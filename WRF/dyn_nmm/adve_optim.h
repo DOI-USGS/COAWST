@@ -1,4 +1,4 @@
-!***********************************************************************
+!*********************************************************************** 
       SUBROUTINE ADVE(NTSD,DT,DETA1,DETA2,PDTOP                         &
      &               ,CURV,F,FAD,F4D,EM_LOC,EMT_LOC,EN,ENT,DX,DY        &
      &               ,HTM,HBM2,VTM,VBM2,LMH,LMV                         &
@@ -15,10 +15,10 @@
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
 !***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
+!                .      .    .     
 ! SUBPROGRAM:    ADVE        HORIZONTAL AND VERTICAL ADVECTION
-!   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 93-10-28
-!
+!   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 93-10-28       
+!     
 ! ABSTRACT:
 !     ADVE CALCULATES THE CONTRIBUTION OF THE HORIZONTAL AND VERTICAL
 !     ADVECTION TO THE TENDENCIES OF TEMPERATURE AND WIND AND THEN
@@ -27,7 +27,7 @@
 !     FOR ALL VARIABLES INSIDE THE FIFTH ROW.  AN UPSTREAM SCHEME
 !     IS USED ON ALL VARIABLES IN THE THIRD, FOURTH, AND FIFTH
 !     OUTERMOST ROWS.  THE ADAMS-BASHFORTH TIME SCHEME IS USED.
-!
+!     
 ! PROGRAM HISTORY LOG:
 !   87-06-??  JANJIC     - ORIGINATOR
 !   95-03-25  BLACK      - CONVERSION FROM 1-D TO 2-D IN HORIZONTAL
@@ -41,25 +41,25 @@
 !                          CONVERT TO GLOBAL INDEXING
 !   02-09-06  WOLFE      - MORE CONVERSION TO GLOBAL INDEXING
 !   04-05-29  JANJIC,BLACK - CRANK-NICHOLSON VERTICAL ADVECTION
-!
+!     
 ! USAGE: CALL ADVE FROM SUBROUTINE SOLVE_RUNSTREAM
 !   INPUT ARGUMENT LIST:
-!
-!   OUTPUT ARGUMENT LIST:
-!
+!  
+!   OUTPUT ARGUMENT LIST: 
+!     
 !   OUTPUT FILES:
 !     NONE
-!
+!     
 !   SUBPROGRAMS CALLED:
-!
+!  
 !     UNIQUE: NONE
-!
+!  
 !     LIBRARY: NONE
-!
+!  
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
 !   MACHINE : IBM SP
-!$$$
+!$$$  
 !***********************************************************************
 !-----------------------------------------------------------------------
 !
@@ -179,7 +179,7 @@
 !
 !                         DPDE      -----  3
 !                          |                      J Increasing
-!                          |
+!                          |                        
 !                          |                            ^
 !                         FNS       -----  2            |
 !                          |                            |
@@ -208,8 +208,8 @@
 !-----------------------------------------------------------------------
 !
       ISTART=MYIS_P2
-      IEND=MYIE_P2
-      IF(ITE==IDE)IEND=MYIE-3
+      IEND=MYIE_P2 
+      IF(ITE==IDE)IEND=MYIE-3 
 !
       DTQ=DT*0.25
       DTE=DT*(0.5*0.25)
@@ -371,7 +371,7 @@
           TNS(I,K,J)=FNS_X*(TST(I,K,J+1)-TST(I,K,J-1))
 !
           UDY_X=U(I,K,JJ)*DY
-          FEW(I,K,JJ)=UDY_X*(DPDE(I+IVW(JJ),K,J)+DPDE(I+IVE(JJ),K,J))
+          FEW(I,K,JJ)=UDY_X*(DPDE(I+IVW(JJ),K,J)+DPDE(I+IVE(JJ),K,J))   
         ENDDO
         ENDDO
 !
@@ -468,7 +468,7 @@
       MY_IE_GLB=1  ! make this a noop for global indexing
       MY_JS_GLB=1  ! make this a noop for global indexing
       MY_JE_GLB=1  ! make this a noop for global indexing
-!
+!  
 !-----------------------------------------------------------------------
 !***  THE WORKING ARRAYS FOR THE PRIMARY VARIABLES
 !-----------------------------------------------------------------------
@@ -582,13 +582,13 @@
 !***  SKIP TO UPSTREAM IF THESE ROWS HAVE ONLY UPSTREAM POINTS.
 !-----------------------------------------------------------------------
 !
-
+      
       JGLOBAL=J+MY_JS_GLB-1
       IF(JGLOBAL>=6.AND.JGLOBAL<=JDE-5)THEN
 !
         JJ=J+MY_JS_GLB-1   ! okay because MY_JS_GLB is 1
         IF(ITS==IDS)ISTART=3+MOD(JJ,2)  ! need to think about this
-                                        ! more in terms of how to
+                                        ! more in terms of how to 
                                         ! convert to global indexing
 !
         DO K=KTS,KTE
@@ -636,7 +636,7 @@
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
 !
-!***  END OF JANJIC HORIZONTAL ADVECTION
+!***  END OF JANJIC HORIZONTAL ADVECTION 
 !
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
@@ -689,7 +689,7 @@
           ENDDO
 !-----------------------------------------------------------------------
 !
-          N_IUPADH_J=N_IUP_ADH(J)
+          N_IUPADH_J=N_IUP_ADH(J) 
 !
           DO K=KTS,KTE
 !
@@ -713,7 +713,7 @@
 !
               IF(HTM(I+IHE(J)+IFP,K,J+ISP)                              &
      &          +HTM(I+IHE(J)+IFQ,K,J+ISQ)                              &
-     &          +HTM(I+IPQ,K,J+ISP+ISQ)<0.1)THEN
+     &          +HTM(I+IPQ,K,J+ISP+ISQ)<0.1)THEN 
 !
                 T(I+IHE(J)+IFP,K,J+ISP)=T(I,K,J)
                 T(I+IHE(J)+IFQ,K,J+ISQ)=T(I,K,J)
@@ -836,7 +836,7 @@
      &                  +F1*U(I+IVE(J)+IFP,K,J+ISP)                     &
      &                  +F2*U(I+IVE(J)+IFQ,K,J+ISQ)                     &
      &                  +F3*U(I+IPQ,K,J+ISP+ISQ)
-!
+! 
               ADV(I,K,J)=F0*V(I,K,J)                                    &
      &                  +F1*V(I+IVE(J)+IFP,K,J+ISP)                     &
      &                  +F2*V(I+IVE(J)+IFQ,K,J+ISQ)                     &

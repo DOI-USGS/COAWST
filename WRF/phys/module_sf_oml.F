@@ -18,8 +18,8 @@ CONTAINS
    IMPLICIT NONE
 !----------------------------------------------------------------
 !
-!  SUBROUTINE OCEANML CALCULATES THE SEA SURFACE TEMPERATURE (TSK)
-!  FROM A SIMPLE OCEAN MIXED LAYER MODEL BASED ON
+!  SUBROUTINE OCEANML CALCULATES THE SEA SURFACE TEMPERATURE (TSK) 
+!  FROM A SIMPLE OCEAN MIXED LAYER MODEL BASED ON 
 !  (Pollard, Rhines and Thompson (1973).
 !
 !-- TML         ocean mixed layer temperature (K)
@@ -130,7 +130,7 @@ CONTAINS
 ! no change unless tml is warmer than layer mean temp tmoml or tsk-5 (see omlinit)
           if(tml.ge.tmoml)then
             tml=max(t0ml - Gam*(h-h0) + 0.5*Gam*h + A2/h, tmoml)
-          else
+          else 
             tml=tmoml
           endif
           u=hu2/h
@@ -193,7 +193,7 @@ CONTAINS
    CHARACTER*1024 message
 
 !----------------------------------------------------------------
-
+ 
    itf=min0(ite,ide-1)
    jtf=min0(jte,jde-1)
 

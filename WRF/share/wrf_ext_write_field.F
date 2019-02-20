@@ -77,7 +77,7 @@
                                 ,ds1, de1, ds2, de2, ds3, de3                 &
                                 ,ms1, me1, ms2, me2, ms3, me3                 &
                                 ,ps1, pe1, ps2, pe2, ps3, pe3, Status          )
-
+    
   END SUBROUTINE wrf_ext_write_field_arr
 
 
@@ -213,16 +213,16 @@
                       ,Stagger                    &  ! Data
                       ,Status )
 #if (EM_CORE == 1)
-! TBH:  Added "coordinates" metadata for GIS folks in RAL.  It is a step
-! TBH:  towards CF.  This change was requested by Jennifer Boehnert based
-! TBH:  upon a suggestion from Nawajish Noman.
-! TBH:  TODO:  This code depends upon longitude and latitude arrays being
-! TBH:         named "XLONG", "XLAT", "XLONG_U", "XLAT_U", "XLONG_V", and
-! TBH:         "XLAT_V" for EM_CORE.  We need a more general way to handle
-! TBH:         this, possibly via the Registry.
-! TBH:  TODO:  Use dimnames(*) == south_north || west_east instead of
-! TBH:         MemoryOrder and Stagger?  It would also work for both ARW
-! TBH:         and NMM and be easier to handle via Registry...
+! TBH:  Added "coordinates" metadata for GIS folks in RAL.  It is a step 
+! TBH:  towards CF.  This change was requested by Jennifer Boehnert based 
+! TBH:  upon a suggestion from Nawajish Noman.  
+! TBH:  TODO:  This code depends upon longitude and latitude arrays being 
+! TBH:         named "XLONG", "XLAT", "XLONG_U", "XLAT_U", "XLONG_V", and 
+! TBH:         "XLAT_V" for EM_CORE.  We need a more general way to handle 
+! TBH:         this, possibly via the Registry.  
+! TBH:  TODO:  Use dimnames(*) == south_north || west_east instead of 
+! TBH:         MemoryOrder and Stagger?  It would also work for both ARW 
+! TBH:         and NMM and be easier to handle via Registry...  
 
       IF ( ( TRIM(MemoryOrder) == 'XY' ) .AND. &
          ( ( TRIM(Var) == 'XLONG'   ) .OR. &

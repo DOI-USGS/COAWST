@@ -23,9 +23,9 @@
       CHARACTER(len = 64) ::   clname                    ! Name of the coupling field, jpeighty defined in oasis
       INTEGER             ::   nid                       ! Id of the field
 #if ( RWORDSIZE == 8 )
-      REAL        , POINTER, DIMENSION(:,:) ::   dbl2d   ! 2d array to store received field
+      REAL        , POINTER, DIMENSION(:,:) ::   dbl2d   ! 2d array to store received field 
 #else
-      REAL(kind=8), POINTER, DIMENSION(:,:) ::   dbl2d   ! 2d array to store received field
+      REAL(kind=8), POINTER, DIMENSION(:,:) ::   dbl2d   ! 2d array to store received field 
 #endif
    END TYPE FLD_CPL
    TYPE(FLD_CPL), DIMENSION(max_domains,max_extdomains,max_cplfld) :: srcv, ssnd   ! Coupling fields informations
@@ -49,12 +49,12 @@
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
    INCLUDE 'mpif.h'               ! only for MPI_COMM_NULL
 #else
-   INTEGER :: MPI_COMM_NULL = -1  ! define a fake (and not used) MPI_COMM_NULL, so it is compiling
+   INTEGER :: MPI_COMM_NULL = -1  ! define a fake (and not used) MPI_COMM_NULL, so it is compiling 
 #endif
 
 CONTAINS
 
-   SUBROUTINE cpl_oasis_init( kl_comm )
+   SUBROUTINE cpl_oasis_init( kl_comm ) 
       !!-------------------------------------------------------------------
       !!             ***  ROUTINE cpl_oasis_init  ***
       !!
@@ -80,7 +80,7 @@ CONTAINS
    END SUBROUTINE cpl_oasis_init
 
 
-   SUBROUTINE cpl_oasis_def_dmcomm( kdm_comm )
+   SUBROUTINE cpl_oasis_def_dmcomm( kdm_comm ) 
       !!-------------------------------------------------------------------
       !!             ***  ROUTINE cpl_oasis_def_dmcomm  ***
       !!
@@ -114,7 +114,7 @@ CONTAINS
       INTEGER :: ishape(2,2)             ! shape of arrays passed to PSMILe
       INTEGER :: jw,je,jf                ! local loop indicees
       INTEGER :: ips,ipe,jps,jpe,kps,kpe ! domain dimension on 1 processor
-      INTEGER :: ims,ime,jms,jme,kms,kme ! memory domain dimension on 1 processor
+      INTEGER :: ims,ime,jms,jme,kms,kme ! memory domain dimension on 1 processor 
       INTEGER :: ids,ide,jds,jde,kds,kde ! domain dimension
       LOGICAL :: llcompute_core          ! is it a compiting core?
       !!--------------------------------------------------------------------
@@ -125,15 +125,15 @@ CONTAINS
       llcompute_core = PRESENT(pgrid)
 
       ! -----------------------------------------------------------------
-      ! ... Define communicator used between computing cores
+      ! ... Define communicator used between computing cores      
       CALL oasis_set_couplcomm( ndm_comm, ierror )               ! provide this communicator to OASIS3-MCT
       IF ( ierror /= OASIS_Ok ) CALL cpl_oasis_abort( 'cpl_oasis_define', 'Failure in oasis_set_couplcomm')
-
+      
       ! -----------------------------------------------------------------
-      ! ... Define the partition
+      ! ... Define the partition 
       ! -----------------------------------------------------------------
       IF( llcompute_core ) THEN
-
+         
          ! ... get mpi domain position
          CALL get_ijk_from_grid( pgrid, ids, ide, jds, jde, kds, kde, &
             &                           ims, ime, jms, jme, kms, kme, &
@@ -141,14 +141,14 @@ CONTAINS
 
          ishape(:,1) = (/1, ipe-ips+1 /)
          ishape(:,2) = (/1, jpe-jps+1 /)
-
+         
          ! ... Define the partition parameteres
          iparal(1) = 2                                      ! box partitioning
          iparal(2) = ide * ( jps - 1 ) + (ips -1)
-         iparal(3) = ipe - ips + 1                          ! local extent in i
+         iparal(3) = ipe - ips + 1                          ! local extent in i 
          iparal(4) = jpe - jps + 1                          ! local extent in j
          iparal(5) = ide                                    ! global extent in x
-
+      
          WRITE(cltxt,*) 'Define the partition for computing cores'   ;   CALL wrf_debug(nlevdbg, cltxt)
          WRITE(cltxt,*) ' multiexchg: iparal (1:5)', iparal          ;   CALL wrf_debug(nlevdbg, cltxt)
          WRITE(cltxt,*) ' multiexchg: ips, ipe =', ips, ipe          ;   CALL wrf_debug(nlevdbg, cltxt)
@@ -162,7 +162,7 @@ CONTAINS
          CALL wrf_debug(nlevdbg, 'no partition for IO cores')
          iparal(:) = 0   ! "fake" partition for IO cores
       ENDIF
-
+      
       CALL oasis_def_partition( id_part, iparal, ierror )
       IF( ierror /= OASIS_Ok ) CALL cpl_oasis_abort( 'cpl_oasis_define', 'Failure in oasis_def_partition')
 
@@ -174,7 +174,7 @@ CONTAINS
       ENDIF
 
       ! -----------------------------------------------------------------
-      ! ... Define sent variables.
+      ! ... Define sent variables. 
       ! -----------------------------------------------------------------
       DO jf = 1, max_cplfld
          DO je = 1, max_extdomains
@@ -187,18 +187,18 @@ CONTAINS
                   CALL wrf_message( cltxt )
                   CALL cpl_oasis_abort( 'cpl_oasis_define', 'Failure in oasis_def_var')
                ENDIF
-               WRITE(cltxt,*) 'cpl_oasis_define ok for :', TRIM(ssnd(jw,je,jf)%clname), ssnd(jw,je,jf)%nid
+               WRITE(cltxt,*) 'cpl_oasis_define ok for :', TRIM(ssnd(jw,je,jf)%clname), ssnd(jw,je,jf)%nid 
                CALL wrf_debug(nlevdbg2, cltxt)
-               IF( ssnd(jw,je,jf)%nid /= -1 ) THEN
-                  WRITE(cltxt,*) ' var snd: ', ssnd(jw,je,jf)%nid, ' ', TRIM(ssnd(jw,je,jf)%clname), id_part
+               IF( ssnd(jw,je,jf)%nid /= -1 ) THEN 
+                  WRITE(cltxt,*) ' var snd: ', ssnd(jw,je,jf)%nid, ' ', TRIM(ssnd(jw,je,jf)%clname), id_part 
                   CALL wrf_debug(nlevdbg, cltxt)
                ENDIF
             END DO
          END DO
       END DO
-
+         
       ! -----------------------------------------------------------------
-      ! ... Define received variables.
+      ! ... Define received variables. 
       ! -----------------------------------------------------------------
       DO jf = 1, max_cplfld
          DO je = 1, max_extdomains
@@ -228,17 +228,17 @@ CONTAINS
       ! -----------------------------------------------------------------
       ! ... End definition
       ! -----------------------------------------------------------------
-      IF (llcompute_core) THEN
+      IF (llcompute_core) THEN 
          IF ( pgrid%id == pgrid%max_dom ) CALL cpl_oasis_enddef()
          CALL wrf_message('cpl_oasis_define (compute_core) : cpl_oasis_enddef done')
       ELSE
          CALL cpl_oasis_enddef()
          CALL wrf_message('cpl_oasis_define (io_core) : cpl_oasis_enddef done')
       ENDIF
-
+      
    END SUBROUTINE cpl_oasis_define
-
-
+   
+   
    SUBROUTINE cpl_oasis_enddef()
       !!-------------------------------------------------------------------
       !!             ***  ROUTINE cpl_oasis_enddef  ***
@@ -248,10 +248,10 @@ CONTAINS
       INTEGER :: ierror         ! return error code
       CALL oasis_enddef(ierror)
       IF( ierror /= OASIS_Ok )   CALL cpl_oasis_abort( 'cpl_oasis_define', 'Failure in oasis_enddef')
-
+      
    END SUBROUTINE cpl_oasis_enddef
-
-
+   
+   
    FUNCTION cpl_oasis_toreceive( kdomwrf, kdomext, kfldid )
       !!-------------------------------------------------------------------
       !!             ***  FUNCTION cpl_oasis_toreceive  ***
@@ -264,7 +264,7 @@ CONTAINS
       !
       LOGICAL :: cpl_oasis_toreceive
       !!--------------------------------------------------------------------
-
+      
       cpl_oasis_toreceive = srcv(kdomwrf,kdomext,kfldid)%nid /= -1
 
    END FUNCTION cpl_oasis_toreceive
@@ -282,7 +282,7 @@ CONTAINS
       !
       LOGICAL :: cpl_oasis_tosend
       !!--------------------------------------------------------------------
-
+      
       cpl_oasis_tosend = ssnd(kdomwrf,kdomext,kfldid)%nid /= -1
 
    END FUNCTION cpl_oasis_tosend
@@ -313,11 +313,11 @@ CONTAINS
 #else
       CALL oasis_put(ssnd(kdomwrf,kdomext,kfldid)%nid, ksec, DBLE(pdata(:,:)), info)
 #endif
-
+      
       WRITE(cltxt,*) 'OASIS_PUT out: info', info   ;   CALL wrf_debug(nlevdbg, cltxt)
 
       llaction = info == OASIS_Sent     .OR. info == OASIS_ToRest .OR.   &
-         &       info == OASIS_SentOut  .OR. info == OASIS_ToRestOut
+         &       info == OASIS_SentOut  .OR. info == OASIS_ToRestOut 
 
       WRITE(cltxt,*) "llaction : ", llaction       ;   CALL wrf_debug(nlevdbg, cltxt)
 
@@ -335,7 +335,7 @@ CONTAINS
       ELSE
          WRITE(cltxt,*) 'field not sent as info=', info                                     ;   CALL wrf_debug(nlevdbg, cltxt)
       ENDIF
-
+      
     END SUBROUTINE cpl_oasis_snd
 
 
@@ -371,7 +371,7 @@ CONTAINS
       WRITE(cltxt,*) 'OASIS_GET out: info', info   ;   CALL wrf_debug(nlevdbg, cltxt)
 
       llaction = info == OASIS_Recvd   .OR. info == OASIS_FromRest .OR.   &
-         &       info == OASIS_RecvOut .OR. info == OASIS_FromRestOut
+         &       info == OASIS_RecvOut .OR. info == OASIS_FromRestOut 
 
       WRITE(cltxt,*) "llaction : ", llaction       ;   CALL wrf_debug(nlevdbg, cltxt)
 
@@ -422,7 +422,7 @@ CONTAINS
             END DO
          END DO
       END DO
-      CALL oasis_terminate ( ierror )
+      CALL oasis_terminate ( ierror )         
 
    END SUBROUTINE cpl_oasis_finalize
 
@@ -441,9 +441,9 @@ CONTAINS
       CALL wrf_message( 'cpl_abort called by '//TRIM(cdroutine) )
       CALL wrf_message( '   ==> '//TRIM(cdtxt) )
       CALL oasis_abort( ncomp_id, cdroutine, cdtxt )
-
+      
    END SUBROUTINE cpl_oasis_abort
-
+   
 #else
    !!----------------------------------------------------------------------
    !!   Dummy modules just for compilation...
@@ -463,12 +463,12 @@ CONTAINS
 
 CONTAINS
 
-   SUBROUTINE cpl_oasis_init( kl_comm )
+   SUBROUTINE cpl_oasis_init( kl_comm ) 
       INTEGER, INTENT(OUT) :: kl_comm       ! local communicator of the model
       IF (.FALSE.) kl_comm = -1 ! to avoid compilation warning
    END SUBROUTINE cpl_oasis_init
 
-   SUBROUTINE cpl_oasis_def_dmcomm( kdm_comm )
+   SUBROUTINE cpl_oasis_def_dmcomm( kdm_comm ) 
       INTEGER, INTENT(IN) :: kdm_comm       ! computing nodes communicator
       IF (.FALSE.) WRITE(*,*) kdm_comm ! to avoid compilation warning
    END SUBROUTINE cpl_oasis_def_dmcomm

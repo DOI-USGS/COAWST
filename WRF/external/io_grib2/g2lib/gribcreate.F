@@ -1,7 +1,7 @@
       subroutine gribcreate(cgrib,lcgrib,listsec0,listsec1,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    gribcreate
+! SUBPROGRAM:    gribcreate 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-04-28
 !
 ! ABSTRACT: This subroutine initializes a new GRIB2 message and packs
@@ -40,14 +40,14 @@
 !                listsec1(12)=Production status of data (Code Table 1.3)
 !                listsec1(13)=Type of processed data (Code Table 1.4)
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     cgrib    - Character array to contain the GRIB2 message
 !     ierr     - Error return code.
 !                0 = no error
 !                1 = Tried to use for version other than GRIB Edition 2
 !
-! REMARKS: This routine is intended for use with routines "addlocal",
-!          "addgrid", "addfield", and "gribend" to create a complete
+! REMARKS: This routine is intended for use with routines "addlocal", 
+!          "addgrid", "addfield", and "gribend" to create a complete 
 !          GRIB2 message.
 !
 ! ATTRIBUTES:
@@ -60,32 +60,32 @@
       integer,intent(in) :: listsec0(*),listsec1(*)
       integer,intent(in) :: lcgrib
       integer,intent(out) :: ierr
-
+      
       character(len=4),parameter :: grib='GRIB'
       integer,parameter :: zero=0,one=1
       integer,parameter :: mapsec1len=13
-      integer,parameter ::
+      integer,parameter :: 
      &        mapsec1(mapsec1len)=(/ 2,2,1,1,1,2,1,1,1,1,1,1,1 /)
       integer lensec0,iofst,ibeg
 
       ierr=0
 !
 !  Currently handles only GRIB Edition 2.
-!
+!  
       if (listsec0(2).ne.2) then
         print *,'gribcreate: can only code GRIB edition 2.'
         ierr=1
         return
       endif
 !
-!  Pack Section 0 - Indicator Section
+!  Pack Section 0 - Indicator Section 
 !  ( except for total length of GRIB message )
 !
 !      cgrib=' '
       cgrib(1)=grib(1:1)                     ! Beginning of GRIB message
-      cgrib(2)=grib(2:2)
-      cgrib(3)=grib(3:3)
-      cgrib(4)=grib(4:4)
+      cgrib(2)=grib(2:2)   
+      cgrib(3)=grib(3:3)   
+      cgrib(4)=grib(4:4)   
       call g2lib_sbyte(cgrib,zero,32,16)           ! reserved for future use
       call g2lib_sbyte(cgrib,listsec0(1),48,8)     ! Discipline
       call g2lib_sbyte(cgrib,listsec0(2),56,8)     ! GRIB edition number

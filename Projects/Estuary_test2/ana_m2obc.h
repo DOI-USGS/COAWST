@@ -114,7 +114,7 @@
 !
 #if defined ESTUARY_TEST2
         ramp=TANH((tdays(ng)-dstart)/1.0_r8)
-        IF (LBC(ieast,isUbar,ng)%acquire.and.                             &
+        IF (LBC(ieast,isUbar,ng)%acquire.and.                           &
      &    LBC(ieast,isVbar,ng)%acquire.and.                             &
      &    DOMAIN(ng)%Eastern_Edge(tile)) THEN
           my_area=0.0_r8

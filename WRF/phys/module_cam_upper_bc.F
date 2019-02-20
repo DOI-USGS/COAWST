@@ -28,7 +28,7 @@ module upper_bc
   public :: ubc_defaultopts    ! set default values of namelist variables
   public :: ubc_setopts        ! get namelist input
   public :: ubc_init           ! global initialization
-#ifndef WRF_PORT
+#ifndef WRF_PORT   
   public :: ubc_timestep_init  ! time step initialization
 #endif
   public :: ubc_get_vals       ! get ubc values for this step
@@ -38,7 +38,7 @@ contains
 !================================================================================================
 
 subroutine ubc_defaultopts(tgcm_ubc_file_out, snoe_ubc_file_out)
-!-----------------------------------------------------------------------
+!----------------------------------------------------------------------- 
 ! Purpose: Return default runtime options
 !-----------------------------------------------------------------------
 
@@ -51,7 +51,7 @@ end subroutine ubc_defaultopts
 !================================================================================================
 
 subroutine ubc_setopts(tgcm_ubc_file_in, snoe_ubc_file_in)
-!-----------------------------------------------------------------------
+!----------------------------------------------------------------------- 
 ! Purpose: Set runtime options
 !-----------------------------------------------------------------------
 
@@ -81,7 +81,7 @@ end subroutine ubc_setopts
 ! timestep dependent setting
 !-----------------------------------------------------------------------
 
-    type(physics_state), intent(in):: state(begchunk:endchunk)
+    type(physics_state), intent(in):: state(begchunk:endchunk)                 
 
   end subroutine ubc_timestep_init
 #endif

@@ -2,7 +2,7 @@
 
       MODULE sed_bed_cohesive_mod
 !#if defined NONLINEAR && defined SEDIMENT && defined COHESIVE_BED
-#if defined NONLINEAR && defined SEDIMENT
+#if defined NONLINEAR && defined SEDIMENT 
 #if defined COHESIVE_BED || defined MIXED_BED
 !
 !svn $Id: sed_bed_cohesive.F 2134 2011-03-14 18:50:06Z csherwood $
@@ -199,11 +199,11 @@
       real(r8) :: thck_avail, thck_to_add
 
       real(r8), dimension(NST) :: nlysm
-
+      
       real(r8), dimension(IminS:ImaxS,NST) :: dep_mass
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tau_w
 # if defined MIXED_BED
-      real(r8) :: pcoh
+      real(r8) :: pcoh 
 # endif
 # if defined COHESIVE_BED || defined MIXED_BED
       real(r8) :: alpha, bzactv, frt, tcb_top, tcb_bot
@@ -272,7 +272,7 @@ minlayer_thick(ng) = newlayer_thick(ng)
 !  after both fluxes are applied.
 !
       DO i=Istr,Iend
-         SED_LOOP: DO ised=1,NST
+         SED_LOOP: DO ised=1,NST  
             dep_mass(i,ised)=0.0_r8
 #  ifdef SED_MORPH
             ! Apply morphology factor.
@@ -290,15 +290,15 @@ minlayer_thick(ng) = newlayer_thick(ng)
                bed_mass(i,j,k,nnew,ised)=bed_mass(i,j,k,nstp,ised)
             END DO
          END DO SED_LOOP
-
+      
          cff3=0.0_r8
          DO ised=1,NST
             cff3=cff3+bed_mass(i,j,1,nnew,ised)
          END DO
 
-         IF (cff3.eq.0.0_r8) THEN
-            cff3=eps
-         END IF
+         IF (cff3.eq.0.0_r8) THEN 
+            cff3=eps 
+         END IF 
          bed(i,j,1,ithck)=0.0_r8
          DO ised=1,NST
             bed_frac(i,j,1,ised)=bed_mass(i,j,1,nnew,ised)/cff3
@@ -308,8 +308,8 @@ minlayer_thick(ng) = newlayer_thick(ng)
      &        (1.0_r8-bed(i,j,1,iporo))),0.0_r8)
          END DO
       END DO
-
-      END DO J_LOOP
+      
+      END DO J_LOOP 
 # endif /* SUSPLOAD section */
 !
 !-----------------------------------------------------------------------
@@ -325,7 +325,7 @@ minlayer_thick(ng) = newlayer_thick(ng)
      &                          0.007_r8*                               &
      &                          (tau_w(i,j)-bottom(i,j,itauc))*rho0)+   &
      &                          6.0_r8*bottom(i,j,isd50)
-#  if defined COHESIVE_BED
+#  if defined COHESIVE_BED 
           bottom(i,j,iactv)=MAX(0.0_r8,                                 &
      &                          0.007_r8*                               &
      &                          (tau_w(i,j)*rho0-bed(i,j,1,ibtcr)))+    &
@@ -367,7 +367,7 @@ minlayer_thick(ng) = newlayer_thick(ng)
           END DO
           DO ised=NCS+1,NST
              cff4=cff4*tau_ce(ised,ng)**bed_frac(i,j,1,ised)
-          ENDDO
+          ENDDO   
           pcoh=min(max((cff3-transN(ng))/(transC(ng)-transN(ng))        &
      &      ,0.0_r8),1.0_r8)
           tcb_top = pcoh*bed(i,j,1,ibtcr)+(pcoh-1.0_r8)*cff4*rho0   !BF
@@ -387,7 +387,7 @@ minlayer_thick(ng) = newlayer_thick(ng)
              END DO
              DO ised=NCS+1,NST
                 cff4=cff4*tau_ce(ised,ng)**bed_frac(i,j,Ksed,ised)
-             ENDDO
+             ENDDO   
 !            Calculate cohesive behavior and blended tau crit
              pcoh=min(max((cff3-transN(ng))/(transC(ng)-transN(ng)),    &
      &            0.0_r8),1.0_r8)
@@ -407,7 +407,7 @@ minlayer_thick(ng) = newlayer_thick(ng)
                    bzactv = bzactv + MIN(bed(i,j,Ksed,ithck),           &
      &                      (MAX(0.0_r8,0.007_r8*(cff1-tcb_bot))))
                    tcb_top = cff1
-                   tcb_bot = bed(i,j,Ksed+1,ibtcr)
+                   tcb_bot = bed(i,j,Ksed+1,ibtcr)   
                 ENDIF
 # if defined MIXED_BED
 !               Recalculate cohesive fraction and mean grain tau crit
@@ -460,7 +460,7 @@ minlayer_thick(ng) = newlayer_thick(ng)
            bottom(i,j,idnet)=cff-cff2
 
            IF ( cff-cff2.GT.0.0_r8) THEN ! NET deposition
-              !  Deposition. Determine if we need to create a new bed layer
+              !  Deposition. Determine if we need to create a new bed layer 
 
 #if defined COHESIVE_BED || defined MIXED_BED
 !
@@ -484,7 +484,7 @@ minlayer_thick(ng) = newlayer_thick(ng)
      &                                 MAX( 0.5_r8*(cff1+cff2), cff2 ))
 !                cff1 = bottom(i,j,idnet)/MAX(bmz(1),eps)
 !                cff2 = bed(i,j,1,ibtcr)+bed(i,j,2,ibtcr)-2*tcr_min(ng)
-!                bed(i,j,1,ibtcr) =bed(i,j,1,ibtcr) - cff1*cff2
+!                bed(i,j,1,ibtcr) =bed(i,j,1,ibtcr) - cff1*cff2 
              ELSE
 !  TODO: Not sure what mud tau_crit should be for single-layer bed.
 !  Try weighted average of dep and old value
@@ -601,11 +601,11 @@ minlayer_thick(ng) = newlayer_thick(ng)
                           bed_mass(i,j,1,nnew,ised)=dep_mass(i,ised)
                        END DO
                     END IF
-                 ELSEIF (Nbed.eq.2) THEN
+                 ELSEIF (Nbed.eq.2) THEN 
                   ! NBED=2
                   !
 #if defined COHESIVE_BED || defined MIXED_BED
-                    !  Tau_crit at top already determined
+                    !  Tau_crit at top already determined 
                     !  Set tau_crit at 2nd layer
                     cff=0.0_r8
                     cff1=0.0_r8
@@ -636,12 +636,12 @@ minlayer_thick(ng) = newlayer_thick(ng)
                     bed(i,j,2,iporo)=(bed(i,j,1,iporo)*cff1+            &
      &                      bed(i,j,2,iporo)*cff2)/(cff1+cff2)
                     ! ALA CHECK WITH CRS POROSITY OF 1ST LAYER
-                    bed(i,j,1,iporo)=bed(i,j,1,iporo)
+                    bed(i,j,1,iporo)=bed(i,j,1,iporo)                    
                  ELSE
                  ! NBED=1
                  END IF
               ELSE
-                ! Net deposition has occurred, but no new bed layer was created
+                ! Net deposition has occurred, but no new bed layer was created 
              END IF
            ELSE
                 ! Net erosion occurred
@@ -654,10 +654,10 @@ minlayer_thick(ng) = newlayer_thick(ng)
 !  interpolation and mass removed / orig. mass in top layer
               bed(i,j,1,ibtcr)=bed(i,j,1,ibtcr)+                        &
      &             MIN(1.0_r8,-bottom(i,j,idnet)/MAX(eps,bmz(1)))*      &
-     &             MAX(0.0_r8,(bed(i,j,2,ibtcr)-bed(i,j,1,ibtcr)))
+     &             MAX(0.0_r8,(bed(i,j,2,ibtcr)-bed(i,j,1,ibtcr)))     
 #endif
                 bed(i,j,1,iaged)=time(ng)
-                IF (Nbed.eq.2) THEN
+                IF (Nbed.eq.2) THEN 
                  ! NBED=2
                     DO ised=1,NST
                        bed_mass(i,j,2,nnew,ised)=                       &
@@ -678,9 +678,9 @@ minlayer_thick(ng) = newlayer_thick(ng)
               DO ised=1,NST
                  cff3=cff3+bed_mass(i,j,k,nnew,ised)
               END DO
-              IF (cff3.eq.0.0_r8) THEN
-                 cff3=eps
-              END IF
+              IF (cff3.eq.0.0_r8) THEN 
+                 cff3=eps 
+              END IF 
               bed(i,j,k,ithck)=0.0_r8
               DO ised=1,NST
                  bed_frac(i,j,k,ised)=bed_mass(i,j,k,nnew,ised)/cff3
@@ -719,7 +719,7 @@ minlayer_thick(ng) = newlayer_thick(ng)
 !  Update bed mass of top layer and fractional layer.
 !
               cff2=MAX(thck_avail-thck_to_add,0.0_r8)/                  &
-     &             MAX(bed(i,j,Ksed,ithck),eps)
+     &             MAX(bed(i,j,Ksed,ithck),eps)	        
               DO ised=1,NST
                 cff1=0.0_r8
                 DO k=1,Ksed
@@ -827,7 +827,7 @@ minlayer_thick(ng) = newlayer_thick(ng)
                   ENDDO
 #endif
 #endif
-              ! ALA CHECK WITH CRS about bed_frac
+              ! ALA CHECK WITH CRS about bed_frac 
               nnn=0
               DO ised=1,NST
                  nlysm(ised)=newlayer_thick(ng)*REAL(ks+1,r8)*          &
@@ -886,12 +886,12 @@ minlayer_thick(ng) = newlayer_thick(ng)
           bottom(i,j,idprp)=min(max((cff1-transN(ng))/                  &
      &     (transC(ng)-transN(ng)),0.0_r8),1.0_r8)
 #endif
-          END DO I_LOOP3
+          END DO I_LOOP3 
 
 #if defined SED_FLOCS && defined SED_DEFLOC
           I_LOOP_DFL: DO i=Istr,Iend
 !        Activate defloc in all layers but the top one
-!            DO k=2,Nbed
+!            DO k=2,Nbed 
 !        Activate defloc in all layers
             DO k=1,Nbed
               alpha = MIN((time(ng)-bed(i,j,k,iaged))/t_dfloc(ng),      &
@@ -919,7 +919,7 @@ minlayer_thick(ng) = newlayer_thick(ng)
 !
 !  Key to this algorithm: "mass available depth" (mad) [kg/m2]
 !  present tau crit profile (tcp)
-!  representative tau crit profile (tcr)
+!  representative tau crit profile (tcr)          
 !  Compute depth and mass depth of sediment column
 !  Compute cumulative depth
 !  Compute mass depth
@@ -954,7 +954,7 @@ minlayer_thick(ng) = newlayer_thick(ng)
 !          DO k=Nbed,Nbed-ks,-1
 !             bed(i,j,k,ibtcr)=tcr(k)
 !          ENDDO
-!  Relax tau crit profile bottom(i,j,k,ibtcr)
+!  Relax tau crit profile bottom(i,j,k,ibtcr) 
 !  towards representative profile tcr...100 x slower for "swelling"
 !  than consolidation
 !  TODO - make the factor an input parameter

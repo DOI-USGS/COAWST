@@ -2,7 +2,7 @@
 
 !-----------------------------------------------------------------------
 !   New in June 2010, by r.c.easter
-!   This file is similar to module_data_mosaic_asect,
+!   This file is similar to module_data_mosaic_asect, 
 !   but works with the CAM modal aerosol packages in WRF-Chem.
 !
 !   Note that the position/index arrays in this file refer to the "chem" array,
@@ -10,7 +10,7 @@
 !   used in the CAM modal aerosol routines
 !
 !   *** Important note on units ***
-!   in this file,
+!   in this file, 
 !	aerosol densities here are g/cm3
 !	aerosol sizes and volumes are cm and cm3
 !       thus the density/size/volume variables in the file have the same units
@@ -32,10 +32,10 @@
 !-----------------------------------------------------------------------
 !
 !   The variables in this module provide a means of organizing and accessing
-!   aerosol species in the "chem" array by their chemical component,
+!   aerosol species in the "chem" array by their chemical component, 
 !   size bin (or mode), "type", and "phase"
 !
-!   Their purpose is to allow flexible coding of process modules,
+!   Their purpose is to allow flexible coding of process modules, 
 !   compared to "hard-coding" using the chem array p_xxx indices
 !   (e.g., p_so4_a01, p_so4_a02, ...; p_num_a01, ...)
 !
@@ -50,15 +50,15 @@
 !   maxd_asize = maximum allowable number of aerosol size bins
 !   maxd_acomp = maximum allowable number of chemical components
 !	in each aerosol size bin
-!   maxd_aphase = maximum allowable number of aerosol phases
+!   maxd_aphase = maximum allowable number of aerosol phases 
 !	(gas, cloud, ice, rain, ...)
 !
 !   ntype_aer = number of aerosol types
-!	The aerosol type will allow treatment of an externally mixed
+!	The aerosol type will allow treatment of an externally mixed 
 !	aerosol.  The current MOSAIC code has only 1 type, with the implicit
-!	assumption of internal mixing.  Eventually, multiple types
-!	could treat fresh primary BC/OC, fresh SO4 from nucleation,
-!	aged BC/OC/SO4/... mixture, soil dust, sea salt, ...
+!	assumption of internal mixing.  Eventually, multiple types 
+!	could treat fresh primary BC/OC, fresh SO4 from nucleation, 
+!	aged BC/OC/SO4/... mixture, soil dust, sea salt, ... 
 !
 !   nphase_aer = number of aerosol phases
 !
@@ -68,7 +68,7 @@
 !   rn_phase = phase (p) index for aerosol particles in rain
 !   sn_phase = phase (p) index for aerosol particles in snow
 !   gr_phase = phase (p) index for aerosol particles in graupel
-!   [Note:  the value of "xx_phase" will be between 1 and nphase_aer
+!   [Note:  the value of "xx_phase" will be between 1 and nphase_aer 
 !	for phases that are active in a simulation.  The others
 !	will have non-positive values.]
 !
@@ -79,10 +79,10 @@
 !	chemical components for aerosol type t
 !   [Note:  only "regular" components are used for calculating
 !	aerosol physical (mass, volume) and chemical properties.
-!	"Tracer" components are optional, and can be used to track source
+!	"Tracer" components are optional, and can be used to track source 
 !	regions, source mechanisms, etc.]
 !   [Note:  for aerosol type t, all phases have the same number of size
-!	bins, and all size bins have the same number of
+!	bins, and all size bins have the same number of 
 !	both regular and tracer components.]
 !
 !   ntot_mastercomp_aer = number of aerosol chemical components defined
@@ -90,18 +90,18 @@
 !   [Note:  each aerosol type will use some but not necessarily all
 !	of the components in the "master component list".]
 !
-!   mastercompptr_aer(c,t) = the position/index/i.d. in the
+!   mastercompptr_aer(c,t) = the position/index/i.d. in the 
 !       "master component list" for chemical component c of aerosol type t.
 !	(1=sulfate, others to be defined by user.)
 !
-!   massptr_aer(c,s,t,p) = the position/index in the chem array for mixing-
+!   massptr_aer(c,s,t,p) = the position/index in the chem array for mixing- 
 !	ratio for chemical component c, size bin s, type t, and phase p.
 !
 !   lptr_so4_aer(s,t,p) = the position/index in the chem array for mixing-
 !	ratio for sulfate for aerosol size bin s, type t, and phase p
-!   (similar lptr's are defined for no3, cl, msa, co3,
+!   (similar lptr's are defined for no3, cl, msa, co3, 
 !	nh4, na, ca, oin, oc, bc, ...)
-!   [Note:  the massptr_aer allow you to loop over all species of
+!   [Note:  the massptr_aer allow you to loop over all species of 
 !	an aerosol type.  The lptr_so4_aer, etc., allow you to access
 !	a specific chemical component.]
 !
@@ -114,10 +114,10 @@
 !	ratio of aerosol "hysteresis water" content for size bin s, type t.
 !	This is used to determine if aerosol is in the dry or wet state, when
 !	the ambient RH is between the crystallization and deliquescence RH.
-!	[Note:  hysteresis water content is only carried for the
+!	[Note:  hysteresis water content is only carried for the 
 !	interstitial aerosol phase, so there is no p dimension.]
 !
-!   numptr_aer(s,t,p) = the position/index in the chem array for mixing-
+!   numptr_aer(s,t,p) = the position/index in the chem array for mixing- 
 !	ratio of particle number for size bin s, type t, and phase p.
 !
 !   mprognum_aer(s,t,p) - if positive, number mixing-ratio for size s, type t,
@@ -128,40 +128,40 @@
 !       associated with aerosol size bin s and type t
 !
 !
-!   mastercompindx_so4_aer = the position/index in the
-!       "master component list" for sulfate.
-!   (similar lptr's are defined for no3, cl, msa, co3,
+!   mastercompindx_so4_aer = the position/index in the 
+!       "master component list" for sulfate.  
+!   (similar lptr's are defined for no3, cl, msa, co3, 
 !	nh4, na, ca, oin, oc, bc, ...)
-!   [Note:  the mastercompindx_xxx_aer are used primarily in
+!   [Note:  the mastercompindx_xxx_aer are used primarily in 
 !	initialization routines, and generally aren't needed elsewhere.]
 !
 !-----------------------------------------------------------------------
 !
-!   dens_mastercomp_aer(mc) = dry density (g/cm^3) of component mc
+!   dens_mastercomp_aer(mc) = dry density (g/cm^3) of component mc 
 !	of the master component list.
-!   dens_aer(c,t) = dry density (g/cm^3) of aerosol chemical component
+!   dens_aer(c,t) = dry density (g/cm^3) of aerosol chemical component 
 !	c of type t
 !   [Note:  dens_aer(c,t) == dens_mastercomp_aer(mastercompptr_aer(c,t))
 !	The dens_mastercomp_aer is used in some initialization routines.
 !	The dens_aer is used in most other places because of convenience.]
 !
-!   mw_mastercomp_aer(mc) = molecular weight (g/mole) of component mc
+!   mw_mastercomp_aer(mc) = molecular weight (g/mole) of component mc 
 !	of the master component list.
-!   mw_aer(c,t) = molecular weight (g/mole) of aerosol chemical component
+!   mw_aer(c,t) = molecular weight (g/mole) of aerosol chemical component 
 !	c of type t
 !   [Note:  mw_aer(c,t) == mw_mastercomp_aer(mastercompptr_aer(c,t)) ]
 !
-!   name_mastercomp_aer(mc) = name of component mc of the
+!   name_mastercomp_aer(mc) = name of component mc of the 
 !	master component list (e.g., "sulfate", "nitrate", ...).
-!   name_aer(c,t) = molecular weight (g/mole) of aerosol chemical component
+!   name_aer(c,t) = molecular weight (g/mole) of aerosol chemical component 
 !	c of type t
 !   [Note:  name_aer(c,t) == name_mastercomp_aer(mastercompptr_aer(c,t)) ]
 !
 !   hygro_mastercomp_aer(mc) = bulk hygroscopicity (--) at dilute conditions
 !	(RH near 100%) of component mc of the master component list.
-!   hygro_aer(c,t) = bulk hygroscopicity (--) at dilute conditions
+!   hygro_aer(c,t) = bulk hygroscopicity (--) at dilute conditions 
 !	(RH near 100%) of aerosol chemical component c of type t
-!   [For definition of bulk hygroscopicity,
+!   [For definition of bulk hygroscopicity, 
 !	see Abdul-Razzak and Ghan, 2004, J Geophys Res, V105, p. 6837-6844.]
 !   [Note:  hygro_aer(c,t) == hygro_mastercomp_aer(mastercompptr_aer(c,t)) ]
 !
@@ -183,7 +183,7 @@
 !
 !   msectional - if positive, each aerosol size bin is a section.
 !   if equals 10, use jacobson moving center
-!   if equals 20, use tzivion mass-number advection
+!   if equals 20, use tzivion mass-number advection 
 !	if zero/negative, each size bin is a mode (aitken, accumulation, ...)
 !
 !   maerosolincw - if positive, both unactivated/interstitial and activated
@@ -202,7 +202,7 @@
 !	the aerchemistry routine.  If zero/negative, it is skipped.
 !	(This is not yet implemented in WRF-Chem.)
 !
-!   maeroptical - if positive, aerosol optical properties are calculated.
+!   maeroptical - if positive, aerosol optical properties are calculated. 
 !	If zero/negative, it is skipped.
 !	(This is not yet implemented in WRF-Chem.)
 !
@@ -229,11 +229,11 @@
       	  ncomp_aer( maxd_atype ),   & ! number of chemical components
       	  ncomp_plustracer_aer( maxd_atype ),   &
           mastercompptr_aer(maxd_acomp, maxd_atype), &   !  mastercomp index
-      	  massptr_aer( maxd_acomp, maxd_asize, maxd_atype, maxd_aphase ), &
+      	  massptr_aer( maxd_acomp, maxd_asize, maxd_atype, maxd_aphase ), & 
 		! index for mixing ratio
       	  waterptr_aer( maxd_asize, maxd_atype ), & ! index for aerosol water
       	  hyswptr_aer( maxd_asize, maxd_atype ), &
-      	  numptr_aer( maxd_asize, maxd_atype, maxd_aphase ), &
+      	  numptr_aer( maxd_asize, maxd_atype, maxd_aphase ), & 
 		! index for the number mixing ratio
           mprognum_aer(maxd_asize,maxd_atype,maxd_aphase)
 
@@ -287,7 +287,7 @@
 ! sg/rce nov-2004 - totally new pointer system  - "..._aer"
 
 
-!   the mw_xxx_aer and dens_xxx_aer will be set from
+!   the mw_xxx_aer and dens_xxx_aer will be set from 
 !      the values in module_data_cam_mam_aero
 !   molecular weights (g/mol)
 	real, save ::   &

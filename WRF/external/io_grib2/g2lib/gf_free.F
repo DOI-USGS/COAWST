@@ -1,7 +1,7 @@
       subroutine gf_free(gfld)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    gf_free
+! SUBPROGRAM:    gf_free 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-26
 !
 ! ABSTRACT: This subroutine frees up memory that was used to store
@@ -14,7 +14,7 @@
 !   INPUT ARGUMENT LIST:
 !     gfld - derived type gribfield ( defined in module grib_mod )
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     gfld - derived type gribfield ( defined in module grib_mod )
 !        gfld%version = GRIB edition number
 !        gfld%discipline = Message Discipline ( see Code Table 0.0 )
@@ -46,26 +46,26 @@
 !        gfld%ifldnum = field number within GRIB message
 !        gfld%griddef = Source of grid definition (see Code Table 3.0)
 !        gfld%ngrdpts = Number of grid points in the defined grid.
-!        gfld%numoct_opt = Number of octets needed for each
-!                          additional grid points definition.
+!        gfld%numoct_opt = Number of octets needed for each 
+!                          additional grid points definition.  
 !                          Used to define number of
 !                          points in each row ( or column ) for
-!                          non-regular grids.
+!                          non-regular grids.  
 !                          = 0, if using regular grid.
-!        gfld%interp_opt = Interpretation of list for optional points
+!        gfld%interp_opt = Interpretation of list for optional points 
 !                          definition.  (Code Table 3.11)
 !        gfld%igdtnum = Grid Definition Template Number (Code Table 3.1)
-!        gfld%igdtmpl() = Contains the data values for the specified Grid
-!                         Definition Template ( NN=gfld%igdtnum ).  Each
-!                         element of this integer array contains an entry (in
+!        gfld%igdtmpl() = Contains the data values for the specified Grid 
+!                         Definition Template ( NN=gfld%igdtnum ).  Each 
+!                         element of this integer array contains an entry (in 
 !                         the order specified) of Grid Defintion Template 3.NN
 !                         This element is actually a pointer to an array
 !                         that holds the data.
 !        gfld%igdtlen = Number of elements in gfld%igdtmpl().  i.e. number of
-!                       entries in Grid Defintion Template 3.NN
+!                       entries in Grid Defintion Template 3.NN  
 !                       ( NN=gfld%igdtnum ).
-!        gfld%list_opt() = (Used if gfld%numoct_opt .ne. 0)  This array
-!                          contains the number of grid points contained in
+!        gfld%list_opt() = (Used if gfld%numoct_opt .ne. 0)  This array 
+!                          contains the number of grid points contained in 
 !                          each row ( or column ).  (part of Section 3)
 !                          This element is actually a pointer to an array
 !                          that holds the data.  This pointer is nullified
@@ -75,16 +75,16 @@
 !                       for which optional grid points are defined.  This value
 !                       is set to zero, if gfld%numoct_opt=0.
 !        gfdl%ipdtnum = Product Definition Template Number (see Code Table 4.0)
-!        gfld%ipdtmpl() = Contains the data values for the specified Product
+!        gfld%ipdtmpl() = Contains the data values for the specified Product 
 !                         Definition Template ( N=gfdl%ipdtnum ).  Each element
-!                         of this integer array contains an entry (in the
+!                         of this integer array contains an entry (in the 
 !                         order specified) of Product Defintion Template 4.N.
 !                         This element is actually a pointer to an array
 !                         that holds the data.
 !        gfld%ipdtlen = Number of elements in gfld%ipdtmpl().  i.e. number of
-!                       entries in Product Defintion Template 4.N
+!                       entries in Product Defintion Template 4.N  
 !                       ( N=gfdl%ipdtnum ).
-!        gfld%coord_list() = Real array containing floating point values
+!        gfld%coord_list() = Real array containing floating point values 
 !                            intended to document the vertical discretisation
 !                            associated to model data on hybrid coordinate
 !                            vertical levels.  (part of Section 4)
@@ -92,28 +92,28 @@
 !                            that holds the data.
 !        gfld%num_coord = number of values in array gfld%coord_list().
 !        gfld%ndpts = Number of data points unpacked and returned.
-!        gfld%idrtnum = Data Representation Template Number
+!        gfld%idrtnum = Data Representation Template Number 
 !                       ( see Code Table 5.0)
-!        gfld%idrtmpl() = Contains the data values for the specified Data
-!                         Representation Template ( N=gfld%idrtnum ).  Each
-!                         element of this integer array contains an entry
-!                         (in the order specified) of Product Defintion
+!        gfld%idrtmpl() = Contains the data values for the specified Data 
+!                         Representation Template ( N=gfld%idrtnum ).  Each 
+!                         element of this integer array contains an entry 
+!                         (in the order specified) of Product Defintion 
 !                         Template 5.N.
 !                         This element is actually a pointer to an array
 !                         that holds the data.
-!        gfld%idrtlen = Number of elements in gfld%idrtmpl().  i.e. number
-!                       of entries in Data Representation Template 5.N
+!        gfld%idrtlen = Number of elements in gfld%idrtmpl().  i.e. number 
+!                       of entries in Data Representation Template 5.N 
 !                       ( N=gfld%idrtnum ).
 !        gfld%unpacked = logical value indicating whether the bitmap and
 !                        data values were unpacked.  If false, gfld%ndpts
-!                        is set to zero, and gfld%bmap and gfld%fld
+!                        is set to zero, and gfld%bmap and gfld%fld 
 !                        pointers are nullified.
 !        gfld%ibmap = Bitmap indicator ( see Code Table 6.0 )
 !                     0 = bitmap applies and is included in Section 6.
 !                     1-253 = Predefined bitmap applies
 !                     254 = Previously defined bitmap applies to this field
 !                     255 = Bit map does not apply to this product.
-!        gfld%bmap() - Logical*1 array containing decoded bitmap,
+!        gfld%bmap() - Logical*1 array containing decoded bitmap, 
 !                      if ibmap=0 or ibap=254.  Otherwise nullified.
 !                      This element is actually a pointer to an array
 !                      that holds the data.
@@ -121,7 +121,7 @@
 !                     This element is actually a pointer to an array
 !                     that holds the data.
 !
-! REMARKS:
+! REMARKS: 
 !
 ! ATTRIBUTES:
 !   LANGUAGE: Fortran 90
@@ -129,7 +129,7 @@
 !
 !$$$
       use grib_mod
-
+    
       type(gribfield) :: gfld
 
       if (associated(gfld%idsect)) then

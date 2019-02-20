@@ -407,12 +407,12 @@
 !
 # include "set_bounds.h"
 
-#ifdef _OPENMP
+#ifdef _OPENMP 
       IF (DOMAIN(ng)%Western_Edge(tile)) THEN
         Imin=BOUNDS(ng)%LBi(tile)
-      ELSE
+      ELSE    
         Imin=Istr
-      END IF
+      END IF  
       IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
         Imax=BOUNDS(ng)%UBi(tile)
       ELSE
@@ -685,7 +685,7 @@
             END DO
           END DO
         END DO
-      END IF
+      END IF 
       IF (Aout(idShea,ng)) THEN
         DO if=1,FILN
           DO j=Jmin,Jmax

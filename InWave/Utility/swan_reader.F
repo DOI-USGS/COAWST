@@ -193,7 +193,7 @@
           read(rline(14:15),'(I4)') INTTIM(6)
           i=1
           WAVES(ng)%SpecTime(1)=DTTIME(INTTIM)
-!  Set dt SpecTime to a large valule in case the spec2d file
+!  Set dt SpecTime to a large valule in case the spec2d file 
 !  has only 1 time instance.
           IF (first.eq.1) THEN
             WAVES(ng)%SpecTime(2)=WAVES(ng)%SpecTime(1)
@@ -244,7 +244,7 @@
 !
       j=0
       DO WHILE (j==0)
-        READ (inp,'(a)',ERR=215,END=240) rline
+        READ (inp,'(a)',ERR=215,END=245) rline 
         IF(rline(41:44).eq.'date') THEN
           read(rline(1:15),*) WAVES(ng)%SpecTimeIso(2)
           read(rline(1:4),'(I4)') INTTIM(1)
@@ -294,6 +294,7 @@
           END IF
         END IF
       END DO
+ 245  CONTINUE
       close(inp)
 !
 !-----------------------------------------------------------------------
@@ -326,7 +327,7 @@
 !-----------------------------------------------------------------------
 !
       IF (first.eq.1) allocate(WAVES(ng)%Sf(nfreqsw))
-
+      
       WAVES(ng)%Sf = sum(WAVES(ng)%SDSW, DIM = 2)*WAVES(ng)%dang
 !
 !-----------------------------------------------------------------------
@@ -342,6 +343,9 @@
       temp=sum(WAVES(ng)%SDSW, DIM = 1)
       i=maxval(maxloc(temp))
       WAVES(ng)%mainang=WAVES(ng)%theta(i)
+      IF (Master) THEN
+        WRITE(stdout,*) 'Peak dir from ', WAVES(ng)%mainang*180.0_r8/pi
+      END IF
       deallocate(temp)
 !
 !-----------------------------------------------------------------------
@@ -350,7 +354,7 @@
 !
       allocate (temp(nfreqsw+1))
       temp(1)=0.0_r8
-      DO i=2,nfreqsw
+      DO i=2,nfreqsw 
         temp(i)=0.5_r8*WAVES(ng)%fsw(i-1)+                              &
      &          0.5_r8*WAVES(ng)%fsw(i)
       END DO

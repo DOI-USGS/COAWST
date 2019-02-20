@@ -1,6 +1,6 @@
-# svn $Id: Linux-g95.mk 834 2017-01-25 18:49:17Z arango $
+# svn $Id: Linux-g95.mk 889 2018-02-10 03:32:52Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2018 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2019 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -109,6 +109,13 @@ ifdef USE_CXX
              LIBS += -lstdc++
 endif
 
+ifdef USE_MCT
+       MCT_INCDIR ?= /opt/g95soft/mct/include
+       MCT_LIBDIR ?= /opt/g95soft/mct/lib
+           FFLAGS += -I$(MCT_INCDIR)
+             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
+endif
+
 ifdef USE_WRF
              FFLAGS += -I$(WRF_DIR)/main -I$(WRF_DIR)/external/esmf_time_f90 -I$(WRF_DIR)/frame -I$(WRF_DIR)/share
              LIBS += WRF/main/module_wrf_top.o
@@ -128,13 +135,6 @@ endif
 ifdef USE_WW3
              FFLAGS += -I${COAWST_WW3_DIR}/mod_DIST/
              LIBS += WW3/obj/libWW3.a
-endif
-
-ifdef USE_MCT
-       MCT_INCDIR ?= /opt/g95soft/mct/include
-       MCT_LIBDIR ?= /opt/g95soft/mct/lib
-           FFLAGS += -I$(MCT_INCDIR)
-             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
 endif
 
 #

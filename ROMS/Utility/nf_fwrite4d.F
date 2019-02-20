@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE nf_fwrite4d_mod
 !
-!svn $Id: nf_fwrite4d.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: nf_fwrite4d.F 922 2018-09-25 21:41:45Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -411,7 +411,12 @@
 
 # ifdef DISTRIBUTE
 !
-      USE distribute_mod, ONLY : mp_bcasti, mp_gather3d
+      USE distribute_mod, ONLY : mp_bcasti
+#  ifdef INLINE_2DIO
+      USE distribute_mod, ONLY : mp_gather2d
+#  else
+      USE distribute_mod, ONLY : mp_gather3d
+#  endif
 # endif
 !
 !  Imported variable declarations.
@@ -448,7 +453,11 @@
 
       integer :: nf_fwrite4d
 
+# if defined INLINE_2DIO && defined DISTRIBUTE
+      real(r8), dimension((Lm(ng)+2)*(Mm(ng)+2)) :: Awrk
+# else
       real(r8), dimension((Lm(ng)+2)*(Mm(ng)+2)*(UBk-LBk+1)) :: Awrk
+# endif
 !
 !-----------------------------------------------------------------------
 !  Set starting and ending indices to process.
@@ -535,15 +544,31 @@
 #  endif
 !-----------------------------------------------------------------------
 !
-!  Process data as 3D slices.
-!
       DO fourth=LBt,UBt
+#  ifdef INLINE_2DIO
+!
+!  Process the data as 2D slices (level by level) to reduce memory
+!  requirements.
+!
+      DO k=LBk,UBk
+        CALL mp_gather2d (ng, model, LBi, UBi, LBj, UBj,                &
+     &                    tindex, gtype, Ascl,                          &
+#   ifdef MASKING
+     &                    Amask,                                        &
+#   endif
+     &                    A(:,:,k,fourth), Npts, Awrk, SetFillVal)
+#  else
+!
+!  Process the data as 3D slices.
+!
+
         CALL mp_gather3d (ng, model, LBi, UBi, LBj, UBj, LBk, UBk,      &
      &                    tindex, gtype, Ascl,                          &
-#  ifdef MASKING
+#   ifdef MASKING
      &                    Amask,                                        &
-#  endif
+#   endif
      &                    A(:,:,:,fourth), Npts, Awrk, SetFillVal)
+#  endif
 !
 !-----------------------------------------------------------------------
 !  Write output buffer into NetCDF file.
@@ -556,8 +581,13 @@
             total(1)=Ilen
             start(2)=1
             total(2)=Jlen
+#  ifdef INLINE_2DIO
+            start(3)=k-Koff+1
+            total(3)=1
+#  else
             start(3)=1
             total(3)=Klen
+#  endif
             start(4)=fourth+Loff
             total(4)=1
             start(5)=tindex
@@ -580,6 +610,9 @@
           status=nf90_put_var(ncid, ncvarid, Awrk, start, total)
           nf_fwrite4d=status
         END IF
+#  ifdef INLINE_2DIO
+      END DO
+#  endif
       END DO
 # else
 !

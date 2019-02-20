@@ -4,9 +4,9 @@
 !  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
-!================================================= John C. Warner =====!
-!================================================= Neil K. Ganju ======!
-!================================================= Alexis Beudin ======!
+!================================================= John C. Warner =====!   
+!================================================= Neil K. Ganju ======!   
+!================================================= Alexis Beudin ======!   
 !================================================= Tarandeep S. Kalra =!
 !=======================================================================
 !                                                                      !
@@ -14,11 +14,11 @@
 !  =================================                                   !
 !  NVEG          Number of vegetation types                            !
 !  NVEGP         Number of vegetation array properties                 !
-!  CD_VEG        Drag coefficient for each veg type                    !
+!  CD_VEG        Drag coefficient for each veg type                    ! 
 !  E_VEG         Youngs modulus for each veg type                      !
 !  VEG_MASSDEN   Mass density for each veg type                        !
-!  VEGHMIXCOEF   Viscosity coefficient for vegetation boundary         !
-!                                                                      !
+!  VEGHMIXCOEF   Viscosity coefficient for vegetation boundary         ! 
+!                                                                      ! 
 !  Plant Property indices:                                             !
 !  ======================                                              !
 !  pdens         Density                                               !
@@ -30,7 +30,7 @@
 !                                                                      !
 !  Plant Property indices:                                             !
 !  ======================                                              !
-!  idvprp        Indices for storing plant properties                  !
+!  idvprp        Indices for storing plant properties                  ! 
 !                                                                      !
 !  Plant Property Output IDs:                                          !
 !  ==========================                                          !
@@ -44,8 +44,8 @@
 !                                                                      !
 !  Wave Thrust on Marsh Output:                                        !
 !  ==========================                                          !
-!  idTims        Initial masking for the marsh                         !
-!  idTmsk        Masking for getting thrust due to waves at rho pts.   !
+!  idTims        Initial masking for the marsh                         ! 
+!  idTmsk        Masking for getting thrust due to waves at rho pts.   ! 
 !  idTmax        Maximum thrust due to waves                           !
 !  idTton        Tonelli masking based thrust due to waves             !
 !=======================================================================
@@ -59,47 +59,47 @@
       integer :: phght, pdens, pdiam, pthck
       integer :: ipdens,iphght,ipdiam,ipthck
 
-#ifdef VEG_BIOMASS
-      integer :: pabbm, pbgbm
-      integer :: ipabbm, ipbgbm
-#endif
-#ifdef VEG_STREAMING
+#ifdef VEG_BIOMASS 
+      integer :: pabbm, pbgbm   
+      integer :: ipabbm, ipbgbm   
+#endif 
+#ifdef VEG_STREAMING 
       integer :: idWdvg
-#endif
-      integer, allocatable :: idvprp(:)
-#ifdef MARSH_WAVE_THRUST
-      integer ::  idTims, idTmsk, idTmax, idTton
-#endif
+#endif 
+      integer, allocatable :: idvprp(:)    
+#ifdef MARSH_WAVE_THRUST 
+      integer ::  idTims, idTmsk, idTmax, idTton 
+#endif 
 !
       real(r8), allocatable :: E_VEG(:,:)
       real(r8), allocatable :: CD_VEG(:,:)
       real(r8), allocatable :: VEG_MASSDENS(:,:)
       real(r8), allocatable :: VEGHMIXCOEF(:,:)
 !
-      CONTAINS
-!
+      CONTAINS 
+! 
       SUBROUTINE initialize_vegetation
 !
       USE mod_param
 !
-      implicit none
+      implicit none 
 !
-!     Setup property indices
-!
+!     Setup property indices 
+! 
        counter = 1
-       pdens   = counter
-       counter = counter+1
+       pdens   = counter 
+       counter = counter+1 
        phght   = counter
-       counter = counter+1
+       counter = counter+1 
        pdiam   = counter
-       counter = counter+1
+       counter = counter+1 
        pthck   = counter
-#ifdef VEG_BIOMASS
-       counter = counter+1
+#ifdef VEG_BIOMASS 
+       counter = counter+1 
        pabbm   = counter
-       counter = counter+1
-       pbgbm   = counter
-#endif
+       counter = counter+1 
+       pbgbm   = counter 
+#endif 
        NVEGP = counter
        IF (.not.allocated(idvprp)) THEN
          allocate ( idvprp(NVEGP) )

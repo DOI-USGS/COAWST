@@ -16,7 +16,7 @@ MODULE module_comm_nesting_dm
 
 CONTAINS
 
-   ! Avoid complaints about empty CONTAINS from some compilers.
+   ! Avoid complaints about empty CONTAINS from some compilers.  
    SUBROUTINE module_comm_nesting_dm_dummy
      USE module_domain, ONLY:domain
      USE module_configure, ONLY:grid_config_rec_type,in_use_for_config
@@ -25,7 +25,7 @@ CONTAINS
      RETURN
    END SUBROUTINE module_comm_nesting_dm_dummy
 
-! Registry-generated communication subroutines.
+! Registry-generated communication subroutines.  
 #ifdef DM_PARALLEL
 #include "REGISTRY_COMM_NESTING_DM_subs.inc"
 #endif

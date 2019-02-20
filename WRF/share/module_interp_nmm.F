@@ -95,7 +95,7 @@
  max(N(ni-1,nj  ),max(N(ni,nj  ),  max(N(ni+1,nj  ),  \
    max(N(ni-a  ,nj-1),max(N(ni+1-a,nj-1), \
     N(ni,nj-2) )))))))
-
+       
 
 module module_interp_nmm
   use module_model_constants, only: g, R_D, p608
@@ -631,7 +631,7 @@ contains
           ni = (i-ipos)*nri + 2 - a
           cfield(i,j)=NGRAB2D(nfield,ni,nj)
        enddo iloop
-    enddo bigj
+    enddo bigj 
  end subroutine n2c_copy2d
 
   subroutine n2c_max2d (&
@@ -675,7 +675,7 @@ contains
           ni = (i-ipos)*nri + 2 - a
           N2I_SET_MAX_IJ(cfield,nfield,i,j,ni,nj)
        enddo iloop
-    enddo bigj
+    enddo bigj 
   end subroutine n2c_max2d
 
     subroutine c2n_copy2d (II,JJ,W1,W2,W3,W4,    &
@@ -845,7 +845,7 @@ contains
        enddo
     endif
   end subroutine c2b_copy3d
-
+  
   subroutine n2c_copy3d (&
        cfield,nfield,ipos,jpos,  &
        cids, cide, cjds, cjde, ckds, ckde,   &
@@ -1052,7 +1052,7 @@ contains
           kloop1: do k=kpres,nkds,-1
              weight=wbxs(j,k,1)
              ck=ibxs(j,k,1)
-
+             
              if(ck>1) then
                 fbxs(j,k,1) = &
                      ICOPY(cfield,i,j,ck)   * weight + &
@@ -1375,7 +1375,7 @@ contains
                 nfield(i,j,k) = &
                      ICOPY(cfield,i,j,ck)   * weight + &
                      ICOPY(cfield,i,j,ck-1) * (1.0-weight)
-             else
+             else                
                 ! Extrapolate
                 if(emethod==EConst) then
                    nfield(i,j,k)=evalue
@@ -1546,7 +1546,7 @@ contains
        iend=MIN(ipos+(nide-nids)/nri-1,cite)
        nx=iend-istart+1
 
-       ! STEP 1: Copy coarse and fine nest data into
+       ! STEP 1: Copy coarse and fine nest data into 
        ! temporary arrays, reordering dimensions:
        qtloop: do k=ckts,ckte-1
           do i=istart,iend
@@ -1672,7 +1672,7 @@ contains
        iend=MIN(ipos+(nide-nids)/nri-1,cite)
        nx=iend-istart+1
 
-       ! STEP 1: Copy coarse and fine nest data into
+       ! STEP 1: Copy coarse and fine nest data into 
        ! temporary arrays, reordering dimensions:
        qtloop: do k=ckts,kpres+1
           do i=istart,iend
@@ -1729,7 +1729,7 @@ contains
     kcopy: do k=kpres+1,ckde-1
        jcopy: do j=jstart,jend
           nj = (j-jpos)*nrj + 1
-
+          
           a=mod(j,2)
           istart=MAX(ipos+a,cits)
           iend=MIN(ipos+(nide-nids)/nri-1,cite)
@@ -1836,7 +1836,7 @@ contains
                 uFCOPY(icQ,cQ,i,j,k)
                 uFCOPY(icPINT,cPINT,i,j,k)
              enddo
-
+                
              k=nkte
              a=1-mod(JJ(i,j),2)
 
@@ -1865,7 +1865,7 @@ contains
                 uFCOPY(icQ,cQ,i,j,k)
                 uFCOPY(icPINT,cPINT,i,j,k)
              enddo
-
+                
              k=nkte
              a=1-mod(JJ(i,j),2)
 
@@ -2049,7 +2049,7 @@ contains
                 uFCOPY(icQ,cQ,i,j,k)
                 uFCOPY(icPINT,cPINT,i,j,k)
              enddo
-
+                
              k=kpres+2
              a=1-mod(JJ(i,j),2)
 
@@ -2078,7 +2078,7 @@ contains
                 uFCOPY(icQ,cQ,i,j,k)
                 uFCOPY(icPINT,cPINT,i,j,k)
              enddo
-
+                
              k=kpres+2
              a=1-mod(JJ(i,j),2)
 
@@ -2260,7 +2260,7 @@ contains
     nz=nkde-nkds+1
 
     bigj: do j=max(njds,njts),min(njde-1,njte)
-       ! STEP 1: Copy coarse and fine nest data into
+       ! STEP 1: Copy coarse and fine nest data into 
        ! temporary arrays, reordering dimensions:
        used=0
        iloop1: do i=max(nids,nits),min(nide-1,nite)
@@ -2293,7 +2293,7 @@ contains
 
        ! Step 2: Interpolate coarse grid to fine grid in reordered
        ! arrays:
-
+       
        if(used==0) then
           ! No points in this row require interpolation, so we're done
           ! with this row:
@@ -2344,7 +2344,7 @@ contains
   ! takes arrays of atmospheric columns, with no knowledge of the
   ! horizontal layout of those columns.  This routine will recalculate
   ! PD if requested, then generate interpolation information and
-  ! interpolate T and Q, within each atmospheric column.
+  ! interpolate T and Q, within each atmospheric column.  
   !
   ! Other variables are handled by the various other c2n, n2c and c2b
   ! routines in this module.  PD, T and Q are handled specially since
@@ -2428,12 +2428,12 @@ contains
             + LAPSR*(zA + zA+dz)*0.5
 
        A         = LAPSR*zA/TSFC(ix)
-       SLP(ix)  = PINTA(1,ix)*(1-A)**COEF2    ! sea level pressure
+       SLP(ix)  = PINTA(1,ix)*(1-A)**COEF2    ! sea level pressure 
        B         = (pstd1/SLP(ix))**COEF3
        ZMSLP(ix)= TSFC(ix)*LAPSI*(1.0 - B)   ! Height at 1030. mb level
 
        TBELOW(ix) = TA(1,ix) + LAPSR*(Z0MID(ix)-ZMSLP(ix))
-
+       
        ! Calculate lowest level RH.  This calculation is from UPP
        ! CALRH.f:
        P0=pdA(ix)+ptop+pdtop ! Use hydrostatic lowest model level P
@@ -2455,12 +2455,12 @@ contains
        ! PD interpolation is requested.  As with the old base_state_parent,
        ! determine PD by interpolating or extrapolating the non-hydrostatic
        ! pressure field (PINT) in source grid to the surface height of the
-       ! target grid.
+       ! target grid.  
        xloop: do ix=1,nx
           if(pintA(1,ix)>p_ref) then
              ! Cannot extrapolate PD below ground because pressure is
              ! unrealistically high.  Follow base_state_parent method:
-             ! when this happens, assign input pressure to output
+             ! when this happens, assign input pressure to output 
              ! pressure.
              if(.not.warned) then
                 call wrf_message2('WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD')
@@ -2477,7 +2477,7 @@ contains
 
           if(zB<zA) then
              ! Need to extrapolate PD below ground.
-             ! Follow base_state_parent method:
+             ! Follow base_state_parent method: 
              !   For pressures between pint(1) and 1030 mbar, interpolate
              iz=1
              weight=abs((zB-zmslp(ix))/(zA-zmslp(ix)))
@@ -2613,7 +2613,7 @@ contains
                    exit interploop
                 endif
                 wnum=pnext-pb
-
+                
                 exit zinterp
              else
                 izA=izA-1
@@ -2742,12 +2742,12 @@ contains
             + LAPSR*(zA + zA+dz)*0.5
 
        A         = LAPSR*zA/TSFC(ix)
-       SLP(ix)  = PINTA(1,ix)*(1-A)**COEF2    ! sea level pressure
+       SLP(ix)  = PINTA(1,ix)*(1-A)**COEF2    ! sea level pressure 
        B         = (pstd1/SLP(ix))**COEF3
        ZMSLP(ix)= TSFC(ix)*LAPSI*(1.0 - B)   ! Height at 1030. mb level
 
        TBELOW(ix) = TA(1,ix) + LAPSR*(Z0MID(ix)-ZMSLP(ix))
-
+       
        ! Calculate lowest level RH.  This calculation is from UPP
        ! CALRH.f:
        P0=pdA(ix)+ptop+pdtop ! Use hydrostatic lowest model level P
@@ -2769,12 +2769,12 @@ contains
        ! PD interpolation is requested.  As with the old base_state_parent,
        ! determine PD by interpolating or extrapolating the non-hydrostatic
        ! pressure field (PINT) in source grid to the surface height of the
-       ! target grid.
+       ! target grid.  
        xloop: do ix=1,nx
           if(pintA(1,ix)>p_ref) then
              ! Cannot extrapolate PD below ground because pressure is
              ! unrealistically high.  Follow base_state_parent method:
-             ! when this happens, assign input pressure to output
+             ! when this happens, assign input pressure to output 
              ! pressure.
              if(.not.warned) then
                 call wrf_message2('WARNING: NESTED DOMAIN PRESSURE AT LOWEST LEVEL HIGHER THAN PSTD')
@@ -2791,7 +2791,7 @@ contains
 
           if(zB<zA) then
              ! Need to extrapolate PD below ground.
-             ! Follow base_state_parent method:
+             ! Follow base_state_parent method: 
              !   For pressures between pint(1) and 1030 mbar, interpolate
              iz=1
              weight=abs((zB-zmslp(ix))/(zA-zmslp(ix)))
@@ -2927,7 +2927,7 @@ contains
                    exit interploop
                 endif
                 wnum=pnext-pb
-
+                
                 exit zinterp
              else
                 izA=izA-1
@@ -3133,7 +3133,7 @@ subroutine ext_c2b_fulldom  (II,JJ,W1,W2,W3,W4,&
   real,dimension(njms:njme,nkms:nkme,bdyw) :: tbxs,tbxe,qbxs,qbxe
   real,dimension(nims:nime,1,bdyw) :: pdbys,pdbye
   real,dimension(njms:njme,1,bdyw) :: pdbxs,pdbxe
-
+  
   ! Weights and indices:
   real,dimension(nims:nime,nkms:nkme,bdyw) :: wbys,wbye
   real,dimension(njms:njme,nkms:nkme,bdyw) :: wbxs,wbxe

@@ -1,10 +1,10 @@
       subroutine addlocal(cgrib,lcgrib,csec2,lcsec2,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    addlocal
+! SUBPROGRAM:    addlocal 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-01
 !
-! ABSTRACT: This subroutine adds a Local Use Section (Section 2) to
+! ABSTRACT: This subroutine adds a Local Use Section (Section 2) to 
 !   a GRIB2 message.
 !   This routine is used with routines "gribcreate", "addgrid", "addfield",
 !   and "gribend" to create a complete GRIB2 message.  Subroutine
@@ -22,7 +22,7 @@
 !     lcsec2   - Number of bytes of character array csec2 to be added to
 !                Section 2.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     cgrib    - Character array to contain the GRIB2 message
 !     ierr     - Error return code.
 !                0 = no error
@@ -45,12 +45,12 @@
       character(len=1),intent(in) :: csec2(lcsec2)
       integer,intent(in) :: lcgrib,lcsec2
       integer,intent(out) :: ierr
-
+      
       character(len=4),parameter :: grib='GRIB',c7777='7777'
       character(len=4):: ctemp
       integer,parameter :: two=2
       integer lensec2,iofst,ibeg,lencurr,len
-
+ 
       ierr=0
 !
 !  Check to see if beginning of GRIB message exists
@@ -65,11 +65,11 @@
       endif
 !
 !  Get current length of GRIB message
-!
+!  
       call g2lib_gbyte(cgrib,lencurr,96,32)
 !
 !  Check to see if GRIB message is already complete
-!
+!  
       ctemp=cgrib(lencurr-3)//cgrib(lencurr-2)//cgrib(lencurr-1)
      &      //cgrib(lencurr)
       if ( ctemp.eq.c7777 ) then
@@ -83,7 +83,7 @@
 !  find the last section number.
 !
       len=16    ! length of Section 0
-      do
+      do 
       !    Get section number and length of next section
         iofst=len*8
         call g2lib_gbyte(cgrib,ilen,iofst,32)

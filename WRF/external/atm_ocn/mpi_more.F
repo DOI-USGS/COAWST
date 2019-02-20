@@ -1,5 +1,5 @@
       SUBROUTINE GLOB_ABORT(ie,s,rc)
-#if defined( DM_PARALLEL )
+#if defined( DM_PARALLEL ) 
       implicit none
 !      include 'mpif.h'
       integer rc,ie,ierr

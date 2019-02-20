@@ -2,9 +2,9 @@
 #if defined FOUR_DVAR || defined VERIFICATION
       SUBROUTINE read_AssPar (model, inp, out, Lwrite)
 !
-!svn $Id: read_asspar.F 885 2017-12-27 23:18:30Z arango $
+!svn $Id: read_asspar.F 929 2018-11-07 20:33:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -23,6 +23,8 @@
       USE mod_ncparam
       USE mod_scalars
 !
+      USE inp_decode_mod
+!
       USE strings_mod, ONLY : FoundError
       USE strings_mod, ONLY : uppercase
 !
@@ -35,15 +37,12 @@
 !
 !  Local variable declarations.
 !
-      logical :: find_file
-      logical :: Lvalue(1)
+      logical :: Lvalue(4)
 
       integer :: Mval, Npts, Nval
       integer :: i, ib, igrid, itrc, k, ng, status
       integer :: Cdim, Clen, Rdim
       integer :: Ivalue(1)
-
-      integer :: decode_line, load_i, load_l, load_r, load_s1d
 
       integer :: Nfiles(Ngrids)
 # if defined FOUR_DVAR  || defined VERIFICATION || \
@@ -62,7 +61,7 @@
 #  endif
       real(r8), dimension(MT,Ngrids) :: Rtracer
 # endif
-      real(r8), dimension(100) :: Rval
+      real(dp), dimension(nRval) :: Rval
       real(r8) :: Rvalue(1)
 
       character (len=1 ), parameter :: blank = ' '
@@ -72,7 +71,7 @@
       character (len=40 ) :: KeyWord
       character (len=50 ) :: label
       character (len=256) :: fname, line
-      character (len=256), dimension(200) :: Cval
+      character (len=256), dimension(nCval) :: Cval
 !
 !-----------------------------------------------------------------------
 !  Initialize.
@@ -181,37 +180,40 @@
             CASE ('tl_M3diff')
               Npts=load_r(Nval, Rval, Ngrids, tl_M3diff)
             CASE ('tl_Tdiff')
-              Npts=load_r(Nval, Rval, MT*Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, MT, Ngrids, Rtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NT(ng)
                   tl_Tdiff(itrc,ng)=Rtracer(itrc,ng)
                 END DO
               END DO
             CASE ('LdefNRM')
-              Npts=load_l(Nval, Cval, 4*Ngrids, LdefNRM)
+              Npts=load_l(Nval, Cval, 4, Ngrids, LdefNRM)
             CASE ('LwrtNRM')
-              Npts=load_l(Nval, Cval, 4*Ngrids, LwrtNRM)
+              Npts=load_l(Nval, Cval, 4, Ngrids, LwrtNRM)
             CASE ('CnormM(isFsur)')
               IF (isFsur.eq.0) THEN
                 IF (Master) WRITE (out,210) 'isFsur'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, 1, Cnorm(2,isFsur))
+              Npts=load_l(Nval, Cval, 1, Lvalue)
+              Cnorm(2,isFsur)=Lvalue(1)
             CASE ('CnormM(isUbar)')
               IF (isUbar.eq.0) THEN
                 IF (Master) WRITE (out,210) 'isUbar'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, 1, Cnorm(2,isUbar))
+              Npts=load_l(Nval, Cval, 1, Lvalue)
+              Cnorm(2,isUbar)=Lvalue(1)
             CASE ('CnormM(isVbar)')
               IF (isVbar.eq.0) THEN
                 IF (Master) WRITE (out,210) 'isVbar'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, 1, Cnorm(2,isVbar))
+              Npts=load_l(Nval, Cval, 1, Lvalue)
+              Cnorm(2,isVbar)=Lvalue(1)
 #  ifdef SOLVE3D
             CASE ('CnormM(isUvel)')
               IF (isUvel.eq.0) THEN
@@ -219,14 +221,16 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, 1, Cnorm(2,isUvel))
+              Npts=load_l(Nval, Cval, 1, Lvalue)
+              Cnorm(2,isUvel)=Lvalue(1)
             CASE ('CnormM(isVvel)')
               IF (isVvel.eq.0) THEN
                 IF (Master) WRITE (out,210) 'isVvel'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, 1, Cnorm(2,isVvel))
+              Npts=load_l(Nval, Cval, 1, Lvalue)
+              Cnorm(2,isVvel)=Lvalue(1)
             CASE ('CnormM(isTvar)')
               IF (MAXVAL(isTvar).eq.0) THEN
                 IF (Master) WRITE (out,210) 'isTvar'
@@ -240,16 +244,21 @@
               END DO
 #  endif
             CASE ('CnormI(isFsur)')
-              Npts=load_l(Nval, Cval, 1, Cnorm(1,isFsur))
+              Npts=load_l(Nval, Cval, 1, Lvalue)
+              Cnorm(1,isFsur)=Lvalue(1)
             CASE ('CnormI(isUbar)')
-              Npts=load_l(Nval, Cval, 1, Cnorm(1,isUbar))
+              Npts=load_l(Nval, Cval, 1, Lvalue)
+              Cnorm(1,isUbar)=Lvalue(1)
             CASE ('CnormI(isVbar)')
-              Npts=load_l(Nval, Cval, 1, Cnorm(1,isVbar))
+              Npts=load_l(Nval, Cval, 1, Lvalue)
+              Cnorm(1,isVbar)=Lvalue(1)
 #  ifdef SOLVE3D
             CASE ('CnormI(isUvel)')
-              Npts=load_l(Nval, Cval, 1, Cnorm(1,isUvel))
+              Npts=load_l(Nval, Cval, 1, Lvalue)
+              Cnorm(1,isUvel)=Lvalue(1)
             CASE ('CnormI(isVvel)')
-              Npts=load_l(Nval, Cval, 1, Cnorm(1,isVvel))
+              Npts=load_l(Nval, Cval, 1, Lvalue)
+              Cnorm(1,isVvel)=Lvalue(1)
             CASE ('CnormI(isTvar)')
               Npts=load_l(Nval, Cval, MT, Ltracer)
               DO itrc=1,MT
@@ -259,18 +268,23 @@
 #  endif
 #  ifdef ADJUST_BOUNDARY
             CASE ('CnormB(isFsur)')
-              Npts=load_l(Nval, Cval, 4, CnormB(isFsur,:))
+              Npts=load_l(Nval, Cval, 4, Lvalue)
+              CnormB(isFsur,1:4)=Lvalue(1:4)
             CASE ('CnormB(isUbar)')
-              Npts=load_l(Nval, Cval, 4, CnormB(isUbar,:))
+              Npts=load_l(Nval, Cval, 4, Lvalue)
+              CnormB(isUbar,1:4)=Lvalue(1:4)
             CASE ('CnormB(isVbar)')
-              Npts=load_l(Nval, Cval, 4, CnormB(isVbar,:))
+              Npts=load_l(Nval, Cval, 4, Lvalue)
+              CnormB(isVbar,1:4)=Lvalue(1:4)
 #   ifdef SOLVE3D
             CASE ('CnormB(isUvel)')
-              Npts=load_l(Nval, Cval, 4, CnormB(isUvel,:))
+              Npts=load_l(Nval, Cval, 4, Lvalue)
+              CnormB(isUvel,1:4)=Lvalue(1:4)
             CASE ('CnormB(isVvel)')
-              Npts=load_l(Nval, Cval, 4, CnormB(isVvel,:))
+              Npts=load_l(Nval, Cval, 4, Lvalue)
+              CnormB(isVvel,1:4)=Lvalue(1:4)
             CASE ('CnormB(isTvar)')
-              Npts=load_l(Nval, Cval, MT*4, Lboundary)
+              Npts=load_l(Nval, Cval, MT, 4, Lboundary)
               DO ib=1,4
                 DO itrc=1,MT
                   i=isTvar(itrc)
@@ -286,14 +300,16 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, 1, Cnorm(1,isUstr))
+              Npts=load_l(Nval, Cval, 1, Lvalue)
+              Cnorm(1,isUstr)=Lvalue(1)
             CASE ('CnormF(isVstr)')
               IF (isVstr.eq.0) THEN
                 IF (Master) WRITE (out,210) 'isVstr'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, 1, Cnorm(1,isVstr))
+              Npts=load_l(Nval, Cval, 1, Lvalue)
+              Cnorm(1,isVstr)=Lvalue(1)
 #  endif
 #  if defined ADJUST_STFLUX && defined SOLVE3D
             CASE ('CnormF(isTsur)')
@@ -309,13 +325,17 @@
               END DO
 #  endif
             CASE ('balance(isSalt)')
-              Npts=load_l(Nval, Cval, 1, balance(isTvar(isalt)))
+              Npts=load_l(Nval, Cval, 1, Lvalue)
+              balance(isTvar(isalt))=Lvalue(1)
             CASE ('balance(isFsur)')
-              Npts=load_l(Nval, Cval, 1, balance(isFsur))
+              Npts=load_l(Nval, Cval, 1, Lvalue)
+              balance(isFsur)=Lvalue(1)
             CASE ('balance(isVbar)')
-              Npts=load_l(Nval, Cval, 1, balance(isVbar))
+              Npts=load_l(Nval, Cval, 1, Lvalue)
+              balance(isVbar)=Lvalue(1)
             CASE ('balance(isVvel)')
-              Npts=load_l(Nval, Cval, 1, balance(isVvel))
+              Npts=load_l(Nval, Cval, 1, Lvalue)
+              balance(isVvel)=Lvalue(1)
             CASE ('Nmethod')
               Npts=load_i(Nval, Rval, Ngrids, Nmethod)
             CASE ('Rscheme')
@@ -341,7 +361,7 @@
             CASE ('HdecayM(isVvel)')
               Npts=load_r(Nval, Rval, Ngrids, Hdecay(2,isVvel,:))
             CASE ('HdecayM(isTvar)')
-              Npts=load_r(Nval, Rval, MT*Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, MT, Ngrids, Rtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NT(ng)
                   Hdecay(2,isTvar(itrc),ng)=Rtracer(itrc,ng)
@@ -352,7 +372,7 @@
             CASE ('VdecayM(isVvel)')
               Npts=load_r(Nval, Rval, Ngrids, Vdecay(2,isVvel,:))
             CASE ('VdecayM(isTvar)')
-              Npts=load_r(Nval, Rval, MT*Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, MT, Ngrids, Rtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NT(ng)
                   Vdecay(2,isTvar(itrc),ng)=Rtracer(itrc,ng)
@@ -371,7 +391,7 @@
             CASE ('TdecayM(isVvel)')
               Npts=load_r(Nval, Rval, Ngrids, Tdecay(isVvel,:))
             CASE ('TdecayM(isTvar)')
-              Npts=load_r(Nval, Rval, MT*Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, MT, Ngrids, Rtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NT(ng)
                   Tdecay(isTvar(itrc),ng)=Rtracer(itrc,ng)
@@ -390,7 +410,7 @@
             CASE ('HdecayI(isVvel)')
               Npts=load_r(Nval, Rval, Ngrids, Hdecay(1,isVvel,:))
             CASE ('HdecayI(isTvar)')
-              Npts=load_r(Nval, Rval, MT*Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, MT, Ngrids, Rtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NT(ng)
                   Hdecay(1,isTvar(itrc),ng)=Rtracer(itrc,ng)
@@ -401,7 +421,7 @@
             CASE ('VdecayI(isVvel)')
               Npts=load_r(Nval, Rval, Ngrids, Vdecay(1,isVvel,:))
             CASE ('VdecayI(isTvar)')
-              Npts=load_r(Nval, Rval, MT*Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, MT, Ngrids, Rtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NT(ng)
                   Vdecay(1,isTvar(itrc),ng)=Rtracer(itrc,ng)
@@ -410,18 +430,18 @@
 #  endif
 #  ifdef ADJUST_BOUNDARY
             CASE ('HdecayB(isFsur)')
-              Npts=load_r(Nval, Rval, 4*Ngrids, HdecayB(isFsur,:,:))
+              Npts=load_r(Nval, Rval, 4, Ngrids, HdecayB(isFsur,:,:))
             CASE ('HdecayB(isUbar)')
-              Npts=load_r(Nval, Rval, 4*Ngrids, HdecayB(isUbar,:,:))
+              Npts=load_r(Nval, Rval, 4, Ngrids, HdecayB(isUbar,:,:))
             CASE ('HdecayB(isVbar)')
-              Npts=load_r(Nval, Rval, 4*Ngrids, HdecayB(isVbar,:,:))
+              Npts=load_r(Nval, Rval, 4, Ngrids, HdecayB(isVbar,:,:))
 #   ifdef SOLVE3D
             CASE ('HdecayB(isUvel)')
-              Npts=load_r(Nval, Rval, 4*Ngrids, HdecayB(isUvel,:,:))
+              Npts=load_r(Nval, Rval, 4, Ngrids, HdecayB(isUvel,:,:))
             CASE ('HdecayB(isVvel)')
-              Npts=load_r(Nval, Rval, 4*Ngrids, HdecayB(isVvel,:,:))
+              Npts=load_r(Nval, Rval, 4, Ngrids, HdecayB(isVvel,:,:))
             CASE ('HdecayB(isTvar)')
-              Npts=load_r(Nval, Rval, 4*MT*Ngrids, Rboundary)
+              Npts=load_r(Nval, Rval, 4, MT, Ngrids, Rboundary)
               DO ng=1,Ngrids
                 DO itrc=1,NT(ng)
                   DO ib=1,4
@@ -430,11 +450,11 @@
                 END DO
               END DO
             CASE ('VdecayB(isUvel)')
-              Npts=load_r(Nval, Rval, 4*Ngrids, VdecayB(isUvel,:,:))
+              Npts=load_r(Nval, Rval, 4, Ngrids, VdecayB(isUvel,:,:))
             CASE ('VdecayB(isVvel)')
-              Npts=load_r(Nval, Rval, 4*Ngrids, VdecayB(isVvel,:,:))
+              Npts=load_r(Nval, Rval, 4, Ngrids, VdecayB(isVvel,:,:))
             CASE ('VdecayB(isTvar)')
-              Npts=load_r(Nval, Rval, 4*MT*Ngrids, Rboundary)
+              Npts=load_r(Nval, Rval, 4, MT, Ngrids, Rboundary)
               DO ng=1,Ngrids
                 DO itrc=1,NT(ng)
                   DO ib=1,4
@@ -452,7 +472,7 @@
 #  endif
 #  if defined ADJUST_STFLUX && defined SOLVE3D
             CASE ('HdecayF(isTsur)')
-              Npts=load_r(Nval, Rval, MT*Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, MT, Ngrids, Rtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NT(ng)
                   Hdecay(1,isTsur(itrc),ng)=Rtracer(itrc,ng)
@@ -473,7 +493,7 @@
             CASE ('S_bgqc(isVvel)')
               Npts=load_r(Nval, Rval, Ngrids, S_bgqc(isVvel,:))
             CASE ('S_bgqc(isTvar)')
-              Npts=load_r(Nval, Rval, MT*Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, MT, Ngrids, Rtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NT(ng)
                   S_bgqc(isTvar(itrc),ng)=Rtracer(itrc,ng)
@@ -488,15 +508,15 @@
                 allocate ( P_bgqc(MAXVAL(Nprovenance),Ngrids))
               END IF
             CASE ('Iprovenance')
-              Mval=MAXVAL(Nprovenance)*Ngrids
-              Npts=load_i(Nval, Rval, Mval, Iprovenance)
+              Mval=MAXVAL(Nprovenance)
+              Npts=load_i(Nval, Rval, Mval, Ngrids, Iprovenance)
             CASE ('P_bgqc')
-              Mval=MAXVAL(Nprovenance)*Ngrids
-              Npts=load_r(Nval, Rval, Mval, P_bgqc)
+              Mval=MAXVAL(Nprovenance)
+              Npts=load_r(Nval, Rval, Mval, Ngrids, P_bgqc)
 #  endif
 #  if defined ADJUST_STFLUX && defined SOLVE3D
             CASE ('Lstflux')
-              Npts=load_l(Nval, Cval, MT*Ngrids, Ltsur)
+              Npts=load_l(Nval, Cval, MT, Ngrids, Ltsur)
               DO ng=1,Ngrids
                 DO itrc=1,NT(ng)
                   Lstflux(itrc,ng)=Ltsur(itrc,ng)
@@ -505,21 +525,21 @@
 #  endif
 #  ifdef ADJUST_BOUNDARY
             CASE ('Lobc(isFsur)')
-              Npts=load_l(Nval, Cval, 4*Ngrids, Lbry)
+              Npts=load_l(Nval, Cval, 4, Ngrids, Lbry)
               DO ng=1,Ngrids
                 DO ib=1,4
                   Lobc(ib,isFsur,ng)=Lbry(ib,ng)
                 END DO
               END DO
             CASE ('Lobc(isUbar)')
-              Npts=load_l(Nval, Cval, 4*Ngrids, Lbry)
+              Npts=load_l(Nval, Cval, 4, Ngrids, Lbry)
               DO ng=1,Ngrids
                 DO ib=1,4
                   Lobc(ib,isUbar,ng)=Lbry(ib,ng)
                 END DO
               END DO
             CASE ('Lobc(isVbar)')
-              Npts=load_l(Nval, Cval, 4*Ngrids, Lbry)
+              Npts=load_l(Nval, Cval, 4, Ngrids, Lbry)
               DO ng=1,Ngrids
                 DO ib=1,4
                   Lobc(ib,isVbar,ng)=Lbry(ib,ng)
@@ -527,21 +547,21 @@
               END DO
 #   ifdef SOLVE3D
             CASE ('Lobc(isUvel)')
-              Npts=load_l(Nval, Cval, 4*Ngrids, Lbry)
+              Npts=load_l(Nval, Cval, 4, Ngrids, Lbry)
               DO ng=1,Ngrids
                 DO ib=1,4
                   Lobc(ib,isUvel,ng)=Lbry(ib,ng)
                 END DO
               END DO
             CASE ('Lobc(isVvel)')
-              Npts=load_l(Nval, Cval, 4*Ngrids, Lbry)
+              Npts=load_l(Nval, Cval, 4, Ngrids, Lbry)
               DO ng=1,Ngrids
                 DO ib=1,4
                   Lobc(ib,isVvel,ng)=Lbry(ib,ng)
                 END DO
               END DO
             CASE ('Lobc(isTvar)')
-              Npts=load_l(Nval, Cval, 4*MT*Ngrids, Lbry_trc)
+              Npts=load_l(Nval, Cval, 4, MT, Ngrids, Lbry_trc)
               DO ng=1,Ngrids
                 DO itrc=1,NT(ng)
                   i=isTvar(itrc)

@@ -35,7 +35,7 @@
                istat=10
                return
             endif
-
+ 
             if ( .not. associated(c) ) then
                allocate(c(m),stat=istat)   ! allocate new memory
                return
@@ -68,7 +68,7 @@
                istat=10
                return
             endif
-
+ 
             if ( .not. associated(c) ) then
                allocate(c(m),stat=istat)   ! allocate new memory
                return
@@ -101,7 +101,7 @@
                istat=10
                return
             endif
-
+ 
             if ( .not. associated(c) ) then
                allocate(c(m),stat=istat)   ! allocate new memory
                return

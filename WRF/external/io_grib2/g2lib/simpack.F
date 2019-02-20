@@ -24,21 +24,21 @@
 !                (4) = Number of bits used to pack data, if value is
 !                      > 0 and  <= 31.
 !                      If this input value is 0 or outside above range
-!                      then the num of bits is calculated based on given
+!                      then the num of bits is calculated based on given 
 !                      data and scale factors.
 !                (5) = Original field type - currently ignored on input
 !                      Data values assumed to be reals.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST: 
 !     idrstmpl - Contains the array of values for Data Representation
 !                Template 5.0
 !                (1) = Reference value - set by simpack routine.
 !                (2) = Binary Scale Factor - unchanged from input
 !                (3) = Decimal Scale Factor - unchanged from input
-!                (4) = Number of bits used to pack data, unchanged from
+!                (4) = Number of bits used to pack data, unchanged from 
 !                      input if value is between 0 and 31.
 !                      If this input value is 0 or outside above range
-!                      then the num of bits is calculated based on given
+!                      then the num of bits is calculated based on given 
 !                      data and scale factors.
 !                (5) = Original field type - currently set = 0 on output.
 !                      Data values assumed to be reals.
@@ -63,7 +63,7 @@
       integer(4) :: iref
       integer :: ifld(ndpts)
       integer,parameter :: zero=0
-
+      
       bscale=2.0**real(-idrstmpl(2))
       dscale=10.0**real(idrstmpl(3))
       if (idrstmpl(4).le.0.OR.idrstmpl(4).gt.31) then
@@ -88,12 +88,12 @@
 !
       if (rmin.ne.rmax) then
         !
-        !  Determine which algorithm to use based on user-supplied
+        !  Determine which algorithm to use based on user-supplied 
         !  binary scale factor and number of bits.
         !
         if (nbits.eq.0.AND.idrstmpl(2).eq.0) then
            !
-           !  No binary scaling and calculate minumum number of
+           !  No binary scaling and calculate minumum number of 
            !  bits in which the data will fit.
            !
            imin=nint(rmin*dscale)
@@ -123,7 +123,7 @@
            enddo
         elseif (nbits.eq.0.AND.idrstmpl(2).ne.0) then
            !
-           !  Use binary scaling factor and calculate minumum number of
+           !  Use binary scaling factor and calculate minumum number of 
            !  bits in which the data will fit.
            !
            rmin=rmin*dscale
@@ -137,7 +137,7 @@
            enddo
         elseif (nbits.ne.0.AND.idrstmpl(2).ne.0) then
            !
-           !  Use binary scaling factor and use minumum number of
+           !  Use binary scaling factor and use minumum number of 
            !  bits specified by user.   Dangerous - may loose
            !  information if binary scale factor and nbits not set
            !  properly by user.

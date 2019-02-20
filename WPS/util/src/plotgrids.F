@@ -1,7 +1,7 @@
 program plotgrids
 
    use map_utils
-
+ 
    implicit none
 
    ! Parameters
@@ -33,7 +33,7 @@ program plotgrids
    real, dimension(MAX_DOMAINS) :: parent_ll_x, parent_ll_y, parent_ur_x, parent_ur_y
 
    character (len=128) :: geog_data_path, opt_output_from_geogrid_path, opt_geogrid_tbl_path
-   character (len=128), dimension(MAX_DOMAINS) :: geog_data_res
+   character (len=128), dimension(MAX_DOMAINS) :: geog_data_res 
    character (len=128) :: map_proj
    character (len=128), dimension(MAX_DOMAINS) :: start_date, end_date
    character (len=3) :: wrf_core
@@ -57,7 +57,7 @@ program plotgrids
                       map_proj, ref_x, ref_y, ref_lat, ref_lon, &
                       truelat1, truelat2, stand_lon, dx, dy, &
                       geog_data_res, geog_data_path, opt_geogrid_tbl_path
-
+  
    ! Set defaults for namelist variables
    debug_level = 0
    io_form_geogrid = 2
@@ -96,7 +96,7 @@ program plotgrids
    opt_output_from_geogrid_path = './'
    opt_geogrid_tbl_path = 'geogrid/'
    interval_seconds = INVALID
-
+   
    ! Read parameters from Fortran namelist
    do funit=10,100
       inquire(unit=funit, opened=is_used)
@@ -120,7 +120,7 @@ program plotgrids
       if (ichar(wrf_core(i:i)) >= 97) wrf_core(i:i) = char(ichar(wrf_core(i:i))-32)
    end do
 
-   ! Before doing anything else, we must have a valid grid type
+   ! Before doing anything else, we must have a valid grid type 
    gridtype = ' '
    if (wrf_core == 'ARW') then
       gridtype = 'C'
@@ -159,28 +159,28 @@ program plotgrids
    ! Assign parameters to module variables
    if ((index(map_proj, 'LAMBERT') /= 0) .and. &
        (len_trim(map_proj) == len('LAMBERT'))) then
-      iproj_type = PROJ_LC
+      iproj_type = PROJ_LC 
       rot=truelat1
       polat=truelat2
       jproj = 3
 
    else if ((index(map_proj, 'MERCATOR') /= 0) .and. &
             (len_trim(map_proj) == len('MERCATOR'))) then
-      iproj_type = PROJ_MERC
+      iproj_type = PROJ_MERC 
       rot=0.
       polat=0.
       jproj = 9
 
    else if ((index(map_proj, 'POLAR') /= 0) .and. &
             (len_trim(map_proj) == len('POLAR'))) then
-      iproj_type = PROJ_PS
+      iproj_type = PROJ_PS 
       rot=0.
       polat=SIGN(90., ref_lat)
       jproj = 1
 
    else if ((index(map_proj, 'ROTATED_LL') /= 0) .and. &
             (len_trim(map_proj) == len('ROTATED_LL'))) then
-      iproj_type = PROJ_ROTLL
+      iproj_type = PROJ_ROTLL 
 
    else
          write(6,*) 'In namelist, invalid map_proj specified. Valid '// &
@@ -297,7 +297,7 @@ program plotgrids
 
    call supmap(jproj,polat,stand_lon,rot,&
                rlats,rlons,rlate,rlone, &
-               jlts,jgrid,iusout,idot,ier)
+               jlts,jgrid,iusout,idot,ier) 
 
    call setusv('LW',1000)
    call perim(e_we(1)-1,1,e_sn(1)-1,1)
@@ -332,7 +332,7 @@ program plotgrids
 
 1000 write(6,*) 'Error opening namelist.wps'
    stop
-
+  
 end program plotgrids
 
 subroutine getxy ( xs, xe, ys, ye, &
@@ -363,11 +363,11 @@ subroutine getxy ( xs, xe, ys, ye, &
    idom = dom_id
    compute_xy : DO
 
-      xs = (i_parent_start(idom) + xs  -1 ) / &
+      xs = (i_parent_start(idom) + xs  -1 ) / &    
            real(parent_grid_ratio(parent_id(idom)))
       xe = xe / real(parent_grid_ratio(idom))
 
-      ys = (j_parent_start(idom) + ys  -1 ) / &
+      ys = (j_parent_start(idom) + ys  -1 ) / &    
            real(parent_grid_ratio(parent_id(idom)))
       ye = ye / real(parent_grid_ratio(idom))
 
@@ -401,11 +401,11 @@ SUBROUTINE plot_e_grid ( rlat0d , rlon0d , dphd , dlmd, &
 
    IMPLICIT NONE
 
-!  15 April 2005 NCEP/EMC
+!  15 April 2005 NCEP/EMC 
 !    The Code and some instructions are provided by Tom BLACK to
-!    NCAR/DTC Meral Demirtas
+!    NCAR/DTC Meral Demirtas			
 
-!  4 May 2005  NCAR/DTC Meral DEMIRTAS
+!  4 May 2005  NCAR/DTC Meral DEMIRTAS  
 !    - An include file (plot_inc) is added to get
 !    Domain size: IM,JM
 !    Central latitute and longnitute: RLAT0D,RLON0D
@@ -447,7 +447,7 @@ SUBROUTINE plot_e_grid ( rlat0d , rlon0d , dphd , dlmd, &
               ngpsn , &
               ilowl , &
               jlowl
-
+     
    INTEGER :: imt , imtjm
    REAL :: latlft,lonlft,latrgt,lonrgt
 
@@ -520,7 +520,7 @@ SUBROUTINE corners ( glatd,glond,im,jm,tph0d,tlm0d,dphd,dlmd,&
    tlat = r2d * ATAN(z/SQRT(x*x + y*y))
    tlon = r2d * ATAN(y/x)
 
-   !  Find the real (non-integer) row and column of the input location on
+   !  Find the real (non-integer) row and column of the input location on 
    !  the filled e-grid.
 
    row = tlat/dphd+jmt
@@ -531,8 +531,8 @@ SUBROUTINE corners ( glatd,glond,im,jm,tph0d,tlm0d,dphd,dlmd,&
    tlon = tlon * d2r
 
 !               E2     E3
-!
-!
+! 
+! 
 !                  X
 !               E1     E4
 
@@ -565,7 +565,7 @@ SUBROUTINE corners ( glatd,glond,im,jm,tph0d,tlm0d,dphd,dlmd,&
      jj = nrow
    END IF
 
-   !  Now find the i and j of the lower left corner of the desired grid
+   !  Now find the i and j of the lower left corner of the desired grid 
    !  region and of the upper right.
 
    ilowl = ii-ngpwe/2
@@ -579,7 +579,7 @@ SUBROUTINE corners ( glatd,glond,im,jm,tph0d,tlm0d,dphd,dlmd,&
    CALL e2t2g(iuppr,juppr,im,jm,tph0d,tlm0d,dphd,dlmd,glatr,glonr)
 
 END SUBROUTINE corners
-
+ 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 SUBROUTINE mapbkg_egrid ( imt,jm,ilowl,jlowl,ngpwe,ngpsn,&
@@ -729,7 +729,7 @@ SUBROUTINE e2t2g ( ncol,nrow,im,jm,tph0d,tlm0d,dphd,dlmd,glatd,glond)
    ARG1=SIN(TLATR)*COS(TPH0)+COS(TLATR)*SIN(TPH0)*COS(TLONR)
    GLATR=ASIN(ARG1)
    GLATD=GLATR*R2D
-   ARG2=COS(TLATR)*COS(TLONR)/(COS(GLATR)*COS(TPH0))- &
+   ARG2=COS(TLATR)*COS(TLONR)/(COS(GLATR)*COS(TPH0))- & 
         TAN(GLATR)*TAN(TPH0)
    IF(ABS(ARG2).GT.1.)ARG2=ABS(ARG2)/ARG2
    FCTR=1.

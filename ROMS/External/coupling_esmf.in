@@ -1,9 +1,9 @@
 !
 ! Multiple model coupling parameters: ESMF/NUOPC Library
 !
-!svn $Id: coupling_esmf.in 900 2018-03-21 03:23:08Z arango $
+!svn $Id: coupling_esmf.in 919 2018-08-21 22:25:53Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -77,11 +77,24 @@
 ! which nested grids are coupled. The first grid of active ESM componets
 ! needs to be coupled always.
 
-  IsActive(roms)   == T F                    ! ROMS (NgridsR)
-  IsActive(atmos)  == F F                    ! atmosphere model (NgridsA)
-  IsActive(seaice) == F                      ! sea-ice model (NgridsI)
-  IsActive(waves)  == F                      ! wave model (NgridsW)
-  IsActive(data)   =  T                      ! data model
+  IsActive(roms)   == T F                   ! ROMS (NgridsR)
+  IsActive(atmos)  == F F                   ! atmosphere model (NgridsA)
+  IsActive(seaice) == F                     ! sea-ice model (NgridsI)
+  IsActive(waves)  == F                     ! wave model (NgridsW)
+  IsActive(data)   =  T                     ! data model
+
+! Set which ESM components are connected during coupling (T/F).
+
+  Coupled(OCN-ATM) =  F                     ! ROMS-atmosphere connected
+  Coupled(OCN-DAT) =  T                     ! ROMS-data connected
+  Coupled(OCN-ICE) =  F                     ! ROMS-seaice connected
+  Coupled(OCN-WAV) =  F                     ! ROMS-wave coupling connected
+  Coupled(ATM-DAT) =  F                     ! atmosphere-data connected
+  Coupled(ATM-ICE) =  F                     ! atmosphere-seaice connected
+  Coupled(ATM-WAV) =  F                     ! atmosphere-wave connected
+  Coupled(ICE-DAT) =  F                     ! seaice-data connected
+  Coupled(ICE-WAV) =  F                     ! seaice-wave connected
+  Coupled(WAV-DAT) =  F                     ! wave-data connected
 
 ! Model coupling type (check Glossary):
 !
@@ -130,16 +143,19 @@
 ! Coupling time interval fraction (INTEGER) from driver TimeStep indicating
 ! how often the exchange of information between ESM components occurs. That
 ! is, the coupling interval between ESM components is TimeStep/TimeFrac.
-! If coupling ROMS nested grids, [Ngrids] values are expected.
+! If coupling ROMS nested grids, [NgridsR] values are expected.
 ! Only active model components are processed and considered.
 
- TimeFrac(OCN-ATM) == 1                     ! ROMS-atmosphere coupling [Ngrids]
- TimeFrac(OCN-ICE) == 1                     ! ROMS-seaice coupling [Ngrids]
- TimeFrac(OCN-WAV) == 1                     ! ROMS-wave coupling [Ngrids]
- TimeFrac(DAT-ATM) == 1                     ! data-atmosphere coupling
- TimeFrac(DAT-ICE) =  1                     ! data-seaice coupling
- TimeFrac(ATM-ICE) == 1                     ! atmosphere-seaice coupling
- TimeFrac(ATM-WAV) == 1                     ! atmosphere-wave coupling
+ TimeFrac(OCN-ATM) == 1                     ! ROMS-atmosphere coupling [NgridsR]
+ TimeFrac(OCN-DAT) == 1                     ! ROMS-data coupling [NgridsR]
+ TimeFrac(OCN-ICE) == 1                     ! ROMS-seaice coupling [NgridsR]
+ TimeFrac(OCN-WAV) == 1                     ! ROMS-wave coupling [NgridsR]
+ TimeFrac(ATM-DAT) == 1                     ! atmosphere-data coupling [NgridsA]
+ TimeFrac(ATM-ICE) == 1                     ! atmosphere-seaice coupling [NgridsA]
+ TimeFrac(ATM-WAV) == 1                     ! atmosphere-wave coupling [NgridsA]
+ TimeFrac(ICE-DAT) =  1                     ! seaice-data coupling
+ TimeFrac(ICE-WAV) =  1                     ! seaice-wave coupling
+ TimeFrac(WAV-DAT) =  1                     ! wave-data coupling
 
 ! Debugging flags:   [0] no debug
 !                    [1] report informative messages
@@ -513,6 +529,21 @@ nDataExport(seaice) == 0                ! number of fields to export
 !                  important. If only one value is set, only the application
 !                  main grid is coupled.
 !
+! Coupled          Logical switch indicating which ESM components are connected
+!                    during coupling (T/F).  It is used by ESMF to stablish the
+!                    coupling run sequence.
+!
+!                    Coupled(OCN-ATM)    ROMS-atmosphere connected
+!                    Coupled(OCN-DAT)    ROMS-data connected
+!                    Coupled(OCN-ICE)    ROMS-seaice connected
+!                    Coupled(OCN-WAV)    ROMS-wave connected
+!                    Coupled(ATM-DAT)    atmosphere-data connected
+!                    Coupled(ATM-ICE)    atmosphere-seaice connected
+!                    Coupled(ATM-WAV)    atmosphere-wave connected
+!                    Coupled(ICE-DAT)    seaice-data connected
+!                    Coupled(ICE-WAV)    seaice-wave connected
+!                    Coupled(WAV-DAT)    wave-data connected
+!
 ! CouplingType     Model coupling type (check Glossary):
 !
 !                    CouplingType = 1    Explicit coupling
@@ -625,13 +656,16 @@ nDataExport(seaice) == 0                ! number of fields to export
 !                    If coupling ROMS (OCN) nested grids, [Ngrids] values are
 !                    expected.
 !
-!                    TimeFrac(OCN-ATM)   ROMS-Atmosphere coupling interval
-!                    TimeFrac(OCN-ICE)   ROMS-Seaice coupling interval
-!                    TimeFrac(OCN-WAV)   ROMS-Wave coupling interval
-!                    TimeFrac(DAT-ATM)   DATA-atmosphere coupling
-!                    TimeFrac(DAT-ICE)   DATA-seaice coupling
-!                    TimeFrac(ATM-ICE)   Atmosphere-Seaice coupling interval
-!                    TimeFrac(ATM-WAV)   Atmosphere-Wave coupling interval
+!                    TimeFrac(OCN-ATM)   ROMS-atmosphere coupling interval
+!                    TimeFrac(OCN-DAT)   ROMS-data coupling interval
+!                    TimeFrac(OCN-ICE)   ROMS-seaice coupling interval
+!                    TimeFrac(OCN-WAV)   ROMS-wave coupling interval
+!                    TimeFrac(ATM-DAT)   atmosphere-data coupling interval
+!                    TimeFrac(ATM-ICE)   atmosphere-seaice coupling interval
+!                    TimeFrac(ATM-WAV)   atmosphere-wave coupling interval
+!                    TimeFrac(ICE-DAT)   seaice-data coupling interval
+!                    TimeFrac(ICE-WAV)   seaice-wave coupling interval
+!                    TimeFrac(WAV-DAT)   wave-data coupling interval
 !
 !                    For example, if TimeStep = 15 minutes = 900 seconds and
 !                    TimeFrac = 3, the coupling exchange between those two

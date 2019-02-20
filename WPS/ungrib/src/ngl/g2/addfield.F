@@ -3,19 +3,19 @@
      &                    idrstmplen,fld,ngrdpts,ibmap,bmap,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    addfield
+! SUBPROGRAM:    addfield 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-02
 !
 ! ABSTRACT: This subroutine packs up Sections 4 through 7 for a given field
 !   and adds them to a GRIB2 message.  They are Product Definition Section,
-!   Data Representation Section, Bit-Map Section and Data Section,
+!   Data Representation Section, Bit-Map Section and Data Section, 
 !   respectively.
 !   This routine is used with routines "gribcreate", "addlocal", "addgrid",
 !   and "gribend" to create a complete GRIB2 message.  Subroutine
 !   gribcreate must be called first to initialize a new GRIB2 message.
 !   Also, subroutine addgrid must be called after gribcreate and
 !   before this routine to add the appropriate grid description to
-!   the GRIB2 message.   Also, a call to gribend is required to complete
+!   the GRIB2 message.   Also, a call to gribend is required to complete 
 !   GRIB2 message after all fields have been added.
 !
 ! PROGRAM HISTORY LOG:
@@ -32,7 +32,7 @@
 !     lcgrib   - Maximum length (bytes) of array cgrib.
 !     ipdsnum  - Product Definition Template Number ( see Code Table 4.0)
 !     ipdstmpl - Contains the data values for the specified Product Definition
-!                Template ( N=ipdsnum ).  Each element of this integer
+!                Template ( N=ipdsnum ).  Each element of this integer 
 !                array contains an entry (in the order specified) of Product
 !                Defintion Template 4.N
 !   ipdstmplen - Max dimension of ipdstmpl()
@@ -42,7 +42,7 @@
 !     numcoord - number of values in array coordlist.
 !     idrsnum  - Data Representation Template Number ( see Code Table 5.0 )
 !     idrstmpl - Contains the data values for the specified Data Representation
-!                Template ( N=idrsnum ).  Each element of this integer
+!                Template ( N=idrsnum ).  Each element of this integer 
 !                array contains an entry (in the order specified) of Data
 !                Representation Template 5.N
 !                Note that some values in this template (eg. reference
@@ -59,17 +59,17 @@
 !                1-253 = Predefined bitmap applies
 !                254 = Previously defined bitmap applies to this field
 !                255 = Bit map does not apply to this product.
-!     bmap()   - Logical*1 array containing bitmap to be added.
+!     bmap()   - Logical*1 array containing bitmap to be added. 
 !                ( if ibmap=0 or ibmap=254)
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     cgrib    - Character array to contain the GRIB2 message
 !     ierr     - Error return code.
 !                0 = no error
 !                1 = GRIB message was not initialized.  Need to call
 !                    routine gribcreate first.
 !                2 = GRIB message already complete.  Cannot add new section.
-!                3 = Sum of Section byte counts does not add to total
+!                3 = Sum of Section byte counts does not add to total 
 !                    byte count.
 !                4 = Previous Section was not 3 or 7.
 !                5 = Could not find requested Product Definition Template.
@@ -102,7 +102,7 @@
       integer,intent(out) :: ierr
       integer,intent(inout) :: idrstmpl(*)
       logical*1,intent(in) :: bmap(ngrdpts)
-
+      
       character(len=4),parameter :: grib='GRIB',c7777='7777'
       character(len=4):: ctemp
       character(len=1),allocatable :: cpack(:)
@@ -116,7 +116,7 @@
       integer width,height,ndpts
       integer lensec3,lensec4,lensec5,lensec6,lensec7
       logical issec3,needext,isprevbmap
-
+ 
       ierr=0
       do jj=0,31
          allones=ibset(allones,jj)
@@ -134,11 +134,11 @@
       endif
 !
 !  Get current length of GRIB message
-!
+!  
       call gbyte(cgrib,lencurr,96,32)
 !
 !  Check to see if GRIB message is already complete
-!
+!  
       ctemp=cgrib(lencurr-3)//cgrib(lencurr-2)//cgrib(lencurr-1)
      &      //cgrib(lencurr)
       if ( ctemp.eq.c7777 ) then
@@ -154,7 +154,7 @@
       issec3=.false.
       isprevbmap=.false.
       len=16    ! length of Section 0
-      do
+      do 
       !    Get number and length of next section
         iofst=len*8
         call gbyte(cgrib,ilen,iofst,32)
@@ -294,7 +294,7 @@
                 pfld(ndpts)=fld(jj);
              endif
          enddo
-      else
+      else 
          ndpts=ngrdpts;
          pfld=>fld;
       endif
@@ -459,13 +459,13 @@
       iofst=iofst+8
       !      Store Packed Binary Data values, if non-constant field
       if (lcpack.ne.0) then
-        ioctet=iofst/8
+        ioctet=iofst/8           
         cgrib(ioctet+1:ioctet+lcpack)=cpack(1:lcpack)
         iofst=iofst+(8*lcpack)
       endif
       !
       !   Calculate length of section 7 and store it in octets
-      !   1-4 of section 7.
+      !   1-4 of section 7.  
       !
       lensec7=(iofst-ibeg)/8
       call sbyte(cgrib,lensec7,ibeg,32)

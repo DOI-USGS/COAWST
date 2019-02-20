@@ -5,17 +5,17 @@ MODULE module_after_all_rk_steps
 CONTAINS
 
    !  This subroutine is called once per domain per time step.  It is outside
-   !  of and after the end of the Runge-Kutta time steps, after the calls to
+   !  of and after the end of the Runge-Kutta time steps, after the calls to 
    !  the explicit moisture driver, and after the polar filtering calls.  The
-   !  variables in here are all up-to-date with the end of this current time
+   !  variables in here are all up-to-date with the end of this current time 
    !  step.
 
 
    SUBROUTINE after_all_rk_steps ( grid, config_flags,                  &
                                    moist, chem, tracer, scalar,         &
-                                   th_phy, pi_phy, p_phy, rho_phy,      &
+                                   th_phy, pi_phy, p_phy, rho_phy,      & 
                                    p8w, t8w, dz8w,                      &
-                                   curr_secs2,                          &
+                                   curr_secs, curr_secs2,               &
                                    diag_flag,                           &
                                    ids,  ide,  jds,  jde,  kds,  kde,   &
                                    ims,  ime,  jms,  jme,  kms,  kme,   &
@@ -58,7 +58,7 @@ CONTAINS
       !=============================================================
       !  USE Association for the Diagnostic Packages
       !=============================================================
-
+      
       USE module_diagnostics_driver, ONLY : diagnostics_driver
 
 
@@ -99,6 +99,7 @@ CONTAINS
 
       !  Time (s) since the beginning of the restart.
 
+      REAL(8) :: curr_secs
       REAL :: curr_secs2
 
       !  Is this to be a history output time?  If so, compute the diagnostics.
@@ -113,7 +114,7 @@ CONTAINS
       !           incrementing index
       !        k: refers to the vertical direction form bottom to top, the second dimension
       !           in all 3d arrays
-      !     The second letter:
+      !     The second letter: 
       !        d: refers to the domain size, the geophysical extent of the entire domain,
       !           not used in dimensions or looping, used to determine when we are close to
       !           the edge of the boundary
@@ -145,14 +146,14 @@ CONTAINS
       !  Start of executable code
       !=============================================================
 
-      CALL wrf_debug ( 100 , '--> TOP OF AFTER ALL RK STEPS' )
+      CALL wrf_debug ( 100 , '--> TOP OF AFTER ALL RK STEPS' ) 
       CALL wrf_debug ( 100 , '--> CALLING DIAGNOSTICS DRIVER' )
 
       CALL diagnostics_driver ( grid, config_flags,               &
                                 moist, chem, tracer, scalar,         &
-                                th_phy, pi_phy, p_phy, rho_phy,      &
+                                th_phy, pi_phy, p_phy, rho_phy,      & 
                                 p8w, t8w, dz8w,                      &
-                                curr_secs2,                          &
+                                curr_secs, curr_secs2,               &
                                 diag_flag,                           &
                                 ids,  ide,  jds,  jde,  kds,  kde,   &
                                 ims,  ime,  jms,  jme,  kms,  kme,   &

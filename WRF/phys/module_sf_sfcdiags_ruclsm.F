@@ -8,7 +8,7 @@ CONTAINS
                      T3D,QV3D,RHO3D,P3D,PSFC2D,SNOW,                         &
                      CP,R_d,ROVCP,                                           &
                      ids,ide, jds,jde, kds,kde,                              &
-                     ims,ime, jms,jme, kms,kme,                              &
+                     ims,ime, jms,jme, kms,kme,                              &        
                      its,ite, jts,jte, kts,kte                     )
 !-------------------------------------------------------------------
       IMPLICIT NONE
@@ -42,12 +42,13 @@ CONTAINS
       REAL,     INTENT(IN   )               ::       CP,R_d,ROVCP
 ! LOCAL VARS
       INTEGER ::  I,J
-      REAL    ::  RHO, x2m, qlev1, tempc, qsat, p2m, qsfcprox, qsfcmr, psfc
+      REAL    ::  RHO, x2m, qlev1, tempc, qsat, p2m, qsfcprox, qsfcmr, &
+                  psfc, dT, dQ, fh, fac, dz1
 
       LOGICAL :: FLUX
 
-      flux = .true.
-!      flux = .false.
+!      flux = .true.
+      flux = .false.
 
       DO J=jts,jte
         DO I=its,ite
@@ -58,13 +59,13 @@ CONTAINS
 !          P2m = PSFC2D(I,J)*EXP(-0.068283/t3d(i,1,j))
 
     if ( flux ) then
-!!! 2-m Temperature - T2
+!!! 2-m Temperature - T2 
            if(CHS2(I,J).lt.1.E-5) then
 ! may be to small treshold?
 !         if(CHS2(I,J).lt.3.E-3 .AND. HFX(I,J).lt.0.) then
 ! when stable - let 2-m temperature be equal the first atm. level temp.
-!             TH2(I,J) = TSK(I,J)*(1.E5/PSFC(I,J))**ROVCP
-             TH2(I,J) = t3d(i,1,j)*(1.E5/PSFC)**ROVCP
+!             TH2(I,J) = TSK(I,J)*(1.E5/PSFC(I,J))**ROVCP 
+             TH2(I,J) = t3d(i,1,j)*(1.E5/PSFC)**ROVCP 
           else
              TH2(I,J) = TSK(I,J)*(1.E5/PSFC)**ROVCP - HFX(I,J)/(RHO*CP*CHS2(I,J))
 !             T2(I,J) = TSK(I,J) - HFX(I,J)/(RHO*CP*CHS2(I,J))
@@ -74,11 +75,13 @@ CONTAINS
 ! check that T2 values lie in the range between TSK and T at the 1st level
              x2m     = MAX(MIN(tsk(i,j),t3d(i,1,j)) , t2(i,j))
              t2(i,j) = MIN(MAX(tsk(i,j),t3d(i,1,j)) , x2m)
+             TH2(I,J) = T2(I,J)*(1.E5/PSFC)**ROVCP
     else
-             T2(I,J) = tsk(i,j) - CHS(I,J)/CHS2(I,J)*(tsk(i,j) - t3d(i,1,j))
+             fac=(1.E5/PSFC)**ROVCP
+             TH2(I,J) = tsk(i,j)*fac - CHS(I,J)/CHS2(I,J)*(tsk(i,j) - t3d(i,1,j))*fac
+             T2(I,J) = TH2(I,J)*(1.E-5*PSFC)**ROVCP
     endif ! flux method
 
-             TH2(I,J) = T2(I,J)*(1.E5/PSFC)**ROVCP
 
 !!! 2-m Water vapor mixing ratio - Q2
              qlev1 = qv3d(i,1,j)
@@ -132,7 +135,7 @@ CONTAINS
 ! water
              qsat = rslf(psfc, t2(i,j))
            endif
-
+            
              q2(i,j) = min(qsat, q2(i,j))
 !  if(i.eq.426.and.j.eq.250) then
 !! cropland point

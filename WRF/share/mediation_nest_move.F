@@ -15,7 +15,7 @@ SUBROUTINE med_nest_move ( parent, nest )
    TYPE(domain) , POINTER                     :: parent, nest, grid
    INTEGER dx, dy, origdy       ! number of parent domain points to move
 #ifdef MOVE_NESTS
-  ! Local
+  ! Local 
    CHARACTER*256 mess
    INTEGER i, j, k, p, parent_grid_ratio
    INTEGER px, py       ! number and direction of nd points to move
@@ -35,7 +35,7 @@ SUBROUTINE med_nest_move ( parent, nest )
    LOGICAL, EXTERNAL :: should_not_move
 #if ( HWRF == 1 )
 !XUEJIN added for HWRFx
-   INTEGER                  :: idum1,idum2
+   INTEGER                  :: idum1,idum2 
    INTEGER                  :: ITS,ITE,JTS,JTE,KTS,KTE
 #else
 !
@@ -97,7 +97,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 !XUEJIN added for HWRFx
          USE MODULE_MODEL_CONSTANTS
 #else
-!
+! 
 #endif
          IMPLICIT NONE
          INTEGER,    INTENT(IN   )                            :: IDS,IDE,JDS,JDE,KDS,KDE
@@ -270,7 +270,7 @@ SUBROUTINE med_nest_move ( parent, nest )
                                ims, ime, jms, jme, kms, kme,    &
                                ips, ipe, jps, jpe, kps, kpe    )
 
-     grid => nest
+     grid => nest 
 
 #if ( EM_CORE == 1 )
      CALL shift_domain_em( grid, dx, dy  &
@@ -290,7 +290,7 @@ SUBROUTINE med_nest_move ( parent, nest )
      px = grid%parent_grid_ratio*dx
      py = grid%parent_grid_ratio*dy
 
-     grid%i_parent_start = grid%i_parent_start + px / grid%parent_grid_ratio
+     grid%i_parent_start = grid%i_parent_start + px / grid%parent_grid_ratio 
      grid%j_parent_start = grid%j_parent_start + py / grid%parent_grid_ratio
 
 #if defined(DM_PARALLEL) && ! defined(STUBMPI)
@@ -358,7 +358,7 @@ SUBROUTINE med_nest_move ( parent, nest )
 !      recover pint from pressure depth after move, then adjust for diff topo
        nest%PINT(I,J,1)=nest%PD(I,J)+nest%pdtop+nest%pt
        nest%PINT(I,J,1)=nest%PINT(I,J,1)*EXP(EPSI)
-       nest%PD(I,J)=nest%PINT(I,J,1)-nest%pdtop-nest%pt
+       nest%PD(I,J)=nest%PINT(I,J,1)-nest%pdtop-nest%pt  
 !       WRITE(0,*)I,J,nest%nmm_PD(I,J),nest%nmm_PINT(I,1,J),nest%nmm_FIS(I,J),nest%nmm_hres_fis(I,J),nest%nmm_pdtop,nest%nmm_pt, &
 !       'change pd,ptint'
        endif
@@ -418,7 +418,7 @@ SUBROUTINE med_nest_move ( parent, nest )
      CALL med_interp_domain( parent, nest )
 
 #if ( EM_CORE == 1 )
-     CALL nl_get_input_from_hires( nest%id , input_from_hires )
+     CALL nl_get_input_from_hires( nest%id , input_from_hires ) 
      IF ( input_from_hires ) THEN
 
        IF ( nest%active_this_task ) THEN
@@ -512,7 +512,7 @@ SUBROUTINE med_nest_move ( parent, nest )
      grid%restart = saved_restart_value
      CALL nl_set_restart ( 1,  saved_restart_value )
      nest%moved = .false.
-
+      
 !
 ! copy time level 2 to time level 1 in new regions of multi-time level fields
 ! this should be registry generated.
@@ -576,7 +576,7 @@ LOGICAL FUNCTION time_for_move2 ( parent , grid , move_cd_x, move_cd_y )
    REAL :: dc_i, dc_j   ! domain center
    REAL :: maxws, ws
    REAL :: pmin
-   INTEGER imploc, jmploc
+   INTEGER imploc, jmploc 
 
    INTEGER :: fje, fjs, fie, fis, fimloc, fjmloc, imloc, jmloc
    INTEGER :: i_parent_start, j_parent_start
@@ -867,7 +867,7 @@ CALL domain_clock_get( grid, current_timestr=message2 )
 WRITE ( message , FMT = '(A," on domain ",I3)' ) TRIM(message2), grid%id
 #  endif
 
-!
+! 
         i = INT(grid%xi+.5)
         j = INT(grid%xj+.5)
         write(mess,'("ATCF"," ",A19," ",f8.2," ",f8.2," ",f6.1," ",f6.1)')                &
@@ -878,7 +878,7 @@ WRITE ( message , FMT = '(A," on domain ",I3)' ) TRIM(message2), grid%id
 !already computed above                0.01*pmin+0.1138*terrain(imploc,jmploc),     &
                                        maxws*1.94
         CALL wrf_message(TRIM(mess))
-
+                            
 
 
      ENDIF monitor_only
@@ -917,8 +917,8 @@ call wrf_debug(1,message)
    disp_y = grid%vc_j - dc_j * 1.0
 
 #if 0
-! This appears to be an old, redundant, and perhaps even misnamed parameter.
-! Remove it from the namelist and Registry and just hard code it to
+! This appears to be an old, redundant, and perhaps even misnamed parameter. 
+! Remove it from the namelist and Registry and just hard code it to 
 ! the default of 6. JM 20050721
    CALL nl_get_vortex_search_radius( 1, irad )
 #else
@@ -1035,8 +1035,8 @@ USE module_timing
      END FUNCTION time_for_move2
    END INTERFACE
 ! executable
-!
-! Simplifying assumption: domains in moving nest simulations have only
+! 
+! Simplifying assumption: domains in moving nest simulations have only 
 ! one parent and only one child.
 
    IF   ( grid%num_nests .GT. 1 ) THEN
@@ -1056,7 +1056,7 @@ USE module_timing
          return
       endif
 #endif
-!
+! 
 ! find out if this is the innermost nest (will not have kids)
    IF   ( grid%num_nests .EQ. 0 ) THEN
      ! code that executes on innermost nest
@@ -1067,7 +1067,7 @@ USE module_timing
      par => grid%parents(1)%ptr
      nst => grid
 
-     would_move_x = move_cd_x
+     would_move_x = move_cd_x 
      would_move_y = move_cd_y
 
      ! top of until loop
@@ -1145,7 +1145,7 @@ USE module_timing
      dn = cjde - ( grid%nests(kid)%ptr%j_parent_start + (njde-njds+1)/pgr )
 
      ! move this domain (the parent containing the moving nest)
-     ! in a direction that reestablishes the distance from
+     ! in a direction that reestablishes the distance from 
      ! the boundary.
      move_cd_x = 0
      move_cd_y = 0
@@ -1175,7 +1175,7 @@ USE module_timing
          CALL nl_set_j_parent_start( grid%nests(kid)%ptr%id, grid%nests(kid)%ptr%j_parent_start )
 
        ENDIF
-     ENDIF
+     ENDIF 
 
    ENDIF
 
@@ -1334,7 +1334,7 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
       abort=.true.
       write(mess,'("d",I0,": cannot move: too close to parent d",I0," -X boundary")') grid%id,parent%id
       call wrf_message(trim(mess))
-   ELSEIF((grid%i_parent_start+corral_dist) .ge. parent%ed31 - corral_x)THEN
+   ELSEIF((grid%i_parent_start+corral_dist) .ge. parent%ed31 - corral_x)THEN  
       abort=.true.
       write(mess,'("d",I0,": cannot move: too close to parent d",I0," +X boundary")') grid%id,parent%id
       call wrf_message(trim(mess))
@@ -1373,7 +1373,7 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
          WRITE(mess,*)'vortex tracking: id,mvnest,num_moves,num_nests: ', &
               grid%id,grid%mvnest,grid%num_moves,grid%num_nests
          call wrf_debug(1,mess)
-
+         
          WRITE(mess,*)'vortex tracking: xloc_1,xloc_2,yloc_y,yloc_2,vortex_tracker: ', &
               grid%XLOC_1,grid%XLOC_2,grid%YLOC_1,grid%YLOC_2,grid%vortex_tracker
          call wrf_debug(1,mess)
@@ -1383,17 +1383,17 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
          ! Follow child
          pgr=grid%parent_grid_ratio+0.01
          pgrn=grid%parent_grid_ratio-0.01
-
+         
          kid=>grid%nests(1)%ptr ! find my kid
-
+         
          ! find my center location
          my_ic = grid%ed31/2.0
          my_jc = grid%ed32/2.0
-
+         
          ! find my kid's center location in my grid
          kid_ic = kid%i_parent_start + kid%ed31/2.0/kid%parent_grid_ratio - 1
          kid_jc = kid%j_parent_start + kid%ed32/2.0/kid%parent_grid_ratio - 1
-
+         
          ! How far is the kid's center from my center?
          dx=kid_ic-my_ic
          dy=kid_jc-my_jc
@@ -1476,13 +1476,13 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
          endif
       endif revised_nest_motion
       vortex_following: IF(grid%vortex_tracker==3 .or. grid%vortex_tracker==1)THEN
-         IF((grid%XLOC_1-grid%XLOC_2) .GE. 3)THEN
+         IF((grid%XLOC_1-grid%XLOC_2) .GE. 3)THEN 
             move_cd_x  = -1
             IF((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN
                move_cd_y  = +1 ! will be changed to 2 automatically by caller
             ENDIF
-         ELSE IF((grid%XLOC_2-grid%XLOC_1) .GE. 3)THEN
-            move_cd_x  = +1
+         ELSE IF((grid%XLOC_2-grid%XLOC_1) .GE. 3)THEN        
+            move_cd_x  = +1 
             IF((grid%YLOC_2-grid%YLOC_1) .GE. 3)THEN
                move_cd_y  = -1 ! will be changed to -2 automatically by caller
             ENDIF
@@ -1491,10 +1491,10 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
             ! Only one parent gridpoint of north distance is required.  The
             ! nest will actually move two parent gridpoints though.
             move_cd_y  = 2
-         ELSE IF ((grid%YLOC_2-grid%YLOC_1) .GE. 6)THEN
-            move_cd_y  = 2
+         ELSE IF ((grid%YLOC_2-grid%YLOC_1) .GE. 6)THEN 
+            move_cd_y  = 2 
          ELSE IF ((grid%YLOC_1-grid%YLOC_2) .GE. 6)THEN    ! wait for the move
-            move_cd_y  = -2
+            move_cd_y  = -2 
          ENDIF
 
          if(wrf_dm_on_monitor()) then
@@ -1515,11 +1515,11 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
         kid=>grid%nests(ikid)%ptr
         inew=kid%i_parent_start-move_cd_x*kid%parent_grid_ratio
         jnew=kid%j_parent_start-move_cd_y*kid%parent_grid_ratio
-
+        
         corral_dist=(kid%ed31+kid%parent_grid_ratio-1)/kid%parent_grid_ratio
         corral_x = max(min_corral_x,grid%corral_x)
         corral_y = max(min_corral_y,grid%corral_y)
-        IF(inew <= corral_x)THEN
+        IF(inew <= corral_x)THEN  
            abort=.true.
            write(mess,'("d",I0,": cannot move: nest d",I0," would be too close to -X bdy")') grid%id,kid%id
            call wrf_message(mess)
@@ -1552,13 +1552,13 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
      write(mess,'("d",I0,"; motion has been aborted.")') grid%id
      call wrf_message(mess)
   endif
-
+  
   IF ( .NOT. grid%active_this_task ) THEN
     grid%mvnest = .FALSE.   ! prevent inactive grids from turning on movement
     grid%move_cd_x = 0
     grid%move_cd_y = 0
   ENDIF
-
+ 
   IF ( (parent%active_this_task .OR. grid%active_this_task) ) THEN
     CALL MPI_Allreduce( grid%mvnest , mvnest_l, 1, MPI_LOGICAL, MPI_LOR, comzilla, ierr )
     grid%mvnest = mvnest_l
@@ -1566,14 +1566,14 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
     CALL MPI_Allreduce( move_cd_x , itmp_neg, 1, MPI_INTEGER, MPI_MIN, comzilla, ierr )
     IF ( itmp_pos .NE. 0 ) THEN
       move_cd_x = itmp_pos
-    ELSE
+    ELSE 
       move_cd_x = itmp_neg
     ENDIF
     CALL MPI_Allreduce( move_cd_y , itmp_pos, 1, MPI_INTEGER, MPI_MAX, comzilla, ierr )
     CALL MPI_Allreduce( move_cd_y , itmp_neg, 1, MPI_INTEGER, MPI_MIN, comzilla, ierr )
     IF ( itmp_pos .NE. 0 ) THEN
       move_cd_y = itmp_pos
-    ELSE
+    ELSE 
       move_cd_y = itmp_neg
     ENDIF
   ENDIF
@@ -1589,7 +1589,7 @@ LOGICAL FUNCTION direction_of_move2 ( parent , grid , move_cd_x, move_cd_y )
   endif
 
    CALL pop_communicators_for_domain(grid%id)
-
+  
   RETURN
 
 END FUNCTION direction_of_move2
@@ -1632,10 +1632,10 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
         TYPE(domain) , POINTER    :: parent , nest
         INTEGER, INTENT(OUT)      :: dx , dy
      END FUNCTION direction_of_move2
-     SUBROUTINE G2T2H_new( IIH,JJH,                            & ! output grid index and weights
+     SUBROUTINE G2T2H_new( IIH,JJH,                            & ! output grid index and weights 
                            HBWGT1,HBWGT2,                      & ! output weights in terms of parent grid
                            HBWGT3,HBWGT4,                      &
-                           I_PARENT_START,J_PARENT_START,      & ! nest start I and J in parent domain
+                           I_PARENT_START,J_PARENT_START,      & ! nest start I and J in parent domain  
                            RATIO,                              & ! Ratio of parent and child grid ( always = 3 for NMM)
                            IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
                            IMS,IME,JMS,JME,KMS,KME,            &
@@ -1649,10 +1649,10 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
       REAL,    DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: HBWGT1,HBWGT2,HBWGT3,HBWGT4
       INTEGER, DIMENSION(IMS:IME,JMS:JME),    INTENT(OUT)  :: IIH,JJH
      END SUBROUTINE G2T2H_new
-     SUBROUTINE G2T2V_new( IIV,JJV,                            & ! output grid index and weights
+     SUBROUTINE G2T2V_new( IIV,JJV,                            & ! output grid index and weights 
                            VBWGT1,VBWGT2,                      & ! output weights in terms of parent grid
                            VBWGT3,VBWGT4,                      &
-                           I_PARENT_START,J_PARENT_START,      & ! nest start I and J in parent domain
+                           I_PARENT_START,J_PARENT_START,      & ! nest start I and J in parent domain  
                            RATIO,                              & ! Ratio of parent and child grid ( always = 3 for NMM)
                            IDS,IDE,JDS,JDE,KDS,KDE,            & ! target (nest) dimensions
                            IMS,IME,JMS,JME,KMS,KME,            &
@@ -1681,8 +1681,8 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
      end subroutine init_hnear
    END INTERFACE
 ! executable
-!
-! Simplifying assumption: moving domains in moving nest simulations have only
+! 
+! Simplifying assumption: moving domains in moving nest simulations have only 
 ! one parent and only one child.
 
    IF   ( grid%num_nests .GT. 1 ) THEN
@@ -1722,7 +1722,7 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
 
    ELSE
      ! move this domain (the parent containing the moving nest)
-     ! in a direction that reestablishes the distance from
+     ! in a direction that reestablishes the distance from 
      ! the boundary.
      move_domain: IF ( direction_of_move ) THEN
         no_nests: IF ( grid%id .EQ. 1 ) THEN
@@ -1835,7 +1835,7 @@ LOGICAL FUNCTION direction_of_move ( parent , grid , move_cd_x, move_cd_y )
        if(grid%swath_mode==1) then
           ! Will need to update area of interest after domain shift:
           grid%update_interest=.true.
-
+          
           ! Parent must also update area of interest after its nest
           ! moves if the parent has interest_kids set:
           if(parent%interest_kids/=0) then

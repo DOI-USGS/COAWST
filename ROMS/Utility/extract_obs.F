@@ -2,9 +2,9 @@
       MODULE extract_obs_mod
 #if (defined FOUR_DVAR || defined VERIFICATION) && defined OBSERVATIONS
 !
-!svn $Id: extract_obs.F 880 2017-11-15 22:04:38Z arango $
+!svn $Id: extract_obs.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -147,12 +147,12 @@
       integer, intent(in) :: ifield, Mobs, NobsSTR, NobsEND
 !
       real(r8), intent(in) :: Xmin, Xmax, Ymin, Ymax
-      real(r8), intent(in) :: time, dt
+      real(dp), intent(in) :: time, dt
 !
 # ifdef ASSUMED_SHAPE
       integer, intent(in) :: ObsType(:)
 
-      real(r8), intent(in) :: Tobs(:)
+      real(dp), intent(in) :: Tobs(:)
       real(r8), intent(in) :: Xobs(:)
       real(r8), intent(in) :: Yobs(:)
       real(r8), intent(in) :: A(LBi:,LBj:)
@@ -165,7 +165,7 @@
 # else
       integer, intent(in) :: ObsType(Mobs)
 
-      real(r8), intent(in) :: Tobs(Mobs)
+      real(dp), intent(in) :: Tobs(Mobs)
       real(r8), intent(in) :: Xobs(Mobs)
       real(r8), intent(in) :: Yobs(Mobs)
       real(r8), intent(in) :: A(LBi:UBi,LBj:UBj)
@@ -180,7 +180,9 @@
 !
       integer :: ic, iobs, i1, i2, j1, j2
 
-      real(r8) :: TimeLB, TimeUB, p1, p2, q1, q2, wsum
+      real(dp) :: TimeLB, TimeUB
+
+      real(r8) :: p1, p2, q1, q2, wsum
 
       real(r8), dimension(8) :: Hmat
 !
@@ -188,8 +190,8 @@
 !  Interpolate from requested 2D state field when appropriate.
 !-----------------------------------------------------------------------
 !
-      TimeLB=(time-0.5_r8*dt)/86400.0_r8
-      TimeUB=(time+0.5_r8*dt)/86400.0_r8
+      TimeLB=(time-0.5_dp*dt)/86400.0_dp
+      TimeUB=(time+0.5_dp*dt)/86400.0_dp
 !
       DO iobs=NobsSTR,NobsEND
         IF ((ObsType(iobs).eq.ifield).and.                              &
@@ -282,12 +284,12 @@
       integer, intent(in) :: ifield, Mobs, NobsSTR, NobsEND
 !
       real(r8), intent(in) :: Xmin, Xmax, Ymin, Ymax
-      real(r8), intent(in) :: time, dt
+      real(dp), intent(in) :: time, dt
 !
 #  ifdef ASSUMED_SHAPE
       integer, intent(in) :: ObsType(:)
 
-      real(r8), intent(in) :: Tobs(:)
+      real(dp), intent(in) :: Tobs(:)
       real(r8), intent(in) :: Xobs(:)
       real(r8), intent(in) :: Yobs(:)
       real(r8), intent(in) :: A(LBi:,LBj:,LBk:)
@@ -301,7 +303,7 @@
 #  else
       integer, intent(in) :: ObsType(Mobs)
 
-      real(r8), intent(in) :: Tobs(Mobs)
+      real(dp), intent(in) :: Tobs(Mobs)
       real(r8), intent(in) :: Xobs(Mobs)
       real(r8), intent(in) :: Yobs(Mobs)
       real(r8), intent(in) :: A(LBi:UBi,LBj:UBj,LBk:UBk)
@@ -318,7 +320,9 @@
 !
       integer :: i, ic, iobs, i1, i2, j1, j2, k, k1, k2
 
-      real(r8) :: TimeLB, TimeUB, Zbot, Ztop, dz, p1, p2, q1, q2, r1, r2
+      real(dp) :: TimeLB, TimeUB
+
+      real(r8) ::  Zbot, Ztop, dz, p1, p2, q1, q2, r1, r2
       real(r8) :: w11, w12, w21, w22, wsum
 
       real(r8), dimension(8) :: Hmat
@@ -327,8 +331,8 @@
 !  Interpolate from requested 3D state field.
 !-----------------------------------------------------------------------
 !
-      TimeLB=(time-0.5_r8*dt)/86400.0_r8
-      TimeUB=(time+0.5_r8*dt)/86400.0_r8
+      TimeLB=(time-0.5_dp*dt)/86400.0_dp
+      TimeUB=(time+0.5_dp*dt)/86400.0_dp
 !
       DO iobs=NobsSTR,NobsEND
         IF ((ObsType(iobs).eq.ifield).and.                              &

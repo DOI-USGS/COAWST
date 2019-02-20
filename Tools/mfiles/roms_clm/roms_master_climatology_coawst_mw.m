@@ -7,8 +7,6 @@
 %
 % This is currently set up to use opendap calls to acquire data
 % from HYCOM + NCODA Global 1/12 Degree Analysis and interp to roms grid.
-%
-% Before running this routine, user needs to setup "nctoolbox" within Matlab.
 %  
 % based on efforts by:
 % written by Mingkui Li, May 2008
@@ -19,76 +17,58 @@
 % - "hc" is called from the structure "gn".(still needs to be tested with wet/dry).
 % - updatinit_coawst_mw.m modified to get desired time (T1) as a variable;
 %    ocean_time=T1-datenum(1858,11,17,0,0,0)
+% Updates from Christie Hegermiller, Feb 2019
+%
 
 %%%%%%%%%%%%%%%%%%%%%   START OF USER INPUT  %%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % (1) Enter start date (T1) and number of days to get climatology data 
-T1=datenum(2012,10,22,0,0,0); %start date
-%number of days to create clm for
-numdays=15;
-dayFrequency=7;
+T1 = datenum(2012,10,28,12,0,0); %start date
+%number of days and frequency to create climatology files for
+numdays = 5;
+dayFrequency = 1;
 
 % (2) Enter URL of the HYCOM catalog for the requested time, T1
 %     see http://tds.hycom.org/thredds/catalog.html
- url='http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';      % 2011-01 to 2013-08
+url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';      % 2011-01 to 2013-08
 
 % (3) Enter working directory (wdr)
-wdr='c:\work\models\COAWST'
+wdr = 'F:\data\models\COAWST_tests\coawstv3.4_update\coawst_v3.4_tests\sandy\Projects\Sandy';
 
-% (4) Enter path and name of the ROMS grid (modelgrid)
-modelgrid='USeast_grd19.nc'
+% (4) Enter path and name of the ROMS grid
+modelgrid = 'Sandy_roms_grid.nc'
 
 % (5) Enter grid vertical coordinate parameters --These need to be consistent with the ROMS setup. 
-theta_s=5;
-theta_b=0.4;
-Tcline=50;
-N=16;
-Vtransform  =1;        %vertical transformation equation
-Vstretching =1;        %vertical stretching function
+theta_s     =  5.0;
+theta_b     =  0.4;
+Tcline      = 50.0;
+N           = 16;
+Vtransform  =  2;
+Vstretching =  4;
 
 %%%%%%%%%%%%%%%%%%%%%   END OF USER INPUT  %%%%%%%%%%%%%%%%%%%%%%%%%%
 eval(['cd ',wdr])
-eval(['gridname=''',modelgrid,''';']);
-
-disp('getting roms grid dimensions ...');
-%gn=roms_get_grid_mw(gridname,[theta_s theta_b Tcline N]);
-Sinp.N           =N;            %number of vertical levels
-Sinp.Vtransform  =Vtransform;   %vertical transformation equation
-Sinp.Vstretching =Vstretching;  %vertical stretching function
-Sinp.theta_s     =theta_s;      %surface control parameter
-Sinp.theta_b     =theta_b;      %bottom  control parameter
-Sinp.Tcline      =Tcline;       %surface/bottom stretching width
-if (Vtransform==1)
-  h=ncread(gridname,'h');
-  hmin=min(h(:));
-  hc=min(max(hmin,0),Tcline);
-elseif (Vtransform==2)
-  hc=Tcline;
-end
-Sinp.hc          =hc;           %stretching width used in ROMS
-gn=get_roms_grid(gridname,Sinp);
-gn.z_r=shiftdim(gn.z_r,2);
-gn.z_u=shiftdim(gn.z_u,2);
-gn.z_v=shiftdim(gn.z_v,2);
-gn.z_w=shiftdim(gn.z_w,2);
 
 tic
 
 % Call to get HYCOM indices for the defined ROMS grid
-disp('getting hycom indices')
-get_ijrg(gn,url)
+disp('getting roms grid, hycom grid, and overlapping indices')
+[gn, clm]=get_ijrg(url, modelgrid, theta_s, theta_b, Tcline, N, Vtransform, Vstretching);
 
 % Call to create the climatology (clm) file
 disp('going to create clm file')
-fn=updatclim_coawst_mw(T1,gn,'coawst_clm.nc',wdr,url)
+fn=updatclim_coawst_mw(T1, gn, clm, 'coawst_clm.nc', wdr, url)
 
 % Call to create the boundary (bdy) file
 disp('going to create bndry file')
-updatbdry_coawst_mw(fn,gn,'coawst_bdy.nc',wdr)
+updatbdry_coawst_mw(fn, gn, 'coawst_bdy.nc', wdr)
 
 % Call to create the initial (ini) file
 disp('going to create init file')
-updatinit_coawst_mw(fn,gn,'coawst_ini.nc',wdr,T1)
+updatinit_coawst_mw(fn, gn, 'coawst_ini.nc', wdr, T1)
+
+toc
+
 
 %% Call to create the long climatology (clm) file
 if numdays>1
@@ -102,7 +82,7 @@ if numdays>1
     end
     for it=dayFrequency:dayFrequency:numdays-1      %1st day already created, NEED to set number of days at top!
         fname=['coawst_clm_',datestr(T1+it,'yyyymmdd'),'.nc']
-        fn=updatclim_coawst_mw(T1+it,gn,fname,wdr,url)
+        fn=updatclim_coawst_mw(T1+it,gn,clm,fname,wdr,url)
         fname=['coawst_bdy_',datestr(T1+it,'yyyymmdd'),'.nc'];
         updatbdry_coawst_mw(fn,gn,fname,wdr)
     end
@@ -168,4 +148,5 @@ if numdays>1
     end
 end
 
+toc
 

@@ -1,10 +1,3 @@
-#if ( HYBRID_COORD==1 )
-#  define mub(...) (c1(k)*XXPCBXX(__VA_ARGS__)+c2(k))
-#  define XXPCBXX(...) mub(__VA_ARGS__)
-
-#  define mu(...)  (c1(k)*XXPCXX(__VA_ARGS__))
-#  define XXPCXX(...) mu(__VA_ARGS__)
-#endif
 
 MODULE module_polarfft
 
@@ -32,7 +25,7 @@ SUBROUTINE couple_scalars_for_filter ( field    &
    DO j = jps, MIN(jpe,jde-1)
    DO k = kps, kpe-1
    DO i = ips, MIN(ipe,ide-1)
-      field(i,k,j)=field(i,k,j)*(mu(i,j)+mub(i,j))
+      field(i,k,j)=field(i,k,j)*(  (c1(k)*mu(i,j))+(c1(k)*mub(i,j)+c2(k)))
    END DO
    END DO
    END DO
@@ -57,7 +50,7 @@ SUBROUTINE uncouple_scalars_for_filter ( field    &
    DO j = jps, MIN(jpe,jde-1)
    DO k = kps, kpe-1
    DO i = ips, MIN(ipe,ide-1)
-      field(i,k,j)=field(i,k,j)/(mu(i,j)+mub(i,j))
+      field(i,k,j)=field(i,k,j)/(  (c1(k)*mu(i,j))+(c1(k)*mub(i,j)+c2(k)))
    END DO
    END DO
    END DO
@@ -186,7 +179,7 @@ integer myproc, i, j, k
 ! rewritten.
 !
 !</DESCRIPTION>
-!write(0,*)__FILE__,__LINE__,' short circuit '
+!write(0,*)"<stdin>",__LINE__,' short circuit '
 !return
 
 !write(0,*)'pxft called from ',lineno
@@ -807,7 +800,7 @@ SUBROUTINE polar_filter_fft_2d_ncar(nx,ny,fin,lat,filter_latitude,piggyback,fftf
      do k=1,ny
         call dfft1b(n, inc, fin8(1,k), lenr, wsave8, lensav, work8, lenwrk, ier)
      enddo
-     fin= fin8
+     fin= fin8     
   endif
 
   IF(ier /= 0) THEN
@@ -891,7 +884,7 @@ END SUBROUTINE polar_filter_fft_2d_ncar
          END DO
 
          !  Filter the fields at the negative lats.
-
+   
          DO j = MIN(j_lat_neg,jte) , jts , -1
 !           i_kicker = MIN( MAX ( NINT(msftx(its,j)/2) , 1 ) , (ide - ids) / 2 )
             i_kicker = MIN( MAX ( NINT(msftx(its,j)/mf_fft/2) , 1 ) , (ide - ids) / 2 )
@@ -919,9 +912,9 @@ END SUBROUTINE polar_filter_fft_2d_ncar
                tr_out(i,j) = ( tr_in(i,j) + sum ) / REAL ( 2 * count + 1 )
             END DO
          END DO
-
+   
          !  Filter the fields at the positive lats.
-
+   
          DO j = MAX(j_lat_pos,jts) , MIN(jde-1,jte)
 !           i_kicker = MIN( MAX ( NINT(msftx(its,j)/2) , 1 ) , (ide - ids) / 2 )
             i_kicker = MIN( MAX ( NINT(msftx(its,j)/mf_fft/2) , 1 ) , (ide - ids) / 2 )
@@ -949,17 +942,17 @@ END SUBROUTINE polar_filter_fft_2d_ncar
                tr_out(i,j) = ( tr_in(i,j) + sum ) / REAL ( 2 * count + 1 )
             END DO
          END DO
-
+   
          !  Set output values for whole patch.
-
+   
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
                tr3d_in(i,k,j) = tr_out(i,j)
             END DO
          END DO
-
+   
          !  Positive definite on scalars?
-
+   
          IF ( pos_def ) THEN
             DO j = jts , MIN(jde-1,jte)
                DO i = its , MIN(ide-1,ite)
@@ -967,16 +960,16 @@ END SUBROUTINE polar_filter_fft_2d_ncar
                END DO
             END DO
          END IF
-
+   
          !  Remove values at j=1 and j=jde-1 locations, set them to the rows just next to them.
-
+   
          IF ( swap_pole_with_next_j ) THEN
             IF  ( jts .EQ. jds ) THEN
                DO i = its , MIN(ide-1,ite)
                   tr3d_in(i,k,jts) = tr3d_in(i,k,jts+1)
                END DO
             END IF
-
+   
             IF  ( jte .EQ. jde ) THEN
                DO i = its , MIN(ide-1,ite)
                   tr3d_in(i,k,jte-1) = tr3d_in(i,k,jte-2)
@@ -1057,7 +1050,7 @@ END SUBROUTINE polar_filter_fft_2d_ncar
          END DO
 
          !  Filter the topo at the negative lats.
-
+   
          DO j = j_lat_neg , jts , -1
             i_kicker = MIN( MAX ( NINT(msftx(its,j)) , 1 ) , (ide - ids) / 2 )
 !           print *,'j = ' , j, ', kicker = ',i_kicker
@@ -1103,9 +1096,9 @@ END SUBROUTINE polar_filter_fft_2d_ncar
                END IF
             END DO
          END DO
-
+   
          !  Filter the topo at the positive lats.
-
+   
          DO j = j_lat_pos , MIN(jde-1,jte)
             i_kicker = MIN( MAX ( NINT(msftx(its,j)) , 1 ) , (ide - ids) / 2 )
 !           print *,'j = ' , j, ', kicker = ',i_kicker
@@ -1151,9 +1144,9 @@ END SUBROUTINE polar_filter_fft_2d_ncar
                END IF
             END DO
          END DO
-
+   
          !  Set output values to initial input topo values for whole patch.
-
+   
          DO j = jts , MIN(jde-1,jte)
             DO i = its , MIN(ide-1,ite)
                tr3d_in(i,k,j) = tr_out(i,j)

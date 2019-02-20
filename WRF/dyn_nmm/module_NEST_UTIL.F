@@ -31,27 +31,27 @@
                              ,PDTMP_B,TTMP_B, QTMP_B,UTMP_B,VTMP_B,Q2TMP_B,CWMTMP_B       &
                              ,PDTMP_BT,TTMP_BT,QTMP_BT,UTMP_BT,VTMP_BT,Q2TMP_BT,CWMTMP_BT &
 !
-                             ,SPEC_BDY_WIDTH                                              &
+                             ,SPEC_BDY_WIDTH                                              &  
                              ,IDS,IDE,JDS,JDE,KDS,KDE                                     &
                              ,IMS,IME,JMS,JME,KMS,KME                                     &
                              ,ITS,ITE,JTS,JTE,KTS,KTE                                     )
 !**********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
-! SUBPROGRAM:    PATCH
-!   PRGRMMR: gopal
-!
+!                .      .    .     
+! SUBPROGRAM:    PATCH       
+!   PRGRMMR: gopal 
+!     
 ! ABSTRACT:
-!         THIS IS JUST A FIX FOR USING NESTED BOUNDARIES IN THE HALO REGION
+!         THIS IS JUST A FIX FOR USING NESTED BOUNDARIES IN THE HALO REGION     
 ! PROGRAM HISTORY LOG:
-!   09-23-2004  : gopal
-!
+!   09-23-2004  : gopal 
+!     
 ! USAGE: CALL PATCH FROM SUBROUTINE SOLVE_RUNSTREAM FOR NESTED DOMAIN ONLY
-!
+!  
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
 !   MACHINE : IBM SP
-!$$$
+!$$$  
 !**********************************************************************
 !----------------------------------------------------------------------
 !
@@ -76,7 +76,7 @@
                                                        ,Q2_BYS,Q2_BYE   &
                                                        ,T_BYS,T_BYE     &
                                                        ,U_BYS,U_BYE     &
-                                                       ,V_BYS,V_BYE
+                                                       ,V_BYS,V_BYE     
 
       REAL,DIMENSION(IMS:IME,KMS:KME,SPEC_BDY_WIDTH)                &
                                       ,INTENT(INOUT) :: CWM_BTYS,CWM_BTYE &
@@ -84,7 +84,7 @@
                                                        ,Q2_BTYS,Q2_BTYE   &
                                                        ,T_BTYS,T_BTYE     &
                                                        ,U_BTYS,U_BTYE     &
-                                                       ,V_BTYS,V_BTYE
+                                                       ,V_BTYS,V_BTYE     
 
 !
 
@@ -98,7 +98,7 @@
                                                        ,Q2_BXS,Q2_BXE   &
                                                        ,T_BXS,T_BXE     &
                                                        ,U_BXS,U_BXE     &
-                                                       ,V_BXS,V_BXE
+                                                       ,V_BXS,V_BXE     
 
       REAL,DIMENSION(JMS:JME,KMS:KME,SPEC_BDY_WIDTH)                &
                                       ,INTENT(INOUT) :: CWM_BTXS,CWM_BTXE &
@@ -106,7 +106,7 @@
                                                        ,Q2_BTXS,Q2_BTXE   &
                                                        ,T_BTXS,T_BTXE     &
                                                        ,U_BTXS,U_BTXE     &
-                                                       ,V_BTXS,V_BTXE
+                                                       ,V_BTXS,V_BTXE     
 
 !
 
@@ -119,7 +119,7 @@
                                                     ,Q2TMP_B,Q2TMP_BT   &
                                                     ,TTMP_B,TTMP_BT     &
                                                     ,UTMP_B,UTMP_BT     &
-                                                    ,VTMP_B,VTMP_BT
+                                                    ,VTMP_B,VTMP_BT    
 
 !
 
@@ -180,7 +180,7 @@
 
           DO K=KTS,KTE
             DO J=MAX(JTS-1,JDS+2-1),MIN(JTE+1,JDE-1)
-              IF(MOD(J,2).EQ.0)THEN                  ! J=2,4,6,8
+              IF(MOD(J,2).EQ.0)THEN                  ! J=2,4,6,8  
                 U_BXS(J,K,IB)    = UTMP_B(II,J,K)
                 U_BTXS(J,K,IB)   = UTMP_BT(II,J,K)
                 V_BXS(J,K,IB)    = VTMP_B(II,J,K)
@@ -219,7 +219,7 @@
 
           DO K=KTS,KTE
             DO J=MAX(JTS-1,JDS+2-1),MIN(JTE+1,JDE-1)
-              IF(MOD(J,2).EQ.0)THEN                  ! J=2,4,6,8
+              IF(MOD(J,2).EQ.0)THEN                  ! J=2,4,6,8  
                 U_BXE(J,K,IB)    = UTMP_B(II,J,K)
                 U_BTXE(J,K,IB)   = UTMP_BT(II,J,K)
                 V_BXE(J,K,IB)    = VTMP_B(II,J,K)
@@ -241,7 +241,7 @@
 !
 !***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
 !
-        IF(S_BDY.AND.IBDY.EQ.1) THEN
+        IF(S_BDY.AND.IBDY.EQ.1) THEN 
 !
 !            BF=P_YSB     ! Which boundary (YSB=the boundary where Y is at its start)
             JB=1         ! Which cell in from boundary
@@ -324,11 +324,11 @@ SUBROUTINE MSLP_DIAG (MSLP,PINT,T,Q               &
 !**********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .
-! SUBPROGRAM:  MSLP_DIAG
+! SUBPROGRAM:  MSLP_DIAG 
 !   PRGRMMR: gopal
 !
 ! ABSTRACT:
-!         THIS ROUTINE COMPUTES MSLP OVER THE PARENT DOMAIN FOR DIAGONOSTIC PURPOSE
+!         THIS ROUTINE COMPUTES MSLP OVER THE PARENT DOMAIN FOR DIAGONOSTIC PURPOSE 
 !
 ! Note: domain I & J end bounds are NOT the usual bounds.  They are
 ! IDE-1 and JDE-1.
@@ -337,7 +337,7 @@ SUBROUTINE MSLP_DIAG (MSLP,PINT,T,Q               &
 !   07-21-2005  : gopal
 !   01-23-2012  : sam: removed 3D Z calculation, updated comments
 !
-! USAGE: CALL MSLP_DIAG FROM THE SOLVER
+! USAGE: CALL MSLP_DIAG FROM THE SOLVER 
 !
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
@@ -352,8 +352,8 @@ SUBROUTINE MSLP_DIAG (MSLP,PINT,T,Q               &
 !     global variables
 
       INTEGER,INTENT(IN)                                      :: IDS,IDF,JDS,JDF,KDS,KDE   &
-                                                                ,IMS,IME,JMS,JME,KMS,KME   &
-                                                                ,ITS,ITE,JTS,JTE,KTS,KTE
+                                                                ,IMS,IME,JMS,JME,KMS,KME   & 
+                                                                ,ITS,ITE,JTS,JTE,KTS,KTE   
 
       REAL,                                     INTENT(IN)    :: PDTOP
       REAL, DIMENSION(KMS:KME),                 INTENT(IN)    :: DETA1,DETA2
@@ -432,7 +432,7 @@ SUBROUTINE MOVE_LAND (SM,TSK                      &
            SM(I,J)=SM(I-1,J)          ! Motion of land (0) from West to East
        ENDDO
       ENDDO
-     ELSE
+     ELSE 
       DO J = MAX(JTS,2), MIN(JTE,JDE-1)
        DO I = ITS, MIN(ITE,IDE-1)
            SM(I,J)=SM(I+1,J)          ! Motion of land (0) from East to west
@@ -469,7 +469,7 @@ SUBROUTINE CALC_BEST_MSLP(BEST_MSLP,MSLP,MEMBRANE_MSLP,FIS &
   integer :: i,j
   real :: z,w
   real, parameter :: gi=1./g
-
+  
   do j=max(jts,jds), min(jte,jde-1)
      do i=max(its,ids), min(ite,ide-1)
         if(membrane_mslp(i,j)<7e4) then

@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_mixing
 !
-!svn $Id: mod_mixing.F 840 2017-04-18 22:00:03Z arango $
+!svn $Id: mod_mixing.F 921 2018-09-06 18:27:34Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -438,75 +438,117 @@
 !
       integer, intent(in) :: ng, LBi, UBi, LBj, UBj
 !
+!  Local variable declarations.
+!
+      real(r8) :: size2d
+!
 !-----------------------------------------------------------------------
 !  Allocate module variables.
 !-----------------------------------------------------------------------
 !
       IF (ng.eq.1) allocate ( MIXING(Ngrids) )
 !
+!  Set horizontal array size.
+!
+      size2d=REAL((UBi-LBi)*(UBj-LBj),r8)
+!
 !  Nonlinear model state.
 !
 #ifndef ANA_SPONGE
       IF (LuvSponge(ng)) THEN
         allocate ( MIXING(ng) % visc_factor(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 #endif
 #if defined UV_VIS2
       allocate ( MIXING(ng) % visc2_p(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( MIXING(ng) % visc2_r(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #endif
 
 #ifdef UV_VIS4
       allocate ( MIXING(ng) % visc4_p(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( MIXING(ng) % visc4_r(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #endif
 
 # ifdef VISC_3DCOEF
       allocate ( MIXING(ng) % Hviscosity(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
 #  ifdef UV_U3ADV_SPLIT
       allocate ( MIXING(ng) % Uvis3d_r(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
       allocate ( MIXING(ng) % Vvis3d_r(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
 #  else
       allocate ( MIXING(ng) % visc3d_r(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
 #  endif
 # endif
 
 #ifdef WEC
       allocate ( MIXING(ng) % rustr2d(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( MIXING(ng) % rvstr2d(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #endif
 #ifdef WEC_MELLOR
       allocate ( MIXING(ng) % Sxx_bar(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( MIXING(ng) % Sxy_bar(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( MIXING(ng) % Syy_bar(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #endif
 #ifdef WEC_VF
       allocate ( MIXING(ng) % rurol2d(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( MIXING(ng) % rvrol2d(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( MIXING(ng) % rubrk2d(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( MIXING(ng) % rvbrk2d(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( MIXING(ng) % rukvf2d(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( MIXING(ng) % rvkvf2d(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifdef BOTTOM_STREAMING
       allocate ( MIXING(ng) % rubst2d(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( MIXING(ng) % rvbst2d(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # endif
 # ifdef SURFACE_STREAMING
       allocate ( MIXING(ng) % russt2d(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( MIXING(ng) % rvsst2d(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # endif
 #endif
 #ifdef SOLVE3D
 # ifdef WEC_MELLOR
       allocate ( MIXING(ng) % Sxx(LBi:UBi,LBj:UBj,1:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       allocate ( MIXING(ng) % Sxy(LBi:UBi,LBj:UBj,1:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       allocate ( MIXING(ng) % Syy(LBi:UBi,LBj:UBj,1:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       allocate ( MIXING(ng) % Szx(LBi:UBi,LBj:UBj,1:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       allocate ( MIXING(ng) % Szy(LBi:UBi,LBj:UBj,1:N(ng)) )
 # endif
 # ifdef WEC
       allocate ( MIXING(ng) % rustr3d(LBi:UBi,LBj:UBj,1:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       allocate ( MIXING(ng) % rvstr3d(LBi:UBi,LBj:UBj,1:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
 # endif
 #endif
 
@@ -514,81 +556,118 @@
 # ifndef ANA_SPONGE
       IF (ANY(LtracerSponge(:,ng))) THEN
         allocate ( MIXING(ng) % diff_factor(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
+
 # ifdef TS_DIF2
       allocate ( MIXING(ng) % diff2(LBi:UBi,LBj:UBj,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(NT(ng),r8)*size2d
 # endif
 
 # ifdef TS_DIF4
       allocate ( MIXING(ng) % diff4(LBi:UBi,LBj:UBj,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(NT(ng),r8)*size2d
 # endif
 
 # ifdef DIFF_3DCOEF
       allocate ( MIXING(ng) % Hdiffusion(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
 #  ifdef TS_U3ADV_SPLIT
       allocate ( MIXING(ng) % diff3d_u(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
       allocate ( MIXING(ng) % diff3d_v(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
 #  else
       allocate ( MIXING(ng) % diff3d_r(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
 #  endif
 # endif
 
       allocate ( MIXING(ng) % Akv(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
+
       allocate ( MIXING(ng) % Akt(LBi:UBi,LBj:UBj,0:N(ng),NAT) )
+      Dmem(ng)=Dmem(ng)+REAL((N(ng)+1)*NAT,r8)*size2d
 
 # ifdef FLOAT_VWALK
       allocate ( MIXING(ng) % dAktdz(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 # endif
 
 # if defined LMD_SKPP    || defined LMD_BKPP         || \
      defined BULK_FLUXES || defined BALANCE_OPERATOR
       allocate ( MIXING(ng) % alpha(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( MIXING(ng) % beta(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # endif
 
 # ifdef BV_FREQUENCY
       allocate ( MIXING(ng) % bvf(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 # endif
 
 # ifdef M2TIDE_DIFF
       allocate ( MIXING(ng) % m2_amp(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # endif
 
 # if defined MIX_ISO_TS || defined GENT_McWILLIAMS
       allocate ( MIXING(ng) % neutral(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 # endif
 
 # if defined GLS_MIXING || defined MY25_MIXING
       allocate ( MIXING(ng) % tke(LBi:UBi,LBj:UBj,0:N(ng),3) )
+      Dmem(ng)=Dmem(ng)+3.0_r8*REAL(N(ng)+1,r8)*size2d
+
       allocate ( MIXING(ng) % gls(LBi:UBi,LBj:UBj,0:N(ng),3) )
+      Dmem(ng)=Dmem(ng)+3.0_r8*REAL(N(ng)+1,r8)*size2d
+
       allocate ( MIXING(ng) % Lscale(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
+
       allocate ( MIXING(ng) % Akk(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 
 #  ifdef GLS_MIXING
       allocate ( MIXING(ng) % Akp(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 #  endif
 # endif
 
 # if defined LMD_MIXING && defined LMD_DDMIX
       allocate ( MIXING(ng) % alfaobeta(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 # endif
 
 # if defined LMD_SKPP || defined SOLAR_SOURCE
       allocate ( MIXING(ng) % Jwtype(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # endif
 
 # if defined LMD_SKPP || defined LMD_BKPP
       allocate ( MIXING(ng) % ksbl(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( MIXING(ng) % hsbl(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 
 #  ifdef LMD_BKPP
       allocate ( MIXING(ng) % kbbl(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( MIXING(ng) % hbbl(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #  endif
 
 #  ifdef LMD_NONLOCAL
       allocate ( MIXING(ng) % ghats(LBi:UBi,LBj:UBj,0:N(ng),NAT) )
+      Dmem(ng)=Dmem(ng)+REAL((N(ng)+1)*NAT,r8)*size2d
 #  endif
 
 # endif
@@ -599,8 +678,11 @@
 !  Spatial convolution diffusion coefficients.
 !
       allocate ( MIXING(ng) % Kh(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
 # ifdef SOLVE3D
       allocate ( MIXING(ng) % Kv(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 # endif
 #endif
 
@@ -612,27 +694,41 @@
 #  ifdef DIFF_3DCOEF
 #   ifdef TS_U3ADV_SPLIT
       allocate ( MIXING(ng) % tl_diff3d_u(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
       allocate ( MIXING(ng) % tl_diff3d_v(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
 #   else
       allocate ( MIXING(ng) % tl_diff3d_r(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
 #   endif
 #  endif
 
 #  ifdef VISC_3DCOEF
 #   ifdef UV_U3ADV_SPLIT
       allocate ( MIXING(ng) % tl_Uvis3d_r(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
       allocate ( MIXING(ng) % tl_Vvis3d_r(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
 #   else
       allocate ( MIXING(ng) % tl_visc3d_r(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
 #   endif
 #  endif
 
       allocate ( MIXING(ng) % tl_Akv(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
+
       allocate ( MIXING(ng) % tl_Akt(LBi:UBi,LBj:UBj,0:N(ng),NAT) )
+      Dmem(ng)=Dmem(ng)+REAL((N(ng)+1)*NAT,r8)*size2d
 
 #  if defined LMD_SKPP || defined LMD_BKPP || defined BULK_FLUXES
       allocate ( MIXING(ng) % tl_alpha(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( MIXING(ng) % tl_beta(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #  endif
 
 #  ifdef BV_FREQUENCY
@@ -641,12 +737,21 @@
 
 #  if defined GLS_MIXING_NOT_YET || defined MY25_MIXING_NOT_YET
       allocate ( MIXING(ng) % tl_tke(LBi:UBi,LBj:UBj,0:N(ng),3) )
+      Dmem(ng)=Dmem(ng)+3.0_r8*REAL(N(ng)+1,r8)*size2d
+
       allocate ( MIXING(ng) % tl_gls(LBi:UBi,LBj:UBj,0:N(ng),3) )
+      Dmem(ng)=Dmem(ng)+3.0_r8*REAL(N(ng)+1,r8)*size2d
+
       allocate ( MIXING(ng) % tl_Lscale(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
+
       allocate ( MIXING(ng) % tl_Akk(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 #  endif
+
 #  ifdef GLS_MIXING_NOT_YET
       allocate ( MIXING(ng) % tl_Akp(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 #  endif
 # endif
 #endif
@@ -659,41 +764,65 @@
 #  ifdef DIFF_3DCOEF
 #   ifdef TS_U3ADV_SPLIT
       allocate ( MIXING(ng) % ad_diff3d_u(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
       allocate ( MIXING(ng) % ad_diff3d_v(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
 #   else
       allocate ( MIXING(ng) % ad_diff3d_r(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
 #   endif
 #  endif
 
 #  ifdef VISC_3DCOEF
 #   ifdef UV_U3ADV_SPLIT
       allocate ( MIXING(ng) % ad_Uvis3d_r(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
       allocate ( MIXING(ng) % ad_Vvis3d_r(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
 #   else
       allocate ( MIXING(ng) % ad_visc3d_r(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
 #   endif
 #  endif
 
       allocate ( MIXING(ng) % ad_Akv(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
+
       allocate ( MIXING(ng) % ad_Akt(LBi:UBi,LBj:UBj,0:N(ng),NAT) )
+      Dmem(ng)=Dmem(ng)+REAL((N(ng)+1)*NAT,r8)*size2d
 
 #  if defined LMD_SKPP || defined LMD_BKPP || defined BULK_FLUXES
       allocate ( MIXING(ng) % ad_alpha(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( MIXING(ng) % ad_beta(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #  endif
 
 #  ifdef BV_FREQUENCY
       allocate ( MIXING(ng) % ad_bvf(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 #  endif
 
 #  if defined GLS_MIXING_NOT_YET || defined MY25_MIXING_NOT_YET
       allocate ( MIXING(ng) % ad_tke(LBi:UBi,LBj:UBj,0:N(ng),3) )
+      Dmem(ng)=Dmem(ng)+3.0_r8*REAL(N(ng)+1,r8)*size2d
+
       allocate ( MIXING(ng) % ad_gls(LBi:UBi,LBj:UBj,0:N(ng),3) )
+      Dmem(ng)=Dmem(ng)+3.0_r8*REAL(N(ng)+1,r8)*size2d
+
       allocate ( MIXING(ng) % ad_Lscale(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
+
       allocate ( MIXING(ng) % ad_Akk(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 #  endif
+
 #  ifdef GLS_MIXING_NOT_YET
       allocate ( MIXING(ng) % ad_Akp(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 #  endif
 # endif
 #endif
@@ -706,28 +835,43 @@
 !  the background state in the tangent linear and adjoint models.
 !
       allocate ( MIXING(ng) % AkvG(LBi:UBi,LBj:UBj,0:N(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)+1,r8)*size2d
+
       allocate ( MIXING(ng) % AktG(LBi:UBi,LBj:UBj,0:N(ng),2,NAT) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL((N(ng)+1)*NAT,r8)*size2d
 # endif
 
 # if defined LMD_MIXING_NOT_YET
       allocate ( MIXING(ng) % hsblG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 
 # if defined LMD_BKPP_NOT_YET
       allocate ( MIXING(ng) % hbblG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 
 # if defined LMD_NONLOCAL_NOT_YET
       allocate ( MIXING(ng) % ghatsG(LBi:UBi,LBj:UBj,0:N(ng),2,NAT) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL((N(ng)+1)*NAT,r8)*size2d
 # endif
 
 # if defined GLS_MIXING_NOT_YET || defined MY25_MIXING_NOT_YET
       allocate ( MIXING(ng) % tkeG(LBi:UBi,LBj:UBj,0:N(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)+1,r8)*size2d
+
       allocate ( MIXING(ng) % glsG(LBi:UBi,LBj:UBj,0:N(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)+1,r8)*size2d
+
       allocate ( MIXING(ng) % LscaleG(LBi:UBi,LBj:UBj,0:N(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)+1,r8)*size2d
+
       allocate ( MIXING(ng) % AkkG(LBi:UBi,LBj:UBj,0:N(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)+1,r8)*size2d
+
 #  ifdef GLS_MIXING_NOT_YET
       allocate ( MIXING(ng) % AkpG(LBi:UBi,LBj:UBj,0:N(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)+1,r8)*size2d
 #  endif
 # endif
 #endif

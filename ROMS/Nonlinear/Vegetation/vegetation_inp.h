@@ -12,6 +12,7 @@
       USE mod_ncparam
       USE mod_scalars
       USE mod_vegetation
+      USE inp_decode_mod
 !
       implicit none
 !
@@ -24,7 +25,6 @@
 !
       integer :: Npts, Nval
       integer :: iveg, ng, status
-      integer :: decode_line, load_i, load_l, load_lbc, load_r
 !
       real(r8), dimension(200) :: Rval
       real(r8), allocatable :: Rveg(:,:)
@@ -53,7 +53,7 @@
             IF (.not.allocated(Rveg)) allocate(Rveg(NVEG,Ngrids))
             CASE ('CD_VEG')
               IF (.not.allocated(CD_VEG)) allocate(CD_VEG(NVEG,Ngrids))
-              Npts=load_r(Nval, Rval, NVEG*Ngrids, Rveg)
+              Npts=load_r(Nval, Rval, NVEG, Ngrids, Rveg)
               DO ng=1,Ngrids
                 DO iveg=1,NVEG
                   CD_VEG(iveg,ng)=Rveg(iveg,ng)
@@ -61,7 +61,7 @@
               END DO
             CASE ('E_VEG')
               IF (.not.allocated(E_VEG)) allocate(E_VEG(NVEG,Ngrids))
-              Npts=load_r(Nval, Rval, NVEG*Ngrids, Rveg)
+              Npts=load_r(Nval, Rval, NVEG, Ngrids, Rveg)
               DO ng=1,Ngrids
                 DO iveg=1,NVEG
                   E_VEG(iveg,ng)=Rveg(iveg,ng)
@@ -70,7 +70,7 @@
             CASE ('VEG_MASSDENS')
               IF (.not.allocated(VEG_MASSDENS))                         &
      &                 allocate(VEG_MASSDENS(NVEG,Ngrids))
-              Npts=load_r(Nval, Rval, NVEG*Ngrids, Rveg)
+              Npts=load_r(Nval, Rval, NVEG, Ngrids, Rveg)
               DO ng=1,Ngrids
                 DO iveg=1,NVEG
                   VEG_MASSDENS(iveg,ng)=Rveg(iveg,ng)
@@ -79,7 +79,7 @@
             CASE ('VEGHMIXCOEF')
               IF (.not.allocated(VEGHMIXCOEF))                         &
      &                 allocate(VEGHMIXCOEF(NVEG,Ngrids))
-              Npts=load_r(Nval, Rval, NVEG*Ngrids, Rveg)
+              Npts=load_r(Nval, Rval, NVEG, Ngrids, Rveg)
               DO ng=1,Ngrids
                 DO iveg=1,NVEG
                   VEGHMIXCOEF(iveg,ng)=Rveg(iveg,ng)
@@ -227,6 +227,7 @@
 !     &  'Write out wave dissipation due to vegetation.'
 #endif
 #ifdef MARSH_WAVE_THRUST
+        DO ng=1,Ngrids
           IF (Hout(idTims,ng)) WRITE (out,90) Hout(idTims,ng),          &
      &       'Hout(idTims)',                                            &
      &       'Write out initial masking for marshes.'
@@ -239,6 +240,7 @@
          IF (Hout(idTton,ng)) WRITE (out,90) Hout(idTton,ng),           &
      &       'Hout(idTton)',                                            &
      &       'Write out Tonelli masking based thrust due to waves.'
+        END DO
 #endif
        END IF
    30  FORMAT (/,' read_VegPar - variable info not yet loaded, ',a)

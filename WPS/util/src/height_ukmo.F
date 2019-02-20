@@ -40,7 +40,7 @@ program height_ukmo
    write(output_date,'(a19)') valid_date(1:10)//'_'//valid_date(12:19)
 
    !  Do this twice.  The first time is to find out how many levels of
-   !  3d fields there are.  Why?  The data from UKMO has *some* of the
+   !  3d fields there are.  Why?  The data from UKMO has *some* of the 
    !  levels, just not all.  So we can compute the height field, but we
    !  are not allowed to just spit out 70 levels.
 
@@ -69,13 +69,13 @@ program height_ukmo
                   end do
                end do
             end if
-
+   
             deallocate ( temp_data%slab )
          end if
-
+   
       end do just_temp
       call mprintf(.true.,STDOUT,'Total number of TT levels, excluding 200100 = %i' , i1=temp_count)
-
+   
       call read_met_close()
 
    else
@@ -122,28 +122,28 @@ program height_ukmo
                   call mprintf(.true.,ERROR,'Mismatch in height field dimensions in file %s', &
                                s1=trim(input_name)//':'//temp_date(1:13))
                end if
-
+                
                open ( 10 , &
                       file = 'util/vertical_grid_70_20m_80km.txt' , &
                       form = 'formatted' , &
                       access = 'sequential' , &
                       status = 'old' , &
-                      iostat = istatus )
+                      iostat = istatus ) 
 
                if ( istatus /= 0 ) then
                   call mprintf(.true.,ERROR,'Cannot open the UKMO file util/vertical_grid_70_20m_80km.txt')
                end if
 
-               read (10 , * )
-               read (10 , * )
-               read (10 , * )
+               read (10 , * ) 
+               read (10 , * ) 
+               read (10 , * ) 
                read (10 , fmt='(30x,i2)' ) model_levels
                read (10 , fmt='(30x,i2)' ) first_constant_r_rho_level
                read (10 , fmt='(30x,f17.11)' ) z_top_of_model
 print *,'model_levels, first_constant_r_rho_level, z_top_of_model = ', model_levels, first_constant_r_rho_level, z_top_of_model
-               read (10 , * )
-               read (10 , * )
-
+               read (10 , * ) 
+               read (10 , * ) 
+ 
                allocate ( eta ( model_levels ) )
                eta = 0.
                do k_loop = 1 , first_constant_r_rho_level-1
@@ -159,12 +159,12 @@ print *,'model_levels, first_constant_r_rho_level, z_top_of_model = ', model_lev
 
                exit all_fields
             end if
-
-
+   
+   
          end if
-
+   
       end do all_fields
-
+   
       call read_met_close()
 
    else
@@ -181,7 +181,7 @@ print *,'model_levels, first_constant_r_rho_level, z_top_of_model = ', model_lev
       height_data%xfcst=  0.
       height_data%hdate=  output_date // '.0000'
       date_loop = 1
-
+    
       all_dates : do while ( still_more_dates_to_process )
 
 print *,'Generating ',temp_count,' height levels for ',output_date,'.'
@@ -201,7 +201,7 @@ print *,'Generating ',temp_count,' height levels for ',output_date,'.'
             end do
          end do
 
-         call write_next_met_field(soilhgt_data, istatus)
+         call write_next_met_field(soilhgt_data, istatus) 
 
          height_data%version=  soilhgt_data%version
          height_data%nx=  soilhgt_data%nx
@@ -237,7 +237,7 @@ print *,'Generating ',temp_count,' height levels for ',output_date,'.'
                end do
             end do
 
-            call write_next_met_field(height_data, istatus)
+            call write_next_met_field(height_data, istatus) 
          end do
 
          do k_loop = first_constant_r_rho_level , 1 , -1
@@ -250,9 +250,9 @@ print *,'Generating ',temp_count,' height levels for ',output_date,'.'
                end do
             end do
 
-            call write_next_met_field(height_data, istatus)
+            call write_next_met_field(height_data, istatus) 
          end do
-
+     
          call write_met_close()
 
          call geth_newdate ( output_date , valid_date , interval_seconds * date_loop )

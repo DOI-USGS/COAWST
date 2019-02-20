@@ -2,26 +2,26 @@
 !  Author(s)/Contact(s):
 !  Abstract:
 !  History Log:
-!
+! 
 !  Usage:
 !  Parameters: <Specify typical arguments passed>
 !  Input Files:
 !        <list file names and briefly describe the data they include>
 !  Output Files:
 !        <list file names and briefly describe the information they include>
-!
+! 
 !  Condition codes:
 !        <list exit condition or error codes returned >
 !        If appropriate, descriptive troubleshooting instructions or
 !        likely causes for failures could be mentioned here with the
 !        appropriate error code
-!
+! 
 !  User controllable options: <if applicable>
 
 MODULE module_channel_routing
 #ifdef MPP_LAND
   USE module_mpp_land
-  use MODULE_mpp_ReachLS, only : updatelinkv,                   &
+  use MODULE_mpp_ReachLS, only : updatelinkv,                   & 
                                  ReachLS_write_io, gbcastvalue, &
                                  gbcastreal2
 
@@ -40,7 +40,7 @@ MODULE module_channel_routing
 !--local variables
         REAL    :: C1, C2, C3
         REAL    :: Km         !K travel time in hrs in reach
-        REAL    :: X          !weighting factors 0<=X<=0.5
+        REAL    :: X          !weighting factors 0<=X<=0.5 
         REAL    :: dt         !routing period in hrs
         REAL    :: avgbf      !average base flow for initial condition
         REAL    :: qup        !inflow from previous timestep
@@ -81,7 +81,7 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
     real, intent(IN)    :: oe      ! orifice elevation
     real, intent(IN)    :: oc      ! orifice coeff.
     real, intent(IN)    :: oa      ! orifice area (m^2)
-    real, intent(IN)    :: maxh    ! max depth of reservoir before overtop (m)
+    real, intent(IN)    :: maxh    ! max depth of reservoir before overtop (m)                     
     integer, intent(IN) :: ln      ! lake number
 
     !!DJG Add lake option switch here...move up to namelist in future versions...
@@ -103,27 +103,27 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
     !future versions...
     LAKE_OPT = 2
     Htmp = H   !temporary set of incoming lake water elevation...
-
-
+    
+    
     !!DJG IF-block for lake model option  1 - outflow=inflow, 2 - Chow et al level
     !pool, .....
     if (LAKE_OPT.eq.1) then     ! If-block for simple pass through scheme....
-
-       qo1 = qi1                 ! Set outflow equal to inflow at current time
+       
+       qo1 = qi1                 ! Set outflow equal to inflow at current time      
        H = Htmp                  ! Set new lake water elevation to incoming lake el.
-
+       
     else if (LAKE_OPT.eq.2) then   ! If-block for Chow et al level pool scheme
-
+ 
     It = qi0
     Itdt_3   = (qi0 + (qi1 + ql))/3
     Itdt_2_3 = (qi0 + (qi1 + ql))/3 + Itdt_3
-    maxWeirDepth =  maxh - we
+    maxWeirDepth =  maxh - we   
 
     !-- determine Q(dh) from elevation-discharge relationship
     !-- and dh1
     dh = H - we
-    if (dh .gt. maxWeirDepth) then
-       dh = maxWeirDepth
+    if (dh .gt. maxWeirDepth) then 
+       dh = maxWeirDepth 
     endif
 
     if (dh .gt. 0.0 ) then              !! orifice and overtop discharge
@@ -145,7 +145,7 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
         sap = ar * 1.0E6
     endif
 
-    if (sap .gt. 0) then
+    if (sap .gt. 0) then 
       dh1 = ((It - discharge)/sap)*dt
     else
       dh1 = 0.0
@@ -154,16 +154,16 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
     !-- determine Q(H + dh1/3) from elevation-discharge relationship
     !-- dh2
     dh = (H+dh1/3) - we
-    if (dh .gt. maxWeirDepth) then
-       dh = maxWeirDepth
+    if (dh .gt. maxWeirDepth) then 
+       dh = maxWeirDepth 
     endif
 
     if (dh .gt. 0.0 ) then              !! orifice and overtop discharge
         tmp1 = oc * oa * sqrt(2 * 9.81 * ( H - oe ) )
-        tmp2 = wc * wl * (dh ** 2./3.)
+        tmp2 = wc * wl * (dh ** 2./3.) 
         discharge = tmp1 + tmp2
 
-        if (H .gt. 0.0) then
+        if (H .gt. 0.0) then 
          sap = (ar * 1.0E6 ) * (1 + (H - we) / H)
         else
          sap  = 0.0
@@ -177,7 +177,7 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
         sap = ar * 1.0E6
     endif
 
-    if (sap .gt. 0.0) then
+    if (sap .gt. 0.0) then 
      dh2 = ((Itdt_3 - discharge)/sap)*dt
     else
      dh2 = 0.0
@@ -186,20 +186,20 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
     !-- determine Q(H + 2/3 dh2) from elevation-discharge relationship
     !-- dh3
     dh = (H + (0.667*dh2)) - we
-    if (dh .gt. maxWeirDepth) then
-       dh = maxWeirDepth
+    if (dh .gt. maxWeirDepth) then 
+       dh = maxWeirDepth 
     endif
 
     if (dh .gt. 0.0 ) then              !! orifice and overtop discharge
         tmp1 = oc * oa * sqrt(2 * 9.81 * ( H - oe ) )
-        tmp2 = wc * wl * (dh ** 2./3.)
+        tmp2 = wc * wl * (dh ** 2./3.) 
         discharge = tmp1 + tmp2
 
         if (H .gt. 0.0) then
          sap = (ar * 1.0E6 ) * (1 + (H - we) / H)
         else
          sap = 0.0
-        endif
+        endif 
 
     else if ( H .gt. oe ) then     !! only orifice flow,not full
         discharge = oc * oa * sqrt(2 * 9.81 * ( H - oe ) )
@@ -208,8 +208,8 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
         discharge = 0.0
         sap = ar * 1.0E6
     endif
-
-    if (sap .gt. 0.0) then
+    
+    if (sap .gt. 0.0) then 
       dh3 = ((Itdt_2_3 - discharge)/sap)*dt
     else
       dh3 = 0.0
@@ -221,15 +221,15 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
 
     !-- compute final discharge
     dh = H - we
-    if (dh .gt. maxWeirDepth) then
-       dh = maxWeirDepth
+    if (dh .gt. maxWeirDepth) then 
+       dh = maxWeirDepth 
     endif
     if (dh .gt. 0.0 ) then              !! orifice and overtop discharge
         tmp1 = oc * oa * sqrt(2 * 9.81 * ( H - oe ) )
         tmp2 = wc * wl * (dh ** 2./3.)
         discharge = tmp1 + tmp2
 
-        if (H .gt. 0.0) then
+        if (H .gt. 0.0) then 
          sap = (ar * 1.0E6 ) * (1 + (H - we) / H)
         else
          sap = 0.0
@@ -253,10 +253,10 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
 23 format('botof H dh orf wr Q',f8.4,2x,f8.4,2x,f8.3,2x,f8.3,2x,f8.2)
 24 format('ofonl H dh sap Q ',f8.4,2x,f8.4,2x,f8.0,2x,f8.2)
 
-
+ 
      ELSE   ! ELSE for LAKE_OPT....
      ENDIF  ! ENDIF for LAKE_OPT....
-
+ 
   RETURN
 
 ! ----------------------------------------------------------------
@@ -284,7 +284,7 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
         REAL    :: Ku,Kd      !-upstream and downstream conveyance
         REAL    :: Kf         !-final face conveyance
         REAL    :: Sf         !-friction slope
-        REAL    :: sgn        !-0 or 1
+        REAL    :: sgn        !-0 or 1 
         INTEGER :: nod         !- node
         REAL ::  z20, dzx
 
@@ -292,15 +292,15 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
 
         dzx = (z1 - z20)/dx
         if(dzx .lt. 0.002) then
-           z2 = z1 - dx*0.002
+           z2 = z1 - dx*0.002  
         else
            z2 = z20
         endif
-!end
+!end 
 
         if (n.le.0.0.or.Cs.le.0.or.Bw.le.0) then
          print *, "Error in Diffusion function ->channel coefficients"
-         print *, "nod, n, Cs, Bw", nod, n, Cs, Bw
+         print *, "nod, n, Cs, Bw", nod, n, Cs, Bw 
          call hydro_stop("In DIFFUSION() - Error channel coefficients.")
         endif
 
@@ -325,7 +325,7 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
         sgn = SGNf(Sf)             !-- establish sign
 
         w = 0.5*(sgn + 1.)         !-- compute upstream or downstream weighting
-
+        
         z = 1/Cs                   !--channel side distance (m)
         R = ((Bw+z*h1)*h1)/(Bw+2*h1*sqrt(1+z*z)) !-- Hyd Radius
         AREA = (Bw+z*h1)*h1        !-- Flow area
@@ -335,7 +335,7 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
         AREA = (Bw+z*h2)*h2        !-- Flow area
         Kd = (1/n)*(R**(2./3.))*AREA     !-- convenyance
 
-        Kf =  (1-w)*Kd + w*Ku      !-- conveyance
+        Kf =  (1-w)*Kd + w*Ku      !-- conveyance 
         DIFFUSION = Kf * sqrt(abs(Sf))*sgn
 
 
@@ -419,10 +419,10 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
 
         c = 0.52    !-- coefficnets for finding dx/Ckdt
         b = 1.15
-
-        if(Cs .eq.0) then
-         z = 1.0
-        else
+        
+        if(Cs .eq.0) then 
+         z = 1.0 
+        else 
          z = 1/Cs              !channel side distance (m)
         endif
 
@@ -437,9 +437,9 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
         maxiter = 0
         a = 0.0
 
-        if ((quc+ql) .lt. 100) then
-          b=5
-        else
+        if ((quc+ql) .lt. 100) then 
+          b=5 
+        else 
          b= 20
         endif
 
@@ -448,101 +448,101 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
         h_0  = 0.0       !- lower interval
         Qj_0 = 0.0       !- initial flow of lower interval
 
-        do while ((error .gt. 0.05 .and. maxiter .le. 100 .and. h .gt. 0.01))
+        do while ((error .gt. 0.05 .and. maxiter .le. 100 .and. h .gt. 0.01))  
 
           !----- lower interval  --------------------
            Tw = Bw + 2*z*h_0                    !--top width of the channel inflow
            Ck = (sqrt(So)/n)*(5./3.)*(h_0**0.667)   !-- pg 287 Chow, Mdt, Mays
            if(Ck .gt. 0.0) then
              Km = dx/Ck                       !-- seconds Muskingum Param
-             if(Km .lt. dt) then
+             if(Km .lt. dt) then           
                Km = dt
              endif
-           else
+           else 
              Km = dt
            endif
-
-           if(Tw*So*Ck*dx .eq. 0.0) then
+ 
+           if(Tw*So*Ck*dx .eq. 0.0) then 
              X = 0.25
            else
              X = 0.5-(Qj_0/(2*Tw*So*Ck*dx))
            endif
-
-           if(X .le. 0.0) then
+  
+           if(X .le. 0.0) then 
              X = 0.25
            elseif(X .gt. 0.35) then
              X = 0.35
            endif
-
+  
            D = (Km*(1 - X) + dt/2)              !--seconds
-            if(D .eq. 0.0) then
+            if(D .eq. 0.0) then 
               print *, "FATAL ERROR: D is 0 in MUSKINGCUNGE", Km, X, dt,D
               call hydro_stop("In MUSKINGCUNGE() - D is 0.")
-           endif
-
+           endif 
+  
            C1 =  (Km*X + dt/2)/D
            C2 =  (dt/2 - Km*X)/D
            C3 =  (Km*(1-X)-dt/2)/D
            C4 =  (ql*dt)/D                       !-- ql already multipled by the dx length
 
-           if(h_0 .le. 0.0) then
+           if(h_0 .le. 0.0) then 
              AREA= 0.0
              WP = 0.0
            else
             AREA = (Bw * h_0 + z * (h_0*h_0) )
             WP   = (Bw * h_0 + z * (h_0*h_0)) / (Bw + 2 * h_0 * sqrt(1+z*z))
            endif
-
-           if(WP .le. 0.0) then
+           
+           if(WP .le. 0.0) then 
               Qj_0 =  ((C1*qup)+(C2*quc)+(C3*qdp) + C4)
-           else
+           else 
               Qj_0 =  ((C1*qup)+(C2*quc)+(C3*qdp) + C4) - ((1/n) * AREA * (WP**(2./3.)) * sqrt(So)) !f(x)
            endif
-
+           
            !--upper interval -----------
            Tw = Bw + 2*z*h                    !--top width of the channel inflow
            Ck = (sqrt(So)/n)*(5./3.)*(h**0.667)   !-- pg 287 Chow, Mdt, Mays
            if(Ck .gt. 0.0) then
              Km = dx/Ck                       !-- seconds Muskingum Param
-             if(Km .lt. dt) then
+             if(Km .lt. dt) then           
                Km = dt
              endif
-           else
+           else 
              Km = dt
            endif
-
-           if(Tw*So*Ck*dx .eq. 0.0) then
+ 
+           if(Tw*So*Ck*dx .eq. 0.0) then 
              X = 0.25
            else
              X = 0.5-(((C1*qup)+(C2*quc)+(C3*qdp) + C4)/(2*Tw*So*Ck*dx))
            endif
-
-           if(X .le. 0.0) then
+  
+           if(X .le. 0.0) then 
              X = 0.25
            elseif(X .gt. 0.35) then
              X = 0.35
            endif
-
+  
            D = (Km*(1 - X) + dt/2)              !--seconds
-            if(D .eq. 0.0) then
+            if(D .eq. 0.0) then 
               print *, "FATAL ERROR: D is 0 in MUSKINGCUNGE", Km, X, dt,D
               call hydro_stop("In MUSKINGCUNGE() - D is 0.")
-           endif
-
+           endif 
+  
            C1 =  (Km*X + dt/2)/D
            C2 =  (dt/2 - Km*X)/D
            C3 =  (Km*(1-X)-dt/2)/D
            C4 =  (ql*dt)/D                       !-- ql already multipled by the dx length
 
-           if(h .le. 0) then
+           if(h .le. 0) then 
             AREA = 0.0
             WP   = 0.0
            else
             AREA = (Bw * h + z * (h*h) )
             WP   = (Bw * h + z * (h*h)) / (Bw + 2 * h * sqrt(1+z*z))
-           endif
-
-           if(WP .le. 0.0) then
+           endif 
+           
+           if(WP .le. 0.0) then 
              Qj =  ((C1*qup)+(C2*quc)+(C3*qdp) + C4)
            else
              Qj =  ((C1*qup)+(C2*quc)+(C3*qdp) + C4) -((1/n) * AREA * (WP**(2./3.)) * sqrt(So))
@@ -559,17 +559,17 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
 
            error = abs((h_1 - h)/h) !error is new estatimate and 2nd estimate
 
-!           if(idx .eq. 626) then
+!           if(idx .eq. 626) then 
 !             write(6,*) h_0,h,h_1,error
 !           endif
 
-           h_0  = h
+           h_0  = h 
            h    = h_1
            maxiter = maxiter + 1
 
       end do
 
-      if((maxiter .ge. 100 .and. error .gt. 0.05) .or. h .gt. 100) then
+      if((maxiter .ge. 100 .and. error .gt. 0.05) .or. h .gt. 100) then 
 
          print*, "WARNING:"
          print*, "id,err,iters,h", idx, error, maxiter, h
@@ -581,11 +581,11 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
          endif
       endif
 
-!      if(idx .eq. 626) then
+!      if(idx .eq. 626) then 
 !         write(6,*) ((C1*qup)+(C2*quc)+(C3*qdp) + C4) !-- pg 295 Bedient huber
 !      endif
 
-!     MUSKINGCUNGE =  h
+!     MUSKINGCUNGE =  h 
 !yw      MUSKINGCUNGE =  ((C1*qup)+(C2*quc)+(C3*qdp) + C4) !-- pg 295 Bedient huber
 
 !yw added for test
@@ -676,10 +676,10 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
 
         c = 0.52    !-- coefficnets for finding dx/Ckdt
         b = 1.15
-
-        if(Cs .eq.0) then
-         z = 1.0
-        else
+        
+        if(Cs .eq.0) then 
+         z = 1.0 
+        else 
          z = 1/Cs              !channel side distance (m)
         endif
 
@@ -694,9 +694,9 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
         maxiter = 0
         a = 0.0
 
-        if ((quc+ql) .lt. 100) then
-          b=5
-        else
+        if ((quc+ql) .lt. 100) then 
+          b=5 
+        else 
          b= 20
         endif
 
@@ -705,101 +705,101 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
         h_0  = 0.0       !- lower interval
         Qj_0 = 0.0       !- initial flow of lower interval
 
-        do while ((error .gt. 0.05 .and. maxiter .le. 100 .and. h .gt. 0.01))
+        do while ((error .gt. 0.05 .and. maxiter .le. 100 .and. h .gt. 0.01))  
 
           !----- lower interval  --------------------
            Tw = Bw + 2*z*h_0                    !--top width of the channel inflow
            Ck = (sqrt(So)/n)*(5./3.)*(h_0**0.667)   !-- pg 287 Chow, Mdt, Mays
            if(Ck .gt. 0.0) then
              Km = dx/Ck                       !-- seconds Muskingum Param
-             if(Km .lt. dt) then
+             if(Km .lt. dt) then           
                Km = dt
              endif
-           else
+           else 
              Km = dt
            endif
-
-           if(Tw*So*Ck*dx .eq. 0.0) then
+ 
+           if(Tw*So*Ck*dx .eq. 0.0) then 
              X = 0.25
            else
              X = 0.5-(Qj_0/(2*Tw*So*Ck*dx))
            endif
-
-           if(X .le. 0.0) then
+  
+           if(X .le. 0.0) then 
              X = 0.25
            elseif(X .gt. 0.35) then
              X = 0.35
            endif
-
+  
            D = (Km*(1 - X) + dt/2)              !--seconds
-            if(D .eq. 0.0) then
+            if(D .eq. 0.0) then 
               print *, "FATAL ERROR: D is 0 in MUSKINGCUNGE", Km, X, dt,D
               call hydro_stop("In MUSKINGCUNGE() - D is 0.")
-           endif
-
+           endif 
+  
            C1 =  (Km*X + dt/2)/D
            C2 =  (dt/2 - Km*X)/D
            C3 =  (Km*(1-X)-dt/2)/D
            C4 =  (ql*dt)/D                       !-- ql already multipled by the dx length
 
-           if(h_0 .le. 0.0) then
+           if(h_0 .le. 0.0) then 
              AREA= 0.0
              WP = 0.0
            else
             AREA = (Bw * h_0 + z * (h_0*h_0) )
             WP   = (Bw * h_0 + z * (h_0*h_0)) / (Bw + 2 * h_0 * sqrt(1+z*z))
            endif
-
-           if(WP .le. 0.0) then
+           
+           if(WP .le. 0.0) then 
               Qj_0 =  ((C1*qup)+(C2*quc)+(C3*qdp) + C4)
-           else
+           else 
               Qj_0 =  ((C1*qup)+(C2*quc)+(C3*qdp) + C4) - ((1/n) * AREA * (WP**(2./3.)) * sqrt(So)) !f(x)
            endif
-
+           
            !--upper interval -----------
            Tw = Bw + 2*z*h                    !--top width of the channel inflow
            Ck = (sqrt(So)/n)*(5./3.)*(h**0.667)   !-- pg 287 Chow, Mdt, Mays
            if(Ck .gt. 0.0) then
              Km = dx/Ck                       !-- seconds Muskingum Param
-             if(Km .lt. dt) then
+             if(Km .lt. dt) then           
                Km = dt
              endif
-           else
+           else 
              Km = dt
            endif
-
-           if(Tw*So*Ck*dx .eq. 0.0) then
+ 
+           if(Tw*So*Ck*dx .eq. 0.0) then 
              X = 0.25
            else
              X = 0.5-(((C1*qup)+(C2*quc)+(C3*qdp) + C4)/(2*Tw*So*Ck*dx))
            endif
-
-           if(X .le. 0.0) then
+  
+           if(X .le. 0.0) then 
              X = 0.25
            elseif(X .gt. 0.35) then
              X = 0.35
            endif
-
+  
            D = (Km*(1 - X) + dt/2)              !--seconds
-            if(D .eq. 0.0) then
+            if(D .eq. 0.0) then 
               print *, "FATAL ERROR: D is 0 in MUSKINGCUNGE", Km, X, dt,D
               call hydro_stop("In MUSKINGCUNGE() - D is 0.")
-           endif
-
+           endif 
+  
            C1 =  (Km*X + dt/2)/D
            C2 =  (dt/2 - Km*X)/D
            C3 =  (Km*(1-X)-dt/2)/D
            C4 =  (ql*dt)/D                       !-- ql already multipled by the dx length
 
-           if(h .le. 0) then
+           if(h .le. 0) then 
             AREA = 0.0
             WP   = 0.0
            else
             AREA = (Bw * h + z * (h*h) )
             WP   = (Bw * h + z * (h*h)) / (Bw + 2 * h * sqrt(1+z*z))
-           endif
-
-           if(WP .le. 0.0) then
+           endif 
+           
+           if(WP .le. 0.0) then 
              Qj =  ((C1*qup)+(C2*quc)+(C3*qdp) + C4)
            else
              Qj =  ((C1*qup)+(C2*quc)+(C3*qdp) + C4) -((1/n) * AREA * (WP**(2./3.)) * sqrt(So))
@@ -816,17 +816,17 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
 
            error = abs((h_1 - h)/h) !error is new estatimate and 2nd estimate
 
-!           if(idx .eq. 626) then
+!           if(idx .eq. 626) then 
 !             write(6,*) h_0,h,h_1,error
 !           endif
 
-           h_0  = h
+           h_0  = h 
            h    = h_1
            maxiter = maxiter + 1
 
       end do
 
-      if((maxiter .ge. 100 .and. error .gt. 0.05) .or. h .gt. 100) then
+      if((maxiter .ge. 100 .and. error .gt. 0.05) .or. h .gt. 100) then 
 
          print*, "WARNING:"
          print*, "id,err,iters,h", idx, error, maxiter, h
@@ -850,7 +850,7 @@ SUBROUTINE LEVELPOOL(ln,qi0,qi1,qo1,ql,dt,H,ar,we,maxh,wc,wl,oe,oc,oa)
       endif
 
       Tw = Bw + (2*z*h)
-      R = (h*(Bw + Tw) / 2) / (Bw + 2*(((Tw - Bw) / 2)**2 + h**2)**0.5)
+      R = (h*(Bw + Tw) / 2) / (Bw + 2*(((Tw - Bw) / 2)**2 + h**2)**0.5)    
       vel =  (1./n) * (R **(2./3.)) * sqrt(So)  ! average velocity in m/s
 
 ! ----------------------------------------------------------------
@@ -866,10 +866,10 @@ END SUBROUTINE SUBMUSKINGCUNGE
 	IMPLICIT NONE
 
 ! -------- DECLARATIONS -----------------------
-
+ 
 !	REAL, INTENT(OUT), DIMENSION(IXRT,JXRT)	:: OVRGH
 
-        KINEMATIC = 1
+        KINEMATIC = 1       
 !----------------------------------------------------------------
   END FUNCTION KINEMATIC
 !----------------------------------------------------------------
@@ -888,7 +888,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
        ORIFICEE, ZELEV, CVOL, NLAKES, QLAKEI, QLAKEO, LAKENODE, &
        dist, QINFLOWBASE, CHANXI, CHANYJ, channel_option, RETDEP_CHAN, &
        NLINKSL, LINKID, node_area  &
-#ifdef MPP_LAND
+#ifdef MPP_LAND 
        , lake_index,link_location,mpp_nlinks,nlinks_index,yw_mpp_nlinks  &
        , LNLINKSL, LLINKID  &
        , gtoNode,toNodeInd,nToNodeInd &
@@ -940,7 +940,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
         REAL                                      :: RETDEP_CHAN
         INTEGER, INTENT(IN)                       :: MAXORDER, SUBRTSWCRT, &
                                                      gwBaseSwCRT, gwChanCondSw
-        real, intent(in)                          :: gwChanCondConstIn, gwChanCondConstOut ! aquifer-channel conductivity constant from namelist
+        real, intent(in)                          :: gwChanCondConstIn, gwChanCondConstOut ! aquifer-channel conductivity constant from namelist                                             
         REAL , INTENT(IN), DIMENSION(NLINKS)   :: node_area
 
 !DJG GW-chan coupling variables...
@@ -949,7 +949,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
         REAL, DIMENSION(IXRT,JXRT)                :: ZWATTBLRT          !DJG !!! Match with subsfce/gw routing & Change 'INTENT' to 'INOUT' when ready to update groundwater state...
         REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: gwHead            !DJG !!! groundwater head from Fersch-2d gw implementation...units (m ASL)
         REAL, INTENT(INOUT), DIMENSION(IXRT,JXRT) :: qgw_chanrt         !DJG !!! Channel-gw flux as used in Fersch 2d gw implementation...units (m^3/s)...Change 'INTENT' to 'OUT' when ready to update groundwater state...
-
+         
 
 
         !-- lake params
@@ -1003,12 +1003,12 @@ END SUBROUTINE SUBMUSKINGCUNGE
 #endif
         integer flag
 
-        integer :: n, kk2, nt, nsteps  ! tmp
+        integer :: n, kk2, nt, nsteps  ! tmp 
 
         QLAKEIP = 0
         HLINKTMP = 0
         CVOLTMP = 0
-        CD = 0
+        CD = 0  
         node = 1
         QLateral = 0
         QSUM     = 0
@@ -1016,7 +1016,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
 
 
 !yw      print *, "DRIVE_channel,option,nlinkl,nlinks!!", channel_option,NLINKSL,NLINKS
-
+         
       dzGwChanHead = 0.
 
    IF(channel_option .ne. 3) then   !--muskingum methods ROUTE ON DT timestep, not DTRT!!
@@ -1035,7 +1035,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
                    ) ) then
                   if (CH_LNKRT_SL(CHANXI(jj),CHANYJ(jj)) .gt. 0) then
                      k = CH_LNKRT_SL(CHANXI(jj),CHANYJ(jj))
-                     LQLateral(k) = LQLateral(k)+((QSTRMVOLRT(CHANXI(jj),CHANYJ(jj))+QINFLOWBASE(CHANXI(jj),CHANYJ(jj)))/1000 &
+                     LQLateral(k) = LQLateral(k)+((QSTRMVOLRT(CHANXI(jj),CHANYJ(jj))+QINFLOWBASE(CHANXI(jj),CHANYJ(jj)))/1000 & 
                             *node_area(jj)/DT)
                   elseif ( (LAKE_MSKRT(CHANXI(jj),CHANYJ(jj)) .gt. 0)) then !-lake grid
                       k = LAKE_MSKRT(CHANXI(jj),CHANYJ(jj))
@@ -1056,13 +1056,13 @@ END SUBROUTINE SUBMUSKINGCUNGE
 
                   if (CH_LNKRT_SL(CHANXI(jj),CHANYJ(jj)) .gt. 0 ) then
                      k = CH_LNKRT_SL(CHANXI(jj),CHANYJ(jj))
-                     LQLateral(k) = LQLateral(k)+((QSTRMVOLRT(CHANXI(jj),CHANYJ(jj))+QINFLOWBASE(CHANXI(jj),CHANYJ(jj)))/1000 &
+                     LQLateral(k) = LQLateral(k)+((QSTRMVOLRT(CHANXI(jj),CHANYJ(jj))+QINFLOWBASE(CHANXI(jj),CHANYJ(jj)))/1000 & 
                             *node_area(jj)/DT)
                   elseif ( (LAKE_MSKRT(CHANXI(jj),CHANYJ(jj)) .gt. 0)) then !-lake grid
                       k = LAKE_MSKRT(CHANXI(jj),CHANYJ(jj))
                       LQLateral(k) = LQLateral(k) +((LAKEINFLORT(CHANXI(jj),CHANYJ(jj))+QINFLOWBASE(CHANXI(jj),CHANYJ(jj)))/1000 &
                                *node_area(jj)/DT)
-                  endif
+                  endif   
 
           end do  ! jj
           QLateral = LQLateral
@@ -1072,7 +1072,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
 
    do nt = 1, nsteps
 
-
+ 
 !----------  route order 1 reaches which have no upstream inflow
         do k=1, NLINKSL
            if (ORDER(k) .eq. 1) then  !-- first order stream has no headflow
@@ -1099,7 +1099,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
 
               else
                   print *, "FATAL ERROR: No channel option selected"
-                  call hydro_stop("In drive_CHANNEL() -No channel option selected ")
+                  call hydro_stop("In drive_CHANNEL() -No channel option selected ") 
               endif
            endif
         end do
@@ -1113,7 +1113,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
       !---------- route other reaches, with upstream inflow
        tmpQlink = 0
        do k = 1,NLINKSL
-          if (ORDER(k) .gt. 1 ) then  !-- exclude first order stream
+          if (ORDER(k) .gt. 1 ) then  !-- exclude first order stream 
              Quc  = 0
              Qup  = 0
 
@@ -1141,7 +1141,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
                   endif
                end do ! do m
 #endif
-
+                   
                 if(TYPEL(k) .eq. 1) then   !--link is a reservoir
 
                    ! CALL LEVELPOOL(1,QLINK(k,1), Qup, QLINK(k,1), QLINK(k,2), &
@@ -1151,7 +1151,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
                    elseif (channel_option .eq. 1) then  !muskingum routing
                        Km = MUSK(k)
                        X = MUSX(k)
-                       tmpQLINK(k,2) = MUSKING(k,Qup,(Quc+QLateral(k)),QLINK(k,1),DTRT_CH,Km,X) !upstream plust lateral inflow
+                       tmpQLINK(k,2) = MUSKING(k,Qup,(Quc+QLateral(k)),QLINK(k,1),DTRT_CH,Km,X) !upstream plust lateral inflow 
                    elseif (channel_option .eq. 2) then ! muskingum cunge
 
                     !HLINK(k) =   MUSKINGCUNGE(k,Qup, Quc, QLINK(k,1), &
@@ -1165,7 +1165,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
 
                    else
                     print *, "FATAL ERROR: no channel option selected"
-                    call hydro_stop("In drive_CHANNEL() - no channel option selected")
+                    call hydro_stop("In drive_CHANNEL() - no channel option selected") 
                    endif
             endif !!! order(1) .ne. 1
          end do       !--k links
@@ -1188,7 +1188,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
             QLINK(k,1) = QLINK(k,2)    !assing link flow of current to be previous for next time step
          end do
 
-!#ifdef MPP_LAND
+!#ifdef MPP_LAND 
 !         call ReachLS_write_io(QLINK(:,2),buf1)
 !         if(my_id .eq. IO_id) write(73,*) buf1
 !#else
@@ -1213,7 +1213,7 @@ END SUBROUTINE SUBMUSKINGCUNGE
          KRT = 0                  !-- initialize the time counter
          minDTCT = 0.01           ! define minimum routing sub-timestep (s), simulation will end with smaller timestep
          DTCT = min(max(DTCT*2.0, minDTCT),DTRT_CH)
-
+       
          HLINKTMP = HLINK         !-- temporary storage of the water elevations (m)
          CVOLTMP = CVOL           !-- temporary storage of the volume of water in channel (m^3)
          QLAKEIP = QLAKEI         !-- temporary lake inflow from previous timestep  (cms)
@@ -1223,69 +1223,69 @@ END SUBROUTINE SUBMUSKINGCUNGE
  crnt:    DO                      !-- loop on the courant condition
          QSUM   = 0              !-- initialize the total flow out of each cell to zero
          QLAKEI = 0              !-- set the lake inflow as zero
-         QLLAKE = 0              !-- initialize each lake's lateral inflow to zero
+         QLLAKE = 0              !-- initialize each lake's lateral inflow to zero  
          DT_STEPS=INT(DT/DTCT)   !-- fix the timestep
-         QLateral = 0.
+         QLateral = 0. 
 !DJG GW-chan coupling variables...
          if(gwBaseSwCRT == 3) then
 	  Q_GW_CHAN_FLUX = 0.
 	  qgw_chanrt     = 0.
          end if
-
+         
 !         ZWATTBLRT=1.0   !--HARDWIRE, remove this and pass in from subsfc/gw routing routines...
 
 
 !-- vectorize
-!---------------------
+!--------------------- 
 #ifdef MPP_LAND
          DO iyw = 1,yw_MPP_NLINKS
          i = nlinks_index(iyw)
 #else
          DO i = 1,NLINKS
 #endif
-
+          
            if(node_area(i) .eq. 0) then
                write(6,*) "FATAL ERROR: node_area(i) is zero. i=", i
-               call hydro_stop("In drive_CHANNEL() - Error node_area")
+               call hydro_stop("In drive_CHANNEL() - Error node_area") 
            endif
 
-
+           
 
 nodeType:if((CH_NETRT(CHANXI(i), CHANYJ(i) ) .eq. 0) .and. &
               (LAKE_MSKRT(CHANXI(i),CHANYJ(i)) .lt.0) ) then !--a reg. node
-
+              
 gwOption:   if(gwBaseSwCRT == 3) then
 
              ! determine potential gradient between groundwater head and channel stage
              ! units in (m)
-             dzGwChanHead(i) = gwHead(CHANXI(i),CHANYJ(i)) - (HLINK(i)+ZELEV(i))
+             dzGwChanHead(i) = gwHead(CHANXI(i),CHANYJ(i)) - (HLINK(i)+ZELEV(i)) 
 
              if(gwChanCondSw .eq. 0) then
-
+	       
                 qgw_chanrt(CHANXI(i),CHANYJ(i)) = 0.
-
+	        
              else if(gwChanCondSw .eq. 1 .and. dzGwChanHead(i) > 0) then
-
+	       
 	       ! channel bed interface, units in (m^3/s), flux into channel...
 	       ! BF todo: consider channel width
                 qgw_chanrt(CHANXI(i),CHANYJ(i)) = gwChanCondConstIn * dzGwChanHead(i) &
-                                                * CHANLEN(i) * 2.
+                                                * CHANLEN(i) * 2. 
 
              else if(gwChanCondSw .eq. 1 .and. dzGwChanHead(i) < 0) then
-
+	       
 	       ! channel bed interface, units in (m^3/s), flux out of channel...
 	       ! BF todo: consider channel width
                 qgw_chanrt(CHANXI(i),CHANYJ(i)) = max(-0.005, gwChanCondConstOut * dzGwChanHead(i) &
                                                 * CHANLEN(i) * 2.)
 !              else if(gwChanCondSw .eq. 2 .and. dzGwChanHead(i) > 0) then  TBD: exponential dependency
 !              else if(gwChanCondSw .eq. 2 .and. dzGwChanHead(i) > 0) then
-
+	       
              else
-
+	       
 	        qgw_chanrt(CHANXI(i),CHANYJ(i)) = 0.
-
+	        
              end if
-
+             
              Q_GW_CHAN_FLUX(i) = qgw_chanrt(CHANXI(i),CHANYJ(i))
 !             if ( i .eq. 1001 ) then
 !                print *, Q_GW_CHAN_FLUX(i), dzGwChanHead(i), ELRT(CHANXI(i),CHANYJ(i)), HLINK(i), ZELEV(i)
@@ -1294,7 +1294,7 @@ gwOption:   if(gwBaseSwCRT == 3) then
 !                 Q_GW_CHAN_FLUX(i) = 0.
 ! 	        qgw_chanrt(CHANXI(i),CHANYJ(i)) = 0.
 !              end if
-
+            
             else
 	      Q_GW_CHAN_FLUX(i) = 0.
 	    end if gwOption
@@ -1345,7 +1345,7 @@ gwOption:   if(gwBaseSwCRT == 3) then
 #else
            DO i = 1,NLINKS
 #endif
-           if (TYPEL(i) .eq. 0 .AND. HLINKTMP(FROM_NODE(i)) .gt. RETDEP_CHAN) then
+           if (TYPEL(i) .eq. 0 .AND. HLINKTMP(FROM_NODE(i)) .gt. RETDEP_CHAN) then 
                if(from_node(i) .ne. to_node(i) .and. (to_node(i) .gt. 0) .and.(from_node(i) .gt. 0) ) &  ! added by Wei Yu
                    QLINK(i,1)=DIFFUSION(i,ZELEV(FROM_NODE(i)),ZELEV(TO_NODE(i)), &
                      HLINKTMP(FROM_NODE(i)),HLINKTMP(TO_NODE(i)), &
@@ -1358,7 +1358,7 @@ gwOption:   if(gwBaseSwCRT == 3) then
 #ifdef MPP_LAND
     call MPP_CHANNEL_COM_REAL(Link_location,ixrt,jxrt,QLINK(:,1),NLINKS,99)
 #endif
-
+ 
 
           !-- compute total flow across face, into node
 #ifdef MPP_LAND
@@ -1400,8 +1400,8 @@ gwOption:   if(gwBaseSwCRT == 3) then
 #else
           DO i = 1, NLINKS                                                !--- compute volume and depth at each node
 #endif
-
-           if( TYPEL(i).eq.0 .and. CVOLTMP(i) .ge. 0.001 .and.(CVOLTMP(i)-QSUM(i)*DTCT)/CVOLTMP(i) .le. -0.01 ) then
+ 
+           if( TYPEL(i).eq.0 .and. CVOLTMP(i) .ge. 0.001 .and.(CVOLTMP(i)-QSUM(i)*DTCT)/CVOLTMP(i) .le. -0.01 ) then  
             flag = -99
 #ifdef HYDRO_D
             write(6,*) "******* start diag ***************"
@@ -1418,10 +1418,10 @@ gwOption:   if(gwBaseSwCRT == 3) then
                write(6,*) "CHANLEN(i), MannN(i), Bw(i), ChSSlp(i) ", CHANLEN(i), MannN(i), Bw(i), ChSSlp(i)
             write(6,*) "*******end of  diag ***************"
 #endif
-
-            goto 999
-            endif
-          enddo
+            
+            goto 999  
+            endif 
+          enddo 
 
 999 continue
 #ifdef MPP_LAND
@@ -1429,8 +1429,8 @@ gwOption:   if(gwBaseSwCRT == 3) then
 #endif
 
 
-        if(flag < 0  .and. DTCT >0.1)   then
-
+        if(flag < 0  .and. DTCT >0.1)   then   
+             
              ! call smoth121(HLINK,nlinks,maxv_p,pnode,to_node)
 
              if(DTCT .gt. minDTCT) then                !-- timestep in seconds
@@ -1445,9 +1445,9 @@ gwOption:   if(gwBaseSwCRT == 3) then
               DTCT = 0.1
               HLINKTMP = HLINK                          !-- set head and volume to start values of timestep
               CVOLTMP  = CVOL
-              goto 998
+              goto 998  
              end if
-        endif
+        endif 
 
 998 continue
 
@@ -1458,18 +1458,18 @@ gwOption:   if(gwBaseSwCRT == 3) then
 #else
          DO i = 1, NLINKS                                                !--- compute volume and depth at each node
 #endif
-
+ 
             if(TYPEL(i) .eq. 0) then                   !--  regular channel grid point, compute volume
               CVOLTMP(i) = CVOLTMP(i) + (QSUM(i) + QLateral(i) )* DTCT
-              if((CVOLTMP(i) .lt. 0) .and. (gwChanCondSw == 0)) then
+              if((CVOLTMP(i) .lt. 0) .and. (gwChanCondSw == 0)) then 
 #ifdef HYDRO_D
                 print *, "WARNING! channel volume less than 0:i,CVOL,QSUM,QLat", &
                                i, CVOLTMP(i),QSUM(i),QLateral(i),HLINK(i)
 #endif
-                CVOLTMP(i) =0
+                CVOLTMP(i) =0 
               endif
 
-            elseif(TYPEL(i) .eq. 1) then               !-- pour point, critical depth downstream
+            elseif(TYPEL(i) .eq. 1) then               !-- pour point, critical depth downstream 
 
               if (QSUM(i)+QLateral(i) .lt. 0) then
               else
@@ -1478,7 +1478,7 @@ gwOption:   if(gwBaseSwCRT == 3) then
                   CD(i) = HLINKTMP(i)  !This is a temp hardwire for flow depth for the pour point...
                endif
 
-               ! change in volume is inflow, lateral flow, and outflow
+               ! change in volume is inflow, lateral flow, and outflow 
                !yw DIFFUSION(i,ZELEV(i),ZELEV(i)-(So(i)*DXRT),HLINKTMP(i), &
                    CVOLTMP(i) = CVOLTMP(i) + (QSUM(i) + QLateral(i) - &
                        DIFFUSION(i,ZELEV(i),ZELEV(i)-(So(i)*CHANLEN(i)),HLINKTMP(i), &
@@ -1492,7 +1492,7 @@ gwOption:   if(gwBaseSwCRT == 3) then
 !DJG remove to have const. flux b.c....    CD(i) =CRITICALDEPTH(i,abs(QSUM(i)+QLateral(i)), Bw(i), 1./ChSSlp(i))
                CD(i) = HLINKTMP(i)  !This is a temp hardwire for flow depth for the pour point...
               endif
-
+ 
               !-- compute volume in reach (m^3)
                    CVOLTMP(i) = CVOLTMP(i) + (QSUM(i) + QLateral(i) - &
                           DIFFUSION(i,ZELEV(i),ZELEV(i)-(So(i)*CHANLEN(i)),HLINKTMP(i), &
@@ -1502,14 +1502,14 @@ gwOption:   if(gwBaseSwCRT == 3) then
 
             else
               print *, "FATAL ERROR: This node does not have a type.. error TYPEL =", TYPEL(i)
-              call hydro_stop("In drive_CHANNEL() - error TYPEL")
+              call hydro_stop("In drive_CHANNEL() - error TYPEL") 
             endif
-
+           
            if(TYPEL(i) == 0) then !-- regular channel node, finalize head and flow
-            HLINKTMP(i) = HEAD(i, CVOLTMP(i)/CHANLEN(i),Bw(i),1/ChSSlp(i))  !--updated depth
+            HLINKTMP(i) = HEAD(i, CVOLTMP(i)/CHANLEN(i),Bw(i),1/ChSSlp(i))  !--updated depth 
            else
             HLINKTMP(i) = CD(i)  !!!   CRITICALDEPTH(i,QSUM(i)+QLateral(i), Bw(i), 1./ChSSlp(i)) !--critical depth is head
-           endif
+           endif 
 
            END DO  !--- done processing all the links
 
@@ -1521,13 +1521,13 @@ gwOption:   if(gwBaseSwCRT == 3) then
        call MPP_CHANNEL_COM_REAL(LAKE_MSKRT,ixrt,jxrt,QLAKEI,NLAKES,99)
     endif
     call MPP_CHANNEL_COM_REAL(Link_location,ixrt,jxrt,HLINKTMP,NLINKS,99)
-#endif
+#endif 
 !   call check_channel(83,CVOLTMP,1,nlinks)
 !   call check_channel(84,CD,1,nlinks)
 !   call check_channel(85,HLINKTMP,1,nlinks)
 !   call check_lake(86,QLAKEI,lake_index,nlakes)
 
-
+      
 
 
 
@@ -1575,12 +1575,12 @@ gwOption:   if(gwBaseSwCRT == 3) then
            IF(KRT .eq. DT_STEPS) EXIT crnt   !-- up to the maximum time in interval
 
           END DO crnt  !--- DTCT timestep of DT_STEPS
-
+ 
            HLINK = HLINKTMP                 !-- update head based on final solution in timestep
            CVOL  = CVOLTMP                  !-- update volume
         else                                !-- no channel option apparently selected
          print *, "FATAL ERROR: no channel option selected"
-         call hydro_stop("In drive_CHANNEL() - no channel option selected")
+         call hydro_stop("In drive_CHANNEL() - no channel option selected") 
         endif
 
 #ifdef HYDRO_D
@@ -1588,7 +1588,7 @@ gwOption:   if(gwBaseSwCRT == 3) then
 #endif
 
         if (KT .eq. 1) KT = KT + 1
-
+         
 
  END SUBROUTINE drive_CHANNEL
 ! ----------------------------------------------------------------
@@ -1604,16 +1604,16 @@ gwOption:   if(gwBaseSwCRT == 3) then
      REAL :: Q, Bw, z, h
        if(h .le. 0) then
          print *, "FATAL ERROR: head is zero, will get division by zero error"
-         call hydro_stop("In CDf() - head is zero")
+         call hydro_stop("In CDf() - head is zero") 
        else
        CDf = (Q/((Bw+z*h)*h))/(sqrt(9.81*(((Bw+z*h)*h)/(Bw+2*z*h))))-1  !--critical depth function
        endif
      END FUNCTION CDf
 
 !=======find flow depth in channel with bisection Chapra pg. 131
-    REAL FUNCTION HEAD(idx,AREA,Bw,z)  !-- find the water elevation given wetted area,
+    REAL FUNCTION HEAD(idx,AREA,Bw,z)  !-- find the water elevation given wetted area, 
                                          !--bottom widith and side channel.. index was for debuggin
-     REAL :: Bw,z,AREA,test
+     REAL :: Bw,z,AREA,test           
      REAL :: hl, hu, hr, hrold
      REAL :: fl, fr,error                !-- function evaluation
      INTEGER :: maxiter, idx
@@ -1623,18 +1623,18 @@ gwOption:   if(gwBaseSwCRT == 3) then
      hl = 0.00001   !-- minimum depth is small
      hu = 30.  !-- assume maximum depth is 30 meters
 
-    if (AREA .lt. 0.00001) then
+    if (AREA .lt. 0.00001) then 
      hr = 0.
     else
-      do while ((AREAf(AREA,BW,hl,z)*AREAf(AREA,BW,hu,z)).gt.0 .and. maxiter .lt. 100)
-       !-- allows for larger , smaller heads
+      do while ((AREAf(AREA,BW,hl,z)*AREAf(AREA,BW,hu,z)).gt.0 .and. maxiter .lt. 100) 
+       !-- allows for larger , smaller heads 
        if(AREA .lt. 1.) then
         hl=hl/2
        else
         hu = hu * 2
        endif
        maxiter = maxiter + 1
-
+        
       end do
 
       maxiter =0
@@ -1678,7 +1678,7 @@ gwOption:   if(gwBaseSwCRT == 3) then
      print *,"head, kd",  h1,Kd
 #endif
      MANNING = Kd
-
+     
      END FUNCTION MANNING
 
 !=======find flow depth in channel with bisection Chapra pg. 131
@@ -1701,7 +1701,7 @@ gwOption:   if(gwBaseSwCRT == 3) then
         print *, "interval won't work to find CD of lnk ", lnk
         print *, "Q, hl, hu", Q, hl, hu
         print *, "cd lwr, upr", CDf(Q,BW,hl,z), CDf(Q,BW,hu,z)
-        ! call hydro_stop("In CRITICALDEPTH()")
+        ! call hydro_stop("In CRITICALDEPTH()") 
         CRITICALDEPTH = -9999
         return
 #endif
@@ -1772,8 +1772,8 @@ gwOption:   if(gwBaseSwCRT == 3) then
                .and. dxl .gt. 10)  !-- don't let dxl get too small
       dxl = dxl/1.1
      end do
-
-
+     
+      
      fl = fnDXCDT(qp,Tw,So,Ck,dxl,dt)
      do while (error .gt. 0.0001 .and. maxiter < 1000)
         dxrold = dxr
@@ -1800,11 +1800,11 @@ gwOption:   if(gwBaseSwCRT == 3) then
      REAL FUNCTION fnDXCDT(qp,Tw,So,Ck,dx,dt) !-- function to help find sub-length for MK method
      REAL    :: qp,Tw,So,Ck,dx,dt,X
      REAL    :: c,b  !-- coefficients on dx/cdt log approximation function
-
+     
      c = 0.2407
      b = 1.16065
      X = 0.5-(qp/(2*Tw*So*Ck*dx))
-     if (X .le.0) then
+     if (X .le.0) then 
       fnDXCDT = -1 !0.115
      else
       fnDXCDT = (dx/(Ck*dt)) - (c*LOG(X)+b)  !-- this function needs to converge to 0
@@ -1814,7 +1814,7 @@ gwOption:   if(gwBaseSwCRT == 3) then
 
     subroutine check_lake(unit,cd,lake_index,nlakes)
          use module_RT_data, only: rt_domain
-         implicit none
+         implicit none 
          integer :: unit,nlakes,i,lake_index(nlakes)
          real cd(nlakes)
 #ifdef MPP_LAND
@@ -1830,7 +1830,7 @@ gwOption:   if(gwBaseSwCRT == 3) then
 #ifdef MPP_LAND
   USE module_mpp_land
 #endif
-         implicit none
+         implicit none 
          integer :: unit,nlinks,i, did
          real cd(nlinks)
 #ifdef MPP_LAND
@@ -1860,8 +1860,8 @@ gwOption:   if(gwBaseSwCRT == 3) then
               do i = 1, nlinks
                  to = to_node(i)
                  plen = from_node(i,1)
-                 if(plen .gt. 1) then
-                     do k = 1, plen-1
+                 if(plen .gt. 1) then 
+                     do k = 1, plen-1 
                          from = from_node(i,k+1)
                          if(to .gt. 0) then
                             vartmp(i) = vartmp(i)+0.25*(var(from)+2.*var(i)+var(to))
@@ -1878,7 +1878,7 @@ gwOption:   if(gwBaseSwCRT == 3) then
                          endif
                  endif
               end do
-              var = vartmp
+              var = vartmp 
         return
     end subroutine smoth121
 
@@ -1895,12 +1895,12 @@ gwOption:   if(gwBaseSwCRT == 3) then
         QINFLOWBASE, CHANXI, CHANYJ, channel_option,  &
         nlinks,NLINKSL, LINKID, node_area, qout_gwsubbas, &
         LAKEIDA, LAKEIDM, NLAKES, LAKEIDX, &
-#ifdef MPP_LAND
+#ifdef MPP_LAND 
         nlinks_index,mpp_nlinks,yw_mpp_nlinks, &
         LNLINKSL, &
         gtoNode,toNodeInd,nToNodeInd,   &
 #endif
-         CH_LNKRT_SL, landRunOff  &
+         CH_LNKRT_SL, landRunOff  & 
 #ifdef WRF_HYDRO_NUDGING
        , nudge &
 #endif
@@ -1912,10 +1912,10 @@ gwOption:   if(gwBaseSwCRT == 3) then
        use module_UDMAP, only: LNUMRSL, LUDRSL
 
 #ifdef WRF_HYDRO_NUDGING
-       use module_stream_nudging,  only: setup_stream_nudging,  &
+       use module_stream_nudging,  only: setup_stream_nudging,  & 
                                          nudge_term_all,        &
                                          nudgeWAdvance
-#endif
+#endif 
 
 
        IMPLICIT NONE
@@ -1947,7 +1947,7 @@ gwOption:   if(gwBaseSwCRT == 3) then
         real, intent(out),    dimension(:)    :: nudge
 #endif
         REAL, DIMENSION(:), intent(out)       :: QLateral, velocity !--lateral flow
-        real, dimension(:), intent(out)       :: accLndRunOff, accQLateral, accStrmvolrt, accBucket
+        real, dimension(:), intent(out)       :: accLndRunOff, accQLateral, accStrmvolrt, accBucket 
 
         REAL ,  DIMENSION(NLINKSL,2) :: tmpQLINK
         REAL, INTENT(IN)                          :: DT    !-- model timestep
@@ -2018,10 +2018,10 @@ gwOption:   if(gwBaseSwCRT == 3) then
 #endif
         integer flag
 
-        integer :: n, kk2, nt, nsteps  ! tmp
+        integer :: n, kk2, nt, nsteps  ! tmp 
         real, dimension(:) :: qout_gwsubbas
         real, allocatable,dimension(:) :: tmpQLAKEO, tmpQLAKEI, tmpRESHT
-
+  
 
         real, dimension(NLINKS) ::  lcLndRunOff, lcQLateral, lcStrmvolrt, lcBucket  ! local variables
 
@@ -2039,7 +2039,7 @@ gwOption:   if(gwBaseSwCRT == 3) then
 #endif
 
         QLAKEIP = 0
-        CD = 0
+        CD = 0  
         node = 1
         QLateral = 0
         QSUM     = 0
@@ -2048,7 +2048,7 @@ gwOption:   if(gwBaseSwCRT == 3) then
 
 #ifdef WRF_HYDRO_NUDGING
          !! Initialize nudging for the current timestep.
-         !! This establishes the data structure used to solve the nudges.
+         !! This establishes the data structure used to solve the nudges. 
          call setup_stream_nudging(0)  !! always zero b/c at beginning of hydro timestep
 #endif /* WRF_HYDRO_NUDGING */
 
@@ -2063,12 +2063,12 @@ gwOption:   if(gwBaseSwCRT == 3) then
     if(OVRTSWCRT .eq. 0)      then
         do k = 1, LNUMRSL
            ! get from land grid runoff
-             do m = 1, LUDRSL(k)%ncell
+             do m = 1, LUDRSL(k)%ncell  
                 ii =  LUDRSL(k)%cell_i(m)
                 jj =  LUDRSL(k)%cell_j(m)
-                LQLateral(k) = LQLateral(k)+landRunOff(ii,jj)*LUDRSL(k)%cellweight(m)/1000 &
+                LQLateral(k) = LQLateral(k)+landRunOff(ii,jj)*LUDRSL(k)%cellweight(m)/1000 & 
                               *LUDRSL(k)%cellArea(m)/DT
-                tmpLQLateral(k) = tmpLQLateral(k)+landRunOff(ii,jj)*LUDRSL(k)%cellweight(m)/1000 &
+                tmpLQLateral(k) = tmpLQLateral(k)+landRunOff(ii,jj)*LUDRSL(k)%cellweight(m)/1000 & 
                               *LUDRSL(k)%cellArea(m)/DT
              end do
         end do
@@ -2088,9 +2088,9 @@ gwOption:   if(gwBaseSwCRT == 3) then
               do m = 1, LUDRSL(k)%ngrids
                   ii =  LUDRSL(k)%grid_i(m)
                   jj =  LUDRSL(k)%grid_j(m)
-                  LQLateral(k) = LQLateral(k) + QSTRMVOLRT(ii,jj)*LUDRSL(k)%weight(m)/1000 &
+                  LQLateral(k) = LQLateral(k) + QSTRMVOLRT(ii,jj)*LUDRSL(k)%weight(m)/1000 & 
                           *LUDRSL(k)%nodeArea(m)/DT
-                  tmpLQLateral(k) = tmpLQLateral(k) + QSTRMVOLRT(ii,jj)*LUDRSL(k)%weight(m)/1000 &
+                  tmpLQLateral(k) = tmpLQLateral(k) + QSTRMVOLRT(ii,jj)*LUDRSL(k)%weight(m)/1000 & 
                           *LUDRSL(k)%nodeArea(m)/DT
               end do
         end do
@@ -2114,21 +2114,21 @@ gwOption:   if(gwBaseSwCRT == 3) then
         QLateral(1:NLINKSL) = QLateral(1:NLINKSL) + qout_gwsubbas(1:NLINKSL)
      endif
 
-     ! accQLateral  = accLndRunOff + QLateral * DT
+     ! accQLateral  = accLndRunOff + QLateral * DT 
      if(NLINKSL .gt. 0) then
-        accQLateral(1:NLINKSL)  = accQLateral(1:NLINKSL) + QLateral(1:NLINKSL) * DT
+        accQLateral(1:NLINKSL)  = accQLateral(1:NLINKSL) + QLateral(1:NLINKSL) * DT 
         accBucket(1:NLINKSL) = accBucket(1:NLINKSL) + qout_gwsubbas(1:NLINKSL) * DT
      endif
 
 !       QLateral = QLateral / nsteps
 
    do nt = 1, nsteps
-
+ 
 #ifdef MPP_LAND
 
        gQLINK = 0
        call gbcastReal2(toNodeInd,nToNodeInd,QLINK(1:NLINKSL,2), NLINKSL, gQLINK(:,2))
-       call gbcastReal2(toNodeInd,nToNodeInd,QLINK(1:NLINKSL,1), NLINKSL, gQLINK(:,1))
+       call gbcastReal2(toNodeInd,nToNodeInd,QLINK(1:NLINKSL,1), NLINKSL, gQLINK(:,1)) 
       !---------- route other reaches, with upstream inflow
 #endif
 
@@ -2178,23 +2178,23 @@ gwOption:   if(gwBaseSwCRT == 3) then
 !       There is a situation that different k point to the same LAKEIDX
 !        if(TYPEL(k) .eq. 1 .and. LAKEIDX(k) .gt. 0) then   !--link is a reservoir
         if(TYPEL(k) .eq. 1 ) then   !--link is a reservoir
-
+             
              lakeid = LAKEIDX(k)
            if(lakeid .ge. 0) then
              CALL LEVELPOOL(lakeid,Qup, Quc, tmpQLINK(k,2), &
                QLateral(k), DT, RESHT(lakeid), HRZAREA(lakeid), WEIRH(lakeid), LAKEMAXH(lakeid), &
                WEIRC(lakeid), WEIRL(lakeid),ORIFICEE(lakeid), ORIFICEC(lakeid), ORIFICEA(lakeid))
-
+             
                QLAKEO(lakeid)  = tmpQLINK(k,2) !save outflow to lake
                QLAKEI(lakeid)  = Quc           !save inflow to lake
            endif
 105  continue
-
+            
 
         elseif (channel_option .eq. 1) then  !muskingum routing
                Km = MUSK(k)
                X = MUSX(k)
-               tmpQLINK(k,2) = MUSKING(k,Qup,(Quc+QLateral(k)),QLINK(k,1),DTRT_CH,Km,X) !upstream plust lateral inflow
+               tmpQLINK(k,2) = MUSKING(k,Qup,(Quc+QLateral(k)),QLINK(k,1),DTRT_CH,Km,X) !upstream plust lateral inflow 
 
         elseif (channel_option .eq. 2) then ! muskingum cunge, don't process internal lake nodes TYP=2
 !              tmpQLINK(k,2) = MUSKINGCUNGE(k,Qup, Quc, QLINK(k,1), &
@@ -2204,12 +2204,12 @@ gwOption:   if(gwBaseSwCRT == 3) then
               CALL SUBMUSKINGCUNGE(tmpQLINK(k,2),velocity(k), k,Qup, Quc, QLINK(k,1), &
                    QLateral(k), DTRT_CH, So(k), CHANLEN(k), &
                    MannN(k), ChSSlp(k), Bw(k) )
-
+                
         else
 #ifdef HYDRO_D
                     print *, " no channel option selected"
 #endif
-                    call hydro_stop("drive_CHANNEL")
+                    call hydro_stop("drive_CHANNEL") 
         endif
 
        END DO        !--k links
@@ -2228,7 +2228,7 @@ gwOption:   if(gwBaseSwCRT == 3) then
        end do
 
 
-#ifdef WRF_HYDRO_NUDGING
+#ifdef WRF_HYDRO_NUDGING         
          if(.not. nudgeWAdvance) call nudge_term_all(qlink, nudge, int(nt*dtrt_ch))
 #endif /* WRF_HYDRO_NUDGING */
 
@@ -2242,12 +2242,12 @@ gwOption:   if(gwBaseSwCRT == 3) then
     if (KT .eq. 1) KT = KT + 1
 
 #ifdef MPP_LAND
-    if(my_id .eq. io_id)      then
+    if(my_id .eq. io_id)      then 
        if(allocated(tmpQLAKEO))  deallocate(tmpQLAKEO)
        if(allocated(tmpQLAKEI))  deallocate(tmpQLAKEI)
        if(allocated(tmpRESHT))  deallocate(tmpRESHT)
     endif
-#endif
+#endif        
 
    if (KT .eq. 1) KT = KT + 1
 

@@ -1,3 +1,12 @@
+#if( BUILD_RRTMG_FAST != 1)
+      MODULE module_ra_rrtmg_lwf
+      CONTAINS
+      SUBROUTINE RRTMG_LWRAD_FAST
+         REAL :: dummy 
+         dummy = 1
+      END SUBROUTINE RRTMG_LWRAD_FAST
+      END MODULE module_ra_rrtmg_lwf
+#else
 !MODULE module_ra_rrtmg_lwf
 #define CHNK 8
 !#define CHNK 1849
@@ -24,7 +33,7 @@
 #define _gpuker  attributes(global)
 #define _gpuked  attributes(device)
 #define _gpuchv  <<<dimGrid,dimBlock>>>
-#define _cpus
+#define _cpus    
 #define _cpusnp
 #else
 #define _gpudev
@@ -35,23 +44,23 @@
 #define _gpuked
 #define _gpuchv
 #define _cpus    ,target
-#define _cpusnp
+#define _cpusnp  
 #endif
 
 #ifdef _ACCEL
 #define dbreg(x) call dbal(x)
-#define dbcop(x,y) call dbcp(x, cpointer);call c_f_pointer( cpointer, y, shape(x))
-#define dbcopnp(x,y,t,u) call dbcp(x, cpointer);call c_f_pointer( cpointer, y, shape(x))
+#define dbcop(x,y) call dbcp(x, cpointer);call c_f_pointer( cpointer, y, shape(x)) 
+#define dbcopnp(x,y,t,u) call dbcp(x, cpointer);call c_f_pointer( cpointer, y, shape(x)) 
 #define dreg(x,y,z) call ddbxeg(x,y,z,cpointer);call c_f_pointer( cpointer, x, [y,z] )
 #define sreg(x,y,z) call ddbxeg(x,y,z,cpointer)
 #define dbflushreg() call dbflushrg()
 #define dbflushcop() call dbflushcp()
 #else
-#define dbreg(x)
+#define dbreg(x) 
 #define dbcop(x,y) y=>x
 #define dbcopnp(x,y,u,v) if (allocated(y).eqv..true.) deallocate(y) ;allocate( y( u, v)); y=x
-#define dbflushreg()
-#define dbflushcop()
+#define dbflushreg() 
+#define dbflushcop() 
 #define dreg(x,y,z) if (allocated(x).eqv..true.) deallocate(x) ;allocate( x( y , z))
 #define sreg(x,y,z)
 #endif
@@ -66,7 +75,7 @@ use iso_c_binding
 use cudafor
 type adr
     integer*8 :: loc
-    integer*8 :: size
+    integer*8 :: size 
     integer*8 :: gap
     integer :: cindex = 0
     integer :: cnum = 0
@@ -101,11 +110,11 @@ integer :: ddflush = 0
 
 interface dbal
     module procedure dbalr, dbalr2, dbalr3, dbali, dbali2, dbali3
-end interface
+end interface 
 
 interface dbcp
     module procedure dbcpi1, dbcpi2, dbcpi3, dbcpr1, dbcpr2, dbcpr3
-end interface
+end interface 
 
 interface ddbxeg
     module procedure ddbxegi, ddbxegr
@@ -117,18 +126,18 @@ subroutine ddbxegi( a, x, y , pt)
     integer, allocatable, device :: a(:,:)
     integer :: x,y
     type(c_devptr), intent(out) :: pt
-
+    
 
     if (ddflush == 0) then
-
+        
         ddsizec = ddsizec + (x*y)
         !pt = c_devloc( ddtemp(1) )
 
     else
-
+        
         pt = c_devloc( ddar( ddindex ) )
         ddindex = ddindex + (x*y)
-
+       
     end if
 end subroutine
 
@@ -138,18 +147,18 @@ subroutine ddbxegr( a, x, y , pt)
     real, allocatable, device :: a(:,:)
     integer :: x,y
     type(c_devptr), intent(out) :: pt
-
+    
 
     if (ddflush == 0) then
-
+        
         ddsizec = ddsizec + (x*y)
         pt = c_devloc( ddtemp(1) )
 
     else
-
+        
         pt = c_devloc( ddar( ddindex ) )
         ddindex = ddindex + (x*y)
-
+       
     end if
 end subroutine
 
@@ -157,7 +166,7 @@ subroutine dflush()
 #ifdef _ACCEL
     allocate( ddar( ddsizec + 1 ) )
 #endif
-
+    
     ddflush = 1
     ddindex = 1
 end subroutine
@@ -171,7 +180,7 @@ subroutine dclean()
     ddflush = 0
 end subroutine
 
-
+    
 subroutine dbgenr( p, s )
     real, intent(in) :: p(*)
     integer, intent(in) :: s
@@ -197,7 +206,7 @@ subroutine dbgeni( p, s )
     plist(np)%gap = 0
     plist(np)%oindex = np
 #ifdef _memdiag
-    print *, "index ", np
+    print *, "index ", np   
     print *, "integer allocation ", np, " loc: ", plist(np)%loc, " size: ", plist(np)%size
 #endif
 end subroutine
@@ -270,8 +279,8 @@ subroutine dbflushrg()
     plist(np)%gap = 9999999
 #ifdef _memdiag
     print *, "sorted elements"
-#endif
-    do i = 1, np
+#endif    
+    do i = 1, np 
 #ifdef _memdiag
         print *, plist(i)%loc, plist(i)%size, plist(i)%gap
 #endif
@@ -288,7 +297,7 @@ subroutine dbflushrg()
     clist(1)%cindex = 1
     do i = 1, np
         plist(i)%cnum = nc
-        plist(i)%cindex = clist(nc)%size/4
+        plist(i)%cindex = clist(nc)%size/4 
 
         if (plist(i)%gap > acgap) then
             clist(nc)%size = clist(nc)%size + plist(i)%size
@@ -299,7 +308,7 @@ subroutine dbflushrg()
             nc = nc + 1
         else
             clist(nc)%size = clist(nc)%size + plist(i)%size + plist(i)%gap
-        end if
+        end if        
 
     end do
     nc = nc - 1
@@ -308,16 +317,16 @@ subroutine dbflushrg()
     print *, "contiguous regions", nc
     print *, "number alloc/copy reduced to ", 100.0 * real(nc)/real(np), "%"
 
-    do i = 1, nc
+    do i = 1, nc 
         print *, clist(i)%loc, clist(i)%size
     end do
 
     print *, "allocating device memory"
 #endif
     do i = 1, nc
-
+        
         dlist(i)%size = clist(i)%size
-#ifdef _memdiag
+#ifdef _memdiag        
         print *, dlist(i)%size
 #endif
 #ifdef _ACCEL
@@ -326,12 +335,12 @@ subroutine dbflushrg()
         dlist(i)%loc = c_devloc( dlist(i)%ar(1) )
     end do
 
-
+   
 
 end subroutine
 
 subroutine dbcpr( p, pt )
-
+    
     real, intent(in) :: p(*)
     integer*8 :: lc
     type(c_devptr), intent(out) :: pt
@@ -400,7 +409,7 @@ subroutine dbcpg( lc, pt )
 #ifdef _memdiag
             print *, "pointer found at index ", i
 #endif
-            pt = c_devloc( dlist( plist(i)%cnum )%ar( plist(i)%cindex+1 ))
+            pt = c_devloc( dlist( plist(i)%cnum )%ar( plist(i)%cindex+1 )) 
             fl = 1
             plist(i)%agn = 1
         end if
@@ -417,7 +426,7 @@ end subroutine
 subroutine dbflushcp
     integer :: i
     integer :: err
-#ifdef _memdiag
+#ifdef _memdiag   
     print  *, "checking that all pointers are assigned"
 #endif
     do i = 1, np
@@ -443,7 +452,7 @@ end subroutine
 
 subroutine dbclean
     integer :: i
-
+   
     do i=1, nc
         dlist(i)%size=0
         clist(i)%size=0
@@ -463,7 +472,7 @@ end module
 
       module parrrtm_f
 
-!     use parkind ,only : im => kind
+!     use parkind ,only : im => kind 
 
 !     implicit none
       save
@@ -484,7 +493,7 @@ end module
 ! nbndlw :  integer: number of spectral bands
 ! maxxsec:  integer: maximum number of cross-section molecules
 !                    (e.g. cfcs)
-! maxinpx:  integer:
+! maxinpx:  integer: 
 ! ngptlw :  integer: total number of reduced g-intervals for rrtmg_lw
 ! ngNN   :  integer: number of reduced g-intervals per spectral band
 ! ngsNN  :  integer: cumulative number of g-intervals per band
@@ -497,9 +506,9 @@ end module
       integer , parameter :: mxmol  = 38
       integer , parameter :: maxinpx= 38
       integer , parameter :: nmol   = 7
-! Use for 140 g-point model
+! Use for 140 g-point model 
       integer , parameter :: ngptlw = 140
-! Use for 256 g-point model
+! Use for 256 g-point model 
 !      integer , parameter :: ngptlw = 256
 
 ! Use for 140 g-point model
@@ -575,7 +584,7 @@ end module
 
       module rrlw_cld_f
 
-!     use parkind, only : rb => kind
+!     use parkind, only : rb => kind 
 
 !     implicit none
       save
@@ -589,13 +598,13 @@ end module
 
 !  name     type     purpose
 ! -----  :  ----   : ----------------------------------------------
-! abscld1:  real   :
-! absice0:  real   :
-! absice1:  real   :
-! absice2:  real   :
-! absice3:  real   :
-! absliq0:  real   :
-! absliq1:  real   :
+! abscld1:  real   : 
+! absice0:  real   : 
+! absice1:  real   : 
+! absice2:  real   : 
+! absice3:  real   : 
+! absliq0:  real   : 
+! absliq1:  real   : 
 !------------------------------------------------------------------
 
       real  :: abscld1
@@ -610,7 +619,7 @@ end module
 
       module rrlw_con_f
 
-!     use parkind, only : rb => kind
+!     use parkind, only : rb => kind 
 
 !     implicit none
       save
@@ -624,7 +633,7 @@ end module
 
 !  name     type     purpose
 ! -----  :  ----   : ----------------------------------------------
-! fluxfac:  real   : radiance to flux conversion factor
+! fluxfac:  real   : radiance to flux conversion factor 
 ! heatfac:  real   : flux to heating rate conversion factor
 !oneminus:  real   : 1.-1.e-6
 ! pi     :  real   : pi
@@ -632,13 +641,13 @@ end module
 ! planck :  real   : planck constant
 ! boltz  :  real   : boltzmann constant
 ! clight :  real   : speed of light
-! avogad :  real   : avogadro constant
+! avogad :  real   : avogadro constant 
 ! alosmt :  real   : loschmidt constant
 ! gascon :  real   : molar gas constant
 ! radcn1 :  real   : first radiation constant
 ! radcn2 :  real   : second radiation constant
 ! sbcnst :  real   : stefan-boltzmann constant
-!  secdy :  real   : seconds per day
+!  secdy :  real   : seconds per day  
 !------------------------------------------------------------------
 
       real  :: fluxfac, heatfac
@@ -652,7 +661,7 @@ end module
 
       module rrlw_kg01_f
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
       use memory
 !     implicit none
@@ -669,13 +678,13 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
+!fracrefao: real    
 !fracrefbo: real
-! kao     : real
-! kbo     : real
-! kao_mn2 : real
-! kbo_mn2 : real
-! selfrefo: real
+! kao     : real     
+! kbo     : real     
+! kao_mn2 : real     
+! kbo_mn2 : real     
+! selfrefo: real     
 ! forrefo : real
 !-----------------------------------------------------------------
 
@@ -698,31 +707,31 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefa : real
+!fracrefa : real    
 !fracrefb : real
-! ka      : real
-! kb      : real
+! ka      : real     
+! kb      : real     
 ! absa    : real
 ! absb    : real
-! ka_mn2  : real
-! kb_mn2  : real
-! selfref : real
+! ka_mn2  : real     
+! kb_mn2  : real     
+! selfref : real     
 ! forref  : real
 !-----------------------------------------------------------------
 
       integer , parameter :: ng1  = 10
 
-
+      
       real  _cpusnp :: ka(5,13,ng1)   , absa(65,ng1)
       real  _cpusnp :: kb(5,13:59,ng1), absb(235,ng1)
       real  _cpus :: fracrefa(ng1)  , fracrefb(ng1)
       real  _cpus :: ka_mn2(19,ng1) , kb_mn2(19,ng1)
       real  _cpus :: selfref(10,ng1), forref(4,ng1)
 
-
+      
       real  _gpudevanp :: kad(:,:,:), absad(:,:), absbd(:,:)
       real  _gpudevanp :: kbd(:,:,:)
-
+      
       real  _gpudeva :: fracrefad(:)  , fracrefbd(:)
       real  _gpudeva :: ka_mn2d(:,:) , kb_mn2d(:,:)
       real  _gpudeva :: selfrefd(:,:), forrefd(:,:)
@@ -732,7 +741,7 @@ end module
       contains
 
       subroutine copyToGPU1
-
+     
         dbcop(fracrefa,fracrefad)
         dbcop(fracrefb,fracrefbd)
         dbcop(ka_mn2,ka_mn2d)
@@ -742,8 +751,8 @@ end module
 
         dbcopnp(absa , absad , 65 , ng1)
         dbcopnp(absb , absbd , 235 , ng1)
-
-      end subroutine
+     
+      end subroutine 
 
       subroutine reg1
 
@@ -755,14 +764,14 @@ end module
         dbreg(forref)
         dbreg(absa)
         dbreg(absb)
-
-      end subroutine
+        
+      end subroutine 
 
       end module rrlw_kg01_f
 
       module rrlw_kg02_f
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
       use memory
 !     implicit none
@@ -779,11 +788,11 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
+!fracrefao: real    
 !fracrefbo: real
-! kao     : real
-! kbo     : real
-! selfrefo: real
+! kao     : real     
+! kbo     : real     
+! selfrefo: real     
 ! forrefo : real
 !-----------------------------------------------------------------
 
@@ -807,13 +816,13 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefa : real
+!fracrefa : real    
 !fracrefb : real
-! ka      : real
-! kb      : real
+! ka      : real     
+! kb      : real     
 ! absa    : real
 ! absb    : real
-! selfref : real
+! selfref : real     
 ! forref  : real
 !
 ! refparam: real
@@ -836,35 +845,35 @@ end module
       equivalence (ka(1,1,1),absa(1,1)),(kb(1,13,1),absb(1,1))
 
       contains
-
+      
       subroutine copyToGPU2
 
         dbcop(fracrefao,fracrefaod)
-        dbcop(fracrefbo,fracrefbod)
+        dbcop(fracrefbo,fracrefbod)       
         dbcop(selfrefo, selfrefod)
         dbcop(forrefo, forrefod)
 
         dbcop(fracrefa,fracrefad)
-        dbcop(fracrefb,fracrefbd)
+        dbcop(fracrefb,fracrefbd)       
 
         dbcopnp(absa , absad , 65 , ng2)
         dbcopnp(absb , absbd , 235 , ng2)
 
         dbcop(selfref, selfrefd)
         dbcop(forref, forrefd)
-
-      end subroutine
-
+        
+      end subroutine 
+        
       subroutine reg2
          ! 9
         dbreg(fracrefao)
-        dbreg(fracrefbo)
+        dbreg(fracrefbo)        
         dbreg(selfrefo)
         dbreg(forrefo)
-
+         
         dbreg(fracrefa)
-        dbreg(fracrefb)
-        dbreg(absa)
+        dbreg(fracrefb)        
+        dbreg(absa)        
         dbreg(absb)
         dbreg(selfref)
         dbreg(forref)
@@ -875,7 +884,7 @@ end module
 
       module rrlw_kg03_f
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
       use memory
 !     implicit none
@@ -892,13 +901,13 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
+!fracrefao: real    
 !fracrefbo: real
-! kao     : real
-! kbo     : real
-! kao_mn2o: real
-! kbo_mn2o: real
-! selfrefo: real
+! kao     : real     
+! kbo     : real     
+! kao_mn2o: real     
+! kbo_mn2o: real     
+! selfrefo: real     
 ! forrefo : real
 !-----------------------------------------------------------------
 
@@ -929,13 +938,13 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefa : real
+!fracrefa : real    
 !fracrefb : real
-! ka      : real
-! kb      : real
-! ka_mn2o : real
-! kb_mn2o : real
-! selfref : real
+! ka      : real     
+! kb      : real     
+! ka_mn2o : real     
+! kb_mn2o : real     
+! selfref : real     
 ! forref  : real
 !
 ! absa    : real
@@ -960,7 +969,7 @@ end module
 
       equivalence (ka(1,1,1,1),absa(1,1)),(kb(1,1,13,1),absb(1,1))
 
-      contains
+      contains 
 
       subroutine copyToGPU3
 
@@ -973,7 +982,7 @@ end module
 
        dbcop( fracrefa , fracrefad )
        dbcop( fracrefb , fracrefbd )
-
+   
        dbcopnp( absa , absad , 585 , ng3 )
        dbcopnp( absb , absbd , 1175 , ng3 )
 
@@ -982,13 +991,13 @@ end module
        dbcop( selfref , selfrefd )
        dbcop( forref , forrefd )
 
-      end subroutine
+      end subroutine 
 
       subroutine reg3
        !19
        dbreg( fracrefao )
        dbreg( fracrefbo )
-
+     
        dbreg( kao_mn2o )
        dbreg( kbo_mn2o )
        dbreg( selfrefo )
@@ -996,9 +1005,9 @@ end module
 
        dbreg( fracrefa )
        dbreg( fracrefb )
-
+      
        dbreg( absa )
-
+     
        dbreg( absb )
        dbreg( ka_mn2o )
        dbreg( kb_mn2o )
@@ -1011,7 +1020,7 @@ end module
 
       module rrlw_kg04_f
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
       use memory
 !     implicit none
@@ -1028,12 +1037,12 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
+!fracrefao: real    
 !fracrefbo: real
-! kao     : real
-! kbo     : real
-! selfrefo: real
-! forrefo : real
+! kao     : real     
+! kbo     : real     
+! selfrefo: real     
+! forrefo : real     
 !-----------------------------------------------------------------
       integer , parameter :: ng4  = 14
       integer , parameter :: no4  = 16
@@ -1044,7 +1053,7 @@ end module
       real  _cpusnp :: kb(5,5,13:59,ng4),absb(1175,ng4)
 
       real  _cpus :: fracrefao(no4,9)  ,fracrefbo(no4,5)
-
+ 
       real  _cpus :: selfrefo(10,no4)  ,forrefo(4,no4)
 
       real  _gpudeva :: fracrefaod(:,:)  ,fracrefbod(:,:)
@@ -1065,16 +1074,16 @@ end module
 !  ----   : ----   : ---------------------------------------------
 ! absa    : real
 ! absb    : real
-!fracrefa : real
+!fracrefa : real    
 !fracrefb : real
-! ka      : real
-! kb      : real
-! selfref : real
-! forref  : real
+! ka      : real     
+! kb      : real     
+! selfref : real     
+! forref  : real     
 !-----------------------------------------------------------------
 
       real  _cpus :: fracrefa(ng4,9)  ,fracrefb(ng4,5)
-
+      
       real  _cpus :: selfref(10,ng4)  ,forref(4,ng4)
 
       real  _gpudeva :: fracrefad(:,:)  ,fracrefbd(:,:)
@@ -1084,39 +1093,39 @@ end module
 
       equivalence (ka(1,1,1,1),absa(1,1)),(kb(1,1,13,1),absb(1,1))
 
-      contains
+      contains 
 
       subroutine copyToGPU4
 
        dbcop( fracrefa , fracrefad )
        dbcop( fracrefb , fracrefbd )
-
+      
        dbcopnp( absa , absad , 585 , ng4 )
        dbcopnp( absb , absbd , 1175 , ng4)
 
        dbcop( selfref , selfrefd )
        dbcop( forref , forrefd )
 
-      end subroutine
+      end subroutine 
 
       subroutine reg4
        !33
        dbreg( fracrefa )
        dbreg( fracrefb )
-
+    
        dbreg( absa )
 
        dbreg( absb )
        dbreg( selfref )
        dbreg( forref )
 
-      end subroutine
+      end subroutine 
 
       end module rrlw_kg04_f
 
       module rrlw_kg05_f
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
       use memory
 !     implicit none
@@ -1133,25 +1142,25 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
+!fracrefao: real    
 !fracrefbo: real
-! kao     : real
-! kbo     : real
-! kao_mo3 : real
-! selfrefo: real
-! forrefo : real
+! kao     : real     
+! kbo     : real     
+! kao_mo3 : real     
+! selfrefo: real     
+! forrefo : real     
 ! ccl4o   : real
 !-----------------------------------------------------------------
 
       integer , parameter :: no5  = 16
       integer , parameter :: ng5  = 16
-      real  _cpusnp :: ka(9,5,13,ng5),kb(5,5,13:59,ng5)
+      real  _cpusnp :: ka(9,5,13,ng5),kb(5,5,13:59,ng5)  
       real  _cpus :: kao(9,5,13,no5)
       real  _cpus :: kbo(5,5,13:59,no5)
 
-      real  _cpus :: fracrefao(no5,9) ,fracrefbo(no5,5)
+      real  _cpus :: fracrefao(no5,9) ,fracrefbo(no5,5) 
       real  _cpusnp :: absa(585,ng5)
-
+ 
       real  _cpus :: kao_mo3(9,19,no5)
       real  _cpus :: selfrefo(10,no5)
       real  _cpus :: forrefo(4,no5)
@@ -1176,13 +1185,13 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefa : real
+!fracrefa : real    
 !fracrefb : real
-! ka      : real
-! kb      : real
-! ka_mo3  : real
-! selfref : real
-! forref  : real
+! ka      : real     
+! kb      : real     
+! ka_mo3  : real     
+! selfref : real     
+! forref  : real     
 ! ccl4    : real
 !
 ! absa    : real
@@ -1192,7 +1201,7 @@ end module
       real  _cpusnp :: absb(1175,ng5)
 
       real  _cpus :: fracrefa(ng5,9) ,fracrefb(ng5,5)
-
+      
       real  _cpus :: ka_mo3(9,19,ng5)
       real  _cpus :: selfref(10,ng5)
       real  _cpus :: forref(4,ng5)
@@ -1205,16 +1214,16 @@ end module
       real  _gpudeva :: selfrefd(:,:)
       real  _gpudeva :: forrefd(:,:)
       real  _gpudeva :: ccl4d(:)
-
+      
       equivalence (ka(1,1,1,1),absa(1,1)),(kb(1,1,13,1),absb(1,1))
 
-      contains
+      contains 
 
       subroutine copyToGPU5
 
        dbcop( fracrefao , fracrefaod )
        dbcop( fracrefbo , fracrefbod )
-
+    
        dbcop( kao_mo3 , kao_mo3d )
        dbcop( selfrefo , selfrefod )
        dbcop( forrefo , forrefod )
@@ -1231,13 +1240,13 @@ end module
        dbcop( forref , forrefd )
        dbcop( ccl4 , ccl4d )
 
-      end subroutine
+      end subroutine 
 
       subroutine reg5
-
+    
        dbreg( fracrefao )
        dbreg( fracrefbo )
-
+     
        dbreg( kao_mo3 )
        dbreg( selfrefo )
        dbreg( forrefo )
@@ -1245,22 +1254,22 @@ end module
 
        dbreg( fracrefa )
        dbreg( fracrefb )
-
+      
        dbreg( absa )
-
+     
        dbreg( absb )
        dbreg( ka_mo3 )
        dbreg( selfref )
        dbreg( forref )
        dbreg( ccl4 )
 
-      end subroutine
+      end subroutine 
 
       end module rrlw_kg05_f
 
       module rrlw_kg06_f
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
       use memory
 
@@ -1278,11 +1287,11 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
-! kao     : real
-! kao_mco2: real
-! selfrefo: real
-! forrefo : real
+!fracrefao: real    
+! kao     : real     
+! kao_mco2: real     
+! selfrefo: real     
+! forrefo : real     
 !cfc11adjo: real
 ! cfc12o  : real
 !-----------------------------------------------------------------
@@ -1320,11 +1329,11 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefa : real
-! ka      : real
-! ka_mco2 : real
-! selfref : real
-! forref  : real
+!fracrefa : real    
+! ka      : real     
+! ka_mco2 : real     
+! selfref : real     
+! forref  : real     
 !cfc11adj : real
 ! cfc12   : real
 !
@@ -1332,7 +1341,7 @@ end module
 !-----------------------------------------------------------------
 
       real  _cpus, dimension(ng6) :: fracrefa
-
+      
       real  _cpus :: ka_mco2(19,ng6)
       real  _cpus :: selfref(10,ng6)
       real  _cpus :: forref(4,ng6)
@@ -1348,23 +1357,23 @@ end module
 
       real  _gpudeva , dimension(:) :: cfc11adjd
       real  _gpudeva , dimension(:) :: cfc12d
-
+      
       equivalence (ka(1,1,1),absa(1,1))
 
-      contains
+      contains 
 
       subroutine copyToGPU6
 
-       dbcop( fracrefao , fracrefaod )
-       dbcop( kao , kaod )
+       dbcop( fracrefao , fracrefaod )    
+       dbcop( kao , kaod )      
        dbcop( kao_mco2 , kao_mco2d )
        dbcop( selfrefo , selfrefod )
        dbcop( forrefo , forrefod )
        dbcop( cfc11adjo , cfc11adjod )
        dbcop( cfc12o , cfc12od )
-
+      
        dbcop( fracrefa , fracrefad )
-
+      
        dbcopnp( absa , absad, 65, ng6 )
        dbcop( ka_mco2 , ka_mco2d )
        dbcop( selfref , selfrefd )
@@ -1372,20 +1381,20 @@ end module
        dbcop( cfc11adj , cfc11adjd )
        dbcop( cfc12 , cfc12d )
 
-      end subroutine
+      end subroutine 
 
       subroutine reg6
        !53
-       dbreg( fracrefao )
-       dbreg( kao )
+       dbreg( fracrefao )    
+       dbreg( kao )      
        dbreg( kao_mco2 )
        dbreg( selfrefo )
        dbreg( forrefo )
        dbreg( cfc11adjo )
        dbreg( cfc12o )
-
+      
        dbreg( fracrefa )
-
+     
        dbreg( absa )
        dbreg( ka_mco2 )
        dbreg( selfref )
@@ -1393,13 +1402,13 @@ end module
        dbreg( cfc11adj )
        dbreg( cfc12 )
 
-      end subroutine
+      end subroutine 
 
       end module rrlw_kg06_f
 
       module rrlw_kg07_f
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
       use memory
 !     implicit none
@@ -1416,14 +1425,14 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
-!fracrefbo: real
-! kao     : real
-! kbo     : real
-! kao_mco2: real
-! kbo_mco2: real
-! selfrefo: real
-! forrefo : real
+!fracrefao: real    
+!fracrefbo: real    
+! kao     : real     
+! kbo     : real     
+! kao_mco2: real     
+! kbo_mco2: real     
+! selfrefo: real     
+! forrefo : real     
 !-----------------------------------------------------------------
 
       integer , parameter :: no7  = 16
@@ -1444,7 +1453,7 @@ end module
 
       real  _gpudeva , dimension(:) :: fracrefbod
       real  _gpudeva :: fracrefaod(:,:)
-
+    
       real  _gpudeva :: kao_mco2d(:,:,:)
       real  _gpudeva :: kbo_mco2d(:,:)
       real  _gpudeva :: selfrefod(:,:)
@@ -1461,21 +1470,21 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefa : real
-!fracrefb : real
-! ka      : real
-! kb      : real
-! ka_mco2 : real
-! kb_mco2 : real
-! selfref : real
-! forref  : real
+!fracrefa : real    
+!fracrefb : real    
+! ka      : real     
+! kb      : real     
+! ka_mco2 : real     
+! kb_mco2 : real     
+! selfref : real     
+! forref  : real     
 !
 ! absa    : real
 !-----------------------------------------------------------------
 
       real  _cpus, dimension(ng7) :: fracrefb
       real  _cpus :: fracrefa(ng7,9)
-
+      
       real  _cpus :: ka_mco2(9,19,ng7)
       real  _cpus :: kb_mco2(19,ng7)
       real  _cpus :: selfref(10,ng7)
@@ -1495,9 +1504,9 @@ end module
 
       subroutine copyToGPU7
 
-       dbcop( fracrefb , fracrefbd )
+       dbcop( fracrefb , fracrefbd )    
        dbcop( fracrefa , fracrefad )
-
+        
        dbcopnp( absa , absad, 585, ng7 )
        dbcopnp( absb , absbd, 235, ng7 )
 
@@ -1506,22 +1515,22 @@ end module
        dbcop( selfref , selfrefd )
        dbcop( forref , forrefd )
 
-       dbcop( fracrefbo , fracrefbod )
+       dbcop( fracrefbo , fracrefbod )    
        dbcop( fracrefao , fracrefaod )
-
+     
        dbcop( kao_mco2 , kao_mco2d )
        dbcop( kbo_mco2 , kbo_mco2d )
        dbcop( selfrefo , selfrefod )
        dbcop( forrefo , forrefod )
 
-      end subroutine
+      end subroutine 
 
       subroutine reg7
        !67
-       dbreg( fracrefb )
+       dbreg( fracrefb )    
        dbreg( fracrefa )
 
-       !dbreg( ka )
+       !dbreg( ka )      
        dbreg( absa )
        !dbreg( kb )
        dbreg( absb )
@@ -1530,9 +1539,9 @@ end module
        dbreg( selfref )
        dbreg( forref )
 
-       dbreg( fracrefbo )
+       dbreg( fracrefbo )    
        dbreg( fracrefao )
-       !dbreg( kao )
+       !dbreg( kao )      
        !dbreg( kbo )
        !dbreg( absbo )
        dbreg( kao_mco2 )
@@ -1540,13 +1549,13 @@ end module
        dbreg( selfrefo )
        dbreg( forrefo )
 
-      end subroutine
+      end subroutine 
 
       end module rrlw_kg07_f
 
       module rrlw_kg08_f
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
       use memory
 !     implicit none
@@ -1563,19 +1572,19 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
-!fracrefbo: real
-! kao     : real
-! kbo     : real
-! kao_mco2: real
-! kbo_mco2: real
-! kao_mn2o: real
-! kbo_mn2o: real
-! kao_mo3 : real
-! selfrefo: real
-! forrefo : real
-! cfc12o  : real
-!cfc22adjo: real
+!fracrefao: real    
+!fracrefbo: real    
+! kao     : real     
+! kbo     : real     
+! kao_mco2: real     
+! kbo_mco2: real     
+! kao_mn2o: real     
+! kbo_mn2o: real     
+! kao_mo3 : real     
+! selfrefo: real     
+! forrefo : real     
+! cfc12o  : real     
+!cfc22adjo: real     
 !-----------------------------------------------------------------
 
       integer , parameter :: no8  = 16
@@ -1621,19 +1630,19 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefa : real
-!fracrefb : real
-! ka      : real
-! kb      : real
-! ka_mco2 : real
-! kb_mco2 : real
-! ka_mn2o : real
-! kb_mn2o : real
-! ka_mo3  : real
-! selfref : real
-! forref  : real
-! cfc12   : real
-! cfc22adj: real
+!fracrefa : real    
+!fracrefb : real    
+! ka      : real     
+! kb      : real     
+! ka_mco2 : real     
+! kb_mco2 : real     
+! ka_mn2o : real     
+! kb_mn2o : real     
+! ka_mo3  : real     
+! selfref : real     
+! forref  : real     
+! cfc12   : real     
+! cfc22adj: real     
 !
 ! absa    : real
 ! absb    : real
@@ -1673,7 +1682,7 @@ end module
 
       equivalence (ka(1,1,1),absa(1,1)),(kb(1,13,1),absb(1,1))
 
-      contains
+      contains 
 
       subroutine copyToGPU8
 
@@ -1684,11 +1693,11 @@ end module
        dbcop( fracrefbo , fracrefbod )
        dbcop( cfc12o , cfc12od )
        dbcop( cfc22adjo , cfc22adjod )
-
+   
        dbcop( kao_mco2 , kao_mco2d )
        dbcop( kao_mn2o , kao_mn2od )
        dbcop( kao_mo3 , kao_mo3d )
-
+     
        dbcop( kbo_mco2 , kbo_mco2d )
        dbcop( kbo_mn2o , kbo_mn2od )
        dbcop( selfrefo , selfrefod )
@@ -1698,7 +1707,7 @@ end module
        dbcop( fracrefb , fracrefbd )
        dbcop( cfc12 , cfc12d )
        dbcop( cfc22adj , cfc22adjd )
-
+    
        dbcopnp( absa , absad, 65 , ng8 )
        dbcopnp( absb , absbd, 235 , ng8 )
 
@@ -1710,10 +1719,10 @@ end module
        dbcop( selfref , selfrefd )
        dbcop( forref , forrefd )
 
-      end subroutine
-
+      end subroutine 
+ 
       subroutine reg8
-
+     
        dbreg( fracrefao )
        dbreg( fracrefbo )
        dbreg( cfc12o )
@@ -1742,13 +1751,13 @@ end module
        dbreg( selfref )
        dbreg( forref )
 
-      end subroutine
+      end subroutine 
 
       end module rrlw_kg08_f
 
       module rrlw_kg09_f
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
       use memory
 !     implicit none
@@ -1765,14 +1774,14 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
-!fracrefbo: real
-! kao     : real
-! kbo     : real
-! kao_mn2o: real
-! kbo_mn2o: real
-! selfrefo: real
-! forrefo : real
+!fracrefao: real    
+!fracrefbo: real    
+! kao     : real     
+! kbo     : real     
+! kao_mn2o: real     
+! kbo_mn2o: real     
+! selfrefo: real     
+! forrefo : real     
 !-----------------------------------------------------------------
 
       integer , parameter :: no9  = 16
@@ -1808,14 +1817,14 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefa : real
-!fracrefb : real
-! ka      : real
-! kb      : real
-! ka_mn2o : real
-! kb_mn2o : real
-! selfref : real
-! forref  : real
+!fracrefa : real    
+!fracrefb : real    
+! ka      : real     
+! kb      : real     
+! ka_mn2o : real     
+! kb_mn2o : real     
+! selfref : real     
+! forref  : real     
 !
 ! absa    : real
 ! absb    : real
@@ -1843,7 +1852,7 @@ end module
 
       equivalence (ka(1,1,1,1),absa(1,1)),(kb(1,13,1),absb(1,1))
 
-      contains
+      contains 
 
       subroutine copyToGPU9
 
@@ -1869,7 +1878,7 @@ end module
        dbcop( selfrefo , selfrefod )
        dbcop( forrefo , forrefod )
 
-      end subroutine
+      end subroutine 
 
       subroutine reg9
 
@@ -1892,13 +1901,13 @@ end module
        dbreg( selfref )
        dbreg( forref )
 
-      end subroutine
+      end subroutine 
 
       end module rrlw_kg09_f
 
       module rrlw_kg10_f
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
       use memory
 !     implicit none
@@ -1915,12 +1924,12 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
-!fracrefbo: real
-! kao     : real
-! kbo     : real
-! selfrefo: real
-! forrefo : real
+!fracrefao: real    
+!fracrefbo: real    
+! kao     : real     
+! kbo     : real     
+! selfrefo: real     
+! forrefo : real     
 !-----------------------------------------------------------------
 
       integer , parameter :: no10 = 16
@@ -1952,12 +1961,12 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
-!fracrefbo: real
-! kao     : real
-! kbo     : real
-! selfref : real
-! forref  : real
+!fracrefao: real    
+!fracrefbo: real    
+! kao     : real     
+! kbo     : real     
+! selfref : real     
+! forref  : real     
 !
 ! absa    : real
 ! absb    : real
@@ -1980,10 +1989,10 @@ end module
       real  _gpudevanp ::   absbd(:,:)
       real  _gpudeva :: selfrefd(:,:)
       real  _gpudeva :: forrefd(:,:)
-
+      
       equivalence (ka(1,1,1),absa(1,1)),(kb(1,13,1),absb(1,1))
 
-      contains
+      contains 
 
       subroutine copyToGPU10
 
@@ -1993,7 +2002,7 @@ end module
        dbcop( fracrefao , fracrefaod )
        dbcop( fracrefbo , fracrefbod )
 
-       !dbcop( kao , kaod )
+       !dbcop( kao , kaod ) 
        !dbcop( kbo , kbod )
        dbcop( selfrefo , selfrefod )
        dbcop( forrefo , forrefod )
@@ -2001,7 +2010,7 @@ end module
        dbcop( fracrefa , fracrefad )
        dbcop( fracrefb , fracrefbd )
 
-       !dbcop( ka , kad )
+       !dbcop( ka , kad ) 
        !dbcop( kb , kbd )
        dbcopnp( absa , absad, 65 , ng10 )
        dbcopnp( absb , absbd, 235 , ng10 )
@@ -2009,14 +2018,14 @@ end module
        dbcop( selfref , selfrefd )
        dbcop( forref , forrefd )
 
-      end subroutine
+      end subroutine 
 
       subroutine reg10
 
        dbreg( fracrefao )
        dbreg( fracrefbo )
 
-       !dbreg( kao )
+       !dbreg( kao ) 
        !dbreg( kbo )
        dbreg( selfrefo )
        dbreg( forrefo )
@@ -2024,20 +2033,20 @@ end module
        dbreg( fracrefa )
        dbreg( fracrefb )
 
-       !dbreg( ka )
+       !dbreg( ka ) 
        !dbreg( kb )
        dbreg( absa )
        dbreg( absb )
        dbreg( selfref )
        dbreg( forref )
 
-      end subroutine
+      end subroutine 
 
       end module rrlw_kg10_f
 
       module rrlw_kg11_f
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
       use memory
 !     implicit none
@@ -2054,14 +2063,14 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
-!fracrefbo: real
-! kao     : real
-! kbo     : real
-! kao_mo2 : real
-! kbo_mo2 : real
-! selfrefo: real
-! forrefo : real
+!fracrefao: real    
+!fracrefbo: real    
+! kao     : real     
+! kbo     : real     
+! kao_mo2 : real     
+! kbo_mo2 : real     
+! selfrefo: real     
+! forrefo : real     
 !-----------------------------------------------------------------
 
       integer , parameter :: no11 = 16
@@ -2097,14 +2106,14 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefa : real
-!fracrefb : real
-! ka      : real
-! kb      : real
-! ka_mo2  : real
-! kb_mo2  : real
-! selfref : real
-! forref  : real
+!fracrefa : real    
+!fracrefb : real    
+! ka      : real     
+! kb      : real     
+! ka_mo2  : real     
+! kb_mo2  : real     
+! selfref : real     
+! forref  : real     
 !
 ! absa    : real
 ! absb    : real
@@ -2134,14 +2143,14 @@ end module
 
       equivalence (ka(1,1,1),absa(1,1)),(kb(1,13,1),absb(1,1))
 
-      contains
+      contains 
 
       subroutine copyToGPU11
 
        dbcop( fracrefa , fracrefad )
        dbcop( fracrefb , fracrefbd )
-
-       dbcopnp( absa , absad , 65 ,  ng11 )
+     
+       dbcopnp( absa , absad , 65 ,  ng11 )     
        dbcopnp( absb , absbd , 235 , ng11 )
 
        dbcop( ka_mo2 , ka_mo2d )
@@ -2149,14 +2158,14 @@ end module
        dbcop( selfref , selfrefd )
        dbcop( forref , forrefd )
 
-      end subroutine
+      end subroutine 
 
       subroutine reg11
 
        dbreg( fracrefa )
        dbreg( fracrefb )
 
-       !dbreg( ka )
+       !dbreg( ka ) 
        dbreg( absa )
        !dbreg( kb )
        dbreg( absb )
@@ -2165,13 +2174,13 @@ end module
        dbreg( selfref )
        dbreg( forref )
 
-      end subroutine
+      end subroutine 
 
       end module rrlw_kg11_f
 
       module rrlw_kg12_f
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
       use memory
 !     implicit none
@@ -2188,10 +2197,10 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
-! kao     : real
-! selfrefo: real
-! forrefo : real
+!fracrefao: real    
+! kao     : real     
+! selfrefo: real     
+! forrefo : real     
 !-----------------------------------------------------------------
 
       integer , parameter :: no12 = 16
@@ -2202,7 +2211,7 @@ end module
       real  _cpus :: forrefo(4,no12)
 
       real  _gpudeva :: fracrefaod(:,:)
-      real  _gpudev :: kaod(9,5,13,no12)
+      real  _gpudev :: kaod(9,5,13,no12) 
       real  _gpudeva :: selfrefod(:,:)
       real  _gpudeva :: forrefod(:,:)
 
@@ -2217,10 +2226,10 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefa : real
-! ka      : real
-! selfref : real
-! forref  : real
+!fracrefa : real    
+! ka      : real     
+! selfref : real     
+! forref  : real     
 !
 ! absa    : real
 !-----------------------------------------------------------------
@@ -2239,21 +2248,21 @@ end module
 
       equivalence (ka(1,1,1,1),absa(1,1))
 
-      contains
+      contains 
 
       subroutine copyToGPU12
 
        kao = kaod
 
        dbcop( fracrefao , fracrefaod )
-       !dbcop( kao , kaod )
+       !dbcop( kao , kaod ) 
        dbcop( selfrefo , selfrefod )
        dbcop( forrefo , forrefod )
 
        dbcop( fracrefa , fracrefad )
-       !dbcop( ka , kad )
+       !dbcop( ka , kad ) 
        dbcopnp( absa , absad , 585 , ng12 )
-
+     
        dbcop( selfref , selfrefd )
        dbcop( forref , forrefd )
 
@@ -2262,14 +2271,14 @@ end module
       subroutine reg12
 
        dbreg( fracrefao )
-       !dbreg( kao )
+       !dbreg( kao ) 
        dbreg( selfrefo )
        dbreg( forrefo )
 
        dbreg( fracrefa )
-       !dbreg( ka )
+       !dbreg( ka ) 
        dbreg( absa )
-
+     
        dbreg( selfref )
        dbreg( forref )
 
@@ -2279,7 +2288,7 @@ end module
 
       module rrlw_kg13_f
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
       use memory
 !     implicit none
@@ -2296,13 +2305,13 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
-! kao     : real
-! kao_mco2: real
-! kao_mco : real
-! kbo_mo3 : real
-! selfrefo: real
-! forrefo : real
+!fracrefao: real    
+! kao     : real     
+! kao_mco2: real     
+! kao_mco : real     
+! kbo_mo3 : real     
+! selfrefo: real     
+! forrefo : real     
 !-----------------------------------------------------------------
 
       integer , parameter :: no13 = 16
@@ -2338,13 +2347,13 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefa : real
-! ka      : real
-! ka_mco2 : real
-! ka_mco  : real
-! kb_mo3  : real
-! selfref : real
-! forref  : real
+!fracrefa : real    
+! ka      : real     
+! ka_mco2 : real     
+! ka_mco  : real     
+! kb_mo3  : real     
+! selfref : real     
+! forref  : real     
 !
 ! absa    : real
 !-----------------------------------------------------------------
@@ -2374,14 +2383,14 @@ end module
       equivalence (ka(1,1,1,1),absa(1,1))
 
       contains
-
+      
       subroutine copyToGPU13
 
        kaod = kao
 
        dbcop( fracrefbo , fracrefbod )
        dbcop( fracrefao , fracrefaod )
-
+    
        dbcop( kao_mco2 , kao_mco2d )
        dbcop( kao_mco , kao_mcod )
        dbcop( kbo_mo3 , kbo_mo3d )
@@ -2400,12 +2409,12 @@ end module
        dbcop( forref , forrefd )
 
       end subroutine
-
+            
       subroutine reg13
 
        dbreg( fracrefbo )
        dbreg( fracrefao )
-       !dbreg( kao )
+       !dbreg( kao ) 
        dbreg( kao_mco2 )
        dbreg( kao_mco )
        dbreg( kbo_mo3 )
@@ -2414,7 +2423,7 @@ end module
 
        dbreg( fracrefb )
        dbreg( fracrefa )
-       !dbreg( ka )
+       !dbreg( ka ) 
        dbreg( absa )
        dbreg( ka_mco2 )
        dbreg( ka_mco )
@@ -2428,7 +2437,7 @@ end module
 
       module rrlw_kg14_f
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
       use memory
 !     implicit none
@@ -2445,12 +2454,12 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
-!fracrefbo: real
-! kao     : real
-! kbo     : real
-! selfrefo: real
-! forrefo : real
+!fracrefao: real    
+!fracrefbo: real    
+! kao     : real     
+! kbo     : real     
+! selfrefo: real     
+! forrefo : real     
 !-----------------------------------------------------------------
 
       integer , parameter :: no14 = 16
@@ -2482,12 +2491,12 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefa : real
-!fracrefb : real
-! ka      : real
-! kb      : real
-! selfref : real
-! forref  : real
+!fracrefa : real    
+!fracrefb : real    
+! ka      : real     
+! kb      : real     
+! selfref : real     
+! forref  : real     
 !
 ! absa    : real
 ! absb    : real
@@ -2512,8 +2521,8 @@ end module
       real  _gpudeva :: forrefd(:,:)
 
       equivalence (ka(1,1,1),absa(1,1)), (kb(1,13,1),absb(1,1))
-
-      contains
+      
+      contains 
 
       subroutine copyToGPU14
 
@@ -2523,7 +2532,7 @@ end module
        dbcop( fracrefao , fracrefaod )
        dbcop( fracrefbo , fracrefbod )
 
-       !dbcop( kao , kaod )
+       !dbcop( kao , kaod ) 
        !dbcop( kbo , kbod )
        dbcop( selfrefo , selfrefod )
        dbcop( forrefo , forrefod )
@@ -2531,7 +2540,7 @@ end module
        dbcop( fracrefa , fracrefad )
        dbcop( fracrefb , fracrefbd )
 
-       !dbcop( ka , kad )
+       !dbcop( ka , kad ) 
        !dbcop( kb , kbd )
        dbcopnp( absa , absad , 65 , ng14 )
        dbcopnp( absb , absbd , 235 , ng14 )
@@ -2539,7 +2548,7 @@ end module
        dbcop( selfref , selfrefd )
        dbcop( forref , forrefd )
 
-      end subroutine
+      end subroutine 
 
       subroutine reg14
 
@@ -2554,20 +2563,20 @@ end module
        dbreg( fracrefa )
        dbreg( fracrefb )
 
-       !dbreg( ka )
+       !dbreg( ka ) 
        !dbreg( kb )
        dbreg( absa )
        dbreg( absb )
        dbreg( selfref )
        dbreg( forref )
 
-      end subroutine
+      end subroutine 
 
       end module rrlw_kg14_f
 
       module rrlw_kg15_f
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
       use memory
 !     implicit none
@@ -2584,11 +2593,11 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
-! kao     : real
-! kao_mn2 : real
-! selfrefo: real
-! forrefo : real
+!fracrefao: real    
+! kao     : real     
+! kao_mn2 : real     
+! selfrefo: real     
+! forrefo : real     
 !-----------------------------------------------------------------
 
       integer , parameter :: no15 = 16
@@ -2616,11 +2625,11 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefa : real
-! ka      : real
-! ka_mn2  : real
-! selfref : real
-! forref  : real
+!fracrefa : real    
+! ka      : real     
+! ka_mn2  : real     
+! selfref : real     
+! forref  : real     
 !
 ! absa    : real
 !-----------------------------------------------------------------
@@ -2641,20 +2650,20 @@ end module
 
       equivalence (ka(1,1,1,1),absa(1,1))
 
-      contains
+      contains 
 
       subroutine copyToGPU15
 
        kaod = kao
 
        dbcop( fracrefao , fracrefaod )
-       !dbcop( kao , kaod )
+       !dbcop( kao , kaod ) 
        dbcop( kao_mn2 , kao_mn2d )
        dbcop( selfrefo , selfrefod )
        dbcop( forrefo , forrefod )
 
        dbcop( fracrefa , fracrefad )
-       !dbcop( ka , kad )
+       !dbcop( ka , kad ) 
 
        dbcopnp( absa , absad , 585 , ng15 )
 
@@ -2662,30 +2671,30 @@ end module
        dbcop( selfref , selfrefd )
        dbcop( forref , forrefd )
 
-      end subroutine
+      end subroutine 
 
       subroutine reg15
 
        dbreg( fracrefao )
-       !dbreg( kao )
+       !dbreg( kao ) 
        dbreg( kao_mn2 )
        dbreg( selfrefo )
        dbreg( forrefo )
 
        dbreg( fracrefa )
-       !dbreg( ka )
+       !dbreg( ka ) 
        dbreg( absa )
        dbreg( ka_mn2 )
        dbreg( selfref )
        dbreg( forref )
 
-      end subroutine
+      end subroutine 
 
       end module rrlw_kg15_f
 
       module rrlw_kg16_f
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
       use memory
 !     implicit none
@@ -2702,11 +2711,11 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefao: real
-! kao     : real
-! kbo     : real
-! selfrefo: real
-! forrefo : real
+!fracrefao: real    
+! kao     : real     
+! kbo     : real     
+! selfrefo: real     
+! forrefo : real     
 !-----------------------------------------------------------------
 
       integer , parameter :: no16 = 16
@@ -2718,7 +2727,7 @@ end module
       real  _cpus :: kbo(5,13:59,no16)
       real  _cpus :: selfrefo(10,no16)
       real  _cpus :: forrefo(4,no16)
-
+      
       real  _gpudeva , dimension(:) :: fracrefbod
       real  _gpudeva :: fracrefaod(:,:)
       real  _gpudev :: kaod(9,5,13,no16)
@@ -2737,11 +2746,11 @@ end module
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!fracrefa : real
-! ka      : real
-! kb      : real
-! selfref : real
-! forref  : real
+!fracrefa : real    
+! ka      : real     
+! kb      : real     
+! selfref : real     
+! forref  : real     
 !
 ! absa    : real
 ! absb    : real
@@ -2767,7 +2776,7 @@ end module
 
       equivalence (ka(1,1,1,1),absa(1,1)), (kb(1,13,1),absb(1,1))
 
-      contains
+      contains 
 
       subroutine copyToGPU16
 
@@ -2776,7 +2785,7 @@ end module
 
        dbcop( fracrefao , fracrefaod )
 
-       !dbcop( kao , kaod )
+       !dbcop( kao , kaod ) 
        !dbcop( kbo , kbod )
        dbcop( selfrefo , selfrefod )
        dbcop( forrefo , forrefod )
@@ -2784,7 +2793,7 @@ end module
        dbcop( fracrefa , fracrefad )
        dbcop( fracrefb , fracrefbd )
 
-       !dbcop( ka , kad )
+       !dbcop( ka , kad ) 
        !dbcop( kb , kbd )
        dbcopnp( absa , absad , 585 , ng16)
        dbcopnp( absb , absbd , 235 , ng16)
@@ -2792,13 +2801,13 @@ end module
        dbcop( selfref , selfrefd )
        dbcop( forref , forrefd )
 
-      end subroutine
+      end subroutine 
 
       subroutine reg16
-
+ 
        dbreg( fracrefao )
 
-       !dbreg( kao )
+       !dbreg( kao ) 
        !dbreg( kbo )
        dbreg( selfrefo )
        dbreg( forrefo )
@@ -2806,29 +2815,29 @@ end module
        dbreg( fracrefa )
        dbreg( fracrefb )
 
-       !dbreg( ka )
+       !dbreg( ka ) 
        !dbreg( kb )
        dbreg( absa )
        dbreg( absb )
        dbreg( selfref )
        dbreg( forref )
 
-      end subroutine
+      end subroutine 
 
       end module rrlw_kg16_f
 
       module rrlw_ncpar
 
-!     use parkind ,only : im => kind , rb => kind
+!     use parkind ,only : im => kind , rb => kind 
 
 !     implicit none
       save
-
+        
       real , parameter :: cpdair = 1003.5  ! Specific heat capacity of dry air
                                                          ! at constant pressure at 273 K
                                                          ! (J kg-1 K-1)
 
-
+        
       integer , parameter :: maxAbsorberNameLength = 5, &
                              Absorber              = 12
       character(len = maxAbsorberNameLength), dimension(Absorber), parameter :: &
@@ -2841,11 +2850,11 @@ end module
                                 'H2O  ',  &
                                 'CO2  ',  &
                                 'O3   ',  &
-                                'N2O  ',  &
+                                'N2O  ',  & 
                                 'CO   ',  &
                                 'CH4  ',  &
                                 'O2   '  /)
-
+        
        integer , dimension(40) :: status
        integer  :: i
        integer , parameter :: keylower  = 9,   &
@@ -2862,22 +2871,22 @@ end module
                                band      = 16,  &
                                GPoint    = 16,  &
                                GPointSet = 2
-
-      contains
-
+                                                  
+      contains 
+        
       subroutine getAbsorberIndex(AbsorberName,AbsorberIndex)
                 character(len = *), intent(in) :: AbsorberName
                 integer , intent(out)           :: AbsorberIndex
-
+                
                 integer  :: m
-
+        
                 AbsorberIndex = -1
                 do m = 1, Absorber
                         if (trim(AbsorberNames(m)) == trim(AbsorberName)) then
                                 AbsorberIndex = m
                         end if
                 end do
-
+                
                 if (AbsorberIndex == -1) then
                         print*, "Absorber name index lookup failed."
                 end if
@@ -2887,12 +2896,12 @@ end module
 
       module rrlw_ref_f
 
-!     use parkind, only : im => kind , rb => kind
+!     use parkind, only : im => kind , rb => kind 
 
 !     implicit none
 
 !------------------------------------------------------------------
-! rrtmg_lw reference atmosphere
+! rrtmg_lw reference atmosphere 
 ! Based on standard mid-latitude summer profile
 !
 ! Initial version:  JJMorcrette, ECMWF, jul1998
@@ -2905,7 +2914,7 @@ end module
 ! pref   :  real   : Reference pressure levels
 ! preflog:  real   : Reference pressure levels, ln(pref)
 ! tref   :  real   : Reference temperature levels for MLS profile
-! chi_mls:  real   :
+! chi_mls:  real   : 
 !------------------------------------------------------------------
 
       real , dimension(59) :: pref
@@ -2934,13 +2943,13 @@ end module
         preflogd = preflog
         trefd = tref
 
-      end subroutine
+      end subroutine 
 
       end module rrlw_ref_f
 
       module rrlw_tbl_f
 
-!     use parkind, only : im => kind , rb => kind
+!     use parkind, only : im => kind , rb => kind 
 
 !     implicit none
       save
@@ -2965,21 +2974,21 @@ end module
 !                    the Planck function from that for the mean layer
 !                    temperature to that for the layer boundary
 !                    temperature as a function of optical depth.
-!                    The "linear in tau" method is used to make
+!                    The "linear in tau" method is used to make 
 !                    the table.
-! pade   :  real   : Pade constant
-! bpade  :  real   : Inverse of Pade constant
+! pade   :  real   : Pade constant   
+! bpade  :  real   : Inverse of Pade constant   
 !------------------------------------------------------------------
 
       integer , parameter :: ntbl = 10000
 
-      real , parameter :: tblint = 10000.0
+      real , parameter :: tblint = 10000.0 
 
       real  , dimension(0:ntbl) :: tau_tbl
       real  , dimension(0:ntbl) :: exp_tbl
       real  , dimension(0:ntbl) :: tfn_tbl
 
-      real , parameter :: pade = 0.278
+      real , parameter :: pade = 0.278 
       real  :: bpade
 
       end module rrlw_tbl_f
@@ -2999,33 +3008,33 @@ end module
 
 !  name     type     purpose
 ! -----  :  ----   : ----------------------------------------------
-!hnamrtm :character:
-!hnamini :character:
-!hnamcld :character:
-!hnamclc :character:
-!hnamrtr :character:
-!hnamrtx :character:
-!hnamrtc :character:
-!hnamset :character:
-!hnamtau :character:
-!hnamatm :character:
-!hnamutl :character:
-!hnamext :character:
-!hnamkg  :character:
+!hnamrtm :character: 
+!hnamini :character: 
+!hnamcld :character: 
+!hnamclc :character: 
+!hnamrtr :character: 
+!hnamrtx :character: 
+!hnamrtc :character: 
+!hnamset :character: 
+!hnamtau :character: 
+!hnamatm :character: 
+!hnamutl :character: 
+!hnamext :character: 
+!hnamkg  :character: 
 !
-! hvrrtm :character:
-! hvrini :character:
-! hvrcld :character:
-! hvrclc :character:
-! hvrrtr :character:
-! hvrrtx :character:
-! hvrrtc :character:
-! hvrset :character:
-! hvrtau :character:
-! hvratm :character:
-! hvrutl :character:
-! hvrext :character:
-! hvrkg  :character:
+! hvrrtm :character: 
+! hvrini :character: 
+! hvrcld :character: 
+! hvrclc :character: 
+! hvrrtr :character: 
+! hvrrtx :character: 
+! hvrrtc :character: 
+! hvrset :character: 
+! hvrtau :character: 
+! hvratm :character: 
+! hvrutl :character: 
+! hvrext :character: 
+! hvrkg  :character: 
 !------------------------------------------------------------------
 
       character*18 hvrrtm,hvrini,hvrcld,hvrclc,hvrrtr,hvrrtx, &
@@ -3040,7 +3049,7 @@ end module
 
       module rrlw_wvn_f
 
-!     use parkind, only : im => kind , rb => kind
+!     use parkind, only : im => kind , rb => kind 
       use parrrtm_f, only : nbndlw, mg, ngptlw, maxinpx
 
 !     implicit none
@@ -3060,7 +3069,7 @@ end module
 ! nspa   :  integer: For the lower atmosphere, the number of reference
 !                    atmospheres that are stored for each spectral band
 !                    per pressure level and temperature.  Each of these
-!                    atmospheres has different relative amounts of the
+!                    atmospheres has different relative amounts of the 
 !                    key species for the band (i.e. different binary
 !                    species parameters).
 ! nspb   :  integer: Same as nspa for the upper atmosphere
@@ -3071,7 +3080,7 @@ end module
 !                    includes total from 2600 cm-1 to infinity)
 !                    Used for calculation across total spectrum
 !totplk16:  real   : Integrated Planck value for band 16 (2600-3250 cm-1)
-!                    Used for calculation in band 16 only if
+!                    Used for calculation in band 16 only if 
 !                    individual band output requested
 !totplnkderiv: real: Integrated Planck function derivative with respect
 !                    to temperature for each band; (band 16
@@ -3079,19 +3088,19 @@ end module
 !                    Used for calculation across total spectrum
 !totplk16deriv:real: Integrated Planck function derivative with respect
 !                    to temperature for band 16 (2600-3250 cm-1)
-!                    Used for calculation in band 16 only if
+!                    Used for calculation in band 16 only if 
 !                    individual band output requested
 !
 ! ngc    :  integer: The number of new g-intervals in each band
 ! ngs    :  integer: The cumulative sum of new g-intervals for each band
 ! ngm    :  integer: The index of each new g-interval relative to the
 !                    original 16 g-intervals in each band
-! ngn    :  integer: The number of original g-intervals that are
+! ngn    :  integer: The number of original g-intervals that are 
 !                    combined to make each new g-intervals in each band
 ! ngb    :  integer: The band index for each new g-interval
 ! wt     :  real   : RRTM weights for the original 16 g-intervals
-! rwgt   :  real   : Weights for combining original 16 g-intervals
-!                    (256 total) into reduced set of g-intervals
+! rwgt   :  real   : Weights for combining original 16 g-intervals 
+!                    (256 total) into reduced set of g-intervals 
 !                    (140 total)
 ! nxmol  :  integer: Number of cross-section molecules
 ! ixindx :  integer: Flag for active cross-sections in calculation
@@ -3126,28 +3135,28 @@ end module
       end module rrlw_wvn_f
 
 
-! Fortran-95 implementation of the Mersenne Twister 19937, following
-!   the C implementation described below (code mt19937ar-cok.c, dated 2002/2/10),
-!   adapted cosmetically by making the names more general.
-! Users must declare one or more variables of type randomNumberSequence in the calling
-!   procedure which are then initialized using a required seed. If the
-!   variable is not initialized the random numbers will all be 0.
-! For example:
-! program testRandoms
+! Fortran-95 implementation of the Mersenne Twister 19937, following 
+!   the C implementation described below (code mt19937ar-cok.c, dated 2002/2/10), 
+!   adapted cosmetically by making the names more general.  
+! Users must declare one or more variables of type randomNumberSequence in the calling 
+!   procedure which are then initialized using a required seed. If the 
+!   variable is not initialized the random numbers will all be 0. 
+! For example: 
+! program testRandoms 
 !   use RandomNumbers
 !   type(randomNumberSequence) :: randomNumbers
 !   integer                    :: i
-!
+!   
 !   randomNumbers = new_RandomNumberSequence(seed = 100)
 !   do i = 1, 10
 !     print ('(f12.10, 2x)'), getRandomReal(randomNumbers)
 !   end do
 ! end program testRandoms
-!
-! Fortran-95 implementation by
+! 
+! Fortran-95 implementation by 
 !   Robert Pincus
 !   NOAA-CIRES Climate Diagnostics Center
-!   Boulder, CO 80305
+!   Boulder, CO 80305 
 !   email: Robert.Pincus@colorado.edu
 !
 ! This documentation in the original C program reads:
@@ -3156,28 +3165,28 @@ end module
 !    Coded by Takuji Nishimura and Makoto Matsumoto.
 !    This is a faster version by taking Shawn Cokus's optimization,
 !    Matthe Bellew's simplification, Isaku Wada's real version.
-!
-!    Before using, initialize the state by using init_genrand(seed)
+! 
+!    Before using, initialize the state by using init_genrand(seed) 
 !    or init_by_array(init_key, key_length).
-!
+! 
 !    Copyright (C) 1997 - 2002, Makoto Matsumoto and Takuji Nishimura,
-!    All rights reserved.
-!
+!    All rights reserved.                          
+! 
 !    Redistribution and use in source and binary forms, with or without
 !    modification, are permitted provided that the following conditions
 !    are met:
-!
+! 
 !      1. Redistributions of source code must retain the above copyright
 !         notice, this list of conditions and the following disclaimer.
-!
+! 
 !      2. Redistributions in binary form must reproduce the above copyright
 !         notice, this list of conditions and the following disclaimer in the
 !         documentation and/or other materials provided with the distribution.
-!
-!      3. The names of its contributors may not be used to endorse or promote
-!         products derived from this software without specific prior written
+! 
+!      3. The names of its contributors may not be used to endorse or promote 
+!         products derived from this software without specific prior written 
 !         permission.
-!
+! 
 !    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 !    "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
 !    LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
@@ -3189,8 +3198,8 @@ end module
 !    LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
 !    NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 !    SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-!
-!
+! 
+! 
 !    Any feedback is very welcome.
 !    http://www.math.keio.ac.jp/matumoto/emt.html
 !    email: matumoto@math.keio.ac.jp
@@ -3199,11 +3208,11 @@ end module
   module MersenneTwister_f
 ! -------------------------------------------------------------
 
-   !use parkind, only : im => kind , rb => kind
+   !use parkind, only : im => kind , rb => kind  
 
   implicit none
   private
-
+  
   ! Algorithm parameters
   ! -------
   ! Period parameters
@@ -3218,7 +3227,7 @@ end module
                         TMASKC= -272236544     ! (0xefc60000UL)
   ! -------
 
-  ! The type containing the state variable
+  ! The type containing the state variable  
   type randomNumberSequence
     integer                             :: currentElement ! = blockSize
     integer , dimension(0:blockSize -1) :: state ! = 0
@@ -3226,7 +3235,7 @@ end module
 
   interface new_RandomNumberSequence
     module procedure initialize_scalar, initialize_vector
-  end interface new_RandomNumberSequence
+  end interface new_RandomNumberSequence 
 
   public :: randomNumberSequence
   public :: new_RandomNumberSequence, finalize_RandomNumberSequence, &
@@ -3239,7 +3248,7 @@ contains
   function mixbits(u, v)
     integer , intent( in) :: u, v
     integer               :: mixbits
-
+    
     mixbits = ior(iand(u, UMASK), iand(v, LMASK))
   end function mixbits
   ! ---------------------------
@@ -3249,37 +3258,37 @@ contains
 
     ! Local variable
     integer , parameter, dimension(0:1) :: t_matrix = (/ 0 , MATRIX_A /)
-
+    
     twist = ieor(ishft(mixbits(u, v), -1 ), t_matrix(iand(v, 1 )))
     twist = ieor(ishft(mixbits(u, v), -1 ), t_matrix(iand(v, 1 )))
   end function twist
   ! ---------------------------
   subroutine nextState(twister)
     type(randomNumberSequence), intent(inout) :: twister
-
+    
     ! Local variables
     integer  :: k
-
+    
     do k = 0, blockSize - M - 1
       twister%state(k) = ieor(twister%state(k + M), &
                               twist(twister%state(k), twister%state(k + 1 )))
-    end do
+    end do 
     do k = blockSize - M, blockSize - 2
       twister%state(k) = ieor(twister%state(k + M - blockSize), &
                               twist(twister%state(k), twister%state(k + 1 )))
-    end do
+    end do 
     twister%state(blockSize - 1 ) = ieor(twister%state(M - 1 ), &
                                         twist(twister%state(blockSize - 1 ), twister%state(0 )))
-    twister%currentElement = 0
+    twister%currentElement = 0 
 
   end subroutine nextState
   ! ---------------------------
   elemental function temper(y)
     integer , intent(in) :: y
     integer              :: temper
-
+    
     integer  :: x
-
+    
     ! Tempering
     x      = ieor(y, ishft(y, -11))
     x      = ieor(x, iand(ishft(x,  7), TMASKB))
@@ -3291,13 +3300,13 @@ contains
   ! --------------------
   function initialize_scalar(seed) result(twister)
     integer ,       intent(in   ) :: seed
-    type(randomNumberSequence)                :: twister
-
+    type(randomNumberSequence)                :: twister 
+    
     integer  :: i
-    ! See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. In the previous versions,
-    !   MSBs of the seed affect only MSBs of the array state[].
-    !   2002/01/09 modified by Makoto Matsumoto
-
+    ! See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. In the previous versions, 
+    !   MSBs of the seed affect only MSBs of the array state[].                       
+    !   2002/01/09 modified by Makoto Matsumoto            
+    
     twister%state(0) = iand(seed, -1 )
     do i = 1,  blockSize - 1 ! ubound(twister%state)
        twister%state(i) = 1812433253  * ieor(twister%state(i-1), &
@@ -3309,13 +3318,13 @@ contains
   ! -------------------------------------------------------------
   function initialize_vector(seed) result(twister)
     integer , dimension(0:), intent(in) :: seed
-    type(randomNumberSequence)                      :: twister
-
+    type(randomNumberSequence)                      :: twister 
+    
     integer  :: i, j, k, nFirstLoop, nWraps
-
+    
     nWraps  = 0
     twister = initialize_scalar(19650218 )
-
+    
     nFirstLoop = max(blockSize, size(seed))
     do k = 1, nFirstLoop
        i = mod(k + nWraps, blockSize)
@@ -3323,42 +3332,42 @@ contains
        if(i == 0) then
          twister%state(i) = twister%state(blockSize - 1)
          twister%state(1) = ieor(twister%state(1),                                 &
-                                 ieor(twister%state(1-1),                          &
-                                      ishft(twister%state(1-1), -30 )) * 1664525 ) + &
+                                 ieor(twister%state(1-1),                          & 
+                                      ishft(twister%state(1-1), -30 )) * 1664525 ) + & 
                             seed(j) + j ! Non-linear
          twister%state(i) = iand(twister%state(i), -1 ) ! for >32 bit machines
          nWraps = nWraps + 1
        else
          twister%state(i) = ieor(twister%state(i),                                 &
-                                 ieor(twister%state(i-1),                          &
-                                      ishft(twister%state(i-1), -30 )) * 1664525 ) + &
+                                 ieor(twister%state(i-1),                          & 
+                                      ishft(twister%state(i-1), -30 )) * 1664525 ) + & 
                             seed(j) + j ! Non-linear
          twister%state(i) = iand(twister%state(i), -1 ) ! for >32 bit machines
       end if
     end do
-
+    
     !
     ! Walk through the state array, beginning where we left off in the block above
-    !
+    ! 
     do i = mod(nFirstLoop, blockSize) + nWraps + 1, blockSize - 1
       twister%state(i) = ieor(twister%state(i),                                 &
-                              ieor(twister%state(i-1),                          &
+                              ieor(twister%state(i-1),                          & 
                                    ishft(twister%state(i-1), -30 )) * 1566083941 ) - i ! Non-linear
       twister%state(i) = iand(twister%state(i), -1 ) ! for >32 bit machines
     end do
-
-    twister%state(0) = twister%state(blockSize - 1)
-
+    
+    twister%state(0) = twister%state(blockSize - 1) 
+    
     do i = 1, mod(nFirstLoop, blockSize) + nWraps
       twister%state(i) = ieor(twister%state(i),                                 &
-                              ieor(twister%state(i-1),                          &
+                              ieor(twister%state(i-1),                          & 
                                    ishft(twister%state(i-1), -30 )) * 1566083941 ) - i ! Non-linear
       twister%state(i) = iand(twister%state(i), -1 ) ! for >32 bit machines
     end do
-
-    twister%state(0) = UMASK
+    
+    twister%state(0) = UMASK 
     twister%currentElement = blockSize
-
+    
   end function initialize_vector
   ! -------------------------------------------------------------
   ! Public functions
@@ -3367,17 +3376,17 @@ contains
     type(randomNumberSequence), intent(inout) :: twister
     integer                         :: getRandomInt
     ! Generate a random integer on the interval [0,0xffffffff]
-    !   Equivalent to genrand_int32 in the C code.
-    !   Fortran doesn't have a type that's unsigned like C does,
+    !   Equivalent to genrand_int32 in the C code. 
+    !   Fortran doesn't have a type that's unsigned like C does, 
     !   so this is integers in the range -2**31 - 2**31
-    ! All functions for getting random numbers call this one,
+    ! All functions for getting random numbers call this one, 
     !   then manipulate the result
-
+    
     if(twister%currentElement >= blockSize) call nextState(twister)
-
+      
     getRandomInt = temper(twister%state(twister%currentElement))
     twister%currentElement = twister%currentElement + 1
-
+  
   end function getRandomInt
   ! --------------------
   function getRandomPositiveInt(twister)
@@ -3385,14 +3394,14 @@ contains
     integer                         :: getRandomPositiveInt
     ! Generate a random integer on the interval [0,0x7fffffff]
     !   or [0,2**31]
-    !   Equivalent to genrand_int31 in the C code.
-
+    !   Equivalent to genrand_int31 in the C code. 
+    
     ! Local integers
     integer  :: localInt
 
     localInt = getRandomInt(twister)
     getRandomPositiveInt = ishft(localInt, -1)
-
+  
   end function getRandomPositiveInt
   ! --------------------
 !! mji - modified Jan 2007, double converted to rrtmg real kind type
@@ -3403,9 +3412,9 @@ contains
     ! Generate a random number on [0,1]
     !   Equivalent to genrand_real1 in the C code
     !   The result is stored as double precision but has 32 bit resolution
-
+    
     integer  :: localInt
-
+    
     localInt = getRandomInt(twister)
     if(localInt < 0) then
 !      getRandomReal = dble(localInt + 2.0d0**32)/(2.0d0**32 - 1.0d0)
@@ -3419,42 +3428,42 @@ contains
   ! --------------------
   subroutine finalize_RandomNumberSequence(twister)
     type(randomNumberSequence), intent(inout) :: twister
-
+    
       twister%currentElement = blockSize
-      twister%state(:) = 0
+      twister%state(:) = 0 
   end subroutine finalize_RandomNumberSequence
 
-  ! --------------------
-
+  ! --------------------  
+  
   end module MersenneTwister_f
 
 
   module mcica_random_numbers_f
 
-  ! Generic module to wrap random number generators.
-  !   The module defines a type that identifies the particular stream of random
-  !   numbers, and has procedures for initializing it and getting real numbers
-  !   in the range 0 to 1.
-  ! This version uses the Mersenne Twister to generate random numbers on [0, 1].
+  ! Generic module to wrap random number generators. 
+  !   The module defines a type that identifies the particular stream of random 
+  !   numbers, and has procedures for initializing it and getting real numbers 
+  !   in the range 0 to 1. 
+  ! This version uses the Mersenne Twister to generate random numbers on [0, 1]. 
   !
   use MersenneTwister_f, only: randomNumberSequence, & ! The random number engine.
                              new_RandomNumberSequence, getRandomReal
 !! mji
 !!  use time_manager_mod, only: time_type, get_date
 
-   !use parkind, only : im => kind , rb => kind
+   !use parkind, only : im => kind , rb => kind  
 
   implicit none
   private
-
+  
   type randomNumberStream
     type(randomNumberSequence) :: theNumbers
   end type randomNumberStream
-
+  
   interface getRandomNumbers
     module procedure getRandomNumber_Scalar, getRandomNumber_1D, getRandomNumber_2D
   end interface getRandomNumbers
-
+  
   interface initializeRandomNumberStream
     module procedure initializeRandomNumberStream_S, initializeRandomNumberStream_V
   end interface initializeRandomNumberStream
@@ -3468,20 +3477,20 @@ contains
   ! ---------------------------------------------------------
   ! Initialization
   ! ---------------------------------------------------------
-  function initializeRandomNumberStream_S(seed) result(new)
+  function initializeRandomNumberStream_S(seed) result(new) 
     integer , intent( in)     :: seed
     type(randomNumberStream) :: new
-
+    
     new%theNumbers = new_RandomNumberSequence(seed)
-
+    
   end function initializeRandomNumberStream_S
   ! ---------------------------------------------------------
-  function initializeRandomNumberStream_V(seed) result(new)
+  function initializeRandomNumberStream_V(seed) result(new) 
     integer , dimension(:), intent( in) :: seed
     type(randomNumberStream)           :: new
-
+    
     new%theNumbers = new_RandomNumberSequence(seed)
-
+    
   end function initializeRandomNumberStream_V
   ! ---------------------------------------------------------
   ! Procedures for drawing random numbers
@@ -3489,17 +3498,17 @@ contains
   subroutine getRandomNumber_Scalar(stream, number)
     type(randomNumberStream), intent(inout) :: stream
     real ,                     intent(  out) :: number
-
+    
     number = getRandomReal(stream%theNumbers)
   end subroutine getRandomNumber_Scalar
   ! ---------------------------------------------------------
   subroutine getRandomNumber_1D(stream, numbers)
     type(randomNumberStream), intent(inout) :: stream
     real , dimension(:),       intent(  out) :: numbers
-
+    
     ! Local variables
     integer  :: i
-
+    
     do i = 1, size(numbers)
       numbers(i) = getRandomReal(stream%theNumbers)
     end do
@@ -3508,10 +3517,10 @@ contains
   subroutine getRandomNumber_2D(stream, numbers)
     type(randomNumberStream), intent(inout) :: stream
     real , dimension(:, :),    intent(  out) :: numbers
-
+    
     ! Local variables
     integer  :: i
-
+    
     do i = 1, size(numbers, 2)
       call getRandomNumber_1D(stream, numbers(:, i))
     end do
@@ -3525,11 +3534,11 @@ contains
 !    integer ,         intent( in)  :: i, j
 !    type(time_type), intent( in) :: time
 !    integer , dimension(8) :: seed
-!
+!    
 !    ! Local variables
 !    integer  :: year, month, day, hour, minute, second
-!
-!
+!    
+!    
 !    call get_date(time, year, month, day, hour, minute, second)
 !    seed = (/ i, j, year, month, day, hour, minute, second /)
 !  end function constructSeed
@@ -3560,7 +3569,7 @@ contains
 
 ! --------- Modules ----------
 
-       !use parkind, only : im => kind , rb => kind
+       !use parkind, only : im => kind , rb => kind 
       use parrrtm_f, only : nbndlw, ngptlw, mxlay
       use rrlw_con_f, only: grav
       use rrlw_wvn_f, only: ngb
@@ -3581,7 +3590,7 @@ contains
 #endif
 
 ! public interfaces/functions/subroutines
-      !public :: mcica_subcol_lwg, generate_stochastic_cloudsg
+      !public :: mcica_subcol_lwg, generate_stochastic_cloudsg 
 
       contains
 
@@ -3602,7 +3611,7 @@ contains
       integer , intent(in) :: ncol            ! number of columns
       integer , intent(in) :: nlay            ! number of model layers
       integer , intent(in) :: icld            ! clear/cloud, cloud overlap flag
-      integer , intent(in) :: permuteseed     ! if the cloud generator is called multiple times,
+      integer , intent(in) :: permuteseed     ! if the cloud generator is called multiple times, 
                                                       ! permute the seed between each call.
                                                       ! between calls for LW and SW, recommended
                                                       ! permuteseed differes by 'ngpt'
@@ -3612,7 +3621,7 @@ contains
 !      integer , intent(in) :: cloudMH, cloudHH
 
 ! Atmosphere
-      real , intent(in) :: play(:,:)          ! layer pressures (mb)
+      real , intent(in) :: play(:,:)          ! layer pressures (mb) 
                                                       !    Dimensions: (ncol,nlay)
 
 ! Atmosphere/clouds - cldprop
@@ -3653,16 +3662,16 @@ contains
       integer , parameter :: nsubclw = ngptlw ! number of sub-columns (g-point intervals)
       integer  :: ilev                        ! loop index
 
-      real  :: pmid(ncol, nlay)               ! layer pressures (Pa)
+      real  :: pmid(ncol, nlay)               ! layer pressures (Pa) 
 #ifdef _ACCEL
       type(dim3) :: dimGrid, dimBlock
 #endif
       integer, save :: counter = 0
       integer :: i,j,k,tk
       real :: t1, t2
-
+  
 ! Return if clear sky; or stop if icld out of range
-      if (icld.eq.0) then
+      if (icld.eq.0) then 
         cldfmcl = 0.0
         ciwpmcl = 0.0
         clwpmcl = 0.0
@@ -3671,11 +3680,11 @@ contains
 !        cloudFlag = 0.0
 
         return
-      end if
-      if (icld.lt.0.or.icld.gt.4) then
+      end if 
+      if (icld.lt.0.or.icld.gt.4) then 
          stop 'MCICA_SUBCOL: INVALID ICLD'
-      endif
-
+      endif 
+   
 ! NOTE: For GCM mode, permuteseed must be offset between LW and SW by at least the number of subcolumns
 
 
@@ -3696,7 +3705,7 @@ contains
 
 #ifdef _ACCEL
       pmidd = pmid
-
+    
       cldfracd = cldfrac
       clwpd = clwp
       ciwpd = ciwp
@@ -3712,60 +3721,60 @@ contains
                                  pmidd,cldfracd,clwpd,ciwpd,cswpd,taucd,changeSeed, &
 #endif
                                  cld_stoch, clwp_stoch, ciwp_stoch, cswp_stoch, &
-                                 tauc_stoch)
+                                 tauc_stoch) 
 !-------------------------------------------------------------------------------------------------
 
   !----------------------------------------------------------------------------------------------------------------
   ! ---------------------
   ! Contact: Cecile Hannay (hannay@ucar.edu)
-  !
+  ! 
   ! Original code: Based on Raisanen et al., QJRMS, 2004.
-  !
+  ! 
   ! Modifications: Generalized for use with RRTMG and added Mersenne Twister as the default
   !   random number generator, which can be changed to the optional kissvec random number generator
-  !   with flag 'irng'. Some extra functionality has been commented or removed.
+  !   with flag 'irng'. Some extra functionality has been commented or removed.  
   !   Michael J. Iacono, AER, Inc., February 2007
   !
   ! Given a profile of cloud fraction, cloud water and cloud ice, we produce a set of subcolumns.
-  ! Each layer within each subcolumn is homogeneous, with cloud fraction equal to zero or one
+  ! Each layer within each subcolumn is homogeneous, with cloud fraction equal to zero or one 
   ! and uniform cloud liquid and cloud ice concentration.
-  ! The ensemble as a whole reproduces the probability function of cloud liquid and ice within each layer
-  ! and obeys an overlap assumption in the vertical.
-  !
+  ! The ensemble as a whole reproduces the probability function of cloud liquid and ice within each layer 
+  ! and obeys an overlap assumption in the vertical.   
+  ! 
   ! Overlap assumption:
-  !  The cloud are consistent with 4 overlap assumptions: random, maximum, maximum-random and exponential.
+  !  The cloud are consistent with 4 overlap assumptions: random, maximum, maximum-random and exponential. 
   !  The default option is maximum-random (option 3)
   !  The options are: 1=random overlap, 2=max/random, 3=maximum overlap, 4=exponential overlap
-  !  This is set with the variable "overlap"
+  !  This is set with the variable "overlap" 
   !mji - Exponential overlap option (overlap=4) has been deactivated in this version
-  !  The exponential overlap uses also a length scale, Zo. (real,    parameter  :: Zo = 2500. )
-  !
+  !  The exponential overlap uses also a length scale, Zo. (real,    parameter  :: Zo = 2500. ) 
+  ! 
   ! Seed:
-  !  If the stochastic cloud generator is called several times during the same timestep,
+  !  If the stochastic cloud generator is called several times during the same timestep, 
   !  one should change the seed between the call to insure that the subcolumns are different.
   !  This is done by changing the argument 'changeSeed'
   !  For example, if one wants to create a set of columns for the shortwave and another set for the longwave ,
-  !  use 'changeSeed = 1' for the first call and'changeSeed = 2' for the second call
+  !  use 'changeSeed = 1' for the first call and'changeSeed = 2' for the second call 
   !
   ! PDF assumption:
-  !  We can use arbitrary complicated PDFS.
-  !  In the present version, we produce homogeneuous clouds (the simplest case).
-  !  Future developments include using the PDF scheme of Ben Johnson.
+  !  We can use arbitrary complicated PDFS. 
+  !  In the present version, we produce homogeneuous clouds (the simplest case).  
+  !  Future developments include using the PDF scheme of Ben Johnson. 
   !
   ! History file:
   !  Option to add diagnostics variables in the history file. (using FINCL in the namelist)
   !  nsubcol = number of subcolumns
   !  overlap = overlap type (1-3)
-  !  Zo = length scale
+  !  Zo = length scale 
   !  CLOUD_S = mean of the subcolumn cloud fraction ('_S" means Stochastic)
   !  CLDLIQ_S = mean of the subcolumn cloud water
-  !  CLDICE_S = mean of the subcolumn cloud ice
+  !  CLDICE_S = mean of the subcolumn cloud ice 
   !
   ! Note:
-  !   Here: we force that the cloud condensate to be consistent with the cloud fraction
-  !   i.e we only have cloud condensate when the cell is cloudy.
-  !   In CAM: The cloud condensate and the cloud fraction are obtained from 2 different equations
-  !   and the 2 quantities can be inconsistent (i.e. CAM can produce cloud fraction
+  !   Here: we force that the cloud condensate to be consistent with the cloud fraction 
+  !   i.e we only have cloud condensate when the cell is cloudy. 
+  !   In CAM: The cloud condensate and the cloud fraction are obtained from 2 different equations 
+  !   and the 2 quantities can be inconsistent (i.e. CAM can produce cloud fraction 
   !   without cloud condensate or the opposite).
   !---------------------------------------------------------------------------------------------------------------
 
@@ -3775,7 +3784,7 @@ contains
       integer , intent(in) :: ncol            ! number of columns
       integer , intent(in) :: nlay            ! number of layers
       integer , intent(in) :: icld            ! clear/cloud, cloud overlap flag
-
+  
        integer  _gpudev, intent(in) :: ngbd(:)
 
 #ifndef _ACCEL
@@ -3792,7 +3801,7 @@ contains
                                                       !    Dimensions: (nbndlw,ncol,nlay)
                                                       !   inactive - for future expansion
 
-      real  _gpudev, intent(out) :: cld_stoch(:,:,:)  ! subcolumn cloud fraction
+      real  _gpudev, intent(out) :: cld_stoch(:,:,:)  ! subcolumn cloud fraction 
                                                       !    Dimensions: (ncol,ngptlw,nlay)
       real  _gpudev, intent(out) :: clwp_stoch(:,:,:) ! subcolumn in-cloud liquid water path
                                                       !    Dimensions: (ncol,ngptlw,nlay)
@@ -3808,25 +3817,25 @@ contains
 !      real , intent(out) :: asmc_stoch(:,:,:)! subcolumn in-cloud asymmetry parameter
                                                       !    Dimensions: (ngptlw,ncol,nlay)
                                                       !   inactive - for future expansion
-
+     
       !integer, value, intent(in) :: counter
-
-
+   
+       
 ! Cloud condensate
-
+      
        real  :: RIND1, RIND2, ZCW, SIGMA_QCW
        integer  :: IND1, IND2
-
+     
        real  :: CDF3(mxlay)      ! random numbers
 
        real  :: cfs
        integer, parameter :: nsubcol = 140
-
+       
 ! Constants (min value for cloud fraction and cloud water and ice)
      ! real , parameter :: cldmin = 1.0e-20  ! min cloud fraction
 !      real , parameter :: qmin   = 1.0e-10    ! min cloud water and cloud ice (not used)
 
-! Variables related to random number and seed
+! Variables related to random number and seed 
 #ifdef _ACCEL
       real  :: CDF(mxlay), CDF2(mxlay)      ! random numbers
       integer  :: seed1, seed2, seed3, seed4 ! seed to create random number (kissvec)
@@ -3844,7 +3853,7 @@ contains
 
 ! Indices
       integer  :: ilev, isubcol, i, n         ! indices
-
+      
       integer :: iplon, gp
       integer  :: m, k, n1, kiss
 
@@ -3853,7 +3862,7 @@ contains
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       gp = (blockidx%y-1) * blockdim%y + threadidx%y
 
-!------------------------------------------------------------------------------------------
+!------------------------------------------------------------------------------------------ 
      !   print *, "ppp ", iplon, gp
       if (iplon <= ncol .and. gp <= nsubcol) then
 # define ILOOP_S_CPU
@@ -3865,16 +3874,16 @@ contains
 
 
 ! ----- Create seed  --------
-
+   
 ! Advance randum number generator by changeseed values
-
-! For kissvec, create a seed that depends on the state of the columns. Maybe not the best way, but it works.
-! Must use pmid from bottom four layers.
+   
+! For kissvec, create a seed that depends on the state of the columns. Maybe not the best way, but it works.  
+! Must use pmid from bottom four layers. 
 #ifdef _ACCEL
-           seed1 = (pmidd(iplon,1) - int(pmidd(iplon,1)))  * 1000000000 + (gp) * 11
-           seed3 = (pmidd(iplon,3) - int(pmidd(iplon,3)))  * 1000000000 + (gp) * 13
+           seed1 = (pmidd(iplon,1) - int(pmidd(iplon,1)))  * 1000000000 + (gp) * 11 
+           seed3 = (pmidd(iplon,3) - int(pmidd(iplon,3)))  * 1000000000 + (gp) * 13 
            seed2 = seed1 + gp
-           seed4 = seed3 - gp
+           seed4 = seed3 - gp 
 #else
 ! Have it agree with the original _lw.F version, jm 20141222
     do iplon = 1, ncol
@@ -3898,17 +3907,17 @@ contains
      do gp = 1, nsubcol
 
 #endif
-
+  
 
 ! ------ Apply overlap assumption --------
 
-! generate the random numbers
+! generate the random numbers  
 
        select case (icld)
 
 #ifdef _ACCEL
 ! Random overlap
-       case(1)
+       case(1) 
 
 # if 0
            do ilev = 1,nlay
@@ -3916,7 +3925,7 @@ contains
              CDF(iplon,ilev) = rand_num
            end do
 # endif
-
+        
 
 ! Maximum-Random overlap
        case(2)
@@ -3925,16 +3934,16 @@ contains
              call kissvec(seed1, seed2, seed3, seed4, rand_num)
              CDF(ilev) = rand_num
            end do
-
+          
 
            do ilev = 2,nlay
-             if (CDF(ilev-1) > 1.  - cldfracd(iplon, ilev-1)) then
+             if (CDF(ilev-1) > 1.  - cldfracd(iplon, ilev-1)) then 
                 CDF(ilev) = CDF(ilev-1)
              else
                  CDF(ilev) = CDF(ilev) * (1. - cldfracd(iplon, ilev-1))
              end if
            end do
-
+            
 ! Maximum overlap
        case(3)
 
@@ -3944,7 +3953,7 @@ contains
            end do
 
 
-       end select
+       end select 
 #else
 ! Random overlap
        case(1)
@@ -3960,7 +3969,7 @@ contains
 
 ! Maximum-Random overlap
        case(2)
-
+   
            do ilev = 1,nlay
             ILOOP_S_CPU
 !             call kissvec(seed1(iplon), seed2(iplon), seed3(iplon), seed4(iplon), rand_num(iplon))
@@ -3972,18 +3981,18 @@ contains
              CDF(iplon,ilev) = kiss*2.328306e-10  + 0.5
             ILOOP_E_CPU
            end do
-
-
+      
+         
            do ilev = 2,nlay
             ILOOP_S_CPU
-             if (CDF(iplon,ilev-1) > 1.  - cldfracd(iplon, ilev-1)) then
+             if (CDF(iplon,ilev-1) > 1.  - cldfracd(iplon, ilev-1)) then 
                 CDF(iplon,ilev) = CDF(iplon,ilev-1)
              else
                  CDF(iplon,ilev) = CDF(iplon,ilev) * (1. - cldfracd(iplon, ilev-1))
              end if
             ILOOP_E_CPU
            end do
-
+            
 ! Maximum overlap
        case(3)
 
@@ -4002,7 +4011,7 @@ contains
             ILOOP_E_CPU
            end do
 
-       end select
+       end select 
 #endif
 
       n = ngbd(gp)
@@ -4017,23 +4026,23 @@ contains
                if (CDF(iplon,ilev) >=1.  - cfs) then
 #endif
 
-                  cld_stoch(iplon,gp,ilev) = 1.
+                  cld_stoch(iplon,gp,ilev) = 1. 
                   clwp_stoch(iplon,gp,ilev) = clwpd(iplon,ilev)
                   ciwp_stoch(iplon,gp,ilev) = ciwpd(iplon,ilev)
                   cswp_stoch(iplon,gp,ilev) = cswpd(iplon,ilev)
-
+                
                   tauc_stoch(iplon,gp,ilev) = taucd(iplon,n,ilev)
-
+                  
                else
-                  cld_stoch(iplon,gp,ilev) = 0.
-                  clwp_stoch(iplon,gp,ilev) = 0.
-                  ciwp_stoch(iplon,gp,ilev) = 0.
-                  cswp_stoch(iplon,gp,ilev) = 0.
-                  tauc_stoch(iplon,gp,ilev) = 0.
-!                  ssac_stoch(isubcol,i,ilev) = 1.
-!                  asmc_stoch(isubcol,i,ilev) = 1.
+                  cld_stoch(iplon,gp,ilev) = 0. 
+                  clwp_stoch(iplon,gp,ilev) = 0. 
+                  ciwp_stoch(iplon,gp,ilev) = 0. 
+                  cswp_stoch(iplon,gp,ilev) = 0. 
+                  tauc_stoch(iplon,gp,ilev) = 0. 
+!                  ssac_stoch(isubcol,i,ilev) = 1. 
+!                  asmc_stoch(isubcol,i,ilev) = 1. 
                endif
-
+           
        ILOOP_E_CPU
       enddo
 
@@ -4046,7 +4055,7 @@ contains
       end subroutine generate_stochastic_cloudsg
 
       _gpuked  subroutine kissvec(seed1,seed2,seed3,seed4,ran_arr)
-!--------------------------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------------------------- 
 
 ! public domain code
 ! made available from http://www.fortran.com/
@@ -4057,14 +4066,14 @@ contains
 ! (1) The congruential generator x(n)=69069*x(n-1)+1327217885, period 2^32.
 ! (2) A 3-shift shift-register generator, period 2^32-1,
 ! (3) Two 16-bit multiply-with-carry generators, period 597273182964842497>2^59
-!  Overall period>2^123;
+!  Overall period>2^123; 
 !
       real , intent(inout)  :: ran_arr
       integer , intent(inout) :: seed1,seed2,seed3,seed4
       integer  :: i,sz,kiss
       integer  :: m, k, n
 
-! inline function
+! inline function 
       m(k, n) = ieor (k, ishft (k, n) )
 
       seed1 = 69069 * seed1 + 1327217885
@@ -4072,15 +4081,15 @@ contains
       seed3 = 18000 * iand (seed3, 65535) + ishft (seed3, - 16)
       seed4 = 30903 * iand (seed4, 65535) + ishft (seed4, - 16)
       kiss = seed1 + seed2 + ishft (seed3, 16) + seed4
-      ran_arr = kiss*2.328306e-10  + 0.5
-
+      ran_arr = kiss*2.328306e-10  + 0.5 
+    
       end subroutine kissvec
 
       end module gpu_mcica_subcol_gen_lw
 
-! (dmb 2012) This is the GPU version of the cldprmc routine.  I have parallelized across
-! all 3 dimensions (columns, g-points, and layers) to make this routine run very fast on the GPU.
-! The greatest speedup was obtained by switching the indices for the cloud variables so that
+! (dmb 2012) This is the GPU version of the cldprmc routine.  I have parallelized across 
+! all 3 dimensions (columns, g-points, and layers) to make this routine run very fast on the GPU.  
+! The greatest speedup was obtained by switching the indices for the cloud variables so that 
 ! the columns were the least significant (leftmost) dimension
 
       module gpu_rrtmg_lw_cldprmc
@@ -4097,7 +4106,7 @@ contains
 
 ! --------- Modules ----------
 
-!      use parkind, only : im => kind , rb => kind
+!      use parkind, only : im => kind , rb => kind 
       use parrrtm_f, only : ngptlw, nbndlw
       use rrlw_cld_f, only: abscld1, absliq0, absliq1, &
                           absice0, absice1, absice2, absice3
@@ -4134,7 +4143,7 @@ contains
                                                       ! iceflag = 3: generalized effective size, dge, (Fu, 1996),
                                                       !              dge range is limited to 5.0 to 140.0 microns
                                                       !              [dge = 1.0315 * r_ec]
-
+ 
       real  _gpucon, dimension(2) :: absice0d
       real  _gpucon, dimension(2,5) :: absice1d
       real  _gpucon, dimension(43,16) :: absice2d
@@ -4171,7 +4180,7 @@ contains
 #ifndef _ACCEL
 # define ncol CHNK
 #endif
-
+      
       real , intent(in) :: cldfmc(ncol, ngptlw, nlayers+1)        ! cloud fraction [mcica]
 
       integer , intent(out) :: icldlyr( ncol, nlayers+1)
@@ -4179,7 +4188,7 @@ contains
       integer , intent(in) :: icb(16)
       real , intent(inout) :: taucmc(:,:,:)           ! cloud optical depth [mcica]
 
-      real , parameter :: absliq0 = 0.0903614
+      real , parameter :: absliq0 = 0.0903614 
 
 ! ------- Output -------
 
@@ -4207,7 +4216,7 @@ contains
                                                       ! iceflag = 3: generalized effective size, dge, (Fu, 1996),
                                                       !              dge range is limited to 5.0 to 140.0 microns
                                                       !              [dge = 1.0315 * r_ec]
-
+ 
       real, dimension(2) :: absice0d
       real, dimension(2,5) :: absice1d
       real, dimension(43,16) :: absice2d
@@ -4221,8 +4230,8 @@ contains
       integer  :: lay                         ! Layer index
       integer  :: ib                          ! spectral band index
       integer  :: ig                          ! g-point interval index
-      integer  :: index
-
+      integer  :: index 
+     
 
       real  :: abscoice                       ! ice absorption coefficients
       real  :: abscoliq                       ! liquid absorption coefficients
@@ -4231,8 +4240,8 @@ contains
       real  :: radice                         ! cloud ice effective size (microns)
       real  :: radliq                         ! cloud liquid droplet radius (microns)
       real  :: radsno                         ! cloud snow effective radius (microns)
-      real  :: factor                         !
-      real  :: fint                           !
+      real  :: factor                         ! 
+      real  :: fint                           ! 
       real , parameter :: eps = 1.e-6         ! epsilon
       real , parameter :: cldmin = 1.e-20     ! minimum value for cloud quantities
 
@@ -4242,23 +4251,23 @@ contains
 !     Explanation of the method for each value of INFLAG.  Values of
 !     0 or 1 for INFLAG do not distingish being liquid and ice clouds.
 !     INFLAG = 2 does distinguish between liquid and ice clouds, and
-!     requires further user input to specify the method to be used to
+!     requires further user input to specify the method to be used to 
 !     compute the aborption due to each.
 !     INFLAG = 0:  For each cloudy layer, the cloud fraction and (gray)
-!                  optical depth are input.
+!                  optical depth are input.  
 !     INFLAG = 1:  For each cloudy layer, the cloud fraction and cloud
-!                  water path (g/m2) are input.  The (gray) cloud optical
+!                  water path (g/m2) are input.  The (gray) cloud optical 
 !                  depth is computed as in CCM2.
-!     INFLAG = 2:  For each cloudy layer, the cloud fraction, cloud
+!     INFLAG = 2:  For each cloudy layer, the cloud fraction, cloud 
 !                  water path (g/m2), and cloud ice fraction are input.
 !       ICEFLAG = 0:  The ice effective radius (microns) is input and the
 !                     optical depths due to ice clouds are computed as in CCM3.
 !       ICEFLAG = 1:  The ice effective radius (microns) is input and the
-!                     optical depths due to ice clouds are computed as in
-!                     Ebert and Curry, JGR, 97, 3831-3836 (1992).  The
+!                     optical depths due to ice clouds are computed as in 
+!                     Ebert and Curry, JGR, 97, 3831-3836 (1992).  The 
 !                     spectral regions in this work have been matched with
-!                     the spectral bands in RRTM to as great an extent
-!                     as possible:
+!                     the spectral bands in RRTM to as great an extent 
+!                     as possible:  
 !                     E&C 1      IB = 5      RRTM bands 9-16
 !                     E&C 2      IB = 4      RRTM bands 6-8
 !                     E&C 3      IB = 3      RRTM bands 3-5
@@ -4267,7 +4276,7 @@ contains
 !       ICEFLAG = 2:  The ice effective radius (microns) is input and the
 !                     optical properties due to ice clouds are computed from
 !                     the optical properties stored in the RT code,
-!                     STREAMER v3.0 (Reference: Key. J., Streamer
+!                     STREAMER v3.0 (Reference: Key. J., Streamer 
 !                     User's Guide, Cooperative Institute for
 !                     Meteorological Satellite Studies, 2001, 96 pp.).
 !                     Valid range of values for re are between 5.0 and
@@ -4282,27 +4291,27 @@ contains
 !                    140.0 micron.
 !       LIQFLAG = 0:  The optical depths due to water clouds are computed as
 !                     in CCM3.
-!       LIQFLAG = 1:  The water droplet effective radius (microns) is input
-!                     and the optical depths due to water clouds are computed
+!       LIQFLAG = 1:  The water droplet effective radius (microns) is input 
+!                     and the optical depths due to water clouds are computed 
 !                     as in Hu and Stamnes, J., Clim., 6, 728-742, (1993).
 !                     The values for absorption coefficients appropriate for
-!                     the spectral bands in RRTM have been obtained for a
-!                     range of effective radii by an averaging procedure
+!                     the spectral bands in RRTM have been obtained for a 
+!                     range of effective radii by an averaging procedure 
 !                     based on the work of J. Pinto (private communication).
-!                     Linear interpolation is used to get the absorption
+!                     Linear interpolation is used to get the absorption 
 !                     coefficients for the input effective radius.
 
 ! (dmb 2012) Here insead of looping over the column, layer, and band dimensions,
-! I compute the index for each dimension from the grid and block layout.  This
-! function is called once per each thread, and each thread has a unique combination of
-! column, layer, and g-point.
+! I compute the index for each dimension from the grid and block layout.  This 
+! function is called once per each thread, and each thread has a unique combination of 
+! column, layer, and g-point.  
 
 #ifdef _ACCEL
     iplon = (blockidx%x-1) * blockdim%x + threadidx%x
         lay = (blockidx%y-1) * blockdim%y + threadidx%y
     ig = (blockidx%z-1) * blockdim%z + threadidx%z
 ! (dmb 2012) Make sure that the column, layer, and g-points are all within the proper
-! range.  They can be out of range if we select certain block configurations due to
+! range.  They can be out of range if we select certain block configurations due to 
 ! optimizations.
     if (iplon<=ncol .and. lay<=nlayers .and. ig<=ngptlw) then
 #else
@@ -4312,7 +4321,7 @@ contains
 #endif
 
           ncbands(iplon) = 1
-! (dmb 2012) all of the cloud variables have been modified so that the column dimensions
+! (dmb 2012) all of the cloud variables have been modified so that the column dimensions 
 ! is least significant.
           if (cldfmc(iplon,ig,lay) .eq. 1. ) then
             icldlyr(iplon, lay)=1
@@ -4334,24 +4343,24 @@ contains
 
 ! Calculation of absorption coefficients due to ice clouds.
                if (ciwpmcd(iplon,ig,lay)+cswpmcd(iplon,ig,lay) .eq. 0.0) then
-                  abscoice = 0.0
-                  abscosno = 0.0
-
+                  abscoice = 0.0 
+                  abscosno = 0.0 
+                                   
                elseif (iceflagd(iplon) .eq. 0) then
                   abscoice= absice0d(1) + absice0d(2)/radice
-                  abscosno = 0.0
+                  abscosno = 0.0 
 
                elseif (iceflagd(iplon) .eq. 1) then
                   ncbands(iplon) = 5
                   ib = icb(ngb(ig))
                   abscoice = absice1d(1,ib) + absice1d(2,ib)/radice
-                  abscosno = 0.0
+                  abscosno = 0.0 
 
 ! For iceflag=2 option, ice particle effective radius is limited to 5.0 to 131.0 microns
 
                elseif (iceflagd(iplon) .eq. 2) then
                   ncbands(iplon) = 16
-                  factor = (radice - 2.)/3.
+                  factor = (radice - 2.)/3. 
                   index = int(factor)
 ! mji - temporary fix to prevent out of range subscripts
                      if (index .le. 0) index = 1
@@ -4361,15 +4370,15 @@ contains
                   ib = ngb(ig)
                   abscoice = &
                       absice2d(index,ib) + fint * &
-                      (absice2d(index+1,ib) - (absice2d(index,ib)))
-                  abscosno = 0.0
-
+                      (absice2d(index+1,ib) - (absice2d(index,ib))) 
+                  abscosno = 0.0 
+               
 ! For iceflag=3 option, ice particle generalized effective size is limited to 5.0 to 140.0 microns
 
 !jm               elseif (iceflagd(iplon) .eq. 3) then
                elseif (iceflagd(iplon) .ge. 3) then
                   ncbands(iplon) = 16
-                  factor = (radice - 2.)/3.
+                  factor = (radice - 2.)/3. 
                   index = int(factor)
 ! mji - temporary fix to prevent out of range subscripts
                   if (index .le. 0) index = 1
@@ -4380,9 +4389,9 @@ contains
                   abscoice= &
                       absice3d(index,ib) + fint * &
                       (absice3d(index+1,ib) - (absice3d(index,ib)))
-                  abscosno = 0.0
+                  abscosno = 0.0 
                endif
-
+                  
 !..Incorporate additional effects due to snow.
                if (cswpmcd(iplon,ig,lay).gt.0.0 .and. iceflagd(iplon) .eq. 5) then
                   radsno = resnmcd(iplon,lay)
@@ -4445,7 +4454,7 @@ contains
         end do
       end do
     end do
-#endif
+#endif  
 
       end subroutine cldprmcg
 
@@ -4453,7 +4462,7 @@ contains
 # undef ncol
 #endif
 
-
+      
 ! (dmb 2012) This subroutine allocates the module level arrays on the GPU
       subroutine allocateGPUcldprmcg(ncol, nlay, ngptlw)
 
@@ -4462,12 +4471,12 @@ contains
          allocate( inflagd(ncol), iceflagd(ncol), liqflagd(ncol))
          allocate( relqmcd(ncol, nlay+1), reicmcd(ncol, nlay+1))
          allocate( resnmcd(ncol, nlay+1))
-
+      
          allocate( ciwpmcd(ncol, ngptlw, nlay+1))
          allocate( clwpmcd(ncol, ngptlw, nlay+1))
          allocate( cswpmcd(ncol, ngptlw, nlay+1))
 #endif
-
+        
       end subroutine
 
       ! (dmb 2012) This subroutine deallocates any GPU arrays.
@@ -4481,22 +4490,22 @@ contains
          deallocate( clwpmcd)
          deallocate( cswpmcd)
 #endif
-
+      
       end subroutine
 
       ! (dmb 2012) This subroutine copies input data from the CPU over to the GPU
       ! for use in the cldprmcg subroutine.
       subroutine copyGPUcldprmcg(inflag, iceflag, liqflag,&
                                  absice0, absice1, absice2, absice3, absliq1)
-
+                                
          integer :: inflag(:), iceflag(:), liqflag(:)
-
+        
          real , dimension(:) :: absice0
          real , dimension(:,:) :: absice1
          real , dimension(:,:) :: absice2
          real , dimension(:,:) :: absice3
          real , dimension(:,:) :: absliq1
-
+      
 #ifdef _ACCEL
          inflagd = inflag
          iceflagd = iceflag
@@ -4508,8 +4517,8 @@ contains
          absice3d = absice3
          absliq1d = absliq1
 #endif
-
-      end subroutine
+      
+      end subroutine 
 
       end module gpu_rrtmg_lw_cldprmc
 
@@ -4538,10 +4547,10 @@ contains
 
 ! --------- Modules ----------
 
-!      use parkind, only : im => kind , rb => kind
+!      use parkind, only : im => kind , rb => kind 
       use parrrtm_f, only : mg, nbndlw, ngptlw, mxlay
       use rrlw_con_f, only: fluxfac, heatfac
-! (jm 2014) not sure why the GPU version defines ntbl 2x instead of using it
+! (jm 2014) not sure why the GPU version defines ntbl 2x instead of using it 
 ! from rrlw_tbl, but will leave it alone for now. However, it is an error when
 ! compiling for CPU, at least with the Intel compiler.  Says it's defined twice.
 #ifdef _ACCEL
@@ -4552,16 +4561,16 @@ contains
 
 #ifdef _ACCEL
       use cudafor
-#endif
-
-      implicit none
-
+#endif      
+    
+      implicit none 
+      
 #ifdef _ACCEL
 ! (jm 2014) see comment above)
       integer(kind=4), parameter :: ntbl = 10000
 #endif
 #ifdef _ACCEL
-      integer  _gpucon :: ngsd(nbndlw)
+      integer  _gpucon :: ngsd(nbndlw)      
 
 ! (dmb 2012) I moved most GPU variables so that they are module level variables.
 ! PGI Fortran seems to sometimes have trouble passing arrays into kernels correctly.
@@ -4570,20 +4579,20 @@ contains
 
 ! Atmosphere
       real , allocatable _gpudev :: taucmcd(:,:,:)
-
+   
       real , allocatable _gpudev, dimension(:,:) :: pzd            ! level (interface) pressures (hPa, mb)
                                                                    !    Dimensions: (ncol,0:nlayers)
       real , allocatable _gpudev, dimension(:) :: pwvcmd           ! precipitable water vapor (cm)
                                                                    !    Dimensions: (ncol)
       real , allocatable _gpudev, dimension(:,:) :: semissd        ! lw surface emissivity
                                                                    !    Dimensions: (ncol,nbndlw)
-      real , allocatable _gpudev, dimension(:,:,:) :: planklayd    !
+      real , allocatable _gpudev, dimension(:,:,:) :: planklayd    ! 
                                                                    !    Dimensions: (ncol,nlayers,nbndlw)
-      real , allocatable _gpudev, dimension(:,:,:) :: planklevd    !
+      real , allocatable _gpudev, dimension(:,:,:) :: planklevd    ! 
                                                                    !    Dimensions: (ncol,0:nlayers,nbndlw)
-      real, allocatable _gpudev, dimension(:,:) :: plankbndd       !
+      real, allocatable _gpudev, dimension(:,:) :: plankbndd       ! 
                                                                    !    Dimensions: (ncol,nbndlw)
-
+   
       real , allocatable _gpudev :: gurad(:,:,:)          ! upward longwave flux (w/m2)
       real , allocatable _gpudev :: gdrad(:,:,:)          ! downward longwave flux (w/m2)
       real , allocatable _gpudev :: gclrurad(:,:,:)       ! clear sky upward longwave flux (w/m2)
@@ -4594,10 +4603,10 @@ contains
 
       real  _gpudev, allocatable :: gdtotuclfl_dtd(:,:,:) ! change in clear sky upward longwave flux (w/m2/k)
                                                           ! with respect to surface temperature
-
+  
 
 ! Clouds
-      integer  _gpudev :: idrvd                       ! flag for calculation of dF/dt from
+      integer  _gpudev :: idrvd                       ! flag for calculation of dF/dt from 
                                                       ! Planck derivative [0=off, 1=on]
       real  _gpucon :: bpaded
       real  _gpucon :: heatfacd
@@ -4616,7 +4625,7 @@ contains
                                                        ! with respect to surface temperature
       real , allocatable _gpudev :: dtotuclfl_dtd(:,:) ! change in clear sky upward longwave flux (w/m2/k)
                                                        ! with respect to surface temperature
-      real , allocatable _gpudev :: dplankbnd_dtd(:,:)
+      real , allocatable _gpudev :: dplankbnd_dtd(:,:) 
 
 ! (jm 2014)
 !$OMP THREADPRIVATE( taucmcd,pzd,pwvcmd,semissd,planklayd,planklevd,plankbndd,gurad,gdrad,gclrurad,gclrdrad,&
@@ -4641,18 +4650,18 @@ contains
 !  This program calculates the upward fluxes, downward fluxes, and
 !  heating rates for an arbitrary clear or cloudy atmosphere.  The input
 !  to this program is the atmospheric profile, all Planck function
-!  information, and the cloud fraction by layer.  A variable diffusivity
-!  angle (SECDIFF) is used for the angle integration.  Bands 2-3 and 5-9
-!  use a value for SECDIFF that varies from 1.50 to 1.80 as a function of
-!  the column water vapor, and other bands use a value of 1.66.  The Gaussian
-!  weight appropriate to this angle (WTDIFF=0.5) is applied here.  Note that
-!  use of the emissivity angle for the flux integration can cause errors of
-!  1 to 4 W/m2 within cloudy layers.
+!  information, and the cloud fraction by layer.  A variable diffusivity 
+!  angle (SECDIFF) is used for the angle integration.  Bands 2-3 and 5-9 
+!  use a value for SECDIFF that varies from 1.50 to 1.80 as a function of 
+!  the column water vapor, and other bands use a value of 1.66.  The Gaussian 
+!  weight appropriate to this angle (WTDIFF=0.5) is applied here.  Note that 
+!  use of the emissivity angle for the flux integration can cause errors of 
+!  1 to 4 W/m2 within cloudy layers.  
 !  Clouds are treated with the McICA stochastic approach and maximum-random
-!  cloud overlap.
+!  cloud overlap. 
 !  This subroutine also provides the optional capability to calculate
 !  the derivative of upward flux respect to surface temperature using
-!  the pre-tabulated derivative of the Planck function with respect to
+!  the pre-tabulated derivative of the Planck function with respect to 
 !  temperature integrated over each spectral band.
 !***************************************************************************
 
@@ -4665,14 +4674,14 @@ contains
       integer(kind=4), value, intent(in) :: iend            ! ending band of calculation
       integer(kind=4), value, intent(in) :: iout            ! output option flag
       integer , intent(in) :: ngb(:)                        ! band index
-
+     
       integer , intent(in) :: icldlyr(:,:)
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
       real  _gpudev :: cldfmcd(:,:,:)
 
 #include "rrtmg_lw_cpu_defs.h"
-
+     
    ! ----- Local -----
 ! Declarations for radiative transfer
 
@@ -4683,12 +4692,12 @@ contains
 # define IDIM
 # define IDIM1
 #endif
-
+   
       real  :: atot( IDIM1 mxlay)
       real  :: atrans( IDIM1 mxlay)
       real  :: bbugas( IDIM1 mxlay)
       real  :: bbutot( IDIM1 mxlay)
-
+     
       real  :: uflux( IDIM1 0:mxlay)
       real  :: dflux( IDIM1 0:mxlay)
       real  :: uclfl( IDIM1 0:mxlay)
@@ -4704,7 +4713,7 @@ contains
 # define uclfl(X)   UCLFL(iplon,X)
 # define dclfl(X)   DCLFL(iplon,X)
 #endif
-
+    
       real  :: odclds
       real  :: efclfracs
       real  :: absclds
@@ -4715,12 +4724,12 @@ contains
       real  :: tblind, tfactot, bbd, bbdtot, tfacgas, transc, tausfac
       real  :: rad0, reflect, radlu IDIM , radclru IDIM
       real  :: d_rad0_dt, d_radlu_dt IDIM , d_radclru_dt IDIM
-
+   
       integer  :: ibnd, ib, lay, lev, l, ig         ! loop indices
       integer  :: igc                               ! g-point interval counter
       integer  :: iclddn IDIM                       ! flag for cloud in down path
       integer  :: ittot, itgas, itr                 ! lookup table indices
-
+   
 ! ------- Definitions -------
 ! input
 !    nlayers                      ! number of model layers
@@ -4761,16 +4770,16 @@ contains
 !    bbutot                       ! gas and cloud planck function for upward calc.
 !    gassrc                       ! source radiance due to gas only
 !    efclfrac                     ! effective cloud fraction
-!    radlu                        ! spectrally summed upward radiance
-!    radclru                      ! spectrally summed clear sky upward radiance
+!    radlu                        ! spectrally summed upward radiance 
+!    radclru                      ! spectrally summed clear sky upward radiance 
 !    urad                         ! upward radiance by layer
 !    clrurad                      ! clear sky upward radiance by layer
-!    radld                        ! spectrally summed downward radiance
-!    radclrd                      ! spectrally summed clear sky downward radiance
+!    radld                        ! spectrally summed downward radiance 
+!    radclrd                      ! spectrally summed clear sky downward radiance 
 !    drad                         ! downward radiance by layer
 !    clrdrad                      ! clear sky downward radiance by layer
-!    d_radlu_dt                   ! spectrally summed upward radiance
-!    d_radclru_dt                 ! spectrally summed clear sky upward radiance
+!    d_radlu_dt                   ! spectrally summed upward radiance 
+!    d_radclru_dt                 ! spectrally summed clear sky upward radiance 
 !    d_urad_dt                    ! upward radiance by layer
 !    d_clrurad_dt                 ! clear sky upward radiance by layer
 
@@ -4786,13 +4795,13 @@ contains
 !    dtotuflux_dt                 ! change in upward longwave flux (w/m2/k)
 !                                 ! with respect to surface temperature
 !    dtotuclfl_dt                 ! change in clear sky upward longwave flux (w/m2/k)
-!
-
-
-! This secant and weight corresponds to the standard diffusivity
+!    
+   
+  
+! This secant and weight corresponds to the standard diffusivity 
 ! angle.  This initial value is redefined below for some bands.
-      real , parameter :: wtdiff = 0.5
-      real , parameter :: rec_6 = 0.166667
+      real , parameter :: wtdiff = 0.5      
+      real , parameter :: rec_6 = 0.166667  
 
 ! Reset diffusivity angle for Bands 2-3 and 5-9 to vary (between 1.50
 ! and 1.80) as a function of total column water vapor.  The function
@@ -4809,58 +4818,58 @@ contains
 ! (dmb 2012) Make sure that the column and bands are within the proper ranges
    if (iplon <= ncol .and. igc<=140) then
 
-
+    
 #else
-      do igc = 1, 140
+      do igc = 1, 140 
 # define secdiff   SECDIFF(iplon)
 #endif
          ibnd = ngb(igc)
 
        ILOOP_S_CPU
          if (ibnd.eq.1 .or. ibnd.eq.4 .or. ibnd.ge.10) then
-           secdiff = 1.66
+           secdiff = 1.66 
          else
            secdiff = a0d(ibnd) + a1d(ibnd)*exp(a2d(ibnd)*pwvcmd(iplon))
-           if (secdiff .gt. 1.80 ) secdiff = 1.80
-           if (secdiff .lt. 1.50 ) secdiff = 1.50
+           if (secdiff .gt. 1.80 ) secdiff = 1.80 
+           if (secdiff .lt. 1.50 ) secdiff = 1.50 
          endif
-         gurad(iplon, igc, 0) = 0.0
-         gdrad(iplon, igc, 0) = 0.0
-!totuflux(iplon,igc,0) = 0.0
-!totdflux(iplon,igc,0) = 0.0
-         gclrurad(iplon, igc, 0) = 0.0
-         gclrdrad(iplon, igc, 0) = 0.0
-!totuclfl(iplon,igc,0) = 0.0
-!totdclfl(iplon,igc,0) = 0.0
+         gurad(iplon, igc, 0) = 0.0 
+         gdrad(iplon, igc, 0) = 0.0 
+!totuflux(iplon,igc,0) = 0.0 
+!totdflux(iplon,igc,0) = 0.0 
+         gclrurad(iplon, igc, 0) = 0.0 
+         gclrdrad(iplon, igc, 0) = 0.0 
+!totuclfl(iplon,igc,0) = 0.0 
+!totdclfl(iplon,igc,0) = 0.0 
          if (idrvd .eq. 1) then
-            gdtotuflux_dtd(iplon,igc,0) = 0.0
-            gdtotuclfl_dtd(iplon,igc,0) = 0.0
+            gdtotuflux_dtd(iplon,igc,0) = 0.0 
+            gdtotuclfl_dtd(iplon,igc,0) = 0.0 
          endif
        ILOOP_E_CPU
 
          do lay = 1, nlayers
        ILOOP_S_CPU
-            gurad(iplon, igc, lay) = 0.0
-            gdrad(iplon, igc, lay) = 0.0
-            gclrurad(iplon, igc, lay) = 0.0
-            gclrdrad(iplon, igc, lay) = 0.0
-
+            gurad(iplon, igc, lay) = 0.0 
+            gdrad(iplon, igc, lay) = 0.0 
+            gclrurad(iplon, igc, lay) = 0.0 
+            gclrdrad(iplon, igc, lay) = 0.0 
+          
 ! (dmb 2012) I removed the band loop here because it was terribly inefficient
 ! I now set the required variables outside of the kernel
 
             if (idrvd .eq. 1) then
-               gdtotuflux_dtd(iplon,igc,lay) = 0.0
-               gdtotuclfl_dtd(iplon,igc,lay) = 0.0
+               gdtotuflux_dtd(iplon,igc,lay) = 0.0 
+               gdtotuclfl_dtd(iplon,igc,lay) = 0.0 
             endif
        ILOOP_E_CPU
          enddo
 
 ! Radiative transfer starts here.
-         radld = 0.
-         radclrd = 0.
+         radld = 0. 
+         radclrd = 0. 
          iclddn = 0
 
-! Downward radiative transfer loop.
+! Downward radiative transfer loop.  
 
 # ifndef _ACCEL
 #  define radld   RADLD(iplon)
@@ -4875,30 +4884,30 @@ contains
                dplankup = planklevd(iplon,lev,ibnd) - blay
                dplankdn = planklevd(iplon,lev-1,ibnd) - blay
                odepth = secdiff * taug(iplon,lev,igc)
-               if (odepth .lt. 0.0 ) odepth = 0.0
+               if (odepth .lt. 0.0 ) odepth = 0.0 
 !  Cloudy layer
                if (icldlyr(iplon, lev).eq.1) then
                   iclddn = 1
-! (dmb 2012) Here instead of using the lookup tables to compute
-! the optical depth and related quantities, I compute them on the
+! (dmb 2012) Here instead of using the lookup tables to compute 
+! the optical depth and related quantities, I compute them on the 
 ! fly because this is actually much more efficient on the GPU.
                   odclds = secdiff * taucmcd(iplon,igc,lev)
                   absclds = 1.  - exp(-odclds)
                   efclfracs = absclds * cldfmcd(iplon, igc,lev)
                   odtot = odepth + odclds
-
+                
 #ifdef _ACCEL
                   tblind = odepth/(bpaded+odepth)
-                  itgas = tblint*tblind+0.5
+                  itgas = tblint*tblind+0.5 
                   bbb = itgas / float(tblint)
                   odepth = bpaded * bbb / (1.  - bbb)
 
                   atrans(lev) = exp( -odepth)
                   atrans(lev) = 1  -atrans(lev)
 ! (dmb 2012) Compute tfacgas on the fly.  Even though this is an expensive operation,
-! it is more efficient to do the calculation within the kernel on the GPU.
+! it is more efficient to do the calculation within the kernel on the GPU. 
                   if (odepth < 0.06) then
-                     tfacgas = odepth/6.
+                     tfacgas = odepth/6. 
                   else
                      tfacgas = 1. -2. *((1. /odepth)-((1.  - atrans(lev))/(atrans(lev))))
                   endif
@@ -4906,12 +4915,12 @@ contains
 
                   odtot = odepth + odclds
                   tblind = odtot/(bpaded+odtot)
-                  ittot = tblint*tblind + 0.5
+                  ittot = tblint*tblind + 0.5 
                   bbb = ittot / float(tblint)
                   bbb = bpaded * bbb / (1.  - bbb)
                   atot(lev) = 1.  - exp(-bbb)
                   if (bbb < 0.06) then
-                     tfactot = bbb/6.
+                     tfactot = bbb/6. 
                   else
                      tfactot = 1. -2. *((1. /bbb)-((1-atot(lev))/(atot(lev))))
                   endif
@@ -4919,7 +4928,7 @@ contains
                   bbd = plfrac*(blay+tfacgas*dplankdn)
 #else
                   tblind = odepth/(bpade+odepth)
-                  itgas = tblint*tblind+0.5
+                  itgas = tblint*tblind+0.5 
                   odepth = tau_tbl(itgas)
                   atrans(lev) = 1.  - exp_tbl(itgas)
                   tfacgas = tfn_tbl(itgas)
@@ -4927,7 +4936,7 @@ contains
 
                   odtot = odepth + odclds
                   tblind = odtot/(bpade+odtot)
-                  ittot = tblint*tblind + 0.5
+                  ittot = tblint*tblind + 0.5 
                   tfactot = tfn_tbl(ittot)
                   bbdtot = plfrac * (blay + tfactot*dplankdn)
                   bbd = plfrac*(blay+tfacgas*dplankdn)
@@ -4938,36 +4947,36 @@ contains
                   efclfracs * (1.  - atrans(lev))) + &
                   gassrc + cldfmcd(iplon, igc,lev) * &
                   (bbdtot * atot(lev) - gassrc)
-                  gdrad(iplon, igc, lev-1) = gdrad(iplon, igc, lev-1) + radld
+                  gdrad(iplon, igc, lev-1) = gdrad(iplon, igc, lev-1) + radld 
                   bbugas(lev) = plfrac * (blay + tfacgas * dplankup)
                   bbutot(lev) = plfrac * (blay + tfactot * dplankup)
-
+              
 !  Clear layer
                else
 
 #ifdef _ACCEL
                   tblind = odepth/(bpaded+odepth)
-                  itr = tblint*tblind+0.5
+                  itr = tblint*tblind+0.5 
 ! (dmb 2012) Compute the atrans and related values on the fly instead
 ! of using the lookup tables.
                   bbb = itr/float(tblint)
                   bbb = bpaded * bbb / (1.  - bbb)
                   transc = exp( -bbb )
-                  if (transc < 1.e-20 ) transc = 1.e-20
+                  if (transc < 1.e-20 ) transc = 1.e-20 
                   atrans(lev) = 1. -transc
 
                   if (bbb < 0.06 ) then
-                     tausfac = bbb/6.
+                     tausfac = bbb/6. 
                   else
                      tausfac = 1. -2. *((1. /bbb)-(transc/(1.-transc)))
-                  endif
+                  endif 
 
                   bbd = plfrac*(blay+tausfac*dplankdn)
                   bbugas(lev) = plfrac * (blay + tausfac * dplankup)
 #else
 #  if 0
                   tblind = odepth/(bpade+odepth)
-                  itr = tblint*tblind+0.5
+                  itr = tblint*tblind+0.5 
                   transc = exp_tbl(itr)
                   atrans(lev) = 1. -transc
                   tausfac = tfn_tbl(itr)
@@ -4992,7 +5001,7 @@ contains
 #  endif
 #endif
                   radld = radld + (bbd-radld )*atrans(lev)
-                  gdrad(iplon, igc, lev-1) = gdrad(iplon, igc, lev-1) + radld
+                  gdrad(iplon, igc, lev-1) = gdrad(iplon, igc, lev-1) + radld 
 
                endif
 
@@ -5000,14 +5009,14 @@ contains
 !  remain clear.  Streams diverge when a cloud is reached (iclddn=1),
 !  and clear sky stream must be computed separately from that point.
                if (iclddn .eq.1) then
-                  radclrd = radclrd + (bbd-radclrd) * atrans(lev)
-! (dmb 2012) Rather than summing up the results and then computing the
-! total fluxes, I store the g-point specific values in GPU arrays to be
-! summed up later in a new kernel.  This ensures that we can parallelize
+                  radclrd = radclrd + (bbd-radclrd) * atrans(lev) 
+! (dmb 2012) Rather than summing up the results and then computing the 
+! total fluxes, I store the g-point specific values in GPU arrays to be 
+! summed up later in a new kernel.  This ensures that we can parallelize 
 ! across enough dimensions so that the GPU remains busy.
                   gclrdrad(iplon, igc, lev-1) = gclrdrad(iplon, igc, lev-1) + radclrd
                else
-                  radclrd = radld
+                  radclrd = radld 
                   gclrdrad(iplon, igc, lev-1) = gdrad(iplon, igc, lev-1)
                endif
        ILOOP_E_CPU
@@ -5018,8 +5027,8 @@ contains
 !  and reflection from the surface to the upward radiative transfer.
 !  Note: Spectral and Lambertian reflection are identical for the
 !  diffusivity angle flux integration used here.
-!  Note: The emissivity is applied to plankbnd and dplankbnd_dt when
-!  they are defined in subroutine setcoef.
+!  Note: The emissivity is applied to plankbnd and dplankbnd_dt when 
+!  they are defined in subroutine setcoef. 
 
 # ifndef _ACCEL
 #  define radlu         RADLU(iplon)
@@ -5027,7 +5036,7 @@ contains
 #  define d_radlu_dt    D_RADLU_DT(iplon)
 #  define d_radclru_dt  D_RADCLRU_DT(iplon)
 # endif
-
+    
        ILOOP_S_CPU
          rad0 = fracsd(iplon,1,igc) * plankbndd(iplon,ibnd)
 !  Add in specular reflection of surface downward radiance.
@@ -5036,7 +5045,7 @@ contains
          radclru = rad0 + reflect * radclrd
 
 ! Upward radiative transfer loop.
-         gurad(iplon, igc, 0) = gurad(iplon, igc, 0) + radlu
+         gurad(iplon, igc, 0) = gurad(iplon, igc, 0) + radlu 
          gclrurad(iplon, igc, 0) = gclrurad(iplon, igc, 0) + radclru
        ILOOP_E_CPU
 
@@ -5062,11 +5071,11 @@ contains
 
 
 !  Set clear sky stream to total sky stream as long as all layers
-!  are clear (iclddn=0).  Streams must be calculated separately at
-!  all layers when a cloud is present (ICLDDN=1), because surface
+!  are clear (iclddn=0).  Streams must be calculated separately at 
+!  all layers when a cloud is present (ICLDDN=1), because surface 
 !  reflectance is different for each stream.
                if (iclddn.eq.1) then
-                  radclru = radclru + (bbugas(lev)-radclru)*atrans(lev)
+                  radclru = radclru + (bbugas(lev)-radclru)*atrans(lev) 
                   gclrurad(iplon, igc, lev) = gclrurad(iplon, igc, lev) + radclru
                else
                   radclru = radlu
@@ -5074,12 +5083,12 @@ contains
                endif
        ILOOP_E_CPU
           enddo
-
-
+          
+          
           tblind = wtdiff * delwaved(ibnd) * fluxfacd
- ! (dmb 2012) Now that the g-points values were created, we modify them
- ! so that later summation (integration) will be simpler.
-          do lev = 0, nlayers
+ ! (dmb 2012) Now that the g-points values were created, we modify them 
+ ! so that later summation (integration) will be simpler.  
+          do lev = 0, nlayers  
        ILOOP_S_CPU
            gurad(iplon, igc, lev) = gurad(iplon, igc, lev) * tblind
            gdrad(iplon, igc, lev) = gdrad(iplon, igc, lev) * tblind
@@ -5096,9 +5105,9 @@ contains
 
       end subroutine rtrnmcg
 
-! (dmb 2012) This subroutine adds up the indivial g-point fluxes to arrive at a
-! final upward and downward flux value for each column and layer.  This subroutine
-! is parallelized across the column and layer dimensions.  As long as we parallelize
+! (dmb 2012) This subroutine adds up the indivial g-point fluxes to arrive at a 
+! final upward and downward flux value for each column and layer.  This subroutine 
+! is parallelized across the column and layer dimensions.  As long as we parallelize 
 ! across two of the three dimesnions, we should usually have enough GPU saturation.
       _gpuker subroutine rtrnadd(ncol, nlay, ngpt, drvf                &
 #include "rrtmg_lw_cpu_args.h"
@@ -5109,17 +5118,17 @@ contains
       integer, intent(in), value :: ngpt
       integer, intent(in), value :: drvf
 #include "rrtmg_lw_cpu_defs.h"
-
+        
       integer :: iplon, ilay, igp
 !      real :: d(140)
 
-! (dmb 2012) compute the column and layer indices from the grid and block
-! configurations.
+! (dmb 2012) compute the column and layer indices from the grid and block 
+! configurations. 
 
 #ifdef _ACCEL
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       ilay = (blockidx%y-1) * blockdim%y + threadidx%y - 1
-
+       
 ! (dmb 2012) make sure that the column and layer are within range
       if (ilay <= nlay .and. iplon <= ncol) then
 #else
@@ -5129,7 +5138,7 @@ contains
 #endif
 
           do igp = 1, ngpt
-
+              
             totufluxd(iplon, ilay)=totufluxd(iplon, ilay)+gurad(iplon, igp, ilay)
             totdfluxd(iplon, ilay)=totdfluxd(iplon, ilay)+gdrad(iplon, igp, ilay)
             totuclfld(iplon, ilay)=totuclfld(iplon, ilay)+gclrurad(iplon, igp, ilay)
@@ -5140,7 +5149,7 @@ contains
           if (drvf .eq. 1) then
 
             do igp = 1, ngpt
-
+                
               dtotuflux_dtd(iplon, ilay) = dtotuflux_dtd(iplon, ilay) + gdtotuflux_dtd( iplon, igp, ilay)
               dtotuclfl_dtd(iplon, ilay) = dtotuclfl_dtd(iplon, ilay) + gdtotuclfl_dtd( iplon, igp, ilay)
 
@@ -5157,7 +5166,7 @@ contains
 
       end subroutine
 
-! (dmb 2012) This kernel computes the heating rates separately.  It is parallelized across the
+! (dmb 2012) This kernel computes the heating rates separately.  It is parallelized across the 
 ! columnn and layer dimensions.
       _gpuker subroutine rtrnheatrates(ncol, nlay &
 #ifndef _ACCEL
@@ -5177,24 +5186,24 @@ contains
 # ifndef ncol_
 #   define ncol_ CHNK
 # endif
-      integer  :: ngsd(nbndlw)
+      integer  :: ngsd(nbndlw)      
 
 ! Atmosphere
       real :: taucmcd(ncol_, ngptlw_, nlayers_+1)
-
+   
       real , dimension(ncol_, 0:nlayers_+1) :: pzd      ! level (interface) pressures (hPa, mb)
                                                         !    Dimensions: (ncol,0:nlayers)
       real , dimension(ncol_) :: pwvcmd                 ! precipitable water vapor (cm)
                                                         !    Dimensions: (ncol)
       real , dimension(ncol_,nbndlw_) :: semissd        ! lw surface emissivity
                                                         !    Dimensions: (ncol,nbndlw)
-      real , dimension(ncol_,nlayers_+1,nbndlw_) :: planklayd    !
+      real , dimension(ncol_,nlayers_+1,nbndlw_) :: planklayd    ! 
                                                         !    Dimensions: (ncol,nlayers+1,nbndlw)
-      real , dimension(ncol_,0:nlayers_+1,nbndlw_) :: planklevd    !
+      real , dimension(ncol_,0:nlayers_+1,nbndlw_) :: planklevd    ! 
                                                         !    Dimensions: (ncol,0:nlayers+1,nbndlw)
-      real, dimension(ncol_,nbndlw_) :: plankbndd       !
+      real, dimension(ncol_,nbndlw_) :: plankbndd       ! 
                                                         !    Dimensions: (ncol,nbndlw)
-
+   
       real :: gurad(ncol_,ngptlw_,0:nlayers_+1)         ! upward longwave flux (w/m2)
       real :: gdrad(ncol_,ngptlw_,0:nlayers_+1)         ! downward longwave flux (w/m2)
       real :: gclrurad(ncol_,ngptlw_,0:nlayers_+1)      ! clear sky upward longwave flux (w/m2)
@@ -5207,7 +5216,7 @@ contains
                                      ! with respect to surface temperature
 
 ! Clouds
-      integer  :: idrvd                       ! flag for calculation of dF/dt from
+      integer  :: idrvd                       ! flag for calculation of dF/dt from 
                                                       ! Planck derivative [0=off, 1=on]
       real  :: bpaded
       real  :: heatfacd
@@ -5226,18 +5235,18 @@ contains
                                                        ! with respect to surface temperature
       real :: dtotuclfl_dtd(ncol_, 0:nlayers_+1) ! change in clear sky upward longwave flux (w/m2/k)
                                                        ! with respect to surface temperature
-      real :: dplankbnd_dtd(ncol_,nbndlw_)
+      real :: dplankbnd_dtd(ncol_,nbndlw_) 
 # undef ncol_
 #endif
-
+      
       real :: t2
       integer :: iplon, ilay
 
-#ifdef _ACCEL
+#ifdef _ACCEL        
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       ilay = (blockidx%y-1) * blockdim%y + threadidx%y - 1
 
-
+    
       if (ilay<nlay .and. iplon<=ncol) then
 #else
       do iplon = 1, ncol
@@ -5255,16 +5264,16 @@ contains
         end do
       end do
 #endif
-
+       
       end subroutine
 
-! (dmb 2012) Copy needed variables over to the GPU.  These arrays are pretty small so simple
+! (dmb 2012) Copy needed variables over to the GPU.  These arrays are pretty small so simple 
 ! stream 0 assignment operators suffice.
       subroutine copyGPUrtrnmcg(pz, pwvcm, idrv, taut)
-
+            
       real , intent(in) :: pz(:,:)             ! level (interface) pressures (hPa, mb)
-      integer , intent(in) :: idrv             ! flag for calculation of dF/dt from
-      real , intent(in) :: taut(:,:,:)
+      integer , intent(in) :: idrv             ! flag for calculation of dF/dt from 
+      real , intent(in) :: taut(:,:,:)  
       real , intent(in) :: pwvcm(:)
 
 #ifdef _ACCEL
@@ -5275,10 +5284,10 @@ contains
       heatfacd = heatfac
       fluxfacd = fluxfac
 #endif
-
+         
       end subroutine
 
-! (dmb 2012) Allocate the arrays for the rtrnmc routine on the GPU.  Some of these arrays are
+! (dmb 2012) Allocate the arrays for the rtrnmc routine on the GPU.  Some of these arrays are 
 ! quite large as they contain all 3 dimensions.  Luckily, for the gurad arrays, no copying of data
 ! from the CPU is needed because they are only stored on the GPU.
       subroutine allocateGPUrtrnmcg(ncol, nlay, ngptlw, drvf)
@@ -5301,12 +5310,12 @@ integer,external :: omp_get_thread_num
 
 ! (dmb 2012) Only allocate the optional derivative arrays if the flag is set
       if (drvf .eq. 1) then
-
+            
         allocate( gdtotuflux_dtd( ncol, ngptlw, 0:nlay+1))
         allocate( gdtotuclfl_dtd( ncol, ngptlw, 0:nlay+1))
 
       endif
-
+          
       allocate (totufluxd(ncol, 0:nlay+1))     ! upward longwave flux (w/m2)
       allocate (totdfluxd(ncol, 0:nlay+1))     ! downward longwave flux (w/m2)
       allocate (fnetd(ncol, 0:nlay+1))         ! net longwave flux (w/m2)
@@ -5317,16 +5326,16 @@ integer,external :: omp_get_thread_num
       allocate (htrcd(ncol, 0:nlay+1))         ! clear sky longwave heating rate (k/day)
       allocate (dtotuflux_dtd(ncol, 0:nlay+1)) ! change in upward longwave flux (w/m2/k)
       allocate (dtotuclfl_dtd(ncol, 0:nlay+1))
-      allocate (dplankbnd_dtd(ncol,nbndlw))
+      allocate (dplankbnd_dtd(ncol,nbndlw)) 
 #endif
 
-      end subroutine
+      end subroutine 
 
 ! (dmb 2012) This subroutine deallocates rtrnmc related GPU arrays.
       subroutine deallocateGPUrtrnmcg( drvf )
 
       integer , intent(in) :: drvf
-
+          
 #ifdef _ACCEL
       deallocate( taucmcd)
       deallocate( pzd)
@@ -5349,21 +5358,21 @@ integer,external :: omp_get_thread_num
       deallocate (htrcd)         ! clear sky longwave heating rate (k/day)
       deallocate (dtotuflux_dtd) ! change in upward longwave flux (w/m2/k)
       deallocate (dtotuclfl_dtd)
-      deallocate (dplankbnd_dtd)
+      deallocate (dplankbnd_dtd) 
 
       if ( drvf .eq. 1) then
         deallocate( gdtotuflux_dtd, gdtotuclfl_dtd )
       end if
 #endif
 
-      end subroutine
+      end subroutine 
 
       end module gpu_rrtmg_lw_rtrnmc
 
 
-! (dmb 2012) This is the GPU version of the taumol subroutines.  At first I was going to
-! try and combine the taumol routines into a single subroutine, but it turns out that
-! all 16 can remain and run efficiently on the GPU.
+! (dmb 2012) This is the GPU version of the taumol subroutines.  At first I was going to 
+! try and combine the taumol routines into a single subroutine, but it turns out that 
+! all 16 can remain and run efficiently on the GPU.  
       module gpu_rrtmg_lw_taumol
 
 !  --------------------------------------------------------------------------
@@ -5378,7 +5387,7 @@ integer,external :: omp_get_thread_num
 
 ! ------- Modules -------
 
-!      use parkind, only : im => kind , rb => kind
+!      use parkind, only : im => kind , rb => kind  
       use parrrtm_f, only : mg, nbndlw, maxxsec, ngptlw
       use rrlw_con_f, only: oneminus
       use rrlw_wvn_f, only: nspa, nspb
@@ -5386,7 +5395,7 @@ integer,external :: omp_get_thread_num
       use rrlw_wvn_f, only: ngb
       use rrlw_ref_f
       use memory
-
+ 
 #ifdef _ACCEL
       use cudafor
 #endif
@@ -5395,7 +5404,7 @@ integer,external :: omp_get_thread_num
 
 #ifdef _ACCEL
 ! (dmb 2012) There are a lot of GPU module level variables in this module
-! The parameter list for the taumol subroutines have been reduced for
+! The parameter list for the taumol subroutines have been reduced for 
 ! efficiency and readability.
 ! (jm 2014) not thread-safe
       real  _gpudev, allocatable :: pavel(:,:)
@@ -5436,10 +5445,10 @@ integer,external :: omp_get_thread_num
                                                       !    Dimensions: (ncol,nlayers)
       real  _gpudev, allocatable :: tauaa(:,:,:)
                                                       !    Dimensions: (ncol,nlayers,ngptlw)
-
+     
       integer  _gpudev, allocatable :: nspad(:)
       integer  _gpudev, allocatable :: nspbd(:)
-      real  _gpucon :: oneminusd
+      real  _gpucon :: oneminusd 
 !$OMP THREADPRIVATE( pavel,wx1,wx2,wx3,wx4,coldry,laytrop,jp,jt,jt1,colh2o,colco2,colo3,coln2o, &
 !$OMP                colco,colch4,colo2,colbrd,indself,indfor,selffac,selffrac,forfac,forfrac,  &
 !$OMP                indminor,minorfrac,scaleminor,scaleminorn2,fac00,fac01,fac10,fac11,        &
@@ -5511,7 +5520,7 @@ integer,external :: omp_get_thread_num
 !     band 1:  10-350 cm-1 (low key - h2o; low minor - n2)
 !                          (high key - h2o; high minor - n2)
 !
-!     note: previous versions of rrtm band 1:
+!     note: previous versions of rrtm band 1: 
 !           10-250 cm-1 (low - h2o; high - h2o)
 !----------------------------------------------------------------------------
 
@@ -5529,7 +5538,7 @@ integer,external :: omp_get_thread_num
       real  _gpudev :: fracsd(:,:,:)
 #include "taug_cpu_defs.h"
 
-! Local
+! Local 
       integer  :: iplon
 
 #ifdef _ACCEL
@@ -5545,7 +5554,7 @@ integer,external :: omp_get_thread_num
 !     lower - n2, p = 142.5490 mbar, t = 215.70 k
 !     upper - n2, p = 142.5490 mbar, t = 215.70 k
 
-! Compute the optical depth by interpolating in ln(pressure) and
+! Compute the optical depth by interpolating in ln(pressure) and 
 ! temperature.  Below laytrop, the water vapor self-continuum and
 ! foreign continuum is interpolated (in temperature) separately.
 
@@ -5562,7 +5571,7 @@ integer,external :: omp_get_thread_num
          pp = pavel(iplon, lay)
          corradj =  1.
          if (pp .lt. 250. ) then
-            corradj = 1.  - 0.15  * (250. -pp) / 154.4
+            corradj = 1.  - 0.15  * (250. -pp) / 154.4 
          endif
 
          scalen2 = colbrd(iplon,lay) * scaleminorn2(iplon,lay)
@@ -5570,17 +5579,17 @@ integer,external :: omp_get_thread_num
             tauself = selffac(iplon,lay) * (selfrefd(inds,ig) + selffrac(iplon,lay) * &
                  (selfrefd(inds+1,ig) - selfrefd(inds,ig)))
             taufor =  forfac(iplon,lay) * (forrefd(indf,ig) + forfrac(iplon,lay) * &
-                 (forrefd(indf+1,ig) -  forrefd(indf,ig)))
-            taun2 = scalen2*(ka_mn2d(indm,ig) + &
+                 (forrefd(indf+1,ig) -  forrefd(indf,ig))) 
+            taun2 = scalen2*(ka_mn2d(indm,ig) + & 
                  minorfrac(iplon,lay) * (ka_mn2d(indm+1,ig) - ka_mn2d(indm,ig)))
             taug(iplon,lay,ig) = corradj * (colh2o(iplon,lay) * &
                 (fac00(iplon,lay) * absad(ind0,ig) + &
                  fac10(iplon,lay) * absad(ind0+1,ig) + &
                  fac01(iplon,lay) * absad(ind1,ig) + &
-                 fac11(iplon,lay) * absad(ind1+1,ig)) &
+                 fac11(iplon,lay) * absad(ind1+1,ig)) & 
                  + tauself + taufor + taun2)
              fracsd(iplon,lay,ig) = fracrefad(ig)
-
+            
          enddo
       else
 
@@ -5594,14 +5603,14 @@ integer,external :: omp_get_thread_num
          scalen2 = colbrd(iplon,lay) * scaleminorn2(iplon,lay)
          do ig = 1, ng1
             taufor = forfac(iplon,lay) * (forrefd(indf,ig) + &
-                 forfrac(iplon,lay) * (forrefd(indf+1,ig) - forrefd(indf,ig)))
-            taun2 = scalen2*(kb_mn2d(indm,ig) + &
+                 forfrac(iplon,lay) * (forrefd(indf+1,ig) - forrefd(indf,ig))) 
+            taun2 = scalen2*(kb_mn2d(indm,ig) + & 
                  minorfrac(iplon,lay) * (kb_mn2d(indm+1,ig) - kb_mn2d(indm,ig)))
             taug(iplon,lay,ig) = corradj * (colh2o(iplon,lay) * &
                 (fac00(iplon,lay) * absbd(ind0,ig) + &
                  fac10(iplon,lay) * absbd(ind0+1,ig) + &
                  fac01(iplon,lay) * absbd(ind1,ig) + &
-                 fac11(iplon,lay) * absbd(ind1+1,ig)) &
+                 fac11(iplon,lay) * absbd(ind1+1,ig)) &  
                  + taufor + taun2)
             fracsd(iplon,lay,ig) = fracrefbd(ig)
          enddo
@@ -5624,7 +5633,7 @@ integer,external :: omp_get_thread_num
 !
 !     band 2:  350-500 cm-1 (low key - h2o; high key - h2o)
 !
-!     note: previous version of rrtm band 2:
+!     note: previous version of rrtm band 2: 
 !           250 - 500 cm-1 (low - h2o; high - h2o)
 !----------------------------------------------------------------------------
 
@@ -5638,8 +5647,8 @@ integer,external :: omp_get_thread_num
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
 #include "taug_cpu_defs.h"
-
-! Local
+     
+! Local 
       integer  :: lay, ind0, ind1, inds, indf, ig
       real  :: pp, corradj, tauself, taufor
       integer , value, intent(in) :: ncol, nlayers
@@ -5653,7 +5662,7 @@ integer,external :: omp_get_thread_num
       do iplon = 1, ncol
       do lay = 1, nlayers
 #endif
-! Compute the optical depth by interpolating in ln(pressure) and
+! Compute the optical depth by interpolating in ln(pressure) and 
 ! temperature.  Below laytrop, the water vapor self-continuum and
 ! foreign continuum is interpolated (in temperature) separately.
 
@@ -5665,12 +5674,12 @@ integer,external :: omp_get_thread_num
          inds = indself(iplon,lay)
          indf = indfor(iplon,lay)
          pp = pavel(iplon, lay)
-         corradj = 1.  - .05  * (pp - 100. ) / 900.
+         corradj = 1.  - .05  * (pp - 100. ) / 900. 
          do ig = 1, ng2
             tauself = selffac(iplon,lay) * (selfrefd(inds,ig) + selffrac(iplon,lay) * &
                  (selfrefd(inds+1,ig) - selfrefd(inds,ig)))
             taufor =  forfac(iplon,lay) * (forrefd(indf,ig) + forfrac(iplon,lay) * &
-                 (forrefd(indf+1,ig) - forrefd(indf,ig)))
+                 (forrefd(indf+1,ig) - forrefd(indf,ig))) 
             taug(iplon,lay,ngs1+ig) = corradj * (colh2o(iplon,lay) * &
                 (fac00(iplon,lay) * absad(ind0,ig) + &
                  fac10(iplon,lay) * absad(ind0+1,ig) + &
@@ -5686,7 +5695,7 @@ integer,external :: omp_get_thread_num
          indf = indfor(iplon,lay)
          do ig = 1, ng2
             taufor =  forfac(iplon,lay) * (forrefd(indf,ig) + &
-                 forfrac(iplon,lay) * (forrefd(indf+1,ig) - forrefd(indf,ig)))
+                 forfrac(iplon,lay) * (forrefd(indf+1,ig) - forrefd(indf,ig))) 
             taug(iplon,lay,ngs1+ig) = colh2o(iplon,lay) * &
                 (fac00(iplon,lay) * absbd(ind0,ig) + &
                  fac10(iplon,lay) * absbd(ind0+1,ig) + &
@@ -5696,7 +5705,7 @@ integer,external :: omp_get_thread_num
             fracsd(iplon,lay,ngs1+ig) = fracrefbd(ig)
          enddo
       endif
-
+      
 #ifdef _ACCEL
       endif
 #else
@@ -5726,10 +5735,10 @@ integer,external :: omp_get_thread_num
 ! ------- Declarations -------
 #include "taug_cpu_defs.h"
 
-! Local
+! Local 
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
-
+     
       integer  :: lay, ind0, ind1, inds, indf, indm, ig
       integer  :: js, js1, jmn2o, jpl
       real  :: speccomb, specparm, specmult, fs
@@ -5767,12 +5776,12 @@ integer,external :: omp_get_thread_num
 !  P = 706.270mb
       refrat_m_a = chi_mlsd(1,3)/chi_mlsd(2,3)
 
-!  P = 95.58 mb
+!  P = 95.58 mb 
       refrat_m_b = chi_mlsd(1,13)/chi_mlsd(2,13)
 
-! Compute the optical depth by interpolating in ln(pressure) and
-! temperature, and appropriate species.  Below laytrop, the water vapor
-! self-continuum and foreign continuum is interpolated (in temperature)
+! Compute the optical depth by interpolating in ln(pressure) and 
+! temperature, and appropriate species.  Below laytrop, the water vapor 
+! self-continuum and foreign continuum is interpolated (in temperature) 
 ! separately.
 
 ! Lower atmosphere loop
@@ -5783,7 +5792,7 @@ integer,external :: omp_get_thread_num
          if (specparm .ge. oneminusd) specparm = oneminusd
          specmult = 8. *(specparm)
          js = 1 + int(specmult)
-         fs = mod(specmult,1.0 )
+         fs = mod(specmult,1.0 )        
 
          speccomb1 = colh2o(iplon,lay) + rat_h2oco2_1(iplon,lay)*colco2(iplon,lay)
          specparm1 = colh2o(iplon,lay)/speccomb1
@@ -5800,13 +5809,13 @@ integer,external :: omp_get_thread_num
          fmn2o = mod(specmult_mn2o,1.0 )
          fmn2omf = minorfrac(iplon,lay)*fmn2o
 !  In atmospheres where the amount of N2O is too great to be considered
-!  a minor species, adjust the column amount of N2O by an empirical factor
+!  a minor species, adjust the column amount of N2O by an empirical factor 
 !  to obtain the proper contribution.
          chi_n2o = coln2o(iplon,lay)/coldry(iplon,lay)
          ratn2o = 1.e20 *chi_n2o/chi_mlsd(4,jp(iplon,lay)+1)
          if (ratn2o .gt. 1.5 ) then
-            adjfac = 0.5 +(ratn2o-0.5 )**0.65
-            adjcoln2o = adjfac*chi_mlsd(4,jp(iplon,lay)+1)*coldry(iplon,lay)*1.e-20
+            adjfac = 0.5 +(ratn2o-0.5 )**0.65 
+            adjcoln2o = adjfac*chi_mlsd(4,jp(iplon,lay)+1)*coldry(iplon,lay)*1.e-20 
          else
             adjcoln2o = coln2o(iplon,lay)
          endif
@@ -5837,7 +5846,7 @@ integer,external :: omp_get_thread_num
             fac110 = fk1*fac10(iplon,lay)
             fac210 = fk2*fac10(iplon,lay)
          else if (specparm .gt. 0.875 ) then
-            p = -fs
+            p = -fs 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -5867,7 +5876,7 @@ integer,external :: omp_get_thread_num
             fac111 = fk1*fac11(iplon,lay)
             fac211 = fk2*fac11(iplon,lay)
          else if (specparm1 .gt. 0.875 ) then
-            p = -fs1
+            p = -fs1 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -5889,7 +5898,7 @@ integer,external :: omp_get_thread_num
             tauself = selffac(iplon,lay)* (selfrefd(inds,ig) + selffrac(iplon,lay) * &
                  (selfrefd(inds+1,ig) - selfrefd(inds,ig)))
             taufor = forfac(iplon,lay) * (forrefd(indf,ig) + forfrac(iplon,lay) * &
-                 (forrefd(indf+1,ig) - forrefd(indf,ig)))
+                 (forrefd(indf+1,ig) - forrefd(indf,ig))) 
             n2om1 = ka_mn2od(jmn2o,indm,ig) + fmn2o * &
                  (ka_mn2od(jmn2o+1,indm,ig) - ka_mn2od(jmn2o,indm,ig))
             n2om2 = ka_mn2od(jmn2o,indm+1,ig) + fmn2o * &
@@ -5950,7 +5959,7 @@ integer,external :: omp_get_thread_num
             fracsd(iplon,lay,ngs2+ig) = fracrefad(ig,jpl) + fpl * &
                  (fracrefad(ig,jpl+1)-fracrefad(ig,jpl))
          enddo
-
+    
 
 ! Upper atmosphere loop
       else
@@ -5986,13 +5995,13 @@ integer,external :: omp_get_thread_num
          fmn2o = mod(specmult_mn2o,1.0 )
          fmn2omf = minorfrac(iplon,lay)*fmn2o
 !  In atmospheres where the amount of N2O is too great to be considered
-!  a minor species, adjust the column amount of N2O by an empirical factor
+!  a minor species, adjust the column amount of N2O by an empirical factor 
 !  to obtain the proper contribution.
          chi_n2o = coln2o(iplon,lay)/coldry(iplon,lay)
          ratn2o = 1.e20*chi_n2o/chi_mlsd(4,jp(iplon,lay)+1)
          if (ratn2o .gt. 1.5 ) then
-            adjfac = 0.5 +(ratn2o-0.5 )**0.65
-            adjcoln2o = adjfac*chi_mlsd(4,jp(iplon,lay)+1)*coldry(iplon,lay)*1.e-20
+            adjfac = 0.5 +(ratn2o-0.5 )**0.65 
+            adjcoln2o = adjfac*chi_mlsd(4,jp(iplon,lay)+1)*coldry(iplon,lay)*1.e-20 
          else
             adjcoln2o = coln2o(iplon,lay)
          endif
@@ -6011,7 +6020,7 @@ integer,external :: omp_get_thread_num
 
          do ig = 1, ng3
             taufor = forfac(iplon,lay) * (forrefd(indf,ig) + &
-                 forfrac(iplon,lay) * (forrefd(indf+1,ig) - forrefd(indf,ig)))
+                 forfrac(iplon,lay) * (forrefd(indf+1,ig) - forrefd(indf,ig))) 
             n2om1 = kb_mn2od(jmn2o,indm,ig) + fmn2o * &
                  (kb_mn2od(jmn2o+1,indm,ig)-kb_mn2od(jmn2o,indm,ig))
             n2om2 = kb_mn2od(jmn2o,indm+1,ig) + fmn2o * &
@@ -6062,11 +6071,11 @@ integer,external :: omp_get_thread_num
 ! ------- Declarations -------
 #include "taug_cpu_defs.h"
 
-! Local
+! Local 
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
-
-
+     
+      
       integer  :: lay, ind0, ind1, inds, indf, ig
       integer  :: js, js1, jpl
       real  :: speccomb, specparm, specmult, fs
@@ -6088,16 +6097,16 @@ integer,external :: omp_get_thread_num
 #else
       do iplon = 1, ncol
       do lay = 1, nlayers
-#endif
+#endif 
 ! P =   142.5940 mb
       refrat_planck_a = chi_mlsd(1,11)/chi_mlsd(2,11)
 
 ! P = 95.58350 mb
       refrat_planck_b = chi_mlsd(3,13)/chi_mlsd(2,13)
 
-! Compute the optical depth by interpolating in ln(pressure) and
-! temperature, and appropriate species.  Below laytrop, the water
-! vapor self-continuum and foreign continuum is interpolated (in temperature)
+! Compute the optical depth by interpolating in ln(pressure) and 
+! temperature, and appropriate species.  Below laytrop, the water 
+! vapor self-continuum and foreign continuum is interpolated (in temperature) 
 ! separately.
 
 ! Lower atmosphere loop
@@ -6142,7 +6151,7 @@ integer,external :: omp_get_thread_num
             fac110 = fk1*fac10(iplon,lay)
             fac210 = fk2*fac10(iplon,lay)
          else if (specparm .gt. 0.875 ) then
-            p = -fs
+            p = -fs 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -6173,7 +6182,7 @@ integer,external :: omp_get_thread_num
             fac111 = fk1*fac11(iplon,lay)
             fac211 = fk2*fac11(iplon,lay)
          else if (specparm1 .gt. 0.875 ) then
-            p = -fs1
+            p = -fs1 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -6195,7 +6204,7 @@ integer,external :: omp_get_thread_num
             tauself = selffac(iplon,lay)* (selfrefd(inds,ig) + selffrac(iplon,lay) * &
                  (selfrefd(inds+1,ig) - selfrefd(inds,ig)))
             taufor =  forfac(iplon,lay) * (forrefd(indf,ig) + forfrac(iplon,lay) * &
-                 (forrefd(indf+1,ig) - forrefd(indf,ig)))
+                 (forrefd(indf+1,ig) - forrefd(indf,ig))) 
 
             if (specparm .lt. 0.125 ) then
                tau_major = speccomb * &
@@ -6250,7 +6259,7 @@ integer,external :: omp_get_thread_num
             fracsd(iplon,lay,ngs3+ig) = fracrefad(ig,jpl) + fpl * &
                  (fracrefad(ig,jpl+1)-fracrefad(ig,jpl))
          enddo
-
+    
 
 ! Upper atmosphere loop
       else
@@ -6345,10 +6354,10 @@ integer,external :: omp_get_thread_num
 ! ------- Declarations -------
 #include "taug_cpu_defs.h"
 
-! Local
+! Local 
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
-
+     
       integer  :: lay, ind0, ind1, inds, indf, indm, ig
       integer  :: js, js1, jmo3, jpl
       real  :: speccomb, specparm, specmult, fs
@@ -6388,9 +6397,9 @@ integer,external :: omp_get_thread_num
 ! P = 317.3480
       refrat_m_a = chi_mlsd(1,7)/chi_mlsd(2,7)
 
-! Compute the optical depth by interpolating in ln(pressure) and
-! temperature, and appropriate species.  Below laytrop, the
-! water vapor self-continuum and foreign continuum is
+! Compute the optical depth by interpolating in ln(pressure) and 
+! temperature, and appropriate species.  Below laytrop, the 
+! water vapor self-continuum and foreign continuum is 
 ! interpolated (in temperature) separately.
 
 ! Lower atmosphere loop
@@ -6443,7 +6452,7 @@ integer,external :: omp_get_thread_num
             fac110 = fk1*fac10(iplon,lay)
             fac210 = fk2*fac10(iplon,lay)
          else if (specparm .gt. 0.875 ) then
-            p = -fs
+            p = -fs 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -6474,7 +6483,7 @@ integer,external :: omp_get_thread_num
             fac111 = fk1*fac11(iplon,lay)
             fac211 = fk2*fac11(iplon,lay)
          else if (specparm1 .gt. 0.875 ) then
-            p = -fs1
+            p = -fs1 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -6496,7 +6505,7 @@ integer,external :: omp_get_thread_num
             tauself = selffac(iplon,lay) * (selfrefd(inds,ig) + selffrac(iplon,lay) * &
                  (selfrefd(inds+1,ig) - selfrefd(inds,ig)))
             taufor =  forfac(iplon,lay) * (forrefd(indf,ig) + forfrac(iplon,lay) * &
-                 (forrefd(indf+1,ig) - forrefd(indf,ig)))
+                 (forrefd(indf+1,ig) - forrefd(indf,ig))) 
             o3m1 = ka_mo3d(jmo3,indm,ig) + fmo3 * &
                  (ka_mo3d(jmo3+1,indm,ig)-ka_mo3d(jmo3,indm,ig))
             o3m2 = ka_mo3d(jmo3,indm+1,ig) + fmo3 * &
@@ -6536,7 +6545,7 @@ integer,external :: omp_get_thread_num
                     fac111 * absad(ind1+10,ig) + &
                     fac211 * absad(ind1+11,ig))
             else if (specparm1 .gt. 0.875 ) then
-               tau_major1 = speccomb1 * &
+               tau_major1 = speccomb1 * & 
                     (fac201 * absad(ind1-1,ig) + &
                     fac101 * absad(ind1,ig) + &
                     fac001 * absad(ind1+1,ig) + &
@@ -6595,7 +6604,7 @@ integer,external :: omp_get_thread_num
 
          ind0 = ((jp(iplon,lay)-13)*5+(jt(iplon,lay)-1))*nspbd(5) + js
          ind1 = ((jp(iplon,lay)-12)*5+(jt1(iplon,lay)-1))*nspbd(5) + js1
-
+         
          do ig = 1, ng5
             taug(iplon,lay,ngs4+ig) = speccomb * &
                 (fac000 * absbd(ind0,ig) + &
@@ -6642,7 +6651,7 @@ integer,external :: omp_get_thread_num
 ! ------- Declarations -------
 #include "taug_cpu_defs.h"
 
-! Local
+! Local 
       integer  :: lay, ind0, ind1, inds, indf, indm, ig
       real  :: chi_co2, ratco2, adjfac, adjcolco2
       real  :: tauself, taufor, absco2
@@ -6650,7 +6659,7 @@ integer,external :: omp_get_thread_num
       integer  :: iplon
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
-
+     
 #ifdef _ACCEL
         iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
@@ -6665,19 +6674,19 @@ integer,external :: omp_get_thread_num
 
 ! Compute the optical depth by interpolating in ln(pressure) and
 ! temperature. The water vapor self-continuum and foreign continuum
-! is interpolated (in temperature) separately.
+! is interpolated (in temperature) separately.  
 
 ! Lower atmosphere loop
       if (lay <= laytrop(iplon)) then
 
 ! In atmospheres where the amount of CO2 is too great to be considered
-! a minor species, adjust the column amount of CO2 by an empirical factor
+! a minor species, adjust the column amount of CO2 by an empirical factor 
 ! to obtain the proper contribution.
          chi_co2 = colco2(iplon,lay)/(coldry(iplon,lay))
          ratco2 = 1.e20 *chi_co2/chi_mlsd(2,jp(iplon,lay)+1)
          if (ratco2 .gt. 3.0 ) then
-            adjfac = 2.0 +(ratco2-2.0 )**0.77
-            adjcolco2 = adjfac*chi_mlsd(2,jp(iplon,lay)+1)*coldry(iplon,lay)*1.e-20
+            adjfac = 2.0 +(ratco2-2.0 )**0.77 
+            adjcolco2 = adjfac*chi_mlsd(2,jp(iplon,lay)+1)*coldry(iplon,lay)*1.e-20 
          else
             adjcolco2 = colco2(iplon,lay)
          endif
@@ -6745,10 +6754,10 @@ integer,external :: omp_get_thread_num
 ! ------- Declarations -------
 #include "taug_cpu_defs.h"
 
-! Local
+! Local 
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
-
+     
       integer  :: lay, ind0, ind1, inds, indf, indm, ig
       integer  :: js, js1, jmco2, jpl
       real  :: speccomb, specparm, specmult, fs
@@ -6786,10 +6795,10 @@ integer,external :: omp_get_thread_num
 ! P = 706.2720 mb
       refrat_m_a = chi_mlsd(1,3)/chi_mlsd(3,3)
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below laytrop, the water
-! vapor self-continuum and foreign continuum is interpolated
-! (in temperature) separately.
+! vapor self-continuum and foreign continuum is interpolated 
+! (in temperature) separately. 
 
 ! Lower atmosphere loop
       if (lay <= laytrop(iplon)) then
@@ -6817,13 +6826,13 @@ integer,external :: omp_get_thread_num
          fmco2 = mod(specmult_mco2,1.0 )
 
 !  In atmospheres where the amount of CO2 is too great to be considered
-!  a minor species, adjust the column amount of CO2 by an empirical factor
+!  a minor species, adjust the column amount of CO2 by an empirical factor 
 !  to obtain the proper contribution.
          chi_co2 = colco2(iplon,lay)/(coldry(iplon,lay))
          ratco2 = 1.e20*chi_co2/chi_mlsd(2,jp(iplon,lay)+1)
          if (ratco2 .gt. 3.0 ) then
-            adjfac = 3.0 +(ratco2-3.0 )**0.79
-            adjcolco2 = adjfac*chi_mlsd(2,jp(iplon,lay)+1)*coldry(iplon,lay)*1.e-20
+            adjfac = 3.0 +(ratco2-3.0 )**0.79 
+            adjcolco2 = adjfac*chi_mlsd(2,jp(iplon,lay)+1)*coldry(iplon,lay)*1.e-20 
          else
             adjcolco2 = colco2(iplon,lay)
          endif
@@ -6854,7 +6863,7 @@ integer,external :: omp_get_thread_num
             fac110 = fk1*fac10(iplon,lay)
             fac210 = fk2*fac10(iplon,lay)
          else if (specparm .gt. 0.875 ) then
-            p = -fs
+            p = -fs 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -6884,7 +6893,7 @@ integer,external :: omp_get_thread_num
             fac111 = fk1*fac11(iplon,lay)
             fac211 = fk2*fac11(iplon,lay)
          else if (specparm1 .gt. 0.875 ) then
-            p = -fs1
+            p = -fs1 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -6906,7 +6915,7 @@ integer,external :: omp_get_thread_num
             tauself = selffac(iplon,lay)* (selfrefd(inds,ig) + selffrac(iplon,lay) * &
                  (selfrefd(inds+1,ig) - selfrefd(inds,ig)))
             taufor = forfac(iplon,lay) * (forrefd(indf,ig) + forfrac(iplon,lay) * &
-                 (forrefd(indf+1,ig) - forrefd(indf,ig)))
+                 (forrefd(indf+1,ig) - forrefd(indf,ig))) 
             co2m1 = ka_mco2d(jmco2,indm,ig) + fmco2 * &
                  (ka_mco2d(jmco2+1,indm,ig) - ka_mco2d(jmco2,indm,ig))
             co2m2 = ka_mco2d(jmco2,indm+1,ig) + fmco2 * &
@@ -6969,13 +6978,13 @@ integer,external :: omp_get_thread_num
          enddo
     else
 !  In atmospheres where the amount of CO2 is too great to be considered
-!  a minor species, adjust the column amount of CO2 by an empirical factor
+!  a minor species, adjust the column amount of CO2 by an empirical factor 
 !  to obtain the proper contribution.
          chi_co2 = colco2(iplon,lay)/(coldry(iplon,lay))
          ratco2 = 1.e20*chi_co2/chi_mlsd(2,jp(iplon,lay)+1)
          if (ratco2 .gt. 3.0 ) then
-            adjfac = 2.0 +(ratco2-2.0 )**0.79
-            adjcolco2 = adjfac*chi_mlsd(2,jp(iplon,lay)+1)*coldry(iplon,lay)*1.e-20
+            adjfac = 2.0 +(ratco2-2.0 )**0.79 
+            adjcolco2 = adjfac*chi_mlsd(2,jp(iplon,lay)+1)*coldry(iplon,lay)*1.e-20 
          else
             adjcolco2 = colco2(iplon,lay)
          endif
@@ -6999,12 +7008,12 @@ integer,external :: omp_get_thread_num
 ! Empirical modification to code to improve stratospheric cooling rates
 ! for o3.  Revised to apply weighting for g-point reduction in this band.
 
-         taug(iplon,lay,ngs6+6)=taug(iplon,lay,ngs6+6)*0.92
-         taug(iplon,lay,ngs6+7)=taug(iplon,lay,ngs6+7)*0.88
-         taug(iplon,lay,ngs6+8)=taug(iplon,lay,ngs6+8)*1.07
-         taug(iplon,lay,ngs6+9)=taug(iplon,lay,ngs6+9)*1.1
-         taug(iplon,lay,ngs6+10)=taug(iplon,lay,ngs6+10)*0.99
-         taug(iplon,lay,ngs6+11)=taug(iplon,lay,ngs6+11)*0.855
+         taug(iplon,lay,ngs6+6)=taug(iplon,lay,ngs6+6)*0.92 
+         taug(iplon,lay,ngs6+7)=taug(iplon,lay,ngs6+7)*0.88 
+         taug(iplon,lay,ngs6+8)=taug(iplon,lay,ngs6+8)*1.07 
+         taug(iplon,lay,ngs6+9)=taug(iplon,lay,ngs6+9)*1.1 
+         taug(iplon,lay,ngs6+10)=taug(iplon,lay,ngs6+10)*0.99 
+         taug(iplon,lay,ngs6+11)=taug(iplon,lay,ngs6+11)*0.855 
 
       endif
 
@@ -7037,10 +7046,10 @@ integer,external :: omp_get_thread_num
 ! ------- Declarations -------
 #include "taug_cpu_defs.h"
 
-! Local
+! Local  
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
-
+     
       integer  :: lay, ind0, ind1, inds, indf, indm, ig
       real  :: tauself, taufor, absco2, abso3, absn2o
       real  :: chi_co2, ratco2, adjfac, adjcolco2
@@ -7063,22 +7072,22 @@ integer,external :: omp_get_thread_num
 !     upper - co2, p = 35.1632 mb, t = 223.28 k
 !     upper - n2o, p = 8.716e-2 mb, t = 226.03 k
 
-! Compute the optical depth by interpolating in ln(pressure) and
-! temperature, and appropriate species.  Below laytrop, the water vapor
-! self-continuum and foreign continuum is interpolated (in temperature)
+! Compute the optical depth by interpolating in ln(pressure) and 
+! temperature, and appropriate species.  Below laytrop, the water vapor 
+! self-continuum and foreign continuum is interpolated (in temperature) 
 ! separately.
 
 ! Lower atmosphere loop
       if (lay <= laytrop(iplon)) then
 
 !  In atmospheres where the amount of CO2 is too great to be considered
-!  a minor species, adjust the column amount of CO2 by an empirical factor
+!  a minor species, adjust the column amount of CO2 by an empirical factor 
 !  to obtain the proper contribution.
          chi_co2 = colco2(iplon,lay)/(coldry(iplon,lay))
          ratco2 = 1.e20 *chi_co2/chi_mlsd(2,jp(iplon,lay)+1)
          if (ratco2 .gt. 3.0 ) then
-            adjfac = 2.0 +(ratco2-2.0 )**0.65
-            adjcolco2 = adjfac*chi_mlsd(2,jp(iplon,lay)+1)*coldry(iplon,lay)*1.e-20
+            adjfac = 2.0 +(ratco2-2.0 )**0.65 
+            adjcolco2 = adjfac*chi_mlsd(2,jp(iplon,lay)+1)*coldry(iplon,lay)*1.e-20 
          else
             adjcolco2 = colco2(iplon,lay)
          endif
@@ -7115,13 +7124,13 @@ integer,external :: omp_get_thread_num
          enddo
       else
 !  In atmospheres where the amount of CO2 is too great to be considered
-!  a minor species, adjust the column amount of CO2 by an empirical factor
+!  a minor species, adjust the column amount of CO2 by an empirical factor 
 !  to obtain the proper contribution.
          chi_co2 = colco2(iplon,lay)/coldry(iplon,lay)
          ratco2 = 1.e20 *chi_co2/chi_mlsd(2,jp(iplon,lay)+1)
          if (ratco2 .gt. 3.0 ) then
-            adjfac = 2.0 +(ratco2-2.0 )**0.65
-            adjcolco2 = adjfac*chi_mlsd(2,jp(iplon,lay)+1) * coldry(iplon,lay)*1.e-20
+            adjfac = 2.0 +(ratco2-2.0 )**0.65 
+            adjcolco2 = adjfac*chi_mlsd(2,jp(iplon,lay)+1) * coldry(iplon,lay)*1.e-20 
          else
             adjcolco2 = colco2(iplon,lay)
          endif
@@ -7141,7 +7150,7 @@ integer,external :: omp_get_thread_num
                  fac01(iplon,lay) * absbd(ind1,ig) + &
                  fac11(iplon,lay) * absbd(ind1+1,ig)) &
                  + adjcolco2*absco2 &
-                 + coln2o(iplon,lay)*absn2o &
+                 + coln2o(iplon,lay)*absn2o & 
                  + wx3(iplon,lay) * coldry(iplon,lay) * 1.e-20  * cfc12d(ig) &
                  + wx4(iplon,lay) * coldry(iplon,lay) * 1.e-20  * cfc22adjd(ig)
             fracsd(iplon,lay,ngs7+ig) = fracrefbd(ig)
@@ -7178,8 +7187,8 @@ integer,external :: omp_get_thread_num
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
 #include "taug_cpu_defs.h"
-
-! Local
+     
+! Local 
       integer  :: lay, ind0, ind1, inds, indf, indm, ig
       integer  :: js, js1, jmn2o, jpl
       real  :: speccomb, specparm, specmult, fs
@@ -7214,13 +7223,13 @@ integer,external :: omp_get_thread_num
 ! P = 212 mb
       refrat_planck_a = chi_mlsd(1,9)/chi_mlsd(6,9)
 
-! P = 706.272 mb
+! P = 706.272 mb 
       refrat_m_a = chi_mlsd(1,3)/chi_mlsd(6,3)
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below laytrop, the water
-! vapor self-continuum and foreign continuum is interpolated
-! (in temperature) separately.
+! vapor self-continuum and foreign continuum is interpolated 
+! (in temperature) separately.  
 
 ! Lower atmosphere loop
       if (lay <= laytrop(iplon)) then
@@ -7247,13 +7256,13 @@ integer,external :: omp_get_thread_num
          fmn2o = mod(specmult_mn2o,1.0 )
 
 !  In atmospheres where the amount of N2O is too great to be considered
-!  a minor species, adjust the column amount of N2O by an empirical factor
+!  a minor species, adjust the column amount of N2O by an empirical factor 
 !  to obtain the proper contribution.
          chi_n2o = coln2o(iplon,lay)/(coldry(iplon,lay))
          ratn2o = 1.e20 *chi_n2o/chi_mlsd(4,jp(iplon,lay)+1)
          if (ratn2o .gt. 1.5 ) then
-            adjfac = 0.5 +(ratn2o-0.5 )**0.65
-            adjcoln2o = adjfac*chi_mlsd(4,jp(iplon,lay)+1)*coldry(iplon,lay)*1.e-20
+            adjfac = 0.5 +(ratn2o-0.5 )**0.65 
+            adjcoln2o = adjfac*chi_mlsd(4,jp(iplon,lay)+1)*coldry(iplon,lay)*1.e-20 
          else
             adjcoln2o = coln2o(iplon,lay)
          endif
@@ -7284,7 +7293,7 @@ integer,external :: omp_get_thread_num
             fac110 = fk1*fac10(iplon,lay)
             fac210 = fk2*fac10(iplon,lay)
          else if (specparm .gt. 0.875 ) then
-            p = -fs
+            p = -fs 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -7315,7 +7324,7 @@ integer,external :: omp_get_thread_num
             fac111 = fk1*fac11(iplon,lay)
             fac211 = fk2*fac11(iplon,lay)
          else if (specparm1 .gt. 0.875 ) then
-            p = -fs1
+            p = -fs1 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -7337,7 +7346,7 @@ integer,external :: omp_get_thread_num
             tauself = selffac(iplon,lay)* (selfrefd(inds,ig) + selffrac(iplon,lay) * &
                  (selfrefd(inds+1,ig) - selfrefd(inds,ig)))
             taufor = forfac(iplon,lay) * (forrefd(indf,ig) + forfrac(iplon,lay) * &
-                 (forrefd(indf+1,ig) - forrefd(indf,ig)))
+                 (forrefd(indf+1,ig) - forrefd(indf,ig))) 
             n2om1 = ka_mn2od(jmn2o,indm,ig) + fmn2o * &
                  (ka_mn2od(jmn2o+1,indm,ig) - ka_mn2od(jmn2o,indm,ig))
             n2om2 = ka_mn2od(jmn2o,indm+1,ig) + fmn2o * &
@@ -7370,7 +7379,7 @@ integer,external :: omp_get_thread_num
 
             if (specparm1 .lt. 0.125 ) then
                tau_major1 = speccomb1 * &
-                    (fac001 * absad(ind1,ig) + &
+                    (fac001 * absad(ind1,ig) + & 
                     fac101 * absad(ind1+1,ig) + &
                     fac201 * absad(ind1+2,ig) + &
                     fac011 * absad(ind1+9,ig) + &
@@ -7400,13 +7409,13 @@ integer,external :: omp_get_thread_num
          enddo
       else
 !  In atmospheres where the amount of N2O is too great to be considered
-!  a minor species, adjust the column amount of N2O by an empirical factor
+!  a minor species, adjust the column amount of N2O by an empirical factor 
 !  to obtain the proper contribution.
          chi_n2o = coln2o(iplon,lay)/(coldry(iplon,lay))
          ratn2o = 1.e20 *chi_n2o/chi_mlsd(4,jp(iplon,lay)+1)
          if (ratn2o .gt. 1.5 ) then
-            adjfac = 0.5 +(ratn2o-0.5 )**0.65
-            adjcoln2o = adjfac*chi_mlsd(4,jp(iplon,lay)+1)*coldry(iplon,lay)*1.e-20
+            adjfac = 0.5 +(ratn2o-0.5 )**0.65 
+            adjcoln2o = adjfac*chi_mlsd(4,jp(iplon,lay)+1)*coldry(iplon,lay)*1.e-20 
          else
             adjcoln2o = coln2o(iplon,lay)
          endif
@@ -7456,8 +7465,8 @@ integer,external :: omp_get_thread_num
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
 #include "taug_cpu_defs.h"
-
-! Local
+     
+! Local 
       integer  :: lay, ind0, ind1, inds, indf, ig
       real  :: tauself, taufor
       integer , value, intent(in) :: ncol, nlayers
@@ -7471,7 +7480,7 @@ integer,external :: omp_get_thread_num
       do iplon = 1, ncol
       do lay = 1, nlayers
 #endif
-! Compute the optical depth by interpolating in ln(pressure) and
+! Compute the optical depth by interpolating in ln(pressure) and 
 ! temperature.  Below laytrop, the water vapor self-continuum and
 ! foreign continuum is interpolated (in temperature) separately.
 
@@ -7486,7 +7495,7 @@ integer,external :: omp_get_thread_num
             tauself = selffac(iplon,lay) * (selfrefd(inds,ig) + selffrac(iplon,lay) * &
                  (selfrefd(inds+1,ig) - selfrefd(inds,ig)))
             taufor = forfac(iplon,lay) * (forrefd(indf,ig) + forfrac(iplon,lay) * &
-                 (forrefd(indf+1,ig) - forrefd(indf,ig)))
+                 (forrefd(indf+1,ig) - forrefd(indf,ig))) 
             taug(iplon,lay,ngs9+ig) = colh2o(iplon,lay) * &
                  (fac00(iplon,lay) * absad(ind0,ig) + &
                  fac10(iplon,lay) * absad(ind0+1,ig) + &
@@ -7496,14 +7505,14 @@ integer,external :: omp_get_thread_num
             fracsd(iplon,lay,ngs9+ig) = fracrefad(ig)
          enddo
       else
-
+   
          ind0 = ((jp(iplon,lay)-13)*5+(jt(iplon,lay)-1))*nspbd(10) + 1
          ind1 = ((jp(iplon,lay)-12)*5+(jt1(iplon,lay)-1))*nspbd(10) + 1
          indf = indfor(iplon,lay)
 
          do ig = 1, ng10
             taufor = forfac(iplon,lay) * (forrefd(indf,ig) + forfrac(iplon,lay) * &
-                 (forrefd(indf+1,ig) - forrefd(indf,ig)))
+                 (forrefd(indf+1,ig) - forrefd(indf,ig))) 
             taug(iplon,lay,ngs9+ig) = colh2o(iplon,lay) * &
                  (fac00(iplon,lay) * absbd(ind0,ig) + &
                  fac10(iplon,lay) * absbd(ind0+1,ig) + &
@@ -7542,8 +7551,8 @@ integer,external :: omp_get_thread_num
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
 #include "taug_cpu_defs.h"
-
-! Local
+     
+! Local 
       integer  :: lay, ind0, ind1, inds, indf, indm, ig
       real  :: scaleo2, tauself, taufor, tauo2
       integer , value, intent(in) :: ncol, nlayers
@@ -7561,7 +7570,7 @@ integer,external :: omp_get_thread_num
 !     lower - o2, p = 706.2720 mbar, t = 278.94 k
 !     upper - o2, p = 4.758820 mbarm t = 250.85 k
 
-! Compute the optical depth by interpolating in ln(pressure) and
+! Compute the optical depth by interpolating in ln(pressure) and 
 ! temperature.  Below laytrop, the water vapor self-continuum and
 ! foreign continuum is interpolated (in temperature) separately.
 
@@ -7597,7 +7606,7 @@ integer,external :: omp_get_thread_num
          scaleo2 = colo2(iplon,lay)*scaleminor(iplon,lay)
          do ig = 1, ng11
             taufor = forfac(iplon,lay) * (forrefd(indf,ig) + forfrac(iplon,lay) * &
-                 (forrefd(indf+1,ig) - forrefd(indf,ig)))
+                 (forrefd(indf+1,ig) - forrefd(indf,ig))) 
             tauo2 =  scaleo2 * (kb_mo2d(indm,ig) + minorfrac(iplon,lay) * &
                  (kb_mo2d(indm+1,ig) - kb_mo2d(indm,ig)))
             taug(iplon,lay,ngs10+ig) = colh2o(iplon,lay) * &
@@ -7640,8 +7649,8 @@ integer,external :: omp_get_thread_num
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
 #include "taug_cpu_defs.h"
-
-! Local
+     
+! Local 
       integer  :: lay, ind0, ind1, inds, indf, ig
       integer  :: js, js1, jpl
       real  :: speccomb, specparm, specmult, fs
@@ -7667,13 +7676,13 @@ integer,external :: omp_get_thread_num
 ! Calculate reference ratio to be used in calculation of Planck
 ! fraction in lower/upper atmosphere.
 
-! P =   174.164 mb
+! P =   174.164 mb 
       refrat_planck_a = chi_mlsd(1,10)/chi_mlsd(2,10)
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below laytrop, the water
-! vapor self-continuum adn foreign continuum is interpolated
-! (in temperature) separately.
+! vapor self-continuum adn foreign continuum is interpolated 
+! (in temperature) separately.  
 
 ! Lower atmosphere loop
       if (lay <= laytrop(iplon)) then
@@ -7717,7 +7726,7 @@ integer,external :: omp_get_thread_num
             fac110 = fk1*fac10(iplon,lay)
             fac210 = fk2*fac10(iplon,lay)
          else if (specparm .gt. 0.875 ) then
-            p = -fs
+            p = -fs 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -7748,7 +7757,7 @@ integer,external :: omp_get_thread_num
             fac111 = fk1*fac11(iplon,lay)
             fac211 = fk2*fac11(iplon,lay)
          else if (specparm1 .gt. 0.875 ) then
-            p = -fs1
+            p = -fs1 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -7770,7 +7779,7 @@ integer,external :: omp_get_thread_num
             tauself = selffac(iplon,lay)* (selfrefd(inds,ig) + selffrac(iplon,lay) * &
                  (selfrefd(inds+1,ig) - selfrefd(inds,ig)))
             taufor = forfac(iplon,lay) * (forrefd(indf,ig) + forfrac(iplon,lay) * &
-                 (forrefd(indf+1,ig) - forrefd(indf,ig)))
+                 (forrefd(indf+1,ig) - forrefd(indf,ig))) 
 
             if (specparm .lt. 0.125 ) then
                tau_major = speccomb * &
@@ -7825,11 +7834,11 @@ integer,external :: omp_get_thread_num
             fracsd(iplon,lay,ngs11+ig) = fracrefad(ig,jpl) + fpl * &
                  (fracrefad(ig,jpl+1)-fracrefad(ig,jpl))
          enddo
-
+   
       else
          do ig = 1, ng12
-            taug(iplon,lay,ngs11+ig) = 0.0
-            fracsd(iplon,lay,ngs11+ig) = 0.0
+            taug(iplon,lay,ngs11+ig) = 0.0 
+            fracsd(iplon,lay,ngs11+ig) = 0.0 
          enddo
       endif
 
@@ -7861,8 +7870,8 @@ integer,external :: omp_get_thread_num
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
 #include "taug_cpu_defs.h"
-
-! Local
+     
+! Local 
       integer  :: lay, ind0, ind1, inds, indf, indm, ig
       integer  :: js, js1, jmco2, jmco, jpl
       real  :: speccomb, specparm, specmult, fs
@@ -7873,7 +7882,7 @@ integer,external :: omp_get_thread_num
       real  :: p, p4, fk0, fk1, fk2
       real  :: fac000, fac100, fac200, fac010, fac110, fac210
       real  :: fac001, fac101, fac201, fac011, fac111, fac211
-      real  :: tauself, taufor, co2m1, co2m2, absco2
+      real  :: tauself, taufor, co2m1, co2m2, absco2 
       real  :: com1, com2, absco, abso3
       real  :: chi_co2, ratco2, adjfac, adjcolco2
       real  :: refrat_planck_a, refrat_m_a, refrat_m_a3
@@ -7906,10 +7915,10 @@ integer,external :: omp_get_thread_num
 ! P = 706. (Level 3)
       refrat_m_a3 = chi_mlsd(1,3)/chi_mlsd(4,3)
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below laytrop, the water
-! vapor self-continuum and foreign continuum is interpolated
-! (in temperature) separately.
+! vapor self-continuum and foreign continuum is interpolated 
+! (in temperature) separately.  
 
 ! Lower atmosphere loop
       if (lay <= laytrop(iplon)) then
@@ -7936,13 +7945,13 @@ integer,external :: omp_get_thread_num
          fmco2 = mod(specmult_mco2,1.0 )
 
 !  In atmospheres where the amount of CO2 is too great to be considered
-!  a minor species, adjust the column amount of CO2 by an empirical factor
+!  a minor species, adjust the column amount of CO2 by an empirical factor 
 !  to obtain the proper contribution.
          chi_co2 = colco2(iplon,lay)/(coldry(iplon,lay))
-         ratco2 = 1.e20 *chi_co2/3.55e-4
+         ratco2 = 1.e20 *chi_co2/3.55e-4 
          if (ratco2 .gt. 3.0 ) then
-            adjfac = 2.0 +(ratco2-2.0 )**0.68
-            adjcolco2 = adjfac*3.55e-4*coldry(iplon,lay)*1.e-20
+            adjfac = 2.0 +(ratco2-2.0 )**0.68 
+            adjcolco2 = adjfac*3.55e-4*coldry(iplon,lay)*1.e-20 
          else
             adjcolco2 = colco2(iplon,lay)
          endif
@@ -7980,7 +7989,7 @@ integer,external :: omp_get_thread_num
             fac110 = fk1*fac10(iplon,lay)
             fac210 = fk2*fac10(iplon,lay)
          else if (specparm .gt. 0.875 ) then
-            p = -fs
+            p = -fs 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -8011,7 +8020,7 @@ integer,external :: omp_get_thread_num
             fac111 = fk1*fac11(iplon,lay)
             fac211 = fk2*fac11(iplon,lay)
          else if (specparm1 .gt. 0.875 ) then
-            p = -fs1
+            p = -fs1 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -8033,7 +8042,7 @@ integer,external :: omp_get_thread_num
             tauself = selffac(iplon,lay)* (selfrefd(inds,ig) + selffrac(iplon,lay) * &
                  (selfrefd(inds+1,ig) - selfrefd(inds,ig)))
             taufor = forfac(iplon,lay) * (forrefd(indf,ig) + forfrac(iplon,lay) * &
-                 (forrefd(indf+1,ig) - forrefd(indf,ig)))
+                 (forrefd(indf+1,ig) - forrefd(indf,ig))) 
             co2m1 = ka_mco2d(jmco2,indm,ig) + fmco2 * &
                  (ka_mco2d(jmco2+1,indm,ig) - ka_mco2d(jmco2,indm,ig))
             co2m2 = ka_mco2d(jmco2,indm+1,ig) + fmco2 * &
@@ -8138,8 +8147,8 @@ integer,external :: omp_get_thread_num
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
 #include "taug_cpu_defs.h"
-
-! Local
+     
+! Local 
       integer  :: lay, ind0, ind1, inds, indf, ig
       real  :: tauself, taufor
       integer , value, intent(in) :: ncol, nlayers
@@ -8153,9 +8162,9 @@ integer,external :: omp_get_thread_num
       do iplon = 1, ncol
       do lay = 1, nlayers
 #endif
-! Compute the optical depth by interpolating in ln(pressure) and
-! temperature.  Below laytrop, the water vapor self-continuum
-! and foreign continuum is interpolated (in temperature) separately.
+! Compute the optical depth by interpolating in ln(pressure) and 
+! temperature.  Below laytrop, the water vapor self-continuum 
+! and foreign continuum is interpolated (in temperature) separately.  
 
 ! Lower atmosphere loop
       if (lay <= laytrop(iplon)) then
@@ -8167,7 +8176,7 @@ integer,external :: omp_get_thread_num
             tauself = selffac(iplon,lay) * (selfrefd(inds,ig) + selffrac(iplon,lay) * &
                  (selfrefd(inds+1,ig) - selfrefd(inds,ig)))
             taufor =  forfac(iplon,lay) * (forrefd(indf,ig) + forfrac(iplon,lay) * &
-                 (forrefd(indf+1,ig) - forrefd(indf,ig)))
+                 (forrefd(indf+1,ig) - forrefd(indf,ig))) 
             taug(iplon,lay,ngs13+ig) = colco2(iplon,lay) * &
                  (fac00(iplon,lay) * absad(ind0,ig) + &
                  fac10(iplon,lay) * absad(ind0+1,ig) + &
@@ -8219,8 +8228,8 @@ integer,external :: omp_get_thread_num
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
 #include "taug_cpu_defs.h"
-
-! Local
+     
+! Local 
       integer  :: lay, ind0, ind1, inds, indf, indm, ig
       integer  :: js, js1, jmn2, jpl
       real  :: speccomb, specparm, specmult, fs
@@ -8230,7 +8239,7 @@ integer,external :: omp_get_thread_num
       real  :: p, p4, fk0, fk1, fk2
       real  :: fac000, fac100, fac200, fac010, fac110, fac210
       real  :: fac001, fac101, fac201, fac011, fac111, fac211
-      real  :: scalen2, tauself, taufor, n2m1, n2m2, taun2
+      real  :: scalen2, tauself, taufor, n2m1, n2m2, taun2 
       real  :: refrat_planck_a, refrat_m_a
       real  :: tau_major, tau_major1
       integer , value, intent(in) :: ncol, nlayers
@@ -8244,7 +8253,7 @@ integer,external :: omp_get_thread_num
       do iplon = 1, ncol
       do lay = 1, nlayers
 #endif
-! Minor gas mapping level :
+! Minor gas mapping level : 
 !     Lower - Nitrogen Continuum, P = 1053., T = 294.
 
 ! Calculate reference ratio to be used in calculation of Planck
@@ -8255,10 +8264,10 @@ integer,external :: omp_get_thread_num
 ! P = 1053.
       refrat_m_a = chi_mlsd(4,1)/chi_mlsd(2,1)
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below laytrop, the water
-! vapor self-continuum and foreign continuum is interpolated
-! (in temperature) separately.
+! vapor self-continuum and foreign continuum is interpolated 
+! (in temperature) separately.  
 
 ! Lower atmosphere loop
       if (lay <= laytrop(iplon)) then
@@ -8296,7 +8305,7 @@ integer,external :: omp_get_thread_num
          inds = indself(iplon,lay)
          indf = indfor(iplon,lay)
          indm = indminor(iplon,lay)
-
+         
          scalen2 = colbrd(iplon,lay)*scaleminor(iplon,lay)
 
          if (specparm .lt. 0.125 ) then
@@ -8312,7 +8321,7 @@ integer,external :: omp_get_thread_num
             fac110 = fk1*fac10(iplon,lay)
             fac210 = fk2*fac10(iplon,lay)
          else if (specparm .gt. 0.875 ) then
-            p = -fs
+            p = -fs 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -8342,7 +8351,7 @@ integer,external :: omp_get_thread_num
             fac111 = fk1*fac11(iplon,lay)
             fac211 = fk2*fac11(iplon,lay)
          else if (specparm1 .gt. 0.875 ) then
-            p = -fs1
+            p = -fs1 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -8364,7 +8373,7 @@ integer,external :: omp_get_thread_num
             tauself = selffac(iplon,lay)* (selfrefd(inds,ig) + selffrac(iplon,lay) * &
                  (selfrefd(inds+1,ig) - selfrefd(inds,ig)))
             taufor =  forfac(iplon,lay) * (forrefd(indf,ig) + forfrac(iplon,lay) * &
-                 (forrefd(indf+1,ig) - forrefd(indf,ig)))
+                 (forrefd(indf+1,ig) - forrefd(indf,ig))) 
             n2m1 = ka_mn2d(jmn2,indm,ig) + fmn2 * &
                  (ka_mn2d(jmn2+1,indm,ig) - ka_mn2d(jmn2,indm,ig))
             n2m2 = ka_mn2d(jmn2,indm+1,ig) + fmn2 * &
@@ -8393,7 +8402,7 @@ integer,external :: omp_get_thread_num
                     fac100 * absad(ind0+1,ig) + &
                     fac010 * absad(ind0+9,ig) + &
                     fac110 * absad(ind0+10,ig))
-            endif
+            endif 
 
             if (specparm1 .lt. 0.125 ) then
                tau_major1 = speccomb1 * &
@@ -8425,11 +8434,11 @@ integer,external :: omp_get_thread_num
             fracsd(iplon,lay,ngs14+ig) = fracrefad(ig,jpl) + fpl * &
                  (fracrefad(ig,jpl+1)-fracrefad(ig,jpl))
          enddo
-
+    
       else
          do ig = 1, ng15
-            taug(iplon,lay,ngs14+ig) = 0.0
-            fracsd(iplon,lay,ngs14+ig) = 0.0
+            taug(iplon,lay,ngs14+ig) = 0.0 
+            fracsd(iplon,lay,ngs14+ig) = 0.0 
          enddo
       endif
 
@@ -8462,8 +8471,8 @@ integer,external :: omp_get_thread_num
       real  _gpudev :: taug(:,:,:)
       real  _gpudev :: fracsd(:,:,:)
 #include "taug_cpu_defs.h"
-
-! Local
+     
+! Local 
       integer  :: lay, ind0, ind1, inds, indf, ig
       integer  :: js, js1, jpl
       real  :: speccomb, specparm, specmult, fs
@@ -8485,17 +8494,17 @@ integer,external :: omp_get_thread_num
 #else
       do iplon = 1, ncol
       do lay = 1, nlayers
-#endif
+#endif 
 ! Calculate reference ratio to be used in calculation of Planck
 ! fraction in lower atmosphere.
 
 ! P = 387. mb (Level 6)
       refrat_planck_a = chi_mlsd(1,6)/chi_mlsd(6,6)
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature,and appropriate species.  Below laytrop, the water
-! vapor self-continuum and foreign continuum is interpolated
-! (in temperature) separately.
+! vapor self-continuum and foreign continuum is interpolated 
+! (in temperature) separately.  
 
 ! Lower atmosphere loop
       if (lay <= laytrop(iplon)) then
@@ -8538,7 +8547,7 @@ integer,external :: omp_get_thread_num
             fac110 = fk1*fac10(iplon,lay)
             fac210 = fk2*fac10(iplon,lay)
          else if (specparm .gt. 0.875 ) then
-            p = -fs
+            p = -fs 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -8569,7 +8578,7 @@ integer,external :: omp_get_thread_num
             fac111 = fk1*fac11(iplon,lay)
             fac211 = fk2*fac11(iplon,lay)
          else if (specparm1 .gt. 0.875 ) then
-            p = -fs1
+            p = -fs1 
             p4 = p**4
             fk0 = p4
             fk1 = 1 - p - 2.0 *p4
@@ -8591,7 +8600,7 @@ integer,external :: omp_get_thread_num
             tauself = selffac(iplon,lay)* (selfrefd(inds,ig) + selffrac(iplon,lay) * &
                  (selfrefd(inds+1,ig) - selfrefd(inds,ig)))
             taufor =  forfac(iplon,lay) * (forrefd(indf,ig) + forfrac(iplon,lay) * &
-                 (forrefd(indf+1,ig) - forrefd(indf,ig)))
+                 (forrefd(indf+1,ig) - forrefd(indf,ig))) 
 
             if (specparm .lt. 0.125 ) then
                tau_major = speccomb * &
@@ -8674,13 +8683,13 @@ integer,external :: omp_get_thread_num
 
       integer , intent(in), value :: ncol, nlayers, ngptlw, nbndlw
       integer , intent(in) :: ngbd(:)
-
+        
 #include "taug_cpu_defs.h"
-
+        
       integer  :: iplon, lay, ig
       real  _gpudev :: taug(:,:,:)
-
-#ifdef _ACCEL
+     
+#ifdef _ACCEL     
       iplon = (blockidx%x-1) * blockdim%x + threadidx%x
       lay = (blockidx%y-1) * blockdim%y + threadidx%y
       ig = (blockidx%z-1) * blockdim%z + threadidx%z
@@ -8721,8 +8730,8 @@ integer,external :: omp_get_thread_num
 ! *                        LEXINGTON, MA 02421                                  *
 ! *                                                                             *
 ! *                                                                             *
-! *                           ELI J. MLAWER                                     *
-! *                         JENNIFER DELAMERE                                   *
+! *                           ELI J. MLAWER                                     * 
+! *                         JENNIFER DELAMERE                                   * 
 ! *                         STEVEN J. TAUBMAN                                   *
 ! *                         SHEPARD A. CLOUGH                                   *
 ! *                                                                             *
@@ -8733,7 +8742,7 @@ integer,external :: omp_get_thread_num
 ! *                       email:  jdelamer@aer.com                              *
 ! *                                                                             *
 ! *        The authors wish to acknowledge the contributions of the             *
-! *        following people:  Karen Cady-Pereira, Patrick D. Brown,             *
+! *        following people:  Karen Cady-Pereira, Patrick D. Brown,             *  
 ! *        Michael J. Iacono, Ronald E. Farren, Luke Chen, Robert Bergstrom.    *
 ! *                                                                             *
 ! *******************************************************************************
@@ -8853,11 +8862,11 @@ integer,external :: omp_get_thread_num
       integer  _gpudev, intent(in) :: ngbd(:)
       real , intent(in) _gpudev :: fracsd(:,:,:)
       real , intent(in) _gpudev :: taug(:,:,:)
-
+   
       !real  :: taugcc(ncol, nlayers, 140)
 
 ! ----- Output -----
-
+  
       integer :: i,j,err
       real :: t1, t2
 
@@ -8870,12 +8879,12 @@ integer,external :: omp_get_thread_num
 
       dimGrid = dim3( (ncol + 63) / 64, ((nlayers+1)/2), 1)
       dimBlock = dim3( 64, 2, 1)
-
+      
 #else
 !jm this can be made constant if the arrays are padded out, otherwise
 !jm will generate a seg fault computing garbage data on unused ends of vectors
 !jm zap #  define ncol CHNK
-#endif
+#endif   
 
 ! Calculate gaseous optical depth and planck fractions for each spectral band.
 
@@ -8888,7 +8897,7 @@ integer,external :: omp_get_thread_num
       call taugb2g _gpuchv (ncol, nlayers, taug, fracsd  &
 #include "taug_cpu_args.h"
                            )
-
+      
       call taugb3g _gpuchv (ncol, nlayers, taug, fracsd  &
 #include "taug_cpu_args.h"
                            )
@@ -8896,7 +8905,7 @@ integer,external :: omp_get_thread_num
       call taugb4g _gpuchv (ncol, nlayers, taug, fracsd  &
 #include "taug_cpu_args.h"
                            )
-
+      
       call taugb5g _gpuchv (ncol, nlayers, taug, fracsd  &
 #include "taug_cpu_args.h"
                            )
@@ -8924,7 +8933,7 @@ integer,external :: omp_get_thread_num
       call taugb11g _gpuchv (ncol, nlayers, taug, fracsd  &
 #include "taug_cpu_args.h"
                            )
-
+ 
       call taugb12g _gpuchv (ncol, nlayers, taug, fracsd  &
 #include "taug_cpu_args.h"
                            )
@@ -9043,7 +9052,7 @@ integer,external :: omp_get_thread_num
       sreg( minorfrac , ncol, nlayers )
       sreg( scaleminor , ncol, nlayers )
       sreg( scaleminorn2 , ncol, nlayers )
-
+        
       sreg( fac00 , ncol, nlayers )
       sreg( fac10 , ncol, nlayers )
       sreg( fac01 , ncol, nlayers )
@@ -9070,7 +9079,7 @@ integer,external :: omp_get_thread_num
       dreg( wx4 , ncol, nlayers )
 
       allocate( coldry( ncol, nlayers ))
-
+        
       dreg( jp , ncol, nlayers )
       dreg( jt , ncol, nlayers )
       dreg( jt1 , ncol, nlayers )
@@ -9116,7 +9125,7 @@ integer,external :: omp_get_thread_num
       allocate( nspbd( nbndlw ))
 
 #endif
-
+        
       end subroutine
 
 ! (dmb 2012) Perform the necessary cleanup of the GPU arrays
@@ -9126,20 +9135,20 @@ integer,external :: omp_get_thread_num
       call dbclean
       call dclean
       deallocate( pavel)
-
+      
       deallocate( tauaa )
       deallocate( laytrop)
-
+       
       deallocate( nspad)
       deallocate( nspbd)
       deallocate( coldry)
 #endif
 
       end subroutine
-
+       
       subroutine copyGPUTaumolMol( colstart, pncol, nlayers, colh2oc, colco2c, colo3c, coln2oc, colch4c, colo2c,&
                                    px1,px2,px3,px4, npart)
-
+        
       integer, value, intent(in) :: colstart, pncol, nlayers, npart
       real , intent(in) :: colh2oc(:,:), colco2c(:,:), colo3c(:,:), coln2oc(:,:), &
                                      colch4c(:,:), colo2c(:,:), px1(:,:), px2(:,:), px3(:,:), px4(:,:)
@@ -9150,7 +9159,7 @@ integer,external :: omp_get_thread_num
         colco2(1:pncol, :) = colco2c( colstart:(colstart+pncol-1), 1:nlayers)
         colo3(1:pncol, :) = colo3c( colstart:(colstart+pncol-1), 1:nlayers)
         coln2o(1:pncol, :) = coln2oc( colstart:(colstart+pncol-1), 1:nlayers)
-
+      
         colch4(1:pncol, :) = colch4c( colstart:(colstart+pncol-1), 1:nlayers)
         colo2(1:pncol, :) = colo2c( colstart:(colstart+pncol-1), 1:nlayers)
         wx1(1:pncol, :) = px1(colstart:(colstart+pncol-1), 1:nlayers)
@@ -9196,7 +9205,7 @@ integer,external :: omp_get_thread_num
       use rrlw_kg16_f, only : copyToGPU16, reg16
       use rrlw_ref_f, only  : copyToGPUref
 
-      real , intent(in) :: pavelc(:,:)                ! layer pressures (mb)
+      real , intent(in) :: pavelc(:,:)                ! layer pressures (mb) 
                                                       !    Dimensions: (ncol,nlayers)
       real  , intent(in) :: wxc(:,:,:)                ! cross-section amounts (mol/cm2)
                                                       !    Dimensions: (ncol,maxxsec,nlayers)
@@ -9206,7 +9215,7 @@ integer,external :: omp_get_thread_num
       real , intent(in) :: tauap(:,:,:)
                                                       !    Dimensions: (ncol,nlayers,ngptlw)
       integer, intent(in)      :: pncol, colstart, nlay, npart
-
+     
 #ifdef _ACCEL
       call reg1
       call reg2
@@ -9224,7 +9233,7 @@ integer,external :: omp_get_thread_num
       call reg14
       call reg15
       call reg16
-
+      
       dbflushreg()
       call CopyToGPU1
       call CopyToGPU2
@@ -9247,18 +9256,18 @@ integer,external :: omp_get_thread_num
       nspbd= nspb
       pavel= pavelc
       coldry= coldryc
-
+      
       oneminusd = oneminus
 
       dbflushcop()
-
+     
       if (npart > 1) then
          tauaa(1:pncol, :, :)  = tauap(colstart:(colstart+pncol-1), :, :)
       else
          tauaa = tauap
       endif
 #endif
-      end subroutine
+      end subroutine 
 
       end module gpu_rrtmg_lw_taumol
 
@@ -9266,14 +9275,14 @@ integer,external :: omp_get_thread_num
       module gpu_rrtmg_lw_setcoef
 
       use gpu_rrtmg_lw_rtrnmc
-
+     
       use parrrtm_f, only : nbndlw, mg, maxxsec, mxmol
       use rrlw_wvn_f, only: totplnk, totplk16, totplnkderiv, totplk16deriv
       use rrlw_vsn_f, only: hvrset, hnamset
       use rrlw_ref_f, only : chi_mlsd
-
+     
       use gpu_rrtmg_lw_taumol
-
+   
       implicit none
 
 #ifdef _ACCEL
@@ -9307,7 +9316,7 @@ integer,external :: omp_get_thread_num
          allocate( tboundd( ncol ))
          allocate( wbroadd( ncol, nlayers) )
 #endif
-
+   
       end subroutine
 
 ! (dmb 2012) This subroutine deallocates the GPU arrays
@@ -9319,7 +9328,7 @@ integer,external :: omp_get_thread_num
          deallocate( tboundd)
          deallocate( wbroadd)
 #endif
-
+      
       end subroutine
 
 ! (dmb 2012) Copy the needed reference data from the CPU to the GPU
@@ -9346,7 +9355,7 @@ integer,external :: omp_get_thread_num
 !
 !  Purpose:  For a given atmosphere, calculate the indices and
 !  fractions related to the pressure and temperature interpolations.
-!  Also calculate the values of the integrated Planck functions
+!  Also calculate the values of the integrated Planck functions 
 !  for each band at the level and layer temperatures.
 
 ! ------- Declarations -------
@@ -9392,16 +9401,16 @@ integer,external :: omp_get_thread_num
       do iplon = 1, ncol
 #endif
 
-        stpfac = 296. /1013.
+        stpfac = 296. /1013. 
 
-        indbound = tboundd(iplon) - 159.
+        indbound = tboundd(iplon) - 159. 
         if (indbound .lt. 1) then
            indbound = 1
         elseif (indbound .gt. 180) then
            indbound = 180
         endif
         tbndfrac = tboundd(iplon) - 159.  - float(indbound)
-        indlev0 = tzd(iplon, 0) - 159.
+        indlev0 = tzd(iplon, 0) - 159. 
         if (indlev0 .lt. 1) then
            indlev0 = 1
         elseif (indlev0 .gt. 180) then
@@ -9410,12 +9419,12 @@ integer,external :: omp_get_thread_num
         t0frac = tzd(iplon, 0) - 159.  - float(indlev0)
         laytrop(iplon) = 0
 
-! Begin layer loop
+! Begin layer loop 
 !  Calculate the integrated Planck functions for each band at the
 !  surface, level, and layer temperatures.
         do lay = 1, nlayers
-          indlay = taveld(iplon, lay) - 159.
-          lcoldry = coldry( iplon, lay)
+          indlay = taveld(iplon, lay) - 159. 
+          lcoldry = coldry( iplon, lay) 
           wv = colh2o(iplon, lay) * lcoldry
           if (indlay .lt. 1) then
              indlay = 1
@@ -9423,7 +9432,7 @@ integer,external :: omp_get_thread_num
              indlay = 180
           endif
           tlayfrac = taveld(iplon, lay) - 159.  - float(indlay)
-          indlev = tzd(iplon, lay) - 159.
+          indlev = tzd(iplon, lay) - 159. 
           if (indlev .lt. 1) then
              indlev = 1
           elseif (indlev .gt. 180) then
@@ -9431,7 +9440,7 @@ integer,external :: omp_get_thread_num
           endif
           tlevfrac = tzd(iplon, lay) - 159.  - float(indlev)
 
-! Begin spectral band loop
+! Begin spectral band loop 
           do iband = 1, 15
             if (lay.eq.1) then
                dbdtlev = totplnkd(indbound+1,iband) - totplnkd(indbound,iband)
@@ -9439,7 +9448,7 @@ integer,external :: omp_get_thread_num
                    (totplnkd(indbound,iband) + tbndfrac * dbdtlev)
                dbdtlev = totplnkd(indlev0+1,iband)-totplnkd(indlev0,iband)
                planklevd(iplon, 0,iband) = totplnkd(indlev0,iband) + t0frac * dbdtlev
-               if (idrvd .eq. 1) then
+               if (idrvd .eq. 1) then 
                   dbdtlev = totplnkderivd(indbound+1,iband) - totplnkderivd(indbound,iband)
                   dplankbnd_dtd(iplon, iband) = semissd(iplon, iband) * &
                         (totplnkderivd(indbound,iband) + tbndfrac * dbdtlev)
@@ -9453,7 +9462,7 @@ integer,external :: omp_get_thread_num
           enddo
 
 !  For band 16, if radiative transfer will be performed on just
-!  this band, use integrated Planck values up to 3250 cm-1.
+!  this band, use integrated Planck values up to 3250 cm-1.  
 !  If radiative transfer will be performed across all 16 bands,
 !  then include in the integrated Planck values for this band
 !  contributions from 2600 cm-1 to infinity.
@@ -9481,7 +9490,7 @@ integer,external :: omp_get_thread_num
                 dbdtlev = totplnkd(indbound+1,iband) - totplnkd(indbound,iband)
                 plankbndd(iplon, iband) = semissd(iplon, iband) * &
                      (totplnkd(indbound,iband) + tbndfrac * dbdtlev)
-                if (idrvd .eq. 1) then
+                if (idrvd .eq. 1) then 
                    dbdtlev = totplnkderivd( indbound+1,iband) - totplnkderivd( indbound,iband)
                    dplankbnd_dtd(iplon, iband) = semissd(iplon, iband) * &
                         (totplnkderivd( indbound,iband) + tbndfrac * dbdtlev)
@@ -9512,11 +9521,11 @@ integer,external :: omp_get_thread_num
           fp = 5.  *(preflogd(jp(iplon, lay)) - plog)
 
 !  Determine, for each reference pressure (JP and JP1), which
-!  reference temperature (these are different for each
+!  reference temperature (these are different for each  
 !  reference pressure) is nearest the layer temperature but does
 !  not exceed it.  Store these indices in JT and JT1, resp.
 !  Store in FT (resp. FT1) the fraction of the way between JT
-!  (JT1) and the next highest reference temperature that the
+!  (JT1) and the next highest reference temperature that the 
 !  layer temperature falls.
           jt(iplon, lay) = int(3.  + (taveld(iplon, lay)-trefd(jp(iplon, lay)))/15. )
           if (jt(iplon, lay) .lt. 1) then
@@ -9541,14 +9550,14 @@ integer,external :: omp_get_thread_num
           laytrop(iplon) =  laytrop(iplon) + 1
 
           forfac(iplon, lay) = scalefac / (1.+water)
-          factor = (332.0 -taveld(iplon, lay))/36.0
+          factor = (332.0 -taveld(iplon, lay))/36.0 
           indfor(iplon, lay) = min(2, max(1, int(factor)))
           forfrac(iplon, lay) = factor - float(indfor(iplon, lay))
 
 !  Set up factors needed to separately include the water vapor
 !  self-continuum in the calculation of absorption coefficient.
           selffac(iplon, lay) = water * forfac(iplon, lay)
-          factor = (taveld(iplon, lay)-188.0 )/7.2
+          factor = (taveld(iplon, lay)-188.0 )/7.2 
           indself(iplon, lay) = min(9, max(1, int(factor)-7))
           selffrac(iplon, lay) = factor - float(indself(iplon, lay) + 7)
 
@@ -9557,7 +9566,7 @@ integer,external :: omp_get_thread_num
           scaleminor(iplon, lay) = pavel(iplon, lay)/taveld(iplon, lay)
           scaleminorn2(iplon, lay) = (pavel(iplon, lay)/taveld(iplon, lay)) &
               *(wbroadd(iplon, lay)/(lcoldry+wv))
-          factor = (taveld(iplon, lay)-180.8 )/7.2
+          factor = (taveld(iplon, lay)-180.8 )/7.2 
           indminor(iplon, lay) = min(18, max(1, int(factor)))
           minorfrac(iplon, lay) = factor - float(indminor(iplon, lay))
 
@@ -9598,9 +9607,9 @@ integer,external :: omp_get_thread_num
  5300     continue
 
           forfac(iplon, lay) = scalefac / (1.+water)
-          factor = (taveld(iplon, lay)-188.0 )/36.0
+          factor = (taveld(iplon, lay)-188.0 )/36.0 
           indfor(iplon, lay) = 3
-          forfrac(iplon, lay) = factor - 1.0
+          forfrac(iplon, lay) = factor - 1.0 
 
 !  Set up factors needed to separately include the water vapor
 !  self-continuum in the calculation of absorption coefficient.
@@ -9608,20 +9617,20 @@ integer,external :: omp_get_thread_num
 
 !  Set up factors needed to separately include the minor gases
 !  in the calculation of absorption coefficient
-          scaleminor(iplon, lay) = pavel(iplon, lay)/taveld(iplon, lay)
+          scaleminor(iplon, lay) = pavel(iplon, lay)/taveld(iplon, lay)         
           scaleminorn2(iplon, lay) = (pavel(iplon, lay)/taveld(iplon, lay)) &
               * (wbroadd(iplon, lay)/(coldry(iplon, lay)+wv))
-          factor = (taveld(iplon, lay)-180.8 )/7.2
+          factor = (taveld(iplon, lay)-180.8 )/7.2 
           indminor(iplon, lay) = min(18, max(1, int(factor)))
           minorfrac(iplon, lay) = factor - float(indminor(iplon, lay))
 
 !  Setup reference ratio to be used in calculation of binary
 !  species parameter in upper atmosphere.
           rat_h2oco2(iplon, lay)=chi_mlsd( 1,jp(iplon, lay))/chi_mlsd( 2,jp(iplon, lay))
-          rat_h2oco2_1(iplon, lay)=chi_mlsd( 1,jp(iplon, lay)+1)/chi_mlsd( 2,jp(iplon, lay)+1)
+          rat_h2oco2_1(iplon, lay)=chi_mlsd( 1,jp(iplon, lay)+1)/chi_mlsd( 2,jp(iplon, lay)+1) 
 
           rat_o3co2(iplon, lay)=chi_mlsd( 3,jp(iplon, lay))/chi_mlsd( 2,jp(iplon, lay))
-          rat_o3co2_1(iplon, lay)=chi_mlsd( 3,jp(iplon, lay)+1)/chi_mlsd( 2,jp(iplon, lay)+1)
+          rat_o3co2_1(iplon, lay)=chi_mlsd( 3,jp(iplon, lay)+1)/chi_mlsd( 2,jp(iplon, lay)+1)         
 
 !  Calculate needed column amounts.
           colh2o(iplon, lay) = 1.e-20  * colh2o(iplon, lay) * lcoldry
@@ -9640,9 +9649,9 @@ integer,external :: omp_get_thread_num
  5400     continue
 
 !  We have now isolated the layer ln pressure and temperature,
-!  between two reference pressures and two reference temperatures
-!  (for each reference pressure).  We multiply the pressure
-!  fraction FP with the appropriate temperature fractions to get
+!  between two reference pressures and two reference temperatures 
+!  (for each reference pressure).  We multiply the pressure 
+!  fraction FP with the appropriate temperature fractions to get 
 !  the factors that will be needed for the interpolation that yields
 !  the optical depths (performed in routines TAUGBn for band n).`
 
@@ -9681,7 +9690,7 @@ integer,external :: omp_get_thread_num
 
 ! ------- Modules -------
 
-!     use parkind, only : im => kind , rb => kind
+!     use parkind, only : im => kind , rb => kind 
       use parrrtm_f, only : nbndlw, mg, maxxsec, mxmol
       use rrlw_wvn_f, only: totplnk, totplk16, totplnkderiv, totplk16deriv
       use rrlw_ref_f
@@ -9695,7 +9704,7 @@ integer,external :: omp_get_thread_num
 !***************************************************************************
 
       save
-
+ 
 ! These pressures are chosen such that the ln of the first pressure
 ! has only a few non-zero digits (i.e. ln(PREF(1)) = 6.96000) and
 ! each subsequent ln(pressure) differs from the previous one by 0.2.
@@ -9728,8 +9737,8 @@ integer,external :: omp_get_thread_num
           -3.0400e+00 ,-3.2400e+00 ,-3.4400e+00 ,-3.6400e+00 ,-3.8400e+00 , &
           -4.0400e+00 ,-4.2400e+00 ,-4.4400e+00 ,-4.6400e+00 /)
 
-! These are the temperatures associated with the respective
-! pressures for the mls standard atmosphere.
+! These are the temperatures associated with the respective 
+! pressures for the mls standard atmosphere. 
 
       tref(:) = (/ &
            2.9420e+02 , 2.8799e+02 , 2.7894e+02 , 2.6925e+02 , 2.5983e+02 , &
@@ -9858,7 +9867,7 @@ integer,external :: omp_get_thread_num
 !***************************************************************************
 
       save
-
+ 
       totplnk(1:50,  1) = (/ &
       0.14783e-05 ,0.15006e-05 ,0.15230e-05 ,0.15455e-05 ,0.15681e-05 , &
       0.15908e-05 ,0.16136e-05 ,0.16365e-05 ,0.16595e-05 ,0.16826e-05 , &
@@ -10564,7 +10573,7 @@ integer,external :: omp_get_thread_num
 !***************************************************************************
 
       save
-
+ 
       totplnkderiv(1:50,  1) = (/ &
       2.22125e-08 ,2.23245e-08 ,2.24355e-08 ,2.25435e-08 ,2.26560e-08 , &
       2.27620e-08 ,2.28690e-08 ,2.29760e-08 ,2.30775e-08 ,2.31800e-08 , &
@@ -11280,7 +11289,7 @@ integer,external :: omp_get_thread_num
 !  --------------------------------------------------------------------------
 
 ! ------- Modules -------
-!      use parkind, only : im => kind , rb => kind
+!      use parkind, only : im => kind , rb => kind 
       use rrlw_wvn_f
       use rrtmg_lw_setcoef_f, only: lwatmref, lwavplank, lwavplankderiv
 
@@ -11312,7 +11321,7 @@ integer,external :: omp_get_thread_num
 
 ! ------- Local -------
 
-      integer  :: itr, ibnd, igc, ig, ind, ipr
+      integer  :: itr, ibnd, igc, ig, ind, ipr 
       integer  :: igcsm, iprsm
 
       real  :: wtsum, wtsm(mg)        !
@@ -11339,7 +11348,7 @@ integer,external :: omp_get_thread_num
       call lwcmbdat               ! g-point interval reduction data
       call lwcldpr                ! cloud optical properties
       call lwatmref               ! reference MLS profile
-      call lwavplank              ! Planck function
+      call lwavplank              ! Planck function 
       call lwavplankderiv         ! Planck function derivative wrt temp
 ! Moved to module_ra_rrtmg_lw for WRF
 !      call lw_kgb01               ! molecular absorption coefficients
@@ -11360,20 +11369,20 @@ integer,external :: omp_get_thread_num
 !      call lw_kgb16
 
 ! Compute lookup tables for transmittance, tau transition function,
-! and clear sky tau (for the cloudy sky radiative transfer).  Tau is
-! computed as a function of the tau transition function, transmittance
-! is calculated as a function of tau, and the tau transition function
-! is calculated using the linear in tau formulation at values of tau
-! above 0.01.  TF is approximated as tau/6 for tau < 0.01.  All tables
+! and clear sky tau (for the cloudy sky radiative transfer).  Tau is 
+! computed as a function of the tau transition function, transmittance 
+! is calculated as a function of tau, and the tau transition function 
+! is calculated using the linear in tau formulation at values of tau 
+! above 0.01.  TF is approximated as tau/6 for tau < 0.01.  All tables 
 ! are computed at intervals of 0.001.  The inverse of the constant used
 ! in the Pade approximation to the tau transition function is set to b.
 
-      tau_tbl(0) = 0.0
-      tau_tbl(ntbl) = 1.e10
-      exp_tbl(0) = 1.0
+      tau_tbl(0) = 0.0 
+      tau_tbl(ntbl) = 1.e10 
+      exp_tbl(0) = 1.0 
       exp_tbl(ntbl) = expeps
-      tfn_tbl(0) = 0.0
-      tfn_tbl(ntbl) = 1.0
+      tfn_tbl(0) = 0.0 
+      tfn_tbl(ntbl) = 1.0 
       bpade = 1.0  / pade
       do itr = 1, ntbl-1
          tfn = float(itr) / float(ntbl)
@@ -11381,7 +11390,7 @@ integer,external :: omp_get_thread_num
          exp_tbl(itr) = exp(-tau_tbl(itr))
          if (exp_tbl(itr) .le. expeps) exp_tbl(itr) = expeps
          if (tau_tbl(itr) .lt. 0.06 ) then
-            tfn_tbl(itr) = tau_tbl(itr)/6.
+            tfn_tbl(itr) = tau_tbl(itr)/6. 
          else
             tfn_tbl(itr) = 1. -2. *((1. /tau_tbl(itr))-(exp_tbl(itr)/(1.-exp_tbl(itr))))
          endif
@@ -11396,9 +11405,9 @@ integer,external :: omp_get_thread_num
       do ibnd = 1,nbndlw
          iprsm = 0
          if (ngc(ibnd).lt.mg) then
-            do igc = 1,ngc(ibnd)
+            do igc = 1,ngc(ibnd) 
                igcsm = igcsm + 1
-               wtsum = 0.
+               wtsum = 0. 
                do ipr = 1, ngn(igcsm)
                   iprsm = iprsm + 1
                   wtsum = wtsum + wt(iprsm)
@@ -11413,7 +11422,7 @@ integer,external :: omp_get_thread_num
             do ig = 1, ng(ibnd)
                igcsm = igcsm + 1
                ind = (ibnd-1)*mg + ig
-               rwgt(ind) = 1.0
+               rwgt(ind) = 1.0 
             enddo
          endif
       enddo
@@ -11448,11 +11457,11 @@ integer,external :: omp_get_thread_num
       use parrrtm_f, only : maxxsec, maxinpx
       use rrlw_con_f, only: heatfac, grav, planck, boltz, &
                           clight, avogad, alosmt, gascon, radcn1, radcn2, &
-                          sbcnst, secdy
+                          sbcnst, secdy 
       use rrlw_vsn_f
 
-      save
-
+      save 
+ 
       real , intent(in) :: cpdair      ! Specific heat capacity of dry air
                                        ! at constant pressure at 273 K
                                        ! (J kg-1 K-1)
@@ -11496,7 +11505,7 @@ integer,external :: omp_get_thread_num
                                               ! (ergs s; g cm2 s-1)
       boltz = 1.3806503e-16                 ! Boltzmann constant
                                               ! (ergs K-1; g cm2 s-2 K-1)
-      clight = 2.99792458e+10               ! Speed of light in a vacuum
+      clight = 2.99792458e+10               ! Speed of light in a vacuum  
                                               ! (cm s-1)
       avogad = 6.02214199e+23               ! Avogadro constant
                                               ! (mol-1)
@@ -11521,26 +11530,26 @@ integer,external :: omp_get_thread_num
 !          radcn2 = planck*clight/boltz
 
 !     Heatfac is the factor by which delta-flux / delta-pressure is
-!     multiplied, with flux in W/m-2 and pressure in mbar, to get
+!     multiplied, with flux in W/m-2 and pressure in mbar, to get 
 !     the heating rate in units of degrees/day.  It is equal to:
 !     Original value:
 !           (g)x(#sec/day)x(1e-5)/(specific heat of air at const. p)
-!           Here, cpdair (1.004) is in units of J g-1 K-1, and the
+!           Here, cpdair (1.004) is in units of J g-1 K-1, and the 
 !           constant (1.e-5) converts mb to Pa and g-1 to kg-1.
 !        =  (9.8066)(86400)(1e-5)/(1.004)
-!      heatfac = 8.4391
+!      heatfac = 8.4391 
 !
 !     Modified value for consistency with CAM3:
 !           (g)x(#sec/day)x(1e-5)/(specific heat of air at const. p)
 !           Here, cpdair (1.00464) is in units of J g-1 K-1, and the
 !           constant (1.e-5) converts mb to Pa and g-1 to kg-1.
 !        =  (9.80616)(86400)(1e-5)/(1.00464)
-!      heatfac = 8.43339130434
+!      heatfac = 8.43339130434 
 !
 !     Calculated value:
 !        (grav) x (#sec/day) / (specific heat of dry air at const. p x 1.e2)
-!           Here, cpdair is in units of J kg-1 K-1, and the constant (1.e2)
-!           converts mb to Pa when heatfac is multiplied by W m-2 mb-1.
+!           Here, cpdair is in units of J kg-1 K-1, and the constant (1.e2) 
+!           converts mb to Pa when heatfac is multiplied by W m-2 mb-1. 
       heatfac = grav * secdy / (cpdair * 1.e2 )
 
       end subroutine lwdatinit
@@ -11550,10 +11559,10 @@ integer,external :: omp_get_thread_num
 !***************************************************************************
 
       save
-
+ 
 ! ------- Definitions -------
 !     Arrays for the g-point reduction from 256 to 140 for the 16 LW bands:
-!     This mapping from 256 to 140 points has been carefully selected to
+!     This mapping from 256 to 140 points has been carefully selected to 
 !     minimize the effect on the resulting fluxes and cooling rates, and
 !     caution should be used if the mapping is modified.  The full 256
 !     g-point set can be restored with ngptlw=256, ngc=16*16, ngn=256*1., etc.
@@ -11561,7 +11570,7 @@ integer,external :: omp_get_thread_num
 !     ngc     The number of new g-points in each band
 !     ngs     The cumulative sum of new g-points for each band
 !     ngm     The index of each new g-point relative to the original
-!             16 g-points for each band.
+!             16 g-points for each band.  
 !     ngn     The number of original g-points that are combined to make
 !             each new g-point in each band.
 !     ngb     The band index for each new g-point.
@@ -11645,7 +11654,7 @@ integer,external :: omp_get_thread_num
 !
 !  band 1:  10-350 cm-1 (low key - h2o; low minor - n2)
 !                       (high key - h2o; high minor - n2)
-!  note: previous versions of rrtm band 1:
+!  note: previous versions of rrtm band 1: 
 !        10-250 cm-1 (low - h2o; high - h2o)
 !***************************************************************************
 
@@ -11656,7 +11665,7 @@ integer,external :: omp_get_thread_num
                            selfref, forref
 
 ! ------- Local -------
-      integer  :: jt, jp, igc, ipr, iprsm
+      integer  :: jt, jp, igc, ipr, iprsm 
       real  :: sumk, sumk1, sumk2, sumf1, sumf2
 
 
@@ -11745,7 +11754,7 @@ integer,external :: omp_get_thread_num
 !
 !     band 2:  350-500 cm-1 (low key - h2o; high key - h2o)
 !
-!     note: previous version of rrtm band 2:
+!     note: previous version of rrtm band 2: 
 !           250 - 500 cm-1 (low - h2o; high - h2o)
 !***************************************************************************
 
@@ -11754,7 +11763,7 @@ integer,external :: omp_get_thread_num
                            fracrefa, fracrefb, absa, ka, absb, kb, selfref, forref
 
 ! ------- Local -------
-      integer  :: jt, jp, igc, ipr, iprsm
+      integer  :: jt, jp, igc, ipr, iprsm 
       real  :: sumk, sumf1, sumf2
 
 
@@ -11839,7 +11848,7 @@ integer,external :: omp_get_thread_num
                            selfref, forref
 
 ! ------- Local -------
-      integer  :: jn, jt, jp, igc, ipr, iprsm
+      integer  :: jn, jt, jp, igc, ipr, iprsm 
       real  :: sumk, sumf
 
 
@@ -11966,7 +11975,7 @@ integer,external :: omp_get_thread_num
                            fracrefa, fracrefb, absa, ka, absb, kb, selfref, forref
 
 ! ------- Local -------
-      integer  :: jn, jt, jp, igc, ipr, iprsm
+      integer  :: jn, jt, jp, igc, ipr, iprsm 
       real  :: sumk, sumf
 
 
@@ -12068,7 +12077,7 @@ integer,external :: omp_get_thread_num
                            selfref, forref
 
 ! ------- Local -------
-      integer  :: jn, jt, jp, igc, ipr, iprsm
+      integer  :: jn, jt, jp, igc, ipr, iprsm 
       real  :: sumk, sumf
 
 
@@ -12194,7 +12203,7 @@ integer,external :: omp_get_thread_num
                            selfref, forref
 
 ! ------- Local -------
-      integer  :: jt, jp, igc, ipr, iprsm
+      integer  :: jt, jp, igc, ipr, iprsm 
       real  :: sumk, sumf, sumk1, sumk2
 
 
@@ -12283,7 +12292,7 @@ integer,external :: omp_get_thread_num
                            selfref, forref
 
 ! ------- Local -------
-      integer  :: jn, jt, jp, igc, ipr, iprsm
+      integer  :: jn, jt, jp, igc, ipr, iprsm 
       real  :: sumk, sumf
 
 
@@ -12409,7 +12418,7 @@ integer,external :: omp_get_thread_num
                            cfc12, cfc22adj
 
 ! ------- Local -------
-      integer  :: jt, jp, igc, ipr, iprsm
+      integer  :: jt, jp, igc, ipr, iprsm 
       real  :: sumk, sumk1, sumk2, sumk3, sumk4, sumk5, sumf1, sumf2
 
 
@@ -12526,7 +12535,7 @@ integer,external :: omp_get_thread_num
                            absb, kb, kb_mn2o, selfref, forref
 
 ! ------- Local -------
-      integer  :: jn, jt, jp, igc, ipr, iprsm
+      integer  :: jn, jt, jp, igc, ipr, iprsm 
       real  :: sumk, sumf
 
 
@@ -12650,7 +12659,7 @@ integer,external :: omp_get_thread_num
                            selfref, forref
 
 ! ------- Local -------
-      integer  :: jt, jp, igc, ipr, iprsm
+      integer  :: jt, jp, igc, ipr, iprsm 
       real  :: sumk, sumf1, sumf2
 
 
@@ -12739,7 +12748,7 @@ integer,external :: omp_get_thread_num
                            absb, kb, kb_mo2, selfref, forref
 
 ! ------- Local -------
-      integer  :: jt, jp, igc, ipr, iprsm
+      integer  :: jt, jp, igc, ipr, iprsm 
       real  :: sumk, sumk1, sumk2, sumf1, sumf2
 
 
@@ -12838,7 +12847,7 @@ integer,external :: omp_get_thread_num
                            fracrefa, absa, ka, selfref, forref
 
 ! ------- Local -------
-      integer  :: jn, jt, jp, igc, ipr, iprsm
+      integer  :: jn, jt, jp, igc, ipr, iprsm 
       real  :: sumk, sumf
 
 
@@ -12912,7 +12921,7 @@ integer,external :: omp_get_thread_num
                            kb_mo3, selfref, forref
 
 ! ------- Local -------
-      integer  :: jn, jt, jp, igc, ipr, iprsm
+      integer  :: jn, jt, jp, igc, ipr, iprsm 
       real  :: sumk, sumk1, sumk2, sumf
 
 
@@ -13025,7 +13034,7 @@ integer,external :: omp_get_thread_num
                            selfref, forref
 
 ! ------- Local -------
-      integer  :: jt, jp, igc, ipr, iprsm
+      integer  :: jt, jp, igc, ipr, iprsm 
       real  :: sumk, sumf1, sumf2
 
 
@@ -13111,7 +13120,7 @@ integer,external :: omp_get_thread_num
                            fracrefa, absa, ka, ka_mn2, selfref, forref
 
 ! ------- Local -------
-      integer  :: jn, jt, jp, igc, ipr, iprsm
+      integer  :: jn, jt, jp, igc, ipr, iprsm 
       real  :: sumk, sumf
 
 
@@ -13197,7 +13206,7 @@ integer,external :: omp_get_thread_num
                            fracrefa, fracrefb, absa, ka, absb, kb, selfref, forref
 
 ! ------- Local -------
-      integer  :: jn, jt, jp, igc, ipr, iprsm
+      integer  :: jn, jt, jp, igc, ipr, iprsm 
       real  :: sumk, sumf
 
 
@@ -13290,13 +13299,13 @@ integer,external :: omp_get_thread_num
 
       save
 
-! ABSCLDn is the liquid water absorption coefficient (m2/g).
+! ABSCLDn is the liquid water absorption coefficient (m2/g). 
 ! For INFLAG = 1.
-      abscld1 = 0.0602410
-!
+      abscld1 = 0.0602410 
+!  
 ! Everything below is for INFLAG = 2.
 
-! ABSICEn(J,IB) are the parameters needed to compute the liquid water
+! ABSICEn(J,IB) are the parameters needed to compute the liquid water 
 ! absorption coefficient in spectral region IB for ICEFLAG=n.  The units
 ! of ABSICEn(1,IB) are m2/g and ABSICEn(2,IB) has units (microns (m2/g)).
 ! For ICEFLAG = 0.
@@ -13489,7 +13498,7 @@ integer,external :: omp_get_thread_num
        6.854061e-03 ,6.697986e-03 ,6.550224e-03 ,6.410138e-03 ,6.277153e-03 , &
        6.150751e-03 ,6.030462e-03 ,5.915860e-03 /)
 
-! ICEFLAG = 3; Fu parameterization. Particle size 5 - 140 micron in
+! ICEFLAG = 3; Fu parameterization. Particle size 5 - 140 micron in 
 ! increments of 3 microns.
 ! units = m2/g
 ! Hexagonal Ice Particle Parameterization
@@ -13688,7 +13697,7 @@ integer,external :: omp_get_thread_num
        8.123136e-03 /)
 
 ! For LIQFLAG = 0.
-      absliq0 = 0.0903614
+      absliq0 = 0.0903614 
 
 ! For LIQFLAG = 1.  In each band, the absorption
 ! coefficients are listed for a range of effective radii from 2.5
@@ -13944,14 +13953,14 @@ integer,external :: omp_get_thread_num
       use gpu_rrtmg_lw_rtrnmc
       use gpu_rrtmg_lw_setcoef
       use gpu_rrtmg_lw_cldprmc
-
+    
       use gpu_rrtmg_lw_taumol, only: taumolg, copyGPUTaumol
       use rrlw_cld_f, only: abscld1, absliq0, absliq1, &
                           absice0, absice1, absice2, absice3
       use rrlw_wvn_f, only: ngb, ngs
       use rrlw_tbl_f, only: tblint, bpade, tau_tbl, exp_tbl, tfn_tbl, ntbl
       use rrlw_con_f, only: fluxfac, heatfac, oneminus, pi, grav, avogad
-      use rrlw_vsn_f
+      use rrlw_vsn_f  
 
       implicit none
 
@@ -13964,7 +13973,7 @@ integer,external :: omp_get_thread_num
       real  _gpudev, allocatable :: taug(:,:,:)
 !$OMP THREADPRIVATE(ngbd,ncbandsd,icbd,icldlyr,fracsd,taug)
 #endif
-
+   
       real :: timings(10)
       INTEGER, PARAMETER :: debug_level_lwf=100
 
@@ -13973,7 +13982,7 @@ integer,external :: omp_get_thread_num
 !------------------------------------------------------------------
       subroutine rrtmg_lw( &
              ncol    ,nlay    ,icld    ,idrv    , &
-             play    ,plev    ,tlay    ,tlev    ,tsfc    , &
+             play    ,plev    ,tlay    ,tlev    ,tsfc    , & 
              h2ovmr  ,o3vmr   ,co2vmr  ,ch4vmr  ,n2ovmr  ,o2vmr , &
              cfc11vmr,cfc12vmr,cfc22vmr,ccl4vmr ,emis    , &
              inflglw ,iceflglw,liqflglw,cldfrac , &
@@ -13983,34 +13992,34 @@ integer,external :: omp_get_thread_num
              duflx_dt,duflxc_dt)
 ! -------- Description --------
 
-! This program is the driver subroutine for RRTMG_LW, the AER LW radiation
+! This program is the driver subroutine for RRTMG_LW, the AER LW radiation 
 ! model for application to GCMs, that has been adapted from RRTM_LW for
 ! improved efficiency.
 !
 ! NOTE: The call to RRTMG_LW_INI should be moved to the GCM initialization
-!  area, since this has to be called only once.
+!  area, since this has to be called only once. 
 !
 ! This routine:
 !    a) calls INATM to read in the atmospheric profile from GCM;
-!       all layering in RRTMG is ordered from surface to toa.
-!    b) calls CLDPRMC to set cloud optical depth for McICA based
-!       on input cloud properties
-!    c) calls SETCOEF to calculate various quantities needed for
+!       all layering in RRTMG is ordered from surface to toa. 
+!    b) calls CLDPRMC to set cloud optical depth for McICA based 
+!       on input cloud properties 
+!    c) calls SETCOEF to calculate various quantities needed for 
 !       the radiative transfer algorithm
-!    d) calls TAUMOL to calculate gaseous optical depths for each
+!    d) calls TAUMOL to calculate gaseous optical depths for each 
 !       of the 16 spectral bands
 !    e) calls RTRNMC (for both clear and cloudy profiles) to perform the
-!       radiative transfer calculation using McICA, the Monte-Carlo
-!       Independent Column Approximation, to represent sub-grid scale
+!       radiative transfer calculation using McICA, the Monte-Carlo 
+!       Independent Column Approximation, to represent sub-grid scale 
 !       cloud variability
 !    f) passes the necessary fluxes and cooling rates back to GCM
 !
 ! Two modes of operation are possible:
 !     The mode is chosen by using either rrtmg_lw.nomcica.f90 (to not use
-!     McICA) or rrtmg_lw.f90 (to use McICA) to interface with a GCM.
+!     McICA) or rrtmg_lw.f90 (to use McICA) to interface with a GCM. 
 !
 !    1) Standard, single forward model calculation (imca = 0)
-!    2) Monte Carlo Independent Column Approximation (McICA, Pincus et al.,
+!    2) Monte Carlo Independent Column Approximation (McICA, Pincus et al., 
 !       JC, 2003) method is applied to the forward model calculation (imca = 1)
 !
 ! This call to RRTMG_LW must be preceeded by a call to the module
@@ -14023,18 +14032,18 @@ integer,external :: omp_get_thread_num
 !     2) Mersenne-Twister (irnd = 1)
 !
 ! Two methods of cloud property input are possible:
-!     Cloud properties can be input in one of two ways (controlled by input
+!     Cloud properties can be input in one of two ways (controlled by input 
 !     flags inflglw, iceflglw, and liqflglw; see text file rrtmg_lw_instructions
 !     and subroutine rrtmg_lw_cldprmc.f90 for further details):
 !
 !    1) Input cloud fraction and cloud optical depth directly (inflglw = 0)
-!    2) Input cloud fraction and cloud physical properties (inflglw = 1 or 2);
+!    2) Input cloud fraction and cloud physical properties (inflglw = 1 or 2);  
 !       cloud optical properties are calculated by cldprmc or cldprmc based
 !       on input settings of iceflglw and liqflglw.  Ice particle size provided
-!       must be appropriately defined for the ice parameterization selected.
+!       must be appropriately defined for the ice parameterization selected. 
 !
 ! One method of aerosol property input is possible:
-!     Aerosol properties can be input in only one way (controlled by input
+!     Aerosol properties can be input in only one way (controlled by input 
 !     flag iaer; see text file rrtmg_lw_instructions for further details):
 !
 !    1) Input aerosol optical depth directly by layer and spectral band (iaer=10);
@@ -14042,11 +14051,11 @@ integer,external :: omp_get_thread_num
 !       RRTMG_LW currently treats only aerosol absorption;
 !       scattering capability is not presently available.
 !
-! The optional calculation of the change in upward flux as a function of surface
-! temperature is available (controlled by input flag idrv).  This can be utilized
-! to approximate adjustments to the upward flux profile caused only by a change in
+! The optional calculation of the change in upward flux as a function of surface 
+! temperature is available (controlled by input flag idrv).  This can be utilized 
+! to approximate adjustments to the upward flux profile caused only by a change in 
 ! surface temperature between full radiation calls.  This feature uses the pre-
-! calculated derivative of the Planck function with respect to surface temperature.
+! calculated derivative of the Planck function with respect to surface temperature. 
 !
 !    1) Normal forward calculation for the input profile (idrv=0)
 !    2) Normal forward calculation with optional calculation of the change
@@ -14057,15 +14066,15 @@ integer,external :: omp_get_thread_num
 !
 ! ------- Modifications -------
 !
-! This version of RRTMG_LW has been modified from RRTM_LW to use a reduced
-! set of g-points for application to GCMs.
+! This version of RRTMG_LW has been modified from RRTM_LW to use a reduced 
+! set of g-points for application to GCMs.  
 !
 !-- Original version (derived from RRTM_LW), reduction of g-points, other
-!   revisions for use with GCMs.
+!   revisions for use with GCMs.  
 !     1999: M. J. Iacono, AER, Inc.
 !-- Adapted for use with NCAR/CAM.
 !     May 2004: M. J. Iacono, AER, Inc.
-!-- Revised to add McICA capability.
+!-- Revised to add McICA capability. 
 !     Nov 2005: M. J. Iacono, AER, Inc.
 !-- Conversion to F90 formatting for consistency with rrtmg_sw.
 !     Feb 2007: M. J. Iacono, AER, Inc.
@@ -14073,7 +14082,7 @@ integer,external :: omp_get_thread_num
 !     Aug 2007: M. J. Iacono, AER, Inc.
 !-- Modified to add longwave aerosol absorption.
 !     Apr 2008: M. J. Iacono, AER, Inc.
-!-- Added capability to calculate derivative of upward flux wrt surface temperature.
+!-- Added capability to calculate derivative of upward flux wrt surface temperature. 
 !     Nov 2009: M. J. Iacono, E. J. Mlawer, AER, Inc.
 !-- Added capability to run on GPU
 !     Aug 2012: David Berthiaume, AER, Inc.
@@ -14087,11 +14096,11 @@ integer,external :: omp_get_thread_num
 
          ! integer , parameter:: maxlay = 203
          ! integer , parameter:: mxmol = 38
-
+          
 
 ! ----- Input -----
 ! Note: All volume mixing ratios are in dimensionless units of mole fraction obtained
-! by scaling mass mixing ratio (g/g) with the appropriate molecular weights (g/mol)
+! by scaling mass mixing ratio (g/g) with the appropriate molecular weights (g/mol) 
       integer , intent(in) :: ncol                    ! Number of horizontal columns
       integer , intent(in) :: nlay                    ! Number of model layers
       integer , intent(inout) :: icld                 ! Cloud overlap method
@@ -14101,7 +14110,7 @@ integer,external :: omp_get_thread_num
                                                       !    3: Maximum
                                                       !    4: Exponential (inactive)
       integer , intent(in) :: idrv                    ! Flag for calculation of dFdT, the change
-                                                      !    in upward flux as a function of
+                                                      !    in upward flux as a function of 
                                                       !    surface temperature [0=off, 1=on]
                                                       !    0: Normal forward calculation
                                                       !    1: Normal forward calculation with
@@ -14191,16 +14200,16 @@ integer,external :: omp_get_thread_num
                                                       !    Dimensions: (ncol,nlay)
 
 ! ----- Optional Output -----
-      real , intent(out), optional :: duflx_dt(:,:)
+      real , intent(out), optional :: duflx_dt(:,:)     
                                                       ! change in upward longwave flux (w/m2/K)
                                                       ! with respect to surface temperature
                                                       !    Dimensions: (ncol,nlay)
-      real , intent(out), optional :: duflxc_dt(:,:)
+      real , intent(out), optional :: duflxc_dt(:,:)    
                                                       ! change in clear sky upward longwave flux (w/m2/K)
                                                       ! with respect to surface temperature
                                                       !    Dimensions: (ncol,nlay)
 !      integer , intent(out), optional :: cloudFlag(:,:)
-
+      
       real,  pointer :: alp(:,:)
 
       integer  :: pncol
@@ -14209,7 +14218,7 @@ integer,external :: omp_get_thread_num
       real :: minmem
       integer :: hetflag
       integer :: numDevices, err
-
+    
       integer :: numThreads
 integer,external :: omp_get_thread_num
       CHARACTER(LEN=256) :: message
@@ -14220,26 +14229,26 @@ integer,external :: omp_get_thread_num
 #endif
       ! store the available device global and constant memory
       real gmem, cmem
-! mji - time
+! mji - time      
       real t1,t2
 
 !jm write(0,*)__FILE__,__LINE__,omp_get_thread_num()
 #ifdef _ACCEL
-
+ 
       err = cudaGetDeviceProperties( prop, 0)
       gmem = prop%totalGlobalMem
 !      print *, "total GPU global memory is ", gmem / (1024.0*1024.0) , "MB"
-
+ 
 #endif
-
+      
 ! (dmb 2012) Here we calculate the number of groups to partition
 ! the inputs.
 
 ! determine the minimum GPU memory
 ! force the GPUFlag off if there are no devices available
-
+      
 #ifdef _ACCEL
-      minmem = gmem
+      minmem = gmem        
 #else
 
 ! on the CPU partiion the inputs into 2 GB chunks.  Runtime
@@ -14247,25 +14256,25 @@ integer,external :: omp_get_thread_num
 ! of steps, so we pick a quantity that uses a relatively low
 ! amount of CPU memory.
       minmem = 2.0 * (1024.0**3)
-
+         
 ! set the number of 'devices' to the available number of CPUs
 #endif
 !      print *, "available working memory is ", int(minmem / (1024*1024)) , " MB"
-
+    
 #ifdef _ACCEL
-! use the available memory to determine the minumum number
+! use the available memory to determine the minumum number 
 ! of steps that will be required.
-! We use 1500 profiles per available GB as a conservative
+! We use 1500 profiles per available GB as a conservative 
 ! lower bound.
       cn = minmem * 1500 / (1024**3)
 
 ! with device emulation (for debugging) make sure there is a lower
 ! limit to the number of supported columns
-      if (cn < 500) then
-        cn = 500
+      if (cn < 500) then 
+        cn = 500 
       end if
 ! Set number of columns per partition to be no larger than total number of columns
-      if (cn > ncol) then
+      if (cn > ncol) then 
         cn = ncol
       end if
 #else
@@ -14280,14 +14289,14 @@ integer,external :: omp_get_thread_num
       WRITE(message,*)'RRTMG_LWF: Number of partitions is            ',ns
       call wrf_debug( debug_level_lwf, message)
 
-! mji - time
+! mji - time      
       call cpu_time(t1)
 
-      do  i = 1, ns
+      do  i = 1, ns 
 
 !jm if ( i .eq. IDEBUG_BASE ) then
 !jm call setdebug
-!jm else
+!jm else 
 !jm call unsetdebug
 !jm endif
 
@@ -14296,17 +14305,17 @@ integer,external :: omp_get_thread_num
       call rrtmg_lw_part &
             (ns, ncol, (i-1)*cn + 1, min(cn, ncol - (i-1)*cn), &
              nlay    ,icld    ,idrv,&
-             play    ,plev    ,tlay    ,tlev    ,tsfc    , &
+             play    ,plev    ,tlay    ,tlev    ,tsfc    , & 
              h2ovmr  ,o3vmr   ,co2vmr  ,ch4vmr  ,n2ovmr  ,o2vmr , &
              cfc11vmr,cfc12vmr,cfc22vmr,ccl4vmr ,emis    , &
              inflglw ,iceflglw,liqflglw,cldfrac , &
              tauc ,ciwp ,clwp ,cswp ,rei ,rel ,res , &
              tauaer  , &
              uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
-             duflx_dt,duflxc_dt)
-      end do
-
-! mji - time
+             duflx_dt,duflxc_dt)    
+      end do  
+      
+! mji - time      
       call cpu_time(t2)
       WRITE(message,*)'------------------------------------------------'
       call wrf_debug( debug_level_lwf, message)
@@ -14320,7 +14329,7 @@ integer,external :: omp_get_thread_num
       subroutine rrtmg_lw_part &
             (npart, ncol , colstart, pncol , &
              nlay    ,icld    ,idrv    , &
-             play    ,plev    ,tlay    ,tlev    ,tsfc    , &
+             play    ,plev    ,tlay    ,tlev    ,tsfc    , & 
              h2ovmr  ,o3vmr   ,co2vmr  ,ch4vmr  ,n2ovmr  ,o2vmr , &
              cfc11vmr,cfc12vmr,cfc22vmr,ccl4vmr ,emis    , &
              inflglw ,iceflglw,liqflglw,cldfrac , &
@@ -14328,9 +14337,9 @@ integer,external :: omp_get_thread_num
              tauaer  , &
              uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
              duflx_dt,duflxc_dt)
-
+   
       use gpu_mcica_subcol_gen_lw, only: mcica_subcol_lwg, generate_stochastic_cloudsg
-
+   
       use parrrtm_f, only : nbndlw, ngptlw, maxxsec, mxmol, mxlay, nbndlw, nmol
       use rrlw_con_f, only: fluxfac, heatfac, oneminus, pi
       use rrlw_wvn_f, only: ng, ngb, nspa, nspb, wavenum1, wavenum2, delwave, ixindx
@@ -14338,7 +14347,7 @@ integer,external :: omp_get_thread_num
 
 ! ----- Input -----
 ! Note: All volume mixing ratios are in dimensionless units of mole fraction obtained
-! by scaling mass mixing ratio (g/g) with the appropriate molecular weights (g/mol)
+! by scaling mass mixing ratio (g/g) with the appropriate molecular weights (g/mol) 
       integer , intent(in) :: npart
       integer , intent(in) :: ncol                    ! Number of horizontal columns
       integer , intent(in) :: nlay                    ! Number of model layers
@@ -14349,7 +14358,7 @@ integer,external :: omp_get_thread_num
                                                       !    3: Maximum
                                                       !    4: Exponential (inactive)
       integer , intent(in) :: idrv                    ! Flag for calculation of dFdT, the change
-                                                      !    in upward flux as a function of
+                                                      !    in upward flux as a function of 
                                                       !    surface temperature [0=off, 1=on]
                                                       !    0: Normal forward calculation
                                                       !    1: Normal forward calculation with
@@ -14429,7 +14438,7 @@ integer,external :: omp_get_thread_num
 #ifndef _ACCEL
 # define pncol CHNK
 #endif
-
+      
 ! ----- Output -----
 
       real , intent(out) :: uflx(:,:)                 ! Total sky longwave upward flux (W/m2)
@@ -14446,11 +14455,11 @@ integer,external :: omp_get_thread_num
                                                       !    Dimensions: (ncol,nlay)
 
 ! ----- Optional Output -----
-      real , intent(out), optional :: duflx_dt(:,:)
+      real , intent(out), optional :: duflx_dt(:,:)     
                                                       ! change in upward longwave flux (w/m2/K)
                                                       ! with respect to surface temperature
                                                       !    Dimensions: (ncol,nlay)
-      real , intent(out), optional :: duflxc_dt(:,:)
+      real , intent(out), optional :: duflxc_dt(:,:)    
                                                       ! change in clear sky upward longwave flux (w/m2/K)
                                                       ! with respect to surface temperature
                                                       !    Dimensions: (ncol,nlay)
@@ -14473,7 +14482,7 @@ integer,external :: omp_get_thread_num
 
       real :: relqmc(pncol, nlay+1), reicmc(pncol, nlay+1)
       real :: resnmc(pncol, nlay+1)
-
+      
       real :: ciwpmcd(pncol, ngptlw, nlay+1)
       real :: clwpmcd(pncol, ngptlw, nlay+1)
       real :: cswpmcd(pncol, ngptlw, nlay+1)
@@ -14541,7 +14550,7 @@ integer,external :: omp_get_thread_num
       real  :: t1, t2
 
 ! Atmosphere
-      real  :: pavel(pncol,nlay+1)                    ! layer pressures (mb)
+      real  :: pavel(pncol,nlay+1)                    ! layer pressures (mb) 
       real  :: tavel(pncol,nlay+1)                    ! layer temperatures (K)
       real  :: pz(pncol,0:nlay+1)                     ! level (interface) pressures (hPa, mb)
       real  :: tz(pncol,0:nlay+1)                     ! level (interface) temperatures (K)
@@ -14552,27 +14561,27 @@ integer,external :: omp_get_thread_num
       real  :: wx(pncol,maxxsec,nlay+1)               ! cross-section amounts (mol/cm-2)
       real  :: pwvcm(pncol)                           ! precipitable water vapor (cm)
       real  :: semiss(pncol,nbndlw)                   ! lw surface emissivity
-      real  :: fracs(pncol,nlay+1,ngptlw)             !
-
+      real  :: fracs(pncol,nlay+1,ngptlw)             ! 
+   
       real  :: taut(pncol,nlay+1,ngptlw)              ! gaseous + aerosol optical depths
 
       real  :: taua(pncol,nlay+1,nbndlw)              ! aerosol optical depth
 !      real :: ssaa(pncol,nlay+1,nbndlw)              ! aerosol single scattering albedo
-                                                      !   for future expansion
+                                                      !   for future expansion 
                                                       !   (lw aerosols/scattering not yet available)
 !      real :: asma(pncol,nlay+1,nbndlw)              ! aerosol asymmetry parameter
-                                                      !   for future expansion
+                                                      !   for future expansion 
                                                       !   (lw aerosols/scattering not yet available)
-
+ 
 ! Atmosphere - setcoef
       integer  :: laytrop(pncol)                      ! tropopause layer index
-      integer  :: jp(pncol,nlay+1)                    ! lookup table index
-      integer  :: jt(pncol,nlay+1)                    ! lookup table index
-      integer  :: jt1(pncol,nlay+1)                   ! lookup table index
-      real  :: planklay(pncol,nlay+1,nbndlw)          !
-      real  :: planklev(pncol,0:nlay+1,nbndlw)        !
-      real  :: plankbnd(pncol,nbndlw)                 !
-      real  :: dplankbnd_dt(pncol,nbndlw)             !
+      integer  :: jp(pncol,nlay+1)                    ! lookup table index 
+      integer  :: jt(pncol,nlay+1)                    ! lookup table index 
+      integer  :: jt1(pncol,nlay+1)                   ! lookup table index 
+      real  :: planklay(pncol,nlay+1,nbndlw)          ! 
+      real  :: planklev(pncol,0:nlay+1,nbndlw)        ! 
+      real  :: plankbnd(pncol,nbndlw)                 ! 
+      real  :: dplankbnd_dt(pncol,nbndlw)             ! 
 
       real  :: colh2o(pncol,nlay+1)                   ! column amount (h2o)
       real  :: colco2(pncol,nlay+1)                   ! column amount (co2)
@@ -14597,7 +14606,7 @@ integer,external :: omp_get_thread_num
 
       real  :: &                      !
                          fac00(pncol,nlay+1), fac01(pncol,nlay+1), &
-                         fac10(pncol,nlay+1), fac11(pncol,nlay+1)
+                         fac10(pncol,nlay+1), fac11(pncol,nlay+1) 
       real  :: &                      !
                          rat_h2oco2(pncol,nlay+1),rat_h2oco2_1(pncol,nlay+1), &
                          rat_h2oo3(pncol,nlay+1),rat_h2oo3_1(pncol,nlay+1), &
@@ -14630,7 +14639,7 @@ integer,external :: omp_get_thread_num
       real  :: cdrad(pncol,ngptlw,0:nlay+1)           ! downward longwave flux (w/m2)
       real  :: cclrurad(pncol,ngptlw,0:nlay+1)        ! clear sky upward longwave flux (w/m2)
       real  :: cclrdrad(pncol,ngptlw,0:nlay+1)        ! clear sky downward longwave flux (w/m2)
-
+      
       real  :: cldfracq(pncol,mxlay+1)                ! Cloud fraction
                                                       !    Dimensions: (ngptlw,ncol,nlay)
       real  :: ciwpq(pncol,mxlay+1)                   ! In-cloud ice water path (g/m2)
@@ -14664,7 +14673,7 @@ integer,external :: omp_get_thread_num
 
       integer :: permuteseed  ! this is set, below
       integer  :: icb(16)
-
+         
       ! local looping variables
       integer :: i,j,kk, piplon
 
@@ -14674,7 +14683,7 @@ integer,external :: omp_get_thread_num
 #ifdef _ACCEL
       type(dim3) :: dimGrid, dimBlock
 #endif
-
+      
       real , dimension(16) :: a0 =(/ 1.66 ,  1.55 ,  1.58 ,  1.66 , &
                 1.54 , 1.454 ,  1.89 ,  1.33 , &
                1.668 ,  1.66 ,  1.66 ,  1.66 , &
@@ -14690,7 +14699,7 @@ integer,external :: omp_get_thread_num
       real , parameter :: amd = 28.9660     ! Effective molecular weight of dry air (g/mol)
       real , parameter :: amw = 18.0160     ! Molecular weight of water vapor (g/mol)
 
-! (dmb 2012) these arrays were moved to the main routine so that we can bypass some of the
+! (dmb 2012) these arrays were moved to the main routine so that we can bypass some of the 
 ! inatm inefficiencies when running on the GPU
       real , parameter :: amdw = 1.607793   ! Molecular weight of dry air / water vapor
       real , parameter :: amdc = 0.658114   ! Molecular weight of dry air / carbon dioxide
@@ -14700,7 +14709,7 @@ integer,external :: omp_get_thread_num
       real , parameter :: amdo2 = 0.905140  ! Molecular weight of dry air / oxygen
       real , parameter :: amdc1 = 0.210852  ! Molecular weight of dry air / CFC11
       real , parameter :: amdc2 = 0.239546  ! Molecular weight of dry air / CFC12
-      real  :: amm, amttl, wvttl, wvsh, summol
+      real  :: amm, amttl, wvttl, wvsh, summol  
       integer  :: isp, l, ix, n, imol, ib   ! Loop indices
       integer, save :: counter =0
       real  :: btemp
@@ -14718,17 +14727,17 @@ integer,external :: omp_get_thread_num
 #endif
 ! Initializations
       icb(:) = (/  1,2,3,3,3,4,4,4,5, 5, 5, 5, 5, 5, 5, 5 /)
-
-      oneminus = 1.  - 1.e-6
+         
+      oneminus = 1.  - 1.e-6 
       pi = 2.  * asin(1. )
-      fluxfac = pi * 2.e4                   ! orig:   fluxfac = pi * 2.d4
+      fluxfac = pi * 2.e4                   ! orig:   fluxfac = pi * 2.d4  
       istart = 1
       iend = 16
       iout = 0
       ims = 1
       pncold = pncol
       nlayd = nlay
-
+    
       cldfracq(1:pncol,1:nlay) = cldfrac(colstart:(colstart+pncol-1), 1:nlay)
       ciwpq(1:pncol,1:nlay) = ciwp(colstart:(colstart+pncol-1), 1:nlay)
       clwpq(1:pncol,1:nlay) = clwp(colstart:(colstart+pncol-1), 1:nlay)
@@ -14738,12 +14747,12 @@ integer,external :: omp_get_thread_num
       resq(1:pncol,1:nlay) = res(colstart:(colstart+pncol-1), 1:nlay)
       taucq(1:pncol,1:nbndlw,1:nlay) = tauc(colstart:(colstart+pncol-1), 1:nbndlw, 1:nlay)
       tauaq(1:pncol,1:nlay,1:nbndlw) = tauaer(colstart:(colstart+pncol-1), 1:nlay, 1:nbndlw)
-
+  
 #ifdef _ACCEL
       allocate( cldfmcd(pncol, ngptlw, nlay+1))
       allocate( ngbd(140) )
 #endif
-
+           
 
 #ifndef _ACCEL
 #  define pncol CHNK
@@ -14752,10 +14761,10 @@ integer,external :: omp_get_thread_num
       allocate( icbd(16))
       allocate( ncbandsd(pncol))
       allocate( icldlyr(pncol, nlay+1))
-
+   
       call allocateGPUcldprmcg(pncol, nlay, ngptlw)
       call allocateGPUrtrnmcg(pncol, nlay, ngptlw, idrv)
-
+  
       ngbd = ngb
       ngsd = ngs
       icldd = icld
@@ -14775,7 +14784,7 @@ integer,external :: omp_get_thread_num
 
 ! *** This version uses McICA (imca = 1) ***
 
-! Set icld to select of clear or cloud calculation and cloud overlap method
+! Set icld to select of clear or cloud calculation and cloud overlap method  
 ! icld = 0, clear only
 ! icld = 1, with clouds using random cloud overlap
 ! icld = 2, with clouds using maximum/random cloud overlap
@@ -14789,17 +14798,17 @@ integer,external :: omp_get_thread_num
       iaer = 10
 
 ! Call model and data initialization, compute lookup tables, perform
-! reduction of g-points from 256 to 140 for input absorption coefficient
+! reduction of g-points from 256 to 140 for input absorption coefficient 
 ! data and other arrays.
 !
 ! In a GCM this call should be placed in the model initialization
-! area, since this has to be called only once.
+! area, since this has to be called only once.  
 ! call rrtmg_lw_ini(cpdair)
-
+       
 !     call rrtmg_lw_ini(1.004 )
 !  This is the main longitude/column loop within RRTMG.
 !  Prepare atmospheric profile from GCM for use in RRTMG, and define
-!  other input parameters.
+!  other input parameters.  
 
 ! (dmb 2012)
 
@@ -14817,7 +14826,7 @@ integer,external :: omp_get_thread_num
       tz(:,0:nlay) = tlev(colstart:(colstart+pncol-1),0:nlay)
       pavel(:,1:nlay) = play(colstart:(colstart+pncol-1),1:nlay)
       tavel(:,1:nlay) = tlay(colstart:(colstart+pncol-1),1:nlay)
-
+      
 #ifdef _ACCEL
       call copyGPUTaumolMol( colstart, pncol, nlayers, h2ovmr, co2vmr, o3vmr, n2ovmr, ch4vmr, &
                              o2vmr, ccl4vmr, cfc11vmr, cfc12vmr, cfc22vmr, npart)
@@ -14851,7 +14860,7 @@ integer,external :: omp_get_thread_num
                             pmid,clwp,ciwp,cswp,tauc,                                     &
 #endif
                             play, cldfracq, ciwpq,                                        &
-                            clwpq, cswpq, taucq,ngbd, cldfmcd, ciwpmcd, clwpmcd, cswpmcd, &
+                            clwpq, cswpq, taucq,ngbd, cldfmcd, ciwpmcd, clwpmcd, cswpmcd, & 
                             taucmcd)
 
 
@@ -14872,18 +14881,18 @@ integer,external :: omp_get_thread_num
 
 !jm write(0,*)__FILE__,__LINE__,omp_get_thread_num()
       do iplon = 1, pncol
-
+ 
         piplon = iplon + colstart - 1
-        amttl = 0.0
-        wvttl = 0.0
+        amttl = 0.0 
+        wvttl = 0.0 
         do l = 1, nlayers
-          amm = (1.  - h2ovmr(piplon,l)) * amd +h2ovmr(piplon,l) * amw
+          amm = (1.  - h2ovmr(piplon,l)) * amd +h2ovmr(piplon,l) * amw            
           coldry(iplon, l) = (pz(iplon, l-1)-pz(iplon, l)) * 1.e3  * avogad / &
                      (1.e2  * grav * amm * (1.  + h2ovmr(piplon,l)))
         end do
-
+         
         do l = 1, nlayers
-          summol = co2vmr(piplon,l) + o3vmr(piplon,l) + n2ovmr(piplon,l) + ch4vmr(piplon,l) + o2vmr(piplon,l)
+          summol = co2vmr(piplon,l) + o3vmr(piplon,l) + n2ovmr(piplon,l) + ch4vmr(piplon,l) + o2vmr(piplon,l) 
           btemp = h2ovmr(piplon, l) * coldry(iplon, l)
           wbrodl(iplon, l) = coldry(iplon, l) * (1.  - summol)
           amttl = amttl + coldry(iplon, l)+btemp
@@ -14892,11 +14901,11 @@ integer,external :: omp_get_thread_num
 
         wvsh = (amw * wvttl) / (amd * amttl)
         pwvcm(iplon) = wvsh * (1.e3  * pz(iplon, 0)) / (1.e2  * grav)
-
+    
 ! Transfer aerosol optical properties to RRTM variable;
 ! modify to reverse layer indexing here if necessary.
 
-        if (icld .ge. 1) then
+        if (icld .ge. 1) then 
           inflag(iplon) = inflglw
           iceflag(iplon) = iceflglw
           liqflag(iplon) = liqflglw
@@ -14915,14 +14924,14 @@ integer,external :: omp_get_thread_num
 !  input cloud physical properties.  Select method based on choices described
 !  in cldprmc.  Cloud fraction, water path, liquid droplet and ice particle
 !  effective radius must be passed into cldprmc.  Cloud fraction and cloud
-!  optical depth are transferred to rrtmg_lw arrays in cldprmc.
+!  optical depth are transferred to rrtmg_lw arrays in cldprmc.  
 
-! If the GPU flag is active, then we call the GPU code.  Otherwise, call the CPU code
+! If the GPU flag is active, then we call the GPU code.  Otherwise, call the CPU code   
 
 ! (dmb 2012) Copy the needed arrays over to the GPU for the cldprmc subroutine.
       call copyGPUcldprmcg( inflag, iceflag, liqflag,&
                                  absice0, absice1, absice2, absice3, absliq1 )
-
+  
 ! copy common arrays over to the GPU
       icbd = icb
       a0d=a0
@@ -14947,13 +14956,13 @@ integer,external :: omp_get_thread_num
 #ifdef _ACCEL
 ! (dmb 2012) Allocate the arrays for the SetCoef and Taumol kernels
       call allocateGPUSetCoef( pncol, nlayers)
-
+      
 ! (dmb 2012) Copy the needed data of to the GPU for the SetCoef and Taumol kernels
 
       call copyGPUTaumol( pavel, wx, coldry, tauaer, pncol, colstart, nlay , npart)
 
       call copyGPUSetCoef( )
-! (dmb 2012) Copy over additional common arrays
+! (dmb 2012) Copy over additional common arrays 
       taveld = tavel
       tzd = tz
       tboundd = tbound
@@ -14980,7 +14989,7 @@ integer,external :: omp_get_thread_num
 # define fluxfacd fluxfac
 # define oneminusd oneminus
 #endif
-
+ 
 ! (dmb 2012) Here we configure the grids and blocks to run the cldpmcd kernel
 ! on the GPU.  I decided to keep the block dimensions to 16x16 to coincide with
 ! coalesced memory access when I am able to parition the profiles to multiples
@@ -15000,15 +15009,15 @@ integer,external :: omp_get_thread_num
                 cldfmcd, taucmcd,  ngbd, icbd, ncbandsd, icldlyr)
 
 ! synchronize the GPU with the CPU before taking timing results or passing data back to the CPU
-#ifdef _ACCEL
-      ierr = cudaThreadSynchronize()
+#ifdef _ACCEL    
+      ierr = cudaThreadSynchronize() 
 #endif
-
+   
 
 ! Calculate information needed by the radiative transfer routine
-! that is specific to this atmosphere, especially some of the
+! that is specific to this atmosphere, especially some of the 
 ! coefficients and indices needed to compute the optical depths
-! by interpolating data from stored reference atmospheres.
+! by interpolating data from stored reference atmospheres. 
 
 ! (dmb 2012) Initialize the grid and block dimensions and call the setcoefg kernel
 #ifdef _ACCEL
@@ -15023,12 +15032,12 @@ integer,external :: omp_get_thread_num
 #endif
                             )
 
-! (dmb 2012) end if GPU flag
+! (dmb 2012) end if GPU flag 
 
-!  Calculate the gaseous optical depths and Planck fractions for
+!  Calculate the gaseous optical depths and Planck fractions for 
 !  each longwave spectral band.
 
-! (dmb 2012) Call the taumolg subroutine.  This subroutine calls all of the individal taumol kernels.
+! (dmb 2012) Call the taumolg subroutine.  This subroutine calls all of the individal taumol kernels.     
       call taumolg(1, pncol,nlayers, ngbd, taug, fracsd &
 !# include "taug_cpu_args.h"
 #ifndef _ACCEL
@@ -15041,22 +15050,22 @@ integer,external :: omp_get_thread_num
                     ,tauaa,nspad,nspbd,oneminusd                                                &
 #endif
                   )
-
+   
 ! Call the radiative transfer routine.
 ! Either routine can be called to do clear sky calculation.  If clouds
 ! are present, then select routine based on cloud overlap assumption
 ! to be used.  Clear sky calculation is done simultaneously.
 ! For McICA, RTRNMC is called for clear and cloudy calculations.
 
-
+   
 #ifdef _ACCEL
       ierr = cudaThreadSynchronize()
-#endif
-
-#ifdef _ACCEL
+#endif 
+   
+#ifdef _ACCEL    
       dimGrid = dim3( (pncol+255)/256, 70, 1)
       dimBlock = dim3( 256,2,1)
-#endif
+#endif    
 
       call rtrnmcg _gpuchv (pncol,nlayers, istart, iend, iout  &
 #ifndef _ACCEL
@@ -15069,13 +15078,13 @@ integer,external :: omp_get_thread_num
                     ,ngbd, icldlyr, taug, fracsd, cldfmcd)
 
 #ifdef _ACCEL
-      ierr = cudaThreadSynchronize()
+      ierr = cudaThreadSynchronize() 
 #endif
 
 !jm write(0,*)__FILE__,__LINE__,omp_get_thread_num()
 
 ! sum up the results
-
+  
       totufluxd = 0.0
       totdfluxd = 0.0
       totuclfld = 0.0
@@ -15120,10 +15129,10 @@ integer,external :: omp_get_thread_num
          ,delwaved,totufluxd,totdfluxd,fnetd,htrd,totuclfld,totdclfld,fnetcd,htrcd,dtotuflux_dtd  &
          ,dtotuclfl_dtd,dplankbnd_dtd                                                             &
 #endif
-                                 )
+                                 )    
 #ifdef _ACCEL
-      ierr = cudaThreadSynchronize()
-#endif
+      ierr = cudaThreadSynchronize() 
+#endif    
 
 ! copy the partition data back to the CPU
 #if 0
@@ -15140,7 +15149,7 @@ integer,external :: omp_get_thread_num
 
          duflx_dt(colstart:(colstart+pncol-1), 1:(nlayers+1)) = dtotuflux_dtd(1:pncol,0:(nlayers))
          duflxc_dt(colstart:(colstart+pncol-1), 1:(nlayers+1)) = dtotuclfl_dtd(1:pncol,0:(nlayers))
-
+ 
       end if
 
 !jm write(0,*)__FILE__,__LINE__,omp_get_thread_num()
@@ -15185,7 +15194,7 @@ integer,external :: omp_get_thread_num
 # undef icbd
 # undef fracsd
 #endif
-
+ 
       end subroutine rrtmg_lw_part
 
       end module rrtmg_lw_rad_f
@@ -15225,13 +15234,13 @@ integer,external :: omp_get_thread_num
          93.6658, 98.5739, 103.603, 108.752, 114.025, 119.424,  &
          124.954, 130.630, 136.457, 142.446, 148.608, 154.956,  &
          161.503, 168.262, 175.248, 182.473, 189.952, 197.699,  &
-         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/
+         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/  
     !
       save retab
     ! For buffer layer adjustment.  Steven Cavallo, Dec 2010.
-      INTEGER , SAVE    :: nlayers
+      INTEGER , SAVE    :: nlayers    
       REAL, PARAMETER :: deltap = 4.  ! Pressure interval for buffer layer in mb
-
+    
       CONTAINS
 
 !------------------------------------------------------------------
@@ -15244,8 +15253,8 @@ integer,external :: omp_get_thread_num
                        p8w, p3d, pi3d,                            &
                        dz8w, tsk, t3d, t8w, rho3d, r, g,          &
                        icloud, warm_rain, cldfra3d,               &
-                       lradius,iradius,                           &
-                       is_cammgmp_used,                           &
+                       lradius,iradius,                           & 
+                       is_cammgmp_used,                           & 
                        f_ice_phy, f_rain_phy,                     &
                        xland, xice, snow,                         &
                        qv3d, qc3d, qr3d,                          &
@@ -15254,10 +15263,10 @@ integer,external :: omp_get_thread_num
                        f_qv, f_qc, f_qr, f_qi, f_qs, f_qg,        &
                        re_cloud, re_ice, re_snow,                 &  ! G. Thompson
                        has_reqc, has_reqi, has_reqs,              &  ! G. Thompson
-                       tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4,   & ! czhao
-                       tauaerlw5,tauaerlw6,tauaerlw7,tauaerlw8,   & ! czhao
-                       tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12,   & ! czhao
-                       tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16,   & ! czhao
+                       tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4,   & ! czhao 
+                       tauaerlw5,tauaerlw6,tauaerlw7,tauaerlw8,   & ! czhao 
+                       tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12,   & ! czhao 
+                       tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16,   & ! czhao 
                        aer_ra_feedback,                           & !czhao
 !jdfcz                 progn,prescribe,                           & !czhao
                        progn,                                     & !czhao
@@ -15265,7 +15274,7 @@ integer,external :: omp_get_thread_num
 !ccc added for time varying gases.
                        yr,julian,                                 &
 !ccc
-                       ids,ide, jds,jde, kds,kde,                 &
+                       ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
                        lwupflx, lwupflxc, lwdnflx, lwdnflxc       &
@@ -15354,9 +15363,9 @@ integer,external :: omp_get_thread_num
                                    F_QV,F_QC,F_QR,F_QI,F_QS,F_QG,F_QNDROP
 ! Optional
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
-         INTENT(IN    ) :: tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4, & ! czhao
-                           tauaerlw5,tauaerlw6,tauaerlw7,tauaerlw8, & ! czhao
-                           tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12, & ! czhao
+         INTENT(IN    ) :: tauaerlw1,tauaerlw2,tauaerlw3,tauaerlw4, & ! czhao 
+                           tauaerlw5,tauaerlw6,tauaerlw7,tauaerlw8, & ! czhao 
+                           tauaerlw9,tauaerlw10,tauaerlw11,tauaerlw12, & ! czhao 
                            tauaerlw13,tauaerlw14,tauaerlw15,tauaerlw16
 
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       aer_ra_feedback
@@ -15386,7 +15395,7 @@ integer,external :: omp_get_thread_num
                                LWUPFLX,LWUPFLXC,LWDNFLX,LWDNFLXC
 
 !  LOCAL VARS
-
+ 
    REAL, DIMENSION( kts:kte+1 ) ::                          Pw1D, &
                                                             Tw1D
 
@@ -15402,7 +15411,7 @@ integer,external :: omp_get_thread_num
                                                             QS1D, &
                                                             QG1D, &
                                                             O31D, &
-                                                          qndrop1d
+                                                          qndrop1d 
 
 ! Added local arrays for RRTMG
     integer ::                                              ncol, &
@@ -15412,7 +15421,7 @@ integer,external :: omp_get_thread_num
                                                          inflglw, &
                                                         iceflglw, &
                                                         liqflglw
-! the mod in the macro below is to quiet range checking
+! the mod in the macro below is to quiet range checking 
 #define TILEPTS (jte-jts+1)*(ite-its+1)+mod((jte-jts+1)*(ite-its+1),CHNK)
 ! Dimension with extra layer from model top to TOA
     real, dimension( TILEPTS, kts:nlayers+1 )  ::                 &
@@ -15441,7 +15450,7 @@ integer,external :: omp_get_thread_num
 ! Surface emissivity (for 16 LW spectral bands)
     real, dimension( TILEPTS, nbndlw )  ::                        &
                                                             emis
-! Dimension with extra layer from model top to TOA,
+! Dimension with extra layer from model top to TOA, 
 ! though no clouds are allowed in extra layer
     real, dimension( TILEPTS, kts:nlayers )  ::                   &
                                                           clwpth, &
@@ -15489,26 +15498,26 @@ integer,external :: omp_get_thread_num
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv)
     real :: co2
-    data co2 / 379.e-6 /
+    data co2 / 379.e-6 / 
 ! methane (1774 ppbv)
     real :: ch4
-    data ch4 / 1774.e-9 /
+    data ch4 / 1774.e-9 / 
 ! nitrous oxide (319 ppbv)
     real :: n2o
-    data n2o / 319.e-9 /
+    data n2o / 319.e-9 / 
 ! cfc-11 (251 ppt)
     real :: cfc11
-    data cfc11 / 0.251e-9 /
+    data cfc11 / 0.251e-9 / 
 ! cfc-12 (538 ppt)
     real :: cfc12
-    data cfc12 / 0.538e-9 /
+    data cfc12 / 0.538e-9 / 
 #endif
 ! cfc-22 (169 ppt)
     real :: cfc22
-    data cfc22 / 0.169e-9 /
+    data cfc22 / 0.169e-9 / 
 ! ccl4 (93 ppt)
     real :: ccl4
-    data ccl4 / 0.093e-9 /
+    data ccl4 / 0.093e-9 / 
 ! Set oxygen volume mixing ratio (for o2mmr=0.23143)
     real :: o2
     data o2 / 0.209488 /
@@ -15525,23 +15534,23 @@ integer,external :: omp_get_thread_num
     data absn /2.34e-3/
 
 ! Molecular weights and ratios for converting mmr to vmr units
-!    real :: amd       ! Effective molecular weight of dry air (g/mol)
-!    real :: amw       ! Molecular weight of water vapor (g/mol)
-!    real :: amo       ! Molecular weight of ozone (g/mol)
-!    real :: amo2      ! Molecular weight of oxygen (g/mol)
-! Atomic weights for conversion from mass to volume mixing ratios
-!    data amd   /  28.9660   /
-!    data amw   /  18.0160   /
-!    data amo   /  47.9998   /
+!    real :: amd       ! Effective molecular weight of dry air (g/mol)  
+!    real :: amw       ! Molecular weight of water vapor (g/mol)        
+!    real :: amo       ! Molecular weight of ozone (g/mol)              
+!    real :: amo2      ! Molecular weight of oxygen (g/mol)              
+! Atomic weights for conversion from mass to volume mixing ratios                
+!    data amd   /  28.9660   /                                                  
+!    data amw   /  18.0160   /                                                  
+!    data amo   /  47.9998   /                                                  
 !    data amo2  /  31.9999   /
-
-    real :: amdw     ! Molecular weight of dry air / water vapor
+                                                                                 
+    real :: amdw     ! Molecular weight of dry air / water vapor  
     real :: amdo     ! Molecular weight of dry air / ozone
     real :: amdo2    ! Molecular weight of dry air / oxygen
-    data amdw /  1.607793 /
+    data amdw /  1.607793 /                                                    
     data amdo /  0.603461 /
     data amdo2 / 0.905190 /
-
+    
 !!
     real, dimension( (jte-jts+1)*(ite-its+1), 1:kte-kts+1 )  :: pdel         ! Layer pressure thickness (mb)
 
@@ -15570,13 +15579,13 @@ integer,external :: omp_get_thread_num
 
 ! Added for top of model adjustment.  Steven Cavallo NCAR/MMM December 2010
     INTEGER, PARAMETER :: nproflevs = 60 ! Constant, from the table
-    INTEGER :: L, LL, klev               ! Loop indices
+    INTEGER :: L, LL, klev               ! Loop indices      
     REAL, DIMENSION( kts:nlayers+1 ) :: varint
-    REAL :: wght,vark,vark1
-    REAL :: PPROF(nproflevs), TPROF(nproflevs)
-    ! Weighted mean pressure and temperature profiles from midlatitude
-    ! summer (MLS),midlatitude winter (MLW), sub-Arctic
-    ! winter (SAW),sub-Arctic summer (SAS), and tropical (TROP)
+    REAL :: wght,vark,vark1       
+    REAL :: PPROF(nproflevs), TPROF(nproflevs)            
+    ! Weighted mean pressure and temperature profiles from midlatitude 
+    ! summer (MLS),midlatitude winter (MLW), sub-Arctic 
+    ! winter (SAW),sub-Arctic summer (SAS), and tropical (TROP) 
     ! standard atmospheres.
     DATA PPROF   /1000.00,855.47,731.82,626.05,535.57,458.16,     &
                   391.94,335.29,286.83,245.38,209.91,179.57,      &
@@ -15597,7 +15606,7 @@ integer,external :: omp_get_thread_num
                   247.35,250.33,253.32,256.30,259.22,262.12,      &
                   264.80,266.50,267.59,268.44,268.69,267.76,      &
                   266.13,263.96,261.54,258.93,256.15,253.23,      &
-                  249.89,246.67,243.48,240.25,236.66,233.86/
+                  249.89,246.67,243.48,240.25,236.66,233.86/    
 !------------------------------------------------------------------
 #if ( WRF_CHEM == 1 )
       IF ( aer_ra_feedback == 1) then
@@ -15626,7 +15635,7 @@ integer,external :: omp_get_thread_num
 
 
 !-----CALCULATE LONG WAVE RADIATION
-!
+!                                                              
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb
 !
@@ -15792,18 +15801,18 @@ integer,external :: omp_get_thread_num
         ENDIF
 
 !         EMISS0=EMISS(I,J)
-!         GLW0=0.
-!         OLR0=0.
+!         GLW0=0. 
+!         OLR0=0. 
 !         TSFC=TSK(I,J)
          DO K=kts,kte
-            QV1D(K)=AMAX1(QV1D(K),1.E-12)
+            QV1D(K)=AMAX1(QV1D(K),1.E-12) 
          ENDDO
 
 ! Set up input for longwave
 !         ncol = 1
 ! Add extra layer from top of model to top of atmosphere
 !         nlay = (kte - kts + 1) + 1
-! Edited for top of model adjustment (nlayers = kte + 1).
+! Edited for top of model adjustment (nlayers = kte + 1).  
 ! Steven Cavallo, December 2010
          nlay = nlayers ! Keep these indices the same
 
@@ -15891,8 +15900,8 @@ integer,external :: omp_get_thread_num
          ENDIF
 
 ! Layer indexing goes bottom to top here for all fields.
-! Water vapor and ozone are converted from mmr to vmr.
-! Pressures are in units of mb here.
+! Water vapor and ozone are converted from mmr to vmr. 
+! Pressures are in units of mb here. 
          plev(icol,1) = pw1d(1)
 
 
@@ -15918,99 +15927,99 @@ integer,external :: omp_get_thread_num
 ! This section is replaced with a new method to deal with model top
          if ( 1 == 0 ) then
 
-!  Define profile values for extra layer from model top to top of atmosphere.
-!  The top layer temperature for all gridpoints is set to the top layer-1
-!  temperature plus a constant (0 K) that represents an isothermal layer
-!  above ptop.  Top layer interface temperatures are linearly interpolated
-!  from the layer temperatures.
+!  Define profile values for extra layer from model top to top of atmosphere. 
+!  The top layer temperature for all gridpoints is set to the top layer-1 
+!  temperature plus a constant (0 K) that represents an isothermal layer    
+!  above ptop.  Top layer interface temperatures are linearly interpolated 
+!  from the layer temperatures.  
 
          play(icol,kte+1) = 0.5 * plev(icol,kte+1)
          tlay(icol,kte+1) = tlev(icol,kte+1) + 0.0
          plev(icol,kte+2) = 1.0e-5
          tlev(icol,kte+2) = tlev(icol,kte+1) + 0.0
-         h2ovmr(icol,kte+1) = h2ovmr(icol,kte)
-         co2vmr(icol,kte+1) = co2vmr(icol,kte)
-         o2vmr(icol,kte+1) = o2vmr(icol,kte)
-         ch4vmr(icol,kte+1) = ch4vmr(icol,kte)
-         n2ovmr(icol,kte+1) = n2ovmr(icol,kte)
-         cfc11vmr(icol,kte+1) = cfc11vmr(icol,kte)
-         cfc12vmr(icol,kte+1) = cfc12vmr(icol,kte)
-         cfc22vmr(icol,kte+1) = cfc22vmr(icol,kte)
-         ccl4vmr(icol,kte+1) = ccl4vmr(icol,kte)
+         h2ovmr(icol,kte+1) = h2ovmr(icol,kte) 
+         co2vmr(icol,kte+1) = co2vmr(icol,kte) 
+         o2vmr(icol,kte+1) = o2vmr(icol,kte) 
+         ch4vmr(icol,kte+1) = ch4vmr(icol,kte) 
+         n2ovmr(icol,kte+1) = n2ovmr(icol,kte) 
+         cfc11vmr(icol,kte+1) = cfc11vmr(icol,kte) 
+         cfc12vmr(icol,kte+1) = cfc12vmr(icol,kte) 
+         cfc22vmr(icol,kte+1) = cfc22vmr(icol,kte) 
+         ccl4vmr(icol,kte+1) = ccl4vmr(icol,kte) 
 
          endif
 
-!  Set up values for extra layers to the top of the atmosphere.
+!  Set up values for extra layers to the top of the atmosphere.                       
 !  Temperature is calculated based on an average temperature profile given
 !  here in a table.  The input table data is linearly interpolated to the
-!  column pressure.  Mixing ratios are held constant except for ozone.
+!  column pressure.  Mixing ratios are held constant except for ozone.  
 !  Caution should be used if model top pressure is less than 5 hPa.
 !  Steven Cavallo, NCAR/MMM, December 2010
-       ! Calculate the column pressure buffer levels above the
-       ! model top
+       ! Calculate the column pressure buffer levels above the 
+       ! model top       
        do L=kte+1,nlayers,1
           plev(icol,L+1) = plev(icol,L) - deltap
           play(icol,L) = 0.5*(plev(icol,L) + plev(icol,L+1))
-       enddo
+       enddo          
        ! Add zero as top level.  This gets the temperature max at the
-       ! stratopause, reducing the downward flux errors in the top
+       ! stratopause, reducing the downward flux errors in the top 
        ! levels.  If zero happened to be the top level already,
        ! this will add another level with zero, but will not affect
        ! the radiative transfer calculation.
        plev(icol,nlayers+1) = 0.00
        play(icol,nlayers) =  0.5*(plev(icol,nlayers) + plev(icol,nlayers+1))
 
-       ! Interpolate the table temperatures to column pressure levels
+       ! Interpolate the table temperatures to column pressure levels    
        do L=1,nlayers+1,1
           if ( PPROF(nproflevs) .lt. plev(icol,L) ) then
-             do LL=2,nproflevs,1
-                if ( PPROF(LL) .lt. plev(icol,L) ) then
+             do LL=2,nproflevs,1       
+                if ( PPROF(LL) .lt. plev(icol,L) ) then           
                    klev = LL - 1
                    exit
                 endif
              enddo
-
+          
           else
              klev = nproflevs
-          endif
-
+          endif  
+  
           if (klev .ne. nproflevs ) then
-             vark  = TPROF(klev)
+             vark  = TPROF(klev) 
              vark1 = TPROF(klev+1)
              wght=(plev(icol,L)-PPROF(klev) )/( PPROF(klev+1)-PPROF(klev))
           else
-             vark  = TPROF(klev)
+             vark  = TPROF(klev) 
              vark1 = TPROF(klev)
              wght = 0.0
           endif
           varint(L) = wght*(vark1-vark)+vark
 
-       enddo
-
-       ! Match the interpolated table temperature profile to WRF column
+       enddo                   
+       
+       ! Match the interpolated table temperature profile to WRF column                    
        do L=kte+1,nlayers+1,1
           tlev(icol,L) = varint(L) + (tlev(icol,kte) - varint(kte))
           !if ( L .le. nlay ) then
-          tlay(icol,L-1) = 0.5*(tlev(icol,L) + tlev(icol,L-1))
+          tlay(icol,L-1) = 0.5*(tlev(icol,L) + tlev(icol,L-1))  
           !endif
-       enddo
+       enddo 
 
        ! Now the chemical species (except for ozone)
        do L=kte+1,nlayers,1
-          h2ovmr(icol,L) = h2ovmr(icol,kte)
-          co2vmr(icol,L) = co2vmr(icol,kte)
-          o2vmr(icol,L) = o2vmr(icol,kte)
-          ch4vmr(icol,L) = ch4vmr(icol,kte)
-          n2ovmr(icol,L) = n2ovmr(icol,kte)
-          cfc11vmr(icol,L) = cfc11vmr(icol,kte)
-          cfc12vmr(icol,L) = cfc12vmr(icol,kte)
-          cfc22vmr(icol,L) = cfc22vmr(icol,kte)
-          ccl4vmr(icol,L) = ccl4vmr(icol,kte)
-       enddo
-! End top of model buffer
-!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+          h2ovmr(icol,L) = h2ovmr(icol,kte) 
+          co2vmr(icol,L) = co2vmr(icol,kte) 
+          o2vmr(icol,L) = o2vmr(icol,kte) 
+          ch4vmr(icol,L) = ch4vmr(icol,kte) 
+          n2ovmr(icol,L) = n2ovmr(icol,kte) 
+          cfc11vmr(icol,L) = cfc11vmr(icol,kte) 
+          cfc12vmr(icol,L) = cfc12vmr(icol,kte) 
+          cfc22vmr(icol,L) = cfc22vmr(icol,kte) 
+          ccl4vmr(icol,L) = ccl4vmr(icol,kte) 
+       enddo     
+! End top of model buffer 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
 ! Get ozone profile including amount in extra layer above model top.
-! Steven Cavallo: Must pass nlay-1 into subroutine to get nlayers
+! Steven Cavallo: Must pass nlay-1 into subroutine to get nlayers 
 ! dimension for o3mmr
 !         call inirad (o3mmr,plev,kts,nlay-1)
          call inirad (o3mmr,plev(icol,:),kts,nlay-1)
@@ -16044,26 +16053,26 @@ integer,external :: omp_get_thread_num
 
 ! Define cloud optical properties for radiation (inflglw = 0)
 ! This is approach used with older RRTM_LW;
-! Cloud and precipitation paths in g/m2
+! Cloud and precipitation paths in g/m2 
 ! qi=0 if no ice phase
 ! qs=0 if no ice phase
          if (inflglw .eq. 0) then
             do k = kts,kte
-               ro = p1d(k) / (r * t1d(k))*100.
+               ro = p1d(k) / (r * t1d(k))*100. 
                dz = dz1d(k)
-               clwp(k) = ro*qc1d(k)*dz*1000.
-               ciwp(k) = ro*qi1d(k)*dz*1000.
-               plwp(k) = (ro*qr1d(k))**0.75*dz*1000.
-               piwp(k) = (ro*qs1d(k))**0.75*dz*1000.
+               clwp(k) = ro*qc1d(k)*dz*1000.         
+               ciwp(k) = ro*qi1d(k)*dz*1000.         
+               plwp(k) = (ro*qr1d(k))**0.75*dz*1000. 
+               piwp(k) = (ro*qs1d(k))**0.75*dz*1000. 
             enddo
 
 ! Cloud fraction and cloud optical depth; old approach used with RRTM_LW
             do k = kts, kte
                cldfrac(icol,k) = cldfra1d(k)
                do nb = 1, nbndlw
-                  taucld(icol,nb,k) = abcw*clwp(k) + abice*ciwp(k) &
-                            +abrn*plwp(k) + absn*piwp(k)
-                  if (taucld(icol,nb,k) .gt. 0.01) cldfrac(icol,k) = 1.
+                  taucld(icol,nb,k) = abcw*clwp(k) + abice*ciwp(k) & 
+                            +abrn*plwp(k) + absn*piwp(k) 
+                  if (taucld(icol,nb,k) .gt. 0.01) cldfrac(icol,k) = 1. 
                enddo
             enddo
 
@@ -16080,7 +16089,7 @@ integer,external :: omp_get_thread_num
 ! Define cloud physical properties for radiation (inflglw = 1 or 2)
 ! Cloud fraction
 ! Set cloud arrays if passing cloud physical properties into radiation
-         if (inflglw .gt. 0) then
+         if (inflglw .gt. 0) then 
             do k = kts, kte
                cldfrac(icol,k) = cldfra1d(k)
             enddo
@@ -16171,15 +16180,15 @@ integer,external :: omp_get_thread_num
             end if
          end if
       end do
-!jdfcz     else ! prescribe
+!jdfcz     else ! prescribe 
 ! following Kiehl
 !      call relcalc(icol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
 !     write(0,*) 'lw prescribe aerosol',maxval(qndrop3d)
 !jdfcz     endif
-    else  ! progn
+    else  ! progn   
       call relcalc(icol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
     endif
-  else   !present(progn)
+  else   !present(progn) 
       call relcalc(icol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
   endif
 
@@ -16250,7 +16259,7 @@ integer,external :: omp_get_thread_num
             endif
 
 ! Zero out cloud optical properties here; not used when passing physical properties
-! to radiation and taucld is calculated in radiation
+! to radiation and taucld is calculated in radiation 
             do k = kts, kte
                do nb = 1, nbndlw
                   taucld(icol,nb,k) = 0.0
@@ -16288,7 +16297,7 @@ integer,external :: omp_get_thread_num
             do nb = 1,nbndlw
                taucld(icol,nb,k) = 0.
             enddo
-         enddo
+         enddo   
 
 ! mji - mcica sub-column generator called inside rrtmg_lw for gpu
 !         iplon = 1
@@ -16320,7 +16329,7 @@ integer,external :: omp_get_thread_num
 
 #if ( WRF_CHEM == 1 )
    IF ( AER_RA_FEEDBACK == 1) then
-!     do nb = 1, nbndlw
+!     do nb = 1, nbndlw 
       do k = kts,kte      !wig
         if(tauaerlw1(i,k,j).gt.thresh .and. tauaerlw16(i,k,j).gt.thresh) then
           tauaer(icol,k,1)=tauaerlw1(i,k,j)
@@ -16370,12 +16379,12 @@ integer,external :: omp_get_thread_num
 
 !
       end do i_loop
-   end do j_loop
+   end do j_loop                                           
 
 ! Call RRTMG longwave radiation model for full grid for gpu
          call rrtmg_lw &
             (ncol    ,nlay    ,icld    ,idrv    , &
-             play    ,plev    ,tlay    ,tlev    ,tsfc    , &
+             play    ,plev    ,tlay    ,tlev    ,tsfc    , & 
              h2ovmr  ,o3vmr   ,co2vmr  ,ch4vmr  ,n2ovmr  ,o2vmr , &
              cfc11vmr,cfc12vmr,cfc22vmr,ccl4vmr ,emis    , &
              inflglw ,iceflglw,liqflglw,cldfrac , &
@@ -16384,7 +16393,7 @@ integer,external :: omp_get_thread_num
              uflx    ,dflx    ,hr      ,uflxc   ,dflxc,  hrc, &
              duflx_dt,duflxc_dt)
 
-! Output downard surface flux, and outgoing longwave flux and cloud forcing
+! Output downard surface flux, and outgoing longwave flux and cloud forcing 
 ! at the top of atmosphere (W/m2)
 
 ! latitude loop
@@ -16398,12 +16407,12 @@ integer,external :: omp_get_thread_num
          glw(i,j) = dflx(icol,1)
 !         olr(i,j) = uflx(icol,kte+2)
 !         lwcf(i,j) = uflxc(icol,kte+2) - uflx(icol,kte+2)
-! Steven Cavallo: Changed OLR to be valid at the top of atmosphere instead
+! Steven Cavallo: Changed OLR to be valid at the top of atmosphere instead 
 ! of top of model.  Dec 2010.
          olr(i,j) = uflx(icol,nlayers+1)
          lwcf(i,j) = uflxc(icol,nlayers+1) - uflx(icol,nlayers+1)
 
-         if (present(lwupt)) then
+         if (present(lwupt)) then 
 ! Output up and down toa fluxes for total and clear sky
             lwupt(i,j)     = uflx(icol,nlayers+1)
             lwuptc(i,j)    = uflxc(icol,nlayers+1)
@@ -16417,7 +16426,7 @@ integer,external :: omp_get_thread_num
          endif
 
 ! Output up and down layer fluxes for total and clear sky.
-! Vertical ordering is from bottom to top in units of W m-2.
+! Vertical ordering is from bottom to top in units of W m-2. 
          if ( present (lwupflx) ) then
          do k=kts,kte+2
             lwupflx(i,k,j)  = uflx(icol,k)
@@ -16428,20 +16437,20 @@ integer,external :: omp_get_thread_num
          endif
 
 ! Output heating rate tendency; convert heating rate from K/d to K/s
-! Heating rate arrays are ordered vertically from bottom to top here.
+! Heating rate arrays are ordered vertically from bottom to top here. 
          do k=kts,kte
             tten1d(k) = hr(icol,k)/86400.
             rthratenlw(i,k,j) = tten1d(k)/pi3d(i,k,j)
          enddo
 !
       end do i_loop2
-   end do j_loop2
+   end do j_loop2                                           
 
 !-------------------------------------------------------------------
 
    END SUBROUTINE RRTMG_LWRAD_FAST
 
-
+ 
 !-------------------------------------------------------------------------
    SUBROUTINE INIRAD (O3PROF,Plev, kts, kte)
 !-------------------------------------------------------------------------
@@ -16454,20 +16463,20 @@ integer,external :: omp_get_thread_num
    REAL, DIMENSION( kts:kte+2 ),INTENT(IN   )    ::      Plev
 
 ! LOCAL VAR
-
+  
    INTEGER :: k
 
-!
-!  COMPUTE OZONE MIXING RATIO DISTRIBUTION
-!
+!                                                                                
+!  COMPUTE OZONE MIXING RATIO DISTRIBUTION                                       
+!                                                                                
    DO K=kts,kte+1
-      O3PROF(K)=0.
+      O3PROF(K)=0.                                                       
    ENDDO
-
+                                                                                 
    CALL O3DATA(O3PROF, Plev, kts, kte)
 
    END SUBROUTINE INIRAD
-
+                                                                                 
 !-------------------------------------------------------------------------
    SUBROUTINE O3DATA (O3PROF, Plev, kts, kte)
 !-------------------------------------------------------------------------
@@ -16485,59 +16494,59 @@ integer,external :: omp_get_thread_num
 
    REAL    ::  PRLEVH(kts:kte+2),PPWRKH(32),                     &
                O3WRK(31),PPWRK(31),O3SUM(31),PPSUM(31),          &
-               O3WIN(31),PPWIN(31),O3ANN(31),PPANN(31)
+               O3WIN(31),PPWIN(31),O3ANN(31),PPANN(31)                                                       
 
    REAL    ::  PB1, PB2, PT1, PT2
 
-   DATA O3SUM  /5.297E-8,5.852E-8,6.579E-8,7.505E-8,             &
-        8.577E-8,9.895E-8,1.175E-7,1.399E-7,1.677E-7,2.003E-7,   &
-        2.571E-7,3.325E-7,4.438E-7,6.255E-7,8.168E-7,1.036E-6,   &
-        1.366E-6,1.855E-6,2.514E-6,3.240E-6,4.033E-6,4.854E-6,   &
-        5.517E-6,6.089E-6,6.689E-6,1.106E-5,1.462E-5,1.321E-5,   &
-        9.856E-6,5.960E-6,5.960E-6/
+   DATA O3SUM  /5.297E-8,5.852E-8,6.579E-8,7.505E-8,             &                    
+        8.577E-8,9.895E-8,1.175E-7,1.399E-7,1.677E-7,2.003E-7,   &                 
+        2.571E-7,3.325E-7,4.438E-7,6.255E-7,8.168E-7,1.036E-6,   &                 
+        1.366E-6,1.855E-6,2.514E-6,3.240E-6,4.033E-6,4.854E-6,   &                 
+        5.517E-6,6.089E-6,6.689E-6,1.106E-5,1.462E-5,1.321E-5,   &                 
+        9.856E-6,5.960E-6,5.960E-6/                                              
 
-   DATA PPSUM  /955.890,850.532,754.599,667.742,589.841,         &
-        519.421,455.480,398.085,347.171,301.735,261.310,225.360, &
-        193.419,165.490,141.032,120.125,102.689, 87.829, 75.123, &
-         64.306, 55.086, 47.209, 40.535, 34.795, 29.865, 19.122, &
-          9.277,  4.660,  2.421,  1.294,  0.647/
-!
+   DATA PPSUM  /955.890,850.532,754.599,667.742,589.841,         &  
+        519.421,455.480,398.085,347.171,301.735,261.310,225.360, &               
+        193.419,165.490,141.032,120.125,102.689, 87.829, 75.123, &            
+         64.306, 55.086, 47.209, 40.535, 34.795, 29.865, 19.122, &               
+          9.277,  4.660,  2.421,  1.294,  0.647/                                 
+!                                                                                
    DATA O3WIN  /4.629E-8,4.686E-8,5.017E-8,5.613E-8,             &
-        6.871E-8,8.751E-8,1.138E-7,1.516E-7,2.161E-7,3.264E-7,   &
-        4.968E-7,7.338E-7,1.017E-6,1.308E-6,1.625E-6,2.011E-6,   &
-        2.516E-6,3.130E-6,3.840E-6,4.703E-6,5.486E-6,6.289E-6,   &
-        6.993E-6,7.494E-6,8.197E-6,9.632E-6,1.113E-5,1.146E-5,   &
-        9.389E-6,6.135E-6,6.135E-6/
+        6.871E-8,8.751E-8,1.138E-7,1.516E-7,2.161E-7,3.264E-7,   &               
+        4.968E-7,7.338E-7,1.017E-6,1.308E-6,1.625E-6,2.011E-6,   &               
+        2.516E-6,3.130E-6,3.840E-6,4.703E-6,5.486E-6,6.289E-6,   &               
+        6.993E-6,7.494E-6,8.197E-6,9.632E-6,1.113E-5,1.146E-5,   &               
+        9.389E-6,6.135E-6,6.135E-6/                                              
 
    DATA PPWIN  /955.747,841.783,740.199,649.538,568.404,         &
-        495.815,431.069,373.464,322.354,277.190,237.635,203.433, &
-        174.070,148.949,127.408,108.915, 93.114, 79.551, 67.940, &
-         58.072, 49.593, 42.318, 36.138, 30.907, 26.362, 16.423, &
-          7.583,  3.620,  1.807,  0.938,  0.469/
-!
+        495.815,431.069,373.464,322.354,277.190,237.635,203.433, &               
+        174.070,148.949,127.408,108.915, 93.114, 79.551, 67.940, &               
+         58.072, 49.593, 42.318, 36.138, 30.907, 26.362, 16.423, &               
+          7.583,  3.620,  1.807,  0.938,  0.469/                                 
+!                                                                                
 
-   DO K=1,31
-     PPANN(K)=PPSUM(K)
+   DO K=1,31                                                              
+     PPANN(K)=PPSUM(K)                                                        
    ENDDO
 !
-   O3ANN(1)=0.5*(O3SUM(1)+O3WIN(1))
-!
-   DO K=2,31
-      O3ANN(K)=O3WIN(K-1)+(O3WIN(K)-O3WIN(K-1))/(PPWIN(K)-PPWIN(K-1))* &
-               (PPSUM(K)-PPWIN(K-1))
+   O3ANN(1)=0.5*(O3SUM(1)+O3WIN(1))                                           
+!                                                                                
+   DO K=2,31                                                              
+      O3ANN(K)=O3WIN(K-1)+(O3WIN(K)-O3WIN(K-1))/(PPWIN(K)-PPWIN(K-1))* & 
+               (PPSUM(K)-PPWIN(K-1))                                           
    ENDDO
 !
-   DO K=2,31
-      O3ANN(K)=0.5*(O3ANN(K)+O3SUM(K))
+   DO K=2,31                                                              
+      O3ANN(K)=0.5*(O3ANN(K)+O3SUM(K))                                         
    ENDDO
 !
-   DO K=1,31
-      O3WRK(K)=O3ANN(K)
-      PPWRK(K)=PPANN(K)
+   DO K=1,31                                                                
+      O3WRK(K)=O3ANN(K)                                                        
+      PPWRK(K)=PPANN(K)                                                        
    ENDDO
-!
-!  CALCULATE HALF PRESSURE LEVELS FOR MODEL AND DATA LEVELS
-!
+!                                                                                
+!  CALCULATE HALF PRESSURE LEVELS FOR MODEL AND DATA LEVELS                     
+!                                                                                
 
 ! Plev is total P at model levels, from bottom to top
 ! Plev is in mb
@@ -16545,40 +16554,40 @@ integer,external :: omp_get_thread_num
    DO K=kts,kte+2
       PRLEVH(K)=Plev(K)
    ENDDO
-!
-   PPWRKH(1)=1100.
-   DO K=2,31
-      PPWRKH(K)=(PPWRK(K)+PPWRK(K-1))/2.
+!                                                                                
+   PPWRKH(1)=1100.                                                        
+   DO K=2,31                                                           
+      PPWRKH(K)=(PPWRK(K)+PPWRK(K-1))/2.                                   
    ENDDO
-   PPWRKH(32)=0.
+   PPWRKH(32)=0.                                                          
    DO K=kts,kte+1
-      DO 25 JJ=1,31
-         IF((-(PRLEVH(K)-PPWRKH(JJ))).GE.0.)THEN
-           PB1=0.
-         ELSE
-           PB1=PRLEVH(K)-PPWRKH(JJ)
-         ENDIF
-         IF((-(PRLEVH(K)-PPWRKH(JJ+1))).GE.0.)THEN
-           PB2=0.
-         ELSE
-           PB2=PRLEVH(K)-PPWRKH(JJ+1)
-         ENDIF
-         IF((-(PRLEVH(K+1)-PPWRKH(JJ))).GE.0.)THEN
-           PT1=0.
-         ELSE
-           PT1=PRLEVH(K+1)-PPWRKH(JJ)
-         ENDIF
-         IF((-(PRLEVH(K+1)-PPWRKH(JJ+1))).GE.0.)THEN
-           PT2=0.
-         ELSE
-           PT2=PRLEVH(K+1)-PPWRKH(JJ+1)
-         ENDIF
-         O3PROF(K)=O3PROF(K)+(PB2-PB1-PT2+PT1)*O3WRK(JJ)
-  25  CONTINUE
-      O3PROF(K)=O3PROF(K)/(PRLEVH(K)-PRLEVH(K+1))
+      DO 25 JJ=1,31                                                        
+         IF((-(PRLEVH(K)-PPWRKH(JJ))).GE.0.)THEN                            
+           PB1=0.                                                           
+         ELSE                                                               
+           PB1=PRLEVH(K)-PPWRKH(JJ)                                         
+         ENDIF                                                              
+         IF((-(PRLEVH(K)-PPWRKH(JJ+1))).GE.0.)THEN                          
+           PB2=0.                                                           
+         ELSE                                                               
+           PB2=PRLEVH(K)-PPWRKH(JJ+1)                                       
+         ENDIF                                                              
+         IF((-(PRLEVH(K+1)-PPWRKH(JJ))).GE.0.)THEN                          
+           PT1=0.                                                           
+         ELSE                                                               
+           PT1=PRLEVH(K+1)-PPWRKH(JJ)                                       
+         ENDIF                                                              
+         IF((-(PRLEVH(K+1)-PPWRKH(JJ+1))).GE.0.)THEN                        
+           PT2=0.                                                           
+         ELSE                                                               
+           PT2=PRLEVH(K+1)-PPWRKH(JJ+1)                                     
+         ENDIF                                                              
+         O3PROF(K)=O3PROF(K)+(PB2-PB1-PT2+PT1)*O3WRK(JJ)                
+  25  CONTINUE                                                             
+      O3PROF(K)=O3PROF(K)/(PRLEVH(K)-PRLEVH(K+1))                      
 
    ENDDO
-!
+!                                                                                
    END SUBROUTINE O3DATA
 
 !------------------------------------------------------------------
@@ -16597,11 +16606,11 @@ integer,external :: omp_get_thread_num
    INTEGER , INTENT(IN)           :: ids, ide, jds, jde, kds, kde,  &
                                      ims, ime, jms, jme, kms, kme,  &
                                      its, ite, jts, jte, kts, kte
-   REAL, INTENT(IN)               :: p_top
+   REAL, INTENT(IN)               :: p_top 
 
 ! Steven Cavallo.  Added for buffer layer adjustment.   December 2010.
    NLAYERS = kme + nint(p_top*0.01/deltap)- 1 ! Model levels plus new levels.
-                                              ! nlayers will subsequently
+                                              ! nlayers will subsequently 
                                               ! replace kte+1
 
 ! Read in absorption coefficients and other data
@@ -16616,13 +16625,13 @@ integer,external :: omp_get_thread_num
    END SUBROUTINE rrtmg_lwinit_fast
 
 
-! **************************************************************************
+! **************************************************************************     
       SUBROUTINE rrtmg_lwlookuptable
-! **************************************************************************
+! **************************************************************************     
 
 IMPLICIT NONE
 
-! Local
+! Local                                    
       INTEGER :: i
       LOGICAL                 :: opened
       LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
@@ -16678,7 +16687,7 @@ IMPLICIT NONE
 
      END SUBROUTINE rrtmg_lwlookuptable
 
-! **************************************************************************
+! **************************************************************************     
 !  RRTMG Longwave Radiative Transfer Model
 !  Atmospheric and Environmental Research, Inc., Cambridge, MA
 !
@@ -16686,13 +16695,13 @@ IMPLICIT NONE
 !  Revision for GCMs:  Michael J. Iacono; October, 2002
 !  Revision for F90 formatting:  Michael J. Iacono; June 2006
 !
-!  This file contains 16 READ statements that include the
+!  This file contains 16 READ statements that include the 
 !  absorption coefficients and other data for each of the 16 longwave
 !  spectral bands used in RRTMG_LW.  Here, the data are defined for 16
 !  g-points, or sub-intervals, per band.  These data are combined and
 !  weighted using a mapping procedure in module RRTMG_LW_INIT to reduce
 !  the total number of g-points from 256 to 140 for use in the GCM.
-! **************************************************************************
+! **************************************************************************     
 
 ! **************************************************************************
       subroutine lw_kgb01(rrtmg_unit)
@@ -16708,7 +16717,7 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
@@ -16716,40 +16725,40 @@ IMPLICIT NONE
 !     and upper atmosphere.
 !     Planck fraction mapping levels: P = 212.7250 mbar, T = 223.06 K
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels > ~100mb and temperatures.  The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the corresponding TREF for this  pressure level,
-!     JT = 2 refers to the temperatureTREF-15, JT = 1 is for TREF-30,
-!     JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  The second
-!     index, JP, runs from 1 to 13 and refers to the corresponding
-!     pressure level in PREF (e.g. JP = 1 is for a pressure of 1053.63 mb).
-!     The third index, IG, goes from 1 to 16, and tells us which
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the corresponding TREF for this  pressure level, 
+!     JT = 2 refers to the temperatureTREF-15, JT = 1 is for TREF-30, 
+!     JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  The second 
+!     index, JP, runs from 1 to 13 and refers to the corresponding 
+!     pressure level in PREF (e.g. JP = 1 is for a pressure of 1053.63 mb).  
+!     The third index, IG, goes from 1 to 16, and tells us which 
 !     g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
-!     The arrays kao_mn2 and kbo_mn2 contain the coefficients of the
+!     The arrays kao_mn2 and kbo_mn2 contain the coefficients of the 
 !     nitrogen continuum for the upper and lower atmosphere.
-!     Minor gas mapping levels:
+!     Minor gas mapping levels: 
 !     Lower - n2: P = 142.5490 mbar, T = 215.70 K
 !     Upper - n2: P = 142.5490 mbar, T = 215.70 K
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -16790,44 +16799,44 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
 !     Arrays fracrefao and fracrefbo are the Planck fractions for the lower
 !     and upper atmosphere.
-!     Planck fraction mapping levels:
+!     Planck fraction mapping levels: 
 !     Lower: P = 1053.630 mbar, T = 294.2 K
 !     Upper: P = 3.206e-2 mb, T = 197.92 K
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels > ~100mb and temperatures.  The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the corresponding TREF for this  pressure level,
-!     JT = 2 refers to the temperatureTREF-15, JT = 1 is for TREF-30,
-!     JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  The second
-!     index, JP, runs from 1 to 13 and refers to the corresponding
-!     pressure level in PREF (e.g. JP = 1 is for a pressure of 1053.63 mb).
-!     The third index, IG, goes from 1 to 16, and tells us which
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the corresponding TREF for this  pressure level, 
+!     JT = 2 refers to the temperatureTREF-15, JT = 1 is for TREF-30, 
+!     JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  The second 
+!     index, JP, runs from 1 to 13 and refers to the corresponding 
+!     pressure level in PREF (e.g. JP = 1 is for a pressure of 1053.63 mb).  
+!     The third index, IG, goes from 1 to 16, and tells us which 
 !     g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -16867,13 +16876,13 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
 !     Arrays fracrefao and fracrefbo are the Planck fractions for the lower
 !     and upper atmosphere.
-!     Planck fraction mapping levels:
+!     Planck fraction mapping levels: 
 !     Lower: P = 212.7250 mbar, T = 223.06 K
 !     Upper: P = 95.8 mbar, T = 215.7 k
 
@@ -16882,12 +16891,12 @@ IMPLICIT NONE
 !     of water vapor to CO2.  The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
 !     to that of gas2.
-!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds
-!     to different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this  pressure
+!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds 
+!     to different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this  pressure 
 !     level, JT = 2 refers to the temperature
 !     TREF-15, JT = 1 is for TREF-30, JT = 4 is for TREF+15, and JT = 5
 !     is for TREF+30.  The third index, JP, runs from 1 to 13 and refers
@@ -16895,20 +16904,20 @@ IMPLICIT NONE
 !     pressure of 1053.63 mb).  The fourth index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
-!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds
-!     to different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this  pressure
+!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds 
+!     to different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this  pressure 
 !     level, JT = 2 refers to the temperature
 !     TREF-15, JT = 1 is for TREF-30, JT = 4 is for TREF+15, and JT = 5
 !     is for TREF+30.  The third index, JP, runs from 1 to 13 and refers
@@ -16916,34 +16925,34 @@ IMPLICIT NONE
 !     pressure of 1053.63 mb).  The fourth index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
-!     The array KAO_Mxx contains the absorption coefficient for
+!     The array KAO_Mxx contains the absorption coefficient for 
 !     a minor species at the 16 chosen g-values for a reference pressure
 !     level below 100~ mb.   The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
-!     to that of gas2.  The second index refers to temperature
-!     in 7.2 degree increments.  For instance, JT = 1 refers to a
-!     temperature of 188.0, JT = 2 refers to 195.2, etc. The third index
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
+!     to that of gas2.  The second index refers to temperature 
+!     in 7.2 degree increments.  For instance, JT = 1 refers to a 
+!     temperature of 188.0, JT = 2 refers to 195.2, etc. The third index 
 !     runs over the g-channel (1 to 16).
 
-!     The array KBO_Mxx contains the absorption coefficient for
+!     The array KBO_Mxx contains the absorption coefficient for 
 !     a minor species at the 16 chosen g-values for a reference pressure
 !     level above 100~ mb.   The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amounts ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1 to
-!     that of gas2.  The second index refers to temperature
-!     in 7.2 degree increments.  For instance, JT = 1 refers to a
-!     temperature of 188.0, JT = 2 refers to 195.2, etc. The third index
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 to 
+!     that of gas2.  The second index refers to temperature 
+!     in 7.2 degree increments.  For instance, JT = 1 refers to a 
+!     temperature of 188.0, JT = 2 refers to 195.2, etc. The third index 
 !     runs over the g-channel (1 to 16).
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -16970,7 +16979,7 @@ IMPLICIT NONE
      WRITE( errmess , '(A,I4)' ) 'module_ra_rrtmg_lwf: error reading RRTMG_LW_DATA on unit ',rrtmg_unit
      CALL wrf_error_fatal(errmess)
 
-      end subroutine lw_kgb03
+      end subroutine lw_kgb03 
 
 ! **************************************************************************
       subroutine lw_kgb04(rrtmg_unit)
@@ -16984,13 +16993,13 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
 !     Arrays fracrefao and fracrefbo are the Planck fractions for the lower
 !     and upper atmosphere.
-!     Planck fraction mapping levels:
+!     Planck fraction mapping levels: 
 !     Lower : P = 142.5940 mbar, T = 215.70 K
 !     Upper : P = 95.58350 mb, T = 215.70 K
 
@@ -16999,12 +17008,12 @@ IMPLICIT NONE
 !     of water vapor to CO2.  The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
 !     to that of gas2.
-!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds
-!     to different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this  pressure
+!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds 
+!     to different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this  pressure 
 !     level, JT = 2 refers to the temperature
 !     TREF-15, JT = 1 is for TREF-30, JT = 4 is for TREF+15, and JT = 5
 !     is for TREF+30.  The third index, JP, runs from 1 to 13 and refers
@@ -17017,12 +17026,12 @@ IMPLICIT NONE
 !     of H2O to CO2.  The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
 !     to that of gas2.  The second index, JT, which
-!     runs from 1 to 5, corresponds to different temperatures.  More
-!     specifically, JT = 3 means that the data are for the corresponding
-!     reference temperature TREF for this  pressure level, JT = 2 refers
+!     runs from 1 to 5, corresponds to different temperatures.  More 
+!     specifically, JT = 3 means that the data are for the corresponding 
+!     reference temperature TREF for this  pressure level, JT = 2 refers 
 !     to the TREF-15, JT = 1 is for TREF-30, JT = 4 is for TREF+15, and
 !     JT = 5 is for TREF+30.  The third index, JP, runs from 13 to 59 and
 !     refers to the corresponding pressure level in PREF (e.g. JP = 13 is
@@ -17030,9 +17039,9 @@ IMPLICIT NONE
 !     16, and tells us which g-interval the absorption coefficients are for.
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -17072,13 +17081,13 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
 !     Arrays fracrefao and fracrefbo are the Planck fractions for the lower
 !     and upper atmosphere.
-!     Planck fraction mapping levels:
+!     Planck fraction mapping levels: 
 !     Lower: P = 473.42 mb, T = 259.83
 !     Upper: P = 0.2369280 mbar, T = 253.60 K
 
@@ -17093,12 +17102,12 @@ IMPLICIT NONE
 !     of water vapor to CO2.  The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
 !     to that of gas2.
-!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds
-!     to different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this  pressure
+!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds 
+!     to different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this  pressure 
 !     level, JT = 2 refers to the temperature
 !     TREF-15, JT = 1 is for TREF-30, JT = 4 is for TREF+15, and JT = 5
 !     is for TREF+30.  The third index, JP, runs from 1 to 13 and refers
@@ -17111,34 +17120,34 @@ IMPLICIT NONE
 !     of H2O to CO2.  The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
 !     to that of gas2.  The second index, JT, which
-!     runs from 1 to 5, corresponds to different temperatures.  More
-!     specifically, JT = 3 means that the data are for the corresponding
-!     reference temperature TREF for this  pressure level, JT = 2 refers
+!     runs from 1 to 5, corresponds to different temperatures.  More 
+!     specifically, JT = 3 means that the data are for the corresponding 
+!     reference temperature TREF for this  pressure level, JT = 2 refers 
 !     to the TREF-15, JT = 1 is for TREF-30, JT = 4 is for TREF+15, and
 !     JT = 5 is for TREF+30.  The third index, JP, runs from 13 to 59 and
 !     refers to the corresponding pressure level in PREF (e.g. JP = 13 is
 !     for a pressure of 95.5835 mb).  The fourth index, IG, goes from 1 to
 !     16, and tells us which g-interval the absorption coefficients are for.
 
-!     The array KAO_Mxx contains the absorption coefficient for
+!     The array KAO_Mxx contains the absorption coefficient for 
 !     a minor species at the 16 chosen g-values for a reference pressure
 !     level below 100~ mb.   The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
-!     to that of gas2.  The second index refers to temperature
-!     in 7.2 degree increments.  For instance, JT = 1 refers to a
-!     temperature of 188.0, JT = 2 refers to 195.2, etc. The third index
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
+!     to that of gas2.  The second index refers to temperature 
+!     in 7.2 degree increments.  For instance, JT = 1 refers to a 
+!     temperature of 188.0, JT = 2 refers to 195.2, etc. The third index 
 !     runs over the g-channel (1 to 16).
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -17180,13 +17189,13 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
 !     Arrays fracrefao and fracrefbo are the Planck fractions for the lower
 !     and upper atmosphere.
-!     Planck fraction mapping levels:
+!     Planck fraction mapping levels: 
 !     Lower: : P = 473.4280 mb, T = 259.83 K
 
 !     The arrays kao_mco2, cfc11adjo and cfc12o contain the coefficients for
@@ -17197,29 +17206,29 @@ IMPLICIT NONE
 !     Lower - co2: P = 706.2720 mb, T = 294.2 k
 !     Upper - cfc11, cfc12
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels > ~100mb and temperatures.  The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the corresponding TREF for this  pressure level,
-!     JT = 2 refers to the temperatureTREF-15, JT = 1 is for TREF-30,
-!     JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  The second
-!     index, JP, runs from 1 to 13 and refers to the corresponding
-!     pressure level in PREF (e.g. JP = 1 is for a pressure of 1053.63 mb).
-!     The third index, IG, goes from 1 to 16, and tells us which
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the corresponding TREF for this  pressure level, 
+!     JT = 2 refers to the temperatureTREF-15, JT = 1 is for TREF-30, 
+!     JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  The second 
+!     index, JP, runs from 1 to 13 and refers to the corresponding 
+!     pressure level in PREF (e.g. JP = 1 is for a pressure of 1053.63 mb).  
+!     The third index, IG, goes from 1 to 16, and tells us which 
 !     g-interval the absorption coefficients are for.
 
-!     The array KAO_Mxx contains the absorption coefficient for
+!     The array KAO_Mxx contains the absorption coefficient for 
 !     a minor species at the 16 chosen g-values for a reference pressure
-!     level below 100~ mb.   The first index refers to temperature
-!     in 7.2 degree increments.  For instance, JT = 1 refers to a
-!     temperature of 188.0, JT = 2 refers to 195.2, etc. The second index
+!     level below 100~ mb.   The first index refers to temperature 
+!     in 7.2 degree increments.  For instance, JT = 1 refers to a 
+!     temperature of 188.0, JT = 2 refers to 195.2, etc. The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -17260,13 +17269,13 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
 !     Arrays fracrefao and fracrefbo are the Planck fractions for the lower
 !     and upper atmosphere.
-!     Planck fraction mapping levels:
+!     Planck fraction mapping levels: 
 !     Lower : P = 706.27 mb, T = 278.94 K
 !     Upper : P = 95.58 mbar, T= 215.70 K
 
@@ -17275,12 +17284,12 @@ IMPLICIT NONE
 !     of water vapor to CO2.  The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
 !     to that of gas2.
-!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds
-!     to different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this  pressure
+!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds 
+!     to different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this  pressure 
 !     level, JT = 2 refers to the temperature
 !     TREF-15, JT = 1 is for TREF-30, JT = 4 is for TREF+15, and JT = 5
 !     is for TREF+30.  The third index, JP, runs from 1 to 13 and refers
@@ -17288,41 +17297,41 @@ IMPLICIT NONE
 !     pressure of 1053.63 mb).  The fourth index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
-!     The array KAO_Mxx contains the absorption coefficient for
+!     The array KAO_Mxx contains the absorption coefficient for 
 !     a minor species at the 16 chosen g-values for a reference pressure
 !     level below 100~ mb.   The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
-!     to that of gas2.  The second index refers to temperature
-!     in 7.2 degree increments.  For instance, JT = 1 refers to a
-!     temperature of 188.0, JT = 2 refers to 195.2, etc. The third index
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
+!     to that of gas2.  The second index refers to temperature 
+!     in 7.2 degree increments.  For instance, JT = 1 refers to a 
+!     temperature of 188.0, JT = 2 refers to 195.2, etc. The third index 
 !     runs over the g-channel (1 to 16).
 
-!     The array KBO_Mxx contains the absorption coefficient for
+!     The array KBO_Mxx contains the absorption coefficient for 
 !     a minor species at the 16 chosen g-values for a reference pressure
-!     level above 100~ mb.   The first index refers to temperature
-!     in 7.2 degree increments.  For instance, JT = 1 refers to a
-!     temperature of 188.0, JT = 2 refers to 195.2, etc. The second index
+!     level above 100~ mb.   The first index refers to temperature 
+!     in 7.2 degree increments.  For instance, JT = 1 refers to a 
+!     temperature of 188.0, JT = 2 refers to 195.2, etc. The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296_rb,260_rb,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296_rb,260_rb,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -17365,13 +17374,13 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
 !     Arrays fracrefao and fracrefbo are the Planck fractions for the lower
 !     and upper atmosphere.
-!     Planck fraction mapping levels:
+!     Planck fraction mapping levels: 
 !     Lower: P=473.4280 mb, T = 259.83 K
 !     Upper: P=95.5835 mb, T= 215.7 K
 
@@ -17379,7 +17388,7 @@ IMPLICIT NONE
 !     carbon dioxide and n2o in the lower and upper atmosphere.
 !     The array kao_mo3 contains the coefficients for ozone in the lower atmosphere,
 !     and arrays cfc12o and cfc12adjo contain the coefficients for cfc12 and cfc22.
-!     Original cfc22 is multiplied by 1.485 to account for the 780-850 cm-1
+!     Original cfc22 is multiplied by 1.485 to account for the 780-850 cm-1 
 !     and 1290-1335 cm-1 bands.
 !     Minor gas mapping level:
 !     Lower - co2: P = 1053.63 mb, T = 294.2 k
@@ -17389,48 +17398,48 @@ IMPLICIT NONE
 !     Upper - co2: P = 35.1632 mb, T = 223.28 k
 !     Upper - n2o: P = 8.716e-2 mb, T = 226.03 k
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels > ~100mb and temperatures.  The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the corresponding TREF for this  pressure level,
-!     JT = 2 refers to the temperatureTREF-15, JT = 1 is for TREF-30,
-!     JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  The second
-!     index, JP, runs from 1 to 13 and refers to the corresponding
-!     pressure level in PREF (e.g. JP = 1 is for a pressure of 1053.63 mb).
-!     The third index, IG, goes from 1 to 16, and tells us which
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the corresponding TREF for this  pressure level, 
+!     JT = 2 refers to the temperatureTREF-15, JT = 1 is for TREF-30, 
+!     JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  The second 
+!     index, JP, runs from 1 to 13 and refers to the corresponding 
+!     pressure level in PREF (e.g. JP = 1 is for a pressure of 1053.63 mb).  
+!     The third index, IG, goes from 1 to 16, and tells us which 
 !     g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
-!     The array KAO_Mxx contains the absorption coefficient for
+!     The array KAO_Mxx contains the absorption coefficient for 
 !     a minor species at the 16 chosen g-values for a reference pressure
-!     level below 100~ mb.   The first index refers to temperature
-!     in 7.2 degree increments.  For instance, JT = 1 refers to a
-!     temperature of 188.0, JT = 2 refers to 195.2, etc. The second index
+!     level below 100~ mb.   The first index refers to temperature 
+!     in 7.2 degree increments.  For instance, JT = 1 refers to a 
+!     temperature of 188.0, JT = 2 refers to 195.2, etc. The second index 
 !     runs over the g-channel (1 to 16).
 
-!     The array KBO_Mxx contains the absorption coefficient for
+!     The array KBO_Mxx contains the absorption coefficient for 
 !     a minor species at the 16 chosen g-values for a reference pressure
-!     level above 100~ mb.   The first index refers to temperature
-!     in 7.2 degree increments.  For instance, JT = 1 refers to a
-!     temperature of 188.0, JT = 2 refers to 195.2, etc. The second index
+!     level above 100~ mb.   The first index refers to temperature 
+!     in 7.2 degree increments.  For instance, JT = 1 refers to a 
+!     temperature of 188.0, JT = 2 refers to 195.2, etc. The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -17478,13 +17487,13 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
 !     Arrays fracrefao and fracrefbo are the Planck fractions for the lower
 !     and upper atmosphere.
-!     Planck fraction mapping levels:
+!     Planck fraction mapping levels: 
 !     Lower: P=212.7250 mb, T = 223.06 K
 !     Upper: P=3.20e-2 mb, T = 197.92 k
 
@@ -17493,12 +17502,12 @@ IMPLICIT NONE
 !     of water vapor to CO2.  The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
 !     to that of gas2.
-!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds
-!     to different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this  pressure
+!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds 
+!     to different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this  pressure 
 !     level, JT = 2 refers to the temperature
 !     TREF-15, JT = 1 is for TREF-30, JT = 4 is for TREF+15, and JT = 5
 !     is for TREF+30.  The third index, JP, runs from 1 to 13 and refers
@@ -17506,41 +17515,41 @@ IMPLICIT NONE
 !     pressure of 1053.63 mb).  The fourth index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
-!     The array KAO_Mxx contains the absorption coefficient for
+!     The array KAO_Mxx contains the absorption coefficient for 
 !     a minor species at the 16 chosen g-values for a reference pressure
 !     level below 100~ mb.   The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
-!     to that of gas2.  The second index refers to temperature
-!     in 7.2 degree increments.  For instance, JT = 1 refers to a
-!     temperature of 188.0, JT = 2 refers to 195.2, etc. The third index
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
+!     to that of gas2.  The second index refers to temperature 
+!     in 7.2 degree increments.  For instance, JT = 1 refers to a 
+!     temperature of 188.0, JT = 2 refers to 195.2, etc. The third index 
 !     runs over the g-channel (1 to 16).
 
-!     The array KBO_Mxx contains the absorption coefficient for
+!     The array KBO_Mxx contains the absorption coefficient for 
 !     a minor species at the 16 chosen g-values for a reference pressure
-!     level above 100~ mb.   The first index refers to temperature
-!     in 7.2 degree increments.  For instance, JT = 1 refers to a
-!     temperature of 188.0, JT = 2 refers to 195.2, etc. The second index
+!     level above 100~ mb.   The first index refers to temperature 
+!     in 7.2 degree increments.  For instance, JT = 1 refers to a 
+!     temperature of 188.0, JT = 2 refers to 195.2, etc. The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -17581,44 +17590,44 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
 !     Arrays fracrefao and fracrefbo are the Planck fractions for the lower
 !     and upper atmosphere.
-!     Planck fraction mapping levels:
+!     Planck fraction mapping levels: 
 !     Lower: P = 212.7250 mb, T = 223.06 K
 !     Upper: P = 95.58350 mb, T = 215.70 K
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels > ~100mb and temperatures.  The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the corresponding TREF for this  pressure level,
-!     JT = 2 refers to the temperatureTREF-15, JT = 1 is for TREF-30,
-!     JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  The second
-!     index, JP, runs from 1 to 13 and refers to the corresponding
-!     pressure level in PREF (e.g. JP = 1 is for a pressure of 1053.63 mb).
-!     The third index, IG, goes from 1 to 16, and tells us which
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the corresponding TREF for this  pressure level, 
+!     JT = 2 refers to the temperatureTREF-15, JT = 1 is for TREF-30, 
+!     JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  The second 
+!     index, JP, runs from 1 to 13 and refers to the corresponding 
+!     pressure level in PREF (e.g. JP = 1 is for a pressure of 1053.63 mb).  
+!     The third index, IG, goes from 1 to 16, and tells us which 
 !     g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -17658,58 +17667,58 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
 !     Arrays fracrefao and fracrefbo are the Planck fractions for the lower
 !     and upper atmosphere.
-!     Planck fraction mapping levels:
+!     Planck fraction mapping levels: 
 !     Lower: P=1053.63 mb, T= 294.2 K
 !     Upper: P=0.353 mb, T = 262.11 K
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels > ~100mb and temperatures.  The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the corresponding TREF for this  pressure level,
-!     JT = 2 refers to the temperatureTREF-15, JT = 1 is for TREF-30,
-!     JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  The second
-!     index, JP, runs from 1 to 13 and refers to the corresponding
-!     pressure level in PREF (e.g. JP = 1 is for a pressure of 1053.63 mb).
-!     The third index, IG, goes from 1 to 16, and tells us which
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the corresponding TREF for this  pressure level, 
+!     JT = 2 refers to the temperatureTREF-15, JT = 1 is for TREF-30, 
+!     JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  The second 
+!     index, JP, runs from 1 to 13 and refers to the corresponding 
+!     pressure level in PREF (e.g. JP = 1 is for a pressure of 1053.63 mb).  
+!     The third index, IG, goes from 1 to 16, and tells us which 
 !     g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
-!     The array KAO_Mxx contains the absorption coefficient for
+!     The array KAO_Mxx contains the absorption coefficient for 
 !     a minor species at the 16 chosen g-values for a reference pressure
-!     level below 100~ mb.   The first index refers to temperature
-!     in 7.2 degree increments.  For instance, JT = 1 refers to a
-!     temperature of 188.0, JT = 2 refers to 195.2, etc. The second index
+!     level below 100~ mb.   The first index refers to temperature 
+!     in 7.2 degree increments.  For instance, JT = 1 refers to a 
+!     temperature of 188.0, JT = 2 refers to 195.2, etc. The second index 
 !     runs over the g-channel (1 to 16).
 
-!     The array KBO_Mxx contains the absorption coefficient for
+!     The array KBO_Mxx contains the absorption coefficient for 
 !     a minor species at the 16 chosen g-values for a reference pressure
-!     level above 100~ mb.   The first index refers to temperature
-!     in 7.2 degree increments.  For instance, JT = 1 refers to a
-!     temperature of 188.0, JT = 2 refers to 195.2, etc. The second index
+!     level above 100~ mb.   The first index refers to temperature 
+!     in 7.2 degree increments.  For instance, JT = 1 refers to a 
+!     temperature of 188.0, JT = 2 refers to 195.2, etc. The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -17750,13 +17759,13 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
 !     Arrays fracrefao and fracrefbo are the Planck fractions for the lower
 !     and upper atmosphere.
-!     Planck fraction mapping levels:
+!     Planck fraction mapping levels: 
 !     Lower: P = 174.1640 mbar, T= 215.78 K
 
 !     The array KAO contains absorption coefs for each of the 16 g-intervals
@@ -17764,12 +17773,12 @@ IMPLICIT NONE
 !     of water vapor to CO2.  The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
 !     to that of gas2.
-!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds
-!     to different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this  pressure
+!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds 
+!     to different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this  pressure 
 !     level, JT = 2 refers to the temperature
 !     TREF-15, JT = 1 is for TREF-30, JT = 4 is for TREF+15, and JT = 5
 !     is for TREF+30.  The third index, JP, runs from 1 to 13 and refers
@@ -17778,9 +17787,9 @@ IMPLICIT NONE
 !     and tells us which g-interval the absorption coefficients are for.
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -17818,14 +17827,14 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
 !     Arrays fracrefao and fracrefbo are the Planck fractions for the lower
 !     and upper atmosphere.
-!     Planck fraction mapping levels:
-!     Lower: P=473.4280 mb, T = 259.83 K
+!     Planck fraction mapping levels: 
+!     Lower: P=473.4280 mb, T = 259.83 K      
 !     Upper: P=4.758820 mb, T = 250.85 K
 
 !     The array KAO contains absorption coefs for each of the 16 g-intervals
@@ -17833,12 +17842,12 @@ IMPLICIT NONE
 !     of water vapor to CO2.  The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
 !     to that of gas2.
-!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds
-!     to different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this  pressure
+!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds 
+!     to different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this  pressure 
 !     level, JT = 2 refers to the temperature
 !     TREF-15, JT = 1 is for TREF-30, JT = 4 is for TREF+15, and JT = 5
 !     is for TREF+30.  The third index, JP, runs from 1 to 13 and refers
@@ -17846,29 +17855,29 @@ IMPLICIT NONE
 !     pressure of 1053.63 mb).  The fourth index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
-!     The array KAO_Mxx contains the absorption coefficient for
+!     The array KAO_Mxx contains the absorption coefficient for 
 !     a minor species at the 16 chosen g-values for a reference pressure
 !     level below 100~ mb.   The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
-!     to that of gas2.  The second index refers to temperature
-!     in 7.2 degree increments.  For instance, JT = 1 refers to a
-!     temperature of 188.0, JT = 2 refers to 195.2, etc. The third index
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
+!     to that of gas2.  The second index refers to temperature 
+!     in 7.2 degree increments.  For instance, JT = 1 refers to a 
+!     temperature of 188.0, JT = 2 refers to 195.2, etc. The third index 
 !     runs over the g-channel (1 to 16).
 
-!     The array KBO_Mxx contains the absorption coefficient for
+!     The array KBO_Mxx contains the absorption coefficient for 
 !     a minor species at the 16 chosen g-values for a reference pressure
-!     level above 100~ mb.   The first index refers to temperature
-!     in 7.2 degree increments.  For instance, JT = 1 refers to a
-!     temperature of 188.0, JT = 2 refers to 195.2, etc. The second index
+!     level above 100~ mb.   The first index refers to temperature 
+!     in 7.2 degree increments.  For instance, JT = 1 refers to a 
+!     temperature of 188.0, JT = 2 refers to 195.2, etc. The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -17909,13 +17918,13 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
 !     Arrays fracrefao and fracrefbo are the Planck fractions for the lower
 !     and upper atmosphere.
-!     Planck fraction mapping levels:
+!     Planck fraction mapping levels: 
 !     Lower: P = 142.5940 mb, T = 215.70 K
 !     Upper: P = 4.758820 mb, T = 250.85 K
 
@@ -17924,12 +17933,12 @@ IMPLICIT NONE
 !     of water vapor to CO2.  The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
 !     to that of gas2.
-!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds
-!     to different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this  pressure
+!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds 
+!     to different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this  pressure 
 !     level, JT = 2 refers to the temperature
 !     TREF-15, JT = 1 is for TREF-30, JT = 4 is for TREF+15, and JT = 5
 !     is for TREF+30.  The third index, JP, runs from 1 to 13 and refers
@@ -17937,22 +17946,22 @@ IMPLICIT NONE
 !     pressure of 1053.63 mb).  The fourth index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -17991,13 +18000,13 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
 !     Arrays fracrefao and fracrefbo are the Planck fractions for the lower
 !     and upper atmosphere.
-!     Planck fraction mapping levels:
+!     Planck fraction mapping levels: 
 !     Lower: P = 1053. mb, T = 294.2 K
 
 !     The array KAO contains absorption coefs for each of the 16 g-intervals
@@ -18005,12 +18014,12 @@ IMPLICIT NONE
 !     of water vapor to CO2.  The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
 !     to that of gas2.
-!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds
-!     to different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this  pressure
+!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds 
+!     to different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this  pressure 
 !     level, JT = 2 refers to the temperature
 !     TREF-15, JT = 1 is for TREF-30, JT = 4 is for TREF+15, and JT = 5
 !     is for TREF+30.  The third index, JP, runs from 1 to 13 and refers
@@ -18018,22 +18027,22 @@ IMPLICIT NONE
 !     pressure of 1053.63 mb).  The fourth index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
-!     The array KA_Mxx contains the absorption coefficient for
+!     The array KA_Mxx contains the absorption coefficient for 
 !     a minor species at the 16 chosen g-values for a reference pressure
 !     level below 100~ mb.   The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
-!     to that of gas2.  The second index refers to temperature
-!     in 7.2 degree increments.  For instance, JT = 1 refers to a
-!     temperature of 188.0, JT = 2 refers to 195.2, etc. The third index
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
+!     to that of gas2.  The second index refers to temperature 
+!     in 7.2 degree increments.  For instance, JT = 1 refers to a 
+!     temperature of 188.0, JT = 2 refers to 195.2, etc. The third index 
 !     runs over the g-channel (1 to 16).
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -18071,13 +18080,13 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
 !     Arrays fracrefao and fracrefbo are the Planck fractions for the lower
 !     and upper atmosphere.
-!     Planck fraction mapping levels:
+!     Planck fraction mapping levels: 
 !     Lower: P = 387.6100 mbar, T = 250.17 K
 !     Upper: P=95.58350 mb, T = 215.70 K
 
@@ -18086,12 +18095,12 @@ IMPLICIT NONE
 !     of water vapor to CO2.  The first index in the array, JS, runs
 !     from 1 to 10, and corresponds to different gas column amount ratios,
 !     as expressed through the binary species parameter eta, defined as
-!     eta = gas1/(gas1 + (rat) * gas2), where rat is the
-!     ratio of the reference MLS column amount value of gas 1
+!     eta = gas1/(gas1 + (rat) * gas2), where rat is the 
+!     ratio of the reference MLS column amount value of gas 1 
 !     to that of gas2.
-!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds
-!     to different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this  pressure
+!     The 2nd index in the array, JT, which runs from 1 to 5, corresponds 
+!     to different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this  pressure 
 !     level, JT = 2 refers to the temperature
 !     TREF-15, JT = 1 is for TREF-30, JT = 4 is for TREF+15, and JT = 5
 !     is for TREF+30.  The third index, JP, runs from 1 to 13 and refers
@@ -18099,22 +18108,22 @@ IMPLICIT NONE
 !     pressure of 1053.63 mb).  The fourth index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -18143,16 +18152,16 @@ IMPLICIT NONE
 
 !===============================================================================
   subroutine relcalc(icol, pcols, pver, t, landfrac, landm, icefrac, rel, snowh)
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Compute cloud water size
-!
-! Method:
+! 
+! Method: 
 ! analytic formula following the formulation originally developed by J. T. Kiehl
-!
+! 
 ! Author: Phil Rasch
-!
+! 
 !-----------------------------------------------------------------------
     implicit none
 !------------------------------Arguments--------------------------------
@@ -18234,3 +18243,4 @@ IMPLICIT NONE
 !------------------------------------------------------------------
 
 END MODULE module_ra_rrtmg_lwf
+#endif

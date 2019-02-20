@@ -1,0 +1,137 @@
+*
+* svn $Id: Readme 937 2019-01-28 06:13:04Z arango $
+***********************************************************************
+*  Copyright (c) 2002-2019 The ROMS/TOMS Group                        *
+*    Licensed under a MIT/X style license                             *
+*    See License_ROMS.txt                                             *
+***********************************************************************
+*
+
+Earth System Model (ESM) Coupling:
+=================================
+
+This directory contains several files used for multi-model coupling
+using the Earth System Modeling Framework (ESMF) with the National
+Unified Operational Prediction Capability (NUOPC) layer.
+
+The NUOPC layer is a simplified infrastructure on top of the ESMF
+library (version 7.0 or higher) that provides conventions and
+templates to facilitate the smooth coupling between ESM components.
+The ROMS coupling interface with the ESMF/NUOPC library allows both
+DRIVER and COMPONENT methods of operation.  In the DRIVER method,
+it provides all the interfaces needed to couple to other ESM
+components including the executable driver, NUOPC-based generic
+ESM component services, model gridded components or NUOPC cap files,
+connectors between components for re-gridding source and destination
+fields, input scripts, and coupling metadata management.  A NUOPC
+model 'cap' is a Fortran code layer that sits on top of the ESM
+component, making calls to the numerical kernel via the 'initialize',
+'run', and 'finalize' phases.  Alternatively, in the COMPONENT method,
+the NUOPC ROMS 'cap' module is provided, and it can be adapted and
+incorporated into other NUOPC-based coupling systems, like the NOAA
+Environmental Modeling System (NEMS).
+
+The strategy is to couple to other ESM components with none or minimal
+changes to the code distributed by developers or repositories.  It is
+the user responsibility to subscribe to such repositories and download
+and install the ESM component.   It expected that the coupling with
+such ESM components is not affected its version (previous, current
+or future).
+
+However, sometimes we need circumvent technical problems when coupling
+to other ESM components and provide build scripts to facilitate
+compiling and linking, and correct interference to deprecated libraries.
+Therefore, this directory contains scripts and modified ESM component
+files that substitute the ones distributed from source repositories
+to solve such technical issues.
+
+File Description:
+----------------
+
+* coupling_esmf.in:
+
+  Standard input script for ROMS when coupling with the ESMF/NUOPC
+library. It is well documented and sets the coupling system. To
+submit a job, we could use for example:
+
+  mpirun -np 8 romsM coupling.in > & log &
+
+* coupling_esmf.dat:
+
+  Coupling metadata defining import and export fields.
+
+* build_cice.sh:
+
+  A friendlier CSH script to compile CICE.
+
+* build_wrf.bash, build_wrf.sh:
+
+  BATCH and CSH compiling scripts for WRF to facilitate easy compiling
+and linking.  It also corrects several technical issues with very old
+ESMF library interference and incorrect NetCDF4 library dependencies.
+
+The files below were adapted from WRF Version 4.0.3 (December 18, 2018)
+
+  - wrf_configure:
+
+       Replaces ${WRF_ROOT_DIR}/configure
+
+       Reworking linking NetCDF4 library dependencies.
+
+  - wrf_add_configure:
+
+       Appends to ${WRF_ROOT_DIR}/configure.wrf
+
+       Adds CPP macros to rename 'ESMF' and 'esmf' to 'MYESMF'
+       and 'myesmf' to the dependecies of 'module_domain.o' and
+       'output_wrf.o' to avoid conflicts with newer versions of
+       the ESMF/NUOPC library.
+
+  - wrf_Makefile:
+
+       Replaces ${WRF_ROOT_DIR}/Makefile
+
+       Reworking linking NetCDF4 library dependencies.
+
+  - wrf_postamble:
+
+       Replaces ${WRF_ROOT_DIR}/arch/postamble
+
+       Reworking linking NetCDF4 library dependencies.
+
+  - wrf_configure.defaults:
+
+       Replaces ${WRF_ROOT_DIR}/arch/configure.defaults
+
+       Substitutes obsolete compiling option -openmp to -qopenmp
+
+       Renames corrences of 'ESMF' and 'esmf' to 'MYESMF' and 'myesmf'
+       to avoid conflicts with newer versions of the ESMF. WRF uses
+       parts of an old verison of the ESMF library for its internal
+       time clock.  This causes conflicts when coupling with newer
+       ESMF/NUOPC library.
+
+       Added mixed compiling with Intel/GNU (ifort/gcc) and OpenMPI
+
+   - wrf_Config.pl:
+
+       Replaces ${WRF_ROOT_DIR}/arch/Config.pl
+
+       Renames ocurrences of 'ESMF' and 'esmf' to 'MYESMF' and 'myesmf'
+       to avoid conflicts with newer versions of the ESMF.
+
+   - wrf_Makefile.esmf:
+
+       Replaces ${WRF_ROOT_DIR}/external/esmf_time_f90/Makefile
+
+       Renames corrences of 'ESMF' and 'esmf' to 'MYESMF' and 'myesmf'
+       to avoid conflicts with newer versions of the ESMF. Everything
+       is done during C-preprocessing so original files are not
+       modified.
+
+    - wrf_Test1.F90:
+
+       Replaces ${WRF_ROOT_DIR}/external/esmf_time_f90/Test1.F90
+
+       Corrects bug in optional argument to 'ESMF_Initialize' call
+       from 'defaultCalendar' to 'defaultCalKind'.

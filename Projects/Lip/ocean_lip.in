@@ -107,7 +107,7 @@ GridsInLayer =  1
 ! shared-memory configurations used to determine tile horizontal range
 ! indices (Istr,Iend) and (Jstr,Jend), [1:Ngrids].
 
-      NtileI == 8                               ! I-direction partition
+      NtileI == 1                               ! I-direction partition
       NtileJ == 1                               ! J-direction partition
 
 ! Set lateral boundary conditions keyword. Notice that a value is expected
@@ -600,6 +600,7 @@ Hout(idWamp) == T       ! Hwave              wave height
 Hout(idWlen) == T       ! Lwave              wave length-mean
 Hout(idWlep) == T       ! Lwavep             wave length-peak
 Hout(idWdir) == T       ! Dwave              wave direction
+Hout(idWdip) == T       ! Dwavep             wave direction-peak
 Hout(idWptp) == T       ! Pwave_top          wave surface period
 Hout(idWpbt) == T       ! Pwave_bot          wave bottom period
 Hout(idWorb) == T       ! Uwave_rms          wave bottom orbital velocity
@@ -1275,13 +1276,13 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !  LBC(isV2Sd) 2D V-stokes,  [1:4, Ngrids] values are expected.
 !  LBC(isU3Sd) 3D U-stokes,  [1:4, Ngrids] values are expected.
 !  LBC(isV3Sd) 3D V-stokes,  [1:4, Ngrids] values are expected.
-
+!
 ! InWave boundary conditions
-
-   LBC(isAC3d) Wave action density, [1:4, Ngrids] values are expected.
-   LBC(isCT3d) Wave theta celerity, [1:4, Ngrids] values are expected.
-   LBC(isCX3d) Wave x-dir celerity, [1:4, Ngrids] values are expected.
-   LBC(isCY3d) Wave y-dir celerity, [1:4, Ngrids] values are expected.
+!
+!  LBC(isAC3d) Wave action density, [1:4, Ngrids] values are expected.
+!  LBC(isCT3d) Wave theta celerity, [1:4, Ngrids] values are expected.
+!  LBC(isCX3d) Wave x-dir celerity, [1:4, Ngrids] values are expected.
+!  LBC(isCY3d) Wave y-dir celerity, [1:4, Ngrids] values are expected.
 !
 ! Similarly, the adjoint-based algorithms (ADM, TLM, RPM) can have different
 ! lateral boundary conditions keywords:

@@ -154,7 +154,7 @@
         DO j=Jstr,Jend
           DO i=Istr,Iend
             IF(h_tot(i,j).ge.Dcrit(ng))THEN
-              L0=g*otwopi*MAX(Tr_min,Tr(i,j,d))**2.0_r8
+              L0=g*otwopi*(MAX(Tr_min,Tr(i,j,d)))**2.0_r8
               k0=twopi/L0
               error=100.0_r8
               wr=twopi/MAX(Tr_min,Tr(i,j,d))

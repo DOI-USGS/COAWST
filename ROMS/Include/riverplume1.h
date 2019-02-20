@@ -1,7 +1,7 @@
 /*
-** svn $Id: riverplume1.h 830 2017-01-24 21:21:11Z arango $
+** svn $Id: riverplume1.h 889 2018-02-10 03:32:52Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2018 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2019 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -9,7 +9,7 @@
 ** Options for River Plume Test (original version).
 **
 ** Application flag:   RIVERPLUME1
-** Input script:       ocean_riverplume1.in
+** Input script:       roms_riverplume1.in
 */
 
 #define ROMS_MODEL

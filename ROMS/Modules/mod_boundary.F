@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_boundary
 !
-!svn $Id: mod_boundary.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: mod_boundary.F 921 2018-09-06 18:27:34Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -900,6 +900,11 @@
       integer :: LBij, UBij
 #endif
       integer :: my_tile
+
+      real(r8) :: Xsize, Ysize
+#ifdef ADJUST_BOUNDARY
+      real(r8) :: XYsize
+#endif
 !
 !-----------------------------------------------------------------------
 !  Initialize module variables.
@@ -919,6 +924,14 @@
       UBij=BOUNDS(ng)%UBij
 #endif
 !
+!  Set horizontal array size.
+!
+      Xsize=REAL(UBi-LBi,r8)
+      Ysize=REAL(UBj-LBj,r8)
+#ifdef ADJUST_BOUNDARY
+      XYsize=REAL(UBij-LBij,r8)
+#endif
+!
 !  Allocate structures.
 !
       IF (ng.eq.1) THEN
@@ -934,15 +947,19 @@
 !
       allocate ( LBC_apply(ng) % west(LBj:UBj) )
       LBC_apply(ng) % west = .TRUE.
+      Dmem(ng)=Dmem(ng)+Ysize
 
       allocate ( LBC_apply(ng) % east(LBj:UBj) )
       LBC_apply(ng) % east = .TRUE.
+      Dmem(ng)=Dmem(ng)+Ysize
 
       allocate ( LBC_apply(ng) % south(LBi:UBi) )
       LBC_apply(ng) % south = .TRUE.
+      Dmem(ng)=Dmem(ng)+Xsize
 
       allocate ( LBC_apply(ng) % north(LBi:UBi) )
       LBC_apply(ng) % north = .TRUE.
+      Dmem(ng)=Dmem(ng)+Xsize
 !
 !  Nonlinear model state.
 !
@@ -953,13 +970,21 @@
       IF (LBC(iwest,isFsur,ng)%acquire) THEN
 #endif
         allocate ( BOUNDARY(ng) % zeta_west(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
 #if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % zeta_west_C2(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
         allocate ( BOUNDARY(ng) % zeta_west_Ce(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
         allocate ( BOUNDARY(ng) % zeta_west_Cx(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
 #endif
 #ifndef ANA_FSOBC
         allocate ( BOUNDARY(ng) % zetaG_west(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*Ysize
 #endif
       END IF
 
@@ -970,13 +995,21 @@
       IF (LBC(ieast,isFsur,ng)%acquire) THEN
 #endif
         allocate ( BOUNDARY(ng) % zeta_east(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
 #if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % zeta_east_C2(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
         allocate ( BOUNDARY(ng) % zeta_east_Ce(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
         allocate ( BOUNDARY(ng) % zeta_east_Cx(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
 #endif
 #ifndef ANA_FSOBC
         allocate ( BOUNDARY(ng) % zetaG_east(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*Ysize
 #endif
       END IF
 
@@ -987,13 +1020,21 @@
       IF (LBC(isouth,isFsur,ng)%acquire) THEN
 #endif
         allocate ( BOUNDARY(ng) % zeta_south(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
 #if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % zeta_south_C2(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
         allocate ( BOUNDARY(ng) % zeta_south_Ce(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
         allocate ( BOUNDARY(ng) % zeta_south_Cx(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
 #endif
 #ifndef ANA_FSOBC
         allocate ( BOUNDARY(ng) % zetaG_south(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*Xsize
 #endif
       END IF
 
@@ -1004,13 +1045,21 @@
       IF (LBC(inorth,isFsur,ng)%acquire) THEN
 #endif
         allocate ( BOUNDARY(ng) % zeta_north(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
 #if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % zeta_north_C2(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
         allocate ( BOUNDARY(ng) % zeta_north_Ce(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
         allocate ( BOUNDARY(ng) % zeta_north_Cx(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
 #endif
 #ifndef ANA_FSOBC
         allocate ( BOUNDARY(ng) % zetaG_north(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*Xsize
 #endif
       END IF
 !
@@ -1021,13 +1070,21 @@
       IF (LBC(iwest,isUbar,ng)%acquire) THEN
 #endif
         allocate ( BOUNDARY(ng) % ubar_west(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
 #if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % ubar_west_C2(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
         allocate ( BOUNDARY(ng) % ubar_west_Ce(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
         allocate ( BOUNDARY(ng) % ubar_west_Cx(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
 #endif
 #ifndef ANA_M2OBC
         allocate ( BOUNDARY(ng) % ubarG_west(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*Ysize
 #endif
       END IF
 
@@ -1038,13 +1095,21 @@
       IF (LBC(ieast,isUbar,ng)%acquire) THEN
 #endif
         allocate ( BOUNDARY(ng) % ubar_east(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
 #if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % ubar_east_C2(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
         allocate ( BOUNDARY(ng) % ubar_east_Ce(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
         allocate ( BOUNDARY(ng) % ubar_east_Cx(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
 #endif
 #ifndef ANA_M2OBC
         allocate ( BOUNDARY(ng) % ubarG_east(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*Ysize
 #endif
       END IF
 
@@ -1055,13 +1120,20 @@
       IF (LBC(isouth,isUbar,ng)%acquire) THEN
 #endif
         allocate ( BOUNDARY(ng) % ubar_south(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
 #if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % ubar_south_C2(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
         allocate ( BOUNDARY(ng) % ubar_south_Ce(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
         allocate ( BOUNDARY(ng) % ubar_south_Cx(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
 #endif
 #ifndef ANA_M2OBC
         allocate ( BOUNDARY(ng) % ubarG_south(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*Xsize
 #endif
       END IF
 
@@ -1072,13 +1144,21 @@
       IF (LBC(inorth,isUbar,ng)%acquire) THEN
 #endif
         allocate ( BOUNDARY(ng) % ubar_north(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
 #if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % ubar_north_C2(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
         allocate ( BOUNDARY(ng) % ubar_north_Ce(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
         allocate ( BOUNDARY(ng) % ubar_north_Cx(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
 #endif
 #ifndef ANA_M2OBC
         allocate ( BOUNDARY(ng) % ubarG_north(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*Xsize
 #endif
       END IF
 !
@@ -1089,13 +1169,21 @@
       IF (LBC(iwest,isVbar,ng)%acquire) THEN
 #endif
         allocate ( BOUNDARY(ng) % vbar_west(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
 #if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % vbar_west_C2(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
         allocate ( BOUNDARY(ng) % vbar_west_Ce(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
         allocate ( BOUNDARY(ng) % vbar_west_Cx(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
 #endif
 #ifndef ANA_M2OBC
         allocate ( BOUNDARY(ng) % vbarG_west(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*Ysize
 #endif
       END IF
 
@@ -1106,13 +1194,21 @@
       IF (LBC(ieast,isVbar,ng)%acquire) THEN
 #endif
         allocate ( BOUNDARY(ng) % vbar_east(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
 #if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % vbar_east_C2(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
         allocate ( BOUNDARY(ng) % vbar_east_Ce(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
+
         allocate ( BOUNDARY(ng) % vbar_east_Cx(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
 #endif
 #ifndef ANA_M2OBC
         allocate ( BOUNDARY(ng) % vbarG_east(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*Ysize
 #endif
       END IF
 
@@ -1123,13 +1219,21 @@
       IF (LBC(isouth,isVbar,ng)%acquire) THEN
 #endif
         allocate ( BOUNDARY(ng) % vbar_south(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
 #if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % vbar_south_C2(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
         allocate ( BOUNDARY(ng) % vbar_south_Ce(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
         allocate ( BOUNDARY(ng) % vbar_south_Cx(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
 #endif
 #ifndef ANA_M2OBC
         allocate ( BOUNDARY(ng) % vbarG_south(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*Xsize
 #endif
       END IF
 
@@ -1140,13 +1244,21 @@
       IF (LBC(inorth,isVbar,ng)%acquire) THEN
 #endif
         allocate ( BOUNDARY(ng) % vbar_north(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
 #if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % vbar_north_C2(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
         allocate ( BOUNDARY(ng) % vbar_north_Ce(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
+
         allocate ( BOUNDARY(ng) % vbar_north_Cx(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
 #endif
 #ifndef ANA_M2OBC
         allocate ( BOUNDARY(ng) % vbarG_north(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*Xsize
 #endif
       END IF
 
@@ -1159,13 +1271,21 @@
       IF (LBC(iwest,isUvel,ng)%acquire) THEN
 # endif
         allocate ( BOUNDARY(ng) % u_west(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
+
 # if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % u_west_C2(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
+
         allocate ( BOUNDARY(ng) % u_west_Ce(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
+
         allocate ( BOUNDARY(ng) % u_west_Cx(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
 # endif
 # ifndef ANA_M3OBC
         allocate ( BOUNDARY(ng) % uG_west(LBj:UBj,N(ng),2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng),r8)*Ysize
 # endif
       END IF
 
@@ -1176,13 +1296,21 @@
       IF (LBC(ieast,isUvel,ng)%acquire) THEN
 # endif
         allocate ( BOUNDARY(ng) % u_east(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
+
 # if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % u_east_C2(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
+
         allocate ( BOUNDARY(ng) % u_east_Ce(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
+
         allocate ( BOUNDARY(ng) % u_east_Cx(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
 # endif
 # ifndef ANA_M3OBC
         allocate ( BOUNDARY(ng) % uG_east(LBj:UBj,N(ng),2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng),r8)*Ysize
 # endif
       END IF
 
@@ -1193,13 +1321,21 @@
       IF (LBC(isouth,isUvel,ng)%acquire) THEN
 # endif
         allocate ( BOUNDARY(ng) % u_south(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
+
 # if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % u_south_C2(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
+
         allocate ( BOUNDARY(ng) % u_south_Ce(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
+
         allocate ( BOUNDARY(ng) % u_south_Cx(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
 # endif
 # ifndef ANA_M3OBC
         allocate ( BOUNDARY(ng) % uG_south(LBi:UBi,N(ng),2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng),r8)*Xsize
 # endif
       END IF
 
@@ -1210,13 +1346,21 @@
       IF (LBC(inorth,isUvel,ng)%acquire) THEN
 # endif
         allocate ( BOUNDARY(ng) % u_north(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
+
 # if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % u_north_C2(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
+
         allocate ( BOUNDARY(ng) % u_north_Ce(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
+
         allocate ( BOUNDARY(ng) % u_north_Cx(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
 # endif
 # ifndef ANA_M3OBC
         allocate ( BOUNDARY(ng) % uG_north(LBi:UBi,N(ng),2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng),r8)*Xsize
 # endif
       END IF
 !
@@ -1227,13 +1371,21 @@
       IF (LBC(iwest,isVvel,ng)%acquire) THEN
 # endif
         allocate ( BOUNDARY(ng) % v_west(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
+
 # if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % v_west_C2(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
+
         allocate ( BOUNDARY(ng) % v_west_Ce(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
+
         allocate ( BOUNDARY(ng) % v_west_Cx(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
 # endif
 # ifndef ANA_M3OBC
         allocate ( BOUNDARY(ng) % vG_west(LBj:UBj,N(ng),2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng),r8)*Ysize
 # endif
       END IF
 
@@ -1244,13 +1396,21 @@
       IF (LBC(ieast,isVvel,ng)%acquire) THEN
 # endif
         allocate ( BOUNDARY(ng) % v_east(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
+
 # if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % v_east_C2(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
+
         allocate ( BOUNDARY(ng) % v_east_Ce(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
+
         allocate ( BOUNDARY(ng) % v_east_Cx(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
 # endif
 # ifndef ANA_M3OBC
         allocate ( BOUNDARY(ng) % vG_east(LBj:UBj,N(ng),2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng),r8)*Ysize
 # endif
       END IF
 
@@ -1261,13 +1421,21 @@
       IF (LBC(isouth,isVvel,ng)%acquire) THEN
 # endif
         allocate ( BOUNDARY(ng) % v_south(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
+
 # if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % v_south_C2(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
+
         allocate ( BOUNDARY(ng) % v_south_Ce(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
+
         allocate ( BOUNDARY(ng) % v_south_Cx(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
 # endif
 # ifndef ANA_M3OBC
         allocate ( BOUNDARY(ng) % vG_south(LBi:UBi,N(ng),2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng),r8)*Xsize
 # endif
       END IF
 
@@ -1278,13 +1446,21 @@
       IF (LBC(inorth,isVvel,ng)%acquire) THEN
 # endif
         allocate ( BOUNDARY(ng) % v_north(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
+
 # if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % u_north_C2(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
+
         allocate ( BOUNDARY(ng) % u_north_Ce(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
+
         allocate ( BOUNDARY(ng) % u_north_Cx(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
 # endif
 # ifndef ANA_M3OBC
         allocate ( BOUNDARY(ng) % vG_north(LBi:UBi,N(ng),2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng),r8)*Xsize
 # endif
       END IF
 !
@@ -1295,13 +1471,21 @@
       IF (ANY(LBC(iwest,isTvar(:),ng)%acquire)) THEN
 # endif
         allocate ( BOUNDARY(ng) % t_west(LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Ysize
+
 # if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % t_west_C2(LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Ysize
+
         allocate ( BOUNDARY(ng) % t_west_Ce(LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Ysize
+
         allocate ( BOUNDARY(ng) % t_west_Cx(LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Ysize
 # endif
 # ifndef ANA_TOBC
         allocate ( BOUNDARY(ng) % tG_west(LBj:UBj,N(ng),2,NT(ng)) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)*NT(ng),r8)*Ysize
 # endif
       END IF
 
@@ -1312,13 +1496,21 @@
       IF (ANY(LBC(ieast,isTvar(:),ng)%acquire)) THEN
 # endif
         allocate ( BOUNDARY(ng) % t_east(LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Ysize
+
 # if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % t_east_C2(LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Ysize
+
         allocate ( BOUNDARY(ng) % t_east_Ce(LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Ysize
+
         allocate ( BOUNDARY(ng) % t_east_Cx(LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Ysize
 # endif
 # ifndef ANA_TOBC
         allocate ( BOUNDARY(ng) % tG_east(LBj:UBj,N(ng),2,NT(ng)) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)*NT(ng),r8)*Ysize
 # endif
       END IF
 
@@ -1329,13 +1521,21 @@
       IF (ANY(LBC(isouth,isTvar(:),ng)%acquire)) THEN
 # endif
         allocate ( BOUNDARY(ng) % t_south(LBi:UBi,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Xsize
+
 # if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % t_south_C2(LBi:UBi,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Xsize
+
         allocate ( BOUNDARY(ng) % t_south_Ce(LBi:UBi,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Xsize
+
         allocate ( BOUNDARY(ng) % t_south_Cx(LBi:UBi,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Xsize
 # endif
 # ifndef ANA_TOBC
         allocate ( BOUNDARY(ng) % tG_south(LBi:UBi,N(ng),2,NT(ng)) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)*NT(ng),r8)*Xsize
 # endif
       END IF
 
@@ -1346,13 +1546,21 @@
       IF (ANY(LBC(inorth,isTvar(:),ng)%acquire)) THEN
 # endif
         allocate ( BOUNDARY(ng) % t_north(LBi:UBi,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Xsize
+
 # if defined CELERITY_READ || defined CELERITY_WRITE
         allocate ( BOUNDARY(ng) % t_north_C2(LBi:UBi,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Xsize
+
         allocate ( BOUNDARY(ng) % t_north_Ce(LBi:UBi,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Xsize
+
         allocate ( BOUNDARY(ng) % t_north_Cx(LBi:UBi,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Xsize
 # endif
 # ifndef ANA_TOBC
         allocate ( BOUNDARY(ng) % tG_north(LBi:UBi,N(ng),2,NT(ng)) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)*NT(ng),r8)*Xsize
 # endif
       END IF
 #endif
@@ -1363,100 +1571,124 @@
 !
       IF (tl_LBC(iwest,isFsur,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_zeta_west(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
 
       IF (tl_LBC(ieast,isFsur,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_zeta_east(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
 
       IF (tl_LBC(isouth,isFsur,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_zeta_south(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 
       IF (tl_LBC(inorth,isFsur,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_zeta_north(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 !
       IF (tl_LBC(iwest,isUbar,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_ubar_west(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
 
       IF (tl_LBC(ieast,isUbar,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_ubar_east(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
 
       IF (tl_LBC(isouth,isUbar,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_ubar_south(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 
       IF (tl_LBC(inorth,isUbar,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_ubar_north(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 !
       IF (tl_LBC(iwest,isVbar,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_vbar_west(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
 
       IF (tl_LBC(ieast,isVbar,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_vbar_east(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
 
       IF (tl_LBC(isouth,isVbar,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_vbar_south(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 
       IF (tl_LBC(inorth,isVbar,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_vbar_north(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 
 # ifdef SOLVE3D
 !
       IF (tl_LBC(iwest,isUvel,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_u_west(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
       END IF
 
       IF (tl_LBC(ieast,isUvel,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_u_east(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
       END IF
 
       IF (tl_LBC(isouth,isUvel,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_u_south(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
       END IF
 
       IF (tl_LBC(inorth,isUvel,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_u_north(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
       END IF
 !
       IF (tl_LBC(iwest,isVvel,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_v_west(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
       END IF
 
       IF (tl_LBC(ieast,isVvel,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_v_east(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
       END IF
 
       IF (tl_LBC(isouth,isVvel,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_v_south(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
       END IF
 
       IF (tl_LBC(inorth,isVvel,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tl_v_north(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
       END IF
 !
       IF (ANY(tl_LBC(iwest,isTvar(:),ng)%acquire)) THEN
         allocate ( BOUNDARY(ng) % tl_t_west(LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Ysize
       END IF
 
       IF (ANY(tl_LBC(ieast,isTvar(:),ng)%acquire)) THEN
         allocate ( BOUNDARY(ng) % tl_t_east(LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Ysize
       END IF
 
       IF (ANY(tl_LBC(isouth,isTvar(:),ng)%acquire)) THEN
         allocate ( BOUNDARY(ng) % tl_t_south(LBi:UBi,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Xsize
       END IF
 
       IF (ANY(tl_LBC(inorth,isTvar(:),ng)%acquire)) THEN
         allocate ( BOUNDARY(ng) % tl_t_north(LBi:UBi,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Xsize
       END IF
 # endif
 #endif
@@ -1467,100 +1699,124 @@
 !
       IF (ad_LBC(iwest,isFsur,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_zeta_west(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
 
       IF (ad_LBC(ieast,isFsur,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_zeta_east(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
 
       IF (ad_LBC(isouth,isFsur,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_zeta_south(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 
       IF (ad_LBC(inorth,isFsur,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_zeta_north(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 !
       IF (ad_LBC(iwest,isUbar,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_ubar_west(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
 
       IF (ad_LBC(ieast,isUbar,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_ubar_east(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
 
       IF (ad_LBC(isouth,isUbar,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_ubar_south(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 
       IF (ad_LBC(inorth,isUbar,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_ubar_north(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 !
       IF (ad_LBC(iwest,isVbar,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_vbar_west(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
 
       IF (ad_LBC(ieast,isVbar,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_vbar_east(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
 
       IF (ad_LBC(isouth,isVbar,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_vbar_south(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 
       IF (ad_LBC(inorth,isVbar,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_vbar_north(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 
 # ifdef SOLVE3D
 !
       IF (ad_LBC(iwest,isUvel,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_u_west(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
       END IF
 
       IF (ad_LBC(ieast,isUvel,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_u_east(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
       END IF
 
       IF (ad_LBC(isouth,isUvel,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_u_south(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
       END IF
 
       IF (ad_LBC(inorth,isUvel,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_u_north(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
       END IF
 !
       IF (ad_LBC(iwest,isVvel,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_v_west(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
       END IF
 
       IF (ad_LBC(ieast,isVvel,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_v_east(LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Ysize
       END IF
 
       IF (ad_LBC(isouth,isVvel,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_v_south(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
       END IF
 
       IF (ad_LBC(inorth,isVvel,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ad_v_north(LBi:UBi,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*Xsize
       END IF
 !
       IF (ANY(ad_LBC(iwest,isTvar(:),ng)%acquire)) THEN
         allocate ( BOUNDARY(ng) % ad_t_west(LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Ysize
       END IF
 
       IF (ANY(ad_LBC(ieast,isTvar(:),ng)%acquire)) THEN
         allocate ( BOUNDARY(ng) % ad_t_east(LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Ysize
       END IF
 
       IF (ANY(ad_LBC(isouth,isTvar(:),ng)%acquire)) THEN
         allocate ( BOUNDARY(ng) % ad_t_south(LBi:UBi,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Xsize
       END IF
 
       IF (ANY(ad_LBC(inorth,isTvar(:),ng)%acquire)) THEN
         allocate ( BOUNDARY(ng) % ad_t_north(LBi:UBi,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*Xsize
       END IF
 # endif
 #endif
@@ -1572,299 +1828,453 @@
 # ifdef SOLVE3D
       allocate ( BOUNDARY(ng) % t_obc(LBij:UBij,N(ng),4,                &
      &                                Nbrec(ng),2,NT(ng)) )
-      allocate ( BOUNDARY(ng) % b_t_obc(LBij:UBij,N(ng),4,NT(ng)) )
-      allocate ( BOUNDARY(ng) % d_t_obc(LBij:UBij,N(ng),4,              &
-     &                                  Nbrec(ng),NT(ng)) )
-      allocate ( BOUNDARY(ng) % e_t_obc(LBij:UBij,N(ng),4,NT(ng)) )
-      allocate ( BOUNDARY(ng) % ad_t_obc(LBij:UBij,N(ng),4,             &
-     &                                   Nbrec(ng),2,NT(ng)) )
-      allocate ( BOUNDARY(ng) % tl_t_obc(LBij:UBij,N(ng),4,             &
-     &                                   Nbrec(ng),2,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(N(ng)*Nbrec(ng)*NT(ng),r8)*XYsize
 
       allocate ( BOUNDARY(ng) % u_obc(LBij:UBij,N(ng),                  &
      &                                4,Nbrec(ng),2) )
-      allocate ( BOUNDARY(ng) % b_u_obc(LBij:UBij,N(ng),4) )
-      allocate ( BOUNDARY(ng) % d_u_obc(LBij:UBij,N(ng),                &
-     &                                   4,Nbrec(ng)) )
-      allocate ( BOUNDARY(ng) % e_u_obc(LBij:UBij,N(ng),4) )
-      allocate ( BOUNDARY(ng) % ad_u_obc(LBij:UBij,N(ng),               &
-     &                                   4,Nbrec(ng),2) )
-      allocate ( BOUNDARY(ng) % tl_u_obc(LBij:UBij,N(ng),               &
-     &                                   4,Nbrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(N(ng)*Nbrec(ng),r8)*XYsize
 
       allocate ( BOUNDARY(ng) % v_obc(LBij:UBij,N(ng),                  &
      &                                4,Nbrec(ng),2) )
-      allocate ( BOUNDARY(ng) % b_v_obc(LBij:UBij,N(ng),4) )
-      allocate ( BOUNDARY(ng) % d_v_obc(LBij:UBij,N(ng),                &
-     &                                  4,Nbrec(ng)) )
-      allocate ( BOUNDARY(ng) % e_v_obc(LBij:UBij,N(ng),4) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(N(ng)*Nbrec(ng),r8)*XYsize
+!
+      allocate ( BOUNDARY(ng) % ad_t_obc(LBij:UBij,N(ng),4,             &
+     &                                   Nbrec(ng),2,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(N(ng)*Nbrec(ng)*NT(ng),r8)*XYsize
+
+      allocate ( BOUNDARY(ng) % ad_u_obc(LBij:UBij,N(ng),               &
+     &                                   4,Nbrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(N(ng)*Nbrec(ng),r8)*XYsize
+
       allocate ( BOUNDARY(ng) % ad_v_obc(LBij:UBij,N(ng),               &
      &                                   4,Nbrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(N(ng)*Nbrec(ng),r8)*XYsize
+!
+      allocate ( BOUNDARY(ng) % tl_t_obc(LBij:UBij,N(ng),4,             &
+     &                                   Nbrec(ng),2,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(N(ng)*Nbrec(ng)*NT(ng),r8)*XYsize
+
+      allocate ( BOUNDARY(ng) % tl_u_obc(LBij:UBij,N(ng),               &
+     &                                   4,Nbrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(N(ng)*Nbrec(ng),r8)*XYsize
+
       allocate ( BOUNDARY(ng) % tl_v_obc(LBij:UBij,N(ng),               &
      &                                   4,Nbrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(N(ng)*Nbrec(ng),r8)*XYsize
+!
+      allocate ( BOUNDARY(ng) % b_t_obc(LBij:UBij,N(ng),4,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*REAL(N(ng)*NT(ng),r8)*XYsize
+
+      allocate ( BOUNDARY(ng) % b_u_obc(LBij:UBij,N(ng),4) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*REAL(N(ng),r8)*XYsize
+
+      allocate ( BOUNDARY(ng) % b_v_obc(LBij:UBij,N(ng),4) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*REAL(N(ng),r8)*XYsize
+!
+      allocate ( BOUNDARY(ng) % d_t_obc(LBij:UBij,N(ng),4,              &
+     &                                  Nbrec(ng),NT(ng)) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*REAL(N(ng)*Nbrec(ng)*NT(ng),r8)*XYsize
+
+      allocate ( BOUNDARY(ng) % d_u_obc(LBij:UBij,N(ng),                &
+     &                                   4,Nbrec(ng)) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*REAL(N(ng)*Nbrec(ng),r8)*XYsize
+
+      allocate ( BOUNDARY(ng) % d_v_obc(LBij:UBij,N(ng),                &
+     &                                  4,Nbrec(ng)) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*REAL(N(ng)*Nbrec(ng),r8)*XYsize
+!
+      allocate ( BOUNDARY(ng) % e_t_obc(LBij:UBij,N(ng),4,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*REAL(N(ng)*NT(ng),r8)*XYsize
+
+      allocate ( BOUNDARY(ng) % e_u_obc(LBij:UBij,N(ng),4) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*REAL(N(ng),r8)*XYsize
+
+      allocate ( BOUNDARY(ng) % e_v_obc(LBij:UBij,N(ng),4) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*REAL(N(ng),r8)*XYsize
 # endif
       allocate ( BOUNDARY(ng) % ubar_obc(LBij:UBij,4,Nbrec(ng),2) )
-      allocate ( BOUNDARY(ng) % b_ubar_obc(LBij:UBij,4) )
-      allocate ( BOUNDARY(ng) % d_ubar_obc(LBij:UBij,4,Nbrec(ng)) )
-      allocate ( BOUNDARY(ng) % e_ubar_obc(LBij:UBij,4) )
-      allocate ( BOUNDARY(ng) % ad_ubar_obc(LBij:UBij,4,Nbrec(ng),2) )
-      allocate ( BOUNDARY(ng) % tl_ubar_obc(LBij:UBij,4,Nbrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(Nbrec(ng),r8)*XYsize
 
       allocate ( BOUNDARY(ng) % vbar_obc(LBij:UBij,4,Nbrec(ng),2) )
-      allocate ( BOUNDARY(ng) % b_vbar_obc(LBij:UBij,4) )
-      allocate ( BOUNDARY(ng) % d_vbar_obc(LBij:UBij,4,Nbrec(ng)) )
-      allocate ( BOUNDARY(ng) % e_vbar_obc(LBij:UBij,4) )
-      allocate ( BOUNDARY(ng) % ad_vbar_obc(LBij:UBij,4,Nbrec(ng),2) )
-      allocate ( BOUNDARY(ng) % tl_vbar_obc(LBij:UBij,4,Nbrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(Nbrec(ng),r8)*XYsize
 
       allocate ( BOUNDARY(ng) % zeta_obc(LBij:UBij,4,Nbrec(ng),2) )
-      allocate ( BOUNDARY(ng) % b_zeta_obc(LBij:UBij,4) )
-      allocate ( BOUNDARY(ng) % d_zeta_obc(LBij:UBij,4,Nbrec(ng)) )
-      allocate ( BOUNDARY(ng) % e_zeta_obc(LBij:UBij,4) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(Nbrec(ng),r8)*XYsize
+!
+      allocate ( BOUNDARY(ng) % ad_ubar_obc(LBij:UBij,4,Nbrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(Nbrec(ng),r8)*XYsize
+
+      allocate ( BOUNDARY(ng) % ad_vbar_obc(LBij:UBij,4,Nbrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(Nbrec(ng),r8)*XYsize
+
       allocate ( BOUNDARY(ng) % ad_zeta_obc(LBij:UBij,4,Nbrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(Nbrec(ng),r8)*XYsize
+!
+      allocate ( BOUNDARY(ng) % tl_ubar_obc(LBij:UBij,4,Nbrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(Nbrec(ng),r8)*XYsize
+
+      allocate ( BOUNDARY(ng) % tl_vbar_obc(LBij:UBij,4,Nbrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(Nbrec(ng),r8)*XYsize
+
       allocate ( BOUNDARY(ng) % tl_zeta_obc(LBij:UBij,4,Nbrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+8.0_r8*REAL(Nbrec(ng),r8)*XYsize
+!
+      allocate ( BOUNDARY(ng) % b_ubar_obc(LBij:UBij,4) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*XYsize
+
+      allocate ( BOUNDARY(ng) % b_vbar_obc(LBij:UBij,4) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*XYsize
+
+      allocate ( BOUNDARY(ng) % b_zeta_obc(LBij:UBij,4) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*XYsize
+!
+      allocate ( BOUNDARY(ng) % d_ubar_obc(LBij:UBij,4,Nbrec(ng)) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*REAL(Nbrec(ng),r8)*XYsize
+
+      allocate ( BOUNDARY(ng) % d_vbar_obc(LBij:UBij,4,Nbrec(ng)) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*REAL(Nbrec(ng),r8)*XYsize
+
+      allocate ( BOUNDARY(ng) % d_zeta_obc(LBij:UBij,4,Nbrec(ng)) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*REAL(Nbrec(ng),r8)*XYsize
+!
+      allocate ( BOUNDARY(ng) % e_ubar_obc(LBij:UBij,4) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*XYsize
+
+      allocate ( BOUNDARY(ng) % e_vbar_obc(LBij:UBij,4) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*XYsize
+
+      allocate ( BOUNDARY(ng) % e_zeta_obc(LBij:UBij,4) )
+      Dmem(ng)=Dmem(ng)+4.0_r8*XYsize
 #endif
 
 #ifdef ICE_MODEL
       allocate ( BOUNDARY(ng) % ai_west(LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+XYsize
       allocate ( BOUNDARY(ng) % ai_east(LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+XYsize
       allocate ( BOUNDARY(ng) % ai_south(LBi:UBi) )
+      Dmem(ng)=Dmem(ng)+XYsize
       allocate ( BOUNDARY(ng) % ai_north(LBi:UBi) )
+      Dmem(ng)=Dmem(ng)+XYsize
 
 # ifndef ANA_AIOBC
       IF (LBC(iwest,isAice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % aiG_west(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*XYsize
       END IF
       IF (LBC(ieast,isAice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % aiG_east(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*XYsize
       END IF
       IF (LBC(isouth,isAice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % aiG_south(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*XYsize
       END IF
       IF (LBC(inorth,isAice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % aiG_north(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*XYsize
       END IF
 # endif
 
       allocate ( BOUNDARY(ng) % hi_west(LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+XYsize
       allocate ( BOUNDARY(ng) % hi_east(LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+XYsize
       allocate ( BOUNDARY(ng) % hi_south(LBi:UBi) )
+      Dmem(ng)=Dmem(ng)+XYsize
       allocate ( BOUNDARY(ng) % hi_north(LBi:UBi) )
+      Dmem(ng)=Dmem(ng)+XYsize
 
 # ifndef ANA_HIOBC
       IF (LBC(iwest,isHice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % hiG_west(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*XYsize
       END IF
       IF (LBC(ieast,isHice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % hiG_east(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*XYsize
       END IF
       IF (LBC(isouth,isHice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % hiG_south(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*XYsize
       END IF
       IF (LBC(inorth,isHice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % hiG_north(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*XYsize
       END IF
 # endif
 
       allocate ( BOUNDARY(ng) % hsn_west(LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+XYsize
       allocate ( BOUNDARY(ng) % hsn_east(LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+XYsize
       allocate ( BOUNDARY(ng) % hsn_south(LBi:UBi) )
+      Dmem(ng)=Dmem(ng)+XYsize
       allocate ( BOUNDARY(ng) % hsn_north(LBi:UBi) )
+      Dmem(ng)=Dmem(ng)+XYsize
 
 # ifndef ANA_HSNOBC
       IF (LBC(iwest,isHsno,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % hsnG_west(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+XYsize
       END IF
       IF (LBC(ieast,isHsno,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % hsnG_east(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+XYsize
       END IF
       IF (LBC(isouth,isHsno,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % hsnG_south(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+XYsize
       END IF
       IF (LBC(inorth,isHsno,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % hsnG_north(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+XYsize
       END IF
 # endif
 
       IF (LBC(iwest,isTice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ti_west(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(ieast,isTice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ti_east(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(isouth,isTice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ti_south(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
       IF (LBC(inorth,isTice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ti_north(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 
 # ifndef ANA_TIOBC
       IF (LBC(iwest,isTice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tiG_west(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(ieast,isTice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tiG_east(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(isouth,isTice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tiG_south(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
       IF (LBC(inorth,isTice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % tiG_north(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 # endif
 
 # ifdef MELT_PONDS
       allocate ( BOUNDARY(ng) % apond_west(LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+Ysize
       allocate ( BOUNDARY(ng) % apond_east(LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+Ysize
       allocate ( BOUNDARY(ng) % apond_south(LBi:UBi) )
+      Dmem(ng)=Dmem(ng)+Xsize
       allocate ( BOUNDARY(ng) % apond_north(LBi:UBi) )
+      Dmem(ng)=Dmem(ng)+Xsize
       allocate ( BOUNDARY(ng) % hpond_west(LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+Ysize
       allocate ( BOUNDARY(ng) % hpond_east(LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+Ysize
       allocate ( BOUNDARY(ng) % hpond_south(LBi:UBi) )
+      Dmem(ng)=Dmem(ng)+Xsize
       allocate ( BOUNDARY(ng) % hpond_north(LBi:UBi) )
+      Dmem(ng)=Dmem(ng)+Xsize
 
 #  ifndef ANA_SFWATOBC
       IF (LBC(iwest,isApond,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % apondG_west(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(ieast,isApond,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % apondG_east(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(isouth,isApond,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % apondG_south(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
       IF (LBC(inorth,isApond,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % apondG_north(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
       IF (LBC(iwest,isHpond,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % hpondG_west(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(ieast,isHpond,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % hpondG_east(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(isouth,isHpond,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % hpondG_south(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
       IF (LBC(inorth,isHpond,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % hpondG_north(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 #  endif
 # endif
 
       allocate ( BOUNDARY(ng) % sig11_west(LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+Ysize
       allocate ( BOUNDARY(ng) % sig11_east(LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+Ysize
       allocate ( BOUNDARY(ng) % sig11_south(LBi:UBi) )
+      Dmem(ng)=Dmem(ng)+Xsize
       allocate ( BOUNDARY(ng) % sig11_north(LBi:UBi) )
+      Dmem(ng)=Dmem(ng)+Xsize
 
 # ifndef ANA_SIG11OBC
       IF (LBC(iwest,isSig11,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % sig11G_west(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(ieast,isSig11,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % sig11G_east(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(isouth,isSig11,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % sig11G_south(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
       IF (LBC(inorth,isSig11,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % sig11G_north(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 # endif
 
       allocate ( BOUNDARY(ng) % sig22_west(LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+Ysize
       allocate ( BOUNDARY(ng) % sig22_east(LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+Ysize
       allocate ( BOUNDARY(ng) % sig22_south(LBi:UBi) )
+      Dmem(ng)=Dmem(ng)+Xsize
       allocate ( BOUNDARY(ng) % sig22_north(LBi:UBi) )
+      Dmem(ng)=Dmem(ng)+Xsize
 
 # ifndef ANA_SIG22OBC
       IF (LBC(iwest,isSig22,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % sig22G_west(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(ieast,isSig22,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % sig22G_east(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(isouth,isSig22,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % sig22G_south(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
       IF (LBC(inorth,isSig22,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % sig22G_north(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 # endif
 
       allocate ( BOUNDARY(ng) % sig12_west(LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+Ysize
       allocate ( BOUNDARY(ng) % sig12_east(LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+Ysize
       allocate ( BOUNDARY(ng) % sig12_south(LBi:UBi) )
+      Dmem(ng)=Dmem(ng)+Xsize
       allocate ( BOUNDARY(ng) % sig12_north(LBi:UBi) )
+      Dmem(ng)=Dmem(ng)+Xsize
 
 # ifndef ANA_SIG12OBC
       IF (LBC(iwest,isSig12,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % sig12G_west(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(ieast,isSig12,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % sig12G_east(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(isouth,isSig12,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % sig12G_south(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
       IF (LBC(inorth,isSig12,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % sig12G_north(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 # endif
 
       IF (LBC(iwest,isUice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ui_west(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(ieast,isUice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ui_east(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(isouth,isUice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ui_south(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
       IF (LBC(inorth,isUice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % ui_north(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 
 # ifndef ANA_MIOBC
       IF (LBC(iwest,isUice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % uiG_west(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(ieast,isUice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % uiG_east(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(isouth,isUice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % uiG_south(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
       IF (LBC(inorth,isUice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % uiG_north(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 # endif
 
       IF (LBC(iwest,isVice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % vi_west(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(ieast,isVice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % vi_east(LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(isouth,isVice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % vi_south(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
       IF (LBC(inorth,isVice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % vi_north(LBi:UBi) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 
 # ifndef ANA_MIOBC
       IF (LBC(iwest,isVice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % viG_west(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(ieast,isVice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % viG_east(LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+Ysize
       END IF
       IF (LBC(isouth,isVice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % viG_south(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
       IF (LBC(inorth,isVice,ng)%acquire) THEN
         allocate ( BOUNDARY(ng) % viG_north(LBi:UBi,2) )
+        Dmem(ng)=Dmem(ng)+Xsize
       END IF
 # endif
 

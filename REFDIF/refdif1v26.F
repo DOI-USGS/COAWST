@@ -32,7 +32,7 @@
       include 'mpif.h'
 
 !c  Define array dimension bounds.
-
+    
 !      include 'param.h'
 
 !c  Internal common blocks.
@@ -73,15 +73,15 @@
       dconv(1)=1.
       dconv(2)=0.30488
       dconv2(1)=1.
-      dconv2(2)=14.594
+      dconv2(2)=14.594    
 
 !c  Read control parameters and reference grid data.
-
+     
       call inref
-
+     
 !c  Read control parameters and initializing wave data.
 
-      if(Master_Start.ge.0)then
+      if(Master_Start.ge.0)then    
         call inwave
         close(1)
       endif
@@ -115,7 +115,7 @@
 !c  For each frequency component specified in |inwave|, |model|
 !c  executes the model throughout the entire grid and then
 !c  reinitializes the model for the next frequency.
-
+    
 !      if(Master_Start.le.0)then
        DO irun=1,45000.*0.04/TI_WAV_OCN
 !jcw - add computations for mct exchanged data
@@ -140,7 +140,7 @@
 
       call finalize_ocean_coupling('normal end')
 
-!c  All done.  Close output data files if |open| and |close| statements are
+!c  All done.  Close output data files if |open| and |close| statements are 
 !c  being used.
 
 !c  Log file.
@@ -216,14 +216,14 @@
 
       end subroutine REFDIF_FINALIZE
 
-
+  
       subroutine inref
-
+  
 #include "param.h"
 #include "common.h"
 #include "pass.h"
 !      include 'param.h'
-
+        
 !      include 'common.h'
 
 !      include 'pass.h'
@@ -240,11 +240,11 @@
      &                dyr, dt, ispace, nd, iff, isp, iinput, ioutput
 
       namelist/inmd/  md
-
+ 
       if(Master_Start.ge.0)then
 
 !c Constants.
-
+  
       g=9.80621
 
 !c Specify name of namelist data file.
@@ -327,18 +327,18 @@
       if(fname26.ne.' ') open(27, file=fname26)
 
 !c print headers on output
-
+    
       write(5,120)
-
+        
       write(5,106)
-
+  
       if(Master_Start.ge.0)then
 
 !c Read control data from unit 1.
 
       read(1,nml=ingrid)
 
-
+  
       if(ispace.eq.1) read(1,nml=inmd)
 !       mr=74
 !       nr=92
@@ -354,7 +354,7 @@
       if(iu.eq.1) write(5,114) iu
       if(iu.eq.2) write(5,115) iu
 
-      if(icur.eq.0) write(5,200)
+      if(icur.eq.0) write(5,200) 
       if(icur.eq.1) write(5,201)
 
       if(ibc.eq.0) write(5,202)
@@ -368,9 +368,9 @@
       if(ntype.eq.0) write(5,110)
       if(ntype.eq.1) write(5,111)
       if(ntype.eq.2) write(5,112)
-
+  
 !c Check input from unit 1.
-
+  
       if((mr.gt.ixr).or.(nr.gt.iyr)) then
         write(5,*) 'dimensions for reference grid too large, stopping'
 !c       call exit(1) ! not good for intel compiler
@@ -415,9 +415,9 @@
         ur(i,j)=Intp_U_Wave(i,j)
         vr(i,j)=Intp_V_Wave(i,j)
  7    continue
-
+ 
 !c Check for large depth changes and large currents in reference grid data.
-
+  
       do 8 i=2,mr-1
       do 8 j=2,nr-1
       dcheck=(dr(i+1,j)+dr(i-1,j)+dr(i,j-1)+dr(i,j+1))/4.
@@ -433,9 +433,9 @@
  9    continue
 
       endif
-
+    
 !c Establish coordinates for reference grid.
-
+    
       do 10 ir=1,mr
       xr(ir)=dfloat(ir-1)*dxr
  10   continue
@@ -443,39 +443,39 @@
       do 11 jr=1,nr
       yr(jr)=dfloat(jr-1)*dyr
  11   continue
-
+    
 !c Establish |y| coordinates for interpolated grid.
-
+    
       n=nd*(nr-1)+1
       dy=dyr/dfloat(nd)
 
       do 12 j=1,n
       y(j)=dfloat(j-1)*dy
  12   continue
-
+       
 !c Check friction values.
-
+ 
 !c        |iff(1)=1|, turbulent boundary layer damping everywhere
 
 !c        |iff(2)=1|, porous bottom damping everywhere
 
 !c        |iff(3)=1|, laminar boundary layer damping everywhere
-
+      
       do 13 i=1,3
       if((iff(i).ne.0).and.(iff(i).ne.1)) iff(i)=0
  13   continue
 
       write(5,116)(iff(i),i=1,3)
 
-!c Specify whether or not user specified subgrids are to be read in during
+!c Specify whether or not user specified subgrids are to be read in during 
 !c model operation.
 
 !c    |isp=0|, no subgrids specified
 
 !c    |isp=1|, subgrids to be read in later from unit 3.
-
+      
       if(isp.eq.0) write(5,117)
-
+      
       if(isp.eq.1) then
       write(5,118)
       open(unit=3,file=fname3)
@@ -499,9 +499,9 @@
  15   continue
 
       endif
-
+    
 !c Input done, return to main program.
-
+    
       return
 
  100  format(15i4)
@@ -565,7 +565,7 @@
 
       end subroutine
 
-
+    
 
       subroutine inwave
 
@@ -581,7 +581,7 @@
       namelist /waves1a/ iwave, nfreqs
       namelist /waves1b/ update_interval,num_data,                      &
      &          freqs, tide, nwavs, amp, dir
-      namelist /waves1c/ thet0, freqs, tide, edens, nwavs, nseed
+      namelist /waves1c/ thet0, freqs, tide, edens, nwavs, nseed     
       namelist /waves2/ freqin, tidein
 
        real*8 dis(numdata)
@@ -589,10 +589,10 @@
        integer i,j
 
       pi=3.1415927
-
-!c Values of |iinput|, |ioutput| already entered in namelist statement in
+    
+!c Values of |iinput|, |ioutput| already entered in namelist statement in 
 !c |inref|.
-
+    
       if((iinput.ne.1).and.(iinput.ne.2))then
       write(5,*)' invalid value chosen for iinput, check indat.dat'
       stop
@@ -605,16 +605,16 @@
 
       if(iinput.eq.1)then
       write(5,*)' iinput = 1, program specifies initial row of a'
-
+    
 !c Enter |iwave|, |nfreqs| for |iinput = 1|.
 
       read(1, nml=waves1a)
-
+    
       write(5,102)
 
 !c Enter data for case of |iinput=1, iwave=1|.
 
-      if(iwave.eq.1) then
+      if(iwave.eq.1) then 
 
       read(1, nml=waves1b)
       write(5,103)
@@ -624,7 +624,7 @@
 !c Enter data for case of |iinput=1, iwave=2|.
 
       if(iwave.eq.2) then
-
+    
       read(1, nml=waves1c)
       write(5,104)
 
@@ -637,7 +637,7 @@
       endif
 
 !c For each frequency, enter the wave period and tidal offset.
-
+    
       do 3 ifreq=1,nfreqs
 
       do itime=1,num_data
@@ -648,9 +648,9 @@
 
       freqs(ifreq,itime)=2.*pi/freqs(ifreq,itime)
       tide(ifreq)=tide(ifreq)*dconv(iu)
-
+    
 !c If |iwave = 1|, read the number of discrete components.
-
+    
       if(iwave.eq.1) then
 
       do 1 iwavs=1,nwavs(ifreq)
@@ -664,9 +664,9 @@
       endif
 
       enddo
-
+    
 !c If |iwave = 2|, read the parameters for each frequency.
-
+    
       if(iwave.eq.2)then
 
       seed=dfloat(nseed)/9999.
@@ -678,9 +678,9 @@
  3    continue
 
       endif
-
+    
 !c If |iinput = 2|, read in wave period and tidal offset.
-
+    
       if(iinput.eq.2)then
 
       read(1,nml=waves2)
@@ -703,7 +703,7 @@
         num_total=int(total_time/(Master_dt*N_Interval_CallWave))
 
         if(num_total.lt.1) num_total=1
-
+    
         print*,'total number of wave updated =', num_total
 
       if(num_total.ge.numdata)then
@@ -712,7 +712,7 @@
 
       do ire=1,num_data
         dis(ire)=freqs(1,ire)
-      enddo
+      enddo 
 
       do ire=1,num_total
         between=(Master_dt*N_Interval_CallWave)*ire                     &
@@ -731,7 +731,7 @@
 
       do ire=1,num_data
         dis(ire)=amp(1,ire)
-      enddo
+      enddo 
 
       do ire=1,num_total
         between=(Master_dt*N_Interval_CallWave)*ire                     &
@@ -750,7 +750,7 @@
 
       do ire=1,num_data
         dis(ire)=dir(1,ire)
-      enddo
+      enddo 
 
       do ire=1,num_total
         between=(Master_dt*N_Interval_CallWave)*ire                     &
@@ -781,8 +781,8 @@
      &n=',i2,' seed number =',i5)
 
       end subroutine
-
-
+  
+ 
       subroutine model
 
 !      include 'param.h'
@@ -801,7 +801,7 @@
 !C DON't THINK THESE ARE NEEDED
 
       real*8 sxy(iy),sxx(iy),syy(iy)
-
+  
 !c Constants.
 
       g=9.80621
@@ -810,17 +810,17 @@
       eps=1.0e-05
 
 !c find updated wave information
-
+     
 !      itime=max(1.,Time_Master/(N_Interval_CallWave*Master_dt))
 !      itime=min(itime,num_total)
 !jcw with kh set itime = 1
       itime=1
       print*,'wave itime =', itime, '  height=',2*amp(1,itime)
-
+   
 !c Execute model once for each frequency.
 
 !c    |ifreq| is the controlling index value.
-
+    
       do 200 ifreq=1,nfreqs
       psibar=0.
       write(5,203) ifreq
@@ -836,15 +836,15 @@
       write(5,*)' window half-width = ', nrs
 
       endif
-
+    
 !c Specify initial nonlinear parameters for each run.
-
+    
       if(ntype.eq.0) an=0.
       if(ntype.ne.0) an=1.
       if(ntype.ne.2) anl=0.
       if(ntype.eq.2) anl=1.
 
-!c Calculate the mean |kb| on the first row, for use in
+!c Calculate the mean |kb| on the first row, for use in 
 !c specifying initial conditions.
 
       npts=0
@@ -877,17 +877,17 @@
  10   continue
 
       kb(1)=sumk/dfloat(npts)
-
+    
 !c Establish initial wave conditions for the |ifreq| frequency
-
+    
       if(iinput.eq.1)then
-
+    
 !c Compute wave from data given in |indat.dat|.
-
+    
       if(iwave.eq.1) then
-
+      
 !c |iwave.eq.1|, discrete components specified.
-
+   
       do 3 j=1,n
       a(1,j)=dcmplx(0.,0.)
 
@@ -908,9 +908,9 @@
         enddo
 
       else
-
+      
 !c |iwave.eq.2|, directional spreading model (not recommended).
-
+      
       sp=dfloat(nwavs(ifreq))
       nsp=nwavs(ifreq)
       thmax=pi/4.
@@ -920,9 +920,9 @@
       ii=(nn-1)/2+1
 !      seed=rand1(seed)
       seed=rand1(seed)     !jcw
-
+    
 !c Compute randomly distributed $\Delta\theta$'s.
-
+    
       sum0=0.
       do 12 i=1,nn
       seed=rand1(seed)
@@ -955,9 +955,9 @@
  7    continue
       endif
       endif
-
+    
 !c If |iinput=2|, read |a| from data file |fname4|.
-
+    
       if(iinput.eq.2)then
       open(4,file=fname4)
       read(4,*)(a(1,j),j=1,n)
@@ -1029,7 +1029,7 @@
 
 
         endif
-
+      
 !c Store first row of wave heights on unit   CHECK UNIT 12.
 
       if(fname6.ne.' ')then
@@ -1055,36 +1055,36 @@
       write(9,*) (dble(a(1,j)),j=1,n)
 
       endif
-
+    
 !c Now execute model for the |ifreq| frequency over each of |mr|
 !c grid blocks.  |ir| is the controlling index value.
-
+      
       do 100 ir=1,(mr-1)
-
+      
 !c Establish interpolated grid block for segment |ir|.
-
+      
       call grid(ifreq,ir)
-
+  
 !c If |ir=1| write initial values on |iun(3)|.
-
+  
       if(ir.eq.1) then
 
       write(5,201) x(1)/dconv(iu),psibar
 
       endif
-
+      
 !c Calculate constants for each grid block.
-
+      
       call con(ifreq,ir)
-
+     
 !c Perform finite difference calculations.
-
+      
       call fdcalc(ifreq,ir)
-
+      
 !c Grid block |ir| done, print output and go to next grid.
 
 
- 100  continue
+ 100  continue 
 
       if(ioutput.eq.2)then
       write(20,*)(a(m,j),j=1,n)
@@ -1105,14 +1105,14 @@
         Pass_period=2.*pi/freqs(1,itime)
 
       call calculate_wave_forcing
-
-!c Model complete for the |ifreq| frequency component, go to the next frequency
+      
+!c Model complete for the |ifreq| frequency component, go to the next frequency 
 !c component.
-
+      
  200  continue
-
+      
 !c  Runs completed for all frequencies.  Return to end of main program.
-
+      
       return
 
  201  format(' x=',f10.2,'  psibar=',f20.4)
@@ -1124,7 +1124,7 @@
 
 
       subroutine grid(ifreq,ir)
-
+    
 !      include 'param.h'
 
 !      include 'common.h'
@@ -1163,13 +1163,13 @@
      &+(yr(jj)*vr(ir,jj-1)-yr(jj-1)*vr(ir,jj))/dyr
  11   continue
  12   continue
-
+    
 !c Set number of $x$ points and define $x$ values.
-
+    
       if(ispace.eq.0) then
-
+      
 !c |ispace=0|, program sets subdivisions.
-
+  
       do 13 j=1,n
       dref=d(1,j)+tide(ifreq)
       if(dref.lt.0.001) dref=0.001
@@ -1194,9 +1194,9 @@
       if(np.gt.(ix-1)) write(5,100) ir
 
       endif
-
+    
 !c    |ispace=1|, user specified subdivision.
-
+    
       m=md(ir)+1
       dx=dxr/dfloat(md(ir))
       do 15 i=1,m
@@ -1204,7 +1204,7 @@
  15   continue
 
 !c    interpolate values on |m| row.
-
+    
       do 16 j=1,n,nd
       d(m,j)=dr(ir+1,((j-1)/nd+1))!+Intp_eta_Wave(ir+1,((j-1)/nd+1))
       u(m,j)=ur(ir+1,((j-1)/nd+1))
@@ -1224,18 +1224,18 @@
      &+(yr(jj)*vr(ir+1,jj-1)-yr(jj-1)*vr(ir+1,jj))/dyr
  17   continue
  18   continue
-
+    
 !c Interpolate values in |x|-direction.
-
+    
       do 19 i=2,m-1
       do 19 j=1,n
       d(i,j)=(d(m,j)-d(1,j))*x(i)/dxr+(x(m)*d(1,j)-x(1)*d(m,j))/dxr
       u(i,j)=(u(m,j)-u(1,j))*x(i)/dxr+(x(m)*u(1,j)-x(1)*u(m,j))/dxr
       v(i,j)=(v(m,j)-v(1,j))*x(i)/dxr+(x(m)*v(1,j)-x(1)*v(m,j))/dxr
  19   continue
-
+    
 !c Add in user specified grid subdivisions (read from unit 3).
-
+    
       do 30 jr=1,nr-1
       if(isd(ir,jr).eq.1) then
       js=nd*jr+(1-nd)
@@ -1257,10 +1257,10 @@
       end if
 
  30   continue
-
+    
 !c Add tidal offset to all rows and establish thin film.  Set
 !c current speed to zero in thin film area.
-
+    
       do 20 i=1,m
       do 20 j=1,n
 
@@ -1273,9 +1273,9 @@
       endif
 
  20   continue
-
+    
 !c Interpolation complete, return to |model|.
-
+    
       return
 
  100  format(' model tried to put more spaces than allowed in',         &
@@ -1286,7 +1286,7 @@
 
 
       subroutine con(ifreq,ir)
-
+    
 !      include 'param.h'
 
 !      include 'common.h'
@@ -1298,9 +1298,9 @@
 
       eps=1.0e-05
       g=9.80621
-
+    
 !c Calculate constants.
-
+    
       do 1 i=1,m
       do 1 j=1,n
       call wvnum(d(i,j),u(i,j),freqs(ifreq,itime),k(i,j),eps,icdw,i,j)
@@ -1335,13 +1335,13 @@
  2    continue
 
       endif
-
+  
 !c Calculate the dissipation term |w|.
-
+  
       call diss
-
+  
 !c Calculate the mean |kb| on each row.
-
+  
       do 11 i=1,m
       npts=0
       sumk=0.
@@ -1361,12 +1361,12 @@
       return
 
  100  format('at grid block ',i3,', location i=',i4,', j=',i4,' model   &
-     &found a negative, blocking velocity u=',f8.2,' and reduced it to  &
+     &found a negative, blocking velocity u=',f8.2,' and reduced it to  & 
      &u=', f8.2)
 
       end subroutine
 
-
+  
       subroutine fdcalc(ifreq,ir)
 
 !      include 'param.h'
@@ -1397,7 +1397,7 @@
      &  (dx*((k(i+1,j) +  k(i,j))**2.)*(p(i+1,j) + p(i,j) -             &
      &  (u(i+1,j)**2 +                                                  &
      &  u(i,j)**2) ) )
-
+  
       dv(i,j)=( cg(i+1,j) + u(i+1,j) )/sig(i+1,j) -                     &
      &  (cg(i,j)+u(i,j))/sig(i,j)                                       &
      &  -delta1*dx*( (v(i+1,j+1)/sig(i+1,j+1)) + (v(i,j+1)/sig(i,j+1) ) &
@@ -1411,7 +1411,7 @@
 
       cp1(i,j)=(cg(i+1,j)+u(i+1,j))*dcmplx(1.,dx*(kb(i+1)-a0*k(i+1,j))) &
      &+dcmplx(1.,0.)*(cg(i,j)+u(i,j)+dv(i,j)*(sig(i+1,j)+sig(i,j))/4.)  &
-     &+2.*omeg*dcmplx(0.,1.)*(-b1)*bet(i,j)*(u(i+1,j)+u(i,j))/sig(i+1,j)&
+     &+2.*omeg*dcmplx(0.,1.)*(-b1)*bet(i,j)*(u(i+1,j)+u(i,j))/sig(i+1,j)& 
      &+4.*omeg*(-b1)*dcmplx(0.,1.)*(3.*(u(i+1,j)-u(i,j))/dx+(v(i+1,j+1) &
      &+v(i,j+1)-v(i+1,j-1)-v(i,j-1))/(4.*dy))/(sig(i+1,j)*(k(i+1,j)+    &
      & k(i,j)))                                                         &
@@ -1497,19 +1497,19 @@
 
 
 
-!c Constants defining the paraboli!cmodel angular aperture.
-
+!c Constants defining the paraboli!cmodel angular aperture. 
+     
 !c 70 degree minimax coefficients.
-!c
-!c     a0=0.994733
-!c     a1=-0.890065
+!c   
+!c     a0=0.994733 
+!c     a1=-0.890065  
 !c     b1=-0.451641
 
 !c Pad\'{e} coefficients.
 
-      a0=1.0
-      a1=-0.75
-      b1=-0.25
+      a0=1.0 
+      a1=-0.75 
+      b1=-0.25 
 
 !c Additional constants.
 
@@ -1546,7 +1546,7 @@
       it=1
       ih=1
 
-!c r.h.s. of matrix equation.
+!c r.h.s. of matrix equation. 
 
       rhs(1)=dcmplx(0.,0.)
 
@@ -1563,8 +1563,8 @@
 
       rhs(n)=dcmplx(0.,0.)
 
-!c Return here for iterations.
-
+!c Return here for iterations. 
+  
  2    if(it.eq.1)ii=i
       if(it.eq.2)ii=ip1
 
@@ -1586,7 +1586,7 @@
       ac(n)=-bc(n)
       endif
 
-!c Calculate dissipation in rows where breaking occurs.
+!c Calculate dissipation in rows where breaking occurs. 
 
       do 3 j=1,n
 
@@ -1597,7 +1597,7 @@
 
  3    continue
 
-!c Coefficients for forward row.
+!c Coefficients for forward row. 
 
       do 4 j=2,(n-1)
 
@@ -1615,7 +1615,7 @@
 
  4    continue
 
-!c Update solution one step.
+!c Update solution one step. 
 
       call ctrida(1,n,ac,bc,cc,rhs,sol)
       do 5 j=1,n
@@ -1626,7 +1626,7 @@
 
 !c     write(*,*)sol(6)
 
-!c Check for start or stop of breaking in each row.
+!c Check for start or stop of breaking in each row. 
 
       do 6 j=1,n
       urs(j)=2.*cdabs(a(ip1,j))
@@ -1656,7 +1656,7 @@
 
       ih=2
 
-!c Redo initial calculation if breaking status changes.
+!c Redo initial calculation if breaking status changes. 
 
       if((isave1.eq.1).or.(isave2.eq.1)) go to 2
  8    continue
@@ -1664,10 +1664,10 @@
       it=2
       go to 2
 
- 9    continue
-
-!c For Stokes model alone (|ntype.eq.2|), test to see whether Ursell
-!c parameter is too large.
+ 9    continue 
+ 
+!c For Stokes model alone (|ntype.eq.2|), test to see whether Ursell 
+!c parameter is too large. 
 
       if(ntype.eq.2) then
       do 11 j=1,n
@@ -1682,7 +1682,7 @@
       wb(1,j)=wb(2,j)
  12   continue
 
-!c Calculate reference phase function for surface plotting.
+!c Calculate reference phase function for surface plotting. 
 
       psibar=psibar+(kb(ip1)+kb(i))*dx/2.
 
@@ -1695,7 +1695,7 @@
 
       endif
 
-!c Start filter if breaking is occuring.
+!c Start filter if breaking is occuring. 
 
       do 13 j=1,n
       if(ibr(j).eq.1)ifilt=1
@@ -1704,9 +1704,9 @@
 
  200  continue
 
-!cCalculate wave angles at reference grid rows.   Note:  angles are not well
-!cdefined in a directional, multicomponent sea, or where waves become short
-!ccrested.  This routine was heavily modified by Raul Medina, University of
+!cCalculate wave angles at reference grid rows.   Note:  angles are not well 
+!cdefined in a directional, multicomponent sea, or where waves become short 
+!ccrested.  This routine was heavily modified by Raul Medina, University of 
 !cCantabria. It is further modified by Arun Chawla to take out a one-sided
 !cderivative that introduced an asymmetry bias.
 
@@ -1812,7 +1812,7 @@
 
       if (nd.NE.1) then
 
-      jh = int(nd/2)
+      jh = int(nd/2) 
 
       do j = 1,n,nd
 
@@ -1825,12 +1825,12 @@
             end do
 
             heightb(1) = sqrt( heightb(1)/(jh+1) )
-
+ 
          endif
 
          if (j.eq.n) then
 
-            do jj = n-jh,n
+            do jj = n-jh,n              
                 heightb(n) = heightb(n) + height(jj)**2.
             end do
 
@@ -1848,7 +1848,7 @@
 
          endif
 
-      end do
+      end do  
 
       endif
 
@@ -1897,7 +1897,7 @@
       endif
 
 
-!c Print out |abs(a)| at grid reference points.
+!c Print out |abs(a)| at grid reference points. 
 
       mm1=m-1
       write(5,205) (ir+1),mm1
@@ -1911,7 +1911,7 @@
         do j=1,n,nd
         jj=(j-1)/nd+1
         Pass_Height(ir+1,jj)=heightb(j)
-        enddo
+        enddo     
 
 
 ! --- Pass wave number
@@ -1919,13 +1919,13 @@
         do j=1,n,nd
         jj=(j-1)/nd+1
         Pass_WaveNum(ir+1,jj)=k(m,j)
-        enddo
+        enddo     
 
 !c Wave angles on |angle.dat|.
 
       do 18 j=1,n
       thet(j)=180.*thet(j)/pi
- 18   continue
+ 18   continue      
 
       write(7,203) (thet(j),j=1,n,nd)
 
@@ -1957,13 +1957,13 @@
       write(17,203) (bottomu(m,j)/dconv(iu),j=1,n,nd)
       endif
 
-!c Write out reference grid data on disk file |iun(3)|.
+!c Write out reference grid data on disk file |iun(3)|. 
 
 !c     write(iun(3),*) x(m)/dconv(iu),psibar
 !c     write(iun(3),*)(a(m,j)/dconv(iu),j=1,n,nd)
 
 !c Roll back solution to first grid level.
-
+ 
       do 201 j=1,n
       a(1,j)=a(m,j)
  201  continue
@@ -1982,7 +1982,7 @@
       end subroutine
 
 
-
+  
       subroutine ctrida(ii,l,a,b,c,d,v)
 
 !      include 'param.h'
@@ -1990,9 +1990,9 @@
 
 
       complex*16 a(iy),b(iy),c(iy),d(iy),v(iy),beta(iy),gamma(iy)
-
+  
 !c Compute intermediate vectors |beta| and |gamma|.
-
+  
       beta(ii)=b(ii)
       gamma(ii)=d(ii)/beta(ii)
       iip1=ii+1
@@ -2001,9 +2001,9 @@
       beta(i)=b(i)-a(i)*c(i-1)/beta(i-1)
       gamma(i)=(d(i)-a(i)*gamma(i-1))/beta(i)
  1    continue
-
+  
 !c Compute solution vector |v|.
-
+  
       v(l)=gamma(l)
       last=l-ii
 
@@ -2015,8 +2015,8 @@
       return
 
       end subroutine
-
-
+    
+    
       subroutine diss
 
 !      include 'param.h'
@@ -2037,30 +2037,30 @@
       cp=4.5e-11
       g=9.80621
       pi=3.1415927
-
+    
 !c    Value of |f| here is value assuming $\tau=(f/8)u^{2}$.
 
 !c    $f=4 f_w$ ; $f_w$ is the wave friction factor
 
       f=0.01*4.0
-
+    
       do 1 j=1,n
       do 1 i=1,m
       w(i,j)=dcmplx(0.,0.)
       kd=k(i,j)*d(i,j)
-
+  
 !c    If |iff(1) = 1|, use turbulent boundary layer damping.
-
+  
       if(iff(1).eq.1) w(i,j)=2.*f*cdabs(a(1,j))*sig(i,j)*k(i,j)/        &
      &(sinh(2.*kd)*sinh(kd)*3.*pi)
-
+    
 !c If |iff(2) = 1|, add porous bottom damping.
-
+    
       if(iff(2).eq.1) w(i,j)=w(i,j)+(g*k(i,j)*cp/(nu*(cosh(kd)**2)))    &
      & *dcmplx(1.,0.)
-
+    
 !c  If |iff(3) = 1|, add boundary layer damping.
-
+    
       if(iff(3).eq.1) w(i,j)=w(i,j)+2.*k(i,j)*sig(i,j)*sq(i,j)          &
      &*(1.+(cosh(kd)**2))*dcmplx(1.,-1.)/sinh(2.*kd)
  1    continue
@@ -2068,7 +2068,7 @@
       return
 
       end  subroutine
-
+  
       function rand1(x)
       real*8 x                        !jcw
       ix=int(32767.*x)                !jcw
@@ -2077,7 +2077,7 @@
       rand1=dfloat(irand)/32767.
       return
       end function rand1
-
+    
       function rdfact(xi)
       real*8 xi, prod                       !jcw
       prod=1.
@@ -2092,7 +2092,7 @@
       return
       end function rdfact
 
-      subroutine bnum(in,n,bn)
+      subroutine bnum(in,n,bn)    
       real*8 xt, xin                        !jcw
 !      xin=in
       xin=dfloat(in)                   !jcw
@@ -2104,8 +2104,8 @@
       return
 
       end subroutine
-
-
+    
+    
       subroutine acalc(thmax,nsp,a)
 
       itn=2*nsp
@@ -2123,7 +2123,7 @@
       end subroutine
 
 
-      subroutine wvnum(d,u,s,k,eps,icdw,i,j)
+      subroutine wvnum(d,u,s,k,eps,icdw,i,j)  
 
 !      include 'param.h'
 #include "param.h"
@@ -2204,7 +2204,7 @@
 
 !cuse depth dwf and check for small or negative depths
 !cKAH 7/28/05
-
+        
         do j=1,Ny_wave
         do i=1,nx_wave
         Thetar(i,j)=pi/180.*Pass_Theta(i,j)
@@ -2248,7 +2248,7 @@
 !      write(*,*) 'here 10',j,jump, slope,Depth_wave(index+1,j),dx,index,&
 !     &                                   Depth_wave(index,j)
 
-!cOutside the surfzone
+!cOutside the surfzone 
 	 do i=1,index
             wavenumber = 2.d0*pi/period /pass_c(i,j)
             aux = 2*wavenumber*(dwf(i,j))
@@ -2258,7 +2258,7 @@
             sm  = sm*aux
             sp = .5d0*rho*grav*pass_height(i,j)                         &
      &           *pass_height(i,j)*capg*.125d0
-            pass_sxx(i,j) = costh(i,j)*costh(i,j)*(sm) + sp
+            pass_sxx(i,j) = costh(i,j)*costh(i,j)*(sm) + sp 
             pass_sxy(i,j) = sinth(i,j)*costh(i,j)*(sm)
             pass_syy(i,j) = sinth(i,j)*sinth(i,j)*(sm)  + sp
             pass_massflux(i,j) =grav*pass_height(i,j)*pass_height(i,j)  &
@@ -2309,7 +2309,7 @@
      &           *pass_height(i,j)*pass_height(i,j)
             sp = .5d0*rho*grav*pass_height(i,j)*                        &
      &           pass_height(i,j)*capg*.125d0
-	    pass_sxx(i,j) = costh(i,j)*costh(i,j)*(sm+smrol(i)) + sp
+	    pass_sxx(i,j) = costh(i,j)*costh(i,j)*(sm+smrol(i)) + sp 
 	    pass_sxy(i,j) = sinth(i,j)*costh(i,j)*(sm+smrol(i))
 	    pass_syy(i,j) = sinth(i,j)*sinth(i,j)*(sm+smrol(i))  + sp
             pass_massflux(i,j) = B0*grav*pass_height(i,j)               &
@@ -2343,7 +2343,7 @@
         enddo
         enddo
 
-
+        
         do j=1,ny_wave
            do i=1,nx_wave
            pass_area(i,j)=area(i,j)*pass_height(i,j)**2
@@ -2351,13 +2351,13 @@
         end do
 
 203    format(501(f10.4))
-
+           
 !          open(unit=19,file='ubwave.dat', status='old')
 !        do j=1,ny_wave
 !        read(19,*)(Pass_ubott(i,j),i=nx_wave,1,-1)
 !        end do
 !        close(19)
-
+     
 
 
 
@@ -2379,7 +2379,7 @@
 
 104    format(201(f12.4))
 
-
+       
 
        do j=1,ny_wave
        do i=1,nx_wave
@@ -2387,16 +2387,16 @@
 
 !c         H=pass_height(i,j)
 
-!c       if(H.ge.0.5*ht(i,j).and.i.ge.nx_wave-1)
+!c       if(H.ge.0.5*ht(i,j).and.i.ge.nx_wave-1) 
 !c    .            H=0.5*ht(i,j)
 !c        call orbit7(100,H,ht(i,j),period
 !c    .            ,-dhodxn(i,j),uw)
 
-
+      
          do ii=1,100
             pass_uw(i,j,ii)=pass_ubott(i,j)*sin(pi/50*ii)
 !c           pass_uw(i,j,ii)=uw(ii)
-
+           
          end do
          end do
          end do
@@ -2407,89 +2407,89 @@
 !c--- print sxx sxy and syy, ibrk
 
       if(fname10.ne.'  ') then
-        do i = 1, nx_wave
+        do i = 1, nx_wave 
          write(10,100)(Pass_Sxx(i,j), j=1,ny_wave)
-        end do
+        end do     
+
+        do i = 1, nx_wave 
+         write(11,100)(Pass_Sxy(i,j), j=1,ny_wave ) 
+        end do     
 
         do i = 1, nx_wave
-         write(11,100)(Pass_Sxy(i,j), j=1,ny_wave )
-        end do
-
-        do i = 1, nx_wave
-         write(12,100)(Pass_Syy(i,j), j=1,ny_wave )
-        end do
+         write(12,100)(Pass_Syy(i,j), j=1,ny_wave ) 
+        end do     
 
         endif
 
 !c--- write Fx Fy
 
       if(fname13.ne.'  ') then
-        do i = 1, nx_wave
+        do i = 1, nx_wave 
          write(13,100)(Pass_Wave_Fx(i,j), j=1,ny_wave)
-        end do
+        end do     
 
-        do i = 1, nx_wave
-         write(14,100)(Pass_Wave_Fy(i,j), j=1,ny_wave )
-        end do
+        do i = 1, nx_wave 
+         write(14,100)(Pass_Wave_Fy(i,j), j=1,ny_wave ) 
+        end do     
 
         endif
 
 !c--- write ibrk
 
-      if(fname19.ne.'  ') then
+      if(fname19.ne.'  ') then  
         do i = 1, nx_wave
-         write(19,100)(Pass_ibrk(i,j), j=1,ny_wave )
-        end do
+         write(19,100)(Pass_ibrk(i,j), j=1,ny_wave ) 
+        end do  
        endif
 
 !c--- write Quv
 
-      if(fname15.ne.'  ') then
+      if(fname15.ne.'  ') then  
         do i = 1, nx_wave
-         write(15,100)(Pass_MassFluxU(i,j), j=1,ny_wave )
-        end do
+         write(15,100)(Pass_MassFluxU(i,j), j=1,ny_wave ) 
+        end do  
         do i = 1, nx_wave
-         write(16,100)(Pass_MassFluxV(i,j), j=1,ny_wave )
-        end do
+         write(16,100)(Pass_MassFluxV(i,j), j=1,ny_wave ) 
+        end do  
        endif
 
 !c--- write tb
 
-      if(fname17.ne.'  ') then
+      if(fname17.ne.'  ') then  
         do i = 1, nx_wave
-         write(17,100)(Pass_ubott(i,j), j=1,ny_wave )
-        end do
+         write(17,100)(Pass_ubott(i,j), j=1,ny_wave ) 
+        end do  
       endif
 
 !c--- write local radiation stresses for 3d circ model
 
-       if(fname21.ne.'  ') then
+       if(fname21.ne.'  ') then 
 
         do i = 1, nx_wave
-         write(21,100)(Pass_Sxx_body(i,j), j=1,ny_wave )
-        end do
+         write(21,100)(Pass_Sxx_body(i,j), j=1,ny_wave ) 
+        end do  
         do i = 1, nx_wave
-         write(22,100)(Pass_Sxy_body(i,j), j=1,ny_wave )
-        end do
+         write(22,100)(Pass_Sxy_body(i,j), j=1,ny_wave ) 
+        end do  
         do i = 1, nx_wave
-         write(23,100)(Pass_Syy_body(i,j), j=1,ny_wave )
-        end do
+         write(23,100)(Pass_Syy_body(i,j), j=1,ny_wave ) 
+        end do  
         do i = 1, nx_wave
-         write(24,100)(Pass_Sxx_surf(i,j), j=1,ny_wave )
-        end do
+         write(24,100)(Pass_Sxx_surf(i,j), j=1,ny_wave ) 
+        end do  
         do i = 1, nx_wave
-         write(25,100)(Pass_Sxy_surf(i,j), j=1,ny_wave )
-        end do
+         write(25,100)(Pass_Sxy_surf(i,j), j=1,ny_wave ) 
+        end do  
         do i = 1, nx_wave
-         write(27,100)(Pass_Syy_surf(i,j), j=1,ny_wave )
-        end do
+         write(27,100)(Pass_Syy_surf(i,j), j=1,ny_wave ) 
+        end do  
 
        endif
 
   101  format(501(I3))
-  100  format(501(f10.4))
-
-
+  100  format(501(f10.4)) 
+        
+        
         return
         end subroutine
 
@@ -2498,12 +2498,12 @@
         subroutine spline1(nx,ny,xin,yin,n,y2)
 
 ! --- This subroutine will compute the cubic spline for an array.
-!        include 'pass.h'
+!        include 'pass.h'    
 #include "pass.h"
 
         integer i,j
 
-        real*8 xin(nx_max),yin(nx_max),y2(nx_max),u(nx_max)
+        real*8 xin(nx_max),yin(nx_max),y2(nx_max),u(nx_max)    
 
       y2(1)=0.
       u(1)=0.
@@ -2518,7 +2518,7 @@
       qn=0.
       un=0.
       y2(n)=(un-qn*u(n-1))/(qn*y2(n-1)+1.)
-
+      
       do kk=n-1,1,-1
          y2(kk)=y2(kk)*y2(kk+1)+u(kk)
       end do
@@ -2579,8 +2579,8 @@
 !cDERIVATIVES
       subroutine derivsed(zeta,qx,qy,dzetadx,dzetady,dqxdx,             &
      &                 dqydy,ncode,nxflag,nx,ny,dx,dy)
-!c	LAST MODIFICATION:
-!c	- Sep 15, 1999
+!c	LAST MODIFICATION:						
+!c	- Sep 15, 1999							
 !c#####################################################################
 !CDIR$ FLOW
 
@@ -2609,7 +2609,7 @@
          do j = 1,ny
 	    nxj(j) = nx
          end do
-      end if
+      end if	 
 
 !c##  Calculating the x-derivatives ----------------------------------
 

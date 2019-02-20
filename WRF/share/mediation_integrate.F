@@ -17,7 +17,7 @@ SUBROUTINE med_calc_model_time ( grid , config_flags )
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
 
   ! Local data
-   REAL                                       :: time
+   REAL                                       :: time 
 
 ! this is now handled by with calls to time manager
 !   time = head_grid%dt * head_grid%total_time_steps
@@ -34,7 +34,20 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
    USE module_streams
   ! Model layer
    USE module_utility
+#if (WRFPLUS == 1)
+   USE module_domain    , ONLY : domain_clock_set, get_ijk_from_grid
+   USE module_configure , ONLY : model_config_rec
+   USE mediation_pertmod_io , ONLY : save_tl_pert, read_ad_forcing, save_xtraj, read_xtraj, read_xtraj_reverse
+   USE module_bc_em, ONLY : rk_phys_bc_dry_2
+   USE module_bc, ONLY : set_physical_bc3d
+   USE esmf_timemod, ONLY : ESMF_TimeInc
 
+#ifdef DM_PARALLEL
+   USE module_dm, ONLY : ntasks_x, ntasks_y, &
+        local_communicator, mytask, ntasks
+   USE module_comm_dm, ONLY : halo_em_init_1_sub, halo_em_init_2_sub, halo_em_init_5_sub
+#endif
+#endif
    IMPLICIT NONE
 
   ! Arguments
@@ -50,7 +63,32 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 #endif
 
    CHARACTER*256          :: message
+#if (WRFPLUS == 1)
+   INTEGER                :: ids , ide , jds , jde , kds , kde , &
+                             ims , ime , jms , jme , kms , kme , &
+                             ips , ipe , jps , jpe , kps , kpe, ij, im
+   CHARACTER*80           :: timestr
+   REAL, POINTER :: moist(:,:,:,:), scalar(:,:,:,:), chem(:,:,:,:), tracer(:,:,:,:)
 
+! In WRFPLUS NL run, boundary should be read before save xtraj.
+! - RESTART OUTPUT
+   CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
+   IF ( ( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) .AND. &
+        ( currTime .NE. startTime ) ) THEN
+     IF ( grid%id .EQ. 1 ) THEN
+       ! Only the parent initiates the restart writing. Otherwise, different
+       ! domains may be written out at different times and with different 
+       ! time stamps in the file names.
+       CALL med_restart_out ( grid , config_flags )
+     ENDIF
+     CALL WRFU_AlarmRingerOff( grid%alarms( RESTART_ALARM ), rc=rc )
+   ELSE
+     CALL WRFU_AlarmRingerOff( grid%alarms( RESTART_ALARM ), rc=rc )
+   ENDIF
+
+! - Look for boundary data after writing out history and restart files
+   CALL med_latbound_in ( grid , config_flags )
+#endif
 
  CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
 
@@ -67,14 +105,14 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 
        !  output history at beginning of restart if alarm is ringing
        CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
-
+      
      ELSE IF  ( ( config_flags%restart )                    .AND. &
                 ( .NOT. config_flags%write_hist_at_0h_rst ) .AND. &
                 ( currTime .EQ. startTime )                       ) THEN
        !  we do not do anything
      ELSE
        CALL med_hist_out ( grid , HISTORY_ALARM, config_flags )
-
+       
      END IF
      CALL WRFU_AlarmRingerOff( grid%alarms( HISTORY_ALARM ), rc=rc )
    ELSE IF  ( (config_flags%restart) .AND. ( currTime .EQ. startTime ) .AND. &
@@ -93,6 +131,29 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
      IF ( .FALSE.) THEN
        rc = 1  ! dummy statement
      ELSE IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
+#if (WRFPLUS == 1)
+       IF ( .NOT. grid%trajectory_io ) THEN
+         ! For wrfplus, only allow tl and nl output histoty files.
+         IF ( config_flags%dyn_opt .EQ. dyn_em_tl .OR. config_flags%dyn_opt .EQ. dyn_em ) THEN
+            CALL med_hist_out ( grid , ialarm, config_flags )
+         ENDIF
+       ELSE
+         IF ( ialarm .EQ. auxhist8_only ) THEN ! TL perturbation only
+            CALL domain_clock_get ( grid, current_timestr=message )
+            IF ( config_flags%dyn_opt .EQ. dyn_em_tl .and. .not. config_flags%tl_standalone ) THEN
+               CALL save_tl_pert  ( message )
+            ELSEIF ( config_flags%dyn_opt .EQ. dyn_em_tl .and. config_flags%tl_standalone ) THEN
+               CALL med_hist_out ( grid , ialarm, config_flags )
+            ENDIF
+         ENDIF
+         IF ( ialarm .EQ. auxhist6_only ) THEN ! trajectory only
+            CALL domain_clock_get ( grid, current_timestr=message )
+            IF ( config_flags%dyn_opt .EQ. dyn_em ) THEN
+               CALL save_xtraj  (  message )
+            ENDIF
+         ENDIF
+       ENDIF
+#else
 !----------------------------------------------------------------------
 ! RASM Climate Diagnostics - JR, AS, MS  - October 2016
 !----------------------------------------------------------------------
@@ -106,6 +167,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 !----------------------------------------------------------------------
 ! end RASM Climate Diagnostics
 !----------------------------------------------------------------------
+#endif
        CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
      ENDIF
    ENDDO
@@ -169,14 +231,114 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
        ENDIF
 #endif
      ELSE IF( WRFU_AlarmIsRinging( grid%alarms( ialarm ), rc=rc ) ) THEN
+#if ( WRFPLUS == 1 )
+       IF ( .NOT. grid%trajectory_io ) THEN
+          ! For adjoint integration with disk IO, the basic state is one step before the domain time.
+          IF ( config_flags%dyn_opt .EQ. dyn_em_ad .AND. ialarm .EQ. auxinput6_only  ) THEN
+             grid%domain_clock%clockint%CurrTime =  ESMF_TimeInc (grid%domain_clock%clockint%CurrTime, &
+                                grid%domain_clock%clockint%TimeStep )
+          ENDIF
+          CALL med_auxinput_in ( grid, ialarm, config_flags )
+          IF ( config_flags%dyn_opt .EQ. dyn_em_ad .AND. ialarm .EQ. auxinput6_only ) THEN
+             CALL domain_clock_get( grid, current_time=currTime, start_time=startTime, &
+                                    current_timestr=timestr )
+             WRITE(message, FMT='(A,A)') 'read xtraj from file at time stamp:', TRIM(timestr)
+             CALL wrf_debug ( 1 , message )
+          ENDIF
+          IF ( config_flags%dyn_opt .EQ. dyn_em_ad .AND. ialarm .EQ. auxinput7_only ) THEN
+             CALL domain_clock_get( grid, current_time=currTime, start_time=startTime, &
+                                    current_timestr=timestr )
+             WRITE(message, FMT='(A,A)') 'read ad. forcing from file at time stamp:', TRIM(timestr)
+             CALL wrf_debug ( 1 , message )
+          ENDIF
+          IF ( ( config_flags%dyn_opt .EQ. dyn_em_ad .OR. config_flags%dyn_opt .EQ. dyn_em_tl ) &
+               .AND. ialarm .EQ. auxinput6_only ) THEN
+             CALL get_ijk_from_grid (  grid ,                   &
+                                       ids, ide, jds, jde, kds, kde,    &
+                                       ims, ime, jms, jme, kms, kme,    &
+                                       ips, ipe, jps, jpe, kps, kpe    )
+
+#ifdef DM_PARALLEL
+             moist  => grid%moist
+             scalar => grid%scalar
+             chem   => grid%chem
+             tracer => grid%tracer
+#  include "HALO_EM_INIT_1.inc"
+#  include "HALO_EM_INIT_2.inc"
+#  include "HALO_EM_INIT_5.inc"
+#endif
+             DO ij = 1 , grid%num_tiles
+                CALL rk_phys_bc_dry_2( config_flags,                     &
+                                       grid%u_2, grid%v_2, grid%w_2,     &
+                                       grid%t_2, grid%ph_2, grid%mu_2,   &
+                                       ids, ide, jds, jde, kds, kde,     &
+                                       ims, ime, jms, jme, kms, kme,     &
+                                       ips, ipe, jps, jpe, kps, kpe,     &
+                                       grid%i_start(ij), grid%i_end(ij), &
+                                       grid%j_start(ij), grid%j_end(ij), &
+                                       kps    , kpe               )
+                DO im = PARAM_FIRST_SCALAR , num_moist
+                   CALL set_physical_bc3d( grid%moist(:,:,:,im), 'p', config_flags,   &
+                                           ids, ide, jds, jde, kds, kde,             &
+                                           ims, ime, jms, jme, kms, kme,             &
+                                           ips, ipe, jps, jpe, kps, kpe,             &
+                                           grid%i_start(ij), grid%i_end(ij),         &
+                                           grid%j_start(ij), grid%j_end(ij),         &
+                                           kps    , kpe                       )
+                ENDDO
+                CALL set_physical_bc3d( grid%tke_2 , 'p', config_flags,  &
+                                        ids, ide, jds, jde, kds, kde,            &
+                                        ims, ime, jms, jme, kms, kme,            &
+                                        ips, ipe, jps, jpe, kps, kpe,            &
+                                        grid%i_start(ij), grid%i_end(ij),        &
+                                        grid%j_start(ij), grid%j_end(ij),        &
+                                        kps    , kpe                     )
+
+             ENDDO
+          ENDIF
+       ELSE
+         IF ( ialarm .EQ. auxinput6_only ) THEN ! Read Trajectory only
+           IF ( config_flags%dyn_opt .EQ. dyn_em_ad  ) THEN
+              grid%domain_clock%clockint%CurrTime =  ESMF_TimeInc (grid%domain_clock%clockint%CurrTime, &
+                                grid%domain_clock%clockint%TimeStep )
+           ENDIF
+           CALL domain_clock_get ( grid, current_timestr=message )
+           IF ( config_flags%dyn_opt .EQ. dyn_em_ad ) THEN
+             CALL read_xtraj  ( message )
+           ELSEIF ( config_flags%dyn_opt .EQ. dyn_em_tl ) THEN
+             CALL read_xtraj_reverse  ( message )
+           ENDIF
+         ENDIF
+         IF ( ialarm .EQ. auxinput7_only ) THEN ! Read Adjoint Forcing only
+           CALL domain_clock_get ( grid, current_timestr=message )
+           IF ( config_flags%dyn_opt .EQ. dyn_em_ad ) THEN
+             CALL read_ad_forcing  ( message )
+           ENDIF
+         ENDIF
+       ENDIF
+       IF ( .NOT. grid%trajectory_io ) THEN
+          WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed from aux input ' , &
+             ialarm - first_auxinput + 1, ' for domain ',grid%id
+          CALL wrf_debug ( 1 , message )
+       ENDIF
+       ! Reverse the current time 
+       IF ( config_flags%dyn_opt .EQ. dyn_em_ad .AND. ialarm .EQ. auxinput6_only  ) THEN
+          CALL domain_clock_set( grid, time_step_seconds=model_config_rec%time_step )
+          grid%domain_clock%clockint%CurrTime = ESMF_TimeInc (grid%domain_clock%clockint%CurrTime, &
+                             grid%domain_clock%clockint%TimeStep )
+          CALL domain_clock_set( grid, time_step_seconds=-1*model_config_rec%time_step )
+       ENDIF
+#else
        CALL med_auxinput_in ( grid, ialarm, config_flags )
        WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed for aux input ' , &
           ialarm - first_auxinput + 1, ' for domain ',grid%id
        CALL wrf_debug ( 0 , message )
+#endif
        CALL WRFU_AlarmRingerOff( grid%alarms( ialarm ), rc=rc )
      ENDIF
    ENDDO
 
+#if (WRFPLUS != 1)
 ! - RESTART OUTPUT
    CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
    IF ( ( WRFU_AlarmIsRinging( grid%alarms( RESTART_ALARM ), rc=rc ) ) .AND. &
@@ -191,7 +353,7 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 #endif
      IF ( grid%id .EQ. 1 ) THEN
        ! Only the parent initiates the restart writing. Otherwise, different
-       ! domains may be written out at different times and with different
+       ! domains may be written out at different times and with different 
        ! time stamps in the file names.
        CALL med_restart_out ( grid , config_flags )
      ENDIF
@@ -202,9 +364,58 @@ SUBROUTINE med_before_solve_io ( grid , config_flags )
 
 ! - Look for boundary data after writing out history and restart files
    CALL med_latbound_in ( grid , config_flags )
+#endif
 
    RETURN
 END SUBROUTINE med_before_solve_io
+
+#if (WRFPLUS == 1)
+SUBROUTINE med_last_ad_solve_io ( grid , config_flags )
+  ! Driver layer
+   USE module_state_description
+   USE module_domain	, ONLY : domain, domain_clock_get
+   USE module_configure	, ONLY : grid_config_rec_type
+   USE module_streams
+   USE mediation_pertmod_io , ONLY : read_ad_forcing
+  ! Model layer
+   USE module_utility
+
+   IMPLICIT NONE
+
+  ! Arguments
+   TYPE(domain)                               :: grid
+   TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
+  ! Local
+   INTEGER                                    :: ialarm
+   INTEGER                                    :: rc
+
+   TYPE(WRFU_Time)        :: currTime, startTime
+   CHARACTER*256          :: message
+   CHARACTER*80           :: timestr
+
+   IF( WRFU_AlarmIsRinging( grid%alarms( AUXINPUT7_ALARM ), rc=rc ) ) THEN
+     IF ( .NOT. grid%trajectory_io ) THEN
+        CALL med_auxinput_in ( grid, AUXINPUT7_ALARM, config_flags )
+     ELSE
+        CALL domain_clock_get ( grid, current_timestr=message )
+        CALL read_ad_forcing  ( message )
+     ENDIF
+     IF ( .NOT. grid%trajectory_io ) THEN
+        CALL WRFU_ClockGet( grid%domain_clock, CurrTime=currTime, StartTime=startTime )
+        CALL domain_clock_get( grid, current_time=currTime, start_time=startTime, &
+                               current_timestr=timestr )
+        WRITE(message, FMT='(A,A)') 'read ad. forcing from file at time stamp:', TRIM(timestr)
+        CALL wrf_debug ( 1 , message )
+        WRITE ( message , FMT='(A,i3,A,i3)' )  'Input data processed from aux input ' , &
+             AUXINPUT7_ALARM - first_auxinput + 1, ' for domain ',grid%id
+        CALL wrf_debug ( 1 , message )
+     ENDIF
+     CALL WRFU_AlarmRingerOff( grid%alarms( AUXINPUT7_ALARM ), rc=rc )
+   ENDIF
+
+   RETURN
+END SUBROUTINE med_last_ad_solve_io
+#endif
 
 SUBROUTINE med_after_solve_io ( grid , config_flags )
   ! Driver layer
@@ -222,7 +433,7 @@ SUBROUTINE med_after_solve_io ( grid , config_flags )
    ! Compute time series variables
    CALL calc_ts(grid)
 
-   ! Compute track variables
+   ! Compute track variables 
    CALL track_driver(grid)
 
    RETURN
@@ -236,7 +447,7 @@ SUBROUTINE med_pre_nest_initial ( parent , newid , config_flags )
    USE module_domain    , ONLY : domain
 #endif
 #ifdef ESMFIO
-   USE module_utility   , ONLY : WRFU_Time
+   USE module_utility   , ONLY : WRFU_Time 
 #else
    USE module_utility   , ONLY : WRFU_Time, WRFU_TimeEQ
 #endif
@@ -336,7 +547,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
    TYPE (WRFU_TimeInterval) :: interval, TimeSinceStart
    INTEGER :: vortex_interval , n
 #endif
-   INTEGER                :: save_itimestep ! This is a kludge, correct fix will
+   INTEGER                :: save_itimestep ! This is a kludge, correct fix will 
                                             ! involve integrating the time-step
                                             ! counting into the time manager.
                                             ! JM 20040604
@@ -468,7 +679,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                ids, ide, jds, jde, kds, kde,    &
                                ims, ime, jms, jme, kms, kme,    &
                                ips, ipe, jps, jpe, kps, kpe    )
-
+  
 ! get the nest config flags
      CALL model_to_grid_config_rec ( nest%id , model_config_rec , nest_config_flags )
 
@@ -592,7 +803,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
 #if defined(DM_PARALLEL) && ! defined(STUBMPI)
      CALL push_communicators_for_domain( parent%id )
-     CALL MPI_Barrier( local_communicator, ierr )
+     CALL MPI_Barrier( local_communicator, ierr )     
      CALL pop_communicators_for_domain
 #endif
 
@@ -603,7 +814,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
                                ids, ide, jds, jde, kds, kde,    &
                                ims, ime, jms, jme, kms, kme,    &
                                ips, ipe, jps, jpe, kps, kpe    )
-
+  
      ALLOCATE( save_acsnow(ims:ime,jms:jme) )
      ALLOCATE( save_acsnom(ims:ime,jms:jme) )
      ALLOCATE( save_cuppt(ims:ime,jms:jme) )
@@ -701,7 +912,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      IF ( ( interval * n ) .NE. TimeSinceStart ) THEN
        CALL wrf_message('WARNING: Restart is not on a vortex_interval time boundary.')
        CALL wrf_message('The code will work but results will not agree exactly with a ')
-       CALL wrf_message('a run that was done straight-through, without a restart.')
+       CALL wrf_message('a run that was done straight-through, without a restart.') 
      ENDIF
 !! In case of a restart, assume that the movement has already occurred in the previous
 !! run and turn off the alarm for the starting time. We must impose a requirement that the
@@ -730,7 +941,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      n = WRFU_TimeIntervalDIVQuot( TimeSinceStart , interval )
      IF ( ( interval * n ) .EQ. TimeSinceStart ) THEN
        CALL WRFU_AlarmRingerOn( nest%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
-     ELSE
+     ELSE 
        CALL WRFU_AlarmRingerOff( nest%alarms( COMPUTE_VORTEX_CENTER_ALARM ), rc=rc )
      ENDIF
 #  endif
@@ -750,7 +961,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
      SUBROUTINE med_nest_egrid_configure ( parent , nest )
         USE module_domain       , ONLY : domain
         TYPE(domain) , POINTER                 :: parent , nest
-     END SUBROUTINE med_nest_egrid_configure
+     END SUBROUTINE med_nest_egrid_configure 
 
      SUBROUTINE med_construct_egrid_weights ( parent , nest )
         USE module_domain       , ONLY : domain
@@ -825,13 +1036,13 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 #endif
 
 !----------------------------------------------------------------------------
-!  initialize nested domain configurations including setting up wbd,sbd, etc
+!  initialize nested domain configurations including setting up wbd,sbd, etc 
 !----------------------------------------------------------------------------
 
    CALL med_nest_egrid_configure ( parent , nest )
 
 !-------------------------------------------------------------------------
-!  initialize lat-lons and determine weights
+!  initialize lat-lons and determine weights 
 !-------------------------------------------------------------------------
 
     CALL med_construct_egrid_weights ( parent, nest )
@@ -842,7 +1053,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 !  From the hybrid, construct the GPMs on isobaric surfaces and then interpolate those
 !  values on to the nested domain. 23 standard prssure levels are assumed here. For
 !  levels below ground, lapse rate atmosphere is assumed before the use of vertical
-!  spline interpolation
+!  spline interpolation 
 !
 
 
@@ -876,7 +1087,7 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
     !                          IMS,IME,JMS,JME,KMS,KME,                                       &
     !                          IPS,IPE,JPS,JPE,KPS,KPE                                        )
 
-!
+!  
 !   Set new terrain. Since some terrain adjustment is done within the interpolation calls
 !   at the next step, the new terrain over the nested domain has to be called here.
 !
@@ -937,10 +1148,10 @@ SUBROUTINE med_nest_initial ( parent , nest , config_flags )
 
 ! initialize nest with interpolated data from the parent
 
-      nest%imask_nostag = 0
-      nest%imask_xstag  = 0
-      nest%imask_ystag  = 0
-      nest%imask_xystag = 0
+      nest%imask_nostag = 0 
+      nest%imask_xstag  = 0 
+      nest%imask_ystag  = 0 
+      nest%imask_xystag = 0 
     ENDIF
 
 #if ( HWRF == 1 )
@@ -980,7 +1191,7 @@ write(0,*)__FILE__,__LINE__
     CALL med_init_domain_constants_nmm ( parent, nest )
 
 !--------------------------------------------------------------------------------------
-! set some other initial fields, fill out halos, etc.
+! set some other initial fields, fill out halos, etc. 
 !--------------------------------------------------------------------------------------
 
     IF ( nest%active_this_task) THEN
@@ -988,17 +1199,17 @@ write(0,*)__FILE__,__LINE__
       CALL start_domain ( nest, .TRUE.)
       CALL pop_communicators_for_domain
     ENDIF
-
+    
 
 #if ( HWRF == 1 )
 !zhang's doing: else for analysis or restart option
 
 !zhang test
-    CALL nl_set_isice ( nest%id , config_flags%isice )
-    CALL nl_set_isoilwater ( nest%id , config_flags%isoilwater )
-    CALL nl_set_isurban ( nest%id , config_flags%isurban )
-    CALL nl_set_gmt    ( nest%id , config_flags%gmt    )
-    CALL nl_set_julyr (nest%id, config_flags%julyr)
+    CALL nl_set_isice ( nest%id , config_flags%isice )   
+    CALL nl_set_isoilwater ( nest%id , config_flags%isoilwater )   
+    CALL nl_set_isurban ( nest%id , config_flags%isurban )   
+    CALL nl_set_gmt    ( nest%id , config_flags%gmt    )   
+    CALL nl_set_julyr (nest%id, config_flags%julyr)       
     CALL nl_set_julday ( nest%id , config_flags%julday )
 !zhang test ends
     IF ( nest%active_this_task) THEN
@@ -1249,7 +1460,7 @@ SUBROUTINE med_nest_feedback ( parent , nest , config_flags )
           parent%nest_pos(i,j) = parent%ht(i,j)*1.5 + 1000.
         ELSE IF ( parent%ht(i,j) .NE. 0. ) THEN
           parent%nest_pos(i,j) = parent%ht(i,j) + 500.
-        ELSE
+        ELSE 
           parent%nest_pos(i,j) = 0.
         ENDIF
       ENDDO
@@ -1269,6 +1480,9 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
    USE module_configure , ONLY : grid_config_rec_type
    USE module_utility
    USE module_streams
+#if ( WRFPLUS == 1 )
+   USE mediation_pertmod_io , ONLY : save_xtraj, save_tl_pert
+#endif
   ! Model layer
 
    IMPLICIT NONE
@@ -1278,6 +1492,7 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
    TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
   ! Local
    INTEGER                                    :: rc
+   CHARACTER*256                              :: message
 #if ( HWRF == 1 )
 !zhang's doing
    TYPE(WRFU_Time) :: CurrTime  !zhang new
@@ -1299,7 +1514,7 @@ SUBROUTINE med_last_solve_io ( grid , config_flags )
      CALL med_filter_out  ( grid , config_flags )
    ENDIF
 
-! registry-generated file of the following
+! registry-generated file of the following 
 !   IF( WRFU_AlarmIsRinging( grid%alarms( AUXHIST1_ALARM ), rc=rc ) ) THEN
 !     CALL med_hist_out ( grid , AUXHIST1_ALARM , config_flags )
 !   ENDIF
@@ -1480,7 +1695,7 @@ SUBROUTINE med_analysis_out ( grid , config_flags )
    RETURN
 END SUBROUTINE med_analysis_out
 
-#endif
+#endif 
 
 RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
   ! Driver layer
@@ -1539,7 +1754,7 @@ RECURSIVE SUBROUTINE med_restart_out ( grid , config_flags )
    DO kid = 1, max_nests
       IF ( ASSOCIATED( grid%nests(kid)%ptr ) ) THEN
         CALL model_to_grid_config_rec ( grid%nests(kid)%ptr%id , model_config_rec , kid_config_flags )
-        CALL med_restart_out ( grid%nests(kid)%ptr , kid_config_flags )
+        CALL med_restart_out ( grid%nests(kid)%ptr , kid_config_flags ) 
       ENDIF
    ENDDO
 
@@ -1727,7 +1942,7 @@ SUBROUTINE med_hist_out ( grid , stream, config_flags )
        IF ( grid%nframes(stream) >= config_flags%frames_per_outfile ) THEN
 write(0,*)__FILE__,__LINE__,trim(n2)
 write(0,*)__FILE__,__LINE__,' grid%id ',grid%id,' grid%oid ',grid%oid
-         CALL close_dataset ( grid%oid , config_flags , n2 )
+         CALL close_dataset ( grid%oid , config_flags , n2 ) 
          grid%oid = 0
          grid%nframes(stream) = 0
        ENDIF
@@ -1910,9 +2125,9 @@ integer myproc,i,j,k
                                   time_step=stepTime )
 
 !jm 20110828
-!jm The test below never worked because set_time_time_read_again is never called to store a
-!jm time that lbc_read_time can compare with currentTime (see module_bc_time_utilities). This means
-!jm lbc_read_time will never return anything but false -- will also generate an ESMF error that the
+!jm The test below never worked because set_time_time_read_again is never called to store a 
+!jm time that lbc_read_time can compare with currentTime (see module_bc_time_utilities). This means 
+!jm lbc_read_time will never return anything but false -- will also generate an ESMF error that the 
 !jm stored time was never initialized.  Removing that branch from the conditional.
 !jm     IF ( ( lbc_read_time( currentTime ) ) .AND. &
 !jm          ( currentTime + stepTime .GE. stopTime ) .AND. &
@@ -1935,7 +2150,7 @@ integer myproc,i,j,k
        CALL construct_filename2a ( bdyname , config_flags%bdy_inname , grid%id , 2 , " " )
 #endif
 
-       CALL wrf_inquire_opened(grid%lbc_fid , TRIM(bdyname) , open_status , ierr )
+       CALL wrf_inquire_opened(grid%lbc_fid , TRIM(bdyname) , open_status , ierr ) 
        IF ( open_status .EQ. WRF_FILE_OPENED_FOR_READ ) THEN
          lbc_opened = .TRUE.
        ELSE
@@ -1969,22 +2184,49 @@ integer myproc,i,j,k
 ! #endif
 
        CALL domain_clock_get( grid, current_time=currentTime )
+#if ( WRFPLUS == 1 )
+       IF ( config_flags%dyn_opt .NE. dyn_em_ad ) THEN
+          DO WHILE (currentTime .GE. grid%next_bdy_time )         ! next_bdy_time is set by input_boundary from bdy file
+             CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
+             CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
+          ENDDO
+       ELSE
+          DO WHILE (currentTime .GT. grid%next_bdy_time )         ! next_bdy_time is set by input_boundary from bdy file
+             CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
+             CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
+          ENDDO
+       ENDIF
+#else
        DO WHILE (currentTime .GE. grid%next_bdy_time )         ! next_bdy_time is set by input_boundary from bdy file
          CALL wrf_debug( 100 , 'med_latbound_in: calling input_boundary ' )
          CALL input_boundary ( grid%lbc_fid, grid , config_flags , ierr )
        ENDDO
+#endif
 #ifdef _MULTI_BDY_FILES_
        ! Close the bdy file so that next time around, we'll open it again.
        CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
 #endif
+#if ( WRFPLUS == 1 )
+       IF ( config_flags%dyn_opt .NE. dyn_em_ad ) THEN
+          CALL WRFU_AlarmSet( grid%alarms( BOUNDARY_ALARM ), RingTime=grid%next_bdy_time, rc=rc )
+       ELSE
+          CALL WRFU_AlarmSet( grid%alarms( BOUNDARY_ALARM ), RingTime=grid%this_bdy_time, rc=rc )
+          CALL wrf_inquire_opened(grid%lbc_fid , TRIM(bdyname) , open_status , ierr ) 
+          IF ( open_status .EQ. WRF_FILE_OPENED_FOR_READ ) THEN
+             CALL wrf_debug( 100 , 'med_latbound_in: closing boundary file ' )
+             CALL close_dataset ( grid%lbc_fid , config_flags , "DATASET=BOUNDARY" )
+          ENDIF
+       ENDIF
+#else
        CALL WRFU_AlarmSet( grid%alarms( BOUNDARY_ALARM ), RingTime=grid%next_bdy_time, rc=rc )
+#endif
 
        IF ( ierr .NE. 0 .and. ierr .NE. WRF_WARN_NETCDF ) THEN
          WRITE( message, * ) 'med_latbound_in: error reading ',TRIM(bdyname), ' IERR = ',ierr
          CALL WRF_ERROR_FATAL( message )
        ENDIF
        IF ( currentTime .EQ. grid%this_bdy_time ) grid%dtbc = 0.
-
+  
        IF ( wrf_dm_on_monitor() ) THEN
          WRITE ( message , FMT = '("processing lateral boundary for domain ",I8)' ) grid%id
          CALL end_timing ( TRIM(message) )
@@ -2099,7 +2341,7 @@ SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
      CALL domain_clock_get( grid, current_time=CT, start_time=ST, &
                             current_timestr=timestr )
      CALL nl_get_adjust_input_times( grid%id, adjust )
-     IF ( adjust ) THEN
+     IF ( adjust ) THEN 
        CALL adjust_io_timestr( grid%io_intervals( alarm_id ), CT, ST, timestr )
      ENDIF
      CALL construct_filename2a ( fname , auxinput_inname, &
@@ -2116,7 +2358,7 @@ SUBROUTINE open_aux_u ( grid , config_flags, stream, alarm_id, &
 !
 !Open_u_dataset is called rather than open_r_dataset to allow interfaces
 !that can do blending or masking to update an existing field. (MCEL IO does this).
-!No effect for other interfaces; open_u_dataset is equivalent to open_r_dataset
+!No effect for other interfaces; open_u_dataset is equivalent to open_r_dataset 
 !in those cases.
 !
 !</DESCRIPTION>
@@ -2166,12 +2408,12 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
 
    ierr = 0
 
-   ! Note that computation of fname and n2 are outside of the oid IF statement
-   ! since they are OUT args and may be used by callers even if oid/=0.
+   ! Note that computation of fname and n2 are outside of the oid IF statement 
+   ! since they are OUT args and may be used by callers even if oid/=0.  
    CALL domain_clock_get( grid, current_time=CT, start_time=ST, &
                           current_timestr=timestr )
    CALL nl_get_adjust_output_times( grid%id, adjust )
-   IF ( adjust ) THEN
+   IF ( adjust ) THEN 
      CALL adjust_io_timestr( grid%io_intervals( alarm_id ), CT, ST, timestr )
    ENDIF
 #if (DA_CORE != 1 && NMM_CORE != 1)
@@ -2183,13 +2425,13 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
       CALL wrf_debug(200,  message )
       WRITE(message, *) "RASM STATS: MEAN AUXHIST5 Time_outbefore =...", trim(grid%OUTDATE_MEAN)
       CALL wrf_debug(200,  message )
-      timestr = grid%OUTDATE_MEAN
+      timestr = grid%OUTDATE_MEAN  
    ELSE IF( alarm_id .EQ. AUXHIST6_ALARM .AND. config_flags%diurnal_diag .EQ. 1 ) THEN
       WRITE(message, *) "RASM STATS: DIURNAL AUXHIST6 oid=", oid, " fname=", trim(fname), " alarmI_id=", alarm_id, " Time_outNow=", timestr
       CALL wrf_debug(200,  message )
       WRITE(message, *) "RASM STATS: DIURNAL AUXHIST6 Time_outbefore =...", trim(grid%OUTDATE_DIURN)
       CALL wrf_debug(200,  message )
-      timestr = grid%OUTDATE_DIURN
+      timestr = grid%OUTDATE_DIURN 
    ENDIF
 !----------------------------------------------------------------------
 ! end RASM Climate Diagnostics
@@ -2212,7 +2454,7 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
 !
 !Open_u_dataset is called rather than open_r_dataset to allow interfaces
 !that can do blending or masking to update an existing field. (MCEL IO does this).
-!No effect for other interfaces; open_u_dataset is equivalent to open_r_dataset
+!No effect for other interfaces; open_u_dataset is equivalent to open_r_dataset 
 !in those cases.
 !
 !</DESCRIPTION>
@@ -2228,7 +2470,7 @@ SUBROUTINE open_hist_w ( grid , config_flags, stream, alarm_id, &
    RETURN
 END SUBROUTINE open_hist_w
 
-
+ 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 #if ( WRF_CHEM == 1 )
@@ -2306,11 +2548,11 @@ END SUBROUTINE med_read_wrf_chem_input
 !
 !   1 = Emissions are read in from two 12 hour files that are cycled.
 !       With this choice, auxinput5_inname should be set to
-!       the value "wrfchemi_hhZ_d<domain>".
+!       the value "wrfchemi_hhZ_d<domain>". 
 !
 !   2 = Emissions are read in from files identified by date and that have
 !       a length defined by frames_per_auxinput5. Both
-!       auxinput5_inname should be set to
+!       auxinput5_inname should be set to 
 !       "wrfchemi_d<domain>_<date>".
 !------------------------------------------------------------------------
 SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
@@ -2353,7 +2595,7 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
 
 ! This "if" should be commented out when using emission files for nested
 ! domains. Also comment out the "ENDIF" line noted below.
-!    IF ( grid%id .EQ. 1 ) THEN
+!    IF ( grid%id .EQ. 1 ) THEN  
 
       CALL domain_clock_get( grid, current_time=currentTime,          &
                                    current_timestr=current_date_char, &
@@ -2375,13 +2617,13 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
          tupdate = mod( time, (12. * 3600.) )
          read(current_date_char(12:13),'(I2)') ihr
          ihr = MOD(ihr,24)
-         ihrdiff = 0
+         ihrdiff = 0  
 
          IF( tupdate .LT. grid%dt ) THEN
             tupdate = 0.
          ENDIF
-         IF( ihr .EQ. 00 .OR. ihr .EQ. 12 ) THEN
-            tupdate = 0.
+         IF( ihr .EQ. 00 .OR. ihr .EQ. 12 ) THEN 
+            tupdate = 0. 
          ENDIF
 
          IF( currentTime + stepTime .GE. stopTime .AND. &
@@ -2393,8 +2635,8 @@ SUBROUTINE med_read_wrf_chem_emiss ( grid , config_flags )
 !        write(message,FMT='(A,F10.1,A)') ' EMISSIONS UPDATE TIME ',time,TRIM(current_date_char(12:13))
 !        CALL wrf_message( TRIM(message) )
 
-         IF ( tupdate .EQ. 0. .AND.  ihr .LT. 12 ) THEN
-            ihrdiff = ihr
+         IF ( tupdate .EQ. 0. .AND.  ihr .LT. 12 ) THEN 
+            ihrdiff = ihr  
             CALL construct_filename1 ( inpname , 'wrfchemi_00z' , grid%id , 2 )
             WRITE(message,*)'mediation_integrate: med_read_wrf_chem_emissions: Open file ',TRIM(inpname)
             CALL wrf_message( TRIM(message) )
@@ -2704,7 +2946,7 @@ SUBROUTINE med_read_wrf_chem_dms_emiss ( grid , config_flags )
 
 !  ENDIF
    CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_dms_emiss: exit' )
-
+ 
 END SUBROUTINE  med_read_wrf_chem_dms_emiss
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2777,7 +3019,7 @@ SUBROUTINE med_read_wrf_chem_gocart_bg ( grid , config_flags )
 !
 !  ENDIF
    CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_chem_gocart_bg: exit' )
-
+ 
 END SUBROUTINE  med_read_wrf_chem_gocart_bg
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -2839,7 +3081,7 @@ SUBROUTINE med_read_wrf_volc_emiss ( grid , config_flags )
          CALL close_dataset ( grid%auxinput13_oid , config_flags , "DATASET=AUXINPUT13" )
 
    CALL wrf_debug (100 , 'mediation_integrate: med_read_wrf_volc_emiss: exit' )
-
+ 
 END SUBROUTINE  med_read_wrf_volc_emiss
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

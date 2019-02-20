@@ -20,7 +20,7 @@ CONTAINS
 ! this version is used to compute only on a boundary of some width
 ! The ids, ide, jds, and jde arguments specify the edge of the boundary (a way of
 ! accounting for staggering, and the bdyw gives the number of cells
-! (idea: if bdyw is negative, have it do the reverse and specify the
+! (idea: if bdyw is negative, have it do the reverse and specify the 
 ! interior, less the boundary.
 
   SUBROUTINE set_tiles1 ( grid , ids , ide , jds , jde , bdyw )
@@ -31,9 +31,9 @@ CONTAINS
      USE module_wrf_error
 
      IMPLICIT NONE
-
+  
      !  Input data.
-
+  
      TYPE(domain)                   , INTENT(INOUT)  :: grid
      INTEGER                        , INTENT(IN)     :: ids , ide , jds , jde , bdyw
 
@@ -154,7 +154,7 @@ CONTAINS
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! this version callset set_tiles2 but only if the zone hasn't been cached already
 ! Up to MAX_TILING_ZONES allowed
-!
+! 
   SUBROUTINE set_tiles_once ( zone, grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
      USE module_domain, ONLY : domain, MAX_TILING_ZONES
      IMPLICIT NONE
@@ -177,10 +177,10 @@ CONTAINS
        ALLOCATE(grid%tile_zones(zone)%i_end(num_tiles))
        ALLOCATE(grid%tile_zones(zone)%j_start(num_tiles))
        ALLOCATE(grid%tile_zones(zone)%j_end(num_tiles))
-       grid%tile_zones(zone)%i_start = grid%i_start
-       grid%tile_zones(zone)%i_end   = grid%i_end
-       grid%tile_zones(zone)%j_start = grid%j_start
-       grid%tile_zones(zone)%j_end   = grid%j_end
+       grid%tile_zones(zone)%i_start = grid%i_start 
+       grid%tile_zones(zone)%i_end   = grid%i_end 
+       grid%tile_zones(zone)%j_start = grid%j_start 
+       grid%tile_zones(zone)%j_end   = grid%j_end 
        grid%tile_zones(zone)%num_tiles = num_tiles
        grid%tile_zones(zone)%num_tiles_x = num_tiles_x
        grid%tile_zones(zone)%num_tiles_y = num_tiles_y
@@ -194,7 +194,7 @@ CONTAINS
        grid%num_tiles_y = grid%tile_zones(zone)%num_tiles_y
      ENDIF
   END SUBROUTINE set_tiles_once
-
+ 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! this version is used to limit the domain or compute onto halos
   SUBROUTINE set_tiles2 ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
@@ -204,9 +204,9 @@ CONTAINS
      USE module_wrf_error
 
      IMPLICIT NONE
-
+  
      !  Input data.
-
+  
      TYPE(domain)                   , INTENT(INOUT)  :: grid
      INTEGER                        , INTENT(IN)     :: ids , ide , jds , jde
      INTEGER                        , INTENT(IN)     :: ips , ipe , jps , jpe
@@ -214,7 +214,7 @@ CONTAINS
      !  Output data.
 
      !  Local data.
-
+  
      INTEGER                                :: num_tiles_x, num_tiles_y, num_tiles_inc,num_tiles
      INTEGER                                :: tile_strategy,tile_strategy_spec
      INTEGER                                :: tile_sz_x, tile_sz_y
@@ -330,7 +330,7 @@ CONTAINS
          ENDIF
        ENDIF
        num_tiles_inc=max( num_tiles_inc , 1)
-       IF ( tile_strategy_spec == TILE_NONE) then
+       IF ( tile_strategy_spec == TILE_NONE) then 
           tile_strategy=TILE_Y
           WRITE(mess,*)'Tile Strategy is not specified. Assuming 1D-Y'
           CALL WRF_MESSAGE ( mess )
@@ -381,7 +381,7 @@ CONTAINS
            ENDIF
          ENDIF
        ENDIF
-!      sanity check
+!      sanity check 
        num_tiles=max( num_tiles , 1)
        num_tiles_x=max( num_tiles_x , 1)
        num_tiles_y=max( num_tiles_y , 1)
@@ -471,9 +471,9 @@ CONTAINS
      USE module_wrf_error
 
      IMPLICIT NONE
-
+  
      !  Input data.
-
+  
      TYPE(domain)                   , INTENT(INOUT)  :: grid
      INTEGER                        , INTENT(IN)     :: ims , ime , jms , jme
      INTEGER                        , INTENT(IN)     :: ips , ipe , jps , jpe
@@ -580,7 +580,7 @@ CONTAINS
       RETURN
   END SUBROUTINE set_tiles_masked
 
-
+  
   SUBROUTINE init_module_tiles
   END SUBROUTINE init_module_tiles
 

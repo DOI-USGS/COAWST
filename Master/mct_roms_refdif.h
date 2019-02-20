@@ -83,7 +83,7 @@
       TYPE(GlobalSegMap) :: GSMapROMS         ! GloabalSegMap variables
 
       TYPE(AttrVect) :: FromWavesAV           ! AttrVect variables
-      TYPE(AttrVect) :: ToWavesAV
+      TYPE(AttrVect) :: ToWavesAV 
 
       TYPE(Router) :: RoutROMS                ! Router variables
 
@@ -109,7 +109,7 @@
 !
       integer, intent(in) :: ng, tile
 !
-!  Local variable declarations.
+!  Local variable declarations.  
 !
       integer :: IstrR, IendR, JstrR, JendR, IstrU, JstrV
       integer :: Asize, Jsize, MyError
@@ -491,7 +491,7 @@
 #ifdef ROLLER_SVENDSEN
 !
 !  Percent wave breaking.
-!
+!  
       CALL AttrVect_exportRAttr (FromWavesAV, "WAVE_BREAK", A, Asize)
       ij=0
       DO j=JstrR,JendR
@@ -734,9 +734,9 @@
  10   FORMAT (1x,'Wave-Ocean models coupling, receive',t64,'t= ',f12.4)
  20   FORMAT (1x,'Wave-Ocean models coupling, send,',t64,'t= ',f12.4)
  30   FORMAT (/,' WAVES_COUPLING - error while receiving data,',         &
-     &          ' MyError = ',i4)
+     &          ' MyError = ',i4)   
  40   FORMAT (/,' WAVES_COUPLING - error while sending data,',           &
-     &          ' MyError = ',i4)
+     &          ' MyError = ',i4)   
 
       RETURN
       END SUBROUTINE waves_coupling_tile

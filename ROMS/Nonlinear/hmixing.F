@@ -4,9 +4,9 @@
 
 #if (defined DIFF_3DCOEF || defined VISC_3DCOEF) && defined SOLVE3D
 !
-!svn $Id: hmixing.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: hmixing.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -214,7 +214,7 @@
       real(r8), intent(out) :: visc3d_r(LBi:,LBj:,:)
 #   endif
 #  endif
-#  if defined VEGETATION && defined VEG_HMIXING
+#  if defined VEGETATION && defined VEG_HMIXING 
       real(r8), intent(in) :: visc3d_r_veg(LBi:,LBj:,:)
 #  endif
 # else
@@ -255,7 +255,7 @@
       real(r8), intent(out) :: visc3d_r(LBi:UBi,LBj:UBj,N(ng))
 #   endif
 #  endif
-#  if defined VEGETATION && defined VEG_HMIXING
+#  if defined VEGETATION && defined VEG_HMIXING 
       real(r8), intent(in) :: visc3d_r_veg(LBi:UBi,LBj:UBj,N(ng))
 #  endif
 # endif
@@ -404,7 +404,7 @@
       END DO
 # endif
 
-# if defined VEGETATION && defined VEG_HMIXING
+# if defined VEGETATION && defined VEG_HMIXING 
 
       clip_scale=0.01_r8*grdmax(ng)**3
 
@@ -413,7 +413,7 @@
           DO i=IstrU-1,Iend
 !
 #  if defined UV_VIS2
-            visc3d_r(i,j,k)=visc3d_r(i,j,k)+visc3d_r_veg(i,j,k)
+            visc3d_r(i,j,k)=visc3d_r(i,j,k)+visc3d_r_veg(i,j,k)  
 #  elif defined UV_VIS4
             visc3d_r(i,j,k)=visc3d_r(i,j,k)+visc3d_r_veg(i,j,k)
 #   ifdef MIX_GEO_UV

@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE u2dbc_mod
 !
-!svn $Id: u2dbc_im.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: u2dbc_im.F 925 2018-10-09 17:08:26Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -98,7 +98,7 @@
 
       real(r8), parameter :: eps = 1.0E-20_r8
 
-      real(r8) :: Ce, Cx, Zx
+      real(r8) :: Ce, Cx, Zx, ramp
       real(r8) :: bry_pgr, bry_cor, bry_str, bry_val
       real(r8) :: cff, cff1, cff2, cff3, dt2d, dUde, dUdt, dUdx
       real(r8) :: obc_in, obc_out, phi, tau
@@ -106,6 +106,12 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
 
 #include "set_bounds.h"
+
+#ifdef SANDY_INWAVE
+      ramp=TANH((tdays(ng)-dstart)/0.15_r8)
+#else
+      ramp=1.0_r8
+#endif
 !
 !-----------------------------------------------------------------------
 !  Set time-indices
@@ -482,12 +488,14 @@
                 cff1=GRID(ng)%on_u(Istr,j)/REFINED(cr)%on_u(m)
                 bry_val=cff1*REFINED(cr)%DU_avg2(1,m,tnew)/cff
 # ifdef WEC
-                bry_val=bry_val-OCEAN(ng)%ubar_stokes(Istr,j)
-# endif
+                bry_val=bry_val-OCEAN(ng)%ubar_stokes(Istr,j) 
+# endif 
 # ifdef MASKING
                 bry_val=bry_val*GRID(ng)%umask(Istr,j)
 # endif
-                BRY_CONTACT(ieast,cr)%Mflux(j)=cff*bry_val
+# ifdef NESTING_DEBUG
+                BRY_CONTACT(iwest,cr)%Mflux(j)=cff*bry_val
+# endif
                 ubar(Istr,j,kout)=bry_val
               END DO
             END IF
@@ -856,12 +864,14 @@
                 cff1=GRID(ng)%on_u(Iend+1,j)/REFINED(cr)%on_u(m)
                 bry_val=cff1*REFINED(cr)%DU_avg2(1,m,tnew)/cff
 # ifdef WEC
-                bry_val=bry_val-OCEAN(ng)%ubar_stokes(Iend+1,j)
-# endif
+                bry_val=bry_val-OCEAN(ng)%ubar_stokes(Iend+1,j) 
+# endif 
 # ifdef MASKING
                 bry_val=bry_val*GRID(ng)%umask(Iend+1,j)
 # endif
+# ifdef NESTING_DEBUG
                 BRY_CONTACT(ieast,cr)%Mflux(j)=cff*bry_val
+# endif
                 ubar(Iend+1,j,kout)=bry_val
               END DO
             END IF

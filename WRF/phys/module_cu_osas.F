@@ -1,5 +1,5 @@
 !!
-MODULE module_cu_osas
+MODULE module_cu_osas 
 
 CONTAINS
 
@@ -10,9 +10,9 @@ CONTAINS
                  RAINCV,PRATEC,HTOP,HBOT,                           &
                  U3D,V3D,W,T3D,QV3D,QC3D,QI3D,PI3D,RHO3D,           &
                  DZ8W,PCPS,P8W,XLAND,CU_ACT_FLAG,                   &
-                 P_QC,                                              &
+                 P_QC,                                              & 
                  STORE_RAND,MOMMIX, & ! gopal's doing
-                 P_QI,P_FIRST_SCALAR,                               &
+                 P_QI,P_FIRST_SCALAR,                               & 
                  ids,ide, jds,jde, kds,kde,                         &
                  ims,ime, jms,jme, kms,kme,                         &
                  its,ite, jts,jte, kts,kte                          )
@@ -22,7 +22,7 @@ CONTAINS
       USE MODULE_GFS_FUNCPHYS , ONLY : gfuncphys
       USE MODULE_GFS_PHYSCONS, grav => con_g, CP => con_CP, HVAP => con_HVAP  &
      &,             RV => con_RV, FV => con_fvirt, T0C => con_T0C       &
-     &,             CVAP => con_CVAP, CLIQ => con_CLIQ                  &
+     &,             CVAP => con_CVAP, CLIQ => con_CLIQ                  & 
      &,             EPS => con_eps, EPSM1 => con_epsm1                  &
      &,             ROVCP => con_rocp, RD => con_rd
 !-------------------------------------------------------------------
@@ -121,7 +121,7 @@ CONTAINS
                                         RTHCUTEN
       REAL, DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(INOUT) ::      &
                                         RUCUTEN,                        &  ! gopal's doing for SAS
-                                        RVCUTEN                            ! gopal's doing for SAS
+                                        RVCUTEN                            ! gopal's doing for SAS 
       REAL, OPTIONAL,   INTENT(IN) ::    MOMMIX
       REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,                   &
                          INTENT(IN) :: STORE_RAND
@@ -175,7 +175,7 @@ CONTAINS
                                         XKT2
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte+1) ::       &
-                                        PRSI
+                                        PRSI                            
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte) ::         &
                                         DEL,                            &
@@ -183,15 +183,15 @@ CONTAINS
                                         PHIL,                           &
                                         PRSL,                           &
                                         PRSLK,                          &
-                                        Q1,                             &
-                                        T1,                             &
-                                        U1,                             &
-                                        V1,                             &
-                                        ZI,                             &
-                                        ZL
+                                        Q1,                             & 
+                                        T1,                             & 
+                                        U1,                             & 
+                                        V1,                             & 
+                                        ZI,                             & 
+                                        ZL 
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte, 2) ::      &
-                                        QL
+                                        QL 
 
       INTEGER, DIMENSION(its:ite) ::                                    &
                                         KBOT,                           &
@@ -208,7 +208,7 @@ CONTAINS
                                         KM,                             &
                                         KP,                             &
                                         KX,                             &
-                                        NCLOUD
+                                        NCLOUD 
 
       DATA IGPVS/0/
 
@@ -220,7 +220,7 @@ CONTAINS
             CU_ACT_FLAG(I,J)=.TRUE.
          ENDDO
       ENDDO
-
+ 
       IM=ITE-ITS+1
       KX=KTE-KTS+1
       JCAP=126
@@ -277,7 +277,7 @@ CONTAINS
 
 #if (EM_CORE == 1)
 !    XKT2 was defined in terms of random number instead of random number based cloud tops
-!    ZCX
+!    ZCX   
      call init_random_seed()
      call random_number(XKT2)
 #ifdef REGTEST
@@ -285,7 +285,7 @@ CONTAINS
      xkt2 = 0.1
 #endif
 #endif
-!
+!   
 #if (NMM_CORE == 1)
       DO i=its,ite
          XKT2(i) = STORE_RAND(i,j)
@@ -327,14 +327,14 @@ CONTAINS
       DO k=kts+1,kte+1
         km=k-1
         DO i=its,ite
-          PRSI(i,k)=PRSI(i,km)-del(i,km)
+          PRSI(i,k)=PRSI(i,km)-del(i,km) 
         ENDDO
       ENDDO
 
 
       CALL OSASCNV(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                  &
                   QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
-                  KTOP,KUO,SLIMSK,DOT,XKT2,NCLOUD)
+                  KTOP,KUO,SLIMSK,DOT,XKT2,NCLOUD) 
 
 !!!   make more like GFDL ... eliminate shallow convection.....
 !!!   CALL SHALCV(IM,IM,KX,DELT,DEL,PRSI,PRSL,PRSLK,KUO,Q1,T1,DPSHC)
@@ -358,7 +358,7 @@ CONTAINS
 
 !===============================================================================
 !     ADD MOMENTUM MIXING TERM AS TENDENCIES. This is gopal's doing for SAS
-!     MOMMIX is the reduction factor set to 0.7 by default. Because NMM has
+!     MOMMIX is the reduction factor set to 0.7 by default. Because NMM has 
 !     divergence damping term, a reducion factor for cumulum mixing may be
 !     required otherwise storms were too weak.
 !===============================================================================
@@ -417,7 +417,7 @@ CONTAINS
                                                               RQICUTEN
    REAL,     DIMENSION( ims:ime , jms:jme , kms:kme ) , INTENT(OUT) ::  &
                                                               RUCUTEN,  & ! gopal's doing for SAS
-                                                              RVCUTEN
+                                                              RVCUTEN   
 
    INTEGER :: i, j, k, itf, jtf, ktf
 
@@ -522,17 +522,17 @@ CONTAINS
      &                     tem2,    terr,    val,     val1,             &
      &                     val2,    w1,      w1l,     w1s,              &
      &                     w2,      w2l,     w2s,     w3,               &
-     &                     w3l,     w3s,     w4,      w4l,              &
-     &                     w4s,     xdby,    xpw,     xpwd,             &
+     &                     w3l,     w3s,     w4,      w4l,              & 
+     &                     w4s,     xdby,    xpw,     xpwd,             & 
      &                     xqc,     xqrch,   xlambu,  mbdt,             &
      &                     tem
 !
 !
-      integer              JMIN(IM), KB(IM), KBCON(IM), KBDTR(IM),      &
+      integer              JMIN(IM), KB(IM), KBCON(IM), KBDTR(IM),      & 
      &                     KT2(IM),  KTCON(IM), LMIN(IM),               &
      &                     kbm(IM),  kbmax(IM), kmax(IM)
 !
-      real(kind=kind_phys) AA1(IM),     ACRT(IM),   ACRTFCT(IM),        &
+      real(kind=kind_phys) AA1(IM),     ACRT(IM),   ACRTFCT(IM),        & 
      &                     DELHBAR(IM), DELQ(IM),   DELQ2(IM),          &
      &                     DELQBAR(IM), DELQEV(IM), DELTBAR(IM),        &
      &                     DELTV(IM),   DTCONV(IM), EDT(IM),            &
@@ -545,7 +545,7 @@ CONTAINS
 !    &                     PSFC(IM),    PWAVO(IM),  PWEVO(IM),          &
      &                     QCDO(IM),    QCOND(IM),  QEVAP(IM),          &
      &                     QKBO(IM),    RNTOT(IM),  VSHEAR(IM),         &
-     &                     XAA0(IM),    XHCD(IM),   XHKB(IM),           &
+     &                     XAA0(IM),    XHCD(IM),   XHKB(IM),           & 
      &                     XK(IM),      XLAMB(IM),  XLAMD(IM),          &
      &                     XMB(IM),     XMBMAX(IM), XPWAV(IM),          &
      &                     XPWEV(IM),   XQCD(IM),   XQKB(IM)
@@ -579,7 +579,7 @@ CONTAINS
       DATA ACRITT/.0633,.0445,.0553,.0664,.075,.1082,.1521,.2216,       &
      &           .3151,.3677,.41,.5255,.7663,1.1686,1.6851/
 !  GDAS DERIVED ACRIT
-!     DATA ACRITT/.203,.515,.521,.566,.625,.665,.659,.688,              &
+!     DATA ACRITT/.203,.515,.521,.566,.625,.665,.659,.688,              & 
 !    &            .743,.813,.886,.947,1.138,1.377,1.896/
 !
       real(kind=kind_phys) TF, TCR, TCRF, RZERO, RONE
@@ -652,9 +652,9 @@ CONTAINS
       fkm     = (float(km) / 28.) ** 2
 !cmr  fkm     = max(fkm,1.)
       fkm     = max(fkm,val)
-      W1l     = -8.E-3
+      W1l     = -8.E-3 
       W2l     = -4.E-2
-      W3l     = -5.E-3
+      W3l     = -5.E-3 
       W4l     = -5.E-4
       W1s     = -2.E-4
       W2s     = -2.E-3
@@ -678,7 +678,7 @@ CONTAINS
         KMAX(I)  = KM
         TX1(I)   = 1.0 / PS(I)
       ENDDO
-!
+!     
       DO K = 1, KM
         DO I=1,IM
           IF (prSL(I,K)*tx1(I) .GT. 0.45) KBMAX(I) = K + 1
@@ -826,7 +826,7 @@ CONTAINS
 !           QO(I,k)   = MIN(QO(I,k),QESO(I,k))
             HEO(I,k)  = .5 * G * (ZO(I,k) + ZO(I,k+1)) +                &
      &                  CP * TO(I,k) + HVAP * QO(I,k)
-            HESO(I,k) = .5 * G * (ZO(I,k) + ZO(I,k+1)) +                &
+            HESO(I,k) = .5 * G * (ZO(I,k) + ZO(I,k+1)) +                & 
      &                  CP * TO(I,k) + HVAP * QESO(I,k)
             UO(I,k)   = .5 * (UO(I,k) + UO(I,k+1))
             VO(I,k)   = .5 * (VO(I,k) + VO(I,k+1))
@@ -967,7 +967,7 @@ CONTAINS
               ONEMF = 1. - FACTOR
               HCKO(I,k) = FACTOR * HCKO(I,k-1) + ONEMF *                &
      &                    .5 * (HEO(I,k) + HEO(I,k+1))
-              UCKO(I,k) = FACTOR * UCKO(I,k-1) + ONEMF *                &
+              UCKO(I,k) = FACTOR * UCKO(I,k-1) + ONEMF *                & 
      &                    .5 * (UO(I,k) + UO(I,k+1))
               VCKO(I,k) = FACTOR * VCKO(I,k-1) + ONEMF *                &
      &                    .5 * (VO(I,k) + VO(I,k+1))
@@ -1262,7 +1262,7 @@ CONTAINS
               val = 0.
               AA1(I)=AA1(I)+                                            &
      &                 DZ1 * G * DELTA *                                &
-!cmr &                 MAX( 0.,(QESO(I,k-1) - QO(I,k-1)))               &
+!cmr &                 MAX( 0.,(QESO(I,k-1) - QO(I,k-1)))               & 
      &                 MAX(val,(QESO(I,k-1) - QO(I,k-1)))
             ENDIF
           endif
@@ -1445,7 +1445,7 @@ CONTAINS
               AA1(I)=AA1(I)+EDTO(I)*DZ*(G/(CP*DT))*((DHH-DH)/(1.+DG))   &
      &               *(1.+DELTA*CP*DG*DT/HVAP)
               val=0.
-              AA1(I)=AA1(I)+EDTO(I)*                                    &
+              AA1(I)=AA1(I)+EDTO(I)*                                    & 
 !cmr &        DZ*G*DELTA*MAX( 0.,(QESO(I,k+1)-QO(I,k+1)))               &
      &        DZ*G*DELTA*MAX(val,(QESO(I,k+1)-QO(I,k+1)))
             ENDIF
@@ -1536,7 +1536,7 @@ CONTAINS
      &            ((AUP * ETA(I,k) - ADW * EDTO(I) * ETAD(I,k)) * DV1U  &
      &        - (AUP * ETA(I,k-1) - ADW * EDTO(I) * ETAD(I,k-1))* DV3U  &
      &                     - AUP * DETA * DV2U                          &
-     &                    + ADW * EDTO(I) * DETAD * UCDO(I)             &
+     &                    + ADW * EDTO(I) * DETAD * UCDO(I)             & 
      &                    ) * G / DP
               DELLAV(I,k) = DELLAV(I,k) +                               &
      &            ((AUP * ETA(I,k) - ADW * EDTO(I) * ETAD(I,k)) * DV1V  &
@@ -1558,7 +1558,7 @@ CONTAINS
           DV1 = HEO(I,INDX-1)
           DELLAH(I,INDX) = ETA(I,INDX-1) *                              &
      &                     (HCKO(I,INDX-1) - DV1) * G / DP
-          DVQ1 = QO(I,INDX-1)
+          DVQ1 = QO(I,INDX-1) 
           DELLAQ(I,INDX) = ETA(I,INDX-1) *                              &
      &                     (QCKO(I,INDX-1) - DVQ1) * G / DP
           DV1U = UO(I,INDX-1)
@@ -1768,14 +1768,14 @@ CONTAINS
               RFACT =  1. + DELTA * CP * GAMMA                          &
      &                 * TO(I,k-1) / HVAP
               XDBY = HCKO(I,k-1) - HESO(I,k-1)
-              XAA0(I) = XAA0(I)                                         &
+              XAA0(I) = XAA0(I)                                         & 
      &                + DZ1 * (G / (CP * TO(I,k-1)))                    &
      &                * XDBY / (1. + GAMMA)                             &
      &                * RFACT
               val=0.
               XAA0(I)=XAA0(I)+                                          &
      &                 DZ1 * G * DELTA *                                &
-!cmr &                 MAX( 0.,(QESO(I,k-1) - QO(I,k-1)))               &
+!cmr &                 MAX( 0.,(QESO(I,k-1) - QO(I,k-1)))               & 
      &                 MAX(val,(QESO(I,k-1) - QO(I,k-1)))
             ENDIF
           endif
@@ -1813,7 +1813,7 @@ CONTAINS
               DETAD    = ETAD(I,k+1) - ETAD(I,k)
               XPWD     = ETAD(I,k+1) * QRCD(I,k+1) -                    &
      &                   ETAD(I,k) * QRCD(I,k)
-              XPWD     = XPWD - DETAD *                                 &
+              XPWD     = XPWD - DETAD *                                 & 
      &                 .5 * (QRCD(I,k) + QRCD(I,k+1))
               XPWEV(I) = XPWEV(I) + XPWD
             ENDIF
@@ -1872,7 +1872,7 @@ CONTAINS
         IF(CNVFLG(I)) THEN
 !       IF(CNVFLG(I).AND.SLIMSK(I).NE.1.) THEN
           IF(PFLD(I,KTCON(I)).LT.PCRIT(15))THEN
-            ACRT(I)=ACRIT(15)*(975.-PFLD(I,KTCON(I)))                   &
+            ACRT(I)=ACRIT(15)*(975.-PFLD(I,KTCON(I)))                   &    
      &              /(975.-PCRIT(15))
           ELSE IF(PFLD(I,KTCON(I)).GT.PCRIT(1))THEN
             ACRT(I)=ACRIT(1)
@@ -2489,7 +2489,7 @@ CONTAINS
       END SUBROUTINE MSTADBT3
 
 #if (EM_CORE == 1)
-!   random seeds - ZCX
+!   random seeds - ZCX    
       SUBROUTINE init_random_seed()
             INTEGER :: i, n, clock
             INTEGER, DIMENSION(:), ALLOCATABLE :: seed
@@ -2503,6 +2503,6 @@ CONTAINS
             CALL RANDOM_SEED(PUT = seed)
 
             DEALLOCATE(seed)
-      END SUBROUTINE
+      END SUBROUTINE 
 #endif
       END MODULE module_cu_osas

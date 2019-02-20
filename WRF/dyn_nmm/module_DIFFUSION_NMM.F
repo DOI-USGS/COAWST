@@ -40,10 +40,10 @@
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
 !***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
+!                .      .    .     
 ! SUBPROGRAM:    HDIFF       HORIZONTAL DIFFUSION
 !   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 93-11-17
-!
+!     
 ! ABSTRACT:
 !     HDIFF CALCULATES THE CONTRIBUTION OF THE HORIZONTAL DIFFUSION
 !     TO THE TENDENCIES OF TEMPERATURE, SPECIFIC HUMIDITY, WIND
@@ -52,7 +52,7 @@
 !     SMAGORINSKY'S IS USED WHERE THE DIFFUSION COEFFICIENT IS
 !     A FUNCTION OF THE DEFORMATION FIELD AND OF THE TURBULENT
 !     KINETIC ENERGY.
-!
+!     
 ! PROGRAM HISTORY LOG:
 !   87-06-??  JANJIC     - ORIGINATOR
 !   95-03-25  BLACK      - CONVERSION FROM 1-D TO 2-D IN HORIZONTAL
@@ -65,26 +65,26 @@
 !   04-11-18  BLACK      - THREADED
 !   05-12-12  BLACK      - CONVERTED FROM IKJ TO IJK
 !   06-08-15  JANJIC     - ENHANCEMENT AT SLOPING SEA COAST
-!
+!     
 ! USAGE: CALL HDIFF FROM SUBROUTINE SOLVE_RUNSTREAM
 !
 !   INPUT ARGUMENT LIST:
-!
-!   OUTPUT ARGUMENT LIST:
-!
+!  
+!   OUTPUT ARGUMENT LIST: 
+!     
 !   OUTPUT FILES:
 !     NONE
-!
+!     
 !   SUBPROGRAMS CALLED:
-!
+!  
 !     UNIQUE: NONE
-!
+!  
 !     LIBRARY: NONE
-!
+!  
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
 !   MACHINE : IBM SP
-!$$$
+!$$$  
 !***********************************************************************
 !-----------------------------------------------------------------------
 !
@@ -104,7 +104,7 @@
 !
       REAL,INTENT(IN) :: DT,DY
 #if ( HWRF == 1 )
-      REAL,INTENT(IN) :: H_DIFF
+      REAL,INTENT(IN) :: H_DIFF  
 #endif
 !
       REAL,DIMENSION(KMS:KME),INTENT(IN) :: DETA1
@@ -113,7 +113,7 @@
      &                                             ,HDAC,HDACV          &
      &                                             ,SM,SICE
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(OUT) :: DEF3D
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(OUT) :: DEF3D          
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: W,Z
 !
@@ -419,7 +419,7 @@
      &                        *FCDIF
           ENDDO
           ENDDO
-
+          
 !
           IF(K>=KTS+1)THEN
             DO J=MYJS2,MYJE2

@@ -6,21 +6,21 @@ MODULE module_bl_gfsedmf
 
 CONTAINS
 
-!-------------------------------------------------------------------
+!-------------------------------------------------------------------          
    SUBROUTINE BL_GFSEDMF(U3D,V3D,TH3D,T3D,QV3D,QC3D,QI3D,P3D,PI3D, &
                   RUBLTEN,RVBLTEN,RTHBLTEN,                        &
-                  RQVBLTEN,RQCBLTEN,RQIBLTEN,          	           &
+                  RQVBLTEN,RQCBLTEN,RQIBLTEN,          	           & 
                   CP,G,ROVCP,R,ROVG,P_QI,P_FIRST_SCALAR,           &
                   dz8w,z,PSFC,                                     &
                   UST,PBL,PSIM,PSIH,                               &
                   HFX,QFX,TSK,GZ1OZ0,WSPD,BR,                      &
                   DT,KPBL2D,EP1,KARMAN,                            &
                   DISHEAT,                                         &
-                  RTHRATEN,                                        &    !Kwon add RTHRATEN
+                  RTHRATEN,                                        &    !Kwon add RTHRATEN 
                   HPBL2D, EVAP2D, HEAT2D,                          &    !Kwon add FOR SHAL. CON.
 
                   U10,V10,ZNT,                                    &
-                  DKU3D,DKT3D,                                    &
+                  DKU3D,DKT3D,                                    & 
                   VAR_RIC,coef_ric_l,coef_ric_s,alpha,xland,        &
                   ids,ide, jds,jde, kds,kde,                       &
                   ims,ime, jms,jme, kms,kme,                       &
@@ -126,11 +126,11 @@ CONTAINS
                                         EP1,                            &
                                         G,                              &
                                         KARMAN,                         &
-                                        R,                              &
+                                        R,                              & 
                                         ROVCP,                          &
-                                        ROVG
+                                        ROVG 
 
-      REAL,    DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) ::      &
+      REAL,    DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) ::      & 
                                         DZ8W,                           &
                                         P3D,                            &
                                         PI3D,                           &
@@ -141,7 +141,7 @@ CONTAINS
                                         TH3D,                           &
                                         U3D,                            &
                                         V3D,                            &
-                                        Z
+                                        Z   
 
 
       REAL,    DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::   &
@@ -150,7 +150,7 @@ CONTAINS
                                         RQIBLTEN,                       &
                                         RQVBLTEN,                       &
                                         RUBLTEN,                        &
-                                        RVBLTEN
+                                        RVBLTEN                        
 
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(IN) ::               &
                                         BR,                             &
@@ -161,14 +161,14 @@ CONTAINS
                                         PSIH,                           &
                                         QFX,                            &
                                         TSK
-
-      REAL,    DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::            &
+ 
+      REAL,    DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::            & 
                                         PBL,                            &
                                         UST,                            &
                                         WSPD
 
       INTEGER, DIMENSION(ims:ime, jms:jme), INTENT(OUT) ::              &
-                                        KPBL2D
+                                        KPBL2D                         
 
 
 !--------------------------- LOCAL VARS ------------------------------
@@ -190,7 +190,7 @@ CONTAINS
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte-1) ::DKU,DKT
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte+1) ::       &
-                                        PHII,                           &
+                                        PHII,                           & 
                                         PRSI
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte, 3) ::      &
@@ -237,15 +237,15 @@ CONTAINS
                                         KTEM,                           &
                                         KTEP,                           &
                                         KX,                             &
-                                        L,                              &
+                                        L,                              & 
                                         NTRAC, ntcw
 
-      real(kind=kind_phys)xkzm_m, xkzm_h, xkzm_s   !! wang, background diff
+      real(kind=kind_phys)xkzm_m, xkzm_h, xkzm_s   !! wang, background diff 
       real :: VAR_RIC,coef_ric_l,coef_ric_s,alpha
       logical lprnt
       integer ipr
 
-
+ 
    IM=ITE-ITS+1
    KX=KTE-KTS+1
    KTEM=KTE-1
@@ -255,7 +255,7 @@ CONTAINS
 
    xkzm_m=1.0
    xkzm_h=1.0
-   xkzm_s=1.0
+   xkzm_s=1.0   
    lprnt=.false.
    ipr=1
    ntcw=2
@@ -280,7 +280,7 @@ CONTAINS
         QSS(i)=QV3D(i,kts,j)               ! not used in moninq so set to qv3d for now
         HEAT(i)=HFX(i,j)/CPM*RRHOX
         EVAP(i)=QFX(i,j)*RRHOX
-! Kwon FOR NEW SHALLOW CONVECTION
+! Kwon FOR NEW SHALLOW CONVECTION 
         HEAT2D(i,j)=HFX(i,j)/CPM*RRHOX
         EVAP2D(i,j)=QFX(i,j)*RRHOX
 !
@@ -298,7 +298,7 @@ CONTAINS
       ENDDO
 
       DO k=kts,kte
-        DO i=its,ite
+        DO i=its,ite 
           DV(I,K) = 0.
           DU(I,K) = 0.
           TAU(I,K) = 0.
@@ -317,7 +317,7 @@ CONTAINS
       ENDDO
 
       DO k=kts,kte
-        DO i=its,ite
+        DO i=its,ite 
           PRSLK(I,K)=(PRSL(i,k)*.01)**ROVCP
         ENDDO
       ENDDO
@@ -325,7 +325,7 @@ CONTAINS
 
       DO k=kts+1,kte
         km=k-1
-        DO i=its,ite
+        DO i=its,ite 
           DEL(i,km)=PRSL(i,km)/ROVG*dz8w(i,km,j)/T3D(i,km,j)
           PRSI(i,k)=PRSI(i,km)-DEL(i,km)
           PHII(I,K)=(Z(i,k,j)-Z(i,kts,j))*G
@@ -333,7 +333,7 @@ CONTAINS
         ENDDO
       ENDDO
 
-      DO i=its,ite
+      DO i=its,ite 
         DEL(i,kte)=DEL(i,ktem)
         PRSI(i,ktep)=PRSI(i,kte)-DEL(i,ktem)
         PHII(I,KTEP)=PHII(I,KTE)+dz8w(i,kte,j)*G
@@ -342,7 +342,7 @@ CONTAINS
 
       IF (P_QI.ge.P_FIRST_SCALAR) THEN
         DO k=kts,kte
-          DO i=its,ite
+          DO i=its,ite 
             Q1(I,K,3) = QI3D(i,k,j)/(1.+QI3D(i,k,j))
           ENDDO
         ENDDO
@@ -370,7 +370,7 @@ CONTAINS
      &   u1,v1,t1,q1,thraten,                                  &
      &   psk,rbsoil,zorl,u10m,v10m,fm,fh,                      &
      &   tsea,qss,heat,evap,stress,spd1,kpbl,                  &
-     &   prsi,del,prsl,prslk,phii,phil,deltim,disheat,         &
+     &   prsi,del,prsl,prslk,phii,phil,deltim,disheat,         &  
      &   dusfc,dvsfc,dtsfc,dqsfc,hpbl,hgamt,hgamq,dkt,dku,     &
      &   kinver,xkzm_m,xkzm_h,xkzm_s,lprnt,ipr,zol,            &
      &   VAR_RIC,coef_ric_l,coef_ric_s,alpha,xland1)
@@ -390,8 +390,8 @@ CONTAINS
 !!          dishx(i,k)=-dishx(i,k)/cpmikj
 !         IF(k==1)WRITE(0,*)'ADDITIONAL DISSIPATIVE HEATING',tau(i,k),dishx(i,k)
 !!          tau(i,k)=tau(i,k)+dishx(i,k)
-!!         ENDDO
-!!       ENDDO
+!!         ENDDO 
+!!       ENDDO 
 !!      ENDIF
 !#endif
 
@@ -458,9 +458,9 @@ CONTAINS
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       its, ite, jts, jte, kts, kte                 )
-!-------------------------------------------------------------------
+!-------------------------------------------------------------------          
    IMPLICIT NONE
-!-------------------------------------------------------------------
+!-------------------------------------------------------------------          
    LOGICAL , INTENT(IN)          ::  allowed_to_read,restart
    INTEGER , INTENT(IN)          ::  ids, ide, jds, jde, kds, kde, &
                                      ims, ime, jms, jme, kms, kme, &
@@ -472,7 +472,7 @@ CONTAINS
                                                          RVBLTEN, &
                                                          RTHBLTEN, &
                                                          RQVBLTEN, &
-                                                         RQCBLTEN, &
+                                                         RQCBLTEN, & 
                                                          RQIBLTEN
    INTEGER :: i, j, k, itf, jtf, ktf
 
@@ -521,13 +521,13 @@ CONTAINS
 
 !!!!!  ==========================================================  !!!!!
 ! subroutine 'moninedmf' computes subgrid vertical mixing by turbulence
-!
+! 
 ! for the convective boundary layer, the scheme adopts eddy-diffusion
-!  mass-flux (edmf) parameterization (siebesma et al., 2007) to take into
-!  account nonlocal transport by large eddies. to reduce the tropical wind rmse,
-!  a hybrid scheme is used, in which the edmf scheme is used only for strongly
-!  unstable pbl while the current operational vertical diffusion scheme is called
-!  for the weakly unstable pbl.
+!  mass-flux (edmf) parameterization (siebesma et al., 2007) to take into 
+!  account nonlocal transport by large eddies. to reduce the tropical wind rmse, 
+!  a hybrid scheme is used, in which the edmf scheme is used only for strongly 
+!  unstable pbl while the current operational vertical diffusion scheme is called 
+!  for the weakly unstable pbl.  
 !
       subroutine moninedmf(ix,im,km,ntrac,ntcw,dv,du,tau,rtg,           &
 !     &   u1,v1,t1,q1,swh,hlw,xmu,                                      &
@@ -560,7 +560,7 @@ CONTAINS
      &                     xmu(im),       psk(im),                   &
      &                     rbsoil(im),    zorl(im),                  &
      &                     u10m(im),      v10m(im),                  &
-     &                     fm(im),        fh(im),                    &
+     &                     fm(im),        fh(im),                    & 
      &                     tsea(im),      qss(im),                   &
      &                                    spd1(im),                  &
      &                     prsi(ix,km+1), del(ix,km),                &
@@ -596,14 +596,14 @@ CONTAINS
      &                     govrth(im),  hrad(im),                      &
 !    &                     hradm(im),   radmin(im),   vrad(im),        &
      &                     radmin(im),  vrad(im),                      &
-     &                     zd(im),      zdd(im),      thlvx1(im)
+     &                     zd(im),      zdd(im),      thlvx1(im)       
 !
       real(kind=kind_phys) rdzt(im,km-1),dktx(im,km-1),                &
      &                     zi(im,km+1),  zl(im,km),    xkzo(im,km-1),  &
      &                     dku(im,km-1), dkt(im,km-1), xkzmo(im,km-1), &
      &                     cku(im,km-1), ckt(im,km-1),                 &
      &                     ti(im,km-1),  shr2(im,km-1),                &
-     &                     al(im,km-1),  ad(im,km),                    &
+     &                     al(im,km-1),  ad(im,km),                    &  
      &                     au(im,km-1),  a1(im,km),                    &
      &                     a2(im,km*ntrac)
 
@@ -637,12 +637,12 @@ CONTAINS
      &                     spdk2,   sri,    zol1,   zolcr, zolcru,   &
      &                     robn,    ttend,                           &
      &                     utend,   vk,     vk2,                     &
-     &                     ust3,    wst3,                            &
+     &                     ust3,    wst3,                            &    
      &                     vtend,   zfac,   vpert,  cteit,           &
-     &                     rentf1,  rentf2, radfac,                  &
+     &                     rentf1,  rentf2, radfac,                  & 
      &                     zfmin,   zk,     tem,    tem1,  tem2,     &
      &                     xkzm,    xkzmu,  xkzminv,                 &
-     &                     ptem,    ptem1,  ptem2, tx1(im), tx2(im)
+     &                     ptem,    ptem1,  ptem2, tx1(im), tx2(im)  
 !
       real(kind=kind_phys) zstblmax,h1,     h2,     qlcr,  actei,   &
      &                     cldtime
@@ -652,7 +652,7 @@ CONTAINS
      integer kLOC ! RGF
      real :: xDKU, ALPHA    ! RGF
      real :: VAR_RIC,coef_ric_l,coef_ric_s
-
+     
      logical:: outp
      integer :: stype, useshape
      real :: smax,ashape,sz2h, sksfc,skmax,ashape1,skminusk0, hmax
@@ -694,7 +694,7 @@ CONTAINS
 !       smax=0.148
 !       stype=1
       useshape=2 !0-- no change, origincal ALPHA adjustment,1-- shape1, 2-- shape2(adjust above sfc)
-  !     useshape=1
+  !     useshape=1 
 !c
 !c-----------------------------------------------------------------------
 !c
@@ -972,7 +972,7 @@ CONTAINS
         hpblx(i) = hpbl(i)
       enddo
 !
-!  compute similarity parameters
+!  compute similarity parameters 
 !
       do i=1,im
          zol(i) = max(rbsoil(i)*fm(i)*fm(i)/fh(i),rimin)
@@ -1144,7 +1144,7 @@ CONTAINS
 !         if(thlvx1(i) > thlvx(i,k-1)) scuflg(i)=.false.
         endif
       enddo
-!
+! 
       do i = 1, im
          flg(i)=scuflg(i)
       enddo
@@ -1236,7 +1236,7 @@ CONTAINS
 !           zfac = max((1.-(zi(i,k+1)-zl(i,1))/
 !    1             (hpbl(i)-zl(i,1))), zfmin)
             zfac = max((1.-zi(i,k+1)/hpbl(i)), zfmin)
-         !   tem = zi(i,k+1) * (zfac**pfac)
+         !   tem = zi(i,k+1) * (zfac**pfac) 
             tem = zi(i,k+1) * (zfac**pfac) * ABS(ALPHA)
 
 !!!! CHANGES FOR HEIGHT-DEPENDENT K ADJUSTMENT, WANG W
@@ -1254,7 +1254,7 @@ CONTAINS
 
                 zfac=max(zfac,zfmin)
                 ashape=max(ABS(ALPHA),0.2)  ! should not be smaller than 0.2, otherwise too much adjustment(?)
-                if(useshape ==1) then
+                if(useshape ==1) then 
                  ashape=( 1.0 - ((sz2h*zfac/smax)**0.25) *( 1.0 - ashape )  )
                  tem = zi(i,k+1) * (zfac) * ashape
                 endif
@@ -1333,13 +1333,13 @@ CONTAINS
             WSPM(i,3) = WSPM(i,1)/xDKU  ! ratio of cap to Km at k-level, store in WSPM(i,3)
             !WSPM(i,4) = amin1(WSPM(I,3),1.0) ! this is new column alpha. cap at 1. ! should never be needed
             WSPM(i,4) = min(WSPM(I,3),1.0) ! this is new column alpha. cap at 1. ! should never be needed
- !! recalculate K capped by WSPM(i,1)
+ !! recalculate K capped by WSPM(i,1)           
       do k = 1, kmpbl
          if(k < kpbl(i)) then
 !           zfac = max((1.-(zi(i,k+1)-zl(i,1))/
 !    1             (hpbl(i)-zl(i,1))), zfmin)
             zfac = max((1.-zi(i,k+1)/hpbl(i)), zfmin)
-         !   tem = zi(i,k+1) * (zfac**pfac)
+         !   tem = zi(i,k+1) * (zfac**pfac) 
             tem = zi(i,k+1) * (zfac**pfac) * WSPM(i,4)
 
 !!! wang use different K shape, options!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1358,7 +1358,7 @@ CONTAINS
 
                 zfac=max(zfac,zfmin)
                 ashape=max(WSPM(i,4),0.2)  !! adjustment coef should not smaller than 0.2
-                if(useshape ==1) then
+                if(useshape ==1) then 
                  ashape=( 1.0 - ((sz2h*zfac/smax)**0.25) *( 1.0 - ashape )  )
                  tem = zi(i,k+1) * (zfac) * ashape
 !                 if(k ==5) write(0,*)'min alf, height-depend alf',WSPM(i,4),ashape
@@ -1654,7 +1654,7 @@ CONTAINS
       if(ntrac >= 2) then
         do kk = 2, ntrac
           is = (kk-1) * km
-          do k = 1, km
+          do k = 1, km 
             do i = 1, im
               qtend = (a2(i,k+is)-q1(i,k,kk))*rdt
               rtg(i,k,kk) = rtg(i,k,kk)+qtend
@@ -1679,7 +1679,7 @@ CONTAINS
       do i = 1,im
          tem   = govrth(i)*sflux(i)
          tem1  = tem + stress(i)*spd1(i)/zl(i,1)
-         tem2  = 0.5 * (tem1+diss(i,1))
+         tem2  = 0.5 * (tem1+diss(i,1)) 
          tem2  = max(tem2, 0.)
          ttend = tem2 / cp
 !         tau(i,1) = tau(i,1)+0.5*ttend
@@ -1830,7 +1830,7 @@ CONTAINS
 !!
       real(kind=kind_phys) cl(l,2:n), cm(l,n), cu(l,n-1),     &
      &                     r1(l,n),   r2(l,n*nt),             &
-     &                     au(l,n-1), a1(l,n), a2(l,n*nt),    &
+     &                     au(l,n-1), a1(l,n), a2(l,n*nt),    &  
      &                     fkk(l,2:n-1)
 !-----------------------------------------------------------------------
       do i=1,l
@@ -1888,7 +1888,7 @@ CONTAINS
 !----------------------------------------------------------------------
 
 !!!!!  ==========================================================  !!!!!
-! subroutine 'mfpbl' computes mass-flux components, called by
+! subroutine 'mfpbl' computes mass-flux components, called by 
 !  subroutine 'moninedmf'.
 !
       subroutine mfpbl(im,ix,km,ntrac,delt,cnvflg,          &
@@ -1911,8 +1911,8 @@ CONTAINS
      &                     zl(im,km),  zm(im,km+1),                &
      &                     hpbl(im),   sflx(im),    ustar(im),     &
      &                     wstar(im),  xmf(im,km),                 &
-     &                     tcko(im,km),qcko(im,km,ntrac),          &
-     &                     ucko(im,km),vcko(im,km)
+     &                     tcko(im,km),qcko(im,km,ntrac),          & 
+     &                     ucko(im,km),vcko(im,km)                 
 !
 !c  local variables and arrays
 !
@@ -1921,12 +1921,12 @@ CONTAINS
       real(kind=kind_phys) dt2,     dz,      ce0,                 &
      &                     h1,      factor,  gocp,                &
      &                     g,       c1,      d1,                  &
-     &                     b1,      f1,      bb1,     bb2,        &
+     &                     b1,      f1,      bb1,     bb2,        & 
      &                     alp,     a1,      qmin,    zfmin,      &
      &                     xmmx,    rbint,   tau,                 &
 !    &                     rbint,   tau,                          &
      &                     tem,     tem1,    tem2,                &
-     &                     ptem,    ptem1,   ptem2,               &
+     &                     ptem,    ptem1,   ptem2,               &  
      &                     pgcon
 !
       real(kind=kind_phys) sigw1(im),   usws3(im),  xlamax(im),   &
@@ -1968,9 +1968,9 @@ CONTAINS
       enddo
 !
       do i=1,im
-        if(cnvflg(i)) then
+        if(cnvflg(i)) then 
           k = kpbl(i) / 2
-          k = max(k, 1)
+          k = max(k, 1) 
           delz(i) = zl(i,k+1) - zl(i,k)
           xlamax(i) = ce0 / delz(i)
         endif
@@ -2037,7 +2037,7 @@ CONTAINS
 !
 !  from our tuning
       bb1 = 1.8
-      bb2 = 3.5
+      bb2 = 3.5 
 !
       do i = 1, im
         if(cnvflg(i)) then
@@ -2187,8 +2187,8 @@ CONTAINS
 !
              tcko(i,k) = ((1.-tem)*tcko(i,k-1)+tem*               &
      &                    (t1(i,k)+t1(i,k-1))-gocp*dz)/factor
-             ucko(i,k) = ((1.-tem)*ucko(i,k-1)+ptem*u1(i,k)       &
-     &                    +ptem1*u1(i,k-1))/factor
+             ucko(i,k) = ((1.-tem)*ucko(i,k-1)+ptem*u1(i,k)       & 
+     &                    +ptem1*u1(i,k-1))/factor                 
              vcko(i,k) = ((1.-tem)*vcko(i,k-1)+ptem*v1(i,k)       &
      &                    +ptem1*v1(i,k-1))/factor
           endif
@@ -2201,7 +2201,7 @@ CONTAINS
              dz   = zl(i,k) - zl(i,k-1)
              tem  = 0.5 * xlamue(i,k-1) * dz
              factor = 1. + tem
-
+ 
              qcko(i,k,n) = ((1.-tem)*qcko(i,k-1,n)+tem*           &
      &                    (q1(i,k,n)+q1(i,k-1,n)))/factor
           endif

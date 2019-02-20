@@ -2,9 +2,9 @@
 !
 
 !<DESCRIPTION>
-! ESMF-specific modules for building WRF as an ESMF component.
+! ESMF-specific modules for building WRF as an ESMF component.  
 !
-! This source file is only built when ESMF coupling is used.
+! This source file is only built when ESMF coupling is used.  
 !
 !</DESCRIPTION>
 
@@ -12,21 +12,21 @@
 
 MODULE module_metadatautils
 !<DESCRIPTION>
-! This module defines component-independent "model metadata" utilities
-! used for ESMF coupling.
+! This module defines component-independent "model metadata" utilities 
+! used for ESMF coupling.  
 !</DESCRIPTION>
-!TODO:  Upgrade this later to support multiple coupling intervals via Alarms
-!TODO:  associated with top-level clock.  Do this by adding TimesAttachedToState()
-!TODO:  inquiry function that will test an ESMF_State to see if the times are
-!TODO:  present via names defined in this module.  Then call it for every
-!TODO:  component and resolve conflicts (somehow) for cases where two components
-!TODO:  define conflicting clocks.  Of course, a component is allowed to not attach
-!TODO:  times to a state at all, if it can handle any time step.
+!TODO:  Upgrade this later to support multiple coupling intervals via Alarms 
+!TODO:  associated with top-level clock.  Do this by adding TimesAttachedToState() 
+!TODO:  inquiry function that will test an ESMF_State to see if the times are 
+!TODO:  present via names defined in this module.  Then call it for every 
+!TODO:  component and resolve conflicts (somehow) for cases where two components 
+!TODO:  define conflicting clocks.  Of course, a component is allowed to not attach 
+!TODO:  times to a state at all, if it can handle any time step.  
 !
-!TODO:  Replace meta-data names with "model metadata" conventions such as CF
+!TODO:  Replace meta-data names with "model metadata" conventions such as CF 
 !TODO:  (once they exist)
 !
-!TODO:  Refactor to remove duplication of hard-coded names.
+!TODO:  Refactor to remove duplication of hard-coded names.  
 !
    USE ESMF
 
@@ -48,9 +48,9 @@ MODULE module_metadatautils
 CONTAINS
 
 
-   ! Attach time information to state as meta-data.
-   ! Update later to use some form of meta-data standards/conventions for
-   ! model "time" meta-data.
+   ! Attach time information to state as meta-data.  
+   ! Update later to use some form of meta-data standards/conventions for 
+   ! model "time" meta-data.  
    SUBROUTINE AttachTimesToState( state, startTime, stopTime, couplingInterval )
      TYPE(ESMF_State),        INTENT(INOUT) :: state
      TYPE(ESMF_Time),         INTENT(INOUT) :: startTime
@@ -112,10 +112,10 @@ CONTAINS
 
 
 
-   ! Extract time information attached as meta-data from a single
-   ! ESMF_State.
-   ! Update later to use some form of meta-data standards/conventions for
-   ! model "time" meta-data.
+   ! Extract time information attached as meta-data from a single 
+   ! ESMF_State.  
+   ! Update later to use some form of meta-data standards/conventions for 
+   ! model "time" meta-data.  
    SUBROUTINE GetTimesFromState( state, startTime, stopTime, couplingInterval, rc )
      TYPE(ESMF_State),        INTENT(INOUT) :: state
      TYPE(ESMF_Time),         INTENT(INOUT) :: startTime
@@ -187,10 +187,10 @@ CONTAINS
 
 
 
-   ! Extract time information attached as meta-data from one or more
-   ! ESMF_States.  To use this with more than one ESMF_State, put the
-   ! ESMF_States into a single ESMF_State.  If times differ, an attempt
-   ! is made to reconcile them.
+   ! Extract time information attached as meta-data from one or more 
+   ! ESMF_States.  To use this with more than one ESMF_State, put the 
+   ! ESMF_States into a single ESMF_State.  If times differ, an attempt 
+   ! is made to reconcile them.  
    SUBROUTINE GetTimesFromStates( state, startTime, stopTime, couplingInterval )
    USE ESMF
      TYPE(ESMF_State),        INTENT(INOUT) :: state
@@ -208,11 +208,11 @@ CONTAINS
      TYPE(ESMF_TimeInterval), ALLOCATABLE :: couplingIntervals(:)
      CHARACTER (len=132) :: mess
 
-! Unfortunately, implementing this is unnecessarily difficult due
-! to lack of Iterators for ESMF_State.
+! Unfortunately, implementing this is unnecessarily difficult due 
+! to lack of Iterators for ESMF_State.  
 
-     ! Since there are no convenient iterators for ESMF_State,
-     ! write a lot of code...
+     ! Since there are no convenient iterators for ESMF_State, 
+     ! write a lot of code...  
      ! Figure out how many items are in the ESMF_State
      CALL ESMF_StateGet(state, itemCount=numItems, rc=rc)
      IF ( rc /= ESMF_SUCCESS) THEN
@@ -264,7 +264,7 @@ CONTAINS
         ! valid times in it.  Use that one.
           WRITE(mess,*)'WARNING: Only ',TRIM(itemNames(1)),&
                        ' is valid and has time info in it.  Using that.'
-          CALL wrf_message(mess)
+          CALL wrf_message(mess) 
           CALL ESMF_StateGet( state, itemName=TRIM(itemNames(1)), &
                               nestedState=tmpState, rc=rc )
           CALL GetTimesFromState( tmpState, startTime, stopTime, &
@@ -272,7 +272,7 @@ CONTAINS
        ELSE IF ( istate .GT. 1 ) THEN
           CALL ReconcileTimes( startTimes, stopTimes, couplingIntervals, &
                                startTime,  stopTime,  couplingInterval )
-       ELSE
+       ELSE 
           CALL wrf_error_fatal('no valid states with times found. giving up.')
        ENDIF
      ELSE
@@ -289,9 +289,9 @@ CONTAINS
    END SUBROUTINE GetTimesFromStates
 
 
-   ! Reconcile all times and intervals in startTimes, stopTimes, and
-   ! couplingIntervals and return the results in startTime, stopTime, and
-   ! couplingInterval.  Abort if reconciliation is not possible.
+   ! Reconcile all times and intervals in startTimes, stopTimes, and 
+   ! couplingIntervals and return the results in startTime, stopTime, and 
+   ! couplingInterval.  Abort if reconciliation is not possible.  
    SUBROUTINE ReconcileTimes( startTimes, stopTimes, couplingIntervals, &
                               startTime,  stopTime,  couplingInterval )
      TYPE(ESMF_Time),         INTENT(INOUT) :: startTimes(:)
@@ -318,7 +318,7 @@ CONTAINS
      ENDIF
 
      ! reconcile
-!TODO:  For now this is very simple.  Fancy it up later.
+!TODO:  For now this is very simple.  Fancy it up later.  
      DO i = 1, numTimes
        IF ( i == 1 ) THEN
          startTime = startTimes(i)
@@ -354,9 +354,9 @@ CONTAINS
 
 
 
-   !TODO:  Eliminate this once this information can be derived via other
-   !TODO:  means.
-   SUBROUTINE AttachDecompToState( state,                        &
+   !TODO:  Eliminate this once this information can be derived via other 
+   !TODO:  means.  
+   SUBROUTINE AttachDecompToState( state,                        & 
                                    ids, ide, jds, jde, kds, kde, &
                                    ims, ime, jms, jme, kms, kme, &
                                    ips, ipe, jps, jpe, kps, kpe, &
@@ -376,9 +376,9 @@ CONTAINS
      logical :: logvals(4)
 
      ! first the logicals
-     ! Usually, when writing an API for a target language, it is considered
-     ! good practice to use native types of the target language in the
-     ! interfaces.
+     ! Usually, when writing an API for a target language, it is considered 
+     ! good practice to use native types of the target language in the 
+     ! interfaces.  
      logvals = .FALSE.
      DO i = 1, SIZE(bdy_mask)
        IF (bdy_mask(i)) THEN
@@ -417,9 +417,9 @@ CONTAINS
 
 
 
-   !TODO:  Eliminate this once this information can be derived via other
-   !TODO:  means.
-   SUBROUTINE GetDecompFromState( state,                        &
+   !TODO:  Eliminate this once this information can be derived via other 
+   !TODO:  means.  
+   SUBROUTINE GetDecompFromState( state,                        & 
                                   ids, ide, jds, jde, kds, kde, &
                                   ims, ime, jms, jme, kms, kme, &
                                   ips, ipe, jps, jpe, kps, kpe, &
@@ -444,9 +444,9 @@ CONTAINS
      IF ( rc /= ESMF_SUCCESS) THEN
        CALL wrf_error_fatal ( 'ESMF_AttributeGet(DecompositionLogicals) failed' )
      ENDIF
-     ! Usually, when writing an API for a target language, it is considered
-     ! good practice to use native types of the target language in the
-     ! interfaces.
+     ! Usually, when writing an API for a target language, it is considered 
+     ! good practice to use native types of the target language in the 
+     ! interfaces.  
      bdy_mask = .FALSE.
      DO i = 1, SIZE(logvals)
        IF (logvals(i) ) THEN
@@ -488,9 +488,9 @@ END MODULE module_metadatautils
 
 MODULE module_wrf_component_top
 !<DESCRIPTION>
-! This module defines wrf_component_init1(), wrf_component_init2(),
-! wrf_component_run(), and wrf_component_finalize() routines that are called
-! when WRF is run as an ESMF component.
+! This module defines wrf_component_init1(), wrf_component_init2(), 
+! wrf_component_run(), and wrf_component_finalize() routines that are called 
+! when WRF is run as an ESMF component.  
 !</DESCRIPTION>
 
    USE ESMF
@@ -532,8 +532,8 @@ CONTAINS
 #endif
      INTEGER,                     INTENT(  OUT) :: rc
 !<DESCRIPTION>
-!     WRF component init routine, phase 1.  Passes relevant coupling
-!     information back as metadata on exportState.
+!     WRF component init routine, phase 1.  Passes relevant coupling 
+!     information back as metadata on exportState.  
 !
 !     The arguments are:
 !       gcomp           Component
@@ -543,12 +543,12 @@ CONTAINS
 !       rc              Return code; equals ESMF_SUCCESS if there are no errors,
 !                       otherwise ESMF_FAILURE.
 !</DESCRIPTION>
-!TODO:  Note that much of the decomposition-related meta-data attached to the
-!TODO:  exportState are WRF-specific and are only useful if other components
-!TODO:  want to re-use the WRF IOAPI with the same decomposition as the WRF
-!TODO:  model.  This is true for the simple WRF+CPL+SST test case, but will
-!TODO:  not be in general.  Of course other components are free to ignore this
-!TODO:  information.
+!TODO:  Note that much of the decomposition-related meta-data attached to the 
+!TODO:  exportState are WRF-specific and are only useful if other components 
+!TODO:  want to re-use the WRF IOAPI with the same decomposition as the WRF 
+!TODO:  model.  This is true for the simple WRF+CPL+SST test case, but will 
+!TODO:  not be in general.  Of course other components are free to ignore this 
+!TODO:  information.  
 
      ! Local variables
      TYPE(ESMF_GridComp), POINTER :: p_gcomp
@@ -573,9 +573,9 @@ CONTAINS
      p_importState => importState
      p_exportState => exportState
      p_clock => clock
-     ! NOTE:  It will be possible to remove this call once ESMF supports
-     !        interfaces ESMF_ClockGetCurrent(), ESMF_ImportStateGetCurrent(),
-     !        ESMF_ExportStateGetCurrent(), and ESMF_GridCompGetCurrent().
+     ! NOTE:  It will be possible to remove this call once ESMF supports 
+     !        interfaces ESMF_ClockGetCurrent(), ESMF_ImportStateGetCurrent(), 
+     !        ESMF_ExportStateGetCurrent(), and ESMF_GridCompGetCurrent().  
      CALL ESMF_SetCurrent( gcomp=p_gcomp, importState=p_importState, &
                            exportState=p_exportState, clock=p_clock )
 
@@ -591,13 +591,13 @@ CONTAINS
      CALL wrf_set_dm_communicator( mpicomtmp )
 #endif
 
-     ! Call WRF "init" routine, which, for a DM_PARALLEL run, will recognize
-     ! that ESMF has already called MPI_INIT and respond appropriately.
+     ! Call WRF "init" routine, which, for a DM_PARALLEL run, will recognize 
+     ! that ESMF has already called MPI_INIT and respond appropriately.  
      CALL wrf_init( no_init1=.TRUE. )
 
-     ! For now, use settings from WRF component intialization to set up
-     ! top-level clock.  Per suggestion from ESMF Core team, these are passed
-     ! back as attributes on exportState.
+     ! For now, use settings from WRF component intialization to set up 
+     ! top-level clock.  Per suggestion from ESMF Core team, these are passed 
+     ! back as attributes on exportState.  
      CALL wrf_clockprint( 100, head_grid%domain_clock, &
             'DEBUG wrf_component_init1():  head_grid%domain_clock,' )
      CALL ESMF_ClockGet(head_grid%domain_clock, startTime=startTime, &
@@ -641,8 +641,8 @@ CONTAINS
      TYPE(ESMF_Clock),    TARGET, INTENT(INOUT) :: clock
      INTEGER,                     INTENT(  OUT) :: rc
 !<DESCRIPTION>
-!     WRF component init routine, phase 2.  Initializes importState and
-!     exportState.
+!     WRF component init routine, phase 2.  Initializes importState and 
+!     exportState.  
 !
 !     The arguments are:
 !       gcomp           Component
@@ -704,9 +704,9 @@ CONTAINS
      p_importState => importState
      p_exportState => exportState
      p_clock => clock
-     ! NOTE:  It will be possible to remove this call once ESMF supports
-     !        interfaces ESMF_ClockGetCurrent(), ESMF_ImportStateGetCurrent(),
-     !        ESMF_ExportStateGetCurrent(), and ESMF_GridCompGetCurrent().
+     ! NOTE:  It will be possible to remove this call once ESMF supports 
+     !        interfaces ESMF_ClockGetCurrent(), ESMF_ImportStateGetCurrent(), 
+     !        ESMF_ExportStateGetCurrent(), and ESMF_GridCompGetCurrent().  
      CALL ESMF_SetCurrent( gcomp=p_gcomp, importState=p_importState, &
                            exportState=p_exportState, clock=p_clock )
 
@@ -815,9 +815,9 @@ CONTAINS
      p_importState => importState
      p_exportState => exportState
      p_clock => clock
-     ! NOTE:  It will be possible to remove this call once ESMF supports
-     !        interfaces ESMF_ClockGetCurrent(), ESMF_ImportStateGetCurrent(),
-     !        ESMF_ExportStateGetCurrent(), and ESMF_GridCompGetCurrent().
+     ! NOTE:  It will be possible to remove this call once ESMF supports 
+     !        interfaces ESMF_ClockGetCurrent(), ESMF_ImportStateGetCurrent(), 
+     !        ESMF_ExportStateGetCurrent(), and ESMF_GridCompGetCurrent().  
      CALL ESMF_SetCurrent( gcomp=p_gcomp, importState=p_importState, &
                            exportState=p_exportState, clock=p_clock )
 
@@ -876,14 +876,14 @@ CONTAINS
      p_importState => importState
      p_exportState => exportState
      p_clock => clock
-     ! NOTE:  It will be possible to remove this call once ESMF supports
-     !        interfaces ESMF_ClockGetCurrent(), ESMF_ImportStateGetCurrent(),
-     !        ESMF_ExportStateGetCurrent(), and ESMF_GridCompGetCurrent().
+     ! NOTE:  It will be possible to remove this call once ESMF supports 
+     !        interfaces ESMF_ClockGetCurrent(), ESMF_ImportStateGetCurrent(), 
+     !        ESMF_ExportStateGetCurrent(), and ESMF_GridCompGetCurrent().  
      CALL ESMF_SetCurrent( gcomp=p_gcomp, importState=p_importState, &
                            exportState=p_exportState, clock=p_clock )
 
-     ! Call WRF "finalize" routine, suppressing call to MPI_FINALIZE so
-     ! ESMF can do it (if needed) during ESMF_Finalize().
+     ! Call WRF "finalize" routine, suppressing call to MPI_FINALIZE so 
+     ! ESMF can do it (if needed) during ESMF_Finalize().  
      CALL wrf_finalize( no_shutdown=.TRUE. )
 
      rc = ESMF_SUCCESS
@@ -897,9 +897,9 @@ CONTAINS
      TYPE(ESMF_Time),         INTENT(IN   ) :: stopTime
      TYPE(ESMF_TimeInterval), INTENT(  OUT) :: couplingInterval
 !<DESCRIPTION>
-!     WRF convenience routine for deducing coupling interval.  The startTime
-!     and stopTime arguments are only used for determining a default value
-!     when coupling is not actually being done.
+!     WRF convenience routine for deducing coupling interval.  The startTime 
+!     and stopTime arguments are only used for determining a default value 
+!     when coupling is not actually being done.  
 !
 !     The arguments are:
 !       startTime          start time
@@ -915,16 +915,16 @@ CONTAINS
 
      ! deduce coupling time-step
      foundcoupling = .FALSE.
-!TODO:  This bit just finds the FIRST case and extracts coupling interval...
-!TODO:  Add error-checking for over-specification.
-!TODO:  Add support for multiple coupling intervals later...
-!TODO:  Add support for coupling that does not begin immediately later...
-!TODO:  Get rid of duplication once I/O refactoring is finished (and
-!TODO:  auxio streams can be addressed via index).
+!TODO:  This bit just finds the FIRST case and extracts coupling interval...  
+!TODO:  Add error-checking for over-specification.  
+!TODO:  Add support for multiple coupling intervals later...  
+!TODO:  Add support for coupling that does not begin immediately later...  
+!TODO:  Get rid of duplication once I/O refactoring is finished (and 
+!TODO:  auxio streams can be addressed via index).  
 
 #include "med_find_esmf_coupling.inc"
 
-     ! look for erroneous use of io_form...
+     ! look for erroneous use of io_form...  
      CALL nl_get_io_form_restart( 1, io_form )
      IF ( use_package( io_form ) == IO_ESMF ) THEN
        CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ERROR:  ESMF cannot be used for WRF restart I/O' )
@@ -942,8 +942,8 @@ CONTAINS
        CALL wrf_error_fatal ( 'wrf_findCouplingInterval:  ERROR:  ESMF cannot be used for WRF boundary I/O' )
      ENDIF
 
-     ! If nobody uses IO_ESMF, then default is to run WRF all the way to
-     ! the end.
+     ! If nobody uses IO_ESMF, then default is to run WRF all the way to 
+     ! the end.  
      IF ( .NOT. foundcoupling ) THEN
        couplingInterval = stopTime - startTime
        call wrf_debug ( 1, 'WARNING:  ESMF coupling not used in this WRF run' )
@@ -963,23 +963,23 @@ CONTAINS
      INTEGER, INTENT(OUT) :: domdesc
      LOGICAL, INTENT(OUT) :: bdy_mask(4)
 !<DESCRIPTION>
-!     WRF convenience routine for deducing decomposition information.
-!TODO:  Note that domdesc is meaningful only for SPMD alternating event loops.
-!TODO:  For concurrent operation (SPMD or MPMD), we will need to create a new
-!TODO:  "domdesc" suitable for the task layout of the SST component.  For
-!TODO:  MPMD alternating event loops, we will need to serialize domdesc and
+!     WRF convenience routine for deducing decomposition information.  
+!TODO:  Note that domdesc is meaningful only for SPMD alternating event loops.  
+!TODO:  For concurrent operation (SPMD or MPMD), we will need to create a new 
+!TODO:  "domdesc" suitable for the task layout of the SST component.  For 
+!TODO:  MPMD alternating event loops, we will need to serialize domdesc and 
 !TODO:  store it as metadata within the export state.  Similar arguments apply
 !TODO:  to [ij][mp][se] and bdy_mask.
 !
 !     The arguments are:
-!       ids, ide, jds, jde, kds, kde    Domain extent.
-!       ims, ime, jms, jme, kms, kme    Memory extent.
-!       ips, ipe, jps, jpe, kps, kpe    Patch extent.
-!       domdesc                         Domain descriptor for external
-!                                       distributed-memory communication
-!                                       package (opaque to WRF).
-!       bdy_mask                        Boundary mask flags indicating which
-!                                       domain boundaries are on this task.
+!       ids, ide, jds, jde, kds, kde    Domain extent.  
+!       ims, ime, jms, jme, kms, kme    Memory extent.  
+!       ips, ipe, jps, jpe, kps, kpe    Patch extent.  
+!       domdesc                         Domain descriptor for external 
+!                                       distributed-memory communication 
+!                                       package (opaque to WRF).  
+!       bdy_mask                        Boundary mask flags indicating which 
+!                                       domain boundaries are on this task.  
 !</DESCRIPTION>
      ! extract decomposition information from head_grid
      CALL get_ijk_from_grid( head_grid ,                   &
@@ -988,7 +988,7 @@ CONTAINS
                              ips, ipe, jps, jpe, kps, kpe  )
 #if 0
 ! JM
-! with version 3 of ESMF's staggering concepts, WRF's non-staggered grid is equivalent to
+! with version 3 of ESMF's staggering concepts, WRF's non-staggered grid is equivalent to 
 ! esmf's 'exclusive' region -- that is the set of points that are owned by the 'DE' (eyeroll)
 ! WRF, on the other hand, is returning the 'staggered' dimensions here.  So convert to the
 ! unstaggered dims before returning.
@@ -1020,12 +1020,12 @@ CONTAINS
      IMPLICIT NONE
 
 !<DESCRIPTION>
-!     Populate WRF import and export states from Registry-generated code.
-!     For now, only head_grid can be coupled.
+!     Populate WRF import and export states from Registry-generated code.  
+!     For now, only head_grid can be coupled.  
 !
 !</DESCRIPTION>
-!TODO:  Extend later to include child
-!TODO:  domains, possibly via nested ESMF_State's.
+!TODO:  Extend later to include child 
+!TODO:  domains, possibly via nested ESMF_State's.  
 
      ! Arguments
      INTEGER, INTENT(OUT)       :: ierr
@@ -1039,7 +1039,7 @@ CONTAINS
 
      ! for now support coupling to head_grid only
      grid => head_grid
-! TODO:  Use actual grid via current_grid%id via something like this...
+! TODO:  Use actual grid via current_grid%id via something like this...  
 !  IF ( current_grid_set ) THEN
 !    grid => current_grid
 !  ELSE
@@ -1049,7 +1049,7 @@ CONTAINS
      CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
      CALL set_scalar_indices_from_config ( grid%id , idum1 , idum2 )
 
-     stream = 0
+     stream = 0 
      ierr = 0
 
 #include "med_open_esmf_calls.inc"
@@ -1062,8 +1062,8 @@ END MODULE module_wrf_component_top
 
 MODULE module_wrf_setservices
 !<DESCRIPTION>
-! This module defines WRF "Set Services" method wrf_register()
-! used for ESMF coupling.
+! This module defines WRF "Set Services" method wrf_register() 
+! used for ESMF coupling.  
 !</DESCRIPTION>
 
    USE module_wrf_component_top, ONLY: wrf_component_init1, &

@@ -44,13 +44,13 @@ typedef struct {
 } Grib1_Tables;
 
 
-int GET_GRIB_PARAM (Grib1_Tables *grib_tables, char *varname, int *center,
+int GET_GRIB_PARAM (Grib1_Tables *grib_tables, char *varname, int *center, 
 		    int *subcenter, int *parmtbl, int *tablenum, int *index,
 		    int strlen1, int strlen2);
 
 int GET_GRIB1_TABLES_SIZE (int *size);
 
-int LOAD_GRIB1_TABLES (char filename[],
+int LOAD_GRIB1_TABLES (char filename[], 
 			   Grib1_Tables *grib_tables, int *ret, int strlen1);
 
 Grib1_Tables *copy_grib_tables(Grib1_Tables *);

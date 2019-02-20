@@ -1,4 +1,4 @@
-function h=m_line(long,lat,varargin);
+function h=m_line(long,lat,varargin)
 % M_LINE Create a line on a map
 %    M_LINE(LONG,LAT) adds the line in vectors LONG and LAT to the 
 %    current axes. If LONG and LAT are matrices the same size, one 
@@ -27,28 +27,28 @@ function h=m_line(long,lat,varargin);
 clp='on';
 
 k=1;
-while k<length(varargin),
-  switch lower(varargin{k}(1:3)),
-    case 'cli',
-      clp=varargin{k+1}
-      if isempty(findstr(clp,'on')),
+while k<length(varargin)
+  switch lower(varargin{k}(1:3))
+    case 'cli'
+      clp=varargin{k+1};
+      if isempty(findstr(clp,'on'))
         varargin{k+1}='off';
       else
         varargin{k+1}='on';
 %        varargin([k k+1])=[];
-      end;
+      end
       k=k+2;
     otherwise
       k=k+2;
-  end;
-end;
+  end
+end
 
-[X,Y]=m_ll2xy(long,lat,'clip',clp);
+[X,Y]=m_ll2xy(long,lat,'clipping',clp);
 
-if nargout>0,
+if nargout>0
   h=line(X,Y,'tag','m_line',varargin{:});
 else
   line(X,Y,'tag','m_line',varargin{:});
-end;
+end
 
 

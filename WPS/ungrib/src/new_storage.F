@@ -86,7 +86,7 @@ contains
        enddo SCANF
        if (nnode%id == 0) exit SEARCH
 
-       N2: do
+       N2: do 
           current => nnode%first
           do while (associated(current%next))
              hold => current
@@ -173,7 +173,7 @@ contains
        call llstor_start(icode)
     endif
     current => nnode%first
-
+    
     SEARCH : do while (associated(current%next))
        current => current%next
        if (current%id == name) then
@@ -209,7 +209,7 @@ contains
        call llstor_start(icode)
     endif
     current => nnode%first
-
+    
     SEARCH : do while (associated(current%next))
        current => current%next
        if (current%id == name) then
@@ -252,7 +252,7 @@ contains
        stop 'GET_STORAGE_code'
     endif
     current => nnode%first
-
+    
     SEARCH : do while (associated(current%next))
        current => current%next
        if (current%id == name) then
@@ -281,7 +281,7 @@ contains
        STOP 'REFR_STORAGE_code'
     endif
     current => nnode%first
-
+    
     SEARCH : do while (associated(current%next))
        current => current%next
        if (current%id == name) then
@@ -324,7 +324,7 @@ contains
     hold%next => current%next
     nullify(current%next)
     nullify(current)
-
+    
   end subroutine llstor_remove
 
   subroutine get_dims(icode, name)
@@ -337,7 +337,7 @@ contains
        STOP 'get_dims'
     end if
     current => nnode%first
-
+    
     SEARCH : do while (associated(current%next))
        current => current%next
        if (current%id == name) then
@@ -380,7 +380,7 @@ contains
 !               print*, current%id, ' = ', current%data2d(1,1)
                 call mprintf(.true.,DEBUG," %s = %f ",s1=current%id,f1=current%data2d(1,1))
              endif
-
+                
           endif
           current => current%next
        enddo
@@ -460,9 +460,9 @@ contains
 
     call find_node1(icode)
     if (iferr /= 0) go to 1000
-
+    
     current => nnode%first
-
+    
     SEARCH : do while (associated(current%next))
        current => current%next
        if (current%id == name) then

@@ -9,14 +9,14 @@
      &                 ,ITS,ITE,JTS,JTE,KTS,KTE)
 !***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
+!                .      .    .     
 ! SUBPROGRAM:    RDTEMP      RADIATIVE TEMPERATURE CHANGE
 !   PRGRMMR: BLACK           ORG: W/NP22     DATE: 93-12-29
-!
+!     
 ! ABSTRACT:
 !     RDTEMP APPLIES THE TEMPERATURE TENDENCIES DUE TO
 !     RADIATION AT ALL LAYERS AT EACH ADJUSTMENT TIME STEP
-!
+!     
 ! PROGRAM HISTORY LOG:
 !   87-09-??  BLACK      - ORIGINATOR
 !   95-03-25  BLACK      - CONVERSION FROM 1-D TO 2-D IN HORIZONTAL
@@ -25,13 +25,13 @@
 !   02-06-07  BLACK      - WRF CODING STANDARDS
 !   02-09-09  WOLFE      - CONVERTING TO GLOBAL INDEXING
 !   05-12-19  BLACK      - CONVERTED FROM IKJ TO IJK
-!
+!     
 ! USAGE: CALL RDTEMP FROM SUBROUTINE SOLVE_RUNSTREAM
-!
+!  
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
 !   MACHINE : IBM SP
-!$$$
+!$$$  
 !-----------------------------------------------------------------------
       USE MODULE_MPP
       USE MODULE_RA_GFDLETA,ONLY : CAL_MON_DAY,ZENITH
@@ -119,7 +119,7 @@
       DO J=MYJS,MYJE
       DO I=MYIS,MYIE
         CZEN(I,J)=CZEN2(I,J)
-        IF(CZMEAN(I,J)>0.)THEN
+        IF(CZMEAN(I,J)>0.)THEN 
           FACTR(I,J)=CZEN(I,J)/CZMEAN(I,J)
         ELSE
           FACTR(I,J)=0.

@@ -1,7 +1,7 @@
 !
-!svn $Id: fennel_mod.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: fennel_mod.h 921 2018-09-06 18:27:34Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -219,117 +219,189 @@
 !
       IF (.not.allocated(BioIter)) THEN
         allocate ( BioIter(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(AttSW)) THEN
         allocate ( AttSW(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(AttChl)) THEN
         allocate ( AttChl(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(Chl2C_m)) THEN
         allocate ( Chl2C_m(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(ChlMin)) THEN
         allocate ( ChlMin(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(CoagR)) THEN
         allocate ( CoagR(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(D_p5NH4)) THEN
         allocate ( D_p5NH4(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(I_thNH4)) THEN
         allocate ( I_thNH4(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(K_NH4)) THEN
         allocate ( K_NH4(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(K_NO3)) THEN
         allocate ( K_NO3(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(K_Phy)) THEN
         allocate ( K_Phy(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(LDeRRN)) THEN
         allocate ( LDeRRN(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(LDeRRC)) THEN
         allocate ( LDeRRC(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(NitriR)) THEN
         allocate ( NitriR(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(PARfrac)) THEN
         allocate ( PARfrac(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(PhyCN)) THEN
         allocate ( PhyCN(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(PhyIP)) THEN
         allocate ( PhyIP(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(PhyIS)) THEN
         allocate ( PhyIS(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(PhyMin)) THEN
         allocate ( PhyMin(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(PhyMR)) THEN
         allocate ( PhyMR(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(SDeAR)) THEN
         allocate ( SDeAR(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(SDeBR)) THEN
         allocate ( SDeBR(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(SDeRRN)) THEN
         allocate ( SDeRRN(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(SDeRRC)) THEN
         allocate ( SDeRRC(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(Vp0)) THEN
         allocate ( Vp0(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(wLDet)) THEN
         allocate ( wLDet(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(wPhy)) THEN
         allocate ( wPhy(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(wSDet)) THEN
         allocate ( wSDet(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(ZooAE_N)) THEN
         allocate ( ZooAE_N(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(ZooBM)) THEN
         allocate ( ZooBM(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(ZooCN)) THEN
         allocate ( ZooCN(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(ZooER)) THEN
         allocate ( ZooER(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(ZooGR)) THEN
         allocate ( ZooGR(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(ZooMin)) THEN
         allocate ( ZooMin(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(ZooMR)) THEN
         allocate ( ZooMR(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(pCO2air)) THEN
         allocate ( pCO2air(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 !
 !  Allocate biological tracer vector.
 !
       IF (.not.allocated(idbio)) THEN
         allocate ( idbio(NBT) )
+        Dmem(1)=Dmem(1)+REAL(NBT,r8)
       END IF
 
 #if defined DIAGNOSTICS && defined DIAGNOSTICS_BIO
@@ -338,9 +410,12 @@
 !
       IF (.not.allocated(iDbio2)) THEN
         allocate ( iDbio2(NDbio2d) )
+        Dmem(1)=Dmem(1)+REAL(NDbio2d,r8)
       END IF
+
       IF (.not.allocated(iDbio3)) THEN
         allocate ( iDbio3(NDbio3d) )
+        Dmem(1)=Dmem(1)+REAL(NDbio3d,r8)
       END IF
 #endif
 !

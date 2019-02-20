@@ -60,11 +60,11 @@
 # endif
 # undef SEDIMENT
 # ifdef SEDIMENT
-#  define SUSPLOAD
-#  undef  BEDLOAD_SOULSBY
+#  undef  SUSPLOAD
+#  define BEDLOAD_SOULSBY
 #  undef  BEDLOAD_MPM
-#  define BEDLOAD_VANDERA
-#  define SED_MORPH
+#  undef  BEDLOAD_VANDERA
+#  undef  SED_MORPH
 # endif
 # if defined SEDIMENT || defined SG_BBL || defined MB_BBL || defined SSW_BBL
 #  define ANA_SEDIMENT

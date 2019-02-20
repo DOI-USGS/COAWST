@@ -3,23 +3,23 @@
 ! Grenier-Bretherton mixing PBL scheme (GBM PBL):
 !
 ! REFERENCES
-! 1) Grenier, H., and C. S. Bretherton, 2001: A moist PBL parameterization
-!    for large-scale models and its application to subtropical cloud-topped
-!    marine boundary layers. Mon. Wea. Rev., 129, 357-377.
+! 1) Grenier, H., and C. S. Bretherton, 2001: A moist PBL parameterization 
+!    for large-scale models and its application to subtropical cloud-topped 
+!    marine boundary layers. Mon. Wea. Rev., 129, 357-377. 
 !    ("GB01" in the comments)
-! 2) Galperin, B., L. H. Kantha, S. Hassid, and A. Rosati, 1988:
-!    A quasi-equilibrium turbulent energy model for geophysical flows.
+! 2) Galperin, B., L. H. Kantha, S. Hassid, and A. Rosati, 1988: 
+!    A quasi-equilibrium turbulent energy model for geophysical flows. 
 !    J. Atmos. Sci., 45, 55-62.
 !    ("Gal88" in the comments)
 ! 3) Mellor, G., and T. Yamada, 1982: Development of a turbulence closure
-!    model for geophysical fluid problems. Rev. Astrophys.Space Phys.,
+!    model for geophysical fluid problems. Rev. Astrophys.Space Phys., 
 !    20, 851-875.
 !    ("MY82" in the comments)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !! Natalie Perlin, October 2012 nperlin@coas.oregonstate.edu
-!!
+!! 
 !! GBM PBL Code history:
-!!
+!! 
 !! Herve Grenier, Christopher Bretherton - original contribution
 !! Jim McCaa - late 1990s, 2000-2001
 !! Nicolai Thum  2004-2005(?)
@@ -41,10 +41,10 @@ CONTAINS
 
   SUBROUTINE GBMPBL(U3D,V3D,TH3D,T3D,QV3D,QC3D,QI3D,P3D,PI3D,     &
        RUBLTEN,RVBLTEN,RTHBLTEN,                                  &
-       RQVBLTEN,RQCBLTEN,RQIBLTEN,                                &
+       RQVBLTEN,RQCBLTEN,RQIBLTEN,                                & 
        KZM_GBM,KTH_GBM,KETHL_GBM,EL_GBM,                          &
        dz8w,z,PSFC,TKE_PBL,RTHRATEN,                              &
-       ZNT,UST,ZOL,HOL,PBL,KPBL2D,REGIME,PSIM,PSIH,               &
+       ZNT,UST,ZOL,HOL,PBL,KPBL2D,REGIME,PSIM,PSIH,               & 
        XLAND,HFX,QFX,TSK,GZ1OZ0,WSPD,BR,                          &
        DT,DTMIN,                                                  &
        ids,ide, jds,jde, kds,kde,                                 &
@@ -74,14 +74,14 @@ CONTAINS
     !               PBL parameterization (kg/m^3 . kg/kg)
     !-- RQIBLTEN    Rho_dQi tendency due to
     !               PBL parameterization (kg/m^3 . kg/kg)
-    !
-    !-- KZM_GBM       exchange coefficient for momentum (m^2/s)
+    ! 
+    !-- KZM_GBM       exchange coefficient for momentum (m^2/s) 
     !-- KTH_GBM       exchange coefficient for heat (K m/s)
     !-- KETHL_GBM     exchange coeff. for TKE enhanced (m^2/s)
-    !
-    ! NB!! Vertical staggering of the GBM output variables
+    ! 
+    ! NB!! Vertical staggering of the GBM output variables 
     !  is as follows:
-    !  KZM_GBM, KTH_GBM are on full levels, starting from the sfc
+    !  KZM_GBM, KTH_GBM are on full levels, starting from the sfc 
     !  KETHL_GBM is on half-levels
     !  TKE_PBL and EL_GBM are on full levels, starting from the sfc
     !
@@ -155,7 +155,7 @@ CONTAINS
          TH3D, &
          T3D, &
          dz8w, &
-         z
+         z   
 
     !
     REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
@@ -205,7 +205,7 @@ CONTAINS
 
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(INOUT)   ::                            ZOL
-
+                                                                      
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                 INTENT(IN   )   ::                            U3D, &
                                                               V3D
@@ -217,7 +217,7 @@ CONTAINS
 
     ! LOCAL VARIABLES
 
-    REAL,       DIMENSION( its:ite, kts:kte )          ::   dz8w2d, &
+    REAL,       DIMENSION( its:ite, kts:kte )          ::   dz8w2d, & 
          z2d,t2dten_ra
 
     INTEGER ::  I,J,K,NK,pass
@@ -226,14 +226,14 @@ CONTAINS
                                          u2dblten_1,u2dblten_2,     &
                                          v2dblten_1,v2dblten_2
 
-    tke2d_1 = 0.0
-    tke2d_2 = 0.0
-    u2dblten_1 = 0.0
-    u2dblten_2 = 0.0
-    v2dblten_1 = 0.0
-    v2dblten_2 = 0.0
-    t2dten_ra  = 0.0
-
+    tke2d_1 = 0.0 
+    tke2d_2 = 0.0 
+    u2dblten_1 = 0.0 
+    u2dblten_2 = 0.0 
+    v2dblten_1 = 0.0 
+    v2dblten_2 = 0.0 
+    t2dten_ra  = 0.0 
+    
     DO J=jts,jte
        DO k=kts,kte
           NK=kme-k
@@ -244,7 +244,7 @@ CONTAINS
              !t2dten is flipped inside the code
 ! TKE_PBL = tke2d = 0.5 * (q**2) == e
 ! tke_2d_2 in gbmpbl is equivalent to "e" in GB01
-             tke2d_2(i,k)= TKE_PBL(i,k,j)
+             tke2d_2(i,k)= TKE_PBL(i,k,j) 
           ENDDO
        ENDDO
 
@@ -291,7 +291,7 @@ CONTAINS
 
   SUBROUTINE GBM2D(J,U2D,V2D,T2D,QV2D,QC2D,QI2D,P2D,    &
        U2DTEN,V2DTEN,T2DTEN,                            &
-       QV2DTEN,QC2DTEN,QI2DTEN,                         &
+       QV2DTEN,QC2DTEN,QI2DTEN,                         & 
        KZM2D,KTH2D,KETHL2D,EL2D,                        &
        TKE2D,T2DTEN_RA,                                 &
        dz8w2d,z2d,PSFCPA,                               &
@@ -366,7 +366,7 @@ CONTAINS
     REAL,     DIMENSION( its:ite, kts:kte ) ,                    &
          INTENT(IN)      ::                         dz8w2d, &
          z2d,t2dten_ra
-    !
+    !                                                                                
     REAL,     DIMENSION( ims:ime, kms:kme )                    , &
          INTENT(IN   )   ::                            U2D, &
          V2D
@@ -374,7 +374,7 @@ CONTAINS
     !     PBL SCHEME                                                      C
     !     Questions? Contact mccaa@atmos.washington.edu                   C
     !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-    !
+    !     
     !     Order of events:
     !     0.  Preliminaries:  Some things we only need to do once
     !     1.  First, save initial values and calculate some derivatives.
@@ -386,7 +386,7 @@ CONTAINS
     !     9.  Implicit diffusion of cloud ice
     !     10. Prediction of TKE
     !     11. Calculation of tendencies for output to model
-    !
+    !     
     !     Local variables on full levels
     real zqx(kts:kte+2)
     REAL KTH(KTS:KTE+1),KZM(KTS:KTE+1),RHOXFL(KTS:KTE+1),tke(kts:kte+1),tkes(kts:kte+1), &
@@ -421,21 +421,21 @@ CONTAINS
     real uimp2(kts:kte),rimp2(kts:kte)
     !NT some temporary variables to recompute n2
     real  THX_t,THVX_t,DTHV_t
-    !
+    !     
     parameter(XFR=0.1)        !Fraction of turb layer to be considered in bbls
 !    parameter(aone=1.9*xfr,atwo=15.,cfac=7.8)  orig, why is atwo 15!???? atn aone 1.9
-    parameter(aone=1.9*xfr,atwo=10.,cfac=7.8)
+    parameter(aone=1.9*xfr,atwo=10.,cfac=7.8) 
     parameter(czero=5.869)    ! b1/2**(3/2)
     parameter(rstbl=1.5)      ! empirical constant for l at stable interfaces
     PARAMETER (GAMCRT=3.,GAMCRQ=2.E-3)
     parameter(vk=0.4)
     parameter(pref = 100000.)
     !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-    !
+    !     
     !     ---0---  Preliminaries:  Some things we only need to do once
-    !
-    RDT=1./DT
-    dt2=dt
+    !     
+    RDT=1./DT 
+    dt2=dt 
     SVP1PA=svp1*10. ! NT actually this is svp1 in mb
     cpoxlv = cp/xlv
     xlvocp = xlv/cp
@@ -444,9 +444,9 @@ CONTAINS
 
     !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
     !     This is the beginning of big I loop
-    !
+    !     
     !     ---1---   First, save initial values and calculate some derivatives.
-    !
+    !     
     DO I=its,ite
        !     Copy in j-dependent variables
        tskx = tsk(i)
@@ -538,19 +538,19 @@ CONTAINS
        !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
        ustx = wspd1(i)*vk/(gz1oz0(i)-psim(i))
        ustxm = amax1(ustx,0.1)
-       if ((xland(i)-1.5).lt.0)  ustx = ustxm
+       if ((xland(i)-1.5).lt.0)  ustx = ustxm   
        !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-       !
-       !
+       !     
+       !     
        !     ---4---   Calculate the buoyancy jump at flux levels
-       !
+       !     
        call n2(thlx,exnerfl,epop,qwx,cpoxlv,rdza,            &
             rexnerfl,kts,kte,nsquar,rcldb,xlvocp,svp1pa)
        nsquar(kte+1)=  g/thvx(kte) * dthv / zax(kte)
        !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-       !
+       !     
        !     ---5--- Calculate the pbl height and length scale
-       !
+       !     
        call pblhgt( &
             ! input variables &
        zqx,kts,kte, &
@@ -561,9 +561,9 @@ CONTAINS
        bbls,pblx, &
             ktop,iconv,kmix2dx,kpbl2dx)
        !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-       !
+       !     
        !     ---6---   Compute diffusivity profiles
-       !
+       !     
        do pass = 1,2
           call my( &
                ! Input variables &
@@ -572,9 +572,9 @@ CONTAINS
                ! Output variables &
           kzm,kth,kethl )
           !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-          !
+          !     
           !     ---7---    Implicit diffusion of thetal, total water
-          !
+          !     
           !     First find the coefficients that apply to all scalars at half-levels
           do k = 1, kte
              if(k.eq.1)then
@@ -606,9 +606,9 @@ CONTAINS
           call tridag(aimp,bimp,cimp,rimp1,uimp1,kte)
           call tridag(aimp,bimp,cimp,rimp2,uimp2,kte)
           !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-          !
+          !     
           !     Recompute the buoyancy jump at flux levels
-          !
+          !     
           call n2(uimp1,exnerfl,epop,uimp2,cpoxlv,rdza,       &
 	       rexnerfl, kts,kte,nsquar,rcldb,xlvocp,svp1pa)
 	       !NT new recompute also n2 at sfc!!
@@ -636,9 +636,9 @@ CONTAINS
        !TTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT
        enddo
        !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-       !
+       !     
        !     Update the scalars (only after second pass)
-       !
+       !     
        !     Calculate new values of thx, qx and qcx using new values of thlx and qcx.
        do  k = 1, kte
           thlx(k) = uimp1(k)
@@ -663,9 +663,9 @@ CONTAINS
 !nt thvx is theta virtual
        ENDDO
        !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-       !
+       !     
        !     ---8--- Implicit diffusion of momentum
-       !
+       !     
        !     First find the coefficients that apply to winds at half-levels
        do k = 1, kte
           if(k.eq.1)then
@@ -681,7 +681,7 @@ CONTAINS
                   kzm(k+1) * dt2 *rdzq(k)*rdza(k+1)
           endif
           bimp(k) = 1 - aimp(k) - cimp(k)
-          !     Now find right side
+          !     Now find right side 
           !     No flux out top, so no (k.eq.1)
           if(k.eq.kte)then
              !     At surface
@@ -710,9 +710,9 @@ CONTAINS
           endif
        enddo
        !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-       !
+       !     
        !     ---9---    Implicit diffusion of cloud ice
-       !
+       !     
        !     First find the coefficients that apply to all scalars at half-levels
        do k = 1, kte
           if(k.eq.1)then
@@ -737,15 +737,15 @@ CONTAINS
        call tridag(aimp,bimp,cimp,rimp1,qix,kte)
        !         call tridag(aimp,bimp,cimp,rimp2,qncx,kte)
        !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-       !
+       !     
        !     ---10---   Prediction of TKE
-       !
+       !     
        !     Features:
        !     a. Explicit calculation of buoyancy and shear terms using
        !     time=t+1 values of thetal, qw, and winds
        !     b. Surface TKE is diagnosed
        !     c. Semi-implicit calculation of dissipation term and
-       !     implicit calculation of turbulent transfer term
+       !     implicit calculation of turbulent transfer term 
        !     First, buoyancy and shear terms
        DO K=2,KTE
           !     Compute buoyancy term with new values of thetal
@@ -757,7 +757,7 @@ CONTAINS
           k = ktop(ilay)
           if(qcx(k).gt.1e-8.and.k.gt.1) bouyan(k) = bouyan(k) - & !NT GB01:A14
                rttenx(k)*(presfl(k+1)-presfl(k)) * rrhoxfl(k) &
-               * rexnerfl(k) / thvx(k)
+               * rexnerfl(k) / thvx(k) 
        enddo
        !     TKE at top is fixed
        tke(1)=0.
@@ -796,7 +796,7 @@ CONTAINS
                 bimp(k-1)= 1 - aimp(k-1) - cimp(k-1)
              endif
           endif
-          !     Now find right side
+          !     Now find right side 
           if(k.eq.kte)then
              !     Account for fixed part of flux between level kte and surface
              rimp1(k-1) = tke(k) + dt2 * ( SHEAR(K)+BOUYAN(K) + &
@@ -812,9 +812,9 @@ CONTAINS
           tke(k) = max(uimp1(k-1),0.001) ! background tke .001
        enddo
        !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-       !
+       !     
        !     ---11---   Calculation of tendencies for output to model
-       !
+       !     
 
        DO K=KTS,KTE
           kr = kte+1-k
@@ -861,7 +861,7 @@ CONTAINS
     end do
     return
   end subroutine tridag
-
+      
   subroutine pblhgt( &
        ! input variables
        zqx,kts,kte, &
@@ -872,7 +872,7 @@ CONTAINS
        bbls,pblx, &
        ktop,iconv,kmix2dx,kpbl2dx &
        )
-
+    
     implicit none
     !     Input variables
     real zqx(kts:kte+2)
@@ -896,7 +896,7 @@ CONTAINS
     iconv = 0
     istabl = 1
     do k=2,kte+1   !nt nscquar is defined at kte+1 after the call to n2
-       if(nsquar(k).le.0)then
+       if(nsquar(k).le.0)then   
           if(istabl.eq.1)then
              iconv = iconv + 1
              ktop(iconv)=k
@@ -913,7 +913,7 @@ CONTAINS
 !	     iconv=iconv-1 !NT don't let the bottome layer be a convective top.
 !     end if
     !NT end
-
+	      
     !     Now see if they have sufficient buoyant convection to connect
 !NT save ktops to be able to reset top of a merged layers
    ktop_save=ktop
@@ -944,7 +944,7 @@ CONTAINS
 !NT doesn't workkpbl           if(trnnll*nlev.ge.-0.5*rnnll.and. &
 !NT n2 gets recomputed      nsquar(k).ge.1.e-6) goto 2746 ! Avoids weak layers with even weaker tops
 !NT after pblhgt                           ! Imagine n2 small negative over several layers
-                                           ! then average rnnll is very small and a very weak
+                                           ! then average rnnll is very small and a very weak 
                                            ! pos n2 is enough to be 'inversion' top. This makes
                                            ! sure that we go up at least one more.
           if(ilay.gt.1) then
@@ -968,7 +968,7 @@ CONTAINS
           nlev = nlev + 1 !NT moved up
        enddo
        !     Add radiative/entrainment contribution to total
-2746   k = ktop(ilay)
+2746   k = ktop(ilay) 
        radnnll = 0.
        if(qcx(k).gt.1e-8) radnnll =  &
             rttenx(k)*(presfl(k+1)-presfl(k))/ &
@@ -1014,14 +1014,14 @@ CONTAINS
        enddo
     enddo
 !NT added to check if iconv .ge. 1
- ENDIF
+ ENDIF  
 !NT end
     !     We should now have tops and bottoms for iconv layers
     ! NT not clear how kpbl2dx should work, but doesn't matter since
     ! NT only kmix2dx is used no matter what kpbl2dx is.
     ! NT Looks like it could be used to choose between mixing pbl and
     ! NT convective pbl height if there are more than 1 unstable layers
-
+			
     if(iconv.gt.0)then
        if(kbot(iconv).eq.kte+1)then
           kmix2dx = ktop(iconv)
@@ -1069,7 +1069,7 @@ CONTAINS
        if(b.eq.0.)then        ! form a*x**2 + c = 0
           if(a*c.gt.0.)then   ! failure: x**2 = -c/a < 0
              r1 =  -9.99e33
-          else                ! x**2 = -c/a
+          else                ! x**2 = -c/a 
              r1 = sqrt(-c/a)
           endif
           r2 = -r1
@@ -1110,7 +1110,7 @@ CONTAINS
        rcldb(k)=max(qwx(k)-rvls,0.)
        tempv = (templ + xlvocp*rcldb(k)) * &
             (1 + ep_1*(qwx(k)-rcldb(k)) - rcldb(k))
-       tvbl = tempv*rexnerfl(k)
+       tvbl = tempv*rexnerfl(k) 
        !     Now do layer above; go down to see how much evaporates
        templ = thlx(k-1)*exnerfl(k)
        rvls  = 100.*svp1pa*EXP(svp2*(templ-svpt0)/(templ-svp3))*epop(k)
@@ -1120,8 +1120,8 @@ CONTAINS
        rcld=max(qwx(k-1)-rvls,0.)
        tempv = (templ + xlvocp*rcld) * &
             (1 + ep_1*(qwx(k-1)-rcld) - rcld)
-       tvab = tempv*rexnerfl(k)
-       !
+       tvab = tempv*rexnerfl(k) 
+       !     
        thvxfl= .5 * (tvab+tvbl)
        dtvdz = (tvab - tvbl) *rdza(k)
        nsquar(k) = g/thvxfl * dtvdz
@@ -1148,7 +1148,7 @@ CONTAINS
     parameter(A1=0.92,B1=16.6,C1=0.08,A2=0.74,B2=10.1)
     parameter(nuk=5.0)        !multiplier for kethl, GB01 value
 
-    parameter(kmax=1000.)      ! max for kethl
+    parameter(kmax=1000.)      ! max for kethl 
     parameter(n2min=1.e-7)     ! min for n2
     a1ob1 = a1/b1
 
@@ -1161,8 +1161,8 @@ CONTAINS
     kth(1)=0.
     sm(kte+1)=1.
     sh(kte+1)=1.
-    sm(1) = 1.
-    sh(1) = 1.
+    sm(1) = 1. 
+    sh(1) = 1. 
     DO K = KTE, 2, -1
 ! According on how the TKE equiation is computed, the "tke" variable in gbmpbl !NP
 ! is equivalent to "e" in GB01 paper, or e==(q^2 / 2)  in MY82 or Gal88.       !NP
@@ -1177,9 +1177,9 @@ CONTAINS
        sh(k) = a2 * (1. - 6.*a1ob1) / (1. - 3.*a2*gh*(6.*a1+b2))
 ! See the previous comments regarding the convention of "e", "q^2/2" and "tke".!NP
 ! In order to use "q" in the calculations of kzm and kzh, apply "sqrt(2*tke)"  !NP
-       kzm(k) = min(bbls(k)*sqrt(2*tke(k))*sm(k),kmax)
+       kzm(k) = min(bbls(k)*sqrt(2*tke(k))*sm(k),kmax) 
        kth(k) = min(bbls(k)*sqrt(2*tke(k))*sh(k),kmax)
-!
+! 
        kethl(k)=nuk*sqrt(kzm(k)*kzm(k+1)) ! GB01:A7
        kethl(k)=min(kethl(k),kmax) ! keep in bounds
     ENDDO
@@ -1204,7 +1204,7 @@ CONTAINS
    enddo
      !     Need KETHL at the top (top-down indexing)
      KETHL(1) = kethl(2)
-     !     Replace KETHL at the surface with something non-zero (top-down indexing)
+     !     Replace KETHL at the surface with something non-zero (top-down indexing) 
      kethl(kte) = nuk*0.5*kzm(kte)
     return
   end subroutine my
@@ -1216,9 +1216,9 @@ CONTAINS
        ids, ide, jds, jde, kds, kde,                &
        ims, ime, jms, jme, kms, kme,                &
        its, ite, jts, jte, kts, kte                 )
-    !-------------------------------------------------------------------
+    !-------------------------------------------------------------------          
     IMPLICIT NONE
-    !-------------------------------------------------------------------
+    !-------------------------------------------------------------------          
     LOGICAL , INTENT(IN)          :: restart,allowed_to_read
     INTEGER , INTENT(IN)          ::  ids, ide, jds, jde, kds, kde, &
          ims, ime, jms, jme, kms, kme, &
@@ -1230,7 +1230,7 @@ CONTAINS
          RVBLTEN, &
          RTHBLTEN, &
          RQVBLTEN, &
-         RQCBLTEN, &
+         RQCBLTEN, & 
          RQIBLTEN, &
          TKE_PBL,  &
          KTH_GBM
@@ -1267,7 +1267,7 @@ CONTAINS
     ENDIF
 
   END SUBROUTINE gbmpblinit
-!-------------------------------------------------------------------
+!-------------------------------------------------------------------          
 
 END MODULE module_bl_gbmpbl
 

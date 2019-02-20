@@ -29,7 +29,7 @@
       REAL,PARAMETER :: PI=3.1415926,VKARMAN=0.4
 !
 !-----------------------------------------------------------------------
-!***  QNSE MODEL CONSTANTS
+!***  QNSE MODEL CONSTANTS 
 !-----------------------------------------------------------------------
 !
       REAL,PARAMETER :: EPSQ2L=0.01
@@ -45,7 +45,7 @@
       REAL,PARAMETER :: EPSL=0.32,EPSRU=1.E-7,EPSRS=1.E-7               &
      &                 ,EPSTRB=1.E-24
       REAL,PARAMETER :: EPSA=1.E-8,EPSIT=1.E-4,EPSU2=1.E-4,EPSUST=0.07  &
-     &                 ,FH=1.01
+     &                 ,FH=1.01 
       REAL,PARAMETER :: ALPH=0.30,BETA=1./273.,EL0MAX=1000.,EL0MIN=1.   &
      &                 ,ELFC=0.23*0.5,GAM1=0.2222222222222222222        &
      &                 ,PRT=1.
@@ -70,16 +70,16 @@
      &                 ,RB1=1./B1,RTVISC=1./TVISC,RVISC=1./VISC         &
      &                 ,ZQRZT=SQSC/SQPR
 !
-      REAL,PARAMETER :: ADNH= 9.*A1*A2x*A2x*(12.*A1+3.*B2)*BTG*BTG      &
-     &                 ,ADNM=18.*A1*A1*A2x*(B2-3.*A2x)*BTG              &
+      REAL,PARAMETER :: ADNH= 9.*A1*A2x*A2x*(12.*A1+3.*B2)*BTG*BTG      &                  
+     &                 ,ADNM=18.*A1*A1*A2x*(B2-3.*A2x)*BTG              & 
      &                 ,ANMH=-9.*A1*A2x*A2x*BTG*BTG                     &
      &                 ,ANMM=-3.*A1*A2x*(3.*A2x+3.*B2*C1+18.*A1*C1-B2)  &
-     &                                *BTG                              &
+     &                                *BTG                              &   
      &                 ,BDNH= 3.*A2x*(7.*A1+B2)*BTG                     &
      &                 ,BDNM= 6.*A1*A1                                  &
      &                 ,BEQH= A2x*B1*BTG+3.*A2x*(7.*A1+B2)*BTG          &
      &                 ,BEQM=-A1*B1*(1.-3.*C1)+6.*A1*A1                 &
-     &                 ,BNMH=-A2x*BTG                                   &
+     &                 ,BNMH=-A2x*BTG                                   &     
      &                 ,BNMM=A1*(1.-3.*C1)                              &
      &                 ,BSHH=9.*A1*A2x*A2x*BTG                          &
      &                 ,BSHM=18.*A1*A1*A2x*C1                           &
@@ -121,7 +121,7 @@
 !-----------------------------------------------------------------------
 !***  NEAR ISOTROPY FOR SHEAR TURBULENCE, WW/Q2 LOWER LIMIT
 !-----------------------------------------------------------------------
-!
+! 
       REAL,PARAMETER :: UBRYL=(18.*REQU*A1*A1*A2x*B2*C1*BTG             &
      &                         +9.*A1*A2x*A2x*B2*BTG*BTG)               &
      &                        /(REQU*ADNM+ADNH)                         &
@@ -168,17 +168,17 @@
       REAL,INTENT(IN) :: DT
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: HT,SICE,SNOW       &
-     &                                             ,TSK,XLAND,HFX
+     &                                             ,TSK,XLAND,HFX  
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN) :: CWM,DZ     &
      &                                                     ,EXNER      &
      &                                                     ,PMID,PINT  &
      &                                                     ,QV,RHO     &
-     &                                                     ,T,TH,U,V
+     &                                                     ,T,TH,U,V    
 
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME),INTENT(IN),OPTIONAL ::   &
      &                                                      WTHV_MF    &
-     &                                                     ,LM_BL89
+     &                                                     ,LM_BL89 
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: PBLH
 !
@@ -189,7 +189,7 @@
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME)                          &
      &    ,INTENT(INOUT) ::                    RQCBLTEN,RQVBLTEN       &
      &                                        ,RTHBLTEN                &
-     &                                        ,RUBLTEN,RVBLTEN
+     &                                        ,RUBLTEN,RVBLTEN        
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: CT,QSFC,QZ0     &
      &                                                ,THZ0,USTAR      &
@@ -211,7 +211,7 @@
       REAL :: AKHS_DENS,AKMS_DENS,APEX,DCDT,DELTAZ,DQDT,DTDIF,DTDT     &
      &       ,DTTURBL,DUDT,DVDT,EXNSFC,PSFC,PTOP,QFC1,QLOW,QOLD        &
      &       ,RATIOMX,RDTTURBL,RG,RWMSK,SEAMASK,THNEW,THOLD,TX         &
-     &       ,ULOW,VLOW,WMSK,RLOW
+     &       ,ULOW,VLOW,WMSK,RLOW 
 !
       REAL,DIMENSION(KTS:KTE) :: CWMK,PK,Q2K,QK,THEK,TK,UK,VK,&
                                 WTHV_MFK,LM_BL89K
@@ -385,8 +385,8 @@
      &               ,ITS,ITE,JTS,JTE,KTS,KTE,PRINT_DIAG)   ! debug
 !
 !----------------------------------------------------------------------
-!***  COUNTING DOWNWARD FROM THE TOP, THE EXCHANGE COEFFICIENTS AKH
-!***  ARE DEFINED ON THE BOTTOMS OF THE LAYERS KTS TO KTE-1.  COUNTING
+!***  COUNTING DOWNWARD FROM THE TOP, THE EXCHANGE COEFFICIENTS AKH 
+!***  ARE DEFINED ON THE BOTTOMS OF THE LAYERS KTS TO KTE-1.  COUNTING 
 !***  COUNTING UPWARD FROM THE BOTTOM, THOSE SAME COEFFICIENTS EXCH_H
 !***  ARE DEFINED ON THE TOPS OF THE LAYERS KTS TO KTE-1.
 !
@@ -442,7 +442,7 @@
       DO J=JTS,JTE
       DO I=ITS,ITE
         PSFC=PINT(I,LOWLYR(I,J),J)
-        RLOW=PSFC/(R_D*T(I,1,J))
+        RLOW=PSFC/(R_D*T(I,1,J))          
 
         THSK(I,J)=THZ0(I,J)
         THSK(I,J)=HFX(I,J)/(AKHS(I,J)*RLOW*CP)+TH(I,1,J)
@@ -749,7 +749,7 @@
 !
       CT=0.
 !----------------------------------------------------------------------
-!***  COMPUTE LOCAL GRADIENT RICHARDSON NUMBER
+!***  COMPUTE LOCAL GRADIENT RICHARDSON NUMBER 
 !----------------------------------------------------------------------
       DO K=KTS,LMH-1
         RDZ=2./(Z(K)-Z(K+2))
@@ -859,7 +859,7 @@
 !
       DO K=LPBL+1,LMH-2
         SREL=MIN(((REL(K-1)+REL(K+1))*0.5+REL(K))*0.5,REL(K))
-        EL(K)=MAX(SREL*ELM(K),EPSL)
+        EL(K)=MAX(SREL*ELM(K),EPSL)      
       ENDDO
 !
 !----------------------------------------------------------------------

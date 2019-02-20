@@ -35,50 +35,50 @@ module interp_option_module
       logical :: is_used, have_specification
       character (len=128) :: lev_string, fill_string, flag_string, flag_val
       character (len=BUFSIZE) :: buffer
-
+   
       do funit=10,100
          inquire(unit=funit, opened=is_used)
          if (.not. is_used) exit
-      end do
-
+      end do 
+   
       nparams = 0
       num_entries = 0
-
+   
       open(funit, file=trim(opt_metgrid_tbl_path)//'METGRID.TBL', form='formatted', status='old', err=1001)
       istatus = 0
-      do while (istatus == 0)
+      do while (istatus == 0) 
          read(funit, '(a)', iostat=istatus) buffer
          if (istatus == 0) then
             call despace(buffer)
-
+   
             ! Is this line a comment?
             if (buffer(1:1) == '#') then
-
+   
             ! Are we beginning a new field specification?
             else if (index(buffer,'=====') /= 0) then
                if (nparams > 0) num_entries = num_entries + 1
                nparams = 0
-
+   
             else
                eos = index(buffer,'#')
                if (eos /= 0) buffer(eos:BUFSIZE) = ' '
-
+    
                ! Does this line contain at least one parameter specification?
                if (index(buffer,'=') /= 0) then
                   nparams = nparams + 1
                end if
             end if
-
+   
          end if
-      end do
-
+      end do 
+   
       rewind(funit)
-
+   
       ! Allocate one extra array element to act as the default
 ! BUG: Maybe this will not be necessary if we move to a module with query routines for
 !  parsing the METGRID.TBL
       num_entries = num_entries + 1
-
+   
       allocate(fieldname(num_entries))
       allocate(mpas_name(num_entries))
       allocate(interp_method(num_entries))
@@ -107,7 +107,7 @@ module interp_option_module
       allocate(is_v_field(num_entries))
       allocate(is_derived_field(num_entries))
       allocate(is_mandatory(num_entries))
-
+   
       !
       ! Set default values
       !
@@ -130,9 +130,9 @@ module interp_option_module
          interp_mask_val(i) = NAN
          interp_land_mask_val(i) = NAN
          interp_water_mask_val(i) = NAN
-         interp_mask_relational(i) = ' '
-         interp_land_mask_relational(i) = ' '
-         interp_water_mask_relational(i) = ' '
+         interp_mask_relational(i) = ' '         
+         interp_land_mask_relational(i) = ' '         
+         interp_water_mask_relational(i) = ' '         
          level_template(i) = ' '
          if (gridtype == 'C') then
             output_stagger(i) = M
@@ -146,26 +146,26 @@ module interp_option_module
          is_mandatory(i) = .false.
       end do
       call list_init(flag_in_output_list)
-
+   
       i = 1
       istatus = 0
       nparams = 0
-
-      do while (istatus == 0)
+   
+      do while (istatus == 0) 
          buffer = ' '
          read(funit, '(a)', iostat=istatus) buffer
          if (istatus == 0) then
             call despace(buffer)
-
+   
             ! Is this line a comment?
             if (buffer(1:1) == '#') then
                ! Do nothing.
-
+   
             ! Are we beginning a new field specification?
             else if (index(buffer,'=====') /= 0) then   !{
                if (nparams > 0) i = i + 1
                nparams = 0
-
+   
             else
                ! Check whether the current line is a comment
                if (buffer(1:1) /= '#') then
@@ -173,13 +173,13 @@ module interp_option_module
                else
                  have_specification = .false.
                end if
-
+         
                ! If only part of the line is a comment, just turn the comment into spaces
                eos = index(buffer,'#')
                if (eos /= 0) buffer(eos:BUFSIZE) = ' '
-
+         
                do while (have_specification)   !{
-
+         
                   ! If this line has no semicolon, it may contain a single specification,
                   !   so we set have_specification = .false. to prevent the line from being
                   !   processed again and "pretend" that the last character was a semicolon
@@ -188,12 +188,12 @@ module interp_option_module
                     have_specification = .false.
                     eos = BUFSIZE
                   end if
-
+          
                   idx = index(buffer(1:eos-1),'=')
-
+          
                   if (idx /= 0) then   !{
                      nparams = nparams + 1
-
+           
                      if (index('name',trim(buffer(1:idx-1))) /= 0 .and. &
                          len_trim('name') == len_trim(buffer(1:idx-1))) then
                         ispace = idx+1
@@ -267,7 +267,7 @@ module interp_option_module
                         else if (index('no',trim(buffer(idx+1:eos-1))) /= 0) then
                            is_v_field(i) = .false.
                         end if
-
+       
                      else if (index('derived',trim(buffer(1:idx-1))) /= 0 .and. &
                          len_trim('derived') == len_trim(buffer(1:idx-1))) then
                         if (index('yes',trim(buffer(idx+1:eos-1))) /= 0) then
@@ -275,7 +275,7 @@ module interp_option_module
                         else if (index('no',trim(buffer(idx+1:eos-1))) /= 0) then
                            is_derived_field(i) = .false.
                         end if
-
+       
                      else if (index('mandatory',trim(buffer(1:idx-1))) /= 0 .and. &
                          len_trim('mandatory') == len_trim(buffer(1:idx-1))) then
                         if (index('yes',trim(buffer(idx+1:eos-1))) /= 0) then
@@ -283,7 +283,7 @@ module interp_option_module
                         else if (index('no',trim(buffer(idx+1:eos-1))) /= 0) then
                            is_mandatory(i) = .false.
                         end if
-
+       
                      else if (index('interp_option',trim(buffer(1:idx-1))) /= 0 .and. &
                          len_trim('interp_option') == len_trim(buffer(1:idx-1))) then
                         ispace = idx+1
@@ -326,15 +326,15 @@ module interp_option_module
                            interp_mask(i) = ' '
                            interp_mask(i)(1:ispace-idx) = buffer(idx+1:ispace-1)
                            interp_mask_val(i) = 0
-                        else
+                        else 
                            ! Parenthesis found; additionally, there may be a relational symbol
                            if ((s1 /= 0) .OR. (s2 /= 0)) then
                               if (s1 > 0) then
-                                 interp_mask_relational(i) = buffer(idx+s1:idx+s1)
+                                 interp_mask_relational(i) = buffer(idx+s1:idx+s1)                                 
                               else if (s2 > 0) then
-                                 interp_mask_relational(i) = buffer(idx+s2:idx+s2)
-                              end if
-                              interp_mask(i) = ' '
+                                 interp_mask_relational(i) = buffer(idx+s2:idx+s2)                                 
+                              end if  
+                              interp_mask(i) = ' '      
                               interp_mask(i)(1:p1) = buffer(idx+1:idx+p1-1)
                               read(buffer(idx+p1+2:idx+p2-1),*,err=1000) interp_mask_val(i)
                            else
@@ -342,9 +342,9 @@ module interp_option_module
                               interp_mask(i) = ' '
                               interp_mask(i)(1:p1) = buffer(idx+1:idx+p1-1)
                               read(buffer(idx+p1+1:idx+p2-1),*,err=1000) interp_mask_val(i)
-                           end if
+                           end if 
                         end if
-
+      
                      else if (index('interp_land_mask',trim(buffer(1:idx-1))) /= 0 .and. &
                          len_trim('interp_land_mask') == len_trim(buffer(1:idx-1))) then
                         ispace = idx+1
@@ -361,15 +361,15 @@ module interp_option_module
                            interp_land_mask(i) = ' '
                            interp_land_mask(i)(1:ispace-idx) = buffer(idx+1:ispace-1)
                            interp_land_mask_val(i) = 0
-                        else
+                        else 
                            ! Parenthesis found; additionally, there may be a relational symbol
                            if ((s1 /= 0) .OR. (s2 /= 0)) then
                               if (s1 > 0) then
-                                 interp_land_mask_relational(i) = buffer(idx+s1:idx+s1)
+                                 interp_land_mask_relational(i) = buffer(idx+s1:idx+s1)                                 
                               else if (s2 > 0) then
-                                 interp_land_mask_relational(i) = buffer(idx+s2:idx+s2)
-                              end if
-                              interp_land_mask(i) = ' '
+                                 interp_land_mask_relational(i) = buffer(idx+s2:idx+s2)                                 
+                              end if  
+                              interp_land_mask(i) = ' '      
                               interp_land_mask(i)(1:p1) = buffer(idx+1:idx+p1-1)
                               read(buffer(idx+p1+2:idx+p2-1),*,err=1000) interp_land_mask_val(i)
                            else
@@ -377,9 +377,9 @@ module interp_option_module
                               interp_land_mask(i) = ' '
                               interp_land_mask(i)(1:p1) = buffer(idx+1:idx+p1-1)
                               read(buffer(idx+p1+1:idx+p2-1),*,err=1000) interp_land_mask_val(i)
-                           end if
+                           end if 
                         end if
-
+      
                      else if (index('interp_water_mask',trim(buffer(1:idx-1))) /= 0 .and. &
                          len_trim('interp_water_mask') == len_trim(buffer(1:idx-1))) then
                         ispace = idx+1
@@ -396,15 +396,15 @@ module interp_option_module
                            interp_water_mask(i) = ' '
                            interp_water_mask(i)(1:ispace-idx) = buffer(idx+1:ispace-1)
                            interp_water_mask_val(i) = 0
-                        else
+                        else 
                            ! Parenthesis found; additionally, there may be a relational symbol
                            if ((s1 /= 0) .OR. (s2 /= 0)) then
                               if (s1 > 0) then
-                                 interp_water_mask_relational(i) = buffer(idx+s1:idx+s1)
+                                 interp_water_mask_relational(i) = buffer(idx+s1:idx+s1)                                 
                               else if (s2 > 0) then
-                                 interp_water_mask_relational(i) = buffer(idx+s2:idx+s2)
-                              end if
-                              interp_water_mask(i) = ' '
+                                 interp_water_mask_relational(i) = buffer(idx+s2:idx+s2)                                 
+                              end if  
+                              interp_water_mask(i) = ' '      
                               interp_water_mask(i)(1:p1) = buffer(idx+1:idx+p1-1)
                               read(buffer(idx+p1+2:idx+p2-1),*,err=1000) interp_water_mask_val(i)
                            else
@@ -412,9 +412,9 @@ module interp_option_module
                               interp_water_mask(i) = ' '
                               interp_water_mask(i)(1:p1) = buffer(idx+1:idx+p1-1)
                               read(buffer(idx+p1+1:idx+p2-1),*,err=1000) interp_water_mask_val(i)
-                           end if
+                           end if 
                         end if
-
+      
                      else if (index('masked',trim(buffer(1:idx-1))) /= 0 .and. &
                          len_trim('masked') == len_trim(buffer(1:idx-1))) then
                         if (index('water',trim(buffer(idx+1:eos-1))) /= 0) then
@@ -424,7 +424,7 @@ module interp_option_module
                         else if (index('both',trim(buffer(idx+1:eos-1))) /= 0) then
                            masked(i) = MASKED_BOTH
                         end if
-
+           
                      else if (index('flag_in_output',trim(buffer(1:idx-1))) /= 0 .and. &
                          len_trim('flag_in_output') == len_trim(buffer(1:idx-1))) then
                         flag_string = ' '
@@ -447,15 +447,15 @@ module interp_option_module
                         end do
                         output_name(i) = ' '
                         output_name(i)(1:ispace-idx) = buffer(idx+1:ispace-1)
-
+           
                      else if (index('fill_missing',trim(buffer(1:idx-1))) /= 0 .and. &
                          len_trim('fill_missing') == len_trim(buffer(1:idx-1))) then
                         read(buffer(idx+1:eos-1),*) fill_missing(i)
-
+   
                      else if (index('missing_value',trim(buffer(1:idx-1))) /= 0 .and. &
                          len_trim('missing_value') == len_trim(buffer(1:idx-1))) then
                         read(buffer(idx+1:eos-1),*) missing_value(i)
-
+   
                      else if (index('fill_lev',trim(buffer(1:idx-1))) /= 0 .and. &
                          len_trim('fill_lev') == len_trim(buffer(1:idx-1))) then
                         ispace = idx+1
@@ -473,32 +473,32 @@ module interp_option_module
                         write(fill_string,'(a)') trim(fill_string(ispace+1:128))
                         fill_string(128-ispace:128) = ' '
                         call list_insert(fill_lev_list(i), ckey=lev_string, cvalue=fill_string)
-
+       
                      else
                         call mprintf(.true.,WARN, 'In METGRID.TBL, unrecognized option %s in entry %i.', s1=buffer(1:idx-1), i1=idx)
                      end if
-
+          
                   end if   !} index(buffer(1:eos-1),'=') /= 0
 
 ! BUG: If buffer has non-whitespace characters but no =, then maybe a wrong specification?
-
+          
                   buffer = buffer(eos+1:BUFSIZE)
                end do   ! while eos /= 0 }
-
+        
             end if   !} index(buffer, '=====') /= 0
-
+   
          end if
       end do
 
       call check_table_specs()
-
+   
       close(funit)
-
+   
       return
 
    1000 call mprintf(.true.,ERROR,'The mask value of the interp_mask specification must '// &
-                     'be a real value, enclosed in parentheses immediately after the field name.')
-
+                     'be a real value, enclosed in parentheses immediately after the field name.') 
+   
    1001 call mprintf(.true.,ERROR,'Could not open file METGRID.TBL')
    1002 call mprintf(.true.,ERROR,'Symbol expected < >. Check METGRID.TBL for missing symbol or erroreous entry')
 
@@ -519,14 +519,14 @@ module interp_option_module
       integer :: i
 
       do i=1,num_entries
-
-         ! For C grid, U field must be on U staggering, and V field must be on
+         
+         ! For C grid, U field must be on U staggering, and V field must be on 
          !   V staggering; for E grid, U and V must be on VV staggering.
          if (gridtype == 'C') then
             if (is_u_field(i) .and. output_stagger(i) /= U) then
                call mprintf(.true.,ERROR,'In entry %i of METGRID.TBL, the wind U-component field '// &
                             'must be interpolated to the U staggered grid points.',i1=i)
-            else if (is_v_field(i) .and. output_stagger(i) /= V) then
+            else if (is_v_field(i) .and. output_stagger(i) /= V) then 
                call mprintf(.true.,ERROR,'In entry %i of METGRID.TBL, the wind V-component field '// &
                             'must be interpolated to the V staggered grid points.',i1=i)
             end if
@@ -546,7 +546,7 @@ module interp_option_module
             if (is_u_field(i) .and. output_stagger(i) /= VV) then
                call mprintf(.true.,ERROR,'In entry %i of METGRID.TBL, the wind U-component field '// &
                             'must be interpolated to the V staggered grid points.',i1=i)
-            else if (is_v_field(i) .and. output_stagger(i) /= VV) then
+            else if (is_v_field(i) .and. output_stagger(i) /= VV) then 
                call mprintf(.true.,ERROR,'In entry %i of METGRID.TBL, the wind V-component field '// &
                             'must be interpolated to the V staggered grid points.',i1=i)
             end if
@@ -576,9 +576,9 @@ module interp_option_module
    ! Pupose:
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine get_z_dim_name(fldname, zdim_name)
-
+  
       implicit none
-
+ 
       ! Arguments
       character (len=*), intent(in) :: fldname
       character (len=32), intent(out) :: zdim_name
@@ -603,9 +603,9 @@ module interp_option_module
    ! Pupose:
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    function mpas_name_to_idx(mpasname) result(idx)
-
+  
       implicit none
-
+ 
       ! Arguments
       character (len=*), intent(in) :: mpasname
 
@@ -632,9 +632,9 @@ module interp_option_module
    ! Pupose:
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    function mpas_to_intermediate_name(mpasname) result(intermediate_name)
-
+  
       implicit none
-
+ 
       ! Arguments
       character (len=*), intent(in) :: mpasname
 
@@ -661,9 +661,9 @@ module interp_option_module
    ! Pupose:
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    function mpas_output_stagger(mpasname) result(istagger)
-
+  
       implicit none
-
+ 
       ! Arguments
       character (len=*), intent(in) :: mpasname
 
@@ -746,7 +746,7 @@ module interp_option_module
       integer :: i, p1, p2
 
       istatus = 1
-      fill_const = NAN
+      fill_const = NAN 
 
       i = index(fill_opt,'const')
       if (i /= 0) then
@@ -797,7 +797,7 @@ module interp_option_module
          fill_src = ' '
          write(fill_src,'(a)') fill_opt(1:p1-1)
       else
-         fill_src_level = 1
+         fill_src_level = 1 
          fill_src = fill_opt
       end if
 
@@ -832,7 +832,7 @@ module interp_option_module
       deallocate(missing_value)
       do i=1,num_entries
          call list_destroy(fill_lev_list(i))
-      end do
+      end do 
       deallocate(fill_lev_list)
       deallocate(interp_mask)
       deallocate(interp_land_mask)

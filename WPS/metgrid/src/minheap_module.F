@@ -1,11 +1,11 @@
-! Implements a heap using an array; top of the heap is the item
+! Implements a heap using an array; top of the heap is the item 
 !   with minimum key value
 module minheap_module
 
    use datatype_module
    use module_debug
 
-   ! Maximum heap size -- maybe make this magically dynamic somehow?
+   ! Maximum heap size -- maybe make this magically dynamic somehow? 
    integer, parameter :: HEAPSIZE = 10000
 
    ! Type of item to be stored in the heap
@@ -18,7 +18,7 @@ module minheap_module
 
    ! Index of last item in the heap
    integer :: end_of_heap
-
+   
    contains
 
 
@@ -30,7 +30,7 @@ module minheap_module
 
       end_of_heap = 0
       allocate(heap(HEAPSIZE))
-
+ 
    end subroutine init_heap
 
 
@@ -53,13 +53,13 @@ module minheap_module
       ! Local variables
       integer :: idx, parent
 
-      call mprintf((end_of_heap == HEAPSIZE),ERROR, 'add_to_heap(): Maximum heap size exceeded')
-
+      call mprintf((end_of_heap == HEAPSIZE),ERROR, 'add_to_heap(): Maximum heap size exceeded') 
+      
       end_of_heap = end_of_heap + 1
       idx = end_of_heap
       heap(idx)%object => x
       heap(idx)%object%heap_index = idx
-
+      
       do while (idx > 1)
          parent = floor(real(idx)/2.)
          if (heap(idx)%object%last_used < heap(parent)%object%last_used) then
@@ -71,7 +71,7 @@ module minheap_module
          else
             idx = 1
          end if
-      end do
+      end do 
 
    end subroutine add_to_heap
 
@@ -86,7 +86,7 @@ module minheap_module
       ! Local variables
       integer :: indx, left, right
       type (data_node), pointer :: temp
-
+ 
       heap(idx)%object => heap(end_of_heap)%object
       heap(idx)%object%heap_index = idx
       end_of_heap = end_of_heap - 1
@@ -104,7 +104,7 @@ module minheap_module
                   heap(indx)%object%heap_index = indx
                   heap(right)%object => temp
                   heap(right)%object%heap_index = right
-                  indx = right
+                  indx = right 
                else
                   indx = end_of_heap + 1
                end if
@@ -115,7 +115,7 @@ module minheap_module
                   heap(indx)%object%heap_index = indx
                   heap(left)%object => temp
                   heap(left)%object%heap_index = left
-                  indx = left
+                  indx = left 
                else
                   indx = end_of_heap + 1
                end if
@@ -127,7 +127,7 @@ module minheap_module
                heap(indx)%object%heap_index = indx
                heap(left)%object => temp
                heap(left)%object%heap_index = left
-               indx = left
+               indx = left 
             else
                indx = end_of_heap + 1
             end if
@@ -135,10 +135,10 @@ module minheap_module
             indx = end_of_heap + 1
          end if
       end do
-
+      
    end subroutine remove_index
 
-
+ 
    subroutine get_min(x)
 
       implicit none
@@ -150,7 +150,7 @@ module minheap_module
       integer :: idx, left, right
       type (data_node), pointer :: temp
 
-      call mprintf((end_of_heap <= 0),ERROR, 'get_min(): No items left in the heap.')
+      call mprintf((end_of_heap <= 0),ERROR, 'get_min(): No items left in the heap.') 
 
       x => heap(1)%object
 
@@ -170,7 +170,7 @@ module minheap_module
                   heap(idx)%object%heap_index = idx
                   heap(right)%object => temp
                   heap(right)%object%heap_index = right
-                  idx = right
+                  idx = right 
                else
                   idx = end_of_heap + 1
                end if
@@ -181,7 +181,7 @@ module minheap_module
                   heap(idx)%object%heap_index = idx
                   heap(left)%object => temp
                   heap(left)%object%heap_index = left
-                  idx = left
+                  idx = left 
                else
                   idx = end_of_heap + 1
                end if
@@ -193,7 +193,7 @@ module minheap_module
                heap(idx)%object%heap_index = idx
                heap(left)%object => temp
                heap(left)%object%heap_index = left
-               idx = left
+               idx = left 
             else
                idx = end_of_heap + 1
             end if

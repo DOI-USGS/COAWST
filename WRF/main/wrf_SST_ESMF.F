@@ -2,35 +2,35 @@
 !
 
 !<DESCRIPTION>
-! ESMF Application Wrapper for coupling WRF with a "dummy" component
-! that simply reads SSTs from a file, sends to WRF, receives SST from
-! WRF (two-way coupling). and checks that the SSTs match.
+! ESMF Application Wrapper for coupling WRF with a "dummy" component 
+! that simply reads SSTs from a file, sends to WRF, receives SST from 
+! WRF (two-way coupling). and checks that the SSTs match.  
 !
-! This file contains the main program and associated modules for the
-! SST "dummy" component and a simple coupler.  It creates ESMF Gridded
-! and Coupler Components.
+! This file contains the main program and associated modules for the 
+! SST "dummy" component and a simple coupler.  It creates ESMF Gridded 
+! and Coupler Components.  
 !
-! This source file is only built when ESMF coupling is used.
+! This source file is only built when ESMF coupling is used.  
 !
 !</DESCRIPTION>
 
 
 
 !<DESCRIPTION>
-! Modules module_sst_component_top and module_sst_setservices define the
-! "SST" dummy component.
+! Modules module_sst_component_top and module_sst_setservices define the 
+! "SST" dummy component.  
 !</DESCRIPTION>
 
 MODULE module_sst_component_top
 !<DESCRIPTION>
-! This module defines sst_component_init1(), sst_component_init2(),
-! sst_component_run1(), sst_component_run2(), and sst_component_finalize()
-! routines that are called when SST is run as an ESMF component.
+! This module defines sst_component_init1(), sst_component_init2(), 
+! sst_component_run1(), sst_component_run2(), and sst_component_finalize() 
+! routines that are called when SST is run as an ESMF component.  
 !</DESCRIPTION>
 
 ! Updated for ESMF 5.2.0r  -- see:
 !  http://www.earthsystemmodeling.org/esmf_releases/public/ESMF_5_2_0r/InterfaceChanges520to520r.pdf
-!   USE ESMF_Mod
+!   USE ESMF_Mod  
    USE ESMF
    USE module_esmf_extensions
    USE module_metadatautils, ONLY: AttachTimesToState
@@ -83,8 +83,8 @@ CONTAINS
 
 
 
-   ! First-phase "init" reads "SST" data file and returns "time" metadata in
-   ! exportState.
+   ! First-phase "init" reads "SST" data file and returns "time" metadata in 
+   ! exportState.  
    SUBROUTINE sst_component_init1( gcomp, importState, exportState, clock, rc )
      USE module_io
      TYPE(ESMF_GridComp), TARGET, INTENT(INOUT) :: gcomp
@@ -120,8 +120,8 @@ CONTAINS
      INTEGER :: status_next_var
 
 !TODO:  For now, sstinfilename is hard-coded
-!TODO:  Upgrade to use a variant of construct_filename() via startTime
-!TODO:  extracted from clock.
+!TODO:  Upgrade to use a variant of construct_filename() via startTime 
+!TODO:  extracted from clock.  
      sstinfilename = 'sstin_d01_000000'
 
      ! get MPI communicator out of current VM and duplicate (if needed)
@@ -159,7 +159,7 @@ CONTAINS
        TRIM(sstinfilename),' for reading fid=',fid
      CALL wrf_debug ( 100, TRIM(str) )
 
-     ! How many data time levels are in the SST input file?
+     ! How many data time levels are in the SST input file?  
      num_steps = -1
      time_loop_max = 0
      CALL wrf_debug    ( 100, 'subroutine sst_component_init1: find time_loop_max' )
@@ -190,7 +190,7 @@ CONTAINS
      ! attach times to exportState for use by driver
      CALL AttachTimesToState( exportState, startTime, stopTime, timeStep )
 
-     ! There should be a more elegant way to get to the beginning of the
+     ! There should be a more elegant way to get to the beginning of the 
      ! file, but this will do.
      CALL wrf_ioclose( fid , ierr )
      IF ( ierr .NE. 0 ) THEN
@@ -218,8 +218,8 @@ CONTAINS
      TYPE(ESMF_State), INTENT(INOUT) :: exportState
      TYPE(ESMF_Clock), INTENT(IN   ) :: clock
 !<DESCRIPTION>
-!     Reads data from file and stores.  Then
-!     stuffs the file data into the SST exportState.
+!     Reads data from file and stores.  Then 
+!     stuffs the file data into the SST exportState.  
 !</DESCRIPTION>
 
 #include "wrf_status_codes.h"
@@ -236,10 +236,10 @@ CONTAINS
      INTEGER :: ierr
      INTEGER :: rc
 
-     ! This call to wrf_get_next_time will position the dataset over the next
-     ! time-frame in the file and return the date_string, which is used as an
-     ! argument to the read_field routines in the blocks of code included
-     ! below.
+     ! This call to wrf_get_next_time will position the dataset over the next 
+     ! time-frame in the file and return the date_string, which is used as an 
+     ! argument to the read_field routines in the blocks of code included 
+     ! below.  
 
      CALL wrf_get_next_time( fid, date_string , ierr )
      WRITE(str,'(A,A)') 'Subroutine read_data: SST data time: ', &
@@ -250,7 +250,7 @@ CONTAINS
        CALL wrf_error_fatal ( "... May have run out of valid SST data ..." )
      ELSE IF ( ierr .NE. WRF_WARN_NOTSUPPORTED .AND. &
                ierr .NE. WRF_WARN_DRYRUN_READ) THEN
-       ! check input time against current time (which will be start time at
+       ! check input time against current time (which will be start time at 
        ! beginning)
        CALL wrf_atotime( date_string, dataTime )
        CALL ESMF_ClockGet( clock, CurrTime=currentTime, rc=rc )
@@ -352,9 +352,9 @@ CONTAINS
 !TODO:  remove clock after debugging is finished
      TYPE(ESMF_Clock), INTENT(INOUT) :: clock
 !<DESCRIPTION>
-!     Gets data from coupler via importState
-!     and compares with data read from file and
-!     error-exits if they differ.
+!     Gets data from coupler via importState 
+!     and compares with data read from file and 
+!     error-exits if they differ.  
 !
 !     The arguments are:
 !       importState     Importstate
@@ -437,7 +437,7 @@ CONTAINS
      in_landmask_ptr_real(ips:MIN((ide-1),ipe),jps:MIN((jde-1),jpe)) = &
           in_landmask_ptr(ips:MIN((ide-1),ipe),jps:MIN((jde-1),jpe))
 
-     ! compare LANDMASK...
+     ! compare LANDMASK...  
      landmask_ok = .TRUE.
      ! staggered starts/ends
      LANDMASK_COMPARE : DO j= jps , MIN( (jde-1), jpe )
@@ -446,7 +446,7 @@ CONTAINS
            landmask_ok = .FALSE.
            WRITE( str , * ) 'error landmask mismatch at (i,j) = (',i,',',j, &
                             '), values are',file_landmask_data(i,j),' and ',     &
-                            in_landmask_ptr_real(i,j)
+                            in_landmask_ptr_real(i,j) 
            EXIT LANDMASK_COMPARE
          ENDIF
        ENDDO
@@ -458,7 +458,7 @@ CONTAINS
        CALL wrf_error_fatal ( TRIM(str) )
      ENDIF
 
-     ! compare SST...
+     ! compare SST...  
      sst_ok = .TRUE.
      ! staggered starts/ends
      SST_COMPARE : DO j= jps , MIN( (jde-1), jpe )
@@ -467,7 +467,7 @@ CONTAINS
            sst_ok = .FALSE.
            WRITE( str , * ) 'error sst mismatch at (i,j) = (',i,',',j, &
                             '), values are',file_sst_data(i,j),' and ',     &
-                            in_sst_ptr_real(i,j)
+                            in_sst_ptr_real(i,j) 
            EXIT SST_COMPARE
          ENDIF
        ENDDO
@@ -486,8 +486,8 @@ CONTAINS
 
    END SUBROUTINE compare_data
 
-   ! Second-phase "init" gets decomposition information from
-   ! importState.
+   ! Second-phase "init" gets decomposition information from 
+   ! importState.  
    SUBROUTINE sst_component_init2( gcomp, importState, exportState, clock, rc )
      USE module_metadatautils, ONLY: GetDecompFromState
      USE module_io
@@ -521,14 +521,14 @@ CONTAINS
      INTEGER :: rc, i, j
      INTEGER :: ierr
 
-    ! Get decomposition information from importState.  Note that index
-    ! values are for staggered dimensions, following the WRF convention.
-!TODO:  Note that this will only work for SPMD serial operation.  For
-!TODO:  concurrent operation (SPMD or MPMD), we will need to create a new
+    ! Get decomposition information from importState.  Note that index 
+    ! values are for staggered dimensions, following the WRF convention.  
+!TODO:  Note that this will only work for SPMD serial operation.  For 
+!TODO:  concurrent operation (SPMD or MPMD), we will need to create a new 
 !TODO:  "domdesc" suitable for the task layout of the SST component.  For
-!TODO:  MPMD serial operation, we will need to extract serialized domdesc
-!TODO:  from export state metadata and de-serialize it.  Similar arguments
-!TODO:  apply to [ij][mp][se] and bdy_mask.
+!TODO:  MPMD serial operation, we will need to extract serialized domdesc 
+!TODO:  from export state metadata and de-serialize it.  Similar arguments 
+!TODO:  apply to [ij][mp][se] and bdy_mask.  
      write(str,*) 'sst_component_init2: calling GetDecompFromState'
      CALL wrf_debug ( 100 , TRIM(str) )
      CALL GetDecompFromState( importState,                  &
@@ -552,7 +552,7 @@ CONTAINS
          file_sst_data(i,j) = -(i*1000.0 + j)/100000.0     ! obvious bad value for debugging
        ENDDO
      ENDDO
-!TODO:  Hmmm...  really need to load these pointers here?  Check...
+!TODO:  Hmmm...  really need to load these pointers here?  Check...  
      this_data(SST_INDX)%r2d => file_sst_data
      ALLOCATE( file_landmask_data(ims:ime,jms:jme) )
      DO j= jms, jme
@@ -563,8 +563,8 @@ CONTAINS
      this_data(LANDMASK_INDX)%r2d => file_landmask_data
 
      ! Create ESMF_Fields in importState and exportState
-     ! Create ESMF_Grid.  Use exactly the same method as WRF so WRFIO will
-     ! work.
+     ! Create ESMF_Grid.  Use exactly the same method as WRF so WRFIO will 
+     ! work.  
      DomainStart(1) = ids; DomainEnd(1) = ide;
      DomainStart(2) = jds; DomainEnd(2) = jde;
      MemoryStart(1) = ims; MemoryEnd(1) = ime;
@@ -585,7 +585,7 @@ CONTAINS
 !write(0,*)__FILE__,__LINE__
      CALL wrf_debug ( 5 , 'DEBUG sst_component_init2:  back from ioesmf_create_grid_int()' )
      ! create ESMF_Fields
-     ! Note use of patch dimension for POINTERs allocated by ESMF.
+     ! Note use of patch dimension for POINTERs allocated by ESMF.  
      CALL wrf_debug ( 5 , 'DEBUG sst_component_init2:  Calling ESMF_GridValidate(esmfgrid)' )
      CALL ESMF_GridValidate( esmfgrid, rc=rc )
 !write(0,*)__FILE__,__LINE__
@@ -598,9 +598,9 @@ CONTAINS
        CALL wrf_error_fatal ( TRIM(str) )
      ENDIF
      CALL wrf_debug ( 5 , 'DEBUG sst_component_init2:  back OK from ESMF_GridValidate(esmfgrid)' )
-!TODO:  Once new ESMF 3.0 interfaces have settled down, eliminate "tmp_data_"
-!TODO:  arrays and let ESMF allocate/deallocate them.  Assuming of course that
-!TODO:  we can convince ESMF to deallocate safely...
+!TODO:  Once new ESMF 3.0 interfaces have settled down, eliminate "tmp_data_" 
+!TODO:  arrays and let ESMF allocate/deallocate them.  Assuming of course that 
+!TODO:  we can convince ESMF to deallocate safely...  
 !write(0,*)__FILE__,__LINE__
      ALLOCATE( tmp_data_out_sst(ips:ipe,jps:jpe) )
 !write(0,*)__FILE__,__LINE__
@@ -629,7 +629,7 @@ CONTAINS
      write(str,*) 'sst_component_init2: ips:ipe,jps:jpe = ', &
        ips,':',ipe,',',jps,':',jpe
      CALL wrf_debug ( 100 , TRIM(str) )
-!TODO:  This bit will be useful once ESMF handles allocation/deallocation.
+!TODO:  This bit will be useful once ESMF handles allocation/deallocation.  
      ! validate ESMF allocation
      IF ( ( ips /= LBOUND(tmp_data_out_sst,1) ) .OR. ( ipe /= UBOUND(tmp_data_out_sst,1) ) .OR. &
           ( jps /= LBOUND(tmp_data_out_sst,2) ) .OR. ( jpe /= UBOUND(tmp_data_out_sst,2) ) ) THEN
@@ -659,7 +659,7 @@ CONTAINS
        CALL wrf_error_fatal ( 'ESMF_FieldCreate(out_landmask_field) failed' )
      ENDIF
      CALL wrf_debug ( 100, 'sst_component_init2: back from ESMF_FieldCreate(out_landmask_field)' )
-!TODO:  This bit will be useful once ESMF handles allocation/deallocation.
+!TODO:  This bit will be useful once ESMF handles allocation/deallocation.  
      ! validate ESMF allocation
      IF ( ( ips /= LBOUND(tmp_data_out_landmask,1) ) .OR. ( ipe /= UBOUND(tmp_data_out_landmask,1) ) .OR. &
           ( jps /= LBOUND(tmp_data_out_landmask,2) ) .OR. ( jpe /= UBOUND(tmp_data_out_landmask,2) ) ) THEN
@@ -689,7 +689,7 @@ CONTAINS
        CALL wrf_error_fatal ( 'ESMF_FieldCreate(in_sst_field) failed' )
      ENDIF
      CALL wrf_debug ( 100, 'sst_component_init2: back from ESMF_FieldCreate(in_sst_field)' )
-!TODO:  This bit will be useful once ESMF handles allocation/deallocation.
+!TODO:  This bit will be useful once ESMF handles allocation/deallocation.  
      ! validate ESMF allocation
      IF ( ( ips /= LBOUND(tmp_data_in_sst,1) ) .OR. ( ipe /= UBOUND(tmp_data_in_sst,1) ) .OR. &
           ( jps /= LBOUND(tmp_data_in_sst,2) ) .OR. ( jpe /= UBOUND(tmp_data_in_sst,2) ) ) THEN
@@ -719,7 +719,7 @@ CONTAINS
        CALL wrf_error_fatal ( 'ESMF_FieldCreate(in_landmask_field) failed' )
      ENDIF
      CALL wrf_debug ( 100, 'sst_component_init2: back from ESMF_FieldCreate(in_landmask_field)' )
-!TODO:  This bit will be useful once ESMF handles allocation/deallocation.
+!TODO:  This bit will be useful once ESMF handles allocation/deallocation.  
      ! validate ESMF allocation
      IF ( ( ips /= LBOUND(tmp_data_in_landmask,1) ) .OR. ( ipe /= UBOUND(tmp_data_in_landmask,1) ) .OR. &
           ( jps /= LBOUND(tmp_data_in_landmask,2) ) .OR. ( jpe /= UBOUND(tmp_data_in_landmask,2) ) ) THEN
@@ -789,7 +789,7 @@ CONTAINS
      INTEGER,                     INTENT(  OUT) :: rc
 !<DESCRIPTION>
 !     SST component run routine, phase 1.
-!     Read "SST" data from file and stuff into exportState.
+!     Read "SST" data from file and stuff into exportState.  
 !
 !     The arguments are:
 !       gcomp           Component
@@ -802,7 +802,7 @@ CONTAINS
 
      rc = ESMF_SUCCESS
 
-     ! Get "SST" data from file and stuff it into exportState.
+     ! Get "SST" data from file and stuff it into exportState.  
      CALL read_data( exportState, clock )
 
    END SUBROUTINE sst_component_run1
@@ -816,9 +816,9 @@ CONTAINS
      INTEGER,                     INTENT(  OUT) :: rc
 !<DESCRIPTION>
 !     SST component run routine, phase 2.
-!     Get from importState, compare with file data, and error-exit
-!     if they differ...  If they are the same, then
-!     stuff the file data into the exportState.
+!     Get from importState, compare with file data, and error-exit 
+!     if they differ...  If they are the same, then 
+!     stuff the file data into the exportState.  
 !
 !     The arguments are:
 !       gcomp           Component
@@ -831,10 +831,10 @@ CONTAINS
 
      rc = ESMF_SUCCESS
 
-     ! Get from importState, compare with file data, and error_exit
-     ! if they differ...
+     ! Get from importState, compare with file data, and error_exit 
+     ! if they differ...  
 !TODO:  change this once WRF can load exportState after integrating
-     ! This works because WRF loads its exportState BEFORE integrating.
+     ! This works because WRF loads its exportState BEFORE integrating.  
      CALL wrf_clockprint ( 50, clock, 'sst_component_run2:  clock before call to compare_data()' )
      CALL compare_data( importState, clock )
      CALL wrf_clockprint ( 50, clock, 'sst_component_run2:  clock after call to compare_data()' )
@@ -868,8 +868,8 @@ CONTAINS
      rc = ESMF_SUCCESS
 
      ! destroy ESMF_Fields and other "deep" objects created by this component
-     ! note that this component relied on ESMF to allocate data pointers during
-     ! calls to ESMF_FieldCreate() so it also expects ESMF to free these pointers
+     ! note that this component relied on ESMF to allocate data pointers during 
+     ! calls to ESMF_FieldCreate() so it also expects ESMF to free these pointers 
      DO i=1, datacount
        ! destroy field in importState
        CALL ESMF_StateGet( importState, TRIM(datanames(i)), tmp_field, &
@@ -927,8 +927,8 @@ END MODULE module_sst_component_top
 
 MODULE module_sst_setservices
 !<DESCRIPTION>
-! This module defines SST "Set Services" method sst_register()
-! used for ESMF coupling.
+! This module defines SST "Set Services" method sst_register() 
+! used for ESMF coupling.  
 !</DESCRIPTION>
 
    USE module_sst_component_top, ONLY: sst_component_init1,  &
@@ -936,7 +936,7 @@ MODULE module_sst_setservices
                                        sst_component_run1,   &
                                        sst_component_run2,   &
                                        sst_component_finalize
-!  Updated for ESMF 5.2.0r
+!  Updated for ESMF 5.2.0r 
 !   USE ESMF_Mod
    USE ESMF
 
@@ -1017,16 +1017,16 @@ END MODULE module_sst_setservices
 
 
 !<DESCRIPTION>
-! Module module_wrfsst_coupler defines the
-! "WRF-SST" coupler component.  It provides two-way coupling between
-! the "SST" and "WRF" components.
-! In its run routine it transfers data directly from the
-! SST Component's export state to the WRF Component's import state.
-! It also transfers data directly from the
-! WRF Component's export state to the SST Component's import state.
+! Module module_wrfsst_coupler defines the 
+! "WRF-SST" coupler component.  It provides two-way coupling between 
+! the "SST" and "WRF" components.  
+! In its run routine it transfers data directly from the 
+! SST Component's export state to the WRF Component's import state.  
+! It also transfers data directly from the 
+! WRF Component's export state to the SST Component's import state.  
 !
 ! This is derived from src/demo/coupled_flow/src/CouplerMod.F90
-! created by Nancy Collins and others on the ESMF Core Team.
+! created by Nancy Collins and others on the ESMF Core Team.  
 !
 !</DESCRIPTION>
 
@@ -1037,11 +1037,11 @@ MODULE module_wrfsst_coupler
     USE ESMF
 
     IMPLICIT NONE
-
+    
     ! everything is private by default
     PRIVATE
 
-    ! Public entry point
+    ! Public entry point 
     PUBLIC WRFSSTCpl_register
 
     ! private data members
@@ -1111,9 +1111,9 @@ CONTAINS
       TYPE(ESMF_Clock), INTENT(INOUT) :: clock
       INTEGER, INTENT(OUT) :: rc
 !<DESCRIPTION>
-!     WRF-SST coupler component init routine.  This simply passes needed
-!     metadata from WRF to SST.  Initialization of ESMF_RouteHandle objects
-!     is handled later via lazy evaluation.
+!     WRF-SST coupler component init routine.  This simply passes needed 
+!     metadata from WRF to SST.  Initialization of ESMF_RouteHandle objects 
+!     is handled later via lazy evaluation.  
 !
 !     The arguments are:
 !       comp            Component
@@ -1171,7 +1171,7 @@ CONTAINS
       datanames(LANDMASK_INDX) = "LANDMASK"
 
       PRINT *, "DEBUG:  Coupler Init returning"
-
+   
     END SUBROUTINE WRFSSTCpl_init
 
 
@@ -1194,8 +1194,8 @@ CONTAINS
 !                       otherwise ESMF_FAILURE.
 !</DESCRIPTION>
 
-! Note that comments in this code are preserved from the sample coupler
-! provided by the ESMF core team.
+! Note that comments in this code are preserved from the sample coupler 
+! provided by the ESMF core team.  
 
       ! Local variables
       TYPE(ESMF_Field) :: src_field, dst_field
@@ -1215,7 +1215,7 @@ CONTAINS
       ! guilty until proven innocent
       rc = ESMF_FAILURE
 
-      ! Which way is this coupling going?
+      ! Which way is this coupling going?  
       WRITE(str,*) 'WRFSSTCpl_run: calling ESMF_StateGet(importState,name,...)'
       CALL wrf_debug ( 100 , TRIM(str) )
       CALL ESMF_StateGet( importState, name=importStatename, rc=rc )
@@ -1227,7 +1227,7 @@ CONTAINS
       WRITE(str,*) 'WRFSSTCpl_run: back from ESMF_StateGet, importStatename = <',TRIM(importStatename),'>'
       CALL wrf_debug ( 100 , TRIM(str) )
 
-      ! first time through in each direction:  create route handle and
+      ! first time through in each direction:  create route handle and 
       ! associated objects
       WRF_exportStatename = "WRF Export State"
       SST_exportStatename = "SST Export State"
@@ -1254,8 +1254,8 @@ CONTAINS
         IF ( rc /= ESMF_SUCCESS ) THEN
           CALL wrf_error_fatal ( 'WRFSSTCpl_run:  ESMF_CplCompGet failed' )
         ENDIF
-        ! The use of literal index "1" here indicates that we don't care which
-        ! ESMF_Field we get so we might as well get the first one.
+        ! The use of literal index "1" here indicates that we don't care which 
+        ! ESMF_Field we get so we might as well get the first one.  
         WRITE(str,*) 'WRFSSTCpl_run: grabbing first field <',TRIM(datanames(1)), &
                      '> from import state'
         CALL wrf_debug ( 100 , TRIM(str) )
@@ -1335,23 +1335,23 @@ CONTAINS
       ENDIF
 
       ! In this case, the coupling is symmetric - you call redist going
-      ! both ways - so we only care about the coupling direction in order
+      ! both ways - so we only care about the coupling direction in order 
       ! to get the right routehandle selected.
       IF ( fromWRF ) THEN
         WRITE(str,*) 'WRFSSTCpl_run: routehandle = fromWRF_rh'
         CALL wrf_debug ( 100 , TRIM(str) )
-        routehandle = fromWRF_rh
+        routehandle = fromWRF_rh 
       ELSE
         WRITE(str,*) 'WRFSSTCpl_run: routehandle = fromSST_rh'
         CALL wrf_debug ( 100 , TRIM(str) )
-        routehandle = fromSST_rh
+        routehandle = fromSST_rh 
       ENDIF
 
       DO i=1, datacount
         WRITE(str,*) 'WRFSSTCpl_run: grabbing field <',TRIM(datanames(i)),'>'
         CALL wrf_debug ( 100 , TRIM(str) )
         ! check isneeded flag here
-!5.2.0r        IF ( .NOT. ESMF_StateIsNeeded( importState, TRIM(datanames(i)), rc=rc ) ) THEN
+!5.2.0r        IF ( .NOT. ESMF_StateIsNeeded( importState, TRIM(datanames(i)), rc=rc ) ) THEN 
 !5.2.0r         IF ( rc /= ESMF_SUCCESS ) THEN
 !5.2.0r            WRITE(str,*) 'WRFSSTCpl_run:  ESMF_StateIsNeeded(',TRIM(datanames(i)),') failed'
 !5.2.0r            CALL wrf_error_fatal ( str )
@@ -1376,10 +1376,10 @@ CONTAINS
         CALL wrf_debug ( 100 , TRIM(str) )
 
 !   The following piece of code provides an example of calling the data
-!   redistribution routine  between two Fields in the Coupler Component.
+!   redistribution routine  between two Fields in the Coupler Component.  
 !   Unlike regrid, which translates between
 !   different Grids, redist translates between different DELayouts on
-!   the same Grid.   The first two lines get the Fields from the
+!   the same Grid.   The first two lines get the Fields from the 
 !   States, each corresponding to a different subcomponent.  One is
 !   an Export State and the other is an Import State.
 !
@@ -1418,8 +1418,8 @@ CONTAINS
 !   The redist routine uses information contained in the Fields and the
 !   Coupler VM object to call the communication routines to move the data.
 !   Because many Fields may share the same Grid association, the same
-!   routing information may be needed repeatedly.  Route information is
-!   saved so the precomputed information can be retained.  The following
+!   routing information may be needed repeatedly.  Route information is 
+!   saved so the precomputed information can be retained.  The following 
 !   is an example of a Field redist call:
         WRITE(str,*) 'WRFSSTCpl_run:  calling ESMF_FieldRedist for <', &
                      TRIM(datanames(i)),'>...'
@@ -1459,7 +1459,7 @@ CONTAINS
 !</DESCRIPTION>
 
       PRINT *, "DEBUG:  Coupler Final starting"
-
+   
       ! guilty until proven innocent
       rc = ESMF_FAILURE
 
@@ -1478,80 +1478,80 @@ CONTAINS
       ENDIF
 
       PRINT *, "DEBUG:  Coupler Final returning"
-
+   
     END SUBROUTINE WRFSSTCpl_final
 
 
 END MODULE module_wrfsst_coupler
-
-
+    
+    
 
 
 PROGRAM wrf_SST_ESMF
 
 !<DESCRIPTION>
-! ESMF Application Wrapper for coupling WRF with a "dummy" component
-! that simply reads SSTs from a file and sends them to WRF (one-way
-! coupling).  Fields are returned from WRF to SST via the coupler for
-! self-test only.
+! ESMF Application Wrapper for coupling WRF with a "dummy" component 
+! that simply reads SSTs from a file and sends them to WRF (one-way 
+! coupling).  Fields are returned from WRF to SST via the coupler for 
+! self-test only.  
 !
-! Note that, like other WRF coupling methods (MCEL, MCT), ESMF coupling is
-! supported only via auxiliary input and history streams.
+! Note that, like other WRF coupling methods (MCEL, MCT), ESMF coupling is 
+! supported only via auxiliary input and history streams.  
 !
-! This is the main program that creates the ESMF Gridded and Coupler
-! Component.
+! This is the main program that creates the ESMF Gridded and Coupler 
+! Component.  
 !
-! "init" looks like this:
-!   1. Init phase 1 for WRF, sets WRF exportState metadata for "time"
-!      and "domain" information needed by WRF IOAPI (which is called from
-!      the SST component).  It also sets up all WRF and WSF modules.  Note
-!      that this must be called before SST phase-1 init because SST uses
-!      WRF IOAPI.
-!   2. Init phase 1 for SST, sets "time" metadata in SST exportState.
-!   3. Initialize coupler, passing decomposition metadata from WRF exportState
-!      to SST importState.
-!   4. Resolve any "time" metadata inconsistencies and create top-level clock.
-!   5. Init phase 2 for SST, gets "domain" information from importState,
-!      creates an ESMF_Grid based on "domain" information using the exact same
-!      method as WRF (so WRF IOAPI calls will work), and sets up SST
-!      importState and exportState.
-!   6. Init phase 2 for WRF, runs up to the end of the head_grid I/O "training"
-!      phase (done in med_before_solve_io()).  This initializes WRF
-!      importState and exportState prior to the first coupling step during the
-!      "run" loop.  Note that this only works for head_grid at present because
-!      recursion in WRF traversal of subdomains is not dealt with yet and
-!      because the code that populates the WRF importState and exportState is
-!      not yet sophisticated enough to handle creating and destroying nested
-!      domains at any time during the model run.
-!TODO:  ESMF auxio must begin at the start of the run.  Remove this
-!TODO:  restriction later, if needed.
+! "init" looks like this:  
+!   1. Init phase 1 for WRF, sets WRF exportState metadata for "time" 
+!      and "domain" information needed by WRF IOAPI (which is called from 
+!      the SST component).  It also sets up all WRF and WSF modules.  Note 
+!      that this must be called before SST phase-1 init because SST uses 
+!      WRF IOAPI.  
+!   2. Init phase 1 for SST, sets "time" metadata in SST exportState.  
+!   3. Initialize coupler, passing decomposition metadata from WRF exportState 
+!      to SST importState.  
+!   4. Resolve any "time" metadata inconsistencies and create top-level clock.  
+!   5. Init phase 2 for SST, gets "domain" information from importState, 
+!      creates an ESMF_Grid based on "domain" information using the exact same 
+!      method as WRF (so WRF IOAPI calls will work), and sets up SST 
+!      importState and exportState.  
+!   6. Init phase 2 for WRF, runs up to the end of the head_grid I/O "training" 
+!      phase (done in med_before_solve_io()).  This initializes WRF 
+!      importState and exportState prior to the first coupling step during the 
+!      "run" loop.  Note that this only works for head_grid at present because 
+!      recursion in WRF traversal of subdomains is not dealt with yet and 
+!      because the code that populates the WRF importState and exportState is 
+!      not yet sophisticated enough to handle creating and destroying nested 
+!      domains at any time during the model run.  
+!TODO:  ESMF auxio must begin at the start of the run.  Remove this 
+!TODO:  restriction later, if needed.  
 !
-!TODO:  Note that coupling is currently limited to one auxin plus one auxout
-!TODO:  streams.  Extension to multiple pairs of auxio streams requires
-!TODO:  nested states (one for each auxio stream pair).
-!TODO:  For now, only support one input and/or one output stream via
-!TODO:  io_esmf.  This condition is asserted in
-!TODO:  ext_esmf_open_for_read_begin() and
-!TODO:  ext_esmf_open_for_write_begin().
+!TODO:  Note that coupling is currently limited to one auxin plus one auxout 
+!TODO:  streams.  Extension to multiple pairs of auxio streams requires 
+!TODO:  nested states (one for each auxio stream pair).  
+!TODO:  For now, only support one input and/or one output stream via 
+!TODO:  io_esmf.  This condition is asserted in 
+!TODO:  ext_esmf_open_for_read_begin() and 
+!TODO:  ext_esmf_open_for_write_begin().  
 !
-! "run" loop looks like this:
-!   1. Run SST phase 1, reads SST from file and writes it to SST exportState
-!      for coupling to WRF.
-!   2. Couple SST exportState -> WRF importState.  First iteration:  set up
-!      SST->WRF routeHandle via lazy evaluation.
-!   3. Run WRF.  First iteration:  head_grid resumes after I/O "training"
-!      phase.  Other iterations and domains:  run normally.
-!      Read WRF importState and write WRF exportState (via med_before_solve_io()).
-!      Note that WRF assigns sst -> tsk for sea points in
-!      share/module_soil_pre.F.
+! "run" loop looks like this:  
+!   1. Run SST phase 1, reads SST from file and writes it to SST exportState 
+!      for coupling to WRF.  
+!   2. Couple SST exportState -> WRF importState.  First iteration:  set up 
+!      SST->WRF routeHandle via lazy evaluation.  
+!   3. Run WRF.  First iteration:  head_grid resumes after I/O "training" 
+!      phase.  Other iterations and domains:  run normally.  
+!      Read WRF importState and write WRF exportState (via med_before_solve_io()).  
+!      Note that WRF assigns sst -> tsk for sea points in 
+!      share/module_soil_pre.F.  
 !   4. Couple WRF exportState -> SST importState.  First iteration:  set up
 !      WRF->SST routeHandle via lazy evaluation.
-!   5. Run SST phase 2, compare SST from file with SST from WRF (via
-!      SST importState) and error-exit if they differ.
+!   5. Run SST phase 2, compare SST from file with SST from WRF (via 
+!      SST importState) and error-exit if they differ.  
 !   6. Advance clock and goto step 1
 !
-! "finalize" is trivial, except for destruction of ESMF objects which is
-! quite non-trivial at the moment.
+! "finalize" is trivial, except for destruction of ESMF objects which is 
+! quite non-trivial at the moment.  
 !
 !</DESCRIPTION>
 
@@ -1603,8 +1603,8 @@ PROGRAM wrf_SST_ESMF
    CHARACTER(LEN=256) :: couplingIntervalString
 integer(ESMF_KIND_I4) :: timevals(6)
 
-
-   ! Warn users that this is not yet ready for general use.
+        
+   ! Warn users that this is not yet ready for general use.  
    PRINT *, '                      W A R N I N G                          '
    PRINT *, '  ESMF COUPLING CAPABILITY IS EXPERIMENTAL AND UNSUPPORTED   '
    PRINT *, '               IN THIS VERSION OF WRF-CPL-SST                '
@@ -1680,9 +1680,9 @@ integer(ESMF_KIND_I4) :: timevals(6)
      PRINT *, 'wrf_SST_ESMF:  ESMF_CplCompSetServices failed'
    ENDIF
 
-   ! Create top-level clock.  There is no way to create an "empty" clock, so
-   ! stuff in bogus values for start time, stop time, and time step and fix
-   ! them after gridded component "init" phases return.
+   ! Create top-level clock.  There is no way to create an "empty" clock, so 
+   ! stuff in bogus values for start time, stop time, and time step and fix 
+   ! them after gridded component "init" phases return.  
    CALL ESMF_TimeSet(startTime, yy=2000, mm=1, dd=1, &
                      h=0, m=0, s=0, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
@@ -1744,11 +1744,11 @@ call esmf_attributeget(exportstatesst,'ComponentCouplingInterval',timevals,itemc
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_GridCompInitialize(SST phase 1) failed' )
    ENDIF
 
-   ! Reconcile clock settings from WRF and SST components to set up
-   ! top-level clock.  These are passed back from each "init" as attributes
-   ! on exportState*.
-   ! Stuff both States into a single State to pass into GetTimesFromStates()
-   ! which is smart enough to deal with a Composite.
+   ! Reconcile clock settings from WRF and SST components to set up 
+   ! top-level clock.  These are passed back from each "init" as attributes 
+   ! on exportState*.  
+   ! Stuff both States into a single State to pass into GetTimesFromStates() 
+   ! which is smart enough to deal with a Composite.  
    PRINT *, 'DEBUG wrf_SST_ESMF:  reconciling clock from WRF and SST components'
    tmpState = ESMF_StateCreate( rc=rc )
    IF ( rc /= ESMF_SUCCESS ) THEN
@@ -1914,14 +1914,14 @@ call esmf_attributeget(exportstatesst,'ComponentCouplingInterval',timevals,itemc
    IF ( rc /= ESMF_SUCCESS ) THEN
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_GridCompFinalize(compGriddedSST) failed' )
    ENDIF
-
+ 
    ! clean up compCplWRFSST
    CALL ESMF_CplCompFinalize( compCplWRFSST, importstate=exportStateWRF, exportstate=importStateSST, &
                               clock=driverClock, rc=rc)
    IF ( rc /= ESMF_SUCCESS ) THEN
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_CplCompFinalize(compCplWRFSST) failed' )
    ENDIF
-
+ 
    ! clean up WRF
    ! must do this AFTER clean up of SST since SST uses WRF IOAPI
    CALL ESMF_GridCompFinalize(compGriddedWRF, importstate=importStateWRF, exportstate=exportStateWRF, &
@@ -1929,7 +1929,7 @@ call esmf_attributeget(exportstatesst,'ComponentCouplingInterval',timevals,itemc
    IF ( rc /= ESMF_SUCCESS ) THEN
      CALL wrf_error_fatal ( 'wrf_SST_ESMF:  ESMF_GridCompFinalize(compGriddedWRF) failed' )
    ENDIF
-
+ 
    ! Clean up
 
    CALL ESMF_GridCompDestroy(compGriddedWRF, rc=rc)

@@ -5,9 +5,9 @@
    (defined TL_AVERAGES && defined TANGENT)
       SUBROUTINE def_avg (ng, ldef)
 !
-!svn $Id: def_avg.F 873 2017-10-05 20:27:10Z arango $
+!svn $Id: def_avg.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -460,7 +460,7 @@
         Vinfo( 4)=TRIM(Rclock%calendar)
         Vinfo(14)=Vname(4,idtime)
         status=def_var(ng, model, AVG(ng)%ncid, AVG(ng)%Vid(idtime),    &
-     &                 NF_TYPE, 1, (/recdim/), Aval, Vinfo, ncname,     &
+     &                 NF_TOUT, 1, (/recdim/), Aval, Vinfo, ncname,     &
      &                 SetParAccess = .TRUE.)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
@@ -2102,7 +2102,7 @@
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
-# ifdef BBL
+# ifdef BBL_MODEL
 !
 !  Define bottom u-momentum stress at rho points.
 !
@@ -2336,8 +2336,8 @@
             status=def_var(ng, model, AVG(ng)%ncid,                     &
      &                     AVG(ng)%Vid(idUbld(i)), NF_FOUT,             &
      &                     nvd3, u2dgrd, Aval, Vinfo, ncname)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
 !
 !  Define Bedload V-direction.
@@ -3169,9 +3169,9 @@
           Vinfo( 3)=Vname(3,idW3zx)
           Vinfo(14)=Vname(4,idW3zx)
           Vinfo(16)=Vname(1,idtime)
-#   if defined WRITE_WATER && defined MASKING
+#    if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#   endif
+#    endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(u3dvar,r8)
           status=def_var(ng, model, AVG(ng)%ncid, AVG(ng)%Vid(idW3zx),  &
@@ -3188,9 +3188,9 @@
           Vinfo( 3)=Vname(3,idW3zy)
           Vinfo(14)=Vname(4,idW3zy)
           Vinfo(16)=Vname(1,idtime)
-#   if defined WRITE_WATER && defined MASKING
+#    if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
-#   endif
+#    endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(u3dvar,r8)
           status=def_var(ng, model, AVG(ng)%ncid, AVG(ng)%Vid(idW3zy),  &
@@ -3385,6 +3385,24 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idWdir,ng),r8)
           status=def_var(ng, model, AVG(ng)%ncid, AVG(ng)%Vid(idWdir),  &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
+        END IF
+# endif
+# ifdef WAVES_DIRP
+        IF (Aout(idWdip,ng)) THEN
+          Vinfo( 1)=Vname(1,idWdip)
+          WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,idWdip))
+          Vinfo( 3)=Vname(3,idWdip)
+          Vinfo(14)=Vname(4,idWdip)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_r'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWdip,ng),r8)
+          status=def_var(ng, model, AVG(ng)%ncid, AVG(ng)%Vid(idWdip),  &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
@@ -4086,6 +4104,11 @@
             got_var(idWdir)=.TRUE.
             AVG(ng)%Vid(idWdir)=var_id(i)
 # endif
+# ifdef WAVES_DIRP
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdip))) THEN
+            got_var(idWdip)=.TRUE.
+            AVG(ng)%Vid(idWdip)=var_id(i)
+# endif
 # ifdef WAVES_TOP_PERIOD
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWptp))) THEN
             got_var(idWptp)=.TRUE.
@@ -4775,7 +4798,7 @@
           exit_flag=3
           RETURN
         END IF
-# ifdef BBL
+# ifdef BBL_MODEL
         IF (.not.got_var(idUbrs).and.Aout(idUbrs,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idUbrs)),          &
      &                                  TRIM(ncname)
@@ -5012,6 +5035,14 @@
 # ifdef WAVES_DIR
         IF (.not.got_var(idWdir).and.Aout(idWdir,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWdir)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+# endif
+# ifdef WAVES_DIRP
+        IF (.not.got_var(idWdip).and.Aout(idWdip,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWdip)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

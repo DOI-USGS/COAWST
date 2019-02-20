@@ -103,7 +103,7 @@
       USE mod_sediment
       USE mod_sedflocs
 !
-      implicit none
+      implicit none 
 !
 !  Imported variable declarations.
 !
@@ -128,7 +128,7 @@
       real(r8), intent(in) :: Lscale(LBi:,LBj:,0:)
       real(r8), intent(in) :: tke(LBi:,LBj:,0:,:)
       real(r8), intent(in) :: gls(LBi:,LBj:,0:,:)
-      real(r8), intent(inout) :: t(LBi:,LBj:,:,:,:)
+      real(r8), intent(inout) :: t(LBi:,LBj:,:,:,:) 
 # else
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
@@ -151,7 +151,7 @@
       real(r8), intent(in) :: f_diam(NCS)
 !
 !  Local variable declarations.
-!
+! 
       integer :: i, indx, ised, j, k, ks
 !
 !  Variable declarations for floc model
@@ -195,23 +195,23 @@
             ENDDO
 	 ENDDO
       ENDDO
-
+ 
 ! min concentration below which flocculation processes are not calculated
-!      f_clim=0.001_r8
+!      f_clim=0.001_r8 
        exp1 = 3.0_r8+gls_p(ng)/gls_n(ng)
        exp2 = 1.5_r8+gls_m(ng)/gls_n(ng)
        exp3 = -1.0_r8/gls_n(ng)
 
        DO i=Istr,Iend
            DO k=1,N(ng)
-
+ 
               f_dt=dt(ng)
               dttemp=0.0_r8
 
 	     ! concentration of all mud classes in one grid cell
               cvtotmud=0.0_r8
               DO ised=1,NCS
-                 cv_tmp(ised)=susmud(i,k,ised)
+                 cv_tmp(ised)=susmud(i,k,ised) 
                  cvtotmud=cvtotmud+cv_tmp(ised)
 
                  NNin(ised)=cv_tmp(ised)/f_mass(ised)
@@ -222,7 +222,7 @@
                   WRITE(*,*) '***************************************'
                   WRITE(*,*) 'CAUTION, negative mass at cell i,j,k :',  &
      &                          i,j,k
-                  WRITE(*,*) '***************************************'
+                  WRITE(*,*) '***************************************'        
                  ENDIF
               ENDDO
 
@@ -238,7 +238,7 @@
 		 ELSEIF (k.eq.N(ng)) THEN
                     tke_av = tke(i,j,k,nnew)
                     gls_av = gls(i,j,k,nnew)
-		 ELSE
+		 ELSE 
                     tke_av = 0.5_r8*(tke(i,j,k-1,nnew)+tke(i,j,k,nnew))
                     gls_av = 0.5_r8*(gls(i,j,k-1,nnew)+gls(i,j,k,nnew))
                 ENDIF
@@ -259,7 +259,7 @@
 		 ELSEIF (k.eq.N(ng)) THEN
                     tke_av = tke(i,j,k,nnew)
                     gls_av = gls(i,j,k,nnew)
-		 ELSE
+		 ELSE 
                     tke_av = 0.5_r8*tke(i,j,k-1,nnew)+                  &
      &                       0.5_r8*tke(i,j,k,nnew)
                     gls_av = 0.5_r8*gls(i,j,k-1,nnew)+                  &
@@ -269,7 +269,7 @@
 !
 !  MODIFY THE BOTTOM LAYER TO INCLUDE WAVECURRENT STRESS
 !
-		IF (k.eq.1) THEN
+		IF (k.eq.1) THEN       
 #  ifdef BBL_MODEL
                  ustr2 =sqrt((bustrcwmax(i,j)**2.0_r8+                  &
      &                       bvstrcwmax(i,j)**2.0_r8 ))
@@ -281,20 +281,20 @@
      &                       (z_r(i,j,1)-zw(i,j,0))),diss)
 #  endif
                ENDIF
-# else
+# else 
                 diss = epsilon8
                 IF (l_testcase) THEN
 !                  if (j.eq.1.and.i.eq.1.and.k.eq.1) then
 !                     WRITE(*,*) 'VERNEY ET AL TESTCASE FOR FLOCS'
 !                  endif
-                ELSE
+                ELSE    
                   WRITE(*,*) 'CAUTION :'
                   WRITE(*,*) 'CHOOSE A DISSIPATION MODEL FOR FLOCS'
                   WRITE(*,*) 'SIMULATION STOPPED'
                   STOP
-                ENDIF
-# endif
-                CALL flocmod_comp_g(k,i,j,Gval,diss,ng)
+                ENDIF                 
+# endif		           
+                CALL flocmod_comp_g(k,i,j,Gval,diss,ng) 
 
                  DO WHILE (dttemp .le. dt(ng))
 
@@ -309,12 +309,12 @@
                              exit
                           ENDIF
                           CALL flocmod_comp_fsd(NNin,NNout,Gval,f_dt,ng)
-                          CALL flocmod_mass_control(NNout,mneg,ng)
+                          CALL flocmod_mass_control(NNout,mneg,ng)   
                        ENDDO
                     ELSE
 
                        IF (f_dt.lt.dt(ng)) THEN
-                          DO while (mneg .lt.f_mneg_param)
+                          DO while (mneg .lt.f_mneg_param) 
                             IF (dttemp+f_dt .eq. dt(ng)) THEN
                            CALL flocmod_comp_fsd(NNin,NNout,Gval,f_dt,ng)
                               exit
@@ -323,7 +323,7 @@
                               f_dt=MIN(2.0_r8*f_dt,dt(ng)-dttemp)
                            CALL flocmod_comp_fsd(NNin,NNout,Gval,f_dt,ng)
                               CALL flocmod_mass_control(NNout,mneg,ng)
-                              IF (mneg .gt. f_mneg_param) THEN
+                              IF (mneg .gt. f_mneg_param) THEN 
                                 f_dt=dt1
                            CALL flocmod_comp_fsd(NNin,NNout,Gval,f_dt,ng)
                                 exit
@@ -335,7 +335,7 @@
                     dttemp=dttemp+f_dt
 
                     NNin(:)=NNout(:) ! update new Floc size distribution
-                    ! redistribute negative masses IF any on positive classes,
+                    ! redistribute negative masses IF any on positive classes, 
                     ! depends on f_mneg_param
 		    CALL flocmod_mass_redistribute(NNin,ng)
 
@@ -365,8 +365,8 @@
             ENDDO
 	 ENDDO
       ENDDO
-
-
+      
+      
       END DO J_LOOP
 !      WRITE(*,*) 'END flocmod_main'
       END SUBROUTINE sed_flocmod_tile
@@ -379,14 +379,14 @@
   !&E--------------------------------------------------------------------------
   !&E                 ***  ROUTINE flocmod_collfrag  ***
   !&E
-  !&E ** Purpose : computation of collision fragmentation term,
+  !&E ** Purpose : computation of collision fragmentation term, 
   !&E              based on McAnally and Mehta, 2001
   !&E
   !&E ** Description :
   !&E
   !&E ** Called by : flocmod_comp_fsd
   !&E
-  !&E ** External calls :
+  !&E ** External calls : 
   !&E
   !&E ** Reference :
   !&E
@@ -399,7 +399,7 @@
       USE mod_param
       USE mod_scalars
 !
-      implicit none
+      implicit none 
       integer, intent(in) :: ng
       real(r8),intent(in) :: Gval
 
@@ -428,7 +428,7 @@
       DO iv1=1,NCS
        DO iv2=1,NCS
         DO iv3=iv2,NCS
-           ! fragmentation after collision probability based on
+           ! fragmentation after collision probability based on 
 	   ! Gval for particles iv2 and iv3
            ! gcolfrag=(collision induced shear) / (floc strength)
 
@@ -445,7 +445,7 @@
 
            ! first case : iv3 not eroded, iv2 eroded forming 2 particles
 	   ! : iv3+f_cfcst*iv2 / iv2-f_cfcst*iv2
-           IF (gcolfragmin.lt.1.0_r8 .and. gcolfragmax.ge.1.0_r8) THEN
+           IF (gcolfragmin.lt.1.0_r8 .and. gcolfragmax.ge.1.0_r8) THEN  
 
               IF (((fmass(iv3)+f_cfcst*fmass(iv2)).gt.fmass(iv1-1))     &
      &             .and. ((fmass(iv3)+f_cfcst*fmass(iv2)).le.           &
@@ -458,7 +458,7 @@
      &              .and. fmass(iv3)+f_cfcst*fmass(iv2).lt.             &
      &              fmass(iv1+1)) THEN
 
-                 IF (iv1.eq.NCS) THEN
+                 IF (iv1.eq.NCS) THEN 
                     f_weight=1.0_r8
                  ELSE
 
@@ -485,7 +485,7 @@
      &            .and. fmass(iv2)-f_cfcst*fmass(iv2).lt.               &
      &            fmass(iv1+1)) THEN
 
-                 IF (iv1.eq.NCS) THEN
+                 IF (iv1.eq.NCS) THEN 
                     f_weight=1.0_r8
                  ELSE
 
@@ -502,10 +502,10 @@
      &            f_cfcst*fmass(iv2))/fmass(iv1)
 
 
-              ! second case : iv3 eroded and iv2 eroded forming 3 particles :
+              ! second case : iv3 eroded and iv2 eroded forming 3 particles : 
 	      !iv3-f_cfcst*iv3 / iv2-f_cfcst*iv2 / f_cfcst*iv3+f_cfcst*iv2
            ELSEIF (gcolfragmin.ge.1.0_r8 .and. gcolfragmax.ge.          &
-     &            1.0_r8) THEN
+     &            1.0_r8) THEN  
 
               IF (f_cfcst*fmass(iv2)+f_cfcst*fmass(iv3).gt.             &
      &            fmass(iv1-1) .and. f_cfcst*fmass(iv2)+f_cfcst*        &
@@ -515,10 +515,10 @@
      &                   fmass(iv1-1))/(fmass(iv1)-fmass(iv1-1)))
 
               ELSEIF (f_cfcst*fmass(iv2)+f_cfcst*fmass(iv3).gt.         &
-     &            fmass(iv1) .and. f_cfcst*fmass(iv2)+f_cfcst*          &
+     &            fmass(iv1) .and. f_cfcst*fmass(iv2)+f_cfcst*          & 
      &            fmass(iv3).lt.fmass(iv1+1)) THEN
 
-                 IF (iv1.eq.NCS) THEN
+                 IF (iv1.eq.NCS) THEN 
                     f_weight=1.0_r8
                  ELSE
 
@@ -546,7 +546,7 @@
      &            .and. (1.0_r8-f_cfcst)*fmass(iv2).lt.                 &
      &            fmass(iv1+1)) THEN
 
-                 IF (iv1.eq.NCS) THEN
+                 IF (iv1.eq.NCS) THEN 
                     f_weight=1.0_r8
                  ELSE
 
@@ -560,7 +560,7 @@
 
               f_g4(iv2,iv3,iv1)=f_g4(iv2,iv3,iv1)+f_weight*             &
      &                  (SEDFLOCS(ng)%f_coll_prob_sh(iv2,iv3))*         &
-     &                  ((1.0_r8-f_cfcst)*fmass(iv2))/fmass(iv1)
+     &                  ((1.0_r8-f_cfcst)*fmass(iv2))/fmass(iv1) 
 
 
               IF ((1.0_r8-f_cfcst)*fmass(iv3).gt.fmass(iv1-1) .and.     &
@@ -573,7 +573,7 @@
      &            .and. (1.0_r8-f_cfcst)*fmass(iv3).lt.                 &
      &            fmass(iv1+1)) THEN
 
-                 IF (iv1.eq.NCS) THEN
+                 IF (iv1.eq.NCS) THEN 
                     f_weight=1.0_r8
                  ELSE
 
@@ -608,7 +608,7 @@
      &            fmass(iv1)*fmass(iv2)/(pi*f_fy*f_fp*fdiam(iv2)        &
      &            **2.0_r8*(fmass(iv1)+fmass(iv2))*                     &
      &            ((SEDFLOCS(ng)%f_rho(iv2)-                            &
-     &            rhoref)*cff2)**cff1)
+     &            rhoref)*cff2)**cff1)    
 
         mult=1.0_r8
         IF (iv1.eq.iv2) mult=2.0_r8
@@ -643,7 +643,7 @@
   !&E
   !&E ** Called by : flocmod_main
   !&E
-  !&E ** External calls :
+  !&E ** External calls : 
   !&E
   !&E ** Reference :
   !&E
@@ -656,7 +656,7 @@
       USE mod_scalars
       USE mod_sedflocs
 !
-      implicit none
+      implicit none 
 
   !! * Arguments
       integer, intent(in) :: ng
@@ -670,7 +670,7 @@
       real(r8) :: tmp_g1,tmp_g3,tmp_l1,tmp_l3,tmp_l4,tmp_g4
       real(r8),dimension(1:NCS,1:NCS,1:NCS)     :: f_g1_tmp,f_g4
       real(r8),dimension(1:NCS,1:NCS)           :: f_l1_tmp,f_l4
-
+      
   !!--------------------------------------------------------------------------
   !! * Executable part
 
@@ -679,7 +679,7 @@
       tmp_g4=0.0_r8
       tmp_l1=0.0_r8
       tmp_l3=0.0_r8
-      tmp_l4=0.0_r8
+      tmp_l4=0.0_r8    
       f_g1_tmp(1:NCS,1:NCS,1:NCS)=0.0_r8
       f_l1_tmp(1:NCS,1:NCS)=0.0_r8
 
@@ -690,11 +690,11 @@
         DO iv3=1,NCS
            IF (l_ASH) THEN
               f_g1_tmp(iv2,iv3,iv1)=f_g1_tmp(iv2,iv3,iv1)+              &
-     &            SEDFLOCS(ng)%f_g1_sh(iv2,iv3,iv1)*Gval
+     &            SEDFLOCS(ng)%f_g1_sh(iv2,iv3,iv1)*Gval   
            ENDIF
            IF (l_ADS) THEN
               f_g1_tmp(iv2,iv3,iv1)=f_g1_tmp(iv2,iv3,iv1)+              &
-     &            SEDFLOCS(ng)%f_g1_ds(iv2,iv3,iv1)
+     &            SEDFLOCS(ng)%f_g1_ds(iv2,iv3,iv1)   
            ENDIF
 
            tmp_g1=tmp_g1+(NNin(iv3)*(f_g1_tmp(iv2,iv3,iv1))*NNin(iv2))
@@ -736,7 +736,7 @@
        tmp_g4=0.0_r8
        tmp_l1=0.0_r8
        tmp_l3=0.0_r8
-       tmp_l4=0.0_r8
+       tmp_l4=0.0_r8    
       ENDDO
 
       RETURN
@@ -750,14 +750,14 @@
   !&E--------------------------------------------------------------------------
   !&E                 ***  ROUTINE flocmod_mass_control  ***
   !&E
-  !&E ** Purpose : Compute mass in every class after flocculation and
+  !&E ** Purpose : Compute mass in every class after flocculation and 
   !&E              returns negative mass if any
   !&E
   !&E ** Description :
   !&E
   !&E ** Called by : flocmod_main
   !&E
-  !&E ** External calls :
+  !&E ** External calls : 
   !&E
   !&E ** Reference :
   !&E
@@ -770,7 +770,7 @@
       USE mod_param
       USE mod_scalars
 !
-      implicit none
+      implicit none 
       integer, intent(in) :: ng
 
   !! * Local declarations
@@ -799,15 +799,15 @@
   !&E--------------------------------------------------------------------------
   !&E                 ***  ROUTINE flocmod_mass_redistribute  ***
   !&E
-  !&E ** Purpose : based on a tolerated negative mass parameter, negative masses
-  !&E              are redistributed linearly towards remaining postive masses
+  !&E ** Purpose : based on a tolerated negative mass parameter, negative masses  
+  !&E              are redistributed linearly towards remaining postive masses 
   !&E              and negative masses are set to 0
-  !&E
+  !&E                   
   !&E ** Description :
   !&E
   !&E ** Called by : flocmod_main
   !&E
-  !&E ** External calls :
+  !&E ** External calls : 
   !&E
   !&E ** Reference :
   !&E
@@ -820,7 +820,7 @@
       USE mod_scalars
       USE mod_sedflocs
 !
-      implicit none
+      implicit none 
       integer, intent(in) :: ng
 
 
@@ -847,11 +847,11 @@
        ENDIF
       ENDDO
 
-      IF (mneg.gt.0.0_r8) THEN
+      IF (mneg.gt.0.0_r8) THEN 
        IF (npos.eq.0.0_r8) THEN
          WRITE(*,*) 'CAUTION : all floc sizes have negative mass!'
          WRITE(*,*) 'SIMULATION STOPPED'
-         STOP
+         STOP    
        ELSE
          DO iv=1,NCS
            IF (NN(iv).gt.0.0_r8) THEN
@@ -869,19 +869,19 @@
       RETURN
       END SUBROUTINE flocmod_mass_redistribute
 
-!!===========================================================================
+!!===========================================================================    
       SUBROUTINE flocmod_comp_g(k,i,j,Gval,diss,ng)
 
   !&E--------------------------------------------------------------------------
   !&E                 ***  ROUTINE flocmod_comp_g  ***
   !&E
-  !&E ** Purpose : compute shear rate to estimate shear aggregation and erosion
-  !&E
+  !&E ** Purpose : compute shear rate to estimate shear aggregation and erosion  
+  !&E 
   !&E ** Description :
   !&E
   !&E ** Called by : flocmod_main
   !&E
-  !&E ** External calls :
+  !&E ** External calls : 
   !&E
   !&E ** Reference :
   !&E
@@ -894,7 +894,7 @@
       USE mod_param
       USE mod_scalars
 !
-      implicit none
+      implicit none 
 
   !! * Local declarations
       integer,  intent(in)      :: k,i,j
@@ -909,7 +909,7 @@
   !    ustar=sqrt(tenfon(i,j)/rhoref)
   !    htn=h0(i,j)+ssh(i,j)
   !    z=(1.0_r8+sig(k))*htn
-
+      
 !
 ! ALA from CRS
 !
@@ -922,7 +922,7 @@
        ELSEIF (time(ng) .lt. 8401.0_r8) THEN
         Gval=2.0_r8
        ELSEIF (time(ng) .lt. 9601.0_r8) THEN
-        Gval=3.0_r8
+        Gval=3.0_r8  
        ELSEIF (time(ng) .lt. 10801.0_r8) THEN
         Gval=4.0_r8
        ELSEIF (time(ng) .lt. 12601.0_r8) THEN
@@ -940,9 +940,9 @@
        ELSEIF (time(ng) .lt. 30601.0_r8) THEN
         Gval=1.0_r8
        ELSEIF (time(ng) .lt. 31801.0_r8) THEN
-        Gval=2.0_r8
+        Gval=2.0_r8                     
        ELSEIF (time(ng) .lt. 33001.0_r8) THEN
-        Gval=3.0_r8
+        Gval=3.0_r8       
        ELSEIF (time(ng) .lt. 34201.0_r8) THEN
         Gval=4.0_r8
        ELSEIF (time(ng) .lt. 36001.0_r8) THEN
@@ -960,12 +960,12 @@
        ELSEIF (time(ng) .lt. 54001.0_r8) THEN
         Gval=1.0_r8
        ELSEIF (time(ng) .lt. 55201.0_r8) THEN
-        Gval=2.0_r8
+        Gval=2.0_r8                     
        ELSEIF (time(ng) .lt. 56401.0_r8) THEN
-        Gval=3.0_r8
+        Gval=3.0_r8       
        ELSEIF (time(ng) .lt. 57601.0_r8) THEN
         Gval=4.0_r8
-       ELSE
+       ELSE 
         Gval=12.0_r8
        ENDIF
       ELSE
@@ -975,7 +975,7 @@
 !      Gval = 12.0_r8
       RETURN
       END SUBROUTINE flocmod_comp_g
-
-
+      
+      
 #endif
       END MODULE sed_flocs_mod

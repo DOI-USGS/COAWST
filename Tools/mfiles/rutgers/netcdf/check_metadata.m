@@ -25,14 +25,14 @@ function S = check_metadata(Sinp)
 %    S          Updated ROMS metadata structure (struct array)
 %
 
-% svn $Id: check_metadata.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: check_metadata.m 926 2018-10-09 21:53:45Z arango $
 %=========================================================================%
 %  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMVariables.txt                   Hernan G. Arango      %
 %=========================================================================%
 
-if (~isstruct(Sinp)),
+if (~isstruct(Sinp))
   error('CHECK_METADATA: input argument ''Sinp'' is not a structure');
 end
   
@@ -46,19 +46,19 @@ S = Sinp;
 
 nvars = length(S.Variables);
 
-for n=1:nvars,
+for n=1:nvars
 
 % Fill variable dimension(s) length and variable size.
   
   nvdims = length(S.Variables(n).Dimensions);
   vsize  = [];
   
-  for i=1:nvdims,
+  for i=1:nvdims
     dname   = char(S.Variables(n).Dimensions(i).Name);
     dindex  = strcmp({S.Dimensions.Name}, dname);
 
     RenameDim = false;
-    if (any(dindex)),
+    if (any(dindex))
       dsize = S.Dimensions(dindex).Length;
     else
       RenameDim = true;
@@ -71,19 +71,19 @@ for n=1:nvars,
 % file dimensions are scanned for the substring 'time' and the structure
 % is corrected with the appropriate available dimension.
 
-    if (RenameDim),
+    if (RenameDim)
       foundit = false;
       if (strcmp(dname, 'ocean_time'))
 	    dindex = strfind({S.Dimensions.Name}, 'time');
         dindex = ~cellfun(@isempty, dindex);
-        if (any(dindex)),
+        if (any(dindex))
           dname = S.Dimensions(dindex).Name;
           dsize = S.Dimensions(dindex).Length;
           S.Variables(n).Dimensions(i).Name = dname;
           foundit = true;
         end
       end
-      if (~foundit),
+      if (~foundit)
         error(['CHECK_METADATA: dimension "',dname,'" is not ',         ...
                'available for variable "', char(S.Variables(n).Name),'"']);
       end
@@ -91,7 +91,7 @@ for n=1:nvars,
     
     Dcel{i} = dname;                                % horizontal cell array
 
-    if (S.Variables(n).Dimensions(i).Unlimited);
+    if (S.Variables(n).Dimensions(i).Unlimited)
       S.Variables(n).Dimensions(i).Length = 0;
       vsize = [vsize 0];
     else      
@@ -99,7 +99,7 @@ for n=1:nvars,
       vsize = [vsize dsize];
     end
   end
-  if (nvdims > 0),
+  if (nvdims > 0)
     S.Variables(n).Size = vsize;
   end
 
@@ -109,12 +109,12 @@ for n=1:nvars,
 % the correct attribute string "Avalue".
 
    iatt = strcmp({S.Variables(n).Attributes.Name}, 'coordinates');
-   if (any(iatt)),
+   if (any(iatt))
      Astr = S.Variables(n).Attributes(iatt).Value;
 
      Acel = textscan(Astr, '%s');                   % vertical cell array
 
-     if (~isequal(Acel{1}, Dcel')),                 % notice transpose
+     if (~isequal(Acel{1}, Dcel'))                  % notice transpose
        Avalue = sprintf('%s ',Dcel{:});
        S.Variables(n).Attributes(iatt).Value = Avalue;
      end
@@ -126,10 +126,10 @@ for n=1:nvars,
 % replace its value with the correct attribute string.
 
    iatt = strcmp({S.Variables(n).Attributes.Name}, 'time');
-   if (any(iatt)),
+   if (any(iatt))
      Astr = S.Variables(n).Attributes(iatt).Value;
 
-     if (~isequal(Astr, char(Dcel{end}))),
+     if (~isequal(Astr, char(Dcel{end})))
        S.Variables(n).Attributes(iatt).Value = char(Dcel{end});
      end
    end

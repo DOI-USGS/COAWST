@@ -197,7 +197,7 @@ SUBROUTINE CALERF_r8(ARG, RESULT, JINT)
 !------------------------------------------------------------------
 !S      real, parameter :: XINF   =  3.40E+38
 !S      real, parameter :: XNEG   = -9.382E0
-!S      real, parameter :: XSMALL =  5.96E-8
+!S      real, parameter :: XSMALL =  5.96E-8 
 !S      real, parameter :: XBIG   =  9.194E0
 !S      real, parameter :: XHUGE  =  2.90E3
 !S      real, parameter :: XMAX   =  4.79E37
@@ -366,7 +366,7 @@ SUBROUTINE CALERF_r4(ARG, RESULT, JINT)
    !------------------------------------------------------------------
    real(rk), parameter :: XINF   =  3.40E+38_r4
    real(rk), parameter :: XNEG   = -9.382E0_r4
-   real(rk), parameter :: XSMALL =  5.96E-8_r4
+   real(rk), parameter :: XSMALL =  5.96E-8_r4 
    real(rk), parameter :: XBIG   =  9.194E0_r4
    real(rk), parameter :: XHUGE  =  2.90E3_r4
    real(rk), parameter :: XMAX   =  4.79E37_r4

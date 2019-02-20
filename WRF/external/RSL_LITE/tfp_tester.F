@@ -24,7 +24,7 @@ MODULE module_driver_constants
 !#include "model_data_order.inc"
 
    !  1. Following are constants for use in defining maximal values for array
-   !     definitions.
+   !     definitions.  
    !
 
    !  The maximum number of levels in the model is how deeply the domains may
@@ -161,7 +161,7 @@ MODULE module_machine
 
    INTEGER FUNCTION locproc( i, m, numpart )
    implicit none
-   integer, intent(in) :: i, m, numpart
+   integer, intent(in) :: i, m, numpart 
    integer             :: retval, ii, im, inumpart, zero
    ii = i
    im = m
@@ -200,7 +200,7 @@ MODULE module_machine
    ! With a little thought and a lot of debugging, we can come up with a
    ! direct expression for what we want.  For time being, we loop...
    ! Remember that processor numbering starts with zero.
-
+                      
    IMPLICIT NONE
    INTEGER, INTENT(IN)                    :: region_start, region_end, num_p, p
    INTEGER, INTENT(OUT)                   :: patch_start, patch_end
@@ -224,7 +224,7 @@ MODULE module_machine
    !  Input data.
    INTEGER, INTENT(IN)           :: nparts,                &
                                     minparts_y, minparts_x
-   ! Output data.
+   ! Output data. 
    INTEGER, INTENT(OUT)          :: nparts_y, nparts_x
    ! Local data.
    INTEGER                       :: x, y, mini
@@ -337,20 +337,20 @@ SUBROUTINE compute_memory_dims_rsl_lite  (      &
     ENDIF
 !end: wig; 12-Mar-2008
 
-!
+! 
 ! description of transpose decomposition strategy for RSL LITE. 20061231jm
 !
 ! Here is the tranpose scheme that is implemented for RSL_LITE. Upper-case
 ! XY corresponds to the dimension of the processor mesh, lower-case xyz
 ! corresponds to grid dimension.
-!
+! 
 !      xy        zy        zx
-!
+! 
 !     XxYy <--> XzYy <--> XzYx <- note x decomposed over Y procs
 !       ^                  ^
 !       |                  |
 !       +------------------+  <- this edge is costly; see below
-!
+! 
 ! The aim is to avoid all-to-all communication over whole
 ! communicator. Instead, when possible, use a transpose scheme that requires
 ! all-to-all within dimensional communicators; that is, communicators
@@ -360,7 +360,7 @@ SUBROUTINE compute_memory_dims_rsl_lite  (      &
 ! being fully all-to-all (in other words, one of the tranpose edges must
 ! rotate and not just transpose a plane of the model grid within the
 ! processor mesh). The issue is then, where should we put this costly edge
-! in the tranpose scheme we chose? To avoid being completely arbitrary,
+! in the tranpose scheme we chose? To avoid being completely arbitrary, 
 ! we chose a scheme most natural for models that use parallel spectral
 ! transforms, where the costly edge is the one that goes from the xz to
 ! the xy decomposition.  (May be implemented as just a two step transpose
@@ -372,7 +372,7 @@ SUBROUTINE compute_memory_dims_rsl_lite  (      &
 ! start and end for the i-dimension in the zy decomposition where x is
 ! on-processor. ('z' is assumed for xy decomposition and not appended to
 ! the ips, ipe, etc. variable names).
-!
+! 
 
 ! XzYy decomposition
 
@@ -389,8 +389,8 @@ SUBROUTINE compute_memory_dims_rsl_lite  (      &
     ENDDO
     IF ( ierr .NE. 0 ) THEN
        CALL tfp_message(__FILE__,__LINE__)
-    ENDIF
-
+    ENDIF 
+    
 ! handle case where no levels are assigned to this process
 ! no iterations.  Do same for I and J. Need to handle memory alloc below.
     IF (kpsx .EQ. -1 ) THEN
@@ -411,7 +411,7 @@ SUBROUTINE compute_memory_dims_rsl_lite  (      &
     ENDDO
     IF ( ierr .NE. 0 ) THEN
        CALL tfp_message(__FILE__,__LINE__)
-    ENDIF
+    ENDIF 
     IF (jpsx .EQ. -1 ) THEN
        jpex = -1
        jpsx = 0
@@ -447,7 +447,7 @@ SUBROUTINE compute_memory_dims_rsl_lite  (      &
     ENDDO
     IF ( ierr .NE. 0 ) THEN
        CALL tfp_message(__FILE__,__LINE__)
-    ENDIF
+    ENDIF 
     IF (ipsy .EQ. -1 ) THEN
        ipey = -1
        ipsy = 0
@@ -472,7 +472,7 @@ SUBROUTINE compute_memory_dims_rsl_lite  (      &
     ENDDO
     IF ( ierr .NE. 0 ) THEN
        CALL tfp_message(__FILE__,__LINE__)
-    ENDIF
+    ENDIF 
     jps = -1
     i = ids ;
     ierr = 0
@@ -487,7 +487,7 @@ SUBROUTINE compute_memory_dims_rsl_lite  (      &
     ENDDO
     IF ( ierr .NE. 0 ) THEN
        CALL tfp_message(__FILE__,__LINE__)
-    ENDIF
+    ENDIF 
 #endif
 
 ! extend the patch dimensions out shw along edges of domain
@@ -620,7 +620,7 @@ PROGRAM tfp_tester
      PRINT*,'ntasks_x,ntasks_y'
      READ(*,*)ntasks_x,ntasks_y
 
-
+     
      DO mytask_y = 0, ntasks_y-1
      DO mytask_x = 0, ntasks_x-1
        CALL compute_memory_dims_rsl_lite  (      &

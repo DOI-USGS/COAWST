@@ -18,8 +18,8 @@ contains
    integer, intent(in)   ::                       ids, ide, jds, jde, kds, kde, &
                                                   ims, ime, jms, jme, kms, kme, &
                                                   its, ite, jts, jte, kts, kte, &
-                                                  itimestep
-!
+                                                  itimestep        
+!   
    real, intent(in)      ::                                          julian_in
 !
    real, dimension( ims:ime, jms:jme )                                        , &
@@ -29,7 +29,7 @@ contains
 
    integer, parameter    ::                                       n_max = 1200
    integer               ::                                 i, j, n, nm, nt, m
-   real                  ::                         julian_s, julian_e, fc_int
+   real                  ::                         julian_s, julian_e, fc_int  
    real, dimension( 0:n_max ) ::                             fc_tsk, fc_julian
    logical               ::                                        end_of_file
 !
@@ -45,7 +45,7 @@ contains
        fc_julian(n)=julian_s+real(n-1)*fc_int/86400.
        n=n+1
        go to 110
- 100   end_of_file = .true.
+ 100   end_of_file = .true.  
  110   continue
      enddo
      nt=n-1
@@ -53,7 +53,7 @@ contains
 !
 !-----linear interpolation of the skin temperature for each time step
 !
-   do n=1,nt
+   do n=1,nt 
      if (julian_in.ge.fc_julian(n) .and. julian_in.lt.fc_julian(n+1)) then
        fc_tsk(0)= fc_tsk(n)                                                     &
                 +(fc_tsk(n+1)-fc_tsk(n))*(julian_in-fc_julian(n))/fc_int/86400.
@@ -66,7 +66,7 @@ contains
      do i=its,ite
        tsk(i,j)=fc_tsk(0)
      enddo
-   enddo
+   enddo 
 
    end subroutine scmskintemp
 !-------------------------------------------------------------------

@@ -46,7 +46,7 @@ CONTAINS
        sigterm=max(0.0,(sig-sigb)/(1.0-sigb))
        kkv=kkf*sigterm
        rv_tend(i,k,j)=rv_tend(i,k,j)-kkv*rv(i,k,j)
-
+ 
     END DO
     END DO
     END DO
@@ -60,7 +60,7 @@ CONTAINS
        sigterm=max(0.0,(sig-sigb)/(1.0-sigb))
        kkv=kkf*sigterm
        ru_tend(i,k,j)=ru_tend(i,k,j)-kkv*ru(i,k,j)
-
+ 
     END DO
     END DO
     END DO

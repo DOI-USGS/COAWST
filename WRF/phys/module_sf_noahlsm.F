@@ -1,13 +1,21 @@
 MODULE module_sf_noahlsm
-  USE module_model_constants, only : CP, R_D, XLF, XLV, RHOWATER, STBOLT, KARMAN
+#if defined(mpas)
+use mpas_atmphys_constants,only: CP=>cp,R_D=>R_d,XLF=>xlf,XLV=>xlv,RHOWATER=>rho_w,STBOLT=>stbolt,KARMAN=>karman
+use mpas_atmphys_utilities, only: physics_error_fatal
+#define FATAL_ERROR(M) call physics_error_fatal( M )
+#else
+USE module_model_constants, only : CP, R_D, XLF, XLV, RHOWATER, STBOLT, KARMAN
+use module_wrf_error
+#define FATAL_ERROR(M) call wrf_error_fatal( M )
+#endif
 
 !ckay=KIRAN ALAPATY @ US EPA -- November 01, 2015
 !
 ! Tim Glotfelty@CNSU; AJ Deng@PSU
-!modified for use with FASDAS
-!Flux Adjusting Surface Data Assimilation System to assimilate
+!modified for use with FASDAS 
+!Flux Adjusting Surface Data Assimilation System to assimilate 
 !surface layer and soil layers temperature and moisture using
-! surfance reanalsys
+! surfance reanalsys 
 !Reference: Alapaty et al., 2008: Development of the flux-adjusting surface
 ! data assimilation system for mesoscale models. JAMC, 47, 2331-2350
 !
@@ -76,7 +84,7 @@ CONTAINS
                        EC,EDIR,ET,ETT,ESNOW,DRIP,DEW,                   &    !O
                        BETA,ETP,SSOIL,                                  &    !O
                        FLX1,FLX2,FLX3,                                  &    !O
-		       FLX4,FVB,FBUR,FGSN,UA_PHYS,                      &    !UA
+		       FLX4,FVB,FBUR,FGSN,UA_PHYS,                      &    !UA 
                        SNOMLT,SNCOVR,                                   &    !O
                        RUNOFF1,RUNOFF2,RUNOFF3,                         &    !O
                        RC,PC,RSMIN,XLAI,RCS,RCT,RCQ,RCSOIL,             &    !O
@@ -497,7 +505,7 @@ CONTAINS
          ELSE
             SNDENS = SNEQV / SNOWH
             IF(SNDENS > 1.0) THEN
-             CALL wrf_error_fatal ( 'Physical snow depth is less than snow water equiv.' )
+             FATAL_ERROR( 'Physical snow depth is less than snow water equiv.' )
             ENDIF
             CALL CSNOW (SNCOND,SNDENS)
          END IF
@@ -574,7 +582,7 @@ CONTAINS
               CH = CH/(1.+RU*CH)
             ENDIF
 
-            SNCOVR = MIN(SNCOVR,0.98)
+            SNCOVR = MIN(SNCOVR,0.98) 
 
             CALL ALCALC (ALB,SNOALB,EMBRD,SHDFAC,SHDMIN,SNCOVR,T1, &
                  ALBEDO,EMISSI,DT,SNOWNG,SNOTIME1,LVCOEF)
@@ -793,7 +801,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 
          SHEAT = - (CH * CP * SFCPRS)/ (R * T2V) * ( TH2- T1 )
-         IF(UA_PHYS) SHEAT = SHEAT + FLX4
+         IF(UA_PHYS) SHEAT = SHEAT + FLX4   
 !
 ! FASDAS
 !
@@ -812,7 +820,7 @@ CONTAINS
       ET(K) = ET(K) * LVH2O
       ENDDO
       ETT = ETT * LVH2O
-
+      
       ETPND1=ETPND1 * LVH2O
 
       ESNOW = ESNOW * LSUBS
@@ -1410,7 +1418,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 
   SUBROUTINE FAC2MIT(SMCMAX,FLIMIT)
-    IMPLICIT NONE
+    IMPLICIT NONE		
     REAL, INTENT(IN)  :: SMCMAX
     REAL, INTENT(OUT) :: FLIMIT
 
@@ -2009,7 +2017,7 @@ CONTAINS
        EFDIR = EFDIR * wetty(1)
           !TWG2015 Bugfix Flip Sign to conform to Net upward Flux
            EDIR1 = EDIR1 + EFDIR    ! new value
-
+       
        EFC = (EC1/EALL_now)*XSDA_QFX*1.0E-03*XQNORM
        !TWG2015 Bugfix Flip Sign to conform to Net upward Flux
        EC1 = EC1 + EFC         ! new value
@@ -2247,11 +2255,11 @@ CONTAINS
       FLX4 = 0.0
       IF(UA_PHYS) THEN
         IF(SNEQV > 0. .AND. FNET > 0. .AND. SOLDN > 0. ) THEN
-         TOTABS = (1.-ALBEDO)*SOLDN*FVB           ! solar radiation absorbed
+         TOTABS = (1.-ALBEDO)*SOLDN*FVB           ! solar radiation absorbed 
                                                   ! by vegetated fraction
          UCABS = MIN(TOTABS,((1.0-ALGDSN)*(1.0-ALVGSN)*SOLDN*GAMA)*FVB)
 !         print*,'penman',UCABS,TOTABS,SOLDN,GAMA,FVB
-!         UCABS = MIN(TOTABS,(0.44*SOLDN*GAMA)*FVB)
+!         UCABS = MIN(TOTABS,(0.44*SOLDN*GAMA)*FVB)  
                                                   ! UCABS -> solar radiation
 						  ! absorbed under canopy
          FLX4 = MIN(TOTABS - UCABS, MIN(250., 0.5*(1.-ALBEDO)*SOLDN))
@@ -2417,13 +2425,13 @@ CONTAINS
 ! ----------------------------------------------------------------------
 !
                IF (SOILTYP .gt. SLCATS) THEN
-                        CALL wrf_error_fatal ( 'Warning: too many input soil types' )
+                        FATAL_ERROR( 'Warning: too many input soil types' )
                END IF
                IF (VEGTYP .gt. LUCATS) THEN
-                     CALL wrf_error_fatal ( 'Warning: too many input landuse types' )
+                     FATAL_ERROR( 'Warning: too many input landuse types' )
                END IF
                IF (SLOPETYP .gt. SLPCATS) THEN
-                     CALL wrf_error_fatal ( 'Warning: too many input slope types' )
+                     FATAL_ERROR( 'Warning: too many input slope types' )
                END IF
 
 ! ----------------------------------------------------------------------
@@ -2490,7 +2498,7 @@ CONTAINS
                IF (NROOT .gt. NSOIL) THEN
                   WRITE (err_message,*) 'Error: too many root layers ',  &
                                                  NSOIL,NROOT
-                  CALL wrf_error_fatal ( err_message )
+                  FATAL_ERROR( err_message )
 ! ----------------------------------------------------------------------
 ! CALCULATE ROOT DISTRIBUTION.  PRESENT VERSION ASSUMES UNIFORM
 ! DISTRIBUTION BASED ON SOIL LAYER DEPTHS.
@@ -2856,7 +2864,7 @@ CONTAINS
         END IF
 !------------------------------------------------------------------
 ! FBUR: VERTICAL FRACTION OF VEGETATION COVERED BY SNOW
-! GRASS, CROP, AND SHRUB: MULTIPLY 0.4 BY ZTOPV AND ZBOTV BECAUSE
+! GRASS, CROP, AND SHRUB: MULTIPLY 0.4 BY ZTOPV AND ZBOTV BECAUSE 
 ! THEY WILL BE PRESSED DOWN BY THE SNOW.
 ! FOREST: DON'T NEED TO CHANGE ZTOPV AND ZBOTV.
 
@@ -3567,10 +3575,10 @@ CONTAINS
           BURIAL = 7.0*Z0BRD - SNOWH
           IF(BURIAL.LE.0.0007) THEN
               Z0EFF = Z0S
-          ELSE
+          ELSE      
               Z0EFF = BURIAL/7.0
           ENDIF
-
+      
           Z0 = (1.- SNCOVR)* Z0BRD + SNCOVR * Z0EFF
 
       ENDIF
@@ -3800,7 +3808,7 @@ CONTAINS
          INFMAX = MAX (INFMAX,WCND)
 
          INFMAX = MIN (INFMAX,PX/DT)
-#ifdef WRF_HYDRO
+#ifdef WRF_HYDRO 
 !DJG NDHMS/WRF-Hydro edit...
 !DJG       IF (PCPDRP >  INFMAX) THEN
          IF (SFCWATR > INFMAX) THEN
@@ -4114,12 +4122,12 @@ CONTAINS
 ! June 2001 CHANGES: FROZEN SOIL CONDITION.
 ! ----------------------------------------------------------------------
       IMPLICIT NONE
-      INTEGER, INTENT(IN)       :: SOILTYP, OPT_THCND
+      INTEGER, INTENT(IN)       :: SOILTYP, OPT_THCND  
       REAL, INTENT(IN)          :: QZ,  SMC, SMCMAX, SH2O, BEXP, PSISAT
       REAL, INTENT(OUT)         :: DF
       REAL                      :: AKE, GAMMD, THKDRY, THKICE, THKO,    &
                                    THKQTZ,THKSAT,THKS,THKW,SATRATIO,XU, &
-                                   XUNFROZ,AKEI,AKEL,PSIF,PF
+                                   XUNFROZ,AKEI,AKEL,PSIF,PF  
 
 ! ----------------------------------------------------------------------
 ! WE NOW GET QUARTZ AS AN INPUT ARGUMENT (SET IN ROUTINE REDPRM):
@@ -4210,7 +4218,7 @@ IF ( OPT_THCND == 1 .OR. ( OPT_THCND == 2 .AND. (SOILTYP /= 4 .AND. SOILTYP /= 3
       DF = AKE * (THKSAT - THKDRY) + THKDRY
 
     ELSE
-
+ 
 ! use the Mccumber and Pielke approach for silt loam (4), sandy loam (3)
 
          PSIF = PSISAT*100.*(SMCMAX/(SMC))**BEXP
@@ -4223,7 +4231,7 @@ IF ( OPT_THCND == 1 .OR. ( OPT_THCND == 2 .AND. (SOILTYP /= 4 .AND. SOILTYP /= 3
            DF=.1744
          END IF
 
-    ENDIF  ! for OPT_THCND OPTIONS
+    ENDIF  ! for OPT_THCND OPTIONS             
 ! ----------------------------------------------------------------------
   END SUBROUTINE TDFCND
 ! ----------------------------------------------------------------------

@@ -132,7 +132,7 @@
 # endif
 # ifdef WRF_COUPLING
       TYPE(AttrVect) :: atm2ocn_AV            ! AttrVect variables
-      TYPE(AttrVect) :: ocn2atm_AV
+      TYPE(AttrVect) :: ocn2atm_AV 
 # endif
       END TYPE T_AttrVect_G
       TYPE (T_AttrVect_G), ALLOCATABLE :: AttrVect_G(:)
@@ -153,7 +153,7 @@
 # ifdef MCT_INTERP_OC2WV
       TYPE T_AV2_W
         TYPE(AttrVect) :: wav2ocn_AV2         ! AttrVect variables
-        TYPE(AttrVect) :: ocn2wav_AV2
+        TYPE(AttrVect) :: ocn2wav_AV2 
       END TYPE T_AV2_W
       TYPE (T_AV2_W), ALLOCATABLE :: AV2_W(:,:)
 

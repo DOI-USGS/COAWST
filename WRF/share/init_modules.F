@@ -33,7 +33,7 @@ SUBROUTINE init_modules( phase )
 ! beginning of a run.  Note, this is only once per run, not once per
 ! domain; domain specific initializations should be handled elsewhere,
 ! such as in <a href=start_domain.html>start_domain</a>.
-!
+! 
 ! Certain framework specific module initializations in this file are
 ! dependent on order they are called. For example, since the quilt module
 ! relies on internal I/O, the init routine for internal I/O must be
@@ -45,12 +45,12 @@ SUBROUTINE init_modules( phase )
 ! should in fact behave this way by first calling MPI_INITIALIZED before
 ! they try to call MPI_INIT).  If MPI is already initialized before the
 ! the quilting module is called, quilting will not work.
-!
-! The phase argument is used to allow other superstructures like ESMF to
-! place their initialization calls following the WRF initialization call
-! that calls MPI_INIT().  When used with ESMF, ESMF will call wrf_init()
-! which in turn will call phase 2 of this routine.  Phase 1 will be called
-! earlier.
+! 
+! The phase argument is used to allow other superstructures like ESMF to 
+! place their initialization calls following the WRF initialization call 
+! that calls MPI_INIT().  When used with ESMF, ESMF will call wrf_init() 
+! which in turn will call phase 2 of this routine.  Phase 1 will be called 
+! earlier.  
 !
 ! </DESCRIPTION>
 
@@ -70,7 +70,7 @@ IF ( phase == 1 ) THEN
  CALL init_module_ext_internal  !! must be called before quilt
 #endif
 #ifdef DM_PARALLEL
-# if ( HWRF == 1 )
+# if ( HWRF == 1 ) 
 ! jm 20150807
 ! jm this was moved to here so that the coupler can divide up the tasks before the model starts doing it for quilting, nesting etc.
 ! jm the idea is that the atmosphere will see only the communicator with the tasks it is supposed to use for that stuff
@@ -108,6 +108,6 @@ ELSE
  CALL init_modules_nmm
 #endif
 ENDIF
-
+ 
 END SUBROUTINE init_modules
 

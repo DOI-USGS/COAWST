@@ -1,9 +1,9 @@
 !
 !  Export/Import Coupling Variables
 !
-!svn $Id: coupling_esmf.dat 902 2018-03-29 04:10:29Z arango $
+!svn $Id: coupling_esmf.dat 919 2018-08-21 22:25:53Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -61,6 +61,11 @@
 !                                                                             !
 !  Enclose Cinfo variables with single quotes so this file can be read with   !
 !  a free format statement.                                                   !
+!                                                                             !
+!  Notice that all export fields are kept in their original form.  The        !
+!  imported component does the proper scaling, physical units conversion,     !
+!  and other manipulations. It is done to avoid applying such transformations !
+!  twice.                                                                     !
 !                                                                             !
 !==============================================================================
 !

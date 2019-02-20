@@ -9,7 +9,7 @@ C
 C ABSTRACT: FIND A GRIB MESSAGE.
 C   FIND IN THE INDEX FILE A REFERENCE TO THE GRIB FIELD REQUESTED.
 C   THE GRIB FIELD REQUEST SPECIFIES THE NUMBER OF MESSAGES TO SKIP
-C   AND THE UNPACKED IDENTIFICATION SECTION, GRID DEFINITION TEMPLATE AND
+C   AND THE UNPACKED IDENTIFICATION SECTION, GRID DEFINITION TEMPLATE AND 
 C   PRODUCT DEFINTION SECTION PARAMETERS.  (A REQUESTED PARAMETER
 C   OF -9999 MEANS TO ALLOW ANY VALUE OF THIS PARAMETER TO BE FOUND.)
 C
@@ -34,12 +34,12 @@ C       BYTE KK+1-  LL: THE DATA REPRESENTATION SECTION (DRS)
 C       BYTE LL+1-LL+6: FIRST 6 BYTES OF THE BIT MAP SECTION (BMS)
 C
 C   Most of the decoded information for the selected GRIB field
-C   is returned in a derived type variable, gfld.
+C   is returned in a derived type variable, gfld.  
 C   Gfld is of type gribfield, which is defined
 C   in module grib_mod, so users of this routine will need to include
 C   the line "USE GRIB_MOD" in their calling routine.  Each component of the
 C   gribfield type is described in the OUTPUT ARGUMENT LIST section below.
-C   Only the unpacked bitmap and data field components are not set by this
+C   Only the unpacked bitmap and data field components are not set by this 
 C   routine.
 C
 C PROGRAM HISTORY LOG:
@@ -57,7 +57,7 @@ C                  (=0 TO SEARCH FROM BEGINNING)
 C     GUESS        A GUESS FOR THE INDEX OF THE GRIB RECORD THAT CONTAINS
 C                   THE REQUESTED DATA.  IF GUESS IS CORRECT, SEARCHING
 C                   CAN BE SIGNFICANTLY FASTER, ESPECIALLY FOR FILES
-C                   WITH MANY RECORDS.  IF GUESS IS WRONG OR MISSING (<0),
+C                   WITH MANY RECORDS.  IF GUESS IS WRONG OR MISSING (<0), 
 C                   ALL RECORDS ARE SEARCHED
 C     JDISC        GRIB2 DISCIPLINE NUMBER OF REQUESTED FIELD
 C                  ( IF = -1, ACCEPT ANY DISCIPLINE)
@@ -108,7 +108,7 @@ C                       6  - Processed satellite observations
 C                       7  - Processed radar observations
 C     JPDTN        INTEGER PRODUCT DEFINITION TEMPLATE NUMBER (N)
 C                  ( IF = -1, DON'T BOTHER MATCHING PDT )
-C     JPDT()       INTEGER ARRAY OF VALUES DEFINING THE PRODUCT DEFINITION
+C     JPDT()       INTEGER ARRAY OF VALUES DEFINING THE PRODUCT DEFINITION 
 C                  TEMPLATE 4.N OF THE FIELD FOR WHICH TO SEARCH
 C                  (=-9999 FOR WILDCARD)
 C     JGDTN        INTEGER GRID DEFINITION TEMPLATE NUMBER (M)
@@ -258,7 +258,7 @@ C     IRET         INTEGER RETURN CODE
 C                    0      ALL OK
 C                    1      REQUEST NOT FOUND
 C
-C REMARKS:
+C REMARKS: 
 C   THIS SUBPROGRAM IS INTENDED FOR PRIVATE USE BY GETGB2 ROUTINES ONLY.
 C
 C   Note that derived type gribfield contains pointers to many
@@ -334,7 +334,7 @@ C$$$
             integer,intent(out) :: ierr
          end subroutine gf_unpack5
       end interface
-
+      
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 C  INITIALIZE
 
@@ -380,7 +380,7 @@ C  SEARCH FOR REQUEST
         if (k .ge. NNUM) then
            exit
         endif
-
+        
 
         K=K+1
         CALL G2LIB_GBYTE(CBUF,INLEN,IPOS*8,4*8) ! GET LENGTH OF CURRENT
@@ -389,7 +389,7 @@ C  SEARCH FOR REQUEST
         IF ( K.LE.SKIP ) THEN   ! SKIP THIS INDEX
            IPOS=IPOS+INLEN
            CYCLE
-        ELSE
+        ELSE 
            LOOPNUM = LOOPNUM + 1
         ENDIF
 
@@ -403,7 +403,7 @@ C  CHECK IF GRIB2 DISCIPLINE IS A MATCH
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 C  CHECK IF IDENTIFICATION SECTION IS A MATCH
         MATCH1=.FALSE.
-        CALL G2LIB_GBYTE(CBUF,LSEC1,(IPOS+44)*8,4*8)  ! GET LENGTH OF IDS
+        CALL G2LIB_GBYTE(CBUF,LSEC1,(IPOS+44)*8,4*8)  ! GET LENGTH OF IDS 
         IOF=0
         CALL GF_UNPACK1(CBUF(IPOS+45),LSEC1,IOF,GFLD%IDSECT,
      &                  GFLD%IDSECTLEN,ICND)
@@ -426,7 +426,7 @@ C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 C  CHECK IF GRID DEFINITION TEMPLATE IS A MATCH
         JPOS=IPOS+44+LSEC1
         MATCH3=.FALSE.
-        CALL G2LIB_GBYTE(CBUF,LSEC3,JPOS*8,4*8)  ! GET LENGTH OF GDS
+        CALL G2LIB_GBYTE(CBUF,LSEC3,JPOS*8,4*8)  ! GET LENGTH OF GDS 
         IF ( JGDTN.EQ.-1 ) THEN
            MATCH3=.TRUE.
         ELSE
@@ -444,7 +444,7 @@ C  CHECK IF GRID DEFINITION TEMPLATE IS A MATCH
                        EXIT
                     ENDIF
                  ENDDO
-C                 WHERE ( JGDT(1:GFLD%IGDTLEN).NE.-9999 )
+C                 WHERE ( JGDT(1:GFLD%IGDTLEN).NE.-9999 ) 
 C     &              MATCH3=ALL(JGDT(1:GFLD%IGDTLEN).EQ.GFLD%IGDTMPL(1:GFLD%IGDTLEN))
               ENDIF
            ENDIF
@@ -465,7 +465,7 @@ C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 C  CHECK IF PRODUCT DEFINITION TEMPLATE IS A MATCH
         JPOS=JPOS+LSEC3
         MATCH4=.FALSE.
-        CALL G2LIB_GBYTE(CBUF,LSEC4,JPOS*8,4*8)  ! GET LENGTH OF PDS
+        CALL G2LIB_GBYTE(CBUF,LSEC4,JPOS*8,4*8)  ! GET LENGTH OF PDS 
         IF ( JPDTN.EQ.-1 ) THEN
            MATCH4=.TRUE.
         ELSE
@@ -484,7 +484,7 @@ C  CHECK IF PRODUCT DEFINITION TEMPLATE IS A MATCH
                        EXIT
                     ENDIF
                  ENDDO
-c                 WHERE ( JPDT.NE.-9999)
+c                 WHERE ( JPDT.NE.-9999) 
 c     &              MATCH4=ALL( JPDT(1:GFLD%IPDTLEN) .EQ. GFLD%IPDTMPL(1:GFLD%IPDTLEN) )
               ENDIF
            ENDIF
@@ -520,7 +520,7 @@ C  SET VALUES FOR DERIVED TYPE GFLD AND RETURN
      &                        GFLD%COORD_LIST,GFLD%NUM_COORD,ICND)
            ENDIF
            JPOS=JPOS+LSEC4
-           CALL G2LIB_GBYTE(CBUF,LSEC5,JPOS*8,4*8)  ! GET LENGTH OF DRS
+           CALL G2LIB_GBYTE(CBUF,LSEC5,JPOS*8,4*8)  ! GET LENGTH OF DRS 
            IOF=0
            CALL GF_UNPACK5(CBUF(JPOS+1),LSEC5,IOF,GFLD%NDPTS,
      &                     GFLD%IDRTNUM,GFLD%IDRTMPL,

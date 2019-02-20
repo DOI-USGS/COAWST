@@ -3,20 +3,20 @@
 !  Abstract:
 !  History Log:
 !  <brief list of changes to this source file>
-!
+! 
 !  Usage:
 !  Parameters: <Specify typical arguments passed>
 !  Input Files:
 !        <list file names and briefly describe the data they include>
 !  Output Files:
 !        <list file names and briefly describe the information they include>
-!
+! 
 !  Condition codes:
 !        <list exit condition or error codes returned >
 !        If appropriate, descriptive troubleshooting instructions or
 !        likely causes for failures could be mentioned here with the
 !        appropriate error code
-!
+! 
 !  User controllable options: <if applicable>
 
 module module_WRF_HYDRO
@@ -37,10 +37,10 @@ module module_WRF_HYDRO
     USE module_configure, ONLY : grid_config_rec_type
     !yw USE module_configure, only : config_flags
     USE module_configure, only: model_config_rec
-
+ 
 
     implicit none
-
+     
     !yw   added for check soil moisture and soiltype
     integer ::  checkSOIL_flag
 
@@ -48,7 +48,7 @@ module module_WRF_HYDRO
     character(len=19) :: cpl_outdate
 #endif
 !
-! added to consider the adaptive time step from WRF model.
+! added to consider the adaptive time step from WRF model. 
     real    :: dtrt_ter0  , dtrt_ch0
     integer ::  mm0
 
@@ -57,7 +57,7 @@ module module_WRF_HYDRO
 
 CONTAINS
 
-!wrf_cpl_HYDRO will not call the off-line lsm
+!wrf_cpl_HYDRO will not call the off-line lsm 
 !ywGW subroutine wrf_cpl_HYDRO(HYDRO_dt,grid, config_flags, its,ite,jts,jte)
     subroutine wrf_cpl_HYDRO(HYDRO_dt,grid,its,ite,jts,jte)
 
@@ -75,7 +75,7 @@ CONTAINS
         integer ntime
 
         integer :: i,j
-
+        
 
 !output flux and state variable
 
@@ -92,10 +92,10 @@ CONTAINS
 
         ntime = 1
 
-
+    
             nlst_rt(did)%dt = HYDRO_dt
 
-
+  
         if(.not. RT_DOMAIN(did)%initialized) then
 
 
@@ -103,7 +103,7 @@ CONTAINS
            !nlst_rt(did)%nsoil = model_config_rec%num_metgrid_soil_levels
            nlst_rt(did)%nsoil = grid%num_soil_layers
 
-
+         
 #ifdef MPP_LAND
            call mpp_land_bcast_int1 (nlst_rt(did)%nsoil)
 #endif
@@ -127,8 +127,8 @@ CONTAINS
                write(6,*) "sf_surface_physics is ", grid%sf_surface_physics
 #endif
 
-           if(grid%sf_surface_physics .eq. 5) then
-                ! clm4
+           if(grid%sf_surface_physics .eq. 5) then    
+                ! clm4 
                call HYDRO_ini(ntime,did=did,ix0=1,jx0=1)
            else
                call HYDRO_ini(ntime,did,ix0=ix,jx0=jx,vegtyp=grid%IVGTYP(its:ite,jts:jte),soltyp=grid%isltyp(its:ite,jts:jte))
@@ -155,7 +155,7 @@ CONTAINS
                mm0 = mm
             endif
 
-            dtrt_ter0 = nlst_rt(did)%dtrt_ter
+            dtrt_ter0 = nlst_rt(did)%dtrt_ter  
 
             if(nlst_rt(did)%dtrt_ch .ge. HYDRO_dt) then
                nlst_rt(did)%dtrt_ch = HYDRO_dt
@@ -166,7 +166,7 @@ CONTAINS
                mm0 = mm
             endif
 
-            dtrt_ch0 = nlst_rt(did)%dtrt_ch
+            dtrt_ch0 = nlst_rt(did)%dtrt_ch  
         endif
 
             if((mm0*nlst_rt(did)%dtrt_ter) .ne. HYDRO_dt) then   ! WRF model time step changed.
@@ -191,7 +191,7 @@ CONTAINS
                endif
             endif
 
-#ifdef HYDRO_D
+#ifdef HYDRO_D 
         write(6,*) "mm, nlst_rt(did)%dt = ",mm, nlst_rt(did)%dt
 #endif
 
@@ -200,7 +200,7 @@ CONTAINS
 
         nn = nlst_rt(did)%nsoil
 
-        ! get the data from WRF
+        ! get the data from WRF 
 
 
 
@@ -210,13 +210,13 @@ CONTAINS
 #endif
        else
             do k = 1, nlst_rt(did)%nsoil
-                RT_DOMAIN(did)%STC(:,:,k) = grid%TSLB(its:ite,k,jts:jte)
-                RT_DOMAIN(did)%smc(:,:,k) = grid%smois(its:ite,k,jts:jte)
-                RT_DOMAIN(did)%sh2ox(:,:,k) = grid%sh2o(its:ite,k,jts:jte)
-            end do
+                RT_DOMAIN(did)%STC(:,:,k) = grid%TSLB(its:ite,k,jts:jte) 
+                RT_DOMAIN(did)%smc(:,:,k) = grid%smois(its:ite,k,jts:jte) 
+                RT_DOMAIN(did)%sh2ox(:,:,k) = grid%sh2o(its:ite,k,jts:jte) 
+            end do 
             rt_domain(did)%infxsrt = grid%infxsrt(its:ite,jts:jte)
             rt_domain(did)%soldrain = grid%soldrain(its:ite,jts:jte)
-       endif
+       endif  
 
             call HYDRO_exe(did)
 
@@ -226,12 +226,12 @@ CONTAINS
                 ! grid%TSLB(its:ite,k,jts:jte) = RT_DOMAIN(did)%STC(:,:,k)
                 grid%smois(its:ite,k,jts:jte) = RT_DOMAIN(did)%smc(:,:,k)
                 grid%sh2o(its:ite,k,jts:jte) = RT_DOMAIN(did)%sh2ox(:,:,k)
-            end do
+            end do 
 
 ! update WRF variable after running routing model.
             grid%sfcheadrt(its:ite,jts:jte) = rt_domain(did)%sfcheadrt
 
-! provide groundwater soil flux to WRF for fully coupled simulations (FERSCH 09/2014)
+! provide groundwater soil flux to WRF for fully coupled simulations (FERSCH 09/2014)            
             if(nlst_rt(did)%GWBASESWCRT .eq. 3 ) then
 !Wei Yu: comment the following two lines. Not ready for WRF3.7 release
 !yw             grid%qsgw(its:ite,jts:jte) = gw2d(did)%qsgw
@@ -253,7 +253,7 @@ CONTAINS
       subroutine wrf2lsm (z1,v1,kk1,z,vout,ix,jx,kk,vegtyp)
 !  input: z1,v1,kk1,z,ix,jx,kk
 !  output: vout
-!  interpolate based on soil layer: z1 and z
+!  interpolate based on soil layer: z1 and z 
 !  z :  soil layer of output variable.
 !  z1: array of soil layers of input variable.
          implicit none
@@ -261,11 +261,11 @@ CONTAINS
          integer:: kk1, ix,jx,kk, vegtyp(ix,jx)
          real :: z1(kk1), z(kk), v1(ix,kk1,jx),vout(ix,jx,kk)
 
-
+       
          do j = 1, jx
             do i = 1, ix
                 do k = 1, kk
-                  call interpLayer(Z1,v1(i,1:kk1,j),kk1,Z(k),vout(i,j,k))
+                  call interpLayer(Z1,v1(i,1:kk1,j),kk1,Z(k),vout(i,j,k)) 
                 end do
             end do
          end do
@@ -275,7 +275,7 @@ CONTAINS
       subroutine lsm2wrf (z1,v1,kk1,z,vout,ix,jx,kk,vegtyp)
 !  input: z1,v1,kk1,z,ix,jx,kk
 !  output: vout
-!  interpolate based on soil layer: z1 and z
+!  interpolate based on soil layer: z1 and z 
 !  z :  soil layer of output variable.
 !  z1: array of soil layers of input variable.
          implicit none
@@ -283,11 +283,11 @@ CONTAINS
          integer:: kk1, ix,jx,kk, vegtyp(ix,jx)
          real :: z1(kk1), z(kk), v1(ix,jx,kk1),vout(ix,kk,jx)
 
-
+       
          do j = 1, jx
             do i = 1, ix
                  do k = 1, kk
-                    call interpLayer(Z1,v1(i,j,1:kk1),kk1,Z(k),vout(i,k,j))
+                    call interpLayer(Z1,v1(i,j,1:kk1),kk1,Z(k),vout(i,k,j)) 
                  end do
             end do
          end do
@@ -306,11 +306,11 @@ CONTAINS
              outV = inV(1)*w1-inV(2)*w2
              return
          elseif(outZ .ge. inZ(inK)) then
-             w1 = (outZ-inZ(inK-1))/(inZ(inK)-inZ(inK-1))
+             w1 = (outZ-inZ(inK-1))/(inZ(inK)-inZ(inK-1)) 
              w2 = (outZ-inZ(inK))  /(inZ(inK)-inZ(inK-1))
              outV = inV(inK)*w1 -inV(inK-1)* w2
              return
-         else
+         else  
             do k = 2, inK
              if((inZ(k) .ge. outZ).and.(inZ(k-1) .le. outZ) ) then
                 k1  = k-1
@@ -318,8 +318,8 @@ CONTAINS
                 w1 = (outZ-inZ(k1))/(inZ(k2)-inZ(k1))
                 w2 = (inZ(k2)-outZ)/(inZ(k2)-inZ(k1))
                 outV = inV(k2)*w1 + inV(k1)*w2
-                return
-             end if
+                return 
+             end if 
             end do
          endif
       end subroutine interpLayer
@@ -360,7 +360,7 @@ CONTAINS
        close(71)
 
 #else
-      open(13, form="formatted")
+      open(13, form="formatted") 
 !read OV_ROUGH first
           read(13,*) nn
           read(13,*)
@@ -403,7 +403,7 @@ CONTAINS
 
       end subroutine lsm_wrf_input
 
-      subroutine  checkSoil(did)
+      subroutine  checkSoil(did) 
           implicit none
           integer :: did
           where(rt_domain(did)%smc(:,:,1) <=0) RT_DOMAIN(did)%VEGTYP = 16

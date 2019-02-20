@@ -29,13 +29,13 @@ SUBROUTINE track_driver( grid )
    INTEGER :: num_rad
    INTEGER :: m, n, i
    INTEGER :: ix, iy
-   TYPE(WRFU_Time) :: xcurrent_time, track_time_test
+   TYPE(WRFU_Time) :: xcurrent_time, track_time_test 
    CHARACTER (LEN=132) :: message
    CHARACTER (LEN=19) :: xcurrent_timestr
    CHARACTER (LEN=19) :: chem_name
-
+   
 !============================================================================================
-
+   
    IF ( grid%track_loc_domain <= 0 ) RETURN     ! no valid location
 
 #if ( DA_CORE != 1 )
@@ -60,7 +60,7 @@ SUBROUTINE track_driver( grid )
 
 ! track time matches current time
 
-   write(message,*) 'track_driver: current_time = ',xcurrent_timestr
+   write(message,*) 'track_driver: current_time = ',xcurrent_timestr 
    call wrf_message( trim(message) )
 
    level      = grid%em32-grid%sm32
@@ -68,12 +68,12 @@ SUBROUTINE track_driver( grid )
 #if (WRF_CHEM == 1)
    level_zref = model_config_rec%track_tuv_lev
    num_tuv    = model_config_rec%track_tuv_num
-   num_rad    = model_config_rec%track_rad_num
+   num_rad    = model_config_rec%track_rad_num 
 #endif
 
    ix = grid%track_i(n)
    iy = grid%track_j(n)
-
+  
       IF (grid%sp31 <= ix .AND. ix <= grid%ep31 .AND. &
           grid%sp33 <= iy .AND. iy <= grid%ep33) THEN
 
@@ -112,7 +112,7 @@ SUBROUTINE track_driver( grid )
                grid%track_phrate(n,i,1:level_zref) = grid%phrate(ix,1:level_zref,iy,i)
              end do
            endif
-         END IF
+         END IF         
 #endif
 
 !-- output met
@@ -140,7 +140,7 @@ SUBROUTINE track_driver( grid )
          grid%track_qvapor(n,grid%sm32:grid%em32-1) = grid%moist(ix,grid%sm32:grid%em32-1,iy,P_QV)
 
 !        print*,'track_z =',grid%track_z(n,grid%sm32:grid%em32-1)
-
+       
       ELSE
 
 !--      this section must have.
@@ -167,7 +167,7 @@ SUBROUTINE track_driver( grid )
              grid%track_adjcoe(n,1:num_tuv,1:level_zref) = 1.E30
              grid%track_phrate(n,1:num_tuv,1:level_zref) = 1.E30
            end if
-         ENDIF
+         ENDIF     
 #endif
 
 !-- output met
@@ -187,9 +187,9 @@ SUBROUTINE track_driver( grid )
          grid%track_qsnow (n,grid%sm32:grid%em32-1) = 1.E30
          grid%track_qgraup(n,grid%sm32:grid%em32-1) = 1.E30
          grid%track_qvapor(n,grid%sm32:grid%em32-1) = 1.E30
-
+ 
       END IF
-
+ 
 !-- write output to file
 
 !     write (*,*) 'grid%track_next_time = ', grid%track_next_time
@@ -202,7 +202,7 @@ SUBROUTINE track_driver( grid )
 
       write (*,*) 'track_driver: DONE write_track'
    end if
-
+ 
    grid%track_next_time = grid%track_next_time + 1
 
 #endif
@@ -253,7 +253,7 @@ SUBROUTINE write_track( grid )
    integer            :: var_dim(3)
    integer            :: var_id
    integer            :: start(3)
-   integer            :: count(3)
+   integer            :: count(3) 
 
 #ifdef DM_PARALLEL
    REAL, ALLOCATABLE, DIMENSION(:,:)   :: track_buf2
@@ -281,7 +281,7 @@ include 'netcdf.inc'
 #endif
 
    level      = grid%em32 - grid%sm32
-   level_stag = grid%em32 - grid%sm32 + 1
+   level_stag = grid%em32 - grid%sm32 + 1  
 #if (WRF_CHEM == 1)
    level_zref = model_config_rec%track_tuv_lev
    num_tuv    = model_config_rec%track_tuv_num
@@ -293,7 +293,7 @@ include 'netcdf.inc'
    ALLOCATE(track_buf2(grid%track_loc_in, level))
 
 !--put z output in grid%track_z(:,:)
-!z
+!z 
    track_buf2(:,:) = grid%track_z(:,:)
    CALL wrf_dm_min_reals(track_buf2(:,:),grid%track_z(:,:),grid%track_loc_in*level)
 !p
@@ -403,7 +403,7 @@ include 'netcdf.inc'
    CALL wrf_dm_min_reals(track_buf3(:,:,:),grid%track_phrate(:,:,:),grid%track_loc_in*num_tuv*level_zref)
 
    DEALLOCATE(track_buf3)
-
+   
    end if
 
    END IF
@@ -610,43 +610,43 @@ include 'netcdf.inc'
 
       units       = 'min-1'
 !o31d
-      chem_name   = 'photr_o31d'
+      chem_name   = 'photr_o31d' 
       description = 'O31D Photolysis Rate'
       astat = NF_DEF_VAR(ncid, trim(chem_name), NF_REAL, 2, var_dim(1:2), var_id )
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'description', len_trim(description),description)
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'units',       len_trim(units),      units      )
 !o33p
-      chem_name   = 'photr_o33p'
+      chem_name   = 'photr_o33p' 
       description = 'O33P Photolysis Rate'
       astat = NF_DEF_VAR(ncid, trim(chem_name), NF_REAL, 2, var_dim(1:2), var_id )
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'description', len_trim(description),description)
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'units',       len_trim(units),      units      )
 !no2
-      chem_name   = 'photr_no2'
+      chem_name   = 'photr_no2' 
       description = 'NO2 Photolysis Rate'
       astat = NF_DEF_VAR(ncid, trim(chem_name), NF_REAL, 2, var_dim(1:2), var_id )
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'description', len_trim(description),description)
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'units',       len_trim(units),      units      )
 !hno2
-      chem_name   = 'photr_hno2'
+      chem_name   = 'photr_hno2' 
       description = 'HNO2 Photolysis Rate'
       astat = NF_DEF_VAR(ncid, trim(chem_name), NF_REAL, 2, var_dim(1:2), var_id )
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'description', len_trim(description),description)
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'units',       len_trim(units),      units      )
 !hno3
-      chem_name   = 'photr_hno3'
+      chem_name   = 'photr_hno3' 
       description = 'HNO3 Photolysis Rate'
       astat = NF_DEF_VAR(ncid, trim(chem_name), NF_REAL, 2, var_dim(1:2), var_id )
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'description', len_trim(description),description)
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'units',       len_trim(units),      units      )
 !h2o2
-      chem_name   = 'photr_h2o2'
+      chem_name   = 'photr_h2o2' 
       description = 'H2O2 Photolysis Rate'
       astat = NF_DEF_VAR(ncid, trim(chem_name), NF_REAL, 2, var_dim(1:2), var_id )
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'description', len_trim(description),description)
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'units',       len_trim(units),      units      )
 !ch3o2h
-      chem_name   = 'photr_ch3o2h'
+      chem_name   = 'photr_ch3o2h' 
       description = 'CH3O2H Photolysis Rate'
       astat = NF_DEF_VAR(ncid, trim(chem_name), NF_REAL, 2, var_dim(1:2), var_id )
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'description', len_trim(description),description)
@@ -659,7 +659,7 @@ include 'netcdf.inc'
       var_dim(1) = level_zref_dim
       var_dim(2) = rad_dim
       var_dim(3) = time_dim
-      chem_name   = 'radfld'
+      chem_name   = 'radfld' 
       description = 'radfld'
       astat = NF_DEF_VAR(ncid, trim(chem_name), NF_REAL, 3, var_dim(1:3), var_id )
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'description', len_trim(description),description)
@@ -668,7 +668,7 @@ include 'netcdf.inc'
       var_dim(1) = level_zref_dim
       var_dim(2) = tuv_dim
       var_dim(3) = time_dim
-      chem_name   = 'adjcoe'
+      chem_name   = 'adjcoe' 
       description = 'adjcoe'
       astat = NF_DEF_VAR(ncid, trim(chem_name), NF_REAL, 3, var_dim(1:3), var_id )
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'description', len_trim(description),description)
@@ -677,7 +677,7 @@ include 'netcdf.inc'
       var_dim(1) = level_zref_dim
       var_dim(2) = tuv_dim
       var_dim(3) = time_dim
-      chem_name   = 'phrate'
+      chem_name   = 'phrate' 
       description = 'phrate'
       astat = NF_DEF_VAR(ncid, trim(chem_name), NF_REAL, 3, var_dim(1:3), var_id )
       astat = NF_PUT_ATT_TEXT(ncid,var_id,'description', len_trim(description),description)
@@ -861,7 +861,7 @@ include 'netcdf.inc'
 
          do m= 1,grid%track_loc_domain
             start(2) = m
-            astat = NF_PUT_VARA_REAL(ncid,var_id,start(1:2),count(1:2),grid%track_chem(n,m,:))
+            astat = NF_PUT_VARA_REAL(ncid,var_id,start(1:2),count(1:2),grid%track_chem(n,m,:))          
          end do
 
 !        write (*,*) 'n, var_id, chem_name = ', n, var_id, trim(chem_name)
@@ -1021,12 +1021,12 @@ SUBROUTINE calc_track_locations( grid )
                               ipsx, ipex, jpsx, jpex, kpsx, kpex,  &
                               imsy, imey, jmsy, jmey, kmsy, kmey,  &
                               ipsy, ipey, jpsy, jpey, kpsy, kpey )
-
+   
      CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
-
+   
 ! Set up map transformation structure
      CALL map_init(track_proj)
-
+   
      IF (ips <= 1 .AND. 1 <= ipe .AND. &
          jps <= 1 .AND. 1 <= jpe) THEN
         known_lat = grid%xlat(1,1)
@@ -1037,7 +1037,7 @@ SUBROUTINE calc_track_locations( grid )
      ENDIF
      known_lat = wrf_dm_min_real(known_lat)
      known_lon = wrf_dm_min_real(known_lon)
-
+   
 ! Mercator
    IF (config_flags%map_proj == PROJ_MERC) THEN
      CALL map_set(PROJ_MERC, track_proj,                &
@@ -1047,7 +1047,7 @@ SUBROUTINE calc_track_locations( grid )
                       knowni   = 1.,                    &
                       knownj   = 1.,                    &
                       dx       = config_flags%dx)
-
+   
 ! Lambert conformal
    ELSE IF (config_flags%map_proj == PROJ_LC) THEN
      CALL map_set(PROJ_LC, track_proj,                   &
@@ -1059,7 +1059,7 @@ SUBROUTINE calc_track_locations( grid )
                       knowni   = 1.,                     &
                       knownj   = 1.,                     &
                       dx       = config_flags%dx)
-
+   
 ! Polar stereographic
    ELSE IF (config_flags%map_proj == PROJ_PS) THEN
      CALL map_set(PROJ_PS, track_proj,                   &
@@ -1070,12 +1070,12 @@ SUBROUTINE calc_track_locations( grid )
                       knowni   = 1.,                     &
                       knownj   = 1.,                     &
                       dx       = config_flags%dx)
-
+   
 ! Cassini (global ARW)
    ELSE IF (config_flags%map_proj == PROJ_CASSINI) THEN
      CALL map_set(PROJ_CASSINI, track_proj,                             &
                       latinc   = grid%dy*360.0/(2.0*EARTH_RADIUS_M*PI), &
-                      loninc   = grid%dx*360.0/(2.0*EARTH_RADIUS_M*PI), &
+                      loninc   = grid%dx*360.0/(2.0*EARTH_RADIUS_M*PI), & 
                       lat1     = known_lat,                             &
                       lon1     = known_lon,                             &
 ! We still need to get POLE_LAT and POLE_LON metadata variables before
@@ -1099,7 +1099,7 @@ SUBROUTINE calc_track_locations( grid )
                       latinc   = grid%dy,                       &
                       loninc   = grid%dx,                       &
                       stagger  = HH)
-
+   
    ENDIF
 
    IF (.NOT. grid%track_have_calculated) THEN
@@ -1133,7 +1133,7 @@ SUBROUTINE calc_track_locations( grid )
 !--------------------------------------------------------
        IF (grid%track_i(track_loc_temp) < ids .OR. grid%track_i(track_loc_temp) > ide .OR. &
            grid%track_j(track_loc_temp) < jds .OR. grid%track_j(track_loc_temp) > jde) THEN
-         track_loc_temp = track_loc_temp - 1
+         track_loc_temp = track_loc_temp - 1   
        ENDIF
      ENDDO
 
@@ -1170,7 +1170,7 @@ SUBROUTINE calc_track_locations( grid )
 
      write(message,*) 'calc_track_locations: valid track locations in the model domain ', grid%track_loc_domain
      call wrf_message( trim(message) )
-
+   
     ENDIF
 #if ( DA_CORE != 1 )
    ENDIF

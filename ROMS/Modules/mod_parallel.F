@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_parallel
 !
-!svn $Id: mod_parallel.F 875 2017-11-03 01:10:02Z arango $
+!svn $Id: mod_parallel.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -104,7 +104,7 @@
 !
 !  Distributed-memory master process.
 !
-      integer, parameter :: MyMaster = 0
+      integer :: MyMaster = 0
 !
 !  Rank of the parallel local process.
 !
@@ -138,6 +138,9 @@
 !!    integer, parameter :: MP_FLOAT = MPI_REAL4
 #  endif
 # endif
+# ifdef MPI
+      integer, parameter :: MP_DOUBLE = MPI_DOUBLE_PRECISION
+# endif
 #endif
 !
       CONTAINS
@@ -160,22 +163,35 @@
 !$OMP PARALLEL
 !  First and last tile to process in a tiled application.
 !
-      allocate ( first_tile(Ngrids) )
-      allocate ( last_tile (Ngrids) )
+      IF (.not.allocated(first_tile)) THEN
+        allocate ( first_tile(Ngrids) )
+      END IF
+      IF (.not.allocated(last_tile)) THEN
+        allocate ( last_tile(Ngrids) )
+      END IF
 !
 !  Time profiling variables.
 !
-      allocate ( proc(0:1,4,Ngrids) )
-      proc(0:1,1:4,1:Ngrids)=0
+      IF (.not.allocated(proc)) THEN
+        allocate ( proc(0:1,4,Ngrids) )
+        proc(0:1,1:4,1:Ngrids)=0
+      END IF
 
-      allocate ( Cstr(0:Nregion,4,Ngrids) )
-      Cstr(0:Nregion,1:4,1:Ngrids)=0.0_r8
+      IF (.not.allocated(Cstr)) THEN
+        allocate ( Cstr(0:Nregion,4,Ngrids) )
+        Cstr(0:Nregion,1:4,1:Ngrids)=0.0_r8
+      END IF
 
-      allocate ( Cend(0:Nregion,4,Ngrids) )
-      Cend(0:Nregion,1:4,1:Ngrids)=0.0_r8
+      IF (.not.allocated(Cend)) THEN
+        allocate ( Cend(0:Nregion,4,Ngrids) )
+        Cend(0:Nregion,1:4,1:Ngrids)=0.0_r8
+      END IF
 !$OMP END PARALLEL
-      allocate ( Csum(0:Nregion,4,Ngrids) )
-      Csum(0:Nregion,1:4,1:Ngrids)=0.0_r8
+
+      IF (.not.allocated(Csum)) THEN
+        allocate ( Csum(0:Nregion,4,Ngrids) )
+        Csum(0:Nregion,1:4,1:Ngrids)=0.0_r8
+      END IF
 !
 ! Initialize other profiling variables.
 !

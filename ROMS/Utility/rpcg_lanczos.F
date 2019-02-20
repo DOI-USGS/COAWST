@@ -4,9 +4,9 @@
       SUBROUTINE rpcg_lanczos (ng, model, outLoop, innLoop, NinnLoop,   &
      &                         Lcgini)
 !
-!svn $Id: rpcg_lanczos.F 857 2017-07-29 04:05:27Z arango $
+!svn $Id: rpcg_lanczos.F 915 2018-07-14 00:06:14Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group       Selime Gurol      !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group       Selime Gurol      !
 !    Licensed under a MIT/X style license            Andrew M. Moore   !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -98,23 +98,23 @@
 !
       Ltrans=.FALSE.
 !
-      MASTER_THREAD : IF (Master) THEN
-!
 !  Initialize internal parameters.  This is needed here for output
 !  reasons.
 !
-        Jopt=0.0_r8
-        Jf=0.0_r8
-        Jdata=0.0_r8
-        Jmod=0.0_r8
-        Jb=Jb0(outLoop-1)
-        Jobs=0.0_r8
-        Jact=0.0_r8
-        eps=0.0_r8
-        preducv=0.0_r8
-        preducy=0.0_r8
-        zwork=0.0_r8
-        zgv=0.0_r8
+      Jopt=0.0_r8
+      Jf=0.0_r8
+      Jdata=0.0_r8
+      Jmod=0.0_r8
+      Jb=Jb0(outLoop-1)
+      Jobs=0.0_r8
+      Jact=0.0_r8
+      eps=0.0_r8
+      preducv=0.0_r8
+      preducy=0.0_r8
+      zwork=0.0_r8
+      zgv=0.0_r8
+!
+      MASTER_THREAD : IF (Master) THEN
 !
 !  Multiply TLmodVal by ObsScale to effectively remove any rejected
 !  observations from the analysis.
@@ -1031,7 +1031,7 @@
 #  if defined SENSITIVITY_4DVAR || \
       defined TL_W4DPSAS        || defined TL_W4DVAR || \
       defined W4DPSAS           || defined W4DVAR
-      CALL mp_bcastf (ng, model, TLmodVal_S(:,:,outLoop))
+!!    CALL mp_bcastf (ng, model, TLmodVal_S(:,:,outLoop))   ! not needed
       CALL mp_bcastf (ng, model, Hbk(:,outLoop))
       CALL mp_bcastf (ng, model, Jb0(outLoop-1))
 #  endif
@@ -1054,6 +1054,14 @@
         CALL mp_bcastf (ng, model, cg_zv(:,:,outLoop))
         CALL mp_bcastf (ng, model, vcglev(:,:,outLoop))
       END IF
+      CALL mp_bcastf (ng, model, Jf)
+      CALL mp_bcastf (ng, model, Jdata)
+      CALL mp_bcastf (ng, model, Jmod)
+      CALL mp_bcastf (ng, model, Jopt)
+      CALL mp_bcastf (ng, model, Jobs)
+      CALL mp_bcastf (ng, model, Jact)
+      CALL mp_bcastf (ng, model, preducv)
+      CALL mp_bcastf (ng, model, preducy)
 # endif
 !
 !-----------------------------------------------------------------------
@@ -1069,8 +1077,8 @@
 # endif
       IF (innLoop.gt.0) THEN
          CALL cg_write_rpcg (ng, model, innLoop, outLoop,               &
-     &                  Jf, Jdata, Jmod, Jopt, Jb, Jobs, Jact,          &
-     &                  preducv, preducy)
+     &                       Jf, Jdata, Jmod, Jopt, Jb, Jobs, Jact,     &
+     &                       preducv, preducy)
       END IF
 
 # ifdef PROFILE

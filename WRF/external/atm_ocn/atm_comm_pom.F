@@ -12,16 +12,16 @@
 
      &   MPI_INTEGER,MPI_STATUS_SIZE, &
      &   kind_REAL,kind_alt_REAL, &
-     &   MPI_kind_REAL,MPI_kind_alt_REAL
+     &   MPI_kind_REAL,MPI_kind_alt_REAL 
 
       implicit none
 
       integer,parameter:: NSF=4, ND=2
-      real dtc,              &   !<- Coupling period
+      real dtc,              &   !<- Coupling period 
      &     dta,              &   !<- AM time step ("physical")
      &     dta2dtc              !<- AM time step / Coupling period
       integer i_dtc2dta /100/   !<- Coupling period / AM time step
-      integer &!,dimension(ND)::
+      integer &!,dimension(ND):: 
      &ims,ime,jms,jme,its,ite,jts,jte,ids,idf,jds,jdf,  NGP
       integer kms,kme,kts,kte,kds,kde
       integer,parameter:: kind_R=kind_alt_REAL
@@ -49,10 +49,10 @@
       logical PHYS,zeroSF,nrmSF,sendSF,getSST
 
       TYPE SST_ARRAY
-        real(kind=kind_SST),dimension(:,:),allocatable:: a
+        real(kind=kind_SST),dimension(:,:),allocatable:: a 
       END TYPE SST_ARRAY
       TYPE SF_ARRAY
-        real(kind=kind_sfcflux),dimension(:,:,:),allocatable:: a
+        real(kind=kind_sfcflux),dimension(:,:,:),allocatable:: a 
       END TYPE SF_ARRAY
 
       TYPE (SST_ARRAY), dimension(ND):: SST_cc
@@ -94,27 +94,27 @@
 
       if (kind_R.eq.kind_REAL) then
         MPI_kind_R=MPI_kind_REAL
-      else
+      else 
         MPI_kind_R=MPI_kind_alt_REAL
       end if
       if (kind_sfcflux.eq.kind_REAL) then
         MPI_kind_sfcflux=MPI_kind_REAL
-      else
+      else 
         MPI_kind_sfcflux=MPI_kind_alt_REAL
       end if
       if (kind_SST.eq.kind_REAL) then
         MPI_kind_SST=MPI_kind_REAL
-      else
+      else 
         MPI_kind_SST=MPI_kind_alt_REAL
       end if
       if (kind_SLM.eq.kind_REAL) then
         MPI_kind_SLM=MPI_kind_REAL
-      else
+      else 
         MPI_kind_SLM=MPI_kind_alt_REAL
       end if
       if (kind_lonlat.eq.kind_REAL) then
         MPI_kind_lonlat=MPI_kind_REAL
-      else
+      else 
         MPI_kind_lonlat=MPI_kind_alt_REAL
       end if
       atm_comm=MPI_COMM_Atmos
@@ -153,7 +153,7 @@
       integer NTSD,NPHS,gid_
       real dta_
       integer ids_,idf_,jds_,jdf_,its_,ite_,jts_,jte_, &
-     &ims_,ime_,jms_,jme_,kds_,kde_,kts_,kte_,kms_,kme_
+     &ims_,ime_,jms_,jme_,kds_,kde_,kts_,kte_,kms_,kme_ 
       real(kind=kind_lonlat),dimension(ims_:ime_,jms_:jme_):: &
      &HLON,HLAT,VLON,VLAT
       real(kind=kind_SLM),dimension(ims_:ime_,jms_:jme_):: SLM
@@ -171,7 +171,7 @@
      &'Abort: in ATM_TSTEP_INIT gid is neither 1 nor 2',rc)
       KDT=NTSD/NPHS+1
       PHYS=MOD(NTSD,NPHS).eq.0 ! .and. gid.eq.1 <-removed to bring MG in
-      dta=dta_
+      dta=dta_ 
 
       write(s1,'("gid=",i1," NTSD=",i5," NPHS=",i3," KDT=",i5,'// &
      &'" PHYS=",L1)') gid,NTSD,NPHS,KDT,PHYS
@@ -341,7 +341,7 @@
       implicit none
 
       real(kind=kind_lonlat),dimension(ims:ime,jms:jme):: &
-     &HLON,HLAT,VLON,VLAT
+     &HLON,HLAT,VLON,VLAT 
 
       real(kind=kind_lonlat),dimension(ids:idf,jds:jdf):: &
      &ALONt,ALATt,ALONv,ALATv
@@ -352,7 +352,7 @@
 !     IF (gid.ne.1) RETURN ! only "parent grid" dim. and coor. are sent
 
       IF (.not.PHYS .or. n_ts(gid).ne.1) RETURN
-
+      
 !temporarily excluded      if (Coupler_id.lt.0) return    !   <- standalone mode
 
       buf(1)=idf-ids+1
@@ -400,7 +400,7 @@
 
 !     IF (gid.ne.1) RETURN  !  only "parent grid" mask is sent
       IF (.not.PHYS .or. n_ts(gid).ne.1) RETURN
-
+      
 !temporarily excluded      if (Coupler_id.lt.0) return    !   <- standalone mode
 
       call ASSEMBLE(SLM_g,SLM,kind_SLM)
@@ -453,12 +453,12 @@
         call DISASSEMBLE(SST_g,SST_cc(gid)%a,kind_SST)
         call ATM_ANNOUNCE('ATM_GETSST: SST received',3)
       end if
-
+      
       if (Coupler_id.lt.0) return    !   <- standalone mode
 
       do j=jts,jte
       do i=its,ite
-        if (abs(SLM(i,j)-SLM_OS_value).lt.0.01) then
+        if (abs(SLM(i,j)-SLM_OS_value).lt.0.01) then 
                                   ! i.e. if it is OS (open sea) AMGP
                                   !
           if (SST_cc(gid)%a(i,j).gt.unrealistically_low_SST)  &
@@ -484,7 +484,7 @@
       implicit none
 
       real(kind=kind_sfcflux),dimension(ims:ime,jms:jme):: &
-     &TWBS,QWBS,RLWIN,RSWIN,RADOT,RSWOUT,TX,TY,PINT,PREC
+     &TWBS,QWBS,RLWIN,RSWIN,RADOT,RSWOUT,TX,TY,PINT,PREC 
 !    &TWBS,QWBS,RLWIN,RSWIN,RADOT,RSWOUT,USTAR,U10,V10,PINT,PREC
 !       Act. arg. for PINT is a 3d array - so this only is OK if
 !       Ps=Act.arg.(:,:.1) - actually, Ps=PINT(:,1,:)

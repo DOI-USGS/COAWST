@@ -45,7 +45,7 @@
    REAL    , PARAMETER :: cvovcp       = 1./cpovcv
    REAL    , PARAMETER :: rvovrd       = r_v/r_d
 
-   REAL    , PARAMETER :: reradius     = 1./6370.0e03
+   REAL    , PARAMETER :: reradius     = 1./6370.0e03 
 
    REAL    , PARAMETER :: asselin      = .025
 !   REAL    , PARAMETER :: asselin      = .0
@@ -130,7 +130,7 @@
        REAL , PARAMETER ::  wght=0.35
        REAL , PARAMETER ::  wpc=0.075
        REAL , PARAMETER ::  z0land=0.10
-#if ( HWRF == 1 )
+#if ( HWRF == 1 ) 
        REAL , PARAMETER ::  z0max=0.01
 #else
        REAL , PARAMETER ::  z0max=0.008

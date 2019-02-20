@@ -42,7 +42,7 @@ function f = nc_read(ncfile, Vname, Tindex, ReplaceValue, PreserveType)
 %                  nc_read_matlab, nc_read_java, nc_read_mexnc (private)
 %
 
-% svn $Id: nc_read.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: nc_read.m 926 2018-10-09 21:53:45Z arango $
 %=========================================================================%
 %  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
@@ -52,13 +52,13 @@ function f = nc_read(ncfile, Vname, Tindex, ReplaceValue, PreserveType)
 % If the PreserveType switch is not provided, set default to convert data
 % to double precision.
 
-if (nargin < 5),
+if (nargin < 5)
   PreserveType = false;
 end
 
 % If ReplaceValue is not provided, use zero as a fill value.
 
-if (nargin < 4),
+if (nargin < 4)
   ReplaceValue = 0;
 end
 
@@ -90,7 +90,7 @@ end
 
 [method,~,~] = nc_interface(ncfile);
 
-switch(method),
+switch(method)
   case {'native'}
     f = nc_read_matlab(ncfile,Vname,Tindex,ReplaceValue,PreserveType,Info);
   case {'java'}
@@ -106,9 +106,9 @@ end
 % array (land and water points).
 %--------------------------------------------------------------------------
 
-if (nvdims > 0),
+if (nvdims > 0)
   if (any(strcmp({Info.Variables(ivar).Dimensions.Name}, 'xy_rho' )) || ...
-      any(strcmp({Info.Variables(ivar).Dimensions.Name}, 'xyz_rho')));
+      any(strcmp({Info.Variables(ivar).Dimensions.Name}, 'xyz_rho')))
     f = land_points (ncfile,Vname,ReplaceValue,Info,f);
   end
 end
@@ -153,24 +153,24 @@ function f = land_points (ncfile, Vname, ReplaceValue, Info, f)
 
 ndims = length(Info.Dimensions);
 
-for n=1:ndims,
+for n=1:ndims
   dname =char(Info.Dimensions(n).Name);
   switch dname
-    case 'xi_rho',
+    case 'xi_rho'
       Lr = Info.Dimensions(n).Length;
-    case 'xi_u',
+    case 'xi_u'
       Lu = Info.Dimensions(n).Length;
-    case 'xi_v',
+    case 'xi_v'
       Lv = Info.Dimensions(n).Length;
-    case 'eta_rho',
+    case 'eta_rho'
       Mr = Info.Dimensions(n).Length;
-    case 'eta_u',
+    case 'eta_u'
       Mu = Info.Dimensions(n).Length;
-    case 'eta_v',
+    case 'eta_v'
       Mv = Info.Dimensions(n).Length;
-    case 's_rho',
+    case 's_rho'
       Nr = Info.Dimensions(n).Length;
-    case 's_w',
+    case 's_w'
       Nw = Info.Dimensions(n).Length;
   end
 end  
@@ -182,31 +182,31 @@ is3d = false;
 
 ivar = find(strcmp({Info.Variables.Name}, Vname));
 
-if (~isempty(ivar)),
+if (~isempty(ivar))
   nvdims = length(Info.Variables(ivar).Dimensions);
 
-  for n=1:nvdims,
+  for n=1:nvdims
     dname = char(Info.Variables(ivar).Dimensions(n).Name);
     switch dname
-      case 'xy_rho',
+      case 'xy_rho'
         msknam = 'mask_rho';
         is2d = true; Im = Lr; Jm = Mr;
-      case 'xy_u',
+      case 'xy_u'
         msknam = 'mask_u';
         is2d = true; Im = Lu; Jm = Mu;
-      case 'xy_v',
+      case 'xy_v'
         msknam = 'mask_v';
         is2d = true; Im = Lv; Jm = Mv;
-      case 'xyz_rho',
+      case 'xyz_rho'
         msknam = 'mask_rho';
         is3d = true; Im = Lr; Jm = Mr; Km = Nr;
-      case 'xyz_u',
+      case 'xyz_u'
         msknam = 'mask_u';
         is3d = true; Im = Lu; Jm = Mu; Km = Nr;
-      case 'xyz_v',    
+      case 'xyz_v'    
         msknam='mask_v';
         is3d = true; Im = Lv; Jm = Mv; Km = Nr;
-      case 'xyz_w',    
+      case 'xyz_w'    
         msknam = 'mask_rho';
         is3d = true; Im = Lr; Jm = Mr; Km = Nw;
     end
@@ -217,10 +217,10 @@ water = is2d | is3d;
 
 % If water data only, read in the appropriate Land/Sea mask.
 
-if (water),
+if (water)
   got_mask = any(strcmp(vnames,msknam));
 
-  if (got_mask),
+  if (got_mask)
     switch (Fmethod)
       case {'native'}
         mask = nc_read_matlab(ncfile,msknam,[],ReplaceValue,false,Info);
@@ -246,17 +246,17 @@ end
 
 % Build full array with land and water points.
 
-if (water),
+if (water)
 
   v = f;
-  [Npts,Ntime]=size(v);
+  [~,Ntime]=size(v);
 
-  if (is2d),
+  if (is2d)
     f = squeeze(ones([Im,Jm,Ntime])).*ReplaceValue;
     MASK = squeeze(repmat(mask,[1,1,Ntime]));
     ind = MASK > 0;
     f(ind) = v;
-  elseif (is3d),    
+  elseif (is3d)    
     f = squeeze(ones([Im,Jm,Km,Ntime])).*ReplaceValue;
     MASK = squeeze(repmat(mask,[1,1,Km,Ntime]));
     ind = MASK > 0;
@@ -269,7 +269,7 @@ return
 
 %--------------------------------------------------------------------------
 
-function f = nc_read_matlab(ncfile, Vname, Tindex,                       ...
+function f = nc_read_matlab(ncfile, Vname, Tindex,                      ...
                             ReplaceValue, PreserveType, Info)
 
 %
@@ -319,27 +319,35 @@ nctype = Info.Variables(ivar).ncType;
 % Activate switch for reading specific record.
 
 time_rec = false;
-if (~isempty(Tindex)),
+if (~isempty(Tindex))
   time_rec = true;
-end,
+end
 
 % Check if there is an unlimited dimension or a time dimension.
 
-if (nvdims > 0),
-  for n=1:nvdims,
+if (nvdims > 0)
+  for n=1:nvdims
     dname = char(Info.Variables(ivar).Dimensions(n).Name);
-    if (Info.Variables(ivar).Dimensions(n).Unlimited ||                 ...
-        ~isempty(strfind(dname,'time'))),
-      got.RecDim = true;
-      TimeDimName = dname;
+    if (exist('contains'))
+      if (Info.Variables(ivar).Dimensions(n).Unlimited ||                 ...
+          ~isempty(contains(dname,'time')))
+        got.RecDim = true;
+        TimeDimName = dname;
+      end
+    else
+      if (Info.Variables(ivar).Dimensions(n).Unlimited ||                 ...
+          ~isempty(strfind(dname,'time')))
+        got.RecDim = true;
+        TimeDimName = dname;
+      end
     end
   end
 end
 
 % Inquire information about the attributes.
 
-if (nvatts > 0),
-  for n=1:nvatts,
+if (nvatts > 0)
+  for n=1:nvatts
     aname = char(Info.Variables(ivar).Attributes(n).Name);
     switch aname
       case 'add_offset'
@@ -347,7 +355,7 @@ if (nvatts > 0),
         got.add_offset = true;
       case {'_FillValue', '_fillvalue', 'missing_value'}
         spval = Info.Variables(ivar).Attributes(n).Value;
-        if (strcmp(aname, 'missing_value')),
+        if (strcmp(aname, 'missing_value'))
           got.missing_value = true;
         else
           got.FillValue = true;
@@ -361,16 +369,16 @@ end
 
 % Set start and count indices to process.
 
-if (nvdims > 0),
+if (nvdims > 0)
   start = zeros([1 nvdims]);
   count = Inf([1 nvdims]); 
 
-  for n=1:nvdims,
+  for n=1:nvdims
     dname = char(Info.Variables(ivar).Dimensions(n).Name);
     start(n) = 0;
     count(n) = Info.Variables(ivar).Dimensions(n).Length;
-    if (time_rec && got.RecDim),
-      if (strcmp(dname, TimeDimName)),
+    if (time_rec && got.RecDim)
+      if (strcmp(dname, TimeDimName))
         start(n) = Tindex-1;
 %       start(n) = Tindex;
         count(n) = 1;
@@ -391,7 +399,7 @@ varid = netcdf.inqVarID(ncid, Vname);
 
 % Read in data: scalar or multi-dimensional array.
 
-if (nvdims == 0),
+if (nvdims == 0)
   f = netcdf.getVar(ncid, varid);
 else
   f = netcdf.getVar(ncid, varid, start, count);
@@ -409,8 +417,8 @@ netcdf.close(ncid);
 
 ind = [];
 
-if (got.FillValue || got.missing_value),
-  if (iscellstr(f) || ischar(f)),
+if (got.FillValue || got.missing_value)
+  if (iscellstr(f) || ischar(f))
     ind = find(f == spval);
     f(ind) = spval;
   else
@@ -420,15 +428,21 @@ end
 
 % Scale data and/or add offset value.
 
-if (isnumeric(f)),
-  if (got.add_offset),
-    if (got.scale_factor),
+if (isnumeric(f))
+  if (got.add_offset)
+    if (got.scale_factor)
       switch nctype
        case {netcdf.getConstant('nc_float'),                            ...
              netcdf.getConstant('nc_double')}
           f = f.*scale+offset;
-        case {nc_int, nc_short, nc_byte}
-          f = double(f).*scale+offset;
+       case {netcdf.getConstant('nc_int'),                              ...
+             netcdf.getConstant('nc_short'),                            ...
+             netcdf.getConstant('nc_byte')}
+          if (PreserveType)
+            f = f.*scale+offset;
+          else
+            f = double(f).*scale+offset;
+          end
       end
     else
       switch nctype
@@ -438,10 +452,14 @@ if (isnumeric(f)),
         case {netcdf.getConstant('nc_int'),                             ...
               netcdf.getConstant('nc_short'),                           ...
               netcdf.getConstant('nc_byte')}
-          f = double(f)+offset;
+          if (PreserveType)
+            f = f+offset;
+          else
+            f = double(f)+offset;
+          end
       end
     end
-  elseif (got.scale_factor);
+  elseif (got.scale_factor)
     switch nctype
       case {netcdf.getConstant('nc_float'),                             ...
             netcdf.getConstant('nc_double')}
@@ -449,14 +467,18 @@ if (isnumeric(f)),
       case {netcdf.getConstant('nc_int'),                               ...
             netcdf.getConstant('nc_short'),                             ...
             netcdf.getConstant('nc_byte')}
-        f = double(f).*scale;
+        if (PreserveType)
+          f = f.*scale;
+        else
+          f = double(f).*scale;
+        end	
     end
   end
 end
 
 % Set fill values or missing values with specified ReplaceValue.
 
-if (~isempty(ind) && isnumeric(f)),
+if (~isempty(ind) && isnumeric(f))
   f(ind) = ReplaceValue;
 end
 
@@ -464,7 +486,7 @@ end
 % If requested and applicable, convert data to double precision.
 %--------------------------------------------------------------------------
 
-if (~PreserveType) && ~(iscellstr(f) || ischar(f)),
+if (~PreserveType) && ~(iscellstr(f) || ischar(f))
   f = double(f);
 end
 
@@ -472,7 +494,7 @@ return
 
 %--------------------------------------------------------------------------
 
-function f = nc_read_java(ncfile, Vname, Tindex,                         ...
+function f = nc_read_java(ncfile, Vname, Tindex,                        ...
                           ReplaceValue, PreserveType, Info)
 
 %
@@ -525,7 +547,7 @@ nctype = Info.Variables(ivar).ncType;
 % Check value of persistent switch to process data in column-major or
 % row-major order.
 
-if (ispref('SNCTOOLS','PRESERVE_FVD')),
+if (ispref('SNCTOOLS','PRESERVE_FVD'))
   saved_preserve_fvd = getpref('SNCTOOLS','PRESERVE_FVD');
 else
   saved_preserve_fvd = false;             % default value in SNCTOOLS
@@ -539,27 +561,35 @@ setpref('SNCTOOLS','PRESERVE_FVD',true);
 % Activate switch for reading specific record.
 
 time_rec = false;
-if (~isempty(Tindex)),
+if (~isempty(Tindex))
   time_rec = true;
-end,
+end
 
 % Check if there is an unlimited dimension or a time dimension.
 
-if (nvdims > 0),
-  for n=1:nvdims,
+if (nvdims > 0)
+  for n=1:nvdims
     dname = char(Info.Variables(ivar).Dimensions(n).Name);
-    if (Info.Variables(ivar).Dimensions(n).Unlimited ||                 ...
-        ~isempty(strfind(dname,'time'))),
-      got.RecDim = true;
-      TimeDimName = dname;
+    if (exist('contains'))
+      if (Info.Variables(ivar).Dimensions(n).Unlimited ||                 ...
+          ~isempty(contains(dname,'time')))
+        got.RecDim = true;
+        TimeDimName = dname;
+      end
+    else
+      if (Info.Variables(ivar).Dimensions(n).Unlimited ||                 ...
+          ~isempty(strfind(dname,'time')))
+        got.RecDim = true;
+        TimeDimName = dname;
+      end
     end
   end
 end
 
 % Inquire information about the attributes.
 
-if (nvatts > 0),
-  for n=1:nvatts,
+if (nvatts > 0)
+  for n=1:nvatts
     aname = char(Info.Variables(ivar).Attributes(n).Name);
     switch aname
       case 'add_offset'
@@ -567,7 +597,7 @@ if (nvatts > 0),
         got.add_offset = true;
       case {'_FillValue', '_fillvalue', 'missing_value'}
         spval = Info.Variables(ivar).Attributes(n).Value;
-        if (strcmp(aname, 'missing_value')),
+        if (strcmp(aname, 'missing_value'))
           got.missing_value = true;
         else
           got.FillValue = true;
@@ -581,16 +611,16 @@ end
 
 % Set start and count indices to process.
 
-if (nvdims > 0),
+if (nvdims > 0)
   start = zeros([1 nvdims]);
   count = Inf([1 nvdims]); 
 
-  for n=1:nvdims,
+  for n=1:nvdims
     dname = char(Info.Variables(ivar).Dimensions(n).Name);
     start(n) = 0;
     count(n) = Inf;
-    if (time_rec && got.RecDim),
-      if (strcmp(dname, TimeDimName)),
+    if (time_rec && got.RecDim)
+      if (strcmp(dname, TimeDimName))
         start(n) = Tindex-1;
         count(n) = 1;
       end
@@ -605,7 +635,7 @@ end
 
 % Read in data: scalar or multi-dimensional array.
 
-if (nvdims == 0),
+if (nvdims == 0)
   f = nc_vargetr(ncfile,Vname);
 else
   f = nc_vargetr(ncfile,Vname,start,count);
@@ -623,8 +653,8 @@ setpref('SNCTOOLS','PRESERVE_FVD', saved_preserve_fvd);
 
 ind = [];
 
-if (got.FillValue || got.missing_value),
-  if (iscellstr(f) || ischar(f)),
+if (got.FillValue || got.missing_value)
+  if (iscellstr(f) || ischar(f))
     ind = find(f == spval);
     f(ind) = spval;
   else
@@ -634,9 +664,9 @@ end
 
 %  Scale data and/or add offset value.
 
-if (isnumeric(f)),
-  if (got.add_offset),
-    if (got.scale_factor),
+if (isnumeric(f))
+  if (got.add_offset)
+    if (got.scale_factor)
       switch nctype
         case {nc_constant('nc_float'),                                  ...
               nc_constant('nc_double')}
@@ -657,7 +687,7 @@ if (isnumeric(f)),
           f = double(f)+offset;
       end
     end
-  elseif (got.scale_factor);
+  elseif (got.scale_factor)
     switch nctype
       case {nc_constant('nc_float'),                                    ...
             nc_constant('nc_double')}
@@ -672,7 +702,7 @@ end
 
 %  Set fill values or missing values with specified ReplaceValue.
 
-if (~isempty(ind) && isnumeric(f)),
+if (~isempty(ind) && isnumeric(f))
   f(ind) = ReplaceValue;
 end
 
@@ -680,7 +710,7 @@ end
 %  Convert data to double precision.
 %--------------------------------------------------------------------------
 
-if (~PreserveType) && ~(iscellstr(f) || ischar(f)),
+if (~PreserveType) && ~(iscellstr(f) || ischar(f))
   f = double(f);
 end
 
@@ -688,7 +718,7 @@ return
 
 %--------------------------------------------------------------------------
 
-function f = nc_read_mexnc(ncfile, Vname, Tindex,                        ...
+function f = nc_read_mexnc(ncfile, Vname, Tindex,                       ...
                            ReplaceValue, PreserveType, Info)
 
 %
@@ -724,21 +754,21 @@ function f = nc_read_mexnc(ncfile, Vname, Tindex,                        ...
 
 global IPRINT
 
-if (isempty(IPRINT)),
+if (isempty(IPRINT))
   IPRINT = false;
 end
 
 %  Activate switch for reading specific record.
 
 time_rec = false;
-if (~isempty(Tindex)),
+if (~isempty(Tindex))
   time_rec = true;
-end,
+end
 
 % Open NetCDF file.
 
 [ncid]=mexnc('ncopen',ncfile,'nc_nowrite');
-if (ncid == -1),
+if (ncid == -1)
   error(['NC_READ_MEXNC: ncopen - unable to open file: ' ncfile])
 end
 
@@ -753,7 +783,7 @@ mexnc('setopts',0);
 % Get variable ID.
 
 [varid] = mexnc('ncvarid',ncid,Vname);
-if (varid < 0),
+if (varid < 0)
   mexnc('ncclose',ncid);
   nc_inq(ncfile);
   disp('  ');
@@ -763,15 +793,16 @@ end
 % Inquire about unlimited dimension.
 
 [~,~,~,recdim,status] = mexnc('ncinquire',ncid);
-if (status == -1),
+if (status == -1)
   error(['NC_READ_MEXNC: ncinquire - cannot inquire file: ',ncfile])
 end
 
 % Get information about requested variable.
 
 [Vname,nctype,nvdims,dimids,nvatts,status] = mexnc('ncvarinq',ncid,varid);
-if (status == -1),
-  error(['NC_READ_MEXNC: ncvarinq - unable to inquire about variable: ',Vname])
+if (status == -1)
+  error(['NC_READ_MEXNC: ncvarinq - unable to inquire about variable: ',...
+         Vname])
 end
 
 % Inquire about the _FillValue attribute.
@@ -781,7 +812,7 @@ got.FillValue     = false;
 got.missing_value = false;
 got.scale_factor  = false;
 
-for i = 0:nvatts-1,
+for i = 0:nvatts-1
   [attnam,status] = mexnc('inq_attname',ncid,varid,i);
   if (status == -1)
     error(['NC_READ_MEXNC: inq_attname: error while inquiring ',        ...
@@ -794,67 +825,67 @@ for i = 0:nvatts-1,
   end
   switch (attnam)
     case 'add_offset'
-      if (atype == nc_constant('nc_double')),
+      if (atype == nc_constant('nc_double'))
         [offset,status] = mexnc('get_att_double',ncid,varid,attnam); 
-      elseif (atype == nc_constant('nc_float')),
+      elseif (atype == nc_constant('nc_float'))
         [offset,status] = mexnc('get_att_float' ,ncid,varid,attnam);
-      elseif (atype == nc_constant('nc_int')),
+      elseif (atype == nc_constant('nc_int'))
         [offset,status] = mexnc('get_att_int'   ,ncid,varid,attnam);
-      elseif (atype == nc_constant('nc_short')),
+      elseif (atype == nc_constant('nc_short'))
         [offset,status] = mexnc('get_att_short' ,ncid,varid,attnam);
-      elseif (atype == nc_constant('nc_byte')),
+      elseif (atype == nc_constant('nc_byte'))
         [offset,status] = mexnc('get_att_schar' ,ncid,varid,attnam);
-      elseif (atype == nc_constant('nc_char')),
+      elseif (atype == nc_constant('nc_char'))
         [offset,status] = mexnc('get_att_text'  ,ncid,varid,attnam);
       else
         [offset,status] = mexnc('ncattget'      ,ncid,varid,attnam);
       end
-      if (status == -1),
+      if (status == -1)
         error(['NC_READ_MEXNC: ncattget error while reading: ',         ...
                attnam])
       end
       got.add_offset = true;
     case {'_FillValue', '_fillvalue', 'missing_value'}
-      if (atype == nc_constant('nc_double')),
+      if (atype == nc_constant('nc_double'))
         [spval,status] = mexnc('get_att_double',ncid,varid,attnam); 
-      elseif (atype == nc_constant('nc_float')),
+      elseif (atype == nc_constant('nc_float'))
         [spval,status] = mexnc('get_att_float' ,ncid,varid,attnam);
-      elseif (atype == nc_constant('nc_int')),
+      elseif (atype == nc_constant('nc_int'))
         [spval,status] = mexnc('get_att_int'   ,ncid,varid,attnam);
-      elseif (atype == nc_constant('nc_short')),
+      elseif (atype == nc_constant('nc_short'))
         [spval,status] = mexnc('get_att_short' ,ncid,varid,attnam);
-      elseif (atype == nc_constant('nc_byte')),
+      elseif (atype == nc_constant('nc_byte'))
         [spval,status] = mexnc('get_att_schar' ,ncid,varid,attnam);
-      elseif (atype == nc_constant('nc_char')),
+      elseif (atype == nc_constant('nc_char'))
         [spval,status] = mexnc('get_att_text'  ,ncid,varid,attnam);
       else
         [spval,status] = mexnc('ncattget'      ,ncid,varid,attnam);
       end
-      if (status == -1),
+      if (status == -1)
         error(['NC_READ_MEXNC: ncattget error while reading: ', attnam]);
       end
-      if (strcmp(attnam,'missing_value')),
+      if (strcmp(attnam,'missing_value'))
         got.missing_value = true;
       else
         got.FillValue = true;
       end
     case 'scale_factor'
-      if (atype == nc_constant('nc_double')),
+      if (atype == nc_constant('nc_double'))
         [scale,status] = mexnc('get_att_double',ncid,varid,attnam); 
-      elseif (atype == nc_constant('nc_float')),
+      elseif (atype == nc_constant('nc_float'))
         [scale,status] = mexnc('get_att_float' ,ncid,varid,attnam);
-      elseif (atype == nc_constant('nc_int')),
+      elseif (atype == nc_constant('nc_int'))
         [scale,status] = mexnc('get_att_int'   ,ncid,varid,attnam);
-      elseif (atype == nc_constant('nc_short')),
+      elseif (atype == nc_constant('nc_short'))
         [scale,status] = mexnc('get_att_short' ,ncid,varid,attnam);
-      elseif (atype == nc_constant('nc_byte')),
+      elseif (atype == nc_constant('nc_byte'))
         [scale,status] = mexnc('get_att_schar' ,ncid,varid,attnam);
-      elseif (atype == nc_constant('nc_char')),
+      elseif (atype == nc_constant('nc_char'))
         [scale,status] = mexnc('get_att_text'  ,ncid,varid,attnam);
       else
         [scale,status] = mexnc('ncattget'      ,ncid,varid,attnam);
       end
-      if (status == -1),
+      if (status == -1)
         error(['NC_READ_MEXNC: ncattget error while reading: ', attnam]);
       end
       got.scale_factor=true;
@@ -864,9 +895,9 @@ end
 % Inquire about dimensions.
 
 index = 0;
-for n=1:nvdims,
+for n=1:nvdims
   [name,dsize,status]=mexnc('ncdiminq',ncid,dimids(n));
-  if (status == -1),
+  if (status == -1)
     error(['NC_READ_MEXNC: ncdiminq - unable to inquire about ',        ...
            'dimension ID: ',num2str(dimids(n))])
   else
@@ -875,8 +906,14 @@ for n=1:nvdims,
     dimsiz(n) = dsize;
     start(n)  = 0;
     count(n)  = dsize;
-    if ((dimids(n) == recdim) || ~isempty(strfind(name,'time'))),
-      index = n;
+    if (exist('contains'))
+      if ((dimids(n) == recdim) || ~isempty(contains(name,'time')))
+        index = n;
+      end
+    else
+      if ((dimids(n) == recdim) || ~isempty(strfind(name,'time')))
+        index = n;
+      end
     end
   end
 end
@@ -884,7 +921,7 @@ end
 %  It reading specific time record, reset variable bounds.
 
 nvdim = nvdims;
-if (time_rec && (index > 0)),
+if (time_rec && (index > 0))
   start(index) = Tindex-1;
   count(index) = 1;
   nvdims = nvdims-1;
@@ -896,7 +933,7 @@ end
 
 %  Read in scalar.
 
-if (nvdim == 0),
+if (nvdim == 0)
   switch nctype
     case (nc_constant('nc_double'))
       [f,status] = mexnc('get_var_double',ncid,varid);
@@ -920,7 +957,7 @@ if (nvdim == 0),
       [f,status] = mexnc('ncvarget1'     ,ncid,varid,0);
       myfunc = 'ncvarget1';
   end
-  if (status == -1),
+  if (status == -1)
     error(['NC_READ_MEXNC: ',myfunc,' - error while reading: ',Vname])
   end
 
@@ -948,22 +985,22 @@ else
       [f,status] = mexnc('ncvarget'       ,ncid,varid,start,count);
       myfunc = 'ncvarget';
   end
-  if (status == -1),
+  if (status == -1)
     error(['NC_READ_MEXNC: ',myfunc,' - error while reading: ',Vname])
   end
 
-  if (nvdims == 3),
-    if (length(start) == 3),
+  if (nvdims == 3)
+    if (length(start) == 3)
       f = reshape(f,[count(3),count(2),count(1)]);
-    elseif (length(start) == 4),
+    elseif (length(start) == 4)
       f = reshape(f,[count(4),count(3),count(2)]);
     end
   end
   
-  if (nvdims == 4),
-    if (length(start) == 4),
+  if (nvdims == 4)
+    if (length(start) == 4)
       f = reshape(f,[count(4),count(3),count(2),count(1)]);
-    elseif (length(start) == 5),
+    elseif (length(start) == 5)
       f = reshape(f,[count(5),count(4),count(3),count(2)]);
     end  
   end
@@ -972,12 +1009,12 @@ end
 
 % Print information about variable.
 
-if (IPRINT),
-  if (nvdims > 0),
+if (IPRINT)
+  if (nvdims > 0)
     disp(' ')
     disp([Vname ' has the following dimensions (input order):']);
     disp(' ')
-    for n=1:nvdim,
+    for n=1:nvdim
       s=[blanks(11) int2str(n) ') ' dimnam(n,:) ' = ' int2str(dimsiz(n))];
       disp(s);
     end
@@ -999,8 +1036,8 @@ end
 
 ind = [];
 
-if (got.FillValue || got.missing_value),
-  if (iscellstr(f) || ischar(f)),
+if (got.FillValue || got.missing_value)
+  if (iscellstr(f) || ischar(f))
     ind = find(f == spval);
     f(ind) = spval;
   else
@@ -1010,9 +1047,9 @@ end
 
 %  Scale data and/or add offset value.
 
-if (isnumeric(f)),
-  if (got.add_offset),
-    if (got.scale_factor),
+if (isnumeric(f))
+  if (got.add_offset)
+    if (got.scale_factor)
       switch nctype
         case {nc_constant('nc_float'),                                  ...
               nc_constant('nc_double')}
@@ -1033,7 +1070,7 @@ if (isnumeric(f)),
           f = double(f)+offset;
       end
     end
-  elseif (got.scale_factor);
+  elseif (got.scale_factor)
     switch nctype
       case {nc_constant('nc_float'),                                    ...
             nc_constant('nc_double')}
@@ -1048,7 +1085,7 @@ end
 
 %  Set fill values or missing values with specified ReplaceValue.
 
-if (~isempty(ind) && isnumeric(f)),
+if (~isempty(ind) && isnumeric(f))
   f(ind) = ReplaceValue;
 end
 
@@ -1056,7 +1093,7 @@ end
 %  If desired, convert data to double precision.
 %--------------------------------------------------------------------------
 
-if (~PreserveType) && ~(iscellstr(f) || ischar(f)),
+if (~PreserveType) && ~(iscellstr(f) || ischar(f))
   f = double(f);
 end
 
@@ -1065,7 +1102,7 @@ end
 %--------------------------------------------------------------------------
 
 status = mexnc('ncclose',ncid);
-if (status == -1),
+if (status == -1)
   error('NC_READ_MEXNC: ncclose - unable to close NetCDF file.')
 end
 

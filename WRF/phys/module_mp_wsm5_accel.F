@@ -6,7 +6,7 @@
 #  define VSQRT vsqrt
 #endif
 
-!Including inline expansion statistical function
+!Including inline expansion statistical function 
 MODULE module_mp_wsm5
 !
 !
@@ -391,7 +391,7 @@ call cpu_time(t1)
             value, xlf, pfrzdtc, pfrzdtr, supice,  holdc, holdci
 ! variables for optimization
   REAL, DIMENSION( its:ite )           ::                    tvec1
-  REAL ::                                                    temp
+  REAL ::                                                    temp 
   INTEGER :: i, j, k,                                             &
             iprt, latd, lond, loop, loops, ifsat, n
 ! Temporaries used for inlining fpvs function
@@ -679,7 +679,7 @@ call cpu_time(t1)
 !               psmlt(i,k) = xka(t(i,k,j),den(i,k,j))/xlf*(t0c-t(i,k,j))*pi/2.       &
 !                           *n0sfac(i,k)*(precs1*rslope2(i,k,2)+precs2         &
 !                           *work2(i,k)*coeres)
-                psmlt(i,k) = (1.414e3*(1.496e-6*((t(i,k,j))*sqrt(t(i,k,j)))        &
+                psmlt(i,k) = (1.414e3*(1.496e-6*((t(i,k,j))*sqrt(t(i,k,j)))        &         
                             /((t(i,k,j))+120.)/(den(i,k,j)) )*(den(i,k,j)))          &
                             /xlf*(t0c-t(i,k,j))*pi/2.                            &
                             *n0sfac(i,k)*(precs1*rslope2(i,k,2)+precs2         &
@@ -749,7 +749,7 @@ call cpu_time(t1)
           snow(i,j) = fallsum_qsi*delz(i,kts,j)/denr*dtcld*1000. + snow(i,j)
         endif
         sr(i,j) = 0.
-        if(fallsum.gt.0.)sr(i,j)=fallsum_qsi*delz(i,kts,j)/denr*dtcld*1000.        &
+        if(fallsum.gt.0.)sr(i,j)=fallsum_qsi*delz(i,kts,j)/denr*dtcld*1000.        &    
         /(rainncv(i,j)+1.e-12)
 !
 !---------------------------------------------------------------
@@ -836,7 +836,7 @@ call cpu_time(t1)
             rslope3(i,k,2) = rslopes3max
           else
 !            rslope(i,k,2) = 1./lamdas(qrs(i,k,2),den(i,k,j),n0sfac(i,k))
-            rslope(i,k,2) = 1./(sqrt(sqrt(pidn0s*(n0sfac(i,k))/((qrs(i,k,2))   &
+            rslope(i,k,2) = 1./(sqrt(sqrt(pidn0s*(n0sfac(i,k))/((qrs(i,k,2))   &  
                           *(den(i,k,j))))))
             rslopeb(i,k,2) = exp(log(rslope(i,k,2))*(bvts))
             rslope2(i,k,2) = rslope(i,k,2)*rslope(i,k,2)
@@ -861,7 +861,7 @@ call cpu_time(t1)
                      *exp(log(t(i,k,j))*(1.81))))))*sqrt(sqrt(den0/(den(i,k,j))))) &
                       /sqrt((1.496e-6*((t(i,k,j))*sqrt(t(i,k,j))))                 &
                       /(((t(i,k,j))+120.)*den(i,k,j)))
-      enddo
+      enddo 
 !
 !===============================================================
 !
@@ -887,7 +887,7 @@ call cpu_time(t1)
 !        (C->R)
 !---------------------------------------------------------------
           if(qrs(i,k,1).gt.qcrmin.and.qci(i,k,1).gt.qmin) then
-            pracw(i,k) = min(pacrr*rslope3(i,k,1)*rslopeb(i,k,1)               &
+            pracw(i,k) = min(pacrr*rslope3(i,k,1)*rslopeb(i,k,1)               & 
                          *qci(i,k,1)*denfac(i,k),qci(i,k,1)/dtcld)
           endif
 !---------------------------------------------------------------
@@ -1087,7 +1087,7 @@ call cpu_time(t1)
 !    snow
 !
             value = max(qmin,qrs(i,k,2))
-            source = (-psdep(i,k)-psaut(i,k)-psaci(i,k)-psacw(i,k))*dtcld
+            source = (-psdep(i,k)-psaut(i,k)-psaci(i,k)-psacw(i,k))*dtcld  
             if (source.gt.value) then
               factor = value/source
               psdep(i,k) = psdep(i,k)*factor
@@ -1134,7 +1134,7 @@ call cpu_time(t1)
               pracw(i,k) = pracw(i,k)*factor
               prevp(i,k) = prevp(i,k)*factor
               psacw(i,k) = psacw(i,k)*factor
-            endif
+            endif  
 !
 !     snow
 !
@@ -1186,7 +1186,7 @@ call cpu_time(t1)
 !
       do k = kts, kte
 !         work1(i,k,1) = conden(t(i,k,j),q(i,k,j),qs(i,k,1),xl(i,k),cpm(i,k))
-          work1(i,k,1) = ((max(q(i,k,j),qmin)-(qs(i,k,1)))/(1.+(xl(i,k))         &
+          work1(i,k,1) = ((max(q(i,k,j),qmin)-(qs(i,k,1)))/(1.+(xl(i,k))         &   
                         *(xl(i,k))/(rv*(cpm(i,k)))*(qs(i,k,1))                 &
                         /((t(i,k,j))*(t(i,k,j)))))
           work2(i,k) = qci(i,k,1)+work1(i,k,1)
@@ -1468,7 +1468,7 @@ call cpu_time(t1)
 !               psmlt(i,k) = xka(t(i,k,j),den(i,k,j))/xlf*(t0c-t(i,k,j))*pi/2.       &
 !                           *n0sfac(i,k)*(precs1*rslope2(i,k,2)+precs2         &
 !                           *work2(i,k)*coeres)
-                psmlt(i,k) = (1.414e3*(1.496e-6*((t(i,k,j))*sqrt(t(i,k,j)))        &
+                psmlt(i,k) = (1.414e3*(1.496e-6*((t(i,k,j))*sqrt(t(i,k,j)))        &         
                             /((t(i,k,j))+120.)/(den(i,k,j)) )*(den(i,k,j)))          &
                             /xlf*(t0c-t(i,k,j))*pi/2.                            &
                             *n0sfac(i,k)*(precs1*rslope2(i,k,2)+precs2         &
@@ -1529,7 +1529,7 @@ call cpu_time(t1)
           rain(i,j) = fallsum*delz(i,1,j)/denr*dtcld*1000. + rain(i,j)
         endif
         sr(i,j) = 0.
-        if(fallsum.gt.0.)sr(i,j)=fallsum_qsi*delz(i,kts,j)/denr*dtcld*1000.        &
+        if(fallsum.gt.0.)sr(i,j)=fallsum_qsi*delz(i,kts,j)/denr*dtcld*1000.        &    
         /(rainncv(i,j)+1.e-12)
 !
 !---------------------------------------------------------------
@@ -1616,7 +1616,7 @@ call cpu_time(t1)
             rslope3(i,k,2) = rslopes3max
           else
 !            rslope(i,k,2) = 1./lamdas(qrs(i,k,2),den(i,k,j),n0sfac(i,k))
-            rslope(i,k,2) = 1./(sqrt(sqrt(pidn0s*(n0sfac(i,k))/((qrs(i,k,2))   &
+            rslope(i,k,2) = 1./(sqrt(sqrt(pidn0s*(n0sfac(i,k))/((qrs(i,k,2))   &  
                           *(den(i,k,j))))))
             rslopeb(i,k,2) = exp(log(rslope(i,k,2))*(bvts))
             rslope2(i,k,2) = rslope(i,k,2)*rslope(i,k,2)
@@ -1641,7 +1641,7 @@ call cpu_time(t1)
                      *exp(log(t(i,k,j))*(1.81))))))*sqrt(sqrt(den0/(den(i,k,j))))) &
                       /sqrt((1.496e-6*((t(i,k,j))*sqrt(t(i,k,j))))                 &
                       /(((t(i,k,j))+120.)*den(i,k,j)))
-      enddo
+      enddo 
 !
 !===============================================================
 !
@@ -1667,7 +1667,7 @@ call cpu_time(t1)
 !        (C->R)
 !---------------------------------------------------------------
           if(qrs(i,k,1).gt.qcrmin.and.qci(i,k,1).gt.qmin) then
-            pracw(i,k) = min(pacrr*rslope3(i,k,1)*rslopeb(i,k,1)               &
+            pracw(i,k) = min(pacrr*rslope3(i,k,1)*rslopeb(i,k,1)               & 
                          *qci(i,k,1)*denfac(i,k),qci(i,k,1)/dtcld)
           endif
 !---------------------------------------------------------------
@@ -1867,7 +1867,7 @@ call cpu_time(t1)
 !    snow
 !
             value = max(qmin,qrs(i,k,2))
-            source = (-psdep(i,k)-psaut(i,k)-psaci(i,k)-psacw(i,k))*dtcld
+            source = (-psdep(i,k)-psaut(i,k)-psaci(i,k)-psacw(i,k))*dtcld  
             if (source.gt.value) then
               factor = value/source
               psdep(i,k) = psdep(i,k)*factor
@@ -1914,7 +1914,7 @@ call cpu_time(t1)
               pracw(i,k) = pracw(i,k)*factor
               prevp(i,k) = prevp(i,k)*factor
               psacw(i,k) = psacw(i,k)*factor
-            endif
+            endif  
 !
 !     snow
 !
@@ -1966,7 +1966,7 @@ call cpu_time(t1)
 !
       do k = kts, kte
 !         work1(i,k,1) = conden(t(i,k,j),q(i,k,j),qs(i,k,1),xl(i,k),cpm(i,k))
-          work1(i,k,1) = ((max(q(i,k,j),qmin)-(qs(i,k,1)))/(1.+(xl(i,k))         &
+          work1(i,k,1) = ((max(q(i,k,j),qmin)-(qs(i,k,1)))/(1.+(xl(i,k))         &   
                         *(xl(i,k))/(rv*(cpm(i,k)))*(qs(i,k,1))                 &
                         /((t(i,k,j))*(t(i,k,j)))))
           work2(i,k) = qci(i,k,1)+work1(i,k,1)
@@ -2132,7 +2132,7 @@ call cpu_time(t1)
             value, xlf, pfrzdtc, pfrzdtr, supice,  holdc, holdci
 ! variables for optimization
   REAL, DIMENSION( its:ite )           ::                    tvec1
-  REAL ::                                                    temp
+  REAL ::                                                    temp 
   INTEGER :: i, j, k, mstepmax,                                   &
             iprt, latd, lond, loop, loops, ifsat, n
 ! Temporaries used for inlining fpvs function
@@ -2420,7 +2420,7 @@ call cpu_time(t1)
 !               psmlt(i,k) = xka(t(i,k),den(i,k))/xlf*(t0c-t(i,k))*pi/2.       &
 !                           *n0sfac(i,k)*(precs1*rslope2(i,k,2)+precs2         &
 !                           *work2(i,k)*coeres)
-                psmlt(i,k) = (1.414e3*(1.496e-6*((t(i,k))*sqrt(t(i,k)))        &
+                psmlt(i,k) = (1.414e3*(1.496e-6*((t(i,k))*sqrt(t(i,k)))        &         
                             /((t(i,k))+120.)/(den(i,k)) )*(den(i,k)))          &
                             /xlf*(t0c-t(i,k))*pi/2.                            &
                             *n0sfac(i,k)*(precs1*rslope2(i,k,2)+precs2         &
@@ -2505,7 +2505,7 @@ call cpu_time(t1)
         endif
         ENDIF
         sr(i) = 0.
-        if(fallsum.gt.0.)sr(i)=fallsum_qsi*delz(i,kts)/denr*dtcld*1000.        &
+        if(fallsum.gt.0.)sr(i)=fallsum_qsi*delz(i,kts)/denr*dtcld*1000.        &    
         /(rainncv(i)+1.e-12)
       enddo
 !
@@ -2596,7 +2596,7 @@ call cpu_time(t1)
             rslope3(i,k,2) = rslopes3max
           else
 !            rslope(i,k,2) = 1./lamdas(qrs(i,k,2),den(i,k),n0sfac(i,k))
-            rslope(i,k,2) = 1./(sqrt(sqrt(pidn0s*(n0sfac(i,k))/((qrs(i,k,2))   &
+            rslope(i,k,2) = 1./(sqrt(sqrt(pidn0s*(n0sfac(i,k))/((qrs(i,k,2))   &  
                           *(den(i,k))))))
             rslopeb(i,k,2) = exp(log(rslope(i,k,2))*(bvts))
             rslope2(i,k,2) = rslope(i,k,2)*rslope(i,k,2)
@@ -2623,8 +2623,8 @@ call cpu_time(t1)
                      *exp(log(t(i,k))*(1.81))))))*sqrt(sqrt(den0/(den(i,k))))) &
                       /sqrt((1.496e-6*((t(i,k))*sqrt(t(i,k))))                 &
                       /(((t(i,k))+120.)*den(i,k)))
-        enddo
-      enddo
+        enddo 
+      enddo 
 !
 !===============================================================
 !
@@ -2651,7 +2651,7 @@ call cpu_time(t1)
 !        (C->R)
 !---------------------------------------------------------------
           if(qrs(i,k,1).gt.qcrmin.and.qci(i,k,1).gt.qmin) then
-            pracw(i,k) = min(pacrr*rslope3(i,k,1)*rslopeb(i,k,1)               &
+            pracw(i,k) = min(pacrr*rslope3(i,k,1)*rslopeb(i,k,1)               & 
                          *qci(i,k,1)*denfac(i,k),qci(i,k,1)/dtcld)
           endif
 !---------------------------------------------------------------
@@ -2855,7 +2855,7 @@ call cpu_time(t1)
 !    snow
 !
             value = max(qmin,qrs(i,k,2))
-            source = (-psdep(i,k)-psaut(i,k)-psaci(i,k)-psacw(i,k))*dtcld
+            source = (-psdep(i,k)-psaut(i,k)-psaci(i,k)-psacw(i,k))*dtcld  
             if (source.gt.value) then
               factor = value/source
               psdep(i,k) = psdep(i,k)*factor
@@ -2902,7 +2902,7 @@ call cpu_time(t1)
               pracw(i,k) = pracw(i,k)*factor
               prevp(i,k) = prevp(i,k)*factor
               psacw(i,k) = psacw(i,k)*factor
-            endif
+            endif  
 !
 !     snow
 !
@@ -2958,7 +2958,7 @@ call cpu_time(t1)
       do k = kts, kte
         do i = its, ite
 !         work1(i,k,1) = conden(t(i,k),q(i,k),qs(i,k,1),xl(i,k),cpm(i,k))
-          work1(i,k,1) = ((max(q(i,k),qmin)-(qs(i,k,1)))/(1.+(xl(i,k))         &
+          work1(i,k,1) = ((max(q(i,k),qmin)-(qs(i,k,1)))/(1.+(xl(i,k))         &   
                         *(xl(i,k))/(rv*(cpm(i,k)))*(qs(i,k,1))                 &
                         /((t(i,k))*(t(i,k)))))
           work2(i,k) = qci(i,k,1)+work1(i,k,1)

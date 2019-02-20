@@ -37,7 +37,7 @@ subroutine datint(fuldates, nful, hstart, ntimes, interval, out_format, prefix)
 ! DATELEN:  length of date strings to use for our output file names.
   integer :: datelen
 
-! Decide the length of date strings to use for output file names.
+! Decide the length of date strings to use for output file names.  
 ! DATELEN is 13 for hours, 16 for minutes, and 19 for seconds.
   if (mod(interval,3600) == 0) then
      datelen = 13
@@ -137,7 +137,7 @@ subroutine datint(fuldates, nful, hstart, ntimes, interval, out_format, prefix)
                 case default
                   call mprintf(.true.,ERROR, &
                     "Unrecognized map%%igrid: %i in DATINT 3",i1=map%igrid)
-                end select
+                end select 
 	      else
                 call mprintf(.true.,ERROR, &
                   "Unknown out_format: %i in DATINT ",i1=ifv)
@@ -297,7 +297,7 @@ subroutine datint(fuldates, nful, hstart, ntimes, interval, out_format, prefix)
 
      call mprintf(.true.,ERROR, &
         "Data not found: %s",s1=hdate)
-
+     
   enddo TIMELOOP
 
   call mprintf(.true.,STDOUT, &

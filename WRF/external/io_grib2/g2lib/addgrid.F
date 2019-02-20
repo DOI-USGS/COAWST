@@ -2,10 +2,10 @@
      &                   ideflist,idefnum,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    addgrid
+! SUBPROGRAM:    addgrid 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-01
 !
-! ABSTRACT: This subroutine packs up a Grid Definition Section (Section 3)
+! ABSTRACT: This subroutine packs up a Grid Definition Section (Section 3) 
 !   and adds it to a GRIB2 message.
 !   This routine is used with routines "gribcreate", "addlocal", "addfield",
 !   and "gribend" to create a complete GRIB2 message.  Subroutine
@@ -23,17 +23,17 @@
 !                Must be dimensioned >= 5.
 !                igds(1)=Source of grid definition (see Code Table 3.0)
 !                igds(2)=Number of grid points in the defined grid.
-!                igds(3)=Number of octets needed for each
-!                            additional grid points definition.
+!                igds(3)=Number of octets needed for each 
+!                            additional grid points definition.  
 !                            Used to define number of
 !                            points in each row ( or column ) for
-!                            non-regular grids.
+!                            non-regular grids.  
 !                            = 0, if using regular grid.
-!                igds(4)=Interpretation of list for optional points
+!                igds(4)=Interpretation of list for optional points 
 !                            definition.  (Code Table 3.11)
 !                igds(5)=Grid Definition Template Number (Code Table 3.1)
 !     igdstmpl - Contains the data values for the specified Grid Definition
-!                Template ( NN=igds(5) ).  Each element of this integer
+!                Template ( NN=igds(5) ).  Each element of this integer 
 !                array contains an entry (in the order specified) of Grid
 !                Defintion Template 3.NN
 !   igdstmplen - Max dimension of igdstmpl()
@@ -43,7 +43,7 @@
 !                in array ideflist.  i.e. number of rows ( or columns )
 !                for which optional grid points are defined.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     cgrib    - Character array to contain the GRIB2 message
 !     ierr     - Error return code.
 !                0 = no error
@@ -69,14 +69,14 @@
       integer,intent(in) :: igds(*),igdstmpl(*),ideflist(idefnum)
       integer,intent(in) :: lcgrib,idefnum,igdstmplen
       integer,intent(out) :: ierr
-
+      
       character(len=4),parameter :: grib='GRIB',c7777='7777'
       character(len=4):: ctemp
       integer:: mapgrid(igdstmplen)
       integer,parameter :: one=1,three=3
       integer lensec3,iofst,ibeg,lencurr,len,mapgridlen
       logical needext
-
+ 
       ierr=0
 !
 !  Check to see if beginning of GRIB message exists
@@ -91,11 +91,11 @@
       endif
 !
 !  Get current length of GRIB message
-!
+!  
       call g2lib_gbyte(cgrib,lencurr,96,32)
 !
 !  Check to see if GRIB message is already complete
-!
+!  
       ctemp=cgrib(lencurr-3)//cgrib(lencurr-2)//cgrib(lencurr-1)
      &      //cgrib(lencurr)
       if ( ctemp.eq.c7777 ) then
@@ -109,7 +109,7 @@
 !  find the last section number.
 !
       len=16    ! length of Section 0
-      do
+      do 
       !    Get section number and length of next section
         iofst=len*8
         call g2lib_gbyte(cgrib,ilen,iofst,32)
@@ -131,7 +131,7 @@
 !
 !  Section 3 can only be added after sections 1, 2 and 7.
 !
-      if ( (isecnum.ne.1) .and. (isecnum.ne.2) .and.
+      if ( (isecnum.ne.1) .and. (isecnum.ne.2) .and. 
      &     (isecnum.ne.7) ) then
         print *,'addgrid: Section 3 can only be added after Section',
      &          ' 1, 2 or 7.'

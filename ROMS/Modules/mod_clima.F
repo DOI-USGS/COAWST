@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_clima
 !
-!svn $Id: mod_clima.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: mod_clima.F 921 2018-09-06 18:27:34Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -195,27 +195,45 @@
 !
       integer, intent(in) :: ng, LBi, UBi, LBj, UBj
 !
+!  Local variable declarations.
+!
+      real(r8) :: size2d
+!
 !-----------------------------------------------------------------------
 !  Allocate module variables.
 !-----------------------------------------------------------------------
 !
       IF (ng.eq.1) allocate ( CLIMA(Ngrids) )
 !
+!  Set horizontal array size.
+!
+      size2d=REAL((UBi-LBi)*(UBj-LBj),r8)
+!
 !  Climatology/Nudging arrays.
 !
       IF (LsshCLM(ng)) THEN
         allocate ( CLIMA(ng) % ssh(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+
 #ifndef ANA_SSH
         allocate ( CLIMA(ng) % sshG(LBi:UBi,LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #endif
       END IF
 !
       IF (Lm2CLM(ng)) THEN
         allocate ( CLIMA(ng) % ubarclm(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+
         allocate ( CLIMA(ng) % vbarclm(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+
 #ifndef ANA_M2CLIMA
         allocate ( CLIMA(ng) % ubarclmG(LBi:UBi,LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*size2d
+
         allocate ( CLIMA(ng) % vbarclmG(LBi:UBi,LBj:UBj,2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #endif
       END IF
 
@@ -223,18 +241,28 @@
 !
       IF (Lm3CLM(ng)) THEN
         allocate ( CLIMA(ng) % uclm(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
         allocate ( CLIMA(ng) % vclm(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
 # ifndef ANA_M3CLIMA
         allocate ( CLIMA(ng) % uclmG(LBi:UBi,LBj:UBj,N(ng),2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng),r8)*size2d
+
         allocate ( CLIMA(ng) % vclmG(LBi:UBi,LBj:UBj,N(ng),2) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng),r8)*size2d
 # endif
       END IF
 !
       IF (ANY(LtracerCLM(:,ng)).or.ANY(LnudgeTCLM(:,ng))) THEN
         allocate ( CLIMA(ng) % tclm(LBi:UBi,LBj:UBj,N(ng),NTCLM(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NTCLM(ng),r8)*size2d
+
 # ifndef ANA_TCLIMA
         allocate ( CLIMA(ng) % tclmG(LBi:UBi,LBj:UBj,N(ng),2,          &
      &                               NTCLM(ng)) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)*NTCLM(ng),r8)*size2d
 # endif
       END IF
 #endif
@@ -243,15 +271,18 @@
 !
       IF (LnudgeM2CLM(ng)) THEN
         allocate ( CLIMA(ng) % M2nudgcof(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 
 #ifdef SOLVE3D
       IF (LnudgeM3CLM(ng)) THEN
         allocate ( CLIMA(ng) % M3nudgcof(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
 
       IF (ANY(LnudgeTCLM(:,ng))) THEN
         allocate ( CLIMA(ng) % Tnudgcof(LBi:UBi,LBj:UBj,N(ng),NTCLM(ng)) )
+        Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)*NTCLM(ng),r8)*size2d
       END IF
 #endif
 
@@ -262,59 +293,97 @@
 !  Adjoint-based algorithms arrays.
 !
       allocate ( CLIMA(ng) % zeta_ads(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( CLIMA(ng) % zeta_adsG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 
       allocate ( CLIMA(ng) % ubar_ads(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( CLIMA(ng) % vbar_ads(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( CLIMA(ng) % ubar_adsG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
+
       allocate ( CLIMA(ng) % vbar_adsG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 
 # ifdef SOLVE3D
       allocate ( CLIMA(ng) % u_ads(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
       allocate ( CLIMA(ng) % v_ads(LBi:UBi,LBj:UBj,N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
       allocate ( CLIMA(ng) % u_adsG(LBi:UBi,LBj:UBj,N(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng),r8)*size2d
+
       allocate ( CLIMA(ng) % v_adsG(LBi:UBi,LBj:UBj,N(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng),r8)*size2d
+
       allocate ( CLIMA(ng) % wvel_ads(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
+
       allocate ( CLIMA(ng) % wvel_adsG(LBi:UBi,LBj:UBj,0:N(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)+1,r8)*size2d
 
       allocate ( CLIMA(ng) % t_ads(LBi:UBi,LBj:UBj,N(ng),NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*size2d
+
       allocate ( CLIMA(ng) % t_adsG(LBi:UBi,LBj:UBj,N(ng),2,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)*NT(ng),r8)*size2d
 # endif
 #endif
 
 #if defined AKTCLIMATOLOGY && defined OFFLINE_FLOATS
       allocate ( CLIMA(ng) % Aclm(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 # ifndef ANA_AKTCLIMA
       allocate ( CLIMA(ng) % AclmG(LBi:UBi,LBj:UBj,0:N(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)+1,r8)*size2d
 # endif
 #endif
 #ifdef OCLIMATOLOGY
       allocate ( CLIMA(ng) % oclm(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 # ifndef ANA_OCLIMA
       allocate ( CLIMA(ng) % oclmG(LBi:UBi,LBj:UBj,0:N(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)+1,r8)*size2d
 # endif
 #endif
 #ifdef AICLIMATOLOGY
       allocate ( CLIMA(ng) % aiclm(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( CLIMA(ng) % hiclm(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_AICLIMA
       allocate ( CLIMA(ng) % aiclmG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+size2d*2.0_r8
       allocate ( CLIMA(ng) % hiclmG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+size2d*2.0_r8
 # endif
 #endif
 #ifdef AICLM_NUDGING
       allocate ( CLIMA(ng) % AInudgcof(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #endif
 #ifdef MICLIMATOLOGY
       allocate ( CLIMA(ng) % uiclm(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( CLIMA(ng) % viclm(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_MICLIMA
       allocate ( CLIMA(ng) % uiclmG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+size2d*2.0_r8
       allocate ( CLIMA(ng) % viclmG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+size2d*2.0_r8
 # endif
 #endif
 #ifdef MICLM_NUDGING
       allocate ( CLIMA(ng) % MInudgcof(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #endif
 
       RETURN

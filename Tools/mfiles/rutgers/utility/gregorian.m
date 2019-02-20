@@ -1,71 +1,139 @@
-function [gtime]=gregorian(julian);
+function [V] = gregorian(Jday, varargin)
 
 %
-% GREGORIAN:  Converts Julian day number to Gregorian calendar date vector
+% GREGORIAN: Converts Julian day number to Proleptic Gregorian date vector
 %
-% [gtime]=gregorian(julian);
+% [V] = gregorian(Jday)
+% [V] = gregorian(Jday, noon_start)
 %
-% This function convert Julian day number to Gregorian calendar
-% date. Although the formal definition holds that Julian days
-% start and end at noon, here Julian days start and end at midnight.
-%
-% In this convention, Julian day 2440000 began at 0000 hours,
-% May 23, 1968.
+% This function convert serial Julian day number to Proleptic Gregorian
+% calendar date.
+%  
+% Although the formal definition holds that Julian days start and end at
+% noon, here by default Julian days start and end at midnight.  The Julian
+% is primarily used in astronomy.
 %
 % On Input:
 %
-%    j           Julian day number
+%    Jday         Julian day number plus fraction (scalar or vector)
+%                   Jday = 0         24 Nov, 4713 BC  (Proleptic Gregorian)
+%                                    01 Jan, 4713 BC  (Proleptic Julian) 
+%
+%    noon_start   Switch to start and end at noon (logical, OPTIONAL)
+%                   noon_start = false   (default)
 %
 % On Ouput:
 %
-%    gtime       Gregorian date. A six component vector:
-%                  gtime=[yyyy month day hours minutes seconds]
+%    V            Date structure:
 %
-%                  gtime(1) => year
-%                  gtime(2) => month of the year
-%                  gtime(1) => day of the month
-%                  gtime(1) => hours
-%                  gtime(1) => minutes
-%                  gtime(1) => seconds
+%                   V.Jday           input day number
+%                   V.yday           day of the year
+%                   V.year           year including century
+%                   V.month          month of the year
+%                   V.day            day of the month
+%                   V.hour           hour of the day
+%                   V.minutes        minutes of the hour
+%                   V.seconds        second of the minute
 %
-% Calls          s2hms
+% Notice that a calendar obtained by extending backward in time from
+% its invention or implementation is called the Proleptic version of
+% the calendar. For example, the Proleptic Gregorian Calendar extends
+% backwards the date preceeding 15 October 1582 with a year length of
+% 365.2425 days instead of 365.25 in the Julian Calendar.
+%
  
-% svn $Id: gregorian.m 895 2018-02-11 23:15:37Z arango $
-%===========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                              %
-%    Licensed under a MIT/X style license                                   %
-%    See License_ROMS.txt                               Rich Signell        %
-%===========================================================================%
+% svn $Id: gregorian.m 916 2018-07-14 01:28:47Z arango $
+%=========================================================================%
+%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%    Licensed under a MIT/X style license               Hernan G. Arango  %
+%    See License_ROMS.txt                               Rich Signell      %
+%=========================================================================%
 
-julian=julian+5.e-9;    % kludge to prevent roundoff error on seconds
+% If requested set Julian Days to start and end at noon.
 
-% If you want Julian Days to start at noon, use...
-%
-% h=rem(julian,1)*24+12;
-% i=(h >= 24);
-% julian(i)=julian(i)+1;
-% h(i)=h(i)-24;
+noon_start = false;
 
-secs=rem(julian,1)*24*3600;
+switch numel(varargin)
+  case 1
+    noon_start = varargin{1};
+end
 
-j = floor(julian) - 1721119;
-in = 4*j -1;
-y = floor(in/146097);
-j = in - 146097*y;
-in = floor(j/4);
-in = 4*in +3;
-j = floor(in/1461);
-d = floor(((in - 1461*j) +4)/4);
-in = 5*d -3;
-m = floor(in/153);
-d = floor(((in - 153*m) +5)/5);
-y = y*100 +j;
-mo=m-9;
-yr=y+1;
-i=(m<10);
-mo(i)=m(i)+3;
-yr(i)=y(i);
-[hour,min,sec]=s2hms(secs);
-gtime=[yr(:) mo(:) d(:) hour(:) min(:) sec(:)];
+if (noon_start)
+  Jnum = Jday + 0.5;
+else
+  Jnum = Jday;
+end
+
+% Use variable precision arithmetic (vpa).
+
+dfrac=vpa(Jnum-fix(Jnum));
+
+jd = floor(Jnum) - 1721119;
+in = 4*jd - 1;
+y  = floor(in/146097);
+jd = in - 146097*y;
+in = floor(jd/4);
+in = 4*in + 3;
+jd = floor(in/1461);
+d  = floor(((in - 1461*jd) + 4)/4);
+in = 5*d - 3;
+m  = floor(in/153);
+y  = y*100 + jd;
+
+if (m < 10)
+ year  = y;
+ month = m+3;
+else
+ year  = y+1;
+ month = m-9;
+end 
+day = fix(((in - 153*m) + 5)/5);
+
+s = dfrac*86400d0;
+s = tround(s, 3*eps(double(s)));
+Hour = fix((s/3600d0));
+s = abs(s-Hour*3600d0);
+Minutes = fix(s/60.0d0);
+Seconds = abs(s-Minutes*60d0);
+
+if (mod(year,4) == 0 & mod(year,100) ~= 0 | mod(year,400) == 0)
+  fac  = 1d0;                                           % leap year
+  leap = 'true';
+else
+  fac  = 2d0;
+  leap = 'false';
+end
+yday = fix((275.0*month)/9) - fac*fix((month+9)/12) + day - 30;
+
+mstr = {'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',                       ...
+        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'};
+
+if (year < 0)
+  ystr = strcat(num2str(abs(year(1)), '%4.4i'), ' BC');
+else
+  ystr = num2str(abs(year(1)), '%4.4i');
+end
+
+string = [num2str(day(1), '%2.2i'), '-',                                ...
+          char(mstr(month(1))), '-',                                    ...
+          ystr, ' ',                                                    ...
+          num2str(double(Hour(1)), '%2.2i'), ':',                       ...
+          num2str(double(Minutes(1)), '%2.2i'), ':',                    ...
+          num2str(double(Seconds(1)), '%5.2f')];
+
+V = struct('Jday',[], 'leap_year', [],'yday',[], 'year',[],             ...
+           'month',[], 'day', [], 'hour', [],                           ...
+           'minutes',0, 'seconds',0, 'string', []);
+
+V.Jday      = Jday;
+V.leap_year = leap;
+V.yday      = yday;
+V.year      = year;
+V.month     = month;
+V.day       = day;
+V.hour      = double(Hour);
+V.minutes   = double(Minutes);
+V.seconds   = double(Seconds);
+V.string    = string;
 
 return

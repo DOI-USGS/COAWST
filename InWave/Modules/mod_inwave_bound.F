@@ -121,7 +121,7 @@
       ND_bnd=WAVEB(ng)%ND_bnd
 #else
       ND_bnd=ND
-!     moved this to mod_inwave_swan
+!     moved this to mod_inwave_swan 
 #endif
 
       IF (LBC(ieast,isAC3d,ng)%acquire) THEN
@@ -221,7 +221,7 @@
 # endif
         END IF
 !
-!  Here we assume that only one of the boudnary Ta was set. So we
+!  Here we assume that only one of the boudnary Ta was set. So we 
 !  will set Trep to be the boundary value.
 !
         WAVEG(ng)%Trep=MAX(WAVEG(ng)%Trep,WAVEB(ng)%Ta_west)

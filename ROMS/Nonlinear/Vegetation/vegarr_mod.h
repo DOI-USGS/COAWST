@@ -5,8 +5,8 @@
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !================================================== John C. Warner ====!
-!==================================================== Neil K. Ganju  ==!
-!==================================================== Alexis Beudin  ==!
+!==================================================== Neil K. Ganju  ==! 
+!==================================================== Alexis Beudin  ==! 
 !==================================================Tarandeep S. Kalra==!
 !                                                                      !
 !  Vegetation Model Kernel Variables:                                  !
@@ -28,15 +28,15 @@
 !  step2d_uveg    Momentum term for 2d x direction                     !
 !  step2d_vveg    Momentum term for 2d y direction                     !
 !  bend           Bending for each vegetation                          !
-!  Lveg           Effective blade length                               !
+!  Lveg           Effective blade length                               ! 
 !  tke_veg        Turbulent kinetic energy from vegetation             !
 !  gls_veg        Length scale change from vegetation                  !
 !  dissip_veg     Dissipation from the SWAN model due to vegetation    !
 !  BWDXL_veg      Wave streaming effect due to vegetation              !
 !  BWDYL_veg      Wave streaming effect due to vegetation              !
-!  visc2d_r_veg   Effect of viscosity change at vegetation interface   !
-!  visc3d_r_veg   Effect of viscosity change at vegetation interface   !
-!  marsh_mask     User input of marsh masking at MSL                   !
+!  visc2d_r_veg   Effect of viscosity change at vegetation interface   ! 
+!  visc3d_r_veg   Effect of viscosity change at vegetation interface   ! 
+!  marsh_mask     User input of marsh masking at MSL                   ! 
 !  mask_thrust    Tonellis masking for wave thrust on marshes          !
 !  Thrust_max     Maximum thrust from wave to marshes                  !
 !  Thrust_tonelli Reduced thrust from tonelli's masking                !
@@ -46,7 +46,7 @@
       USE mod_kinds
 !
       implicit none
-
+       
       TYPE T_VEG
 !
 !  Nonlinear model state.
@@ -57,33 +57,33 @@
         real(r8), pointer :: ru_veg(:,:,:)
         real(r8), pointer :: rv_veg(:,:,:)
 
-!  Momentum terms feed to the turbulence model
+!  Momentum terms feed to the turbulence model 
         real(r8), pointer :: ru_loc_veg(:,:,:,:)
         real(r8), pointer :: rv_loc_veg(:,:,:,:)
         real(r8), pointer :: step2d_uveg(:,:)
         real(r8), pointer :: step2d_vveg(:,:)
         real(r8), pointer :: Lveg(:,:,:)
-# ifdef VEG_FLEX
+# ifdef VEG_FLEX 
         real(r8), pointer :: bend(:,:,:)
-# endif
+# endif         
 # ifdef VEG_TURB
         real(r8), pointer :: tke_veg(:,:,:)
         real(r8), pointer :: gls_veg(:,:,:)
-# endif
+# endif 
 # ifdef VEG_HMIXING
         real(r8), pointer :: visc2d_r_veg(:,:)
         real(r8), pointer :: visc3d_r_veg(:,:,:)
-# endif
+# endif 
 # if defined VEG_SWAN_COUPLING && defined VEG_STREAMING
         real(r8), pointer :: dissip_veg(:,:)
         real(r8), pointer :: BWDXL_veg(:,:,:)
         real(r8), pointer :: BWDYL_veg(:,:,:)
-# endif
+# endif 
 # ifdef MARSH_WAVE_THRUST
         real(r8), pointer :: marsh_mask(:,:)
         real(r8), pointer :: mask_thrust(:,:)
         real(r8), pointer :: Thrust_max(:,:)
-        real(r8), pointer :: Thrust_tonelli(:,:)
+        real(r8), pointer :: Thrust_tonelli(:,:) 
 # endif
 
       END TYPE T_VEG
@@ -103,10 +103,10 @@
 !
       USE mod_param
       USE mod_ncparam
-      USE mod_vegetation
+      USE mod_vegetation 
 
-      implicit none
-!
+      implicit none 
+!                       
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, LBi, UBi, LBj, UBj
@@ -127,7 +127,7 @@
       allocate ( VEG(ng) % ru_loc_veg(LBi:UBi,LBj:UBj,N(ng),NVEG) )
       allocate ( VEG(ng) % rv_loc_veg(LBi:UBi,LBj:UBj,N(ng),NVEG) )
       allocate ( VEG(ng) % step2d_uveg(LBi:UBi,LBj:UBj) )
-      allocate ( VEG(ng) % step2d_vveg(LBi:UBi,LBj:UBj) )
+      allocate ( VEG(ng) % step2d_vveg(LBi:UBi,LBj:UBj) ) 
       allocate ( VEG(ng) % Lveg(LBi:UBi,LBj:UBj,N(ng)) )
 # ifdef VEG_FLEX
       allocate ( VEG(ng) % bend(LBi:UBi,LBj:UBj,NVEG) )
@@ -135,7 +135,7 @@
 # ifdef VEG_HMIXING
       allocate ( VEG(ng) % visc2d_r_veg(LBi:UBi,LBj:UBj) )
       allocate ( VEG(ng) % visc3d_r_veg(LBi:UBi,LBj:UBj,N(ng)) )
-# endif
+# endif 
 # ifdef VEG_TURB
       allocate ( VEG(ng) % tke_veg(LBi:UBi,LBj:UBj,N(ng)) )
       allocate ( VEG(ng) % gls_veg(LBi:UBi,LBj:UBj,N(ng)) )
@@ -175,7 +175,7 @@
 !
       USE mod_param
       USE mod_ncparam
-      USE mod_vegetation
+      USE mod_vegetation 
 !
 !  Imported variable declarations.
 !
@@ -233,86 +233,86 @@
                 VEG(ng) % plant(i,j,iveg,ivpr) = IniVal
               END DO
             END DO
-          END DO
+          END DO 
         END DO
         DO k=1,N(ng)
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               VEG(ng) % ru_veg(i,j,k) = IniVal
               VEG(ng) % rv_veg(i,j,k) = IniVal
-            END DO
-          END DO
-        END DO
+            END DO 
+          END DO 
+        END DO 
         DO k=1,N(ng)
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               VEG(ng) % Lveg(i,j,k) = IniVal
-            END DO
-          END DO
-        END DO
+            END DO 
+          END DO 
+        END DO 
         DO iveg=1,NVEG
           DO k=1,N(ng)
             DO j=Jmin,Jmax
               DO i=Imin,Imax
                 VEG(ng) % ru_loc_veg(i,j,k,iveg) = IniVal
                 VEG(ng) % rv_loc_veg(i,j,k,iveg) = IniVal
-              END DO
-            END DO
-          END DO
-	END DO
+              END DO 
+            END DO 
+          END DO 
+	END DO 
 	DO j=Jmin,Jmax
 	  DO i=Imin,Imax
             VEG(ng) % step2d_uveg(i,j) = IniVal
             VEG(ng) % step2d_vveg(i,j) = IniVal
-	  END DO
-	END DO
-# ifdef VEG_FLEX
+	  END DO 
+	END DO 
+# ifdef VEG_FLEX 
         DO iveg=1,NVEG
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               VEG(ng) % bend(i,j,iveg) = IniVal
-            END DO
-          END DO
-        END DO
-# endif
-# ifdef VEG_TURB
+            END DO 
+          END DO 
+        END DO 
+# endif 
+# ifdef VEG_TURB 
         DO k=1,N(ng)
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               VEG(ng) % tke_veg(i,j,k) = IniVal
               VEG(ng) % gls_veg(i,j,k) = IniVal
-            END DO
+            END DO 
           END DO
-        END DO
+        END DO 
 # endif
 # if defined VEG_HMIXING
         DO j=Jmin,Jmax
           DO i=Imin,Imax
             VEG(ng) % visc2d_r_veg(i,j) = IniVal
-          END DO
+          END DO 
         END DO
         DO k=1,N(ng)
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               VEG(ng) % visc3d_r_veg(i,j,k) = IniVal
-            END DO
+            END DO 
           END DO
-        END DO
-# endif
-# if defined VEG_SWAN_COUPLING && defined VEG_STREAMING
+        END DO 
+# endif  
+# if defined VEG_SWAN_COUPLING && defined VEG_STREAMING 
         DO j=Jmin,Jmax
           DO i=Imin,Imax
             VEG(ng) % dissip_veg(i,j) = IniVal
-          END DO
-        END DO
+          END DO 
+        END DO 
         DO k=1,N(ng)
           DO j=Jmin,Jmax
             DO i=Imin,Imax
               VEG(ng) % BWDXL_veg(i,j,k) = IniVal
               VEG(ng) % BWDYL_veg(i,j,k) = IniVal
-            END DO
+            END DO 
           END DO
-        END DO
+        END DO 
 # endif
 !
 # ifdef MARSH_WAVE_THRUST
@@ -322,11 +322,11 @@
             VEG(ng) % mask_thrust(i,j) = IniVal
             VEG(ng) % Thrust_max(i,j) = IniVal
             VEG(ng) % Thrust_tonelli(i,j) = IniVal
-          END DO
+          END DO 
         END DO
 # endif
 !
       END IF
-!
-      RETURN
+! 
+      RETURN   
       END SUBROUTINE initialize_vegarr

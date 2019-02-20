@@ -15,10 +15,10 @@
 */
 # if defined VEG_DRAG || defined VEG_BIOMASS
 !
-!  Write out vegetation properties
-!
-      DO i=1,NVEGP
-        IF (Hout(idvprp(i),ng)) THEN
+!  Write out vegetation properties 
+! 
+      DO i=1,NVEGP 
+        IF (Hout(idvprp(i),ng)) THEN 
           scale=1.0_r8
           gtype=gfactor*r3dvar
           status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid,                    &
@@ -31,7 +31,7 @@
      &                       VEG(ng) % plant(:,:,:,i))
           IF (FoundError(status, nf90_noerr, __LINE__,                  &
      &                   __FILE__)) THEN
-            IF (Master) THEN
+            IF (Master) THEN 
               WRITE (stdout,10) TRIM(Vname(1,idvprp(i))), HIS(ng)%Rindex
             END IF
             exit_flag=3
@@ -39,14 +39,14 @@
             RETURN
           END IF
         END IF
-      END DO
-# endif
+      END DO 
+# endif 
 !
-# ifdef VEG_STREAMING
+# ifdef VEG_STREAMING 
 !
-!  Write out wave dissipation due to vegetation
-!
-      IF (Hout(idWdvg,ng)) THEN
+!  Write out wave dissipation due to vegetation 
+! 
+      IF (Hout(idWdvg,ng)) THEN 
         scale=1.0_r8
         gtype=gfactor*r2dvar
         status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWdvg), &
@@ -58,7 +58,7 @@
      &                     VEG(ng)%Dissip_veg )
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
      &                 __FILE__)) THEN
-          IF (Master) THEN
+          IF (Master) THEN 
             WRITE (stdout,10) TRIM(Vname(1,idWdvg)), HIS(ng)%Rindex
           END IF
           exit_flag=3
@@ -67,12 +67,12 @@
         END IF
       END IF
 # endif
-!
+! 
 # ifdef MARSH_WAVE_THRUST
 !
-!  Write out initial masking for marshes
-!
-      IF (Hout(idTims,ng)) THEN
+!  Write out initial masking for marshes 
+! 
+      IF (Hout(idTims,ng)) THEN 
         scale=1.0_r8
         gtype=gfactor*r2dvar
         status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTims), &
@@ -84,7 +84,7 @@
      &                     VEG(ng)%marsh_mask)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
      &                 __FILE__)) THEN
-          IF (Master) THEN
+          IF (Master) THEN 
             WRITE (stdout,10) TRIM(Vname(1,idTims)), HIS(ng)%Rindex
           END IF
           exit_flag=3
@@ -93,9 +93,9 @@
         END IF
       END IF
 !
-!  Write out wave thrust on marsh output
-!
-      IF (Hout(idTmsk,ng)) THEN
+!  Write out wave thrust on marsh output 
+! 
+      IF (Hout(idTmsk,ng)) THEN 
         scale=1.0_r8
         gtype=gfactor*r2dvar
         status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmsk), &
@@ -107,7 +107,7 @@
      &                     VEG(ng)%mask_thrust)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
      &                 __FILE__)) THEN
-          IF (Master) THEN
+          IF (Master) THEN 
             WRITE (stdout,10) TRIM(Vname(1,idTmsk)), HIS(ng)%Rindex
           END IF
           exit_flag=3
@@ -116,7 +116,30 @@
         END IF
       END IF
 !
-!  Define maximum thrust due to waves.
+!  Define maximum thrust due to waves. 
+!
+      IF (Hout(idTmax,ng)) THEN 
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmax), &
+     &                     HIS(ng)%Rindex, gtype,                       &    
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     VEG(ng)%Thrust_max)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idTmax)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Define maximum thrust due to waves. 
 !
       IF (Hout(idTmax,ng)) THEN
         scale=1.0_r8
@@ -139,30 +162,7 @@
         END IF
       END IF
 !
-!  Define maximum thrust due to waves.
-!
-      IF (Hout(idTmax,ng)) THEN
-        scale=1.0_r8
-        gtype=gfactor*r2dvar
-        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmax), &
-     &                     HIS(ng)%Rindex, gtype,                       &
-     &                     LBi, UBi, LBj, UBj, scale,                   &
-# ifdef MASKING
-     &                     GRID(ng) % rmask,                            &
-# endif
-     &                     VEG(ng)%Thrust_max)
-        IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
-          IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idTmax)), HIS(ng)%Rindex
-          END IF
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
-!
-!  Define Tonelli masking based thrust due to waves.
+!  Define Tonelli masking based thrust due to waves. 
 !
       IF (Hout(idTton,ng)) THEN
         scale=1.0_r8
@@ -184,4 +184,4 @@
           RETURN
         END IF
       END IF
-# endif
+# endif 

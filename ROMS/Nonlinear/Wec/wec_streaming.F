@@ -40,17 +40,17 @@
 # if defined DIAGNOSTICS_UV
       USE mod_diags
 # endif
-# if defined VEGETATION && defined VEG_STREAMING
+# if defined VEGETATION && defined VEG_STREAMING 
       USE mod_vegarr
       USE vegetation_stream_mod, ONLY : vegetation_stream_cal
-# endif
+# endif 
 !
       integer, intent(in) :: ng, tile
 # include "tile.h"
 
-# if defined VEGETATION && defined VEG_STREAMING
+# if defined VEGETATION && defined VEG_STREAMING 
       CALL vegetation_stream_cal (ng, tile)
-# endif
+# endif 
 
 # ifdef PROFILE
       CALL wclock_on (ng, iNLM, 21)
@@ -141,7 +141,7 @@
 # if defined VEGETATION && defined VEG_STREAMING
      &                               BWDXL_veg, BWDYL_veg,              &
 # endif
-     &                               rustr3d,  rvstr3d)
+     &                               rustr3d,  rvstr3d) 
 !***********************************************************************
 !
       USE mod_param
@@ -200,7 +200,7 @@
 #  endif
       real(r8), intent(inout) :: rustr3d(LBi:,LBj:,:)
       real(r8), intent(inout) :: rvstr3d(LBi:,LBj:,:)
-#  if defined VEGETATION && defined VEG_STREAMING
+#  if defined VEGETATION && defined VEG_STREAMING 
       real(r8), intent(inout) :: BWDXL_veg(LBi:,LBj:,:)
       real(r8), intent(inout) :: BWDYL_veg(LBi:,LBj:,:)
 #  endif
@@ -240,7 +240,7 @@
       real(r8), intent(inout) :: russt2d(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: rvsst2d(LBi:UBi,LBj:UBj)
 #  endif
-#  if defined VEGETATION && defined VEG_STREAMING
+#  if defined VEGETATION && defined VEG_STREAMING 
       real(r8), intent(inout) :: BWDXL_veg(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(inout) :: BWDYL_veg(LBi:UBi,LBj:UBj,N(ng))
 #  endif
@@ -310,7 +310,7 @@
 # ifdef BOTTOM_STREAMING_YU
 !
 !  Compute metrics for vertical bottom streaming distribution
-!
+!          
           owd(i,j)=0.0_r8
 !  Bottom Orbital Velocity
           cff=0.25_r8*sqrt2*sigma(i,j)*Hwave(i,j)/                      &
@@ -326,7 +326,7 @@
           owd(i,j)=1.0_r8/owd(i,j)
 !
 !  Wave friction factor (based on Soulsby, 1997).
-!  Hold this constant for now.  Need to add logic for
+!  Hold this constant for now.  Need to add logic for 
 !  zo if no bbl on, or zo_apparent if use a bbl.
          cff3=MIN(1.39_r8*(sigma(i,j)*(ks/30.0_r8)/                     &
      &               cff)**0.52_r8,0.2_r8)
@@ -341,7 +341,7 @@
 # endif
 # ifdef SURFACE_STREAMING
           Surst(i,j)=0.25_r8*(Hwave(i,j)**2.0_r8)*g*                    &
-     &               (waven(i,j)**2.0_r8)*osigma(i,j)
+     &               (waven(i,j)**2.0_r8)*osigma(i,j)          
 # endif
         END DO
       END DO
@@ -429,7 +429,7 @@
 # endif
 !
 ! Compute contribution to U-momentum
-!
+! 
         DO j=Jstr,Jend
           DO i=IstrU,Iend
             cff1=0.5_r8*(Hz(i-1,j,k)+                                   &
@@ -479,7 +479,7 @@
         END DO
 !
 ! Compute contribution to U-momentum
-!
+! 
         DO j=Jstr,Jend
           DO i=IstrU,Iend
             cff1=0.5_r8*(Hz(i-1,j,k)+                                   &

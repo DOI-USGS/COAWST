@@ -60,7 +60,7 @@ typedef struct node_struct {
   char dim_data_name[NAMELEN] ;
   int  coord_axis ;   /* X, Y, Z, C */
                                  /* DOMAIN_STANDARD, NAMELIST, CONSTANT */
-  int  len_defined_how ;
+  int  len_defined_how ;  
   char assoc_nl_var_s[NAMELEN] ;  /* for NAMELIST */
   char assoc_nl_var_e[NAMELEN] ;  /* for NAMELIST */
   int  coord_start ;               /* for CONSTANT */
@@ -108,6 +108,9 @@ EXTERN node_t * Type ;
 EXTERN node_t * Dim ;
 EXTERN node_t * Packages ;
 EXTERN node_t * Halos ;
+#if ( WRFPLUS == 1 )
+EXTERN node_t * Halos_nta ;
+#endif
 EXTERN node_t * Periods ;
 EXTERN node_t * Xposes ;
 EXTERN node_t * FourD ;

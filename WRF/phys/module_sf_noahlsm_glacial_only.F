@@ -40,9 +40,9 @@ CONTAINS
        &                   RIBB)
 ! ----------------------------------------------------------------------
 ! SUB-DRIVER FOR "Noah LSM" FAMILY OF PHYSICS SUBROUTINES FOR A
-! SOIL/VEG/SNOWPACK LAND-SURFACE MODEL TO UPDATE ICE TEMPERATURE, SKIN
-! TEMPERATURE, SNOWPACK WATER CONTENT, SNOWDEPTH, AND ALL TERMS OF THE
-! SURFACE ENERGY BALANCE (EXCLUDING INPUT ATMOSPHERIC FORCINGS OF
+! SOIL/VEG/SNOWPACK LAND-SURFACE MODEL TO UPDATE ICE TEMPERATURE, SKIN 
+! TEMPERATURE, SNOWPACK WATER CONTENT, SNOWDEPTH, AND ALL TERMS OF THE 
+! SURFACE ENERGY BALANCE (EXCLUDING INPUT ATMOSPHERIC FORCINGS OF 
 ! DOWNWARD RADIATION AND PRECIP)
 ! ----------------------------------------------------------------------
 ! SFLX ARGUMENT LIST KEY:
@@ -202,7 +202,7 @@ CONTAINS
     END DO
 
 ! ----------------------------------------------------------------------
-! IF S.W.E. (SNEQV) BELOW THRESHOLD LOWER BOUND (0.10 M FOR GLACIAL
+! IF S.W.E. (SNEQV) BELOW THRESHOLD LOWER BOUND (0.10 M FOR GLACIAL 
 ! ICE), THEN SET AT LOWER BOUND
 ! ----------------------------------------------------------------------
     IF ( SNEQV < 0.10 ) THEN
@@ -260,7 +260,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 ! kmh 09/04/2006 set Snow Density at 0.2 g/cm**3
 ! for "cold permanent ice" or new "dry" snow
-! if soil temperature less than 268.15 K, treat as typical
+! if soil temperature less than 268.15 K, treat as typical 
 ! Antarctic/Greenland snow firn
 ! ----------------------------------------------------------------------
        IF ( SNCOVR .GT. 0.99 ) THEN
@@ -283,17 +283,17 @@ CONTAINS
 !      KWM:  Set SNCOVR to 1.0 because SNUP is set small in VEGPARM.TBL,
 !      and SNEQV is at least 0.1 (as set above)
 ! ----------------------------------------------------------------------
-    SNCOVR = 1.0
+    SNCOVR = 1.0 
 
 ! ----------------------------------------------------------------------
 ! DETERMINE SURFACE ALBEDO MODIFICATION DUE TO SNOWDEPTH STATE.
 ! ----------------------------------------------------------------------
 
     CALL ALCALC (ALB,SNOALB,EMBRD,T1,ALBEDO,EMISSI,   &
-         &       DT,SNOWNG,SNOTIME1)
+         &       DT,SNOWNG,SNOTIME1) 
 
 ! ----------------------------------------------------------------------
-! THERMAL CONDUCTIVITY
+! THERMAL CONDUCTIVITY 
 ! ----------------------------------------------------------------------
     DF1 = SNCOND
 
@@ -391,7 +391,7 @@ CONTAINS
     SSOIL = -1.0* SSOIL
 
 ! ----------------------------------------------------------------------
-! FOR THE CASE OF GLACIAL-ICE, ADD ANY SNOWMELT DIRECTLY TO SURFACE
+! FOR THE CASE OF GLACIAL-ICE, ADD ANY SNOWMELT DIRECTLY TO SURFACE 
 ! RUNOFF (RUNOFF1) SINCE THERE IS NO SOIL MEDIUM
 ! ----------------------------------------------------------------------
     RUNOFF1 = SNOMLT / DT
@@ -877,7 +877,7 @@ CONTAINS
          &                   SNOEXP = 2.0
 
 ! ----------------------------------------------------------------------
-! FOR GLACIAL-ICE, SNOWCOVER FRACTION = 1.0, AND SUBLIMATION IS AT THE
+! FOR GLACIAL-ICE, SNOWCOVER FRACTION = 1.0, AND SUBLIMATION IS AT THE 
 ! POTENTIAL RATE.
 ! ----------------------------------------------------------------------
 ! INITIALIZE EVAP TERMS.
@@ -1038,7 +1038,7 @@ CONTAINS
 ! SPECIAL VALUES THAT ENSURE THAT GROUND HEAT FLUX CALCULATED IN SHFLX
 ! MATCHES THAT ALREADY COMPUTED FOR BELOW THE SNOWPACK, THUS THE SFC
 ! HEAT FLUX TO BE COMPUTED IN SHFLX WILL EFFECTIVELY BE THE FLUX AT THE
-! SNOW TOP SURFACE.
+! SNOW TOP SURFACE.  
 ! ----------------------------------------------------------------------
     ZZ1 = 1.0
     YY = STC (1) -0.5* SSOIL * ZSOIL (1)* ZZ1/ DF1
@@ -1207,7 +1207,7 @@ CONTAINS
     BURIAL = 7.0*Z0BRD - SNOWH
     IF(BURIAL.LE.0.0007) THEN
        Z0EFF = Z0S
-    ELSE
+    ELSE      
        Z0EFF = BURIAL/7.0
     ENDIF
 

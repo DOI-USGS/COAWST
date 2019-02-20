@@ -28,11 +28,11 @@ MODULE module_mp_wsm3
    REAL, PARAMETER, PRIVATE :: lamdagmax = 6.e4   ! limited maximum value for slope parameter of graupel
    REAL, PARAMETER, PRIVATE :: dicon = 11.9       ! constant for the cloud-ice diamter
    REAL, PARAMETER, PRIVATE :: dimax = 500.e-6    ! limited maximum value for the cloud-ice diamter
-   REAL, PARAMETER, PRIVATE :: n0s = 2.e6         ! temperature dependent intercept parameter snow
+   REAL, PARAMETER, PRIVATE :: n0s = 2.e6         ! temperature dependent intercept parameter snow 
    REAL, PARAMETER, PRIVATE :: alpha = .12        ! .122 exponen factor for n0s
    REAL, PARAMETER, PRIVATE :: qcrmin = 1.e-9     ! minimun values for qr, qs, and qg
    REAL, SAVE ::                                      &
-             qc0, qck1, pidnc,                        &
+             qc0, qck1, pidnc,                        &  
              bvtr1,bvtr2,bvtr3,bvtr4,g1pbr,           &
              g3pbr,g4pbr,g5pbro2,pvtr,eacrr,pacrr,    &
              precr1,precr2,xmmax,roqimax,bvts1,       &
@@ -59,7 +59,7 @@ CONTAINS
                    , snow, snowncv                    &
                    , sr                               &
                    , has_reqc, has_reqi, has_reqs     &  ! for radiation
-                   , re_cloud, re_ice,   re_snow      &  ! for radiation
+                   , re_cloud, re_ice,   re_snow      &  ! for radiation 
                    , ids,ide, jds,jde, kds,kde        &
                    , ims,ime, jms,jme, kms,kme        &
                    , its,ite, jts,jte, kts,kte        &
@@ -211,7 +211,7 @@ CONTAINS
   IMPLICIT NONE
 !-------------------------------------------------------------------
 !
-!  This code is a 3-class simple ice microphyiscs scheme (WSM3) of the
+!  This code is a 3-class simple ice microphyiscs scheme (WSM3) of the 
 !  Single-Moment MicroPhyiscs (WSMMP). The WSMMP assumes that ice nuclei
 !  number concentration is a function of temperature, and seperate assumption
 !  is developed, in which ice crystal number concentration is a function
@@ -222,8 +222,8 @@ CONTAINS
 !
 !  WSM3 cloud scheme
 !
-!  Developed by Song-You Hong (Yonsei Univ.), Jimy Dudhia (NCAR)
-!             and Shu-Hua Chen (UC Davis)
+!  Developed by Song-You Hong (Yonsei Univ.), Jimy Dudhia (NCAR) 
+!             and Shu-Hua Chen (UC Davis) 
 !             Summer 2002
 !
 !  Implemented by Song-You Hong (Yonsei Univ.) and Jimy Dudhia (NCAR)
@@ -329,7 +329,7 @@ CONTAINS
             cpmcal, xlcal, diffus,                                             &
             viscos, xka, venfac, conden, diffac,                               &
             x, y, z, a, b, c, d, e,                                            &
-            fallsum, fallsum_qsi, vt2i,vt2s,acrfac,                            &
+            fallsum, fallsum_qsi, vt2i,vt2s,acrfac,                            &      
             qdt, pvt, qik, delq, facq, qrsci, frzmlt,                          &
             snomlt, hold, holdrs, facqci, supcol, coeres,                      &
             supsat, dtcld, xmi, qciik, delqci, eacrs, satdt,                   &
@@ -624,7 +624,7 @@ CONTAINS
       enddo
 !
 !----------------------------------------------------------------
-!     update the slope parameters for microphysics computation
+!     update the slope parameters for microphysics computation 
 !
       do k = kts, kte
         do i = its, ite
@@ -929,14 +929,14 @@ CONTAINS
 !.... constants which may not be tunable
    REAL, INTENT(IN) :: den0,denr,dens,cl,cpv
    LOGICAL, INTENT(IN) :: allowed_to_read
-!
+!  
    pi = 4.*atan(1.)
    xlv1 = cl-cpv
-!
+!  
    qc0  = 4./3.*pi*denr*r0**3*xncr/den0  ! 0.419e-3 -- .61e-3
    qck1 = .104*9.8*peaut/(xncr*denr)**(1./3.)/xmyu*den0**(4./3.) ! 7.03
    pidnc = pi*denr/6.        ! syb
-!
+!  
    bvtr1 = 1.+bvtr
    bvtr2 = 2.5+.5*bvtr
    bvtr3 = 3.+bvtr
@@ -1056,8 +1056,8 @@ CONTAINS
 ! dt     time step
 ! id     kind of precip: 0 test case; 1 raindrop
 ! iter   how many time to guess mean terminal velocity: 0 pure forward.
-!        0 : use departure wind for advection
-!        1 : use mean wind for advection
+!        0 : use departure wind for advection 
+!        1 : use mean wind for advection 
 !        > 1 : use mean wind after iter-1 iterations
 !
 ! author: hann-ming henry juang <henry.juang@noaa.gov>
@@ -1252,8 +1252,8 @@ CONTAINS
 ! dt     time step
 ! id     kind of precip: 0 test case; 1 raindrop
 ! iter   how many time to guess mean terminal velocity: 0 pure forward.
-!        0 : use departure wind for advection
-!        1 : use mean wind for advection
+!        0 : use departure wind for advection 
+!        1 : use mean wind for advection 
 !        > 1 : use mean wind after iter-1 iterations
 !
 ! author: hann-ming henry juang <henry.juang@noaa.gov>
@@ -1482,11 +1482,11 @@ CONTAINS
                                 re_qc, re_qi, re_qs, kts, kte, ii, jj)
 
 !-----------------------------------------------------------------------
-!  Compute radiation effective radii of cloud water, ice, and snow for
+!  Compute radiation effective radii of cloud water, ice, and snow for 
 !  single-moment microphysics.
 !  These are entirely consistent with microphysics assumptions, not
 !  constant or otherwise ad hoc as is internal to most radiation
-!  schemes.
+!  schemes.  
 !  Coded and implemented by Soo ya Bae, KIAPS, January 2015.
 !-----------------------------------------------------------------------
 

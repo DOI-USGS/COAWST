@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_forces
 !
-!svn $Id: mod_forces.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: mod_forces.F 921 2018-09-06 18:27:34Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -35,8 +35,11 @@
 !  Hwave        Surface wind induced wave height (m).                  !
 !  HwaveG       Latest two-time snapshots of input "Hwave" grided      !
 !                 data used for interpolation.                         !
-!  Dwave        Surface wind induced wave direction (radians).         !
+!  Dwave        Surface wind induced mean wave direction (radians).    !
 !  DwaveG       Latest two-time snapshots of input "Dwave" grided      !
+!                 data used for interpolation.                         !
+!  Dwavep       Surface wind induced peak wave direction (radians).    !
+!  DwavepG      Latest two-time snapshots of input "Dwavep" grided     !
 !                 data used for interpolation.                         !
 !  Lwave        Mean surface wavelength read in from swan output       !
 !  LwaveG       Latest two-time snapshots of input "Lwave" grided      !
@@ -256,6 +259,13 @@
 # endif
 #endif
 
+#ifdef WAVES_DIRP
+          real(r8), pointer :: Dwavep(:,:)
+# ifndef ANA_WWAVE
+          real(r8), pointer :: DwavepG(:,:,:)
+# endif
+#endif
+
 #ifdef WAVES_HEIGHT
           real(r8), pointer :: Hwave(:,:)
 # ifndef ANA_WWAVE
@@ -291,7 +301,8 @@
 # endif
 #endif
 
-#if defined BBL_MODEL || defined WAVES_OCEAN
+#if defined BBL_MODEL || defined WAVES_OCEAN || \
+    defined SED_BEDLOAD_VANDERA
           real(r8), pointer :: Uwave_rms(:,:)
 # ifndef ANA_WWAVE
           real(r8), pointer :: Uwave_rmsG(:,:,:)
@@ -415,7 +426,7 @@
           real(r8), pointer :: qao_n(:,:)
           real(r8), pointer :: snow_n(:,:)
           real(r8), pointer :: p_e_n(:,:)
-# endif
+# endif 
 
 # ifdef CLOUDS
           real(r8), pointer :: cloud(:,:)
@@ -635,134 +646,227 @@
 !
       integer, intent(in) :: ng, LBi, UBi, LBj, UBj
 !
+!  Local variable declarations.
+!
+      real(r8) :: size2d
+!
 !-----------------------------------------------------------------------
 !  Allocate module variables.
 !-----------------------------------------------------------------------
 !
       IF (ng.eq.1) allocate ( FORCES(Ngrids) )
 !
+!  Set horizontal array size.
+!
+      size2d=REAL((UBi-LBi)*(UBj-LBj),r8)
+!
 !  Nonlinear model state
 !
 #ifdef NCEP_FLUXES
       allocate ( FORCES(ng) % sustr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % svstr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % nustr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % nvstr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % nustrG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
       allocate ( FORCES(ng) % nvstrG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
       allocate ( FORCES(ng) % bustr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % bvstr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % stflx(LBi:UBi,LBj:UBj,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(NT(ng),r8)*size2d
       allocate ( FORCES(ng) % btflx(LBi:UBi,LBj:UBj,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(NT(ng),r8)*size2d
       allocate ( FORCES(ng) % srflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % srflxG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
       allocate ( FORCES(ng) % cloud(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % cloudG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
       allocate ( FORCES(ng) % lhflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % lhflxG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
       allocate ( FORCES(ng) % lrflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % lrflxG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
       allocate ( FORCES(ng) % shflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % shflxG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
       allocate ( FORCES(ng) % Pair(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % PairG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
       allocate ( FORCES(ng) % rain(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % rainG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # ifdef RUNOFF
       allocate ( FORCES(ng) % runoff(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % runoffG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
       allocate ( FORCES(ng) % skt(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % sktG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
       allocate ( FORCES(ng) % icec(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % icecG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
       allocate ( FORCES(ng) % wg2_d(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % cd_d(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % ch_d(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % ce_d(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % wg2_m(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % cd_m(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % ch_m(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % ce_m(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % rhoa_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % cawdir(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % snow_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % p_e_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % qao_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % qai_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % qswi_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % tau_awx_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % tau_awy_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % tau_aix_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % tau_aiy_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % sustr_aw(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % svstr_aw(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #else
       allocate ( FORCES(ng) % sustr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( FORCES(ng) % svstr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifdef ATM2OCN_FLUXES
       allocate ( FORCES(ng) % Taux(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % Tauy(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # endif
 # if !defined ANA_SMFLUX && !defined BULK_FLUXES && !defined \
      BULK_FLUXES2D || defined NL_BULK_FLUXES
       allocate ( FORCES(ng) % sustrG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
       allocate ( FORCES(ng) % svstrG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 # ifdef ADJUST_WSTRESS
       allocate ( FORCES(ng) % ustr(LBi:UBi,LBj:UBj,Nfrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nfrec(ng),r8)*size2d
       allocate ( FORCES(ng) % vstr(LBi:UBi,LBj:UBj,Nfrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nfrec(ng),r8)*size2d
 # endif
       allocate ( FORCES(ng) % bustr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % bvstr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #endif
 
 #ifdef WAVES_DIR
       allocate ( FORCES(ng) % Dwave(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % DwaveG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
+# endif
+#endif
+
+#ifdef WAVES_DIRP
+      allocate ( FORCES(ng) % Dwavep(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+# ifndef ANA_WWAVE
+      allocate ( FORCES(ng) % DwavepG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
 
 #ifdef WAVES_HEIGHT
       allocate ( FORCES(ng) % Hwave(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % HwaveG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
 
 #ifdef WAVES_LENGTH
       allocate ( FORCES(ng) % Lwave(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % LwaveG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
 
 #ifdef WAVES_LENGTHP
       allocate ( FORCES(ng) % Lwavep(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % LwavepG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
 
 #ifdef WAVES_TOP_PERIOD
       allocate ( FORCES(ng) % Pwave_top(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % Pwave_topG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
 
 #ifdef WAVES_BOT_PERIOD
       allocate ( FORCES(ng) % Pwave_bot(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % Pwave_botG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
 
 #if defined BBL_MODEL || defined WAVES_OCEAN
       allocate ( FORCES(ng) % Uwave_rms(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % Uwave_rmsG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
 
@@ -770,81 +874,107 @@
     defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
     defined WAVES_DISS || defined WDISS_INWAVE
       allocate ( FORCES(ng) % Dissip_break(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % Dissip_wcap(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % Dissip_breakG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
       allocate ( FORCES(ng) % Dissip_wcapG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
 
 #if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
       allocate ( FORCES(ng) % Dissip_fric(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % Dissip_fricG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
 
 #if defined WEC_ROLLER
       allocate ( FORCES(ng) % Dissip_roller(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % Dissip_rollerG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
 
 #if defined ROLLER_SVENDSEN
       allocate ( FORCES(ng) % wave_break(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % Wave_breakG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
 
 #if defined WAVES_DSPR
       allocate ( FORCES(ng) % Wave_ds(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % Wave_qp(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_WWAVE
       allocate ( FORCES(ng) % Wave_dsG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
       allocate ( FORCES(ng) % Wave_qpG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
 
 #if defined WEC_ROLLER
       allocate ( FORCES(ng) % rollA(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #endif
 #if defined BULK_FLUXES || defined BULK_FLUXES2D || defined ECOSIM || \
     defined SPECTRAL_LIGHT || defined ATM2OCN_FLUXES
       allocate ( FORCES(ng) % Uwind(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % Vwind(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_WINDS
       allocate ( FORCES(ng) % UwindG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
       allocate ( FORCES(ng) % VwindG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
 
 #if defined BULK_FLUXES || defined ECOSIM || defined CCSM_FLUXES2D ||  \
     defined SPECTRAL_LIGHT || (defined SHORTWAVE && defined ANA_SRFLUX)
       allocate ( FORCES(ng) % Hair(LBi:UBi,LBj:UBj) )
-
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_HUMIDITY
       allocate ( FORCES(ng) % HairG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 
       allocate ( FORCES(ng) % Tair(LBi:UBi,LBj:UBj) )
-
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_TAIR
       allocate ( FORCES(ng) % TairG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
 #ifdef CICE_MODEL
       allocate ( FORCES(ng) % PotT(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % LW_down(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % SW_down(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #endif
 
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
      defined SPECTRAL_LIGHT || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
       allocate ( FORCES(ng) % Pair(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifndef ANA_PAIR
       allocate ( FORCES(ng) % PairG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
 
@@ -852,144 +982,205 @@
 
 # ifdef SHORTWAVE
       allocate ( FORCES(ng) % srflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 
 #  ifndef ANA_SRFLUX
       allocate ( FORCES(ng) % srflxG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #  endif
 #  ifdef ALBEDO
       allocate ( FORCES(ng) % albedo(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #   ifdef ICE_MODEL
       allocate ( FORCES(ng) % albedo_ice(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #   endif
 #  endif
 #  ifdef ALBEDO_FILE
       allocate ( FORCES(ng) % albedoG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #  endif
 #  if defined ALBEDO_CLOUD
       allocate ( FORCES(ng) % cawdir(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #  endif
 # endif
 # if defined RED_TIDE && defined DAILY_SHORTWAVE
       allocate ( FORCES(ng) % srflx_avg(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % srflxG_avg(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 # if defined ICE_BULK_FLUXES && !defined NCEP_FLUXES
       allocate ( FORCES(ng) % sustr_aw(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % svstr_aw(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % tau_aix_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % tau_aiy_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % qai_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % qi_o_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % qswi_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % qao_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % snow_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % p_e_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # endif
 
 # ifdef CLOUDS
       allocate ( FORCES(ng) % cloud(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 
 #  ifndef ANA_CLOUD
       allocate ( FORCES(ng) % cloudG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #  endif
 # endif
 
 # ifdef BULK_FLUXES
       allocate ( FORCES(ng) % lhflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( FORCES(ng) % lrflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 
 #  ifndef LONGWAVE
       allocate ( FORCES(ng) % lrflxG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #  endif
 
       allocate ( FORCES(ng) % shflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # endif
 # ifdef ATM2OCN_FLUXES
       allocate ( FORCES(ng) % lhflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % lrflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % shflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # endif
 
 # if defined BULK_FLUXES || defined ATM2OCN_FLUXES
       allocate ( FORCES(ng) % rain(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #  ifdef SNOWFALL
       allocate ( FORCES(ng) % snow(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #  endif
 #  ifndef ANA_RAIN
       allocate ( FORCES(ng) % rainG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0+r8*size2d
 #  ifdef SNOWFALL
       allocate ( FORCES(ng) % snowG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0+r8*size2d
 #  endif
 #  endif
 #  ifdef EMINUSP
       allocate ( FORCES(ng) % EminusP(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % evap(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #  endif
 #  ifdef RUNOFF
       allocate ( FORCES(ng) % runoff(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % runoffG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0+r8*size2d
 #  endif
 # endif
 
       allocate ( FORCES(ng) % stflx(LBi:UBi,LBj:UBj,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(NT(ng),r8)*size2d
 # if defined PERFECT_RESTART && defined ICE_MODEL
       allocate ( FORCES(ng) % stflx_save(LBi:UBi,LBj:UBj,NAT) )
+      Dmem(ng)=Dmem(ng)+REAL(NAT,r8)*size2d
       allocate ( FORCES(ng) % sustr_save(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % svstr_save(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # endif
 
 # if !defined ANA_STFLUX || !defined ANA_SSFLUX || \
      !defined ANA_SPFLUX
       allocate ( FORCES(ng) % stflxG(LBi:UBi,LBj:UBj,2,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(NT(ng),r8)*size2d
+
 # endif
 # ifdef ADJUST_STFLUX
       allocate ( FORCES(ng) % tflux(LBi:UBi,LBj:UBj,nfrec(ng),          &
      &                              2,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(nfrec(ng)*NT(ng),r8)*size2d
+
 # endif
       allocate ( FORCES(ng) % btflx(LBi:UBi,LBj:UBj,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(NT(ng),r8)*size2d
 
 # if !defined ANA_BTFLUX || !defined ANA_BSFLUX || \
      !defined ANA_BPFLUX
       allocate ( FORCES(ng) % btflxG(LBi:UBi,LBj:UBj,2,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(NT(ng),r8)*size2d
 # endif
 
 # ifdef QCORRECTION
       allocate ( FORCES(ng) % dqdt(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( FORCES(ng) % sst(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 
 #  ifndef ANA_SST
       allocate ( FORCES(ng) % dqdtG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
+
       allocate ( FORCES(ng) % sstG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #  endif
 # endif
 
 # if defined SALINITY && (defined SCORRECTION || defined SRELAXATION)
       allocate ( FORCES(ng) % sss(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 
 #  ifndef ANA_SSS
       allocate ( FORCES(ng) % sssG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #  endif
 # endif
 
 # if defined SSSFLX
       allocate ( FORCES(ng) % sssflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 
 #  ifndef ANA_SSSFLX
       allocate ( FORCES(ng) % sssflxG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #  endif
 # endif
 
 # if defined FASTICE_CLIMATOLOGY
       allocate ( FORCES(ng) % fastice_clm(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 
 #  ifndef ANA_FASTICE
       allocate ( FORCES(ng) % fastice_clmG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #  endif
 # endif
 
-# if defined ECOSIM || defined SPECTRAL_LIGHT
+# if defined ECOSIM || defined SPECTRAL_LIGHT 
       allocate ( FORCES(ng) % SpecIr(LBi:UBi,LBj:UBj,NBands) )
+      Dmem(ng)=Dmem(ng)+REAL(NBands,r8)*size2d
+
       allocate ( FORCES(ng) % avcos(LBi:UBi,LBj:UBj,NBands) )
+      Dmem(ng)=Dmem(ng)+REAL(NBands,r8)*size2d
 # endif
 
 #endif
@@ -999,29 +1190,49 @@
 !  Tangent linear model state
 !
       allocate ( FORCES(ng) % tl_sustr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( FORCES(ng) % tl_svstr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifdef ADJUST_WSTRESS
       allocate ( FORCES(ng) % tl_ustr(LBi:UBi,LBj:UBj,Nfrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nfrec(ng),r8)*size2d
+
       allocate ( FORCES(ng) % tl_vstr(LBi:UBi,LBj:UBj,Nfrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nfrec(ng),r8)*size2d
 # endif
       allocate ( FORCES(ng) % tl_bustr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( FORCES(ng) % tl_bvstr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifdef SOLVE3D
       allocate ( FORCES(ng) % tl_stflx(LBi:UBi,LBj:UBj,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(NT(ng),r8)*size2d
+
       allocate ( FORCES(ng) % tl_btflx(LBi:UBi,LBj:UBj,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(NT(ng),r8)*size2d
 #  ifdef ADJUST_STFLUX
       allocate ( FORCES(ng) % tl_tflux(LBi:UBi,LBj:UBj,Nfrec(ng),       &
      &                                 2,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nfrec(ng)*NT(ng),r8)*size2d
 #  endif
 #  ifdef SHORTWAVE
       allocate ( FORCES(ng) % tl_srflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #  endif
 #  ifdef BULK_FLUXES
       allocate ( FORCES(ng) % tl_lhflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( FORCES(ng) % tl_lrflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( FORCES(ng) % tl_shflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #   ifdef EMINUSP
       allocate ( FORCES(ng) % tl_evap(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #   endif
 #  endif
 # endif
@@ -1032,31 +1243,56 @@
 !  Adjoint model state
 !
       allocate ( FORCES(ng) % ad_sustr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( FORCES(ng) % ad_svstr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
 # ifdef ADJUST_WSTRESS
       allocate ( FORCES(ng) % ad_ustr(LBi:UBi,LBj:UBj,Nfrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nfrec(ng),r8)*size2d
+
       allocate ( FORCES(ng) % ad_vstr(LBi:UBi,LBj:UBj,Nfrec(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nfrec(ng),r8)*size2d
 # endif
       allocate ( FORCES(ng) % ad_bustr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( FORCES(ng) % ad_bvstr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( FORCES(ng) % ad_bustr_sol(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( FORCES(ng) % ad_bvstr_sol(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # ifdef SOLVE3D
       allocate ( FORCES(ng) % ad_stflx(LBi:UBi,LBj:UBj,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(NT(ng),r8)*size2d
+
       allocate ( FORCES(ng) % ad_btflx(LBi:UBi,LBj:UBj,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(NT(ng),r8)*size2d
 #  ifdef ADJUST_STFLUX
       allocate ( FORCES(ng) % ad_tflux(LBi:UBi,LBj:UBj,Nfrec(ng),       &
      &                                 2,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nfrec(ng)*NT(ng),r8)*size2d
 #  endif
 #  ifdef SHORTWAVE
       allocate ( FORCES(ng) % ad_srflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #  endif
 #  ifdef BULK_FLUXES
       allocate ( FORCES(ng) % ad_lhflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( FORCES(ng) % ad_lrflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( FORCES(ng) % ad_shflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #   ifdef EMINUSP
       allocate ( FORCES(ng) % ad_evap(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #   endif
 #  endif
 # endif
@@ -1071,23 +1307,37 @@
 # if defined FOUR_DVAR || defined IMPULSE
 #  ifdef ADJUST_WSTRESS
       allocate ( FORCES(ng) % b_sustr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( FORCES(ng) % b_svstr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #  endif
 #  if defined ADJUST_STFLUX && defined SOLVE3D
       allocate ( FORCES(ng) % b_stflx(LBi:UBi,LBj:UBj,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(NT(ng),r8)*size2d
 #  endif
 # endif
 # ifdef FOUR_DVAR
 #  ifdef ADJUST_WSTRESS
       allocate ( FORCES(ng) % d_sustr(LBi:UBi,LBj:UBj,Nfrec(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nfrec(ng),r8)*size2d
+
       allocate ( FORCES(ng) % d_svstr(LBi:UBi,LBj:UBj,Nfrec(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nfrec(ng),r8)*size2d
+
       allocate ( FORCES(ng) % e_sustr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( FORCES(ng) % e_svstr(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #  endif
 #  if defined ADJUST_STFLUX && defined SOLVE3D
       allocate ( FORCES(ng) % d_stflx(LBi:UBi,LBj:UBj,                  &
      &                                Nfrec(ng),NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nfrec(ng)*NT(ng),r8)*size2d
+
       allocate ( FORCES(ng) % e_stflx(LBi:UBi,LBj:UBj,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(NT(ng),r8)*size2d
 #  endif
 # endif
 #endif
@@ -1280,6 +1530,13 @@
 # ifndef ANA_WWAVE
             FORCES(ng) % DwaveG(i,j,1) = IniVal
             FORCES(ng) % DwaveG(i,j,2) = IniVal
+# endif
+#endif
+#ifdef WAVES_DIRP
+            FORCES(ng) % Dwavep(i,j) = IniVal
+# ifndef ANA_WWAVE
+            FORCES(ng) % DwavepG(i,j,1) = IniVal
+            FORCES(ng) % DwavepG(i,j,2) = IniVal
 # endif
 #endif
 #ifdef WAVES_HEIGHT
@@ -1555,7 +1812,7 @@
               FORCES(ng) % btflxG(i,j,2,itrc) = IniVal
 # endif
             END DO
-# if defined ECOSIM || defined SPECTRAL_LIGHT
+# if defined ECOSIM || defined SPECTRAL_LIGHT 
             DO itrc=1,NBands
               FORCES(ng) % SpecIr(i,j,itrc) = IniVal
               FORCES(ng) % avcos(i,j,itrc) = IniVal

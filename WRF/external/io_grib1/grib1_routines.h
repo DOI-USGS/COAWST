@@ -151,26 +151,26 @@ void FREE_INDEX_FILE(FileIndex *fileindex);
 
 int INDEX_FILE(int *fid, FileIndex *fileindex);
 
-int GET_METADATA_VALUE(FileIndex *fileindex, char Element[], char DateStr[],
-		       char VarName[], char Value[], int *stat, int strlen1,
+int GET_METADATA_VALUE(FileIndex *fileindex, char Element[], char DateStr[], 
+		       char VarName[], char Value[], int *stat, int strlen1, 
 		       int strlen2, int strlen3, int strlen4, int strlen5);
 
 int GET_GRIB_INDEX(FileIndex *fileindex,
 		   int *center, int *subcenter, int *parmtbl,
-		   int *parmid, char DateStrIn[],
+		   int *parmid, char DateStrIn[], 
 		   int *leveltype, int *level1, int *level2, int *fcsttime1,
 		   int *fcsttime2, int *index, int strlen1, int strlen2);
 
-int GET_GRIB_INDEX_GUESS(FileIndex *fileindex, int *center, int *subcenter,
-			 int *parmtbl, int *parmid, char DateStrIn[],
-			 int *leveltype, int *level1, int *level2,
-			 int *fcsttime1,int *fcsttime2, int *guessidx,
+int GET_GRIB_INDEX_GUESS(FileIndex *fileindex, int *center, int *subcenter, 
+			 int *parmtbl, int *parmid, char DateStrIn[], 
+			 int *leveltype, int *level1, int *level2, 
+			 int *fcsttime1,int *fcsttime2, int *guessidx, 
 			 int *index, int strlen1, int strlen2);
 
-int GET_GRIB_INDICES(FileIndex *fileindex, int *center, int *subcenter,
-		     int *parmtbl,int *parmid, char DateStrIn[],
+int GET_GRIB_INDICES(FileIndex *fileindex, int *center, int *subcenter, 
+		     int *parmtbl,int *parmid, char DateStrIn[], 
 		     int *leveltype, int *level1, int *level2, int *fcsttime1,
-		     int *fcsttime2, int *indices, int *num_indices,
+		     int *fcsttime2, int *indices, int *num_indices, 
 		     int strlen1, int strlen2);
 
 int GET_NUM_TIMES(FileIndex *fileindex, int *numtimes);
@@ -179,12 +179,12 @@ int GET_TIME(FileIndex *fileindex, int *idx, char time[]);
 
 int GET_GRID_INFO_SIZE(int *size);
 
-int LOAD_GRID_INFO(char *varname, char *initdate, int *leveltype,
-		   int *level1, int *level2, float *fcst_time,
-		   int *accum_period, int *grid_id, int *projection,
-		   int *xpoints, int *ypoints, float *center_lat,
+int LOAD_GRID_INFO(char *varname, char *initdate, int *leveltype, 
+		   int *level1, int *level2, float *fcst_time, 
+		   int *accum_period, int *grid_id, int *projection, 
+		   int *xpoints, int *ypoints, float *center_lat, 
 		   float *center_lon, float *Di, float *Dj,float *central_lon,
-		   int *proj_center_flag, float *latin1,
+		   int *proj_center_flag, float *latin1, 
 		   float *latin2, Grib1_Tables *grib_tables,
 		   Grid_Info *grid_info, int strlen1, int strlen2);
 
@@ -194,24 +194,24 @@ int WRITE_GRIB(Grid_Info *grid_info, int *filefd, float *data);
 
 int READ_GRIB(FileIndex *fileindex, int *fid, int *index, float *data);
 
-int GET_SIZEOF_GRID(FileIndex *fileindex, int *index, int *numcols,
+int GET_SIZEOF_GRID(FileIndex *fileindex, int *index, int *numcols, 
 		    int *numrows);
 
 int GET_LEVEL1(FileIndex *fileindex, int *idx, int *level1);
 
 int GET_LEVEL2(FileIndex *fileindex, int *idx, int *level2);
 
-int GET_GRIB_INDEX_VALIDTIME(FileIndex *fileindex,
+int GET_GRIB_INDEX_VALIDTIME(FileIndex *fileindex, 
 			     int *center, int *subcenter, int *parmtbl,
-			     int *parmid,
-			     char DateStrIn[], int *leveltype, int *level1,
-			     int *level2, int *index, int strlen1,
+			     int *parmid, 
+			     char DateStrIn[], int *leveltype, int *level1, 
+			     int *level2, int *index, int strlen1, 
 			     int strlen2);
 
-int GET_GRIB_INDEX_VALIDTIME_GUESS(FileIndex *fileindex, int *center,
-				   int *subcenter, int *parmtbl, int *parmid,
-				   char DateStrIn[], int *leveltype,
-				   int *level1, int *level2, int *guessidx,
+int GET_GRIB_INDEX_VALIDTIME_GUESS(FileIndex *fileindex, int *center, 
+				   int *subcenter, int *parmtbl, int *parmid, 
+				   char DateStrIn[], int *leveltype, 
+				   int *level1, int *level2, int *guessidx, 
 				   int *index, int strlen1, int strlen2);
 
 int GET_GRIB_CENTER(FileIndex *fileindex, int *parmid, int *center);
@@ -222,12 +222,12 @@ int GET_GRIB_TBLVERSION(FileIndex *fileindex, int *parmid, int *parmtbl);
 
 int GET_GRIB_PROCID(FileIndex *fileindex, int *parmid, int *proc_id);
 
-int GET_REGION_CENTER(char *MemoryOrderIn, int *projection,
-		      float *domain_center_lat,
-		      float *domain_center_lon, int *full_xsize,
-		      int *full_ysize, float *dx, float *dy,
-		      float *proj_central_lon,
-		      int *proj_center_flag, float *truelat1,
-		      float *truelat2, int *region_xsize, int *region_ysize,
-		      float *region_center_lat, float *region_center_lon,
+int GET_REGION_CENTER(char *MemoryOrderIn, int *projection, 
+		      float *domain_center_lat, 
+		      float *domain_center_lon, int *full_xsize, 
+		      int *full_ysize, float *dx, float *dy, 
+		      float *proj_central_lon, 
+		      int *proj_center_flag, float *truelat1, 
+		      float *truelat2, int *region_xsize, int *region_ysize, 
+		      float *region_center_lat, float *region_center_lon, 
 		      int strlen1);

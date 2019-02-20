@@ -8,7 +8,7 @@
 !   packing algorithm as defined in the GRIB2 documention.  It
 !   supports GRIB2 complex packing templates with or without
 !   spatial differences (i.e. DRTs 5.2 and 5.3).
-!   It also fills in GRIB2 Data Representation Template 5.2 or 5.3
+!   It also fills in GRIB2 Data Representation Template 5.2 or 5.3 
 !   with the appropriate values.
 !   This version assumes that Missing Value Management is being used and that
 !   1 or 2 missing values appear in the data.
@@ -39,7 +39,7 @@
 !                    .
 !                    .
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST: 
 !     idrstmpl - Contains the array of values for Data Representation
 !                Template 5.3
 !                (1) = Reference value - set by misspack routine.
@@ -72,7 +72,7 @@
       integer,allocatable :: gref(:),gwidth(:),glen(:)
       integer :: glength,grpwidth
       logical :: simple_alg = .false.
-
+      
       alog2=alog(2.0)
       bscale=2.0**real(-idrstmpl(2))
       dscale=10.0**real(idrstmpl(3))
@@ -115,7 +115,7 @@
       endif
 !
 !  Allocate work arrays:
-!  Note: -ifldmiss(j),j=1,ndpts is a map of original field indicating
+!  Note: -ifldmiss(j),j=1,ndpts is a map of original field indicating 
 !         which of the original data values
 !         are primary missing (1), sencondary missing (2) or non-missing (0).
 !        -jfld(j),j=1,nonmiss is a subarray of just the non-missing values from
@@ -270,7 +270,7 @@
            ! Use Dr. Glahn's algorithm for determining grouping.
            !
            kfildo=6
-           minpk=10
+           minpk=10 
            inc=1
            maxgrps=(ndpts/minpk)+1
            allocate(jmin(maxgrps))
@@ -287,7 +287,7 @@
            deallocate(jmax)
            deallocate(lbit)
         endif
-        !
+        !  
         !  For each group, find the group's reference value (min)
         !  and the number of bits needed to hold the remaining values
         !
@@ -315,8 +315,8 @@
              j=n
              do lg=1,glen(ng)
                 if ( ifldmiss(j).eq.0 ) then
-                  if (ifld(j).lt.gref(ng)) gref(ng)=ifld(j)
-                  if (ifld(j).gt.imax) imax=ifld(j)
+                  if (ifld(j).lt.gref(ng)) gref(ng)=ifld(j) 
+                  if (ifld(j).gt.imax) imax=ifld(j) 
                 endif
                 j=j+1
              enddo
@@ -346,8 +346,8 @@
            !   increment fld array counter
            n=n+glen(ng)
         enddo
-        !
-        !  Find max of the group references and calc num of bits needed
+        !  
+        !  Find max of the group references and calc num of bits needed 
         !  to pack each groups reference value, then
         !  pack up group reference values
         !

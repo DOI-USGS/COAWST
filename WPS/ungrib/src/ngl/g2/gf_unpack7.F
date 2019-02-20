@@ -2,14 +2,14 @@
      &                      idrsnum,idrstmpl,ndpts,fld,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    gf_unpack7
+! SUBPROGRAM:    gf_unpack7 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2002-01-24
 !
 ! ABSTRACT: This subroutine unpacks GRIB2 Section 7 (Data Section).
 !
 ! PROGRAM HISTORY LOG:
 ! 2002-01-24  Gilbert
-! 2002-12-17  Gilbert  - Added support for new templates using
+! 2002-12-17  Gilbert  - Added support for new templates using 
 !                        PNG and JPEG2000 algorithms/templates.
 ! 2004-12-29  Gilbert  - Added check on comunpack return code.
 !
@@ -35,7 +35,7 @@
 !                Representation Template 5.N
 !     ndpts    - Number of data points unpacked and returned.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     iofst    - Bit offset at the end of Section 7, returned.
 !     fld()    - Pointer to a real array containing the unpacked data field.
 !     ierr     - Error return code.
@@ -65,7 +65,7 @@
       nullify(fld)
 
       call gbyte(cgrib,lensec,iofst,32)        ! Get Length of Section
-      iofst=iofst+32
+      iofst=iofst+32    
       iofst=iofst+8     ! skip section number
 
       ipos=(iofst/8)+1
@@ -118,7 +118,7 @@
       endif
 
       iofst=iofst+(8*lensec)
-
+      
       return    ! End of Section 7 processing
       end
 

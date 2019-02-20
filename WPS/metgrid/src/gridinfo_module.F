@@ -8,33 +8,33 @@ module gridinfo_module
 
    use misc_definitions_module
    use module_debug
-
+ 
    ! Parameters
    integer, parameter :: MAX_DOMAINS = 21
-
+ 
    ! Variables
    integer :: interval_seconds, max_dom, io_form_input, io_form_output, debug_level
    integer, dimension(MAX_DOMAINS) :: subgrid_ratio_x, subgrid_ratio_y
    integer :: process_only_bdy
    character (len=MAX_FILENAME_LEN) :: opt_output_from_geogrid_path, &
-                          opt_output_from_metgrid_path, opt_metgrid_tbl_path
+                          opt_output_from_metgrid_path, opt_metgrid_tbl_path 
    character (len=128), dimension(MAX_DOMAINS) :: start_date, end_date
    character (len=MAX_FILENAME_LEN), dimension(MAX_DOMAINS) :: fg_name, constants_name
    logical :: do_tiled_input, do_tiled_output, nocolons
    logical, dimension(MAX_DOMAINS) :: grid_is_active
    character (len=1) :: gridtype
-
+ 
    contains
-
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ 
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
    ! Name: get_namelist_params
    !
    ! Purpose: Read namelist parameters.
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!  
    subroutine get_namelist_params()
-
+ 
       implicit none
-
+  
       ! Local variables
       integer :: i, io_form_geogrid, io_form_metgrid
       integer, dimension(MAX_DOMAINS) :: start_year, start_month, start_day, start_hour, start_minute, start_second, &
@@ -53,7 +53,7 @@ module gridinfo_module
                         subgrid_ratio_x, subgrid_ratio_y
       namelist /metgrid/ io_form_metgrid, fg_name, constants_name, process_only_bdy, opt_output_from_metgrid_path, &
                          opt_metgrid_tbl_path
-
+        
       ! Set defaults
       io_form_geogrid = 2
       io_form_metgrid = 2
@@ -87,7 +87,7 @@ module gridinfo_module
       opt_output_from_metgrid_path = './'
       opt_metgrid_tbl_path = 'metgrid/'
       interval_seconds = INVALID
-
+  
       ! Read parameters from Fortran namelist
       do funit=10,100
          inquire(unit=funit, opened=is_used)
@@ -222,7 +222,7 @@ module gridinfo_module
              wrf_core(i:i) = char(ichar(wrf_core(i:i))-ichar('a')+ichar('A'))
       end do
 
-      ! Before doing anything else, we must have a valid grid type
+      ! Before doing anything else, we must have a valid grid type 
       gridtype = ' '
       if (wrf_core == 'ARW') then
          gridtype = 'C'
@@ -242,7 +242,7 @@ module gridinfo_module
       call mprintf(gridtype /= 'C' .and. process_only_bdy /= 0, ERROR, &
                    'The use of process_only_bdy is only currently supported in the "ARW" core. '// &
                    'For "NMM", please set process_only_bdy to 0 in the namelist.')
-
+  
       ! Handle IO_FORM+100
       if (io_form_geogrid > 100) then
          io_form_geogrid = io_form_geogrid - 100
@@ -256,17 +256,17 @@ module gridinfo_module
       else
          do_tiled_output = .false.
       end if
-
+  
       ! Check for valid io_form_geogrid
       if ( &
 #ifdef IO_BINARY
-          io_form_geogrid /= BINARY .and. &
+          io_form_geogrid /= BINARY .and. & 
 #endif
 #ifdef IO_NETCDF
-          io_form_geogrid /= NETCDF .and. &
+          io_form_geogrid /= NETCDF .and. & 
 #endif
 #ifdef IO_GRIB1
-          io_form_geogrid /= GRIB1 .and. &
+          io_form_geogrid /= GRIB1 .and. & 
 #endif
           .true. ) then
          call mprintf(.true.,WARN,'Valid io_form_geogrid values are:')
@@ -282,7 +282,7 @@ module gridinfo_module
          call mprintf(.true.,ERROR,'No valid value for io_form_geogrid was specified in the namelist.')
       end if
       io_form_input = io_form_geogrid
-
+  
       ! Check for valid io_form_metgrid
       if ( &
 #ifdef IO_BINARY
@@ -308,31 +308,31 @@ module gridinfo_module
          call mprintf(.true.,ERROR,'No valid value for io_form_metgrid was specified in the namelist.')
       end if
       io_form_output = io_form_metgrid
-
+  
       if (start_date(1) == '0000-00-00_00:00:00') then
          do i=1,max_dom
             ! Build starting date string
             write(start_date(i), '(i4.4,a1,i2.2,a1,i2.2,a1,i2.2,a1,i2.2,a1,i2.2)') &
                start_year(i),'-',start_month(i),'-',start_day(i),'_',start_hour(i),':',start_minute(i),':',start_second(i)
-
+     
             ! Build ending date string
             write(end_date(i), '(i4.4,a1,i2.2,a1,i2.2,a1,i2.2,a1,i2.2,a1,i2.2)') &
                end_year(i),'-',end_month(i),'-',end_day(i),'_',end_hour(i),':',end_minute(i),':',end_second(i)
          end do
       end if
-
+  
 
       ! Paths need to end with a /
       i = len_trim(opt_metgrid_tbl_path)
       if (opt_metgrid_tbl_path(i:i) /= '/') then
          opt_metgrid_tbl_path(i+1:i+1) = '/'
       end if
-
+  
       i = len_trim(opt_output_from_geogrid_path)
       if (opt_output_from_geogrid_path(i:i) /= '/') then
          opt_output_from_geogrid_path(i+1:i+1) = '/'
       end if
-
+  
       i = len_trim(opt_output_from_metgrid_path)
       if (opt_output_from_metgrid_path(i:i) /= '/') then
          opt_output_from_metgrid_path(i+1:i+1) = '/'
@@ -354,9 +354,9 @@ module gridinfo_module
       end do
 
       return
-
+  
  1000 call mprintf(.true.,ERROR,'Error opening file namelist.wps')
-
+ 
    end subroutine get_namelist_params
-
+  
 end module gridinfo_module

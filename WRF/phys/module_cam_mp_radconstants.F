@@ -34,7 +34,7 @@ integer, parameter, public :: ot_length = 32
 ! SHORTWAVE DATA
 
 ! number of shorwave spectral intervals
-integer, parameter, public :: nswbands = 19
+integer, parameter, public :: nswbands = 19 
 
 integer, parameter, public :: idx_sw_diag = 8 ! index to sw visible band
 integer, parameter, public :: idx_lw_diag = 2 ! index to (H20 window) LW band
@@ -49,9 +49,9 @@ integer, parameter, public :: idx_lw_diag = 2 ! index to (H20 window) LW band
 ! high variation near rh = 1.  Alternative methods
 ! were found to be too slow.
 ! Optimal approach would be for cam to specify size of aerosol
-! based on each aerosol's characteristics.  Radiation
+! based on each aerosol's characteristics.  Radiation 
 ! should know nothing about hygroscopic growth!
-integer, parameter, public :: nrh = 1000
+integer, parameter, public :: nrh = 1000  
 
 ! LONGWAVE DATA
 
@@ -199,7 +199,7 @@ subroutine radconstants_init()
       if(ph2o(ns)/=0._r8) psf(ns) = psf(ns)*ph2o(ns)
       if(pco2(ns)/=0._r8) psf(ns) = psf(ns)*pco2(ns)
       if(po2 (ns)/=0._r8) psf(ns) = psf(ns)*po2 (ns)
-      solfrac_true(ns)   = frcsol(ns)*psf(ns)
+      solfrac_true(ns)   = frcsol(ns)*psf(ns) 
     enddo
 
 end subroutine radconstants_init

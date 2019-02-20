@@ -5,9 +5,9 @@
      &                       Istr, Iend, Jrec,                          &
      &                       Fout)
 !
-!svn $Id: get_ngfldr.F 884 2017-12-06 01:59:26Z arango $
+!svn $Id: get_ngfldr.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -75,9 +75,11 @@
       integer :: Nrec, Tid, Tindex, Trec, Vid, Vtype
       integer :: i, ic, j, job, lend, lstr, npts, status
 
-      real(r8) :: Aval, Clength, Fmax, Fmin, Tdelta, Tend
-      real(r8) :: Tmax, Tmin, Tmono, Tscale, Tstr
-      real(r8) :: Tsec, Tval
+      real(r8) :: Aval, Fmax, Fmin
+
+      real(dp) :: Clength, Tdelta, Tend
+      real(dp) :: Tmax, Tmin, Tmono, Tscale, Tstr
+      real(dp) :: Tsec, Tval
 
       real(r8), dimension((UBi-LBi+1)*UBj) :: A
 
@@ -180,8 +182,8 @@
 !  Read in time coordinate.
 !
           IF ((Tid.ge.0).and.(Tid.ne.Vid)) THEN
-            CALL netcdf_get_fvar (ng, model, ncfile, Tname(ifield),     &
-     &                            Tval,                                 &
+            CALL netcdf_get_time (ng, model, ncfile, Tname(ifield),     &
+     &                            Rclock%DateNumber, Tval,              &
      &                            ncid = ncid,                          &
      &                            start = (/Trec/),                     &
      &                            total = (/1/))

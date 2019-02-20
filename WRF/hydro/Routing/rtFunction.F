@@ -5,11 +5,11 @@
          use module_channel_routing, only: drive_channel
          use module_namelist, only: nlst_rt
 
-#ifdef MPP_LAND
-         use module_mpp_land
+#ifdef MPP_LAND  
+         use module_mpp_land 
 #endif
 
-
+       
          implicit none
          integer did, i
          real, dimension(RT_DOMAIN(did)%IXRT,RT_DOMAIN(did)%JXRT):: &
@@ -132,7 +132,7 @@
      endif
 #endif
 
-#ifdef HYDRO_D
+#ifdef HYDRO_D 
            write(6,*) "*****yw******end simp_gw_buck "
 #endif
 
@@ -145,23 +145,23 @@
 #endif
 
            DX = abs(nlst_rt(did)%DXRT0 * nlst_rt(did)%AGGFACTRT)
-
+           
            call gwstep(gw2d(did)%ix, gw2d(did)%jx, gw2d(did)%dx, &
 			gw2d(did)%ltype, gw2d(did)%elev, gw2d(did)%bot, &
 			gw2d(did)%hycond, gw2d(did)%poros, gw2d(did)%compres, &
 			gw2d(did)%ho, gw2d(did)%h, gw2d(did)%convgw, &
 			gw2d(did)%ebot, gw2d(did)%eocn, gw2d(did)%dt, &
 			gw2d(did)%istep)
-
-
-! bftodo head postprocessing block
+           
+           
+! bftodo head postprocessing block 
 ! GW-SOIL-CHANNEL interaction section
 	  gw2d(did)%ho = gw2d(did)%h
 
 #ifdef HYDRO_D
            write(6,*) "*****bf******end 2d_gw_model "
 #endif
-
+      
     End if
 
   END IF    !DJG (End if for RTE SWC activation)
@@ -174,7 +174,7 @@
 !DJG,DNY  Begin Channel and Lake Routing Routines
 !-------------------------------------------------------------------
   IF (nlst_rt(did)%CHANRTSWCRT.EQ.1 .or. nlst_rt(did)%CHANRTSWCRT.EQ.2) THEN
-
+ 
     call drive_CHANNEL(RT_DOMAIN(did)%timestep_flag,RT_DOMAIN(did)%IXRT,RT_DOMAIN(did)%JXRT, &
        nlst_rt(did)%SUBRTSWCRT, RT_DOMAIN(did)%QSUBRT, &
        LAKE_INFLORT_TS, QSTRMVOLRT_TS,&

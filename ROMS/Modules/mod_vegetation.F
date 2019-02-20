@@ -1,5 +1,5 @@
 #include "cppdefs.h"
-      MODULE mod_vegetation
+      MODULE mod_vegetation 
 
 /*
 ** svn $Id: mod_vegetation.F 429 2015-05-20 10:10:26Z arango $
@@ -32,7 +32,7 @@
 **                                                                    **
 **   *  Wave Thrust on Marsh calculation:                             **
 **                                                                    **
-**        marsh_wave_thrust.F                                         **
+**        marsh_wave_thrust.F                                         ** 
 **                                                                    **
 **   *  Vegetation biomass calculation:                               **
 **                                                                    **
@@ -73,7 +73,7 @@
 ************************************************************************
 */
 
-#if defined VEGETATION
+#if defined VEGETATION 
 # include <vegetation_mod.h>
 #endif
 

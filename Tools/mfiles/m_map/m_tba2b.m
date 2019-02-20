@@ -1,4 +1,4 @@
-function m_tba2b(fnam);
+function m_tba2b(fnam)
 % M_TBA2B Converts the ASCII TerrainBase 5-minute bathymetry database
 %         (size 56Mb) available from
 %           ftp://ncardata.ucar.edu/datasets/ds759.2/tbase.Z
@@ -27,29 +27,29 @@ function m_tba2b(fnam);
 % This software is provided "as is" without warranty of any kind. But
 % it's mine, so you can't sell it.
 
-if nargin==0,
+if nargin==0
  fnam='.';
-end;
+end
 
 fnam=[fnam '/tbase.int'];
 
 fid=fopen('tbase','rt');
 
-if fid==-1,
+if fid==-1
  error('Cannot find file called ''tbase'' ');
-end;
+end
 
 fidb=fopen(fnam,'w');
-if fidb==-1,
+if fidb==-1
  error(['Cannot open file ''' fnam '''']);
-end;
+end
 
-for k=1:466560,
+for k=1:466560
  data=fscanf(fid,'%6d',20);
  fwrite(fidb,data,'int16');
- if rem(k,2000)==0,
+ if rem(k,2000)==0
    disp([ int2str(k) '/466450 lines processed']);
- end;
-end;
+ end
+end
 
 

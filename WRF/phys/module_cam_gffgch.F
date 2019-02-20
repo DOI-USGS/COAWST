@@ -18,14 +18,14 @@ contains
 #endif
 
 subroutine gffgch(t       ,es      ,itype   )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Computes saturation vapor pressure over water and/or over ice using
-! Goff & Gratch (1946) relationships.
-! <Say what the routine does>
-!
-! Method:
+! Goff & Gratch (1946) relationships. 
+! <Say what the routine does> 
+! 
+! Method: 
 ! T (temperature), and itype are input parameters, while es (saturation
 ! vapor pressure) is an output parameter.  The input parameter itype
 ! serves two purposes: a value of zero indicates that saturation vapor
@@ -39,9 +39,9 @@ subroutine gffgch(t       ,es      ,itype   )
 ! degrees c, the saturation vapor pressures are assumed to be a weighted
 ! average of the vapor pressure over supercooled water and ice (all
 ! water at 0 c; all ice at -itype c).  Maximum transition range => 40 c
-!
+! 
 ! Author: J. Hack
-!
+! 
 !-----------------------------------------------------------------------
    use shr_kind_mod, only: r8 => shr_kind_r8
    use physconst,    only: tmelt
@@ -52,7 +52,7 @@ subroutine gffgch(t       ,es      ,itype   )
    use abortutils,   only: endrun
    use cam_logfile,  only: iulog
 #endif
-
+    
    implicit none
 !------------------------------Arguments--------------------------------
 !

@@ -87,7 +87,7 @@ CONTAINS
    ENDIF
   END SUBROUTINE open_u_dataset
 
-  SUBROUTINE close_dataset( id , config_flags, sysdepinfo )
+  SUBROUTINE close_dataset( id , config_flags, sysdepinfo ) 
    IMPLICIT NONE
    INTEGER id , ierr
    LOGICAL , EXTERNAL :: wrf_dm_on_monitor
@@ -138,7 +138,7 @@ CONTAINS
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
     INTEGER, INTENT(IN) :: fid
-    INTEGER, INTENT(INOUT) :: ierr
+    INTEGER, INTENT(INOUT) :: ierr 
     IF ( config_flags%io_form_restart .GT. 0 ) THEN
       CALL output_wrf ( fid , grid , config_flags , restart_only , ierr )
     ENDIF
@@ -151,7 +151,7 @@ CONTAINS
     IMPLICIT NONE
     TYPE(domain) :: grid
     TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
-    INTEGER, INTENT(IN) :: fid
+    INTEGER, INTENT(IN) :: fid 
     INTEGER, INTENT(INOUT) :: ierr
     IF ( config_flags%io_form_boundary .GT. 0 ) THEN
       CALL output_wrf ( fid , grid , config_flags , boundary_only , ierr )
@@ -168,7 +168,7 @@ SUBROUTINE construct_filename1( result , basename , fld1 , len1 )
   CHARACTER*(*) :: basename
   INTEGER , INTENT(IN) :: fld1 , len1
   CHARACTER*64         :: t1, zeros
-
+  
   CALL zero_pad ( t1 , fld1 , len1 )
   result = TRIM(basename) // "_d" // TRIM(t1)
   CALL maybe_remove_colons(result)
@@ -210,7 +210,7 @@ SUBROUTINE construct_filename2a( result , basename , fld1 , len1 , date_char )
   DO WHILE ( i .GT. 0 )                    ! value   |
     l = len(trim(result))                  !        \/
     result = result  (1:i-1) // TRIM(t1) // result(i+8:l)
-    i = index( result   , '<domain>' )
+    i = index( result   , '<domain>' ) 
   END DO
 
   i = index( result , '<date>' )
@@ -258,7 +258,7 @@ SUBROUTINE construct_filename ( result , basename , fld1 , len1 , fld2 , len2 )
   CHARACTER*(*) :: basename
   INTEGER , INTENT(IN) :: fld1 , len1 , fld2 , len2
   CHARACTER*64         :: t1, t2, zeros
-
+  
   CALL zero_pad ( t1 , fld1 , len1 )
   CALL zero_pad ( t2 , fld2 , len2 )
   result = TRIM(basename) // "_d" // TRIM(t1) // "_" // TRIM(t2)
@@ -397,7 +397,7 @@ SUBROUTINE append_to_filename ( result , basename , fld1 , len1 )
   CHARACTER*(*) :: basename
   INTEGER , INTENT(IN) :: fld1 , len1
   CHARACTER*64         :: t1, zeros
-
+  
   CALL zero_pad ( t1 , fld1 , len1 )
   result = TRIM(basename) // "_" // TRIM(t1)
   CALL maybe_remove_colons(result)
@@ -429,14 +429,14 @@ SUBROUTINE init_wrfio
 END SUBROUTINE init_wrfio
 
 !<DESCRIPTION>
-! This routine figures out the nearest previous time instant
+! This routine figures out the nearest previous time instant 
 ! that corresponds to a multiple of the input time interval.
-! Example use is to give the time instant that corresponds to
+! Example use is to give the time instant that corresponds to 
 ! an I/O interval, even when the current time is a little bit
 ! past that time when, for example, the number of model time
 ! steps does not evenly divide the I/O interval. JM 20051013
 !</DESCRIPTION>
-!
+! 
 SUBROUTINE adjust_io_timestr ( TI, CT, ST, timestr )
    USE module_utility
    IMPLICIT NONE

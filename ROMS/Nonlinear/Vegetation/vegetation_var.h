@@ -26,16 +26,16 @@
                 idvprp(pthck)=varid
             CASE ('idvprp(phght)')
                 idvprp(phght)=varid
-#if defined VEG_BIOMASS
+#if defined VEG_BIOMASS  
             CASE ('idvprp(pabbm)')
                 idvprp(pabbm)=varid
             CASE ('idvprp(pbgbm)')
                 idvprp(pbgbm)=varid
-#endif
-#if defined VEG_STREAMING
+#endif 
+#if defined VEG_STREAMING 
             CASE ('idWdvg')
               idWdvg=varid
-#endif
+#endif 
 #if defined MARSH_WAVE_THRUST
             CASE ('idTims')
               idTims=varid
@@ -45,4 +45,4 @@
               idTmax=varid
             CASE ('idTton')
               idTton=varid
-#endif
+#endif 

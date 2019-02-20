@@ -1,4 +1,4 @@
-module module_swath
+module module_swath   
 #if ( HWRF == 1 )
 
 #ifdef DM_PARALLEL
@@ -235,7 +235,7 @@ contains
        parent%nest_imid(nest%id) = nimid
        parent%nest_jmid(nest%id) = njmid
     endif
-
+    
     ispan =ceiling(1e3*nest%interest_rad_parent/dx)+1
     istart=max(pids,  nimid-ispan)
     iend  =min(pide-1,nimid+ispan)
@@ -251,7 +251,7 @@ contains
     else
        orwhat=ishft(1,21)
     endif
-
+    
     if(jstart<=pjpe .or. jend>=pjps .or. istart<=pipe .or. iend>=pipe) then
        do j=pjps,min(pjpe,pjde-1)
           if(mod(j,2)==1) then
@@ -356,7 +356,7 @@ contains
     if(check_for_kid_move) &
          call  wrf_debug(1,'At least one of my nests moved.')
   end function check_for_kid_move
-
+  
   subroutine update_interest(grid,config_flags)
     USE MODULE_CONFIGURE, ONLY : grid_config_rec_type
     type(domain), intent(inout) :: grid

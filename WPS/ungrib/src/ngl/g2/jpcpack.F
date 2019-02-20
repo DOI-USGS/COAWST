@@ -35,7 +35,7 @@
 !                      Set to 255, if idrstmpl(6)=0.
 !     lcpack   - size of array cpack().
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST: 
 !     idrstmpl - Contains the array of values for Data Representation
 !                Template 5.0
 !                (1) = Reference value - set by jpcpack routine.
@@ -72,7 +72,7 @@
       integer :: enc_jpeg2000
       character(len=1),allocatable :: ctemp(:)
 #ifdef USE_JPEG2000
-
+      
       ndpts=width*height
       bscale=2.0**real(-idrstmpl(2))
       dscale=10.0**real(idrstmpl(3))
@@ -98,12 +98,12 @@
 !
       if (rmin.ne.rmax .AND. maxdif.ne.0) then
         !
-        !  Determine which algorithm to use based on user-supplied
+        !  Determine which algorithm to use based on user-supplied 
         !  binary scale factor and number of bits.
         !
         if (idrstmpl(2).eq.0) then
            !
-           !  No binary scaling and calculate minimum number of
+           !  No binary scaling and calculate minimum number of 
            !  bits in which the data will fit.
            !
            imin=nint(rmin*dscale)
@@ -118,7 +118,7 @@
            enddo
         else
            !
-           !  Use binary scaling factor and calculate minimum number of
+           !  Use binary scaling factor and calculate minimum number of 
            !  bits in which the data will fit.
            !
            rmin=rmin*dscale

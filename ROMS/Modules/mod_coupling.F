@@ -2,9 +2,9 @@
       MODULE mod_coupling
 #ifdef SOLVE3D
 !
-!svn $Id: mod_coupling.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: mod_coupling.F 921 2018-09-06 18:27:34Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -110,25 +110,49 @@
 !
       integer, intent(in) :: ng, LBi, UBi, LBj, UBj
 !
+!  Local variable declarations.
+!
+      real(r8) :: size2d
+!
 !-----------------------------------------------------------------------
 !  Initialize module variables.
 !-----------------------------------------------------------------------
 !
       IF (ng.eq.1) allocate ( COUPLING(Ngrids) )
 !
+!  Set horizontal array size.
+!
+      size2d=REAL((UBi-LBi)*(UBj-LBj),r8)
+!
 !  Nonlinear model state.
 !
       allocate ( COUPLING(ng) % DU_avg1(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % DU_avg2(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % DV_avg1(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % DV_avg2(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % Zt_avg1(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % rufrc(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % rvfrc(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 
 # ifdef VAR_RHO_2D
       allocate ( COUPLING(ng) % rhoA(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % rhoS(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # endif
 
 # if defined TANGENT || defined TL_IOMS
@@ -136,16 +160,32 @@
 !  Tangent linear model state.
 !
       allocate ( COUPLING(ng) % tl_DU_avg1(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % tl_DU_avg2(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % tl_DV_avg1(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % tl_DV_avg2(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % tl_Zt_avg1(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % tl_rufrc(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % tl_rvfrc(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 
 #  ifdef VAR_RHO_2D
       allocate ( COUPLING(ng) % tl_rhoA(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % tl_rhoS(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #  endif
 # endif
 
@@ -154,16 +194,32 @@
 !  Adjoint model state.
 !
       allocate ( COUPLING(ng) % ad_DU_avg1(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % ad_DU_avg2(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % ad_DV_avg1(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % ad_DV_avg2(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % ad_Zt_avg1(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % ad_rufrc(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % ad_rvfrc(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 
 #  ifdef VAR_RHO_2D
       allocate ( COUPLING(ng) % ad_rhoA(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( COUPLING(ng) % ad_rhoS(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 #  endif
 # endif
 
@@ -174,11 +230,22 @@
 !  the background state in the tangent linear and adjoint models.
 !
       allocate ( COUPLING(ng) % DU_avg1G(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
+
       allocate ( COUPLING(ng) % DU_avg2G(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
+
       allocate ( COUPLING(ng) % DV_avg1G(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
+
       allocate ( COUPLING(ng) % DV_avg2G(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
+
       allocate ( COUPLING(ng) % rufrcG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
+
       allocate ( COUPLING(ng) % rvfrcG(LBi:UBi,LBj:UBj,2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 
       RETURN

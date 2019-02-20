@@ -1,7 +1,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! Program metgrid
 !
-! First version: Michael Duda -- January 2006
+! First version: Michael Duda -- January 2006 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 program metgrid
 
@@ -29,8 +29,8 @@ program metgrid
    ! Get info about how many nests there are to process, etc.
    call get_namelist_params()
 
-   ! Having determined which processor we are, which grid type we are, and where
-   !   our patch is located in the domain, we can determine if U or V staggered
+   ! Having determined which processor we are, which grid type we are, and where 
+   !   our patch is located in the domain, we can determine if U or V staggered 
    !   fields will have one more row or column than the M staggered fields
    if (gridtype == 'C') then
       if (my_x == nproc_x-1) then
@@ -53,7 +53,7 @@ program metgrid
    call  read_interp_table()
 
    !
-   ! Now begin the processing work, looping over all domains to be processed
+   ! Now begin the processing work, looping over all domains to be processed 
    !
 
    if (gridtype == 'C') then
@@ -97,5 +97,5 @@ program metgrid
    call mprintf(.true.,LOGFILE,' *** Successful completion of program metgrid.exe *** ')
 
    stop
-
+ 
 end program metgrid

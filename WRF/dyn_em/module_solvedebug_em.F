@@ -266,7 +266,7 @@ CONTAINS
       SUBROUTINE var_print ( u, &
                               ims,ime, jms,jme, kms,kme,  & ! memory dims
                               ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                              level                )
+                              level                )  
 
       IMPLICIT NONE
 
@@ -293,7 +293,7 @@ CONTAINS
                               ids,ide, jds,jde, kds,kde,  & ! domain dims
                               ims,ime, jms,jme, kms,kme,  & ! memory dims
                               ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
-                              level                )
+                              level                )  
 
       IMPLICIT NONE
 

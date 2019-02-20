@@ -1,10 +1,10 @@
       subroutine rdieee(rieee,a,num)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    rdieee
+! SUBPROGRAM:    rdieee 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-09
 !
-! ABSTRACT: This subroutine reads a list of real values in
+! ABSTRACT: This subroutine reads a list of real values in 
 !   32-bit IEEE floating point format.
 !
 ! PROGRAM HISTORY LOG:
@@ -15,7 +15,7 @@
 !     rieee    - Input array of floating point values in 32-bit IEEE format.
 !     num      - Number of floating point values to convert.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     a        - Output array of real values.
 !
 ! REMARKS: None
@@ -55,7 +55,7 @@
         imant=ibits(ieee,0,23)
         sign=1.0
         if (isign.eq.1) sign=-1.0
-
+        
         if ( (iexp.gt.0).and.(iexp.lt.255) ) then
           temp=2.0**(iexp-127)
           a(j)=sign*temp*(1.0+(two23*real(imant)))

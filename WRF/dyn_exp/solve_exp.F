@@ -70,23 +70,23 @@ USE module_exp
    CALL model_to_grid_config_rec ( grid%id , model_config_rec , config_flags )
 ! this sets up the P_* indices into the moisture and chem arrays
    CALL set_scalar_indices_from_config ( grid%id , idum1 , idum2 )
-
+ 
    !  De-reference dimension information stored in the grid data structure.
 
 !                    ikj model   kij model
 
-   ids             = grid%sd31 ! grid%sd32
-   ide             = grid%ed31 ! grid%ed32
-   jds             = grid%sd33 ! grid%sd33
-   jde             = grid%ed33 ! grid%ed33
-   kds             = grid%sd32 ! grid%sd31
+   ids             = grid%sd31 ! grid%sd32 
+   ide             = grid%ed31 ! grid%ed32 
+   jds             = grid%sd33 ! grid%sd33 
+   jde             = grid%ed33 ! grid%ed33 
+   kds             = grid%sd32 ! grid%sd31 
    kde             = grid%ed32 ! grid%ed31
 
    ims             = grid%sm31 ! grid%sm32
-   ime             = grid%em31 ! grid%em32
-   jms             = grid%sm33 ! grid%sm33
-   jme             = grid%em33 ! grid%em33
-   kms             = grid%sm32 ! grid%sm31
+   ime             = grid%em31 ! grid%em32 
+   jms             = grid%sm33 ! grid%sm33 
+   jme             = grid%em33 ! grid%em33 
+   kms             = grid%sm32 ! grid%sm31 
    kme             = grid%em32 ! grid%em31
 
    ips             = grid%sp31 ! grid%sp32
@@ -106,7 +106,7 @@ USE module_exp
 
    CALL set_tiles ( grid , ids , ide , jds , jde , ips , ipe , jps , jpe )
 
-! end of "magic"; start of experimental solver; just a goofy relaxation
+! end of "magic"; start of experimental solver; just a goofy relaxation 
 
 ! Halo exchange on x_1 for relaxation operator in model layer subroutine
 ! relax_1_into_2

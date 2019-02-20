@@ -13,7 +13,8 @@ MODULES =       mct_wrf_coupler_params.o   \
                 atm_coupler.o              \
                 module_streams.o           \
                 module_domain.o            \
-                module_integrate.o         \
+		$(LLIST) \
+		module_integrate.o         \
                 module_timing.o            \
                 module_configure.o         \
                 module_tiles.o             \

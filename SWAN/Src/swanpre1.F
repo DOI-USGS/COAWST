@@ -835,8 +835,8 @@
 !
       IF (KEYWIS ('NSGRIDS')) THEN                                       JCW
           CALL ININTG('NUMS',NUM_SGRIDS,'UNC',1)
-        GO TO 100
-      ENDIF
+        GO TO 100                                                       
+      ENDIF                                                               
 !
 ! ------------------------------------------------------------------
 !
@@ -1904,7 +1904,7 @@
            NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)                                        40.31
            IF ( .NOT.LOPS ) THEN                                          40.31
               OPSDATZ_MOD(ng)%FOPS => OPSDATZ_MOD(ng)%OPSTMP
-              OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%FOPS
+              OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%FOPS 
               LOPS = .TRUE.                                               40.31
            ELSE                                                           40.31
               OPSDATZ_MOD(ng)%COPS%NEXTOPS => OPSDATZ_MOD(ng)%OPSTMP
@@ -3736,14 +3736,14 @@
      &          '    MXFR MYFR',/,
      &          I3,8X,A,1X,4(3X,I4),5X,E8.3,2(1X,I4))
       ENDIF                                                               30.21
-      NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)
+      NULLIFY(OPSDATZ_MOD(ng)%OPSTMP%NEXTOPS)                            
       IF ( .NOT.LOPS ) THEN                                               40.31
-         OPSDATZ_MOD(ng)%FOPS = OPSDATZ_MOD(ng)%OPSTMP
-         OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%FOPS
+         OPSDATZ_MOD(ng)%FOPS = OPSDATZ_MOD(ng)%OPSTMP                   
+         OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%FOPS                   
          LOPS = .TRUE.                                                    40.31
       ELSE                                                                40.31
          OPSDATZ_MOD(ng)%COPS%NEXTOPS => OPSDATZ_MOD(ng)%OPSTMP
-         OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%OPSTMP
+         OPSDATZ_MOD(ng)%COPS => OPSDATZ_MOD(ng)%OPSTMP                  
       END IF                                                              40.31
 #else
       ALLOCATE(OPSTMP)                                                    40.31
@@ -6888,7 +6888,7 @@
 !                                                                  *
 #ifdef SWAN_MODEL
       SUBROUTINE RESTART_SWAN (AC2, SPCSIG, SPCDIR, KGRPNT,
-     &                         XCGRID, YCGRID, ng)
+     &                         XCGRID, YCGRID, CHTIME_M, ng)
 !                                                                  *
 !*******************************************************************
 !
@@ -6974,6 +6974,7 @@
       REAL    SPCSIG(MSC)                                                 30.82
       REAL    XCGRID(MXC,MYC),    YCGRID(MXC,MYC)                         30.82
       INTEGER, INTENT(IN) :: ng
+      CHARACTER*20 CHTIME_M
 
       CHARACTER RSTFN*(LENFNM)   ! to be moved to module
 !
@@ -7062,7 +7063,7 @@
 !      writing of heading is completed, write time if nonstationary
 !
       IF (NSTATM.EQ.1) THEN
-        WRITE (NREF, 202) CHTIME                                         40.00
+        WRITE (NREF, 202) CHTIME_M                                       40.00 jcw
  202    FORMAT (A18, T41, 'date and time')
       ENDIF
 !

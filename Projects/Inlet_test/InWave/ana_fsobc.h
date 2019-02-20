@@ -49,6 +49,7 @@
       USE mod_boundary
       USE mod_grid
       USE mod_scalars
+      USE mod_inwave_swan
 !
 !  Imported variable declarations.
 !
@@ -58,7 +59,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, j
+      integer :: i, j, tidx
       real(r8) :: cff, fac, omega, phase, val
 
 #include "set_bounds.h"
@@ -68,10 +69,12 @@
 !-----------------------------------------------------------------------
 !
 #if defined INLET_TEST
+      tidx=MOD(iic(ng),WAVES(ng)%Insteps)+1
       IF (LBC(inorth,isFsur,ng)%acquire.and.                            &
      &    DOMAIN(ng)%Northern_Edge(tile)) THEN
         cff=-1.0_r8*sin(2.0_r8*pi*time(ng)/(12.0_r8*3600.0_r8))
         DO i=IstrR,IendR
+!         cff=cff+WAVES(ng)%bndwave(tidx)
           BOUNDARY(ng)%zeta_north(i)=cff
         END DO
       END IF

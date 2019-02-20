@@ -15,7 +15,7 @@ CONTAINS
                       sf_ocean_physics,okms, okme,                 & !cyl
                       om_tmp,om_s,om_u, om_v, om_depth, om_ml,     & !cyl
                       om_lat, om_lon,                              & !cyl
-                      QFX,                                         & !cyl
+                      QFX,                                         & !cyl 
                       rdx, rdy, msfu, msfv, msft,xtime,om_tini,om_sini,id,omdt, & !cyl
                       itimestep)
 
@@ -95,7 +95,7 @@ CONTAINS
   INTEGER, OPTIONAL, INTENT(IN )::  sf_ocean_physics
   integer :: okms, okme
   real, dimension(ims:ime, okms:okme, jms:jme), INTENT(INOUT):: OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH
-  real, dimension(ims:ime, okms:okme, jms:jme):: om_density
+  real, dimension(ims:ime, okms:okme, jms:jme):: om_density 
   real, dimension(ims:ime, okms:okme, jms:jme), INTENT(IN):: OM_TINI,OM_SINI
   real, dimension(ims:ime, jms:jme),INTENT(INOUT):: OM_ML, OM_LAT, OM_LON
   REAL, INTENT(IN   ) :: rdx, rdy,xtime,omdt
@@ -107,7 +107,7 @@ CONTAINS
 ! calculate the steps of om
 
   stepom=nint(omdt*60/deltsm)
-  stepom = max(stepom,1)
+  stepom = max(stepom,1) 
 
 ! cyl:OML1D or DPWP
 
@@ -133,12 +133,12 @@ if ( sf_ocean_physics .eq. OMLSCHEME ) then
 
 ! call 3DPWP
 
-elseif ( sf_ocean_physics .eq. PWP3DSCHEME ) then
+elseif ( sf_ocean_physics .eq. PWP3DSCHEME ) then 
        call wrf_debug ( 100, 'call 3DPWP' )
        if ( itimestep .eq. 1 .or. mod(itimestep, stepom) .eq. 0 ) then
          ! run 3DPWP only when the grid resolution larger than 3.0 km
           print*,'dx',1.0/rdx
-          if ( 1.0/rdx .ge. 3000.0 .and. 1.0/rdy .ge. 3000.0 ) then
+          if ( 1.0/rdx .ge. 3000.0 .and. 1.0/rdy .ge. 3000.0 ) then  
              call DPWP(ims,ime, jms,jme, kms,kme,its,ite, jts,jte, kts,kte, &
                     ids,ide, jds,jde, kds,kde,okms, okme,                   &
                     om_tmp,om_s,om_u, om_v, om_density, om_depth, om_ml,    &
@@ -155,10 +155,10 @@ elseif ( sf_ocean_physics .eq. PWP3DSCHEME ) then
                       endif
                   enddo
               enddo
-
-          endif
+ 
+          endif 
        endif
-endif
+endif 
 #endif
 
    END SUBROUTINE OCEAN_DRIVER

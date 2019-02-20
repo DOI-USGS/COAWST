@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE wrt_his (ng, tile)
 !
-!svn $Id: wrt_his.F 858 2017-07-31 23:02:30Z arango $
+!svn $Id: wrt_his.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -43,7 +43,7 @@
       USE mod_sedbed
       USE mod_sediment
 #endif
-#if defined VEGETATION
+#if defined VEGETATION 
       USE mod_vegetation
       USE mod_vegarr
 #endif
@@ -1385,7 +1385,7 @@
 # endif
 !
 !  Write out density anomaly.
-!----------------------------
+!
       IF (Hout(idDano,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r3dvar
@@ -1646,8 +1646,8 @@
      &                       GRID(ng) % rmask_full,                     &
 #  endif
      &                       MIXING(ng) % ghats(:,:,:,i))
-        IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idGhat(i))), HIS(ng)%Rindex
             END IF
@@ -2873,7 +2873,7 @@
 # endif
 #endif
 !
-#if defined ESTUARYBGC && defined SPECTRAL_LIGHT
+#if defined ESTUARYBGC && defined SPECTRAL_LIGHT 
 !  Write out Photosynthetically Available Radiation (PAR)
 !
       IF (Hout(idPARo,ng)) THEN
@@ -2957,9 +2957,9 @@
 !
 #if defined ESTUARYBGC && defined SAV_BIOMASS
 !
-!  Write out Dissolved Inorganic Nitrogen in water column
+!  Write out Dissolved Inorganic Nitrogen in water column 
 !
-      IF (Hout(iddinw,ng)) THEN
+      IF (Hout(iddinw,ng)) THEN 
         scale=1.0_r8
         gtype=gfactor*r3dvar
         status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(iddinw), &
@@ -2975,7 +2975,7 @@
      &                     OCEAN(ng) % DINwcr)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
      &                 __FILE__)) THEN
-          IF (Master) THEN
+          IF (Master) THEN 
             WRITE (stdout,10) TRIM(Vname(1,iddinw)), HIS(ng)%Rindex
           END IF
           exit_flag=3
@@ -2984,9 +2984,9 @@
         END IF
       END IF
 !
-!  Write out Dissolved Inorganic Nitrogen in sediment column
+!  Write out Dissolved Inorganic Nitrogen in sediment column 
 !
-      IF (Hout(iddins,ng)) THEN
+      IF (Hout(iddins,ng)) THEN 
         scale=1.0_r8
         gtype=gfactor*r3dvar
         status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(iddins), &
@@ -3011,9 +3011,9 @@
         END IF
       END IF
 !
-!  Write out Dissolved Oxygen in water column
+!  Write out Dissolved Oxygen in water column 
 !
-      IF (Hout(iddowc,ng)) THEN
+      IF (Hout(iddowc,ng)) THEN 
         scale=1.0_r8
         gtype=gfactor*r3dvar
         status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(iddowc), &
@@ -3038,9 +3038,9 @@
         END IF
       END IF
 !
-!  Write out Dissolved Inorganic Nitrogen in water column due to SAV
+!  Write out Dissolved Inorganic Nitrogen in water column due to SAV 
 !
-      IF (Hout(idwsvl,ng)) THEN
+      IF (Hout(idwsvl,ng)) THEN 
         scale=1.0_r8
         gtype=gfactor*r3dvar
         status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idwsvl), &
@@ -3127,7 +3127,7 @@
         status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsvpp), &
      &                     HIS(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
-# ifdef MASKING
+# ifdef MASKING 
 #  ifdef WET_DRY
      &                     GRID(ng) % rmask_full,                       &
 #  else
@@ -3773,6 +3773,332 @@
           END IF
         END IF
       END DO
+!
+#   ifdef BEDLOAD_VANDERA 
+!
+!  Write out Ursell number of the asymmetric wave form.
+!
+      IF (Hout(idsurs,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsurs), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#    ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#    endif 
+     &                     SEDBED(ng) % ursell_no)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idsurs)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF 
+!
+!  Write out velocity skewness parameter of the asymmetric wave form.
+!
+      IF (Hout(idsrrw,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsrrw), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#    ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#    endif 
+     &                     SEDBED(ng) % RR_asymwave)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idsrrw)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF 
+!
+!  Write out acceleration asymmetry parameter of the asymmetric wave form.
+!
+      IF (Hout(idsbtw,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsbtw), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#    ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#    endif 
+     &                     SEDBED(ng) % beta_asymwave)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idsbtw)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF 
+!
+!  Write out reference height to get near bottom current velocity.
+!
+      IF (Hout(idszrw,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idszrw), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#    ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#    endif 
+     &                     SEDBED(ng) % Zr_wbl)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idszrw)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF 
+!
+!  Write out bed roughness to get the current vel. at wave boundary layer.
+!
+      IF (Hout(idsksd,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsksd), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#    ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#    endif 
+     &                     SEDBED(ng) % ksd_wbl)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idsksd)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out friction current velocity at the wave boundary layer.
+!
+      IF (Hout(idsusc,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsusc), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#    ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#    endif 
+     &                     SEDBED(ng) % ustrc_wbl)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idsusc)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out thickness of the wave boundary layer.
+!
+      IF (Hout(idstbl,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idstbl), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#    ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#    endif 
+     &                     SEDBED(ng) % thck_wbl)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idstbl)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out current velocity at the wave boundary layer.
+!
+      IF (Hout(idsubl,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsubl), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#    ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#    endif 
+     &                     SEDBED(ng) % udelta_wbl)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idsubl)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out the angle between waves and currents. 
+!
+      IF (Hout(idspwc,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idspwc), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#    ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#    endif 
+     &                     SEDBED(ng) % phi_wc)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idspwc)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out friction factor for currents.
+!
+      IF (Hout(idsfdw,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsfdw), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#    ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#    endif 
+     &                     SEDBED(ng) % fd_wbl)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idsfdw)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out crest velocity of the asymmetric wave form. 
+!
+      IF (Hout(idsucr,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsucr), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#    ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#    endif 
+     &                     SEDBED(ng) % ucrest_r)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idsucr)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out trough velocity of the asymmetric wave form. 
+!
+      IF (Hout(idsutr,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsutr), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#    ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#    endif 
+     &                     SEDBED(ng) % utrough_r)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idsutr)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out crest time period of the asymmetric wave form. 
+!
+      IF (Hout(idstcr,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idstcr), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#    ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#    endif 
+     &                     SEDBED(ng) % T_crest)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idstcr)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write out trough time period of the asymmetric wave form. 
+!
+      IF (Hout(idsttr,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsttr), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#    ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#    endif 
+     &                     SEDBED(ng) % T_trough)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idsttr)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+! 
+#   endif
 #  endif
 !
 !  Write out sediment fraction of each size class in each bed layer.
@@ -4026,7 +4352,7 @@
 #endif
 #ifdef VEGETATION
 #include "vegetation_wrt_his.h"
-#endif
+#endif 
 
 #ifdef WEC_MELLOR
 !
@@ -4537,7 +4863,7 @@
 #endif
 #ifdef WAVES_DIR
 !
-!  Write out wind-induced wave direction.
+!  Write out wind-induced mean wave direction.
 !
       IF (Hout(idWdir,ng)) THEN
         scale=rad2deg
@@ -4553,6 +4879,31 @@
      &                 __FILE__)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idWdir)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+#endif
+#ifdef WAVES_DIRP
+!
+!  Write out wind-induced peak wave direction.
+!
+      IF (Hout(idWdip,ng)) THEN
+        scale=rad2deg
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWdip), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     FORCES(ng) % Dwavep)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idWdip)), HIS(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
@@ -4610,7 +4961,8 @@
         END IF
       END IF
 #endif
-#if defined BBL_MODEL || defined WAVES_OCEAN
+#if defined BBL_MODEL || defined WAVES_OCEAN || \
+    defined SED_BEDLOAD_VANDERA
 !
 !  Write out wind-induced wave bottom orbital velocity.
 !

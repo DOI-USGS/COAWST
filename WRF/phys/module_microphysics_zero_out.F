@@ -50,7 +50,7 @@ SUBROUTINE microphysics_zero_outa (                                      &
          END IF
       ENDDO
    ELSE IF ( config_flags%mp_zero_out .EQ. 2 ) then
-      !  All of the non-Qv "moist" fields that are below a critical threshold are set to
+      !  All of the non-Qv "moist" fields that are below a critical threshold are set to 
       !  zero.  The vapor is constrained to be non-negative.
       CALL wrf_debug ( 100 , 'zero out small condensates, zero out negative vapor')
       DO n = PARAM_FIRST_SCALAR,n_moist

@@ -198,7 +198,7 @@
       real(r8) :: thck_avail, thck_to_add
 
       real(r8), dimension(NST) :: nlysm
-
+      
       real(r8), dimension(IminS:ImaxS,NST) :: dep_mass
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tau_w
 
@@ -259,7 +259,7 @@ minlayer_thick(ng) = newlayer_thick(ng)
                                 !  after both fluxes are applied.
                                 !
       DO i=Istr,Iend
-         SED_LOOP: DO ised=1,NST
+         SED_LOOP: DO ised=1,NST  
             dep_mass(i,ised)=0.0_r8
 #  ifdef SED_MORPH
             ! Apply morphology factor.
@@ -277,15 +277,15 @@ minlayer_thick(ng) = newlayer_thick(ng)
                bed_mass(i,j,k,nnew,ised)=bed_mass(i,j,k,nstp,ised)
             END DO
          END DO SED_LOOP
-
+      
          cff3=0.0_r8
          DO ised=1,NST
             cff3=cff3+bed_mass(i,j,1,nnew,ised)
          END DO
 
-         IF (cff3.eq.0.0_r8) THEN
-            cff3=eps
-         END IF
+         IF (cff3.eq.0.0_r8) THEN 
+            cff3=eps 
+         END IF 
          bed(i,j,1,ithck)=0.0_r8
          DO ised=1,NST
             bed_frac(i,j,1,ised)=bed_mass(i,j,1,nnew,ised)/cff3
@@ -295,8 +295,8 @@ minlayer_thick(ng) = newlayer_thick(ng)
      &        (1.0_r8-bed(i,j,1,iporo))),0.0_r8)
          END DO
       END DO
-
-      END DO J_LOOP
+      
+      END DO J_LOOP 
 # endif /* SUSPLOAD section */
 !
 !-----------------------------------------------------------------------
@@ -334,7 +334,7 @@ minlayer_thick(ng) = newlayer_thick(ng)
            END DO
 
            IF ( cff-cff2.GT.0.0_r8) THEN ! NET depostion
-              !  Deposition. Determine if we need to create a new bed layer
+              !  Deposition. Determine if we need to create a new bed layer 
               ! (no test for age here)
               bed(i,j,1,iaged)=time(ng)
               IF(bed(i,j,1,ithck).gt.                                   &
@@ -407,7 +407,7 @@ minlayer_thick(ng) = newlayer_thick(ng)
                           bed_mass(i,j,1,nnew,ised)=dep_mass(i,ised)
                        END DO
                     END IF
-                 ELSEIF (Nbed.eq.2) THEN
+                 ELSEIF (Nbed.eq.2) THEN 
                  ! NBED=2
                     cff1=0.0_r8
                     cff2=0.0_r8
@@ -429,17 +429,17 @@ minlayer_thick(ng) = newlayer_thick(ng)
                     bed(i,j,2,iporo)=(bed(i,j,1,iporo)*cff1+            &
      &                      bed(i,j,2,iporo)*cff2)/(cff1+cff2)
                     ! ALA CHECK WITH CRS POROSITY OF 1ST LAYER
-                    bed(i,j,1,iporo)=bed(i,j,1,iporo)
+                    bed(i,j,1,iporo)=bed(i,j,1,iporo)                    
                  ELSE
                  ! NBED=1
                  END IF
               ELSE
-                ! Net deposition has occured, but no new bed layer was created
+                ! Net deposition has occured, but no new bed layer was created 
              END IF
            ELSE
                 ! Net erosion occurred
                 bed(i,j,1,iaged)=time(ng)
-                IF (Nbed.eq.2) THEN
+                IF (Nbed.eq.2) THEN 
                  ! NBED=2
                     DO ised=1,NST
                        bed_mass(i,j,2,nnew,ised)=                       &
@@ -460,9 +460,9 @@ minlayer_thick(ng) = newlayer_thick(ng)
               DO ised=1,NST
                  cff3=cff3+bed_mass(i,j,k,nnew,ised)
               END DO
-              IF (cff3.eq.0.0_r8) THEN
-                 cff3=eps
-              END IF
+              IF (cff3.eq.0.0_r8) THEN 
+                 cff3=eps 
+              END IF 
               bed(i,j,k,ithck)=0.0_r8
               DO ised=1,NST
                  bed_frac(i,j,k,ised)=bed_mass(i,j,k,nnew,ised)/cff3
@@ -501,7 +501,7 @@ minlayer_thick(ng) = newlayer_thick(ng)
 !  Update bed mass of top layer and fractional layer.
 !
               cff2=MAX(thck_avail-thck_to_add,0.0_r8)/                  &
-     &             MAX(bed(i,j,Ksed,ithck),eps)
+     &             MAX(bed(i,j,Ksed,ithck),eps)	        
               DO ised=1,NST
                 cff1=0.0_r8
                 DO k=1,Ksed
@@ -550,7 +550,7 @@ minlayer_thick(ng) = newlayer_thick(ng)
 !  fill these new empty cells. ("ks" is the number of new layers).
 !
               ks=Ksed-2
-              ! ALA CHECK WITH CRS about bed_frac
+              ! ALA CHECK WITH CRS about bed_frac 
               nnn=0
               DO ised=1,NST
                  nlysm(ised)=newlayer_thick(ng)*REAL(ks+1,r8)*          &

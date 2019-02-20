@@ -11,7 +11,7 @@
 
 !*
 !* This io_grib2 API is designed to read WRF input and write WRF output data
-!*   in grib version 2 format.
+!*   in grib version 2 format.  
 !*
 
 
@@ -206,7 +206,7 @@ SUBROUTINE ext_gr2_open_for_read_begin ( FileName , Comm_compute, Comm_io, &
   ! Open grib file
   !
   if (DataHandle .GT. 0) then
-
+     
      call baopenr(DataHandle,trim(FileName),status)
 
      if (status .ne. 0) then
@@ -221,7 +221,7 @@ SUBROUTINE ext_gr2_open_for_read_begin ( FileName , Comm_compute, Comm_io, &
      Status = WRF_WARN_TOO_MANY_FILES
      return
   endif
-
+ 
   fileinfo(DataHandle)%recnum = -1
 
   !
@@ -256,28 +256,28 @@ SUBROUTINE ext_gr2_open_for_read_begin ( FileName , Comm_compute, Comm_io, &
   ! Read the metadata
   !
   fields_to_skip = 0
-
+  
   !
   ! First, set all values to the wildcard, then reset values that we wish
   !    to specify.
   !
   call gr2_g2lib_wildcard(JIDS, JPDT, JGDT)
-
+  
   JIDS(1) = center
   JIDS(2) = subcenter
   JIDS(3) = MasterTblV
   JIDS(4) = LocalTblV
   JIDS(5) = 1           ! Indicates that time is "Start of Forecast"
   JIDS(13) = 1          ! Type of processed data (1 for forecast products)
-
+  
   JPDTN = 0             ! Product definition template number
   JPDT(1) = Category
   JPDT(2) = ParmNum
   JPDT(3) = 2           ! Generating process id
-  JPDT(9) = 0           ! Forecast time
+  JPDT(9) = 0           ! Forecast time 
 
   JGDTN    = -1         ! Indicates that any Grid Display Template is a match
-
+  
   UNPACK   = .FALSE.    ! Dont unpack bitmap and data values
 
   CALL GETGB2(DataHandle, DataHandle, fields_to_skip, -1, Disc, JIDS, JPDTN, &
@@ -326,18 +326,18 @@ SUBROUTINE ext_gr2_open_for_read_begin ( FileName , Comm_compute, Comm_io, &
 
   JIDS(5) = 1           ! Indicates that time is "Start of Forecast"
   JIDS(13) = 1          ! Type of processed data (1 for forecast products)
-
+  
   JPDTN = 0             ! Product definition template number
   JPDT(1) = Category
   JPDT(2) = ParmNum
   JPDT(3) = 2           ! Generating process id
 
   JGDTN    = -1         ! Indicates that any Grid Display Template is a match
-
+  
   UNPACK   = .FALSE.    ! Dont unpack bitmap and data values
 
   fields_to_skip = 0
-  do while (status .eq. 0)
+  do while (status .eq. 0) 
      CALL GETGB2(DataHandle, 0, fields_to_skip, -1, -1, JIDS, JPDTN, &
           JPDT, JGDTN, JGDT, UNPACK, fileinfo(DataHandle)%recnum, &
           gfld, status)
@@ -349,7 +349,7 @@ SUBROUTINE ext_gr2_open_for_read_begin ( FileName , Comm_compute, Comm_io, &
         Status = WRF_GRIB2_ERR_READ
         return
      endif
-
+     
      ! Build times list here
      write(refTime,'(I4,A,I2.2,A,I2.2,A,I2.2,A,I2.2,A,I2.2)')      &
           gfld%idsect(6),'-',gfld%idsect(7),'-',gfld%idsect(8),'_',&
@@ -363,10 +363,10 @@ SUBROUTINE ext_gr2_open_for_read_begin ( FileName , Comm_compute, Comm_io, &
      time_range_convert(11) = 6*60*60
      time_range_convert(12) = 12*60*60
      time_range_convert(13) = 1
-
+     
      if (time_range_convert(gfld%ipdtmpl(8)) .gt. 0) then
         fcstsecs = gfld%ipdtmpl(9)*time_range_convert(gfld%ipdtmpl(8))
-     else
+     else 
         write(msg,*)'Invalid time range in input data: ',gfld%ipdtmpl(8),&
              ' Skipping'
         call wrf_message(trim(msg))
@@ -381,7 +381,7 @@ SUBROUTINE ext_gr2_open_for_read_begin ( FileName , Comm_compute, Comm_io, &
 
      scalar_input(DataHandle) = transfer(gfld%local,scalar_input(DataHandle))
      scalar_input(DataHandle)(gfld%locallen+1:30000) = ' '
-
+     
      call gf_free(gfld)
   enddo
 
@@ -397,7 +397,7 @@ SUBROUTINE ext_gr2_open_for_read_begin ( FileName , Comm_compute, Comm_io, &
   endif
   if (.not. half_eta_init) then
      CALL gr2_fill_levels(DataHandle, "ZNU", half_eta, ierr)
-     if (ierr .eq. 0) then
+     if (ierr .eq. 0) then 
         half_eta_init = .TRUE.
      endif
   endif
@@ -417,7 +417,7 @@ SUBROUTINE ext_gr2_open_for_read_begin ( FileName , Comm_compute, Comm_io, &
      endif
   endif
 
-  !
+  ! 
   ! Fill up any variables from the global metadata
   !
 
@@ -427,7 +427,7 @@ SUBROUTINE ext_gr2_open_for_read_begin ( FileName , Comm_compute, Comm_io, &
      write(msg,*)'Could not find metadata value for START_DATE, continuing'
      call wrf_message(trim(msg))
   endif
-
+ 
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        'PROGRAM_NAME', InputProgramName, status)
   if (status .ne. 0) then
@@ -500,14 +500,14 @@ SUBROUTINE ext_gr2_open_for_read ( FileName , Comm_compute, Comm_io, &
   ENDIF
   return
 
-  RETURN
+  RETURN  
 END SUBROUTINE ext_gr2_open_for_read
 
 !*****************************************************************************
 
 SUBROUTINE ext_gr2_open_for_write_begin(FileName, Comm, IOComm, SysDepInfo, &
      DataHandle, Status)
-
+  
   USE gr2_data_info
   implicit none
 #include "wrf_status_codes.h"
@@ -568,7 +568,7 @@ SUBROUTINE ext_gr2_open_for_write_begin(FileName, Comm, IOComm, SysDepInfo, &
      Status = WRF_WARN_TOO_MANY_FILES
   endif
 
-  RETURN
+  RETURN  
 END SUBROUTINE ext_gr2_open_for_write_begin
 
 !*****************************************************************************
@@ -593,7 +593,7 @@ SUBROUTINE ext_gr2_open_for_write_commit( DataHandle , Status )
 
   Status = WRF_NO_ERR
 
-  RETURN
+  RETURN  
 END SUBROUTINE ext_gr2_open_for_write_commit
 
 !*****************************************************************************
@@ -647,7 +647,7 @@ SUBROUTINE ext_gr2_inquire_opened ( DataHandle, FileName , FileStat, Status )
   else
      FileStat = WRF_FILE_NOT_OPENED
   endif
-
+  
   Status = FileStat
 
   RETURN
@@ -682,7 +682,7 @@ SUBROUTINE ext_gr2_ioclose ( DataHandle, Status )
      endif
      fileinfo(DataHandle)%last_scalar_time_written = fcst_secs
      scalar_output(DataHandle) = ''
-
+     
      call gr2_fill_local_use(DataHandle,&
           trim(ti_output(DataHandle))//trim(td_output(DataHandle)),&
           "WRF_GLOBAL",0,msg,status)
@@ -694,7 +694,7 @@ SUBROUTINE ext_gr2_ioclose ( DataHandle, Status )
      td_output(DataHandle) = ''
   endif
 
-  do idx = 1,fileinfo(DataHandle)%NumberTimes
+  do idx = 1,fileinfo(DataHandle)%NumberTimes 
      if (allocated(fileinfo(DataHandle)%Times)) then
         deallocate(fileinfo(DataHandle)%Times)
      endif
@@ -734,7 +734,7 @@ SUBROUTINE ext_gr2_write_field( DataHandle , DateStrIn , VarName , &
   IMPLICIT NONE
 #include "wrf_status_codes.h"
 #include "wrf_io_flags.h"
-  integer                       ,intent(in)    :: DataHandle
+  integer                       ,intent(in)    :: DataHandle 
   character*(*)                 ,intent(in)    :: DateStrIn
   character*(*)                 ,intent(in)    :: VarName
   integer                       ,intent(in)    :: FieldType
@@ -791,14 +791,14 @@ SUBROUTINE ext_gr2_write_field( DataHandle , DateStrIn , VarName , &
   integer             :: numlevels
   integer             :: ngrdpts
   integer             :: bytes_written
-
+  
   call wrf_debug ( DEBUG , 'Entering ext_gr2_write_field for parameter '//&
        VarName)
 
   !
-  ! If DateStr is all 0s, we reset it to StartDate.  For some reason,
+  ! If DateStr is all 0s, we reset it to StartDate.  For some reason, 
   !   in idealized simulations, StartDate is 0001-01-01_00:00:00 while
-  !   the first DateStr is 0000-00-00_00:00:00.
+  !   the first DateStr is 0000-00-00_00:00:00.  
   !
   if (DateStrIn .eq. '0000-00-00_00:00:00') then
      DateStr = TRIM(StartDate)
@@ -807,7 +807,7 @@ SUBROUTINE ext_gr2_write_field( DataHandle , DateStrIn , VarName , &
   endif
 
   !
-  ! Check if this is a domain that we haven t seen yet.  If so, add it to
+  ! Check if this is a domain that we haven t seen yet.  If so, add it to 
   !   the list of domains.
   !
   this_domain = 0
@@ -848,7 +848,7 @@ SUBROUTINE ext_gr2_write_field( DataHandle , DateStrIn , VarName , &
      endif
   enddo
 
-  if (zsize .eq. 0) then
+  if (zsize .eq. 0) then 
      zsize = 1
   endif
 
@@ -869,7 +869,7 @@ SUBROUTINE ext_gr2_write_field( DataHandle , DateStrIn , VarName , &
      enddo
      full_eta_init = .TRUE.
   endif
-
+  
   if (VarName .eq. 'ZS') then
      do idx = 1, zsize
         soil_depth(idx) = Field(1,idx,1,1)
@@ -884,7 +884,7 @@ SUBROUTINE ext_gr2_write_field( DataHandle , DateStrIn , VarName , &
      soil_thickness_init = .TRUE.
   endif
 
-  !
+  ! 
   ! Check to assure that dimensions are valid
   !
 
@@ -894,18 +894,18 @@ SUBROUTINE ext_gr2_write_field( DataHandle , DateStrIn , VarName , &
      call wrf_message(trim(msg))
      return
   endif
-
+     
 
   if (fileinfo(DataHandle)%opened .and. fileinfo(DataHandle)%committed) then
 
      if (StartDate == '') then
         StartDate = DateStr
      endif
-
+     
      CALL geth_idts(DateStr,StartDate,fcst_secs)
 
      !
-     ! If this is a new forecast time, and we have not written the
+     ! If this is a new forecast time, and we have not written the 
      !   last_fcst_secs scalar output yet, then write it here.
      !
 
@@ -924,14 +924,14 @@ SUBROUTINE ext_gr2_write_field( DataHandle , DateStrIn , VarName , &
      endif
 
      call get_vert_stag(VarName,Stagger,vert_stag)
-
+     
      do idx = 1, zsize
         call gr2_get_levels(VarName, idx, zsize, soil_layers, vert_stag, &
              fraction, vert_unit1, vert_unit2, vert_sclFctr1, &
              vert_sclFctr2, level1(idx), level2(idx))
      enddo
-
-     !
+     
+     ! 
      ! Get the center lat/lon for the area being output.  For some cases (such
      !    as for boundary areas, the center of the area is different from the
      !    center of the model grid.
@@ -946,13 +946,13 @@ SUBROUTINE ext_gr2_write_field( DataHandle , DateStrIn , VarName , &
      else
         dom_ysize = full_ysize
      endif
-
+     
 
      CALL get_region_center(MemoryOrder, wrf_projection, center_lat, &
           center_lon, dom_xsize, dom_ysize, dx, dy, proj_central_lon, &
           proj_center_flag, truelat1, truelat2, xsize, ysize, &
           region_center_lat, region_center_lon)
-
+     
 
      if (ndims .eq. 0) then        ! Scalar quantity
 
@@ -977,7 +977,7 @@ SUBROUTINE ext_gr2_write_field( DataHandle , DateStrIn , VarName , &
            dim2size = ysize
            dim3size = zsize
         endif
-
+        
         ALLOCATE(data(1:dim1size,1:dim2size), STAT=istat)
 
         CALL get_parminfo(VarName, center, subcenter, MasterTblV, &
@@ -994,13 +994,13 @@ SUBROUTINE ext_gr2_write_field( DataHandle , DateStrIn , VarName , &
 
            call gr2_retrieve_data(MemoryOrder, MemoryStart, MemoryEnd, xsize, &
                 ysize, zsize, dim3, FieldType, Field, data)
-
-           !
+        
+           ! 
            ! Here, we do any necessary conversions to the data.
            !
-
-           ! Potential temperature is sometimes passed in as perturbation
-           !   potential temperature (i.e., POT-300).  Other times (i.e., from
+           
+           ! Potential temperature is sometimes passed in as perturbation 
+           !   potential temperature (i.e., POT-300).  Other times (i.e., from 
            !   WRF SI), it is passed in as full potential temperature.
            ! Here, we convert to full potential temperature by adding 300
            !   only if POT < 200 K.
@@ -1010,8 +1010,8 @@ SUBROUTINE ext_gr2_write_field( DataHandle , DateStrIn , VarName , &
                  data = data + 300
               endif
            endif
-
-           !
+           
+           ! 
            ! For precip, we setup the accumulation period, and output a precip
            !    rate for time-step precip.
            !
@@ -1022,7 +1022,7 @@ SUBROUTINE ext_gr2_write_field( DataHandle , DateStrIn , VarName , &
            else
               accum_period = 0
            endif
-
+           
            !
            ! Create indicator and identification sections (sections 0 and 1)
            !
@@ -1056,12 +1056,12 @@ SUBROUTINE ext_gr2_write_field( DataHandle , DateStrIn , VarName , &
               grib_levels(2) = level2(dim3)
               ngrdpts = xsize*ysize
            endif
-
+           
            !
-           ! Add the Product Definition, Data representation, bitmap
+           ! Add the Product Definition, Data representation, bitmap 
            !      and data sections (sections 4-7)
            !
-
+           
            call gr2_addfield_w(cgrib, lcgrib, VarName, Category, ParmNum, &
                 DecScl, BinScl, fcst_secs, vert_unit1, vert_unit2, &
                 vert_sclFctr1, vert_sclFctr2, numlevels, &
@@ -1092,19 +1092,19 @@ SUBROUTINE ext_gr2_write_field( DataHandle , DateStrIn , VarName , &
            !
            ! Close out the message
            !
-
+           
            call gribend(cgrib,lcgrib,lengrib,ierr)
            if (ierr .ne. 0) then
-              write(msg,*) 'gribend failed with ierr: ',ierr
+              write(msg,*) 'gribend failed with ierr: ',ierr     
               call wrf_message(trim(msg))
               Status = WRF_GRIB2_ERR_GRIBEND
               return
            endif
 
-           !
+           ! 
            ! Write the data to the file
            !
-
+           
 !           call write_file_n(fileinfo(DataHandle)%FileFd, cgrib, lengrib, ierr)
            call bawrite(DataHandle, -1, lengrib, bytes_written, cgrib)
            if (bytes_written .ne. lengrib) then
@@ -1116,7 +1116,7 @@ SUBROUTINE ext_gr2_write_field( DataHandle , DateStrIn , VarName , &
            endif
 
         ENDDO VERTDIM
-
+        
         DEALLOCATE(data)
 
      endif
@@ -1143,10 +1143,10 @@ SUBROUTINE ext_gr2_read_field ( DataHandle , DateStr , VarName , Field , &
 
   USE gr2_data_info
   USE grib_mod
-  IMPLICIT NONE
+  IMPLICIT NONE  
 #include "wrf_status_codes.h"
 #include "wrf_io_flags.h"
-  INTEGER                       ,intent(in)       :: DataHandle
+  INTEGER                       ,intent(in)       :: DataHandle 
   CHARACTER*(*)                 ,intent(in)       :: DateStr
   CHARACTER*(*)                 ,intent(in)       :: VarName
   integer                       ,intent(inout)    :: FieldType
@@ -1187,14 +1187,14 @@ SUBROUTINE ext_gr2_read_field ( DataHandle , DateStr , VarName , Field , &
   real                                         :: tmpreal
 
   call wrf_debug ( DEBUG , 'Entering ext_gr2_read_field'//fileinfo(DataHandle)%DataFile)
-
+  
   CALL get_dims(MemoryOrder, PatchStart, PatchEnd, ndims, x_start, x_end, &
        y_start, y_end,z_start,z_end)
   xsize = x_end - x_start + 1
   ysize = y_end - y_start + 1
   zsize = z_end - z_start + 1
 
-  !
+  ! 
   ! Check to assure that dimensions are valid
   !
 
@@ -1205,7 +1205,7 @@ SUBROUTINE ext_gr2_read_field ( DataHandle , DateStr , VarName , Field , &
      call wrf_message(trim(msg))
      return
   endif
-
+     
 
   if (ndims .eq. 0) then    ! Scalar quantity
 
@@ -1236,7 +1236,7 @@ SUBROUTINE ext_gr2_read_field ( DataHandle , DateStr , VarName , Field , &
      endif
 
   else if (ndims .ge. 1) then   ! Vector (1-D) and 2/3 D quantities
-
+     
      if (ndims .eq. 1) then     ! Handle Vector (1-D) parameters
         dim1size = zsize
         dim2size = 1
@@ -1246,7 +1246,7 @@ SUBROUTINE ext_gr2_read_field ( DataHandle , DateStr , VarName , Field , &
         dim2size = ysize
         dim3size = zsize
      endif
-
+     
      CALL get_parminfo(VarName, center, subcenter, MasterTblV, &
           LocalTblV, Disc, Category, ParmNum, DecScl, BinScl, status)
      if (status .ne. 0) then
@@ -1256,7 +1256,7 @@ SUBROUTINE ext_gr2_read_field ( DataHandle , DateStr , VarName , Field , &
         Status =  WRF_GRIB2_ERR_GRIB2MAP
         return
      endif
-
+     
      CALL get_vert_stag(VarName,Stagger,vert_stag)
      CALL get_soil_layers(VarName,soil_layers)
 
@@ -1274,17 +1274,17 @@ SUBROUTINE ext_gr2_read_field ( DataHandle , DateStr , VarName , Field , &
         JIDS(3) = MasterTblV
         JIDS(4) = LocalTblV
         JIDS(5) = 1           ! Indicates that time is "Start of Forecast"
-
+        
         READ (StartDate,'(I4.4,1X,I2.2,1X,I2.2,1X,I2.2,1X,I2.2,1X,I2.2)') &
              (JIDS(idx),idx=6,11)
         JIDS(13) = 1          ! Type of processed data(1 for forecast products)
-
+        
         JPDT(1) = Category
         JPDT(2) = ParmNum
         JPDT(3) = 2           ! Generating process id
 
-        CALL geth_idts(DateStr,StartDate,tmpreal)  ! Forecast time
-
+        CALL geth_idts(DateStr,StartDate,tmpreal)  ! Forecast time 
+        
         JPDT(9) = NINT(tmpreal)
 
         if (ndims .eq. 1) then
@@ -1293,7 +1293,7 @@ SUBROUTINE ext_gr2_read_field ( DataHandle , DateStr , VarName , Field , &
            call gr2_get_levels(VarName, dim3, dim3size, soil_layers, &
                 vert_stag, .false., vert_unit1, vert_unit2, vert_sclFctr1, &
                 vert_sclFctr2, level1, level2)
-
+           
            jpdtn = 0          ! Product definition template (0 for horiz grid)
            JPDT(10) = vert_unit1     ! Type of first surface
            JPDT(11) = vert_sclFctr1  ! Scale factor first surface
@@ -1304,9 +1304,9 @@ SUBROUTINE ext_gr2_read_field ( DataHandle , DateStr , VarName , Field , &
         endif
 
         JGDTN    = -1    ! Indicates that any Grid Display Template is a match
-
+        
         UNPACK   = .TRUE.! Unpack bitmap and data values
-
+        
         fields_to_skip = 0
         CALL GETGB2(DataHandle, 0, fields_to_skip, &
              fileinfo(DataHandle)%recnum+1, &
@@ -1327,16 +1327,16 @@ SUBROUTINE ext_gr2_read_field ( DataHandle , DateStr , VarName , Field , &
 
         if(FieldType == WRF_DOUBLE) then
            di = 2
-        else
+        else 
            di = 1
         endif
 
-        !
+        ! 
         ! Here, we do any necessary conversions to the data.
         !
         ! The WRF executable (wrf.exe) expects perturbation potential
         !   temperature.  However, real.exe expects full potential T.
-        ! So, if the program is WRF, subtract 300 from Potential Temperature
+        ! So, if the program is WRF, subtract 300 from Potential Temperature 
         !   to get perturbation potential temperature.
         !
         if (VarName == 'T') then
@@ -1362,7 +1362,7 @@ SUBROUTINE ext_gr2_read_field ( DataHandle , DateStr , VarName , Field , &
         endif
 
         call gf_free(gfld)
-
+        
      enddo VERTDIM
   endif
 
@@ -1413,7 +1413,7 @@ end subroutine ext_gr2_end_of_frame
 
 SUBROUTINE ext_gr2_iosync ( DataHandle, Status )
 
-  USE gr2_data_info
+  USE gr2_data_info  
   IMPLICIT NONE
 #include "wrf_status_codes.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
@@ -1449,7 +1449,7 @@ SUBROUTINE ext_gr2_inquire_filename ( DataHandle, FileName , FileStat, &
 
   call wrf_debug ( DEBUG , 'Entering ext_gr2_inquire_filename')
 
-  FileName = fileinfo(DataHandle)%DataFile
+  FileName = fileinfo(DataHandle)%DataFile 
 
   if ((DataHandle .ge. firstFileHandle) .and. &
        (DataHandle .le. maxFileHandles)) then
@@ -1516,7 +1516,7 @@ SUBROUTINE ext_gr2_set_time ( DataHandle, DateStr, Status )
         fileinfo(DataHandle)%CurrentTime = idx
      endif
   enddo
-  if (found_time == 0) then
+  if (found_time == 0) then 
      Status = WRF_WARN_TIME_NF
   else
      Status = WRF_NO_ERR
@@ -1587,7 +1587,7 @@ SUBROUTINE ext_gr2_get_var_ti_real ( DataHandle,Element,  Varname, Data, &
 #include "wrf_status_codes.h"
   INTEGER ,       INTENT(IN)    :: DataHandle
   CHARACTER*(*) :: Element
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   real ,          INTENT(OUT)   :: Data(*)
   INTEGER ,       INTENT(IN)    :: Count
   INTEGER ,       INTENT(OUT)   :: OutCount
@@ -1599,7 +1599,7 @@ SUBROUTINE ext_gr2_get_var_ti_real ( DataHandle,Element,  Varname, Data, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_var_ti_real')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(VarName)//';'//trim(Element), Value, stat)
   if (stat /= 0) then
@@ -1615,9 +1615,9 @@ SUBROUTINE ext_gr2_get_var_ti_real ( DataHandle,Element,  Varname, Data, &
      RETURN
   endif
   Outcount = idx
-
+ 
   RETURN
-END SUBROUTINE ext_gr2_get_var_ti_real
+END SUBROUTINE ext_gr2_get_var_ti_real 
 
 !*****************************************************************************
 
@@ -1629,7 +1629,7 @@ SUBROUTINE ext_gr2_get_var_ti_real8 ( DataHandle,Element,  Varname, Data, &
 #include "wrf_status_codes.h"
   INTEGER ,       INTENT(IN)      :: DataHandle
   CHARACTER*(*) :: Element
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   real*8 ,        INTENT(OUT)     :: Data(*)
   INTEGER ,       INTENT(IN)      :: Count
   INTEGER ,       INTENT(OUT)     :: OutCount
@@ -1641,7 +1641,7 @@ SUBROUTINE ext_gr2_get_var_ti_real8 ( DataHandle,Element,  Varname, Data, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_var_ti_real8')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(VarName)//';'//trim(Element), Value, stat)
   if (stat /= 0) then
@@ -1657,9 +1657,9 @@ SUBROUTINE ext_gr2_get_var_ti_real8 ( DataHandle,Element,  Varname, Data, &
      RETURN
   endif
   Outcount = idx
-
+ 
   RETURN
-END SUBROUTINE ext_gr2_get_var_ti_real8
+END SUBROUTINE ext_gr2_get_var_ti_real8 
 
 !*****************************************************************************
 
@@ -1682,7 +1682,7 @@ SUBROUTINE ext_gr2_get_var_ti_double ( DataHandle,Element,  Varname, Data, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_var_ti_double')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(VarName)//';'//trim(Element), Value, stat)
   if (stat /= 0) then
@@ -1712,7 +1712,7 @@ SUBROUTINE ext_gr2_get_var_ti_integer ( DataHandle,Element,  Varname, Data, &
 #include "wrf_status_codes.h"
   INTEGER ,       INTENT(IN)       :: DataHandle
   CHARACTER*(*) :: Element
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   integer ,       INTENT(OUT)      :: Data(*)
   INTEGER ,       INTENT(IN)       :: Count
   INTEGER ,       INTENT(OUT)      :: OutCount
@@ -1724,7 +1724,7 @@ SUBROUTINE ext_gr2_get_var_ti_integer ( DataHandle,Element,  Varname, Data, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_var_ti_integer')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(VarName)//';'//trim(Element), Value, stat)
   if (stat /= 0) then
@@ -1742,7 +1742,7 @@ SUBROUTINE ext_gr2_get_var_ti_integer ( DataHandle,Element,  Varname, Data, &
   Outcount = idx
 
   RETURN
-END SUBROUTINE ext_gr2_get_var_ti_integer
+END SUBROUTINE ext_gr2_get_var_ti_integer 
 
 !*****************************************************************************
 
@@ -1754,7 +1754,7 @@ SUBROUTINE ext_gr2_get_var_ti_logical ( DataHandle,Element,  Varname, Data, &
 #include "wrf_status_codes.h"
   INTEGER ,       INTENT(IN)       :: DataHandle
   CHARACTER*(*) :: Element
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   logical ,       INTENT(OUT)      :: Data(*)
   INTEGER ,       INTENT(IN)       :: Count
   INTEGER ,       INTENT(OUT)      :: OutCount
@@ -1766,7 +1766,7 @@ SUBROUTINE ext_gr2_get_var_ti_logical ( DataHandle,Element,  Varname, Data, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_var_ti_logical')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(VarName)//';'//trim(Element), Value, stat)
   if (stat /= 0) then
@@ -1784,7 +1784,7 @@ SUBROUTINE ext_gr2_get_var_ti_logical ( DataHandle,Element,  Varname, Data, &
   Outcount = idx
 
   RETURN
-END SUBROUTINE ext_gr2_get_var_ti_logical
+END SUBROUTINE ext_gr2_get_var_ti_logical 
 
 !*****************************************************************************
 
@@ -1796,13 +1796,13 @@ SUBROUTINE ext_gr2_get_var_ti_char ( DataHandle,Element,  Varname, Data,  &
 #include "wrf_status_codes.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
   INTEGER       :: stat
 
   Status = WRF_NO_ERR
-
+  
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_var_ti_char')
 
   CALL gr2_get_metadata_value(global_input(DataHandle), &
@@ -1814,7 +1814,7 @@ SUBROUTINE ext_gr2_get_var_ti_char ( DataHandle,Element,  Varname, Data,  &
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_get_var_ti_char
+END SUBROUTINE ext_gr2_get_var_ti_char 
 
 !******************************************************************************
 !* End of get_var_ti_* routines
@@ -1833,7 +1833,7 @@ SUBROUTINE ext_gr2_put_var_ti_real ( DataHandle,Element,  Varname, Data, &
 #include "wrf_status_codes.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   real ,          INTENT(IN)  :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
@@ -1854,7 +1854,7 @@ SUBROUTINE ext_gr2_put_var_ti_real ( DataHandle,Element,  Varname, Data, &
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_put_var_ti_real
+END SUBROUTINE ext_gr2_put_var_ti_real 
 
 !*****************************************************************************
 
@@ -1879,7 +1879,7 @@ SUBROUTINE ext_gr2_put_var_ti_double ( DataHandle,Element,  Varname, Data, &
      do idx = 1,Count
         write(tmpstr(idx),'(G17.10)')Data(idx)
      enddo
-
+     
      CALL gr2_build_string (ti_output(DataHandle), &
           trim(VarName)//';'//trim(Element), tmpstr, Count, Status)
   endif
@@ -1897,7 +1897,7 @@ SUBROUTINE ext_gr2_put_var_ti_real8 ( DataHandle,Element,  Varname, Data, &
 #include "wrf_status_codes.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   real*8 ,        INTENT(IN)  :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
@@ -1911,13 +1911,13 @@ SUBROUTINE ext_gr2_put_var_ti_real8 ( DataHandle,Element,  Varname, Data, &
      do idx = 1,Count
         write(tmpstr(idx),'(G17.10)')Data(idx)
      enddo
-
+     
      CALL gr2_build_string (ti_output(DataHandle), &
           trim(VarName)//';'//trim(Element), tmpstr, Count, Status)
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_put_var_ti_real8
+END SUBROUTINE ext_gr2_put_var_ti_real8 
 
 !*****************************************************************************
 
@@ -1929,7 +1929,7 @@ SUBROUTINE ext_gr2_put_var_ti_integer ( DataHandle,Element,  Varname, Data, &
 #include "wrf_status_codes.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   integer ,       INTENT(IN)  :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
@@ -1943,13 +1943,13 @@ SUBROUTINE ext_gr2_put_var_ti_integer ( DataHandle,Element,  Varname, Data, &
      do idx = 1,Count
         write(tmpstr(idx),'(G17.10)')Data(idx)
      enddo
-
+     
      CALL gr2_build_string (ti_output(DataHandle), &
           trim(VarName)//';'//trim(Element), tmpstr, Count, Status)
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_put_var_ti_integer
+END SUBROUTINE ext_gr2_put_var_ti_integer 
 
 !*****************************************************************************
 
@@ -1961,7 +1961,7 @@ SUBROUTINE ext_gr2_put_var_ti_logical ( DataHandle,Element,  Varname, Data, &
 #include "wrf_status_codes.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   logical ,       INTENT(IN)  :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
@@ -1975,14 +1975,14 @@ SUBROUTINE ext_gr2_put_var_ti_logical ( DataHandle,Element,  Varname, Data, &
      do idx = 1,Count
         write(tmpstr(idx),'(G17.10)')Data(idx)
      enddo
-
+     
      CALL gr2_build_string (ti_output(DataHandle), &
           trim(Varname)//';'//trim(Element), tmpstr, Count, Status)
 
   endif
 
 RETURN
-END SUBROUTINE ext_gr2_put_var_ti_logical
+END SUBROUTINE ext_gr2_put_var_ti_logical 
 
 !*****************************************************************************
 
@@ -1994,7 +1994,7 @@ SUBROUTINE ext_gr2_put_var_ti_char ( DataHandle,Element,  Varname, Data,  &
 #include "wrf_status_codes.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER(len=*) :: Element
-  CHARACTER(len=*) :: VarName
+  CHARACTER(len=*) :: VarName 
   CHARACTER(len=*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
   REAL dummy
@@ -2014,7 +2014,7 @@ SUBROUTINE ext_gr2_put_var_ti_char ( DataHandle,Element,  Varname, Data,  &
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_put_var_ti_char
+END SUBROUTINE ext_gr2_put_var_ti_char 
 
 !******************************************************************************
 !* End of put_var_ti_* routines
@@ -2044,7 +2044,7 @@ SUBROUTINE ext_gr2_get_var_td_double ( DataHandle,Element,  DateStr, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_var_td_double')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(VarName)//';'//trim(DateStr)//';'//trim(Element), Value, stat)
   if (stat /= 0) then
@@ -2075,7 +2075,7 @@ SUBROUTINE ext_gr2_get_var_td_real ( DataHandle,Element,  DateStr,Varname, &
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
   CHARACTER*(*) :: DateStr
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   real ,          INTENT(OUT) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: OutCount
@@ -2087,7 +2087,7 @@ SUBROUTINE ext_gr2_get_var_td_real ( DataHandle,Element,  DateStr,Varname, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_var_td_real')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(VarName)//';'//trim(DateStr)//';'//trim(Element), Value, stat)
   if (stat /= 0) then
@@ -2105,7 +2105,7 @@ SUBROUTINE ext_gr2_get_var_td_real ( DataHandle,Element,  DateStr,Varname, &
   Outcount = idx
 
   RETURN
-END SUBROUTINE ext_gr2_get_var_td_real
+END SUBROUTINE ext_gr2_get_var_td_real 
 
 !*****************************************************************************
 
@@ -2118,7 +2118,7 @@ SUBROUTINE ext_gr2_get_var_td_real8 ( DataHandle,Element,  DateStr,Varname, &
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
   CHARACTER*(*) :: DateStr
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   real*8 ,        INTENT(OUT) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: OutCount
@@ -2130,7 +2130,7 @@ SUBROUTINE ext_gr2_get_var_td_real8 ( DataHandle,Element,  DateStr,Varname, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_var_td_real8')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(VarName)//';'//trim(DateStr)//';'//trim(Element), Value, stat)
   if (stat /= 0) then
@@ -2148,7 +2148,7 @@ SUBROUTINE ext_gr2_get_var_td_real8 ( DataHandle,Element,  DateStr,Varname, &
   Outcount = idx
 
   RETURN
-END SUBROUTINE ext_gr2_get_var_td_real8
+END SUBROUTINE ext_gr2_get_var_td_real8 
 
 !*****************************************************************************
 
@@ -2161,7 +2161,7 @@ SUBROUTINE ext_gr2_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, &
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
   CHARACTER*(*) :: DateStr
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   integer ,       INTENT(OUT) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: OutCount
@@ -2173,7 +2173,7 @@ SUBROUTINE ext_gr2_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_var_td_integer')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(VarName)//';'//trim(DateStr)//';'//trim(Element), Value, stat)
   if (stat /= 0) then
@@ -2191,20 +2191,20 @@ SUBROUTINE ext_gr2_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, &
   Outcount = idx
 
   RETURN
-END SUBROUTINE ext_gr2_get_var_td_integer
+END SUBROUTINE ext_gr2_get_var_td_integer 
 
 !*****************************************************************************
 
 SUBROUTINE ext_gr2_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, &
      Data, Count, Outcount, Status )
-
+  
   USE gr2_data_info
   IMPLICIT NONE
 #include "wrf_status_codes.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
   CHARACTER*(*) :: DateStr
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   logical ,       INTENT(OUT) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: OutCount
@@ -2216,7 +2216,7 @@ SUBROUTINE ext_gr2_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_var_td_logical')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(VarName)//';'//trim(DateStr)//';'//trim(Element), Value, stat)
   if (stat /= 0) then
@@ -2234,7 +2234,7 @@ SUBROUTINE ext_gr2_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, &
   Outcount = idx
 
   RETURN
-END SUBROUTINE ext_gr2_get_var_td_logical
+END SUBROUTINE ext_gr2_get_var_td_logical 
 
 !*****************************************************************************
 
@@ -2247,13 +2247,13 @@ SUBROUTINE ext_gr2_get_var_td_char ( DataHandle,Element,  DateStr,Varname, &
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
   CHARACTER*(*) :: DateStr
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
   INTEGER       :: stat
 
   Status = WRF_NO_ERR
-
+  
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_var_td_char')
 
   CALL gr2_get_metadata_value(global_input(DataHandle), &
@@ -2265,7 +2265,7 @@ SUBROUTINE ext_gr2_get_var_td_char ( DataHandle,Element,  DateStr,Varname, &
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_get_var_td_char
+END SUBROUTINE ext_gr2_get_var_td_char 
 
 !******************************************************************************
 !* End of get_var_td_* routines
@@ -2319,7 +2319,7 @@ SUBROUTINE ext_gr2_put_var_td_integer ( DataHandle,Element,  DateStr, &
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
   CHARACTER*(*) :: DateStr
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   integer ,       INTENT(IN)  :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
@@ -2333,7 +2333,7 @@ SUBROUTINE ext_gr2_put_var_td_integer ( DataHandle,Element,  DateStr, &
      do idx = 1,Count
         write(tmpstr(idx),'(G17.10)')Data(idx)
      enddo
-
+     
      CALL gr2_build_string (td_output(DataHandle), &
           trim(Varname)//';'//trim(DateStr)//';'//trim(Element), &
           tmpstr, Count, Status)
@@ -2341,7 +2341,7 @@ SUBROUTINE ext_gr2_put_var_td_integer ( DataHandle,Element,  DateStr, &
   endif
 
 RETURN
-END SUBROUTINE ext_gr2_put_var_td_integer
+END SUBROUTINE ext_gr2_put_var_td_integer 
 
 !*****************************************************************************
 
@@ -2354,7 +2354,7 @@ SUBROUTINE ext_gr2_put_var_td_real ( DataHandle,Element,  DateStr,Varname, &
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
   CHARACTER*(*) :: DateStr
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   real ,          INTENT(IN)  :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
@@ -2368,7 +2368,7 @@ SUBROUTINE ext_gr2_put_var_td_real ( DataHandle,Element,  DateStr,Varname, &
      do idx = 1,Count
         write(tmpstr(idx),'(G17.10)')Data(idx)
      enddo
-
+     
      CALL gr2_build_string (td_output(DataHandle), &
           trim(Varname)//';'//trim(DateStr)//';'//trim(Element), &
           tmpstr, Count, Status)
@@ -2376,7 +2376,7 @@ SUBROUTINE ext_gr2_put_var_td_real ( DataHandle,Element,  DateStr,Varname, &
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_put_var_td_real
+END SUBROUTINE ext_gr2_put_var_td_real 
 
 !*****************************************************************************
 
@@ -2389,7 +2389,7 @@ SUBROUTINE ext_gr2_put_var_td_real8 ( DataHandle,Element,  DateStr,Varname, &
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
   CHARACTER*(*) :: DateStr
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   real*8 ,        INTENT(IN)  :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
@@ -2402,14 +2402,14 @@ SUBROUTINE ext_gr2_put_var_td_real8 ( DataHandle,Element,  DateStr,Varname, &
      do idx = 1,Count
         write(tmpstr(idx),'(G17.10)')Data(idx)
      enddo
-
+     
      CALL gr2_build_string (td_output(DataHandle), &
           trim(Varname)//';'//trim(DateStr)//';'//trim(Element), &
           tmpstr, Count, Status)
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_put_var_td_real8
+END SUBROUTINE ext_gr2_put_var_td_real8 
 
 !*****************************************************************************
 
@@ -2422,7 +2422,7 @@ SUBROUTINE ext_gr2_put_var_td_logical ( DataHandle,Element,  DateStr, &
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
   CHARACTER*(*) :: DateStr
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   logical ,       INTENT(IN)  :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
@@ -2444,7 +2444,7 @@ SUBROUTINE ext_gr2_put_var_td_logical ( DataHandle,Element,  DateStr, &
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_put_var_td_logical
+END SUBROUTINE ext_gr2_put_var_td_logical 
 
 !*****************************************************************************
 
@@ -2457,7 +2457,7 @@ SUBROUTINE ext_gr2_put_var_td_char ( DataHandle,Element,  DateStr,Varname, &
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) :: Element
   CHARACTER*(*) :: DateStr
-  CHARACTER*(*) :: VarName
+  CHARACTER*(*) :: VarName 
   CHARACTER*(*) :: Data
   INTEGER ,       INTENT(OUT) :: Status
   CHARACTER(len=1000) :: tmpstr(1)
@@ -2476,7 +2476,7 @@ SUBROUTINE ext_gr2_put_var_td_char ( DataHandle,Element,  DateStr,Varname, &
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_put_var_td_char
+END SUBROUTINE ext_gr2_put_var_td_char 
 
 !******************************************************************************
 !* End of put_var_td_* routines
@@ -2524,7 +2524,7 @@ SUBROUTINE ext_gr2_get_dom_ti_real ( DataHandle,Element,   Data, Count, &
   Outcount = idx
 
   RETURN
-END SUBROUTINE ext_gr2_get_dom_ti_real
+END SUBROUTINE ext_gr2_get_dom_ti_real 
 
 !*****************************************************************************
 
@@ -2547,7 +2547,7 @@ SUBROUTINE ext_gr2_get_dom_ti_real8 ( DataHandle,Element,   Data, Count, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_dom_ti_real8')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(Element), Value, stat)
   if (stat /= 0) then
@@ -2563,9 +2563,9 @@ SUBROUTINE ext_gr2_get_dom_ti_real8 ( DataHandle,Element,   Data, Count, &
      RETURN
   endif
   Outcount = idx
-
+ 
   RETURN
-END SUBROUTINE ext_gr2_get_dom_ti_real8
+END SUBROUTINE ext_gr2_get_dom_ti_real8 
 
 !*****************************************************************************
 
@@ -2584,7 +2584,7 @@ SUBROUTINE ext_gr2_get_dom_ti_integer ( DataHandle,Element,   Data, Count, &
   INTEGER          :: idx
   INTEGER          :: stat
   CHARACTER*(1000) :: VALUE
-
+  
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_dom_ti_integer Element: '//Element)
 
   CALL gr2_get_metadata_value(global_input(DataHandle), &
@@ -2602,9 +2602,9 @@ SUBROUTINE ext_gr2_get_dom_ti_integer ( DataHandle,Element,   Data, Count, &
      RETURN
   endif
   Outcount = Count
-
+ 
   RETURN
-END SUBROUTINE ext_gr2_get_dom_ti_integer
+END SUBROUTINE ext_gr2_get_dom_ti_integer 
 
 !*****************************************************************************
 
@@ -2627,7 +2627,7 @@ SUBROUTINE ext_gr2_get_dom_ti_logical ( DataHandle,Element,   Data, Count, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_dom_ti_logical')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(Element), Value, stat)
   if (stat /= 0) then
@@ -2643,9 +2643,9 @@ SUBROUTINE ext_gr2_get_dom_ti_logical ( DataHandle,Element,   Data, Count, &
      RETURN
   endif
   Outcount = idx
-
+ 
   RETURN
-END SUBROUTINE ext_gr2_get_dom_ti_logical
+END SUBROUTINE ext_gr2_get_dom_ti_logical 
 
 !*****************************************************************************
 
@@ -2662,7 +2662,7 @@ SUBROUTINE ext_gr2_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
   INTEGER       :: endchar
 
   Status = WRF_NO_ERR
-
+  
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_dom_ti_char')
 
   CALL gr2_get_metadata_value(global_input(DataHandle), &
@@ -2674,7 +2674,7 @@ SUBROUTINE ext_gr2_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_get_dom_ti_char
+END SUBROUTINE ext_gr2_get_dom_ti_char 
 
 !*****************************************************************************
 
@@ -2696,7 +2696,7 @@ SUBROUTINE ext_gr2_get_dom_ti_double ( DataHandle,Element,   Data, Count, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_dom_ti_double')
 
   Status = WRF_NO_ERR
-
+   
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(Element), Value, stat)
   if (stat /= 0) then
@@ -2712,7 +2712,7 @@ SUBROUTINE ext_gr2_get_dom_ti_double ( DataHandle,Element,   Data, Count, &
      RETURN
   endif
   Outcount = idx
-
+ 
 RETURN
 END SUBROUTINE ext_gr2_get_dom_ti_double
 
@@ -2754,7 +2754,7 @@ SUBROUTINE ext_gr2_put_dom_ti_real ( DataHandle,Element,   Data, Count,  &
   endif
   if (Element .eq. 'CEN_LON') then
      center_lon = Data(1)
-  endif
+  endif  
   if (Element .eq. 'TRUELAT1') then
      truelat1 = Data(1)
   endif
@@ -2773,14 +2773,14 @@ SUBROUTINE ext_gr2_put_dom_ti_real ( DataHandle,Element,   Data, Count,  &
      do idx = 1,Count
         write(tmpstr(idx),'(G17.10)')Data(idx)
      enddo
-
+     
      CALL gr2_build_string (ti_output(DataHandle), Element, &
           tmpstr, Count, Status)
 
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_put_dom_ti_real
+END SUBROUTINE ext_gr2_put_dom_ti_real 
 
 !*****************************************************************************
 
@@ -2805,14 +2805,14 @@ SUBROUTINE ext_gr2_put_dom_ti_real8 ( DataHandle,Element,   Data, Count,  &
      do idx = 1,Count
         write(tmpstr(idx),'(G17.10)')Data(idx)
      enddo
-
+     
      CALL gr2_build_string (ti_output(DataHandle), Element, &
           tmpstr, Count, Status)
 
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_put_dom_ti_real8
+END SUBROUTINE ext_gr2_put_dom_ti_real8 
 
 !*****************************************************************************
 
@@ -2855,7 +2855,7 @@ SUBROUTINE ext_gr2_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  &
      do idx = 1,Count
         write(tmpstr(idx),'(G17.10)')Data(idx)
      enddo
-
+     
      CALL gr2_build_string (ti_output(DataHandle), Element, &
           tmpstr, Count, Status)
 
@@ -2864,7 +2864,7 @@ SUBROUTINE ext_gr2_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  &
   call wrf_debug ( DEBUG , 'Leaving ext_gr2_put_dom_ti_integer')
 
   RETURN
-END SUBROUTINE ext_gr2_put_dom_ti_integer
+END SUBROUTINE ext_gr2_put_dom_ti_integer 
 
 !*****************************************************************************
 
@@ -2889,14 +2889,14 @@ SUBROUTINE ext_gr2_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  &
      do idx = 1,Count
         write(tmpstr(idx),'(G17.10)')Data(idx)
      enddo
-
+     
      CALL gr2_build_string (ti_output(DataHandle), Element, &
           tmpstr, Count, Status)
 
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_put_dom_ti_logical
+END SUBROUTINE ext_gr2_put_dom_ti_logical 
 
 !*****************************************************************************
 
@@ -2919,7 +2919,7 @@ SUBROUTINE ext_gr2_put_dom_ti_char ( DataHandle,Element,   Data,  &
 
      !
      ! This is just a hack to fix a problem when outputting restart.  WRF
-     !   outputs both the initialization time and the time of the restart
+     !   outputs both the initialization time and the time of the restart 
      !   as the StartDate.  So, we ll just take the earliest.
      !
      if ((StartDate .eq. '') .or. (Data .le. StartDate)) then
@@ -2931,7 +2931,7 @@ SUBROUTINE ext_gr2_put_dom_ti_char ( DataHandle,Element,   Data,  &
   if (fileinfo(DataHandle)%committed) then
 
      write(tmpstr,*)trim(Data)
-
+     
      CALL gr2_build_string (ti_output(DataHandle), Element, &
           tmpstr, 1, Status)
 
@@ -2967,7 +2967,7 @@ SUBROUTINE ext_gr2_put_dom_ti_double ( DataHandle,Element, Data, Count, &
           tmpstr, Count, Status)
 
   endif
-
+  
   RETURN
 END SUBROUTINE ext_gr2_put_dom_ti_double
 
@@ -3000,7 +3000,7 @@ SUBROUTINE ext_gr2_get_dom_td_real ( DataHandle,Element, DateStr,  Data, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_dom_td_real')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(DateStr)//';'//trim(Element), Value, stat)
   if (stat /= 0) then
@@ -3018,7 +3018,7 @@ SUBROUTINE ext_gr2_get_dom_td_real ( DataHandle,Element, DateStr,  Data, &
   Outcount = idx
 
   RETURN
-END SUBROUTINE ext_gr2_get_dom_td_real
+END SUBROUTINE ext_gr2_get_dom_td_real 
 
 !*****************************************************************************
 
@@ -3042,7 +3042,7 @@ SUBROUTINE ext_gr2_get_dom_td_real8 ( DataHandle,Element, DateStr,  Data, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_dom_td_real8')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(DateStr)//';'//trim(Element), Value, stat)
   if (stat /= 0) then
@@ -3060,7 +3060,7 @@ SUBROUTINE ext_gr2_get_dom_td_real8 ( DataHandle,Element, DateStr,  Data, &
   Outcount = idx
 
   RETURN
-END SUBROUTINE ext_gr2_get_dom_td_real8
+END SUBROUTINE ext_gr2_get_dom_td_real8 
 
 !*****************************************************************************
 
@@ -3084,7 +3084,7 @@ SUBROUTINE ext_gr2_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_dom_td_integer')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(DateStr)//';'//trim(Element), Value, stat)
   if (stat /= 0) then
@@ -3102,7 +3102,7 @@ SUBROUTINE ext_gr2_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, &
   Outcount = idx
 
   RETURN
-END SUBROUTINE ext_gr2_get_dom_td_integer
+END SUBROUTINE ext_gr2_get_dom_td_integer 
 
 !*****************************************************************************
 
@@ -3126,7 +3126,7 @@ SUBROUTINE ext_gr2_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_dom_td_logical')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(DateStr)//';'//trim(Element), Value, stat)
   if (stat /= 0) then
@@ -3144,7 +3144,7 @@ SUBROUTINE ext_gr2_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, &
   Outcount = idx
 
   RETURN
-END SUBROUTINE ext_gr2_get_dom_td_logical
+END SUBROUTINE ext_gr2_get_dom_td_logical 
 
 !*****************************************************************************
 
@@ -3162,7 +3162,7 @@ SUBROUTINE ext_gr2_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  &
   INTEGER       :: stat
 
   Status = WRF_NO_ERR
-
+  
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_dom_td_char')
 
   CALL gr2_get_metadata_value(global_input(DataHandle), &
@@ -3174,7 +3174,7 @@ SUBROUTINE ext_gr2_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  &
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_get_dom_td_char
+END SUBROUTINE ext_gr2_get_dom_td_char 
 
 !*****************************************************************************
 
@@ -3197,7 +3197,7 @@ SUBROUTINE ext_gr2_get_dom_td_double ( DataHandle,Element, DateStr,  Data, &
   call wrf_debug ( DEBUG , 'Entering ext_gr2_get_dom_td_double')
 
   Status = WRF_NO_ERR
-
+  
   CALL gr2_get_metadata_value(global_input(DataHandle), &
        trim(DateStr)//';'//trim(Element), Value, stat)
   if (stat /= 0) then
@@ -3257,7 +3257,7 @@ SUBROUTINE ext_gr2_put_dom_td_real8 ( DataHandle,Element, DateStr,  Data, &
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_put_dom_td_real8
+END SUBROUTINE ext_gr2_put_dom_td_real8 
 
 !*****************************************************************************
 
@@ -3283,7 +3283,7 @@ SUBROUTINE ext_gr2_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, &
      do idx = 1,Count
         write(tmpstr(idx),'(G17.10)')Data(idx)
      enddo
-
+     
      CALL gr2_build_string (td_output(DataHandle), &
           trim(DateStr)//';'//trim(Element), tmpstr, &
           Count, Status)
@@ -3317,7 +3317,7 @@ SUBROUTINE ext_gr2_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, &
      do idx = 1,Count
         write(tmpstr(idx),'(G17.10)')Data(idx)
      enddo
-
+     
      CALL gr2_build_string (td_output(DataHandle), &
           trim(DateStr)//';'//trim(Element), tmpstr, &
           Count, Status)
@@ -3355,7 +3355,7 @@ SUBROUTINE ext_gr2_put_dom_td_char ( DataHandle,Element, DateStr,  Data, &
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_put_dom_td_char
+END SUBROUTINE ext_gr2_put_dom_td_char 
 
 !*****************************************************************************
 
@@ -3414,7 +3414,7 @@ SUBROUTINE ext_gr2_put_dom_td_real ( DataHandle,Element, DateStr,  Data, &
      do idx = 1,Count
         write(tmpstr(idx),'(G17.10)')Data(idx)
      enddo
-
+     
      CALL gr2_build_string (td_output(DataHandle), &
           trim(DateStr)//';'//trim(Element), tmpstr, &
           Count, Status)
@@ -3422,7 +3422,7 @@ SUBROUTINE ext_gr2_put_dom_td_real ( DataHandle,Element, DateStr,  Data, &
   endif
 
   RETURN
-END SUBROUTINE ext_gr2_put_dom_td_real
+END SUBROUTINE ext_gr2_put_dom_td_real 
 
 
 !******************************************************************************
@@ -3433,7 +3433,7 @@ END SUBROUTINE ext_gr2_put_dom_td_real
 SUBROUTINE gr2_get_new_handle(DataHandle)
   USE gr2_data_info
   IMPLICIT NONE
-
+  
   INTEGER ,       INTENT(OUT)  :: DataHandle
   INTEGER :: i
 
@@ -3456,7 +3456,7 @@ END SUBROUTINE gr2_get_new_handle
 
 SUBROUTINE gr2_retrieve_data (MemoryOrder, MemoryStart, MemoryEnd, xsize, ysize, &
      zsize, z, FieldType, Field, data)
-
+  
   IMPLICIT NONE
 
 #include "wrf_io_flags.h"
@@ -3476,7 +3476,7 @@ SUBROUTINE gr2_retrieve_data (MemoryOrder, MemoryStart, MemoryEnd, xsize, ysize,
   integer, dimension(:,:),   pointer           :: mold
   integer                                      :: istat
   integer                                      :: dim1
-
+  
   ALLOCATE(mold(1:xsize,1:ysize), STAT=istat)
   if (istat .ne. 0) then
      print *,'Could not allocate space for mold, returning'
@@ -3484,7 +3484,7 @@ SUBROUTINE gr2_retrieve_data (MemoryOrder, MemoryStart, MemoryEnd, xsize, ysize,
   endif
 
   !
-  ! Set the size of the first dimension of the data array (dim1) to xsize.
+  ! Set the size of the first dimension of the data array (dim1) to xsize.  
   !    If the MemoryOrder is Z or z, dim1 is overridden below.
   !
   dim1 = xsize
@@ -3524,7 +3524,7 @@ SUBROUTINE gr2_retrieve_data (MemoryOrder, MemoryStart, MemoryEnd, xsize, ysize,
            data(x,y) = Field(1,y,x,1)
         enddo
      enddo
-
+     
   CASE ('XSZ')
      do x = 1,xsize
         do y = 1,ysize
@@ -3549,7 +3549,7 @@ SUBROUTINE gr2_retrieve_data (MemoryOrder, MemoryStart, MemoryEnd, xsize, ysize,
            data(x,y) = Field(1,x,z,y)
         enddo
      enddo
-
+     
   CASE ('XS')
      do x = 1,xsize
         do y = 1,ysize
@@ -3583,8 +3583,8 @@ SUBROUTINE gr2_retrieve_data (MemoryOrder, MemoryStart, MemoryEnd, xsize, ysize,
   CASE ('0')
      data(1,1) = Field(1,1,1,1)
   END SELECT
-
-  !
+  
+  ! 
   ! Here, we convert any integer fields to real
   !
   if (FieldType == WRF_INTEGER) then
@@ -3600,7 +3600,7 @@ SUBROUTINE gr2_retrieve_data (MemoryOrder, MemoryStart, MemoryEnd, xsize, ysize,
   endif
 
   deallocate(mold)
-
+  
   return
 
 end subroutine gr2_retrieve_data
@@ -3686,7 +3686,7 @@ SUBROUTINE gr2_get_levels(VarName, zidx, zsize, soil_layers, vert_stag, &
         level2 = 0
         vert_sclFctr1 = 0
         vert_sclFctr2 = 0
-     else
+     else 
         vert_unit1 = 1
         vert_unit2 = 255
         level1 = 0
@@ -3716,7 +3716,7 @@ subroutine gr2_create_w(StartDate, cgrib, lcgrib, production_status, Disc, &
   integer                      :: slen
   integer , intent(in)         :: Disc, center, subcenter, MasterTblV, LocalTblV
 
-  !
+  ! 
   ! Create the grib message
   !
   listsec0(1) = Disc       ! Discipline (Table 0.0)
@@ -3764,14 +3764,14 @@ subroutine gr2_create_w(StartDate, cgrib, lcgrib, production_status, Disc, &
   else
      msg = ''
   endif
-
+  
 end SUBROUTINE gr2_create_w
 
 
 !*****************************************************************************
 subroutine gr2_addgrid_w(cgrib, lcgrib, central_lat, central_lon, wrf_projection, &
      latin1, latin2, nx, ny, dx, dy, center_lat, center_lon, ierr,msg)
-
+  
   implicit none
 
   character*(*)            ,intent(inout)   :: cgrib
@@ -3805,7 +3805,7 @@ subroutine gr2_addgrid_w(cgrib, lcgrib, central_lat, central_lon, wrf_projection
 
   igds(1) = 0      ! Source of grid definition
   igds(2) = nx*ny  ! Number of points in grid
-  igds(3) = 0      !
+  igds(3) = 0      ! 
   igds(4) = 0
 
   ! Here, setup the parameters that are common to all WRF projections
@@ -3819,10 +3819,10 @@ subroutine gr2_addgrid_w(cgrib, lcgrib, central_lat, central_lon, wrf_projection
   igdstmpl(7) = 0       ! Minor axis
   igdstmpl(8) = nx      ! Number of points along x axis
   igdstmpl(9) = ny      ! Number of points along y axis
-
+  
   !
   ! Setup increments in "x" and "y" direction.  For LATLON projection
-  !   increments need to be in degrees.  For all other projections,
+  !   increments need to be in degrees.  For all other projections, 
   !   increments are in km.
   !
   if ((wrf_projection .eq. WRF_LATLON) &
@@ -3875,7 +3875,7 @@ subroutine gr2_addgrid_w(cgrib, lcgrib, central_lat, central_lon, wrf_projection
      igdstmpl(19) = dy*km_to_mm   ! j-direction increment
   case(WRF_LAMBERT)
      igds(5) = 30
-
+     
      igdstmpl(10) = LLLa*deg_to_microdeg
      igdstmpl(11) = LLLo*deg_to_microdeg
      call gr2_convert_lon(igdstmpl(11))
@@ -3937,7 +3937,7 @@ subroutine gr2_addfield_w(cgrib, lcgrib, VarName, parmcat, parmnum, DecScl, &
      BinScl, fcst_secs, vert_unit1, vert_unit2, vert_sclFctr1, vert_sclFctr2, &
      numlevels, levels, ngrdpts, background_proc_id, forecast_proc_id, &
      compression, fld, ierr, msg)
-
+  
   implicit none
 
   character*(*)            ,intent(inout)   :: cgrib
@@ -3999,7 +3999,7 @@ subroutine gr2_addfield_w(cgrib, lcgrib, VarName, parmcat, parmnum, DecScl, &
      ipdstmpl(12) = levels(1)     ! First fixed surface
      ipdstmpl(13) = vert_unit2    ! Type of second fixed surface
      ipdstmpl(14) = vert_sclFctr2 ! Scale factor for 2nd surface
-     if (numlevels .eq. 2) then
+     if (numlevels .eq. 2) then 
         ipdstmpl(15) = levels(2)
      else
         ipdstmpl(15) = 0
@@ -4007,7 +4007,7 @@ subroutine gr2_addfield_w(cgrib, lcgrib, VarName, parmcat, parmnum, DecScl, &
      numcoord = 0
      coordlist(1) = 0
 
-     ! Set Data Representation templ (40 for JPEG2000, 41 for PNG)
+     ! Set Data Representation templ (40 for JPEG2000, 41 for PNG)  
      idrsnum = compression
 
   endif
@@ -4017,7 +4017,7 @@ subroutine gr2_addfield_w(cgrib, lcgrib, VarName, parmcat, parmnum, DecScl, &
 
      idrstmpl(1) = 255       ! Reference value - ignored on input
      idrstmpl(2) = BinScl    ! Binary scale factor
-     idrstmpl(3) = DecScl    ! Decimal scale factor
+     idrstmpl(3) = DecScl    ! Decimal scale factor 
      idrstmpl(4) = 0         ! number of bits for each data value - ignored on input
      idrstmpl(5) = 0         ! Original field type - ignored on input
      idrstmpl(6) = 0         ! 0 for lossless compression
@@ -4027,20 +4027,20 @@ subroutine gr2_addfield_w(cgrib, lcgrib, VarName, parmcat, parmnum, DecScl, &
 
      idrstmpl(1) = 255       ! Reference value - ignored on input
      idrstmpl(2) = BinScl    ! Binary scale factor
-     idrstmpl(3) = DecScl    ! Decimal scale factor
+     idrstmpl(3) = DecScl    ! Decimal scale factor 
      idrstmpl(4) = 0         ! number of bits for each data value - ignored on input
      idrstmpl(5) = 0         ! Original field type - ignored on input
 
-  else if (idrsnum == 0) then! Simple packing
+  else if (idrsnum == 0) then! Simple packing 
 
      idrstmpl(1) = 255       ! Reference value - ignored on input
      idrstmpl(2) = BinScl    ! Binary scale factor
-     idrstmpl(3) = DecScl    ! Decimal scale factor
+     idrstmpl(3) = DecScl    ! Decimal scale factor 
      idrstmpl(4) = 0         ! number of bits for each data value - ignored on input
      idrstmpl(5) = 0         ! Original field type - ignored on input
-
+     
   else
-
+     
      write (msg,*) 'addfield failed because Data Representation template',&
           idrsnum,' is invalid'
      ierr = 1
@@ -4049,7 +4049,7 @@ subroutine gr2_addfield_w(cgrib, lcgrib, VarName, parmcat, parmnum, DecScl, &
   endif
 
   ibmap = 255                ! Flag for bitmap
-
+  
   call addfield(cgrib, lcgrib, ipdsnum, ipdstmpl, ipdstmplen, coordlist,      &
        numcoord, idrsnum, idrstmpl, idrstmplen, fld, ngrdpts, ibmap,          &
        bmap, ierr)
@@ -4084,8 +4084,8 @@ subroutine gr2_fill_local_use(DataHandle,string,VarName,fcsts,msg,status)
   integer                        :: lcsec2
   integer                        :: fcsts
   integer                        :: bytes_written
-
-  !
+  
+  ! 
   ! Set data to a default dummy value.
   !
   data = 1.0
@@ -4094,7 +4094,7 @@ subroutine gr2_fill_local_use(DataHandle,string,VarName,fcsts,msg,status)
   ! This statement prevents problems when calling addlocal in the grib2
   !   library.  Basically, if addlocal is called with an empty string, it
   !   will be encoded correctly by the grib2 routine, but the grib2 routines
-  !   that read the data (i.e., getgb2) will segfault.  This prevents that
+  !   that read the data (i.e., getgb2) will segfault.  This prevents that 
   !   segfault.
   !
 
@@ -4121,7 +4121,7 @@ subroutine gr2_fill_local_use(DataHandle,string,VarName,fcsts,msg,status)
      return
   endif
 
-  !
+  ! 
   ! Add the local use section
   !
   lcsec2 = len_trim(string)
@@ -4145,7 +4145,7 @@ subroutine gr2_fill_local_use(DataHandle,string,VarName,fcsts,msg,status)
   endif
 
   !
-  ! Add the Product Definition, Data representation, bitmap
+  ! Add the Product Definition, Data representation, bitmap 
   !      and data sections (sections 4-7)
   !
   call gr2_addfield_w(cgrib, lcgrib, VarName, Category, ParmNum, DecScl, &
@@ -4160,19 +4160,19 @@ subroutine gr2_fill_local_use(DataHandle,string,VarName,fcsts,msg,status)
   !
   ! Close out the message
   !
-
+  
   call gribend(cgrib,lcgrib,lengrib,status)
   if (status .ne. 0) then
-     write(msg,*) 'gribend failed with status: ',status
+     write(msg,*) 'gribend failed with status: ',status     
      call wrf_message(trim(msg))
      Status = WRF_GRIB2_ERR_GRIBEND
      return
   endif
 
-  !
+  ! 
   ! Write the data to the file
   !
-
+  
   call bawrite(DataHandle, -1, lengrib, bytes_written, cgrib)
 !!  call write_file_n(fileinfo(DataHandle)%FileFd, cgrib, lengrib, status)
   if (bytes_written .ne. lengrib) then
@@ -4203,11 +4203,11 @@ subroutine gr2_convert_lon(value)
   integer, intent(inout) :: value
   real, parameter                           :: deg_to_microdeg = 1e6
 
-  do while (value .lt. 0)
+  do while (value .lt. 0) 
      value = value + 360*deg_to_microdeg
   enddo
 
-  do while (value .gt. 360*deg_to_microdeg)
+  do while (value .gt. 360*deg_to_microdeg) 
      value = value - 360*deg_to_microdeg
   enddo
 
@@ -4234,14 +4234,14 @@ subroutine gr2_add_time(DataHandle,addTime)
   character (DateStrLen), dimension(:),pointer  :: tmpTimes(:)
   integer,parameter :: allsize = 50
   integer           :: ierr
-
+  
   already_have = .false.
-  do idx = 1,fileinfo(DataHandle)%NumberTimes
+  do idx = 1,fileinfo(DataHandle)%NumberTimes 
      if (addTime .eq. fileinfo(DataHandle)%Times(idx)) then
         already_have = .true.
      endif
   enddo
-
+  
   if (.not. already_have) then
      fileinfo(DataHandle)%NumberTimes = fileinfo(DataHandle)%NumberTimes + 1
 
@@ -4282,13 +4282,13 @@ subroutine gr2_add_time(DataHandle,addTime)
                 tmpTimes
 
            deallocate(tmpTimes)
-
+           
         endif
-
+        
      endif
 
      fileinfo(DataHandle)%Times(fileinfo(DataHandle)%NumberTimes) = addTime
-
+  
      ! Sort the Times array
 
      swap = .true.
@@ -4362,14 +4362,14 @@ subroutine gr2_fill_levels(DataHandle,VarName,levels,ierr)
   JIDS(4) = LocalTblV
   JIDS(5) = 1           ! Indicates that time is "Start of Forecast"
   JIDS(13) = 1          ! Type of processed data (1 for forecast products)
-
+  
   JPDTN = 1000          ! Product definition template number
   JPDT(1) = Category
   JPDT(2) = ParmNum
   JPDT(3) = 2           ! Generating process id
 
   JGDTN    = -1         ! Indicates that any Grid Display Template is a match
-
+  
   UNPACK   = .TRUE.     ! Unpack bitmap and data values
 
 
@@ -4391,10 +4391,10 @@ subroutine gr2_fill_levels(DataHandle,VarName,levels,ierr)
      ierr = -1
      return
   endif
-
+  
   levels(1:gfld%ndpts) = gfld%fld(1:gfld%ndpts)
   ierr = 0
-
+  
 end subroutine gr2_fill_levels
 
 
@@ -4412,11 +4412,11 @@ subroutine gr2_g2lib_wildcard(JIDS, JPDT, JGDT)
   do idx = 1,JIDSSIZE
      JIDS(idx) = -9999
   enddo
-
+  
   do idx=1,JPDTSIZE
      JPDT(idx) = -9999
   enddo
-
+  
   do idx = 1,JGDTSIZE
      JGDT(idx) = -9999
   enddo
@@ -4480,9 +4480,9 @@ subroutine gr2_get_metadata_value(instring, Key, Value, stat)
   else
      Value = ""
   endif
-
+  
   stat = 0
-
+  
 
 end subroutine gr2_get_metadata_value
 
@@ -4510,7 +4510,7 @@ SUBROUTINE gr2_build_string (string, Element, Value, Count, Status)
 
   if (index(string,lf//Element//' =') .gt. 0) then
      ! We do nothing, since we dont want to add the same variable twice.
-  else
+  else 
      if (len_trim(string) == 0) then
         string = lf//Element//' = '
      else

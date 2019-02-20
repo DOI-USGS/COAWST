@@ -47,7 +47,7 @@ MODULE module_machine
 
    INTEGER FUNCTION locproc( i, m, numpart )
    implicit none
-   integer, intent(in) :: i, m, numpart
+   integer, intent(in) :: i, m, numpart 
    integer             :: retval, ii, im, inumpart, zero
    ii = i
    im = m
@@ -86,7 +86,7 @@ MODULE module_machine
    ! With a little thought and a lot of debugging, we can come up with a
    ! direct expression for what we want.  For time being, we loop...
    ! Remember that processor numbering starts with zero.
-
+                      
    IMPLICIT NONE
    INTEGER, INTENT(IN)                    :: region_start, region_end, num_p, p
    INTEGER, INTENT(OUT)                   :: patch_start, patch_end
@@ -110,7 +110,7 @@ MODULE module_machine
    !  Input data.
    INTEGER, INTENT(IN)           :: nparts,                &
                                     minparts_y, minparts_x
-   ! Output data.
+   ! Output data. 
    INTEGER, INTENT(OUT)          :: nparts_y, nparts_x
    ! Local data.
    INTEGER                       :: x, y, mini

@@ -3,7 +3,7 @@
 ! applications require this module to run standalone. No physics here.
 ! Some are dependent on WRF indexing scheme. Some violate WRF conventions but these
 ! are not called from the WRF dependent code. Some are not called at all.
-!
+! 
 
 module module_fr_fire_util
 
@@ -16,28 +16,38 @@ module module_fr_fire_util
 
 
 integer,save::          &
- fire_print_msg=1,      &  ! print FIRE progress
+ fire_print_msg=1,      &  ! print FIRE progress 
  fire_print_file=1,     &  ! write many files by write_array_m; compile with DEBUG_OUT, do not run in parallel
  fuel_left_method=1,    &  ! 1=simple, 2=exact in linear case
  fuel_left_irl=2,       &  ! refinement for fuel calculation, must be even
  fuel_left_jrl=2,       &
  boundary_guard=-1,     &  ! crash if fire gets this many cells to domain boundary, -1=off
  fire_grows_only=1,     &  ! fire can spread out only (level set functions may not increase)
- fire_upwinding=3,      &  ! upwind normal spread: 1=standard, 2=godunov, 3=eno, 4=sethian
+ fire_upwinding=9,      &  ! upwind normal spread: 1=standard, 2=godunov, 3=eno, 4=sethian, 5=2nd-order, 6=WENO3, 7=WENO5, 8=hybrid WENO3/ENO1, 9=hybrid WENO5/ENO1 
  fire_upwind_split=0,   &  ! 1=upwind advection separately from normal direction spread
  fire_test_steps=0,     &  ! 0=no fire, 1=normal, >1 = do specified number of steps and terminate (testing only)
  fire_topo_from_atm=1,  &  ! 0 = expect ZSF set correctly on entry, 1 = populate by interploating from atmosphere
- fire_advection=0          ! 0 = fire spread from normal wind/slope (CAWFE), 1 = full speed projected
-
+ fire_advection=0,      &  ! 0 = fire spread from normal wind/slope (CAWFE), 1 = full speed projected
+ fire_upwinding_reinit=4, &  ! spatial discretization for reinitialization PDE: 1=WENO3, 2=WENO5, 3=hybrid WENO3-ENO1, 4=hybrid WENO5-ENO1 
+ fire_lsm_reinit_iter=1,  &  ! number of iterations for the reinitialization PDE 
+ fire_lsm_band_ngp=4,     &  ! number of grid points around lfn=0 that the higher-order scheme WENO5/WENO3 is used (ENO1 elsewhere), for ire_upwinding=8,9 and fire_upwinding_reinit=3,4 and
+ fire_viscosity_ngp=4        ! number of grid points around lfn=0 where low artificial viscosity is used = fire_viscosity_bg
 
 real, save::            &
  fire_const_time=-1,    &  ! time from ignition to start constant heat output  <0=never
  fire_const_grnhfx=-1., &  ! if both >=0, the constant heat flux to output then
  fire_const_grnqfx=-1., &  ! if both >=0, the constant heat flux to output then
  fire_atm_feedback=1. , &  ! 1 = normal, 0. = one way coupling atmosphere -> fire only
- fire_back_weight=0.5,  &  ! RK parameter, 0 = Euler method, 0.5 = Heun, 1 = fake backward Euler
  fire_viscosity=0.4,    &  ! artificial viscosity
- fire_lfn_ext_up=1.        ! 0.=extend level set function at boundary by reflection, 1.=always up
+ fire_lfn_ext_up=1.,    &  ! 0.=extend level set function at boundary by reflection, 1.=always up
+ fire_lsm_zcoupling_ref=50., &  ! Reference height from wich u at fire_wind_hegiht is calculated using a logarithmic profile
+ fire_viscosity_bg=0.4,      &  ! artificial viscosity in the near-front region 
+ fire_viscosity_band=0.5,    &  ! number of times the hybrid advection band to transition from fire_viscosity_bg to fire_viscosity
+ fire_slope_factor=1.0          ! slope correction factor
+
+logical,save::              &
+ fire_lsm_reinit=.true.,    &  ! flag to activate reinitialization of level set method
+ fire_lsm_zcoupling=.false.     ! flag to activate reference velocity at a different height from fire_wind_height
 
 integer, parameter:: REAL_SUM=10, REAL_MAX=20, RNRM_SUM=30, RNRM_MAX=40
 
@@ -65,7 +75,7 @@ end subroutine crash
 subroutine message(s,level)
 use module_wrf_error
 #ifdef _OPENMP
-use OMP_LIB
+use OMP_LIB 
 #endif
 implicit none
 !*** arguments
@@ -136,8 +146,8 @@ logical::op
         case default
             write(msg,*)'open_text_file: bad mode ',trim(rw),' for file ',trim(filename)
     end select
-
-    if(ierr.ne.0)then
+    
+    if(ierr.ne.0)then 
 	write(msg,*)'open_text_file: Cannot open file ',filename
         call crash(msg)
     endif
@@ -166,7 +176,7 @@ integer, intent(in):: &
 real, intent(out),dimension(ifms:ifme,jfms:jfme)::fxlong,fxlat
 ! local
 integer::i,j
-                ! set fake  coordinates, in m
+                ! set fake  coordinates, in m 
                 do j=jfts,jfte
                     do i=ifts,ifte
                         ! uniform mesh, lower left domain corner is (0,0)
@@ -204,20 +214,19 @@ real,intent(inout),dimension(ims:ime,jms:jme)::lfn
 integer i,j
 character(len=128)::msg
 integer::its1,ite1,jts1,jte1
-integer,parameter::halo=1           ! width of halo region to update
+integer,parameter::halo=1           ! only 1 domain halo is needed since ENO1 is used near domain boundaries
 !*** executable
-! check if there is space for the extension
-call check_mesh_2dim(its-1,ite+1,jts-1,jte+1,ims,ime,jms,jme)
+
 ! for dislay only
 itso=its
 jtso=jts
 iteo=ite
 jteo=jte
-! go halo width beyond if at patch boundary but not at domain boudnary
-! assume we have halo need to compute the value we do not have
+! go halo width beyond if at patch boundary but not at domain boudnary 
+! assume we have halo need to compute the value we do not have 
 ! the next thread that would conveniently computer the extended values at patch corners
 ! besides halo may not transfer values outside of the domain
-!
+! 
 its1=its
 jts1=jts
 ite1=ite
@@ -227,7 +236,7 @@ if(jts.eq.jps.and..not.jts.eq.jds)jts1=jts-halo
 if(ite.eq.ipe.and..not.ite.eq.ide)ite1=ite+halo
 if(jte.eq.jpe.and..not.jte.eq.jde)jte1=jte+halo
 !$OMP CRITICAL(FIRE_UTIL_CRIT)
-write(msg,'(a,2i5,a,f5.2)')'continue_at_boundary: directions',ix,iy,' bias ',bias
+write(msg,'(a,2i5,a,f5.2)')'continue_at_boundary: directions',ix,iy,' bias ',bias 
 call message(msg)
 !$OMP END CRITICAL(FIRE_UTIL_CRIT)
 if(ix.ne.0)then
@@ -319,7 +328,7 @@ end subroutine check_mesh_3dim
 subroutine sum_2d_cells(       &
        ims2,ime2,jms2,jme2,    &
        its2,ite2,jts2,jte2,    &
-       v2,                     &  ! input
+       v2,                     &  ! input       
        ims1,ime1,jms1,jme1,    &
        its1,ite1,jts1,jte1,    &
        v1)                        ! output
@@ -414,14 +423,14 @@ subroutine interpolate_2d(  &
     ims1,ime1,jms1,jme1, & ! array coarse grid
     its1,ite1,jts1,jte1, & ! dimensions fine grid
     ir,jr,               & ! refinement ratio
-    rip2,rjp2,rip1,rjp1, & ! (rip2,rjp2) on grid 2 lines up with (rip1,rjp1) on grid 1
-    v2, &                  ! in coarse grid
+    rip2,rjp2,rip1,rjp1, & ! (rip2,rjp2) on grid 2 lines up with (rip1,rjp1) on grid 1 
+    v2, &                  ! in coarse grid  
     v1  )                  ! out fine grid
 implicit none
 
 !*** purpose
 ! interpolate nodal values in mesh2 to nodal values in mesh1
-! interpolation runs over the mesh2 region its2:ite2,jts2:jte2
+! interpolation runs over the mesh2 region its2:ite2,jts2:jte2 
 ! only the part of mesh 1 in the region its1:ite1,jts1:jte1 is modified
 
 !*** arguments
@@ -452,7 +461,7 @@ ry=1./jr
 do j2=jts2,jte2-1               ! loop over mesh 2 cells
     rjo=rjp1+jr*(j2-rjp2)       ! mesh 1 coordinate of the mesh 2 patch start
     js=max(jts1,ceiling(rjo))   ! lower bound of mesh 1 patch for this mesh 2 cell
-    je=min(jte1,floor(rjo)+jr)  ! upper bound of mesh 1 patch for this mesh 2 cell
+    je=min(jte1,floor(rjo)+jr)  ! upper bound of mesh 1 patch for this mesh 2 cell 
     do i2=its2,ite2-1
         rio=rip1+ir*(i2-rip2)
         is=max(its1,ceiling(rio))
@@ -469,7 +478,7 @@ do j2=jts2,jte2-1               ! loop over mesh 2 cells
                       (1-tx)*(1-ty)*v2(i2,j2)  &
                  +    (1-tx)*ty  *v2(i2,j2+1)  &
                  +      tx*(1-ty)*v2(i2+1,j2)  &
-                 +        tx*ty  *v2(i2+1,j2+1)
+                 +        tx*ty  *v2(i2+1,j2+1)  
                 !print *,'coarse ',i2,j2,' fine ',i1,j1, ' offset ',io,jo,' weights ',tx,ty, &
                 ! 'in ',v2(i2,j2),v2(i2,j2+1),v2(i2+1,j2),v2(i2+1,j2+1),' out ',v1(i1,j1)
                 !write(*,'(a,2i5,a,2f8.2,a,4f8.2,a,2i5,a,f8.2)') &
@@ -487,7 +496,7 @@ end subroutine interpolate_2d
 !
 
 subroutine interpolate_2d_cells2cells(              &
-      ids2,ide2,jds2,jde2,ims2,ime2,jms2,jme2,v2, &  ! in
+      ids2,ide2,jds2,jde2,ims2,ime2,jms2,jme2,v2, &  ! in  
       ids1,ide1,jds1,jde1,ims1,ime1,jms1,jme1,v1  )  ! out
 implicit none
 
@@ -505,7 +514,7 @@ real, intent(in)::v2(ims2:ime2,jms2:jme2)
 ! Example with mesh ratio=4. | = cell boundary,  x = cell center
 !
 !  mesh2   |-------x-------|-------x-------|
-!  mesh1   |-x-|-x-|-x-|-x-|-x-|-x-|-x-|-x-|
+!  mesh1   |-x-|-x-|-x-|-x-|-x-|-x-|-x-|-x-| 
 !
 
 !*** local
@@ -533,20 +542,20 @@ ir=isz1/isz2
 jr=jsz1/jsz2
 !
 !  mesh2   |-------x-------|-------x-------|
-!  mesh1   |-x-|-x-|-x-|-x-|-x-|-x-|-x-|-x-|
+!  mesh1   |-x-|-x-|-x-|-x-|-x-|-x-|-x-|-x-| 
 
 !  mesh2   |-----x-----|-----x-----|  rx=3
-!  mesh1   |-x-|-x-|-x-|-x-|-x-|-x-|
+!  mesh1   |-x-|-x-|-x-|-x-|-x-|-x-| 
 !  i2            1   1   1   2
 !  i1        1   2   3   4   5
 !  ioff          0   1   2   0
 !  tx            0  1/3 2/3
 
 !  mesh2   |---x---|---x---| rx=2
-!  mesh1   |-x-|-x-|-x-|-x-|
-!  i2            1   1   2
+!  mesh1   |-x-|-x-|-x-|-x-| 
+!  i2            1   1   2  
 !  i1            2   3   4
-!  ioff          0   1   2
+!  ioff          0   1   2   
 !  tx           1/4 3/4
 
 
@@ -558,7 +567,7 @@ ip=mod(ir+1,2)
 jp=mod(jr+1,2)
 
 call interpolate_2d_w(ip,jp,ih,jh,ir,jr,              &
-      ids2,ide2,jds2,jde2,ims2,ime2,jms2,jme2,v2, &  ! in
+      ids2,ide2,jds2,jde2,ims2,ime2,jms2,jme2,v2, &  ! in  
       ids1,ide1,jds1,jde1,ims1,ime1,jms1,jme1,v1  )  ! out
 
 return
@@ -584,7 +593,7 @@ end subroutine interpolate_2d_cells2cells
 !
 
 subroutine interpolate_2d_cells2nodes(              &
-      ids2,ide2,jds2,jde2,ims2,ime2,jms2,jme2,v2, &  ! in
+      ids2,ide2,jds2,jde2,ims2,ime2,jms2,jme2,v2, &  ! in  
       ids1,ide1,jds1,jde1,ims1,ime1,jms1,jme1,v1  )  ! out
 implicit none
 
@@ -602,7 +611,7 @@ real, intent(in)::v2(ims2:ime2,jms2:jme2)
 ! Example with mesh ratio=4. | = cell boundary,  x = cell center
 !
 !  mesh2   |-------x-------|-------x-------|
-!  mesh1   x-|-x-|-x-|-x-|-x-|-x-|-x-|-x-|-x
+!  mesh1   x-|-x-|-x-|-x-|-x-|-x-|-x-|-x-|-x 
 !
 
 !*** local
@@ -630,13 +639,13 @@ ir=isz1/isz2
 jr=jsz1/jsz2
 !
 !  mesh2   |-------x-------|-------x-------|
-!  mesh1   x-|-x-|-x-|-x-|-x-|-x-|-x-|-x-|-x
+!  mesh1   x-|-x-|-x-|-x-|-x-|-x-|-x-|-x-|-x 
 
 !  mesh2   |-----x-----|-----x-----|  rx=3
-!  mesh1   x-|-x-|-x-|-x-|-x-|-x-|-x
+!  mesh1   x-|-x-|-x-|-x-|-x-|-x-|-x 
 
 !  mesh2   |---x---|---x---| rx=2
-!  mesh1   x-|-x-|-x-|-x-|-x
+!  mesh1   x-|-x-|-x-|-x-|-x 
 
 ! offset of the last node in the 1st half of the cell
 ih=(ir+1)/2
@@ -647,7 +656,7 @@ jp=mod(jr,2)
 
 
 call interpolate_2d_w(ip,jp,ih,jh,ir,jr,              &
-      ids2,ide2,jds2,jde2,ims2,ime2,jms2,jme2,v2, &  ! in
+      ids2,ide2,jds2,jde2,ims2,ime2,jms2,jme2,v2, &  ! in  
       ids1,ide1+1,jds1,jde1+1,ims1,ime1,jms1,jme1,v1  )  ! out
 
 
@@ -672,7 +681,7 @@ end subroutine interpolate_2d_cells2nodes
 !
 
 subroutine interpolate_2d_w(ip,jp,ih,jh,ir,jr,             &
-      ids2,ide2,jds2,jde2,ims2,ime2,jms2,jme2,v2, &  ! in
+      ids2,ide2,jds2,jde2,ims2,ime2,jms2,jme2,v2, &  ! in  
       ids1,ide1,jds1,jde1,ims1,ime1,jms1,jme1,v1  )  ! out
 implicit none
 !*** EXCEPTION: THIS SUBROUTINE IS NEITHER CELL NOR NODE BASED.
@@ -693,7 +702,7 @@ ry=jr
 xoff = ip*half
 yoff = jp*half
 
-! the inside, ids1+ih:ide1-ih,jds1+jh:jde1-jh
+! the inside, ids1+ih:ide1-ih,jds1+jh:jde1-jh 
 do j2=jds2,jde2-1     ! interpolate from nodes j2 and j2+1
     do i2=ids2,ide2-1
         do ioff=0,ir-ip
@@ -709,7 +718,7 @@ do j2=jds2,jde2-1     ! interpolate from nodes j2 and j2+1
                       (1-tx)*(1-ty)*v2(i2,j2)  &
                  +    (1-tx)*ty  *v2(i2,j2+1)  &
                  +      tx*(1-ty)*v2(i2+1,j2)  &
-                 +        tx*ty  *v2(i2+1,j2+1)
+                 +        tx*ty  *v2(i2+1,j2+1)  
                 !write(*,'(3(a,2i5),a,2f7.4)')'coarse ',i2,j2,' fine ',i1,j1, &
                 ! ' offset ',ioff,joff,' weights ',tx,ty
                 !write(*,'(a,4f7.4,a,f7.4)')'in ',v2(i2,j2),v2(i2,j2+1),v2(i2+1,j2), &
@@ -745,20 +754,20 @@ do joff=0,jh-1  ! left and right strips
     enddo
 enddo
 ! extend to the 4 corner squares from the nearest known
-do ioff=0,ih-1
+do ioff=0,ih-1  
     do joff=0,jh-1
         v1(ids1+ioff,jds1+joff)=v2(ids2,jds2)
         v1(ide1-ioff,jds1+joff)=v2(ide2,jds2)
         v1(ids1+ioff,jde1-joff)=v2(ids2,jde2)
         v1(ide1-ioff,jde1-joff)=v2(ide2,jde2)
     enddo
-enddo
-end subroutine interpolate_2d_w
+enddo         
+end subroutine interpolate_2d_w  
 
 !
 !****************
 !
-
+                
 real function interp(ids,ide,jds,jde,ims,ime,jms,jme,x,y,v)
 implicit none
 !*** purpose
@@ -794,13 +803,13 @@ interp = &
                     (1-tx)*(1-ty)*v(i,j)    &
                  +    tx*(1-ty)  *v(i+1,j)  &
                  +    (1-tx)*ty  *v(i,j+1)  &
-                 +        tx*ty  *v(i+1,j+1)
+                 +        tx*ty  *v(i+1,j+1)  
 
 !print *,'x,y=',x,y,'i1,i2=',i1,j1,'tx,ty=',tx,ty,' interp=',interp
 end function interp
 
 subroutine meshdiffc_2d(ids, ide, jds,jde , &    ! mesh area used (in cells, end +1)
-                   ims1,ime1,jms1,jme1, &       ! memory dimensiuons
+                   ims1,ime1,jms1,jme1, &       ! memory dimensiuons 
                    dx,dy,               &       ! mesh spacing
                    lfn,                 &       ! input
                    diffCx,diffCy) ! output
@@ -822,7 +831,7 @@ real, dimension(ims1:ime1,jms1:jme1):: diffLx,diffRx,diffLy,diffRy
 
 ! get one-sided differences; dumb but had that already...
 call meshdiff_2d(ids, ide, jds,jde , &    ! mesh area used (in cells, end +1)
-                   ims1,ime1,jms1,jme1, &       ! dimensions of lfn
+                   ims1,ime1,jms1,jme1, &       ! dimensions of lfn 
                    dx,dy,               &       ! mesh spacing
                    lfn,                 &       ! input
                    diffLx,diffRx,diffLy,diffRy) ! output
@@ -834,10 +843,10 @@ do j=jds,jde+1
         diffCy(i,j)=0.5*(diffLy(i,j) + diffRy(i,j))
     enddo
 enddo
-end subroutine meshdiffc_2d
+end subroutine meshdiffc_2d 
 
 subroutine meshdiff_2d(ids, ide, jds,jde , &    ! mesh area used (in cells, end +1)
-                   ims1,ime1,jms1,jme1, &       ! dimensions of lfn
+                   ims1,ime1,jms1,jme1, &       ! dimensions of lfn 
                    dx,dy,               &       ! mesh spacing
                    lfn,                 &       ! input
                    diffLx,diffRx,diffLy,diffRy) ! output
@@ -860,7 +869,7 @@ real:: tmpx,tmpy
 !*** executable
 
     call check_mesh_2dim(ids,ide+1,jds,jde+1,ims1,ime1,jms1,jme1)
-
+  
     ! the bulk of the work
     do j=jds,jde
         do i=ids,ide
@@ -895,7 +904,7 @@ real:: tmpx,tmpy
     do i=ids,ide+1
         diffLy(i,jds)   = diffLy(i,jds+1)
         diffRy(i,jde+1) = diffRy(i,jde)
-    enddo
+    enddo    
 
 end subroutine meshdiff_2d
 
@@ -944,8 +953,8 @@ integer, intent(in)::ips,ipe,jps,jpe,ims,ime,jms,jme
 real, intent(in), dimension(ims:ime,jms:jme)::ax,ay
 character(len=*),intent(in)::name
 integer:: i,j
-real:: t
-real:: avg_a,max_a,min_a
+real:: t 
+real:: avg_a,max_a,min_a 
 character(len=25)::id
 id=name
 call print_2d_stats(ips,ipe,jps,jpe, &
@@ -1026,7 +1035,7 @@ do j=jps,jpe
     enddo
   enddo
 enddo
-if(bb.ne.bb)goto 10 ! should never happen
+if(bb.ne.bb)goto 10 ! should never happen 
 if(fire_print_msg.eq.0)return
 avg_a = avg_a/((ipe-ips+1)*(jpe-jps+1)*(kpe-kps+1))
 call print_stat_line(name,ips,ipe,jps,jpe,min_a,max_a,avg_a)
@@ -1178,7 +1187,7 @@ write(iu,1)real(kte)
 write(iu,1)(((a(i,k,j),i=its,ite),j=jts,jte),k=kts,kte)
 close(iu)
 write(msg,2)name,'(',its,':',ite,',',jts,':',jte,',', &
-kts,':',kte,') -> ',trim(fname)
+kts,':',kte,') -> ',trim(fname) 
 !$OMP END CRITICAL(FIRE_UTIL_CRIT)
 call message(msg)
 return
@@ -1221,11 +1230,11 @@ do j=jts,jte
 enddo
 end subroutine read_array_2d_integer
 
-
+        
 
 subroutine read_array_2d_real(filename,a,its,ite,jts,jte,ims,ime,jms,jme)
 #ifdef _OPENMP
-use OMP_LIB
+use OMP_LIB 
 #endif
 implicit none
 !*** purpose: read a 2D array from a text file
@@ -1318,12 +1327,12 @@ else
 endif
 end function snode
 
-subroutine print_chsum( id, &
+subroutine print_chsum( id, & 
     ims,ime,kms,kme,jms,jme, &                ! memory dims
     ids,ide,kds,kde,jds,jde, &                ! domain dims
     ips,ipe,kps,kpe,jps,jpe, &                ! patch or tile dims
     istag,kstag,jstag,       &
-    a,name)
+    a,name)                      
 
 #ifdef DM_PARALLEL
     USE module_dm , only : wrf_dm_bxor_integer
@@ -1393,15 +1402,15 @@ if(thread.eq.0)then
     call message(msg)
 endif
 
-end subroutine print_chsum
+end subroutine print_chsum 
 
 
-real function fun_real(fun,  &
+real function fun_real(fun,  & 
     ims,ime,kms,kme,jms,jme, &                ! memory dims
     ids,ide,kds,kde,jds,jde, &                ! domain dims
     ips,ipe,kps,kpe,jps,jpe, &                ! patch or tile dims
     istag,kstag,jstag,       &                ! staggering
-    a,b)
+    a,b)                      
 
 #ifdef DM_PARALLEL
     USE module_dm , only : wrf_dm_sum_real , wrf_dm_max_real

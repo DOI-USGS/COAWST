@@ -34,7 +34,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   INTEGER                                    :: rc
   TYPE(WRFU_TimeInterval)                    :: tmpTimeInterval, dtInterval
   TYPE(WRFU_TimeInterval)                    :: dtInterval_horiz
-  TYPE(WRFU_TimeInterval)                    :: dtInterval_vert
+  TYPE(WRFU_TimeInterval)                    :: dtInterval_vert  
   TYPE(WRFU_TimeInterval)                    :: parent_dtInterval
   INTEGER                                    :: num_small_steps
   integer                                    :: tile
@@ -82,9 +82,9 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   endif
 
   !
-  ! For nests, if we're not adapting using child nest, we only want to change
-  !    nests' time steps when the time is conincident with the parent's time.
-  !    So, if dtbc is not zero, simply return and leave the last time step in
+  ! For nests, if we're not adapting using child nest, we only want to change 
+  !    nests' time steps when the time is conincident with the parent's time.  
+  !    So, if dtbc is not zero, simply return and leave the last time step in 
   !    place.
   !
 
@@ -203,21 +203,21 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   endif
 
   !
-  ! Now, if this is a nest, and we are adapting based upon parent,
-  !   we round down the time step to the nearest
+  ! Now, if this is a nest, and we are adapting based upon parent, 
+  !   we round down the time step to the nearest 
   !   value that divides evenly into the parent time step.
-  ! If this is a nest, and we are adapting based upon the child (i.e., the
+  ! If this is a nest, and we are adapting based upon the child (i.e., the 
   !   nest), we update the parent timestep to the next smallest multiple
   !   timestep.
   !
   if (grid%nested) then
 
      dt = real_time(dtInterval)
-
-     if (.not. grid%adapt_step_using_child) then
+        
+     if (.not. grid%adapt_step_using_child) then 
 
         ! We'll calculate real numbers to get the number of small steps:
-
+     
         num_small_steps = CEILING( grid%parents(1)%ptr%dt / dt )
 
 #ifdef DM_PARALLEL
@@ -258,7 +258,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   call wrf_dm_maxtile_real(grid%max_horiz_cfl, tile)
 #endif
 
-  if ((grid%nested) .and. (grid%adapt_step_using_child)) then
+  if ((grid%nested) .and. (grid%adapt_step_using_child)) then 
 
      grid%dt = real_time(dtInterval)
 
@@ -272,7 +272,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
      CALL WRFU_ClockSet ( grid%parents(1)%ptr%domain_clock,        &
           timeStep=parent_dtInterval, &
           rc=rc )
-
+     
   endif
 
 
@@ -287,23 +287,23 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
   num = INT(time_to_bc * precision + 0.5)
   den = precision
   CALL WRFU_TimeIntervalSet(tmpTimeInterval, Sn=num, Sd=den)
-
+  
   if ( ( tmpTimeInterval .LT. dtInterval * 2 ) .and. &
        ( tmpTimeInterval .GT. dtInterval ) ) then
      dtInterval = tmpTimeInterval / 2
-
+     
      use_last2 = .TRUE.
      stepping_to_bc = .true.
      grid%stepping_to_time = .TRUE.
-
+     
   elseif (tmpTimeInterval .LE. dtInterval) then
-
+     
      bc_time = NINT ( (curr_secs + time_to_bc) / ( grid%interval_seconds ) ) &
           * ( grid%interval_seconds )
      CALL WRFU_TimeIntervalSet(tmpTimeInterval, S=bc_time)
      dtInterval = tmpTimeInterval - &
           (domain_get_current_time(grid) - domain_get_sim_start_time(grid))
-
+     
      use_last2 = .TRUE.
      stepping_to_bc = .true.
      grid%stepping_to_time = .TRUE.
@@ -339,12 +339,12 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
 
      elseif (tmpTimeInterval .LE. dtInterval) then
         !
-        ! We will do some tricks here to assure that we fall exactly on an
+        ! We will do some tricks here to assure that we fall exactly on an 
         !   output time.  Without the tricks, round-off error causes problems!
         !
 
         !
-        ! Calculate output time.  We round to nearest history time to assure
+        ! Calculate output time.  We round to nearest history time to assure 
         !    we don't have any rounding error.
         !
         output_time = NINT ( (curr_secs + time_to_output) /  &
@@ -372,7 +372,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
           (domain_get_current_time(grid) .ne. &
           domain_get_start_time(grid)) &
           ) then
-
+        
         grid%adapt_step_using_child = .TRUE.
      else
         grid%adapt_step_using_child = .FALSE.
@@ -402,8 +402,8 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
        rc=rc )
 
   !
-  ! If we're are adapting based on the child time step,
-  !    we call the child from here.  This assures that
+  ! If we're are adapting based on the child time step, 
+  !    we call the child from here.  This assures that 
   !    child and parent are updated in sync.
   ! Note: This is not necessary when we are adapting based
   !    upon parent.
@@ -412,7 +412,7 @@ RECURSIVE SUBROUTINE adapt_timestep(grid, config_flags)
      !
      ! Finally, check if we can adapt using child.  If we are
      !   stepping to an output time, we cannot adapt based upon
-     !   child.  So, we reset the variable before calling the child.
+     !   child.  So, we reset the variable before calling the child.  
      ! This covers the case that, within this parent time-step that
      !   we just calculated, we are stepping to an output time.
      !
@@ -451,9 +451,9 @@ SUBROUTINE calc_dt(dtInterval, max_cfl, max_increase_factor, precision, &
   TYPE(WRFU_TimeInterval) ,INTENT(IN)       :: last_dtInterval
   REAL                                      :: factor
   INTEGER                                   :: num, den
+  
 
-
-  if (max_cfl < 0.001) then
+  if (max_cfl < 0.001) then 
      !
      ! If the max_cfl is small, then we increase dtInterval the maximum
      !    amount allowable.
@@ -464,8 +464,8 @@ SUBROUTINE calc_dt(dtInterval, max_cfl, max_increase_factor, precision, &
 
   else
      !
-     ! If the max_cfl is greater than the user input target cfl, we
-     !    reduce the time step,
+     ! If the max_cfl is greater than the user input target cfl, we 
+     !    reduce the time step, 
      ! else, we increase it.
      !
      if (max_cfl .gt. target_cfl) then
@@ -474,7 +474,7 @@ SUBROUTINE calc_dt(dtInterval, max_cfl, max_increase_factor, precision, &
         !   the difference between max and target.
         !   This tends to keep the model more stable.
         !
-
+        
         factor = ( target_cfl - 0.5 * (max_cfl - target_cfl) ) / max_cfl
 
         ! BPR BEGIN
@@ -494,7 +494,7 @@ SUBROUTINE calc_dt(dtInterval, max_cfl, max_increase_factor, precision, &
         !
         ! Linearly increase dtInterval (we'll limit below)
         !
-
+        
         factor = target_cfl / max_cfl
         num = INT(factor * precision + 0.5)
         den = precision
@@ -509,10 +509,10 @@ FUNCTION real_time( timeinterval ) RESULT ( out_time )
 
   USE module_domain
 
-  IMPLICIT NONE
+  IMPLICIT NONE 
 
 ! This function returns a floating point time from an input time interval
-!
+!  
 ! Unfortunately, the ESMF did not provide this functionality.
 !
 ! Be careful with the output because, due to rounding, the time is only
@@ -534,16 +534,16 @@ FUNCTION real_time( timeinterval ) RESULT ( out_time )
       else
          out_time = dt_whole + dt_num / REAL(dt_den)
       endif
-END FUNCTION
+END FUNCTION 
 
 FUNCTION real_time_r8( timeinterval ) RESULT ( out_time )
 
   USE module_domain
 
-  IMPLICIT NONE
+  IMPLICIT NONE 
 
 ! This function returns a double precision floating point time from an input time interval
-!
+!  
 ! Unfortunately, the ESMF did not provide this functionality.
 !
 ! Be careful with the output because, due to rounding, the time is only

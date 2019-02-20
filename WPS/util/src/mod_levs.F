@@ -38,19 +38,19 @@ PROGRAM mod_levs_prog
    OPEN ( UNIT   =  10            , &
           FILE   = 'namelist.wps' , &
           STATUS = 'OLD'          , &
-          FORM   = 'FORMATTED'    , &
+          FORM   = 'FORMATTED'    , & 
           IOSTAT =  iop              )
 
    IF (iop .NE. 0) then
       print *, 'Error: Couldn''t open namelist.wps file.'
-      STOP
+      STOP 
    END IF
 
    !  Input the pressure levels requested.
 
-   READ ( 10 , mod_levs, err=1000, end=1001 )
+   READ ( 10 , mod_levs, err=1000, end=1001 ) 
 
-   CLOSE ( 10 )
+   CLOSE ( 10 ) 
 
    !  How many pressure levels were asked for?
 
@@ -91,15 +91,15 @@ PROGRAM mod_levs_prog
          CALL read_next_met_field(fg_data, istatus)
 
          DO WHILE (istatus == 0)
-
-
+   
+   
             keep_this_one = .FALSE.
             DO l = 1 , max_pres_keep
                IF ( fg_data%xlvl .EQ. press_pa(l) ) THEN
                   keep_this_one = .TRUE.
                   EXIT
                END IF
-            END DO
+            END DO 
 
             IF (keep_this_one) THEN
                CALL write_next_met_field(fg_data, istatus)
@@ -110,7 +110,7 @@ PROGRAM mod_levs_prog
             CALL mprintf(.true.,STDOUT,'Processed %s at level %f for time %s', &
                          s1=fg_data%field, f1=fg_data%xlvl, s2=fg_data%hdate)
             IF (ASSOCIATED(fg_data%slab)) DEALLOCATE(fg_data%slab)
-
+   
             CALL read_next_met_field(fg_data, istatus)
          END DO
 
@@ -125,7 +125,7 @@ PROGRAM mod_levs_prog
       END IF
 
       CALL read_met_close()
-
+ 
    ELSE
 
       print *, 'File = ',TRIM(flnm)
@@ -143,8 +143,8 @@ PROGRAM mod_levs_prog
    STOP
 
 END PROGRAM mod_levs_prog
-
-INTEGER FUNCTION lenner ( string )
+   
+INTEGER FUNCTION lenner ( string ) 
    CHARACTER ( LEN = 132 ) ::  string
    INTEGER :: l
    DO l = 132 , 1 , -1

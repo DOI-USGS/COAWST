@@ -12,7 +12,7 @@ SUBROUTINE ext_xxx_ioinit( SysDepInfo,Status )
   IMPLICIT NONE
   CHARACTER (LEN=80), INTENT(IN) :: SysDepInfo
   INTEGER, INTENT(INOUT) :: Status
-  RETURN
+  RETURN  
 END SUBROUTINE ext_xxx_ioinit
 
 SUBROUTINE ext_xxx_inquiry( Inquiry, Result,Status )
@@ -20,14 +20,14 @@ SUBROUTINE ext_xxx_inquiry( Inquiry, Result,Status )
   CHARACTER *(*), INTENT(IN) :: Inquiry
   CHARACTER *(*), INTENT(OUT) :: Result
   INTEGER, INTENT(INOUT) :: Status
-  RETURN
+  RETURN  
 END SUBROUTINE ext_xxx_inquiry
 
 !--- ioexit
 SUBROUTINE ext_xxx_ioexit( Status )
   IMPLICIT NONE
   INTEGER, INTENT(INOUT) :: Status
-  RETURN
+  RETURN  
 END SUBROUTINE
 
 !--- open_for_write_begin
@@ -39,7 +39,7 @@ SUBROUTINE ext_xxx_open_for_write_begin( FileName , Comm_compute, Comm_io, SysDe
   CHARACTER *(*), INTENT(IN)  :: SysDepInfo
   INTEGER ,       INTENT(OUT) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
-  RETURN
+  RETURN  
 END SUBROUTINE ext_xxx_open_for_write_begin
 
 !--- open_for_write_commit
@@ -47,10 +47,10 @@ SUBROUTINE ext_xxx_open_for_write_commit( DataHandle , Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN ) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
-  RETURN
+  RETURN  
 END SUBROUTINE ext_xxx_open_for_write_commit
 
-!--- open_for_read
+!--- open_for_read 
 SUBROUTINE ext_xxx_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                DataHandle , Status )
   IMPLICIT NONE
@@ -59,7 +59,7 @@ SUBROUTINE ext_xxx_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo,
   CHARACTER *(*), INTENT(IN)  :: SysDepInfo
   INTEGER ,       INTENT(OUT) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
-  RETURN
+  RETURN  
 END SUBROUTINE ext_xxx_open_for_read
 
 !--- inquire_opened
@@ -130,7 +130,7 @@ SUBROUTINE ext_xxx_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcount
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
 RETURN
-END SUBROUTINE ext_xxx_get_dom_ti_real
+END SUBROUTINE ext_xxx_get_dom_ti_real 
 
 !--- put_dom_ti_real
 SUBROUTINE ext_xxx_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Status )
@@ -141,7 +141,7 @@ SUBROUTINE ext_xxx_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Status 
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_dom_ti_real
+END SUBROUTINE ext_xxx_put_dom_ti_real 
 
 !--- get_dom_ti_double
 SUBROUTINE ext_xxx_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outcount, Status )
@@ -153,7 +153,7 @@ SUBROUTINE ext_xxx_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outcou
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_dom_ti_double
+END SUBROUTINE ext_xxx_get_dom_ti_double 
 
 !--- put_dom_ti_double
 SUBROUTINE ext_xxx_put_dom_ti_double ( DataHandle,Element,   Data, Count,  Status )
@@ -164,7 +164,7 @@ SUBROUTINE ext_xxx_put_dom_ti_double ( DataHandle,Element,   Data, Count,  Statu
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_dom_ti_double
+END SUBROUTINE ext_xxx_put_dom_ti_double 
 
 !--- get_dom_ti_integer
 SUBROUTINE ext_xxx_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Outcount, Status )
@@ -176,7 +176,7 @@ SUBROUTINE ext_xxx_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Outco
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_dom_ti_integer
+END SUBROUTINE ext_xxx_get_dom_ti_integer 
 
 !--- put_dom_ti_integer
 SUBROUTINE ext_xxx_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  Status )
@@ -187,7 +187,7 @@ SUBROUTINE ext_xxx_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  Stat
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_dom_ti_integer
+END SUBROUTINE ext_xxx_put_dom_ti_integer 
 
 !--- get_dom_ti_logical
 SUBROUTINE ext_xxx_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Outcount, Status )
@@ -199,7 +199,7 @@ SUBROUTINE ext_xxx_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Outco
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_dom_ti_logical
+END SUBROUTINE ext_xxx_get_dom_ti_logical 
 
 !--- put_dom_ti_logical
 SUBROUTINE ext_xxx_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  Status )
@@ -210,7 +210,7 @@ SUBROUTINE ext_xxx_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  Stat
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_dom_ti_logical
+END SUBROUTINE ext_xxx_put_dom_ti_logical 
 
 !--- get_dom_ti_char
 SUBROUTINE ext_xxx_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
@@ -220,7 +220,7 @@ SUBROUTINE ext_xxx_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
   CHARACTER*(*) , INTENT(OUT) :: Data
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_dom_ti_char
+END SUBROUTINE ext_xxx_get_dom_ti_char 
 
 !--- put_dom_ti_char
 SUBROUTINE ext_xxx_put_dom_ti_char ( DataHandle,Element,   Data,  Status )
@@ -230,7 +230,7 @@ SUBROUTINE ext_xxx_put_dom_ti_char ( DataHandle,Element,   Data,  Status )
   CHARACTER*(*) , INTENT(IN) :: Data
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_dom_ti_char
+END SUBROUTINE ext_xxx_put_dom_ti_char 
 
 !--- get_dom_td_real
 SUBROUTINE ext_xxx_get_dom_td_real ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
@@ -243,7 +243,7 @@ SUBROUTINE ext_xxx_get_dom_td_real ( DataHandle,Element, DateStr,  Data, Count, 
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_dom_td_real
+END SUBROUTINE ext_xxx_get_dom_td_real 
 
 !--- put_dom_td_real
 SUBROUTINE ext_xxx_put_dom_td_real ( DataHandle,Element, DateStr,  Data, Count,  Status )
@@ -255,7 +255,7 @@ SUBROUTINE ext_xxx_put_dom_td_real ( DataHandle,Element, DateStr,  Data, Count, 
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_dom_td_real
+END SUBROUTINE ext_xxx_put_dom_td_real 
 
 !--- get_dom_td_double
 SUBROUTINE ext_xxx_get_dom_td_double ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
@@ -268,7 +268,7 @@ SUBROUTINE ext_xxx_get_dom_td_double ( DataHandle,Element, DateStr,  Data, Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_dom_td_double
+END SUBROUTINE ext_xxx_get_dom_td_double 
 
 !--- put_dom_td_double
 SUBROUTINE ext_xxx_put_dom_td_double ( DataHandle,Element, DateStr,  Data, Count,  Status )
@@ -280,7 +280,7 @@ SUBROUTINE ext_xxx_put_dom_td_double ( DataHandle,Element, DateStr,  Data, Count
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_dom_td_double
+END SUBROUTINE ext_xxx_put_dom_td_double 
 
 !--- get_dom_td_integer
 SUBROUTINE ext_xxx_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
@@ -293,7 +293,7 @@ SUBROUTINE ext_xxx_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, Coun
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_dom_td_integer
+END SUBROUTINE ext_xxx_get_dom_td_integer 
 
 !--- put_dom_td_integer
 SUBROUTINE ext_xxx_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, Count,  Status )
@@ -305,7 +305,7 @@ SUBROUTINE ext_xxx_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, Coun
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_dom_td_integer
+END SUBROUTINE ext_xxx_put_dom_td_integer 
 
 !--- get_dom_td_logical
 SUBROUTINE ext_xxx_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
@@ -318,7 +318,7 @@ SUBROUTINE ext_xxx_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, Coun
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_dom_td_logical
+END SUBROUTINE ext_xxx_get_dom_td_logical 
 
 !--- put_dom_td_logical
 SUBROUTINE ext_xxx_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, Count,  Status )
@@ -330,7 +330,7 @@ SUBROUTINE ext_xxx_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, Coun
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_dom_td_logical
+END SUBROUTINE ext_xxx_put_dom_td_logical 
 
 !--- get_dom_td_char
 SUBROUTINE ext_xxx_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status )
@@ -341,7 +341,7 @@ SUBROUTINE ext_xxx_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status
   CHARACTER*(*) , INTENT(OUT) :: Data
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_dom_td_char
+END SUBROUTINE ext_xxx_get_dom_td_char 
 
 !--- put_dom_td_char
 SUBROUTINE ext_xxx_put_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status )
@@ -352,129 +352,129 @@ SUBROUTINE ext_xxx_put_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status
   CHARACTER*(*) , INTENT(IN) :: Data
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_dom_td_char
+END SUBROUTINE ext_xxx_put_dom_td_char 
 
 !--- get_var_ti_real
 SUBROUTINE ext_xxx_get_var_ti_real ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   real ,            INTENT(OUT) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_var_ti_real
+END SUBROUTINE ext_xxx_get_var_ti_real 
 
 !--- put_var_ti_real
 SUBROUTINE ext_xxx_put_var_ti_real ( DataHandle,Element,  Varname, Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   real ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_var_ti_real
+END SUBROUTINE ext_xxx_put_var_ti_real 
 
 !--- get_var_ti_double
 SUBROUTINE ext_xxx_get_var_ti_double ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   real*8 ,            INTENT(OUT) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_var_ti_double
+END SUBROUTINE ext_xxx_get_var_ti_double 
 
 !--- put_var_ti_double
 SUBROUTINE ext_xxx_put_var_ti_double ( DataHandle,Element,  Varname, Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   real*8 ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_var_ti_double
+END SUBROUTINE ext_xxx_put_var_ti_double 
 
 !--- get_var_ti_integer
 SUBROUTINE ext_xxx_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   integer ,            INTENT(OUT) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_var_ti_integer
+END SUBROUTINE ext_xxx_get_var_ti_integer 
 
 !--- put_var_ti_integer
 SUBROUTINE ext_xxx_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   integer ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_var_ti_integer
+END SUBROUTINE ext_xxx_put_var_ti_integer 
 
 !--- get_var_ti_logical
 SUBROUTINE ext_xxx_get_var_ti_logical ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   logical ,            INTENT(OUT) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_var_ti_logical
+END SUBROUTINE ext_xxx_get_var_ti_logical 
 
 !--- put_var_ti_logical
 SUBROUTINE ext_xxx_put_var_ti_logical ( DataHandle,Element,  Varname, Data, Count,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   logical ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_var_ti_logical
+END SUBROUTINE ext_xxx_put_var_ti_logical 
 
 !--- get_var_ti_char
 SUBROUTINE ext_xxx_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   CHARACTER*(*) , INTENT(OUT) :: Data
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_var_ti_char
+END SUBROUTINE ext_xxx_get_var_ti_char 
 
 !--- put_var_ti_char
 SUBROUTINE ext_xxx_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Status )
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   CHARACTER*(*) , INTENT(IN) :: Data
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_var_ti_char
+END SUBROUTINE ext_xxx_put_var_ti_char 
 
 !--- get_var_td_real
 SUBROUTINE ext_xxx_get_var_td_real ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
@@ -482,13 +482,13 @@ SUBROUTINE ext_xxx_get_var_td_real ( DataHandle,Element,  DateStr,Varname, Data,
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   real ,            INTENT(OUT) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_var_td_real
+END SUBROUTINE ext_xxx_get_var_td_real 
 
 !--- put_var_td_real
 SUBROUTINE ext_xxx_put_var_td_real ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
@@ -496,12 +496,12 @@ SUBROUTINE ext_xxx_put_var_td_real ( DataHandle,Element,  DateStr,Varname, Data,
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   real ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_var_td_real
+END SUBROUTINE ext_xxx_put_var_td_real 
 
 !--- get_var_td_double
 SUBROUTINE ext_xxx_get_var_td_double ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
@@ -509,13 +509,13 @@ SUBROUTINE ext_xxx_get_var_td_double ( DataHandle,Element,  DateStr,Varname, Dat
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   real*8 ,            INTENT(OUT) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_var_td_double
+END SUBROUTINE ext_xxx_get_var_td_double 
 
 !--- put_var_td_double
 SUBROUTINE ext_xxx_put_var_td_double ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
@@ -523,12 +523,12 @@ SUBROUTINE ext_xxx_put_var_td_double ( DataHandle,Element,  DateStr,Varname, Dat
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   real*8 ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_var_td_double
+END SUBROUTINE ext_xxx_put_var_td_double 
 
 !--- get_var_td_integer
 SUBROUTINE ext_xxx_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
@@ -536,13 +536,13 @@ SUBROUTINE ext_xxx_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, Da
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   integer ,            INTENT(OUT) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_var_td_integer
+END SUBROUTINE ext_xxx_get_var_td_integer 
 
 !--- put_var_td_integer
 SUBROUTINE ext_xxx_put_var_td_integer ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
@@ -550,12 +550,12 @@ SUBROUTINE ext_xxx_put_var_td_integer ( DataHandle,Element,  DateStr,Varname, Da
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   integer ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_var_td_integer
+END SUBROUTINE ext_xxx_put_var_td_integer 
 
 !--- get_var_td_logical
 SUBROUTINE ext_xxx_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
@@ -563,13 +563,13 @@ SUBROUTINE ext_xxx_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, Da
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   logical ,            INTENT(OUT) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT)  :: OutCount
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_var_td_logical
+END SUBROUTINE ext_xxx_get_var_td_logical 
 
 !--- put_var_td_logical
 SUBROUTINE ext_xxx_put_var_td_logical ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
@@ -577,12 +577,12 @@ SUBROUTINE ext_xxx_put_var_td_logical ( DataHandle,Element,  DateStr,Varname, Da
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   logical ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_var_td_logical
+END SUBROUTINE ext_xxx_put_var_td_logical 
 
 !--- get_var_td_char
 SUBROUTINE ext_xxx_get_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,  Status )
@@ -590,11 +590,11 @@ SUBROUTINE ext_xxx_get_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   CHARACTER*(*) , INTENT(OUT) :: Data
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_get_var_td_char
+END SUBROUTINE ext_xxx_get_var_td_char 
 
 !--- put_var_td_char
 SUBROUTINE ext_xxx_put_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,  Status )
@@ -602,11 +602,11 @@ SUBROUTINE ext_xxx_put_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   CHARACTER*(*) , INTENT(IN) :: Data
   INTEGER ,       INTENT(OUT) :: Status
 RETURN
-END SUBROUTINE ext_xxx_put_var_td_char
+END SUBROUTINE ext_xxx_put_var_td_char 
 
 !--- read_field
 SUBROUTINE ext_xxx_read_field ( DataHandle , DateStr , VarName , Field , FieldType , Comm , IOComm &
@@ -616,7 +616,7 @@ SUBROUTINE ext_xxx_read_field ( DataHandle , DateStr , VarName , Field , FieldTy
                             PatchStart , PatchEnd ,                                      &
                             Status )
   IMPLICIT NONE
-  INTEGER ,       INTENT(IN)    :: DataHandle
+  INTEGER ,       INTENT(IN)    :: DataHandle 
   CHARACTER*(*) , INTENT(INOUT) :: DateStr
   CHARACTER*(*) , INTENT(INOUT) :: VarName
   INTEGER ,       INTENT(INOUT) :: Field(*)
@@ -642,7 +642,7 @@ SUBROUTINE ext_xxx_write_field ( DataHandle , DateStr , VarName , Field , FieldT
                              PatchStart , PatchEnd ,                                      &
                              Status )
   IMPLICIT NONE
-  INTEGER ,       INTENT(IN)    :: DataHandle
+  INTEGER ,       INTENT(IN)    :: DataHandle 
   CHARACTER*(*) , INTENT(IN)    :: DateStr
   CHARACTER*(*) , INTENT(IN)    :: VarName
   INTEGER ,       INTENT(IN)    :: Field(*)

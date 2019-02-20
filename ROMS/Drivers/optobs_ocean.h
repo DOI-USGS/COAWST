@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: optobs_ocean.h 858 2017-07-31 23:02:30Z arango $
+!svn $Id: optobs_ocean.h 937 2019-01-28 06:13:04Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group           W. G. Zhang   !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group           W. G. Zhang   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -93,7 +93,7 @@
 #ifdef DISTRIBUTE
 !
 !-----------------------------------------------------------------------
-!  Set distribute-memory (MPI) world communictor.
+!  Set distribute-memory (mpi) world communictor.
 !-----------------------------------------------------------------------
 !
       IF (PRESENT(mpiCOMM)) THEN
@@ -277,7 +277,7 @@
 !
 !  Imported variable declarations
 !
-      real(r8), intent(in) :: RunInterval            ! seconds
+      real(dp), intent(in) :: RunInterval            ! seconds
 !
 !  Local variable declarations.
 !
@@ -594,7 +594,8 @@
       END DO
 !
 !-----------------------------------------------------------------------
-!  Stop model and time profiling clocks.  Close output NetCDF files.
+!  Stop model and time profiling clocks, report memory requirements, and
+!  close output NetCDF files.
 !-----------------------------------------------------------------------
 !
 !  Stop time clocks.
@@ -603,7 +604,7 @@
         WRITE (stdout,20)
  20     FORMAT (/,' Elapsed CPU time (seconds):',/)
       END IF
-
+!
       DO ng=1,Ngrids
 !$OMP PARALLEL
         DO thread=THREAD_RANGE
@@ -611,6 +612,12 @@
         END DO
 !$OMP END PARALLEL
       END DO
+!
+!  Report dynamic memory and automatic memory requirements.
+!
+!$OMP PARALLEL
+      CALL memory
+!$OMP END PARALLEL
 !
 !  Close IO files.
 !

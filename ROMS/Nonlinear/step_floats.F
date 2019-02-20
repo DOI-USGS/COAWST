@@ -2,9 +2,9 @@
       MODULE step_floats_mod
 #if defined NONLINEAR && defined FLOATS
 !
-!svn $Id: step_floats.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: step_floats.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group        John M. Klinck   !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group        John M. Klinck   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -231,17 +231,14 @@
 # endif
 
 # ifdef DIAPAUSE
-
            RiseStart=   1.0d0  ! Date NC begin to move upward (Day of Year)
            RiseEnd  =  90.00d0 ! 90 Date NC stop moving upward (Day of Year)
            SinkStart= 166.0d0  !166 Date NC begin to move downward (Day of Year)
            SinkEnd  = 365.0d0  ! 365.Date NC stop moving downward (Day of Year)
            wNCrise  =  10.0d0
            wNCsink  =  -10.0d0
-
            diapW=0.0
            dtdays = dt(ng)*sec2day
-
 # endif
 # if defined SOLVE3D && defined FLOAT_VWALK
 !

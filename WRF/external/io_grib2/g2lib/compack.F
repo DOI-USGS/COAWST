@@ -8,7 +8,7 @@
 !   packing algorithm as defined in the GRIB2 documention.  It
 !   supports GRIB2 complex packing templates with or without
 !   spatial differences (i.e. DRTs 5.2 and 5.3).
-!   It also fills in GRIB2 Data Representation Template 5.2 or 5.3
+!   It also fills in GRIB2 Data Representation Template 5.2 or 5.3 
 !   with the appropriate values.
 !
 ! PROGRAM HISTORY LOG:
@@ -36,7 +36,7 @@
 !                    .
 !                    .
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST: 
 !     idrstmpl - Contains the array of values for Data Representation
 !                Template 5.3
 !                (1) = Reference value - set by compack routine.
@@ -69,7 +69,7 @@
       integer,allocatable :: gref(:),gwidth(:),glen(:)
       integer :: glength,grpwidth
       logical :: simple_alg = .false.
-
+      
       alog2=alog(2.0)
       bscale=2.0**real(-idrstmpl(2))
       dscale=10.0**real(idrstmpl(3))
@@ -231,7 +231,7 @@
            deallocate(jmax)
            deallocate(lbit)
         endif
-        !
+        !  
         !  For each group, find the group's reference value
         !  and the number of bits needed to hold the remaining values
         !
@@ -242,8 +242,8 @@
            imax=ifld(n)
            j=n+1
            do lg=2,glen(ng)
-              if (ifld(j).lt.gref(ng)) gref(ng)=ifld(j)
-              if (ifld(j).gt.imax) imax=ifld(j)
+              if (ifld(j).lt.gref(ng)) gref(ng)=ifld(j) 
+              if (ifld(j).gt.imax) imax=ifld(j) 
               j=j+1
            enddo
            !   calc num of bits needed to hold data
@@ -262,8 +262,8 @@
            !   increment fld array counter
            n=n+glen(ng)
         enddo
-        !
-        !  Find max of the group references and calc num of bits needed
+        !  
+        !  Find max of the group references and calc num of bits needed 
         !  to pack each groups reference value, then
         !  pack up group reference values
         !

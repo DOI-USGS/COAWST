@@ -2,9 +2,9 @@
       SUBROUTINE inquiry (ng, model, job, Iout, Irec, Mrec, ifield,     &
      &                    ncid, Lmulti, nfiles, S)
 !
-!svn $Id: inquiry.F 884 2017-12-06 01:59:26Z arango $
+!svn $Id: inquiry.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -71,8 +71,8 @@
       integer :: i, ifile, lstr, my_ncid, nvatt, nvdim
       integer :: Vsize(4)
 
-      real(r8) :: Clength, Tend, Tmax, Tmin, Tmono, Tscale, Tstr, Tval
-      real(r8) :: scale
+      real(dp) :: Clength, Tend, Tmax, Tmin, Tmono, Tscale, Tstr, Tval
+      real(dp) :: scale
 
       character (len=1  ), parameter :: blank = ' '
       character (len=3  ) :: label
@@ -132,6 +132,14 @@
      &                     __FILE__)) RETURN
             IF (label(1:3).eq.'FRC') THEN
               FRCids(ifile,ng)=-1
+              S(ifile)%ncid=-1
+            END IF
+            IF (label(1:3).eq.'BRY') THEN
+              BRYids(ifile,ng)=-1
+              S(ifile)%ncid=-1
+            END IF
+            IF (label(1:3).eq.'CLM') THEN
+              CLMids(ifile,ng)=-1
               S(ifile)%ncid=-1
             END IF
             EXIT
@@ -366,6 +374,20 @@
               WRITE (stdout,'(15x,a)') TRIM(S(i)%name)
             END DO
           END IF
+        ELSE IF ((nfiles.gt.1).and.(label(1:3).eq.'BRY')) THEN
+          IF (Master) THEN
+            WRITE (stdout,50) TRIM(Vname(1,ifield)), 'files:'
+            DO i=1,nfiles
+              WRITE (stdout,'(15x,a)') TRIM(S(i)%name)
+            END DO
+          END IF
+        ELSE IF ((nfiles.gt.1).and.(label(1:3).eq.'CLM')) THEN
+          IF (Master) THEN
+            WRITE (stdout,50) TRIM(Vname(1,ifield)), 'files:'
+            DO i=1,nfiles
+              WRITE (stdout,'(15x,a)') TRIM(S(i)%name)
+            END DO
+          END IF
         ELSE
           lstr=LEN_TRIM(ncfile)
           IF (Master) THEN
@@ -384,6 +406,20 @@
       END IF
       IF (.not.got_time) THEN
         IF ((nfiles.gt.1).and.(label(1:3).eq.'FRC')) THEN
+          IF (Master) THEN
+            WRITE (stdout,50) TRIM(Tname(ifield)), 'files:'
+            DO i=1,nfiles
+              WRITE (stdout,'(15x,a)') TRIM(S(i)%name)
+            END DO
+          END IF
+        ELSE IF ((nfiles.gt.1).and.(label(1:3).eq.'BRY')) THEN
+          IF (Master) THEN
+            WRITE (stdout,50) TRIM(Tname(ifield)), 'files:'
+            DO i=1,nfiles
+              WRITE (stdout,'(15x,a)') TRIM(S(i)%name)
+            END DO
+          END IF
+        ELSE IF ((nfiles.gt.1).and.(label(1:3).eq.'CLM')) THEN
           IF (Master) THEN
             WRITE (stdout,50) TRIM(Tname(ifield)), 'files:'
             DO i=1,nfiles
@@ -420,6 +456,24 @@
           END IF
         END DO
       END IF
+      IF (label(1:3).eq.'BRY') THEN
+        DO ifile=1,nfiles
+          IF ((TRIM(ncfile).eq.TRIM(S(ifile)%name)).and.                &
+     &        (ncid.ne.BRYids(ifile,ng))) THEN
+            ncid=BRYids(ifile,ng)
+            EXIT
+          END IF
+        END DO
+      END IF
+      IF (label(1:3).eq.'CLM') THEN
+        DO ifile=1,nfiles
+          IF ((TRIM(ncfile).eq.TRIM(S(ifile)%name)).and.                &
+     &        (ncid.ne.CLMids(ifile,ng))) THEN
+            ncid=CLMids(ifile,ng)
+            EXIT
+          END IF
+        END DO
+      END IF
 !
 !  If appropriate, open input NetCDF file for reading.
 !
@@ -437,6 +491,22 @@
           DO ifile=1,nfiles
             IF (TRIM(ncfile).eq.TRIM(S(ifile)%name)) THEN
               FRCids(ifile,ng)=ncid
+              S(ifile)%ncid=ncid
+              EXIT
+            END IF
+          END DO
+        ELSE IF (label(1:3).eq.'BRY') THEN
+          DO ifile=1,nfiles
+            IF (TRIM(ncfile).eq.TRIM(S(ifile)%name)) THEN
+              BRYids(ifile,ng)=ncid
+              S(ifile)%ncid=ncid
+              EXIT
+            END IF
+          END DO
+        ELSE IF (label(1:3).eq.'CLM') THEN
+          DO ifile=1,nfiles
+            IF (TRIM(ncfile).eq.TRIM(S(ifile)%name)) THEN
+              CLMids(ifile,ng)=ncid
               S(ifile)%ncid=ncid
               EXIT
             END IF
@@ -479,8 +549,8 @@
           ELSE
             Tmono=Tend
             Trec=Trec+1
-            CALL netcdf_get_fvar (ng, model, ncfile, Tname(ifield),     &
-     &                            Tval,                                 &
+            CALL netcdf_get_time (ng, model, ncfile, Tname(ifield),     &
+     &                            Rclock%DateNumber, Tval,              &
      &                            ncid = ncid,                          &
      &                            start = (/Trec-1/),                   &
      &                            total = (/1/))

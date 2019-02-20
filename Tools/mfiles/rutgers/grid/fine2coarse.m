@@ -1,9 +1,9 @@
-function C = fine2coarse(Ginp,Gout,Gfactor,varargin)
+function C = fine2coarse(Ginp, Gout, Gfactor, Lplot, varargin)
 
 %
 % FINE2COARSE:  Creates a coarser resolution ROMS Grid NetCDF file
 %
-% C = fine2coarse(Ginp,Gout,Gfactor,Imin,Imax,Jmin,Jmax)
+% C = fine2coarse(Ginp, Gout, Gfactor, Lplot, Imin, Imax, Jmin, Jmax)
 %
 % Given a fine resolution Grid NetCDF file (Ginp), this function creates
 % a coarser resolution grid in the region specified by the finer grid
@@ -12,24 +12,38 @@ function C = fine2coarse(Ginp,Gout,Gfactor,varargin)
 % defines the physical boundaries of the coarser grid. The grid coarseness
 % coefficient is specified with Gfactor.
 %
-% If Imin, Imax, Jmin, and Jmax is not provided, this function extracts
-% the largest coarse grid possible within the finer grid.  If these
-% PSI-indices are provided make sure that you pick the correct value
-% from the following set for consistency between coarse and fine grids:
+% If Imin, Imax, Jmin, and Jmax are not provided, this function extracts
+% the largest coarse grid possible from the finer PSI-grid:
 %
-%    Imin, Imax      Any value from    Gfactor : Gfactor :L-Gfactor
-%    Jmin, Jmax      Any value from    Gfactor : Gfactor :M-Gfactor
+%    Imin = 1+half;
+%    Imax = L-half+1;
+%    Jmin = 1+half;
+%    Jmax = M-half+1;
 %
-% where L and M are the number of PSI-points in the I- and J-directions.
+% where
+%
+%    half = (Gfactor-1)/2;
+%
+% here L and M are the finer grid number of PSI-points in the I- and
+% J-directions, respectible.
+%
 %
 % On Input:
 %
 %    Ginp       Input  finer   Grid NetCDF file name (string)
+%
 %    Gout       Output coarser Grid NetCDF file name (string)
+%
 %    Gfactor    Grid coarseness factor (3,5,7,9,11,13,15,...)
+%
+%    Lplot      Draw diagrams of fine and coarse grids.
+%
 %    Imin       Finer grid lower-left  I-coordinate (PSI-point)
+%
 %    Imax       Finer grid upper-right I-coordinate (PSI-point)
+%
 %    Jmin       Finer grid lower-left  J-coordinate (PSI-point)
+%
 %    Jmax       Finer grid upper-right J-coordinate (PSI-point)
 %
 % On Output:
@@ -37,16 +51,24 @@ function C = fine2coarse(Ginp,Gout,Gfactor,varargin)
 %    C          Coaser resolution Grid structure
 %
 
-% svn $Id: fine2coarse.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: fine2coarse.m 913 2018-07-02 22:16:58Z arango $
 %=========================================================================%
 %  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
   
+% Check coarseness factor.
+
+legal = abs((3:2:27) - Gfactor) < 4*eps;
+if (~any(legal))
+  error([' FINE2COARSE: illegal coarseness factor, Gfactor = ',         ...
+         num2str(Gfactor)]);
+end
+
 % If applicable, get larger grid structure.
 
-if (~isstruct(Ginp)),
+if (~isstruct(Ginp))
   F = get_roms_grid(Ginp);
   InpName = Ginp;
 else
@@ -61,16 +83,33 @@ end
 L = Lp-1;
 M = Mp-1;
 
-% Set offset "half" factor which is used to extract boundary points
-% outside of the PSI-points perimeter defined by Imin, Imax, Jmin,
-% and Jmax.
+% If extraction indices are not provided, set (Imin,Jmin) and (Imax,Jmax)
+% to the maximum coarseness grid possible at PSI-points, such that
+% averaging from fine-to-coarse is bounded.
 
-half = floor(Gfactor-1)/2;
+half = (Gfactor-1)/2;
 
-Imin = 1;                           % Default PSI-points range to apply
-Imax = L-floor(mod(L,Gfactor)/2);   % coarseness to the full input grid
-Jmin = 1;
-Jmax = M-floor(mod(M,Gfactor)/2);
+if (numel(varargin) == 0)
+  Imin = 1+half;                 % mininum I-value possible (PSI-points)
+  Istr = Imin+1:Gfactor:L;
+  Iend = Istr+Gfactor-1;  
+  Indx = find(Iend > L-half);
+  if (~isempty(Indx))
+    Istr(Indx)=[];
+    Iend(Indx)=[];
+  end
+  Imax = Iend(end);              % maximum I-value possible (PSI-points)
+
+  Jmin = 1+half;                 % mininum J-value possible (PSI-points)
+  Jstr = Jmin+1:Gfactor:M;
+  Jend = Jstr+Gfactor-1;  
+  Jndx = find(Jend > M-half);
+  if (~isempty(Jndx))
+    Jstr(Jndx)=[];
+    Jend(Jndx)=[];
+  end
+  Jmax = Jend(end);              % maximum J-value possible (PSI-points)
+end
 
 switch numel(varargin)
   case 1
@@ -89,62 +128,109 @@ switch numel(varargin)
     Jmax = varargin{4};
 end
 
-% Check coarseness factor.
+if (numel(varargin) > 0)
+  Istr = Imin+1:Gfactor:L;
+  Iend = Istr+Gfactor-1;  
+  Indx = find(Iend > L-half);
+  if (~isempty(Indx))
+    Istr(Indx)=[];
+    Iend(Indx)=[];
+  end
 
-legal = abs([3:2:27] - Gfactor) < 4*eps;
-if (~any(legal)),
-  error([' FINE2COARSE: illegal coarseness factor, Gfactor = ',         ...
-         num2str(Gfactor)]);
+  Jstr = Jmin+1:Gfactor:M;
+  Jend = Jstr+Gfactor-1;  
+  Jndx = find(Jend > M-half);
+  if (~isempty(Jndx))
+    Jstr(Jndx)=[];
+    Jend(Jndx)=[];
+  end
 end
 
-% Check extraction region.
+disp(blanks(1));
+disp('Extracting Coarse Grid from Finer Grid: ');
+disp(blanks(1));
+disp(['  Gfactor = ', num2str(Gfactor)]);
+disp(['     Imin = ', num2str(Imin)]);
+disp(['     Imax = ', num2str(Imax)]);
+disp(['     Jmin = ', num2str(Jmin)]);
+disp(['     Jmax = ', num2str(Jmax)]);
+disp(blanks(1));
+disp('Legal Imax values given Imin:');
+disp(blanks(1));
+string = sprintf('%5i %5i %5i %5i %5i %5i %5i %5i %5i %5i\n', Iend);
+disp(string);
+disp(blanks(1));
+disp('Legal Jmax values given Jmin:');
+disp(blanks(1));
+string = sprintf('%5i %5i %5i %5i %5i %5i %5i %5i %5i %5i\n', Jend);
+disp(string);
 
-if (Imin >= Imax),
-  error([' FINE2COARSE: Imin >= Imax,    ',                             ...
-         ' Imin = ', num2str(Imin),                                     ...
-         ' Imax = ', num2str(Imax)]);
+% Now that all the legal values have been reported, remove those values
+% exceeding Imax and Jmax.
+
+Indx = find(Iend > Imax);
+if (~isempty(Indx))
+  Istr(Indx)=[];
+  Iend(Indx)=[];
 end
 
-if (Jmin >= Jmax),
-  error([' FINE2COARSE: Jmin >= Jmax,    ',                             ...
-         ' Jmin = ', num2str(Jmin),                                     ...
-         ' Jmax = ', num2str(Jmax)]);
+Jndx = find(Jend > Jmax);
+if (~isempty(Jndx))
+  Jstr(Jndx)=[];
+  Jend(Jndx)=[];
 end
 
-if (Imin < 1),
-  error([' FINE2COARSE: Imin < 1,   ',                                  ...
-         ' Imin = ', num2str(Imax)]);
-end
+% Check indices to process.
 
-if (Imax > L),
-  error([' FINE2COARSE: Imax > L,    ',                                 ...
-         ' Imax = ', num2str(Imax),                                     ...
-         ' L = ', num2str(L)]);
-end
+if (numel(varargin) > 0)
 
-if (Jmin < 1),
-  error([' FINE2COARSE: Jmin < 1,   ',                                  ...
-         ' Jmin = ', num2str(Imax)]);
-end
+  if (Imin >= Imax)
+    error([' FINE2COARSE: Imin >= Imax,    ',                           ...
+           ' Imin = ', num2str(Imin), ',',                              ...
+           ' Imax = ', num2str(Imax)]);
+  end
 
-if (Jmax > M),
-  error([' FINE2COARSE: Jmax > M,    ',                                 ...
-         ' Jmax = ', num2str(Jmax),                                     ...
-         ' M = ', num2str(M)]);
+  if (Jmin >= Jmax)
+    error([' FINE2COARSE: Jmin >= Jmax,    ',                           ...
+           ' Jmin = ', num2str(Jmin), ','                               ...
+           ' Jmax = ', num2str(Jmax)]);
+  end
+
+  if (Imin < half+1)
+    error([' FINE2COARSE: illegal Imin = ', num2str(Imin),              ...
+           ',   minimum value possible = ', num2str(half+1)]);
+  end
+
+  if (~any(Iend == Imax))
+    error([' FINE2COARSE: illegal Imax = ', num2str(Imax),              ...
+           ',   maximum value possible = ', num2str(Iend(end)),         ...
+           ',   for given Imin = ', num2str(Imin)]);
+  end
+
+  if (Jmin < half+1)
+    error([' FINE2COARSE: illegal Jmin = ', num2str(Jmin),              ...
+           ',   minimum value possible = ', num2str(half+1)]);
+  end
+
+  if (~any(Jend == Jmax))
+    error([' FINE2COARSE: illegal Jmax = ', num2str(Jmax),              ...
+           ',   maximum value possible = ', num2str(Jend(end)),         ...
+           ',   given Jmin = ', num2str(Jmin)]);
+  end
 end
 
 % Set grid variables to process.
 
 grd_vars = {'h', 'f', 'angle', 'pm', 'pn'};
 
-if (F.curvilinear),
-  field_list = [grd_vars, 'dmde', 'dndx'];
+if (F.curvilinear)
+  grd_vars = [grd_vars, 'dmde', 'dndx'];
 end
 
 grd_vars = [grd_vars, 'x_rho', 'y_rho', 'x_psi', 'y_psi',               ...
-                      'x_u', 'y_u', 'x_v', 'y_v'};
+                      'x_u', 'y_u', 'x_v', 'y_v'];
 
-if (F.spherical),
+if (F.spherical)
   grd_vars = [grd_vars, 'lon_rho', 'lat_rho', 'lon_psi', 'lat_psi',     ...
                         'lon_u', 'lat_u', 'lon_v', 'lat_v'];
 end
@@ -157,22 +243,6 @@ grd_vars = [grd_vars, 'hraw'];               % needs to be last
 % Extract coaser grid.  Only valid for C-grid...
 %--------------------------------------------------------------------------
 
-% Set extraction ranges. The "half" offset value is to extract RHO-points
-% boundaries (all four edges), U-points southern and northern boundary
-% edges, and V-points western and eastern boundary edges. All these points
-% are outside the fine grid perimeter defined by Imin, Imax, Jmin, and
-% Jmax.
-
-IminP = Imin;            ImaxP = Imax;
-IminR = Imin-(half+1);   ImaxR = Imax+(half+1);
-IminU = Imin;            ImaxU = Imax;
-IminV = Imin-(half+1);   ImaxV = Imax+(half+1);
-
-JminP = Jmin;            JmaxP = Jmax;
-JminR = Jmin-(half+1);   JmaxR = Jmax+(half+1);
-JminU = Jmin-(half+1);   JmaxU = Jmax+(half+1);
-JminV = Jmin;            JmaxV = Jmax;
-
 % Set fine and coarse grid ROMS I-indices to extract.
 
 IindexP = false([1 L  ]);
@@ -180,46 +250,75 @@ IindexR = false([1 L+1]);
 IindexU = false([1 L  ]);
 IindexV = false([1 L+1]);
 
-if (Imin == 1),
-  IpC = half:Gfactor:L;
-  IrC = 1   :Gfactor:L;
-  IuC = half:Gfactor:L;
-  IvC = 1   :Gfactor:L;
-else
-  IpC = Imin     :Gfactor:Imax;
-  IrC = Imin-half:Gfactor:Imax;
-  IuC = Imin     :Gfactor:Imax;
-  IvC = Imin-half:Gfactor:Imax;
-end
+IpC = Imin     :Gfactor:Imax;
+IrC = Imin-half:Gfactor:Imax+Gfactor;
+IuC = Imin     :Gfactor:Imax;
+IvC = Imin-half:Gfactor:Imax+Gfactor;
 
 IindexP(IpC) = true;
 IindexR(IrC) = true;
 IindexU(IuC) = true;
 IindexV(IvC) = true;
 
-% Set fine and coarse grid ROMS I-indices to extract.
+% Set fine and coarse grid ROMS J-indices to extract.
 
 JindexP = false([1 M  ]);
 JindexR = false([1 M+1]);
 JindexU = false([1 M+1]);
 JindexV = false([1 M  ]);
 
-if (Jmin == 1),
-  JpC = half:Gfactor:M;
-  JrC = 1   :Gfactor:M;
-  JuC = 1   :Gfactor:M;
-  JvC = half:Gfactor:M;
-else
-  JpC = Jmin     :Gfactor:Jmax;
-  JrC = Jmin-half:Gfactor:Jmax;
-  JuC = Jmin-half:Gfactor:Jmax;
-  JvC = Jmin     :Gfactor:Jmax;
-end
+JpC = Jmin     :Gfactor:Jmax;
+JrC = Jmin-half:Gfactor:Jmax+Gfactor;
+JuC = Jmin-half:Gfactor:Jmax+Gfactor;
+JvC = Jmin     :Gfactor:Jmax;
 
 JindexP(JpC) = true;
 JindexR(JrC) = true;
 JindexU(JuC) = true;
 JindexV(JvC) = true;
+
+% Set fine and coarse grids (XI,ETA) coordinates.
+
+[YpF, XpF] = meshgrid(1.0:1:M     , 1.0:1:L     );
+[YrF, XrF] = meshgrid(0.5:1:Mp-0.5, 0.5:1:Lp-0.5);
+[YuF, XuF] = meshgrid(0.5:1:Mp-0.5, 1.0:1:L     );
+[YvF, XvF] = meshgrid(1.0:1:M     , 0.5:1:Lp-0.5);
+
+XpC = XpF(IindexP,JindexP);   YpC = YpF(IindexP,JindexP);   
+XrC = XrF(IindexR,JindexR);   YrC = YrF(IindexR,JindexR);   
+XuC = XuF(IindexU,JindexU);   YuC = YuF(IindexU,JindexU);   
+XvC = XvF(IindexV,JindexV);   YvC = YvF(IindexV,JindexV);   
+
+% If requested, plot fine and coarse grid points.
+
+if (Lplot)
+  figure;
+  plot(XrF, YrF, 'bo',  XrC,  YrC,  'r+',                               ...
+       XpF, YpF, 'b--', XpF', YpF', 'b--',                              ...
+       XpC, YpC, 'r-',  XpC', YpC', 'r-')
+  title('RHO-points in (XI,ETA) Coordinates  (PSI-points mesh)');
+  xlabel(['Coarseness Factor = ', num2str(Gfactor), blanks(4),          ...
+          '(blue circles: fine RHO-points,',                            ...
+	  ' red plus: coarse RHO-points)']);
+
+  figure;
+  plot(XuF, YuF, 'bo',  XuC,  YuC,  'r+',                               ...
+       XvF, YvF, 'b--', XvF', YvF', 'b--',                              ...
+       XvC, YvC, 'r-',  XvC', YvC', 'r-')
+  title('U-points in (XI,ETA) Coordinates  (V-points mesh)');
+  xlabel(['Coarseness Factor = ', num2str(Gfactor), blanks(4),          ...
+          '(blue circles: fine U-points,',                              ...
+	  ' red plus: coarse RHO-points)']);
+
+  figure;
+  plot(XvF, YvF, 'bo',  XvC,  YvC,  'r+',                               ...
+       XvF, YvF, 'b--', XvF', YvF', 'b--',                              ...
+       XuC, YuC, 'r-',  XuC', YuC', 'r-')
+  title('V-points in (XI,ETA) Coordinates  (U-points mesh)');
+  xlabel(['Coarseness Factor = ', num2str(Gfactor), blanks(4),          ...
+          '(blue circles: fine V-points,',                              ...
+	  ' red plus: coarse RHO-points)']);
+end
 
 % Initialize several subsomain structure paameters.
 
@@ -228,7 +327,7 @@ C.Lm = length(IpC)-1;
 C.Mm = length(JpC)-1;
 C.spherical = F.spherical;
 
-if isfield(F, 'uniform'),
+if isfield(F, 'uniform')
   C.uniform = F.uniform;
 else
   C.uniform = 0;
@@ -236,10 +335,10 @@ end
 
 % Extract grid variables.
 
-for value = grd_vars,
+for value = grd_vars
   field = char(value);
   got.(field) = false;
-  if (isfield(F,field)),
+  if (isfield(F,field))
     switch (field)
       case {'lon_psi', 'lat_psi', 'mask_psi', 'x_psi', 'y_psi'}
         C.(field) = F.(field)(IindexP,JindexP);
@@ -262,7 +361,7 @@ end
 
 % Get grid lengths.
 
-if (got.x_psi && got.y_psi),
+if (got.x_psi && got.y_psi)
   C.xl = max(C.x_psi(:)) - min(C.x_psi(:));
   C.el = max(C.y_psi(:)) - min(C.y_psi(:));
 else
@@ -270,22 +369,153 @@ else
   C.el = 0;
 end
 
-% Recompute metrics at coarser resolution.  We cannot extract their
-% values because grid spacing is larger by factor of Gfactors.
-% The computation of metrics from discrete point is subject to
-% roundoff.  There is not much that we can do here.  The roundoff
-% is small and of the order 1.0E-16 (eps value).
+% Process inverse grid spacing array "pm" and "pn".  Sum finer grid
+% values to conserve area.
 
-disp(' ');
-if (G.spherical),
-  GreatCircle = true;
-  disp('Computing grid spacing: great circle distances');
-else
-  GreatCircle = false;
-  disp('Computing grid spacing: Cartesian distances');
+Ibry  = Istr(1)-(half+1):Gfactor:Iend(end)+(half+1);
+Jbry  = Jstr(1)-(half+1):Gfactor:Jend(end)+(half+1);
+
+dxC = nan(size(XrC));
+dyC = nan(size(XrC));
+
+% X-spacing interior points including southern and northern boundaries.
+% The values are summed for each finer grid j-value within the coarser
+% grid cell and then averaged at the end.
+
+for j = 1:length(Jbry)
+  Javg = Jbry(j)-half:1:Jbry(j)+half;
+  indx = Javg < 1 | Javg > M;
+  Javg(indx) = [];
+  Nvalues = length(Javg);
+  values  = zeros([1 Nvalues]);
+  for i = 1:length(Istr)
+    for jc = 1:Nvalues
+      values(jc) = sum(1 ./ squeeze(F.pm(Istr(i):Iend(i), Javg(jc))));
+    end
+    dxC(i+1,j) = mean(values(:));
+  end
 end
 
-[C.pm, C.pn, C.dndx, C.dmde]=grid_metrics(C, GreatCircle);
+% Y-spacing interior points including western and eastern boundaries.
+% The values are summed for each finer grid j-value within the coarser
+% grid cell and averaged at the ne
+
+for i = 1:length(Ibry)
+  Iavg = Ibry(i)-half:1:Ibry(i)+half;
+  indx = Iavg < 1 | Iavg > L;
+  Iavg(indx) = [];
+  Nvalues = length(Iavg);
+  values  = zeros([1 Nvalues]);
+  for j = 1:length(Jstr)
+    for ic = 1:Nvalues
+      values(ic) = sum(1 ./ squeeze(F.pn(Iavg(ic), Jstr(j):Jend(j))));
+    end
+    dyC(i,j+1) = mean(values(:));
+  end
+end
+
+%  Boundary points.  The values depend on the extraction indices.  We
+%  either have enough points for averaging or we need to mirror values
+%  by multypling by 2.
+
+%  Western boundary.
+
+if (Imin < Gfactor)
+  Iwest  = Imin-half:1:Imin;
+  factor = 0.5;
+else
+  Iwest = Imin-(Gfactor-1):1:Imin;
+  factor = 1;
+end  
+
+for j = 1:length(Jbry)
+  Javg = Jbry(j)-half:1:Jbry(j)+half;
+  indx = Javg < 1 | Javg > M;
+  Javg(indx) = [];
+  Nvalues = length(Javg);
+  values = zeros([1 Nvalues]);
+  for jc = 1:Nvalues
+    val  = 1 ./ squeeze(F.pm(Iwest, Javg(jc)));
+    val(1) = factor * val(1);
+    values(jc) = sum(val(:)) / factor;
+  end      
+  dxC(1,j) = mean(values(:));
+end
+
+%  Eastern boundary.
+
+if (Imax > (Lp-Gfactor))
+  Ieast = Iend(end)+1:1:Iend(end)+1+half;
+  factor = 0.5;
+else
+  Ieast = Iend(end)+1:1:Iend(end)+Gfactor;
+  factor = 1;
+end
+
+for j = 1:length(Jbry)
+  Javg = Jbry(j)-half:1:Jbry(j)+half;
+  indx = Javg < 1 | Javg > M;
+  Javg(indx) = [];
+  Nvalues = length(Javg);
+  values = zeros([1 Nvalues]);
+  for jc = 1:Nvalues
+    val = 1 ./ squeeze(F.pm(Ieast, Javg(jc)));
+    val(end) = factor * val(end);
+    values(jc) = sum(val(:)) / factor;
+  end
+  dxC(end,j) = mean(values(:));
+end
+
+%  Southern boundary.
+
+if (Jmin < Gfactor)
+  Jsouth = Jmin-half:1:Jmin;
+  factor = 0.5;
+else
+  Jsouth = Jmin-(Gfactor-1):1:Jmin;
+  factor = 1;
+end
+
+for i = 1:length(Ibry)
+  Iavg = Ibry(i)-half:1:Ibry(i)+half;
+  indx = Iavg < 1 | Iavg > L;
+  Iavg(indx) = [];
+  Nvalues = length(Iavg);
+  values  = zeros([1 Nvalues]);
+  for ic = 1:Nvalues  
+    val = 1 ./ squeeze(F.pn(Iavg(ic), Jsouth));
+    val(1) = factor * val(1);
+    values(ic) = sum(val(:)) / factor;
+  end
+  dyC(i,1) = mean(values(:));
+end
+
+%  Northern boundary.
+
+if (Jmax > (Mp-Gfactor))
+  Jnorth = Jend(end)+1:1:Jend(end)+1+half;
+  factor = 0.5;
+else
+  Jnorth = Jend(end)+1:1:Jend(end)+Gfactor;
+  factor = 1;
+end  
+  
+for i = 1:length(Ibry)
+  Iavg = Ibry(i)-half:1:Ibry(i)+half;
+  indx = Iavg < 1 | Iavg > L;
+  Iavg(indx) = [];
+  Nvalues = length(Iavg);
+  values  = zeros([1 Nvalues]);
+  for ic = 1:Nvalues
+    val = 1 ./ squeeze(F.pn(Iavg(ic), Jnorth));
+    val(end) = factor * val(end);
+    values(ic) = sum(val(:)) / factor;
+  end
+  dyC(i,end) = mean(values(:));
+end
+
+C.pm = 1 ./ dxC;
+C.pn = 1 ./ dyC;
 
 %--------------------------------------------------------------------------
 % Create subdomain Grid NetCDF file and write out data.
@@ -349,9 +579,9 @@ if (status ~= 0), return, end
 status = nc_write (Gout, 'el', C.el);
 if (status ~= 0), return, end
 
-if (got.hraw),
+if (got.hraw)
   bath = size(C.hraw,3);
-  for rec=1:bath,
+  for rec=1:bath
     status = nc_write (Gout, 'hraw', C.hraw, rec);
     if (status ~= 0), return, end
   end
@@ -360,19 +590,19 @@ else
   if (status ~= 0), return, end
 end
 
-for value = 1:length(grd_vars)-1,
+for value = 1:length(grd_vars)-1
   field = char(grd_vars(value));
-  if (got.(field)),
+  if (got.(field))
     status = nc_write (Gout, field, C.(field));
     if (status ~= 0), return, end
   end  
-end,
+end
 
 %--------------------------------------------------------------------------
 % Add coastline data if available.
 %--------------------------------------------------------------------------
 
-if (isfield(F, 'lon_coast') && isfield(F, 'lat_coast')),
+if (isfield(F, 'lon_coast') && isfield(F, 'lat_coast'))
   add_coastline (Gout, F.lon_coast, F.lat_coast);
 end
 

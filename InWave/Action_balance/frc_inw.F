@@ -58,7 +58,7 @@
 #  endif
      &                 WAVEP(ng)% AC, WAVEP(ng)% Tr,                    &
      &                 WAVEP(ng)% Ta, WAVEP(ng)% kwc,                   &
-     &                 WAVEG(ng) % WD,                                  &
+     &                 WAVEG(ng)% WD,                                   &
      &                 WAVEP(ng) % h_tot)
 !#  ifdef PROFILE
 !      CALL wclock_off (ng, iNLM, 35)
@@ -146,8 +146,8 @@
 !  Local variable declarations.
 !
       integer :: i, j, d
-      real(r8) :: EW, KM, TRM, H, DIRM, twopi
-      real(r8) :: EN
+      real(r8) :: TRM, H, DIRE, DIRN, twopi
+      real(r8) :: EN, EW, oEW, KM, DwaveE, DwaveN
       real(r8), parameter :: Lmin=10.0_r8
       real(r8), parameter :: Lmax=1000.0_r8
       real(r8), parameter :: Pmin=2.0_r8
@@ -173,7 +173,8 @@
           EW=0.0_r8
           KM=0.0_r8
           TRM=0.0_r8
-          DIRM=0.0_r8
+          DIRE=0.0_r8
+          DIRN=0.0_r8
           IF (h_tot(i,j).ge.Dcrit(ng)) THEN
             DO d=1,ND
 !=======================================================================
@@ -187,27 +188,36 @@
               EW=EW+EN
 !=======================================================================
 !  Compute the mean wave number and intrinsic periods
-!  What we do is give more importance to those wave
+!  What we do is give more importance to those wave 
 !  numbers with more energy
 !=======================================================================
               KM=KM+kwc(i,j,d)*EN
               TRM=TRM+Tr(i,j,d)*EN
-              DIRM=DIRM+WD(d)*EN
+!             DIRM=DIRM+WD(d)*EN
+              DIRE=DIRE+sin(WD(d))*EN
+              DIRN=DIRN+cos(WD(d))*EN
             ENDDO
             IF (EW.ge.0.001_r8) THEN
-              KM=KM/EW
+              oEW=1.0_r8/EW
+              KM=KM*oEW
+              TRM=TRM*oEW
               Lwave(i,j)=MIN(twopi/KM,Lmax)
-              Dwave(i,j)=DIRM/EW
+              DwaveE=DIRE*oEW
+              DwaveN=DIRN*oEW
+              Dwave(i,j)=ATAN2(DwaveE,DwaveN)
+              IF (Dwave(i,j).lt.0.0_r8) THEN
+                Dwave(i,j)=Dwave(i,j)+2.0_r8*pi
+              END IF
 !=======================================================================
 !  Compute the wave height Hwave (Significant).
 !=======================================================================
 !             Hwave(i,j)=(8.0_r8*EW/(g*rho0))**0.5_r8
               Hwave(i,j)=(16.0_r8*EW/(g*rho0))**0.5_r8
 #  if defined WAVES_TOP_PERIOD
-              Pwave_top(i,j)=TRM/EW
+              Pwave_top(i,j)=TRM
 #  endif
 #  if defined WAVES_BOT_PERIOD
-              Pwave_bot(i,j)=TRM/EW
+              Pwave_bot(i,j)=TRM
 #  endif
 #  if defined WAVES_UB
               Fwave_bot=twopi/MAX(Pwave_bot(i,j),0.05_r8)

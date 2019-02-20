@@ -57,7 +57,7 @@ module scan_input
         integer, intent(out), optional :: nRecords
 
         integer :: i
-
+ 
         stat = 0
 
         stat = nf90_open(trim(filename), NF90_NOWRITE, handle % ncid)

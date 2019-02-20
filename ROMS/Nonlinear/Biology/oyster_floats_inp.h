@@ -1,8 +1,8 @@
       SUBROUTINE read_FltBioPar (model, inp, out, Lwrite)
 !
-!svn $Id: oyster_floats_inp.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: oyster_floats_inp.h 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -18,6 +18,8 @@
       USE mod_ncparam
       USE mod_scalars
 !
+      USE inp_decode_mod
+!
       implicit none
 !
 !  Imported variable declarations
@@ -31,16 +33,14 @@
       integer :: i, j, igrid, mc, nc, ng, status
       integer :: Ivalue(1)
 
-      integer :: decode_line, load_i, load_l, load_r
-
       real(r8) :: Rvalue(1)
 
-      real(r8), dimension(200) :: Rval
+      real(dp), dimension(nRval) :: Rval
 
       character (len=35) :: frmt
       character (len=40) :: KeyWord
       character (len=256) :: line
-      character (len=256), dimension(200) :: Cval
+      character (len=256), dimension(nCval) :: Cval
 
       character (len=1 ), parameter :: blank = ' '
 !
@@ -125,6 +125,7 @@
               IF (.not.allocated(swim_table)) THEN
                 allocate ( swim_table(swim_Im,swim_Jm) )
                 swim_table=0.0_r8
+                Dmem(1)=Dmem(1)+REAL(swim_Im*swim_Jm,r8)
               END IF
               READ (inp,*,ERR=20,END=30)                                &
                    ((swim_table(i,j),i=1,swim_Im),j=1,swim_Jm)
@@ -150,6 +151,7 @@
               IF (.not.allocated(Gfactor_table)) THEN
                 allocate ( Gfactor_table(Gfactor_Im,Gfactor_Jm) )
                 Gfactor_table=0.0_r8
+                Dmem(1)=Dmem(1)+REAL(Gfactor_Im*Gfactor_Jm)
               END IF
               READ (inp,*,ERR=20,END=30)                                &
                    ((Gfactor_table(i,j),i=1,Gfactor_Im),j=1,Gfactor_Jm)
@@ -175,6 +177,7 @@
               IF (.not.allocated(Grate_table)) THEN
                 allocate ( Grate_table(Grate_Im,Grate_Jm) )
                 Grate_table=0.0_r8
+                Dmem(1)*Dmem(1)+REAL(Grate_Im*Grate_Jm,r8)
               END IF
               READ (inp,*,ERR=20,END=30)                                &
                    ((Grate_table(i,j),i=1,Grate_Im),j=1,Grate_Jm)

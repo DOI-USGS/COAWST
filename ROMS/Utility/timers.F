@@ -1,10 +1,10 @@
 #include "cppdefs.h"
-      SUBROUTINE wclock_on (ng, model, region, line, routine)
+      RECURSIVE SUBROUTINE wclock_on (ng, model, region, line, routine)
 !
 
-!svn $Id: timers.F 855 2017-07-29 03:10:57Z arango $
+!svn $Id: timers.F 921 2018-09-06 18:27:34Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -29,6 +29,9 @@
 #ifdef DISTRIBUTE
 !
       USE distribute_mod, ONLY : mp_barrier
+# ifdef ROMS_STDOUT
+      USE distribute_mod, ONLY : mp_collect
+# endif
 #endif
 !
       implicit none
@@ -46,10 +49,14 @@
       integer :: my_getpid
 #ifndef DISTRIBUTE
       integer :: my_threadnum
+#else
+# ifdef ROMS_STDOUT
+      integer :: node
+      integer, parameter :: Pspv = 0
+      integer, allocatable :: Pids(:)
+# endif
 #endif
-
       real(r8), dimension(2) :: wtime
-
       real(r8) :: my_wtime
 !
 !-----------------------------------------------------------------------
@@ -87,15 +94,31 @@
         IF (ng.eq.1) THEN
 #ifdef DISTRIBUTE
           CALL mp_barrier (ng, model)
+# ifdef ROMS_STDOUT
+          IF (.not.allocated(Pids)) THEN
+            allocate ( Pids(numthreads) )
+            Pids=0
+          END IF
+          Pids(MyRank+1)=proc(0,MyModel,ng)
+          CALL mp_collect (ng, model, numthreads, Pspv, Pids)
+          IF (Master) THEN
+            DO node=1,numthreads
+              WRITE (stdout,10) ' Node #', node-1,                      &
+     &                      ' (pid=',Pids(node),') is active.'
+            END DO
+          END IF
+          IF (allocated(Pids)) deallocate (Pids)
+# else
           WRITE (stdout,10) ' Node #', MyRank,                          &
      &                      ' (pid=',proc(0,MyModel,ng),') is active.'
+# endif
           CALL my_flush (stdout)
 #else
           WRITE (stdout,10) ' Thread #', MyThread,                      &
      &                      ' (pid=',proc(0,MyModel,ng),') is active.'
 #endif
         END IF
- 10     FORMAT (a,i3,a,i8,a)
+ 10     FORMAT (a,i5,a,i8,a)
         thread_count=thread_count+1
         IF (thread_count.eq.NSUB) thread_count=0
 !$OMP END CRITICAL (START_WCLOCK)
@@ -103,7 +126,7 @@
       RETURN
       END SUBROUTINE wclock_on
 !
-      SUBROUTINE wclock_off (ng, model, region, line, routine)
+      RECURSIVE SUBROUTINE wclock_off (ng, model, region, line, routine)
 !
 !=======================================================================
 !                                                                      !
@@ -127,6 +150,9 @@
 #ifdef DISTRIBUTE
 !
       USE distribute_mod, ONLY : mp_barrier, mp_reduce
+# ifdef ROMS_STDOUT
+      USE distribute_mod, ONLY : mp_collect
+# endif
 #endif
 !
       implicit none
@@ -140,7 +166,9 @@
 !  Local variable declarations.
 !
       integer :: imodel, iregion, MyModel, NSUB
-
+#if defined DISTRIBUTE && defined ROMS_STDOUT
+      integer :: node
+#endif
       integer :: my_threadnum
 
       real(r8) :: percent, sumcpu, sumper, total
@@ -150,6 +178,10 @@
       real(r8) :: my_wtime
 
 #ifdef DISTRIBUTE
+# ifdef ROMS_STDOUT
+      real(r8), parameter :: Tspv = 0.0_r8
+      real(r8), allocatable :: Tend(:)
+# endif
       real(r8), dimension(0:Nregion) :: buffer
 
       character (len= 3), dimension(0:Nregion) :: op_handle
@@ -208,14 +240,30 @@
         IF (ng.eq.1) THEN
 #ifdef DISTRIBUTE
           CALL mp_barrier (ng, model)
+# ifdef ROMS_STDOUT
+          IF (.not.allocated(Tend)) THEN
+            allocate ( Tend(numthreads) )
+            Tend=0.0_r8
+          END IF
+          Tend(MyRank+1)=Cend(region,MyModel,ng)
+          CALL mp_collect (ng, model, numthreads, Tspv, Tend)
+          IF (Master) THEN
+            DO node=1,numthreads
+               WRITE (stdout,10) ' Node   #', node-1,                   &
+     &                           ' CPU:', Tend(node)
+            END DO
+          END IF
+          IF (allocated(Tend)) deallocate (Tend)
+# else
           WRITE (stdout,10) ' Node   #', MyRank, ' CPU:',               &
      &                      Cend(region,MyModel,ng)
+# endif
           CALL my_flush (stdout)
 #else
           WRITE (stdout,10) ' Thread #', MyThread, ' CPU:',             &
      &                      Cend(region,MyModel,ng)
 #endif
- 10       FORMAT (a,i3,a,f12.3)
+ 10       FORMAT (a,i5,a,f12.3)
         END IF
 !
 !  Sum the elapsed time for each profile region by model.
@@ -258,7 +306,7 @@
             END DO
             IF (ng.eq.1) THEN
               WRITE (stdout,20) ' Total:', total_cpu
- 20           FORMAT (a,8x,f14.3)
+ 20           FORMAT (a,10x,f14.3)
             END IF
           END IF
 #ifdef PROFILE
@@ -279,11 +327,10 @@
             sumcpu=0.0_r8
             sumper=0.0_r8
             DO iregion=1,Mregion-1
-              IF (Csum(iregion,imodel,ng).gt.0.0_r8) THEN
+              IF (Master.and.(Csum(iregion,imodel,ng).gt.0.0_r8)) THEN
                 percent=100.0_r8*Csum(iregion, imodel,ng)/total_cpu
-                IF (Master) WRITE (stdout,40) Pregion(iregion),         &
-     &                                        Csum(iregion,imodel,ng),  &
-     &                                        percent
+                WRITE (stdout,40) Pregion(iregion),                     &
+     &                            Csum(iregion,imodel,ng), percent
                 sumcpu=sumcpu+Csum(iregion,imodel,ng)
                 sumper=sumper+percent
               END IF
@@ -313,11 +360,10 @@
             sumper=0.0_r8
             IF (total.gt.0.0_r8) THEN
               DO iregion=Mregion,Nregion
-                IF (Csum(iregion,imodel,ng).gt.0.0_r8) THEN
+                IF (Master.and.(Csum(iregion,imodel,ng).gt.0.0_r8)) THEN
                   percent=100.0_r8*Csum(iregion, imodel,ng)/total_cpu
-                  IF (Master) WRITE (stdout,40) Pregion(iregion),       &
-     &                                          Csum(iregion,imodel,ng),&
-     &                                          percent
+                  WRITE (stdout,40) Pregion(iregion),                   &
+     &                              Csum(iregion,imodel,ng), percent
                   sumcpu=sumcpu+Csum(iregion,imodel,ng)
                   sumper=sumper+percent
                 END IF

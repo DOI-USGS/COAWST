@@ -1,4 +1,4 @@
-function [h]=pltmask(Gname, ptype, C);
+function [h]=pltmask(Gname, ptype, C)
 
 %
 % PLTMASK:  Plots ROMS Land/Sea masks
@@ -24,45 +24,37 @@ function [h]=pltmask(Gname, ptype, C);
 %                  C.Jcst    => Coastline J-grid coordinates, (0:M).
 %
 
-% svn $Id: pltmask.m 895 2018-02-11 23:15:37Z arango $
-%===========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                              %
-%    Licensed under a MIT/X style license                                   %
-%    See License_ROMS.txt                           Hernan G. Arango        %
-%===========================================================================%
+% svn $Id: pltmask.m 916 2018-07-14 01:28:47Z arango $
+%=========================================================================%
+%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%    Licensed under a MIT/X style license                                 %
+%    See License_ROMS.txt                           Hernan G. Arango      %
+%=========================================================================%
 
 %  Read spherical switch.
 
 spherical=0;
 string=nc_read(Gname,'spherical');
-if (upper(string) == 'T'),
+if (upper(string) == 'T')
   spherical=1;
-end,
+end
 
-%  Set coastline switch
-
-ICOAST=0;
-if (spherical & (nargin >2)),
-  ICOAST=1;
-end,
-
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Plot mask of PSI-points.
-%---------------------------------------------------------------------------
-%-----------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
 figure;
 mask=nc_read(Gname,'mask_psi');
 [L,M]=size(mask);
-if (spherical),
+if (spherical)
   lon=nc_read(Gname,'lon_psi');
   lat=nc_read(Gname,'lat_psi');
-end,
+end
 [x,y]=ndgrid(1:L,1:M);
 cmask=mask*2+mod(mod(x,2)+mod(y,2),2);
 
-if (ptype & spherical),
-  h=surface(lon,lat,cmask); shading flat;
+if (ptype && spherical)
+  h.p=surface(lon,lat,cmask); shading flat;
   colormap([0 1 0;.5 1 0;0 .7 1;.3 0 1]);
   set(gca,'layer','top');
   axis tight;
@@ -71,36 +63,36 @@ if (ptype & spherical),
   plot(C.lon,C.lat,'k');
   xlabel('Longitude');
   ylabel('Latitude');
-else,
+else
   x=1:1:L; x=x';
   y=1:1:M;
-  h=image(x,y,cmask','cdatamapping','scaled');
+  h.p=image(x,y,cmask','cdatamapping','scaled');
   colormap([0 1 0;.5 1 0;0 .7 1;.3 0 1]);
-  set(gca,'YDir','normal','drawmode','fast','layer','top');
+  set(gca,'YDir','normal','layer','top');
   grid on;
   hold on
   plot(C.Icst,C.Jcst,'k');
   xlabel('I-grid');
   ylabel('J-grid');
-end,
+end
 title('Land/Sea Mask of PSI-points');
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Plot mask of RHO-points.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
 figure;
 mask=nc_read(Gname,'mask_rho');
 [Lp,Mp]=size(mask);
-if (spherical),
+if (spherical)
   lon=nc_read(Gname,'lon_rho');
   lat=nc_read(Gname,'lat_rho');
-end,
+end
 [x,y]=ndgrid(1:Lp,1:Mp);
 cmask=mask*2+mod(mod(x,2)+mod(y,2),2);
 
-if (ptype & spherical),
-  h=surface(lon,lat,cmask); shading flat;
+if (ptype && spherical)
+  h.r=surface(lon,lat,cmask); shading flat;
   colormap([0 1 0;.5 1 0;0 .7 1;.3 0 1]);
   set(gca,'layer','top');
   axis tight;
@@ -109,36 +101,36 @@ if (ptype & spherical),
   plot(C.lon,C.lat,'k');
   xlabel('Longitude');
   ylabel('Latitude');
-else,
+else
   x=0:1:Lp-1; x=x';
   y=0:1:Mp-1;
-  h=image(x,y,cmask','cdatamapping','scaled');
+  h.r=image(x,y,cmask','cdatamapping','scaled');
   colormap([0 1 0;.5 1 0;0 .7 1;.3 0 1]);
-  set(gca,'YDir','normal','drawmode','fast','layer','top');
+  set(gca,'YDir','normal','layer','top');
   grid on;
   hold on
   plot(C.Icst,C.Jcst,'k');
   xlabel('I-grid');
   ylabel('J-grid');
-end,
+end
 title('Land/Sea Mask of RHO-points');
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Plot mask of U-points.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
 figure;
 mask=nc_read(Gname,'mask_u');
 [L,Mp]=size(mask);
-if (spherical),
+if (spherical)
   lon=nc_read(Gname,'lon_u');
   lat=nc_read(Gname,'lat_u');
-end,
+end
 [x,y]=ndgrid(1:L,1:Mp);
 cmask=mask*2+mod(mod(x,2)+mod(y,2),2);
 
-if (ptype & spherical),
-  h=surface(lon,lat,cmask); shading flat;
+if (ptype && spherical)
+  h.u=surface(lon,lat,cmask); shading flat;
   colormap([0 1 0;.5 1 0;0 .7 1;.3 0 1]);
   set(gca,'layer','top');
   axis tight;
@@ -147,36 +139,36 @@ if (ptype & spherical),
   plot(C.lon,C.lat,'k');
   xlabel('Longitude');
   ylabel('Latitude');
-else,
+else
   x=1:1:L; x=x';
   y=0:1:Mp;
-  h=image(x,y,cmask','cdatamapping','scaled');
+  h.u=image(x,y,cmask','cdatamapping','scaled');
   colormap([0 1 0;.5 1 0;0 .7 1;.3 0 1]);
-  set(gca,'YDir','normal','drawmode','fast','layer','top');
+  set(gca,'YDir','normal','layer','top');
   grid on;
   hold on
   plot(C.Icst,C.Jcst,'k');
   xlabel('I-grid');
   ylabel('J-grid');
-end,
+end
 title('Land/Sea Mask of U-points');
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 % Plot mask of V-points.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
 figure;
 mask=nc_read(Gname,'mask_v');
 [Lp,M]=size(mask);
-if (spherical),
+if (spherical)
   lon=nc_read(Gname,'lon_v');
   lat=nc_read(Gname,'lat_v');
-end,
+end
 [x,y]=ndgrid(1:Lp,1:M);
 cmask=mask*2+mod(mod(x,2)+mod(y,2),2);
 
-if (ptype & spherical),
-  h=surface(lon,lat,cmask); shading flat;
+if (ptype && spherical)
+  h.v=surface(lon,lat,cmask); shading flat;
   colormap([0 1 0;.5 1 0;0 .7 1;.3 0 1]);
   set(gca,'layer','top');
   axis tight;
@@ -185,18 +177,22 @@ if (ptype & spherical),
   plot(C.lon,C.lat,'k');
   xlabel('Longitude');
   ylabel('Latitude');
-else,
+else
   x=0:1:Lp; x=x';
   y=1:1:M;
-  h=image(x,y,cmask','cdatamapping','scaled');
+  h.v=image(x,y,cmask','cdatamapping','scaled');
   colormap([0 1 0;.5 1 0;0 .7 1;.3 0 1]);
-  set(gca,'YDir','normal','drawmode','fast','layer','top');
+  set(gca,'YDir','normal','layer','top');
   grid on;
   hold on
   plot(C.Icst,C.Jcst,'k');
   xlabel('I-grid');
   ylabel('J-grid');
-end,
+end
 title('Land/Sea Mask of V-points');
+
+if (nargout == 0)
+  clear h
+end
 
 return

@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE def_rst (ng)
 !
-!svn $Id: def_rst.F 857 2017-07-29 04:05:27Z arango $
+!svn $Id: def_rst.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -71,7 +71,7 @@
       integer :: sr3dgrd(4), su3dgrd(4), sv3dgrd(4)
       integer :: t2dgrd(4), u2dgrd(4), v2dgrd(4)
       integer :: Vsize(4)
-#if defined VEGETATION
+#if defined VEGETATION 
 # if defined VEG_DRAG || defined VEG_BIOMASS
       integer :: v3pgrd(4)
 # endif
@@ -265,7 +265,7 @@
      &                 NVEG, DimIDs(35))
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
-#  endif
+#  endif 
 # endif
 !
 # if defined VARIABLE_CDOM && defined SPECTRAL_LIGHT
@@ -758,7 +758,7 @@
         Vinfo( 4)=TRIM(Rclock%calendar)
         Vinfo(14)=Vname(4,idtime)
         status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idtime),     &
-     &                 NF_TYPE, 1, (/recdim/), Aval, Vinfo, ncname,     &
+     &                 NF_TOUT, 1, (/recdim/), Aval, Vinfo, ncname,     &
      &                 SetParAccess = .TRUE.)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
@@ -834,7 +834,7 @@
      &                 __FILE__)) RETURN
 #endif
 !
-#if defined VEGETATION
+#if defined VEGETATION 
 #include "vegetation_def_rst.h"
 #endif
 !
@@ -1272,7 +1272,7 @@
 # if defined BENTHIC
 !------------------------------------------
 !  Define benthic tracer type variables.
-!------------------------------------------
+!------------------------------------------   
         DO itrc=1,NBeT(ng)
           rstBid(itrc,ng) = var_id(i)
           IF (Hout(idBeTvar(itrc),ng)) THEN
@@ -1289,7 +1289,7 @@
             IF (FoundError(exit_flag, NoError, __LINE__,                &
      &                 __FILE__)) RETURN
 
-!Will need to switch this if have more than one depth level for benthos
+!Will need to switch this if have more than one depth level for benthos 
 !         status=def_var(ncRSTid(ng),hisBid(itrc,ng),NF_FOUT, &
 !    &                     nvd4,t3dgrd,Aval,Vinfo,ncname)
           END IF
@@ -1298,7 +1298,7 @@
 
 !------------------------------------------
 !  Define ice bio tracer type variables.
-!------------------------------------------
+!------------------------------------------  
 # if defined ICE_BIO
 #  ifdef CLIM_ICE_1D
         DO itrc=1,NIceT(ng)
@@ -1310,7 +1310,7 @@
             Vinfo(14)=Vname(4,idIceBeTvar(itrc))
             Vinfo(16)=Vname(1,idtime)
             Vinfo(22)='coordinates'
-            Aval(5)=REAL(r2dvar,r8)
+            Aval(5)=REAL(r2dvar,r8)  
             status=def_var(ng,iNLM,RST(ng)%ncid,RST(ng)%IceBid(itrc),      &
      &                   NF_FOUT, nvd3,t2dgrd,Aval,Vinfo,ncname)
             IF (FoundError(exit_flag, NoError, __LINE__,                   &
@@ -1318,7 +1318,7 @@
           END IF
         END DO
 #  endif
-# endif
+# endif     
 !
 !  Define density anomaly.
 !
@@ -2855,8 +2855,8 @@
           END IF
 #endif
         END DO
-#if defined VEGETATION
-# if defined VEG_DRAG || defined VEG_BIOMASS
+#if defined VEGETATION 
+# if defined VEG_DRAG || defined VEG_BIOMASS 
         DO i=1,NVEGP
             IF (TRIM(var_name(i)).eq.                                   &
      &          TRIM(Vname(1,idvprp(i)))) THEN
@@ -2865,7 +2865,7 @@
           END IF
         END DO
 #  endif
-#endif
+#endif 
 !
 !  Check if initialization variables are available in input NetCDF
 !  file.
@@ -3118,8 +3118,8 @@
             RETURN
           END IF
         END DO
-# ifdef VEGETATION
-#  if defined VEG_DRAG || defined VEG_BIOMASS
+# ifdef VEGETATION 
+#  if defined VEG_DRAG || defined VEG_BIOMASS 
         DO i=1,NVEGP
           IF (.not.got_var(idvprp(i)).and.Hout(idvprp(i),ng)) THEN
             IF (Master) WRITE (stdout,40) TRIM(Vname(1,idvprp(i))),     &
@@ -3129,7 +3129,7 @@
           END IF
         END DO
 #  endif
-# endif
+# endif 
 # ifdef SEDIMENT
         DO i=1,NST
           IF (.not.got_var(idfrac(i))) THEN

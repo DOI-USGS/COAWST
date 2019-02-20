@@ -4,7 +4,7 @@
 MODULE module_timing
 
    INTEGER, PARAMETER, PRIVATE :: cnmax = 30
-   INTEGER, PRIVATE :: cn = 0
+   INTEGER, PRIVATE :: cn = 0 
    REAL, PRIVATE    :: elapsed_seconds , elapsed_seconds_total = 0
 
 #if defined(OLD_TIMERS)
@@ -53,7 +53,7 @@ CONTAINS
 
    SUBROUTINE end_timing ( string )
      use module_wrf_error, only: silence, stderrlog, buffered
-
+   
       IMPLICIT NONE
       REAL(kind=8) :: now_hires
       CHARACTER *(*) :: string
@@ -62,9 +62,9 @@ CONTAINS
       if(silence/=0) return
 
       IF ( cn .lt. 1 ) THEN
-        CALL wrf_error_fatal( 'module_timing: clock nesting error, cn<1' )
+        CALL wrf_error_fatal( 'module_timing: clock nesting error, cn<1' ) 
       ELSE IF ( cn .gt. cnmax ) THEN
-        CALL wrf_error_fatal( 'module_timing: clock nesting error, cn>cnmax' )
+        CALL wrf_error_fatal( 'module_timing: clock nesting error, cn>cnmax' ) 
       ENDIF
 
 #if defined(OLD_TIMERS)

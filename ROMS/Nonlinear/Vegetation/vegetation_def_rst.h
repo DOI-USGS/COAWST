@@ -9,7 +9,7 @@
 *************************************************** Alexis Beudin     **
 *************************************************** Tarandeep S. Kalra**
 **                                                                    **
-**  Defines vegetation module input parameters in output restart      **
+**  Defines vegetation module input parameters in output restart      ** 
 **  NetCDF files.                                                     **
 **  It is included in routine "def_rst.F".                            **
 **                                                                    **
@@ -41,9 +41,9 @@
       END DO
 #endif
 !
-#if defined VEG_STREAMING
+#if defined VEG_STREAMING 
 !
-!  Define wave dissipation due to vegetation
+!  Define wave dissipation due to vegetation 
 !
           Vinfo( 1)=Vname(1,idWdvg)
           Vinfo( 2)=Vname(2,idWdvg)
@@ -58,10 +58,10 @@
           status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idWdvg),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
-#endif
+#endif 
 #ifdef MARSH_WAVE_THRUST
 !
-!  Store initial masking marsh
+!  Store initial masking marsh 
 !
           Vinfo( 1)=Vname(1,idTims)
           Vinfo( 2)=Vname(2,idTims)
@@ -106,7 +106,7 @@
           status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idTmax),   &
      &                   NF_FRST, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
-!
+!     
 !  Define Tonelli masking based thrust due to waves.
 !
           Vinfo( 1)=Vname(1,idTton)
@@ -122,4 +122,4 @@
           status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idTton),   &
      &                   NF_FRST, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
-#endif
+#endif 

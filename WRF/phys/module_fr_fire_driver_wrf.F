@@ -12,7 +12,7 @@ implicit none
 
 contains
 
-subroutine fire_driver_em_init (grid , config_flags               &
+subroutine fire_driver_em_init (grid , config_flags               & 
             ,ids,ide, kds,kde, jds,jde                              &
             ,ims,ime, kms,kme, jms,jme                              &
             ,ips,ipe, kps,kpe, jps,jpe)
@@ -34,20 +34,20 @@ subroutine fire_driver_em_init (grid , config_flags               &
     integer :: &  ! fire mesh sizes
              ifds,ifde, kfds,kfde, jfds,jfde,                              &
              ifms,ifme, kfms,kfme, jfms,jfme,                              &
-             ifps,ifpe, kfps,kfpe, jfps,jfpe
+             ifps,ifpe, kfps,kfpe, jfps,jfpe                              
     ! dummies
 
     real,dimension(1,1,1)::rho,z_at_w,dz8w
-
+    
     call message('fire_driver_em_init: FIRE initialization start')
 
     ! get fire mesh dimensions
     CALL get_ijk_from_subgrid (  grid ,                   &
                             ifds,ifde, jfds,jfde,kfds,kfde,                        &
                             ifms,ifme, jfms,jfme,kfms,kfme,                        &
-                            ifps,ifpe, jfps,jfpe,kfps,kfpe)
+                            ifps,ifpe, jfps,jfpe,kfps,kfpe) 
 
-    call fire_driver_em ( grid , config_flags               &
+    call fire_driver_em ( grid , config_flags               & 
             ,1,3,0                        & ! ifun start, end, test steps
             ,ids,ide, kds,kde, jds,jde                              &
             ,ims,ime, kms,kme, jms,jme                              &
@@ -55,7 +55,7 @@ subroutine fire_driver_em_init (grid , config_flags               &
             ,ifds,ifde, jfds,jfde                                   &
             ,ifms,ifme, jfms,jfme                                   &
             ,ifps,ifpe, jfps,jfpe                                   &
-            )
+            ) 
 
     call message('fire_driver_em_init: FIRE initialization complete')
 
@@ -65,13 +65,13 @@ end subroutine fire_driver_em_init
 !***
 !
 
-subroutine fire_driver_em_step (grid , config_flags               &
+subroutine fire_driver_em_step (grid , config_flags               & 
             ,ids,ide, kds,kde, jds,jde                              &
             ,ims,ime, kms,kme, jms,jme                              &
             ,ips,ipe, kps,kpe, jps,jpe                              &
-            ,rho,z_at_w,dz8w )
+            ,rho,z_at_w,dz8w ) 
 
-    ! stub to call fire_driver_em
+    ! stub to call fire_driver_em 
 
     USE module_domain, only: domain , get_ijk_from_subgrid
     USE module_configure , only : grid_config_rec_type
@@ -90,9 +90,9 @@ subroutine fire_driver_em_step (grid , config_flags               &
     integer :: &  ! fire mesh sizes
              ifds,ifde, kfds,kfde, jfds,jfde,                              &
              ifms,ifme, kfms,kfme, jfms,jfme,                              &
-             ifps,ifpe, kfps,kfpe, jfps,jfpe
+             ifps,ifpe, kfps,kfpe, jfps,jfpe                              
     integer :: its,ite,jts,jte,kts,kte            ! atm tile
-    integer:: ij
+    integer:: ij 
 
     call message('fire_driver_em_step: FIRE step start')
 
@@ -100,9 +100,9 @@ subroutine fire_driver_em_step (grid , config_flags               &
     CALL get_ijk_from_subgrid (  grid ,                   &
                             ifds,ifde, jfds,jfde,kfds,kfde,                        &
                             ifms,ifme, jfms,jfme,kfms,kfme,                        &
-                            ifps,ifpe, jfps,jfpe,kfps,kfpe)
+                            ifps,ifpe, jfps,jfpe,kfps,kfpe) 
 
-    call fire_driver_em ( grid , config_flags               &
+    call fire_driver_em ( grid , config_flags               & 
             ,3,6,fire_test_steps                                &
             ,ids,ide, kds,kde, jds,jde                              &
             ,ims,ime, kms,kme, jms,jme                              &
@@ -110,7 +110,9 @@ subroutine fire_driver_em_step (grid , config_flags               &
             ,ifds,ifde, jfds,jfde                                   &
             ,ifms,ifme, jfms,jfme                                   &
             ,ifps,ifpe, jfps,jfpe                                   &
+            ,rho,z_at_w,dz8w                                        &
             )
+ 
 
     ! --- add heat and moisture fluxes to tendency variables by postulated decay
     do ij=1,grid%num_tiles
@@ -125,8 +127,8 @@ subroutine fire_driver_em_step (grid , config_flags               &
        call fire_tendency(                 &
             ids,ide-1, kds,kde, jds,jde-1, & ! domain dimensions
             ims,ime, kms,kme, jms,jme,      &
-            its,ite, kts,kte, jts,jte,      & !
-            grid%grnhfx,grid%grnqfx,grid%canhfx,grid%canqfx,        & ! fluxes on atm grid
+            its,ite, kts,kte, jts,jte,      & ! 
+            grid%grnhfx,grid%grnqfx,grid%canhfx,grid%canqfx,        & ! fluxes on atm grid 
             config_flags%fire_ext_grnd,config_flags%fire_ext_crwn,config_flags%fire_crwn_hgt,                &
             grid%ht,z_at_w,dz8w,grid%mut,grid%c1h,grid%c2h,rho,          &
             grid%rthfrten,grid%rqvfrten)                ! out
@@ -139,7 +141,7 @@ subroutine fire_driver_em_step (grid , config_flags               &
        call print_3d_stats(its,ite,kts,kte,jts,jte,ims,ime,kms,kme,jms,jme,grid%rqvfrten,'fire_driver_phys:rqvfrten')
 
     call message('fire_driver_em_step: FIRE step complete')
-
+            
 end subroutine fire_driver_em_step
 
 end module module_fr_fire_driver_wrf

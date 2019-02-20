@@ -14,7 +14,7 @@ typedef int MPI_Request;
 typedef int MPI_Group;
 
 /* MPI_GROUP_EMPTY and MPI_GROUP_NULL must not conflict with MPI_GROUP_ONE */
-#define MPI_GROUP_EMPTY (-1)
+#define MPI_GROUP_EMPTY (-1)  
 #define MPI_GROUP_NULL  (0)
 
 
@@ -157,7 +157,7 @@ typedef struct                  /* Fortran: INTEGER status(MPI_STATUS_SIZE) */
 typedef int MPI_Op;
 
 typedef void MPI_User_function( void *invec, void *inoutvec, int *len,
-				MPI_Datatype *datatype);
+				MPI_Datatype *datatype); 
 
 #define MPI_OP_NULL (0)
 
@@ -193,7 +193,7 @@ typedef void MPI_User_function( void *invec, void *inoutvec, int *len,
  * Note: if you need to regenerate the prototypes below,
  * you can use 'protify.awk' and paste the output here.
  *
- */
+ */                                                      
 
 
 extern int MPI_Barrier(MPI_Comm comm );
@@ -202,7 +202,7 @@ extern int MPI_Bcast(void* buffer, int count, MPI_Datatype datatype,
 extern int MPI_Gather(void* sendbuf, int sendcount, MPI_Datatype sendtype,
                       void* recvbuf, int recvcount, MPI_Datatype recvtype,
                       int root, MPI_Comm comm);
-extern int MPI_Gatherv(void* sendbuf, int sendcount, MPI_Datatype sendtype,
+extern int MPI_Gatherv(void* sendbuf, int sendcount, MPI_Datatype sendtype, 
                        void* recvbuf, int *recvcounts, int *displs,
                        MPI_Datatype recvtype, int root, MPI_Comm comm);
 extern int MPI_Allgather(void* sendbuf, int sendcount, MPI_Datatype sendtype,
@@ -211,17 +211,17 @@ extern int MPI_Allgather(void* sendbuf, int sendcount, MPI_Datatype sendtype,
 extern int MPI_Allgatherv(void* sendbuf, int sendcount, MPI_Datatype sendtype,
                           void* recvbuf, int *recvcounts, int *displs,
                           MPI_Datatype recvtype, MPI_Comm comm);
-extern int MPI_Scatter( void* sendbuf, int sendcount, MPI_Datatype sendtype,
+extern int MPI_Scatter( void* sendbuf, int sendcount, MPI_Datatype sendtype, 
                         void* recvbuf, int recvcount, MPI_Datatype recvtype,
                         int root, MPI_Comm comm);
-extern int MPI_Scatterv(void* sendbuf, int *sendcounts, int *displs,
-                        MPI_Datatype sendtype, void* recvbuf, int recvcount,
+extern int MPI_Scatterv(void* sendbuf, int *sendcounts, int *displs, 
+                        MPI_Datatype sendtype, void* recvbuf, int recvcount, 
                         MPI_Datatype recvtype, int root, MPI_Comm comm);
-extern int MPI_Reduce(void* sendbuf, void* recvbuf, int count,
+extern int MPI_Reduce(void* sendbuf, void* recvbuf, int count, 
                       MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm);
-extern int MPI_Allreduce(void* sendbuf, void* recvbuf, int count,
+extern int MPI_Allreduce(void* sendbuf, void* recvbuf, int count, 
                          MPI_Datatype datatype, MPI_Op op, MPI_Comm comm);
-extern int MPI_Scan( void* sendbuf, void* recvbuf, int count,
+extern int MPI_Scan( void* sendbuf, void* recvbuf, int count, 
                      MPI_Datatype datatype, MPI_Op op, MPI_Comm comm);
 extern int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                         void *recvbuf, int recvcount, MPI_Datatype recvtype,

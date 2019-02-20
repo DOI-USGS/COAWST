@@ -2,7 +2,7 @@
      &                    numfields,numlocal,maxlocal,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    gb_info
+! SUBPROGRAM:    gb_info 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-25
 !
 ! ABSTRACT: This subroutine searches through a GRIB2 message and
@@ -20,7 +20,7 @@
 !     cgrib    - Character array that contains the GRIB2 message
 !     lcgrib   - Length (in bytes) of GRIB message in array cgrib.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     listsec0 - Contains information decoded from GRIB Indicator Section 0.
 !                Must be dimensioned >= 2.
 !                listsec0(1)=Discipline-GRIB Master Table Number
@@ -32,7 +32,7 @@
 !                listsec1(1)=Id of orginating centre (Common Code Table C-1)
 !                listsec1(2)=Id of orginating sub-centre (local table)
 !                listsec1(3)=GRIB Master Tables Version Number (Code Table 1.0)
-!                listsec1(4)=GRIB Local Tables Version Number
+!                listsec1(4)=GRIB Local Tables Version Number 
 !                listsec1(5)=Significance of Reference Time (Code Table 1.1)
 !                listsec1(6)=Reference Time - Year (4 digits)
 !                listsec1(7)=Reference Time - Month
@@ -43,7 +43,7 @@
 !                listsec1(12)=Production status of data (Code Table 1.2)
 !                listsec1(13)=Type of processed data (Code Table 1.3)
 !     numfields- The number of gridded fieldse found in the GRIB message.
-!     numlocal - The number of Local Use Sections ( Section 2 ) found in
+!     numlocal - The number of Local Use Sections ( Section 2 ) found in 
 !                the GRIB message.
 !     maxlocal-  The size of the largest Local Use Section ( Section 2 ).
 !                Can be used to ensure that the return array passed
@@ -69,12 +69,12 @@
       integer,intent(in) :: lcgrib
       integer,intent(out) :: listsec0(3),listsec1(13)
       integer,intent(out) :: numlocal,numfields,maxlocal,ierr
-
+      
       character(len=4),parameter :: grib='GRIB',c7777='7777'
       character(len=4) :: ctemp
       integer,parameter :: zero=0,one=1
       integer,parameter :: mapsec1len=13
-      integer,parameter ::
+      integer,parameter :: 
      &        mapsec1(mapsec1len)=(/ 2,2,1,1,1,2,1,1,1,1,1,1,1 /)
       integer iofst,ibeg,istart
 
@@ -99,7 +99,7 @@
         return
       endif
 !
-!  Unpack Section 0 - Indicator Section
+!  Unpack Section 0 - Indicator Section 
 !
       iofst=8*(istart+5)
       call g2lib_gbyte(cgrib,listsec0(1),iofst,8)     ! Discipline
@@ -114,7 +114,7 @@
       ipos=istart+lensec0
 !
 !  Currently handles only GRIB Edition 2.
-!
+!  
       if (listsec0(2).ne.2) then
         print *,'gb_info: can only decode GRIB edition 2.'
         ierr=2
@@ -186,7 +186,7 @@
            ierr=6
            return
         endif
-
+        
       enddo
 
       return

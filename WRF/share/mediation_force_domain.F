@@ -138,9 +138,6 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
 !  End of gopal's doing.
 !=======================================================================
 #endif
-! ----------------------------------------------------------
-!    Interface definitions for COAMPS (placeholder)
-! ----------------------------------------------------------
    END INTERFACE
 ! ----------------------------------------------------------
 ! End of Interface blocks
@@ -204,7 +201,7 @@ SUBROUTINE med_force_domain ( parent_grid , nested_grid )
    !
    ! Added following line to handle adaptive time step.  This should probably
    !   go somewhere else, but I'm not sure where.
-   !
+   !   
    ! T. Hutchinson, WSI  1/23/07
    !
 
@@ -377,14 +374,6 @@ ENDIF
 ! ------------------------------------------------------
 !    End of Forcing calls for NMM.
 ! ------------------------------------------------------
-! ------------------------------------------------------
-! ------------------------------------------------------
-!    Forcing calls for COAMPS. (Placeholder)
-! ------------------------------------------------------
-# if (COAMPS_CORE == 1)
-# endif
-! ------------------------------------------------------
-!    End of Forcing calls for COAMPS.
 ! ------------------------------------------------------
    RETURN
 END SUBROUTINE med_force_domain

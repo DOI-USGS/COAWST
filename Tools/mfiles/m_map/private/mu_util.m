@@ -1,4 +1,4 @@
-function varargout=mu_util(optn,varargin);
+function varargout=mu_util(optn,varargin)
 % MU_UTIL Various utility routines
 %           This function should not be used directly; instead it is
 %           is accessed by other high- and low-level functions.
@@ -18,26 +18,31 @@ function varargout=mu_util(optn,varargin);
 % This software is provided "as is" without warranty of any kind. But
 % it's mine, so you can't sell it.
 
-switch optn,
-  case 'clip',
+% 31/Mar/04 - added a fix in m_rectgrid that caused problems when a map
+% boundary coincided with a grid line.
+% 26/Oct/07 - fixed the same problem when it occurred near SOUTH pole!
+% 8/Sep/13 - added 'tickstyle' to grid generation
+
+switch optn
+  case 'clip'
     [varargout{1},varargout{2}]=m_clip(varargin{:});
-  case 'axisticks',
+  case 'axisticks'
     varargout{1}=m_getinterval(varargin{:});
   case {'xgrid','ygrid'}
     [varargout{1},varargout{2},varargout{3},varargout{4}]=m_rectgrid(optn,varargin{:});
-  case 'xylimits',
+  case 'xylimits'
     m_getxylimits;
-  case 'lllimits',
+  case 'lllimits'
     m_getlllimits;
-  case 'box',
+  case 'box'
     [varargout{1},varargout{2}]=m_box(varargin{:});
 
-end;
+end
 
 
 
 %---------------------------------------------------------
-function [Xc,Yc]=m_clip(cliptype,X,Xedge,indx,Y);
+function [Xc,Yc]=m_clip(cliptype,X,Xedge,indx,Y)
 % M_CLIP performs clipping of data. Columns of points are
 %        assumed to be lines; the first points outside the
 %        clip area are recomputed to lie on the edge of the
@@ -59,61 +64,61 @@ function [Xc,Yc]=m_clip(cliptype,X,Xedge,indx,Y);
 Xc=X;
 Yc=Y;
 
-if ~strcmp(cliptype,'point'),
+if ~strcmp(cliptype,'point')
 
   % Find regions where we suddenly come into the area
   % (indices go from 1 to 0)
 
   [i,j]=find(diff(indx)==-1);
 
-  if any(i),
+  if any(i)
     I=i+(j-1)*size(X,1); % 1-d addressing
 
     % Linearly interpolate to boundary
 
     bt=(X(I+1)-X(I));
     ibt=abs(bt)<5*eps;
-    if any(ibt), bt(ibt)=1*eps; end; % In these cases the delta(Y) also = 0, so we just want
+    if any(ibt), bt(ibt)=1*eps; end % In these cases the delta(Y) also = 0, so we just want
                                       % to avoid /0 warnings.
     Yc(I)=Y(I)+(Xedge-X(I)).*(Y(I+1)-Y(I))./bt;
     Yc(I(ibt))=(Y(I(ibt))+Y(I(ibt)+1))/2;
     Xc(I)=Xedge;
-    indx(I(finite(Yc(I))))=0;
-  end;
+    indx(I(isfinite(Yc(I))))=0;
+  end
 
   % Find regions where we suddenly come out of the area
   % (indices go from 0 to 1)
 
   
   [i,j]=find(diff(indx)==1);
-  if any(i),
+  if any(i)
 
     I=i+(j-1)*size(X,1);
 
     bt=(X(I+1)-X(I));
     ibt=abs(bt)<5*eps;
-    if any(ibt), bt(ibt)=eps;  end; % In these cases the delta(Y) also = 0, so we just want
+    if any(ibt), bt(ibt)=eps;  end % In these cases the delta(Y) also = 0, so we just want
                                       % to avoid /0 warnings.
   
     Yc(I+1)=Y(I)+(Xedge-X(I)).*(Y(I+1)-Y(I))./bt;
     Yc(I(ibt)+1)=(Y(I(ibt))+Y(I(ibt)+1))/2;
     Xc(I+1)=Xedge;
-    indx(I(finite(Yc(I+1)))+1)=0;
-  end;
+    indx(I(isfinite(Yc(I+1)))+1)=0;
+  end
 
-end;
+end
 
-switch cliptype,
+switch cliptype
   case {'on','point'}
     Xc(indx)=NaN;
     Yc(indx)=NaN;
-  case 'patch',
+  case 'patch'
     Xc(indx)=Xedge;
-end;
+end
 
 
 %--------------------------------------------------------------------------
-function gval=m_getinterval(gmin,gmax,gtick);
+function gval=m_getinterval(gmin,gmax,gtick,gtickstyle)
 % M_GETINTERVAL picks nice spacing for grid ticks
 %        This occurs when the following call is made:
 %        TICKS=M_GRID('axisticks',MIN,MAX,APPROX_NUM_TICKS)
@@ -127,22 +132,32 @@ function gval=m_getinterval(gmin,gmax,gtick);
 % If ticks are specified, we just make sure they are within the limits
 % of the map.
 
-if length(gtick)>1,
+if length(gtick)>1
   gval=[gtick(gtick(:)>=gmin & gtick(:)<=gmax)];
 
 % Otherwise, we try to fit approximately gtick ticks in the interval
 else
 
-  if gtick>2,
+  if gtick>2
     
     exactint=(gmax-gmin)/(gtick-1)*60; %interval in minutes
 
-    % These are the intervals which we will allow (they are "nice" in the sense
-    % that they come to various even multiples of minutes or degrees)
-    niceints=[0.1 0.2 0.25 0.5 ...
-              1 2 3 4 5 6 10 12 15 20 30 ...
-              60*[1 2 3 4 5 6 8 9 10 12 15 18 20 25 30 40 50 60 100 120 180]];
-
+    if strcmp(gtickstyle,'dm')
+       % These are the intervals which we will allow (they are "nice" in the sense
+       % that they come to various even multiples of minutes or degrees)
+       niceints=[0.1 0.2 0.25 0.5 ...
+        	 1 2 3 4 5 6 10 12 15 20 30 ...
+        	 60*[1 2 3 4 5 6 8 9 10 12 15 18 20 25 30 40 50 60 100 120 180]];
+    elseif strcmp(gtickstyle,'dd')
+       % these are decimal intervals
+       niceints=60*[1/500 1/400 1/250 1/200 1/100 ...
+		     1/50 1/40 1/25 1/20 1/10 1/5 1/4 1/3 1/2 ...
+		     1 2 3 4 5 6 8 9 10 12 15 18 20 25 30 40 50 60 100 120 180];
+    else
+       error(['bad tickstyle - ''' gtickstyle '''']);
+    end
+    
+ 
     [dun,I]=min(abs(niceints-exactint));
 
     gval=niceints(I)/60*[ceil(gmin*60/niceints(I)):fix(gmax*60/niceints(I))];
@@ -150,12 +165,12 @@ else
     gval=[gval(gval>=gmin & gval<=gmax) ];
   else
     gval=[gmin gmax];
-  end;
-end;
+  end
+end
 
  
 %--------------------------------------------------------------
-function [X,Y,vals,labI]=m_rectgrid(direc,Xlims,Ylims,Nx,Ny,label_pos);
+function [X,Y,vals,labI]=m_rectgrid(direc,Xlims,Ylims,Nx,Ny,label_pos,tickstyle)
 % M_RECTGRID This handles some of the computations involved in creating grids
 %            for rectangular maps. Essentially we make our "first guess" using the
 %            lat/long limits. Then these curves are clipped to the boundaries, after
@@ -171,19 +186,19 @@ Ny21=Ny2-1;
 
 % First try some wildly oversampled lines (not including the boundaries)
 
-vals=mu_util('axisticks',Xlims(1),Xlims(2),Nx);
+vals=mu_util('axisticks',Xlims(1),Xlims(2),Nx,tickstyle);
 
-if strcmp(MAP_VAR_LIST.rectbox,'on') |  strcmp(MAP_VAR_LIST.rectbox,'circle'),
+if strcmp(MAP_VAR_LIST.rectbox,'on') ||  strcmp(MAP_VAR_LIST.rectbox,'circle')
 
  % We don't want the end limits here.
  if vals(end) == Xlims(2), vals(end) = []; end
  if vals(1)   == Xlims(1), vals(1)   = []; end
 
- if direc(1)=='x',
+ if direc(1)=='x'
   [lg,lt]=meshgrid(vals,Ylims(1)+diff(Ylims)*[0:1/Ny1:1]);
  else
   [lt,lg]=meshgrid(vals,Ylims(1)+diff(Ylims)*[0:1/Ny1:1]);
- end;
+ end
 
  % But sneakily we clip them in transforming, so we end up with finite values only
  % inside the axis limits
@@ -192,17 +207,27 @@ if strcmp(MAP_VAR_LIST.rectbox,'on') |  strcmp(MAP_VAR_LIST.rectbox,'circle'),
 
  % Now we find the first/last unclipped values; these will be our correct starting points.
  % (Note I am converting to one-dimensional addressing).
+ 
+ istart=sum(cumsum(isfinite(X))==0)+1+[0:size(X,2)-1]*size(X,1);
+ iend=size(X,1)-sum(cumsum(isfinite(flipud(X)))==0)+[0:size(X,2)-1]*size(X,1);
 
- istart=sum(cumsum(finite(X))==0)+1+[0:size(X,2)-1]*size(X,1);
- iend=size(X,1)-sum(cumsum(finite(flipud(X)))==0)+[0:size(X,2)-1]*size(X,1);
+ % Now, in the case where map boundaries coincide with limits it is just possible
+ % that an entire column might be NaN...so in this case make up something just
+ % slight non-zero. (31/Mar/04)
+ 
+ i3=find(iend==0); 
+ if any(i3), istart(i3)=1; iend(i3)=1; end 
 
+ % do same fix for istart (thanks Ben Raymond for finding this bug)
+ i3=find(istart>prod(size(X)));
+ if any(i3), istart(i3)=1; iend(i3)=1; end
   
  % Now go back and find the lat/longs corresponding to those points; these are our new
  % starting points for the lines (Note that the linear interpolation for clipping at boundaries
  % means that they will not *quite* be the exact longitudes due to curvature, but they should
  % be very close.
 
- if direc(1)=='x',
+ if direc(1)=='x'
 
   [lgs,lts]=feval(MAP_PROJECTION.routine,'xy2ll',X(istart),Y(istart),'clip','off');
   [lgs,lte]=feval(MAP_PROJECTION.routine,'xy2ll',X(iend),Y(iend),'clip','off');
@@ -227,31 +252,31 @@ if strcmp(MAP_VAR_LIST.rectbox,'on') |  strcmp(MAP_VAR_LIST.rectbox,'circle'),
   [X,Y]=feval(MAP_PROJECTION.routine,'ll2xy',lgs(ones(Ny2,1),:)+[0:1/Ny21:1]'*(lge-lgs),...
               vals(ones(Ny2,1),:),'clip','on');
 
- end;
+ end
 
 else
- if direc(1)=='x',
+ if direc(1)=='x'
   [lg,lt]=meshgrid(vals,Ylims(1)+diff(Ylims)*[0:1/Ny1:1]);
  else
   [lt,lg]=meshgrid(vals,Ylims(1)+diff(Ylims)*[0:1/Ny1:1]);
- end;
+ end
  [X,Y]=feval(MAP_PROJECTION.routine,'ll2xy',lg,lt,'clip','off');
 
-end;
+end
 
 switch label_pos
   case {'left','bottom','west','south'}
     labI=1;
-  case 'middle',
+  case 'middle'
     labI=round(size(X,1)/2+1/2);
   case {'right','top','east','north'}
     labI=size(X,1);
-end;
+end
 
 
 
 %--------------------------------------------------------------------------------
-function m_getxylimits;
+function m_getxylimits
 % M_GET_LIMITS Converts X/Y limits to lat/long limits
 %              This is a chunk of code that is needed for most projections.
 
@@ -275,7 +300,7 @@ MAP_VAR_LIST.ylims=[min(Y) max(Y)];
 
 
 %-------------------------------------------------------------------------------
-function m_getlllimits;
+function m_getlllimits
 % M_GET_LIMITS Converts X/Y limits to lat/long limits
 %              This is a chunk of code that is needed for most projections.
 
@@ -293,10 +318,10 @@ MAP_VAR_LIST.lats=[min(real(lt)) max(real(lt))];
 
 % Are the poles within the axis limits? (Test necessary for oblique mercator and azimuthal)
 [px,py]=feval(MAP_PROJECTION.routine,'ll2xy',[0 0],[-90 90],'clip','point');
-if finite(px(1)), MAP_VAR_LIST.lats(1)=-90; end;
-if finite(px(2)), MAP_VAR_LIST.lats(2)= 90; end;
+if isfinite(px(1)), MAP_VAR_LIST.lats(1)=-90; end
+if isfinite(px(2)), MAP_VAR_LIST.lats(2)= 90; end
 
-if any(finite(px)),
+if any(isfinite(px))
   MAP_VAR_LIST.longs=[-179.9 180]+exp(1); % we add a weird number (exp(1)) to get away from 
                          % anything that might conceivably be desired as a 
                          % boundary - it makes grid generation easier.
@@ -306,15 +331,15 @@ if any(finite(px)),
                          % in 'm_rectgrid'
 else
   MAP_VAR_LIST.longs=[min(lg) max(lg)];
-  if all(isnan(px)) & diff(MAP_VAR_LIST.longs)>360*30/31,
+  if all(isnan(px)) && diff(MAP_VAR_LIST.longs)>360*30/31
     ii=lg<mean(MAP_VAR_LIST.longs);
     lg(ii)=lg(ii)+360;
     MAP_VAR_LIST.longs=[min(lg) max(lg)];
-  end;
-end;
+  end
+end
 
 %------------------------------------------------------------------------
-function [X,Y]=m_box(npts);
+function [X,Y]=m_box(npts)
 % M_BOX  Computes coordinates of the map border.
 %
 
@@ -324,20 +349,22 @@ global MAP_PROJECTION MAP_VAR_LIST
 
 n1=npts-1;
 
-switch MAP_VAR_LIST.rectbox,
-  case 'on',
+switch MAP_VAR_LIST.rectbox
+  case 'on'
     X=MAP_VAR_LIST.xlims(1)+diff(MAP_VAR_LIST.xlims)*[0:1/n1:1];
     Y=MAP_VAR_LIST.ylims(1)+diff(MAP_VAR_LIST.ylims)*[0:1/n1:1];
     X=[X MAP_VAR_LIST.xlims(2*ones(1,npts)) fliplr(X) MAP_VAR_LIST.xlims(ones(1,npts))];
     Y=[MAP_VAR_LIST.ylims(ones(1,npts)) Y  MAP_VAR_LIST.ylims(2*ones(1,npts)) fliplr(Y)];
-  case 'off',
+  case 'off'
     lg=MAP_VAR_LIST.longs(1)+diff(MAP_VAR_LIST.longs)*[0:1/n1:1];
     lg=[lg MAP_VAR_LIST.longs(2*ones(1,npts)) fliplr(lg) MAP_VAR_LIST.longs(ones(1,npts))]'; 
     lt=MAP_VAR_LIST.lats(1)+diff(MAP_VAR_LIST.lats)*[0:1/n1:1];
     lt=[MAP_VAR_LIST.lats(ones(1,npts)) lt  MAP_VAR_LIST.lats(2*ones(1,npts)) fliplr(lt)]';
     [X,Y]=feval(MAP_PROJECTION.routine,'ll2xy',lg,lt,'clip','off');
-  case 'circle',
+  case 'circle'
     n1=npts*3-1;
     X=MAP_VAR_LIST.rhomax*cos([0:n1]/n1*pi*2);
     Y=MAP_VAR_LIST.rhomax*sin([0:n1]/n1*pi*2);
-end;
+  otherwise
+    error('Unrecognized rectbox option');
+end

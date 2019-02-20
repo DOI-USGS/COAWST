@@ -3,6 +3,7 @@ module rotate_winds_module
    use bitarray_module
    use constants_module
    use llxy_module
+   use map_utils
    use misc_definitions_module
    use module_debug
 
@@ -14,11 +15,11 @@ module rotate_winds_module
    ! ARW Wind Rotation Code
    !
 
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    ! Name: map_to_met                                                             !
    !                                                                              !
    ! Purpose: Rotate grid-relative winds to Earth-relative winds                  !
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    subroutine map_to_met(u, u_mask, v, v_mask, &
                          us1, us2, ue1, ue2, &
                          vs1, vs2, ve1, ve2, &
@@ -41,12 +42,12 @@ module rotate_winds_module
 
    end subroutine map_to_met
 
-
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    ! Name: met_to_map                                                             !
    !                                                                              !
    ! Purpose: Rotate Earth-relative winds to grid-relative winds                  !
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    subroutine met_to_map(u, u_mask, v, v_mask, &
                          us1, us2, ue1, ue2, &
                          vs1, vs2, ve1, ve2, &
@@ -69,8 +70,8 @@ module rotate_winds_module
 
    end subroutine met_to_map
 
-
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    ! Name: metmap_xform                                                           !
    !                                                                              !
    ! Purpose: Do the actual work of rotating winds for C grid.                    !
@@ -80,7 +81,7 @@ module rotate_winds_module
    ! ASSUMPTIONS: 1) MEMORY ORDER IS XY.                                          !
    !              2) U ARRAY HAS ONE MORE COLUMN THAN THE V ARRAY, AND V ARRAY    !
    !                 HAS ONE MORE ROW THAN U ARRAY.                               !
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    subroutine metmap_xform(u, u_mask, v, v_mask, &
                            us1, us2, ue1, ue2, vs1, vs2, ve1, ve2, &
                            xlon_u, xlon_v, xlat_u, xlat_v, idir)
@@ -98,6 +99,10 @@ module rotate_winds_module
       real :: u_map, v_map, alpha, diff
       real, pointer, dimension(:,:) :: u_new, v_new, u_mult, v_mult
       logical :: do_last_col_u, do_last_row_u, do_last_col_v, do_last_row_v
+      real :: x_u, y_u, x_v, y_v
+      real :: xlat_u_p1 , xlon_u_p1, xlat_v_p1 , xlon_v_p1
+      real :: xlat_u_m1 , xlon_u_m1, xlat_v_m1 , xlon_v_m1
+      real :: diff_lon, diff_lat
 
       ! If the proj_info structure has not been initialized, we don't have
       !   information about the projection and standard longitude.
@@ -156,7 +161,6 @@ module rotate_winds_module
             ! Rotate U field
             do j=us2,ue2
                do i=us1,ue1
-
                   diff = idir * (xlon_u(i,j) - proj_stack(current_nest_number)%stdlon)
                   if (diff > 180.) then
                      diff = diff - 360.
@@ -166,43 +170,60 @@ module rotate_winds_module
 
                   ! Calculate the rotation angle, alpha, in radians
                   if (proj_stack(current_nest_number)%code == PROJ_LC) then
-                     alpha = diff * proj_stack(current_nest_number)%cone * rad_per_deg * proj_stack(current_nest_number)%hemi
-                  else if (proj_stack(current_nest_number)%code == PROJ_CASSINI) then
-                     if (j == ue2) then
-                        diff = xlon_u(i,j)-xlon_u(i,j-1)
-                        if (diff > 180.) then
-                           diff = diff - 360.
-                        else if (diff < -180.) then
-                           diff = diff + 360.
+                     alpha = diff * proj_stack(current_nest_number)%cone * rad_per_deg * proj_stack(current_nest_number)%hemi 
+                  else if ( (proj_stack(SOURCE_PROJ)%code == PROJ_CASSINI) .and. ( idir == 1 ) ) then
+                        call latlon_to_ij ( proj_stack(SOURCE_PROJ) , &
+                                            xlat_u(i,j), xlon_u(i,j), x_u, y_u )
+                        call ij_to_latlon ( proj_stack(SOURCE_PROJ) , &
+                                            x_u, y_u + 0.1 , xlat_u_p1 , xlon_u_p1 )
+                        call ij_to_latlon ( proj_stack(SOURCE_PROJ) , &
+                                            x_u, y_u - 0.1 , xlat_u_m1 , xlon_u_m1 )
+                        diff_lon = xlon_u_p1-xlon_u_m1
+                        if (diff_lon > 180.) then
+                           diff_lon = diff_lon - 360.
+                        else if (diff_lon < -180.) then
+                           diff_lon = diff_lon + 360.
                         end if
-                        alpha = atan2(   (-cos(xlat_u(i,j)*rad_per_deg) * diff*rad_per_deg),   &
-                                                        (xlat_u(i,j)-xlat_u(i,j-1))*rad_per_deg    &
+                        diff_lat = xlat_u_p1-xlat_u_m1
+                        alpha =-atan2(   (-cos(xlat_u(i,j)*rad_per_deg) * diff_lon*rad_per_deg),   &
+                                                        diff_lat*rad_per_deg    &
                                      )
-                     else if (j == us2) then
-                        diff = xlon_u(i,j+1)-xlon_u(i,j)
-                        if (diff > 180.) then
-                           diff = diff - 360.
-                        else if (diff < -180.) then
-                           diff = diff + 360.
+                  else if ( (proj_stack(current_nest_number)%code == PROJ_CASSINI) .and. ( idir == -1 ) ) then
+                        if (j == ue2) then
+                           diff = xlon_u(i,j)-xlon_u(i,j-1)
+                           if (diff > 180.) then
+                              diff = diff - 360.
+                           else if (diff < -180.) then
+                              diff = diff + 360.
+                           end if
+                           alpha = atan2(   (-cos(xlat_u(i,j)*rad_per_deg) * diff*rad_per_deg),   &   
+                                                           (xlat_u(i,j)-xlat_u(i,j-1))*rad_per_deg    &   
+                                        )   
+                        else if (j == us2) then
+                           diff = xlon_u(i,j+1)-xlon_u(i,j)
+                           if (diff > 180.) then
+                              diff = diff - 360.
+                           else if (diff < -180.) then
+                              diff = diff + 360.
+                           end if
+                           alpha = atan2(   (-cos(xlat_u(i,j)*rad_per_deg) * diff*rad_per_deg),   &   
+                                                           (xlat_u(i,j+1)-xlat_u(i,j))*rad_per_deg    &   
+                                        )   
+                        else
+                           diff = xlon_u(i,j+1)-xlon_u(i,j-1)
+                           if (diff > 180.) then
+                              diff = diff - 360.
+                           else if (diff < -180.) then
+                              diff = diff + 360.
+                           end if
+                           alpha = atan2(   (-cos(xlat_u(i,j)*rad_per_deg) * diff*rad_per_deg),   &   
+                                                           (xlat_u(i,j+1)-xlat_u(i,j-1))*rad_per_deg    &   
+                                        )   
                         end if
-                        alpha = atan2(   (-cos(xlat_u(i,j)*rad_per_deg) * diff*rad_per_deg),   &
-                                                        (xlat_u(i,j+1)-xlat_u(i,j))*rad_per_deg    &
-                                     )
-                     else
-                        diff = xlon_u(i,j+1)-xlon_u(i,j-1)
-                        if (diff > 180.) then
-                           diff = diff - 360.
-                        else if (diff < -180.) then
-                           diff = diff + 360.
-                        end if
-                        alpha = atan2(   (-cos(xlat_u(i,j)*rad_per_deg) * diff*rad_per_deg),   &
-                                                        (xlat_u(i,j+1)-xlat_u(i,j-1))*rad_per_deg    &
-                                     )
-                     end if
                   else
-                     alpha = diff * rad_per_deg * proj_stack(current_nest_number)%hemi
+                     alpha = diff * rad_per_deg * proj_stack(current_nest_number)%hemi 
                   end if
-
+                 
                   v_weight = 0.
 
                   ! On C grid, take U_ij, and get V value at the same lat/lon
@@ -216,15 +237,15 @@ module rotate_winds_module
                         else
                            v_weight = v_mult(i,j) + v_mult(i,j+1)
                            v_map = v(i,j)*v_mult(i,j) + v(i,j+1)*v_mult(i,j+1)
-                        end if
+                        end if 
                      else if (i == ue1 .and. do_last_col_u) then
                         if (j == ue2 .and. do_last_row_u) then
                            v_weight = v_mult(i-1,j)
                            v_map = v(i-1,j)
                         else
-                           v_weight = v_mult(i-1,j) + v_mult(i-1,j+1)
+                           v_weight = v_mult(i-1,j) + v_mult(i-1,j+1) 
                            v_map = v(i-1,j)*v_mult(i-1,j) + v(i-1,j+1)*v_mult(i-1,j+1)
-                        end if
+                        end if 
                      else if (j == ue2 .and. do_last_row_u) then
                         v_weight = v_mult(i-1,j-1) + v_mult(i,j-1)
                         v_map = v(i-1,j-1)*v_mult(i-1,j-1) + v(i,j-1)*v_mult(i,j-1)
@@ -256,41 +277,58 @@ module rotate_winds_module
                   end if
 
                   if (proj_stack(current_nest_number)%code == PROJ_LC) then
-                     alpha = diff * proj_stack(current_nest_number)%cone * rad_per_deg * proj_stack(current_nest_number)%hemi
-                  else if (proj_stack(current_nest_number)%code == PROJ_CASSINI) then
-                     if (j == ve2) then
-                        diff = xlon_v(i,j)-xlon_v(i,j-1)
-                        if (diff > 180.) then
-                           diff = diff - 360.
-                        else if (diff < -180.) then
-                           diff = diff + 360.
+                     alpha = diff * proj_stack(current_nest_number)%cone * rad_per_deg * proj_stack(current_nest_number)%hemi 
+                  else if ( (proj_stack(SOURCE_PROJ)%code == PROJ_CASSINI) .and. ( idir == 1 ) ) then
+                        call latlon_to_ij ( proj_stack(SOURCE_PROJ) , &
+                                            xlat_v(i,j), xlon_v(i,j), x_v, y_v )
+                        call ij_to_latlon ( proj_stack(SOURCE_PROJ) , &
+                                            x_v, y_v + 0.1 , xlat_v_p1 , xlon_v_p1 )
+                        call ij_to_latlon ( proj_stack(SOURCE_PROJ) , &
+                                            x_v, y_v - 0.1 , xlat_v_m1 , xlon_v_m1 )
+                        diff_lon = xlon_v_p1-xlon_v_m1
+                        if (diff_lon > 180.) then
+                           diff_lon = diff_lon - 360.
+                        else if (diff_lon < -180.) then
+                           diff_lon = diff_lon + 360.
                         end if
-                        alpha = atan2(   (-cos(xlat_v(i,j)*rad_per_deg) * diff*rad_per_deg),   &
-                                                        (xlat_v(i,j)-xlat_v(i,j-1))*rad_per_deg    &
+                        diff_lat = xlat_v_p1-xlat_v_m1
+                        alpha =-atan2(   (-cos(xlat_v(i,j)*rad_per_deg) * diff_lon*rad_per_deg),   &
+                                                        diff_lat*rad_per_deg    &
                                      )
-                     else if (j == vs2) then
-                        diff = xlon_v(i,j+1)-xlon_v(i,j)
-                        if (diff > 180.) then
-                           diff = diff - 360.
-                        else if (diff < -180.) then
-                           diff = diff + 360.
+                  else if ( (proj_stack(current_nest_number)%code == PROJ_CASSINI) .and. ( idir == -1 ) ) then
+                        if (j == ve2) then
+                           diff = xlon_v(i,j)-xlon_v(i,j-1)
+                           if (diff > 180.) then
+                              diff = diff - 360.
+                           else if (diff < -180.) then
+                              diff = diff + 360.
+                           end if
+                           alpha = atan2(   (-cos(xlat_v(i,j)*rad_per_deg) * diff*rad_per_deg),   &
+                                                           (xlat_v(i,j)-xlat_v(i,j-1))*rad_per_deg    &
+                                        )
+                        else if (j == vs2) then
+                           diff = xlon_v(i,j+1)-xlon_v(i,j)
+                           if (diff > 180.) then
+                              diff = diff - 360.
+                           else if (diff < -180.) then
+                              diff = diff + 360.
+                           end if
+                           alpha = atan2(   (-cos(xlat_v(i,j)*rad_per_deg) * diff*rad_per_deg),   &
+                                                           (xlat_v(i,j+1)-xlat_v(i,j))*rad_per_deg    &
+                                        )
+                        else
+                           diff = xlon_v(i,j+1)-xlon_v(i,j-1)
+                           if (diff > 180.) then
+                              diff = diff - 360.
+                           else if (diff < -180.) then
+                              diff = diff + 360.
+                           end if
+                           alpha = atan2(   (-cos(xlat_v(i,j)*rad_per_deg) * diff*rad_per_deg),   &
+                                                           (xlat_v(i,j+1)-xlat_v(i,j-1))*rad_per_deg    &
+                                        )
                         end if
-                        alpha = atan2(   (-cos(xlat_v(i,j)*rad_per_deg) * diff*rad_per_deg),   &
-                                                        (xlat_v(i,j+1)-xlat_v(i,j))*rad_per_deg    &
-                                     )
-                     else
-                        diff = xlon_v(i,j+1)-xlon_v(i,j-1)
-                        if (diff > 180.) then
-                           diff = diff - 360.
-                        else if (diff < -180.) then
-                           diff = diff + 360.
-                        end if
-                        alpha = atan2(   (-cos(xlat_v(i,j)*rad_per_deg) * diff*rad_per_deg),   &
-                                                        (xlat_v(i,j+1)-xlat_v(i,j-1))*rad_per_deg    &
-                                     )
-                     end if
                   else
-                     alpha = diff * rad_per_deg * proj_stack(current_nest_number)%hemi
+                     alpha = diff * rad_per_deg * proj_stack(current_nest_number)%hemi 
                   end if
 
                   u_weight = 0.
@@ -304,7 +342,7 @@ module rotate_winds_module
                         else
                            u_weight = u_mult(i,j) + u_mult(i+1,j)
                            u_map = u(i,j)*u_mult(i,j) + u(i+1,j)*u_mult(i+1,j)
-                        end if
+                        end if 
                      else if (j == ve2 .and. do_last_row_v) then
                         if (i == ve1 .and. do_last_col_v) then
                            u_weight = u_mult(i,j-1)
@@ -312,7 +350,7 @@ module rotate_winds_module
                         else
                            u_weight = u_mult(i,j-1) + u_mult(i+1,j-1)
                            u_map = u(i,j-1)*u_mult(i,j-1) + u(i+1,j-1)*u_mult(i+1,j-1)
-                        end if
+                        end if 
                      else if (i == ve1 .and. do_last_col_v) then
                         u_weight = u_mult(i,j) + u_mult(i,j-1)
                         u_map = u(i,j)*u_mult(i,j) + u(i,j-1)*u_mult(i,j-1)
@@ -333,8 +371,8 @@ module rotate_winds_module
             end do
 
             ! Copy rotated winds back into argument arrays
-            u = u_new
-            v = v_new
+            u = u_new 
+            v = v_new 
 
             deallocate(u_new)
             deallocate(v_new)
@@ -345,7 +383,7 @@ module rotate_winds_module
       else
          call mprintf(.true.,ERROR,'In metmap_xform(), uninitialized proj_info structure.')
       end if
-
+ 
    end subroutine metmap_xform
 
 
@@ -353,11 +391,11 @@ module rotate_winds_module
    ! NMM Wind Rotation Code
    !
 
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    ! Name: map_to_met_nmm                                                         !
    !                                                                              !
    ! Purpose: Rotate grid-relative winds to Earth-relative winds                  !
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    subroutine map_to_met_nmm(u, u_mask, v, v_mask, &
                              vs1, vs2, ve1, ve2, &
                              xlat_v, xlon_v)
@@ -378,12 +416,12 @@ module rotate_winds_module
 
    end subroutine map_to_met_nmm
 
-
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    ! Name: met_to_map_nmm                                                         !
    !                                                                              !
    ! Purpose: Rotate Earth-relative winds to grid-relative winds                  !
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    subroutine met_to_map_nmm(u, u_mask, v, v_mask, &
                              vs1, vs2, ve1, ve2, &
                              xlat_v, xlon_v)
@@ -441,7 +479,7 @@ module rotate_winds_module
 
             call mprintf((idir ==  1),LOGFILE,'Rotating map winds to earth winds.')
             call mprintf((idir == -1),LOGFILE,'Rotating earth winds to grid winds')
-
+   
             ! Create arrays to hold rotated winds
             allocate(u_new(vs1:ve1, vs2:ve2))
             allocate(v_new(vs1:ve1, vs2:ve2))
@@ -477,7 +515,7 @@ module rotate_winds_module
                   cos_alpha = (cos_phi0 * cos(rlat_v) + &
                                sin_phi0 * sin(rlat_v) * cos(relm))  /  &
                                             big_denominator
-
+   
                   ! Rotate U field
                   if (bitarray_test(u_mask, i-vs1+1, j-vs2+1)) then
                      u_map = u(i,j)
@@ -486,12 +524,12 @@ module rotate_winds_module
                      else
                         v_map = 0.
                      end if
-
+                     
                      u_new(i,j) = cos_alpha*u_map + idir*sin_alpha*v_map
                   else
                      u_new(i,j) = u(i,j)
                   end if
-
+                       
                   ! Rotate V field
                   if (bitarray_test(v_mask, i-vs1+1, j-vs2+1)) then
                      v_map = v(i,j)
@@ -500,22 +538,22 @@ module rotate_winds_module
                      else
                         u_map = 0.
                      end if
-
+                     
                      v_new(i,j) = -idir*sin_alpha*u_map + cos_alpha*v_map
                   else
                      v_new(i,j) = v(i,j)
                   end if
-
+   
                end do
             end do
 
             ! Copy rotated winds back into argument arrays
-            u = u_new
-            v = v_new
-
+            u = u_new 
+            v = v_new 
+   
             deallocate(u_new)
             deallocate(v_new)
-
+   
          ! Only rotate winds for Lambert conformal, polar stereographic, or Cassini
          else if ((proj_stack(current_nest_number)%code == PROJ_LC) .or. &
                   (proj_stack(current_nest_number)%code == PROJ_PS) .or. &
@@ -543,7 +581,7 @@ module rotate_winds_module
                      alpha = diff * proj_stack(current_nest_number)%cone * &
                              rad_per_deg * proj_stack(current_nest_number)%hemi
                   else
-                     alpha = diff * rad_per_deg * proj_stack(current_nest_number)%hemi
+                     alpha = diff * rad_per_deg * proj_stack(current_nest_number)%hemi 
                   end if
 
                   ! Rotate U field
@@ -554,12 +592,12 @@ module rotate_winds_module
                      else
                         v_map = 0.
                      end if
-
+                     
                      u_new(i,j) = cos(alpha)*u_map + idir*sin(alpha)*v_map
                   else
                      u_new(i,j) = u(i,j)
                   end if
-
+                       
                   ! Rotate V field
                   if (bitarray_test(v_mask, i-vs1+1, j-vs2+1)) then
                      v_map = v(i,j)
@@ -568,7 +606,7 @@ module rotate_winds_module
                      else
                         u_map = 0.
                      end if
-
+                     
                      v_new(i,j) = -idir*sin(alpha)*u_map + cos(alpha)*v_map
                   else
                      v_new(i,j) = v(i,j)
@@ -578,9 +616,9 @@ module rotate_winds_module
             end do
 
             ! Copy rotated winds back into argument arrays
-            u = u_new
-            v = v_new
-
+            u = u_new 
+            v = v_new 
+   
             deallocate(u_new)
             deallocate(v_new)
 

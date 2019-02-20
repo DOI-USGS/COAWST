@@ -5,9 +5,9 @@
    (defined TL_AVERAGES && defined TANGENT)
       SUBROUTINE wrt_avg (ng)
 !
-!svn $Id: wrt_avg.F 857 2017-07-29 04:05:27Z arango $
+!svn $Id: wrt_avg.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -701,6 +701,28 @@
         END IF
       END IF
 # endif
+# ifdef WAVES_DIRP
+      IF (Aout(idWdip,ng)) THEN
+        scale=rad2deg
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, AVG(ng)%ncid, AVG(ng)%Vid(idWdip), &
+     &                     AVG(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#  ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#  endif
+     &                     AVERAGE(ng) % avgWdip)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idWdip)), AVG(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+# endif
 # ifdef WAVES_TOP_PERIOD
       IF (Aout(idWptp,ng)) THEN
         scale=1.0_r8
@@ -1146,7 +1168,7 @@
      &                     AVG(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, 1, N(ng), scale,         &
 #   ifdef MASKING
-     &                     GRID(ng) % rmask,                           &
+     &                     GRID(ng) % rmask,                            &
 #   endif
      &                     AVERAGE(ng) % avgSxx3d)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
@@ -1819,8 +1841,8 @@
           IF (FoundError(status, nf90_noerr, __LINE__,                  &
      &                   __FILE__)) THEN
             IF (Master) THEN
-              WRITE (stdout,10) TRIM(Vname(1,idTSvar(itrc))),            &
-     &                        AVG(ng)%Rindex
+              WRITE (stdout,10) TRIM(Vname(1,idTvar(itrc))),            &
+     &                          AVG(ng)%Rindex
             END IF
             exit_flag=3
             ioerror=status
@@ -3609,7 +3631,7 @@
           RETURN
         END IF
       END IF
-# ifdef BBL
+# ifdef BBL_MODEL
 !
 !  Write out bottom u-momentum stress at rho points.
 !

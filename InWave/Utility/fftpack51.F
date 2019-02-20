@@ -22,7 +22,7 @@
 !      IMPLICIT NONE
 
 !      PRIVATE
-!      PUBLIC::
+!      PUBLIC:: 
 
 !      CONTAINS
 !
@@ -1737,8 +1737,8 @@ subroutine cfft1b ( n, inc, c, lenc, wsave, lensav, work, lenwrk, ier )
 !
 !  Discussion:
 !
-!    CFFT1B computes the one-dimensional Fourier transform of a single
-!    periodic sequence within a complex array.  This transform is referred
+!    CFFT1B computes the one-dimensional Fourier transform of a single 
+!    periodic sequence within a complex array.  This transform is referred 
 !    to as the backward transform or Fourier synthesis, transforming the
 !    sequence from spectral to physical space.
 !
@@ -1775,30 +1775,30 @@ subroutine cfft1b ( n, inc, c, lenc, wsave, lensav, work, lenwrk, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of the sequence to be
+!    Input, integer ( kind = 4 ) N, the length of the sequence to be 
 !    transformed.  The transform is most efficient when N is a product of
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations, in
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, in 
 !    array C, of two consecutive elements within the sequence to be transformed.
 !
-!    Input/output, complex ( kind = 8 ) C(LENC) containing the sequence to be
+!    Input/output, complex ( kind = 8 ) C(LENC) containing the sequence to be 
 !    transformed.
 !
-!    Input, integer ( kind = 4 ) LENC, the dimension of the C array.
+!    Input, integer ( kind = 4 ) LENC, the dimension of the C array.  
 !    LENC must be at least INC*(N-1) + 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to CFFT1I before the first call to routine CFFT1F
-!    or CFFT1B for a given transform length N.  WSAVE's contents may be
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to CFFT1I before the first call to routine CFFT1F 
+!    or CFFT1B for a given transform length N.  WSAVE's contents may be 
 !    re-used for subsequent calls to CFFT1F and CFFT1B with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least 2*N.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -1854,9 +1854,9 @@ subroutine cfft1f ( n, inc, c, lenc, wsave, lensav, work, lenwrk, ier )
 !
 !  Discussion:
 !
-!    CFFT1F computes the one-dimensional Fourier transform of a single
-!    periodic sequence within a complex array.  This transform is referred
-!    to as the forward transform or Fourier analysis, transforming the
+!    CFFT1F computes the one-dimensional Fourier transform of a single 
+!    periodic sequence within a complex array.  This transform is referred 
+!    to as the forward transform or Fourier analysis, transforming the 
 !    sequence from physical to spectral space.
 !
 !    This transform is normalized since a call to CFFT1F followed
@@ -1892,30 +1892,30 @@ subroutine cfft1f ( n, inc, c, lenc, wsave, lensav, work, lenwrk, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of the sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of the sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations, in
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, in 
 !    array C, of two consecutive elements within the sequence to be transformed.
 !
-!    Input/output, complex ( kind = 8 ) C(LENC) containing the sequence to
+!    Input/output, complex ( kind = 8 ) C(LENC) containing the sequence to 
 !    be transformed.
 !
-!    Input, integer ( kind = 4 ) LENC, the dimension of the C array.
+!    Input, integer ( kind = 4 ) LENC, the dimension of the C array.  
 !    LENC must be at least INC*(N-1) + 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to CFFT1I before the first call to routine CFFT1F
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to CFFT1I before the first call to routine CFFT1F 
 !    or CFFT1B for a given transform length N.  WSAVE's contents may be re-used
 !    for subsequent calls to CFFT1F and CFFT1B with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least 2*N.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -1970,9 +1970,9 @@ end
 !
 !  Discussion:
 !
-!    CFFT1I initializes array WSAVE for use in its companion routines
-!    CFFT1B and CFFT1F.  Routine CFFT1I must be called before the first
-!    call to CFFT1B or CFFT1F, and after whenever the value of integer
+!    CFFT1I initializes array WSAVE for use in its companion routines 
+!    CFFT1B and CFFT1F.  Routine CFFT1I must be called before the first 
+!    call to CFFT1B or CFFT1F, and after whenever the value of integer 
 !    N changes.
 !
 !  License:
@@ -2004,15 +2004,15 @@ end
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of the sequence to be
-!    transformed.  The transform is most efficient when N is a product
+!    Input, integer ( kind = 4 ) N, the length of the sequence to be 
+!    transformed.  The transform is most efficient when N is a product 
 !    of small primes.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
-!    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors
-!    of N and  also containing certain trigonometric values which will be used
+!    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors 
+!    of N and  also containing certain trigonometric values which will be used 
 !    in routines CFFT1B or CFFT1F.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -2054,12 +2054,12 @@ subroutine cfft2b ( ldim, l, m, c, wsave, lensav, work, lenwrk, ier )
 !
 !  Discussion:
 !
-!    CFFT2B computes the two-dimensional discrete Fourier transform of a
-!    complex periodic array.  This transform is known as the backward
-!    transform or Fourier synthesis, transforming from spectral to
-!    physical space.  Routine CFFT2B is normalized, in that a call to
-!    CFFT2B followed by a call to CFFT2F (or vice-versa) reproduces the
-!    original array within roundoff error.
+!    CFFT2B computes the two-dimensional discrete Fourier transform of a 
+!    complex periodic array.  This transform is known as the backward 
+!    transform or Fourier synthesis, transforming from spectral to 
+!    physical space.  Routine CFFT2B is normalized, in that a call to 
+!    CFFT2B followed by a call to CFFT2F (or vice-versa) reproduces the 
+!    original array within roundoff error. 
 !
 !    On 10 May 2010, this code was modified by changing the value
 !    of an index into the WSAVE array.
@@ -2093,35 +2093,35 @@ subroutine cfft2b ( ldim, l, m, c, wsave, lensav, work, lenwrk, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) LDIM, the first dimension of C.
+!    Input, integer ( kind = 4 ) LDIM, the first dimension of C. 
 !
-!    Input, integer ( kind = 4 ) L, the number of elements to be transformed
-!    in the first dimension of the two-dimensional complex array C.  The value
+!    Input, integer ( kind = 4 ) L, the number of elements to be transformed 
+!    in the first dimension of the two-dimensional complex array C.  The value 
 !    of L must be less than or equal to that of LDIM.  The transform is
 !    most efficient when L is a product of small primes.
 !
 !    Input, integer ( kind = 4 ) M, the number of elements to be transformed in
 !    the second dimension of the two-dimensional complex array C.  The transform
-!    is most efficient when M is a product of small primes.
+!    is most efficient when M is a product of small primes. 
 !
-!    Input/output, complex ( kind = 8 ) C(LDIM,M), on intput, the array of
-!    two dimensions containing the (L,M) subarray to be transformed.  On
+!    Input/output, complex ( kind = 8 ) C(LDIM,M), on intput, the array of 
+!    two dimensions containing the (L,M) subarray to be transformed.  On 
 !    output, the transformed data.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV). WSAVE's contents must be
+!    Input, real ( kind = 8 ) WSAVE(LENSAV). WSAVE's contents must be 
 !    initialized with a call to CFFT2I before the first call to routine CFFT2F
 !    or CFFT2B with transform lengths L and M.  WSAVE's contents may be
-!    re-used for subsequent calls to CFFT2F and CFFT2B with the same
-!    transform lengths L and M.
+!    re-used for subsequent calls to CFFT2F and CFFT2B with the same 
+!    transform lengths L and M. 
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
-!    LENSAV must be at least 2*(L+M) + INT(LOG(REAL(L)))
-!    + INT(LOG(REAL(M))) + 8.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array. 
+!    LENSAV must be at least 2*(L+M) + INT(LOG(REAL(L))) 
+!    + INT(LOG(REAL(M))) + 8. 
 !
-!    Workspace, real ( kind = 8 ) WORK(LENWRK).
+!    Workspace, real ( kind = 8 ) WORK(LENWRK). 
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
-!    LENWRK must be at least 2*L*M.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
+!    LENWRK must be at least 2*L*M. 
 !
 !    Output, integer ( kind = 4 ) IER, the error flag.
 !    0, successful exit;
@@ -2199,12 +2199,12 @@ subroutine cfft2f ( ldim, l, m, c, wsave, lensav, work, lenwrk, ier )
 !
 !  Discussion:
 !
-!    CFFT2F computes the two-dimensional discrete Fourier transform of
-!    a complex periodic array. This transform is known as the forward
-!    transform or Fourier analysis, transforming from physical to
-!    spectral space. Routine CFFT2F is normalized, in that a call to
-!    CFFT2F followed by a call to CFFT2B (or vice-versa) reproduces the
-!    original array within roundoff error.
+!    CFFT2F computes the two-dimensional discrete Fourier transform of 
+!    a complex periodic array. This transform is known as the forward 
+!    transform or Fourier analysis, transforming from physical to 
+!    spectral space. Routine CFFT2F is normalized, in that a call to 
+!    CFFT2F followed by a call to CFFT2B (or vice-versa) reproduces the 
+!    original array within roundoff error. 
 !
 !    On 10 May 2010, this code was modified by changing the value
 !    of an index into the WSAVE array.
@@ -2238,38 +2238,38 @@ subroutine cfft2f ( ldim, l, m, c, wsave, lensav, work, lenwrk, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) LDIM, the first dimension of the array C.
+!    Input, integer ( kind = 4 ) LDIM, the first dimension of the array C. 
 !
-!    Input, integer ( kind = 4 ) L, the number of elements to be transformed
-!    in the first dimension of the two-dimensional complex array C.  The value
-!    of L must be less than or equal to that of LDIM.  The transform is most
-!    efficient when L is a product of small primes.
+!    Input, integer ( kind = 4 ) L, the number of elements to be transformed 
+!    in the first dimension of the two-dimensional complex array C.  The value 
+!    of L must be less than or equal to that of LDIM.  The transform is most 
+!    efficient when L is a product of small primes. 
 !
-!    Input, integer ( kind = 4 ) M, the number of elements to be transformed
-!    in the second dimension of the two-dimensional complex array C.  The
-!    transform is most efficient when M is a product of small primes.
+!    Input, integer ( kind = 4 ) M, the number of elements to be transformed 
+!    in the second dimension of the two-dimensional complex array C.  The 
+!    transform is most efficient when M is a product of small primes. 
 !
-!    Input/output, complex ( kind = 8 ) C(LDIM,M), on input, the array of two
+!    Input/output, complex ( kind = 8 ) C(LDIM,M), on input, the array of two 
 !    dimensions containing the (L,M) subarray to be transformed.  On output, the
 !    transformed data.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV). WSAVE's contents must be
-!    initialized with a call to CFFT2I before the first call to routine CFFT2F
-!    or CFFT2B with transform lengths L and M.  WSAVE's contents may be re-used
-!    for subsequent calls to CFFT2F and CFFT2B having those same
-!    transform lengths.
+!    Input, real ( kind = 8 ) WSAVE(LENSAV). WSAVE's contents must be 
+!    initialized with a call to CFFT2I before the first call to routine CFFT2F 
+!    or CFFT2B with transform lengths L and M.  WSAVE's contents may be re-used 
+!    for subsequent calls to CFFT2F and CFFT2B having those same 
+!    transform lengths. 
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*(L+M) + INT(LOG(REAL(L)))
-!    + INT(LOG(REAL(M))) + 8.
+!    + INT(LOG(REAL(M))) + 8. 
 !
-!    Workspace, real ( kind = 8 ) WORK(LENWRK).
+!    Workspace, real ( kind = 8 ) WORK(LENWRK). 
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least 2*L*M.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
-!    0, successful exit;
+!    0, successful exit; 
 !    2, input parameter LENSAV not big enough;
 !    3, input parameter LENWRK not big enough;
 !    5, input parameter LDIM < L;
@@ -2345,10 +2345,10 @@ subroutine cfft2i ( l, m, wsave, lensav, ier )
 !
 !  Discussion:
 !
-!    CFFT2I initializes real array WSAVE for use in its companion
-!    routines CFFT2F and CFFT2B for computing two-dimensional fast
+!    CFFT2I initializes real array WSAVE for use in its companion 
+!    routines CFFT2F and CFFT2B for computing two-dimensional fast 
 !    Fourier transforms of complex data.  Prime factorizations of L and M,
-!    together with tabulations of the trigonometric functions, are
+!    together with tabulations of the trigonometric functions, are 
 !    computed and stored in array WSAVE.
 !
 !    On 10 May 2010, this code was modified by changing the value
@@ -2383,21 +2383,21 @@ subroutine cfft2i ( l, m, wsave, lensav, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) L, the number of elements to be transformed
-!    in the first dimension.  The transform is most efficient when L is a
+!    Input, integer ( kind = 4 ) L, the number of elements to be transformed 
+!    in the first dimension.  The transform is most efficient when L is a 
 !    product of small primes.
 !
-!    Input, integer ( kind = 4 ) M, the number of elements to be transformed
-!    in the second dimension.  The transform is most efficient when M is a
-!    product of small primes.
+!    Input, integer ( kind = 4 ) M, the number of elements to be transformed 
+!    in the second dimension.  The transform is most efficient when M is a 
+!    product of small primes. 
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
-!    LENSAV must be at least 2*(L+M) + INT(LOG(REAL(L)))
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
+!    LENSAV must be at least 2*(L+M) + INT(LOG(REAL(L))) 
 !    + INT(LOG(REAL(M))) + 8.
 !
-!    Output, real ( kind = 8 ) WSAVE(LENSAV), contains the prime factors of L
-!    and M, and also certain trigonometric values which will be used in
-!    routines CFFT2B or CFFT2F.
+!    Output, real ( kind = 8 ) WSAVE(LENSAV), contains the prime factors of L 
+!    and M, and also certain trigonometric values which will be used in 
+!    routines CFFT2B or CFFT2F. 
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
 !    0, successful exit;
@@ -2454,17 +2454,17 @@ subroutine cfftmb ( lot, jump, n, inc, c, lenc, wsave, lensav, work, &
 !
 !  Discussion:
 !
-!    CFFTMB computes the one-dimensional Fourier transform of multiple
+!    CFFTMB computes the one-dimensional Fourier transform of multiple 
 !    periodic sequences within a complex array.  This transform is referred
 !    to as the backward transform or Fourier synthesis, transforming the
-!    sequences from spectral to physical space.  This transform is
+!    sequences from spectral to physical space.  This transform is 
 !    normalized since a call to CFFTMF followed by a call to CFFTMB (or
-!    vice-versa) reproduces the original array within roundoff error.
+!    vice-versa) reproduces the original array within roundoff error. 
 !
-!    The parameters INC, JUMP, N and LOT are consistent if equality
-!    I1*INC + J1*JUMP = I2*INC + J2*JUMP for I1,I2 < N and J1,J2 < LOT
-!    implies I1=I2 and J1=J2.  For multiple FFTs to execute correctly,
-!    input variables INC, JUMP, N and LOT must be consistent, otherwise
+!    The parameters INC, JUMP, N and LOT are consistent if equality 
+!    I1*INC + J1*JUMP = I2*INC + J2*JUMP for I1,I2 < N and J1,J2 < LOT 
+!    implies I1=I2 and J1=J2.  For multiple FFTs to execute correctly, 
+!    input variables INC, JUMP, N and LOT must be consistent, otherwise 
 !    at least one array element mistakenly is transformed more than once.
 !
 !  License:
@@ -2496,39 +2496,39 @@ subroutine cfftmb ( lot, jump, n, inc, c, lenc, wsave, lensav, work, &
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) LOT, the number of sequences to be transformed
-!    within array C.
+!    Input, integer ( kind = 4 ) LOT, the number of sequences to be transformed 
+!    within array C. 
 !
-!    Input, integer ( kind = 4 ) JUMP, the increment between the locations, in
-!    array C, of the first elements of two consecutive sequences to be
-!    transformed.
+!    Input, integer ( kind = 4 ) JUMP, the increment between the locations, in 
+!    array C, of the first elements of two consecutive sequences to be 
+!    transformed. 
 !
 !    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations, in
-!    array C, of two consecutive elements within the same sequence to be
-!    transformed.
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, in 
+!    array C, of two consecutive elements within the same sequence to be 
+!    transformed. 
 !
-!    Input/output, complex ( kind = 8 ) C(LENC), an array containing LOT
-!    sequences, each having length N, to be transformed.  C can have any
-!    number of dimensions, but the total number of locations must be at least
+!    Input/output, complex ( kind = 8 ) C(LENC), an array containing LOT 
+!    sequences, each having length N, to be transformed.  C can have any 
+!    number of dimensions, but the total number of locations must be at least 
 !    LENC.  On output, C contains the transformed sequences.
 !
-!    Input, integer ( kind = 4 ) LENC, the dimension of the C array.
-!    LENC must be at least (LOT-1)*JUMP + INC*(N-1) + 1.
+!    Input, integer ( kind = 4 ) LENC, the dimension of the C array.  
+!    LENC must be at least (LOT-1)*JUMP + INC*(N-1) + 1. 
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to CFFTMI before the first call to routine CFFTMF
-!    or CFFTMB for a given transform length N.
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to CFFTMI before the first call to routine CFFTMF 
+!    or CFFTMB for a given transform length N. 
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
-!    Workspace, real ( kind = 8 ) WORK(LENWRK).
+!    Workspace, real ( kind = 8 ) WORK(LENWRK). 
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least 2*LOT*N.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -2536,7 +2536,7 @@ subroutine cfftmb ( lot, jump, n, inc, c, lenc, wsave, lensav, work, &
 !    1, input parameter LENC not big enough;
 !    2, input parameter LENSAV not big enough;
 !    3, input parameter LENWRK not big enough;
-!    4, input parameters INC, JUMP, N, LOT are not consistent.
+!    4, input parameters INC, JUMP, N, LOT are not consistent. 
 !
   implicit none
 
@@ -2591,17 +2591,17 @@ subroutine cfftmf ( lot, jump, n, inc, c, lenc, wsave, lensav, work, &
 !
 !  Discussion:
 !
-!    CFFTMF computes the one-dimensional Fourier transform of multiple
-!    periodic sequences within a complex array. This transform is referred
-!    to as the forward transform or Fourier analysis, transforming the
-!    sequences from physical to spectral space. This transform is
-!    normalized since a call to CFFTMF followed by a call to CFFTMB
-!    (or vice-versa) reproduces the original array within roundoff error.
+!    CFFTMF computes the one-dimensional Fourier transform of multiple 
+!    periodic sequences within a complex array. This transform is referred 
+!    to as the forward transform or Fourier analysis, transforming the 
+!    sequences from physical to spectral space. This transform is 
+!    normalized since a call to CFFTMF followed by a call to CFFTMB 
+!    (or vice-versa) reproduces the original array within roundoff error. 
 !
 !    The parameters integers INC, JUMP, N and LOT are consistent if equality
-!    I1*INC + J1*JUMP = I2*INC + J2*JUMP for I1,I2 < N and J1,J2 < LOT
-!    implies I1=I2 and J1=J2. For multiple FFTs to execute correctly,
-!    input variables INC, JUMP, N and LOT must be consistent, otherwise
+!    I1*INC + J1*JUMP = I2*INC + J2*JUMP for I1,I2 < N and J1,J2 < LOT 
+!    implies I1=I2 and J1=J2. For multiple FFTs to execute correctly, 
+!    input variables INC, JUMP, N and LOT must be consistent, otherwise 
 !    at least one array element mistakenly is transformed more than once.
 !
 !  License:
@@ -2633,39 +2633,39 @@ subroutine cfftmf ( lot, jump, n, inc, c, lenc, wsave, lensav, work, &
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) LOT, the number of sequences to be
-!    transformed within array C.
+!    Input, integer ( kind = 4 ) LOT, the number of sequences to be 
+!    transformed within array C. 
 !
-!    Input, integer ( kind = 4 ) JUMP, the increment between the locations,
-!    in array C, of the first elements of two consecutive sequences to be
+!    Input, integer ( kind = 4 ) JUMP, the increment between the locations, 
+!    in array C, of the first elements of two consecutive sequences to be 
 !    transformed.
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N is a product of
-!    small primes.
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
+!    small primes. 
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations, in
-!    array C, of two consecutive elements within the same sequence to be
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, in 
+!    array C, of two consecutive elements within the same sequence to be 
 !    transformed.
 !
 !    Input/output, complex ( kind = 8 ) C(LENC), array containing LOT sequences,
-!    each having length N, to be transformed.  C can have any number of
+!    each having length N, to be transformed.  C can have any number of 
 !    dimensions, but the total number of locations must be at least LENC.
 !
-!    Input, integer ( kind = 4 ) LENC, the dimension of the C array.
-!    LENC must be at least (LOT-1)*JUMP + INC*(N-1) + 1.
+!    Input, integer ( kind = 4 ) LENC, the dimension of the C array. 
+!    LENC must be at least (LOT-1)*JUMP + INC*(N-1) + 1. 
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to CFFTMI before the first call to routine CFFTMF
-!    or CFFTMB for a given transform length N.
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to CFFTMI before the first call to routine CFFTMF 
+!    or CFFTMB for a given transform length N. 
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
-!    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
+!    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4. 
 !
-!    Workspace, real ( kind = 8 ) WORK(LENWRK).
+!    Workspace, real ( kind = 8 ) WORK(LENWRK). 
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
-!    LENWRK must be at least 2*LOT*N.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
+!    LENWRK must be at least 2*LOT*N. 
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
 !    0 successful exit;
@@ -2726,9 +2726,9 @@ subroutine cfftmi ( n, wsave, lensav, ier )
 !
 !  Discussion:
 !
-!    CFFTMI initializes array WSAVE for use in its companion routines
-!    CFFTMB and CFFTMF.  CFFTMI must be called before the first call
-!    to CFFTMB or CFFTMF, and after whenever the value of integer N changes.
+!    CFFTMI initializes array WSAVE for use in its companion routines 
+!    CFFTMB and CFFTMF.  CFFTMI must be called before the first call 
+!    to CFFTMB or CFFTMF, and after whenever the value of integer N changes. 
 !
 !  License:
 !
@@ -2759,19 +2759,19 @@ subroutine cfftmi ( n, wsave, lensav, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N is a product of
-!    small primes.
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
+!    small primes. 
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
-!    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
+!    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4. 
 !
-!    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors
+!    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors 
 !    of N and also containing certain trigonometric values which will be used in
 !    routines CFFTMB or CFFTMF.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
-!    0, successful exit;
+!    0, successful exit; 
 !    2, input parameter LENSAV not big enough.
 !
   implicit none
@@ -4363,7 +4363,7 @@ subroutine cmfgkf ( lot, ido, ip, l1, lid, na, cc, cc1, im1, in1, &
   integer ( kind = 4 ) im2
   integer ( kind = 4 ) ipp2
   integer ( kind = 4 ) ipph
-  integer ( kind = 4 ) j
+  integer ( kind = 4 ) j 
   integer ( kind = 4 ) jc
   integer ( kind = 4 ) k
   integer ( kind = 4 ) ki
@@ -4738,8 +4738,8 @@ subroutine cosq1b ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !
 !  Discussion:
 !
-!    COSQ1B computes the one-dimensional Fourier transform of a sequence
-!    which is a cosine series with odd wave numbers.  This transform is
+!    COSQ1B computes the one-dimensional Fourier transform of a sequence 
+!    which is a cosine series with odd wave numbers.  This transform is 
 !    referred to as the backward transform or Fourier synthesis, transforming
 !    the sequence from spectral to physical space.
 !
@@ -4776,30 +4776,30 @@ subroutine cosq1b ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of elements to be transformed
-!    in the sequence.  The transform is most efficient when N is a
+!    Input, integer ( kind = 4 ) N, the number of elements to be transformed 
+!    in the sequence.  The transform is most efficient when N is a 
 !    product of small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations,
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, 
 !    in array R, of two consecutive elements within the sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR); on input, containing the sequence
+!    Input/output, real ( kind = 8 ) R(LENR); on input, containing the sequence 
 !    to be transformed, and on output, containing the transformed sequence.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least INC*(N-1)+ 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to COSQ1I before the first call to routine COSQ1F
-!    or COSQ1B for a given transform length N.  WSAVE's contents may be
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to COSQ1I before the first call to routine COSQ1F 
+!    or COSQ1B for a given transform length N.  WSAVE's contents may be 
 !    re-used for subsequent calls to COSQ1F and COSQ1B with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least N.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -4869,9 +4869,9 @@ subroutine cosq1f ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !
 !  Discussion:
 !
-!    COSQ1F computes the one-dimensional Fourier transform of a sequence
-!    which is a cosine series with odd wave numbers.  This transform is
-!    referred to as the forward transform or Fourier analysis, transforming
+!    COSQ1F computes the one-dimensional Fourier transform of a sequence 
+!    which is a cosine series with odd wave numbers.  This transform is 
+!    referred to as the forward transform or Fourier analysis, transforming 
 !    the sequence from physical to spectral space.
 !
 !    This transform is normalized since a call to COSQ1F followed
@@ -4907,30 +4907,30 @@ subroutine cosq1f ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number of elements to be transformed
-!    in the sequence.  The transform is most efficient when N is a
+!    Input, integer ( kind = 4 ) N, the number of elements to be transformed 
+!    in the sequence.  The transform is most efficient when N is a 
 !    product of small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations,
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, 
 !    in array R, of two consecutive elements within the sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR); on input, containing the sequence
+!    Input/output, real ( kind = 8 ) R(LENR); on input, containing the sequence 
 !    to be transformed, and on output, containing the transformed sequence.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least INC*(N-1)+ 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to COSQ1I before the first call to routine COSQ1F
-!    or COSQ1B for a given transform length N.  WSAVE's contents may be
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to COSQ1I before the first call to routine COSQ1F 
+!    or COSQ1B for a given transform length N.  WSAVE's contents may be 
 !    re-used for subsequent calls to COSQ1F and COSQ1B with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least N.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -4996,10 +4996,10 @@ subroutine cosq1i ( n, wsave, lensav, ier )
 !
 !  Discussion:
 !
-!    COSQ1I initializes array WSAVE for use in its companion routines
-!    COSQ1F and COSQ1B.  The prime factorization of N together with a
-!    tabulation of the trigonometric functions are computed and stored
-!    in array WSAVE.  Separate WSAVE arrays are required for different
+!    COSQ1I initializes array WSAVE for use in its companion routines 
+!    COSQ1F and COSQ1B.  The prime factorization of N together with a 
+!    tabulation of the trigonometric functions are computed and stored 
+!    in array WSAVE.  Separate WSAVE arrays are required for different 
 !    values of N.
 !
 !  License:
@@ -5031,15 +5031,15 @@ subroutine cosq1i ( n, wsave, lensav, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of the sequence to be
-!    transformed.  The transform is most efficient when N is a product
+!    Input, integer ( kind = 4 ) N, the length of the sequence to be 
+!    transformed.  The transform is most efficient when N is a product 
 !    of small primes.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
 !    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors of N
-!    and also containing certain trigonometric values which will be used
+!    and also containing certain trigonometric values which will be used 
 !    in routines COSQ1B or COSQ1F.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -5342,39 +5342,39 @@ subroutine cosqmb ( lot, jump, n, inc, x, lenx, wsave, lensav, work, lenwrk, &
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) LOT, the number of sequences to be transformed
+!    Input, integer ( kind = 4 ) LOT, the number of sequences to be transformed 
 !    within array R.
 !
-!    Input, integer ( kind = 4 ) JUMP, the increment between the locations,
-!    in array R, of the first elements of two consecutive sequences to be
+!    Input, integer ( kind = 4 ) JUMP, the increment between the locations, 
+!    in array R, of the first elements of two consecutive sequences to be 
 !    transformed.
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations,
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, 
 !    in array R, of two consecutive elements within the same sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR), array containing LOT sequences,
-!    each having length N.  R can have any number of dimensions, but the total
+!    Input/output, real ( kind = 8 ) R(LENR), array containing LOT sequences, 
+!    each having length N.  R can have any number of dimensions, but the total 
 !    number of locations must be at least LENR.  On input, R contains the data
 !    to be transformed, and on output, the transformed data.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least (LOT-1)*JUMP + INC*(N-1)+ 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to COSQMI before the first call to routine COSQMF
-!    or COSQMB for a given transform length N.  WSAVE's contents may be re-used
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to COSQMI before the first call to routine COSQMF 
+!    or COSQMB for a given transform length N.  WSAVE's contents may be re-used 
 !    for subsequent calls to COSQMF and COSQMB with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least LOT*N.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -5459,10 +5459,10 @@ subroutine cosqmf ( lot, jump, n, inc, x, lenx, wsave, lensav, work, &
 !
 !  Discussion:
 !
-!    COSQMF computes the one-dimensional Fourier transform of multiple
-!    sequences within a real array, where each of the sequences is a
-!    cosine series with odd wave numbers.  This transform is referred to
-!    as the forward transform or Fourier synthesis, transforming the
+!    COSQMF computes the one-dimensional Fourier transform of multiple 
+!    sequences within a real array, where each of the sequences is a 
+!    cosine series with odd wave numbers.  This transform is referred to 
+!    as the forward transform or Fourier synthesis, transforming the 
 !    sequences from spectral to physical space.
 !
 !    This transform is normalized since a call to COSQMF followed
@@ -5498,39 +5498,39 @@ subroutine cosqmf ( lot, jump, n, inc, x, lenx, wsave, lensav, work, &
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) LOT, the number of sequences to be transformed
+!    Input, integer ( kind = 4 ) LOT, the number of sequences to be transformed 
 !    within array R.
 !
-!    Input, integer ( kind = 4 ) JUMP, the increment between the locations, in
-!    array R, of the first elements of two consecutive sequences to be
+!    Input, integer ( kind = 4 ) JUMP, the increment between the locations, in 
+!    array R, of the first elements of two consecutive sequences to be 
 !    transformed.
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations,
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, 
 !    in array R, of two consecutive elements within the same sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR), array containing LOT sequences,
+!    Input/output, real ( kind = 8 ) R(LENR), array containing LOT sequences, 
 !    each having length N.  R can have any number of dimensions, but the total
 !    number of locations must be at least LENR.  On input, R contains the data
 !    to be transformed, and on output, the transformed data.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least (LOT-1)*JUMP + INC*(N-1)+ 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to COSQMI before the first call to routine COSQMF
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to COSQMI before the first call to routine COSQMF 
 !    or COSQMB for a given transform length N.  WSAVE's contents may be re-used
 !    for subsequent calls to COSQMF and COSQMB with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least LOT*N.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -5613,10 +5613,10 @@ subroutine cosqmi ( n, wsave, lensav, ier )
 !
 !  Discussion:
 !
-!    COSQMI initializes array WSAVE for use in its companion routines
-!    COSQMF and COSQMB.  The prime factorization of N together with a
-!    tabulation of the trigonometric functions are computed and stored
-!    in array WSAVE.  Separate WSAVE arrays are required for different
+!    COSQMI initializes array WSAVE for use in its companion routines 
+!    COSQMF and COSQMB.  The prime factorization of N together with a 
+!    tabulation of the trigonometric functions are computed and stored 
+!    in array WSAVE.  Separate WSAVE arrays are required for different 
 !    values of N.
 !
 !  License:
@@ -5648,15 +5648,15 @@ subroutine cosqmi ( n, wsave, lensav, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
-!    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors of
-!    N and also containing certain trigonometric values which will be used
+!    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors of 
+!    N and also containing certain trigonometric values which will be used 
 !    in routines COSQMB or COSQMF.
 !
 !    Input, integer ( kind = 4 ) IER, error flag.
@@ -5714,13 +5714,13 @@ subroutine cost1b ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !
 !  Discussion:
 !
-!    COST1B computes the one-dimensional Fourier transform of an even
-!    sequence within a real array.  This transform is referred to as
-!    the backward transform or Fourier synthesis, transforming the sequence
+!    COST1B computes the one-dimensional Fourier transform of an even 
+!    sequence within a real array.  This transform is referred to as 
+!    the backward transform or Fourier synthesis, transforming the sequence 
 !    from spectral to physical space.
 !
 !    This transform is normalized since a call to COST1B followed
-!    by a call to COST1F (or vice-versa) reproduces the original array
+!    by a call to COST1F (or vice-versa) reproduces the original array 
 !    within roundoff error.
 !
 !  License:
@@ -5752,30 +5752,30 @@ subroutine cost1b ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of the sequence to be
+!    Input, integer ( kind = 4 ) N, the length of the sequence to be 
 !    transformed.  The transform is most efficient when N-1 is a product of
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations,
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, 
 !    in array R, of two consecutive elements within the sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR), containing the sequence to
+!    Input/output, real ( kind = 8 ) R(LENR), containing the sequence to 
 !     be transformed.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least INC*(N-1)+ 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to COST1I before the first call to routine COST1F
-!    or COST1B for a given transform length N.  WSAVE's contents may be re-used
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to COST1I before the first call to routine COST1F 
+!    or COST1B for a given transform length N.  WSAVE's contents may be re-used 
 !    for subsequent calls to COST1F and COST1B with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least N-1.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -5837,13 +5837,13 @@ subroutine cost1f ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !
 !  Discussion:
 !
-!    COST1F computes the one-dimensional Fourier transform of an even
-!    sequence within a real array.  This transform is referred to as the
-!    forward transform or Fourier analysis, transforming the sequence
+!    COST1F computes the one-dimensional Fourier transform of an even 
+!    sequence within a real array.  This transform is referred to as the 
+!    forward transform or Fourier analysis, transforming the sequence 
 !    from  physical to spectral space.
 !
-!    This transform is normalized since a call to COST1F followed by a call
-!    to COST1B (or vice-versa) reproduces the original array within
+!    This transform is normalized since a call to COST1F followed by a call 
+!    to COST1B (or vice-versa) reproduces the original array within 
 !    roundoff error.
 !
 !  License:
@@ -5875,30 +5875,30 @@ subroutine cost1f ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of the sequence to be
-!    transformed.  The transform is most efficient when N-1 is a product of
+!    Input, integer ( kind = 4 ) N, the length of the sequence to be 
+!    transformed.  The transform is most efficient when N-1 is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations,
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, 
 !    in array R, of two consecutive elements within the sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR), containing the sequence to
+!    Input/output, real ( kind = 8 ) R(LENR), containing the sequence to 
 !    be transformed.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least INC*(N-1)+ 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
 !    initialized with a call to COST1I before the first call to routine COST1F
-!    or COST1B for a given transform length N.  WSAVE's contents may be re-used
+!    or COST1B for a given transform length N.  WSAVE's contents may be re-used 
 !    for subsequent calls to COST1F and COST1B with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least N-1.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -5960,10 +5960,10 @@ subroutine cost1i ( n, wsave, lensav, ier )
 !
 !  Discussion:
 !
-!    COST1I initializes array WSAVE for use in its companion routines
-!    COST1F and COST1B.  The prime factorization of N together with a
-!    tabulation of the trigonometric functions are computed and stored
-!    in array WSAVE.  Separate WSAVE arrays are required for different
+!    COST1I initializes array WSAVE for use in its companion routines 
+!    COST1F and COST1B.  The prime factorization of N together with a 
+!    tabulation of the trigonometric functions are computed and stored 
+!    in array WSAVE.  Separate WSAVE arrays are required for different 
 !    values of N.
 !
 !  License:
@@ -5995,11 +5995,11 @@ subroutine cost1i ( n, wsave, lensav, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of the sequence to be
-!    transformed.  The transform is most efficient when N-1 is a product
+!    Input, integer ( kind = 4 ) N, the length of the sequence to be 
+!    transformed.  The transform is most efficient when N-1 is a product 
 !    of small primes.
 !
-!    Input, integer ( kind = 4 ) LENSAV, dimension of WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, dimension of WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
 !    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors of
@@ -6179,7 +6179,7 @@ subroutine costb1 ( n, inc, x, wsave, work, ier )
         return
       end if
 
-      fnm1s2 = real ( nm1, kind = 8 ) / 2.0D+00
+      fnm1s2 = real ( nm1, kind = 8 ) / 2.0D+00 
       dsum = 0.5D+00 * dsum
       x(1,1) = fnm1s2*x(1,1)
       if(mod(nm1,2) /= 0) go to 30
@@ -6334,9 +6334,9 @@ subroutine costmb ( lot, jump, n, inc, x, lenx, wsave, lensav, work, &
 !
 !  Discussion:
 !
-!    COSTMB computes the one-dimensional Fourier transform of multiple
-!    even sequences within a real array.  This transform is referred to
-!    as the backward transform or Fourier synthesis, transforming the
+!    COSTMB computes the one-dimensional Fourier transform of multiple 
+!    even sequences within a real array.  This transform is referred to 
+!    as the backward transform or Fourier synthesis, transforming the 
 !    sequences from spectral to physical space.
 !
 !    This transform is normalized since a call to COSTMB followed
@@ -6372,39 +6372,39 @@ subroutine costmb ( lot, jump, n, inc, x, lenx, wsave, lensav, work, &
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) LOT, the number of sequences to be transformed
+!    Input, integer ( kind = 4 ) LOT, the number of sequences to be transformed 
 !    within array R.
 !
-!    Input, integer ( kind = 4 ) JUMP, the increment between the locations, in
-!    array R, of the first elements of two consecutive sequences to be
+!    Input, integer ( kind = 4 ) JUMP, the increment between the locations, in 
+!    array R, of the first elements of two consecutive sequences to be 
 !    transformed.
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N-1 is a product of
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N-1 is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations, in
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, in 
 !    array R, of two consecutive elements within the same sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR), array containing LOT sequences,
+!    Input/output, real ( kind = 8 ) R(LENR), array containing LOT sequences, 
 !    each having length N.  On input, the data to be transformed; on output,
-!    the transormed data.  R can have any number of dimensions, but the total
+!    the transormed data.  R can have any number of dimensions, but the total 
 !    number of locations must be at least LENR.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least (LOT-1)*JUMP + INC*(N-1)+ 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to COSTMI before the first call to routine COSTMF
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to COSTMI before the first call to routine COSTMF 
 !    or COSTMB for a given transform length N.  WSAVE's contents may be re-used
 !    for subsequent calls to COSTMF and COSTMB with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least LOT*(N+1).
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -6473,9 +6473,9 @@ subroutine costmf ( lot, jump, n, inc, x, lenx, wsave, lensav, work, &
 !
 !  Discussion:
 !
-!    COSTMF computes the one-dimensional Fourier transform of multiple
-!    even sequences within a real array.  This transform is referred to
-!    as the forward transform or Fourier analysis, transforming the
+!    COSTMF computes the one-dimensional Fourier transform of multiple 
+!    even sequences within a real array.  This transform is referred to 
+!    as the forward transform or Fourier analysis, transforming the 
 !    sequences from physical to spectral space.
 !
 !    This transform is normalized since a call to COSTMF followed
@@ -6511,39 +6511,39 @@ subroutine costmf ( lot, jump, n, inc, x, lenx, wsave, lensav, work, &
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) LOT, the number of sequences to be transformed
+!    Input, integer ( kind = 4 ) LOT, the number of sequences to be transformed 
 !    within array R.
 !
-!    Input, integer ( kind = 4 ) JUMP, the increment between the locations,
-!    in array R, of the first elements of two consecutive sequences to
+!    Input, integer ( kind = 4 ) JUMP, the increment between the locations, 
+!    in array R, of the first elements of two consecutive sequences to 
 !    be transformed.
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N-1 is a product of
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N-1 is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations,
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, 
 !    in array R, of two consecutive elements within the same sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR), array containing LOT sequences,
+!    Input/output, real ( kind = 8 ) R(LENR), array containing LOT sequences, 
 !    each having length N.  On input, the data to be transformed; on output,
-!    the transormed data.  R can have any number of dimensions, but the total
+!    the transormed data.  R can have any number of dimensions, but the total 
 !    number of locations must be at least LENR.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the  R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the  R array.  
 !    LENR must be at least (LOT-1)*JUMP + INC*(N-1)+ 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
 !    initialized with a call to COSTMI before the first call to routine COSTMF
 !    or COSTMB for a given transform length N.  WSAVE's contents may be re-used
 !    for subsequent calls to COSTMF and COSTMB with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least LOT*(N+1).
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -6612,10 +6612,10 @@ subroutine costmi ( n, wsave, lensav, ier )
 !
 !  Discussion:
 !
-!    COSTMI initializes array WSAVE for use in its companion routines
-!    COSTMF and COSTMB.  The prime factorization of N together with a
-!    tabulation of the trigonometric functions are computed and stored
-!    in array WSAVE.  Separate WSAVE arrays are required for different
+!    COSTMI initializes array WSAVE for use in its companion routines 
+!    COSTMF and COSTMB.  The prime factorization of N together with a 
+!    tabulation of the trigonometric functions are computed and stored 
+!    in array WSAVE.  Separate WSAVE arrays are required for different 
 !    values of N.
 !
 !  License:
@@ -6647,15 +6647,15 @@ subroutine costmi ( n, wsave, lensav, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4
 !
-!    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors of N
-!    and also containing certain trigonometric values which will be used
+!    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors of N 
+!    and also containing certain trigonometric values which will be used 
 !    in routines COSTMB or COSTMF.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -7742,7 +7742,7 @@ subroutine mradb5 (m,ido,l1,cc,im1,in1,ch,im2,in2,wa1,wa2,wa3,wa4)
 
   m1d = (m-1)*im1+1
   m2s = 1-im2
-  arg= 2.0D+00 * 4.0D+00 * atan ( 1.0D+00 ) / 5.0D+00
+  arg= 2.0D+00 * 4.0D+00 * atan ( 1.0D+00 ) / 5.0D+00 
   tr11=cos(arg)
   ti11=sin(arg)
   tr12=cos( 2.0D+00 *arg)
@@ -7787,7 +7787,7 @@ subroutine mradb5 (m,ido,l1,cc,im1,in1,ch,im2,in2,wa1,wa2,wa3,wa4)
         +cc(m1,ic,2,k))+ti12*(cc(m1,i,5,k)+cc(m1,ic,4,k)))) &
         -wa1(i-1)*((cc(m1,i,1,k)+tr11*(cc(m1,i,3,k)-cc(m1,ic,2,k)) &
         +tr12*(cc(m1,i,5,k)-cc(m1,ic,4,k)))+(ti11*(cc(m1,i-1,3,k) &
-        -cc(m1,ic-1,2,k))+ti12*(cc(m1,i-1,5,k)-cc(m1,ic-1,4,k))))
+        -cc(m1,ic-1,2,k))+ti12*(cc(m1,i-1,5,k)-cc(m1,ic-1,4,k)))) 
 
         ch(m2,i,k,2) = wa1(i-2)*((cc(m1,i,1,k)+tr11*(cc(m1,i,3,k) &
         -cc(m1,ic,2,k))+tr12*(cc(m1,i,5,k)-cc(m1,ic,4,k))) &
@@ -8456,7 +8456,7 @@ subroutine mradf4 (m,ido,l1,cc,im1,in1,ch,im2,in2,wa1,wa2,wa3)
   real ( kind = 8 ) wa2(ido)
   real ( kind = 8 ) wa3(ido)
 
-  hsqt2=sqrt( 2.0D+00 ) / 2.0D+00
+  hsqt2=sqrt( 2.0D+00 ) / 2.0D+00 
   m1d = (m-1)*im1+1
   m2s = 1-im2
 
@@ -9128,11 +9128,11 @@ subroutine mrftb1 (m,im,n,in,c,ch,wa,fac)
 
   do k1=1,nf
       ip = fac(k1+2)
-      na = 1-na
+      na = 1-na      
       if(ip <= 5) go to 10
       if(k1 == nf) go to 10
       na = 1-na
-   10 continue
+   10 continue 
   end do
 
       half = 0.5D+00
@@ -9422,12 +9422,12 @@ subroutine mrfti1 (n,wa,fac)
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number for which factorization and
+!    Input, integer ( kind = 4 ) N, the number for which factorization and 
 !    other information is needed.
 !
 !    Output, real ( kind = 8 ) WA(N), trigonometric information.
 !
-!    Output, real ( kind = 8 ) FAC(15), factorization information.  FAC(1) is
+!    Output, real ( kind = 8 ) FAC(15), factorization information.  FAC(1) is 
 !    N, FAC(2) is NF, the number of factors, and FAC(3:NF+2) are the factors.
 !
   implicit none
@@ -9591,7 +9591,7 @@ subroutine msntb1(lot,jump,n,inc,x,wsave,dsum,xh,work,ier)
   lj = (lot-1)*jump+1
 
       if (n-2) 200,102,103
- 102  srt3s2 = sqrt( 3.0D+00 )/ 2.0D+00
+ 102  srt3s2 = sqrt( 3.0D+00 )/ 2.0D+00 
 
       do m=1,lj,jump
          xhold = srt3s2*(x(m,1)+x(m,2))
@@ -9628,7 +9628,7 @@ subroutine msntb1(lot,jump,n,inc,x,wsave,dsum,xh,work,ier)
       lnsv = np1 + int(log( real ( np1, kind = 8 ))/log( 2.0D+00 )) + 4
       lnwk = lot*np1
 
-      call rfftmf(lot,1,np1,lot,xh,lnxh,wsave(ns2+1),lnsv,work,lnwk,ier1)
+      call rfftmf(lot,1,np1,lot,xh,lnxh,wsave(ns2+1),lnsv,work,lnwk,ier1)     
 
       if (ier1 /= 0) then
         ier = 20
@@ -9769,12 +9769,12 @@ subroutine msntf1(lot,jump,n,inc,x,wsave,dsum,xh,work,ier)
   123 continue
   124 do 127 m=1,lot
          xh(m,1) = 0.0D+00
-  127 continue
+  127 continue 
       lnxh = lot-1 + lot*(np1-1) + 1
       lnsv = np1 + int(log( real ( np1, kind = 8 ))/log( 2.0D+00 )) + 4
       lnwk = lot*np1
 
-      call rfftmf(lot,1,np1,lot,xh,lnxh,wsave(ns2+1),lnsv,work,lnwk,ier1)
+      call rfftmf(lot,1,np1,lot,xh,lnxh,wsave(ns2+1),lnsv,work,lnwk,ier1)     
       if (ier1 /= 0) then
         ier = 20
         call xerfft ('msntf1',-5)
@@ -9873,10 +9873,10 @@ subroutine r1f2kb (ido,l1,cc,in1,ch,in2,wa1)
       do 104 k = 1, l1
          do 103 i=3,ido,2
             ic = idp2-i
-
+            
             ch(1,i-1,k,1) = cc(1,i-1,1,k)+cc(1,ic-1,2,k)
             ch(1,i,k,1) = cc(1,i,1,k)-cc(1,ic,2,k)
-
+            
             ch(1,i-1,k,2) = wa1(i-2)*(cc(1,i-1,1,k)-cc(1,ic-1,2,k)) &
                  -wa1(i-1)*(cc(1,i,1,k)+cc(1,ic,2,k))
             ch(1,i,k,2) = wa1(i-2)*(cc(1,i,1,k)+cc(1,ic,2,k))+wa1(i-1) &
@@ -10026,7 +10026,7 @@ subroutine r1f3kb (ido,l1,cc,in1,ch,in2,wa1,wa2)
   real ( kind = 8 ) wa1(ido)
   real ( kind = 8 ) wa2(ido)
 
-  arg = 2.0D+00 * 4.0D+00 * atan ( 1.0D+00 ) / 3.0D+00
+  arg = 2.0D+00 * 4.0D+00 * atan ( 1.0D+00 ) / 3.0D+00 
   taur = cos ( arg )
   taui = sin ( arg )
 
@@ -10055,7 +10055,7 @@ subroutine r1f3kb (ido,l1,cc,in1,ch,in2,wa1,wa2)
        (taui*(cc(1,i,3,k)+cc(1,ic,2,k)))) &
                          -wa1(i-1)* &
        ((cc(1,i,1,k)+taur*(cc(1,i,3,k)-cc(1,ic,2,k)))+ &
-       (taui*(cc(1,i-1,3,k)-cc(1,ic-1,2,k))))
+       (taui*(cc(1,i-1,3,k)-cc(1,ic-1,2,k)))) 
 
             ch(1,i,k,2) = wa1(i-2)* &
        ((cc(1,i,1,k)+taur*(cc(1,i,3,k)-cc(1,ic,2,k)))+ &
@@ -10137,7 +10137,7 @@ subroutine r1f3kf (ido,l1,cc,in1,ch,in2,wa1,wa2)
   real ( kind = 8 ) wa1(ido)
   real ( kind = 8 ) wa2(ido)
 
-  arg= 2.0D+00 * 4.0D+00 * atan( 1.0D+00 )/ 3.0D+00
+  arg= 2.0D+00 * 4.0D+00 * atan( 1.0D+00 )/ 3.0D+00 
   taur=cos(arg)
   taui=sin(arg)
 
@@ -10358,7 +10358,7 @@ subroutine r1f4kf (ido,l1,cc,in1,ch,in2,wa1,wa2,wa3)
   real ( kind = 8 ) wa2(ido)
   real ( kind = 8 ) wa3(ido)
 
-  hsqt2=sqrt( 2.0D+00 )/ 2.0D+00
+  hsqt2=sqrt( 2.0D+00 )/ 2.0D+00 
 
   do k = 1, l1
     ch(1,1,1,k) = (cc(1,1,k,2)+cc(1,1,k,4))+(cc(1,1,k,1)+cc(1,1,k,3))
@@ -10676,7 +10676,7 @@ subroutine r1f5kf (ido,l1,cc,in1,ch,in2,wa1,wa2,wa3,wa4)
             wa1(i-1)*cc(1,i,k,2))+(wa4(i-2)*cc(1,i-1,k,5)+wa4(i-1)* &
             cc(1,i,k,5)))+((wa2(i-2)*cc(1,i-1,k,3)+wa2(i-1)* &
             cc(1,i,k,3))+(wa3(i-2)*cc(1,i-1,k,4)+ &
-            wa3(i-1)*cc(1,i,k,4)))
+            wa3(i-1)*cc(1,i,k,4))) 
 
             ch(1,i,1,k) = cc(1,i,k,1)+((wa1(i-2)*cc(1,i,k,2)- &
              wa1(i-1)*cc(1,i-1,k,2))+(wa4(i-2)*cc(1,i,k,5)-wa4(i-1)* &
@@ -11351,7 +11351,7 @@ subroutine r8_factor ( n, nf, fac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number for which factorization and
+!    Input, integer ( kind = 4 ) N, the number for which factorization and 
 !    other information is needed.
 !
 !    Output, integer ( kind = 4 ) NF, the number of factors.
@@ -11557,10 +11557,10 @@ subroutine rfft1b ( n, inc, r, lenr, wsave, lensav, work, lenwrk, ier )
 !
 !    RFFT1B computes the one-dimensional Fourier transform of a periodic
 !    sequence within a real array.  This is referred to as the backward
-!    transform or Fourier synthesis, transforming the sequence from
-!    spectral to physical space.  This transform is normalized since a
+!    transform or Fourier synthesis, transforming the sequence from 
+!    spectral to physical space.  This transform is normalized since a 
 !    call to RFFT1B followed by a call to RFFT1F (or vice-versa) reproduces
-!    the original array within roundoff error.
+!    the original array within roundoff error. 
 !
 !  License:
 !
@@ -11591,30 +11591,30 @@ subroutine rfft1b ( n, inc, r, lenr, wsave, lensav, work, lenwrk, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of the sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of the sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations,
-!    in array R, of two consecutive elements within the sequence.
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, 
+!    in array R, of two consecutive elements within the sequence. 
 !
-!    Input/output, real ( kind = 8 ) R(LENR), on input, the data to be
+!    Input/output, real ( kind = 8 ) R(LENR), on input, the data to be 
 !    transformed, and on output, the transformed data.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
-!    LENR must be at least INC*(N-1) + 1.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
+!    LENR must be at least INC*(N-1) + 1. 
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
 !    initialized with a call to RFFT1I before the first call to routine
 !    RFFT1F or RFFT1B for a given transform length N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
-!    LENSAV must be at least N + INT(LOG(REAL(N))) + 4.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
+!    LENSAV must be at least N + INT(LOG(REAL(N))) + 4. 
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
-!    LENWRK must be at least N.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
+!    LENWRK must be at least N. 
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
 !    0, successful exit;
@@ -11665,10 +11665,10 @@ subroutine rfft1f ( n, inc, r, lenr, wsave, lensav, work, lenwrk, ier )
 !  Discussion:
 !
 !    RFFT1F computes the one-dimensional Fourier transform of a periodic
-!    sequence within a real array.  This is referred to as the forward
+!    sequence within a real array.  This is referred to as the forward 
 !    transform or Fourier analysis, transforming the sequence from physical
-!    to spectral space.  This transform is normalized since a call to
-!    RFFT1F followed by a call to RFFT1B (or vice-versa) reproduces the
+!    to spectral space.  This transform is normalized since a call to 
+!    RFFT1F followed by a call to RFFT1B (or vice-versa) reproduces the 
 !    original array within roundoff error.
 !
 !  License:
@@ -11700,30 +11700,30 @@ subroutine rfft1f ( n, inc, r, lenr, wsave, lensav, work, lenwrk, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of the sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of the sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations, in
-!    array R, of two consecutive elements within the sequence.
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, in 
+!    array R, of two consecutive elements within the sequence. 
 !
-!    Input/output, real ( kind = 8 ) R(LENR), on input, contains the sequence
+!    Input/output, real ( kind = 8 ) R(LENR), on input, contains the sequence 
 !    to be transformed, and on output, the transformed data.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least INC*(N-1) + 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
 !    initialized with a call to RFFT1I before the first call to routine RFFT1F
-!    or RFFT1B for a given transform length N.
+!    or RFFT1B for a given transform length N. 
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least N + INT(LOG(REAL(N))) + 4.
 !
-!    Workspace, real ( kind = 8 ) WORK(LENWRK).
+!    Workspace, real ( kind = 8 ) WORK(LENWRK). 
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
-!    LENWRK must be at least N.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array. 
+!    LENWRK must be at least N. 
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
 !    0, successful exit;
@@ -11773,11 +11773,11 @@ subroutine rfft1i ( n, wsave, lensav, ier )
 !
 !  Discussion:
 !
-!    RFFT1I initializes array WSAVE for use in its companion routines
+!    RFFT1I initializes array WSAVE for use in its companion routines 
 !    RFFT1B and RFFT1F.  The prime factorization of N together with a
 !    tabulation of the trigonometric functions are computed and stored
 !    in array WSAVE.  Separate WSAVE arrays are required for different
-!    values of N.
+!    values of N. 
 !
 !  License:
 !
@@ -11808,15 +11808,15 @@ subroutine rfft1i ( n, wsave, lensav, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of the sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of the sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
 !    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors of
 !    N and also containing certain trigonometric values which will be used in
 !    routines RFFT1B or RFFT1F.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least N + INT(LOG(REAL(N))) + 4.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -11857,8 +11857,8 @@ subroutine rfft2b ( ldim, l, m, r, wsave, lensav, work, lenwrk, ier )
 !    RFFT2B computes the two-dimensional discrete Fourier transform of the
 !    complex Fourier coefficients a real periodic array.  This transform is
 !    known as the backward transform or Fourier synthesis, transforming from
-!    spectral to physical space.  Routine RFFT2B is normalized: a call to
-!    RFFT2B followed by a call to RFFT2F (or vice-versa) reproduces the
+!    spectral to physical space.  Routine RFFT2B is normalized: a call to 
+!    RFFT2B followed by a call to RFFT2F (or vice-versa) reproduces the 
 !    original array within roundoff error.
 !
 !  License:
@@ -11890,36 +11890,36 @@ subroutine rfft2b ( ldim, l, m, r, wsave, lensav, work, lenwrk, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) LDIM, the first dimension of the 2D real
+!    Input, integer ( kind = 4 ) LDIM, the first dimension of the 2D real 
 !    array R, which must be at least 2*(L/2+1).
 !
-!    Input, integer ( kind = 4 ) L, the number of elements to be transformed
-!    in the first dimension of the two-dimensional real array R.  The value of
-!    L must be less than or equal to that of LDIM.  The transform is most
+!    Input, integer ( kind = 4 ) L, the number of elements to be transformed 
+!    in the first dimension of the two-dimensional real array R.  The value of 
+!    L must be less than or equal to that of LDIM.  The transform is most 
 !    efficient when L is a product of small primes.
 !
-!    Input, integer ( kind = 4 ) M, the number of elements to be transformed
+!    Input, integer ( kind = 4 ) M, the number of elements to be transformed 
 !    in the second dimension of the two-dimensional real array R.  The transform
 !    is most efficient when M is a product of small primes.
 !
-!    Input/output, real ( kind = 8 ) R(LDIM,M), the real array of two
-!    dimensions.  On input, R contains the L/2+1-by-M complex subarray of
+!    Input/output, real ( kind = 8 ) R(LDIM,M), the real array of two 
+!    dimensions.  On input, R contains the L/2+1-by-M complex subarray of 
 !    spectral coefficients, on output, the physical coefficients.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to RFFT2I before the first call to routine RFFT2F
-!    or RFFT2B with lengths L and M.  WSAVE's contents may be re-used for
-!    subsequent calls to RFFT2F and RFFT2B with the same transform lengths
-!    L and M.
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to RFFT2I before the first call to routine RFFT2F 
+!    or RFFT2B with lengths L and M.  WSAVE's contents may be re-used for 
+!    subsequent calls to RFFT2F and RFFT2B with the same transform lengths 
+!    L and M. 
 !
-!    Input, integer ( kind = 4 ) LENSAV, the number of elements in the WSAVE
-!    array.  LENSAV must be at least L + M + INT(LOG(REAL(L)))
+!    Input, integer ( kind = 4 ) LENSAV, the number of elements in the WSAVE 
+!    array.  LENSAV must be at least L + M + INT(LOG(REAL(L))) 
 !    + INT(LOG(REAL(M))) + 8.
 !
-!    Workspace, real ( kind = 8 ) WORK(LENWRK).  WORK provides workspace, and
+!    Workspace, real ( kind = 8 ) WORK(LENWRK).  WORK provides workspace, and 
 !    its contents need not be saved between calls to routines RFFT2B and RFFT2F.
 !
-!    Input, integer ( kind = 4 )  LENWRK, the number of elements in the WORK
+!    Input, integer ( kind = 4 )  LENWRK, the number of elements in the WORK 
 !    array.  LENWRK must be at least LDIM*M.
 !
 !    Output, integer ( kind = 4 ) IER, the error flag.
@@ -12066,12 +12066,12 @@ subroutine rfft2f ( ldim, l, m, r, wsave, lensav, work, lenwrk, ier )
 !
 !  Discussion:
 !
-!    RFFT2F computes the two-dimensional discrete Fourier transform of a
-!    real periodic array.  This transform is known as the forward transform
-!    or Fourier analysis, transforming from physical to spectral space.
-!    Routine RFFT2F is normalized: a call to RFFT2F followed by a call to
-!    RFFT2B (or vice-versa) reproduces the original array within roundoff
-!    error.
+!    RFFT2F computes the two-dimensional discrete Fourier transform of a 
+!    real periodic array.  This transform is known as the forward transform 
+!    or Fourier analysis, transforming from physical to spectral space. 
+!    Routine RFFT2F is normalized: a call to RFFT2F followed by a call to 
+!    RFFT2B (or vice-versa) reproduces the original array within roundoff 
+!    error. 
 !
 !  License:
 !
@@ -12103,34 +12103,34 @@ subroutine rfft2f ( ldim, l, m, r, wsave, lensav, work, lenwrk, ier )
 !  Parameters:
 !
 !    Input, integer ( kind = 4 ) LDIM, the first dimension of the 2D real
-!    array R, which must be at least 2*(L/2+1).
+!    array R, which must be at least 2*(L/2+1). 
 !
-!    Input, integer ( kind = 4 ) L, the number of elements to be transformed
-!    in the first dimension of the two-dimensional real array R.  The value
-!    of L must be less than or equal to that of LDIM.  The transform is most
+!    Input, integer ( kind = 4 ) L, the number of elements to be transformed 
+!    in the first dimension of the two-dimensional real array R.  The value 
+!    of L must be less than or equal to that of LDIM.  The transform is most 
 !    efficient when L is a product of small primes.
 !
-!    Input, integer ( kind = 4 ) M, the number of elements to be transformed
+!    Input, integer ( kind = 4 ) M, the number of elements to be transformed 
 !    in the second dimension of the two-dimensional real array R.  The
-!    transform is most efficient when M is a product of small primes.
+!    transform is most efficient when M is a product of small primes. 
 !
-!    Input/output, real ( kind = 8 ) R(LDIM,M), the real array of two
-!    dimensions.  On input, containing the L-by-M physical data to be
+!    Input/output, real ( kind = 8 ) R(LDIM,M), the real array of two 
+!    dimensions.  On input, containing the L-by-M physical data to be 
 !    transformed.  On output, the spectral coefficients.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
 !    initialized with a call to RFFT2I before the first call to routine RFFT2F
 !    or RFFT2B with lengths L and M.  WSAVE's contents may be re-used for
-!    subsequent calls to RFFT2F and RFFT2B with the same transform lengths.
+!    subsequent calls to RFFT2F and RFFT2B with the same transform lengths. 
 !
-!    Input, integer ( kind = 4 ) LENSAV, the number of elements in the WSAVE
-!    array.  LENSAV must be at least L + M + INT(LOG(REAL(L)))
-!    + INT(LOG(REAL(M))) + 8.
+!    Input, integer ( kind = 4 ) LENSAV, the number of elements in the WSAVE 
+!    array.  LENSAV must be at least L + M + INT(LOG(REAL(L))) 
+!    + INT(LOG(REAL(M))) + 8. 
 !
-!    Workspace, real ( kind = 8 ) WORK(LENWRK), provides workspace, and its
-!    contents need not be saved between calls to routines RFFT2F and RFFT2B.
+!    Workspace, real ( kind = 8 ) WORK(LENWRK), provides workspace, and its 
+!    contents need not be saved between calls to routines RFFT2F and RFFT2B. 
 !
-!    Input, integer ( kind = 4 ) LENWRK, the number of elements in the WORK
+!    Input, integer ( kind = 4 ) LENWRK, the number of elements in the WORK 
 !    array.  LENWRK must be at least LDIM*M.
 !
 !    Output, integer ( kind = 4 ) IER, the error flag.
@@ -12282,11 +12282,11 @@ subroutine rfft2i ( l, m, wsave, lensav, ier )
 !  Discussion:
 !
 !    RFFT2I initializes real array WSAVE for use in its companion routines
-!    RFFT2F and RFFT2B for computing the two-dimensional fast Fourier
+!    RFFT2F and RFFT2B for computing the two-dimensional fast Fourier 
 !    transform of real data.  Prime factorizations of L and M, together with
 !    tabulations of the trigonometric functions, are computed and stored in
-!    array WSAVE.  RFFT2I must be called prior to the first call to RFFT2F
-!    or RFFT2B.  Separate WSAVE arrays are required for different values of
+!    array WSAVE.  RFFT2I must be called prior to the first call to RFFT2F 
+!    or RFFT2B.  Separate WSAVE arrays are required for different values of 
 !    L or M.
 !
 !  License:
@@ -12318,20 +12318,20 @@ subroutine rfft2i ( l, m, wsave, lensav, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) L, the number of elements to be transformed
-!    in the first dimension.  The transform is most efficient when L is a
+!    Input, integer ( kind = 4 ) L, the number of elements to be transformed 
+!    in the first dimension.  The transform is most efficient when L is a 
 !    product of small primes.
 !
-!    Input, integer ( kind = 4 ) M, the number of elements to be transformed
-!    in the second dimension.  The transform is most efficient when M is a
-!    product of small primes.
+!    Input, integer ( kind = 4 ) M, the number of elements to be transformed 
+!    in the second dimension.  The transform is most efficient when M is a 
+!    product of small primes. 
 !
-!    Input, integer ( kind = 4 ) LENSAV, the number of elements in the WSAVE
-!    array.  LENSAV must be at least L + M + INT(LOG(REAL(L)))
+!    Input, integer ( kind = 4 ) LENSAV, the number of elements in the WSAVE 
+!    array.  LENSAV must be at least L + M + INT(LOG(REAL(L))) 
 !    + INT(LOG(REAL(M))) + 8.
 !
-!    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors
-!    of L and M, and also containing certain trigonometric values which
+!    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors 
+!    of L and M, and also containing certain trigonometric values which 
 !    will be used in routines RFFT2B or RFFT2F.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -12460,11 +12460,11 @@ subroutine rfftb1 ( n, in, c, ch, wa, fac )
       na = 0
       do 10 k1=1,nf
       ip = fac(k1+2)
-      na = 1-na
+      na = 1-na      
       if(ip <= 5) go to 10
       if(k1 == nf) go to 10
       na = 1-na
-   10 continue
+   10 continue 
       half = 0.5D+00
       halfm = -0.5D+00
       modn = mod(n,2)
@@ -12713,13 +12713,13 @@ subroutine rffti1 ( n, wa, fac )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the number for which factorization
+!    Input, integer ( kind = 4 ) N, the number for which factorization 
 !    and other information is needed.
 !
 !    Output, real ( kind = 8 ) WA(N), trigonometric information.
 !
-!    Output, real ( kind = 8 ) FAC(15), factorization information.
-!    FAC(1) is N, FAC(2) is NF, the number of factors, and FAC(3:NF+2) are the
+!    Output, real ( kind = 8 ) FAC(15), factorization information.  
+!    FAC(1) is N, FAC(2) is NF, the number of factors, and FAC(3:NF+2) are the 
 !    factors.
 !
   implicit none
@@ -12821,8 +12821,8 @@ subroutine rfftmb ( lot, jump, n, inc, r, lenr, wsave, lensav, work, lenwrk, &
 !
 !  Discussion:
 !
-!    RFFTMB computes the one-dimensional Fourier transform of multiple
-!    periodic sequences within a real array.  This transform is referred
+!    RFFTMB computes the one-dimensional Fourier transform of multiple 
+!    periodic sequences within a real array.  This transform is referred 
 !    to as the backward transform or Fourier synthesis, transforming the
 !    sequences from spectral to physical space.
 !
@@ -12859,38 +12859,38 @@ subroutine rfftmb ( lot, jump, n, inc, r, lenr, wsave, lensav, work, lenwrk, &
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) LOT, the number of sequences to be transformed
+!    Input, integer ( kind = 4 ) LOT, the number of sequences to be transformed 
 !    within array R.
 !
 !    Input, integer ( kind = 4 ) JUMP, the increment between the locations, in
-!    array R, of the first elements of two consecutive sequences to be
+!    array R, of the first elements of two consecutive sequences to be 
 !    transformed.
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations, in
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, in 
 !    array R, of two consecutive elements within the same sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR), real array containing LOT
-!    sequences, each having length N.  R can have any number of dimensions,
+!    Input/output, real ( kind = 8 ) R(LENR), real array containing LOT 
+!    sequences, each having length N.  R can have any number of dimensions, 
 !    but the total number of locations must be at least LENR.  On input, the
 !    spectral data to be transformed, on output the physical data.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array. 
 !    LENR must be at least (LOT-1)*JUMP + INC*(N-1) + 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to RFFTMI before the first call to routine RFFTMF
-!    or RFFTMB for a given transform length N.
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to RFFTMI before the first call to routine RFFTMF 
+!    or RFFTMB for a given transform length N.  
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array. 
 !    LENSAV must  be at least N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least LOT*N.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -12953,9 +12953,9 @@ subroutine rfftmf ( lot, jump, n, inc, r, lenr, wsave, lensav, &
 !
 !  Discussion:
 !
-!    RFFTMF computes the one-dimensional Fourier transform of multiple
-!    periodic sequences within a real array.  This transform is referred
-!    to as the forward transform or Fourier analysis, transforming the
+!    RFFTMF computes the one-dimensional Fourier transform of multiple 
+!    periodic sequences within a real array.  This transform is referred 
+!    to as the forward transform or Fourier analysis, transforming the 
 !    sequences from physical to spectral space.
 !
 !    This transform is normalized since a call to RFFTMF followed
@@ -12991,38 +12991,38 @@ subroutine rfftmf ( lot, jump, n, inc, r, lenr, wsave, lensav, &
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) LOT, the number of sequences to be transformed
+!    Input, integer ( kind = 4 ) LOT, the number of sequences to be transformed 
 !    within array R.
 !
-!    Input, integer ( kind = 4 ) JUMP, the increment between the locations, in
-!    array R, of the first elements of two consecutive sequences to be
+!    Input, integer ( kind = 4 ) JUMP, the increment between the locations, in 
+!    array R, of the first elements of two consecutive sequences to be 
 !    transformed.
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations,
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, 
 !    in array R, of two consecutive elements within the same sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR), real array containing LOT
-!    sequences, each having length N.  R can have any number of dimensions, but
+!    Input/output, real ( kind = 8 ) R(LENR), real array containing LOT 
+!    sequences, each having length N.  R can have any number of dimensions, but 
 !    the total number of locations must be at least LENR.  On input, the
 !    physical data to be transformed, on output the spectral data.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least (LOT-1)*JUMP + INC*(N-1) + 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to RFFTMI before the first call to routine RFFTMF
-!    or RFFTMB for a given transform length N.
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to RFFTMI before the first call to routine RFFTMF 
+!    or RFFTMB for a given transform length N.  
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least LOT*N.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -13084,10 +13084,10 @@ subroutine rfftmi ( n, wsave, lensav, ier )
 !
 !  Discussion:
 !
-!    RFFTMI initializes array WSAVE for use in its companion routines
-!    RFFTMB and RFFTMF.  The prime factorization of N together with a
-!    tabulation of the trigonometric functions are computed and stored
-!    in array WSAVE.  Separate WSAVE arrays are required for different
+!    RFFTMI initializes array WSAVE for use in its companion routines 
+!    RFFTMB and RFFTMF.  The prime factorization of N together with a 
+!    tabulation of the trigonometric functions are computed and stored 
+!    in array WSAVE.  Separate WSAVE arrays are required for different 
 !    values of N.
 !
 !  License:
@@ -13119,15 +13119,15 @@ subroutine rfftmi ( n, wsave, lensav, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least N + INT(LOG(REAL(N))) + 4.
 !
-!    Output, real ( kind = 8 ) WSAVE(LENSAV), work array containing the prime
-!    factors of N and also containing certain trigonometric
+!    Output, real ( kind = 8 ) WSAVE(LENSAV), work array containing the prime 
+!    factors of N and also containing certain trigonometric 
 !    values which will be used in routines RFFTMB or RFFTMF.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -13166,9 +13166,9 @@ subroutine sinq1b ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !
 !  Discussion:
 !
-!    SINQ1B computes the one-dimensional Fourier transform of a sequence
-!    which is a sine series with odd wave numbers.  This transform is
-!    referred to as the backward transform or Fourier synthesis,
+!    SINQ1B computes the one-dimensional Fourier transform of a sequence 
+!    which is a sine series with odd wave numbers.  This transform is 
+!    referred to as the backward transform or Fourier synthesis, 
 !    transforming the sequence from spectral to physical space.
 !
 !    This transform is normalized since a call to SINQ1B followed
@@ -13204,30 +13204,30 @@ subroutine sinq1b ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of the sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of the sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
 !    Input, integer ( kind = 4 ) INC, the increment between the locations, in
 !    array R, of two consecutive elements within the sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR), on input, the sequence to be
+!    Input/output, real ( kind = 8 ) R(LENR), on input, the sequence to be 
 !    transformed.  On output, the transformed sequence.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least INC*(N-1)+ 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to SINQ1I before the first call to routine SINQ1F
-!    or SINQ1B for a given transform length N.  WSAVE's contents may be
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to SINQ1I before the first call to routine SINQ1F 
+!    or SINQ1B for a given transform length N.  WSAVE's contents may be 
 !    re-used for subsequent calls to SINQ1F and SINQ1B with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least N.
 !
 !    Output, integer ( kind = 4 ) IER, the error flag.
@@ -13302,10 +13302,10 @@ subroutine sinq1f ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !! SINQ1F: real double precision forward sine quarter wave transform, 1D.
 !
 !  Discussion:
-!
-!    SINQ1F computes the one-dimensional Fourier transform of a sequence
-!    which is a sine series of odd wave numbers.  This transform is
-!    referred to as the forward transform or Fourier analysis, transforming
+! 
+!    SINQ1F computes the one-dimensional Fourier transform of a sequence 
+!    which is a sine series of odd wave numbers.  This transform is 
+!    referred to as the forward transform or Fourier analysis, transforming 
 !    the sequence from physical to spectral space.
 !
 !    This transform is normalized since a call to SINQ1F followed
@@ -13341,30 +13341,30 @@ subroutine sinq1f ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of the sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of the sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations,
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, 
 !    in array R, of two consecutive elements within the sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR), on input, the sequence to be
+!    Input/output, real ( kind = 8 ) R(LENR), on input, the sequence to be 
 !    transformed.  On output, the transformed sequence.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least INC*(N-1)+ 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to SINQ1I before the first call to routine SINQ1F
-!    or SINQ1B for a given transform length N.  WSAVE's contents may be re-used
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to SINQ1I before the first call to routine SINQ1F 
+!    or SINQ1B for a given transform length N.  WSAVE's contents may be re-used 
 !    for subsequent calls to SINQ1F and SINQ1B with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least N.
 !
 !    Output, integer ( kind = 4 ) IER, the error flag.
@@ -13446,10 +13446,10 @@ subroutine sinq1i ( n, wsave, lensav, ier )
 !
 !  Discussion:
 !
-!    SINQ1I initializes array WSAVE for use in its companion routines
-!    SINQ1F and SINQ1B.  The prime factorization of N together with a
-!    tabulation of the trigonometric functions are computed and stored
-!    in array WSAVE.  Separate WSAVE arrays are required for different
+!    SINQ1I initializes array WSAVE for use in its companion routines 
+!    SINQ1F and SINQ1B.  The prime factorization of N together with a 
+!    tabulation of the trigonometric functions are computed and stored 
+!    in array WSAVE.  Separate WSAVE arrays are required for different 
 !    values of N.
 !
 !  License:
@@ -13481,15 +13481,15 @@ subroutine sinq1i ( n, wsave, lensav, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of the sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of the sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
-!    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors
-!    of N and also containing certain trigonometric values which will be used
+!    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors 
+!    of N and also containing certain trigonometric values which will be used 
 !   in routines SINQ1B or SINQ1F.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -13533,10 +13533,10 @@ subroutine sinqmb ( lot, jump, n, inc, x, lenx, wsave, lensav, &
 !
 !  Discussion:
 !
-!    SINQMB computes the one-dimensional Fourier transform of multiple
-!    sequences within a real array, where each of the sequences is a
-!    sine series with odd wave numbers.  This transform is referred to as
-!    the backward transform or Fourier synthesis, transforming the
+!    SINQMB computes the one-dimensional Fourier transform of multiple 
+!    sequences within a real array, where each of the sequences is a 
+!    sine series with odd wave numbers.  This transform is referred to as 
+!    the backward transform or Fourier synthesis, transforming the 
 !    sequences from spectral to physical space.
 !
 !    This transform is normalized since a call to SINQMB followed
@@ -13576,35 +13576,35 @@ subroutine sinqmb ( lot, jump, n, inc, x, lenx, wsave, lensav, &
 !    within array R.
 !
 !    Input, integer ( kind = 4 ) JUMP, the increment between the locations, in
-!    array R, of the first elements of two consecutive sequences to be
+!    array R, of the first elements of two consecutive sequences to be 
 !    transformed.
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
 !    Input, integer ( kind = 4 ) INC, the increment between the locations, in
 !    array R, of two consecutive elements within the same sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR), containing LOT sequences, each
-!    having length N.  R can have any number of dimensions, but the total
+!    Input/output, real ( kind = 8 ) R(LENR), containing LOT sequences, each 
+!    having length N.  R can have any number of dimensions, but the total 
 !    number of locations must be at least LENR.  On input, R contains the data
 !    to be transformed, and on output the transformed data.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least (LOT-1)*JUMP + INC*(N-1)+ 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
 !    initialized with a call to SINQMI before the first call to routine SINQMF
-!    or SINQMB for a given transform length N.  WSAVE's contents may be re-used
+!    or SINQMB for a given transform length N.  WSAVE's contents may be re-used 
 !    for subsequent calls to SINQMF and SINQMB with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least LOT*N.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -13698,10 +13698,10 @@ subroutine sinqmf ( lot, jump, n, inc, x, lenx, wsave, lensav, &
 !
 !  Discussion:
 !
-!    SINQMF computes the one-dimensional Fourier transform of multiple
-!    sequences within a real array, where each sequence is a sine series
+!    SINQMF computes the one-dimensional Fourier transform of multiple 
+!    sequences within a real array, where each sequence is a sine series 
 !    with odd wave numbers.  This transform is referred to as the forward
-!    transform or Fourier synthesis, transforming the sequences from
+!    transform or Fourier synthesis, transforming the sequences from 
 !    spectral to physical space.
 !
 !    This transform is normalized since a call to SINQMF followed
@@ -13741,35 +13741,35 @@ subroutine sinqmf ( lot, jump, n, inc, x, lenx, wsave, lensav, &
 !    within array R.
 !
 !    Input, integer ( kind = 4 ) JUMP, the increment between the locations,
-!    in array R, of the first elements of two consecutive sequences to
+!    in array R, of the first elements of two consecutive sequences to 
 !    be transformed.
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations,
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, 
 !    in array R, of two consecutive elements within the same sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR), containing LOT sequences, each
-!    having length N.  R can have any number of dimensions, but the total
+!    Input/output, real ( kind = 8 ) R(LENR), containing LOT sequences, each 
+!    having length N.  R can have any number of dimensions, but the total 
 !    number of locations must be at least LENR.  On input, R contains the data
 !    to be transformed, and on output the transformed data.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least (LOT-1)*JUMP + INC*(N-1)+ 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to SINQMI before the first call to routine SINQMF
-!    or SINQMB for a given transform length N.  WSAVE's contents may be re-used
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to SINQMI before the first call to routine SINQMF 
+!    or SINQMB for a given transform length N.  WSAVE's contents may be re-used 
 !    for subsequent calls to SINQMF and SINQMB with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least LOT*N.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -13864,10 +13864,10 @@ subroutine sinqmi ( n, wsave, lensav, ier )
 !
 !  Discussion:
 !
-!    SINQMI initializes array WSAVE for use in its companion routines
-!    SINQMF and SINQMB.  The prime factorization of N together with a
-!    tabulation of the trigonometric functions are computed and stored
-!    in array WSAVE.  Separate WSAVE arrays are required for different
+!    SINQMI initializes array WSAVE for use in its companion routines 
+!    SINQMF and SINQMB.  The prime factorization of N together with a 
+!    tabulation of the trigonometric functions are computed and stored 
+!    in array WSAVE.  Separate WSAVE arrays are required for different 
 !    values of N.
 !
 !  License:
@@ -13899,15 +13899,15 @@ subroutine sinqmi ( n, wsave, lensav, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least 2*N + INT(LOG(REAL(N))) + 4.
 !
-!    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors
-!    of N and also containing certain trigonometric values which will be used
+!    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors 
+!    of N and also containing certain trigonometric values which will be used 
 !    in routines SINQMB or SINQMF.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -13949,9 +13949,9 @@ subroutine sint1b ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !
 !  Discussion:
 !
-!    SINT1B computes the one-dimensional Fourier transform of an odd
-!    sequence within a real array.  This transform is referred to as
-!    the backward transform or Fourier synthesis, transforming the
+!    SINT1B computes the one-dimensional Fourier transform of an odd 
+!    sequence within a real array.  This transform is referred to as 
+!    the backward transform or Fourier synthesis, transforming the 
 !    sequence from spectral to physical space.
 !
 !    This transform is normalized since a call to SINT1B followed
@@ -13987,30 +13987,30 @@ subroutine sint1b ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of the sequence to be
-!    transformed.  The transform is most efficient when N+1 is a product of
+!    Input, integer ( kind = 4 ) N, the length of the sequence to be 
+!    transformed.  The transform is most efficient when N+1 is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations, in
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, in 
 !    array R, of two consecutive elements within the sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR), on input, contains the sequence
+!    Input/output, real ( kind = 8 ) R(LENR), on input, contains the sequence 
 !    to be transformed, and on output, the transformed sequence.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least INC*(N-1)+ 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to SINT1I before the first call to routine SINT1F
-!    or SINT1B for a given transform length N.  WSAVE's contents may be re-used
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to SINT1I before the first call to routine SINT1F 
+!    or SINT1B for a given transform length N.  WSAVE's contents may be re-used 
 !    for subsequent calls to SINT1F and SINT1B with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least N/2 + N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least 2*N+2.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -14068,8 +14068,8 @@ subroutine sint1f ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !
 !  Discussion:
 !
-!    SINT1F computes the one-dimensional Fourier transform of an odd
-!    sequence within a real array.  This transform is referred to as the
+!    SINT1F computes the one-dimensional Fourier transform of an odd 
+!    sequence within a real array.  This transform is referred to as the 
 !    forward transform or Fourier analysis, transforming the sequence
 !    from physical to spectral space.
 !
@@ -14106,30 +14106,30 @@ subroutine sint1f ( n, inc, x, lenx, wsave, lensav, work, lenwrk, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of the sequence to be
-!    transformed.  The transform is most efficient when N+1 is a product of
+!    Input, integer ( kind = 4 ) N, the length of the sequence to be 
+!    transformed.  The transform is most efficient when N+1 is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations,
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, 
 !    in array R, of two consecutive elements within the sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR), on input, contains the sequence
+!    Input/output, real ( kind = 8 ) R(LENR), on input, contains the sequence 
 !    to be transformed, and on output, the transformed sequence.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least INC*(N-1)+ 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to SINT1I before the first call to routine SINT1F
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to SINT1I before the first call to routine SINT1F 
 !    or SINT1B for a given transform length N.  WSAVE's contents may be re-used
 !    for subsequent calls to SINT1F and SINT1B with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least N/2 + N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least 2*N+2.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -14187,9 +14187,9 @@ subroutine sint1i ( n, wsave, lensav, ier )
 !
 !  Discussion:
 !
-!    SINT1I initializes array WSAVE for use in its companion routines
-!    SINT1F and SINT1B.  The prime factorization of N together with a
-!    tabulation of the trigonometric functions are computed and stored
+!    SINT1I initializes array WSAVE for use in its companion routines 
+!    SINT1F and SINT1B.  The prime factorization of N together with a 
+!    tabulation of the trigonometric functions are computed and stored 
 !    in array WSAVE.  Separate WSAVE arrays are required for different
 !    values of N.
 !
@@ -14222,15 +14222,15 @@ subroutine sint1i ( n, wsave, lensav, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of the sequence to be
-!    transformed.  The transform is most efficient when N+1 is a product
+!    Input, integer ( kind = 4 ) N, the length of the sequence to be 
+!    transformed.  The transform is most efficient when N+1 is a product 
 !    of small primes.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least N/2 + N + INT(LOG(REAL(N))) + 4.
 !
-!    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors
-!    of N and also containing certain trigonometric values which will be used
+!    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors 
+!    of N and also containing certain trigonometric values which will be used 
 !    in routines SINT1B or SINT1F.
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -14374,8 +14374,8 @@ subroutine sintb1 ( n, inc, x, wsave, xh, work, ier )
       lnsv = np1 + int(log( real ( np1, kind = 8 ))/log( 2.0D+00 )) + 4
       lnwk = np1
 
-      call rfft1f(np1,1,xh,lnxh,wsave(ns2+1),lnsv,work,lnwk,ier1)
-
+      call rfft1f(np1,1,xh,lnxh,wsave(ns2+1),lnsv,work,lnwk,ier1)    
+ 
       if (ier1 /= 0) then
         ier = 20
         call xerfft ('sintb1',-5)
@@ -14488,7 +14488,7 @@ subroutine sintf1 ( n, inc, x, wsave, xh, work, ier )
       lnsv = np1 + int(log( real ( np1, kind = 8 ))/log( 2.0D+00 )) + 4
       lnwk = np1
 
-      call rfft1f(np1,1,xh,lnxh,wsave(ns2+1),lnsv,work, lnwk,ier1)
+      call rfft1f(np1,1,xh,lnxh,wsave(ns2+1),lnsv,work, lnwk,ier1)     
       if (ier1 /= 0) then
         ier = 20
         call xerfft ('sintf1',-5)
@@ -14522,9 +14522,9 @@ subroutine sintmb ( lot, jump, n, inc, x, lenx, wsave, lensav, &
 !
 !  Discussion:
 !
-!    SINTMB computes the one-dimensional Fourier transform of multiple
-!    odd sequences within a real array.  This transform is referred to as
-!    the backward transform or Fourier synthesis, transforming the
+!    SINTMB computes the one-dimensional Fourier transform of multiple 
+!    odd sequences within a real array.  This transform is referred to as 
+!    the backward transform or Fourier synthesis, transforming the 
 !    sequences from spectral to physical space.
 !
 !    This transform is normalized since a call to SINTMB followed
@@ -14563,35 +14563,35 @@ subroutine sintmb ( lot, jump, n, inc, x, lenx, wsave, lensav, &
 !    Input, integer ( kind = 4 ) LOT, the number of sequences to be transformed
 !    within the array R.
 !
-!    Input, integer ( kind = 4 ) JUMP, the increment between the locations, in
+!    Input, integer ( kind = 4 ) JUMP, the increment between the locations, in 
 !    array R, of the first elements of two consecutive sequences.
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N+1 is a product of
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N+1 is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations, in
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, in 
 !    array R, of two consecutive elements within the same sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR), containing LOT sequences, each
-!    having length N.  R can have any number of dimensions, but the total
+!    Input/output, real ( kind = 8 ) R(LENR), containing LOT sequences, each 
+!    having length N.  R can have any number of dimensions, but the total 
 !    number of locations must be at least LENR.  On input, R contains the data
 !    to be transformed, and on output, the transformed data.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least (LOT-1)*JUMP + INC*(N-1)+ 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
-!    initialized with a call to SINTMI before the first call to routine SINTMF
-!    or SINTMB for a given transform length N.  WSAVE's contents may be re-used
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
+!    initialized with a call to SINTMI before the first call to routine SINTMF 
+!    or SINTMB for a given transform length N.  WSAVE's contents may be re-used 
 !    for subsequent calls to SINTMF and SINTMB with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least N/2 + N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least LOT*(2*N+4).
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -14664,9 +14664,9 @@ subroutine sintmf ( lot, jump, n, inc, x, lenx, wsave, lensav, &
 !
 !  Discussion:
 !
-!    SINTMF computes the one-dimensional Fourier transform of multiple
-!    odd sequences within a real array.  This transform is referred to as
-!    the forward transform or Fourier analysis, transforming the sequences
+!    SINTMF computes the one-dimensional Fourier transform of multiple 
+!    odd sequences within a real array.  This transform is referred to as 
+!    the forward transform or Fourier analysis, transforming the sequences 
 !    from physical to spectral space.
 !
 !    This transform is normalized since a call to SINTMF followed
@@ -14702,38 +14702,38 @@ subroutine sintmf ( lot, jump, n, inc, x, lenx, wsave, lensav, &
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) LOT, the number of sequences to be
+!    Input, integer ( kind = 4 ) LOT, the number of sequences to be 
 !    transformed within.
 !
-!    Input, integer ( kind = 4 ) JUMP, the increment between the locations,
+!    Input, integer ( kind = 4 ) JUMP, the increment between the locations, 
 !    in array R, of the first elements of two consecutive sequences.
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N+1 is a product of
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N+1 is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) INC, the increment between the locations, in
+!    Input, integer ( kind = 4 ) INC, the increment between the locations, in 
 !    array R, of two consecutive elements within the same sequence.
 !
-!    Input/output, real ( kind = 8 ) R(LENR), containing LOT sequences, each
-!    having length N.  R can have any number of dimensions, but the total
+!    Input/output, real ( kind = 8 ) R(LENR), containing LOT sequences, each 
+!    having length N.  R can have any number of dimensions, but the total 
 !    number of locations must be at least LENR.  On input, R contains the data
 !    to be transformed, and on output, the transformed data.
 !
-!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.
+!    Input, integer ( kind = 4 ) LENR, the dimension of the R array.  
 !    LENR must be at least (LOT-1)*JUMP + INC*(N-1)+ 1.
 !
-!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be
+!    Input, real ( kind = 8 ) WSAVE(LENSAV).  WSAVE's contents must be 
 !    initialized with a call to SINTMI before the first call to routine SINTMF
-!    or SINTMB for a given transform length N.  WSAVE's contents may be re-used
+!    or SINTMB for a given transform length N.  WSAVE's contents may be re-used 
 !    for subsequent calls to SINTMF and SINTMB with the same N.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least N/2 + N + INT(LOG(REAL(N))) + 4.
 !
 !    Workspace, real ( kind = 8 ) WORK(LENWRK).
 !
-!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.
+!    Input, integer ( kind = 4 ) LENWRK, the dimension of the WORK array.  
 !    LENWRK must be at least LOT*(2*N+4).
 !
 !    Output, integer ( kind = 4 ) IER, error flag.
@@ -14803,10 +14803,10 @@ subroutine sintmi ( n, wsave, lensav, ier )
 !
 !  Discussion:
 !
-!    SINTMI initializes array WSAVE for use in its companion routines
-!    SINTMF and SINTMB.  The prime factorization of N together with a
-!    tabulation of the trigonometric functions are computed and stored
-!    in array WSAVE.  Separate WSAVE arrays are required for different
+!    SINTMI initializes array WSAVE for use in its companion routines 
+!    SINTMF and SINTMB.  The prime factorization of N together with a 
+!    tabulation of the trigonometric functions are computed and stored 
+!    in array WSAVE.  Separate WSAVE arrays are required for different 
 !    values of N.
 !
 !  License:
@@ -14838,11 +14838,11 @@ subroutine sintmi ( n, wsave, lensav, ier )
 !
 !  Parameters:
 !
-!    Input, integer ( kind = 4 ) N, the length of each sequence to be
-!    transformed.  The transform is most efficient when N is a product of
+!    Input, integer ( kind = 4 ) N, the length of each sequence to be 
+!    transformed.  The transform is most efficient when N is a product of 
 !    small primes.
 !
-!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.
+!    Input, integer ( kind = 4 ) LENSAV, the dimension of the WSAVE array.  
 !    LENSAV must be at least N/2 + N + INT(LOG(REAL(N))) + 4.
 !
 !    Output, real ( kind = 8 ) WSAVE(LENSAV), containing the prime factors
@@ -15099,10 +15099,10 @@ subroutine xerfft ( srname, info )
 !
 !    Input, character ( len = * ) SRNAME, the name of the calling routine.
 !
-!    Input, integer ( kind = 4 ) INFO, an error code.  When a single invalid
-!    parameter in the parameter list of the calling routine has been detected,
-!    INFO is the position of that parameter.  In the case when an illegal
-!    combination of LOT, JUMP, N, and INC has been detected, the calling
+!    Input, integer ( kind = 4 ) INFO, an error code.  When a single invalid 
+!    parameter in the parameter list of the calling routine has been detected, 
+!    INFO is the position of that parameter.  In the case when an illegal 
+!    combination of LOT, JUMP, N, and INC has been detected, the calling 
 !    subprogram calls XERFFT with INFO = -1.
 !
   implicit none

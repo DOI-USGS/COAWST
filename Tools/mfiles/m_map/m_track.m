@@ -1,4 +1,4 @@
-function m_track(lon,lat,varargin);
+function m_track(lon,lat,varargin)
 % M_TRACK Draw a trackline on a map
 %
 %	M_TRACK draws navigation tracklines on a map. The trackline
@@ -52,10 +52,10 @@ global MAP_PROJECTION MAP_VAR_LIST
 
 % Have to have initialized a map first
 
-if isempty (MAP_PROJECTION),
+if isempty (MAP_PROJECTION)
    disp ('No Map Projection initialized - call M_PROJ first!');
    return;
-end;
+end
 
 numinputs = nargin;			% save this
 
@@ -85,8 +85,8 @@ else
    if (l ~= m)
       disp ('long and lat vectors must be the same length');
       return;
-   end;
-end;
+   end
+end
 
 % check for time input. has to be the first varargin
 
@@ -105,42 +105,42 @@ end
 
 % look at any remaining options
 
-while k<length(varargin),
+while k<length(varargin)
    optn=[lower(varargin{k}) '   '];
-   switch optn(1:5),
-      case 'ticks',
+   switch optn(1:5)
+      case 'ticks'
 	 TICKS=varargin{k+1};
-      case 'times',
+      case 'times'
 	 TIMES=varargin{k+1};
-      case 'dates',
+      case 'dates'
 	 DATES=varargin{k+1};
-      case 'timef',
+      case 'timef'
 	 TIMEF=varargin{k+1};
-      case 'datef',
+      case 'datef'
 	 DATEF=varargin{k+1};
-      case 'color',
+      case 'color'
 	 COLOR=varargin{k+1};
-      case 'linew',
+      case 'linew'
 	 LINEW=varargin{k+1};
-      case 'lines',
+      case 'lines'
 	 LINES=varargin{k+1};
-      case 'fontn',
+      case 'fontn'
 	 FONTN=varargin{k+1};
-      case 'fonts',
+      case 'fonts'
 	 FONTS=varargin{k+1};
-      case 'clip ',
+      case 'clip '
 	 CLIP=varargin{k+1};
-      case 'orien',
+      case 'orien'
 	 ORIEN=varargin{k+1};
-   end;
+   end
    k=k+2;
-end;
+end
 
 % always want the line drawn at full resolution.
 
 [x,y] = m_ll2xy(lon,lat,'clip',CLIP);
 
-line(x,y,'clip',CLIP,'lines',LINES,'linew',LINEW,'color',COLOR, ...
+line(x,y,'clipping',CLIP,'linestyle',LINES,'linewidth',LINEW,'color',COLOR, ...
     'tag', 'm_track_line');
 
 
@@ -150,7 +150,7 @@ if ~n
 elseif (l ~= n)
    disp('long, lat, and navtimes vectors must be same length');
    return;
-end;
+end
 
 if TICKS < 0				% w/o ticks, nothing more
    return;
@@ -209,9 +209,9 @@ for i=1:nt
    
    % go ahead and tick here
    
-   text(tx(i),ty(i),'-', 'vertical', 'middle', 'horizontal', 'left', ...
+   text(tx(i),ty(i),'-', 'verticalalignment', 'middle', 'horizontalalignment', 'left', ...
        'color', COLOR, 'fontsize', FONTS, 'fontname', FONTN, ...
-       'clip',CLIP,'rotation', angle,'tag','m_track_tick');
+       'clipping',CLIP,'rotation', angle,'tag','m_track_tick');
 
    % maybe time label here?
    
@@ -219,7 +219,7 @@ for i=1:nt
       
       % make label at desired orientation
       
-      if ((abs(angle) < 90) | ~strcmp(ORIEN,'upright'))
+      if ((abs(angle) < 90) || ~strcmp(ORIEN,'upright'))
 	 leadstr = ' ';
 	 tailstr = '';
 	 ang_off = 0;
@@ -238,8 +238,8 @@ for i=1:nt
       text(tx(i),ty(i), ...
 	  [leadstr leadstr datestr(ttim(i),TIMEF) tailstr tailstr], ...
 	  'color', COLOR, 'fontsize', FONTS, 'fontname', FONTN, ...
-	  'vertical', 'middle', 'horizontal', tmlab, 'rotation', ...
-	  angle+ang_off, 'clip', CLIP, 'tag','m_track_time');
+	  'verticalalignment', 'middle', 'horizontalalignment', tmlab, 'rotation', ...
+	  angle+ang_off, 'clipping', CLIP, 'tag','m_track_time');
 
 
       % maybe date label here?
@@ -249,8 +249,8 @@ for i=1:nt
 	 text(tx(i), ty(i), ...
 	     [tailstr datestr(ttim(i),DATEF) leadstr], ...
 	     'color', COLOR, 'fontsize', FONTS, 'fontname', FONTN, ...
-	     'vertical', 'middle', 'horizontal', datlab, 'rotation', ...
-	     angle-ang_off, 'clip', CLIP, 'tag','m_track_date');
+	     'verticalalignment', 'middle', 'horizontalalignment', datlab, 'rotation', ...
+	     angle-ang_off, 'clipping', CLIP, 'tag','m_track_date');
       
       end				% end of date labelling
    end					% end of time labelling

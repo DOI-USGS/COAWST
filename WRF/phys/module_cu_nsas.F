@@ -37,7 +37,7 @@ CONTAINS
 !-- dz8w        dz between full levels (m)
 !-- u3d         3d u-velocity interpolated to theta points (m/s)
 !-- v3d         3d v-velocity interpolated to theta points (m/s)
-!-- ids         start index for i in domain
+!-- ids         start index for i in domain 
 !-- ide         end index for i in domain
 !-- jds         start index for j in domain
 !-- jde         end index for j in domain
@@ -48,7 +48,7 @@ CONTAINS
 !-- jms         start index for j in memory
 !-- jme         end index for j in memory
 !-- kms         start index for k in memory
-!-- kme         end index for k in memory
+!-- kme         end index for k in memory 
 !-- its         start index for i in tile
 !-- ite         end index for i in tile
 !-- jts         start index for j in tile
@@ -84,7 +84,7 @@ CONTAINS
    real,     dimension( ims:ime, kms:kme, jms:jme )                           ,&
              intent(in   )   ::                                           p3di
    real,     dimension( ims:ime, kms:kme, jms:jme )                           ,&
-             intent(in   )   ::                                           dz8w,&
+             intent(in   )   ::                                           dz8w,&  
                                                                              w
    real,     dimension( ims:ime, jms:jme )                                    ,&
              intent(inout) ::                                           raincv,&
@@ -107,7 +107,7 @@ CONTAINS
                                                                            hfx,&
                                                                            qfx
    integer,   intent(in   )   ::                                    mp_physics
-   integer,   intent(in   )   ::                                dx_factor_nsas
+   integer,   intent(in   )   ::                                dx_factor_nsas 
    integer :: ncloud
 !
 !local
@@ -127,7 +127,7 @@ CONTAINS
                                                                            qi2
    real,   dimension( its:ite, kts:kte+1 )  ::                           prsii,&
                                                                            zii
-   real,   dimension( its:ite, kts:kte )  ::                               zll
+   real,   dimension( its:ite, kts:kte )  ::                               zll 
    real,   dimension( its:ite)  ::                                         rain
    real ::                                                          delt,rdelt
    integer, dimension (its:ite)  ::                                       kbot,&
@@ -136,7 +136,7 @@ CONTAINS
    real :: pgcon_use
    integer ::  i,j,k,kp
 !
-! microphysics scheme --> ncloud
+! microphysics scheme --> ncloud 
 !
    if (mp_physics .eq. 0) then
      ncloud = 0
@@ -181,18 +181,18 @@ CONTAINS
 !
      do i = its,ite
        zii(i,1)=0.0
-     enddo
+     enddo     
 !
-     do k = kts,kte
+     do k = kts,kte                                            
        do i = its,ite
          zii(i,k+1)=zii(i,k)+dz8w(i,k,j)
        enddo
      enddo
 !
-     do k = kts,kte
-       do i = its,ite
+     do k = kts,kte                
+       do i = its,ite                                                  
          zll(i,k)=0.5*(zii(i,k)+zii(i,k+1))
-       enddo
+       enddo                                                         
      enddo
 !
      do k = kts,kte
@@ -208,7 +208,7 @@ CONTAINS
        enddo
      enddo
 !
-! NCEP SAS
+! NCEP SAS 
 !
      call nsas2d(delt=delt,delx=dx,del=del(its,kts),                           &
               prsl=prsll(its,kts),prsi=prsii(its,kts),prslk=pi3d(ims,kms,j),   &
@@ -311,8 +311,8 @@ CONTAINS
 ! NCEP SAS (Deep Convection Scheme)
 !-------------------------------------------------------------------------------
    subroutine nsas2d(delt,delx,del,prsl,prsi,prslk,zl,                         &
-            ncloud,                                                            &
-            qc2,qi2,                                                           &
+            ncloud,                                                            & 
+            qc2,qi2,                                                           & 
             q1,t1,rain,kbot,ktop,                                              &
             icps,                                                              &
             lat,slimsk,dot,u1,v1,cp_,cliq_,cvap_,g_,hvap_,rd_,rv_,fv_,ep2,     &
@@ -329,7 +329,7 @@ CONTAINS
 !
 ! abstract: computes convective heating and moistening using a one
 !   cloud type arakawa-schubert convection scheme originally developed
-!   by georg grell. the scheme has been revised at ncep since initial
+!   by georg grell. the scheme has been revised at ncep since initial 
 !   implementation in 1993. it includes updraft and downdraft effects.
 !   the closure is the cloud work function. both updraft and downdraft
 !   are assumed to be saturated and the heating and moistening are
@@ -339,11 +339,11 @@ CONTAINS
 !
 ! developed by hua-lu pan, wan-shu wu, songyou hong, and jongil han
 !   implemented into wrf by kyosun sunny lim and songyou hong
-!   module with cpp-based options is available in grims
+!   module with cpp-based options is available in grims 
 !
 ! program history log:
 !   92-03-01  hua-lu pan       operational development
-!   96-03-01  song-you hong    revised closure, and trigger
+!   96-03-01  song-you hong    revised closure, and trigger 
 !   99-03-01  hua-lu pan       multiple clouds
 !   06-03-01  young-hwa byun   closure based on moisture convergence (optional)
 !   09-10-01  jung-eun kim     f90 format with standard physics modules
@@ -371,8 +371,8 @@ CONTAINS
 !   rcs      - real
 !   slimsk   - real (ims:ime) land(1),sea(0), ice(2) flag
 !   dot      - real (ims:ime,kms:kme) vertical velocity
-!   jcap     - integer wave number
-!   ncloud   - integer no_cloud(0),no_ice(1),cloud+ice(2)
+!   jcap     - integer wave number 
+!   ncloud   - integer no_cloud(0),no_ice(1),cloud+ice(2) 
 !   lat      - integer  current latitude index
 !
 ! output argument list:
@@ -406,7 +406,7 @@ CONTAINS
    implicit none
 !-------------------------------------------------------------------------------
 !
-! model tunable parameters
+! model tunable parameters 
 !
    real,parameter  ::  alphal = 0.5,    alphas = 0.5
    real,parameter  ::  betal  = 0.05,   betas  = 0.05
@@ -506,7 +506,7 @@ CONTAINS
    real            ::  acrit(15)
    real            ::  qcirs(its:ite,kts:kte),qrski(its:ite)
    real            ::  dellal(its:ite,kts:kte)
-   real            ::  rntot(its:ite),delqev(its:ite),delq2(its:ite)
+   real            ::  rntot(its:ite),delqev(its:ite),delq2(its:ite) 
 !
    real            ::  fent1(its:ite,kts:kte),fent2(its:ite,kts:kte)
    real            ::  frh(its:ite,kts:kte)
@@ -532,7 +532,7 @@ CONTAINS
                        dv1,dv2,dv3,dv1q,dv2q,dv3q,dvq1,                        &
                        dv1u,dv2u,dv3u,dv1v,dv2v,dv3v,                          &
                        dellat,xdby,xqrch,xqc,xpw,xpwd,                         &
-                       W1l,W2l,W3l,W4l,W1s,W2s,W3s,W4s,                        &
+                       W1l,W2l,W3l,W4l,W1s,W2s,W3s,W4s,                        & 
                        w1,w2,w3,w4,qrsk(its:ite,kts:kte),evef,ptem,ptem1
 !
    logical         ::  totflg, cnvflg(its:ite),flg(its:ite),lclflg
@@ -574,7 +574,7 @@ CONTAINS
    W2s = W2l
    W3s = W3l
    W4s = W4l
-   else
+   else 
    W1l = -8.E-3
    W2l = -4.E-2
    W3l = -5.E-3
@@ -616,16 +616,16 @@ CONTAINS
 ! Define top layer for search of the downdraft originating layer
 ! and the maximum thetae for updraft
 !
-   kbmax = kte
-   kbm   = kte
-   kmax  = kte
-   do k = kts,kte
-     do i = its,ite
-       if(prsl(i,k).gt.prsi(i,1)*0.45) kbmax = k + 1
-       if(prsl(i,k).gt.prsi(i,1)*0.70) kbm   = k + 1
-       if(prsl(i,k).gt.prsi(i,1)*0.04) kmax  = k + 1
-     enddo
-   enddo
+   kbmax = kte 
+   kbm   = kte 
+   kmax  = kte 
+   do k = kts,kte 
+     do i = its,ite 
+       if(prsl(i,k).gt.prsi(i,1)*0.45) kbmax = k + 1 
+       if(prsl(i,k).gt.prsi(i,1)*0.70) kbm   = k + 1 
+       if(prsl(i,k).gt.prsi(i,1)*0.04) kmax  = k + 1 
+     enddo 
+   enddo 
    kmax = min(kmax,kte)
    kmax1 = kmax - 1
    kbm = min(kbm,kte)
@@ -826,7 +826,7 @@ CONTAINS
 !
    do k = kts,kte1
      do i = its,ite
-       xlamb(i,k) = clam / zi(i,k+1)
+       xlamb(i,k) = clam / zi(i,k+1) 
      enddo
    enddo
 !
@@ -1022,7 +1022,7 @@ CONTAINS
 !
 !  search for downdraft originating level above theta-e minimum
 !
-   do i = its,ite
+   do i = its,ite 
      if(cnvflg(i)) then
        hmin(i) = heo(i,kbcon1(i))
        lmin(i) = kbmax
@@ -1030,8 +1030,8 @@ CONTAINS
     endif
    enddo
 !
-   do k = kts1,kbmax
-     do i = its,ite
+   do k = kts1,kbmax 
+     do i = its,ite 
        if(cnvflg(i).and.k.gt.kbcon1(i).and.heo(i,k).lt.hmin(i)) then
          lmin(i) = k + 1
          hmin(i) = heo(i,k)
@@ -1077,7 +1077,7 @@ CONTAINS
          tem  = 0.5 * (xlamb(i,k)+xlamb(i,k-1)) * dz1
          tem1 = 0.5 * xlamud(i) * dz1
          factor = 1. + tem - tem1
-         qcko(i,k) = ((1.-tem1)*qcko(i,k-1)+tem*0.5*                           &
+         qcko(i,k) = ((1.-tem1)*qcko(i,k-1)+tem*0.5*                           & 
                     (qo(i,k)+qo(i,k-1)))/factor
          qcirs(i,k) = eta(i,k) * qcko(i,k) - eta(i,k) * qrch
 !
@@ -1104,8 +1104,8 @@ CONTAINS
 !
 ! calculate cloud work function at t+dt
 !
-   do k = kts1,kmax
-     do i = its,ite
+   do k = kts1,kmax 
+     do i = its,ite 
        if(cnvflg(i).and.k.ge.kbcon(i).and.k.lt.ktcon(i)) then
          dz1 = zl(i,k+1) - zl(i,k)
          gamma = el2orc * qeso(i,k) / (to(i,k)**2)
@@ -1174,7 +1174,7 @@ CONTAINS
            tem  = 0.5 * (xlamb(i,k)+xlamb(i,k-1)) * dz
            tem1 = 0.5 * xlamud(i) * dz
            factor = 1. + tem - tem1
-           qcko(i,k) = ((1.-tem1)*qcko(i,k-1)+tem*0.5*                         &
+           qcko(i,k) = ((1.-tem1)*qcko(i,k-1)+tem*0.5*                         & 
                       (qo(i,k)+qo(i,k-1)))/factor
            qcirs(i,k) = eta(i,k) * qcko(i,k) - eta(i,k) * qrch
 !
@@ -1214,7 +1214,7 @@ CONTAINS
    if (ncloud.gt.0) then
 !
 !  compute liquid and vapor separation at cloud top
-!
+! 
      do i = its,ite
        if(cnvflg(i)) then
          k = ktcon(i)-1
@@ -1246,7 +1246,7 @@ CONTAINS
    do k = kts1,kmax
      do i = its,ite
        if(k.gt.kb(i).and.k.le.ktcon(i).and.cnvflg(i)) then
-         shear= sqrt((uo(i,k)-uo(i,k-1)) ** 2                                  &
+         shear= sqrt((uo(i,k)-uo(i,k-1)) ** 2                                  & 
                        + (vo(i,k)-vo(i,k-1)) ** 2)
          vshear(i) = vshear(i) + shear
        endif
@@ -1335,7 +1335,7 @@ CONTAINS
    enddo
 !
    do i = its,ite
-     if(cnvflg(i))  then
+     if(cnvflg(i))  then 
        jmn = jmin(i)
        hcdo(i,jmn) = heo(i,jmn)
        qcdo(i,jmn) = qo(i,jmn)
@@ -1345,8 +1345,8 @@ CONTAINS
      endif
    enddo
 !
-   do k = kmax1,kts,-1
-     do i = its,ite
+   do k = kmax1,kts,-1 
+     do i = its,ite 
        if (cnvflg(i) .and. k.lt.jmin(i)) then
          dz = zi(i,k+2) - zi(i,k+1)
          if(k.ge.kbcon(i)) then
@@ -1359,11 +1359,11 @@ CONTAINS
           factor = 1. + tem - tem1
           ptem = 0.5 * tem - pgcon
           ptem1= 0.5 * tem + pgcon
-          hcdo(i,k) = ((1.-tem1)*hcdo(i,k+1)+tem*0.5*                     &
+          hcdo(i,k) = ((1.-tem1)*hcdo(i,k+1)+tem*0.5*                     & 
                       (heo(i,k)+heo(i,k+1)))/factor
-          ucdo(i,k) = ((1.-tem1)*ucdo(i,k+1)+ptem*uo(i,k+1)               &
+          ucdo(i,k) = ((1.-tem1)*ucdo(i,k+1)+ptem*uo(i,k+1)               & 
                      +ptem1*uo(i,k))/factor
-          vcdo(i,k) = ((1.-tem1)*vcdo(i,k+1)+ptem*vo(i,k+1)               &
+          vcdo(i,k) = ((1.-tem1)*vcdo(i,k+1)+ptem*vo(i,k+1)               & 
                      +ptem1*vo(i,k))/factor
           dbyo(i,k) = hcdo(i,k) - heso(i,k)
        endif
@@ -1387,7 +1387,7 @@ CONTAINS
             tem1 = 0.5 * (xlamd(i)+xlamdd) * dz
          endif
          factor = 1. + tem - tem1
-         qcdo(i,k) = ((1.-tem1)*qcdo(i,k+1)+tem*0.5*                      &
+         qcdo(i,k) = ((1.-tem1)*qcdo(i,k+1)+tem*0.5*                      & 
                      (qo(i,k)+qo(i,k+1)))/factor
          pwdo(i,k) = etad(i,k+1) * qcdo(i,k) -etad(i,k+1) * qrcdo(i,k)
          qcdo(i,k) = qrcdo(i,k)
@@ -1506,29 +1506,29 @@ CONTAINS
          dellah(i,k) = dellah(i,k) +                                           &
              ((aup * eta(i,k) - adw * edto(i) * etad(i,k)) * dv1               &
          - (aup * eta(i,k-1) - adw * edto(i) * etad(i,k-1))* dv3               &
-         - (aup*tem*eta(i,k-1)+adw*edto(i)*ptem*etad(i,k))*dv2*dz              &
-         +  aup*tem1*eta(i,k-1)*.5*(hcko(i,k)+hcko(i,k-1))*dz                  &
+         - (aup*tem*eta(i,k-1)+adw*edto(i)*ptem*etad(i,k))*dv2*dz              & 
+         +  aup*tem1*eta(i,k-1)*.5*(hcko(i,k)+hcko(i,k-1))*dz                  & 
          +  adw*edto(i)*ptem1*etad(i,k)*.5*(hcdo(i,k)+hcdo(i,k-1))*dz) *g_/dp
          dellaq(i,k) = dellaq(i,k) +                                           &
              ((aup * eta(i,k) - adw * edto(i) * etad(i,k)) * dv1q              &
          - (aup * eta(i,k-1) - adw * edto(i) * etad(i,k-1))* dv3q              &
-         - (aup*tem*eta(i,k-1)+adw*edto(i)*ptem*etad(i,k))*dv2q*dz             &
-         +  aup*tem1*eta(i,k-1)*.5*(qcko(i,k)+qcko(i,k-1))*dz                  &
+         - (aup*tem*eta(i,k-1)+adw*edto(i)*ptem*etad(i,k))*dv2q*dz             & 
+         +  aup*tem1*eta(i,k-1)*.5*(qcko(i,k)+qcko(i,k-1))*dz                  & 
          +  adw*edto(i)*ptem1*etad(i,k)*.5*(qrcdo(i,k)+qrcdo(i,k-1))*dz) *g_/dp
          dellau(i,k) = dellau(i,k) +                                           &
              ((aup * eta(i,k) - adw * edto(i) * etad(i,k)) * dv1u              &
          - (aup * eta(i,k-1) - adw * edto(i) * etad(i,k-1))* dv3u              &
-         - (aup*tem*eta(i,k-1)+adw*edto(i)*ptem*etad(i,k))*dv2u*dz             &
-         +  aup*tem1*eta(i,k-1)*.5*(ucko(i,k)+ucko(i,k-1))*dz                  &
-         +  adw*edto(i)*ptem1*etad(i,k)*.5*(ucdo(i,k)+ucdo(i,k-1))*dz          &
+         - (aup*tem*eta(i,k-1)+adw*edto(i)*ptem*etad(i,k))*dv2u*dz             & 
+         +  aup*tem1*eta(i,k-1)*.5*(ucko(i,k)+ucko(i,k-1))*dz                  & 
+         +  adw*edto(i)*ptem1*etad(i,k)*.5*(ucdo(i,k)+ucdo(i,k-1))*dz          & 
          -  pgcon*(aup*eta(i,k-1)-adw*edto(i)*etad(i,k))*(dv1u-dv3u))*g_/dp
 !
          dellav(i,k) = dellav(i,k) +                                           &
              ((aup * eta(i,k) - adw * edto(i) * etad(i,k)) * dv1v              &
          - (aup * eta(i,k-1) - adw * edto(i) * etad(i,k-1))* dv3v              &
-         - (aup*tem*eta(i,k-1)+adw*edto(i)*ptem*etad(i,k))*dv2v*dz             &
-         +  aup*tem1*eta(i,k-1)*.5*(vcko(i,k)+vcko(i,k-1))*dz                  &
-         +  adw*edto(i)*ptem1*etad(i,k)*.5*(vcdo(i,k)+vcdo(i,k-1))*dz          &
+         - (aup*tem*eta(i,k-1)+adw*edto(i)*ptem*etad(i,k))*dv2v*dz             & 
+         +  aup*tem1*eta(i,k-1)*.5*(vcko(i,k)+vcko(i,k-1))*dz                  & 
+         +  adw*edto(i)*ptem1*etad(i,k)*.5*(vcdo(i,k)+vcdo(i,k-1))*dz          & 
          -  pgcon*(aup*eta(i,k-1)-adw*edto(i)*etad(i,k))*(dv1v-dv3v))*g_/dp
        endif
      enddo
@@ -1668,7 +1668,7 @@ CONTAINS
          tem  = 0.5 * (xlamb(i,k)+xlamb(i,k-1)) * dz
          tem1 = 0.5 * xlamud(i) * dz
          factor = 1. + tem - tem1
-         hcko(i,k) = ((1.-tem1)*hcko(i,k-1)+tem*0.5*                         &
+         hcko(i,k) = ((1.-tem1)*hcko(i,k-1)+tem*0.5*                         & 
                     (heo(i,k)+heo(i,k-1)))/factor
        endif
      enddo
@@ -1749,7 +1749,7 @@ CONTAINS
             tem1 = 0.5 * (xlamd(i)+xlamdd) * dz
          endif
          factor = 1. + tem - tem1
-         xhcd(i,k) = ((1.-tem1)*xhcd(i,k+1)+tem*0.5*                        &
+         xhcd(i,k) = ((1.-tem1)*xhcd(i,k+1)+tem*0.5*                        & 
                     (heo(i,k)+heo(i,k+1)))/factor
        endif
      enddo
@@ -1772,7 +1772,7 @@ CONTAINS
            tem1 = 0.5 * (xlamd(i)+xlamdd) * dz
          endif
          factor = 1. + tem - tem1
-         xqcd(i,k) = ((1.-tem1)*xqcd(i,k+1)+tem*0.5*                           &
+         xqcd(i,k) = ((1.-tem1)*xqcd(i,k+1)+tem*0.5*                           & 
                    (qo(i,k)+qo(i,k+1)))/factor
          xpwd     = etad(i,k+1) * (xqcd(i,k) - qrcd(i,k))
          xqcd(i,k)= qrcd(i,k)
@@ -1855,7 +1855,7 @@ CONTAINS
        acrtfct(i) = max(acrtfct(i),-1.)
        acrtfct(i) = min(acrtfct(i),1.)
        acrtfct(i) = 1. - acrtfct(i)
-       dtconv(i) = dt2 + max((1800. - dt2),0.) * (pdot(i) - w2) / (w1 - w2)
+       dtconv(i) = dt2 + max((1800. - dt2),0.) * (pdot(i) - w2) / (w1 - w2)   
        dtconv(i) = max(dtconv(i),dtmin)
        dtconv(i) = min(dtconv(i),dtmax)
 !
@@ -1933,7 +1933,7 @@ CONTAINS
          q1(i,k) = q1(i,k) + dellaq(i,k) * xmb(i) * dt2
          tem=1./rcs
          u1(i,k) = u1(i,k) + dellau(i,k) * xmb(i) * dt2 * tem
-         v1(i,k) = v1(i,k) + dellav(i,k) * xmb(i) * dt2 * tem
+         v1(i,k) = v1(i,k) + dellav(i,k) * xmb(i) * dt2 * tem 
          dp = 1000. * del(i,k)
          delhbar(i) = delhbar(i) + dellah(i,k)*xmb(i)*dp/g_
          delqbar(i) = delqbar(i) + dellaq(i,k)*xmb(i)*dp/g_
@@ -1949,8 +1949,8 @@ CONTAINS
      endif
    enddo
 !
-   do k = kts,kmax
-     do i = its,ite
+   do k = kts,kmax 
+     do i = its,ite 
        if (cnvflg(i) .and. k.le.ktcon(i)) then
          qeso(i,k)=0.01* fpvs(t1(i,k),1,rd_,rv_,cvap_,cliq_,cice,xlv0,xls,psat,t0c_)
          qeso(i,k) = eps * qeso(i,k)/(p(i,k) + (eps-1.)*qeso(i,k))
@@ -1959,14 +1959,14 @@ CONTAINS
      enddo
    enddo
 !
-   do i = its,ite
+   do i = its,ite 
      rntot(i) = 0.
      delqev(i) = 0.
      delq2(i) = 0.
-     flg(i) = cnvflg(i)
+     flg(i) = cnvflg(i) 
    enddo
 !
-!  comptute rainfall
+!  comptute rainfall  
 !
    do k = kmax,kts,-1
      do i = its,ite
@@ -1982,7 +1982,7 @@ CONTAINS
      enddo
    enddo
 !
-!  conversion rainfall (m) and compute the evaporation of falling raindrops
+!  conversion rainfall (m) and compute the evaporation of falling raindrops 
 !
    do k = kmax,kts,-1
      do i = its,ite
@@ -2012,7 +2012,7 @@ CONTAINS
            if (delq2(i).gt.rntot(i)) then
              qevap(i) = 1000.* g_ * (rntot(i) - delqev(i)) / dp
              flg(i) = .false.
-           endif
+           endif 
          endif
          if(rain(i).gt.0..and.qevap(i).gt.0.) then
            q1(i,k) = q1(i,k) + qevap(i)
@@ -2059,8 +2059,8 @@ CONTAINS
 !  detrainment of cloud water and ice
 !
    if (ncloud.gt.0) then
-     do k = kts,kmax
-       do i = its,ite
+     do k = kts,kmax 
+       do i = its,ite 
          if (cnvflg(i) .and. rain(i).gt.0.) then
            if (k.ge.kbcon(i).and.k.le.ktcon(i)) then
              tem  = dellal(i,k) * xmb(i) * dt2
@@ -2124,7 +2124,7 @@ CONTAINS
 !
 !-------------------------------------------------------------------------------
    subroutine nsasinit(rthcuten,rqvcuten,rqccuten,rqicuten,                    &
-                      rucuten,rvcuten,                                         &
+                      rucuten,rvcuten,                                         &  
                       restart,p_qc,p_qi,p_first_scalar,                        &
                       allowed_to_read,                                         &
                       ids, ide, jds, jde, kds, kde,                            &
@@ -2157,8 +2157,8 @@ CONTAINS
          do i = its,itf
            rthcuten(i,k,j)=0.
            rqvcuten(i,k,j)=0.
-           rucuten(i,k,j)=0.
-           rvcuten(i,k,j)=0.
+           rucuten(i,k,j)=0.   
+           rvcuten(i,k,j)=0.   
          enddo
        enddo
      enddo
@@ -2203,13 +2203,13 @@ CONTAINS
 !-------------------------------------------------------------------------------
 ! subprogram:    nscv2d           computes shallow-convective heating and moisng
 !
-! abstract: computes non-precipitating convective heating and moistening
+! abstract: computes non-precipitating convective heating and moistening 
 !   using a one cloud type arakawa-schubert convection scheme as in the ncep
 !   sas scheme. the scheme has been operational at ncep gfs model since july 2010
-!   the scheme includes updraft and downdraft effects, but the cloud depth is
-!   limited less than 150 hpa.
+!   the scheme includes updraft and downdraft effects, but the cloud depth is 
+!   limited less than 150 hpa. 
 !
-! developed by jong-il han and hua-lu pan
+! developed by jong-il han and hua-lu pan 
 !   implemented into wrf by jiheon jang and songyou hong
 !   module with cpp-based options is available in grims
 !
@@ -2222,7 +2222,7 @@ CONTAINS
 !
 ! references:
 !   han and pan (2010, wea. forecasting)
-!
+!   
 !-------------------------------------------------------------------------------
    implicit none
 !-------------------------------------------------------------------------------
@@ -2404,7 +2404,7 @@ CONTAINS
 ! define miscellaneous values
 !
    el2orc = hvap_*hvap_/(rv_*cp_)
-   eps    = rd_/rv_
+   eps    = rd_/rv_ 
    fact1  = (cvap_-cliq_)/rv_
    fact2  = hvap_/rv_-fact1*t0c_
 !
@@ -2424,7 +2424,7 @@ CONTAINS
      kbm(i)   = kte
      kmax(i)  = kte
    enddo
-!
+!     
    do k = kts,kte
      do i = its,ite
        if (prsl(i,k).gt.prsi(i,1)*0.70) kbm(i) = k + 1
@@ -2464,7 +2464,7 @@ CONTAINS
 !
    do k = kts+1,km1
      do i = its,ite
-       if (flg(i).and.zl(i,k).le.hpbl(i)) then
+       if (flg(i).and.zl(i,k).le.hpbl(i)) then 
          kpbl(i) = k
        else
          flg(i) = .false.
@@ -2672,7 +2672,7 @@ CONTAINS
    enddo
    if(totflg) return
 !
-!  assume the detrainment rate for the updrafts to be same as
+!  assume the detrainment rate for the updrafts to be same as 
 !  the entrainment rate at cloud base
 !
    do i = its,ite
@@ -2862,7 +2862,7 @@ CONTAINS
      do i = its,ite
        if (cnvflg(i)) then
          if(k.ge.kbcon(i).and.k.lt.ktcon(i)) then
-           dz1 = zl(i,k+1) - zl(i,k)
+           dz1 = zl(i,k+1) - zl(i,k)        
            gamma = el2orc * qeso(i,k) / (to(i,k)**2)
            rfact =  1. + fv_ * cp_ * gamma * to(i,k) / hvap_
            aa1(i) = aa1(i) + dz1 * (g_ / (cp_ * to(i,k)))                      &

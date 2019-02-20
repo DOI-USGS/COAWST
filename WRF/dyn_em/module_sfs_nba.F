@@ -33,7 +33,7 @@
 !
 !=============================================================================
 !
-! Modification History:
+! Modification History: 
 !
 ! Implemented 12/2009 by Jeff Mirocha, jmirocha@llnl.gov
 !
@@ -45,7 +45,7 @@ MODULE module_sfs_nba
 
   IMPLICIT NONE
 
-  REAL :: c1, c2, c3, ce, cb, cs ! global model parameters
+  REAL :: c1, c2, c3, ce, cb, cs ! global model parameters           
 
 CONTAINS
 
@@ -55,13 +55,13 @@ SUBROUTINE calc_mij_constants( )
 
 !-----------------------------------------------------------------------------
 !
-! PURPOSE: Compute constants for Mij calculations
+! PURPOSE: Compute constants for Mij calculations 
 !
 !-----------------------------------------------------------------------------
 
   IMPLICIT NONE
 
-  REAL :: sk, pi ! local model parameters
+  REAL :: sk, pi ! local model parameters           
 
 !-----------------------------------------------------------------------------
 
@@ -81,7 +81,7 @@ END SUBROUTINE calc_mij_constants
 
 !=============================================================================
 
-SUBROUTINE calc_smnsmn( smnsmn,                       &
+SUBROUTINE calc_smnsmn( smnsmn,                       &                
                         s11, s22, s33,                &
                         s12, s13, s23,                &
                         config_flags,                 &
@@ -92,7 +92,7 @@ SUBROUTINE calc_smnsmn( smnsmn,                       &
 
 !-----------------------------------------------------------------------------
 !
-! PURPOSE: Compute Smn*Smn = S11^2 + S22^2 + S33^2 + 2*(S12^2 + S13^2 +S23^2)
+! PURPOSE: Compute Smn*Smn = S11^2 + S22^2 + S33^2 + 2*(S12^2 + S13^2 +S23^2) 
 !
 !-----------------------------------------------------------------------------
 
@@ -100,7 +100,7 @@ SUBROUTINE calc_smnsmn( smnsmn,                       &
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( OUT ) &
   :: smnsmn        ! Smn*Smn                             (s-2)
-
+ 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( IN  ) &
   :: s11         & ! 2*deformation element 11            (s-1)
    , s22         & ! 2*deformation element 22            (s-1)
@@ -119,7 +119,7 @@ SUBROUTINE calc_smnsmn( smnsmn,                       &
      its, ite, jts, jte, kts, kte
 
 ! LOCAL VARIABLES ------------------------------------------------------------
-
+             
   REAL :: tmp
 
   INTEGER :: i, j, k, i_start, i_end, j_start, j_end, ktf
@@ -127,10 +127,10 @@ SUBROUTINE calc_smnsmn( smnsmn,                       &
 !-----------------------------------------------------------------------------
 !
 ! Set loop limits,
-! taken from /dyn_em/module_diffusion_em.F SUBROUTINE smag_km
+! taken from /dyn_em/module_diffusion_em.F SUBROUTINE smag_km   
 !
 !-----------------------------------------------------------------------------
-
+   
   ktf = min(kte,kde-1)
 
   i_start = its
@@ -151,7 +151,7 @@ SUBROUTINE calc_smnsmn( smnsmn,                       &
 
 !-----------------------------------------------------------------------------
 
-! Below the 0.25 factor divides the incoming WRF deformations,
+! Below the 0.25 factor divides the incoming WRF deformations, 
 ! which are multiplied by a factor of 2, by 2
 
   DO j=j_start,j_end
@@ -167,7 +167,7 @@ SUBROUTINE calc_smnsmn( smnsmn,                       &
   END DO
 
 ! Below the 0.125 factor accounts for the four-point averaging (0.25)
-! and divides the incoming WRF deformation elements by 2 (0.5)
+! and divides the incoming WRF deformation elements by 2 (0.5) 
 
   DO j=j_start,j_end
   DO k=kts,ktf
@@ -200,7 +200,7 @@ SUBROUTINE calc_smnsmn( smnsmn,                       &
     tmp = 0.125*( s23(i,k+1,j  ) + s23(i,k,j  ) + &
                   s23(i,k+1,j+1) + s23(i,k,j+1) )
     smnsmn(i,k,j) = smnsmn(i,k,j) + 2.0*tmp*tmp
-
+  
   END DO
   END DO
   END DO
@@ -251,7 +251,7 @@ SUBROUTINE calc_mii( m11, m22, m33,                &
 
   REAL,                                                  INTENT( IN  ) &
   :: dx          & ! grid spacing in x                   (m)
-   , dy            ! grid spacing in y                   (m)
+   , dy            ! grid spacing in y                   (m) 
 
   TYPE (grid_config_rec_type),                           INTENT( IN  ) &
   :: config_flags
@@ -265,23 +265,23 @@ SUBROUTINE calc_mii( m11, m22, m33,                &
 ! LOCAL VARIABLES ------------------------------------------------------------
 
   REAL, DIMENSION( its-1:ite+1, kms:kme, jts-1:jte+1 ) & ! sij/2, rij/2
-  :: ss11        &
-   , ss22        &
-   , ss33        &
-   , ss12        &
-   , ss13        &
-   , ss23        &
-   , rr12        &
-   , rr13        &
-   , rr23
+  :: ss11        & 
+   , ss22        & 
+   , ss33        & 
+   , ss12        & 
+   , ss13        & 
+   , ss23        &          
+   , rr12        & 
+   , rr13        & 
+   , rr23  
 
   REAL, DIMENSION( its-1:ite+1, kms:kme, jts-1:jte+1 ) & ! projected to c
-  :: ss12c       &
-   , rr12c       &
-   , ss13c       &
-   , rr13c       &
-   , ss23c       &
-   , rr23c
+  :: ss12c       & 
+   , rr12c       & 
+   , ss13c       & 
+   , rr13c       & 
+   , ss23c       & 
+   , rr23c    
 
   REAL :: delta, a, b
 
@@ -315,8 +315,8 @@ SUBROUTINE calc_mii( m11, m22, m33,                &
   is_ext = 1
   js_ext = 1
 
-  i_start = i_start - is_ext
-  j_start = j_start - js_ext
+  i_start = i_start - is_ext  
+  j_start = j_start - js_ext   
 
 !-----------------------------------------------------------------------------
 !
@@ -439,7 +439,7 @@ SUBROUTINE calc_mii( m11, m22, m33,                &
     ENDDO
     ENDDO
     ENDDO
-
+ 
   ELSE !(config_flags%sfs_opt .EQ. 2) Use TKE
 
     DO j=j_start,j_end
@@ -491,7 +491,7 @@ SUBROUTINE calc_mii( m11, m22, m33,                &
                                   )                                    &
                            )                                           &
                      )
-
+ 
 
     ENDDO
     ENDDO
@@ -529,7 +529,7 @@ SUBROUTINE calc_m12( m12,                          &
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),          INTENT( IN  ) &
   :: s11         & ! 2*deformation element 11            (s-1)
-   , s22         & ! 2*deformation element 22            (s-1)
+   , s22         & ! 2*deformation element 22            (s-1)   
    , s12         & ! 2*deformation element 12            (s-1)
    , s13         & ! 2*deformation element 13            (s-1)
    , s23         & ! 2*deformation element 23            (s-1)
@@ -556,25 +556,25 @@ SUBROUTINE calc_m12( m12,                          &
 ! LOCAL VARIABLES ------------------------------------------------------------
 
   REAL, DIMENSION( its-1:ite+1, kms:kme, jts-1:jte+1 ) & ! sij/2, rij/2
-  :: ss11        &
-   , ss22        &
-   , ss12        &
-   , ss13        &
-   , ss23        &
-   , rr12        &
-   , rr13        &
-   , rr23
+  :: ss11        & 
+   , ss22        &  
+   , ss12        &  
+   , ss13        & 
+   , ss23        & 
+   , rr12        & 
+   , rr13        & 
+   , rr23  
 
 
   REAL, DIMENSION( its-1:ite+1, kms:kme, jts-1:jte+1 ) & ! projected to d
-  :: tked        &
-   , ss11d       &
-   , ss22d       &
-   , ss13d       &
-   , ss23d       &
-   , rr13d       &
-   , rr23d       &
-   , smnsmnd
+  :: tked        & 
+   , ss11d       & 
+   , ss22d       & 
+   , ss13d       & 
+   , ss23d       & 
+   , rr13d       & 
+   , rr23d       &          
+   , smnsmnd    
 
   REAL :: delta, a, b
 
@@ -610,8 +610,8 @@ SUBROUTINE calc_m12( m12,                          &
   je_ext = 1
   ie_ext = 1
 
-  i_end = i_end + ie_ext
-  j_end = j_end + je_ext
+  i_end = i_end + ie_ext  
+  j_end = j_end + je_ext   
 
 !-----------------------------------------------------------------------------
 !
@@ -706,7 +706,7 @@ SUBROUTINE calc_m12( m12,                          &
                               + ss13d(i,k,j)*ss23d(i,k,j)           &
                             )                                       &
                        + c2*(   ss11d(i,k,j)*rr12(i,k,j)            &
-                              - ss13d(i,k,j)*rr23d(i,k,j)           &
+                              - ss13d(i,k,j)*rr23d(i,k,j)           & 
                               - ss22d(i,k,j)*rr12(i,k,j)            &
                               - ss23d(i,k,j)*rr13d(i,k,j)           &
                             )                                       &
@@ -720,7 +720,7 @@ SUBROUTINE calc_m12( m12,                          &
 
     DO j=j_start,j_end
     DO k=kts,ktf
-    DO i=i_start,i_end
+    DO i=i_start,i_end 
 
       delta = ( dx * dy / rdzw(i,k,j) )**0.33333333
       a = -1.0*ce*delta
@@ -807,24 +807,24 @@ SUBROUTINE calc_m13( m13,                          &
 ! LOCAL VARIABLES ------------------------------------------------------------
 
   REAL, DIMENSION( its-1:ite+1, kms:kme, jts-1:jte+1 ) & ! sij/2, rij/2
-  :: ss11        &
-   , ss33        &
-   , ss12        &
-   , ss13        &
-   , ss23        &
-   , rr12        &
-   , rr13        &
-   , rr23
+  :: ss11        & 
+   , ss33        &  
+   , ss12        &  
+   , ss13        & 
+   , ss23        & 
+   , rr12        & 
+   , rr13        & 
+   , rr23  
 
   REAL, DIMENSION( its-1:ite+1, kms:kme, jts-1:jte+1 ) & ! projected to e
-  :: tkee        &
-   , ss11e       &
-   , ss33e       &
-   , ss12e       &
-   , ss23e       &
-   , rr12e       &
-   , rr23e       &
-   , smnsmne
+  :: tkee        & 
+   , ss11e       & 
+   , ss33e       & 
+   , ss12e       & 
+   , ss23e       & 
+   , rr12e       & 
+   , rr23e       &          
+   , smnsmne 
 
   REAL :: delta, a, b
 
@@ -858,7 +858,7 @@ SUBROUTINE calc_m13( m13,                          &
       IF ( config_flags%periodic_x ) i_end = ite
 
   ie_ext = 1
-  i_end = i_end + ie_ext
+  i_end = i_end + ie_ext   
 
 !-----------------------------------------------------------------------------
 !
@@ -904,7 +904,7 @@ SUBROUTINE calc_m13( m13,                          &
 
     ss33e(i,k,j) = 0.5*( fnm(k)*( ss33(i  ,k  ,j  ) + ss33(i-1,k  ,j  ) ) + &
                          fnp(k)*( ss33(i  ,k-1,j  ) + ss33(i-1,k-1,j  ) ) )
-
+ 
     ss12e(i,k,j) = 0.5*( fnm(k)*( ss12(i  ,k  ,j  ) + ss12(i  ,k  ,j+1) ) + &
                          fnp(k)*( ss12(i  ,k-1,j  ) + ss12(i  ,k-1,j+1) ) )
 
@@ -1045,24 +1045,24 @@ SUBROUTINE calc_m23( m23,                          &
 ! LOCAL VARIABLES ------------------------------------------------------------
 
   REAL, DIMENSION( its-1:ite+1, kms:kme, jts-1:jte+1 ) & ! sij/2, rij/2
-  :: ss22        &
-   , ss33        &
-   , ss12        &
-   , ss13        &
-   , ss23        &
-   , rr12        &
-   , rr13        &
-   , rr23
+  :: ss22        & 
+   , ss33        &  
+   , ss12        &  
+   , ss13        & 
+   , ss23        & 
+   , rr12        & 
+   , rr13        & 
+   , rr23  
 
   REAL, DIMENSION( its-1:ite+1, kms:kme, jts-1:jte+1 ) & ! projected to f
-  :: tkef        &
-   , ss22f       &
-   , ss33f       &
-   , ss12f       &
-   , ss13f       &
-   , rr12f       &
-   , rr13f       &
-   , smnsmnf
+  :: tkef        & 
+   , ss22f       & 
+   , ss33f       & 
+   , ss12f       & 
+   , ss13f       & 
+   , rr12f       & 
+   , rr13f       &          
+   , smnsmnf    
 
   REAL :: delta, a, b
 
@@ -1096,7 +1096,7 @@ SUBROUTINE calc_m23( m23,                          &
       IF ( config_flags%periodic_x ) i_end = MIN( ite, ide-1 )
 
   je_ext = 1
-  j_end = j_end + je_ext
+  j_end = j_end + je_ext   
 
 !-----------------------------------------------------------------------------
 !
@@ -1158,7 +1158,7 @@ SUBROUTINE calc_m23( m23,                          &
   END DO
   END DO
   END DO
-
+ 
 !-----------------------------------------------------------------------------
 !
 ! Calculate M23

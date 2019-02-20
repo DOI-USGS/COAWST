@@ -2,9 +2,9 @@
       MODULE set_3dfld_mod
 #ifdef SOLVE3D
 !
-!svn $Id: set_3dfld.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: set_3dfld.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -59,7 +59,8 @@
 
       integer :: Tindex, gtype, i, it1, it2, j, k
 
-      real(r8) :: Fval, fac, fac1, fac2
+      real(dp) :: SecScale, fac, fac1, fac2
+      real(r8) :: Fval
 
 # include "set_bounds.h"
 !
@@ -84,22 +85,14 @@
       update=.TRUE.
 !
 !  Set linear, time interpolation factors. Fractional seconds are
-!  rounded to the nearest integer towards zero in the weights.
+!  rounded to the nearest milliseconds integer towards zero in the
+!  time interpolation weights.
 !
+      SecScale=1000.0_dp              ! seconds to milliseconds
       it1=3-Tindex
       it2=Tindex
-# if defined CRAY || defined SGI
-      fac1=ANINT(Tintrp(it2,ifield,ng)-time(ng))
-      fac2=ANINT(time(ng)-Tintrp(it1,ifield,ng))
-# else
-#  ifdef INWAVE_MODEL
-      fac1=ANINT((Tintrp(it2,ifield,ng)-time(ng))*100.0_r8,r8)/100.0_r8
-      fac2=ANINT((time(ng)-Tintrp(it1,ifield,ng))*100.0_r8,r8)/100.0_r8
-#  else
-      fac1=ANINT(Tintrp(it2,ifield,ng)-time(ng),r8)
-      fac2=ANINT(time(ng)-Tintrp(it1,ifield,ng),r8)
-#  endif
-# endif
+      fac1=ANINT((Tintrp(it2,ifield,ng)-time(ng))*SecScale,dp)
+      fac2=ANINT((time(ng)-Tintrp(it1,ifield,ng))*SecScale,dp)
 !
 !  Load time-invariant data. Time interpolation is not necessary.
 !
@@ -125,11 +118,11 @@
 !
 !  Time-interpolate from gridded or point data.
 !
-      ELSE IF (((fac1*fac2).ge.0.0_r8).and.                             &
-     &        ((fac1+fac2).gt.0.0_r8)) THEN
-        fac=1.0_r8/(fac1+fac2)
-        fac1=fac*fac1
-        fac2=fac*fac2
+      ELSE IF (((fac1*fac2).ge.0.0_dp).and.                             &
+     &        ((fac1+fac2).gt.0.0_dp)) THEN
+        fac=1.0_dp/(fac1+fac2)
+        fac1=fac*fac1                             ! nondimensional
+        fac2=fac*fac2                             ! nondimensional
         IF (Lgrided) THEN
           DO k=LBk,UBk
             DO j=JstrR,JendR
@@ -166,7 +159,8 @@
      &                        Finfo(3,ifield,ng), Finfo(4,ifield,ng),   &
      &                        Tintrp(it1,ifield,ng)*sec2day,            &
      &                        Tintrp(it2,ifield,ng)*sec2day,            &
-     &                        fac1*sec2day, fac2*sec2day
+     &                        fac1*sec2day/SecScale,                    &
+     &                        fac2*sec2day/SecScale
           END IF
   10      FORMAT (/,' SET_3DFLD  - current model time',                 &
      &            ' exceeds ending value for variable: ',a,             &

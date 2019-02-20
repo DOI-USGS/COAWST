@@ -34,7 +34,7 @@ contains
     USE module_timing
     IMPLICIT NONE
 
-    TYPE(domain), POINTER :: grid
+    TYPE(domain), POINTER :: grid          
     TYPE(domain), POINTER :: intermediate_grid
     TYPE(domain), POINTER :: ngrid
     INTEGER nlev, msize
@@ -171,7 +171,7 @@ contains
     USE module_comm_dm, ONLY : HALO_NMM_INT_UP_sub
     IMPLICIT NONE
 
-    TYPE(domain), POINTER :: grid
+    TYPE(domain), POINTER :: grid          
     TYPE(domain), POINTER :: cgrid
     TYPE(domain), POINTER :: ngrid
 
@@ -200,7 +200,7 @@ contains
          cips, cipe, cjps, cjpe, ckps, ckpe    )
 
 IF ( ngrid%active_this_task ) THEN
-    nlev  = ckde - ckds + 1
+    nlev  = ckde - ckds + 1 
     !write(0,*) 'IN parent_to_inter_part2'
     CALL rsl_lite_from_parent_info(pig,pjg,retval)
     DO while ( retval .eq. 1 )

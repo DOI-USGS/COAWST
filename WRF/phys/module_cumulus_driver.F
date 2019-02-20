@@ -15,7 +15,7 @@ CONTAINS
                      ,p,pi,rho                                        &
                  ! --Other arguments
                      ,itimestep,dt,dx,cudt,curr_secs,adapt_step_flag  &
-                     ,cudtacttime                                     &
+                     ,cudtacttime                                     & 
                      ,rainc,raincv,pratec,nca                         &
                      ,cldfra_dp,cldfra_sh,w_up                        & !ckay for subgrid cloud
                      ,udr_kf,ddr_kf,uer_kf,der_kf,timec_kf,kf_edrates & !kf_edrates
@@ -39,7 +39,7 @@ CONTAINS
                      ,tstar, lnterms, lnint                           & !CuP, wig 4-Oct-2006
                      ,numBins, thBinSize, rBinSize                    & !CUP, lkb 4-Nov-2009
                      ,minDeepFreq, minShallowFreq                     & !CUP, lkb 4-Nov-2009
-                     ,wCloudBase                                      & !CuP, lkb 29-April-2010
+                     ,wCloudBase                                      & !CuP, lkb 29-April-2010                
                      ,wact_cup                                        & !CuP, rce 10-may-2012
                      ,wulcl_cup                                       & !CuP, rce 10-may-2012
                      ,wup_cup                                         & !CuP, rce 15-mar-2013 !BSINGH (12/06/2013)
@@ -58,7 +58,7 @@ CONTAINS
                      !BSINGH -ENDS
 #endif
                      ,periodic_x,periodic_y                           &
-                     ,is_CAMMGMP_used                                 &
+                     ,is_CAMMGMP_used                                 & 
                      ,evapcdp3d,icwmrdp3d,rprddp3d                    & !Balwinder.Singh@pnnl.gov: Used for CAM's wet scavenging
                  ! Package selection variables
                      ,cu_physics, bl_pbl_physics, sf_sfclay_physics   &
@@ -68,10 +68,10 @@ CONTAINS
                      ,chem_opt                                        & !CuP, rce 10-may-2012
                      !BSINGH - ENDS
 #endif
-                 ! Optional moisture tracers
+                 ! Optional moisture tracers 
                      ,qv_curr, qc_curr, qr_curr                       &
-                     ,qi_curr, qs_curr, qg_curr                       &
-                     ,qv_prev, qc_prev, qr_prev                       &
+                     ,qi_curr, qs_curr, qg_curr                       & 
+                     ,qv_prev, qc_prev, qr_prev                       & 
                      ,qi_prev, qs_prev, qg_prev                       &
                  ! Optional arguments for GD scheme
                      ,apr_gr,apr_w,apr_mc,apr_st,apr_as,apr_capma     &
@@ -99,11 +99,12 @@ CONTAINS
                      ,shalconv,shal_pgcon                             &
                      ,HPBL2D,EVAP2D,HEAT2D                            &     !Kwon for SAS2010 shallow convection
                      ,DX2D, DYNMM                                     & ! For scale-aware SAS
-                     ,SCALEFUN,SCALEFUN1                              & !    scale functions
+                     ,SCALEFUN,SCALEFUN1                              & !    scale functions 
                      ,SIGMU,SIGMU1                                    & !    updraft fraction
 
                  ! Optional arguments for NSAS scheme
                      ,mp_physics                                      &
+                     ,hpbl_hold                                       &
                  ! Optional moisture and other tendencies
                      ,rqvcuten,rqccuten,rqrcuten                      &
                      ,rqicuten,rqscuten,rqgcuten                      &
@@ -112,9 +113,9 @@ CONTAINS
                      ,rucuten,rvcuten                                 &
                      ,rthcuten,rthraten,rthblten,rthften              &
                      ,mommix,store_rand                               &
-! Optional variables for tiedtke scheme - add by ZCX&YQW
+! Optional variables for tiedtke scheme - add by ZCX&YQW 
                      ,znu                                             &
-                 ! Optional moisture tracer flags
+                 ! Optional moisture tracer flags 
                      ,f_qv,f_qc,f_qr                                  &
                      ,f_qi,f_qs,f_qg                                  &
                      ,CFU1,CFD1,DFU1,EFU1,DFD1,EFD1,f_flux            &
@@ -124,6 +125,12 @@ CONTAINS
 #if ( WRF_DFI_RADAR == 1 )
                  ! Optional CAP suppress option      --- 3.2 CLEANUP TODO -- THESE SHOULD BE OPTIONAL, NOT #IF/#ENDIF
                      ,do_capsuppress                                  &
+#endif 
+#if (EM_CORE == 1)                               
+          ,QR_CU,QS_CU,NC_CU,NI_CU,NR_CU,NS_CU,CCN_CU,CU_UAF          &
+          ,alevsiz_cu,num_months,no_src_types_cu,aercu_opt,aercu_fct  &
+          ,aeromcu,aerocu,aeropcu,id,JULDAY,JULIAN,aerovar            &
+          ,EFCS,EFIS,EFSS                                             &
 #endif
                                                                       )
 !----------------------------------------------------------------------
@@ -133,10 +140,9 @@ CONTAINS
                                           ,G3SCHEME,GFSCHEME          &
                                           ,P_QC,P_QI,Param_FIRST_SCALAR &
                                           ,CAMZMSCHEME, SASSCHEME     &
-                                          ,OSASSCHEME                 &
+                                          ,OSASSCHEME                 &  
                                           ,SCALESASSCHEME             &  ! scale-sware sas
-
-                                          ,NSASSCHEME                 &
+                                          ,KSASSCHEME, NSASSCHEME     &
 #if (EM_CORE == 1)
                                           ,MSKFSCHEME                 &
                                           ,CAMMGMPSCHEME              &
@@ -144,7 +150,11 @@ CONTAINS
                                           ,num_chem                   & !CuP, rce 10-may-2012 !BSINGH - For WRFCuP scheme
 #endif
                                           ,TIEDTKESCHEME              &
-                                          ,NTIEDTKESCHEME
+                                          ,NTIEDTKESCHEME             
+
+#if ( WRFPLUS == 1 )
+   USE module_state_description, ONLY:    DUCUSCHEME
+#endif
 
 
 ! *** add new modules of schemes here
@@ -152,7 +162,7 @@ CONTAINS
    USE module_cu_kf     ,  ONLY : kfcps
    USE module_cu_bmj    ,  ONLY : bmjdrv
 #ifdef DM_PARALLEL
-   USE module_dm        , ONLY : ntasks_x,ntasks_y,local_communicator,mytask,ntasks
+   USE module_dm        , ONLY : ntasks_x,ntasks_y,local_communicator,mytask,ntasks 
 #if (EM_CORE == 1)
    USE module_comm_dm   ,  ONLY : halo_cup_g3_in_sub, halo_cup_g3_out_sub
 #endif
@@ -165,16 +175,20 @@ CONTAINS
    USE module_cu_gd     , ONLY : grelldrv
    USE module_cu_gf_wrfdrv     , ONLY : gfdrv
    USE module_cu_g3     , ONLY : g3drv,conv_grell_spread3d
+#if ( WRFPLUS == 1 )
+   USE module_cu_du     , ONLY : DUCU   
+#endif
    USE module_cu_sas    , ONLY : cu_sas
    USE module_cu_scalesas    , ONLY : cu_scalesas
 
 #if (EM_CORE == 1)
-   USE module_cu_kfcup  , ONLY : KF_CUP_CPS !wig, 3-Aug-2006 !BSINGH - For WRFCuP scheme
+   USE module_cu_kfcup  , ONLY : KF_CUP_CPS !wig, 3-Aug-2006 !BSINGH - For WRFCuP scheme 
 #endif
    USE module_cu_osas   , ONLY : cu_osas
    USE module_cu_camzm_driver, ONLY : camzm_driver
    USE module_cu_tiedtke, ONLY : cu_tiedtke
    USE module_cu_ntiedtke,ONLY : cu_ntiedtke
+   USE module_cu_ksas   , ONLY : cu_ksas
    USE module_cu_nsas   , ONLY : cu_nsas
    USE module_wrf_error , ONLY : wrf_err_message
 
@@ -233,31 +247,31 @@ CONTAINS
 !-- DT            time step (second)
 !-- CUDT          cumulus time step (minute)
 !-- curr_secs     current forecast time (seconds)
-!-- itimestep     number of time step (integer)
+!-- itimestep     number of time step (integer)   
 !-- DX            horizontal space interval (m)
 !-- rr            dry air density (kg/m^3)
 !
-!-- RUCUTEN       Zonal wind tendency due to
+!-- RUCUTEN       Zonal wind tendency due to 
 !                 cumulus scheme precipitation (m/s/s)
-!-- RVCUTEN       Meridional wind tendency due to
+!-- RVCUTEN       Meridional wind tendency due to 
 !                 cumulus scheme precipitation (m/s/s)
-!-- RTHCUTEN      Theta tendency due to
+!-- RTHCUTEN      Theta tendency due to 
 !                 cumulus scheme precipitation (K/s)
-!-- RQVCUTEN      Qv tendency due to
+!-- RQVCUTEN      Qv tendency due to 
 !                 cumulus scheme precipitation (kg/kg/s)
-!-- RQRCUTEN      Qr tendency due to
+!-- RQRCUTEN      Qr tendency due to 
 !                 cumulus scheme precipitation (kg/kg/s)
-!-- RQCCUTEN      Qc tendency due to
+!-- RQCCUTEN      Qc tendency due to 
 !                 cumulus scheme precipitation (kg/kg/s)
-!-- RQSCUTEN      Qs tendency due to
+!-- RQSCUTEN      Qs tendency due to 
 !                 cumulus scheme precipitation (kg/kg/s)
-!-- RQICUTEN      Qi tendency due to
+!-- RQICUTEN      Qi tendency due to 
 !                 cumulus scheme precipitation (kg/kg/s)
 !
 !-- RAINC         accumulated total cumulus scheme precipitation (mm)
 !-- RAINCV        time-step cumulus scheme precipitation (mm)
 !-- PRATEC        precipitiation rate from cumulus scheme (mm/s)
-!-- NCA           counter of the cloud relaxation
+!-- NCA           counter of the cloud relaxation 
 !                 time in KF cumulus scheme (integer)
 !-- u_phy         u-velocity interpolated to theta points (m/s)
 !-- v_phy         v-velocity interpolated to theta points (m/s)
@@ -300,11 +314,11 @@ CONTAINS
 !-- STEPCU        # of fundamental timesteps between convection calls
 !-- XLAND         land-sea mask (1.0 for land; 2.0 for water)
 !-- LOWLYR        index of lowest model layer above the ground
-!-- XLV0          latent heat of vaporization constant
+!-- XLV0          latent heat of vaporization constant 
 !                 used in temperature dependent formula (J/kg)
-!-- XLV1          latent heat of vaporization constant
+!-- XLV1          latent heat of vaporization constant 
 !                 used in temperature dependent formula (J/kg/K)
-!-- XLS0          latent heat of sublimation constant
+!-- XLS0          latent heat of sublimation constant 
 !                 used in temperature dependent formula (J/kg)
 !-- XLS1          latent heat of sublimation constant
 !                 used in temperature dependent formula (J/kg/K)
@@ -313,7 +327,7 @@ CONTAINS
 !-- Cp            specific heat at constant pressure (1004 J/k/kg)
 !-- rvovrd        R_v divided by R_d (dimensionless)
 !-- G             acceleration due to gravity (m/s^2)
-!-- EP_1          constant for virtual temperature
+!-- EP_1          constant for virtual temperature 
 !                 (R_v/R_d - 1) (dimensionless)
 !-- pi_phy        the exner function, (p/p0)**(R/Cp) (none unit)
 !-- evapcdp3d     Evaporation of deep convective precipitation (kg/kg/s)
@@ -372,7 +386,7 @@ CONTAINS
 #endif
 
 
-   INTEGER,      INTENT(IN   )    ::                 cu_physics
+   INTEGER,      INTENT(IN   )    ::                 cu_physics  
    INTEGER,      INTENT(IN   )    ::   STEPCU
    LOGICAL,      INTENT(IN   )    ::   warm_rain
    LOGICAL,      INTENT(IN   )    ::   is_CAMMGMP_used !BSINGH:01/31/2013: Added for CAMZM
@@ -395,7 +409,7 @@ CONTAINS
            INTENT(INOUT) ::                            taucloud, & !CuP, wig 1-Oct-2006
                                                         tactive, & !CuP, wig 1-Oct-2006
                                                      activeFrac, & !CuP, lkb 5-May-2010
-                                                     wCloudBase    !CuP, lkb 29-April-2010
+                                                     wCloudBase    !CuP, lkb 29-April-2010  
    !BSINGH - ENDS
 #endif
 
@@ -422,11 +436,11 @@ CONTAINS
          INTENT(IN ),OPTIONAL ::                         z_at_w  &
                                                       ,  cldfra  &
                                                ,  cldfra_mp_all  &
-                                                      , tke_pbl
+                                                      , tke_pbl  
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(INOUT)  ::                                       &
-                                                          W0AVG
+                                                          W0AVG 
 !ckay
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
          INTENT(INOUT)  ::                            cldfra_dp  &
@@ -464,19 +478,21 @@ CONTAINS
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
           INTENT(INOUT) ::                                RAINC  &
                                                     ,    RAINCV  &
-                                                    ,       NCA  &
-                                                    ,      HTOP  &
+                                                    ,       NCA  & 
+                                                    ,      HTOP  & 
                                                     ,      HBOT  &
                                                     ,    CLDEFI
 #if (EM_CORE == 1)
    REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: akpbl    !CuP, wig 6-Oct-2006 testing !BSINGH - For WRFCuP scheme
 #endif
-
+ 
    REAL, DIMENSION( kms:kme ), OPTIONAL, INTENT(IN   ) ::        &
                                                             znu
 
    REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT),OPTIONAL :: &
         PRATEC,MAVAIL,PBLH,PSFC,TSK,TPERT2D,UST,HFX,QFX
+   REAL, DIMENSION( ims:ime , jms:jme ),INTENT(INOUT)          :: &
+                                                      HPBL_HOLD
 
 !ckay
    REAL, DIMENSION( ims:ime , jms:jme ),                         &
@@ -484,7 +500,7 @@ CONTAINS
                                                     ,     WSTAR
 
    REAL, DIMENSION( ims:ime , jms:jme ) :: tmppratec
-
+                                                    
    INTEGER, DIMENSION( ims:ime , jms:jme ),                      &
                     INTENT(IN) ::                          KPBL
 
@@ -500,8 +516,8 @@ CONTAINS
    REAL,  INTENT(IN   ),OPTIONAL :: CUDT
    REAL,  INTENT(IN   ),OPTIONAL :: CURR_SECS
    LOGICAL,INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
-   REAL,  INTENT(INOUT ),OPTIONAL :: cudtacttime
-   REAL   :: cudt_pass, curr_secs_pass,cudtacttime_pass
+   REAL,  INTENT(INOUT ),OPTIONAL :: cudtacttime                 
+   REAL   :: cudt_pass, curr_secs_pass,cudtacttime_pass          
    LOGICAL :: adapt_step_flag_pass
 
    INTEGER,      INTENT(IN   ), OPTIONAL    ::   mp_physics
@@ -510,11 +526,11 @@ CONTAINS
    REAL, OPTIONAL,  INTENT(INOUT) :: mommix
 
 
-   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &
+   REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    
                     INTENT(IN) ::  DX2D                           ! For scale-aware SAS
-   REAL, OPTIONAL,  INTENT(IN) ::  DYNMM                          ! For scale-aware SAS
+   REAL, OPTIONAL,  INTENT(IN) ::  DYNMM                          ! For scale-aware SAS  
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,INTENT(INOUT) :: &
-                                   SCALEFUN,SCALEFUN1,SIGMU,SIGMU1
+                                   SCALEFUN,SCALEFUN1,SIGMU,SIGMU1    
 
 
    REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,               &    !Kwon for sas2010 shallow convection
@@ -528,7 +544,7 @@ CONTAINS
    INTEGER, DIMENSION( ims:ime, jms:jme ),                       &
          OPTIONAL, INTENT(INOUT) ::                              &
      k22_shallow,kbcon_shallow,ktop_shallow,ideep2d,jt2d,maxg2d, &
-     lengath2d
+     lengath2d 
    INTEGER, DIMENSION( ims:ime, jms:jme ),                       &
          OPTIONAL, INTENT(  OUT) :: ktop_deep
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
@@ -536,8 +552,8 @@ CONTAINS
                       ! optional moisture tracers
                       ! 2 time levels; if only one then use CURR
                       qv_curr, qc_curr, qr_curr                  &
-                     ,qi_curr, qs_curr, qg_curr                  &
-                     ,qv_prev, qc_prev, qr_prev                  &
+                     ,qi_curr, qs_curr, qg_curr                  & 
+                     ,qv_prev, qc_prev, qr_prev                  & 
                      ,qi_prev, qs_prev, qg_prev                  &
                       ! optional moisture and other tendencies
                      ,rqvcuten,rqccuten,rqrcuten                 &
@@ -573,11 +589,22 @@ CONTAINS
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
                   INTENT(INOUT) ::                               &
                   QC_CU,QI_CU
+                  
+#if (EM_CORE == 1)
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                 &
+                  INTENT(INOUT) ::                               &
+                  QR_CU,QS_CU,                                   &
+                  NC_CU,NI_CU,NR_CU,NS_CU,CCN_CU,                &
+                  EFCS,EFIS,EFSS
 
+   REAL, DIMENSION( ims:ime, jms:jme ),                          &
+                  INTENT(INOUT) ::                               &
+                  CU_UAF
+#endif
+                  
    REAL, DIMENSION( ims:ime , jms:jme , 1:ensdim ),              &
           OPTIONAL,                                              &
           INTENT(INOUT) ::                       XF_ENS, PR_ENS
-
 
 #if (EM_CORE == 1)
 !BSINGH - For WRFCuP Scheme
@@ -619,8 +646,8 @@ CONTAINS
             INTENT(OUT) ::                              cupflag    !CuP, wig 9-Oct-2006
 
    REAL,  INTENT(IN   ) :: thBinSize, rBinSize
-   INTEGER, INTENT(IN ) :: numBins
-   REAL,  INTENT(IN   ) :: minDeepFreq, minShallowFreq
+   INTEGER, INTENT(IN ) :: numBins 
+   REAL,  INTENT(IN   ) :: minDeepFreq, minShallowFreq 
 !BSINGH - ENDS
 #endif
 
@@ -662,7 +689,7 @@ CONTAINS
 
 #if ( WRF_DFI_RADAR == 1 )
 !
-!  option of cap suppress:
+!  option of cap suppress: 
 !        do_capsuppress = 1   do
 !        do_capsuppress = other   don't
 !
@@ -677,6 +704,20 @@ CONTAINS
    logical :: l_flux
    LOGICAL :: decided , run_param , doing_adapt_dt
 
+#if (EM_CORE == 1)
+   INTEGER,  INTENT(IN)        :: alevsiz_cu, num_months, no_src_types_cu 
+   INTEGER,  INTENT(IN)        :: aercu_opt  
+   REAL,     INTENT(IN)        :: aercu_fct  
+   REAL, DIMENSION( ims:ime, alevsiz_cu, jms:jme, num_months, no_src_types_cu) :: aeromcu 
+   REAL, DIMENSION( ims:ime, alevsiz_cu, jms:jme, no_src_types_cu)   :: aerotcu
+   REAL, DIMENSION( ims:ime, alevsiz_cu, jms:jme, num_months)        :: aeropcu 
+   REAL, DIMENSION( ims:ime, alevsiz_cu, jms:jme )                   :: aeroptcu 
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme, no_src_types_cu)      :: aerocu 
+   REAL, DIMENSION( ims:ime, kms:kme, jms:jme)                       :: aerovar 
+   REAL, INTENT(IN)    :: JULIAN        
+   INTEGER, INTENT(IN) :: id 
+   INTEGER, INTENT(IN) :: JULDAY
+#endif
 
 !-----------------------------------------------------------------
     pattern_spp_conv=0.
@@ -688,7 +729,7 @@ CONTAINS
    if (present(f_flux)) l_flux=f_flux
    if (.not. PRESENT(CURR_SECS)) then
       curr_secs_pass = -1
-   else
+   else 
       curr_secs_pass = curr_secs
    endif
 
@@ -817,7 +858,7 @@ CONTAINS
       endif
 
       IF ( cu_physics == G3SCHEME .OR.  cu_physics == GFSCHEME .OR.     &
-           cu_physics == KFETASCHEME .OR. cu_physics == MSKFSCHEME ) THEN
+           cu_physics == KFETASCHEME .OR. cu_physics == MSKFSCHEME) THEN 
 #ifdef DM_PARALLEL
 #include "HALO_CUP_G3_IN.inc"
 #endif
@@ -837,7 +878,7 @@ CONTAINS
         ite = i_end(ij)
         jts = j_start(ij)
         jte = j_end(ij)
-
+        
 #if (EM_CORE == 1)
         !BSINGH - For WRFCuP scheme
         !wig, beg: testing for kpbl to get output to wrfout since kpbl won't output as an integer
@@ -848,8 +889,40 @@ CONTAINS
         end do
         !wig, end.
         !BSINGH - ENDS
-#endif
 
+        !The following is for introducing aerosol data into the MSKF scheme !
+        !If the flag is set, the aerosol data will be interpolated in       !
+        !time and then pressure to the current state.
+        IF ( aercu_opt .GT. 0 ) THEN
+          IF ( aercu_opt .GT. 0 .AND. id .EQ. 1 ) THEN
+            call aer_time_int_cu(julday,julian,aeromcu,aerotcu,alevsiz_cu,num_months,no_src_types_cu,&
+                                  ids , ide , jds , jde , kds , kde ,     &
+                                  ims , ime , jms , jme , kms , kme ,     &
+                                  its , ite , jts , jte , kts , kte )
+
+            ! INTERPOLATE PRESSURE IN TIME
+            call aer_time_int_cu(julday,julian,aeropcu,aeroptcu,alevsiz_cu,num_months,1, &
+                                  ids , ide , jds , jde , kds , kde ,     &
+                                  ims , ime , jms , jme , kms , kme ,     &
+                                  its , ite , jts , jte , kts , kte )
+
+            call aer_p_int_cu(p ,aeroptcu, alevsiz_cu, aerotcu, aerocu, no_src_types_cu, p8w, &
+                                   ids , ide , jds , jde , kds , kde ,     &
+                                   ims , ime , jms , jme , kms , kme ,     &
+                                   its , ite , jts , jte , kts , kte )
+
+          do j=jts,jte
+             do k=kts,kte
+                do i=its,ite
+                   aerovar(i,k,j)=aerocu(i,k,j,2)
+                end do
+              end do
+          end do
+
+          ENDIF
+        ENDIF
+
+#endif
 
    cps_select: SELECT CASE(cu_physics)
 
@@ -883,8 +956,8 @@ CONTAINS
                ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                   &
                ,F_QI=f_qi,F_QS=f_qs                             &
                ,UDR_KF=udr_kf,DDR_KF=ddr_kf                     & !kf_edrates
-               ,UER_KF=uer_kf,DER_KF=der_kf                     &
-               ,TIMEC_KF=timec_kf,KF_EDRATES=kf_edrates         &
+               ,UER_KF=uer_kf,DER_KF=der_kf                     & 
+               ,TIMEC_KF=timec_kf,KF_EDRATES=kf_edrates         & 
                                                                 )
 
      CASE (BMJSCHEME)
@@ -940,12 +1013,12 @@ CONTAINS
                ,CLDFRA_SH_KF=cldfra_sh                          &
                ,QC_KF=QC_CU,QI_KF=QI_CU                         &
                ,UDR_KF=udr_kf,DDR_KF=ddr_kf                     & !kf_edrates
-               ,UER_KF=uer_kf,DER_KF=der_kf                     &
-               ,TIMEC_KF=timec_kf,KF_EDRATES=kf_edrates         )
-
+               ,UER_KF=uer_kf,DER_KF=der_kf                     & 
+               ,TIMEC_KF=timec_kf,KF_EDRATES=kf_edrates         ) 
 #if (EM_CORE==1)
      CASE (MSKFSCHEME)
-          CALL wrf_debug(100,'in mskf_cps')
+          CALL wrf_debug(100,'in mskf_cps_mp')
+      
           CALL MSKF_CPS(                                        &
                 U=u ,V=v ,TH=th ,T=t ,W=w ,RHO=rho              &
                ,CUDT=cudt_pass                                  &
@@ -975,11 +1048,16 @@ CONTAINS
                ,CLDFRA_DP_KF=cldfra_dp                          & ! ckay for sub-grid cloud
                ,CLDFRA_SH_KF=cldfra_sh                          &
                ,W_UP=w_up                                       & ! ckay
-               ,QC_KF=QC_CU,QI_KF=QI_CU                         &
+               ,QC_KF=QC_CU,QI_KF=QI_CU,QR_KF=QR_CU,QS_KF=QS_CU &
+               ,NC_KF=NC_CU,NI_KF=NI_CU,NR_KF=NR_CU,NS_KF=NS_CU &
+               ,CCN_KF=CCN_CU,AINC_FRAC=CU_UAF                  &
                ,UDR_KF=udr_kf,DDR_KF=ddr_kf                     & !kf_edrates
-               ,UER_KF=uer_kf,DER_KF=der_kf                     &
-               ,TIMEC_KF=timec_kf,KF_EDRATES=kf_edrates         &
-               ,ZOL=zol,WSTAR=wstar,UST=ust,PBLH=pblh           )  !ckay
+               ,UER_KF=uer_kf,DER_KF=der_kf                     & 
+               ,TIMEC_KF=timec_kf,KF_EDRATES=kf_edrates         & 
+               ,ZOL=zol,WSTAR=wstar,UST=ust,PBLH=pblh           & !ckay
+               ,AEROCU=aerocu,NO_SRC_TYPES_CU=no_src_types_cu   &
+               ,AERCU_FCT=aercu_fct,AERCU_OPT=aercu_opt        &
+               ,EFCS=EFCS,EFIS=EFIS,EFSS=EFSS)
 #endif
 
      CASE (GDSCHEME)
@@ -1024,7 +1102,7 @@ CONTAINS
           CALL wrf_debug(200,'back from grelldrv')
 
      CASE (SASSCHEME)
-
+                                                                                                                                           
           IF ( adapt_step_flag_pass ) THEN
             WRITE( wrf_err_message , * ) 'The SAS cumulus option will not work properly with an adaptive time step'
             CALL wrf_error_fatal ( wrf_err_message )
@@ -1077,7 +1155,7 @@ CONTAINS
                ,shalconv=shalconv,shal_pgcon=shal_pgcon         &
                ,hpbl2d=hpbl2d,evap2d=evap2d,heat2d=heat2d       &
                ,P_QI=p_qi,P_FIRST_SCALAR=param_first_scalar     &
-               ,DX2D=dx2d,DY=dynmm                              & ! 2 new
+               ,DX2D=dx2d,DY=dynmm                              & ! 2 new 
                ,SCALEFUN=SCALEFUN,SCALEFUN1=SCALEFUN1           & ! CNV scale functions
                ,SIGMU=SIGMU,SIGMU1=SIGMU1                       & ! CNV updraft fractions
                ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
@@ -1085,7 +1163,7 @@ CONTAINS
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                                                                 )
      CASE (OSASSCHEME)
-
+                                                                                                                                           
           IF ( adapt_step_flag_pass ) THEN
             WRITE( wrf_err_message , * ) 'The SAS cumulus option will not work properly with an adaptive time step'
             CALL wrf_error_fatal ( wrf_err_message )
@@ -1169,7 +1247,7 @@ CONTAINS
                  ! Optional CAP suppress option
               ,do_capsuppress=do_capsuppress                    &
               ,cap_suppress_loc=cap_suppress_loc                &
-#endif
+#endif                                 
                                                                 )
      CASE (GFSCHEME)
           CALL wrf_debug(100,'in grelldrv')
@@ -1204,7 +1282,7 @@ CONTAINS
                ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                ,PERIODIC_X=periodic_x,PERIODIC_Y=periodic_y     &
               ! optionals
-#if (NMM_CORE == 1 )
+#if (NMM_CORE == 1 ) 
                ,RTHCUTEN=RTHCUTEN ,RTHFTEN=forcet               &
                ,RTHRATEN=RTHRATEN                               &
                ,RQICUTEN=RQICUTEN ,RQVFTEN=forceq               &
@@ -1220,7 +1298,7 @@ CONTAINS
                  ! Optional CAP suppress option
                ,do_capsuppress=do_capsuppress                   &
                ,cap_suppress_loc=cap_suppress_loc               &
-#endif
+#endif 
                                                                 )
      CASE (CAMZMSCHEME)
           IF (PRESENT(z_at_w) .AND. PRESENT(mavail)                 &
@@ -1238,7 +1316,7 @@ CONTAINS
                ,SF_SFCLAY_PHYSICS=sf_sfclay_physics                 &
                ,TH=th, T_PHY=t, TSK=tsk, TKE_PBL=tke_pbl            &
                ,UST=ust, QV=qv_curr, QC=qc_curr, QI=qi_curr         &
-               ,MAVAIL=mavail,KPBL=kpbl, PBLH=pblh, XLAND=xland     &
+               ,MAVAIL=mavail,KPBL=kpbl, PBLH=pblh, XLAND=xland     & 
                ,Z=z, Z_AT_W=z_at_w                                  &
                ,DZ8W=dz8w, HT=ht                                    &
                ,P=p, P8W=p8w, PI_PHY=pi, PSFC=psfc                  &
@@ -1249,7 +1327,7 @@ CONTAINS
                ,DX=dx, DT=dt, STEPCU=stepcu, CUDT=cudt              &
                ,CURR_SECS=curr_secs                                 &
                ,ADAPT_STEP_FLAG=adapt_step_flag                     &
-               ,CUDTACTTIME=cudtacttime_pass                        &
+               ,CUDTACTTIME=cudtacttime_pass                        & 
                ,CAPE_OUT=cape                                       &
                ,MU_OUT=zmmu, MD_OUT=zmmd                            &
                ,ZMDT=zmdt, ZMDQ=zmdq, DLF_OUT=dlf, RLIQ_OUT=rliq    &
@@ -1274,11 +1352,10 @@ CONTAINS
                ,EU3D=eu3d, MD3D=md3d, MU3D=mu3d,DSUBCLD2D=dsubcld2d &
                ,IDEEP2D=ideep2d, JT2D=jt2d, MAXG2D=maxg2d           &
                ,LENGATH2D=lengath2d                                 )
-        ELSE
+          ELSE
              WRITE( wrf_err_message , * ) 'Insufficient arguments to call CAMZM cu scheme'
              CALL wrf_error_fatal ( wrf_err_message )
           ENDIF
-
 ! TIEDTKE SCHEME - ZCX&YQW (U of Hawaii)
      CASE (TIEDTKESCHEME)
 
@@ -1344,6 +1421,42 @@ CONTAINS
           CALL wrf_error_fatal('Lacking arguments for CU_NTIEDTKE in cumulus driver')
         ENDIF
 
+! New KIM SAS SCHEME - (KIAPS, South Korea)
+     CASE (KSASSCHEME)
+        IF ( PRESENT ( QFX ) .AND. PRESENT( HFX ) ) THEN
+          CALL wrf_debug(100,'in ksas_cps')
+          CALL CU_KSAS(                                         &
+                DT=dt,DX=dx,P3DI=p8w,P3D=p,PI3D=pi,             &
+                QC3D=QC_CURR,QI3D=QI_CURR,RHO3D=rho,            &
+                ITIMESTEP=itimestep,STEPCU=STEPCU,              &
+                HBOT=HBOT,HTOP=HTOP,                            &
+                CU_ACT_FLAG=CU_ACT_FLAG,                        &
+                RTHCUTEN=RTHCUTEN,RQVCUTEN=RQVCUTEN,            &
+                RQCCUTEN=RQCCUTEN,RQICUTEN=RQICUTEN,            &
+                RUCUTEN=RUCUTEN,RVCUTEN=RVCUTEN,                &
+                QV3D=QV_CURR,T3D=t,                             &
+                RAINCV=RAINCV,PRATEC=tmpPRATEC,                 &
+                XLAND=XLAND,DZ8W=dz8w,W=w,U3D=u,V3D=v,          &
+                HPBL=pblh,HFX=hfx,QFX=qfx,                      & 
+                HPBL_HOLD=hpbl_hold,                            &
+                ZNU=znu,                                        &
+                MP_PHYSICS=mp_physics,                          & 
+                DX_FACTOR_NSAS=dx_factor_nsas,                  & 
+                pgcon=pgcon,                                    &
+                P_QC=p_qc,P_QI=p_qi,                            &
+                P_FIRST_SCALAR=param_first_scalar               &
+               ,CP=cp,CLIQ=cliq,CPV=cpv,G=g,XLV=xlv,R_D=r_d     &
+               ,R_V=r_v,EP_1=ep_1,EP_2=EP_2                     &
+               ,CICE=cice,XLS=xls,PSAT=psat                     &
+               ,F_QI=f_qi,F_QC=f_qc                             & 
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+                                                                )
+        ELSE
+          CALL wrf_error_fatal('Lacking arguments for CU_KSAS in cumulus driver')
+        ENDIF
+
 ! New GFS SAS SCHEME - (Yonsei Univ., South Korea)
      CASE (NSASSCHEME)
         IF ( PRESENT ( QFX ) .AND. PRESENT( HFX ) ) THEN
@@ -1360,28 +1473,29 @@ CONTAINS
                 QV3D=QV_CURR,T3D=t,                             &
                 RAINCV=RAINCV,PRATEC=tmpPRATEC,                 &
                 XLAND=XLAND,DZ8W=dz8w,W=w,U3D=u,V3D=v,          &
-                HPBL=pblh,HFX=hfx,QFX=qfx,                      &
-                MP_PHYSICS=mp_physics,                          &
-                DX_FACTOR_NSAS=dx_factor_nsas,                  &
+                HPBL=pblh,HFX=hfx,QFX=qfx,                      & 
+                MP_PHYSICS=mp_physics,                          & 
+                DX_FACTOR_NSAS=dx_factor_nsas,                  & 
                 pgcon=pgcon,                                    &
-                P_QC=p_qc,P_QI=p_qi,                            &
+               P_QC=p_qc,P_QI=p_qi,                            &
                 P_FIRST_SCALAR=param_first_scalar               &
                ,CP=cp,CLIQ=cliq,CPV=cpv,G=g,XLV=xlv,R_D=r_d     &
                ,R_V=r_v,EP_1=ep_1,EP_2=EP_2                     &
                ,CICE=cice,XLS=xls,PSAT=psat                     &
-               ,F_QI=f_qi,F_QC=f_qc                             &
-               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
+               ,F_QI=f_qi,F_QC=f_qc                             & 
+              ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &
                ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &
-               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
+              ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &
                                                                 )
         ELSE
           CALL wrf_error_fatal('Lacking arguments for CU_NSAS in cumulus driver')
         ENDIF
+
 #if (EM_CORE == 1)
         !BSINGH -  For WRFCuP scheme
      CASE (KFCUPSCHEME)
-
-        CALL wrf_debug(100,'in cu_kfcup')
+        
+        CALL wrf_debug(100,'in cu_kfcup')        
         CALL KF_CUP_CPS( GRID_ID=grid%grid_id                        & !rce 10-may-2012 add grid%id
              ,U=u ,V=v ,TH=th ,T=t ,W=w ,RHO=rho                &
              ,RAINCV=raincv,NCA=nca ,DZ8W=dz8w,XLAND=xland      & !LD add PRATEC 21-Apr-2011
@@ -1442,8 +1556,8 @@ CONTAINS
              ,F_QV=f_qv,F_QC=f_qc,F_QR=f_qr                     &
              ,F_QI=f_qi,F_QS=f_qs                               &
              )
-
-
+        
+        
         DO J = jts,jte
            DO I=its,ite
               tmppratec(i,j)=raincv(i,j)/DT      !!!!!byang, move the pratec after calling cup
@@ -1451,8 +1565,38 @@ CONTAINS
         end do
         !BSINGH -ENDS
 #endif
+#if ( WRFPLUS == 1 )
+! this scheme is for WRFPlus only
+!----------------------------
+     CASE (DUCUSCHEME)
+          CALL wrf_debug(100,'in ducu')
 
-     CASE DEFAULT
+          CALL DUCU(                                            &
+              ! order independent arguments
+                DT=dt ,KTAU=itimestep ,DX=dx                    &    !
+               ,RHO=rho                                         &    !
+               ,U=u ,V=v ,TH=th ,T=t ,W=w                       &    !
+               ,PCPS=p ,PI=pi                                   &    !
+               ,XLV=xlv0                                        &    !  or XLV=xlv1
+               ,RAINCV=raincv, NCA=nca, PRATEC=tmppratec        &
+               ,DZ8W=dz8w, Z= z                                 &    !  
+               ,W0AVG=w0avg                                     &    !
+               ,CP=cp ,RV=R_v, RD=R_d, G=g                      &    !  RD, RV
+               ,EP2=ep_2                                        &    !  only EP2 needed
+               ,SVP1=svp1 ,SVP2=svp2 ,SVP3=svp3 ,SVPT0=svpt0    &    !  
+               ,STEPCU=stepcu                                   &    !
+               ,CU_ACT_FLAG=cu_act_flag                         &    !
+               ,WARM_RAIN=warm_rain                             &    !
+               ,CUTOP=htop, CUBOT=hbot                          &    ! from other scheme
+               ,QV=qv_curr                                      &    !
+               ,IDS=ids,IDE=ide,JDS=jds,JDE=jde,KDS=kds,KDE=kde &    !
+               ,IMS=ims,IME=ime,JMS=jms,JME=jme,KMS=kms,KME=kme &    !
+               ,ITS=its,ITE=ite,JTS=jts,JTE=jte,KTS=kts,KTE=kte &    !
+              ! optionals
+               ,RTHCUTEN=rthcuten ,RQVCUTEN=rqvcuten            )    !
+#endif
+
+     CASE DEFAULT 
 
          WRITE( wrf_err_message , * ) 'The cumulus option does not exist: cu_physics = ', cu_physics
          CALL wrf_error_fatal ( wrf_err_message )
@@ -1507,5 +1651,267 @@ CONTAINS
    CALL wrf_debug(200,'returning from cumulus_driver')
 
    END SUBROUTINE cumulus_driver
+
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!                    PSH/TWG 06/10/16                       !!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+! AER_TIME_INT and AER_P_INT were copied from the radiation driver code   !
+! for interpolating aerosol data in time and pressure. They have been     !
+! modified slightly here for aerosol data input to the MSKF scheme.       !
+
+SUBROUTINE aer_time_int_cu(julday,julian,aerodm,aerodt,levsiz,num_months,no_src,&
+                              ids , ide , jds , jde , kds , kde ,     &
+                              ims , ime , jms , jme , kms , kme ,     &
+                              its , ite , jts , jte , kts , kte )
+
+! adapted from oznint from CAM module
+!  input: aerodm - read from physics_init
+! output: aerodt - time interpolated
+
+!  USE module_ra_cam_support, ONLY : getfactors
+
+   IMPLICIT NONE
+
+   INTEGER,    INTENT(IN) ::           ids,ide, jds,jde, kds,kde, &
+                                       ims,ime, jms,jme, kms,kme, &
+                                       its,ite, jts,jte, kts,kte
+
+   INTEGER,      INTENT(IN   )    ::   levsiz, num_months, no_src
+
+   REAL,  DIMENSION( ims:ime, levsiz, jms:jme, num_months, no_src ),      &
+          INTENT(IN   ) ::                                  aerodm
+
+   INTEGER, INTENT(IN )      ::        JULDAY
+   REAL,    INTENT(IN )      ::        JULIAN
+
+   REAL,  DIMENSION( ims:ime, levsiz, jms:jme, no_src ),      &
+          INTENT(OUT  ) ::                                  aerodt
+
+   !Local
+   REAL      :: intJULIAN
+   integer   :: np1,np,nm,m,k,i,j,s
+   integer   :: IJUL
+   integer, dimension(12) ::  date_oz
+   data date_oz/16, 45, 75, 105, 136, 166, 197, 228, 258, 289, 319, 350/
+   real, parameter :: daysperyear = 365.  ! number of days in a year
+   real      :: cdayozp, cdayozm
+   real      :: fact1, fact2, deltat
+   logical   :: finddate
+   logical   :: ozncyc
+   CHARACTER(LEN=256) :: msgstr
+
+   ozncyc = .true.
+   ! JULIAN starts from 0.0 at 0Z on 1 Jan.
+   intJULIAN = JULIAN + 1.0       ! offset by one day
+! jan 1st 00z is julian=1.0 here
+   IJUL=INT(intJULIAN)
+!  Note that following will drift.
+!    Need to use actual month/day info to compute julian.
+   intJULIAN=intJULIAN-FLOAT(IJUL)
+   IJUL=MOD(IJUL,365)
+   IF(IJUL.EQ.0)IJUL=365
+   intJULIAN=intJULIAN+IJUL
+   np1=1
+   finddate=.false.
+
+!  do m=1,num_months
+   do m=1,12
+      if(date_oz(m).gt.intjulian.and..not.finddate) then
+        np1=m
+        finddate=.true.
+      endif
+   enddo
+   cdayozp=date_oz(np1)
+
+   if(np1.gt.1) then
+      cdayozm=date_oz(np1-1)
+      np=np1
+      nm=np-1
+   else
+      cdayozm=date_oz(12)
+      np=np1
+      nm=12
+   endif
+
+!  call getfactors(ozncyc,np1, cdayozm, cdayozp,intjulian, &
+!                   fact1, fact2)
+!
+! Determine time interpolation factors.  Account for December-January
+! interpolation if dataset is being cycled yearly.
+!
+   if (ozncyc .and. np1 == 1) then                      ! Dec-Jan interpolation
+      deltat = cdayozp + daysperyear - cdayozm
+      if (intjulian > cdayozp) then                     ! We are in December
+         fact1 = (cdayozp + daysperyear - intjulian)/deltat
+         fact2 = (intjulian - cdayozm)/deltat
+      else                                              ! We are in January
+         fact1 = (cdayozp - intjulian)/deltat
+         fact2 = (intjulian + daysperyear - cdayozm)/deltat
+      end if
+   else
+      deltat = cdayozp - cdayozm
+      fact1 = (cdayozp - intjulian)/deltat
+      fact2 = (intjulian - cdayozm)/deltat
+   end if
+!
+! Time interpolation.
+!
+      do s=1, no_src
+        do j=jts,jte
+          do k=1,levsiz
+            do i=its,ite
+            aerodt(i,k,j,s) = aerodm(i,k,j,nm,s)*fact1 + aerodm(i,k,j,np,s)*fact2
+            end do
+          end do
+        end do
+      end do
+
+END SUBROUTINE aer_time_int_cu
+
+
+SUBROUTINE aer_p_int_cu(p ,pin_cu, levsiz_cu, aerotcu, aerocu, no_src_cu, pf, &
+                     ids , ide , jds , jde , kds , kde ,     &
+                     ims , ime , jms , jme , kms , kme ,     &
+                     its , ite , jts , jte , kts , kte )
+
+!-----------------------------------------------------------------------
+!
+! Purpose: Interpolate aerosol from current time-interpolated values to model
+! levels
+!
+! Method: Use pressure values to determine interpolation levels
+!
+! Author: Bruce Briegleb
+! WW: Adapted for general use
+! PSH: Modified to not calculate totaod 
+! 
+!   p:  model level pressure at half levels (Pa, bottom-up)
+!   pf: model level pressure at full levles (Pa, bottom-up)
+!
+!--------------------------------------------------------------------------
+   implicit none
+!--------------------------------------------------------------------------
+!
+! Arguments
+!
+
+   INTEGER,    INTENT(IN) ::           ids,ide, jds,jde, kds,kde, &
+                                       ims,ime, jms,jme, kms,kme, &
+                                       its,ite, jts,jte, kts,kte
+
+   integer, intent(in) :: levsiz_cu              ! number of aerosol layers
+   integer, intent(in) :: no_src_cu              ! types of aerosol 
+
+   real, intent(in) :: p(ims:ime,kms:kme,jms:jme)
+   real, intent(in) :: pf(ims:ime,kms:kme,jms:jme)
+   real, intent(in) :: pin_cu(ims:ime,levsiz_cu,jms:jme)        ! aerosol data level pressures (mks, top-down)
+   real, intent(in) :: aerotcu(ims:ime,levsiz_cu,jms:jme,no_src_cu) ! aerosol optical depth
+   real, intent(out) :: aerocu(ims:ime,kms:kme,jms:jme,no_src_cu+1) ! aerosol optical depth
+!
+! local storage
+!
+   real    pmid(its:ite,kts:kte)
+   integer i,j                 ! longitude index
+   integer k, kk, kkstart, kout! level indices
+   integer kupper(its:ite)     ! Level indices for interpolation
+   integer kount               ! Counter
+   integer ncol, pver, s
+
+   real    dpu                 ! upper level pressure difference
+   real    dpl                 ! lower level pressure difference
+
+   ncol = ite - its + 1
+   pver = kte - kts + 1
+
+   do s=1,no_src_cu
+   do j=jts,jte
+!
+! Initialize index array
+!
+   do i=its, ite
+      kupper(i) = 1
+   end do
+!
+! The pressure from incoming data is in hPa and top-down, 
+!     while model pressure is in Pa and bottom-up
+!
+      do k = kts,kte
+         kk = kte - k + kts
+      do i = its,ite
+         pmid(i,kk) = p(i,k,j)!*0.01
+      enddo
+      enddo
+
+   do k=1,pver
+
+      kout = pver - k + 1
+
+!
+! Top level we need to start looking is the top level for the previous k
+! for all longitude points
+!
+      kkstart = levsiz_cu
+      do i=its,ite
+         kkstart = min0(kkstart,kupper(i))
+      end do
+      kount = 0
+
+!
+! Store level indices for interpolation
+!
+      do kk=kkstart,levsiz_cu-1
+         do i=its,ite
+            if (pin_cu(i,kk,j).lt.pmid(i,k) .and. pmid(i,k).le.pin_cu(i,kk+1,j)) then
+               kupper(i) = kk
+               kount = kount + 1
+            end if
+         end do
+!
+! If all indices for this level have been found, do the interpolation and
+! go to the next level
+!
+         if (kount.eq.ncol) then
+            do i=its,ite
+               dpu = pmid(i,k) - pin_cu(i,kupper(i),j)
+               dpl = pin_cu(i,kupper(i)+1,j) - pmid(i,k)
+               aerocu(i,kout,j,s) = (aerotcu(i,kupper(i),j,s)*dpl + &
+                             aerotcu(i,kupper(i)+1,j,s)*dpu)/(dpl + dpu)
+            end do
+            goto 35
+         end if
+      end do
+
+!
+! If we've fallen through the kk=1,levsiz_cu-1 loop, we cannot interpolate and
+! must extrapolate from the bottom or top aerosol data level for at least some
+! of the longitude points.
+!
+      do i=its,ite
+         if (pmid(i,k) .lt. pin_cu(i,1,j)) then
+            aerocu(i,kout,j,s) = aerotcu(i,1,j,s)*pmid(i,k)/pin_cu(i,1,j)
+         else if (pmid(i,k) .gt. pin_cu(i,levsiz_cu,j)) then
+            aerocu(i,kout,j,s) = aerotcu(i,levsiz_cu,j,s)
+         else
+            dpu = pmid(i,k) - pin_cu(i,kupper(i),j)
+            dpl = pin_cu(i,kupper(i)+1,j) - pmid(i,k)
+            aerocu(i,kout,j,s) = (aerotcu(i,kupper(i),j,s)*dpl + &
+                          aerotcu(i,kupper(i)+1,j,s)*dpu)/(dpl + dpu)
+         end if
+      end do
+
+      if (kount.gt.ncol) then
+         call wrf_error_fatal ('AER_P_INT: Bad aerosol data: non-monotonicity suspected')
+      end if
+35    continue
+
+   end do
+   end do
+   end do
+
+   return
+END SUBROUTINE aer_p_int_cu
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!!!!!!!!             END    PSH/TWG 06/10/16   EDITS               !!!!!!!!
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 END MODULE module_cumulus_driver

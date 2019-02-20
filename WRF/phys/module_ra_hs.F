@@ -16,7 +16,7 @@ CONTAINS
 !------------------------------------------------------------------
    INTEGER,    INTENT(IN   ) ::        ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
-                                       its,ite, jts,jte, kts,kte
+                                       its,ite, jts,jte, kts,kte  
 
    REAL, INTENT(IN    )      ::        DEGRAD
 
@@ -32,7 +32,7 @@ CONTAINS
                                                           pi_phy, &
                                                            t_phy, &
                                                              t8w, &
-                                                         rho_phy
+                                                         rho_phy  
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          INTENT(IN ) ::                                     xlat
 
@@ -61,7 +61,7 @@ CONTAINS
 
       ttmp = 315.0 - delty*(sin(xlat(i,j)*degrad))**2.0- &
                delthez*alog(p_phy(i,k,j)/p0)*(cos(xlat(i,j)*degrad))**2.0
-
+               
       teq=max(200.0,ttmp*(p_phy(i,k,j)/p0)**rcp)
 
       sig=p_phy(i,k,j)/p8w(i,1,j)
@@ -75,7 +75,7 @@ CONTAINS
 
    ENDDO i_loop
    ENDDO k_loop
-   ENDDO j_loop
+   ENDDO j_loop                                          
 
    END SUBROUTINE HSRAD
 

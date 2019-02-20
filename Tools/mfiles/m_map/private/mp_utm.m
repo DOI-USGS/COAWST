@@ -19,7 +19,7 @@ function  [X,Y,vals,labI]=mp_utm(optn,varargin)
 %
 
 % 10/Dec/98 - PL added various ellipsoids.
-
+% 17/May/12 - clarified hemisphere setting
 
 global MAP_PROJECTION MAP_VAR_LIST
 
@@ -43,9 +43,9 @@ MAP_ELLIP = struct ( 'normal', [1.0, 0], ...
 
 name={'UTM'};
 
-switch optn,
+switch optn
 
-  case 'name',
+  case 'name'
 
     X=name;
 
@@ -57,13 +57,13 @@ switch optn,
 	'     <,''lon<gitude>'',[min max]>',...
 	'     <,''lat<itude>'',[min max]>',...
 	'     <,''zon<e>'',value>',...
-	'     <,''hem<isphere>'',value>',...
+	'     <,''hem<isphere>'',[1|0] (0 for N)>',...
 	'     <,''ell<ipsoid>'', one of',...
     reshape(sprintf('         %6s',m_names{:}),15,length(m_names))',...
         '                               >',...
 	'     <,''rec<tbox>'', ( ''on'' | ''off'' )>'});
 
-  case 'get',
+  case 'get'
 
     X=char([' Projection: ' MAP_PROJECTION.name '  (function: ' ...
 	  MAP_PROJECTION.routine ')'],...
@@ -75,7 +75,7 @@ switch optn,
 	[' Rectangular border: ' MAP_VAR_LIST.rectbox ]);
 
 
-  case 'initialize',
+  case 'initialize'
 
     MAP_VAR_LIST=[];
     MAP_PROJECTION.name=varargin{1};
@@ -87,25 +87,25 @@ switch optn,
     MAP_VAR_LIST.rectbox='off';
     k=2;
 
-    while k<length(varargin),   
-      switch varargin{k}(1:3),
-	case 'lon',
-	  MAP_VAR_LIST.ulongs=varargin{k+1};
-	case 'lat',
-	  MAP_VAR_LIST.ulats=varargin{k+1};
-	case 'zon',
+    while k<length(varargin) 
+      switch varargin{k}(1:3)
+	case 'lon'
+	  MAP_VAR_LIST.ulongs=varargin{k+1}(:)';
+	case 'lat'
+	  MAP_VAR_LIST.ulats=varargin{k+1}(:)';
+	case 'zon'
 	  MAP_VAR_LIST.zone=varargin{k+1};
-	case 'hem',
+	case 'hem'
 	  MAP_VAR_LIST.hemisphere=varargin{k+1};
-        case 'ell',
+        case 'ell'
 	  MAP_VAR_LIST.ellipsoid=varargin{k+1};
-        case 'rec',
+        case 'rec'
           MAP_VAR_LIST.rectbox=varargin{k+1};
 	otherwise
 	  disp(['Unknown option: ' varargin{k}]);
-      end;
+      end
       k=k+2;
-    end;
+    end
 
     % set the zone and hemisphere if not specified
     
@@ -113,34 +113,37 @@ switch optn,
       MAP_VAR_LIST.zone = 1 + fix((mod(mean(MAP_VAR_LIST.ulongs)+180,360))/6);
     end
     
-    if MAP_VAR_LIST.hemisphere==-1,
+    if MAP_VAR_LIST.hemisphere==-1
       MAP_VAR_LIST.hemisphere=mean(MAP_VAR_LIST.ulats)<0;
-    end;
+    end
 
     % check for a valid ellipsoid. if not, use the normalized sphere
     
-    if ~isfield(MAP_ELLIP,MAP_VAR_LIST.ellipsoid),
+    if ~isfield(MAP_ELLIP,MAP_VAR_LIST.ellipsoid)
        MAP_VAR_LIST.ellipsoid = 'normal';
     end
     
     % Get X/Y and (if rectboxs are desired) recompute lat/long limits.
 
     mu_util('xylimits');
-    if strcmp(MAP_VAR_LIST.rectbox,'on'), mu_util('lllimits'); end;
+    if strcmp(MAP_VAR_LIST.rectbox,'on'), mu_util('lllimits'); end
 
-  case 'll2xy',
+  case 'll2xy'
 
     long=varargin{1};
     lat=varargin{2};
+    vals=zeros(size(long));
 
     % Clip out-of-range values (lat/long boxes)
     
-    if  strcmp(MAP_VAR_LIST.rectbox,'off') & ~strcmp(varargin{4},'off'),
+    if  strcmp(MAP_VAR_LIST.rectbox,'off') && ~strcmp(varargin{4},'off')
+        vals=vals | long<=MAP_VAR_LIST.longs(1)+eps*10 | long>=MAP_VAR_LIST.longs(2)-eps*10 | ...
+	              lat<=MAP_VAR_LIST.lats(1)+eps*10 |   lat>=MAP_VAR_LIST.lats(2)-eps*10;
         [long,lat]=mu_util('clip',varargin{4},long,MAP_VAR_LIST.longs(1),long<MAP_VAR_LIST.longs(1),lat);
         [long,lat]=mu_util('clip',varargin{4},long,MAP_VAR_LIST.longs(2),long>MAP_VAR_LIST.longs(2),lat);
         [lat,long]=mu_util('clip',varargin{4},lat,MAP_VAR_LIST.lats(1),lat<MAP_VAR_LIST.lats(1),long);
         [lat,long]=mu_util('clip',varargin{4},lat,MAP_VAR_LIST.lats(2),lat>MAP_VAR_LIST.lats(2),long);
-    end;
+    end
 
     % do the forward transformation
 
@@ -149,31 +152,33 @@ switch optn,
     
     % Clip out-of-range values (rectboxes)
 
-    if strcmp(MAP_VAR_LIST.rectbox,'on')  & ~strcmp(varargin{4},'off'),
+    if strcmp(MAP_VAR_LIST.rectbox,'on')  && ~strcmp(varargin{4},'off')
+        vals= vals | X<=MAP_VAR_LIST.xlims(1)+eps*10 | X>=MAP_VAR_LIST.xlims(2)-eps*10 | ...
+                     Y<=MAP_VAR_LIST.ylims(1)+eps*10 | Y>=MAP_VAR_LIST.ylims(2)-eps*10;
         [X,Y]=mu_util('clip',varargin{4},X,MAP_VAR_LIST.xlims(1),X<MAP_VAR_LIST.xlims(1),Y);
         [X,Y]=mu_util('clip',varargin{4},X,MAP_VAR_LIST.xlims(2),X>MAP_VAR_LIST.xlims(2),Y);
         [Y,X]=mu_util('clip',varargin{4},Y,MAP_VAR_LIST.ylims(1),Y<MAP_VAR_LIST.ylims(1),X);
         [Y,X]=mu_util('clip',varargin{4},Y,MAP_VAR_LIST.ylims(2),Y>MAP_VAR_LIST.ylims(2),X);
-    end;
+    end
 
-  case 'xy2ll',
+  case 'xy2ll'
 
     [Y,X] = mu_utm2ll(varargin{1}, varargin{2}, MAP_VAR_LIST.zone, ...
 	MAP_VAR_LIST.hemisphere, getfield(MAP_ELLIP,MAP_VAR_LIST.ellipsoid));
         
-  case 'xgrid',
+  case 'xgrid'
    
-    [X,Y,vals,labI]=mu_util('xgrid',MAP_VAR_LIST.longs,MAP_VAR_LIST.lats,varargin{1},31,varargin{2});
+    [X,Y,vals,labI]=mu_util('xgrid',MAP_VAR_LIST.longs,MAP_VAR_LIST.lats,varargin{1},31,varargin{2:3});
 
-  case 'ygrid',
+  case 'ygrid'
    
-    [X,Y,vals,labI]=mu_util('ygrid',MAP_VAR_LIST.lats,MAP_VAR_LIST.longs,varargin{1},31,varargin{2});
+    [X,Y,vals,labI]=mu_util('ygrid',MAP_VAR_LIST.lats,MAP_VAR_LIST.longs,varargin{1},31,varargin{2:3});
 
-  case 'box',
+  case 'box'
 
     [X,Y]=mu_util('box',31);
 
-end;
+end
 
 
 %-------------------------------------------------------------------
@@ -206,7 +211,7 @@ if (max(abs(lat)) > 90)
   return;
 end
 
-if ((zone < 1) | (zone > 60))
+if ((zone < 1) || (zone > 60))
   error ('utm zones only valid from 1 to 60');
   return;
 end
@@ -301,7 +306,7 @@ K_NOT       = 0.9996;
 FALSE_EAST  = 500000;
 FALSE_NORTH = 10000000;
 
-if ((zone < 1) | (zone > 60))
+if ((zone < 1) || (zone > 60))
   error ('utm zones only valid from 1 to 60');
   return;
 end

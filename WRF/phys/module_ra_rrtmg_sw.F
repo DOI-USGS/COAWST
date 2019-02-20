@@ -1,5 +1,5 @@
 !!MODULE module_ra_rrtmg_sw
-
+                
       module parrrsw
 
       use parkind ,only : im => kind_im, rb => kind_rb
@@ -33,9 +33,9 @@
       integer(kind=im), parameter :: mxmol  = 38
       integer(kind=im), parameter :: nstr   = 2
       integer(kind=im), parameter :: nmol   = 7
-! Use for 112 g-point model
+! Use for 112 g-point model   
       integer(kind=im), parameter :: ngptsw = 112    !jpgpt
-! Use for 224 g-point model
+! Use for 224 g-point model   
 !      integer(kind=im), parameter :: ngptsw = 224   !jpgpt
 
 ! may need to rename these - from v2.6
@@ -49,7 +49,7 @@
       integer(kind=im), parameter :: jmxang   = 4
       integer(kind=im), parameter :: jmxstr   = 16
 
-! Use for 112 g-point model
+! Use for 112 g-point model   
       integer(kind=im), parameter :: ng16 = 6
       integer(kind=im), parameter :: ng17 = 12
       integer(kind=im), parameter :: ng18 = 8
@@ -80,7 +80,7 @@
       integer(kind=im), parameter :: ngs28 = 100
       integer(kind=im), parameter :: ngs29 = 112
 
-! Use for 224 g-point model
+! Use for 224 g-point model   
 !      integer(kind=im), parameter :: ng16 = 16
 !      integer(kind=im), parameter :: ng17 = 16
 !      integer(kind=im), parameter :: ng18 = 16
@@ -113,7 +113,7 @@
 
 ! Source function solar constant
       real(kind=rb), parameter :: rrsw_scon = 1.36822e+03     ! W/m2
-
+ 
       end module parrrsw
 
       module rrsw_aer
@@ -164,7 +164,7 @@
 !
 !  name     type     purpose
 ! -----   : ----   : ----------------------------------------------
-! rsrtaua : real   : ratio of average optical thickness in
+! rsrtaua : real   : ratio of average optical thickness in 
 !                    spectral band to that at 0.55 micron
 ! rsrpiza : real   : average single scattering albedo (unitless)
 ! rsrasya : real   : average asymmetry parameter (unitless)
@@ -195,19 +195,19 @@
 !
 !  name     type     purpose
 ! -----  :  ----   : ----------------------------------------------
-! xxxliq1 : real   : optical properties (extinction coefficient, single
+! xxxliq1 : real   : optical properties (extinction coefficient, single 
 !                    scattering albedo, assymetry factor) from
-!                    Hu & Stamnes, j. clim., 6, 728-742, 1993.
-! xxxice2 : real   : optical properties (extinction coefficient, single
+!                    Hu & Stamnes, j. clim., 6, 728-742, 1993.  
+! xxxice2 : real   : optical properties (extinction coefficient, single 
 !                    scattering albedo, assymetry factor) from streamer v3.0,
-!                    Key, streamer user's guide, cooperative institude
+!                    Key, streamer user's guide, cooperative institude 
 !                    for meteorological studies, 95 pp., 2001.
-! xxxice3 : real   : optical properties (extinction coefficient, single
+! xxxice3 : real   : optical properties (extinction coefficient, single 
 !                    scattering albedo, assymetry factor) from
 !                    Fu, j. clim., 9, 1996.
-! xbari   : real   : optical property coefficients for five spectral
+! xbari   : real   : optical property coefficients for five spectral 
 !                    intervals (2857-4000, 4000-5263, 5263-7692, 7692-14285,
-!                    and 14285-40000 wavenumbers) following
+!                    and 14285-40000 wavenumbers) following 
 !                    Ebert and Curry, jgr, 97, 3831-3836, 1992.
 !------------------------------------------------------------------
 
@@ -235,7 +235,7 @@
 
 !  name     type     purpose
 ! -----  :  ----   : ----------------------------------------------
-! fluxfac:  real   : radiance to flux conversion factor
+! fluxfac:  real   : radiance to flux conversion factor 
 ! heatfac:  real   : flux to heating rate conversion factor
 !oneminus:  real   : 1.-1.e-6
 ! pi     :  real   : pi
@@ -243,7 +243,7 @@
 ! planck :  real   : planck constant
 ! boltz  :  real   : boltzmann constant
 ! clight :  real   : speed of light
-! avogad :  real   : avogadro constant
+! avogad :  real   : avogadro constant 
 ! alosmt :  real   : loschmidt constant
 ! gascon :  real   : molar gas constant
 ! radcn1 :  real   : first radiation constant
@@ -280,11 +280,11 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! kao     : real
-! kbo     : real
-! selfrefo: real
+! kao     : real     
+! kbo     : real     
+! selfrefo: real     
 ! forrefo : real
-!sfluxrefo: real
+!sfluxrefo: real     
 !-----------------------------------------------------------------
 
       integer(kind=im), parameter :: no16 = 16
@@ -308,13 +308,13 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! ka      : real
-! kb      : real
+! ka      : real     
+! kb      : real     
 ! absa    : real
 ! absb    : real
-! selfref : real
+! selfref : real     
 ! forref  : real
-! sfluxref: real
+! sfluxref: real     
 !-----------------------------------------------------------------
 
       real(kind=rb) :: ka(9,5,13,ng16) , absa(585,ng16)
@@ -345,11 +345,11 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! kao     : real
-! kbo     : real
-! selfrefo: real
+! kao     : real     
+! kbo     : real     
+! selfrefo: real     
 ! forrefo : real
-!sfluxrefo: real
+!sfluxrefo: real     
 !-----------------------------------------------------------------
 
       integer(kind=im), parameter :: no17 = 16
@@ -373,13 +373,13 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! ka      : real
-! kb      : real
+! ka      : real     
+! kb      : real     
 ! absa    : real
 ! absb    : real
-! selfref : real
+! selfref : real     
 ! forref  : real
-! sfluxref: real
+! sfluxref: real     
 !-----------------------------------------------------------------
 
       real(kind=rb) :: ka(9,5,13,ng17) , absa(585,ng17)
@@ -410,11 +410,11 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! kao     : real
-! kbo     : real
-! selfrefo: real
+! kao     : real     
+! kbo     : real     
+! selfrefo: real     
 ! forrefo : real
-!sfluxrefo: real
+!sfluxrefo: real     
 !-----------------------------------------------------------------
 
       integer(kind=im), parameter :: no18 = 16
@@ -438,13 +438,13 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! ka      : real
-! kb      : real
+! ka      : real     
+! kb      : real     
 ! absa    : real
 ! absb    : real
-! selfref : real
+! selfref : real     
 ! forref  : real
-! sfluxref: real
+! sfluxref: real     
 !-----------------------------------------------------------------
 
       real(kind=rb) :: ka(9,5,13,ng18), absa(585,ng18)
@@ -475,11 +475,11 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! kao     : real
-! kbo     : real
-! selfrefo: real
+! kao     : real     
+! kbo     : real     
+! selfrefo: real     
 ! forrefo : real
-!sfluxrefo: real
+!sfluxrefo: real     
 !-----------------------------------------------------------------
 
       integer(kind=im), parameter :: no19 = 16
@@ -503,13 +503,13 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! ka      : real
-! kb      : real
+! ka      : real     
+! kb      : real     
 ! absa    : real
 ! absb    : real
-! selfref : real
+! selfref : real     
 ! forref  : real
-! sfluxref: real
+! sfluxref: real     
 !-----------------------------------------------------------------
 
       real(kind=rb) :: ka(9,5,13,ng19), absa(585,ng19)
@@ -540,12 +540,12 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! kao     : real
-! kbo     : real
-! selfrefo: real
+! kao     : real     
+! kbo     : real     
+! selfrefo: real     
 ! forrefo : real
-!sfluxrefo: real
-! absch4o : real
+!sfluxrefo: real     
+! absch4o : real     
 !-----------------------------------------------------------------
 
       integer(kind=im), parameter :: no20 = 16
@@ -557,7 +557,7 @@
       real(kind=rb) :: absch4o(no20)
 
       integer(kind=im) :: layreffr
-      real(kind=rb) :: rayl
+      real(kind=rb) :: rayl 
 
 !-----------------------------------------------------------------
 ! rrtmg_sw COMBINED abs. coefficients for interval 20
@@ -570,14 +570,14 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! ka      : real
-! kb      : real
+! ka      : real     
+! kb      : real     
 ! absa    : real
 ! absb    : real
-! selfref : real
+! selfref : real     
 ! forref  : real
-! sfluxref: real
-! absch4  : real
+! sfluxref: real     
+! absch4  : real     
 !-----------------------------------------------------------------
 
       real(kind=rb) :: ka(5,13,ng20), absa(65,ng20)
@@ -609,11 +609,11 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! kao     : real
-! kbo     : real
-! selfrefo: real
+! kao     : real     
+! kbo     : real     
+! selfrefo: real     
 ! forrefo : real
-!sfluxrefo: real
+!sfluxrefo: real     
 !-----------------------------------------------------------------
 
       integer(kind=im), parameter :: no21 = 16
@@ -637,13 +637,13 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! ka      : real
-! kb      : real
+! ka      : real     
+! kb      : real     
 ! absa    : real
 ! absb    : real
-! selfref : real
+! selfref : real     
 ! forref  : real
-! sfluxref: real
+! sfluxref: real     
 !-----------------------------------------------------------------
 
       real(kind=rb) :: ka(9,5,13,ng21), absa(585,ng21)
@@ -674,11 +674,11 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! kao     : real
-! kbo     : real
-! selfrefo: real
+! kao     : real     
+! kbo     : real     
+! selfrefo: real     
 ! forrefo : real
-!sfluxrefo: real
+!sfluxrefo: real     
 !-----------------------------------------------------------------
 
       integer(kind=im), parameter :: no22 = 16
@@ -702,13 +702,13 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! ka      : real
-! kb      : real
+! ka      : real     
+! kb      : real     
 ! absa    : real
 ! absb    : real
-! selfref : real
+! selfref : real     
 ! forref  : real
-! sfluxref: real
+! sfluxref: real     
 !-----------------------------------------------------------------
 
       real(kind=rb) :: ka(9,5,13,ng22), absa(585,ng22)
@@ -739,11 +739,11 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! kao     : real
-! kbo     : real
-! selfrefo: real
+! kao     : real     
+! kbo     : real     
+! selfrefo: real     
 ! forrefo : real
-!sfluxrefo: real
+!sfluxrefo: real     
 !-----------------------------------------------------------------
 
       integer(kind=im), parameter :: no23 = 16
@@ -767,13 +767,13 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! ka      : real
-! kb      : real
+! ka      : real     
+! kb      : real     
 ! absa    : real
 ! absb    : real
-! selfref : real
+! selfref : real     
 ! forref  : real
-! sfluxref: real
+! sfluxref: real     
 !-----------------------------------------------------------------
 
       real(kind=rb) :: ka(5,13,ng23), absa(65,ng23)
@@ -803,15 +803,15 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! kao     : real
-! kbo     : real
-! selfrefo: real
+! kao     : real     
+! kbo     : real     
+! selfrefo: real     
 ! forrefo : real
-!sfluxrefo: real
-! abso3ao : real
-! abso3bo : real
-! raylao  : real
-! raylbo  : real
+!sfluxrefo: real     
+! abso3ao : real     
+! abso3bo : real     
+! raylao  : real     
+! raylbo  : real     
 !-----------------------------------------------------------------
 
       integer(kind=im), parameter :: no24 = 16
@@ -837,17 +837,17 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! ka      : real
-! kb      : real
+! ka      : real     
+! kb      : real     
 ! absa    : real
 ! absb    : real
-! selfref : real
+! selfref : real     
 ! forref  : real
-! sfluxref: real
-! abso3a  : real
-! abso3b  : real
-! rayla   : real
-! raylb   : real
+! sfluxref: real     
+! abso3a  : real     
+! abso3b  : real     
+! rayla   : real     
+! raylb   : real     
 !-----------------------------------------------------------------
 
       real(kind=rb) :: ka(9,5,13,ng24), absa(585,ng24)
@@ -880,11 +880,11 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! kao     : real
-!sfluxrefo: real
-! abso3ao : real
-! abso3bo : real
-! raylo   : real
+! kao     : real     
+!sfluxrefo: real     
+! abso3ao : real     
+! abso3bo : real     
+! raylo   : real     
 !-----------------------------------------------------------------
 
       integer(kind=im), parameter :: no25 = 16
@@ -907,12 +907,12 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! ka      : real
+! ka      : real     
 ! absa    : real
-! sfluxref: real
-! abso3a  : real
-! abso3b  : real
-! rayl    : real
+! sfluxref: real     
+! abso3a  : real     
+! abso3b  : real     
+! rayl    : real     
 !-----------------------------------------------------------------
 
       real(kind=rb) :: ka(5,13,ng25), absa(65,ng25)
@@ -943,8 +943,8 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-!sfluxrefo: real
-! raylo   : real
+!sfluxrefo: real     
+! raylo   : real     
 !-----------------------------------------------------------------
 
       integer(kind=im), parameter :: no26 = 16
@@ -963,8 +963,8 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! sfluxref: real
-! rayl    : real
+! sfluxref: real     
+! rayl    : real     
 !-----------------------------------------------------------------
 
       real(kind=rb) :: sfluxref(ng26)
@@ -991,10 +991,10 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! kao     : real
-! kbo     : real
-!sfluxrefo: real
-! raylo   : real
+! kao     : real     
+! kbo     : real     
+!sfluxrefo: real     
+! raylo   : real     
 !-----------------------------------------------------------------
 
       integer(kind=im), parameter :: no27 = 16
@@ -1018,12 +1018,12 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! ka      : real
-! kb      : real
+! ka      : real     
+! kb      : real     
 ! absa    : real
 ! absb    : real
-! sfluxref: real
-! rayl    : real
+! sfluxref: real     
+! rayl    : real     
 !-----------------------------------------------------------------
 
       real(kind=rb) :: ka(5,13,ng27), absa(65,ng27)
@@ -1054,9 +1054,9 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! kao     : real
-! kbo     : real
-!sfluxrefo: real
+! kao     : real     
+! kbo     : real     
+!sfluxrefo: real     
 !-----------------------------------------------------------------
 
       integer(kind=im), parameter :: no28 = 16
@@ -1079,9 +1079,9 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! ka      : real
-! kb      : real
-! sfluxref: real
+! ka      : real     
+! kb      : real     
+! sfluxref: real     
 !-----------------------------------------------------------------
 
       real(kind=rb) :: ka(9,5,13,ng28), absa(585,ng28)
@@ -1111,13 +1111,13 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! kao     : real
-! kbo     : real
-! selfrefo: real
-! forrefo : real
-!sfluxrefo: real
-! absh2oo : real
-! absco2o : real
+! kao     : real     
+! kbo     : real     
+! selfrefo: real     
+! forrefo : real     
+!sfluxrefo: real     
+! absh2oo : real     
+! absco2o : real     
 !-----------------------------------------------------------------
 
       integer(kind=im), parameter :: no29 = 16
@@ -1142,13 +1142,13 @@
 !
 !  name     type     purpose
 !  ----   : ----   : ---------------------------------------------
-! ka      : real
-! kb      : real
-! selfref : real
-! forref  : real
-! sfluxref: real
-! absh2o  : real
-! absco2  : real
+! ka      : real     
+! kb      : real     
+! selfref : real     
+! forref  : real     
+! sfluxref: real     
+! absh2o  : real     
+! absco2  : real     
 !-----------------------------------------------------------------
 
       real(kind=rb) :: ka(5,13,ng29), absa(65,ng29)
@@ -1169,7 +1169,7 @@
       save
 
 !------------------------------------------------------------------
-! rrtmg_sw reference atmosphere
+! rrtmg_sw reference atmosphere 
 ! Based on standard mid-latitude summer profile
 !
 ! Initial version:  JJMorcrette, ECMWF, jul1998
@@ -1209,7 +1209,7 @@
 ! -----  :  ----   : ----------------------------------------------
 ! ntbl   :  integer: Lookup table dimension
 ! tblint :  real   : Lookup table conversion factor
-! tau_tbl:  real   : Clear-sky optical depth
+! tau_tbl:  real   : Clear-sky optical depth 
 ! exp_tbl:  real   : Exponential lookup table for transmittance
 ! od_lo  :  real   : Value of tau below which expansion is used
 !                  : in place of lookup table
@@ -1246,35 +1246,35 @@
 
 !  name     type     purpose
 ! -----  :  ----   : ----------------------------------------------
-!hnamrtm :character:
-!hnamini :character:
-!hnamcld :character:
-!hnamclc :character:
-!hnamrft :character:
-!hnamspv :character:
-!hnamspc :character:
-!hnamset :character:
-!hnamtau :character:
-!hnamvqd :character:
-!hnamatm :character:
-!hnamutl :character:
-!hnamext :character:
-!hnamkg  :character:
+!hnamrtm :character: 
+!hnamini :character: 
+!hnamcld :character: 
+!hnamclc :character: 
+!hnamrft :character: 
+!hnamspv :character: 
+!hnamspc :character: 
+!hnamset :character: 
+!hnamtau :character: 
+!hnamvqd :character: 
+!hnamatm :character: 
+!hnamutl :character: 
+!hnamext :character: 
+!hnamkg  :character: 
 !
-! hvrrtm :character:
-! hvrini :character:
-! hvrcld :character:
-! hvrclc :character:
-! hvrrft :character:
-! hvrspv :character:
-! hvrspc :character:
-! hvrset :character:
-! hvrtau :character:
-! hvrvqd :character:
-! hvratm :character:
-! hvrutl :character:
-! hvrext :character:
-! hvrkg  :character:
+! hvrrtm :character: 
+! hvrini :character: 
+! hvrcld :character: 
+! hvrclc :character: 
+! hvrrft :character: 
+! hvrspv :character: 
+! hvrspc :character: 
+! hvrset :character: 
+! hvrtau :character: 
+! hvrvqd :character: 
+! hvratm :character: 
+! hvrutl :character: 
+! hvrext :character: 
+! hvrkg  :character: 
 !------------------------------------------------------------------
 
       character*18 hvrrtm,hvrini,hvrcld,hvrclc,hvrrft,hvrspv, &
@@ -1306,8 +1306,8 @@
 !  name     type     purpose
 ! -----  :  ----   : ----------------------------------------------
 ! ng     :  integer: Number of original g-intervals in each spectral band
-! nspa   :  integer:
-! nspb   :  integer:
+! nspa   :  integer: 
+! nspb   :  integer: 
 !wavenum1:  real   : Spectral band lower boundary in wavenumbers
 !wavenum2:  real   : Spectral band upper boundary in wavenumbers
 ! delwave:  real   : Spectral band width in wavenumbers
@@ -1316,12 +1316,12 @@
 ! ngs    :  integer: The cumulative sum of new g-intervals for each band
 ! ngm    :  integer: The index of each new g-interval relative to the
 !                    original 16 g-intervals in each band
-! ngn    :  integer: The number of original g-intervals that are
+! ngn    :  integer: The number of original g-intervals that are 
 !                    combined to make each new g-intervals in each band
 ! ngb    :  integer: The band index for each new g-interval
 ! wt     :  real   : RRTM weights for the original 16 g-intervals
-! rwgt   :  real   : Weights for combining original 16 g-intervals
-!                    (224 total) into reduced set of g-intervals
+! rwgt   :  real   : Weights for combining original 16 g-intervals 
+!                    (224 total) into reduced set of g-intervals 
 !                    (112 total)
 !------------------------------------------------------------------
 
@@ -1361,7 +1361,7 @@
 ! |                                                                          |
 !  --------------------------------------------------------------------------
 
-! Purpose: Create McICA stochastic arrays for cloud physical or optical properties.
+! Purpose: Create McICA stochastic arrays for cloud physical or optical properties.   
 ! Two options are possible:
 ! 1) Input cloud physical properties: cloud fraction, ice and liquid water
 !    paths, ice fraction, and particle sizes.  Output will be stochastic
@@ -1407,9 +1407,9 @@
       integer(kind=im), intent(inout) :: irng         ! flag for random number generator
                                                       !  0 = kissvec
                                                       !  1 = Mersenne Twister
-
+        
 ! Atmosphere
-      real(kind=rb), intent(in) :: play(:,:)          ! layer pressures (mb)
+      real(kind=rb), intent(in) :: play(:,:)          ! layer pressures (mb) 
                                                       !    Dimensions: (ncol,nlay)
 
 ! Atmosphere/clouds - cldprop
@@ -1467,17 +1467,17 @@
       integer(kind=im), parameter :: nsubcsw = ngptsw ! number of sub-columns (g-point intervals)
       integer(kind=im) :: ilev                        ! loop index
 
-      real(kind=rb) :: pmid(ncol,nlay)                ! layer pressures (Pa)
-!      real(kind=rb) :: pdel(ncol,nlay)               ! layer pressure thickness (Pa)
+      real(kind=rb) :: pmid(ncol,nlay)                ! layer pressures (Pa) 
+!      real(kind=rb) :: pdel(ncol,nlay)               ! layer pressure thickness (Pa) 
 !      real(kind=rb) :: qi(ncol,nlay)                 ! ice water (specific humidity)
 !      real(kind=rb) :: ql(ncol,nlay)                 ! liq water (specific humidity)
 
 
 ! Return if clear sky; or stop if icld out of range
       if (icld.eq.0) return
-      if (icld.lt.0.or.icld.gt.3) then
+      if (icld.lt.0.or.icld.gt.3) then 
          stop 'MCICA_SUBCOL: INVALID ICLD'
-      endif
+      endif 
 
 ! NOTE: For GCM mode, permuteseed must be offset between LW and SW by at least number of subcolumns
 
@@ -1490,7 +1490,7 @@
       resnmcl(:ncol,:nlay) = res(:ncol,:nlay)
       pmid(:ncol,:nlay) = play(:ncol,:nlay)*1.e2_rb
 
-! Convert input ice and liquid cloud water paths to specific humidity ice and liquid components
+! Convert input ice and liquid cloud water paths to specific humidity ice and liquid components 
 
 !      cwp =  (q * pdel * 1000.) / gravit)
 !           = (kg/kg * kg m-1 s-2 *1000.) / m s-2
@@ -1516,66 +1516,66 @@
 !-------------------------------------------------------------------------------------------------
       subroutine generate_stochastic_clouds_sw(ncol, nlay, nsubcol, icld, irng, pmid, cld, clwp, ciwp, cswp, &
                                tauc, ssac, asmc, fsfc, cld_stoch, clwp_stoch, ciwp_stoch, cswp_stoch,        &
-                               tauc_stoch, ssac_stoch, asmc_stoch, fsfc_stoch, changeSeed)
+                               tauc_stoch, ssac_stoch, asmc_stoch, fsfc_stoch, changeSeed) 
 !-------------------------------------------------------------------------------------------------
 
   !----------------------------------------------------------------------------------------------------------------
   ! ---------------------
   ! Contact: Cecile Hannay (hannay@ucar.edu)
-  !
+  ! 
   ! Original code: Based on Raisanen et al., QJRMS, 2004.
   !
   ! Modifications: Generalized for use with RRTMG and added Mersenne Twister as the default
   !   random number generator, which can be changed to the optional kissvec random number generator
-  !   with flag 'irng'. Some extra functionality has been commented or removed.
+  !   with flag 'irng'. Some extra functionality has been commented or removed.  
   !   Michael J. Iacono, AER, Inc., February 2007
   !
   ! Given a profile of cloud fraction, cloud water and cloud ice, we produce a set of subcolumns.
-  ! Each layer within each subcolumn is homogeneous, with cloud fraction equal to zero or one
+  ! Each layer within each subcolumn is homogeneous, with cloud fraction equal to zero or one 
   ! and uniform cloud liquid and cloud ice concentration.
-  ! The ensemble as a whole reproduces the probability function of cloud liquid and ice within each layer
-  ! and obeys an overlap assumption in the vertical.
-  !
+  ! The ensemble as a whole reproduces the probability function of cloud liquid and ice within each layer 
+  ! and obeys an overlap assumption in the vertical.   
+  ! 
   ! Overlap assumption:
-  !  The cloud are consistent with 4 overlap assumptions: random, maximum, maximum-random and exponential.
+  !  The cloud are consistent with 4 overlap assumptions: random, maximum, maximum-random and exponential. 
   !  The default option is maximum-random (option 3)
   !  The options are: 1=random overlap, 2=max/random, 3=maximum overlap, 4=exponential overlap
-  !  This is set with the variable "overlap"
+  !  This is set with the variable "overlap" 
   !mji - Exponential overlap option (overlap=4) has been deactivated in this version
-  !  The exponential overlap uses also a length scale, Zo. (real,    parameter  :: Zo = 2500. )
-  !
+  !  The exponential overlap uses also a length scale, Zo. (real,    parameter  :: Zo = 2500. ) 
+  ! 
   ! Seed:
-  !  If the stochastic cloud generator is called several times during the same timestep,
+  !  If the stochastic cloud generator is called several times during the same timestep, 
   !  one should change the seed between the call to insure that the subcolumns are different.
   !  This is done by changing the argument 'changeSeed'
   !  For example, if one wants to create a set of columns for the shortwave and another set for the longwave ,
-  !  use 'changeSeed = 1' for the first call and'changeSeed = 2' for the second call
+  !  use 'changeSeed = 1' for the first call and'changeSeed = 2' for the second call 
   !
   ! PDF assumption:
-  !  We can use arbitrary complicated PDFS.
-  !  In the present version, we produce homogeneuous clouds (the simplest case).
-  !  Future developments include using the PDF scheme of Ben Johnson.
+  !  We can use arbitrary complicated PDFS. 
+  !  In the present version, we produce homogeneuous clouds (the simplest case).  
+  !  Future developments include using the PDF scheme of Ben Johnson. 
   !
   ! History file:
   !  Option to add diagnostics variables in the history file. (using FINCL in the namelist)
   !  nsubcol = number of subcolumns
   !  overlap = overlap type (1-3)
-  !  Zo = length scale
+  !  Zo = length scale 
   !  CLOUD_S = mean of the subcolumn cloud fraction ('_S" means Stochastic)
   !  CLDLIQ_S = mean of the subcolumn cloud water
-  !  CLDICE_S = mean of the subcolumn cloud ice
+  !  CLDICE_S = mean of the subcolumn cloud ice 
   !
   ! Note:
-  !   Here: we force that the cloud condensate to be consistent with the cloud fraction
-  !   i.e we only have cloud condensate when the cell is cloudy.
-  !   In CAM: The cloud condensate and the cloud fraction are obtained from 2 different equations
-  !   and the 2 quantities can be inconsistent (i.e. CAM can produce cloud fraction
+  !   Here: we force that the cloud condensate to be consistent with the cloud fraction 
+  !   i.e we only have cloud condensate when the cell is cloudy. 
+  !   In CAM: The cloud condensate and the cloud fraction are obtained from 2 different equations 
+  !   and the 2 quantities can be inconsistent (i.e. CAM can produce cloud fraction 
   !   without cloud condensate or the opposite).
   !---------------------------------------------------------------------------------------------------------------
 
       use mcica_random_numbers
 ! The Mersenne Twister random number engine
-      use MersenneTwister, only: randomNumberSequence, &
+      use MersenneTwister, only: randomNumberSequence, &   
                                  new_RandomNumberSequence, getRandomReal
 
       type(randomNumberSequence) :: randomNumbers
@@ -1591,10 +1591,10 @@
       integer(kind=im), intent(in) :: nsubcol         ! number of sub-columns (g-point intervals)
       integer(kind=im), optional, intent(in) :: changeSeed     ! allows permuting seed
 
-! Column state (cloud fraction, cloud water, cloud ice) + variables needed to read physics state
+! Column state (cloud fraction, cloud water, cloud ice) + variables needed to read physics state 
       real(kind=rb), intent(in) :: pmid(:,:)          ! layer pressure (Pa)
                                                       !    Dimensions: (ncol,nlay)
-      real(kind=rb), intent(in) :: cld(:,:)           ! cloud fraction
+      real(kind=rb), intent(in) :: cld(:,:)           ! cloud fraction 
                                                       !    Dimensions: (ncol,nlay)
       real(kind=rb), intent(in) :: clwp(:,:)          ! in-cloud liquid water path (g/m2)
                                                       !    Dimensions: (ncol,nlay)
@@ -1611,7 +1611,7 @@
       real(kind=rb), intent(in) :: fsfc(:,:,:)        ! in-cloud forward scattering fraction (non-delta scaled)
                                                       !    Dimensions: (nbndsw,ncol,nlay)
 
-      real(kind=rb), intent(out) :: cld_stoch(:,:,:)  ! subcolumn cloud fraction
+      real(kind=rb), intent(out) :: cld_stoch(:,:,:)  ! subcolumn cloud fraction 
                                                       !    Dimensions: (ngptsw,ncol,nlay)
       real(kind=rb), intent(out) :: clwp_stoch(:,:,:) ! subcolumn in-cloud liquid water path
                                                       !    Dimensions: (ngptsw,ncol,nlay)
@@ -1629,11 +1629,11 @@
                                                       !    Dimensions: (ngptsw,ncol,nlay)
 
 ! -- Local variables
-      real(kind=rb) :: cldf(ncol,nlay)                ! cloud fraction
+      real(kind=rb) :: cldf(ncol,nlay)                ! cloud fraction 
                                                       !    Dimensions: (ncol,nlay)
 
 ! Mean over the subcolumns (cloud fraction, cloud water , cloud ice) - inactive
-!      real(kind=rb) :: mean_cld_stoch(ncol,nlay)     ! cloud fraction
+!      real(kind=rb) :: mean_cld_stoch(ncol,nlay)     ! cloud fraction 
 !      real(kind=rb) :: mean_clwp_stoch(ncol,nlay)    ! cloud water
 !      real(kind=rb) :: mean_ciwp_stoch(ncol,nlay)    ! cloud ice
 !      real(kind=rb) :: mean_tauc_stoch(ncol,nlay)    ! cloud optical depth
@@ -1643,16 +1643,16 @@
 
 ! Set overlap
       integer(kind=im) :: overlap                     ! 1 = random overlap, 2 = maximum/random,
-                                                      ! 3 = maximum overlap,
-!      real(kind=rb), parameter  :: Zo = 2500._rb        ! length scale (m)
+                                                      ! 3 = maximum overlap, 
+!      real(kind=rb), parameter  :: Zo = 2500._rb        ! length scale (m) 
 !      real(kind=rb) :: zm(ncon,nlay)                    ! Height of midpoints (above surface)
-!      real(kind=rb), dimension(nlay) :: alpha=0.0_rb    ! overlap parameter
+!      real(kind=rb), dimension(nlay) :: alpha=0.0_rb    ! overlap parameter  
 
 ! Constants (min value for cloud fraction and cloud water and ice)
       real(kind=rb), parameter :: cldmin = 1.0e-20_rb ! min cloud fraction
 !      real(kind=rb), parameter :: qmin   = 1.0e-10_rb   ! min cloud water and cloud ice (not used)
 
-! Variables related to random number and seed
+! Variables related to random number and seed 
       real(kind=rb), dimension(nsubcol, ncol, nlay) :: CDF, CDF2       ! random numbers
       integer(kind=im), dimension(ncol) :: seed1, seed2, seed3, seed4  ! seed to create random number
       real(kind=rb), dimension(ncol) :: rand_num       ! random number (kissvec)
@@ -1665,7 +1665,7 @@
 ! Indices
       integer(kind=im) :: ilev, isubcol, i, n, ngbm    ! indices
 
-!------------------------------------------------------------------------------------------
+!------------------------------------------------------------------------------------------ 
 
 ! Check that irng is in bounds; if not, set to default
       if (irng .ne. 0) irng = 1
@@ -1673,7 +1673,7 @@
 ! Pass input cloud overlap setting to local variable
       overlap = icld
 
-! Ensure that cloud fractions are in bounds
+! Ensure that cloud fractions are in bounds 
       do ilev = 1, nlay
          do i = 1, ncol
             cldf(i,ilev) = cld(i,ilev)
@@ -1684,11 +1684,11 @@
       enddo
 
 ! ----- Create seed  --------
-
+   
 ! Advance randum number generator by changeseed values
-      if (irng.eq.0) then
-! For kissvec, create a seed that depends on the state of the columns. Maybe not the best way, but it works.
-! Must use pmid from bottom four layers.
+      if (irng.eq.0) then   
+! For kissvec, create a seed that depends on the state of the columns. Maybe not the best way, but it works.  
+! Must use pmid from bottom four layers. 
          do i=1,ncol
             if (pmid(i,1).lt.pmid(i,2)) then
                stop 'MCICA_SUBCOL: KISSVEC SEED GENERATOR REQUIRES PMID FROM BOTTOM FOUR LAYERS.'
@@ -1703,20 +1703,20 @@
          enddo
       elseif (irng.eq.1) then
          randomNumbers = new_RandomNumberSequence(seed = changeSeed)
-      endif
+      endif 
 
 
 ! ------ Apply overlap assumption --------
 
-! generate the random numbers
+! generate the random numbers  
 
       select case (overlap)
 
-      case(1)
+      case(1) 
 ! Random overlap
 ! i) pick a random value at every level
-
-         if (irng.eq.0) then
+  
+         if (irng.eq.0) then 
             do isubcol = 1,nsubcol
                do ilev = 1,nlay
                   call kissvec(seed1, seed2, seed3, seed4, rand_num)
@@ -1734,14 +1734,14 @@
              enddo
          endif
 
-      case(2)
+      case(2) 
 ! Maximum-Random overlap
 ! i) pick  a random number for top layer.
-! ii) walk down the column:
+! ii) walk down the column: 
 !    - if the layer above is cloudy, we use the same random number than in the layer above
-!    - if the layer above is clear, we use a new random number
+!    - if the layer above is clear, we use a new random number 
 
-         if (irng.eq.0) then
+         if (irng.eq.0) then 
             do isubcol = 1,nsubcol
                do ilev = 1,nlay
                   call kissvec(seed1, seed2, seed3, seed4, rand_num)
@@ -1763,19 +1763,19 @@
             do i = 1, ncol
                do isubcol = 1, nsubcol
                   if (CDF(isubcol, i, ilev-1) > 1._rb - cldf(i,ilev-1) ) then
-                     CDF(isubcol,i,ilev) = CDF(isubcol,i,ilev-1)
+                     CDF(isubcol,i,ilev) = CDF(isubcol,i,ilev-1) 
                   else
-                     CDF(isubcol,i,ilev) = CDF(isubcol,i,ilev) * (1._rb - cldf(i,ilev-1))
+                     CDF(isubcol,i,ilev) = CDF(isubcol,i,ilev) * (1._rb - cldf(i,ilev-1)) 
                   endif
                enddo
             enddo
          enddo
 
-      case(3)
+      case(3) 
 ! Maximum overlap
-! i) pick same random numebr at every level
+! i) pick same random numebr at every level  
 
-         if (irng.eq.0) then
+         if (irng.eq.0) then 
             do isubcol = 1,nsubcol
                call kissvec(seed1, seed2, seed3, seed4, rand_num)
                do ilev = 1,nlay
@@ -1794,22 +1794,22 @@
          endif
 
 !    case(4)  - inactive
-!       ! Exponential overlap: weighting between maximum and random overlap increases with the distance.
+!       ! Exponential overlap: weighting between maximum and random overlap increases with the distance. 
 !       ! The random numbers for exponential overlap verify:
 !       ! j=1   RAN(j)=RND1
 !       ! j>1   if RND1 < alpha(j,j-1) => RAN(j) = RAN(j-1)
 !       !                                 RAN(j) = RND2
 !       ! alpha is obtained from the equation
-!       ! alpha = exp(- (Zi-Zj-1)/Zo) where Zo is a characteristic length scale
+!       ! alpha = exp(- (Zi-Zj-1)/Zo) where Zo is a characteristic length scale    
 
 
 !       ! compute alpha
-!       zm    = state%zm
+!       zm    = state%zm     
 !       alpha(:, 1) = 0._rb
 !       do ilev = 2,nlay
 !          alpha(:, ilev) = exp( -( zm (:, ilev-1) -  zm (:, ilev)) / Zo)
 !       end do
-
+       
 !       ! generate 2 streams of random numbers
 !       do isubcol = 1,nsubcol
 !          do ilev = 1,nlay
@@ -1823,13 +1823,13 @@
 !       ! generate random numbers
 !       do ilev = 2,nlay
 !          where (CDF2(:, :, ilev) < spread(alpha (:,ilev), dim=1, nCopies=nsubcol) )
-!             CDF(:,:,ilev) = CDF(:,:,ilev-1)
+!             CDF(:,:,ilev) = CDF(:,:,ilev-1) 
 !          end where
 !       end do
 
       end select
 
-
+ 
 ! -- generate subcolumns for homogeneous clouds -----
       do ilev = 1, nlay
          isCloudy(:,:,ilev) = (CDF(:,:,ilev) >= 1._rb - spread(cldf(:,ilev), dim=1, nCopies=nsubcol) )
@@ -1877,13 +1877,13 @@
 !      mean_asmc_stoch(:,:) = 0._rb
 !      mean_fsfc_stoch(:,:) = 0._rb
 !      do i = 1, nsubcol
-!         mean_cld_stoch(:,:) =  cld_stoch(i,:,:) + mean_cld_stoch(:,:)
-!         mean_clwp_stoch(:,:) =  clwp_stoch( i,:,:) + mean_clwp_stoch(:,:)
-!         mean_ciwp_stoch(:,:) =  ciwp_stoch( i,:,:) + mean_ciwp_stoch(:,:)
-!         mean_tauc_stoch(:,:) =  tauc_stoch( i,:,:) + mean_tauc_stoch(:,:)
-!         mean_ssac_stoch(:,:) =  ssac_stoch( i,:,:) + mean_ssac_stoch(:,:)
-!         mean_asmc_stoch(:,:) =  asmc_stoch( i,:,:) + mean_asmc_stoch(:,:)
-!         mean_fsfc_stoch(:,:) =  fsfc_stoch( i,:,:) + mean_fsfc_stoch(:,:)
+!         mean_cld_stoch(:,:) =  cld_stoch(i,:,:) + mean_cld_stoch(:,:) 
+!         mean_clwp_stoch(:,:) =  clwp_stoch( i,:,:) + mean_clwp_stoch(:,:) 
+!         mean_ciwp_stoch(:,:) =  ciwp_stoch( i,:,:) + mean_ciwp_stoch(:,:) 
+!         mean_tauc_stoch(:,:) =  tauc_stoch( i,:,:) + mean_tauc_stoch(:,:) 
+!         mean_ssac_stoch(:,:) =  ssac_stoch( i,:,:) + mean_ssac_stoch(:,:) 
+!         mean_asmc_stoch(:,:) =  asmc_stoch( i,:,:) + mean_asmc_stoch(:,:) 
+!         mean_fsfc_stoch(:,:) =  fsfc_stoch( i,:,:) + mean_fsfc_stoch(:,:) 
 !      end do
 !      mean_cld_stoch(:,:) = mean_cld_stoch(:,:) / nsubcol
 !      mean_clwp_stoch(:,:) = mean_clwp_stoch(:,:) / nsubcol
@@ -1896,9 +1896,9 @@
       end subroutine generate_stochastic_clouds_sw
 
 
-!--------------------------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------------------------- 
       subroutine kissvec(seed1,seed2,seed3,seed4,ran_arr)
-!--------------------------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------------------------- 
 
 ! public domain code
 ! made available from http://www.fortran.com/
@@ -1909,14 +1909,14 @@
 ! (1) The congruential generator x(n)=69069*x(n-1)+1327217885, period 2^32.
 ! (2) A 3-shift shift-register generator, period 2^32-1,
 ! (3) Two 16-bit multiply-with-carry generators, period 597273182964842497>2^59
-!  Overall period>2^123;
+!  Overall period>2^123; 
 !
       real(kind=rb), dimension(:), intent(inout)  :: ran_arr
       integer(kind=im), dimension(:), intent(inout) :: seed1,seed2,seed3,seed4
       integer(kind=im) :: i,sz,kiss
       integer(kind=im) :: m, k, n
 
-! inline function
+! inline function 
       m(k, n) = ieor (k, ishft (k, n) )
 
       sz = size(ran_arr)
@@ -1928,7 +1928,7 @@
          kiss = seed1(i) + seed2(i) + ishft (seed3(i), 16_im) + seed4(i)
          ran_arr(i) = kiss*2.328306e-10_rb + 0.5_rb
       end do
-
+    
       end subroutine kissvec
 
       end module mcica_subcol_gen_sw
@@ -1972,9 +1972,9 @@
 ! ----------------------------------------------------------------------------
 
 ! Purpose: Compute the cloud optical properties for each cloudy layer
-! and g-point interval for use by the McICA method.
+! and g-point interval for use by the McICA method.  
 ! Note: Only inflag = 0 and inflag=2/liqflag=1/iceflag=2,3 are available;
-! (Hu & Stamnes, Key, and Fu) are implemented.
+! (Hu & Stamnes, Key, and Fu) are implemented. 
 
 ! ------- Input -------
 
@@ -2065,7 +2065,7 @@
       do lay = 1, nlayers
 
 ! Main g-point interval loop
-         do ig = 1, ngptsw
+         do ig = 1, ngptsw 
             cwp = ciwpmc(ig,lay) + clwpmc(ig,lay) + cswpmc(ig,lay)
 
             if (cldfmc(ig,lay) .ge. cldmin .and. &
@@ -2087,7 +2087,7 @@
                   taucmc(ig,lay) = taucloud_a
                   asmcmc(ig,lay) = (asmcmc(ig,lay) - ffp) / (ffp1)
 
-               elseif (inflag .eq. 1) then
+               elseif (inflag .eq. 1) then 
                   stop 'INFLAG = 1 OPTION NOT AVAILABLE WITH MCICA'
 
 ! (inflag=2): Separate treatement of ice clouds and water clouds.
@@ -2106,7 +2106,7 @@
                      gsno(ig)     = 0.0_rb
                      forwsno(ig)  = 0.0_rb
 
-! (iceflag = 1):
+! (iceflag = 1): 
 ! Note: This option uses Ebert and Curry approach for all particle sizes similar to
 ! CAM3 implementation, though this is somewhat unjustified for large ice particles
                   elseif (iceflag .eq. 1) then
@@ -2189,9 +2189,9 @@
                       call wrf_error_fatal(errmess)
                      end if
                      forwice(ig) = fdelta(ig) + 0.5_rb / ssacoice(ig)
-! See Fu 1996 p. 2067
+! See Fu 1996 p. 2067 
                      if (forwice(ig) .gt. gice(ig)) forwice(ig) = gice(ig)
-! Check to ensure all calculated quantities are within physical limits.
+! Check to ensure all calculated quantities are within physical limits.  
                      if (extcoice(ig) .lt. 0.0_rb) stop 'ICE EXTINCTION LESS THAN 0.0'
                      if (ssacoice(ig) .gt. 1.0_rb) stop 'ICE SSA GRTR THAN 1.0'
                      if (ssacoice(ig) .lt. 0.0_rb) stop 'ICE SSA LESS THAN 0.0'
@@ -2240,7 +2240,7 @@
                      forwsno(ig) = fdelta(ig) + 0.5_rb / ssacosno(ig)
 ! See Fu 1996 p. 2067
                      if (forwsno(ig) .gt. gsno(ig)) forwsno(ig) = gsno(ig)
-! Check to ensure all calculated quantities are within physical limits.
+! Check to ensure all calculated quantities are within physical limits.  
                      if (extcosno(ig) .lt. 0.0_rb) then
                       write(errmess, *) 'SNOW EXTINCTION LESS THAN 0.0'
                       call wrf_error_fatal(errmess)
@@ -2301,13 +2301,13 @@
                      if (gliq(ig) .gt. 1.0_rb) stop 'LIQUID ASYM GRTR THAN 1.0'
                      if (gliq(ig) .lt. 0.0_rb) stop 'LIQUID ASYM LESS THAN 0.0'
                   endif
-
+   
 
                   if (iceflag .lt. 5) then
                       tauliqorig = clwpmc(ig,lay) * extcoliq(ig)
                       tauiceorig = ciwpmc(ig,lay) * extcoice(ig)
                       taormc(ig,lay) = tauliqorig + tauiceorig
-
+  
                       ssaliq = ssacoliq(ig) * (1._rb - forwliq(ig)) / &
                                (1._rb - forwliq(ig) * ssacoliq(ig))
                       tauliq = (1._rb - forwliq(ig) * ssacoliq(ig)) * tauliqorig
@@ -2316,7 +2316,7 @@
                       tauice = (1._rb - forwice(ig) * ssacoice(ig)) * tauiceorig
                       scatliq = ssaliq * tauliq
                       scatice = ssaice * tauice
-                      scatsno = 0.0_rb
+                      scatsno = 0.0_rb 
                       taucmc(ig,lay) = tauliq + tauice
                   else
                       tauliqorig = clwpmc(ig,lay) * extcoliq(ig)
@@ -2351,7 +2351,7 @@
                   endif
 
                   if (iceflag .eq. 3 .or. iceflag.eq.4) then
-! In accordance with the 1996 Fu paper, equation A.3,
+! In accordance with the 1996 Fu paper, equation A.3, 
 ! the moments for ice were calculated depending on whether using spheres
 ! or hexagonal ice crystals.
 ! Set asymetry parameter to first moment (istr=1)
@@ -2367,15 +2367,15 @@
                                     + scatice * ((gice(ig)-forwice(ig))/(1.0_rb - forwice(ig)))        &
                                     + scatsno * ((gsno(ig)-forwsno(ig))/(1.0_rb - forwsno(ig)))**istr)
 
-                  else
-! This code is the standard method for delta-m scaling.
+                  else 
+! This code is the standard method for delta-m scaling. 
 ! Set asymetry parameter to first moment (istr=1)
                      istr = 1
                      asmcmc(ig,lay) = (scatliq *  &
                         (gliq(ig)**istr - forwliq(ig)) / &
                         (1.0_rb - forwliq(ig)) + scatice * (gice(ig)**istr - forwice(ig)) / &
                         (1.0_rb - forwice(ig)))/(scatliq + scatice)
-                  endif
+                  endif 
 
                endif
 
@@ -2422,8 +2422,8 @@
       subroutine reftra_sw(nlayers, lrtchk, pgg, prmuz, ptau, pw, &
                            pref, prefd, ptra, ptrad)
 ! --------------------------------------------------------------------
-
-! Purpose: computes the reflectivity and transmissivity of a clear or
+  
+! Purpose: computes the reflectivity and transmissivity of a clear or 
 !   cloudy layer using a choice of various approximations.
 !
 ! Interface:  *rrtmg_sw_reftra* is called by *rrtmg_sw_spcvrt*
@@ -2432,9 +2432,9 @@
 ! explicit arguments :
 ! --------------------
 ! inputs
-! ------
+! ------ 
 !      lrtchk  = .t. for all layers in clear profile
-!      lrtchk  = .t. for cloudy layers in cloud profile
+!      lrtchk  = .t. for cloudy layers in cloud profile 
 !              = .f. for clear layers in cloud profile
 !      pgg     = assymetry factor
 !      prmuz   = cosine solar zenith angle
@@ -2444,7 +2444,7 @@
 ! outputs
 ! -------
 !      pref    : collimated beam reflectivity
-!      prefd   : diffuse beam reflectivity
+!      prefd   : diffuse beam reflectivity 
 !      ptra    : collimated beam transmissivity
 !      ptrad   : diffuse beam transmissivity
 !
@@ -2473,14 +2473,14 @@
       integer(kind=im), intent(in) :: nlayers
 
       logical, intent(in) :: lrtchk(:)                         ! Logical flag for reflectivity and
-                                                               ! and transmissivity calculation;
+                                                               ! and transmissivity calculation; 
                                                                !   Dimensions: (nlayers)
 
       real(kind=rb), intent(in) :: pgg(:)                      ! asymmetry parameter
                                                                !   Dimensions: (nlayers)
       real(kind=rb), intent(in) :: ptau(:)                     ! optical depth
                                                                !   Dimensions: (nlayers)
-      real(kind=rb), intent(in) :: pw(:)                       ! single scattering albedo
+      real(kind=rb), intent(in) :: pw(:)                       ! single scattering albedo 
                                                                !   Dimensions: (nlayers)
       real(kind=rb), intent(in) :: prmuz                       ! cosine of solar zenith angle
 
@@ -2532,7 +2532,7 @@
          else
             zto1=ptau(jk)
             zw  =pw(jk)
-            zg  =pgg(jk)
+            zg  =pgg(jk)  
 
 ! General two-stream expressions
 
@@ -2541,17 +2541,17 @@
                zgamma1= (7._rb - zw * (4._rb + zg3)) * 0.25_rb
                zgamma2=-(1._rb - zw * (4._rb - zg3)) * 0.25_rb
                zgamma3= (2._rb - zg3 * prmuz ) * 0.25_rb
-            else if (kmodts == 2) then
+            else if (kmodts == 2) then  
                zgamma1= (8._rb - zw * (5._rb + zg3)) * 0.25_rb
                zgamma2=  3._rb *(zw * (1._rb - zg )) * 0.25_rb
                zgamma3= (2._rb - zg3 * prmuz ) * 0.25_rb
-            else if (kmodts == 3) then
+            else if (kmodts == 3) then  
                zgamma1= zsr3 * (2._rb - zw * (1._rb + zg)) * 0.5_rb
                zgamma2= zsr3 * zw * (1._rb - zg ) * 0.5_rb
                zgamma3= (1._rb - zsr3 * zg * prmuz ) * 0.5_rb
             end if
             zgamma4= 1._rb - zgamma3
-
+    
 ! Recompute original s.s.a. to test for conservative solution
             !Balwinder.Singh@pnnl.gov: Code added to avoid 'divide by zero' error in zwo computation
             denom = max((1._rb - (1._rb - zw) * (zg / (1._rb - zg))**2),1.0E-30_rb)
@@ -2560,19 +2560,19 @@
             if (zwo >= zwcrit) then
 ! Conservative scattering
 
-               za  = zgamma1 * prmuz
+               za  = zgamma1 * prmuz 
                za1 = za - zgamma3
                zgt = zgamma1 * zto1
-
+        
 ! Homogeneous reflectance and transmittance,
 ! collimated beam
 
                ze1 = min ( zto1 / prmuz , 500._rb)
 !               ze2 = exp( -ze1 )
 
-! Use exponential lookup table for transmittance, or expansion of
+! Use exponential lookup table for transmittance, or expansion of 
 ! exponential for low tau
-               if (ze1 .le. od_lo) then
+               if (ze1 .le. od_lo) then 
                   ze2 = 1._rb - ze1 + 0.5_rb * ze1 * ze1
                else
                   tblind = ze1 / (bpade + ze1)
@@ -2587,12 +2587,12 @@
 ! isotropic incidence
 
                prefd(jk) = zgt / (1._rb + zgt)
-               ptrad(jk) = 1._rb - prefd(jk)
+               ptrad(jk) = 1._rb - prefd(jk)        
 
-! This is applied for consistency between total (delta-scaled) and direct (unscaled)
+! This is applied for consistency between total (delta-scaled) and direct (unscaled) 
 ! calculations at very low optical depths (tau < 1.e-4) when the exponential lookup
 ! table returns a transmittance of 1.0.
-               if (ze2 .eq. 1.0_rb) then
+               if (ze2 .eq. 1.0_rb) then 
                   pref(jk) = 0.0_rb
                   ptra(jk) = 1.0_rb
                   prefd(jk) = 0.0_rb
@@ -2605,7 +2605,7 @@
                za1 = zgamma1 * zgamma4 + zgamma2 * zgamma3
                za2 = zgamma1 * zgamma3 + zgamma2 * zgamma4
                zrk = sqrt ( zgamma1**2 - zgamma2**2)
-               zrp = zrk * prmuz
+               zrp = zrk * prmuz               
                zrp1 = 1._rb + zrp
                zrm1 = 1._rb - zrp
                zrk2 = 2._rb * zrk
@@ -2626,7 +2626,7 @@
 !               zbeta = - zr5 / zr4
                zbeta = (zgamma1 - zrk) / zrkg
 !!
-
+        
 ! Homogeneous reflectance and transmittance
 
                ze1 = min ( zrk * zto1, 500._rb)
@@ -2644,9 +2644,9 @@
 !              zep2 = exp( ze2 )
 !              zem2 = 1._rb / zep2
 !
-! Use exponential lookup table for transmittance, or expansion of
+! Use exponential lookup table for transmittance, or expansion of 
 ! exponential for low tau
-               if (ze1 .le. od_lo) then
+               if (ze1 .le. od_lo) then 
                   zem1 = 1._rb - ze1 + 0.5_rb * ze1 * ze1
                   zep1 = 1._rb / zem1
                else
@@ -2656,7 +2656,7 @@
                   zep1 = 1._rb / zem1
                endif
 
-               if (ze2 .le. od_lo) then
+               if (ze2 .le. od_lo) then 
                   zem2 = 1._rb - ze2 + 0.5_rb * ze2 * ze2
                   zep2 = 1._rb / zem2
                else
@@ -2694,9 +2694,9 @@
 
             endif
 
-         endif
+         endif         
 
-      enddo
+      enddo    
 
       end subroutine reftra_sw
 
@@ -2751,7 +2751,7 @@
 ! ----- Input -----
       integer(kind=im), intent(in) :: nlayers         ! total number of layers
 
-      real(kind=rb), intent(in) :: pavel(:)           ! layer pressures (mb)
+      real(kind=rb), intent(in) :: pavel(:)           ! layer pressures (mb) 
                                                       !    Dimensions: (nlayers)
       real(kind=rb), intent(in) :: tavel(:)           ! layer temperatures (K)
                                                       !    Dimensions: (nlayers)
@@ -2767,10 +2767,10 @@
 
 ! ----- Output -----
       integer(kind=im), intent(out) :: laytrop        ! tropopause layer index
-      integer(kind=im), intent(out) :: layswtch       !
-      integer(kind=im), intent(out) :: laylow         !
+      integer(kind=im), intent(out) :: layswtch       ! 
+      integer(kind=im), intent(out) :: laylow         ! 
 
-      integer(kind=im), intent(out) :: jp(:)          !
+      integer(kind=im), intent(out) :: jp(:)          ! 
                                                       !    Dimensions: (nlayers)
       integer(kind=im), intent(out) :: jt(:)          !
                                                       !    Dimensions: (nlayers)
@@ -2789,7 +2789,7 @@
                                                       !    Dimensions: (nlayers)
       real(kind=rb), intent(out) :: colo2(:)          ! column amount (o2)
                                                       !    Dimensions: (nlayers)
-      real(kind=rb), intent(out) :: colmol(:)         !
+      real(kind=rb), intent(out) :: colmol(:)         ! 
                                                       !    Dimensions: (nlayers)
       real(kind=rb), intent(out) :: co2mult(:)        !
                                                       !    Dimensions: (nlayers)
@@ -2809,7 +2809,7 @@
 
       real(kind=rb), intent(out) :: &                 !
                          fac00(:), fac01(:), &        !    Dimensions: (nlayers)
-                         fac10(:), fac11(:)
+                         fac10(:), fac11(:) 
 
 ! ----- Local -----
 
@@ -2862,11 +2862,11 @@
          fp = 5._rb * (preflog(jp(lay)) - plog)
 
 ! Determine, for each reference pressure (JP and JP1), which
-! reference temperature (these are different for each
+! reference temperature (these are different for each  
 ! reference pressure) is nearest the layer temperature but does
 ! not exceed it.  Store these indices in JT and JT1, resp.
 ! Store in FT (resp. FT1) the fraction of the way between JT
-! (JT1) and the next highest reference temperature that the
+! (JT1) and the next highest reference temperature that the 
 ! layer temperature falls.
 
          jt(lay) = int(3._rb + (tavel(lay)-tref(jp(lay)))/15._rb)
@@ -2972,9 +2972,9 @@
  5400    continue
 
 ! We have now isolated the layer ln pressure and temperature,
-! between two reference pressures and two reference temperatures
-! (for each reference pressure).  We multiply the pressure
-! fraction FP with the appropriate temperature fractions to get
+! between two reference pressures and two reference temperatures 
+! (for each reference pressure).  We multiply the pressure 
+! fraction FP with the appropriate temperature fractions to get 
 ! the factors that will be needed for the interpolation that yields
 ! the optical depths (performed in routines TAUGBn for band n).
 
@@ -2994,7 +2994,7 @@
 !***************************************************************************
 
       save
-
+ 
 ! These pressures are chosen such that the ln of the first pressure
 ! has only a few non-zero digits (i.e. ln(PREF(1)) = 6.96000) and
 ! each subsequent ln(pressure) differs from the previous one by 0.2.
@@ -3027,8 +3027,8 @@
           -3.0400e+00_rb,-3.2400e+00_rb,-3.4400e+00_rb,-3.6400e+00_rb,-3.8400e+00_rb, &
           -4.0400e+00_rb,-4.2400e+00_rb,-4.4400e+00_rb,-4.6400e+00_rb /)
 
-! These are the temperatures associated with the respective
-! pressures for the MLS standard atmosphere.
+! These are the temperatures associated with the respective 
+! pressures for the MLS standard atmosphere. 
 
       tref(:) = (/ &
            2.9420e+02_rb, 2.8799e+02_rb, 2.7894e+02_rb, 2.6925e+02_rb, 2.5983e+02_rb, &
@@ -3039,7 +3039,7 @@
            2.4371e+02_rb, 2.4726e+02_rb, 2.5085e+02_rb, 2.5457e+02_rb, 2.5832e+02_rb, &
            2.6216e+02_rb, 2.6606e+02_rb, 2.6999e+02_rb, 2.7340e+02_rb, 2.7536e+02_rb, &
            2.7568e+02_rb, 2.7372e+02_rb, 2.7163e+02_rb, 2.6955e+02_rb, 2.6593e+02_rb, &
-           2.6211e+02_rb, 2.5828e+02_rb, 2.5360e+02_rb, 2.4854e+02_rb, 2.4348e+02_rb, &
+           2.6211e+02_rb, 2.5828e+02_rb, 2.5360e+02_rb, 2.4854e+02_rb, 2.4348e+02_rb, & 
            2.3809e+02_rb, 2.3206e+02_rb, 2.2603e+02_rb, 2.2000e+02_rb, 2.1435e+02_rb, &
            2.0887e+02_rb, 2.0340e+02_rb, 1.9792e+02_rb, 1.9290e+02_rb, 1.8809e+02_rb, &
            1.8329e+02_rb, 1.7849e+02_rb, 1.7394e+02_rb, 1.7212e+02_rb /)
@@ -3218,7 +3218,7 @@
       integer(kind=im), intent(in) :: nlayers            ! total number of layers
 
       integer(kind=im), intent(in) :: laytrop            ! tropopause layer index
-      integer(kind=im), intent(in) :: jp(:)              !
+      integer(kind=im), intent(in) :: jp(:)              ! 
                                                          !   Dimensions: (nlayers)
       integer(kind=im), intent(in) :: jt(:)              !
                                                          !   Dimensions: (nlayers)
@@ -3236,10 +3236,10 @@
                                                          !   Dimensions: (nlayers)
       real(kind=rb), intent(in) :: colo2(:)              ! column amount (o2)
                                                          !   Dimensions: (nlayers)
-      real(kind=rb), intent(in) :: colmol(:)             !
+      real(kind=rb), intent(in) :: colmol(:)             ! 
                                                          !   Dimensions: (nlayers)
 
-      integer(kind=im), intent(in) :: indself(:)
+      integer(kind=im), intent(in) :: indself(:)    
                                                          !   Dimensions: (nlayers)
       integer(kind=im), intent(in) :: indfor(:)
                                                          !   Dimensions: (nlayers)
@@ -3254,14 +3254,14 @@
 
       real(kind=rb), intent(in) :: &                     !
                        fac00(:), fac01(:), &             !   Dimensions: (nlayers)
-                       fac10(:), fac11(:)
+                       fac10(:), fac11(:) 
 
 ! ----- Output -----
       real(kind=rb), intent(out) :: sfluxzen(:)          ! solar source function
                                                          !   Dimensions: (ngptsw)
-      real(kind=rb), intent(out) :: taug(:,:)            ! gaseous optical depth
+      real(kind=rb), intent(out) :: taug(:,:)            ! gaseous optical depth 
                                                          !   Dimensions: (nlayers,ngptsw)
-      real(kind=rb), intent(out) :: taur(:,:)            ! Rayleigh
+      real(kind=rb), intent(out) :: taur(:,:)            ! Rayleigh 
                                                          !   Dimensions: (nlayers,ngptsw)
 !      real(kind=rb), intent(out) :: ssa(:,:)            ! single scattering albedo (inactive)
                                                          !   Dimensions: (nlayers,ngptsw)
@@ -3312,14 +3312,14 @@
                        fac110, fac111, fs, speccomb, specmult, specparm, &
                        tauray
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
-! vapor self-continuum is interpolated (in temperature) separately.
+! vapor self-continuum is interpolated (in temperature) separately.  
 
 ! Lower atmosphere loop
       do lay = 1, laytrop
          speccomb = colh2o(lay) + strrat1*colch4(lay)
-         specparm = colh2o(lay)/speccomb
+         specparm = colh2o(lay)/speccomb 
          if (specparm .ge. oneminus) specparm = oneminus
          specmult = 8._rb*(specparm)
          js = 1 + int(specmult)
@@ -3354,7 +3354,7 @@
                  (selfref(inds+1,ig) - selfref(inds,ig))) + &
                  forfac(lay) * (forref(indf,ig) + &
                  forfrac(lay) * &
-                 (forref(indf+1,ig) - forref(indf,ig))))
+                 (forref(indf+1,ig) - forref(indf,ig)))) 
 !            ssa(lay,ig) = tauray/taug(lay,ig)
             taur(lay,ig) = tauray
          enddo
@@ -3375,10 +3375,10 @@
                 (fac00(lay) * absb(ind0  ,ig) + &
                  fac10(lay) * absb(ind0+1,ig) + &
                  fac01(lay) * absb(ind1  ,ig) + &
-                 fac11(lay) * absb(ind1+1,ig))
+                 fac11(lay) * absb(ind1+1,ig)) 
 !            ssa(lay,ig) = tauray/taug(lay,ig)
-            if (lay .eq. laysolfr) sfluxzen(ig) = sfluxref(ig)
-            taur(lay,ig) = tauray
+            if (lay .eq. laysolfr) sfluxzen(ig) = sfluxref(ig) 
+            taur(lay,ig) = tauray  
          enddo
       enddo
 
@@ -3407,14 +3407,14 @@
                        fac110, fac111, fs, speccomb, specmult, specparm, &
                        tauray
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
-! vapor self-continuum is interpolated (in temperature) separately.
+! vapor self-continuum is interpolated (in temperature) separately.  
 
 ! Lower atmosphere loop
       do lay = 1, laytrop
          speccomb = colh2o(lay) + strrat*colco2(lay)
-         specparm = colh2o(lay)/speccomb
+         specparm = colh2o(lay)/speccomb 
          if (specparm .ge. oneminus) specparm = oneminus
          specmult = 8._rb*(specparm)
          js = 1 + int(specmult)
@@ -3449,7 +3449,7 @@
                  (selfref(inds+1,ig) - selfref(inds,ig))) + &
                  forfac(lay) * (forref(indf,ig) + &
                  forfrac(lay) * &
-                 (forref(indf+1,ig) - forref(indf,ig))))
+                 (forref(indf+1,ig) - forref(indf,ig)))) 
 !             ssa(lay,ngs16+ig) = tauray/taug(lay,ngs16+ig)
             taur(lay,ngs16+ig) = tauray
          enddo
@@ -3462,7 +3462,7 @@
          if (jp(lay-1) .lt. layreffr .and. jp(lay) .ge. layreffr) &
             laysolfr = lay
          speccomb = colh2o(lay) + strrat*colco2(lay)
-         specparm = colh2o(lay)/speccomb
+         specparm = colh2o(lay)/speccomb 
          if (specparm .ge. oneminus) specparm = oneminus
          specmult = 4._rb*(specparm)
          js = 1 + int(specmult)
@@ -3493,7 +3493,7 @@
                  colh2o(lay) * &
                  forfac(lay) * (forref(indf,ig) + &
                  forfrac(lay) * &
-                 (forref(indf+1,ig) - forref(indf,ig)))
+                 (forref(indf+1,ig) - forref(indf,ig))) 
 !            ssa(lay,ngs16+ig) = tauray/taug(lay,ngs16+ig)
             if (lay .eq. laysolfr) sfluxzen(ngs16+ig) = sfluxref(ig,js) &
                + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
@@ -3526,18 +3526,18 @@
                        fac110, fac111, fs, speccomb, specmult, specparm, &
                        tauray
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
-! vapor self-continuum is interpolated (in temperature) separately.
+! vapor self-continuum is interpolated (in temperature) separately.  
 
       laysolfr = laytrop
-
+      
 ! Lower atmosphere loop
       do lay = 1, laytrop
          if (jp(lay) .lt. layreffr .and. jp(lay+1) .ge. layreffr) &
             laysolfr = min(lay+1,laytrop)
          speccomb = colh2o(lay) + strrat*colch4(lay)
-         specparm = colh2o(lay)/speccomb
+         specparm = colh2o(lay)/speccomb 
          if (specparm .ge. oneminus) specparm = oneminus
          specmult = 8._rb*(specparm)
          js = 1 + int(specmult)
@@ -3572,7 +3572,7 @@
                  (selfref(inds+1,ig) - selfref(inds,ig))) + &
                  forfac(lay) * (forref(indf,ig) + &
                  forfrac(lay) * &
-                 (forref(indf+1,ig) - forref(indf,ig))))
+                 (forref(indf+1,ig) - forref(indf,ig)))) 
 !            ssa(lay,ngs17+ig) = tauray/taug(lay,ngs17+ig)
             if (lay .eq. laysolfr) sfluxzen(ngs17+ig) = sfluxref(ig,js) &
                + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
@@ -3590,8 +3590,8 @@
             taug(lay,ngs17+ig) = colch4(lay) * &
                 (fac00(lay) * absb(ind0,ig) + &
                  fac10(lay) * absb(ind0+1,ig) + &
-                 fac01(lay) * absb(ind1,ig) + &
-                 fac11(lay) * absb(ind1+1,ig))
+                 fac01(lay) * absb(ind1,ig) + &	  
+                 fac11(lay) * absb(ind1+1,ig)) 
 !           ssa(lay,ngs17+ig) = tauray/taug(lay,ngs17+ig)
            taur(lay,ngs17+ig) = tauray
          enddo
@@ -3622,18 +3622,18 @@
                        fac110, fac111, fs, speccomb, specmult, specparm, &
                        tauray
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
-! vapor self-continuum is interpolated (in temperature) separately.
+! vapor self-continuum is interpolated (in temperature) separately.  
 
       laysolfr = laytrop
 
-! Lower atmosphere loop
+! Lower atmosphere loop      
       do lay = 1, laytrop
          if (jp(lay) .lt. layreffr .and. jp(lay+1) .ge. layreffr) &
             laysolfr = min(lay+1,laytrop)
          speccomb = colh2o(lay) + strrat*colco2(lay)
-         specparm = colh2o(lay)/speccomb
+         specparm = colh2o(lay)/speccomb 
          if (specparm .ge. oneminus) specparm = oneminus
          specmult = 8._rb*(specparm)
          js = 1 + int(specmult)
@@ -3665,14 +3665,14 @@
                  colh2o(lay) * &
                  (selffac(lay) * (selfref(inds,ig) + &
                  selffrac(lay) * &
-                 (selfref(inds+1,ig) - selfref(inds,ig))) + &
+                 (selfref(inds+1,ig) - selfref(inds,ig))) + & 
                  forfac(lay) * (forref(indf,ig) + &
                  forfrac(lay) * &
-                 (forref(indf+1,ig) - forref(indf,ig))))
+                 (forref(indf+1,ig) - forref(indf,ig)))) 
 !            ssa(lay,ngs18+ig) = tauray/taug(lay,ngs18+ig)
             if (lay .eq. laysolfr) sfluxzen(ngs18+ig) = sfluxref(ig,js) &
                + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
-            taur(lay,ngs18+ig) = tauray
+            taur(lay,ngs18+ig) = tauray   
          enddo
       enddo
 
@@ -3687,9 +3687,9 @@
                 (fac00(lay) * absb(ind0,ig) + &
                  fac10(lay) * absb(ind0+1,ig) + &
                  fac01(lay) * absb(ind1,ig) + &
-                 fac11(lay) * absb(ind1+1,ig))
-!            ssa(lay,ngs18+ig) = tauray/taug(lay,ngs18+ig)
-            taur(lay,ngs18+ig) = tauray
+                 fac11(lay) * absb(ind1+1,ig)) 
+!            ssa(lay,ngs18+ig) = tauray/taug(lay,ngs18+ig) 
+            taur(lay,ngs18+ig) = tauray   
          enddo
       enddo
 
@@ -3720,9 +3720,9 @@
                        fac110, fac111, fs, speccomb, specmult, specparm, &
                        tauray
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
-! vapor self-continuum is interpolated (in temperature) separately.
+! vapor self-continuum is interpolated (in temperature) separately.  
 
       laysolfr = laytrop
 
@@ -3742,7 +3742,7 @@
                  fac10(lay) * absa(ind0+1,ig) + &
                  fac01(lay) * absa(ind1,ig) + &
                  fac11(lay) * absa(ind1+1,ig)) + &
-                 selffac(lay) * (selfref(inds,ig) + &
+                 selffac(lay) * (selfref(inds,ig) + & 
                  selffrac(lay) * &
                  (selfref(inds+1,ig) - selfref(inds,ig))) + &
                  forfac(lay) * (forref(indf,ig) + &
@@ -3750,8 +3750,8 @@
                  (forref(indf+1,ig) - forref(indf,ig)))) &
                  + colch4(lay) * absch4(ig)
 !            ssa(lay,ngs19+ig) = tauray/taug(lay,ngs19+ig)
-            taur(lay,ngs19+ig) = tauray
-            if (lay .eq. laysolfr) sfluxzen(ngs19+ig) = sfluxref(ig)
+            taur(lay,ngs19+ig) = tauray 
+            if (lay .eq. laysolfr) sfluxzen(ngs19+ig) = sfluxref(ig) 
          enddo
       enddo
 
@@ -3773,7 +3773,7 @@
                  (forref(indf+1,ig) - forref(indf,ig)))) + &
                  colch4(lay) * absch4(ig)
 !            ssa(lay,ngs19+ig) = tauray/taug(lay,ngs19+ig)
-            taur(lay,ngs19+ig) = tauray
+            taur(lay,ngs19+ig) = tauray 
          enddo
       enddo
 
@@ -3802,18 +3802,18 @@
                        fac110, fac111, fs, speccomb, specmult, specparm, &
                        tauray
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
-! vapor self-continuum is interpolated (in temperature) separately.
+! vapor self-continuum is interpolated (in temperature) separately.  
 
       laysolfr = laytrop
-
+      
 ! Lower atmosphere loop
       do lay = 1, laytrop
          if (jp(lay) .lt. layreffr .and. jp(lay+1) .ge. layreffr) &
             laysolfr = min(lay+1,laytrop)
          speccomb = colh2o(lay) + strrat*colco2(lay)
-         specparm = colh2o(lay)/speccomb
+         specparm = colh2o(lay)/speccomb 
          if (specparm .ge. oneminus) specparm = oneminus
          specmult = 8._rb*(specparm)
          js = 1 + int(specmult)
@@ -3859,7 +3859,7 @@
 ! Upper atmosphere loop
       do lay = laytrop+1, nlayers
          speccomb = colh2o(lay) + strrat*colco2(lay)
-         specparm = colh2o(lay)/speccomb
+         specparm = colh2o(lay)/speccomb 
          if (specparm .ge. oneminus) specparm = oneminus
          specmult = 4._rb*(specparm)
          js = 1 + int(specmult)
@@ -3921,14 +3921,14 @@
                        fac110, fac111, fs, speccomb, specmult, specparm, &
                        tauray, o2adj, o2cont
 
-! The following factor is the ratio of total O2 band intensity (lines
+! The following factor is the ratio of total O2 band intensity (lines 
 ! and Mate continuum) to O2 band intensity (line only).  It is needed
 ! to adjust the optical depths since the k's include only lines.
       o2adj = 1.6_rb
-
-! Compute the optical depth by interpolating in ln(pressure),
+      
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
-! vapor self-continuum is interpolated (in temperature) separately.
+! vapor self-continuum is interpolated (in temperature) separately.  
 
       laysolfr = laytrop
 
@@ -3938,7 +3938,7 @@
             laysolfr = min(lay+1,laytrop)
          o2cont = 4.35e-4_rb*colo2(lay)/(350.0_rb*2.0_rb)
          speccomb = colh2o(lay) + o2adj*strrat*colo2(lay)
-         specparm = colh2o(lay)/speccomb
+         specparm = colh2o(lay)/speccomb 
          if (specparm .ge. oneminus) specparm = oneminus
          specmult = 8._rb*(specparm)
 !         odadj = specparm + o2adj * (1._rb - specparm)
@@ -4027,9 +4027,9 @@
                        fac110, fac111, fs, speccomb, specmult, specparm, &
                        tauray
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
-! vapor self-continuum is interpolated (in temperature) separately.
+! vapor self-continuum is interpolated (in temperature) separately.  
 
       laysolfr = laytrop
 
@@ -4054,9 +4054,9 @@
                  (selfref(inds+1,ig) - selfref(inds,ig))) + &
                  forfac(lay) * (forref(indf,ig) + &
                  forfrac(lay) * &
-                 (forref(indf+1,ig) - forref(indf,ig))))
+                 (forref(indf+1,ig) - forref(indf,ig)))) 
 !            ssa(lay,ngs22+ig) = tauray/taug(lay,ngs22+ig)
-            if (lay .eq. laysolfr) sfluxzen(ngs22+ig) = sfluxref(ig)
+            if (lay .eq. laysolfr) sfluxzen(ngs22+ig) = sfluxref(ig) 
             taur(lay,ngs22+ig) = tauray
          enddo
       enddo
@@ -4067,7 +4067,7 @@
 !            taug(lay,ngs22+ig) = colmol(lay) * rayl(ig)
 !            ssa(lay,ngs22+ig) = 1.0_rb
             taug(lay,ngs22+ig) = 0._rb
-            taur(lay,ngs22+ig) = colmol(lay) * rayl(ig)
+            taur(lay,ngs22+ig) = colmol(lay) * rayl(ig) 
          enddo
       enddo
 
@@ -4097,9 +4097,9 @@
                        fac110, fac111, fs, speccomb, specmult, specparm, &
                        tauray
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
-! vapor self-continuum is interpolated (in temperature) separately.
+! vapor self-continuum is interpolated (in temperature) separately.  
 
       laysolfr = laytrop
 
@@ -4108,7 +4108,7 @@
          if (jp(lay) .lt. layreffr .and. jp(lay+1) .ge. layreffr) &
             laysolfr = min(lay+1,laytrop)
          speccomb = colh2o(lay) + strrat*colo2(lay)
-         specparm = colh2o(lay)/speccomb
+         specparm = colh2o(lay)/speccomb 
          if (specparm .ge. oneminus) specparm = oneminus
          specmult = 8._rb*(specparm)
          js = 1 + int(specmult)
@@ -4139,11 +4139,11 @@
                  fac011 * absa(ind1+9,ig) + &
                  fac111 * absa(ind1+10,ig)) + &
                  colo3(lay) * abso3a(ig) + &
-                 colh2o(lay) * &
+                 colh2o(lay) * & 
                  (selffac(lay) * (selfref(inds,ig) + &
                  selffrac(lay) * &
                  (selfref(inds+1,ig) - selfref(inds,ig))) + &
-                 forfac(lay) * (forref(indf,ig) + &
+                 forfac(lay) * (forref(indf,ig) + & 
                  forfrac(lay) * &
                  (forref(indf+1,ig) - forref(indf,ig))))
 !            ssa(lay,ngs23+ig) = tauray/taug(lay,ngs23+ig)
@@ -4196,9 +4196,9 @@
                        fac110, fac111, fs, speccomb, specmult, specparm, &
                        tauray
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
-! vapor self-continuum is interpolated (in temperature) separately.
+! vapor self-continuum is interpolated (in temperature) separately.  
 
       laysolfr = laytrop
 
@@ -4216,9 +4216,9 @@
                  fac10(lay) * absa(ind0+1,ig) + &
                  fac01(lay) * absa(ind1,ig) + &
                  fac11(lay) * absa(ind1+1,ig)) + &
-                 colo3(lay) * abso3a(ig)
+                 colo3(lay) * abso3a(ig) 
 !            ssa(lay,ngs24+ig) = tauray/taug(lay,ngs24+ig)
-            if (lay .eq. laysolfr) sfluxzen(ngs24+ig) = sfluxref(ig)
+            if (lay .eq. laysolfr) sfluxzen(ngs24+ig) = sfluxref(ig) 
             taur(lay,ngs24+ig) = tauray
          enddo
       enddo
@@ -4227,7 +4227,7 @@
       do lay = laytrop+1, nlayers
          do ig = 1, ng25
             tauray = colmol(lay) * rayl(ig)
-            taug(lay,ngs24+ig) = colo3(lay) * abso3b(ig)
+            taug(lay,ngs24+ig) = colo3(lay) * abso3b(ig) 
 !            ssa(lay,ngs24+ig) = tauray/taug(lay,ngs24+ig)
             taur(lay,ngs24+ig) = tauray
          enddo
@@ -4257,20 +4257,20 @@
                        fac110, fac111, fs, speccomb, specmult, specparm, &
                        tauray
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
-! vapor self-continuum is interpolated (in temperature) separately.
+! vapor self-continuum is interpolated (in temperature) separately.  
 
       laysolfr = laytrop
 
 ! Lower atmosphere loop
       do lay = 1, laytrop
-         do ig = 1, ng26
+         do ig = 1, ng26 
 !            taug(lay,ngs25+ig) = colmol(lay) * rayl(ig)
 !            ssa(lay,ngs25+ig) = 1.0_rb
-            if (lay .eq. laysolfr) sfluxzen(ngs25+ig) = sfluxref(ig)
+            if (lay .eq. laysolfr) sfluxzen(ngs25+ig) = sfluxref(ig) 
             taug(lay,ngs25+ig) = 0._rb
-            taur(lay,ngs25+ig) = colmol(lay) * rayl(ig)
+            taur(lay,ngs25+ig) = colmol(lay) * rayl(ig) 
          enddo
       enddo
 
@@ -4280,7 +4280,7 @@
 !            taug(lay,ngs25+ig) = colmol(lay) * rayl(ig)
 !            ssa(lay,ngs25+ig) = 1.0_rb
             taug(lay,ngs25+ig) = 0._rb
-            taur(lay,ngs25+ig) = colmol(lay) * rayl(ig)
+            taur(lay,ngs25+ig) = colmol(lay) * rayl(ig) 
          enddo
       enddo
 
@@ -4309,9 +4309,9 @@
                        fac110, fac111, fs, speccomb, specmult, specparm, &
                        tauray
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
-! vapor self-continuum is interpolated (in temperature) separately.
+! vapor self-continuum is interpolated (in temperature) separately.  
 
 ! Lower atmosphere loop
       do lay = 1, laytrop
@@ -4344,10 +4344,10 @@
             taug(lay,ngs26+ig) = colo3(lay) * &
                 (fac00(lay) * absb(ind0,ig) + &
                  fac10(lay) * absb(ind0+1,ig) + &
-                 fac01(lay) * absb(ind1,ig) + &
+                 fac01(lay) * absb(ind1,ig) + & 
                  fac11(lay) * absb(ind1+1,ig))
 !            ssa(lay,ngs26+ig) = tauray/taug(lay,ngs26+ig)
-            if (lay.eq.laysolfr) sfluxzen(ngs26+ig) = scalekur * sfluxref(ig)
+            if (lay.eq.laysolfr) sfluxzen(ngs26+ig) = scalekur * sfluxref(ig) 
             taur(lay,ngs26+ig) = tauray
          enddo
       enddo
@@ -4377,14 +4377,14 @@
                        fac110, fac111, fs, speccomb, specmult, specparm, &
                        tauray
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
-! vapor self-continuum is interpolated (in temperature) separately.
+! vapor self-continuum is interpolated (in temperature) separately.  
 
 ! Lower atmosphere loop
       do lay = 1, laytrop
          speccomb = colo3(lay) + strrat*colo2(lay)
-         specparm = colo3(lay)/speccomb
+         specparm = colo3(lay)/speccomb 
          if (specparm .ge. oneminus) specparm = oneminus
          specmult = 8._rb*(specparm)
          js = 1 + int(specmult)
@@ -4410,7 +4410,7 @@
                  fac001 * absa(ind1,ig) + &
                  fac101 * absa(ind1+1,ig) + &
                  fac011 * absa(ind1+9,ig) + &
-                 fac111 * absa(ind1+10,ig))
+                 fac111 * absa(ind1+10,ig)) 
 !            ssa(lay,ngs27+ig) = tauray/taug(lay,ngs27+ig)
             taur(lay,ngs27+ig) = tauray
          enddo
@@ -4423,7 +4423,7 @@
          if (jp(lay-1) .lt. layreffr .and. jp(lay) .ge. layreffr) &
             laysolfr = lay
          speccomb = colo3(lay) + strrat*colo2(lay)
-         specparm = colo3(lay)/speccomb
+         specparm = colo3(lay)/speccomb 
          if (specparm .ge. oneminus) specparm = oneminus
          specmult = 4._rb*(specparm)
          js = 1 + int(specmult)
@@ -4449,7 +4449,7 @@
                  fac001 * absb(ind1,ig) + &
                  fac101 * absb(ind1+1,ig) + &
                  fac011 * absb(ind1+5,ig) + &
-                 fac111 * absb(ind1+6,ig))
+                 fac111 * absb(ind1+6,ig)) 
 !            ssa(lay,ngs27+ig) = tauray/taug(lay,ngs27+ig)
             if (lay .eq. laysolfr) sfluxzen(ngs27+ig) = sfluxref(ig,js) &
                + fs * (sfluxref(ig,js+1) - sfluxref(ig,js))
@@ -4482,9 +4482,9 @@
                        fac110, fac111, fs, speccomb, specmult, specparm, &
                        tauray
 
-! Compute the optical depth by interpolating in ln(pressure),
+! Compute the optical depth by interpolating in ln(pressure), 
 ! temperature, and appropriate species.  Below LAYTROP, the water
-! vapor self-continuum is interpolated (in temperature) separately.
+! vapor self-continuum is interpolated (in temperature) separately.  
 
 ! Lower atmosphere loop
       do lay = 1, laytrop
@@ -4503,10 +4503,10 @@
                  selffac(lay) * (selfref(inds,ig) + &
                  selffrac(lay) * &
                  (selfref(inds+1,ig) - selfref(inds,ig))) + &
-                 forfac(lay) * (forref(indf,ig) + &
+                 forfac(lay) * (forref(indf,ig) + & 
                  forfrac(lay) * &
                  (forref(indf+1,ig) - forref(indf,ig)))) &
-                 + colco2(lay) * absco2(ig)
+                 + colco2(lay) * absco2(ig) 
 !            ssa(lay,ngs28+ig) = tauray/taug(lay,ngs28+ig)
             taur(lay,ngs28+ig) = tauray
          enddo
@@ -4527,10 +4527,10 @@
                 (fac00(lay) * absb(ind0,ig) + &
                  fac10(lay) * absb(ind0+1,ig) + &
                  fac01(lay) * absb(ind1,ig) + &
-                 fac11(lay) * absb(ind1+1,ig)) &
-                 + colh2o(lay) * absh2o(ig)
+                 fac11(lay) * absb(ind1+1,ig)) &  
+                 + colh2o(lay) * absh2o(ig) 
 !            ssa(lay,ngs28+ig) = tauray/taug(lay,ngs28+ig)
-            if (lay .eq. laysolfr) sfluxzen(ngs28+ig) = sfluxref(ig)
+            if (lay .eq. laysolfr) sfluxzen(ngs28+ig) = sfluxref(ig) 
             taur(lay,ngs28+ig) = tauray
          enddo
       enddo
@@ -4601,7 +4601,7 @@
 
 ! ------- Definitions -------
 !     Arrays for 10000-point look-up tables:
-!     TAU_TBL  Clear-sky optical depth
+!     TAU_TBL  Clear-sky optical depth 
 !     EXP_TBL  Exponential lookup table for transmittance
 !     PADE     Pade approximation constant (= 0.278)
 !     BPADE    Inverse of the Pade approximation constant
@@ -4632,9 +4632,9 @@
 !      call sw_kgb29
 
 ! Define exponential lookup tables for transmittance. Tau is
-! computed as a function of the tau transition function, and transmittance
-! is calculated as a function of tau.  All tables are computed at intervals
-! of 0.0001.  The inverse of the constant used in the Pade approximation to
+! computed as a function of the tau transition function, and transmittance 
+! is calculated as a function of tau.  All tables are computed at intervals 
+! of 0.0001.  The inverse of the constant used in the Pade approximation to 
 ! the tau transition function is set to bpade.
 
       exp_tbl(0) = 1.0_rb
@@ -4708,8 +4708,8 @@
                           sbcnst, secdy, oneminus, pi
       use rrsw_vsn
 
-      save
-
+      save 
+ 
       real(kind=rb), intent(in) :: cpdair     ! Specific heat capacity of dry air
                                               ! at constant pressure at 273 K
                                               ! (J kg-1 K-1)
@@ -4735,7 +4735,7 @@
                                               ! (ergs s; g cm2 s-1)
       boltz = 1.3806503e-16_rb                ! Boltzmann constant
                                               ! (ergs K-1; g cm2 s-2 K-1)
-      clight = 2.99792458e+10_rb              ! Speed of light in a vacuum
+      clight = 2.99792458e+10_rb              ! Speed of light in a vacuum  
                                               ! (cm s-1)
       avogad = 6.02214199e+23_rb              ! Avogadro constant
                                               ! (mol-1)
@@ -4765,11 +4765,11 @@
 !          radcn2 = planck*clight/boltz
 
 !     Heatfac is the factor by which delta-flux / delta-pressure is
-!     multiplied, with flux in W/m-2 and pressure in mbar, to get
+!     multiplied, with flux in W/m-2 and pressure in mbar, to get 
 !     the heating rate in units of degrees/day.  It is equal to:
 !     Original value:
 !           (g)x(#sec/day)x(1e-5)/(specific heat of air at const. p)
-!           Here, cpdair (1.004) is in units of J g-1 K-1, and the
+!           Here, cpdair (1.004) is in units of J g-1 K-1, and the 
 !           constant (1.e-5) converts mb to Pa and g-1 to kg-1.
 !        =  (9.8066)(86400)(1e-5)/(1.004)
 !      heatfac = 8.4391_rb
@@ -4783,8 +4783,8 @@
 !
 !     Calculated value (from constants above and input cpdair)
 !        (grav) x (#sec/day) / (specific heat of dry air at const. p x 1.e2)
-!           Here, cpdair is in units of J kg-1 K-1, and the constant (1.e2)
-!           converts mb to Pa when heatfac is multiplied by W m-2 mb-1.
+!           Here, cpdair is in units of J kg-1 K-1, and the constant (1.e2) 
+!           converts mb to Pa when heatfac is multiplied by W m-2 mb-1. 
       heatfac = grav * secdy / (cpdair * 1.e2_rb)
 
       end subroutine swdatinit
@@ -4794,10 +4794,10 @@
 !***************************************************************************
 
       save
-
+ 
 ! ------- Definitions -------
 !     Arrays for the g-point reduction from 224 to 112 for the 16 LW bands:
-!     This mapping from 224 to 112 points has been carefully selected to
+!     This mapping from 224 to 112 points has been carefully selected to 
 !     minimize the effect on the resulting fluxes and cooling rates, and
 !     caution should be used if the mapping is modified.  The full 224
 !     g-point set can be restored with ngpt=224, ngc=16*16, ngn=224*1., etc.
@@ -4805,7 +4805,7 @@
 !     ngc     The number of new g-points in each band
 !     ngs     The cumulative sum of new g-points for each band
 !     ngm     The index of each new g-point relative to the original
-!             16 g-points for each band.
+!             16 g-points for each band.  
 !     ngn     The number of original g-points that are combined to make
 !             each new g-point in each band.
 !     ngb     The band index for each new g-point.
@@ -4957,7 +4957,7 @@
         1.69446_rb, 1.11855_rb, 1.09212_rb, 1.72145_rb, 1.03858_rb, 1.12044_rb/)
       rsrtaua(14, :) = (/ &
         0.10849_rb, 0.66699_rb, 0.65255_rb, 0.11600_rb, 0.06529_rb, 0.04468_rb/)
-
+ 
       rsrpiza( 1, :) = (/ &
         .5230504_rb, .7868518_rb, .8531531_rb, .4048149_rb, .8748231_rb, .2355667_rb/)
       rsrpiza( 2, :) = (/ &
@@ -5017,7 +5017,7 @@
         0.700610_rb, 0.818871_rb, 0.702399_rb, 0.689886_rb, .4629866_rb, .1907639_rb/)
 
       end subroutine swaerpr
-
+ 
 !***************************************************************************
       subroutine cmbgb16s
 !***************************************************************************
@@ -5030,7 +5030,7 @@
 !  The subroutines CMBGB16->CMBGB29 input the absorption coefficient
 !  data for each band, which are defined for 16 g-points and 14 spectral
 !  bands. The data are combined with appropriate weighting following the
-!  g-point mapping arrays specified in RRTMG_SW_INIT.  Solar source
+!  g-point mapping arrays specified in RRTMG_SW_INIT.  Solar source 
 !  function data in array SFLUXREF are combined without weighting.  All
 !  g-point reduced data are put into new arrays for use in RRTMG_SW.
 !
@@ -6085,7 +6085,7 @@
 ! Explanation of the method for each value of INFLAG.  A value of
 !  0 for INFLAG do not distingish being liquid and ice clouds.
 !  INFLAG = 2 does distinguish between liquid and ice clouds, and
-!    requires further user input to specify the method to be used to
+!    requires further user input to specify the method to be used to 
 !    compute the aborption due to each.
 !  INFLAG = 0:  For each cloudy layer, the cloud fraction, the cloud optical
 !    depth, the cloud single-scattering albedo, and the
@@ -6093,17 +6093,17 @@
 !    that these values are delta-m scaled within this
 !    subroutine.
 
-!  INFLAG = 2:  For each cloudy layer, the cloud fraction, cloud
+!  INFLAG = 2:  For each cloudy layer, the cloud fraction, cloud 
 !    water path (g/m2), and cloud ice fraction are input.
 !  ICEFLAG = 2:  The ice effective radius (microns) is input and the
 !    optical properties due to ice clouds are computed from
-!    the optical properties stored in the RT code, STREAMER v3.0
-!    (Reference: Key. J., Streamer User's Guide, Cooperative
+!    the optical properties stored in the RT code, STREAMER v3.0 
+!    (Reference: Key. J., Streamer User's Guide, Cooperative 
 !    Institute for Meteorological Satellite Studies, 2001, 96 pp.).
 !    Valid range of values for re are between 5.0 and
 !    131.0 micron.
-!    This version uses Ebert and Curry, JGR, (1992) method for
-!    ice particles larger than 131.0 microns.
+!    This version uses Ebert and Curry, JGR, (1992) method for 
+!    ice particles larger than 131.0 microns. 
 !  ICEFLAG = 3:  The ice generalized effective size (dge) is input
 !    and the optical depths, single-scattering albedo,
 !    and phase function moments are calculated as in
@@ -6112,18 +6112,18 @@
 !    bands in RRTM_SW.  Linear interpolation is used to
 !    get the coefficients from the stored tables.
 !    Valid range of values for dge are between 5.0 and
-!    140.0 micron.
-!    This version uses Ebert and Curry, JGR, (1992) method for
-!    ice particles larger than 140.0 microns.
-!  LIQFLAG = 1:  The water droplet effective radius (microns) is input
-!    and the optical depths due to water clouds are computed
+!    140.0 micron. 
+!    This version uses Ebert and Curry, JGR, (1992) method for 
+!    ice particles larger than 140.0 microns. 
+!  LIQFLAG = 1:  The water droplet effective radius (microns) is input 
+!    and the optical depths due to water clouds are computed 
 !    as in Hu and Stamnes, J., Clim., 6, 728-742, (1993) with
-!    modified coefficients derived from Mie scattering calculations.
+!    modified coefficients derived from Mie scattering calculations. 
 !    The values for absorption coefficients appropriate for
-!    the spectral bands in RRTM/RRTMG have been obtained for a
-!    range of effective radii by an averaging procedure
+!    the spectral bands in RRTM/RRTMG have been obtained for a 
+!    range of effective radii by an averaging procedure 
 !    based on the work of J. Pinto (private communication).
-!    Linear interpolation is used to get the absorption
+!    Linear interpolation is used to get the absorption 
 !    coefficients for the input effective radius.
 !
 !..Updated tables suggested by Peter Blossey (Univ. Washington) that came from RRTM v3.9 from AER, Inc.
@@ -7924,13 +7924,13 @@
                            pdbt, prdnd, prup, prupd, ptdbt, &
                            pfd, pfu)
 ! --------------------------------------------------------------------------
-
+ 
 ! Purpose: This routine performs the vertical quadrature integration
 !
 ! Interface:  *vrtqdr_sw* is called from *spcvrt_sw* and *spcvmc_sw*
 !
 ! Modifications.
-!
+! 
 ! Original: H. Barker
 ! Revision: Integrated with rrtmg_sw, J.-J. Morcrette, ECMWF, Oct 2002
 ! Revision: Reformatted for consistency with rrtmg_lw: MJIacono, AER, Jul 2006
@@ -7978,7 +7978,7 @@
       integer(kind=im) :: ikp, ikx, jk
 
       real(kind=rb) :: zreflect
-      real(kind=rb) :: ztdn(klev+1)
+      real(kind=rb) :: ztdn(klev+1)  
 
 ! Definitions
 !
@@ -7991,9 +7991,9 @@
 ! ptdbt(jk)  total direct beam transmittance at levels
 !
 !-----------------------------------------------------------------------------
-
+                   
 ! Link lowest layer with surface
-
+             
       zreflect = 1._rb / (1._rb - prefd(klev+1) * prefd(klev))
       prup(klev) = pref(klev) + (ptrad(klev) * &
                  ((ptra(klev) - pdbt(klev)) * prefd(klev+1) + &
@@ -8001,10 +8001,10 @@
       prupd(klev) = prefd(klev) + ptrad(klev) * ptrad(klev) * &
                     prefd(klev+1) * zreflect
 
-! Pass from bottom to top
+! Pass from bottom to top 
 
       do jk = 1,klev-1
-         ikp = klev+1-jk
+         ikp = klev+1-jk                       
          ikx = ikp-1
          zreflect = 1._rb / (1._rb -prupd(ikp) * prefd(ikx))
          prup(ikx) = pref(ikx) + (ptrad(ikx) * &
@@ -8013,7 +8013,7 @@
          prupd(ikx) = prefd(ikx) + ptrad(ikx) * ptrad(ikx) * &
                       prupd(ikp) * zreflect
       enddo
-
+    
 ! Upper boundary conditions
 
       ztdn(1) = 1._rb
@@ -8032,7 +8032,7 @@
          prdnd(ikp) = prefd(jk) + ptrad(jk) * ptrad(jk) * &
                       prdnd(jk) * zreflect
       enddo
-
+    
 ! Up and down-welling fluxes at levels
 
       do jk = 1,klev+1
@@ -8093,9 +8093,9 @@
              pbbfddir, pbbcddir, puvfddir, puvcddir, pnifddir, pnicddir)
 ! ---------------------------------------------------------------------------
 !
-! Purpose: Contains spectral loop to compute the shortwave radiative fluxes,
+! Purpose: Contains spectral loop to compute the shortwave radiative fluxes, 
 !          using the two-stream method of H. Barker and McICA, the Monte-Carlo
-!          Independent Column Approximation, for the representation of
+!          Independent Column Approximation, for the representation of 
 !          sub-grid cloud variability (i.e. cloud overlap).
 !
 ! Interface:  *spcvmc_sw* is called from *rrtmg_sw.F90* or rrtmg_sw.1col.F90*
@@ -8114,12 +8114,12 @@
 ! Revision: Bug fix to apply delta scaling to clear sky: AER, Dec 2004
 ! Revision: Code modified so that delta scaling is not done in cloudy profiles
 !           if routine cldprop is used; delta scaling can be applied by swithcing
-!           code below if cldprop is not used to get cloud properties.
+!           code below if cldprop is not used to get cloud properties. 
 !           AER, Jan 2005
 ! Revision: Modified to use McICA: MJIacono, AER, Nov 2005
-! Revision: Uniform formatting for RRTMG: MJIacono, AER, Jul 2006
-! Revision: Use exponential lookup table for transmittance: MJIacono, AER,
-!           Aug 2007
+! Revision: Uniform formatting for RRTMG: MJIacono, AER, Jul 2006 
+! Revision: Use exponential lookup table for transmittance: MJIacono, AER, 
+!           Aug 2007 
 !
 ! ------------------------------------------------------------------
 
@@ -8147,7 +8147,7 @@
       integer(kind=im), intent(in) :: jt1(:)
                                                                !   Dimensions: (nlayers)
 
-      real(kind=rb), intent(in) :: pavel(:)                    ! layer pressure (hPa, mb)
+      real(kind=rb), intent(in) :: pavel(:)                    ! layer pressure (hPa, mb) 
                                                                !   Dimensions: (nlayers)
       real(kind=rb), intent(in) :: tavel(:)                    ! layer temperature (K)
                                                                !   Dimensions: (nlayers)
@@ -8156,7 +8156,7 @@
       real(kind=rb), intent(in) :: tz(0:)                      ! level temperatures (hPa, mb)
                                                                !   Dimensions: (0:nlayers)
       real(kind=rb), intent(in) :: tbound                      ! surface temperature (K)
-      real(kind=rb), intent(in) :: wkl(:,:)                    ! molecular amounts (mol/cm2)
+      real(kind=rb), intent(in) :: wkl(:,:)                    ! molecular amounts (mol/cm2) 
                                                                !   Dimensions: (mxmol,nlayers)
       real(kind=rb), intent(in) :: coldry(:)                   ! dry air column density (mol/cm2)
                                                                !   Dimensions: (nlayers)
@@ -8255,8 +8255,8 @@
       integer(kind=im)  :: klev
       integer(kind=im) :: ib1, ib2, ibm, igt, ikl, ikp, ikx
       integer(kind=im) :: iw, jb, jg, jl, jk
-!      integer(kind=im), parameter :: nuv = ??
-!      integer(kind=im), parameter :: nvs = ??
+!      integer(kind=im), parameter :: nuv = ?? 
+!      integer(kind=im), parameter :: nvs = ?? 
       integer(kind=im) :: itind
 
       real(kind=rb) :: tblind, ze1
@@ -8276,7 +8276,7 @@
       real(kind=rb) :: ztra(nlayers+1), ztrac(nlayers+1), ztrao(nlayers+1)
       real(kind=rb) :: ztrad(nlayers+1), ztradc(nlayers+1), ztrado(nlayers+1)
       real(kind=rb) :: zdbtc(nlayers+1), ztdbtc(nlayers+1)
-      real(kind=rb) :: zincflx(ngptsw), zdbtc_nodel(nlayers+1)
+      real(kind=rb) :: zincflx(ngptsw), zdbtc_nodel(nlayers+1) 
       real(kind=rb) :: ztdbt_nodel(nlayers+1), ztdbtc_nodel(nlayers+1)
 
       real(kind=rb) :: zdbtmc, zdbtmo, zf, zgw, zreflect
@@ -8354,7 +8354,7 @@
 !           zbbfu(jk)=0.0_rb
 !        enddo
 
-! Top of g-point interval loop within each band (iw is cumulative counter)
+! Top of g-point interval loop within each band (iw is cumulative counter) 
          do jg = 1,igt
             iw = iw+1
 
@@ -8362,7 +8362,7 @@
             zincflx(iw) = adjflux(jb) * zsflxzen(iw) * prmu0
 !             zincflux = zincflux + adjflux(jb) * zsflxzen(iw) * prmu0           ! inactive
 
-! Compute layer reflectances and transmittances for direct and diffuse sources,
+! Compute layer reflectances and transmittances for direct and diffuse sources, 
 ! first clear then cloudy
 
 ! zrefc(jk)  direct albedo for clear
@@ -8373,7 +8373,7 @@
 ! ztrao(jk)  direct transmittance for cloudy
 ! ztradc(jk) diffuse transmittance for clear
 ! ztrado(jk) diffuse transmittance for cloudy
-!
+!  
 ! zref(jk)   direct reflectance
 ! zrefd(jk)  diffuse reflectance
 ! ztra(jk)   direct transmittance
@@ -8384,8 +8384,8 @@
 ! zdbt(jk)   layer mean direct beam transmittance
 ! ztdbt(jk)  total direct beam transmittance at levels
 
-! Clear-sky
-!   TOA direct beam
+! Clear-sky    
+!   TOA direct beam    
             ztdbtc(1)=1.0_rb
             ztdbtc_nodel(1)=1.0_rb
 !   Surface values
@@ -8396,9 +8396,9 @@
             zrefdc(klev+1)=palbd(ibm)
             zrupc(klev+1) =palbp(ibm)
             zrupdc(klev+1)=palbd(ibm)
-
-! Total sky
-!   TOA direct beam
+           
+! Total sky    
+!   TOA direct beam    
             ztdbt(1)=1.0_rb
             ztdbt_nodel(1)=1.0_rb
 !   Surface values
@@ -8409,11 +8409,11 @@
             zrefd(klev+1)=palbd(ibm)
             zrup(klev+1) =palbp(ibm)
             zrupd(klev+1)=palbd(ibm)
-
+    
 ! Top of layer loop
             do jk=1,klev
 
-! Note: two-stream calculations proceed from top to bottom;
+! Note: two-stream calculations proceed from top to bottom; 
 !   RRTMG_SW quantities are given bottom to top and are reversed here
 
                ikl=klev+1-jk
@@ -8426,12 +8426,12 @@
                lrtchkcld(jk)=.false.
                lrtchkcld(jk)=(pcldfmc(ikl,iw) > repclc)
 
-! Clear-sky optical parameters - this section inactive
+! Clear-sky optical parameters - this section inactive     
 !   Original
 !               ztauc(jk) = ztaur(ikl,iw) + ztaug(ikl,iw)
 !               zomcc(jk) = ztaur(ikl,iw) / ztauc(jk)
 !               zgcc(jk) = 0.0001_rb
-!   Total sky optical parameters
+!   Total sky optical parameters        
 !               ztauo(jk) = ztaur(ikl,iw) + ztaug(ikl,iw) + ptaucmc(ikl,iw)
 !               zomco(jk) = ptaucmc(ikl,iw) * pomgcmc(ikl,iw) + ztaur(ikl,iw)
 !               zgco (jk) = (ptaucmc(ikl,iw) * pomgcmc(ikl,iw) * pasycmc(ikl,iw) + &
@@ -8444,21 +8444,21 @@
                zgcc(jk) = pasya(ikl,ibm) * pomga(ikl,ibm) * ptaua(ikl,ibm) / zomcc(jk)
                zomcc(jk) = zomcc(jk) / ztauc(jk)
 
-! Pre-delta-scaling clear and cloudy direct beam transmittance (must use 'orig', unscaled cloud OD)
+! Pre-delta-scaling clear and cloudy direct beam transmittance (must use 'orig', unscaled cloud OD)       
 !   \/\/\/ This block of code is only needed for direct beam calculation
-!
+!     
                zclear = 1.0_rb - pcldfmc(ikl,iw)
                zcloud = pcldfmc(ikl,iw)
 
 ! Clear
 !                zdbtmc = exp(-ztauc(jk) / prmu0)
 
-! Use exponential lookup table for transmittance, or expansion of
+! Use exponential lookup table for transmittance, or expansion of 
 ! exponential for low tau
                ze1 = ztauc(jk) / prmu0
                if (ze1 .le. od_lo) then
                   zdbtmc = 1._rb - ze1 + 0.5_rb * ze1 * ze1
-               else
+               else 
                   tblind = ze1 / (bpade + ze1)
                   itind = tblint * tblind + 0.5_rb
                   zdbtmc = exp_tbl(itind)
@@ -8471,7 +8471,7 @@
                tauorig = ztauc(jk) + ptaormc(ikl,iw)
 !                zdbtmo = exp(-tauorig / prmu0)
 
-! Use exponential lookup table for transmittance, or expansion of
+! Use exponential lookup table for transmittance, or expansion of 
 ! exponential for low tau
                ze1 = tauorig / prmu0
                if (ze1 .le. od_lo) then
@@ -8487,24 +8487,25 @@
 !   /\/\/\ Above code only needed for direct beam calculation
 
 
-! Delta scaling - clear
+! Delta scaling - clear   
                zf = zgcc(jk) * zgcc(jk)
                zwf = zomcc(jk) * zf
                ztauc(jk) = (1.0_rb - zwf) * ztauc(jk)
                zomcc(jk) = (zomcc(jk) - zwf) / (1.0_rb - zwf)
                zgcc (jk) = (zgcc(jk) - zf) / (1.0_rb - zf)
 
+
 ! Total sky optical parameters (cloud properties already delta-scaled)
-!   Use this code if cloud properties are derived in rrtmg_sw_cldprop
+!   Use this code if cloud properties are derived in rrtmg_sw_cldprop       
                if (icpr .ge. 1) then
                   ztauo(jk) = ztauc(jk) + ptaucmc(ikl,iw)
-                  zomco(jk) = ztauc(jk) * zomcc(jk) + ptaucmc(ikl,iw) * pomgcmc(ikl,iw)
+                  zomco(jk) = ztauc(jk) * zomcc(jk) + ptaucmc(ikl,iw) * pomgcmc(ikl,iw) 
                   zgco (jk) = (ptaucmc(ikl,iw) * pomgcmc(ikl,iw) * pasycmc(ikl,iw) + &
                               ztauc(jk) * zomcc(jk) * zgcc(jk)) / zomco(jk)
                   zomco(jk) = zomco(jk) / ztauo(jk)
 
 ! Total sky optical parameters (if cloud properties not delta scaled)
-!   Use this code if cloud properties are not derived in rrtmg_sw_cldprop
+!   Use this code if cloud properties are not derived in rrtmg_sw_cldprop       
                elseif (icpr .eq. 0) then
                   ztauo(jk) = ztaur(ikl,iw) + ztaug(ikl,iw) + ptaua(ikl,ibm) + ptaucmc(ikl,iw)
                   zomco(jk) = ptaua(ikl,ibm) * pomga(ikl,ibm) + ptaucmc(ikl,iw) * pomgcmc(ikl,iw) + &
@@ -8513,24 +8514,24 @@
                               ptaua(ikl,ibm)*pomga(ikl,ibm)*pasya(ikl,ibm)) / zomco(jk)
                   zomco(jk) = zomco(jk) / ztauo(jk)
 
-! Delta scaling - clouds
+! Delta scaling - clouds 
 !   Use only if subroutine rrtmg_sw_cldprop is not used to get cloud properties and to apply delta scaling
                   zf = zgco(jk) * zgco(jk)
                   zwf = zomco(jk) * zf
                   ztauo(jk) = (1._rb - zwf) * ztauo(jk)
                   zomco(jk) = (zomco(jk) - zwf) / (1.0_rb - zwf)
                   zgco (jk) = (zgco(jk) - zf) / (1.0_rb - zf)
-               endif
+               endif 
 
 ! End of layer loop
-            enddo
+            enddo    
 
 ! Clear sky reflectivities
             call reftra_sw (klev, &
                             lrtchkclr, zgcc, prmu0, ztauc, zomcc, &
                             zrefc, zrefdc, ztrac, ztradc)
 
-! Total sky reflectivities
+! Total sky reflectivities      
             call reftra_sw (klev, &
                             lrtchkcld, zgco, prmu0, ztauo, zomco, &
                             zrefo, zrefdo, ztrao, ztrado)
@@ -8538,7 +8539,7 @@
             do jk=1,klev
 
 ! Combine clear and cloudy contributions for total sky
-               ikl = klev+1-jk
+               ikl = klev+1-jk 
                zclear = 1.0_rb - pcldfmc(ikl,iw)
                zcloud = pcldfmc(ikl,iw)
 
@@ -8547,12 +8548,12 @@
                ztra(jk) = zclear*ztrac(jk) + zcloud*ztrao(jk)
                ztrad(jk)= zclear*ztradc(jk) + zcloud*ztrado(jk)
 
-! Direct beam transmittance
+! Direct beam transmittance        
 
 ! Clear
 !                zdbtmc = exp(-ztauc(jk) / prmu0)
 
-! Use exponential lookup table for transmittance, or expansion of
+! Use exponential lookup table for transmittance, or expansion of 
 ! exponential for low tau
                ze1 = ztauc(jk) / prmu0
                if (ze1 .le. od_lo) then
@@ -8569,7 +8570,7 @@
 ! Clear + Cloud
 !                zdbtmo = exp(-ztauo(jk) / prmu0)
 
-! Use exponential lookup table for transmittance, or expansion of
+! Use exponential lookup table for transmittance, or expansion of 
 ! exponential for low tau
                ze1 = ztauo(jk) / prmu0
                if (ze1 .le. od_lo) then
@@ -8582,16 +8583,16 @@
 
                zdbt(jk) = zclear*zdbtmc + zcloud*zdbtmo
                ztdbt(jk+1) = zdbt(jk)*ztdbt(jk)
-
-            enddo
-
+        
+            enddo           
+                 
 ! Vertical quadrature for clear-sky fluxes
 
             call vrtqdr_sw(klev, iw, &
                            zrefc, zrefdc, ztrac, ztradc, &
                            zdbtc, zrdndc, zrupc, zrupdc, ztdbtc, &
                            zcd, zcu)
-
+      
 ! Vertical quadrature for cloudy fluxes
 
             call vrtqdr_sw(klev, iw, &
@@ -8600,21 +8601,21 @@
                            zfd, zfu)
 
 ! Upwelling and downwelling fluxes at levels
-!   Two-stream calculations go from top to bottom;
+!   Two-stream calculations go from top to bottom; 
 !   layer indexing is reversed to go bottom to top for output arrays
 
             do jk=1,klev+1
                ikl=klev+2-jk
 
 ! Accumulate spectral fluxes over bands - inactive
-!               zbbfu(ikl) = zbbfu(ikl) + zincflx(iw)*zfu(jk,iw)
+!               zbbfu(ikl) = zbbfu(ikl) + zincflx(iw)*zfu(jk,iw)  
 !               zbbfd(ikl) = zbbfd(ikl) + zincflx(iw)*zfd(jk,iw)
 !               zbbcu(ikl) = zbbcu(ikl) + zincflx(iw)*zcu(jk,iw)
 !               zbbcd(ikl) = zbbcd(ikl) + zincflx(iw)*zcd(jk,iw)
 !               zbbfddir(ikl) = zbbfddir(ikl) + zincflx(iw)*ztdbt_nodel(jk)
 !               zbbcddir(ikl) = zbbcddir(ikl) + zincflx(iw)*ztdbtc_nodel(jk)
 
-! Accumulate spectral fluxes over whole spectrum
+! Accumulate spectral fluxes over whole spectrum  
                pbbfu(ikl) = pbbfu(ikl) + zincflx(iw)*zfu(jk,iw)
                pbbfd(ikl) = pbbfd(ikl) + zincflx(iw)*zfd(jk,iw)
                pbbcu(ikl) = pbbcu(ikl) + zincflx(iw)*zcu(jk,iw)
@@ -8629,7 +8630,7 @@
                   puvcddir(ikl) = puvcddir(ikl) + zincflx(iw)*ztdbtc_nodel(jk)
                   puvfddir(ikl) = puvfddir(ikl) + zincflx(iw)*ztdbt_nodel(jk)
 ! Accumulate direct fluxes for near-IR bands
-               else if (ibm == 14 .or. ibm <= 9) then
+               else if (ibm == 14 .or. ibm <= 9) then  
                   pnicd(ikl) = pnicd(ikl) + zincflx(iw)*zcd(jk,iw)
                   pnifd(ikl) = pnifd(ikl) + zincflx(iw)*zfd(jk,iw)
                   pnicddir(ikl) = pnicddir(ikl) + zincflx(iw)*ztdbtc_nodel(jk)
@@ -8639,10 +8640,10 @@
             enddo
 
 ! End loop on jg, g-point interval
-         enddo
+         enddo             
 
 ! End loop on jb, spectral band
-      enddo
+      enddo                    
 
       end subroutine spcvmc_sw
 
@@ -8707,7 +8708,7 @@
       use rrsw_vsn
       use mcica_subcol_gen_sw, only: mcica_subcol_sw
       use rrtmg_sw_cldprmc, only: cldprmc_sw
-! *** Move the required call to rrtmg_sw_ini below and the following
+! *** Move the required call to rrtmg_sw_ini below and the following 
 ! use association to GCM initialization area ***
 !      use rrtmg_sw_init, only: rrtmg_sw_ini
       use rrtmg_sw_setcoef, only: setcoef_sw
@@ -8736,34 +8737,36 @@
              taucmcl ,ssacmcl ,asmcmcl ,fsfcmcl , &
              ciwpmcl ,clwpmcl ,cswpmcl ,reicmcl ,relqmcl ,resnmcl, &
              tauaer  ,ssaaer  ,asmaer  ,ecaer   , &
-             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, aer_opt,  &
+             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, swuflxcln ,swdflxcln , aer_opt,  &
 ! --------- Add the following four compenants for ssib shortwave down radiation ---!
 ! -------------------      by Zhenxin 2011-06-20      --------------------------------!
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! ----------------------  End,  Zhenxin 2011-06-20    --------------------------------!
-             swdkdir,swdkdif                                & ! jararias, 2013/08/10
+             swdkdir,swdkdif,                               & ! jararias, 2013/08/10
+             swdkdirc                                       & ! PAJ
+             ,calc_clean_atm_diag                          &
                                                                 )
 
 
 ! ------- Description -------
 
-! This program is the driver for RRTMG_SW, the AER SW radiation model for
+! This program is the driver for RRTMG_SW, the AER SW radiation model for 
 !  application to GCMs, that has been adapted from RRTM_SW for improved
 !  efficiency and to provide fractional cloudiness and cloud overlap
 !  capability using McICA.
 !
-! Note: The call to RRTMG_SW_INI should be moved to the GCM initialization
-!  area, since this has to be called only once.
+! Note: The call to RRTMG_SW_INI should be moved to the GCM initialization 
+!  area, since this has to be called only once. 
 !
 ! This routine
 !    b) calls INATM_SW to read in the atmospheric profile;
-!       all layering in RRTMG is ordered from surface to toa.
+!       all layering in RRTMG is ordered from surface to toa. 
 !    c) calls CLDPRMC_SW to set cloud optical depth for McICA based
 !       on input cloud properties
-!    d) calls SETCOEF_SW to calculate various quantities needed for
+!    d) calls SETCOEF_SW to calculate various quantities needed for 
 !       the radiative transfer algorithm
-!    e) calls SPCVMC to call the two-stream model that in turn
-!       calls TAUMOL to calculate gaseous optical depths for each
+!    e) calls SPCVMC to call the two-stream model that in turn 
+!       calls TAUMOL to calculate gaseous optical depths for each 
 !       of the 16 spectral bands and to perform the radiative transfer
 !       using McICA, the Monte-Carlo Independent Column Approximation,
 !       to represent sub-grid scale cloud variability
@@ -8773,9 +8776,9 @@
 !     The mode is chosen by using either rrtmg_sw.nomcica.f90 (to not use
 !     McICA) or rrtmg_sw.f90 (to use McICA) to interface with a GCM.
 !
-!    1) Standard, single forward model calculation (imca = 0); this is
+!    1) Standard, single forward model calculation (imca = 0); this is 
 !       valid only for clear sky or fully overcast clouds
-!    2) Monte Carlo Independent Column Approximation (McICA, Pincus et al.,
+!    2) Monte Carlo Independent Column Approximation (McICA, Pincus et al., 
 !       JC, 2003) method is applied to the forward model calculation (imca = 1)
 !       This method is valid for clear sky or partial cloud conditions.
 !
@@ -8785,19 +8788,19 @@
 !     on the RRTMG quadrature point (ngptsw) dimension.
 !
 ! Two methods of cloud property input are possible:
-!     Cloud properties can be input in one of two ways (controlled by input
+!     Cloud properties can be input in one of two ways (controlled by input 
 !     flags inflag, iceflag and liqflag; see text file rrtmg_sw_instructions
 !     and subroutine rrtmg_sw_cldprop.f90 for further details):
 !
-!    1) Input cloud fraction, cloud optical depth, single scattering albedo
+!    1) Input cloud fraction, cloud optical depth, single scattering albedo 
 !       and asymmetry parameter directly (inflgsw = 0)
 !    2) Input cloud fraction and cloud physical properties: ice fracion,
-!       ice and liquid particle sizes (inflgsw = 1 or 2);
+!       ice and liquid particle sizes (inflgsw = 1 or 2);  
 !       cloud optical properties are calculated by cldprop or cldprmc based
 !       on input settings of iceflgsw and liqflgsw
 !
 ! Two methods of aerosol property input are possible:
-!     Aerosol properties can be input in one of two ways (controlled by input
+!     Aerosol properties can be input in one of two ways (controlled by input 
 !     flag iaer, see text file rrtmg_sw_instructions for further details):
 !
 !    1) Input aerosol optical depth, single scattering albedo and asymmetry
@@ -8809,7 +8812,7 @@
 ! ------- Modifications -------
 !
 ! This version of RRTMG_SW has been modified from RRTM_SW to use a reduced
-! set of g-point intervals and a two-stream model for application to GCMs.
+! set of g-point intervals and a two-stream model for application to GCMs. 
 !
 !-- Original version (derived from RRTM_SW)
 !     2002: AER. Inc.
@@ -8818,10 +8821,10 @@
 !-- Additional modifications for GCM application
 !     Aug 2003: M. J. Iacono, AER Inc.
 !-- Total number of g-points reduced from 224 to 112.  Original
-!   set of 224 can be restored by exchanging code in module parrrsw.f90
+!   set of 224 can be restored by exchanging code in module parrrsw.f90 
 !   and in file rrtmg_sw_init.f90.
 !     Apr 2004: M. J. Iacono, AER, Inc.
-!-- Modifications to include output for direct and diffuse
+!-- Modifications to include output for direct and diffuse 
 !   downward fluxes.  There are output as "true" fluxes without
 !   any delta scaling applied.  Code can be commented to exclude
 !   this calculation in source file rrtmg_sw_spcvrt.f90.
@@ -8830,7 +8833,7 @@
 !     Nov 2005: M. J. Iacono, AER, Inc.
 !-- Reformatted for consistency with rrtmg_lw.
 !     Feb 2007: M. J. Iacono, AER, Inc.
-!-- Modifications to formatting to use assumed-shape arrays.
+!-- Modifications to formatting to use assumed-shape arrays. 
 !     Aug 2007: M. J. Iacono, AER, Inc.
 
 ! --------- Modules ---------
@@ -8845,7 +8848,7 @@
 
 ! ----- Input -----
 
-      integer(kind=im), intent(in) :: ncol            ! Number of horizontal columns
+      integer(kind=im), intent(in) :: ncol            ! Number of horizontal columns     
       integer(kind=im), intent(in) :: nlay            ! Number of model layers
       integer(kind=im), intent(inout) :: icld         ! Cloud overlap method
                                                       !    0: Clear only
@@ -8929,16 +8932,17 @@
                                                       !    Dimensions: (ncol,nlay)
       real(kind=rb), intent(in) :: tauaer(:,:,:)      ! Aerosol optical depth (iaer=10 only)
                                                       !    Dimensions: (ncol,nlay,nbndsw)
-                                                      ! (non-delta scaled)
+                                                      ! (non-delta scaled)      
       real(kind=rb), intent(in) :: ssaaer(:,:,:)      ! Aerosol single scattering albedo (iaer=10 only)
                                                       !    Dimensions: (ncol,nlay,nbndsw)
-                                                      ! (non-delta scaled)
+                                                      ! (non-delta scaled)      
       real(kind=rb), intent(in) :: asmaer(:,:,:)      ! Aerosol asymmetry parameter (iaer=10 only)
                                                       !    Dimensions: (ncol,nlay,nbndsw)
-                                                      ! (non-delta scaled)
+                                                      ! (non-delta scaled)      
       real(kind=rb), intent(in) :: ecaer(:,:,:)       ! Aerosol optical depth at 0.55 micron (iaer=6 only)
                                                       !    Dimensions: (ncol,nlay,naerec)
-                                                      ! (non-delta scaled)
+                                                      ! (non-delta scaled)      
+      integer, intent(in)       :: calc_clean_atm_diag! Control for clean air diagnositic calls for WRF-Chem
 
 ! ----- Output -----
 
@@ -8962,11 +8966,16 @@
                                                       !    Dimensions: (ncol,nlay+1)
       real(kind=rb), intent(out) :: swhrc(:,:)        ! Clear sky shortwave radiative heating rate (K/d)
                                                       !    Dimensions: (ncol,nlay)
+      real(kind=rb), intent(out) :: swuflxcln(:,:)    ! Clean sky shortwave upward flux (W/m2)
+                                                      !    Dimensions: (ncol,nlay+1)
+      real(kind=rb), intent(out) :: swdflxcln(:,:)    ! Clean sky shortwave downward flux (W/m2)
+                                                      !    Dimensions: (ncol,nlay+1)
 
       integer, intent(in)        :: aer_opt
       real(kind=rb), intent(out) :: &
         swdkdir(:,:), & ! Total shortwave downward direct flux (W/m2),  Dimensions: (ncol,nlay) jararias, 2013/08/10
-        swdkdif(:,:)    ! Total shortwave downward diffuse flux (W/m2), Dimensions: (ncol,nlay) jararias, 2013/08/10
+        swdkdif(:,:), & ! Total shortwave downward diffuse flux (W/m2), Dimensions: (ncol,nlay) jararias, 2013/08/10
+        swdkdirc(:,:)   ! Total shortwave downward direct flux clear sky (W/m2),  Dimensions: (ncol,nlay)
 
 
 
@@ -8995,7 +9004,7 @@
       real(kind=rb) :: zdpgcp                 ! flux to heating conversion ratio
 
 ! Atmosphere
-      real(kind=rb) :: pavel(nlay+1)          ! layer pressures (mb)
+      real(kind=rb) :: pavel(nlay+1)          ! layer pressures (mb) 
       real(kind=rb) :: tavel(nlay+1)          ! layer temperatures (K)
       real(kind=rb) :: pz(0:nlay+1)           ! level (interface) pressures (hPa, mb)
       real(kind=rb) :: tz(0:nlay+1)           ! level (interface) temperatures (K)
@@ -9020,7 +9029,7 @@
       integer(kind=im) :: laytrop             ! tropopause layer index
       integer(kind=im) :: layswtch            ! tropopause layer index
       integer(kind=im) :: laylow              ! tropopause layer index
-      integer(kind=im) :: jp(nlay+1)          !
+      integer(kind=im) :: jp(nlay+1)          ! 
       integer(kind=im) :: jt(nlay+1)          !
       integer(kind=im) :: jt1(nlay+1)         !
 
@@ -9031,7 +9040,7 @@
       real(kind=rb) :: colch4(nlay+1)         ! column amount (ch4)
       real(kind=rb) :: colo2(nlay+1)          ! column amount (o2)
       real(kind=rb) :: colmol(nlay+1)         ! column amount
-      real(kind=rb) :: co2mult(nlay+1)        ! column amount
+      real(kind=rb) :: co2mult(nlay+1)        ! column amount 
 
       integer(kind=im) :: indself(nlay+1)
       integer(kind=im) :: indfor(nlay+1)
@@ -9042,7 +9051,7 @@
 
       real(kind=rb) :: &                      !
                          fac00(nlay+1), fac01(nlay+1), &
-                         fac10(nlay+1), fac11(nlay+1)
+                         fac10(nlay+1), fac11(nlay+1) 
 
 ! Atmosphere/clouds - cldprop
       integer(kind=im) :: ncbands             ! number of cloud spectral bands
@@ -9082,17 +9091,18 @@
 ! Atmosphere/clouds/aerosol - spcvrt,spcvmc
       real(kind=rb) :: ztauc(nlay+1,nbndsw)     ! cloud optical depth
       real(kind=rb) :: ztaucorig(nlay+1,nbndsw) ! unscaled cloud optical depth
-      real(kind=rb) :: zasyc(nlay+1,nbndsw)     ! cloud asymmetry parameter
+      real(kind=rb) :: zasyc(nlay+1,nbndsw)     ! cloud asymmetry parameter 
                                                 !  (first moment of phase function)
       real(kind=rb) :: zomgc(nlay+1,nbndsw)     ! cloud single scattering albedo
       real(kind=rb) :: ztaua(nlay+1,nbndsw)     ! total aerosol optical depth
-      real(kind=rb) :: zasya(nlay+1,nbndsw)     ! total aerosol asymmetry parameter
+      real(kind=rb) :: ztauacln(nlay+1,nbndsw)  ! dummy total aerosol optical depth for clean case (=zero)
+      real(kind=rb) :: zasya(nlay+1,nbndsw)     ! total aerosol asymmetry parameter 
       real(kind=rb) :: zomga(nlay+1,nbndsw)     ! total aerosol single scattering albedo
 
       real(kind=rb) :: zcldfmc(nlay+1,ngptsw)   ! cloud fraction [mcica]
       real(kind=rb) :: ztaucmc(nlay+1,ngptsw)   ! cloud optical depth [mcica]
       real(kind=rb) :: ztaormc(nlay+1,ngptsw)   ! unscaled cloud optical depth [mcica]
-      real(kind=rb) :: zasycmc(nlay+1,ngptsw)   ! cloud asymmetry parameter [mcica]
+      real(kind=rb) :: zasycmc(nlay+1,ngptsw)   ! cloud asymmetry parameter [mcica] 
       real(kind=rb) :: zomgcmc(nlay+1,ngptsw)   ! cloud single scattering albedo [mcica]
 
       real(kind=rb) :: zbbfu(nlay+2)          ! temporary upward shortwave flux (w/m2)
@@ -9109,14 +9119,21 @@
       real(kind=rb) :: znicd(nlay+2)          ! temporary clear sky near-IR downward shortwave flux (w/m2)
       real(kind=rb) :: znifddir(nlay+2)       ! temporary near-IR downward direct shortwave flux (w/m2)
       real(kind=rb) :: znicddir(nlay+2)       ! temporary clear sky near-IR downward direct shortwave flux (w/m2)
+      real(kind=rb) :: zbbclnu(nlay+2)        ! temporary clean sky upward shortwave flux (w/m2)
+      real(kind=rb) :: zbbclnd(nlay+2)        ! temporary clean sky downward shortwave flux (w/m2)
+      real(kind=rb) :: zbbclnddir(nlay+2)     ! temporary clean sky downward direct shortwave flux (w/m2)
+      real(kind=rb) :: zuvclnd(nlay+2)        ! temporary clean sky UV downward shortwave flux (w/m2)
+      real(kind=rb) :: zuvclnddir(nlay+2)     ! temporary clean sky UV downward direct shortwave flux (w/m2)
+      real(kind=rb) :: zniclnd(nlay+2)        ! temporary clean sky near-IR downward shortwave flux (w/m2)
+      real(kind=rb) :: zniclnddir(nlay+2)     ! temporary clean sky near-IR downward direct shortwave flux (w/m2)
 
-! Optional output fields
+! Optional output fields 
       real(kind=rb) :: swnflx(nlay+2)         ! Total sky shortwave net flux (W/m2)
       real(kind=rb) :: swnflxc(nlay+2)        ! Clear sky shortwave net flux (W/m2)
       real(kind=rb) :: dirdflux(nlay+2)       ! Direct downward shortwave surface flux
       real(kind=rb) :: difdflux(nlay+2)       ! Diffuse downward shortwave surface flux
-      real(kind=rb) :: uvdflx(nlay+2)         ! Total sky downward shortwave flux, UV/vis
-      real(kind=rb) :: nidflx(nlay+2)         ! Total sky downward shortwave flux, near-IR
+      real(kind=rb) :: uvdflx(nlay+2)         ! Total sky downward shortwave flux, UV/vis  
+      real(kind=rb) :: nidflx(nlay+2)         ! Total sky downward shortwave flux, near-IR 
       real(kind=rb) :: dirdnuv(nlay+2)        ! Direct downward shortwave flux, UV/vis
       real(kind=rb) :: difdnuv(nlay+2)        ! Diffuse downward shortwave flux, UV/vis
       real(kind=rb) :: dirdnir(nlay+2)        ! Direct downward shortwave flux, near-IR
@@ -9159,8 +9176,8 @@
 
 ! *** This version uses McICA (imca = 1) ***
 
-! Set icld to select of clear or cloud calculation and cloud
-! overlap method (read by subroutine readprof from input file INPUT_RRTM):
+! Set icld to select of clear or cloud calculation and cloud 
+! overlap method (read by subroutine readprof from input file INPUT_RRTM):  
 ! icld = 0, clear only
 ! icld = 1, with clouds using random cloud overlap (McICA only)
 ! icld = 2, with clouds using maximum/random cloud overlap (McICA only)
@@ -9171,7 +9188,7 @@
 ! iaer = 0, no aerosols
 ! iaer = 6, use six ECMWF aerosol types
 !           input aerosol optical depth at 0.55 microns for each aerosol type (ecaer)
-! iaer = 10, input total aerosol optical depth, single scattering albedo
+! iaer = 10, input total aerosol optical depth, single scattering albedo 
 !            and asymmetry parameter (tauaer, ssaaer, asmaer) directly
       if ( aer_opt.eq.0 .or. aer_opt.eq.2 .or. aer_opt.eq.3) then
       iaer = 10
@@ -9184,7 +9201,7 @@
 ! coefficient data and other arrays.
 !
 ! In a GCM this call should be placed in the model initialization
-! area, since this has to be called only once.
+! area, since this has to be called only once.  
 !      call rrtmg_sw_ini(cpdair)
 
 ! This is the main longitude/column loop in RRTMG.
@@ -9210,14 +9227,14 @@
 !  input cloud physical properties.  Select method based on choices described
 !  in cldprop.  Cloud fraction, water path, liquid droplet and ice particle
 !  effective radius must be passed in cldprop.  Cloud fraction and cloud
-!  optical properties are transferred to rrtmg_sw arrays in cldprop.
+!  optical properties are transferred to rrtmg_sw arrays in cldprop.  
 
          call cldprmc_sw(nlayers, inflag, iceflag, liqflag, cldfmc, &
                          ciwpmc, clwpmc, cswpmc, reicmc, relqmc, resnmc, &
                          taormc, taucmc, ssacmc, asmcmc, fsfcmc)
          icpr = 1
 
-! Calculate coefficients for the temperature and pressure dependence of the
+! Calculate coefficients for the temperature and pressure dependence of the 
 ! molecular absorption coefficients by interpolating data from stored
 ! reference atmospheres.
 
@@ -9228,14 +9245,14 @@
                          selffac, selffrac, indself, forfac, forfrac, indfor)
 
 
-! Cosine of the solar zenith angle
-!  Prevent using value of zero; ideally, SW model is not called from host model when sun
+! Cosine of the solar zenith angle 
+!  Prevent using value of zero; ideally, SW model is not called from host model when sun 
 !  is below horizon
 
          cossza = coszen(iplon)
          if (cossza .le. zepzen) cossza = zepzen
 
-! Transfer albedo, cloud and aerosol properties into arrays for 2-stream radiative transfer
+! Transfer albedo, cloud and aerosol properties into arrays for 2-stream radiative transfer 
 
 ! Surface albedo
 !  Near-IR bands 16-24 and 29 (1-9 and 14), 820-16000 cm-1, 0.625-12.195 microns
@@ -9272,7 +9289,7 @@
                enddo
             enddo
 
-         endif
+         endif   
 
 ! Aerosol
 ! IAER = 0: no aerosols
@@ -9283,7 +9300,7 @@
             zomga(:,:) = 1._rb
 
 ! IAER = 6: Use ECMWF six aerosol types. See rrsw_aer.f90 for details.
-! Input aerosol optical thickness at 0.55 micron for each aerosol type (ecaer),
+! Input aerosol optical thickness at 0.55 micron for each aerosol type (ecaer), 
 ! or set manually here for each aerosol and layer.
          elseif (iaer.eq.6) then
 
@@ -9320,6 +9337,7 @@
             do i = 1 ,nlayers
                do ib = 1 ,nbndsw
                   ztaua(i,ib) = taua(i,ib)
+                  ztauacln(i,ib) = 0.0
                   zasya(i,ib) = asma(i,ib)
                   zomga(i,ib) = ssaa(i,ib)
                enddo
@@ -9351,7 +9369,7 @@
              (nlayers, istart, iend, icpr, iout, &
               pavel, tavel, pz, tz, tbound, albdif, albdir, &
               zcldfmc, ztaucmc, zasycmc, zomgcmc, ztaormc, &
-              ztaua, zasya, zomga, cossza, coldry, wkl, adjflux, &
+              ztaua, zasya, zomga, cossza, coldry, wkl, adjflux, &	 
               laytrop, layswtch, laylow, jp, jt, jt1, &
               co2mult, colch4, colco2, colh2o, colmol, coln2o, colo2, colo3, &
               fac00, fac01, fac10, fac11, &
@@ -9375,6 +9393,7 @@
             difdflux(i) = swdflx(iplon,i) - dirdflux(i)
             swdkdir(iplon,i) = dirdflux(i) ! all-sky direct flux   jararias, 2013/08/10
             swdkdif(iplon,i) = difdflux(i) ! all-sky diffuse flux  jararias, 2013/08/10
+            swdkdirc(iplon,i) = zbbcddir(i) ! PAJ: clear-sky direct flux
 
 !  UV/visible direct/diffuse fluxes
             dirdnuv(i) = zuvfddir(i)
@@ -9407,6 +9426,57 @@
          swhrc(iplon,nlayers) = 0._rb
          swhr(iplon,nlayers) = 0._rb
 
+#if (WRF_CHEM == 1)
+         !  Repeat call to 2-stream radiation model using "clean sky" 
+         !  variables and aerosol tau set to 0
+         if(calc_clean_atm_diag .gt. 0)then
+            do i=1,nlayers+1
+                zbbcu(i) = 0._rb
+                zbbcd(i) = 0._rb
+                zbbclnu(i) = 0._rb
+                zbbclnd(i) = 0._rb
+                zbbcddir(i) = 0._rb
+                zbbclnddir(i) = 0._rb
+                zuvcd(i) = 0._rb
+                zuvclnd(i) = 0._rb
+                zuvcddir(i) = 0._rb
+                zuvclnddir(i) = 0._rb
+                znicd(i) = 0._rb
+                zniclnd(i) = 0._rb
+                znicddir(i) = 0._rb
+                zniclnddir(i) = 0._rb
+             enddo         
+
+             call spcvmc_sw &
+                 (nlayers, istart, iend, icpr, iout, &
+                  pavel, tavel, pz, tz, tbound, albdif, albdir, &
+                  zcldfmc, ztaucmc, zasycmc, zomgcmc, ztaormc, &
+                  ztauacln, zasya, zomga, cossza, coldry, wkl, adjflux, &	 
+                  laytrop, layswtch, laylow, jp, jt, jt1, &
+                  co2mult, colch4, colco2, colh2o, colmol, coln2o, colo2, colo3, &
+                  fac00, fac01, fac10, fac11, &
+                  selffac, selffrac, indself, forfac, forfrac, indfor, &
+                  zbbclnd, zbbclnu, zbbcd, zbbcu, zuvclnd, zuvcd, zniclnd, znicd, &
+                  zbbclnddir, zbbcddir, zuvclnddir, zuvcddir, zniclnddir, znicddir)
+
+            do i = 1, nlayers+1
+               swuflxcln(iplon,i) = zbbclnu(i) 
+               swdflxcln(iplon,i) = zbbclnd(i)
+            enddo
+         else
+            do i = 1, nlayers+1
+               swuflxcln(iplon,i) = 0.0 
+               swdflxcln(iplon,i) = 0.0
+            enddo
+         end if
+
+#else
+         do i = 1, nlayers+1
+            swuflxcln(iplon,i) = 0.0 
+            swdflxcln(iplon,i) = 0.0
+         enddo
+
+#endif
 ! End longitude loop
       enddo
 
@@ -9449,11 +9519,11 @@
             nlayers, pavel, pz, pdp, tavel, tz, tbound, coldry, wkl, &
             adjflux, solvar, inflag, iceflag, liqflag, cldfmc, taucmc, &
             ssacmc, asmcmc, fsfcmc, ciwpmc, clwpmc, cswpmc, reicmc, relqmc, resnmc, &
-            taua, ssaa, asma)
+            taua, ssaa, asma)                                       
 !***************************************************************************
 !
 !  Input atmospheric profile from GCM, and prepare it for use in RRTMG_SW.
-!  Set other RRTMG_SW input parameters.
+!  Set other RRTMG_SW input parameters.  
 !
 !***************************************************************************
 
@@ -9537,7 +9607,7 @@
 ! Atmosphere
       integer(kind=im), intent(out) :: nlayers        ! number of layers
 
-      real(kind=rb), intent(out) :: pavel(:)          ! layer pressures (mb)
+      real(kind=rb), intent(out) :: pavel(:)          ! layer pressures (mb) 
                                                       ! Dimensions: (nlay)
       real(kind=rb), intent(out) :: tavel(:)          ! layer temperatures (K)
                                                       ! Dimensions: (nlay)
@@ -9614,7 +9684,7 @@
       real(kind=rb), parameter :: sbc = 5.67e-08_rb   ! Stefan-Boltzmann constant (W/m2K4)
 
       integer(kind=im) :: isp, l, ix, n, imol, ib, ig   ! Loop indices
-      real(kind=rb) :: amm, summol                      !
+      real(kind=rb) :: amm, summol                      ! 
       real(kind=rb) :: adjflx                           ! flux adjustment for Earth/Sun distance
 !      real(kind=rb) :: earth_sun                        ! function for Earth/Sun distance adjustment
 
@@ -9638,26 +9708,26 @@
        taua(:,:) = 0.0_rb
        ssaa(:,:) = 1.0_rb
        asma(:,:) = 0.0_rb
-
+ 
 ! Set flux adjustment for current Earth/Sun distance (two options).
 ! 1) Use Earth/Sun distance flux adjustment provided by GCM (input as adjes);
       adjflx = adjes
 !
 ! 2) Calculate Earth/Sun distance from DYOFYR, the cumulative day of the year.
-!    (Set adjflx to 1. to use constant Earth/Sun distance of 1 AU).
+!    (Set adjflx to 1. to use constant Earth/Sun distance of 1 AU). 
       if (dyofyr .gt. 0) then
          adjflx = earth_sun(dyofyr)
       endif
 
 ! Set incoming solar flux adjustment to include adjustment for
 ! current Earth/Sun distance (ADJFLX) and scaling of default internal
-! solar constant (rrsw_scon = 1368.22 Wm-2) by band (SOLVAR).  SOLVAR can be set
-! to a single scaling factor as needed, or to a different value in each
-! band, which may be necessary for paleoclimate simulations.
-!
+! solar constant (rrsw_scon = 1368.22 Wm-2) by band (SOLVAR).  SOLVAR can be set 
+! to a single scaling factor as needed, or to a different value in each 
+! band, which may be necessary for paleoclimate simulations. 
+! 
       do ib = jpb1,jpb2
 !         solvar(ib) = 1._rb
-         solvar(ib) = scon / rrsw_scon
+         solvar(ib) = scon / rrsw_scon 
          adjflux(ib) = adjflx * solvar(ib)
       enddo
 
@@ -9665,15 +9735,15 @@
       tbound = tsfc(iplon)
 
 !  Install input GCM arrays into RRTMG_SW arrays for pressure, temperature,
-!  and molecular amounts.
+!  and molecular amounts.  
 !  Pressures are input in mb, or are converted to mb here.
-!  Molecular amounts are input in volume mixing ratio, or are converted from
+!  Molecular amounts are input in volume mixing ratio, or are converted from 
 !  mass mixing ratio (or specific humidity for h2o) to volume mixing ratio
-!  here. These are then converted to molecular amount (molec/cm2) below.
-!  The dry air column COLDRY (in molec/cm2) is calculated from the level
-!  pressures, pz (in mb), based on the hydrostatic equation and includes a
-!  correction to account for h2o in the layer.  The molecular weight of moist
-!  air (amm) is calculated for each layer.
+!  here. These are then converted to molecular amount (molec/cm2) below.  
+!  The dry air column COLDRY (in molec/cm2) is calculated from the level 
+!  pressures, pz (in mb), based on the hydrostatic equation and includes a 
+!  correction to account for h2o in the layer.  The molecular weight of moist 
+!  air (amm) is calculated for each layer.  
 !  Note: In RRTMG, layer indexing goes from bottom to top, and coding below
 !  assumes GCM input fields are also bottom to top. Input layer indexing
 !  from GCM fields should be reversed here if necessary.
@@ -9697,18 +9767,18 @@
          wkl(4,l) = n2ovmr(iplon,l)
          wkl(6,l) = ch4vmr(iplon,l)
          wkl(7,l) = o2vmr(iplon,l)
-         amm = (1._rb - wkl(1,l)) * amd + wkl(1,l) * amw
+         amm = (1._rb - wkl(1,l)) * amd + wkl(1,l) * amw            
          coldry(l) = (pz(l-1)-pz(l)) * 1.e3_rb * avogad / &
                      (1.e2_rb * grav * amm * (1._rb + wkl(1,l)))
       enddo
 
 ! The following section can be used to set values for an additional layer (from
-! the GCM top level to 1.e-4 mb) for improved calculation of TOA fluxes.
-! Temperature and molecular amounts in the extra model layer are set to
+! the GCM top level to 1.e-4 mb) for improved calculation of TOA fluxes. 
+! Temperature and molecular amounts in the extra model layer are set to 
 ! their values in the top GCM model layer, though these can be modified
-! here if necessary.
+! here if necessary. 
 ! If this feature is utilized, increase nlayers by one above, limit the two
-! loops above to (nlayers-1), and set the top most (nlayers) layer values here.
+! loops above to (nlayers-1), and set the top most (nlayers) layer values here. 
 
 !      pavel(nlayers) = 0.5_rb * pz(nlayers-1)
 !      tavel(nlayers) = tavel(nlayers-1)
@@ -9726,8 +9796,8 @@
 !      coldry(nlayers) = (pz(nlayers-1)) * 1.e3_rb * avogad / &
 !                        (1.e2_rb * grav * amm * (1._rb + wkl(1,nlayers-1)))
 
-! At this point all molecular amounts in wkl are in volume mixing ratio;
-! convert to molec/cm2 based on coldry for use in rrtm.
+! At this point all molecular amounts in wkl are in volume mixing ratio; 
+! convert to molec/cm2 based on coldry for use in rrtm.  
 
       do l = 1, nlayers
          do imol = 1, nmol
@@ -9738,7 +9808,7 @@
 ! Transfer aerosol optical properties to RRTM variables;
 ! modify to reverse layer indexing here if necessary.
 
-      if (iaer .ge. 1) then
+      if (iaer .ge. 1) then 
          do l = 1, nlayers
             do ib = 1, nbndsw
                taua(l,ib) = tauaer(iplon,l,ib)
@@ -9751,7 +9821,7 @@
 ! Transfer cloud fraction and cloud optical properties to RRTM variables;
 ! modify to reverse layer indexing here if necessary.
 
-      if (icld .ge. 1) then
+      if (icld .ge. 1) then 
          inflag = inflgsw
          iceflag = iceflgsw
          liqflag = liqflgsw
@@ -9770,13 +9840,13 @@
                clwpmc(ig,l) = clwpmcl(ig,iplon,l)
                if (iceflag.eq.5) then
                   cswpmc(ig,l)=cswpmcl(ig,iplon,l)
-               endif
+               endif 
             enddo
             reicmc(l) = reicmcl(iplon,l)
             relqmc(l) = relqmcl(iplon,l)
             if (iceflag.eq.5) then
                resnmc(l) = resnmcl(iplon,l)
-            endif
+            endif 
          enddo
 
 ! If an extra layer is being used in RRTMG, set all cloud properties to zero in the extra layer.
@@ -9790,7 +9860,7 @@
 !         clwpmc(:,nlayers) = 0.0_rb
 !         reicmc(nlayers) = 0.0_rb
 !         relqmc(nlayers) = 0.0_rb
-
+      
       endif
 
       end subroutine inatm_sw
@@ -9803,7 +9873,7 @@ MODULE module_ra_rrtmg_sw
 use module_model_constants, only : cp
 USE module_wrf_error
 #if (HWRF == 1)
-USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT, ETAMP_HWRF
+USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT, ETAMP_HWRF 
 #else
 USE module_state_description, ONLY : FER_MP_HIRES, FER_MP_HIRES_ADVECT
 #endif
@@ -9823,8 +9893,8 @@ CONTAINS
 !------------------------------------------------------------------
    SUBROUTINE RRTMG_SWRAD(                                        &
                        rthratensw,                                &
-                       swupt, swuptc, swdnt, swdntc,              &
-                       swupb, swupbc, swdnb, swdnbc,              &
+                       swupt, swuptc, swuptcln, swdnt, swdntc, swdntcln, &
+                       swupb, swupbc, swupbcln, swdnb, swdnbc, swdnbcln, &
 !                      swupflx, swupflxc, swdnflx, swdnflxc,      &
                        swcf, gsw,                                 &
                        xtime, gmt, xlat, xlong,                   &
@@ -9832,7 +9902,7 @@ CONTAINS
                        coszr, julday, solcon,                     &
                        albedo, t3d, t8w, tsk,                     &
                        p3d, p8w, pi3d, rho3d,                     &
-                       dz8w, cldfra3d, lradius, iradius,          &
+                       dz8w, cldfra3d, lradius, iradius,          & 
                        is_cammgmp_used, r, g,                     &
                        re_cloud,re_ice,re_snow,                   &
                        has_reqc,has_reqi,has_reqs,                &
@@ -9849,20 +9919,22 @@ CONTAINS
                        swnirdir, swnirdif,                        &  !Zhenxin ssib swi comp (06/20/2011)
                        sf_surface_physics,                        &  !Zhenxin
                        f_qv, f_qc, f_qr, f_qi, f_qs, f_qg,        &
-                       tauaer300,tauaer400,tauaer600,tauaer999,   & ! czhao
-                       gaer300,gaer400,gaer600,gaer999,           & ! czhao
-                       waer300,waer400,waer600,waer999,           & ! czhao
+                       tauaer300,tauaer400,tauaer600,tauaer999,   & ! czhao 
+                       gaer300,gaer400,gaer600,gaer999,           & ! czhao 
+                       waer300,waer400,waer600,waer999,           & ! czhao 
                        aer_ra_feedback,                           &
 !jdfcz                 progn,prescribe,                           &
-                       progn,                                     &
+                       progn,calc_clean_atm_diag,                 &
                        qndrop3d,f_qndrop,                         & !czhao
                        mp_physics,                                & !wang 2014/12
-                       ids,ide, jds,jde, kds,kde,                 &
+                       ids,ide, jds,jde, kds,kde,                 & 
                        ims,ime, jms,jme, kms,kme,                 &
                        its,ite, jts,jte, kts,kte,                 &
-                       swupflx, swupflxc, swdnflx, swdnflxc,      &
+                       swupflx, swupflxc,                         &
+                       swdnflx, swdnflxc,                         &
                        tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw,       & ! jararias 2013/11
                        swddir, swddni, swddif,                    & ! jararias 2013/08
+                       swdownc, swddnic, swddirc,                 & ! PAJ
                        xcoszen,julian                             & ! jararias 2013/08
                                                                   )
 !------------------------------------------------------------------
@@ -9931,7 +10003,11 @@ CONTAINS
    real, dimension(ims:ime,jms:jme), intent(out) :: &
             swddir,  &  ! All-sky broadband surface direct horiz irradiance
             swddni,  &  ! All-sky broadband surface direct normal irradiance
-            swddif      ! All-sky broadband surface diffuse irradiance
+            swddif,  &  ! All-sky broadband surface diffuse irradiance
+            swdownc, & ! Clear sky GHI
+            swddnic, & ! Clear ski DNI
+            swddirc    ! Clear ski direct horizontal irradiance
+
    real, optional, intent(in) :: &
             julian      ! julian day (1-366)
    real, dimension(ims:ime,jms:jme), intent(in) :: &
@@ -9977,13 +10053,15 @@ CONTAINS
 
 ! Optional
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), OPTIONAL ,       &
-         INTENT(IN    ) :: tauaer300,tauaer400,tauaer600,tauaer999, & ! czhao
-                                 gaer300,gaer400,gaer600,gaer999, & ! czhao
-                                 waer300,waer400,waer600,waer999    ! czhao
+         INTENT(IN    ) :: tauaer300,tauaer400,tauaer600,tauaer999, & ! czhao 
+                                 gaer300,gaer400,gaer600,gaer999, & ! czhao 
+                                 waer300,waer400,waer600,waer999    ! czhao 
 
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       aer_ra_feedback
 !jdfcz   INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn,prescribe
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       progn
+   INTEGER,    INTENT(IN  )             ::       calc_clean_atm_diag
+
 !  Ozone
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          OPTIONAL                                               , &
@@ -10011,17 +10089,18 @@ CONTAINS
 ! Top of atmosphere and surface shortwave fluxes (W m-2)
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          OPTIONAL, INTENT(INOUT) ::                               &
-                                       SWUPT,SWUPTC,SWDNT,SWDNTC, &
-                                       SWUPB,SWUPBC,SWDNB,SWDNBC
+                    SWUPT,SWUPTC,SWUPTCLN,SWDNT,SWDNTC,SWDNTCLN,  &
+                    SWUPB,SWUPBC,SWUPBCLN,SWDNB,SWDNBC,SWDNBCLN
 
 ! Layer shortwave fluxes (including extra layer above model top)
 ! Vertical ordering is from bottom to top (W m-2)
    REAL, DIMENSION( ims:ime, kms:kme+2, jms:jme ),                &
          OPTIONAL, INTENT(OUT) ::                                 &
-                               SWUPFLX,SWUPFLXC,SWDNFLX,SWDNFLXC
+                               SWUPFLX,SWUPFLXC,                  &
+                               SWDNFLX,SWDNFLXC
 
 !  LOCAL VARS
-
+ 
    REAL, DIMENSION( kts:kte+1 ) ::                          Pw1D, &
                                                             Tw1D
 
@@ -10038,7 +10117,7 @@ CONTAINS
                                                             QS1D, &
                                                             QG1D, &
                                                             O31D, &
-                                                          qndrop1d
+                                                          qndrop1d 
 
 !BSF: From eq. (5) on p. 2434 in McFarquhar & Heymsfield (1996)
       real, parameter :: re_50C=1250.0/9.917, re_40C=1250.0/9.337,     &
@@ -10069,7 +10148,7 @@ CONTAINS
                                                            asdif, &
                                                            aldir, &
                                                            aldif
-! Dimension with extra layer from model top to TOA,
+! Dimension with extra layer from model top to TOA, 
 ! though no clouds are allowed in extra layer
     real, dimension( 1, kts:kte+1 )  ::                   clwpth, &
                                                           ciwpth, &
@@ -10095,7 +10174,7 @@ CONTAINS
                                                          fsfcmcl
     real, dimension( 1, kts:kte+1, nbndsw )  ::           tauaer, &
                                                           ssaaer, &
-                                                          asmaer
+                                                          asmaer   
     real, dimension( 1, kts:kte+1, naerec )  ::            ecaer
 
 ! Output arrays contain extra layer from model top to TOA
@@ -10103,13 +10182,16 @@ CONTAINS
                                                           swdflx, &
                                                          swuflxc, &
                                                          swdflxc, &
+                                                       swuflxcln, &
+                                                       swdflxcln, &
                                                        sibvisdir, &  ! Zhenxin 2011-06-20
                                                        sibvisdif, &
                                                        sibnirdir, &
                                                        sibnirdif     ! Zhenxin 2011-06-20
 
     real, dimension( 1, kts:kte+2 ) ::                   swdkdir, &  ! jararias, 2013/08/10
-                                                         swdkdif     ! jararias, 2013/08/10
+                                                         swdkdif, &  ! jararias, 2013/08/10
+                                                        swdkdirc     ! PAJ
 
     real, dimension( 1, kts:kte+1 )  ::                     swhr, &
                                                            swhrc
@@ -10120,7 +10202,7 @@ CONTAINS
     real ::                                                   ro, &
                                                               dz, &
                                                            adjes, &
-                                                            scon, &
+                                                            scon, &  
                                                   snow_mass_factor
     integer ::                                            dyofyr
 
@@ -10130,13 +10212,13 @@ CONTAINS
 ! Set trace gas volume mixing ratios, 2005 values, IPCC (2007)
 ! carbon dioxide (379 ppmv)
     real :: co2
-    data co2 / 379.e-6 /
+    data co2 / 379.e-6 / 
 ! methane (1774 ppbv)
     real :: ch4
-    data ch4 / 1774.e-9 /
+    data ch4 / 1774.e-9 / 
 ! nitrous oxide (319 ppbv)
     real :: n2o
-    data n2o / 319.e-9 /
+    data n2o / 319.e-9 / 
 ! Set oxygen volume mixing ratio (for o2mmr=0.23143)
     real :: o2
     data o2 / 0.209488 /
@@ -10153,23 +10235,23 @@ CONTAINS
 !    data absn /2.34e-3/
 
 ! Molecular weights and ratios for converting mmr to vmr units
-!    real :: amd       ! Effective molecular weight of dry air (g/mol)
-!    real :: amw       ! Molecular weight of water vapor (g/mol)
-!    real :: amo       ! Molecular weight of ozone (g/mol)
-!    real :: amo2      ! Molecular weight of oxygen (g/mol)
-! Atomic weights for conversion from mass to volume mixing ratios
-!    data amd   /  28.9660   /
-!    data amw   /  18.0160   /
-!    data amo   /  47.9998   /
+!    real :: amd       ! Effective molecular weight of dry air (g/mol)  
+!    real :: amw       ! Molecular weight of water vapor (g/mol)        
+!    real :: amo       ! Molecular weight of ozone (g/mol)              
+!    real :: amo2      ! Molecular weight of oxygen (g/mol)              
+! Atomic weights for conversion from mass to volume mixing ratios                
+!    data amd   /  28.9660   /                                                  
+!    data amw   /  18.0160   /                                                  
+!    data amo   /  47.9998   /                                                  
 !    data amo2  /  31.9999   /
-
-    real :: amdw     ! Molecular weight of dry air / water vapor
+                                                                                 
+    real :: amdw     ! Molecular weight of dry air / water vapor  
     real :: amdo     ! Molecular weight of dry air / ozone
     real :: amdo2    ! Molecular weight of dry air / oxygen
-    data amdw /  1.607793 /
+    data amdw /  1.607793 /                                                    
     data amdo /  0.603461 /
     data amdo2 / 0.905190 /
-
+    
 !!
     real, dimension(1, 1:kte-kts+1 )  :: pdel          ! Layer pressure thickness (mb)
 
@@ -10188,7 +10270,7 @@ CONTAINS
     REAL   ::  FP
 
 !    real, dimension(1:ite-its+1 )          ::   clat     ! latitude in radians for columns
-    real :: coszrs                      ! Cosine of solar zenith angle for present latitude
+    real :: coszrs                      ! Cosine of solar zenith angle for present latitude 
     logical :: dorrsw                   ! Flag to allow shortwave calculation
 
     real, dimension (1) :: landfrac, landm, snowh, icefrac
@@ -10223,7 +10305,7 @@ CONTAINS
 #endif
 
 !-----CALCULATE SHORT WAVE RADIATION
-!
+!                                                              
 ! All fields are ordered vertically from bottom to top
 ! Pressures are in mb
 
@@ -10403,11 +10485,11 @@ CONTAINS
            ENDIF
 !
 !         EMISS0=EMISS(I,J)
-!         GLW0=0.
-!         OLR0=0.
+!         GLW0=0. 
+!         OLR0=0. 
 !         TSFC=TSK(I,J)
          DO K=kts,kte
-            QV1D(K)=AMAX1(QV1D(K),1.E-12)
+            QV1D(K)=AMAX1(QV1D(K),1.E-12) 
          ENDDO
 
 ! Set up input for shortwave
@@ -10479,7 +10561,7 @@ CONTAINS
                ENDDO
             ELSE
                DO K=kts,kte
-#if (EM_CORE==1)
+#if (EM_CORE==1) 
                   resnow1D(ncol,K) = 10.0
 #else
                  tem2 = 25.0  !- was 10.0
@@ -10497,7 +10579,7 @@ CONTAINS
                    endif
                     tem2 = max(25.,tem2)
                  endif
-                 reice1D(ncol,K) = min(tem2, 135.72)   !- 1.0315*reice <= 140 microns
+                 reice1D(ncol,K) = min(tem2, 135.72)   !- 1.0315*reice <= 140 microns 
 #endif
                ENDDO
             ENDIF
@@ -10524,15 +10606,15 @@ CONTAINS
          scon = solcon
 ! For Earth/Sun distance adjustment in RRTMG
 !         dyofyr = julday
-!         adjes = 0.0
+!         adjes = 0.0 
 ! For WRF, solar constant is already provided with eccentricity adjustment,
 ! so do not do this in RRTMG
          dyofyr = 0
-         adjes = 1.0
+         adjes = 1.0 
 
 ! Layer indexing goes bottom to top here for all fields.
-! Water vapor and ozone are converted from mmr to vmr.
-! Pressures are in units of mb here.
+! Water vapor and ozone are converted from mmr to vmr. 
+! Pressures are in units of mb here. 
          plev(ncol,1) = pw1d(1)
          tlev(ncol,1) = tw1d(1)
          tsfc(ncol) = tsk(i,j)
@@ -10549,22 +10631,22 @@ CONTAINS
             n2ovmr(ncol,k) = n2o
          enddo
 
-!  Define profile values for extra layer from model top to top of atmosphere.
-!  The top layer temperature for all gridpoints is set to the top layer-1
-!  temperature plus a constant (0 K) that represents an isothermal layer
-!  above ptop.  Top layer interface temperatures are linearly interpolated
-!  from the layer temperatures.
+!  Define profile values for extra layer from model top to top of atmosphere. 
+!  The top layer temperature for all gridpoints is set to the top layer-1 
+!  temperature plus a constant (0 K) that represents an isothermal layer    
+!  above ptop.  Top layer interface temperatures are linearly interpolated 
+!  from the layer temperatures.  
 
          play(ncol,kte+1) = 0.5 * plev(ncol,kte+1)
          tlay(ncol,kte+1) = tlev(ncol,kte+1) + 0.0
          plev(ncol,kte+2) = 1.0e-5
          tlev(ncol,kte+2) = tlev(ncol,kte+1) + 0.0
          tlev(ncol,kte+2) = tlev(ncol,kte+1) + 0.0
-         h2ovmr(ncol,kte+1) = h2ovmr(ncol,kte)
-         co2vmr(ncol,kte+1) = co2vmr(ncol,kte)
-         o2vmr(ncol,kte+1) = o2vmr(ncol,kte)
-         ch4vmr(ncol,kte+1) = ch4vmr(ncol,kte)
-         n2ovmr(ncol,kte+1) = n2ovmr(ncol,kte)
+         h2ovmr(ncol,kte+1) = h2ovmr(ncol,kte) 
+         co2vmr(ncol,kte+1) = co2vmr(ncol,kte) 
+         o2vmr(ncol,kte+1) = o2vmr(ncol,kte) 
+         ch4vmr(ncol,kte+1) = ch4vmr(ncol,kte) 
+         n2ovmr(ncol,kte+1) = n2ovmr(ncol,kte) 
 
 ! Get ozone profile including amount in extra layer above model top
          call inirad (o3mmr,plev,kts,kte)
@@ -10619,7 +10701,7 @@ CONTAINS
 
 ! Define cloud optical properties for radiation (inflgsw = 0)
 ! This option is not currently active
-! Cloud and precipitation paths in g/m2
+! Cloud and precipitation paths in g/m2 
 ! qi=0 if no ice phase
 ! qs=0 if no ice phase
          if (inflgsw .eq. 0) then
@@ -10648,7 +10730,7 @@ CONTAINS
 ! Define cloud physical properties for radiation (inflgsw = 1 or 2)
 ! Cloud fraction
 ! Set cloud arrays if passing cloud physical properties into radiation
-         if (inflgsw .gt. 0) then
+         if (inflgsw .gt. 0) then 
             do k = kts, kte
                cldfrac(ncol,k) = cldfra1d(k)
             enddo
@@ -10677,7 +10759,7 @@ CONTAINS
 !..The ice water path is already sum of cloud ice and snow, but when we have explicit
 !.. ice effective radius, overwrite the ice path with only the cloud ice variable,
 !.. leaving out the snow for its own effect.
-           if(iceflgsw.ge.4)then
+           if(iceflgsw.ge.4)then 
               do k = kts, kte
                      gicewp = qi1d(k) * pdel(ncol,k)*100.0 / gravmks * 1000.0     ! Grid box ice water path.
                      cicewp(ncol,k) = gicewp / max(0.01,cldfrac(ncol,k))               ! In-cloud ice water path.
@@ -10694,8 +10776,8 @@ CONTAINS
 
            if(iceflgsw.eq.5)then
               do k = kts, kte
-                 snow_mass_factor = 1.0
-                 if (resnow1d(ncol,k) .gt. 130.)then
+                 snow_mass_factor = 1.0                 
+                 if (resnow1d(ncol,k) .gt. 130.)then 
                      snow_mass_factor = (130.0/resnow1d(ncol,k))*(130.0/resnow1d(ncol,k))
                      resnow1d(ncol,k)   = 130.0
                  endif
@@ -10733,7 +10815,7 @@ CONTAINS
             end if
          end if
       end do
-!jdfcz     else ! prescribe
+!jdfcz     else ! prescribe 
 ! following Kiehl
 !     call relcalc(ncol, pcols, pver, tlay, landfrac, landm, icefrac, reliq, snowh)
 !      write(0,*) 'sw prescribe aerosol',maxval(qndrop3d)
@@ -10758,7 +10840,7 @@ CONTAINS
             reliq(ncol,k) = recloud1d(ncol,k)
          end do
       endif
-#if (EM_CORE==1)
+#if (EM_CORE==1) 
       if (iceflgsw .ge. 4) then
 #else
       if (iceflgsw .ge. 3) then   !BSF: was .ge. 4
@@ -10771,7 +10853,7 @@ CONTAINS
 
 #if 0
       if (i==80.and.j==30) then
-#if defined( DM_PARALLEL ) && ! defined( STUBMPI)
+#if defined( DM_PARALLEL ) && ! defined( STUBMPI) 
       if( PRESENT( progn ) ) write(0,*) 'aerosol indirect',progn
       write(0,*)'sw water eff radius',reliq(ncol,10),reliq(ncol,20),reliq(ncol,25)
       write(0,*)'sw ice eff radius',reice(ncol,10),reice(ncol,20),reice(ncol,25)
@@ -10788,8 +10870,8 @@ CONTAINS
                   reice(ncol,k) = min(140.0,reice(ncol,k))
                end do
             endif
-
-!if CAMMGMP is used, use output from CAMMGMP
+            
+!if CAMMGMP is used, use output from CAMMGMP            
 !PMA
             if(is_CAMMGMP_used) then
                do k = kts, kte
@@ -10829,7 +10911,7 @@ CONTAINS
                end do
             endif
 
-! Zero out cloud optical properties here, calculated in radiation
+! Zero out cloud optical properties here, calculated in radiation 
             do k = kts, kte
                do nb = 1, nbndsw
                   taucld(nb,ncol,k) = 0.0
@@ -10912,7 +10994,7 @@ CONTAINS
         if(tauaer300(i,k,j).gt.thresh .and. tauaer999(i,k,j).gt.thresh) then
            ang=alog(tauaer300(i,k,j)/tauaer999(i,k,j))/alog(999./300.)
            tauaer(ncol,k,nb)=tauaer400(i,k,j)*(0.4/wavemid(nb))**ang
-           !tauaer(ncol,k,nb)=tauaer600(i,k,j)*(0.6/wavemid(nb))**ang
+           !tauaer(ncol,k,nb)=tauaer600(i,k,j)*(0.6/wavemid(nb))**ang 
            if (i==30.and.j==49.and.k==2.and.nb==12) then
             write(0,*) 'TAU from 600 vs 400 in RRTMG',tauaer600(i,k,j),tauaer400(i,k,j)
             print*, 'TAU from 600 vs 400 in RRTMG',tauaer600(i,k,j),tauaer400(i,k,j)
@@ -10952,9 +11034,9 @@ CONTAINS
                write(msg,'(i4,5f8.2)') k, tauaer300(i,k,j), tauaer400(i,k,j), &
                     tauaer600(i,k,j), tauaer999(i,k,j),tauaer(ncol,k,nb)
                call wrf_message(msg)
-               !czhao set an up-limit here to avoid segmentation fault
+               !czhao set an up-limit here to avoid segmentation fault 
                !from extreme AOD
-               tauaer(ncol,k,nb)=tauaer(ncol,k,nb)*6.0/slope
+               tauaer(ncol,k,nb)=tauaer(ncol,k,nb)*6.0/slope 
             end do
 
             call wrf_message("Diagnostics 2: k, gaer300, gaer400, gaer600, gaer999")
@@ -11022,11 +11104,13 @@ CONTAINS
              taucmcl ,ssacmcl ,asmcmcl ,fsfcmcl , &
              ciwpmcl ,clwpmcl ,cswpmcl, reicmcl ,relqmcl ,resnmcl, &
              tauaer  ,ssaaer  ,asmaer  ,ecaer   , &
-             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, aer_opt, &
+             swuflx  ,swdflx  ,swhr    ,swuflxc ,swdflxc ,swhrc, swuflxcln, swdflxcln, aer_opt, &
 ! -----      Zhenxin added for ssib coupiling 2011-06-20 --------!
              sibvisdir, sibvisdif, sibnirdir, sibnirdif,         &
 ! --------------------   End of addiation by Zhenxin 2011-06-20 ------!
-             swdkdir, swdkdif                      &  ! jararias, 2012/08/10
+             swdkdir, swdkdif,                     &  ! jararias, 2012/08/10
+             swdkdirc                              &  ! PAJ
+             ,calc_clean_atm_diag                 &
                                                    )
 
 
@@ -11035,7 +11119,7 @@ CONTAINS
          gsw(i,j) = swdflx(1,1) - swuflx(1,1)
          swcf(i,j) = (swdflx(1,kte+2) - swuflx(1,kte+2)) - (swdflxc(1,kte+2) - swuflxc(1,kte+2))
 
-         if (present(swupt)) then
+         if (present(swupt)) then 
 ! Output up and down toa fluxes for total and clear sky
             swupt(i,j)     = swuflx(1,kte+2)
             swuptc(i,j)    = swuflxc(1,kte+2)
@@ -11052,13 +11136,22 @@ CONTAINS
             swnirdif(i,j)  = sibnirdif(1,1)
 !  Ended, Zhenxin (2011/06/20)
             swdnbc(i,j)    = swdflxc(1,1)
+            if(calc_clean_atm_diag .gt. 0)then
+            	swuptcln(i,j)  = swuflxcln(1,kte+2)
+            	swdntcln(i,j)  = swdflxcln(1,kte+2)
+            	swupbcln(i,j)  = swuflxcln(1,1)
+            	swdnbcln(i,j)  = swdflxcln(1,1)
+            end if
          endif
             swddir(i,j)    = swdkdir(1,1)          ! jararias 2013/08/10
             swddni(i,j)    = swddir(i,j) / coszrs  ! jararias 2013/08/10
             swddif(i,j)    = swdkdif(1,1)          ! jararias 2013/08/10
+            swdownc(i, j)  = swdflxc(1,1)          ! PAJ: clear-sky GHI
+            swddirc(i,j)   = swdkdirc(1,1)         ! PAJ: clear-sky direct normal irradiance
+            swddnic(i,j)   = swddirc(i,j) / coszrs ! PAJ: clear-sky direct normal irradiance
 
 ! Output up and down layer fluxes for total and clear sky.
-! Vertical ordering is from bottom to top in units of W m-2.
+! Vertical ordering is from bottom to top in units of W m-2. 
          if ( present (swupflx) ) then
          do k=kts,kte+2
             swupflx(i,k,j)  = swuflx(1,k)
@@ -11069,13 +11162,13 @@ CONTAINS
          endif
 
 ! Output heating rate tendency; convert heating rate from K/d to K/s
-! Heating rate arrays are ordered vertically from bottom to top here.
-         do k=kts,kte
+! Heating rate arrays are ordered vertically from bottom to top here. 
+         do k=kts,kte 
             tten1d(k) = swhr(ncol,k)/86400.
             rthratensw(i,k,j) = tten1d(k)/pi3d(i,k,j)
          enddo
       else
-         if (present(swupt)) then
+         if (present(swupt)) then 
 ! Output up and down toa fluxes for total and clear sky
             swupt(i,j)     = 0.
             swuptc(i,j)    = 0.
@@ -11090,23 +11183,32 @@ CONTAINS
             swvisdif(i,j)  = 0.
             swnirdir(i,j)  = 0.
             swnirdif(i,j)  = 0.  ! Add by Zhenxin (2011/06/20)
+            if(calc_clean_atm_diag .gt. 0)then
+				swuptcln(i,j)  = 0.
+				swdntcln(i,j)  = 0.
+				swupbcln(i,j)  = 0.
+				swdnbcln(i,j)  = 0.
+            end if
          endif
             swddir(i,j)    = 0.  ! jararias 2013/08/10
             swddni(i,j)    = 0.  ! jararias 2013/08/10
             swddif(i,j)    = 0.  ! jararias 2013/08/10
+            swdownc(i, j)  = 0.0 ! PAJ
+            swddnic(i,j)   = 0.0 ! PAJ
+            swddirc(i,j)   = 0.0 ! PAJ
             swcf(i,j)      = 0.
 
       endif
 !
       end do i_loop
-   end do j_loop
+   end do j_loop                                           
 
 
 !-------------------------------------------------------------------
 
    END SUBROUTINE RRTMG_SWRAD
 
-
+ 
 !====================================================================
    SUBROUTINE rrtmg_swinit(                                         &
                        allowed_to_read ,                            &
@@ -11134,13 +11236,13 @@ CONTAINS
    END SUBROUTINE rrtmg_swinit
 
 
-! **************************************************************************
+! **************************************************************************     
       SUBROUTINE rrtmg_swlookuptable
-! **************************************************************************
+! **************************************************************************     
 
 IMPLICIT NONE
 
-! Local
+! Local                                    
       INTEGER :: i
       LOGICAL                 :: opened
       LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
@@ -11203,7 +11305,7 @@ IMPLICIT NONE
 !  Revision for GCMs:  Michael J. Iacono, AER, July 2002
 !  Further F90 reformatting:  Michael J. Iacono, AER, June 2006
 !
-!  This file contains 14 READ statements that include the
+!  This file contains 14 READ statements that include the 
 !  absorption coefficients and other data for each of the 14 shortwave
 !  spectral bands used in RRTMG_SW.  Here, the data are defined for 16
 !  g-points, or sub-intervals, per band.  These data are combined and
@@ -11224,20 +11326,20 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
-!     Array sfluxrefo contains the Kurucz solar source function for this band.
+!     Array sfluxrefo contains the Kurucz solar source function for this band. 
 
 !     Array rayl contains the Rayleigh extinction coefficient at v = 2925 cm-1.
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels> ~100mb, temperatures, and binary
-!     species parameters (see taumol.f for definition).  The first
-!     index in the array, JS, runs from 1 to 9, and corresponds to
-!     different values of the binary species parameter.  For instance,
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8,
+!     species parameters (see taumol.f for definition).  The first 
+!     index in the array, JS, runs from 1 to 9, and corresponds to 
+!     different values of the binary species parameter.  For instance, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -11248,22 +11350,22 @@ IMPLICIT NONE
 !     in mb).  The fourth index, IG, goes from 1 to 16, and indicates
 !     which g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -11307,20 +11409,20 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
-!     Array sfluxrefo contains the Kurucz solar source function for this band.
+!     Array sfluxrefo contains the Kurucz solar source function for this band. 
 
 !     Array rayl contains the Rayleigh extinction coefficient at v = 3625 cm-1.
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels> ~100mb, temperatures, and binary
-!     species parameters (see taumol.f for definition).  The first
-!     index in the array, JS, runs from 1 to 9, and corresponds to
-!     different values of the binary species parameter.  For instance,
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8,
+!     species parameters (see taumol.f for definition).  The first 
+!     index in the array, JS, runs from 1 to 9, and corresponds to 
+!     different values of the binary species parameter.  For instance, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -11331,22 +11433,22 @@ IMPLICIT NONE
 !     in mb).  The fourth index, IG, goes from 1 to 16, and indicates
 !     which g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -11390,20 +11492,20 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
-!     Array sfluxrefo contains the Kurucz solar source function for this band.
+!     Array sfluxrefo contains the Kurucz solar source function for this band. 
 
 !     Array rayl contains the Rayleigh extinction coefficient at v = 4325 cm-1.
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels> ~100mb, temperatures, and binary
-!     species parameters (see taumol.f for definition).  The first
-!     index in the array, JS, runs from 1 to 9, and corresponds to
-!     different values of the binary species parameter.  For instance,
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8,
+!     species parameters (see taumol.f for definition).  The first 
+!     index in the array, JS, runs from 1 to 9, and corresponds to 
+!     different values of the binary species parameter.  For instance, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -11414,22 +11516,22 @@ IMPLICIT NONE
 !     in mb).  The fourth index, IG, goes from 1 to 16, and indicates
 !     which g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -11458,7 +11560,7 @@ IMPLICIT NONE
      WRITE( errmess , '(A,I4)' ) 'module_ra_rrtmg_sw: error reading RRTMG_SW_DATA on unit ',rrtmg_unit
      CALL wrf_error_fatal(errmess)
 
-      end subroutine sw_kgb18
+      end subroutine sw_kgb18 
 
 ! **************************************************************************
       subroutine sw_kgb19(rrtmg_unit)
@@ -11473,20 +11575,20 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
-!     Array sfluxrefo contains the Kurucz solar source function for this band.
+!     Array sfluxrefo contains the Kurucz solar source function for this band. 
 
 !     Array rayl contains the Rayleigh extinction coefficient at v = 4900 cm-1.
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels> ~100mb, temperatures, and binary
-!     species parameters (see taumol.f for definition).  The first
-!     index in the array, JS, runs from 1 to 9, and corresponds to
-!     different values of the binary species parameter.  For instance,
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8,
+!     species parameters (see taumol.f for definition).  The first 
+!     index in the array, JS, runs from 1 to 9, and corresponds to 
+!     different values of the binary species parameter.  For instance, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -11497,22 +11599,22 @@ IMPLICIT NONE
 !     in mb).  The fourth index, IG, goes from 1 to 16, and indicates
 !     which g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -11556,22 +11658,22 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
-!     Array sfluxrefo contains the Kurucz solar source function for this band.
+!     Array sfluxrefo contains the Kurucz solar source function for this band. 
 
 !     Array rayl contains the Rayleigh extinction coefficient at v = 5670 cm-1.
 
 !     Array absch4o contains the absorption coefficients for methane.
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels> ~100mb, temperatures, and binary
-!     species parameters (see taumol.f for definition).  The first
-!     index in the array, JS, runs from 1 to 9, and corresponds to
-!     different values of the binary species parameter.  For instance,
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8,
+!     species parameters (see taumol.f for definition).  The first 
+!     index in the array, JS, runs from 1 to 9, and corresponds to 
+!     different values of the binary species parameter.  For instance, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -11582,22 +11684,22 @@ IMPLICIT NONE
 !     in mb).  The fourth index, IG, goes from 1 to 16, and indicates
 !     which g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -11641,20 +11743,20 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
-!     Array sfluxrefo contains the Kurucz solar source function for this band.
+!     Array sfluxrefo contains the Kurucz solar source function for this band. 
 
 !     Array rayl contains the Rayleigh extinction coefficient at v = 6925 cm-1.
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels> ~100mb, temperatures, and binary
-!     species parameters (see taumol.f for definition).  The first
-!     index in the array, JS, runs from 1 to 9, and corresponds to
-!     different values of the binary species parameter.  For instance,
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8,
+!     species parameters (see taumol.f for definition).  The first 
+!     index in the array, JS, runs from 1 to 9, and corresponds to 
+!     different values of the binary species parameter.  For instance, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -11665,22 +11767,22 @@ IMPLICIT NONE
 !     in mb).  The fourth index, IG, goes from 1 to 16, and indicates
 !     which g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -11724,20 +11826,20 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
-!     Array sfluxrefo contains the Kurucz solar source function for this band.
+!     Array sfluxrefo contains the Kurucz solar source function for this band. 
 
 !     Array rayl contains the Rayleigh extinction coefficient at v = 8000 cm-1.
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels> ~100mb, temperatures, and binary
-!     species parameters (see taumol.f for definition).  The first
-!     index in the array, JS, runs from 1 to 9, and corresponds to
-!     different values of the binary species parameter.  For instance,
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8,
+!     species parameters (see taumol.f for definition).  The first 
+!     index in the array, JS, runs from 1 to 9, and corresponds to 
+!     different values of the binary species parameter.  For instance, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -11748,22 +11850,22 @@ IMPLICIT NONE
 !     in mb).  The fourth index, IG, goes from 1 to 16, and indicates
 !     which g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296_rb,260_rb,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296_rb,260_rb,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -11807,22 +11909,22 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
-!     Array sfluxrefo contains the Kurucz solar source function for this band.
+!     Array sfluxrefo contains the Kurucz solar source function for this band. 
 
 !     Array raylo contains the Rayleigh extinction coefficient at all v for this band
 
-!     Array givfac is the average Giver et al. correction factor for this band.
+!     Array givfac is the average Giver et al. correction factor for this band. 
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels> ~100mb, temperatures, and binary
-!     species parameters (see taumol.f for definition).  The first
-!     index in the array, JS, runs from 1 to 9, and corresponds to
-!     different values of the binary species parameter.  For instance,
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8,
+!     species parameters (see taumol.f for definition).  The first 
+!     index in the array, JS, runs from 1 to 9, and corresponds to 
+!     different values of the binary species parameter.  For instance, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -11834,9 +11936,9 @@ IMPLICIT NONE
 !     which g-interval the absorption coefficients are for.
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -11879,24 +11981,24 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
-!     Array sfluxrefo contains the Kurucz solar source function for this band.
+!     Array sfluxrefo contains the Kurucz solar source function for this band. 
 
-!     Arrays raylao and raylbo contain the Rayleigh extinction coefficient at
+!     Arrays raylao and raylbo contain the Rayleigh extinction coefficient at 
 !     all v for this band for the upper and lower atmosphere.
 
-!     Arrays abso3ao and abso3bo contain the ozone absorption coefficient at
+!     Arrays abso3ao and abso3bo contain the ozone absorption coefficient at 
 !     all v for this band for the upper and lower atmosphere.
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels> ~100mb, temperatures, and binary
-!     species parameters (see taumol.f for definition).  The first
-!     index in the array, JS, runs from 1 to 9, and corresponds to
-!     different values of the binary species parameter.  For instance,
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8,
+!     species parameters (see taumol.f for definition).  The first 
+!     index in the array, JS, runs from 1 to 9, and corresponds to 
+!     different values of the binary species parameter.  For instance, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -11907,22 +12009,22 @@ IMPLICIT NONE
 !     in mb).  The fourth index, IG, goes from 1 to 16, and indicates
 !     which g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor
@@ -11970,23 +12072,23 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
-!     Array sfluxrefo contains the Kurucz solar source function for this band.
+!     Array sfluxrefo contains the Kurucz solar source function for this band. 
 
 !     Array raylo contains the Rayleigh extinction coefficient at all v = 2925 cm-1.
 
-!     Arrays abso3ao and abso3bo contain the ozone absorption coefficient at
+!     Arrays abso3ao and abso3bo contain the ozone absorption coefficient at 
 !     all v for this band for the upper and lower atmosphere.
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels> ~100mb, temperatures, and binary
-!     species parameters (see taumol.f for definition).  The first
-!     index in the array, JS, runs from 1 to 9, and corresponds to
-!     different values of the binary species parameter.  For instance,
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8,
+!     species parameters (see taumol.f for definition).  The first 
+!     index in the array, JS, runs from 1 to 9, and corresponds to 
+!     different values of the binary species parameter.  For instance, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -12028,11 +12130,11 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
-!     Array sfluxrefo contains the Kurucz solar source function for this band.
+!     Array sfluxrefo contains the Kurucz solar source function for this band. 
 
 !     Array raylo contains the Rayleigh extinction coefficient at all v for this band.
 
@@ -12063,11 +12165,11 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
-!     Array sfluxrefo contains the Kurucz solar source function for this band.
+!     Array sfluxrefo contains the Kurucz solar source function for this band. 
 !     The values in array sfluxrefo were obtained using the "low resolution"
 !     version of the Kurucz solar source function.  For unknown reasons,
 !     the total irradiance in this band differs from the corresponding
@@ -12076,12 +12178,12 @@ IMPLICIT NONE
 
 !     Array raylo contains the Rayleigh extinction coefficient at all v = 2925 cm-1.
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels> ~100mb, temperatures, and binary
-!     species parameters (see taumol.f for definition).  The first
-!     index in the array, JS, runs from 1 to 9, and corresponds to
-!     different values of the binary species parameter.  For instance,
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8,
+!     species parameters (see taumol.f for definition).  The first 
+!     index in the array, JS, runs from 1 to 9, and corresponds to 
+!     different values of the binary species parameter.  For instance, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -12092,13 +12194,13 @@ IMPLICIT NONE
 !     in mb).  The fourth index, IG, goes from 1 to 16, and indicates
 !     which g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
@@ -12137,20 +12239,20 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
-!     Array sfluxrefo contains the Kurucz solar source function for this band.
+!     Array sfluxrefo contains the Kurucz solar source function for this band. 
 
 !     Array raylo contains the Rayleigh extinction coefficient at all v = ???? cm-1.
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels> ~100mb, temperatures, and binary
-!     species parameters (see taumol.f for definition).  The first
-!     index in the array, JS, runs from 1 to 9, and corresponds to
-!     different values of the binary species parameter.  For instance,
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8,
+!     species parameters (see taumol.f for definition).  The first 
+!     index in the array, JS, runs from 1 to 9, and corresponds to 
+!     different values of the binary species parameter.  For instance, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -12161,13 +12263,13 @@ IMPLICIT NONE
 !     in mb).  The fourth index, IG, goes from 1 to 16, and indicates
 !     which g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
@@ -12206,11 +12308,11 @@ IMPLICIT NONE
 ! Input
       integer, intent(in) :: rrtmg_unit
 
-! Local
+! Local                                    
       character*80 errmess
       logical, external  :: wrf_dm_on_monitor
 
-!     Array sfluxrefo contains the Kurucz solar source function for this band.
+!     Array sfluxrefo contains the Kurucz solar source function for this band. 
 
 !     Array rayl contains the Rayleigh extinction coefficient at all v = 2200 cm-1.
 
@@ -12218,12 +12320,12 @@ IMPLICIT NONE
 
 !     Array absco2o contains the carbon dioxide absorption coefficient for this band.
 
-!     The array KAO contains absorption coefs at the 16 chosen g-values
+!     The array KAO contains absorption coefs at the 16 chosen g-values 
 !     for a range of pressure levels> ~100mb, temperatures, and binary
-!     species parameters (see taumol.f for definition).  The first
-!     index in the array, JS, runs from 1 to 9, and corresponds to
-!     different values of the binary species parameter.  For instance,
-!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8,
+!     species parameters (see taumol.f for definition).  The first 
+!     index in the array, JS, runs from 1 to 9, and corresponds to 
+!     different values of the binary species parameter.  For instance, 
+!     JS=1 refers to dry air, JS = 2 corresponds to the paramter value 1/8, 
 !     JS = 3 corresponds to the parameter value 2/8, etc.  The second index
 !     in the array, JT, which runs from 1 to 5, corresponds to different
 !     temperatures.  More specifically, JT = 3 means that the data are for
@@ -12234,22 +12336,22 @@ IMPLICIT NONE
 !     in mb).  The fourth index, IG, goes from 1 to 16, and indicates
 !     which g-interval the absorption coefficients are for.
 
-!     The array KBO contains absorption coefs at the 16 chosen g-values
-!     for a range of pressure levels < ~100mb and temperatures. The first
-!     index in the array, JT, which runs from 1 to 5, corresponds to
-!     different temperatures.  More specifically, JT = 3 means that the
-!     data are for the reference temperature TREF for this pressure
+!     The array KBO contains absorption coefs at the 16 chosen g-values 
+!     for a range of pressure levels < ~100mb and temperatures. The first 
+!     index in the array, JT, which runs from 1 to 5, corresponds to 
+!     different temperatures.  More specifically, JT = 3 means that the 
+!     data are for the reference temperature TREF for this pressure 
 !     level, JT = 2 refers to the temperature TREF-15, JT = 1 is for
-!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.
+!     TREF-30, JT = 4 is for TREF+15, and JT = 5 is for TREF+30.  
 !     The second index, JP, runs from 13 to 59 and refers to the JPth
 !     reference pressure level (see taumol.f for the value of these
 !     pressure levels in mb).  The third index, IG, goes from 1 to 16,
 !     and tells us which g-interval the absorption coefficients are for.
 
 !     The array FORREFO contains the coefficient of the water vapor
-!     foreign-continuum (including the energy term).  The first
-!     index refers to reference temperature (296,260,224,260) and
-!     pressure (970,475,219,3 mbar) levels.  The second index
+!     foreign-continuum (including the energy term).  The first 
+!     index refers to reference temperature (296,260,224,260) and 
+!     pressure (970,475,219,3 mbar) levels.  The second index 
 !     runs over the g-channel (1 to 16).
 
 !     The array SELFREFO contains the coefficient of the water vapor

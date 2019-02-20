@@ -2,9 +2,9 @@
 #ifdef SOLVE3D
       SUBROUTINE set_scoord (ng)
 !
-!svn $Id: set_scoord.F 877 2017-11-15 04:04:42Z arango $
+!svn $Id: set_scoord.F 927 2018-10-16 03:51:56Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -152,10 +152,10 @@
 !
       integer :: k
 
-      real(r8) :: Aweight, Bweight, Cweight, Cbot, Csur, Hscale
-      real(r8) :: ds, exp_bot, exp_sur, rk, rN, sc_r, sc_w
-      real(r8) :: cff, cff1, cff2
-      real(r8) :: zhc, z1, z2, z3
+      real(dp) :: Aweight, Bweight, Cweight, Cbot, Csur, Hscale
+      real(dp) :: ds, exp_bot, exp_sur, rk, rN, sc_r, sc_w
+      real(dp) :: cff, cff1, cff2
+      real(dp) :: zhc, z1, z2, z3
 !
 !-----------------------------------------------------------------------
 !  Set thickness controlling vertical coordinate stretching.
@@ -169,7 +169,7 @@
 !
       IF (Vtransform(ng).eq.1) THEN
 # if defined WET_DRY
-        hc(ng)=MIN(MAX(hmin(ng),0.0_r8),Tcline(ng))
+        hc(ng)=MIN(MAX(hmin(ng),0.0_dp),Tcline(ng))
 # else
         hc(ng)=MIN(hmin(ng),Tcline(ng))
 # endif
@@ -199,33 +199,33 @@
 !  If theta_b=1, the refinement is both bottom ans surface intensified
 !  as theta_s is increased.
 !
-        IF (theta_s(ng).ne.0.0_r8) THEN
-          cff1=1.0_r8/SINH(theta_s(ng))
-          cff2=0.5_r8/TANH(0.5_r8*theta_s(ng))
+        IF (theta_s(ng).ne.0.0_dp) THEN
+          cff1=1.0_dp/SINH(theta_s(ng))
+          cff2=0.5_dp/TANH(0.5_dp*theta_s(ng))
         END IF
-        SCALARS(ng)%sc_w(0)=-1.0_r8
-        SCALARS(ng)%Cs_w(0)=-1.0_r8
-        ds=1.0_r8/REAL(N(ng),r8)
+        SCALARS(ng)%sc_w(0)=-1.0_dp
+        SCALARS(ng)%Cs_w(0)=-1.0_dp
+        ds=1.0_dp/REAL(N(ng),dp)
         DO k=1,N(ng)
-          SCALARS(ng)%sc_w(k)=ds*REAL(k-N(ng),r8)
-          SCALARS(ng)%sc_r(k)=ds*(REAL(k-N(ng),r8)-0.5_r8)
-          IF (theta_s(ng).ne.0.0_r8) THEN
-            SCALARS(ng)%Cs_w(k)=(1.0_r8-theta_b(ng))*                   &
+          SCALARS(ng)%sc_w(k)=ds*REAL(k-N(ng),dp)
+          SCALARS(ng)%sc_r(k)=ds*(REAL(k-N(ng),dp)-0.5_dp)
+          IF (theta_s(ng).ne.0.0_dp) THEN
+            SCALARS(ng)%Cs_w(k)=(1.0_dp-theta_b(ng))*                   &
      &                          cff1*SINH(theta_s(ng)*                  &
      &                                    SCALARS(ng)%sc_w(k))+         &
      &                          theta_b(ng)*                            &
      &                          (cff2*TANH(theta_s(ng)*                 &
      &                                     (SCALARS(ng)%sc_w(k)+        &
-     &                                      0.5_r8))-                   &
-     &                           0.5_r8)
-            SCALARS(ng)%Cs_r(k)=(1.0_r8-theta_b(ng))*                   &
+     &                                      0.5_dp))-                   &
+     &                           0.5_dp)
+            SCALARS(ng)%Cs_r(k)=(1.0_dp-theta_b(ng))*                   &
      &                          cff1*SINH(theta_s(ng)*                  &
      &                                    SCALARS(ng)%sc_r(k))+         &
      &                          theta_b(ng)*                            &
      &                          (cff2*TANH(theta_s(ng)*                 &
      &                                     (SCALARS(ng)%sc_r(k)+        &
-     &                                      0.5_r8))-                   &
-     &                           0.5_r8)
+     &                                      0.5_dp))-                   &
+     &                           0.5_dp)
           ELSE
             SCALARS(ng)%Cs_w(k)=SCALARS(ng)%sc_w(k)
             SCALARS(ng)%Cs_r(k)=SCALARS(ng)%sc_r(k)
@@ -264,25 +264,25 @@
 !  to allow near-bottom refinement.  This is done by blending it with
 !  another function.
 !
-        Aweight=1.0_r8
-        Bweight=1.0_r8
-        ds=1.0_r8/REAL(N(ng),r8)
+        Aweight=1.0_dp
+        Bweight=1.0_dp
+        ds=1.0_dp/REAL(N(ng),dp)
 !
-        SCALARS(ng)%sc_w(N(ng))=0.0_r8
-        SCALARS(ng)%Cs_w(N(ng))=0.0_r8
+        SCALARS(ng)%sc_w(N(ng))=0.0_dp
+        SCALARS(ng)%Cs_w(N(ng))=0.0_dp
         DO k=N(ng)-1,1,-1
-          sc_w=ds*REAL(k-N(ng),r8)
+          sc_w=ds*REAL(k-N(ng),dp)
           SCALARS(ng)%sc_w(k)=sc_w
-          IF (theta_s(ng).gt.0.0_r8) THEN
-            Csur=(1.0_r8-COSH(theta_s(ng)*sc_w))/                       &
-     &           (COSH(theta_s(ng))-1.0_r8)
-            IF (theta_b(ng).gt.0.0_r8) THEN
-              Cbot=SINH(theta_b(ng)*(sc_w+1.0_r8))/                     &
-     &             SINH(theta_b(ng))-1.0_r8
-              Cweight=(sc_w+1.0_r8)**Aweight*                           &
-     &                (1.0_r8+(Aweight/Bweight)*                        &
-     &                        (1.0_r8-(sc_w+1.0_r8)**Bweight))
-              SCALARS(ng)%Cs_w(k)=Cweight*Csur+(1.0_r8-Cweight)*Cbot
+          IF (theta_s(ng).gt.0.0_dp) THEN
+            Csur=(1.0_dp-COSH(theta_s(ng)*sc_w))/                       &
+     &           (COSH(theta_s(ng))-1.0_dp)
+            IF (theta_b(ng).gt.0.0_dp) THEN
+              Cbot=SINH(theta_b(ng)*(sc_w+1.0_dp))/                     &
+     &             SINH(theta_b(ng))-1.0_dp
+              Cweight=(sc_w+1.0_dp)**Aweight*                           &
+     &                (1.0_dp+(Aweight/Bweight)*                        &
+     &                        (1.0_dp-(sc_w+1.0_dp)**Bweight))
+              SCALARS(ng)%Cs_w(k)=Cweight*Csur+(1.0_dp-Cweight)*Cbot
             ELSE
               SCALARS(ng)%Cs_w(k)=Csur
             END IF
@@ -290,22 +290,22 @@
             SCALARS(ng)%Cs_w(k)=sc_w
           END IF
         END DO
-        SCALARS(ng)%sc_w(0)=-1.0_r8
-        SCALARS(ng)%Cs_w(0)=-1.0_r8
+        SCALARS(ng)%sc_w(0)=-1.0_dp
+        SCALARS(ng)%Cs_w(0)=-1.0_dp
 !
         DO k=1,N(ng)
-          sc_r=ds*(REAL(k-N(ng),r8)-0.5_r8)
+          sc_r=ds*(REAL(k-N(ng),dp)-0.5_dp)
           SCALARS(ng)%sc_r(k)=sc_r
-          IF (theta_s(ng).gt.0.0_r8) THEN
-            Csur=(1.0_r8-COSH(theta_s(ng)*sc_r))/                       &
-     &           (COSH(theta_s(ng))-1.0_r8)
-            IF (theta_b(ng).gt.0.0_r8) THEN
-              Cbot=SINH(theta_b(ng)*(sc_r+1.0_r8))/                     &
-     &             SINH(theta_b(ng))-1.0_r8
-              Cweight=(sc_r+1.0_r8)**Aweight*                           &
-     &                (1.0_r8+(Aweight/Bweight)*                        &
-     &                        (1.0_r8-(sc_r+1.0_r8)**Bweight))
-              SCALARS(ng)%Cs_r(k)=Cweight*Csur+(1.0_r8-Cweight)*Cbot
+          IF (theta_s(ng).gt.0.0_dp) THEN
+            Csur=(1.0_dp-COSH(theta_s(ng)*sc_r))/                       &
+     &           (COSH(theta_s(ng))-1.0_dp)
+            IF (theta_b(ng).gt.0.0_dp) THEN
+              Cbot=SINH(theta_b(ng)*(sc_r+1.0_dp))/                     &
+     &             SINH(theta_b(ng))-1.0_dp
+              Cweight=(sc_r+1.0_dp)**Aweight*                           &
+     &                (1.0_dp+(Aweight/Bweight)*                        &
+     &                        (1.0_dp-(sc_r+1.0_dp)**Bweight))
+              SCALARS(ng)%Cs_r(k)=Cweight*Csur+(1.0_dp-Cweight)*Cbot
             ELSE
               SCALARS(ng)%Cs_r(k)=Csur
             END IF
@@ -356,33 +356,33 @@
 !
         exp_sur=theta_s(ng)
         exp_bot=theta_b(ng)
-        Hscale=3.0_r8
-        ds=1.0_r8/REAL(N(ng),r8)
+        Hscale=3.0_dp
+        ds=1.0_dp/REAL(N(ng),dp)
 !
-        SCALARS(ng)%sc_w(N(ng))=0.0_r8
-        SCALARS(ng)%Cs_w(N(ng))=0.0_r8
+        SCALARS(ng)%sc_w(N(ng))=0.0_dp
+        SCALARS(ng)%Cs_w(N(ng))=0.0_dp
         DO k=N(ng)-1,1,-1
-          sc_w=ds*REAL(k-N(ng),r8)
+          sc_w=ds*REAL(k-N(ng),dp)
           SCALARS(ng)%sc_w(k)=sc_w
-          Cbot= LOG(COSH(Hscale*(sc_w+1.0_r8)**exp_bot))/               &
-     &          LOG(COSH(Hscale))-1.0_r8
+          Cbot= LOG(COSH(Hscale*(sc_w+1.0_dp)**exp_bot))/               &
+     &          LOG(COSH(Hscale))-1.0_dp
           Csur=-LOG(COSH(Hscale*ABS(sc_w)**exp_sur))/                   &
      &          LOG(COSH(Hscale))
-          Cweight=0.5_r8*(1.0_r8-TANH(Hscale*(sc_w+0.5_r8)))
-          SCALARS(ng)%Cs_w(k)=Cweight*Cbot+(1.0_r8-Cweight)*Csur
+          Cweight=0.5_dp*(1.0_dp-TANH(Hscale*(sc_w+0.5_dp)))
+          SCALARS(ng)%Cs_w(k)=Cweight*Cbot+(1.0_dp-Cweight)*Csur
         END DO
-        SCALARS(ng)%sc_w(0)=-1.0_r8
-        SCALARS(ng)%Cs_w(0)=-1.0_r8
+        SCALARS(ng)%sc_w(0)=-1.0_dp
+        SCALARS(ng)%Cs_w(0)=-1.0_dp
 !
         DO k=1,N(ng)
-          sc_r=ds*(REAL(k-N(ng),r8)-0.5_r8)
+          sc_r=ds*(REAL(k-N(ng),dp)-0.5_dp)
           SCALARS(ng)%sc_r(k)=sc_r
-          Cbot= LOG(COSH(Hscale*(sc_r+1.0_r8)**exp_bot))/               &
-     &          LOG(COSH(Hscale))-1.0_r8
+          Cbot= LOG(COSH(Hscale*(sc_r+1.0_dp)**exp_bot))/               &
+     &          LOG(COSH(Hscale))-1.0_dp
           Csur=-LOG(COSH(Hscale*ABS(sc_r)**exp_sur))/                   &
      &          LOG(COSH(Hscale))
-          Cweight=0.5_r8*(1.0_r8-TANH(Hscale*(sc_r+0.5_r8)))
-          SCALARS(ng)%Cs_r(k)=Cweight*Cbot+(1.0_r8-Cweight)*Csur
+          Cweight=0.5_dp*(1.0_dp-TANH(Hscale*(sc_r+0.5_dp)))
+          SCALARS(ng)%Cs_r(k)=Cweight*Cbot+(1.0_dp-Cweight)*Csur
         END DO
 !
 !-----------------------------------------------------------------------
@@ -430,42 +430,42 @@
 !  This double transformation is continuous with respect to "theta_s"
 !  and "theta_b", as both values approach to zero.
 !
-        ds=1.0_r8/REAL(N(ng),r8)
+        ds=1.0_dp/REAL(N(ng),dp)
 !
-        SCALARS(ng)%sc_w(N(ng))=0.0_r8
-        SCALARS(ng)%Cs_w(N(ng))=0.0_r8
+        SCALARS(ng)%sc_w(N(ng))=0.0_dp
+        SCALARS(ng)%Cs_w(N(ng))=0.0_dp
         DO k=N(ng)-1,1,-1
-          sc_w=ds*REAL(k-N(ng),r8)
+          sc_w=ds*REAL(k-N(ng),dp)
           SCALARS(ng)%sc_w(k)=sc_w
-          IF (theta_s(ng).gt.0.0_r8) THEN
-            Csur=(1.0_r8-COSH(theta_s(ng)*sc_w))/                       &
-     &           (COSH(theta_s(ng))-1.0_r8)
+          IF (theta_s(ng).gt.0.0_dp) THEN
+            Csur=(1.0_dp-COSH(theta_s(ng)*sc_w))/                       &
+     &           (COSH(theta_s(ng))-1.0_dp)
           ELSE
             Csur=-sc_w**2
           END IF
-          IF (theta_b(ng).gt.0.0_r8) THEN
-            Cbot=(EXP(theta_b(ng)*Csur)-1.0_r8)/                        &
-     &           (1.0_r8-EXP(-theta_b(ng)))
+          IF (theta_b(ng).gt.0.0_dp) THEN
+            Cbot=(EXP(theta_b(ng)*Csur)-1.0_dp)/                        &
+     &           (1.0_dp-EXP(-theta_b(ng)))
             SCALARS(ng)%Cs_w(k)=Cbot
           ELSE
             SCALARS(ng)%Cs_w(k)=Csur
           END IF
         END DO
-        SCALARS(ng)%sc_w(0)=-1.0_r8
-        SCALARS(ng)%Cs_w(0)=-1.0_r8
+        SCALARS(ng)%sc_w(0)=-1.0_dp
+        SCALARS(ng)%Cs_w(0)=-1.0_dp
 !
         DO k=1,N(ng)
-          sc_r=ds*(REAL(k-N(ng),r8)-0.5_r8)
+          sc_r=ds*(REAL(k-N(ng),dp)-0.5_dp)
           SCALARS(ng)%sc_r(k)=sc_r
-          IF (theta_s(ng).gt.0.0_r8) THEN
-            Csur=(1.0_r8-COSH(theta_s(ng)*sc_r))/                       &
-     &           (COSH(theta_s(ng))-1.0_r8)
+          IF (theta_s(ng).gt.0.0_dp) THEN
+            Csur=(1.0_dp-COSH(theta_s(ng)*sc_r))/                       &
+     &           (COSH(theta_s(ng))-1.0_dp)
           ELSE
             Csur=-sc_r**2
           END IF
-          IF (theta_b(ng).gt.0.0_r8) THEN
-            Cbot=(EXP(theta_b(ng)*Csur)-1.0_r8)/                        &
-     &           (1.0_r8-EXP(-theta_b(ng)))
+          IF (theta_b(ng).gt.0.0_dp) THEN
+            Cbot=(EXP(theta_b(ng)*Csur)-1.0_dp)/                        &
+     &           (1.0_dp-EXP(-theta_b(ng)))
             SCALARS(ng)%Cs_r(k)=Cbot
           ELSE
             SCALARS(ng)%Cs_r(k)=Csur
@@ -484,46 +484,46 @@
 !-----------------------------------------------------------------------
 !
       ELSE IF (Vstretching(ng).eq.5) THEN
-        SCALARS(ng)%sc_w(N(ng))=0.0_r8
-        SCALARS(ng)%Cs_w(N(ng))=0.0_r8
+        SCALARS(ng)%sc_w(N(ng))=0.0_dp
+        SCALARS(ng)%Cs_w(N(ng))=0.0_dp
         DO k=N(ng)-1,1,-1
-          rk=REAL(k,r8)
-          rN=REAL(N(ng),r8)
-          sc_w=-(rk*rk - 2.0_r8*rk*rN + rk + rN*rN - rN)/(rN*rN - rN)-  &
-               0.01_r8*(rk*rk - rk*rN)/(1.0_r8 - rN)
+          rk=REAL(k,dp)
+          rN=REAL(N(ng),dp)
+          sc_w=-(rk*rk - 2.0_dp*rk*rN + rk + rN*rN - rN)/(rN*rN - rN)-  &
+               0.01_dp*(rk*rk - rk*rN)/(1.0_dp - rN)
           SCALARS(ng)%sc_w(k)=sc_w
-          IF (theta_s(ng).gt.0.0_r8) THEN
-            Csur=(1.0_r8-COSH(theta_s(ng)*sc_w))/                       &
-     &           (COSH(theta_s(ng))-1.0_r8)
+          IF (theta_s(ng).gt.0.0_dp) THEN
+            Csur=(1.0_dp-COSH(theta_s(ng)*sc_w))/                       &
+     &           (COSH(theta_s(ng))-1.0_dp)
           ELSE
             Csur=-sc_w**2
           END IF
-          IF (theta_b(ng).gt.0.0_r8) THEN
-            Cbot=(EXP(theta_b(ng)*Csur)-1.0_r8)/                        &
-     &           (1.0_r8-EXP(-theta_b(ng)))
+          IF (theta_b(ng).gt.0.0_dp) THEN
+            Cbot=(EXP(theta_b(ng)*Csur)-1.0_dp)/                        &
+     &           (1.0_dp-EXP(-theta_b(ng)))
             SCALARS(ng)%Cs_w(k)=Cbot
           ELSE
             SCALARS(ng)%Cs_w(k)=Csur
           END IF
         END DO
-        SCALARS(ng)%sc_w(0)=-1.0_r8
-        SCALARS(ng)%Cs_w(0)=-1.0_r8
+        SCALARS(ng)%sc_w(0)=-1.0_dp
+        SCALARS(ng)%Cs_w(0)=-1.0_dp
 !
         DO k=1,N(ng)
-          rk=REAL(k,r8)-0.5_r8
-          rN=REAL(N(ng),r8)
-          sc_r=-(rk*rk - 2.0_r8*rk*rN + rk + rN*rN - rN)/(rN*rN - rN)-  &
-               0.01_r8*(rk*rk - rk*rN)/(1.0_r8 - rN)
+          rk=REAL(k,dp)-0.5_dp
+          rN=REAL(N(ng),dp)
+          sc_r=-(rk*rk - 2.0_dp*rk*rN + rk + rN*rN - rN)/(rN*rN - rN)-  &
+               0.01_dp*(rk*rk - rk*rN)/(1.0_dp - rN)
           SCALARS(ng)%sc_r(k)=sc_r
-          IF (theta_s(ng).gt.0.0_r8) THEN
-            Csur=(1.0_r8-COSH(theta_s(ng)*sc_r))/                       &
-     &           (COSH(theta_s(ng))-1.0_r8)
+          IF (theta_s(ng).gt.0.0_dp) THEN
+            Csur=(1.0_dp-COSH(theta_s(ng)*sc_r))/                       &
+     &           (COSH(theta_s(ng))-1.0_dp)
           ELSE
             Csur=-sc_r**2
           END IF
-          IF (theta_b(ng).gt.0.0_r8) THEN
-            Cbot=(EXP(theta_b(ng)*Csur)-1.0_r8)/                        &
-     &           (1.0_r8-EXP(-theta_b(ng)))
+          IF (theta_b(ng).gt.0.0_dp) THEN
+            Cbot=(EXP(theta_b(ng)*Csur)-1.0_dp)/                        &
+     &           (1.0_dp-EXP(-theta_b(ng)))
             SCALARS(ng)%Cs_r(k)=Cbot
           ELSE
             SCALARS(ng)%Cs_r(k)=Csur
@@ -537,7 +537,7 @@
 !
       IF (Master.and.LwrtInfo(ng)) THEN
         WRITE (stdout,10) ng
-        cff=0.5_r8*(hmax(ng)+hmin(ng))
+        cff=0.5_dp*(hmax(ng)+hmin(ng))
         DO k=N(ng),0,-1
           IF (Vtransform(ng).eq.1) THEN
             zhc=hc(ng)*SCALARS(ng)%sc_w(k)
@@ -554,7 +554,7 @@
             IF (hc(ng).gt.hmax(ng)) THEN
               zhc=z3      ! same as hmax, other values do not make sense
             ELSE
-              zhc=0.5_r8*hc(ng)*(SCALARS(ng)%sc_w(k)+                   &
+              zhc=0.5_dp*hc(ng)*(SCALARS(ng)%sc_w(k)+                   &
      &                           SCALARS(ng)%Cs_w(k))
             END IF
           END IF

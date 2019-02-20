@@ -242,7 +242,7 @@ module mpas_mesh
             mesh % lonEdge(:) = real(field % array1d(:))
         end if
         stat = scan_input_free_field(field)
-
+ 
         stat = scan_input_close(handle)
 
         mesh % valid = .true.

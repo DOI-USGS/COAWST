@@ -1,7 +1,7 @@
 /*
-** svn $Id: sediment_var.h 830 2017-01-24 21:21:11Z arango $
+** svn $Id: sediment_var.h 889 2018-02-10 03:32:52Z arango $
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2018 The ROMS/TOMS Group                        **
+** Copyright (c) 2002-2019 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -28,6 +28,36 @@
                 idSbed(iporo)=varid
               CASE ('idSbed(idiff)')
                 idSbed(idiff)=varid
+#if defined BEDLOAD && defined BEDLOAD_VANDERA
+              CASE ('idsurs')
+                idsurs=varid
+              CASE ('idsrrw')
+                idsrrw=varid
+              CASE ('idsbtw')
+                idsbtw=varid
+              CASE ('idszrw')
+                idszrw=varid
+              CASE ('idsksd')
+                idsksd=varid
+              CASE ('idsusc')
+                idsusc=varid
+              CASE ('idstbl')
+                idstbl=varid
+              CASE ('idsubl')
+                idsubl=varid
+              CASE ('idspwc')
+                idspwc=varid
+              CASE ('idsfdw')
+                idsfdw=varid
+              CASE ('idsucr')
+                idsucr=varid
+              CASE ('idsutr')
+                idsutr=varid
+              CASE ('idstcr')
+                idstcr=varid
+              CASE ('idsttr')
+                idsttr=varid
+#endif 
 #if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
               CASE ('idSbed(ibtcr)')
                 idSbed(ibtcr)=varid

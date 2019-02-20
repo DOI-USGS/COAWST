@@ -411,7 +411,7 @@ contains
 !             IDS,IDE,JDS,JDE,KDS,KDE, &
 !             IMS,IME,JMS,JME,KMS,KME, &
 !             IPS,IPE,JPS,JPE,KPS,KPE)
-
+       
 !        call store_old_fixes(grid, &
 !             IDS,IDE,JDS,JDE,KDS,KDE, &
 !             IMS,IME,JMS,JME,KMS,KME, &
@@ -441,7 +441,7 @@ contains
     !
     !  1. Use the present, and past few, fix locations and extrapolate
     !  to the next location.
-    !
+    !  
     !  2. Calculate the mean motion and extrapolate to get the
     !  location at the next nest motion timestep.
     !
@@ -542,7 +542,7 @@ contains
        yysum=ysum*ysum
        ytsum=ysum*tsum
        ttsum=tsum*tsum
-
+       
        do i=1,grid%track_n_old
           call get_nearest_lonlat(grid,iold,jold,ierr, &
                grid%track_old_lon(i),grid%track_old_lat(i), &
@@ -961,12 +961,12 @@ contains
     ! This is the same as "fixcenter" in gettrk_main.  Original comment:
     !
     ! ABSTRACT: This subroutine loops through the different parameters
-    !           for the input storm number (ist) and calculates the
+    !           for the input storm number (ist) and calculates the 
     !           center position of the storm by taking an average of
     !           the center positions obtained for those parameters.
-    !           First we check to see which parameters are within a
+    !           First we check to see which parameters are within a 
     !           max error range (errmax), and we discard those that are
-    !           not within that range.  Of the remaining parms, we get
+    !           not within that range.  Of the remaining parms, we get 
     !           a mean position, and then we re-calculate the position
     !           by giving more weight to those estimates that are closer
     !           to this mean first-guess position estimate.
@@ -1197,7 +1197,7 @@ contains
 
 1000 format('Stored lat/lon at i=',I0,' j=',I0,' lon=',F0.3,' lat=',F0.3)
     !write(0,1000) ifinal,jfinal,lonfinal,latfinal
-
+    
 
     if(nint(hours) > grid%track_last_hour ) then
        ! It is time to recalculate the std. dev. of the track:
@@ -1252,7 +1252,7 @@ contains
 
     grid%tracker_fixlon=-999.0
     grid%tracker_fixlat=-999.0
-
+    
   end subroutine fixcenter
 
   subroutine get_uv_guess(grid,icen,jcen,loncen,latcen,calcparm, &
@@ -1261,11 +1261,11 @@ contains
        IMS,IME,JMS,JME,KMS,KME, &
        ITS,ITE,JTS,JTE,KTS,KTE)
     ! This is a rewrite of the gettrk_main.f get_uv_guess.  Original comment:
-    ! ABSTRACT: The purpose of this subroutine is to get a modified
-    !           first guess lat/lon position before searching for the
+    ! ABSTRACT: The purpose of this subroutine is to get a modified 
+    !           first guess lat/lon position before searching for the 
     !           minimum in the wind field.  The reason for doing this is
     !           to better refine the guess and avoid picking up a wind
-    !           wind minimum far away from the center.  So, use the
+    !           wind minimum far away from the center.  So, use the 
     !           first guess position (and give it strong weighting), and
     !           then also use the  fix positions for the current time
     !           (give the vorticity centers stronger weighting as well),
@@ -1311,7 +1311,7 @@ contains
     ! Get a guess storm center location for searching for the wind centers:
     do ip=1,maxtp
        if ((ip > 2 .and. ip < 7) .or. ip == 10) then
-          cycle   ! because 3-6 are for 850 & 700 u & v and 10 is
+          cycle   ! because 3-6 are for 850 & 700 u & v and 10 is 
           ! for surface wind magnitude.
        elseif(calcparm(ip)) then
           call calcdist (longuess,latguess,loncen(ip),latcen(ip),dist,degrees)
@@ -1339,7 +1339,7 @@ contains
        IDS,IDE,JDS,JDE,KDS,KDE, &
        IMS,IME,JMS,JME,KMS,KME, &
        IPS,IPE,JPS,JPE,KPS,KPE, &
-       iuvguess,juvguess)
+       iuvguess,juvguess) 
 
     use module_wrf_error
 #ifdef DM_PARALLEL
@@ -1377,7 +1377,7 @@ contains
     istop=min(istop,iuvguess+nint(rads_vmag/(2.*dxdymean)))
     jstart=max(jstart,juvguess-nint(rads_vmag/(2.*dxdymean)))
     jstop=min(jstop,juvguess+nint(rads_vmag/(2.*dxdymean)))
-
+    
     srsq=rads_vmag*rads_vmag*1e6
 
     icen=-99
@@ -1411,7 +1411,7 @@ contains
        call get_lonlat(grid,iout,jout,lonout,latout,ierr, &
             ids,ide, jds,jde, kds,kde, &
             ims,ime, jms,jme, kms,kme, &
-            ips,ipe, jps,jpe, kps,kpe)
+            ips,ipe, jps,jpe, kps,kpe) 
        if(ierr/=0) then
           !write(0,*) 'bad lonlat'
           calcparm=.false.
@@ -1538,14 +1538,14 @@ contains
          IDS,IDE,JDS,JDE,KDS,KDE, &
          IMS,IME,JMS,JME,KMS,KME, &
          IPS,IPE,JPS,JPE,KPS,KPE)
-
+    
     ! Copy the smoothed data back in:
     do j=jps,min(jde-1,jpe)
        do i=ips,min(ide-1,ipe)
           smooth(i,j)=grid%relaxwork(i,j)
        enddo
     enddo
-
+       
     ! Figure out whether we're finding a min or max:
     ifmin: if(trim(cparm)=='zeta') then
        if(.not.present(north_hemi)) then
@@ -1621,7 +1621,7 @@ contains
        call get_lonlat(grid,iout,jout,lonout,latout,ierr, &
             ids,ide, jds,jde, kds,kde, &
             ims,ime, jms,jme, kms,kme, &
-            ips,ipe, jps,jpe, kps,kpe)
+            ips,ipe, jps,jpe, kps,kpe) 
        if(ierr/=0) then
           !write(0,*) 'bad lonlat'
           calcparm=.false.
@@ -1752,11 +1752,11 @@ contains
   subroutine calcdist(rlonb,rlatb,rlonc,rlatc,xdist,degrees)
     ! Copied from gettrk_main.f
     !
-    !     ABSTRACT: This subroutine computes the distance between two
-    !               lat/lon points by using spherical coordinates to
+    !     ABSTRACT: This subroutine computes the distance between two 
+    !               lat/lon points by using spherical coordinates to 
     !               calculate the great circle distance between the points.
     !                       Figure out the angle (a) between pt.B and pt.C,
-    !             N. Pole   then figure out how much of a % of a great
+    !             N. Pole   then figure out how much of a % of a great 
     !               x       circle distance that angle represents.
     !              / \
     !            b/   \     cos(a) = (cos b)(cos c) + (sin b)(sin c)(cos A)
@@ -1767,16 +1767,16 @@ contains
     !               a      \                                      .
     !                       \pt.  NOTE: You may get strange results if you:
     !                         C    (1) use positive values for SH lats AND
-    !                              you try computing distances across the
+    !                              you try computing distances across the 
     !                              equator, or (2) use lon values of 0 to
     !                              -180 for WH lons AND you try computing
     !                              distances across the 180E meridian.
-    !
+    !    
     !     NOTE: In the diagram above, (a) is the angle between pt. B and
     !     pt. C (with pt. x as the vertex), and (A) is the difference in
     !     longitude (in degrees, absolute value) between pt. B and pt. C.
     !
-    !     !!! NOTE !!! -- THE PARAMETER ecircum IS DEFINED (AS OF THE
+    !     !!! NOTE !!! -- THE PARAMETER ecircum IS DEFINED (AS OF THE 
     !     ORIGINAL WRITING OF THIS SYSTEM) IN KM, NOT M, SO BE AWARE THAT
     !     THE DISTANCE RETURNED FROM THIS SUBROUTINE IS ALSO IN KM.
     !
@@ -1815,7 +1815,7 @@ contains
     xdist      = circ_fract * ecircum
     !
     !     NOTE: whether this subroutine returns the value of the distance
-    !           in km or m depends on the scale of the parameter ecircum.
+    !           in km or m depends on the scale of the parameter ecircum. 
     !           At the original writing of this subroutine (7/97), ecircum
     !           was given in km.
     !

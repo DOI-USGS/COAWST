@@ -1,6 +1,6 @@
 !-----------------------------------------------------------------------
 !
-! Contains all subroutines to get time-varying mixing ratios of CO2,
+! Contains all subroutines to get time-varying mixing ratios of CO2, 
 ! N2O, CH4, CFC11 and CFC12 into radiation schemes.
 ! These subroutines enable the user to specify the mixing ratios
 ! in the file CAMtr_volume_mixing_ratio, giving the user an easy way
@@ -96,8 +96,8 @@ MODULE module_ra_clWRF_support
   PUBLIC :: read_CAMgases
 
 CONTAINS
-
-  SUBROUTINE read_CAMgases(yr, julian, model, co2vmr, n2ovmr, ch4vmr, cfc11vmr, cfc12vmr)
+  
+  SUBROUTINE read_CAMgases(yr, julian, model, co2vmr, n2ovmr, ch4vmr, cfc11vmr, cfc12vmr) 
 
     INTEGER, INTENT(IN)            :: yr
     REAL, INTENT(IN)               :: julian
@@ -105,15 +105,16 @@ CONTAINS
     REAL(r8), OPTIONAL, INTENT(OUT)    :: co2vmr, n2ovmr, ch4vmr, cfc11vmr, cfc12vmr
 
 !Local
-
+    
     INTEGER                                          :: yearIN, found_yearIN, iyear  &
                                                        ,yr1,yr2
     INTEGER                                         :: mondata(1:cyr)
     LOGICAL, EXTERNAL                                :: wrf_dm_on_monitor
     INTEGER, EXTERNAL                                :: get_unused_unit
-
+      
     INTEGER                                          :: istatus, iunit, idata
-    INTEGER, SAVE                             :: VARCAM_in_years
+!ccc VARCAM_in_years is a module variable, needs something else here!        
+    INTEGER, SAVE                             :: max_years 
     integer                                          :: nyrm, nyrp, njulm, njulp
     LOGICAL                                          :: exists
     LOGICAL, SAVE                                    :: READtrFILE=.FALSE.
@@ -121,13 +122,13 @@ CONTAINS
     INTEGER                                   :: monday(13)=(/0,31,28,31,30,31,30,31,31,30,31,30,31/)
     INTEGER                                   :: mondayi(13)
     INTEGER                                   :: my1,my2,my3, tot_valid
-
+    
 ! CLWRF-UC June.09  (Copy from share/wrf_tsin.F)
     IF ( .NOT. READtrFILE ) THEN
        READtrFILE= .TRUE.
-
+       
        INQUIRE(FILE='CAMtr_volume_mixing_ratio', EXIST=exists)
-
+       
        IF (exists) THEN
           iunit = get_unused_unit()
           IF ( iunit <= 0 ) THEN
@@ -135,16 +136,16 @@ CONTAINS
                 CALL wrf_error_fatal('Error in module_ra_rrtm: could not find a free Fortran unit.')
              END IF
           END IF
-
-          ! Read volume mixing ratio
+          
+          ! Read volume mixing ratio 
           OPEN(UNIT=iunit, FILE='CAMtr_volume_mixing_ratio', FORM='formatted', &
                STATUS='old', IOSTAT=istatus)
-
+          
           IF (istatus == 0) THEN
              ! Ignore first two lines which constitute a header
              READ(UNIT=iunit, FMT='(1X)')
              READ(UNIT=iunit, FMT='(1X)')
-
+             
              istatus = 0
              idata = 1
              DO WHILE (istatus == 0)
@@ -155,10 +156,10 @@ CONTAINS
                    WRITE(message,*)'CLWRF reading...: istatus:',istatus,' idata:',idata,   &
                         ' year:', yrdata(idata), ' co2: ',co2r(idata), ' n2o: ',&
                         n2or(idata),' ch4:',ch4r(idata)
-                   call wrf_debug( 0, message)
+                   call wrf_debug( 0, message) 
                 ENDIF
                 mondata(idata) = 6
-
+                
                 idata=idata+1
              END DO
 
@@ -167,11 +168,11 @@ CONTAINS
                 PRINT *,"   Not normal ending of 'CAMtr_volume_mixing_ratio' file"
                 PRINT *,"   Lecture ends with 'IOSTAT'=",istatus
              END IF
-             VARCAM_in_years = idata - 1
+             max_years = idata - 1
              CLOSE(iunit)
 
              ! Calculate the julian day for each month.
-             DO idata=1,VARCAM_in_years
+             DO idata=1,max_years
                 mondayi = monday
                 MY1=MOD(yrdata(idata),4)
                 MY2=MOD(yrdata(idata),100)
@@ -181,36 +182,24 @@ CONTAINS
              ENDDO
           ENDIF
        ELSE
-          PRINT *,"CLWRF -- clwrf -- CLWRF ALERT!"
-          PRINT *,"   'CAMtr_volume_mixing_ratio' does not exists"
-          PRINT *,'   Recovering original concentrations'
-
-          !ccc Fake yrdata. Won't be use but a value > yr is needed so that
-          ! everything work.
-          ! With negative mixing ratios in co2r, n2or and ch4r, no interpolation
-          ! is done and we use the constant mixing ratios that were used before
-          ! CLWRF modifications.
-          yrdata = yr + 1
-          juldata = 1
-          co2r   = -9999.999
-          n2or   = -9999.999
-          ch4r   = -9999.999
-          cfc11r = -9999.999
-          cfc12r = -9999.999
-
+          max_years = VARCAM_in_years ! Set max number of years to the table size
+                                      ! used for CAM.
           ! For CAM model, recovers original data sets.
           IF (model .eq. "CAM") THEN
-             yrdata(1:VARCAM_in_years) = yr_CAM
-             co2r(1:VARCAM_in_years)   = co2r_CAM
+             yrdata(1:max_years) = yr_CAM
+             co2r(1:max_years)   = co2r_CAM
+          ELSE
+             CALL wrf_error_fatal("CLWRF: 'CAMtr_volume_mixing_ratio' does not exist")
           ENDIF
+
        ENDIF ! CAMtr_volume_mixing_ratio exists
-
-    ENDIF ! File already opened and read
-
+       
+    ENDIF ! File already opened and read 
+    
     found_yearIN=0
     iyear=1
     !ccc Crash if iyear get > cyr (max. # of years in the mixing ratio file) ?
-    !DO WHILE (found_yearIN == 0)
+    !DO WHILE (found_yearIN == 0) 
     DO WHILE (found_yearIN == 0 .and. iyear <= cyr)
        IF (yrdata(iyear) .GT. yr )  THEN
           yearIN=iyear
@@ -221,14 +210,14 @@ CONTAINS
        ENDIF
        iyear=iyear+1
     ENDDO
-
+    
     ! Prevent yr > last year in data
 !    IF (yearIN .ge. VARCAM_in_years) yearIN=VARCAM_in_years-1
-    IF (iyear .ge. VARCAM_in_years) then
-       yearIN=VARCAM_in_years-1
+    IF (iyear .ge. max_years) then
+       yearIN=max_years-1
        found_yearIN = 1
     ENDIF
-
+    
     IF (found_yearIN .NE. 0 ) THEN
        if (yearIN .eq. 1) yearIN = yearIN + 1    ! To take 2 first lines of the file
        nyrm = yrdata(yearIN-1)
@@ -241,9 +230,9 @@ CONTAINS
        co2vmr=-9999.999
        if (found_yearIN /= 0) then
           ! Interpolate data only if we have at least 2 valid concentrations.
-          tot_valid = count(co2r(1:VARCAM_in_years) > 0)
+          tot_valid = count(co2r(1:max_years) > 0)
           IF (tot_valid >= 2 ) THEN
-             CALL valid_years(yearIN, co2r, VARCAM_in_years,yr1, yr2)
+             CALL valid_years(yearIN, co2r, max_years,yr1, yr2)
 
              ! Set nyrm, njulm, nyrp, njulp
              nyrm = yrdata(yr1)
@@ -254,7 +243,7 @@ CONTAINS
              CALL interpolate_CAMgases(yr, julian, nyrm, njulm, yr1, yr2, nyrp, njulp, co2r, co2vmr)
           ENDIF
        endif
-       ! Verification of interpolated values. In case of no value
+       ! Verification of interpolated values. In case of no value 
        ! original values extracted from ghg_surfvals.F90 module
 
        IF (co2vmr < 0. .or. found_yearIN == 0) THEN
@@ -269,9 +258,9 @@ CONTAINS
     IF (PRESENT(n2ovmr)) THEN
        n2ovmr=-9999.999
        if (found_yearIN /= 0) then
-          tot_valid = count(n2or(1:VARCAM_in_years) > 0)
+          tot_valid = count(n2or(1:max_years) > 0)
           IF (tot_valid >= 2 ) THEN
-             CALL valid_years(yearIN, n2or, VARCAM_in_years,yr1, yr2)
+             CALL valid_years(yearIN, n2or, max_years,yr1, yr2)
 
              ! Set nyrm, njulm, nyrp, njulp
              nyrm = yrdata(yr1)
@@ -282,23 +271,23 @@ CONTAINS
              CALL interpolate_CAMgases(yr, julian, nyrm, njulm, yr1, yr2, nyrp, njulp, n2or, n2ovmr)
           ENDIF
        endif
-
+       
        IF (n2ovmr < 0. .or. found_yearIN == 0) THEN
           CALL orig_val("N2O",model,n2ovmr)
        ELSE
           ! If extrapolation, need to bound the data to pre-industrial concentrations
-          if (n2ovmr < 270.) n2ovmr = 270.
+          if (n2ovmr < 270.) n2ovmr = 270.          
           n2ovmr=n2ovmr*1.e-09
        ENDIF
-
+       
     ENDIF
-
+    
     IF (PRESENT(ch4vmr)) THEN
        ch4vmr=-9999.999
        if (found_yearIN /= 0) then
-          tot_valid = count(ch4r(1:VARCAM_in_years) > 0)
+          tot_valid = count(ch4r(1:max_years) > 0)
           IF (tot_valid >= 2 ) THEN
-             CALL valid_years(yearIN, ch4r, VARCAM_in_years,yr1, yr2)
+             CALL valid_years(yearIN, ch4r, max_years,yr1, yr2)
 
              ! Set nyrm, njulm, nyrp, njulp
              nyrm = yrdata(yr1)
@@ -309,7 +298,7 @@ CONTAINS
              CALL interpolate_CAMgases(yr, julian, nyrm, njulm, yr1, yr2, nyrp, njulp, ch4r, ch4vmr)
           endif
        endif
-
+       
        IF (ch4vmr < 0. .or. found_yearIN == 0) THEN
           CALL orig_val("CH4",model,ch4vmr)
        ELSE
@@ -318,13 +307,13 @@ CONTAINS
           ch4vmr=ch4vmr*1.e-09
        ENDIF
     ENDIF
-
+    
     IF (PRESENT(cfc11vmr)) THEN
        cfc11vmr = -9999.999
        if (found_yearIN /= 0) then
-          tot_valid = count(cfc11r(1:VARCAM_in_years) > 0)
+          tot_valid = count(cfc11r(1:max_years) > 0)
           IF (tot_valid >= 2 ) THEN
-             CALL valid_years(yearIN, cfc11r, VARCAM_in_years,yr1, yr2)
+             CALL valid_years(yearIN, cfc11r, max_years,yr1, yr2)
 
              ! Set nyrm, njulm, nyrp, njulp
              nyrm = yrdata(yr1)
@@ -335,20 +324,20 @@ CONTAINS
              CALL interpolate_CAMgases(yr, julian, nyrm, njulm, yr1, yr2, nyrp, njulp, cfc11r, cfc11vmr)
           endif
        endif
-
+       
        IF (cfc11vmr < 0. .or. found_yearIN == 0) THEN
           CALL orig_val("CFC11",model,cfc11vmr)
        ELSE
           cfc11vmr=cfc11vmr*1.e-12
        ENDIF
     ENDIF
-
+    
     IF (PRESENT(cfc12vmr)) THEN
        cfc12vmr = -9999.999
        if (found_yearIN /= 0) then
-          tot_valid = count(cfc12r(1:VARCAM_in_years) > 0)
+          tot_valid = count(cfc12r(1:max_years) > 0)
           IF (tot_valid >= 2 ) THEN
-             CALL valid_years(yearIN, cfc12r, VARCAM_in_years,yr1, yr2)
+             CALL valid_years(yearIN, cfc12r, max_years,yr1, yr2)
 
              ! Set nyrm, njulm, nyrp, njulp
              nyrm = yrdata(yr1)
@@ -359,31 +348,31 @@ CONTAINS
              CALL interpolate_CAMgases(yr, julian, nyrm, njulm, yr1, yr2, nyrp, njulp, cfc12r, cfc12vmr)
           endif
        endif
-
+       
        IF (cfc12vmr < 0. .or. found_yearIN == 0) THEN
           CALL orig_val("CFC12",model,cfc12vmr)
        ELSE
           cfc12vmr=cfc12vmr*1.e-12
        ENDIF
     ENDIF
-
+       
   END SUBROUTINE read_CAMgases
-
+  
   SUBROUTINE valid_years(yearIN, gas, tot_years, yr1, yr2)
 
-! Find
+! Find 
     INTEGER, INTENT(IN) :: yearIN, tot_years
     INTEGER, INTENT(OUT) :: yr2, yr1
     REAL(r8), INTENT(IN) :: gas(:)
 
     ! Local variables
     INTEGER :: yr_loc, idata
-
+    
 
     yr_loc = yearIN
     yr2 = yr_loc
     yr1 = yr_loc-1
-
+    
     ! If all valid dates are > yearIN then find the 2 lowest dates with
     ! valid data.
     IF (count(gas(1:yr_loc-1) > 0.) == 0) THEN
@@ -403,7 +392,7 @@ CONTAINS
        ENDDO
     ELSE  ! There is at least 1 valid year below yearIN
        IF (gas(yr_loc) < 0.) THEN
-
+          
           ! Find the closest valid year, look for higher year first
           IF (any(gas(yr_loc:tot_years) > 0)) THEN
              DO idata=yr_loc+1, tot_years
@@ -421,10 +410,10 @@ CONTAINS
              ENDDO
           ENDIF
        ENDIF
-
+       
        yr_loc = min(yr_loc-1, yr2-1)
        IF (gas(yr_loc) < 0.) THEN
-
+          
           ! Find the closest valid year, lower than yr1
           IF (any(gas(1:yr_loc-1) > 0)) THEN
              DO idata=yr_loc-1,1,-1
@@ -444,7 +433,7 @@ CONTAINS
 
   SUBROUTINE interpolate_CAMgases(yr, julian, yeari, juli, yr1, yr2, yearf, julf, gas, interp_gas)
     IMPLICIT NONE
-! These subroutine interpolates a trace gas concentration from a non-homogeneously
+! These subroutine interpolates a trace gas concentration from a non-homogeneously 
 ! distributed gas concentration evolution
     INTEGER, INTENT (IN)                      :: yr, yeari, yr1, yr2, yearf, juli, julf
     REAL, INTENT (IN)                         :: julian
@@ -455,8 +444,8 @@ CONTAINS
     REAL                                      :: doymodel, doydatam, doydatap,    &
                                                  deltat, fact1, fact2, x
     INTEGER                                   :: ny, my1,my2,my3,nday, maxyear, minyear
-
-
+ 
+    
     ! Add support for leap-years
 
     ! Find smallest and largest year: yearf >= yeari since the file is ordered with increasing dates.
@@ -476,7 +465,7 @@ CONTAINS
        MY2=MOD(ny,100)
        MY3=MOD(ny,400)
        IF(MY1.EQ.0.AND.MY2.NE.0.OR.MY3.EQ.0) nday=366
-
+       
        if (ny < yeari) then
           fact2 = fact2+nday
        endif
@@ -492,12 +481,12 @@ CONTAINS
     fact1 = (fact1 - x)/deltat
     fact2 = (x - fact2)/deltat
 
-    interp_gas = gas(yr1)*fact1+gas(yr2)*fact2
+    interp_gas = gas(yr1)*fact1+gas(yr2)*fact2 
 
     IF (interp_gas .LT. 0. ) THEN
        interp_gas=-99999.
     ENDIF
-
+    
   END SUBROUTINE interpolate_CAMgases
 
   SUBROUTINE interpolate_lin(x1,y1,x2,y2,x0,y)
@@ -511,19 +500,19 @@ CONTAINS
     REAL(r8), INTENT (IN)                   :: y1,y2
     REAL(r8), INTENT (OUT)                  :: y
     REAL(r8)                                :: a,b,x
-
+    
     a=y1
     b=(y2-y1)/(x2-x1)
-
+    
     IF (x0 .GE. x1) THEN
        x=x0-x1
     ELSE
        x=x1-x0
        b=-b
     ENDIF
-
+    
     y=a+b*x
-
+    
   END SUBROUTINE interpolate_lin
 
 
@@ -560,21 +549,8 @@ CONTAINS
           ENDIF
        ENDIF
 
-    ELSE IF (model .eq. "RRTM") THEN
-       IF (tracer .eq. "CO2") THEN
-          out = 3.300e-4
-
-       ELSE IF ((tracer .eq. "N2O") .or. &
-                (tracer .eq. "CH4")) THEN
-          out = 0.
-       ELSE
-          IF ( wrf_dm_on_monitor() ) THEN
-             WRITE(message,*) 'CLWRF : Trace gas ',tracer,' not valid for scheme ',model
-             CALL wrf_error_fatal(message)
-          ENDIF
-       ENDIF
-
-    ELSE IF (model .eq. "RRTMG") THEN
+    ELSE IF ((model .eq. "RRTM") .or. &
+             (model .eq. "RRTMG")) THEN
        IF (tracer .eq. "CO2") THEN
           out = 379.e-6
 

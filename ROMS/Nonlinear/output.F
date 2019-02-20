@@ -3,9 +3,9 @@
 #ifdef NONLINEAR
       SUBROUTINE output (ng)
 !
-!svn $Id: output.F 857 2017-07-29 04:05:27Z arango $
+!svn $Id: output.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -710,7 +710,8 @@
 !
       IF (LwrtRST(ng)) THEN
         IF ((iic(ng).gt.ntstart(ng)).and.                               &
-     & ((MOD(iic(ng)-1,nRST(ng)).eq.0) .or. ((iic(ng)-1)==ntimes(ng)))) THEN
+!    & ((MOD(iic(ng)-1,nRST(ng)).eq.0) .or. ((iic(ng)-1)==ntimes(ng)))) THEN
+     &      (MOD(iic(ng)-1,nRST(ng)).eq.0)) THEN
           CALL wrt_rst (ng)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                     __FILE__)) RETURN

@@ -2,19 +2,19 @@
 #define MODAL_AERO
 subroutine qneg3 (subnam  ,idx     ,ncol    ,ncold   ,lver    ,lconst_beg  , &
                   lconst_end       ,qmin    ,q       )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Check moisture and tracers for minimum value, reset any below
 ! minimum value to minimum value and return information to allow
 ! warning message to be printed. The global average is NOT preserved.
-!
-! Method:
-! <Describe the algorithm(s) used in the routine.>
-! <Also include any applicable external references.>
-!
+! 
+! Method: 
+! <Describe the algorithm(s) used in the routine.> 
+! <Also include any applicable external references.> 
+! 
 ! Author: J. Rosinski
-!
+! 
 !-----------------------------------------------------------------------
    use shr_kind_mod, only: r8 => shr_kind_r8
 #ifndef WRF_PORT
@@ -126,19 +126,19 @@ end subroutine qneg3
 #if ( defined MODAL_AERO )
 subroutine qneg3_modalx1 (subnam  ,idx     ,ncol    ,ncold   ,lver    ,lconst_beg  , &
                           lconst_end       ,qmin    ,q       ,qneg3_worst_thresh )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Check moisture and tracers for minimum value, reset any below
 ! minimum value to minimum value and return information to allow
 ! warning message to be printed. The global average is NOT preserved.
-!
-! Method:
-! <Describe the algorithm(s) used in the routine.>
-! <Also include any applicable external references.>
-!
+! 
+! Method: 
+! <Describe the algorithm(s) used in the routine.> 
+! <Also include any applicable external references.> 
+! 
 ! Author: J. Rosinski
-!
+! 
 !-----------------------------------------------------------------------
    use shr_kind_mod, only: r8 => shr_kind_r8
 #ifndef WRF_PORT

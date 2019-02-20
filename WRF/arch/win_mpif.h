@@ -1,11 +1,11 @@
 !      /* -*- Mode: Fortran; -*- */
-!
+!      
 !      (C) 2001 by Argonne National Laboratory.
 !      See COPYRIGHT in top-level directory.
-!
+!      
 !      DO NOT EDIT
-!      This file created by buildiface
-!
+!      This file created by buildiface 
+!      
        INTEGER MPI_SOURCE, MPI_TAG, MPI_ERROR
        PARAMETER (MPI_SOURCE=3,MPI_TAG=4,MPI_ERROR=5)
        INTEGER MPI_STATUS_SIZE

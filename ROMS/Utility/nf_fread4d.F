@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE nf_fread4d_mod
 !
-!svn $Id: nf_fread4d.F 857 2017-07-29 04:05:27Z arango $
+!svn $Id: nf_fread4d.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -81,7 +81,7 @@
       integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk, LBt, UBt
       integer, intent(in) :: Vsize(4)
 
-      real(r8), intent(in)  :: Ascl
+      real(dp), intent(in)  :: Ascl
       real(r8), intent(out) :: Amin
       real(r8), intent(out) :: Amax
 
@@ -512,7 +512,13 @@
       USE mod_scalars
 !
 # ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_bcasti, mp_scatter3d
+      USE distribute_mod, ONLY : mp_bcasti
+#  ifdef INLINE_2DIO
+      USE distribute_mod, ONLY : mp_scatter2d
+#  else
+      USE distribute_mod, ONLY : mp_scatter3d
+#  endif
+
 # endif
       USE strings_mod,    ONLY : FoundError
 !
@@ -524,7 +530,7 @@
       integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk, LBt, UBt
       integer, intent(in) :: Vsize(4)
 
-      real(r8), intent(in)  :: Ascl
+      real(dp), intent(in)  :: Ascl
       real(r8), intent(out) :: Amin
       real(r8), intent(out) :: Amax
 
@@ -548,7 +554,7 @@
       logical, dimension(3) :: foundit
 
       integer :: i, j, k, ic, fourth, Npts, NWpts, status, wtype
-      integer :: Imin, Imax, Jmin, Jmax, Loff
+      integer :: Imin, Imax, Jmin, Jmax, Koff, Loff
       integer :: Ilen, Jlen, Klen, IJlen, MyType
 # ifdef DISTRIBUTE
       integer :: Nghost
@@ -561,7 +567,11 @@
 
       real(r8), dimension(3) :: AttValue
 
+# if defined INLINE_2DIO && defined DISTRIBUTE
+      real(r8), dimension(2+(Lm(ng)+2)*(Mm(ng)+2)) :: wrk
+# else
       real(r8), dimension(2+(Lm(ng)+2)*(Mm(ng)+2)*(UBk-LBk+1)) :: wrk
+# endif
 
       character (len=12), dimension(3) :: AttName
 !
@@ -606,6 +616,14 @@
       Jlen=Jmax-Jmin+1
       Klen=UBk-LBk+1
       IJlen=Ilen*Jlen
+
+#ifdef INLINE_2DIO
+      IF (LBk.eq.0) THEN
+        Koff=0
+      ELSE
+        Koff=1
+      END IF
+#endif
 
       IF (LBt.eq.0) THEN
         Loff=1
@@ -697,7 +715,9 @@
           wtype=r2dvar
       END SELECT
       NWpts=(Lm(ng)+2)*(Mm(ng)+2)
+#  if !(defined INLINE_2DIO && defined DISTRIBUTE)
       Npts=Npts*Klen
+#  endif
 # endif
 !
 !  Initialize local array to avoid denormalized numbers. This
@@ -726,7 +746,10 @@
           total(4)=1
           start(5)=tindex
           total(5)=1
-          Npts=IJlen*Klen
+          Npts=IJlen
+# if !(defined INLINE_2DIO && defined DISTRIBUTE)
+          Npts=Npts*Klen
+# endif
 # if defined READ_WATER && defined MASKING
         ELSE
           start(1)=1+(fourth+Loff-1)*Npts
@@ -735,6 +758,15 @@
           total(2)=tindex
 # endif
         END IF
+# if defined INLINE_2DIO && defined DISTRIBUTE
+!
+!  Process data as 2D slices (level by level) to reduce memory
+!  requirements.
+!
+      DO k=LBk,UBk
+        start(3)=k-Koff+1
+        total(3)=1
+# endif
         status=nf90_noerr
         IF (InpThread) THEN
           status=nf90_get_var(ncid, ncvarid, wrk, start, total)
@@ -766,12 +798,22 @@
 !-----------------------------------------------------------------------
 !
 # ifdef DISTRIBUTE
+#  ifdef INLINE_2DIO
+        CALL mp_scatter2d (ng, model, LBi, UBi, LBj, UBj,               &
+     &                     Nghost, MyType, Amin, Amax,                  &
+#   if defined READ_WATER && defined MASKING
+     &                     NWpts, SCALARS(ng)%IJwater(:,wtype),         &
+#   endif
+     &                     Npts, wrk, A(:,:,k,fourth))
+      END DO
+#  else
         CALL mp_scatter3d (ng, model, LBi, UBi, LBj, UBj, LBk, UBk,     &
      &                     Nghost, MyType, Amin, Amax,                  &
-#  if defined READ_WATER && defined MASKING
+#   if defined READ_WATER && defined MASKING
      &                     NWpts, SCALARS(ng)%IJwater(:,wtype),         &
-#  endif
+#   endif
      &                     Npts, wrk, A(:,:,:,fourth))
+#  endif
 # else
         IF (MyType.gt.0) THEN
           ic=0

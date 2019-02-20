@@ -158,7 +158,7 @@ contains
   subroutine reset_tornado_genesis(grid,config_flags)
     ! Called after writing output for a given stream.  Resets all
     ! min/max information for all fields if the stream is the
-    ! tg_reset_stream.
+    ! tg_reset_stream.  
     use module_state_description, only: tg_emc2014spc
     use module_domain, only: domain, get_ijk_from_grid
     use module_configure, only : grid_config_rec_type
@@ -216,7 +216,7 @@ contains
     if(cenlon<0) cenlon=cenlon+360.
     lmbd0=cenlon*DEGRAD
     phi0=cenlat*DEGRAD
-
+    
     cos_phi0=cos(phi0)
     sin_phi0=sin(phi0)
     do j=max(jps,jds),min(jpe,jde-1)
@@ -345,7 +345,7 @@ contains
              dvdx = (grid%v(i+1-a,j,k)-grid%v(i-a,j,k))/(2.*grid%dx_nmm(i,j))
              dudy = (grid%u(i,j+1,k)-grid%u(i,j-1,k))/(2.*grid%dy_nmm)
              zhel = (dvdx-dudy) * (grid%w(i,j,k) + grid%w(i,j,k+1))/2
-
+             
              if(height1<3000.0) then
                 grid%tg_max_zhel_03(i,j)=max(grid%tg_max_zhel_03(i,j),zhel)
                 grid%tg_min_zhel_03(i,j)=min(grid%tg_min_zhel_03(i,j),zhel)
@@ -460,7 +460,7 @@ subroutine nmm_request_tg_reset(grid,config_flags,stream)
   ! file does not exist when mediation_integrate is compiled, so
   ! med_hist_out has to call a non-module function instead.
   use module_domain, only: domain
-  use module_configure, only : grid_config_rec_type
+  use module_configure, only : grid_config_rec_type 
   use module_tornado_genesis, only: request_tg_reset
   implicit none
   integer, intent(in) :: stream

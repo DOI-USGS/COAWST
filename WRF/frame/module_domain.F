@@ -56,7 +56,7 @@ MODULE module_domain
 
    TYPE(domain_levels) , DIMENSION(max_levels)            :: head_for_each_level
 
-   ! Use this to support debugging features, giving easy access to clock, etc.
+   ! Use this to support debugging features, giving easy access to clock, etc.  
    TYPE(domain), POINTER :: current_grid
    LOGICAL, SAVE :: current_grid_set = .FALSE.
 
@@ -257,32 +257,32 @@ CONTAINS
        CASE  ( DATA_ORDER_XYZ )
            ids = grid%sd31 ; ide = grid%ed31 ; jds = grid%sd32 ; jde = grid%ed32 ; kds = grid%sd33 ; kde = grid%ed33 ;
            ims = grid%sm31 ; ime = grid%em31 ; jms = grid%sm32 ; jme = grid%em32 ; kms = grid%sm33 ; kme = grid%em33 ;
-           ips = grid%sp31 ; ipe = grid%ep31 ; jps = grid%sp32 ; jpe = grid%ep32 ; kps = grid%sp33 ; kpe = grid%ep33 ;
+           ips = grid%sp31 ; ipe = grid%ep31 ; jps = grid%sp32 ; jpe = grid%ep32 ; kps = grid%sp33 ; kpe = grid%ep33 ; 
        CASE  ( DATA_ORDER_YXZ )
-           ids = grid%sd32  ; ide = grid%ed32  ; jds = grid%sd31  ; jde = grid%ed31  ; kds = grid%sd33  ; kde = grid%ed33  ;
-           ims = grid%sm32  ; ime = grid%em32  ; jms = grid%sm31  ; jme = grid%em31  ; kms = grid%sm33  ; kme = grid%em33  ;
-           ips = grid%sp32  ; ipe = grid%ep32  ; jps = grid%sp31  ; jpe = grid%ep31  ; kps = grid%sp33  ; kpe = grid%ep33  ;
+           ids = grid%sd32  ; ide = grid%ed32  ; jds = grid%sd31  ; jde = grid%ed31  ; kds = grid%sd33  ; kde = grid%ed33  ; 
+           ims = grid%sm32  ; ime = grid%em32  ; jms = grid%sm31  ; jme = grid%em31  ; kms = grid%sm33  ; kme = grid%em33  ; 
+           ips = grid%sp32  ; ipe = grid%ep32  ; jps = grid%sp31  ; jpe = grid%ep31  ; kps = grid%sp33  ; kpe = grid%ep33  ; 
        CASE  ( DATA_ORDER_ZXY )
-           ids = grid%sd32  ; ide = grid%ed32  ; jds = grid%sd33  ; jde = grid%ed33  ; kds = grid%sd31  ; kde = grid%ed31  ;
-           ims = grid%sm32  ; ime = grid%em32  ; jms = grid%sm33  ; jme = grid%em33  ; kms = grid%sm31  ; kme = grid%em31  ;
-           ips = grid%sp32  ; ipe = grid%ep32  ; jps = grid%sp33  ; jpe = grid%ep33  ; kps = grid%sp31  ; kpe = grid%ep31  ;
+           ids = grid%sd32  ; ide = grid%ed32  ; jds = grid%sd33  ; jde = grid%ed33  ; kds = grid%sd31  ; kde = grid%ed31  ; 
+           ims = grid%sm32  ; ime = grid%em32  ; jms = grid%sm33  ; jme = grid%em33  ; kms = grid%sm31  ; kme = grid%em31  ; 
+           ips = grid%sp32  ; ipe = grid%ep32  ; jps = grid%sp33  ; jpe = grid%ep33  ; kps = grid%sp31  ; kpe = grid%ep31  ; 
        CASE  ( DATA_ORDER_ZYX )
-           ids = grid%sd33  ; ide = grid%ed33  ; jds = grid%sd32  ; jde = grid%ed32  ; kds = grid%sd31  ; kde = grid%ed31  ;
-           ims = grid%sm33  ; ime = grid%em33  ; jms = grid%sm32  ; jme = grid%em32  ; kms = grid%sm31  ; kme = grid%em31  ;
-           ips = grid%sp33  ; ipe = grid%ep33  ; jps = grid%sp32  ; jpe = grid%ep32  ; kps = grid%sp31  ; kpe = grid%ep31  ;
+           ids = grid%sd33  ; ide = grid%ed33  ; jds = grid%sd32  ; jde = grid%ed32  ; kds = grid%sd31  ; kde = grid%ed31  ; 
+           ims = grid%sm33  ; ime = grid%em33  ; jms = grid%sm32  ; jme = grid%em32  ; kms = grid%sm31  ; kme = grid%em31  ; 
+           ips = grid%sp33  ; ipe = grid%ep33  ; jps = grid%sp32  ; jpe = grid%ep32  ; kps = grid%sp31  ; kpe = grid%ep31  ; 
        CASE  ( DATA_ORDER_XZY )
-           ids = grid%sd31  ; ide = grid%ed31  ; jds = grid%sd33  ; jde = grid%ed33  ; kds = grid%sd32  ; kde = grid%ed32  ;
-           ims = grid%sm31  ; ime = grid%em31  ; jms = grid%sm33  ; jme = grid%em33  ; kms = grid%sm32  ; kme = grid%em32  ;
-           ips = grid%sp31  ; ipe = grid%ep31  ; jps = grid%sp33  ; jpe = grid%ep33  ; kps = grid%sp32  ; kpe = grid%ep32  ;
+           ids = grid%sd31  ; ide = grid%ed31  ; jds = grid%sd33  ; jde = grid%ed33  ; kds = grid%sd32  ; kde = grid%ed32  ; 
+           ims = grid%sm31  ; ime = grid%em31  ; jms = grid%sm33  ; jme = grid%em33  ; kms = grid%sm32  ; kme = grid%em32  ; 
+           ips = grid%sp31  ; ipe = grid%ep31  ; jps = grid%sp33  ; jpe = grid%ep33  ; kps = grid%sp32  ; kpe = grid%ep32  ; 
        CASE  ( DATA_ORDER_YZX )
-           ids = grid%sd33  ; ide = grid%ed33  ; jds = grid%sd31  ; jde = grid%ed31  ; kds = grid%sd32  ; kde = grid%ed32  ;
-           ims = grid%sm33  ; ime = grid%em33  ; jms = grid%sm31  ; jme = grid%em31  ; kms = grid%sm32  ; kme = grid%em32  ;
-           ips = grid%sp33  ; ipe = grid%ep33  ; jps = grid%sp31  ; jpe = grid%ep31  ; kps = grid%sp32  ; kpe = grid%ep32  ;
+           ids = grid%sd33  ; ide = grid%ed33  ; jds = grid%sd31  ; jde = grid%ed31  ; kds = grid%sd32  ; kde = grid%ed32  ; 
+           ims = grid%sm33  ; ime = grid%em33  ; jms = grid%sm31  ; jme = grid%em31  ; kms = grid%sm32  ; kme = grid%em32  ; 
+           ips = grid%sp33  ; ipe = grid%ep33  ; jps = grid%sp31  ; jpe = grid%ep31  ; kps = grid%sp32  ; kpe = grid%ep32  ; 
     END SELECT data_ordering
    END SUBROUTINE get_ijk_from_grid2
 
 ! return the values for subgrid whose refinement is in grid%sr
-! note when using this routine, it does not affect K. For K
+! note when using this routine, it does not affect K. For K 
 ! (vertical), it just returns what get_ijk_from_grid does
    SUBROUTINE get_ijk_from_subgrid (  grid ,                &
                            ids0, ide0, jds0, jde0, kds0, kde0,    &
@@ -353,7 +353,7 @@ CONTAINS
 ! memory halo regions (DM_PARALLEL only) and for boundary regions around
 ! the domain (used for idealized cases only).  The width of the boundary
 ! regions to be accommodated is passed in as bdx and bdy.
-!
+! 
 ! The bdy_mask argument is a four-dimensional logical array, each element
 ! of which is set to true for any boundaries that this process's patch
 ! contains (all four are true in the non-DM_PARALLEL case) and false
@@ -362,7 +362,7 @@ CONTAINS
 ! exists at the beginning of the X-dimension; ie. the western boundary;
 ! P_XEB to the boundary that corresponds to the end of the X-dimension
 ! (east). Likewise for Y (south and north respectively).
-!
+! 
 ! The correspondence of the first, second, and third dimension of each
 ! set (domain, memory, and patch) with the coordinate axes of the model
 ! domain is based on the setting of the variable model_data_order, which
@@ -379,7 +379,7 @@ CONTAINS
 ! and ends of the staggered domains in X.  The non-staggered grid runs
 ! sd<em>n</em>:ed<em>n</em>-1. The extra row or column on the north or
 ! east boundaries is not used for non-staggered fields.
-!
+! 
 ! The domdesc and parent_domdesc arguments are for external communication
 ! packages (e.g. RSL) that establish and return to WRF integer handles
 ! for referring to operations on domains.  These descriptors are not set
@@ -412,7 +412,7 @@ CONTAINS
 
    bdy_mask = .true.     ! only one processor so all 4 boundaries are there
 
-! this is a trivial version -- 1 patch per processor;
+! this is a trivial version -- 1 patch per processor; 
 ! use version in module_dm to compute for DM
    sp1 = sd1 ; sp2 = sd2 ; sp3 = sd3
    ep1 = ed1 ; ep2 = ed2 ; ep3 = ed3
@@ -539,11 +539,11 @@ CONTAINS
 ! top-level domain. The id of 1 always corresponds to the top-level
 ! domain.  and these grid ids correspond to the ordering of settings in
 ! the namelist, starting with 1 for the top-level domain.
-!
+! 
 ! Model_data_order is provide by USE association of
 ! module_driver_constants and is set from dimspec entries in the
 ! Registry.
-!
+! 
 ! The allocation of the TYPE(DOMAIN) itself occurs in this routine.
 ! However, the numerous multi-dimensional arrays that make up the members
 ! of the domain are allocated in the call to alloc_space_field, after
@@ -553,10 +553,10 @@ CONTAINS
 ! model is decomposed over patches. Thus, when arrays are allocated on a
 ! given process, the start and end of an array dimension are the global
 ! indices of the start and end of that process's subdomain.
-!
+! 
 ! Configuration information for the domain (that is, information from the
 ! namelist) is added by the call to <a href=med_add_config_info_to_grid.html>med_add_config_info_to_grid</a>, defined
-! in share/mediation_wrfmain.F.
+! in share/mediation_wrfmain.F. 
 !</DESCRIPTION>
 
       IMPLICIT NONE
@@ -589,7 +589,7 @@ CONTAINS
       INTEGER                     :: nx, ny
       LOGICAL :: active
 
-!
+! 
       active = .TRUE.
       IF ( PRESENT( active_this_task ) ) THEN
          active = active_this_task
@@ -691,9 +691,9 @@ CONTAINS
       ALLOCATE( new_grid%head_statevars )
       new_grid%head_statevars%Ndim = 0
       NULLIFY( new_grid%head_statevars%next)
-      new_grid%tail_statevars => new_grid%head_statevars
+      new_grid%tail_statevars => new_grid%head_statevars 
 
-      ALLOCATE ( new_grid%parents( max_parents ) )
+      ALLOCATE ( new_grid%parents( max_parents ) ) 
       ALLOCATE ( new_grid%nests( max_nests ) )
       NULLIFY( new_grid%sibling )
       DO i = 1, max_nests
@@ -722,16 +722,16 @@ CONTAINS
       ! set this up *prior* to calling the patching or allocation
       ! routines so that implementations of these routines can
       ! traverse the nest hierarchy (through the root head_grid)
-      ! if they need to
+      ! if they need to 
 
-
+ 
       IF ( domain_id .NE. 1 ) THEN
          new_grid%parents(1)%ptr => parent
          new_grid%num_parents = 1
          parent%nests(kid)%ptr => new_grid
          new_grid%child_of_parent(1) = kid    ! note assumption that nest can have only 1 parent
          parent%num_nests = parent%num_nests + 1
-#if ( NMM_CORE == 1 )
+#if ( NMM_CORE == 1 ) 
 !jm 20150810, this replaces the compile-time logic associated with the CPP constant HRD_MULTIPLE_STORMS
 ! used in solve_nmm of the HWRF version to decide whether or not to call the coupler.  If there is more than
 ! one nest to a parent then that implies there are multiple storms, so we turn off the coupling.
@@ -758,7 +758,7 @@ CONTAINS
                                      sp3y , ep3y , sm3y , em3y , &
 
                          bdyzone_x  , bdyzone_y , new_grid%bdy_mask &
-      )
+      ) 
 
 
       new_grid%domdesc = new_domdesc
@@ -810,23 +810,23 @@ CONTAINS
       new_grid%vc_j = -1.0
 #endif
 
-      new_grid%sd31                            = sd1
+      new_grid%sd31                            = sd1 
       new_grid%ed31                            = ed1
-      new_grid%sp31                            = sp1
-      new_grid%ep31                            = ep1
-      new_grid%sm31                            = sm1
+      new_grid%sp31                            = sp1 
+      new_grid%ep31                            = ep1 
+      new_grid%sm31                            = sm1 
       new_grid%em31                            = em1
-      new_grid%sd32                            = sd2
+      new_grid%sd32                            = sd2 
       new_grid%ed32                            = ed2
-      new_grid%sp32                            = sp2
-      new_grid%ep32                            = ep2
-      new_grid%sm32                            = sm2
+      new_grid%sp32                            = sp2 
+      new_grid%ep32                            = ep2 
+      new_grid%sm32                            = sm2 
       new_grid%em32                            = em2
-      new_grid%sd33                            = sd3
+      new_grid%sd33                            = sd3 
       new_grid%ed33                            = ed3
-      new_grid%sp33                            = sp3
-      new_grid%ep33                            = ep3
-      new_grid%sm33                            = sm3
+      new_grid%sp33                            = sp3 
+      new_grid%ep33                            = ep3 
+      new_grid%sm33                            = sm3 
       new_grid%em33                            = em3
 
       new_grid%sp31x                           = sp1x
@@ -949,7 +949,7 @@ CONTAINS
 
       grid => new_grid
 !debug write(0,*)__FILE__,__LINE__,'grid%mvnest ',grid%mvnest
-
+ 
 !debug write(0,*)__FILE__,__LINE__,'grid%mvnest ',grid%mvnest
       IF ( grid%active_this_task ) THEN
 ! Allocate storage for time series metadata
@@ -969,7 +969,7 @@ CONTAINS
         ALLOCATE( grid%track_time_in( grid%track_loc_in ) )
         ALLOCATE( grid%track_lat_in( grid%track_loc_in ) )
         ALLOCATE( grid%track_lon_in( grid%track_loc_in ) )
-
+  
         ALLOCATE( grid%track_time_domain( grid%track_loc_in ) )
         ALLOCATE( grid%track_lat_domain( grid%track_loc_in ) )
         ALLOCATE( grid%track_lon_domain( grid%track_loc_in ) )
@@ -994,7 +994,7 @@ CONTAINS
 #if ( NMM_CORE==1 )
 !      grid%interp_mp = .not. ( size(grid%f_ice)>1 .or. size(grid%f_rain)>1 .or. size(grid%f_rimef)>1 )
       grid%interp_mp = .not. (in_use_for_config(grid%id,'f_ice')   .or.&
-                              in_use_for_config(grid%id,'f_rain')  .or. &
+                              in_use_for_config(grid%id,'f_rain')  .or. & 
                               in_use_for_config(grid%id,'f_rimef') )
 #else
       grid%interp_mp = .true.
@@ -1029,7 +1029,7 @@ CONTAINS
 
      IF     ( (dexes(ix+1)-2)-(dexes(ix)) .GT. noutstr ) THEN
        noerr = .FALSE.  ! would overwrite
-     ELSE IF( dexes(ix) .EQ. dexes(ix+1) ) THEN
+     ELSE IF( dexes(ix) .EQ. dexes(ix+1) ) THEN 
        noerr = .FALSE.  ! not found
      ELSE
        outstr = instr(dexes(ix):(dexes(ix+1)-2))
@@ -1098,11 +1098,11 @@ CONTAINS
           count_em = 0    ! Count the total number of fields
           DO WHILE ( keepgoing )
             READ(UNIT=read_unit,FMT='(A)',IOSTAT=io_status) inln
-            keepgoing = (io_status .EQ. 0) .AND. (LEN(TRIM(inln)) .GT. 0)
+            keepgoing = (io_status .EQ. 0) .AND. (LEN(TRIM(inln)) .GT. 0)  
             IF ( keepgoing ) THEN
               lineno = lineno + 1
               IF ( .NOT. LEN(TRIM(inln)) .LT. LEN(inln) ) THEN
-                WRITE(mess,*)'W A R N I N G : Line ',lineno,' of ',TRIM(fname),' is too long. Limit is ',LEN(inln),' characters.'
+                WRITE(mess,*)'W A R N I N G : Line ',lineno,' of ',TRIM(fname),' is too long. Limit is ',LEN(inln),' characters.' 
                 gavewarning = .TRUE.
               ENDIF
               IF ( INDEX(inln,'#') .EQ. 0 ) THEN   ! skip comments, which is a # anywhere on line
@@ -1114,7 +1114,7 @@ CONTAINS
                     gavewarning = .TRUE.
                   ENDIF
                   CALL get_fieldstr(2,':',inln,t1,1,noerr)          ! i is input, h is history
-                  CALL change_to_lower_case(t1,strmtyp)
+                  CALL change_to_lower_case(t1,strmtyp) 
 
                   SELECT CASE (TRIM(strmtyp))
                   CASE ('h')
@@ -1144,11 +1144,11 @@ CONTAINS
                       found = .FALSE.
                       count_em = count_em + 1
                       DO WHILE ( ASSOCIATED( p ) )
-
+  
                         IF ( p%Ndim .EQ. 4 .AND. p%scalar_array ) THEN
-
+  
                           DO itrace = PARAM_FIRST_SCALAR , p%num_table(grid%id)
-                            CALL change_to_lower_case( p%dname_table( grid%id, itrace ) , dname )
+                            CALL change_to_lower_case( p%dname_table( grid%id, itrace ) , dname ) 
 
                             IF ( TRIM(dname) .EQ. TRIM(lookee) ) &
                             CALL warn_me_or_set_mask (id, istrm, lineno, strmtyp_int, count_em, op, &
@@ -1156,13 +1156,13 @@ CONTAINS
                                                       p%streams_table(grid%id,itrace)%stream,  &
                                                       mess, found, you_warned_me2)
                           ENDDO
-                        ELSE
+                        ELSE 
                           IF ( p%Ntl .GT. 0 ) THEN
                             CALL change_to_lower_case(p%DataName(1:LEN(TRIM(p%DataName))-2),dname)
                           ELSE
                             CALL change_to_lower_case(p%DataName,dname)
                           ENDIF
-
+  
                           IF ( TRIM(dname) .EQ. TRIM(lookee) ) &
                           CALL warn_me_or_set_mask (id, istrm, lineno, strmtyp_int, count_em, op, &
                                                     strmtyp_name, dname, fname, lookee,      &
@@ -1171,9 +1171,11 @@ CONTAINS
                         p => p%next
                       ENDDO
                       IF ( .NOT. found ) THEN
+#if ( WRFPLUS != 1 )
                         WRITE(mess,*)'W A R N I N G : Unable to modify mask for ',TRIM(lookee),&
                                      '.  Variable not found. File: ',TRIM(fname),' at line ',lineno
                         CALL wrf_message(mess)
+#endif
                         gavewarning = .TRUE.
                       ENDIF
                       fieldno = fieldno + 1
@@ -1199,13 +1201,13 @@ CONTAINS
           CALL nl_get_ignore_iofields_warning(1,ignorewarning)
           IF ( .NOT. ignorewarning ) THEN
             CALL wrf_message(mess)
-            WRITE(mess,*)'modify_io_masks: problems reading ',TRIM(fname)
+            WRITE(mess,*)'modify_io_masks: problems reading ',TRIM(fname) 
             CALL wrf_message(mess)
             CALL wrf_error_fatal('Set ignore_iofields_warn to true in namelist to ignore')
           ELSE
             IF ( .NOT. you_warned_me ) THEN
               if ( .NOT. you_warned_me2(count_em,id) ) CALL wrf_message(mess)  ! Don't repeat the W A R N I N G message
-              WRITE(mess,*)'Ignoring problems reading ',TRIM(fname)
+              WRITE(mess,*)'Ignoring problems reading ',TRIM(fname) 
               CALL wrf_message(mess)
               CALL wrf_message('Continuing.  To make this a fatal error, set ignore_iofields_warn to false in namelist' )
               CALL wrf_message(' ')
@@ -1231,7 +1233,7 @@ CONTAINS
         p => p%next
       ENDDO
 #endif
-
+      
    END SUBROUTINE modify_io_masks1
 
    SUBROUTINE warn_me_or_set_mask (id, istrm, lineno, strmtyp_int, count_em, op, &
@@ -1274,14 +1276,16 @@ CONTAINS
                        TRIM(strmtyp_name), ' stream ',istrm, '. File: ',TRIM(fname),' at line ',lineno
        ELSE
          WRITE(mess,*) 'Domain ', id, ' Resetting ', TRIM(strmtyp_name), ' stream ',istrm,' for ', &
-                                    TRIM(DNAME)  ; CALL wrf_debug(1,mess)
+                                    TRIM(DNAME)  ; CALL wrf_debug(1,mess) 
          CALL reset_mask( p_stream, strmtyp_int + istrm - 1)
        ENDIF
      ENDIF
      IF ( count_em > max_hst_mods ) THEN
+#if ( DA_CORE != 1 )
        WRITE(mess,*)'ERROR module_domain:  Array size for you_warned_me2 is fixed at ',max_hst_mods
        CALL wrf_message(mess)
        CALL wrf_error_fatal('Did you really type > max_hst_mods fields into ', TRIM(fname) ,' ?')
+#endif
      ELSE
        IF ( .NOT. you_warned_me2(count_em,id) ) THEN
          CALL wrf_message(mess)     ! Write warning message once for each field
@@ -1289,7 +1293,7 @@ CONTAINS
        ENDIF
      ENDIF
 
-   END SUBROUTINE warn_me_or_set_mask
+   END SUBROUTINE warn_me_or_set_mask 
 
 !  This routine ALLOCATEs the required space for the meteorological fields
 !  for a specific domain.  The fields are simply ALLOCATEd as an -1.  They
@@ -1337,7 +1341,7 @@ CONTAINS
       !      to set only 1st                        use 1
       !      to set only 2st                        use 2
       INTEGER , INTENT(IN)            :: tl_in
-
+  
       ! true if the allocation is for an intermediate domain (for nesting); only certain fields allocated
       ! false otherwise (all allocated, modulo tl above)
       LOGICAL , INTENT(IN)            :: inter_domain_in, okay_to_alloc_in
@@ -1357,7 +1361,7 @@ CONTAINS
 
       CALL set_scalar_indices_from_config( id , idum1 , idum2 )
 
-      num_bytes_allocated = 0
+      num_bytes_allocated = 0 
 
       ! now separate modules to reduce the size of module_domain that the compiler sees
       CALL alloc_space_field_core_0 ( grid,   id, setinitval_in ,  tl_in , inter_domain_in , okay_to_alloc_in, num_bytes_allocated , &
@@ -1447,7 +1451,7 @@ CONTAINS
         WRITE(wrf_err_message,*)&
             'alloc_space_field: domain ',id,', ',num_bytes_allocated,' bytes allocated'
         CALL  wrf_debug( 0, wrf_err_message )
-        grid%have_displayed_alloc_stats = .TRUE.
+        grid%have_displayed_alloc_stats = .TRUE.   
       ENDIF
 
 
@@ -1515,7 +1519,7 @@ CONTAINS
       !      to set only 1st                        use 1
       !      to set only 2st                        use 2
       INTEGER , INTENT(IN)            :: tl_in
-
+  
       ! true if the allocation is for an intermediate domain (for nesting); only certain fields allocated
       ! false otherwise (all allocated, modulo tl above)
       LOGICAL , INTENT(IN)            :: inter_domain_in, okay_to_alloc_in
@@ -1556,13 +1560,13 @@ CONTAINS
 
    END SUBROUTINE ensure_space_field
 
-!  This routine is used to DEALLOCATE space for a single domain and remove
-!  it from the linked list.  First the pointers in the linked list are fixed
-!  (so the one in the middle can be removed).  Then the domain itself is
-!  DEALLOCATEd via a call to domain_destroy().
+!  This routine is used to DEALLOCATE space for a single domain and remove 
+!  it from the linked list.  First the pointers in the linked list are fixed 
+!  (so the one in the middle can be removed).  Then the domain itself is 
+!  DEALLOCATEd via a call to domain_destroy().  
 
    SUBROUTINE dealloc_space_domain ( id )
-
+      
       IMPLICIT NONE
 
       !  Input data.
@@ -1582,9 +1586,9 @@ CONTAINS
 
       !  The identity of the domain to delete is based upon the "id".
       !  We search all of the possible grids.  It is required to find a domain
-      !  otherwise it is a fatal error.
+      !  otherwise it is a fatal error.  
 
-      find_grid : DO WHILE ( ASSOCIATED(grid) )
+      find_grid : DO WHILE ( ASSOCIATED(grid) ) 
          IF ( grid%id == id ) THEN
             found = .TRUE.
             old_grid%next => grid%next
@@ -1598,20 +1602,20 @@ CONTAINS
       IF ( .NOT. found ) THEN
          WRITE ( wrf_err_message , * ) 'module_domain: ', &
            'dealloc_space_domain: Could not de-allocate grid id ',id
-         CALL wrf_error_fatal ( TRIM( wrf_err_message ) )
+         CALL wrf_error_fatal ( TRIM( wrf_err_message ) ) 
       END IF
 
    END SUBROUTINE dealloc_space_domain
 
 
 
-!  This routine is used to DEALLOCATE space for a single domain type.
-!  First, the field data are all removed through a CALL to the
+!  This routine is used to DEALLOCATE space for a single domain type.  
+!  First, the field data are all removed through a CALL to the 
 !  dealloc_space_field routine.  Then the pointer to the domain
 !  itself is DEALLOCATEd.
 
    SUBROUTINE domain_destroy ( grid )
-
+      
       IMPLICIT NONE
 
       !  Input data.
@@ -1626,7 +1630,7 @@ CONTAINS
       CALL domain_clock_destroy( grid )
       CALL domain_alarms_destroy( grid )
       IF ( ASSOCIATED( grid%i_start ) ) THEN
-        DEALLOCATE( grid%i_start )
+        DEALLOCATE( grid%i_start ) 
       ENDIF
       IF ( ASSOCIATED( grid%i_end ) ) THEN
         DEALLOCATE( grid%i_end )
@@ -1639,45 +1643,45 @@ CONTAINS
       ENDIF
       IF ( ASSOCIATED( grid%itsloc ) ) THEN
         DEALLOCATE( grid%itsloc )
-      ENDIF
+      ENDIF 
       IF ( ASSOCIATED( grid%jtsloc ) ) THEN
         DEALLOCATE( grid%jtsloc )
-      ENDIF
+      ENDIF 
       IF ( ASSOCIATED( grid%id_tsloc ) ) THEN
         DEALLOCATE( grid%id_tsloc )
-      ENDIF
+      ENDIF 
       IF ( ASSOCIATED( grid%lattsloc ) ) THEN
         DEALLOCATE( grid%lattsloc )
-      ENDIF
+      ENDIF 
       IF ( ASSOCIATED( grid%lontsloc ) ) THEN
         DEALLOCATE( grid%lontsloc )
-      ENDIF
+      ENDIF 
       IF ( ASSOCIATED( grid%nametsloc ) ) THEN
         DEALLOCATE( grid%nametsloc )
-      ENDIF
+      ENDIF 
       IF ( ASSOCIATED( grid%desctsloc ) ) THEN
         DEALLOCATE( grid%desctsloc )
-      ENDIF
+      ENDIF 
       IF ( ASSOCIATED( grid%ts_filename ) ) THEN
         DEALLOCATE( grid%ts_filename )
-      ENDIF
+      ENDIF 
 #if (EM_CORE == 1)
       IF ( ASSOCIATED( grid%track_time_in ) ) THEN
         DEALLOCATE( grid%track_time_in )
       ENDIF
-
+ 
       IF ( ASSOCIATED( grid%track_lat_in ) ) THEN
         DEALLOCATE( grid%track_lat_in )
       ENDIF
-
+ 
       IF ( ASSOCIATED( grid%track_lon_in ) ) THEN
         DEALLOCATE( grid%track_lon_in )
       ENDIF
-
+ 
       IF ( ASSOCIATED( grid%track_i ) ) THEN
         DEALLOCATE( grid%track_i )
       ENDIF
-
+ 
       IF ( ASSOCIATED( grid%track_j ) ) THEN
         DEALLOCATE( grid%track_j )
       ENDIF
@@ -1685,11 +1689,11 @@ CONTAINS
       IF ( ASSOCIATED( grid%track_time_domain ) ) THEN
         DEALLOCATE( grid%track_time_domain )
       ENDIF
-
+ 
       IF ( ASSOCIATED( grid%track_lat_domain ) ) THEN
         DEALLOCATE( grid%track_lat_domain )
       ENDIF
-
+ 
       IF ( ASSOCIATED( grid%track_lon_domain ) ) THEN
         DEALLOCATE( grid%track_lon_domain )
       ENDIF
@@ -1732,7 +1736,7 @@ CONTAINS
         ENDIF
       ENDDO
    END SUBROUTINE show_nest_subtree
-
+   
 
 !
 
@@ -1741,7 +1745,7 @@ CONTAINS
 !  for every -1 (i.e., each different meteorological field).
 
    SUBROUTINE dealloc_space_field ( grid )
-
+      
       IMPLICIT NONE
 
       !  Input data.
@@ -1761,7 +1765,7 @@ CONTAINS
    RECURSIVE SUBROUTINE find_grid_by_id ( id, in_grid, result_grid )
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: id
-      TYPE(domain), POINTER     :: in_grid
+      TYPE(domain), POINTER     :: in_grid 
       TYPE(domain), POINTER     :: result_grid
 ! <DESCRIPTION>
 ! This is a recursive subroutine that traverses the domain hierarchy rooted
@@ -1796,8 +1800,8 @@ CONTAINS
    END SUBROUTINE find_grid_by_id
 
 
-   FUNCTION first_loc_integer ( array , search ) RESULT ( loc )
-
+   FUNCTION first_loc_integer ( array , search ) RESULT ( loc ) 
+ 
       IMPLICIT NONE
 
       !  Input data.
@@ -1814,14 +1818,14 @@ CONTAINS
 !  of domain identifiers.
 !
 !</DESCRIPTION>
-
+      
       !  Local data.
 
       INTEGER :: loop
 
       loc = -1
       find : DO loop = 1 , SIZE(array)
-         IF ( search == array(loop) ) THEN
+         IF ( search == array(loop) ) THEN         
             loc = loop
             EXIT find
          END IF
@@ -1835,16 +1839,16 @@ CONTAINS
 
 ! <DESCRIPTION>
 !
-! The following routines named domain_*() are convenience routines that
-! eliminate many duplicated bits of code.  They provide shortcuts for the
-! most common operations on the domain_clock field of TYPE(domain).
+! The following routines named domain_*() are convenience routines that 
+! eliminate many duplicated bits of code.  They provide shortcuts for the 
+! most common operations on the domain_clock field of TYPE(domain).  
 !
 ! </DESCRIPTION>
 
-      FUNCTION domain_get_current_time ( grid ) RESULT ( current_time )
+      FUNCTION domain_get_current_time ( grid ) RESULT ( current_time ) 
         IMPLICIT NONE
 ! <DESCRIPTION>
-! This convenience function returns the current time for domain grid.
+! This convenience function returns the current time for domain grid.  
 !
 ! </DESCRIPTION>
         TYPE(domain), INTENT(IN) :: grid
@@ -1861,10 +1865,10 @@ CONTAINS
       END FUNCTION domain_get_current_time
 
 
-      FUNCTION domain_get_start_time ( grid ) RESULT ( start_time )
+      FUNCTION domain_get_start_time ( grid ) RESULT ( start_time ) 
         IMPLICIT NONE
 ! <DESCRIPTION>
-! This convenience function returns the start time for domain grid.
+! This convenience function returns the start time for domain grid.  
 !
 ! </DESCRIPTION>
         TYPE(domain), INTENT(IN) :: grid
@@ -1881,10 +1885,10 @@ CONTAINS
       END FUNCTION domain_get_start_time
 
 
-      FUNCTION domain_get_stop_time ( grid ) RESULT ( stop_time )
+      FUNCTION domain_get_stop_time ( grid ) RESULT ( stop_time ) 
         IMPLICIT NONE
 ! <DESCRIPTION>
-! This convenience function returns the stop time for domain grid.
+! This convenience function returns the stop time for domain grid.  
 !
 ! </DESCRIPTION>
         TYPE(domain), INTENT(IN) :: grid
@@ -1901,10 +1905,10 @@ CONTAINS
       END FUNCTION domain_get_stop_time
 
 
-      FUNCTION domain_get_time_step ( grid ) RESULT ( time_step )
+      FUNCTION domain_get_time_step ( grid ) RESULT ( time_step ) 
         IMPLICIT NONE
 ! <DESCRIPTION>
-! This convenience function returns the time step for domain grid.
+! This convenience function returns the time step for domain grid.  
 !
 ! </DESCRIPTION>
         TYPE(domain), INTENT(IN) :: grid
@@ -1921,11 +1925,11 @@ CONTAINS
       END FUNCTION domain_get_time_step
 
 
-      FUNCTION domain_get_advanceCount ( grid ) RESULT ( advanceCount )
+      FUNCTION domain_get_advanceCount ( grid ) RESULT ( advanceCount ) 
         IMPLICIT NONE
 ! <DESCRIPTION>
-! This convenience function returns the time step for domain grid.
-! Also converts from INTEGER(WRFU_KIND_I8) to INTEGER.
+! This convenience function returns the time step for domain grid.  
+! Also converts from INTEGER(WRFU_KIND_I8) to INTEGER.  
 !
 ! </DESCRIPTION>
         TYPE(domain), INTENT(IN) :: grid
@@ -1948,8 +1952,8 @@ CONTAINS
       SUBROUTINE domain_alarms_destroy ( grid )
         IMPLICIT NONE
 ! <DESCRIPTION>
-! This convenience routine destroys and deallocates all alarms associated
-! with grid.
+! This convenience routine destroys and deallocates all alarms associated 
+! with grid.  
 !
 ! </DESCRIPTION>
         TYPE(domain), INTENT(INOUT) :: grid
@@ -1975,7 +1979,7 @@ CONTAINS
       SUBROUTINE domain_clock_destroy ( grid )
         IMPLICIT NONE
 ! <DESCRIPTION>
-! This convenience routine destroys and deallocates the domain clock.
+! This convenience routine destroys and deallocates the domain clock.  
 !
 ! </DESCRIPTION>
         TYPE(domain), INTENT(INOUT) :: grid
@@ -1990,11 +1994,11 @@ CONTAINS
       END SUBROUTINE domain_clock_destroy
 
 
-      FUNCTION domain_last_time_step ( grid ) RESULT ( LAST_TIME )
+      FUNCTION domain_last_time_step ( grid ) RESULT ( LAST_TIME ) 
         IMPLICIT NONE
 ! <DESCRIPTION>
-! This convenience function returns .TRUE. if this is the last time
-! step for domain grid.  Thanks to Tom Black.
+! This convenience function returns .TRUE. if this is the last time 
+! step for domain grid.  Thanks to Tom Black.  
 !
 ! </DESCRIPTION>
         TYPE(domain), INTENT(IN) :: grid
@@ -2007,11 +2011,11 @@ CONTAINS
 
 
 
-      FUNCTION domain_clockisstoptime ( grid ) RESULT ( is_stop_time )
+      FUNCTION domain_clockisstoptime ( grid ) RESULT ( is_stop_time ) 
         IMPLICIT NONE
 ! <DESCRIPTION>
-! This convenience function returns .TRUE. iff grid%clock has reached its
-! stop time.
+! This convenience function returns .TRUE. iff grid%clock has reached its 
+! stop time.  
 !
 ! </DESCRIPTION>
         TYPE(domain), INTENT(IN) :: grid
@@ -2027,11 +2031,11 @@ CONTAINS
 
 
 
-      FUNCTION domain_clockisstopsubtime ( grid ) RESULT ( is_stop_subtime )
+      FUNCTION domain_clockisstopsubtime ( grid ) RESULT ( is_stop_subtime ) 
         IMPLICIT NONE
 ! <DESCRIPTION>
-! This convenience function returns .TRUE. iff grid%clock has reached its
-! grid%stop_subtime.
+! This convenience function returns .TRUE. iff grid%clock has reached its 
+! grid%stop_subtime.  
 !
 ! </DESCRIPTION>
         TYPE(domain), INTENT(IN) :: grid
@@ -2063,18 +2067,18 @@ CONTAINS
 
 
 
-      FUNCTION domain_get_sim_start_time ( grid ) RESULT ( simulationStartTime )
+      FUNCTION domain_get_sim_start_time ( grid ) RESULT ( simulationStartTime ) 
         IMPLICIT NONE
 ! <DESCRIPTION>
-! This convenience routine returns simulation start time for domain grid as
-! a time instant.
+! This convenience routine returns simulation start time for domain grid as 
+! a time instant.  
 !
-! If this is not a restart run, the start_time of head_grid%clock is returned
-! instead.
+! If this is not a restart run, the start_time of head_grid%clock is returned 
+! instead.  
 !
-! Note that simulation start time remains constant through restarts while
-! the start_time of head_grid%clock always refers to the start time of the
-! current run (restart or otherwise).
+! Note that simulation start time remains constant through restarts while 
+! the start_time of head_grid%clock always refers to the start time of the 
+! current run (restart or otherwise).  
 !
 ! </DESCRIPTION>
         TYPE(domain), INTENT(IN) :: grid
@@ -2119,15 +2123,15 @@ CONTAINS
         RETURN
       END FUNCTION domain_get_sim_start_time
 
-      FUNCTION domain_get_time_since_sim_start ( grid ) RESULT ( time_since_sim_start )
+      FUNCTION domain_get_time_since_sim_start ( grid ) RESULT ( time_since_sim_start ) 
         IMPLICIT NONE
 ! <DESCRIPTION>
-! This convenience function returns the time elapsed since start of
-! simulation for domain grid.
+! This convenience function returns the time elapsed since start of 
+! simulation for domain grid.  
 !
-! Note that simulation start time remains constant through restarts while
-! the start_time of grid%clock always refers to the start time of the
-! current run (restart or otherwise).
+! Note that simulation start time remains constant through restarts while 
+! the start_time of grid%clock always refers to the start time of the 
+! current run (restart or otherwise).  
 !
 ! </DESCRIPTION>
         TYPE(domain), INTENT(IN) :: grid
@@ -2169,22 +2173,22 @@ CONTAINS
         CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: time_stepstr
         CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: time_stepstr_frac
         INTEGER,                 INTENT(  OUT), OPTIONAL :: advanceCount
-        ! currentDayOfYearReal = 0.0 at 0Z on 1 January, 0.5 at 12Z on
+        ! currentDayOfYearReal = 0.0 at 0Z on 1 January, 0.5 at 12Z on 
         ! 1 January, etc.
         REAL,                    INTENT(  OUT), OPTIONAL :: currentDayOfYearReal
-        ! Time at which simulation started.  If this is not a restart run,
-        ! start_time is returned instead.
+        ! Time at which simulation started.  If this is not a restart run, 
+        ! start_time is returned instead.  
         TYPE(WRFU_Time),         INTENT(  OUT), OPTIONAL :: simulationStartTime
         CHARACTER (LEN=*),       INTENT(  OUT), OPTIONAL :: simulationStartTimeStr
-        ! time interval since start of simulation, includes effects of
+        ! time interval since start of simulation, includes effects of 
         ! restarting even when restart uses a different timestep
         TYPE(WRFU_TimeInterval), INTENT(  OUT), OPTIONAL :: timeSinceSimulationStart
         ! minutes since simulation start date
         REAL,                    INTENT(  OUT), OPTIONAL :: minutesSinceSimulationStart
 ! <DESCRIPTION>
-! This convenience routine returns clock information for domain grid in
-! various forms.  The caller is responsible for ensuring that character
-! string actual arguments are big enough.
+! This convenience routine returns clock information for domain grid in 
+! various forms.  The caller is responsible for ensuring that character 
+! string actual arguments are big enough.  
 !
 ! </DESCRIPTION>
         ! Locals
@@ -2228,12 +2232,12 @@ CONTAINS
         IF ( PRESENT( advanceCount ) ) THEN
           advanceCount = domain_get_advanceCount ( grid )
         ENDIF
-        ! This duplication avoids assignment of time-manager objects
-        ! which works now in ESMF 2.2.0 but may not work in the future
-        ! if these objects become "deep".  We have already been bitten
-        ! by this when the clock objects were changed from "shallow" to
-        ! "deep".  Once again, adherence to orthodox canonical form by
-        ! ESMF would avoid all this crap.
+        ! This duplication avoids assignment of time-manager objects 
+        ! which works now in ESMF 2.2.0 but may not work in the future 
+        ! if these objects become "deep".  We have already been bitten 
+        ! by this when the clock objects were changed from "shallow" to 
+        ! "deep".  Once again, adherence to orthodox canonical form by 
+        ! ESMF would avoid all this crap.  
         IF ( PRESENT( current_time ) ) THEN
           current_time = domain_get_current_time ( grid )
         ENDIF
@@ -2299,11 +2303,11 @@ CONTAINS
         RETURN
       END SUBROUTINE domain_clock_get
 
-      FUNCTION domain_clockisstarttime ( grid ) RESULT ( is_start_time )
+      FUNCTION domain_clockisstarttime ( grid ) RESULT ( is_start_time ) 
         IMPLICIT NONE
 ! <DESCRIPTION>
-! This convenience function returns .TRUE. iff grid%clock is at its
-! start time.
+! This convenience function returns .TRUE. iff grid%clock is at its 
+! start time.  
 !
 ! </DESCRIPTION>
         TYPE(domain), INTENT(IN) :: grid
@@ -2315,11 +2319,11 @@ CONTAINS
         is_start_time = ( current_time == start_time )
       END FUNCTION domain_clockisstarttime
 
-      FUNCTION domain_clockissimstarttime ( grid ) RESULT ( is_sim_start_time )
+      FUNCTION domain_clockissimstarttime ( grid ) RESULT ( is_sim_start_time ) 
         IMPLICIT NONE
 ! <DESCRIPTION>
-! This convenience function returns .TRUE. iff grid%clock is at the
-! simulation start time.  (It returns .FALSE. during a restart run.)
+! This convenience function returns .TRUE. iff grid%clock is at the 
+! simulation start time.  (It returns .FALSE. during a restart run.)  
 !
 ! </DESCRIPTION>
         TYPE(domain), INTENT(IN) :: grid
@@ -2343,8 +2347,8 @@ CONTAINS
         TYPE(WRFU_Time),         INTENT(IN   ) :: StopTime
         TYPE(WRFU_TimeInterval), INTENT(IN   ) :: TimeStep
 ! <DESCRIPTION>
-! This convenience routine creates the domain_clock for domain grid and
-! sets associated flags.
+! This convenience routine creates the domain_clock for domain grid and 
+! sets associated flags.  
 !
 ! </DESCRIPTION>
         ! Locals
@@ -2373,16 +2377,16 @@ CONTAINS
         TYPE(WRFU_TimeInterval), INTENT(IN), OPTIONAL :: begin_time
         TYPE(WRFU_TimeInterval), INTENT(IN), OPTIONAL :: end_time
 ! <DESCRIPTION>
-! This convenience routine creates alarm alarm_id for domain grid and
-! sets associated flags.
+! This convenience routine creates alarm alarm_id for domain grid and 
+! sets associated flags.  
 !
 ! </DESCRIPTION>
         ! Locals
         INTEGER :: rc
-!$$$ TBH:  Ideally, this could be simplified by passing all optional actual
-!$$$ TBH:  args into AlarmCreate.  However, since operations are performed on
-!$$$ TBH:  the actual args in-place in the calls, they must be present for the
-!$$$ TBH:  operations themselves to be defined.  Grrr...
+!$$$ TBH:  Ideally, this could be simplified by passing all optional actual 
+!$$$ TBH:  args into AlarmCreate.  However, since operations are performed on 
+!$$$ TBH:  the actual args in-place in the calls, they must be present for the 
+!$$$ TBH:  operations themselves to be defined.  Grrr...  
         LOGICAL :: interval_only, all_args, no_args
         TYPE(WRFU_Time) :: startTime
         interval_only = .FALSE.
@@ -2448,9 +2452,9 @@ CONTAINS
         CHARACTER (LEN=*), INTENT(IN   ), OPTIONAL :: stop_timestr
         INTEGER,           INTENT(IN   ), OPTIONAL :: time_step_seconds
 ! <DESCRIPTION>
-! This convenience routine sets clock information for domain grid.
-! The caller is responsible for ensuring that character string actual
-! arguments are big enough.
+! This convenience routine sets clock information for domain grid.  
+! The caller is responsible for ensuring that character string actual 
+! arguments are big enough.  
 !
 ! </DESCRIPTION>
         ! Locals
@@ -2494,8 +2498,8 @@ CONTAINS
       END SUBROUTINE domain_clock_set
 
 
-      ! Debug routine to print key clock information.
-      ! Printed lines include pre_str.
+      ! Debug routine to print key clock information.  
+      ! Printed lines include pre_str.  
       SUBROUTINE domain_clockprint ( level, grid, pre_str )
         IMPLICIT NONE
         INTEGER,           INTENT( IN) :: level
@@ -2506,8 +2510,8 @@ CONTAINS
       END SUBROUTINE domain_clockprint
 
 
-      ! Advance the clock associated with grid.
-      ! Also updates several derived time quantities in grid state.
+      ! Advance the clock associated with grid.  
+      ! Also updates several derived time quantities in grid state.  
       SUBROUTINE domain_clockadvance ( grid )
         IMPLICIT NONE
         TYPE(domain), INTENT(INOUT) :: grid
@@ -2530,7 +2534,7 @@ CONTAINS
 
 
 
-      ! Set grid%gmt, grid%julday, and grid%julyr from simulation-start-date.
+      ! Set grid%gmt, grid%julday, and grid%julyr from simulation-start-date.  
       ! Set start_of_simulation to TRUE iff current_time == simulation_start_time
       SUBROUTINE domain_setgmtetc ( grid, start_of_simulation )
         IMPLICIT NONE
@@ -2561,11 +2565,11 @@ CONTAINS
         start_of_simulation = domain_ClockIsSimStartTime(grid)
         RETURN
       END SUBROUTINE domain_setgmtetc
+     
 
 
-
-      ! Set pointer to current grid.
-      ! To begin with, current grid is not set.
+      ! Set pointer to current grid.  
+      ! To begin with, current grid is not set.  
       SUBROUTINE set_current_grid_ptr( grid_ptr )
         IMPLICIT NONE
         TYPE(domain), POINTER :: grid_ptr
@@ -2693,11 +2697,11 @@ CONTAINS
 
 !******************************************************************************
 ! BEGIN TEST SECTION
-!   Code in the test section is used to test domain methods.
-!   This code should probably be moved elsewhere, eventually.
+!   Code in the test section is used to test domain methods.  
+!   This code should probably be moved elsewhere, eventually.  
 !******************************************************************************
 
-      ! Private utility routines for domain_time_test.
+      ! Private utility routines for domain_time_test.  
       SUBROUTINE domain_time_test_print ( pre_str, name_str, res_str )
         IMPLICIT NONE
         CHARACTER (LEN=*), INTENT(IN) :: pre_str
@@ -2710,7 +2714,7 @@ CONTAINS
         CALL wrf_debug( 0, TRIM(out_str) )
       END SUBROUTINE domain_time_test_print
 
-      ! Test adjust_io_timestr
+      ! Test adjust_io_timestr 
       SUBROUTINE test_adjust_io_timestr( TI_h, TI_m, TI_s, &
         CT_yy,  CT_mm,  CT_dd,  CT_h,  CT_m,  CT_s,        &
         ST_yy,  ST_mm,  ST_dd,  ST_h,  ST_m,  ST_s,        &
@@ -2792,11 +2796,11 @@ CONTAINS
         ENDIF
       END SUBROUTINE test_adjust_io_timestr
 
-      ! Print lots of time-related information for testing and debugging.
-      ! Printed lines include pre_str and special string DOMAIN_TIME_TEST
-      ! suitable for grepping by test scripts.
-      ! Returns immediately unless self_test_domain has been set to .true. in
-      ! namelist /time_control/ .
+      ! Print lots of time-related information for testing and debugging.  
+      ! Printed lines include pre_str and special string DOMAIN_TIME_TEST 
+      ! suitable for grepping by test scripts.  
+      ! Returns immediately unless self_test_domain has been set to .true. in 
+      ! namelist /time_control/ .  
       SUBROUTINE domain_time_test ( grid, pre_str )
         IMPLICIT NONE
         TYPE(domain),      INTENT(IN) :: grid
@@ -2811,10 +2815,10 @@ CONTAINS
         CHARACTER (LEN=512) :: res_str
         LOGICAL :: self_test_domain
         !
-        ! NOTE:  test_adjust_io_timestr() (see below) is a self-test that
-        !        prints PASS/FAIL/ERROR messages in a standard format.  All
-        !        of the other tests should be strucutred the same way,
-        !        someday.
+        ! NOTE:  test_adjust_io_timestr() (see below) is a self-test that 
+        !        prints PASS/FAIL/ERROR messages in a standard format.  All 
+        !        of the other tests should be strucutred the same way, 
+        !        someday.  
         !
         CALL nl_get_self_test_domain( 1, self_test_domain )
         IF ( self_test_domain ) THEN
@@ -2838,8 +2842,8 @@ CONTAINS
               'domain_time_test:  WRFU_TimeIntervalGet() failed' )
           ENDIF
           CALL domain_time_test_print( pre_str, 'timeSinceSimulationStart', res_str )
-          ! The following tests should only be done once, the first time this
-          ! routine is called.
+          ! The following tests should only be done once, the first time this 
+          ! routine is called.  
           IF ( .NOT. one_time_tests_done ) THEN
             one_time_tests_done = .TRUE.
             CALL domain_clock_get( grid, simulationStartTimeStr=res_str )
@@ -2880,13 +2884,13 @@ CONTAINS
 END MODULE module_domain
 
 
-! The following routines are outside this module to avoid build dependences.
+! The following routines are outside this module to avoid build dependences.  
 
 
-! Get current time as a string (current time from clock attached to the
-! current_grid).  Includes fractional part, if present.
-! Returns empty string if current_grid is not set or if timing has not yet
-! been set up on current_grid.
+! Get current time as a string (current time from clock attached to the 
+! current_grid).  Includes fractional part, if present.  
+! Returns empty string if current_grid is not set or if timing has not yet 
+! been set up on current_grid.  
 SUBROUTINE get_current_time_string( time_str )
   USE module_domain
   IMPLICIT NONE
@@ -2921,10 +2925,10 @@ SUBROUTINE get_current_time_string( time_str )
 END SUBROUTINE get_current_time_string
 
 
-! Get current domain name as a string of form "d<NN>" where "<NN>" is
-! grid%id printed in two characters, with leading zero if needed ("d01",
-! "d02", etc.).
-! Return empty string if current_grid not set.
+! Get current domain name as a string of form "d<NN>" where "<NN>" is 
+! grid%id printed in two characters, with leading zero if needed ("d01", 
+! "d02", etc.).  
+! Return empty string if current_grid not set.  
 SUBROUTINE get_current_grid_name( grid_str )
   USE module_domain
   IMPLICIT NONE
@@ -2997,7 +3001,7 @@ END SUBROUTINE get_current_grid_name
    END SUBROUTINE get_ijk_from_grid_ext
 
 ! return the values for subgrid whose refinement is in grid%sr
-! note when using this routine, it does not affect K. For K
+! note when using this routine, it does not affect K. For K 
 ! (vertical), it just returns what get_ijk_from_grid does
    SUBROUTINE get_ijk_from_subgrid_ext (  grid ,                &
                            ids0, ide0, jds0, jde0, kds0, kde0,    &
@@ -3074,18 +3078,18 @@ END SUBROUTINE get_current_grid_name
            ds(1) = grid%sd31 ; de(1) = grid%ed31 ; ds(2) = grid%sd32 ; de(2) = grid%ed32 ; ds(3) = grid%sd33 ; de(3) = grid%ed33 ;
            ms(1) = grid%sm31 ; me(1) = grid%em31 ; ms(2) = grid%sm32 ; me(2) = grid%em32 ; ms(3) = grid%sm33 ; me(3) = grid%em33 ;
            ps(1) = grid%sp31 ; pe(1) = grid%ep31 ; ps(2) = grid%sp32 ; pe(2) = grid%ep32 ; ps(3) = grid%sp33 ; pe(3) = grid%ep33 ;
-           mxs(1) = grid%sm31x ; mxe(1) = grid%em31x
-           mxs(2) = grid%sm32x ; mxe(2) = grid%em32x
-           mxs(3) = grid%sm33x ; mxe(3) = grid%em33x
-           pxs(1) = grid%sp31x ; pxe(1) = grid%ep31x
-           pxs(2) = grid%sp32x ; pxe(2) = grid%ep32x
+           mxs(1) = grid%sm31x ; mxe(1) = grid%em31x 
+           mxs(2) = grid%sm32x ; mxe(2) = grid%em32x 
+           mxs(3) = grid%sm33x ; mxe(3) = grid%em33x 
+           pxs(1) = grid%sp31x ; pxe(1) = grid%ep31x 
+           pxs(2) = grid%sp32x ; pxe(2) = grid%ep32x 
            pxs(3) = grid%sp33x ; pxe(3) = grid%ep33x
-           mys(1) = grid%sm31y ; mye(1) = grid%em31y
-           mys(2) = grid%sm32y ; mye(2) = grid%em32y
-           mys(3) = grid%sm33y ; mye(3) = grid%em33y
-           pys(1) = grid%sp31y ; pye(1) = grid%ep31y
-           pys(2) = grid%sp32y ; pye(2) = grid%ep32y
-           pys(3) = grid%sp33y ; pye(3) = grid%ep33y
+           mys(1) = grid%sm31y ; mye(1) = grid%em31y 
+           mys(2) = grid%sm32y ; mye(2) = grid%em32y 
+           mys(3) = grid%sm33y ; mye(3) = grid%em33y 
+           pys(1) = grid%sp31y ; pye(1) = grid%ep31y 
+           pys(2) = grid%sp32y ; pye(2) = grid%ep32y 
+           pys(3) = grid%sp33y ; pye(3) = grid%ep33y 
      ELSE
         WRITE(mess,*)'internal error: get_ijk_from_grid_id: no such grid id:',id
         CALL wrf_error_fatal(TRIM(mess))
@@ -3144,7 +3148,7 @@ END SUBROUTINE get_current_grid_name
      INTEGER, INTENT(IN) :: id
      TYPE(domain), POINTER :: grid
      CALL find_grid_by_id( id, head_grid, grid )
-     IF ( ASSOCIATED( grid ) ) CALL modify_io_masks1( grid, id )
-     RETURN
+     IF ( ASSOCIATED( grid ) ) CALL modify_io_masks1( grid, id ) 
+     RETURN 
    END SUBROUTINE modify_io_masks
 

@@ -2,9 +2,9 @@
       MODULE biology_mod
 #if defined NONLINEAR && defined BIOLOGY
 !
-!svn $Id: biology.F 851 2017-06-23 23:22:54Z arango $
+!svn $Id: biology.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -117,7 +117,7 @@
 #  include <bestnpz.h>
 # elif defined BIO_FENNEL
 #  include <fennel.h>
-# elif defined ESTUARYBGC
+# elif defined ESTUARYBGC 
 #  include <estuarybgc.h>
 # elif defined ECOSIM
 #  include <ecosim.h>

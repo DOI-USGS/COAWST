@@ -337,7 +337,7 @@
         DO ng=1,Ngrids
           CALL output (ng)
           IF ((exit_flag.ne.NoError).or.                                &
-     &        ((iic(ng).eq.(ntend(ng)+1)).and.(ng.eq.Ngrids))) RETURN
+     &        ((iic(ng).eq.(ntend(ng)+1)).and.(ng.eq.Ngrids))) RETURN 
         END DO
 !
 !-----------------------------------------------------------------------

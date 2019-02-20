@@ -111,7 +111,7 @@ END MODULE module_dm
 ! in case DM_PARALLEL is not compiled for.
 ! This file, src/module_dm_stubs.F is copied to src/module_dm.F  when
 ! the code is built.
-! If, on the other hand, a DM package is specified, the module_dm.F
+! If, on the other hand, a DM package is specified, the module_dm.F 
 ! provided with that package (e.g. RSL) is copied from /external/RSL/module_dm.F
 ! into src/module_dm.F.
 ! It is important to recognize this, because changes directly to src/module_dm.F

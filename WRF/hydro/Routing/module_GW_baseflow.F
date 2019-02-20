@@ -2,20 +2,20 @@
 !  Author(s)/Contact(s):
 !  Abstract:
 !  History Log:
-!
+! 
 !  Usage:
 !  Parameters: <Specify typical arguments passed>
 !  Input Files:
 !        <list file names and briefly describe the data they include>
 !  Output Files:
 !        <list file names and briefly describe the information they include>
-!
+! 
 !  Condition codes:
 !        <list exit condition or error codes returned >
 !        If appropriate, descriptive troubleshooting instructions or
 !        likely causes for failures could be mentioned here with the
 !        appropriate error code
-!
+! 
 !  User controllable options: <if applicable>
 
 module module_GW_baseflow
@@ -32,23 +32,23 @@ module module_GW_baseflow
 contains
 
 !------------------------------------------------------------------------------
-!DJG   Simple GW Bucket Model
+!DJG   Simple GW Bucket Model 
 !      for NHDPLUS mapping
 !------------------------------------------------------------------------------
 
    subroutine simp_gw_buck_nhd(ix,jx,ixrt,jxrt,numbasns, AGGFACTRT, DT, INFXSWGT         &
            , runoff1x_in, runoff2x_in,cellArea,area_lsm    &
            , c, ex,z_mx,z_gwsubbas_tmp, qout_gwsubbas, qin_gwsubbas,GWBASESWCRT,OVRTSWCRT   &
-           , LNLINKSL, basns_area, nhdBuckMask )
+           , LNLINKSL, basns_area, nhdBuckMask ) 
 
    use module_UDMAP, only: LNUMRSL, LUDRSL
 
    implicit none
-
+   
 !!!Declarations...
    integer, intent(in)                               :: ix,jx,ixrt,jxrt
    integer, intent(in)                               :: numbasns, lnlinksl
-   real, intent(in), dimension(ix,jx)                :: runoff2x_in
+   real, intent(in), dimension(ix,jx)                :: runoff2x_in 
    real, dimension(ixrt,jxrt)                            :: runoff2x , runoff1x
    real, intent(in), dimension(ix,jx)                :: runoff1x_in, area_lsm
    real, intent(in)                                  :: cellArea(ixrt,jxrt),DT
@@ -63,7 +63,7 @@ contains
    integer, intent(in)                               :: GWBASESWCRT
    integer, intent(in)                               :: OVRTSWCRT
    real, intent(in), dimension(numbasns)             :: basns_area
-
+   
 
    real, dimension(numbasns)                        :: net_perc
    integer, dimension(numbasns)                        :: nhdBuckMask
@@ -89,7 +89,7 @@ contains
              do AGGFACXRT=AGGFACTRT-1,0,-1
                IXXRT=I*AGGFACTRT-AGGFACXRT
                JYYRT=J*AGGFACTRT-AGGFACYRT
-#ifdef MPP_LAND
+#ifdef MPP_LAND  
        if(left_id.ge.0) IXXRT=IXXRT+1
        if(down_id.ge.0) JYYRT=JYYRT+1
 !              if(AGGFACTRT .eq. 1) then
@@ -120,7 +120,7 @@ contains
        LQLateral = 0
        do k = 1, LNUMRSL
               ! get from land grid runoff
-               do m = 1, LUDRSL(k)%ncell
+               do m = 1, LUDRSL(k)%ncell 
                    ii =  LUDRSL(k)%cell_i(m)
                    jj =  LUDRSL(k)%cell_j(m)
                    if(ii .gt. 0 .and. jj .gt. 0) then
@@ -157,7 +157,7 @@ contains
 !Adjust level of GW depth...(conceptual GW bucket units (mm))
 
           z_gwsubbas(bas) = z_gwsubbas(bas) + net_perc(bas) / basns_area(bas)   ! m
-
+    
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !Calculate baseflow as a function of GW bucket depth...
@@ -174,7 +174,7 @@ contains
 !                    if(z_mx(bas) .gt. 5) then
 !                         z_mx(bas) = z_mx(bas) /1000    ! change from mm to meters
 !                    endif
-
+ 
 
                if (z_gwsubbas(bas).gt.z_mx(bas)/1000.) then  !If/then for bucket overflow case...
 
@@ -192,9 +192,9 @@ contains
 
 
 ! Assume exponential relation between z/zmax and Q...
-!DJG force asymptote to zero to prevent 'overdraft'...
+!DJG force asymptote to zero to prevent 'overdraft'... 
                qout_gwsubbas(bas) = C(bas)*(EXP(ex(bas)*z_gwsubbas(bas)/z_mx(bas)/1000.)-1) !Exp.model. q_out (m^3/s)
-
+       
 !DJG...Calculation of max bucket outlfow that is limited by total quantity in bucket...
                qout_gwsubbas(bas) = MIN(qout_max,qout_gwsubbas(bas))   ! Limit bucket discharge to max. bucket limit   (m^3/s)
 
@@ -213,7 +213,7 @@ contains
 
 
           z_gwsubbas(bas) = z_gwsubbas(bas) - qout_gwsubbas(bas)*DT/( &
-                       basns_area(bas) )   ! units (meters)
+                       basns_area(bas) )   ! units (meters)	
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 !Combine calculated bucket discharge and amount spilled from bucket...
@@ -243,13 +243,13 @@ contains
                             qout_gwsubbas,qinflowbase,gw_strm_msk,gwbas_pix_ct,dist,DT,&
                             C,ex,z_mx,GWBASESWCRT,OVRTSWCRT)
    implicit none
-
+   
 !!!Declarations...
    integer, intent(in)                               :: ix,jx,ixrt,jxrt
    integer, intent(in)                               :: numbasns, gnumbasns
    integer, intent(in), dimension(ix,jx)             :: gwsubbasmsk
-   real, intent(in), dimension(ix,jx)                :: runoff2x_in
-   real, dimension(ix,jx)                            :: runoff2x
+   real, intent(in), dimension(ix,jx)                :: runoff2x_in 
+   real, dimension(ix,jx)                            :: runoff2x 
    real, intent(in), dimension(ix,jx)                :: runoff1x_in
    real, dimension(ix,jx)                            :: runoff1x
    real, intent(in)                                  :: basns_area(numbasns),dist(ixrt,jxrt,9),DT
@@ -264,7 +264,7 @@ contains
    integer, intent(in),dimension(ixrt,jxrt)          :: gw_strm_msk, gw_strm_msk_lind
    integer, intent(in)                               :: GWBASESWCRT
    integer, intent(in)                               :: OVRTSWCRT
-
+   
 
    real*8, dimension(numbasns)                      :: sum_perc8,ct_bas8
    real, dimension(numbasns)                        :: sum_perc
@@ -324,7 +324,7 @@ contains
 #endif
    sum_perc = sum_perc8
    ct_bas = ct_bas8
-
+   
 
 
 
@@ -379,10 +379,10 @@ contains
 
 ! Assume exponential relation between z/zmax and Q...
 !DJG...old...creates non-asymptotic flow...   qout_gwsubbas(bas) = C(bas)*EXP(ex(bas)*z_gwsubbas(bas)/z_mx(bas)) !Exp.model. q_out (m^3/s)
-!DJG force asymptote to zero to prevent 'overdraft'...
+!DJG force asymptote to zero to prevent 'overdraft'... 
 !DJG debug hardwire test...       qout_gwsubbas(bas) = 1*(EXP(7.0*10./100.)-1) !Exp.model. q_out (m^3/s)
      qout_gwsubbas(bas) = C(bas)*(EXP(ex(bas)*z_gwsubbas(bas)/z_mx(bas))-1) !Exp.model. q_out (m^3/s)
-
+       
 !DJG...Calculation of max bucket outlfow that is limited by total quantity in bucket...
      qout_gwsubbas(bas) = MIN(qout_max,qout_gwsubbas(bas))   ! Limit bucket discharge to max. bucket limit
 
@@ -408,7 +408,7 @@ contains
 !DJG bug adjust output to be mm and correct area bug...                       / (ct_bas(bas)*basns_area(bas))   !units(m)
 
      z_gwsubbas(bas) = z_gwsubbas(bas) - qout_gwsubbas(bas)*DT/( &
-                       ct_bas(bas)*basns_area(bas))*1000.   ! units (mm)
+                       ct_bas(bas)*basns_area(bas))*1000.   ! units (mm)	
 
 !DJG...Combine calculated bucket discharge and amount spilled from bucket...
      qout_gwsubbas(bas) = qout_gwsubbas(bas) + qout_spill   ! units (cms)
@@ -472,20 +472,20 @@ contains
       integer ::    i,j,ixrt,jxrt,numbasns, bas, gnumbasns, k
       integer,dimension(ixrt,jxrt) :: in_gw_strm_msk
       integer,dimension(global_rt_nx,global_rt_ny) :: gw_strm_msk
-      real,dimension(numbasns) :: gwbas_pix_ct
-      real,dimension(gnumbasns) :: tmp_gwbas_pix_ct
+      real,dimension(numbasns) :: gwbas_pix_ct 
+      real,dimension(gnumbasns) :: tmp_gwbas_pix_ct 
       integer, intent(in), dimension(:) :: basnsInd
 
       gw_strm_msk = 0
 
 
-      call write_IO_rt_int(in_gw_strm_msk, gw_strm_msk)
-
-      call mpp_land_sync()
+      call write_IO_rt_int(in_gw_strm_msk, gw_strm_msk)    
+    
+      call mpp_land_sync() 
 
       if(my_id .eq. IO_id) then
 !        tmp_gwbas_pix_ct = 0.0
-!         do bas = 1,gnumbasns
+!         do bas = 1,gnumbasns  
 !         do i=1,global_rt_nx
 !           do j=1,global_rt_ny
 !             if(gw_strm_msk(i,j) .eq. bas) then
@@ -506,7 +506,7 @@ contains
             end do
       end if
 
-      call mpp_land_sync()
+      call mpp_land_sync() 
 
       if(gnumbasns .gt. 0) then
          call mpp_land_bcast_real(gnumbasns,tmp_gwbas_pix_ct)
@@ -525,4 +525,4 @@ contains
 
 
 
-end module module_GW_baseflow
+end module module_GW_baseflow   

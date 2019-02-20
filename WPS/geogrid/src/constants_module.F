@@ -1,7 +1,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! MODULE CONSTANTS_MODULE
 !
-! This module defines constants that are used by other modules
+! This module defines constants that are used by other modules 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 module constants_module
 
@@ -10,7 +10,7 @@ module constants_module
 
    real, parameter :: DEG_PER_RAD = 180./PI
    real, parameter :: RAD_PER_DEG = PI/180.
-
+ 
    ! Mean Earth Radius in m.  The value below is consistent
    ! with NCEP's routines and grids.
    real, parameter :: A_WGS84  = 6378137.

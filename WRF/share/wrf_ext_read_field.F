@@ -55,10 +55,10 @@
     CALL wrf_ext_read_field(    DataHandle,DateStr,Var           &
                                 ,Field(1                                                            &
                                       +tsfac*(0                                                     &
-                                      +(idx4-1)*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)                 &
-                                      +(idx5-1)*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)             &
-                                      +(idx6-1)*nx5*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)         &
-                                      +(idx7-1)*nx6*nx5*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)))   &
+                                      +(idx4-1)*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)                 &                              
+                                      +(idx5-1)*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)             &                              
+                                      +(idx6-1)*nx5*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)         &                              
+                                      +(idx7-1)*nx6*nx5*nx4*(me3-ms3+1)*(me2-ms2+1)*(me1-ms1+1)))   &                              
                                 ,FieldType, grid                  &
                                 ,DomainDesc                       &
                                 ,bdy_mask                         &
@@ -68,7 +68,7 @@
                                 ,ds1, de1, ds2, de2, ds3, de3                 &
                                 ,ms1, me1, ms2, me2, ms3, me3                 &
                                 ,ps1, pe1, ps2, pe2, ps3, pe3, Status          )
-
+    
   END SUBROUTINE wrf_ext_read_field_arr
 
   SUBROUTINE wrf_ext_read_field( DataHandle,DateStr,Var,Field,FieldType,grid, &

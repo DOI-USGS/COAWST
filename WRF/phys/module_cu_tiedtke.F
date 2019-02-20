@@ -7,8 +7,8 @@
 !   added by Chunxi Zhang and Yuqing Wang to wrf3.2, may, 2010
 !   refenrence: Tiedtke (1989, mwr, 117, 1779-1800)
 !               Nordeng, t.e., (1995), cape closure and organized entrainment/detrainment
-!               Yuqing Wang et al. (2003,j. climate, 16, 1721-1738) for improvements
-!                                                  for cloud top detrainment
+!               Yuqing Wang et al. (2003,j. climate, 16, 1721-1738) for improvements 
+!                                                  for cloud top detrainment 
 !                       (2004, mon. wea. rev., 132, 274-296), improvements for pbl clouds
 !                       (2007,mon. wea. rev., 135, 567-585), diurnal cycle of precipitation
 !###########################################################
@@ -20,17 +20,17 @@ module module_cu_tiedtke
      implicit none
 
      real :: rcpd,vtmpc1,t000,hgfr,rhoh2o,tmelt, &
-             c1es,c2es,c3les,c3ies,c4les,c4ies,c5les,c5ies,zrg
-
+             c1es,c2es,c3les,c3ies,c4les,c4ies,c5les,c5ies,zrg 
+    
      real :: entrpen,entrscv,entrmid,entrdd,cmfctop,rhm,rhc,    &
              cmfcmax,cmfcmin,cmfdeps,cprcon,crirh,zbuo0,  &
              fdbk,ztau
-
+ 
      real :: cevapcu1, cevapcu2, zdnoprc
-
+    
      parameter(                     &
       rcpd=1.0/cpd,                 &
-      rhoh2o=1.0e03,                &
+      rhoh2o=1.0e03,                & 
       tmelt=273.16,                 &
       t000= 273.15,                 &
       hgfr= 233.15,                 &
@@ -44,10 +44,10 @@ module module_cu_tiedtke
       c4ies=7.66,                   &
       c5ies=c3ies*(tmelt-c4ies),    &
       vtmpc1=rv/rd-1.0,             &
-      cevapcu1=1.93e-6*261.0*0.5/g, &
+      cevapcu1=1.93e-6*261.0*0.5/g, & 
       cevapcu2=1.e3/(38.3*0.293) )
 
-
+     
 !                specify parameters for massflux-scheme
 !                  --------------------------------------
 !                   these are tunable parameters
@@ -140,21 +140,21 @@ contains
 !-- p8w         3d hydrostatic pressure at full levels (pa)
 !-- pcps        3d hydrostatic pressure at half levels (pa)
 !-- pi3d        3d exner function (dimensionless)
-!-- rthcuten      theta tendency due to
+!-- rthcuten      theta tendency due to 
 !                 cumulus scheme precipitation (k/s)
-!-- rucuten       u wind tendency due to
+!-- rucuten       u wind tendency due to 
 !                 cumulus scheme precipitation (k/s)
-!-- rvcuten       v wind tendency due to
+!-- rvcuten       v wind tendency due to 
 !                 cumulus scheme precipitation (k/s)
-!-- rqvcuten      qv tendency due to
+!-- rqvcuten      qv tendency due to 
 !                 cumulus scheme precipitation (kg/kg/s)
-!-- rqrcuten      qr tendency due to
+!-- rqrcuten      qr tendency due to 
 !                 cumulus scheme precipitation (kg/kg/s)
-!-- rqccuten      qc tendency due to
+!-- rqccuten      qc tendency due to 
 !                 cumulus scheme precipitation (kg/kg/s)
-!-- rqscuten      qs tendency due to
+!-- rqscuten      qs tendency due to 
 !                 cumulus scheme precipitation (kg/kg/s)
-!-- rqicuten      qi tendency due to
+!-- rqicuten      qi tendency due to 
 !                 cumulus scheme precipitation (kg/kg/s)
 !-- rainc         accumulated total cumulus scheme precipitation (mm)
 !-- raincv        cumulus scheme precipitation (mm)
@@ -215,10 +215,10 @@ contains
                                         t3d,                            &
                                         u3d,                            &
                                         v3d,                            &
-                                        w
+                                        w                              
 
 !--------------------------- optional vars ----------------------------
-
+                                                                                                      
       real, dimension(ims:ime, kms:kme, jms:jme),                       &
                optional, intent(inout) ::                               &
                                         rqccuten,                       &
@@ -227,7 +227,7 @@ contains
                                         rthcuten,                       &
                                         rucuten,                        &
                                         rvcuten
-
+                                                                                                      
 !
 ! flags relating to the optional tendency arrays declared above
 ! models that carry the optional tendencies will provdide the
@@ -241,49 +241,49 @@ contains
                                                   ,f_qr      &
                                                   ,f_qi      &
                                                   ,f_qs
-
+ 
 !--------------------------- local vars ------------------------------
 
       real,    dimension(ims:ime, jms:jme) ::                           &
-                                        qfx
+                                        qfx     
 
       real      ::                                      &
                                         delt,                           &
-                                        rdelt
+                                        rdelt                          
 
       real     , dimension(its:ite) ::                  &
                                         rcs,                            &
                                         rn,                             &
                                         evap
-      integer  , dimension(its:ite) ::  slimsk
-
+      integer  , dimension(its:ite) ::  slimsk                         
+      
 
       real     , dimension(its:ite, kts:kte+1) ::       &
-                                        prsi
+                                        prsi                            
 
       real     , dimension(its:ite, kts:kte) ::         &
                                         del,                            &
                                         dot,                            &
                                         phil,                           &
                                         prsl,                           &
-                                        q1,                             &
+                                        q1,                             & 
                                         q2,                             &
                                         q3,                             &
                                         q1b,                            &
                                         q1bl,                           &
                                         q11,                            &
-                                        q12,                            &
-                                        t1,                             &
-                                        u1,                             &
-                                        v1,                             &
-                                        zi,                             &
+                                        q12,                            &  
+                                        t1,                             & 
+                                        u1,                             & 
+                                        v1,                             & 
+                                        zi,                             & 
                                         zl,                             &
                                         omg,                            &
-                                        ght
+                                        ght 
 
       integer, dimension(its:ite) ::                                    &
                                         kbot,                           &
-                                        ktop
+                                        ktop                           
 
       integer ::                                                        &
                                         i,                              &
@@ -301,7 +301,7 @@ contains
       integer,dimension( its:ite ) :: ktype
       real, dimension( kts:kte )   :: sig1      ! half sigma levels
       real, dimension( kms:kme )   :: znu
-      integer                      :: zz
+      integer                      :: zz 
 !-----------------------------------------------------------------------
 
       do j=jts,jte
@@ -309,7 +309,7 @@ contains
             cu_act_flag(i,j)=.true.
          enddo
       enddo
-
+ 
       im=ite-its+1
       kx=kte-kts+1
       delt=dt*stepcu
@@ -355,7 +355,7 @@ contains
       enddo
 
       do k=kts,kte
-        zz = kte+1-k
+        zz = kte+1-k        
         do i=its,ite
           u1(i,zz)=u3d(i,k,j)
           v1(i,zz)=v3d(i,k,j)
@@ -381,7 +381,7 @@ contains
         do i=its,ite
           prsi(i,zz) = p8w(i,k,j)
         enddo
-      enddo
+      enddo 
 
       do k=kts,kte
          zz = kte+1-k
@@ -397,7 +397,7 @@ contains
       enddo
 !########################################################################
       call tiecnv(u1,v1,t1,q1,q2,q3,q1b,q1bl,ght,omg,prsl,prsi,evap,             &
-                  rn,slimsk,ktype,im,kx,kx+1,sig1,delt)
+                  rn,slimsk,ktype,im,kx,kx+1,sig1,delt)                 
 
       do i=its,ite
          raincv(i,j)=rn(i)/stepcu
@@ -410,7 +410,7 @@ contains
           rthcuten(i,k,j)=(t1(i,zz)-t3d(i,k,j))/pi3d(i,k,j)*rdelt
           rqvcuten(i,k,j)=(q1(i,zz)-qv3d(i,k,j))*rdelt
           rucuten(i,k,j) =(u1(i,zz)-u3d(i,k,j))*rdelt
-          rvcuten(i,k,j) =(v1(i,zz)-v3d(i,k,j))*rdelt
+          rvcuten(i,k,j) =(v1(i,zz)-v3d(i,k,j))*rdelt 
         enddo
       enddo
 
@@ -463,7 +463,7 @@ contains
                                                               rqvcuten, &
                                                               rqccuten, &
                                                               rqicuten, &
-                                                              rucuten,rvcuten
+                                                              rucuten,rvcuten 
 
    integer :: i, j, k, itf, jtf, ktf
 
@@ -523,7 +523,7 @@ contains
       subroutine tiecnv(pu,pv,pt,pqv,pqc,pqi,pqvf,pqvbl,poz,pomg,  &
                pap,paph,evap,zprecc,lndj,ktype,lq,km,km1,sig1,dt)
 !-----------------------------------------------------------------
-!  this is the interface between the meso-scale model and the mass
+!  this is the interface between the meso-scale model and the mass 
 !  flux convection module
 !-----------------------------------------------------------------
       implicit none
@@ -600,7 +600,7 @@ contains
          (lq,       km,       km1,      km-1,    ztp1,   &
           zqp1,     pum1,     pvm1,     pverv,   zqsat,  &
           pqhfl,    ztmst,    pap,      paph,    pgeo,   &
-          ptte,     pqte,     pvom,     pvol,    prsfc,  &
+          ptte,     pqte,     pvom,     pvol,    prsfc,  & 
           pssfc,    paprc,    paprsm,   paprs,   locum,  &
           ktype,    icbot,    ictop,    ztu,     zqu,    &
           zlu,      zlude,    zmfu,     zmfd,    zrain,  &
@@ -672,7 +672,7 @@ contains
           pssfc,    paprc,    paprsm,   paprs,    ldcum, &
           ktype,    kcbot,    kctop,    ptu,      pqu,   &
           plu,      plude,    pmfu,     pmfd,     prain, &
-          psrain,   psevap,   psheat,   psdiss,   psmelt,&
+          psrain,   psevap,   psheat,   psdiss,   psmelt,& 
           pcte,     sig1,     lndj)
 !
 !***cumastr*  master routine for cumulus massflux-scheme
@@ -765,7 +765,7 @@ contains
               ptte(klon,klev),        pqte(klon,klev),  &
               pvom(klon,klev),        pvol(klon,klev),  &
               pqsen(klon,klev),       pgeo(klon,klev),  &
-              pap(klon,klev),         paph(klon,klevp1),&
+              pap(klon,klev),         paph(klon,klevp1),& 
               pverv(klon,klev),       pqhfl(klon)
       real     ptu(klon,klev),         pqu(klon,klev),  &
               plu(klon,klev),         plude(klon,klev), &
@@ -778,20 +778,20 @@ contains
               ztd(klon,klev),         zqd(klon,klev),   &
               zmfus(klon,klev),       zmfds(klon,klev), &
               zmfuq(klon,klev),       zmfdq(klon,klev), &
-              zdmfup(klon,klev),      zdmfdp(klon,klev),&
+              zdmfup(klon,klev),      zdmfdp(klon,klev),& 
               zmful(klon,klev),       zrfl(klon),       &
               zuu(klon,klev),         zvu(klon,klev),   &
               zud(klon,klev),         zvd(klon,klev)
       real     zentr(klon),            zhcbase(klon),   &
               zmfub(klon),            zmfub1(klon),     &
-              zdqpbl(klon),           zdqcv(klon)
+              zdqpbl(klon),           zdqcv(klon) 
       real     zsfl(klon),             zdpmel(klon,klev), &
               pcte(klon,klev),        zcape(klon),        &
               zheat(klon),            zhhatt(klon,klev),  &
               zhmin(klon),            zrelh(klon)
       real     sig1(klev)
       integer  ilab(klon,klev),        idtop(klon),   &
-              ictop0(klon),           ilwmin(klon)
+              ictop0(klon),           ilwmin(klon)    
       integer  kcbot(klon),            kctop(klon),   &
               ktype(klon),            ihmin(klon),    &
               ktop0,                  lndj(klon)
@@ -932,7 +932,7 @@ contains
       end if
       end do
       end do
-
+ 
       do jl = 1, klon
       if (ldcum(jl).and.ktype(jl).eq.1) then
         if (ihmin(jl).lt.ictop0(jl)) ihmin(jl) = ictop0(jl)
@@ -1112,7 +1112,7 @@ contains
          (klon,     klev,     klevp1,   klevm1,   ztenh,  &
           zqenh,    puen,     pven,     pten,     pqen,   &
           pqsen,    pgeo,     zgeoh,    pap,      paph,   &
-          pqte,     pverv,    ilwmin,   ldcum,    zhcbase,&
+          pqte,     pverv,    ilwmin,   ldcum,    zhcbase,& 
           ktype,    ilab,     ptu,      pqu,      plu,    &
           zuu,      zvu,      pmfu,     zmfub,    zentr,  &
           zmfus,    zmfuq,    zmful,    plude,    zdmfup, &
@@ -1208,7 +1208,7 @@ contains
               pmfu(klon,klev),        pmfd(klon,klev),     &
               pmfus(klon,klev),       pmfds(klon,klev),    &
               pmfuq(klon,klev),       pmfdq(klon,klev),    &
-              pdmfup(klon,klev),      pdmfdp(klon,klev),   &
+              pdmfup(klon,klev),      pdmfdp(klon,klev),   & 
               plu(klon,klev),         plude(klon,klev)
       real     zwmax(klon),            zph(klon),          &
               pdpmel(klon,klev)
@@ -1297,11 +1297,11 @@ contains
       end do
       end do
       return
-      end subroutine cuini
+      end subroutine cuini   
 
 !**********************************************
 !       subroutine cubase
-!**********************************************
+!********************************************** 
       subroutine cubase &
          (klon,     klev,     klevp1,   klevm1,   ptenh, &
           pqenh,    pgeoh,    paph,     ptu,      pqu,   &
@@ -1340,7 +1340,7 @@ contains
       real     ptu(klon,klev),         pqu(klon,klev),   &
               plu(klon,klev)
       real     puen(klon,klev),        pven(klon,klev),  &
-              puu(klon,klev),         pvu(klon,klev)
+              puu(klon,klev),         pvu(klon,klev) 
       real     zqold(klon,klev),       zph(klon)
       integer  klab(klon,klev),        kcbot(klon)
       logical  ldcum(klon),            loflag(klon)
@@ -1399,7 +1399,7 @@ contains
 
 !             calculate averages of u and v for subcloud area,
 !             the values will be used to define cloud base values.
-
+      
         if(lmfdudv) then
           do jl=1,klon
             if(.not.ldbase(jl)) then
@@ -1430,7 +1430,7 @@ contains
              zbuo=ptu(jl,jk)*(1.+vtmpc1*pqu(jl,jk))-      &
                  ptenh(jl,jk)*(1.+vtmpc1*pqenh(jl,jk))+zbuo0
              if(zbuo.gt.0.) klab(jl,jk)=1
-           else
+           else 
              klab(jl,jk)=2
              plu(jl,jk)=plu(jl,jk)+zqold(jl,jk)-pqu(jl,jk)
              zbuo=ptu(jl,jk)*(1.+vtmpc1*pqu(jl,jk))-      &
@@ -1464,15 +1464,15 @@ contains
 !
 !**********************************************
 !       subroutine cuasc_new
-!**********************************************
+!********************************************** 
       subroutine cuasc_new &
          (klon,     klev,     klevp1,   klevm1,   ptenh,  &
           pqenh,    puen,     pven,     pten,     pqen,   &
           pqsen,    pgeo,     pgeoh,    pap,      paph,   &
-          pqte,     pverv,    klwmin,   ldcum,    phcbase,&
+          pqte,     pverv,    klwmin,   ldcum,    phcbase,& 
           ktype,    klab,     ptu,      pqu,      plu,    &
           puu,      pvu,      pmfu,     pmfub,    pentr,  &
-          pmfus,    pmfuq,    pmful,    plude,    pdmfup, &
+          pmfus,    pmfuq,    pmful,    plude,    pdmfup, & 
           kcbot,    kctop,    kctop0,   kcum,     ztmst,  &
           khmin,    phhatt,   pqsenh)
 !     this routine does the calculations for cloud ascents
@@ -1562,7 +1562,7 @@ contains
               pgeo(klon,klev),        pgeoh(klon,klev),  &
               pap(klon,klev),         paph(klon,klevp1), &
               pqsen(klon,klev),       pqte(klon,klev),   &
-              pverv(klon,klev),       pqsenh(klon,klev)
+              pverv(klon,klev),       pqsenh(klon,klev)  
       real     ptu(klon,klev),         pqu(klon,klev),   &
               puu(klon,klev),         pvu(klon,klev),    &
               pmfu(klon,klev),        zph(klon),         &
@@ -1833,9 +1833,9 @@ contains
               zdmfdu=zdmfde(jl)+zz*zdmfde(jl)
               zdmfdu=min(zdmfdu,0.75*pmfu(jl,jk+1))
               zmfuu(jl)=zmfuu(jl)+                              &
-                       zdmfeu*puen(jl,jk)-zdmfdu*puu(jl,jk+1)
+                       zdmfeu*puen(jl,jk)-zdmfdu*puu(jl,jk+1)   
               zmfuv(jl)=zmfuv(jl)+                              &
-                       zdmfeu*pven(jl,jk)-zdmfdu*pvu(jl,jk+1)
+                       zdmfeu*pven(jl,jk)-zdmfdu*pvu(jl,jk+1)   
               if(pmfu(jl,jk).gt.0.) then
                  puu(jl,jk)=zmfuu(jl)*(1./pmfu(jl,jk))
                  pvu(jl,jk)=zmfuv(jl)*(1./pmfu(jl,jk))
@@ -1913,7 +1913,7 @@ contains
 
 !**********************************************
 !       subroutine cudlfs
-!**********************************************
+!********************************************** 
       subroutine cudlfs &
          (klon,     klev,     klevp1,   ptenh,    pqenh,  &
           puen,     pven,     pgeoh,    paph,     ptu,    &
@@ -1958,7 +1958,7 @@ contains
       real     ptd(klon,klev),         pqd(klon,klev),     &
               pud(klon,klev),         pvd(klon,klev),      &
               pmfd(klon,klev),        pmfds(klon,klev),    &
-              pmfdq(klon,klev),       pdmfdp(klon,klev)
+              pmfdq(klon,klev),       pdmfdp(klon,klev)    
       real     ztenwb(klon,klev),      zqenwb(klon,klev),  &
               zcond(klon),            zph(klon)
       integer  kcbot(klon),            kctop(klon),        &
@@ -2040,7 +2040,7 @@ contains
           end if
           end do
       end if
-
+  
       end do
       return
       end subroutine cudlfs
@@ -2048,7 +2048,7 @@ contains
 
 !**********************************************
 !       subroutine cuddraf
-!**********************************************
+!********************************************** 
       subroutine cuddraf &
          (klon,     klev,     klevp1,   ptenh,    pqenh, &
           puen,     pven,     pgeoh,    paph,     prfl,  &
@@ -2088,14 +2088,14 @@ contains
       real      zbuo, zdmfdp, zmfduk, zmfdvk
       real     ptenh(klon,klev),       pqenh(klon,klev),  &
               puen(klon,klev),        pven(klon,klev),    &
-              pgeoh(klon,klev),       paph(klon,klevp1)
+              pgeoh(klon,klev),       paph(klon,klevp1) 
       real     ptd(klon,klev),         pqd(klon,klev),    &
               pud(klon,klev),         pvd(klon,klev),     &
               pmfd(klon,klev),        pmfds(klon,klev),   &
               pmfdq(klon,klev),       pdmfdp(klon,klev),  &
               prfl(klon)
       real     zdmfen(klon),           zdmfde(klon),      &
-              zcond(klon),            zph(klon)
+              zcond(klon),            zph(klon)       
       logical  lddraf(klon),           llo2(klon)
 !--------------------------------------------------------------
 !     1.       calculate moist descent for cumulus downdraft by
@@ -2195,7 +2195,7 @@ contains
 
 !**********************************************
 !       subroutine cuflx
-!**********************************************
+!********************************************** 
       subroutine cuflx &
          (klon,     klev,     klevp1,   pqen,    pqsen,     &
           ptenh,    pqenh,    paph,     pgeoh,   kcbot,    &
@@ -2226,7 +2226,7 @@ contains
       real      zrmin, zrfln, zdrfl, zdpevap
       real     pqen(klon,klev),        pqsen(klon,klev),  &
               ptenh(klon,klev),       pqenh(klon,klev),   &
-              paph(klon,klevp1),      pgeoh(klon,klev)
+              paph(klon,klevp1),      pgeoh(klon,klev)    
       real     pmfu(klon,klev),        pmfd(klon,klev),   &
               pmfus(klon,klev),       pmfds(klon,klev),   &
               pmfuq(klon,klev),       pmfdq(klon,klev),   &
@@ -2369,7 +2369,7 @@ contains
 
 !**********************************************
 !       subroutine cudtdq
-!**********************************************
+!********************************************** 
       subroutine cudtdq &
          (klon,     klev,     klevp1,   ktopm2,   paph,   &
           ldcum,    pten,     ptte,     pqte,     pmfus,  &
@@ -2401,7 +2401,7 @@ contains
       real     pmfus(klon,klev),       pmfds(klon,klev), &
               pmfuq(klon,klev),       pmfdq(klon,klev), &
               pmful(klon,klev),       pqsen(klon,klev), &
-              pdmfup(klon,klev),      pdmfdp(klon,klev),&
+              pdmfup(klon,klev),      pdmfdp(klon,klev),& 
               prfl(klon),             prain(klon),      &
               pqen(klon,klev)
       real     pdpmel(klon,klev),      psfl(klon)
@@ -2438,7 +2438,7 @@ contains
               -zalv*(pmful(jl,jk+1)-pmful(jl,jk)-pldfd-      &
               (pdmfup(jl,jk)+pdmfdp(jl,jk))))
             ptte(jl,jk)=ptte(jl,jk)+zdtdt
-            zdqdt=(g/(paph(jl,jk+1)-paph(jl,jk)))*&
+            zdqdt=(g/(paph(jl,jk+1)-paph(jl,jk)))*& 
               (pmfuq(jl,jk+1)-pmfuq(jl,jk)+       &
               pmfdq(jl,jk+1)-pmfdq(jl,jk)+        &
               pmful(jl,jk+1)-pmful(jl,jk)-pldfd-  &
@@ -2462,11 +2462,11 @@ contains
             pldfd=max(0.0,rhcoe*fdbk*plude(jl,jk))
             zdtdt=-(g/(paph(jl,jk+1)-paph(jl,jk)))*rcpd*           &
                 (pmfus(jl,jk)+pmfds(jl,jk)+alf*pdpmel(jl,jk)-zalv* &
-                (pmful(jl,jk)+pdmfup(jl,jk)+pdmfdp(jl,jk)+pldfd))
+                (pmful(jl,jk)+pdmfup(jl,jk)+pdmfdp(jl,jk)+pldfd))  
             ptte(jl,jk)=ptte(jl,jk)+zdtdt
             zdqdt=-(g/(paph(jl,jk+1)-paph(jl,jk)))*                &
                      (pmfuq(jl,jk)+pmfdq(jl,jk)+pldfd+             &
-                     (pmful(jl,jk)+pdmfup(jl,jk)+pdmfdp(jl,jk)))
+                     (pmful(jl,jk)+pdmfup(jl,jk)+pdmfdp(jl,jk)))   
             pqte(jl,jk)=pqte(jl,jk)+zdqdt
             pcte(jl,jk)=(g/(paph(jl,jk+1)-paph(jl,jk)))*pldfd
             zsheat(jl)=zsheat(jl)+zalv*(pdmfup(jl,jk)+pdmfdp(jl,jk))
@@ -2495,7 +2495,7 @@ contains
 !
 !**********************************************
 !       subroutine cududv
-!**********************************************
+!********************************************** 
       subroutine cududv &
          (klon,     klev,     klevp1,   ktopm2,   ktype,  &
           kcbot,    paph,     ldcum,    puen,     pven,   &
@@ -2616,7 +2616,7 @@ contains
           pgeo,     pgeoh,    ldcum,   ktype,  klab,  &
           pmfu,     pmfub,    pentr,   kcbot,  ptu,   &
           pqu,      plu,      puu,     pvu,    pmfus, &
-          pmfuq,    pmful,    pdmfup,  pmfuu,  pmfuv)
+          pmfuq,    pmful,    pdmfup,  pmfuu,  pmfuv) 
 !      m.tiedtke         e.c.m.w.f.     12/89
 !***purpose.
 !   --------
@@ -2642,7 +2642,7 @@ contains
       real      zzzmb
       real     pten(klon,klev),        pqen(klon,klev),  &
               puen(klon,klev),        pven(klon,klev),   &
-              pqsen(klon,klev),       pverv(klon,klev),  &
+              pqsen(klon,klev),       pverv(klon,klev),  & 
               pgeo(klon,klev),        pgeoh(klon,klev)
       real     ptu(klon,klev),         pqu(klon,klev),   &
               puu(klon,klev),         pvu(klon,klev),    &
@@ -2852,7 +2852,7 @@ contains
 !**********************************************************
 !        subroutine cuentr_new
 !**********************************************************
-      subroutine cuentr_new                              &
+      subroutine cuentr_new                              &   
          (klon,     klev,     klevp1,   kk,       ptenh, &
           paph,     pap,      pgeoh,    klwmin,   ldcum, &
           ktype,    kcbot,    kctop0,   zpbase,   pmfu,  &
@@ -2941,7 +2941,7 @@ contains
           end if
         end if
       enddo
-!
+! 
       return
       end subroutine cuentr_new
 !

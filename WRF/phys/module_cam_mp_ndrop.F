@@ -45,7 +45,7 @@ contains
 #ifdef WRF_PORT
                     , qqcw_inout                                    &
 #endif
-                                                                    )
+                                                                    ) 
 
 !     vertical diffusion and nucleation of cloud droplets
 !     assume cloud presence controlled by cloud fraction
@@ -61,7 +61,7 @@ contains
       use constituents,  only: pcnst, qmin, cnst_get_ind, cnst_name
 #else
       use module_cam_support, only: pcnst => pcnst_mp
-      use constituents,  only: cnst_get_ind, cnst_name
+      use constituents,  only: cnst_get_ind, cnst_name 
 #endif
       use error_function, only: erf
 
@@ -188,7 +188,7 @@ contains
       real(r8) fluxn(ntot_amode)      ! number  activation fraction flux (cm/s)
       real(r8) fluxm(ntot_amode)      ! mass    activation fraction flux (cm/s)
       real(r8) sum,sumcw,flux,fluxcw
-!     note:  activation fraction fluxes are defined as
+!     note:  activation fraction fluxes are defined as 
 !     fluxn = [flux of activated aero. number into cloud (#/cm2/s)]
 !           / [aero. number conc. in updraft, just below cloudbase (#/cm3)]
 
@@ -230,7 +230,7 @@ contains
        write (iulog,*) 'erf(1.0) = ',ERF(arg)
 #ifdef WRF_PORT
        call wrf_message(iulog)
-#endif
+#endif 
        call endrun('dropmixnuc: Error function error')
     endif
     arg = 0.0
@@ -238,11 +238,11 @@ contains
        write (iulog,*) 'erf(0.0) = ',erf(arg)
 #ifdef WRF_PORT
        call wrf_message(iulog)
-#endif
+#endif 
        write (iulog,*) 'dropmixnuc: Error function error'
 #ifdef WRF_PORT
        call wrf_message(iulog)
-#endif
+#endif 
        call endrun('dropmixnuc: Error function error')
     endif
      zero=0._r8
@@ -270,7 +270,7 @@ contains
           QQCW(numptrcw_amode(m))%fldcw => qqcw_inout(:,:,numptrcw_amode(m))
 #endif
           do l=1,nspec_amode(m)
-#ifndef WRF_PORT
+#ifndef WRF_PORT             
              QQCW(lmassptrcw_amode(l,m))%fldcw => qqcw_get_field(lmassptrcw_amode(l,m),lchnk)
 #else
              QQCW(lmassptrcw_amode(l,m))%fldcw => qqcw_inout(:,:,lmassptrcw_amode(l,m))
@@ -379,9 +379,9 @@ overall_main_i_loop: &
 
 !        droplet nucleation/aerosol activation
 
-! tau_cld_regenerate = time scale for regeneration of cloudy air
+! tau_cld_regenerate = time scale for regeneration of cloudy air 
 !    by (horizontal) exchange with clear air
-            tau_cld_regenerate = 3600.0_r8 * 3.0_r8
+            tau_cld_regenerate = 3600.0_r8 * 3.0_r8 
 
 ! k-loop for growing/shrinking cloud calcs .............................
 grow_shrink_main_k_loop: &
@@ -429,7 +429,7 @@ grow_shrink_main_k_loop: &
 
 ! growing cloud ......................................................
 !    treat the increase of cloud fraction from when cldn(i,k) > cldo(i,k)
-!    and also regenerate part of the cloud
+!    and also regenerate part of the cloud 
               cldo_tmp = cldn_tmp
               cldn_tmp = cldn(i,k)
 
@@ -524,7 +524,7 @@ old_cloud_main_k_loop: &
                   if(cldn(i,k)-cldn(i,kp1).gt.0.01.or.k.eq.pver)then
 
 !                   cloud base
-
+                    
                     ekd(k)=wtke(i,k)*dz(i,k)/sq2pi
 ! rce-comments
 !   first, should probably have 1/zs(k) here rather than dz(i,k) because
@@ -542,7 +542,7 @@ old_cloud_main_k_loop: &
                     wmin=wbar+wmix*0.25*sq2pi*log(alogarg)
                     phase=1 ! interstitial
                     do m=1,ntot_amode
-! rce-comment - use kp1 here as old-cloud activation involves
+! rce-comment - use kp1 here as old-cloud activation involves 
 !   aerosol from layer below
 !                      call loadaer(raer,qqcw,i,i,k,m,cs, npv(m),phase, &
                        call loadaer(raer,qqcw,i,i,kp1,m,cs, npv(m),phase, &
@@ -580,14 +580,14 @@ old_cloud_main_k_loop: &
 ! rce-comment 2
 !    code for k=pver was changed to use the following conceptual model
 !    in k=pver, there can be no cloud-base activation unless one considers
-!       a scenario such as the layer being partially cloudy,
+!       a scenario such as the layer being partially cloudy, 
 !       with clear air at bottom and cloudy air at top
-!    assume this scenario, and that the clear/cloudy portions mix with
+!    assume this scenario, and that the clear/cloudy portions mix with 
 !       a timescale taumix_internal = dz(i,pver)/wtke_cen(i,pver)
-!    in the absence of other sources/sinks, qact (the activated particle
+!    in the absence of other sources/sinks, qact (the activated particle 
 !       mixratio) attains a steady state value given by
 !          qact_ss = fcloud*fact*qtot
-!       where fcloud is cloud fraction, fact is activation fraction,
+!       where fcloud is cloud fraction, fact is activation fraction, 
 !       qtot=qact+qint, qint is interstitial particle mixratio
 !    the activation rate (from mixing within the layer) can now be
 !       written as
@@ -597,8 +597,8 @@ old_cloud_main_k_loop: &
 !    also, d(qact)/dt can be negative.  in the code below
 !       it is forced to be >= 0
 !
-! steve --
-!    you will likely want to change this.  i did not really understand
+! steve -- 
+!    you will likely want to change this.  i did not really understand 
 !       what was previously being done in k=pver
 !    in the cam3_5_3 code, wtke(i,pver) appears to be equal to the
 !       droplet deposition velocity which is quite small
@@ -669,7 +669,7 @@ old_cloud_main_k_loop: &
          do k=1,pver-1
 ! rce-comment -- ekd(k) is eddy-diffusivity at k/k+1 interface
 !   want ekk(k) = ekd(k) * (density at k/k+1 interface)
-!   so use pint(i,k+1) as pint is 1:pverp
+!   so use pint(i,k+1) as pint is 1:pverp 
 !           ekk(k)=ekd(k)*2.*pint(i,k)/(rair*(temp(i,k)+temp(i,k+1)))
 !           ekk(k)=ekd(k)*2.*pint(i,k+1)/(rair*(temp(i,k)+temp(i,k+1)))
             ekk(k)=ekd(k)*csbot(k)
@@ -685,10 +685,10 @@ old_cloud_main_k_loop: &
 !    for the layer.  for most layers, the activation loss rate
 !    (for interstitial particles) is accounted for by the loss by
 !    turb-transfer to the layer above.
-!    k=pver is special, and the loss rate for activation within
+!    k=pver is special, and the loss rate for activation within 
 !    the layer must be added to tinv.  if not, the time step
 !    can be too big, and explmix can produce negative values.
-!    the negative values are reset to zero, resulting in an
+!    the negative values are reset to zero, resulting in an 
 !    artificial source.
             if(k.eq.pver)tinv=tinv+taumix_internal_pver_inv
 
@@ -768,7 +768,7 @@ old_cloud_nsubmix_loop: &
 !    of a layer, and generally higher in the clear portion.  (we have/had
 !    a method for diagnosing the the clear/cloudy mixratios.)  the activation
 !    source terms involve clear air (from below) moving into cloudy air (above).
-!    in theory, the clear-portion mixratio should be used when calculating
+!    in theory, the clear-portion mixratio should be used when calculating 
 !    source terms
             do m=1,ntot_amode
                lnum=numptr_amode(m)
@@ -950,7 +950,7 @@ old_cloud_nsubmix_loop: &
 
 !  explicit integration of droplet/aerosol mixing
 !     with source due to activation/nucleation
-
+      
 
    implicit none
    integer, intent(in) :: pver ! number of levels
@@ -1077,13 +1077,13 @@ old_cloud_nsubmix_loop: &
                   write(iulog,*)'lmassptr_amode(',l,m,')=',lmass
 #ifdef WRF_PORT
                   call wrf_message(iulog)
-#endif
+#endif 
                   call endrun
                endif
           enddo
           npv(m)=6./(pi*dgnum_amode(m)**3*exp45logsig(m))
       enddo
-
+      
       call addfld ('WTKE     ', 'm/s     ', pver, 'A', 'Standard deviation of updraft velocity'                  ,phys_decomp)
       call addfld ('LCLOUD   ', '        ', pver, 'A', 'Liquid cloud fraction'                                   ,phys_decomp)
       call addfld ('NDROPMIX ', '#/kg/s  ', pver, 'A', 'Droplet number mixing'                     ,phys_decomp)
@@ -1198,7 +1198,7 @@ old_cloud_nsubmix_loop: &
       integer m,n
 !      numerical integration parameters
       real(r8), parameter :: eps=0.3_r8,fmax=0.99_r8,sds=3._r8
-
+ 
       real(r8), parameter :: namin=1.e6_r8   ! minimum aerosol number concentration (/m3)
 
       integer ndist(nx)  ! accumulates frequency distribution of integration bins required
@@ -1209,7 +1209,7 @@ old_cloud_nsubmix_loop: &
          write(iulog,*)'ntot_amode,pmode in activate =',ntot_amode,pmode
 #ifdef WRF_PORT
          call wrf_message(iulog)
-#endif
+#endif 
 	 call endrun('activate')
       endif
 
@@ -1383,33 +1383,33 @@ old_cloud_nsubmix_loop: &
          write(iulog,*)'do loop is too short in activate'
 #ifdef WRF_PORT
          call wrf_message(iulog)
-#endif
+#endif 
          write(iulog,*)'wmin=',wmin,' w=',w,' wmax=',wmax,' dw=',dw
 #ifdef WRF_PORT
          call wrf_message(iulog)
-#endif
+#endif 
          write(iulog,*)'wbar=',wbar,' sigw=',sigw,' wdiab=',wdiab
 #ifdef WRF_PORT
          call wrf_message(iulog)
-#endif
+#endif          
          write(iulog,*)'wnuc=',wnuc
 #ifdef WRF_PORT
          call wrf_message(iulog)
-#endif
+#endif 
          write(iulog,*)'na=',(na(m),m=1,nmode)
 #ifdef WRF_PORT
          call wrf_message(iulog)
-#endif
+#endif 
          write(iulog,*)'fn=',(fn(m),m=1,nmode)
 #ifdef WRF_PORT
          call wrf_message(iulog)
-#endif
+#endif 
 !   dump all subr parameters to allow testing with standalone code
 !   (build a driver that will read input and call activate)
          write(iulog,*)'wbar,sigw,wdiab,tair,rhoair,nmode='
 #ifdef WRF_PORT
          call wrf_message(iulog)
-#endif
+#endif 
          write(iulog,*) wbar,sigw,wdiab,tair,rhoair,nmode
 #ifdef WRF_PORT
          call wrf_message(iulog)
@@ -1717,9 +1717,9 @@ old_cloud_nsubmix_loop: &
            lspectype_amode   => lspectype_amode_mp, specdens_amode    => specdens_amode_mp,   &
            spechygro         => spechygro_mp      , numptr_amode      => numptr_amode_mp,     &
            numptrcw_amode    => numptrcw_amode_mp , voltonumbhi_amode => voltonumbhi_amode_mp,&
-           voltonumblo_amode => voltonumblo_amode_mp
+           voltonumblo_amode => voltonumblo_amode_mp 
 #endif
-
+     
 
       implicit none
 

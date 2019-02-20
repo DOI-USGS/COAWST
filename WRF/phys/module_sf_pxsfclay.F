@@ -40,20 +40,20 @@ CONTAINS
 !   TO PSIH AND PSIM.  THESE EXPRESSIONS ARE FIT TO THE DYER (1974) FUNCTIONS
 !   WITH HOGSTROM (1988) REVISED COEFFICIENTS.  ALSO, THESE EXPERESSIONS
 !   ASSUME A LAMINAR SUBLAYER RESISTANCE FOR HEAT (Rb = 5/U*)   - JP 8/01
-!
+! 
 !   Reference: Pleim (2006): JAMC, 45, 341-347
 !
 !  REVISION HISTORY:
 !     A. Xiu        2/2005 - developed WRF version based on the MM5 PX LSM
 !     R. Gilliam    7/2006 - completed implementation into WRF model
-!     J. Pleim     12/2015 - Saturation WV mixing ratio was recomputed internally for all surfaces.
-!                            Now, it's only recomputed internally at initial timestep or over water.
-!                            Otherwise, the surface water vapor mixing ratio is read in from PXLSM where
-!                            it is computed from the water vapor surface flux from previous time step.
-!                            Also, The MOL calculation was modified to use the water vapor surface flux
+!     J. Pleim     12/2015 - Saturation WV mixing ratio was recomputed internally for all surfaces.  
+!                            Now, it's only recomputed internally at initial timestep or over water. 
+!                            Otherwise, the surface water vapor mixing ratio is read in from PXLSM where 
+!                            it is computed from the water vapor surface flux from previous time step.  
+!                            Also, The MOL calculation was modified to use the water vapor surface flux 
 !                            from previous time step to compute surface buoyancy flux.
 !
-!***********************************************************************
+!*********************************************************************** 
 !-------------------------------------------------------------------
 !-- U3D         3D u-velocity interpolated to theta points (m/s)
 !-- V3D         3D v-velocity interpolated to theta points (m/s)
@@ -89,7 +89,7 @@ CONTAINS
 !-- FLHC        exchange coefficient for heat (m/s)
 !-- FLQC        exchange coefficient for moisture (m/s)
 !-- QGH         lowest-level saturated mixing ratio
-!-- QSFC        SPECIFIC HUMIDITY AT LOWER BOUNDARY
+!-- QSFC        SPECIFIC HUMIDITY AT LOWER BOUNDARY				
 !-- RMOL        inverse Monin-Obukhov length (1/m)
 !-- U10         diagnostic 10m u wind
 !-- V10         diagnostic 10m v wind
@@ -103,7 +103,7 @@ CONTAINS
 !-- SVP3        constant for saturation vapor pressure (K)
 !-- SVPT0       constant for saturation vapor pressure (K)
 !-- EP1         constant for virtual temperature (R_v/R_d - 1) (dimensionless)
-!-- EP2         constant for specific humidity calculation
+!-- EP2         constant for specific humidity calculation 
 !               (R_d/R_v) (dimensionless)
 !-- KARMAN      Von Karman constant
 !-- ids         start index for i in domain
@@ -128,14 +128,14 @@ CONTAINS
       INTEGER,  INTENT(IN )   ::        ids,ide, jds,jde, kds,kde, &
                                         ims,ime, jms,jme, kms,kme, &
                                         its,ite, jts,jte, kts,kte
-!
+!                                                               
       INTEGER,  INTENT(IN )   ::        ISFFLX, ITIMESTEP
       REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
       REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN
 !
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                 INTENT(IN   )   ::                           dz8w
-
+                                        
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                 INTENT(IN   )   ::                           QV3D, &
                                                               P3D, &
@@ -150,7 +150,7 @@ CONTAINS
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(OUT  )               ::                U10, &
                                                               V10
-
+                                                             
 !
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(INOUT)               ::             REGIME, &
@@ -167,7 +167,7 @@ CONTAINS
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                 INTENT(IN   )   ::                            U3D, &
                                                               V3D
-
+                                        
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(IN   )               ::               PSFC
 
@@ -188,9 +188,9 @@ CONTAINS
                                                               QGH
 
 
-
+                                    
       REAL,     INTENT(IN   )                  ::   CP,G,ROVCP,R,XLV,DX
-
+ 
 ! LOCAL VARS
 
       REAL,     DIMENSION( its:ite ) ::                       U1D, &
@@ -205,7 +205,7 @@ CONTAINS
       INTEGER ::  I,J
 
       DO J=jts,jte
-
+   
         DO i=its,ite
           dz8w1d(i) =dz8w(i,1,j)
           U1D(i)    =U3D(i,1,j)
@@ -215,10 +215,10 @@ CONTAINS
           T1D(i)    =T3D(i,1,j)
           TH1D(i)   =TH3D(i,1,j)
         ENDDO
-
-
+        
+        
         !  TST, WST, MOLENGTH, USTM need to be recaculated or passed in
-
+        
         CALL PXSFCLAY1D(J,U1D,V1D,T1D,TH1D,QV1D,P1D,dz8w1d,          &
                 CP,G,ROVCP,R,XLV,PSFC(ims,j),CHS(ims,j),CHS2(ims,j), &
                 CQS2(ims,j),CPM(ims,j),PBLH(ims,j), RMOL(ims,j),   &
@@ -260,7 +260,7 @@ CONTAINS
                                         ims,ime, jms,jme, kms,kme, &
                                         its,ite, jts,jte, kts,kte, &
                                         J
-!
+!                                                               
       INTEGER,  INTENT(IN )   ::        ISFFLX, ITIMESTEP
       REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
       REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN
@@ -305,7 +305,7 @@ CONTAINS
       REAL,     DIMENSION( ims:ime )                             , &
                 INTENT(OUT)     ::                        U10,V10, &
                                                           LH
-
+                                    
       REAL,     INTENT(IN   )                    ::   CP,G,ROVCP,XLV,DX,R
 
 ! MODULE-LOCAL VARIABLES, DEFINED IN SUBROUTINE SFCLAY
@@ -317,7 +317,7 @@ CONTAINS
                                                               P1D, &
                                                               T1D, &
                                                            THETA1
-
+ 
 ! LOCAL VARS
 
       REAL,     DIMENSION( its:ite )        ::                 ZA, &
@@ -331,7 +331,7 @@ CONTAINS
                                                          MOLENGTH
 !
       REAL,     DIMENSION( its:ite )        ::                     &
-                                                      RHOX,GOVRTH
+                                                      RHOX,GOVRTH  
 !
       REAL,     DIMENSION( its:ite )        ::               PSFC
 !
@@ -348,7 +348,7 @@ CONTAINS
       REAL    ::  TV0,CPOT,RICRITI,AM,AH,SQLNZZ0,RBH,RBW,TSTV
       REAL    ::  PSIH2, PSIM2, PSIH10, PSIM10, CQS,TMPVTCON,TST,QST
 
-!-------------------------------Exicutable starts here--------------------
+!-------------------------------Exicutable starts here-------------------- 
 
       DO i = its,ite
 ! PSFC cb
@@ -368,39 +368,39 @@ CONTAINS
            & 11.64*LOG(273.15/TG(I)) + 0.02265*(273.15 - TG(I)))
         ELSE
            !SATURATION VAPOR PRESSURE WRT WATER (Bolton 1980)
-           E1=SVP1*EXP( SVP2*(TG(I)-SVPT0)/(TG(I)-SVP3) )
+           E1=SVP1*EXP( SVP2*(TG(I)-SVPT0)/(TG(I)-SVP3) )  
         ENDIF
 !-- If water or initial timestep use saturation MR for qsfc, otherwise use from LSM
-        IF (xland(i).gt.1.5 .or. QSFC(i).le.0.0.or.itimestep.eq.1) THEN
+        IF (xland(i).gt.1.5 .or. QSFC(i).le.0.0.or.itimestep.eq.1) THEN                     
            QSFC(I)=EP2*E1/(PSFC(I)-E1)
         ENDIF
-
+        
 ! QGH CHANGED TO USE LOWEST-LEVEL AIR TEMP CONSISTENT WITH MYJSFC CHANGE
 ! Q2SAT = QGH IN LSM
-        E1=SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))
-        PL = P1D(I)/1000.
-        QGH(I)=EP2*E1/(PL-E1)
-        CPM(I)=CP*(1.+0.8*QV1D(I))
-      ENDDO
+        E1=SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))  
+        PL = P1D(I)/1000.                     
+        QGH(I)=EP2*E1/(PL-E1)                                                 
+        CPM(I)=CP*(1.+0.8*QV1D(I))                                   
+      ENDDO                                                                   
 
 !.......... compute the thetav at ground
       DO I = its, ite
 !        TV0       = TG(I) * (1.0 + EP1 * QSFC(I)*MAVAIL(I))
         TV0       = TG(I) * (1.0 + EP1 * QSFC(I))
-        CPOT      = (100./PSFC(I))**ROVCP
+        CPOT      = (100./PSFC(I))**ROVCP 
         TH0(I)    = TV0 * CPOT
         THETAG(I) = CPOT * TG(I)
       ENDDO
-!
-!-----COMPUTE THE HEIGHT OF FULL- AND HALF-SIGMA LEVELS ABOVE GROUND
-!     LEVEL, AND THE LAYER THICKNESSES.
-!
-!... DZ8W1D is DZ between full sigma levels and Z0 is the height of the first
+!                                                                                
+!-----COMPUTE THE HEIGHT OF FULL- AND HALF-SIGMA LEVELS ABOVE GROUND             
+!     LEVEL, AND THE LAYER THICKNESSES.                                          
+!                                                                                
+!... DZ8W1D is DZ between full sigma levels and Z0 is the height of the first 
 !    half sigma level
       DO I = its,ite
-        ZA(I) = 0.5 * DZ8W1D(I)
+        ZA(I) = 0.5 * DZ8W1D(I)                                
         WS(I)   = SQRT(US(I) * US(I) + VS(I) * VS(I))
-      ENDDO
+      ENDDO                                                                   
 !
 !-----CALCULATE BULK RICHARDSON NO. OF SURFACE LAYER, ACCORDING TO
 !     AKB(1976), EQ(12).
@@ -455,7 +455,7 @@ CONTAINS
       DO I = its,ite
         DTG       = THETA1(I) - THETAG(I)
         PSIX      = GZ1OZ0(I) - PSIM(I)
-        UST(I)=0.5*UST(I)+0.5*KARMAN*WSPD(I)/PSIX
+        UST(I)=0.5*UST(I)+0.5*KARMAN*WSPD(I)/PSIX                                             
         USTM(I) = UST(I)
 
 !      ------- OVER WATER, ALTER ROUGHNESS LENGTH (Z0) ACCORDING TO WIND (UST).
@@ -466,29 +466,29 @@ CONTAINS
           PSIX      = GZ1OZ0(I) - PSIM(I)
           UST(I)  = KARMAN * WSPD(I) / PSIX
           USTM(I) = UST(I)
-        ENDIF
+        ENDIF 
 
         RA(I)  = PR0 * (GZ1OZ0(I) - PSIH(I)) / (KARMAN * UST(I))
         RBH    = 5.0 / UST(I)                ! 5/U*  ! WESELY AND HICKS (1977)
-!       ------- RB FOR WATER VAPOR =  5*(0.606/0.709)^2/3 /UST = 4.503/UST    hi
-        RBW    = 4.503/UST(I)
+!       ------- RB FOR WATER VAPOR =  5*(0.606/0.709)^2/3 /UST = 4.503/UST    hi               
+        RBW    = 4.503/UST(I)                                       
         CHS(I) = 1./(RA(I) + RBH)
         CQS    = 1./(RA(I) + RBW)
         MOL(I) = DTG * CHS(I) / UST(I)
         TMPVTCON  = 1.0 + EP1 * QV1D(i)
         TST = DTG * CHS(I)/UST(i)
-        TSTV  = (THETAV1(I) - TH0(I)) * CHS(I) / UST(I)
-        IF (ABS(TSTV) .LT. 1.E-5)  TSTV = 1.E-5
+        TSTV  = (THETAV1(I) - TH0(I)) * CHS(I) / UST(I) 
+        IF (ABS(TSTV) .LT. 1.E-5)  TSTV = 1.E-5 
         MOLENGTH(I) = THETAV1(I) * UST(I) * UST(I) / (KARMAN * G * TSTV)
 
 !       ---Compute 2m surface exchange coefficients for heat and moisture
         XMOL = MOLENGTH(I)
-        IF(MOLENGTH(I).GT.0.0) XMOL = AMAX1(MOLENGTH(I),2.0)
-        RMOL(I) = 1/XMOL
-        ZOL(I)   = ZA(I)*RMOL(I)
-        ZOBOL = 1.5*RMOL(I)
-        Z10OL = 10.0*RMOL(I)
-        ZNTOL = ZNT(I)*RMOL(I)
+        IF(MOLENGTH(I).GT.0.0) XMOL = AMAX1(MOLENGTH(I),2.0)       
+        RMOL(I) = 1/XMOL                                           
+        ZOL(I)   = ZA(I)*RMOL(I)                                                        
+        ZOBOL = 1.5*RMOL(I)  
+        Z10OL = 10.0*RMOL(I)                                                      
+        ZNTOL = ZNT(I)*RMOL(I)                                                  
         IF(XMOL.LT.0.0) THEN
           YNT = ( 1.0 - GAMAH * ZNTOL )**0.5
           YOB = ( 1.0 - GAMAH * ZOBOL )**0.5
@@ -498,45 +498,45 @@ CONTAINS
           psim10 = 2.0 * ALOG( (1.0+x1) / (1.0+x2) ) +        &
                          ALOG( (1.0+x1*x1) / (1.0+x2*x2)) -   &
                          2.0 * ATAN(x1) + 2.0 * ATAN(x2)
-        ELSE
-          IF((ZOBOL-ZNTOL).LE.1.0) THEN
-            PSIH2 = -BETAH*(ZOBOL-ZNTOL)
-          ELSE
-            PSIH2 = 1.-BETAH-(ZOBOL-ZNTOL)
-          ENDIF
-          IF((Z10OL-ZNTOL).LE.1.0) THEN
-            PSIM10 = -BETAM*(Z10OL-ZNTOL)
-          ELSE
-            PSIM10 = 1.-BETAM-(Z10OL-ZNTOL)
-          ENDIF
-        ENDIF
+        ELSE 
+          IF((ZOBOL-ZNTOL).LE.1.0) THEN                                       
+            PSIH2 = -BETAH*(ZOBOL-ZNTOL)                                     
+          ELSE                                                                
+            PSIH2 = 1.-BETAH-(ZOBOL-ZNTOL)                                   
+          ENDIF                                                               
+          IF((Z10OL-ZNTOL).LE.1.0) THEN                                       
+            PSIM10 = -BETAM*(Z10OL-ZNTOL)                                     
+          ELSE                                                                
+            PSIM10 = 1.-BETAM-(Z10OL-ZNTOL)                                   
+          ENDIF                                                               
+        ENDIF 
         G2OZ0  = ALOG(1.5 / ZNT(I))
         G10OZ0 = ALOG(10.0 / ZNT(I))
         RA2  = PR0 * (G2OZ0 - PSIH2) / (KARMAN * UST(I))
         CHS2(I) = 1.0/(RA2 + RBH)
-        CQS2(I) = 1.0/(RA2 + RBW)
-        U10(I)  = US(I)*(G10OZ0-PSIM10)/PSIX
-        V10(I)  = VS(I)*(G10OZ0-PSIM10)/PSIX
+        CQS2(I) = 1.0/(RA2 + RBW) 
+        U10(I)  = US(I)*(G10OZ0-PSIM10)/PSIX                                    
+        V10(I)  = VS(I)*(G10OZ0-PSIM10)/PSIX                                            
 
-!       -----COMPUTE SURFACE HEAT AND MOIST FLUX:
+!       -----COMPUTE SURFACE HEAT AND MOIST FLUX:                                                
         FLHC(i)=CPM(I)*RHOX(I)*CHS(I)
         FLQC(i)=RHOX(I)*CQS*MAVAIL(I)
-        QFX(I)=FLQC(I)*(QSFC(I)-QV1D(I))
-        QFX(I)=AMAX1(QFX(I),0.)
+        QFX(I)=FLQC(I)*(QSFC(I)-QV1D(I))                                     
+        QFX(I)=AMAX1(QFX(I),0.)                                            
         LH(I)=XLV*QFX(I)
-        IF(XLAND(I)-1.5.GT.0.)THEN
-          HFX(I)=-FLHC(I)*DTG
-        ELSEIF(XLAND(I)-1.5.LT.0.)THEN
-          HFX(I)=-FLHC(I)*DTG
-          HFX(I)=AMAX1(HFX(I),-250.)
-        ENDIF
-      ENDDO
+        IF(XLAND(I)-1.5.GT.0.)THEN                                           
+          HFX(I)=-FLHC(I)*DTG                               
+        ELSEIF(XLAND(I)-1.5.LT.0.)THEN                                       
+          HFX(I)=-FLHC(I)*DTG                               
+          HFX(I)=AMAX1(HFX(I),-250.)                                       
+        ENDIF      
+      ENDDO                                           
 
 
    END SUBROUTINE PXSFCLAY1D
 
 !====================================================================
-   SUBROUTINE pxsfclayinit( allowed_to_read )
+   SUBROUTINE pxsfclayinit( allowed_to_read )         
 
    LOGICAL , INTENT(IN)      ::      allowed_to_read
    INTEGER                   ::      N
@@ -545,6 +545,6 @@ CONTAINS
 
    END SUBROUTINE pxsfclayinit
 
-!-------------------------------------------------------------------
+!-------------------------------------------------------------------          
 
 END MODULE module_sf_pxsfclay

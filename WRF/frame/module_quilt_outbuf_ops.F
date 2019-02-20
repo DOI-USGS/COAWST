@@ -1,8 +1,8 @@
 MODULE module_quilt_outbuf_ops
 !<DESCRIPTION>
 !<PRE>
-! This module contains routines and data structures used by the I/O quilt
-! servers to assemble fields ("quilting") and write them to disk.
+! This module contains routines and data structures used by the I/O quilt 
+! servers to assemble fields ("quilting") and write them to disk.  
 !</PRE>
 !</DESCRIPTION>
   INTEGER, PARAMETER :: tabsize = 5
@@ -11,16 +11,16 @@ MODULE module_quilt_outbuf_ops
 
 ! ARP, for PNC-enabled quilting, 02/06/2010
   TYPE varpatch
-    LOGICAL                            :: forDeletion ! TRUE if patch to be
+    LOGICAL                            :: forDeletion ! TRUE if patch to be 
                                                       ! deleted
     INTEGER, DIMENSION(3)              :: PatchStart, PatchEnd, PatchExtent
-    REAL,    POINTER, DIMENSION(:,:,:) :: rptr
+    REAL,    POINTER, DIMENSION(:,:,:) :: rptr 
     INTEGER, POINTER, DIMENSION(:,:,:) :: iptr
   END TYPE varpatch
 
   ! With PNC-enabled quilting, each table entry consists of a series of
   ! 'npatch' patches (one for each of the compute PEs that this IOServer has
-  ! as clients). We attempt to stitch these together before finally
+  ! as clients). We attempt to stitch these together before finally 
   ! writing the data to disk.
   TYPE outpatchlist
     CHARACTER*80                       :: VarName, DateStr, MemoryOrder, &
@@ -37,15 +37,15 @@ MODULE module_quilt_outbuf_ops
 
   TYPE(outpatchlist), DIMENSION(tabsize), SAVE :: outpatch_table
 
-  ! List of which of the initial set of patches saved by the IOServer have
-  ! been successfully stitched together. Without any stitching, each patch's
+  ! List of which of the initial set of patches saved by the IOServer have 
+  ! been successfully stitched together. Without any stitching, each patch's 
   ! entry contains just itself:
   !   JoinedPatches(1,ipatch) = ipatch
   ! If jpatch is then stitched to ipatch then we do:
   !   JoinedPatches(2,ipatch) = jpatch
   ! and so on.
-  INTEGER, ALLOCATABLE, DIMENSION(:,:), SAVE :: JoinedPatches
-
+  INTEGER, ALLOCATABLE, DIMENSION(:,:), SAVE :: JoinedPatches 
+ 
   ! The no. of original patches to be stitched together to make each new patch
   ! i.e. if the 2nd new patch consists of 4 of the original patches stitched
   ! together then:
@@ -60,7 +60,7 @@ MODULE module_quilt_outbuf_ops
     INTEGER                            :: ndim
     INTEGER, DIMENSION(3)              :: DomainStart, DomainEnd
     INTEGER                            :: FieldType
-    REAL,    POINTER, DIMENSION(:,:,:) :: rptr
+    REAL,    POINTER, DIMENSION(:,:,:) :: rptr 
     INTEGER, POINTER, DIMENSION(:,:,:) :: iptr
   END TYPE outrec
 
@@ -71,7 +71,7 @@ CONTAINS
   SUBROUTINE init_outbuf
 !<DESCRIPTION>
 !<PRE>
-! This routine re-initializes module data structures.
+! This routine re-initializes module data structures.  
 !</PRE>
 !</DESCRIPTION>
     IMPLICIT NONE
@@ -127,12 +127,12 @@ CONTAINS
                                 mytask, ntasks )
 !<DESCRIPTION>
 !<PRE>
-! This routine writes all of the records stored in outpatch_table to the
+! This routine writes all of the records stored in outpatch_table to the 
 ! file referenced by DataHandle using pNetCDF. The patches constituting
 ! each record are stitched together as far as is possible before
 ! the pNetCDF I/O routines are called to accomplish the write.
-!
-! It then re-initializes module data structures.
+! 
+! It then re-initializes module data structures.  
 !</PRE>
 !</DESCRIPTION>
     USE module_state_description
@@ -148,13 +148,13 @@ CONTAINS
     INTEGER, ALLOCATABLE, DIMENSION(:) :: count_buf
     INTEGER               :: min_count
     LOGICAL               :: do_indep_write ! If no. of patches differs between
-                                            ! IO Servers then we will have to
-                                            ! switch pnetcdf into
-                                            ! independent-writes mode for some
+                                            ! IO Servers then we will have to 
+                                            ! switch pnetcdf into 
+                                            ! independent-writes mode for some 
                                             ! of them
     CHARACTER*256         :: mess
 
-    DomainDesc = 0
+    DomainDesc = 0 
 
     ALLOCATE(count_buf(ntasks), Stat=Status)
     IF(Status /= 0)THEN
@@ -176,12 +176,12 @@ CONTAINS
 
         CASE ( IO_PNETCDF   )
 
-          ! Situation is more complicated in this case since field data stored
-          ! as a list of patches rather than in one array of global-domain
+          ! Situation is more complicated in this case since field data stored 
+          ! as a list of patches rather than in one array of global-domain 
           ! extent.
           ! PatchStart(1) - PatchEnd(1) is dimension with unit stride.
 
-          ! Quilt patches back together where possible in order to minimise
+          ! Quilt patches back together where possible in order to minimise 
           ! number of individual writes
           CALL stitch_outbuf_patches(ii)
 
@@ -197,7 +197,7 @@ CONTAINS
 	                     count_buf, 1, MPI_INTEGER, &
 	                     local_comm, Status)
 
-          ! Work out the minimum no. of patches on any IO Server and whether
+          ! Work out the minimum no. of patches on any IO Server and whether 
           ! or not we will have to enter independent IO mode.
           min_count = outpatch_table(ii)%nActivePatch
           DO jj=1,ntasks, 1
@@ -212,10 +212,10 @@ CONTAINS
 !          CALL wrf_message(mess)
 
           IF ( outpatch_table(ii)%FieldType .EQ. WRF_FLOAT ) THEN
-
-             ! Loop over the patches in this field up to the number that
+             
+             ! Loop over the patches in this field up to the number that 
              ! every IO Server has. This is slightly tricky now
-             ! that some of them may be 'deleted.'
+             ! that some of them may be 'deleted.' 
 
              ipatch = 0
              icnt = 0
@@ -243,8 +243,8 @@ CONTAINS
                                  outpatch_table(ii)%DimNames ,                   &!*
                                  outpatch_table(ii)%DomainStart,                 &
                                  outpatch_table(ii)%DomainEnd,                   &
-                                 ! ARP supply magic number as MemoryStart and
-                                 ! MemoryEnd to signal that this routine is
+                                 ! ARP supply magic number as MemoryStart and 
+                                 ! MemoryEnd to signal that this routine is 
                                  ! being called from quilting.
                                  -998899,                                        &
                                  -998899,                                        &
@@ -258,9 +258,9 @@ CONTAINS
              END DO
 
              IF( do_indep_write )THEN
-                ! We must do the next few patches (if any) in independent IO
-                ! mode as not all of the IO Servers have the same no. of
-                ! patches.
+                ! We must do the next few patches (if any) in independent IO 
+                ! mode as not all of the IO Servers have the same no. of 
+                ! patches. 
                 ! outpatch_table(ii)%nActivePatch holds the no. of live patches
                 ! for this IO Server
 
@@ -285,8 +285,8 @@ CONTAINS
                                  outpatch_table(ii)%DimNames ,                   &!*
                                  outpatch_table(ii)%DomainStart,                 &
                                  outpatch_table(ii)%DomainEnd,                   &
-                                 ! ARP supply magic number as MemoryStart and
-                                 ! MemoryEnd to signal that this routine is
+                                 ! ARP supply magic number as MemoryStart and 
+                                 ! MemoryEnd to signal that this routine is 
                                  ! being called from quilting.
                                  -998899,                                        &
                                  -998899,                                        &
@@ -308,9 +308,9 @@ CONTAINS
 
           ELSE IF ( outpatch_table(ii)%FieldType .EQ. WRF_INTEGER ) THEN
 
-             ! Loop over the patches in this field up to the number that
+             ! Loop over the patches in this field up to the number that 
              ! every IO Server has. This is slightly tricky now
-             ! that some of them may be 'deleted.'
+             ! that some of them may be 'deleted.' 
              ipatch = 0
              icnt = 0
              DO WHILE ( icnt < min_count )
@@ -332,8 +332,8 @@ CONTAINS
                                  outpatch_table(ii)%DimNames ,                    &!*
                                  outpatch_table(ii)%DomainStart,                  &
                                  outpatch_table(ii)%DomainEnd,                    &
-                                 ! ARP supply magic number as MemoryStart and
-                                 ! MemoryEnd to signal that this routine is
+                                 ! ARP supply magic number as MemoryStart and 
+                                 ! MemoryEnd to signal that this routine is 
                                  ! being called from quilting.
                                  -998899,                                         &
                                  -998899,                                         &
@@ -348,9 +348,9 @@ CONTAINS
 
              IF( do_indep_write )THEN
 
-                ! We have to do the next few patches in independent IO mode as
-                ! not all of the IO Servers have this many patches.
-                ! outpatch_table(ii)%npatch holds the no. of live patches for
+                ! We have to do the next few patches in independent IO mode as 
+                ! not all of the IO Servers have this many patches. 
+                ! outpatch_table(ii)%npatch holds the no. of live patches for 
                 ! this IO Server
                 CALL ext_pnc_start_independent_mode(DataHandle, Status)
 
@@ -373,8 +373,8 @@ CONTAINS
                                  outpatch_table(ii)%DimNames ,                   &!*
                                  outpatch_table(ii)%DomainStart,                 &
                                  outpatch_table(ii)%DomainEnd,                   &
-                                 ! ARP supply magic number as MemoryStart and
-                                 ! MemoryEnd to signal that this routine is
+                                 ! ARP supply magic number as MemoryStart and 
+                                 ! MemoryEnd to signal that this routine is 
                                  ! being called from quilting.
                                  -998899,                                        &
                                  -998899,                                        &
@@ -410,11 +410,11 @@ CONTAINS
   SUBROUTINE write_outbuf ( DataHandle , io_form_arg )
 !<DESCRIPTION>
 !<PRE>
-! This routine writes all of the records stored in outbuf_table to the
-! file referenced by DataHandle using format specified by io_form_arg.
-! This routine calls the package-specific I/O routines to accomplish
-! the write.
-! It then re-initializes module data structures.
+! This routine writes all of the records stored in outbuf_table to the 
+! file referenced by DataHandle using format specified by io_form_arg.  
+! This routine calls the package-specific I/O routines to accomplish 
+! the write.  
+! It then re-initializes module data structures.  
 !</PRE>
 !</DESCRIPTION>
     USE module_state_description
@@ -425,7 +425,7 @@ CONTAINS
     INTEGER               :: Comm, IOComm, DomainDesc ! dummy
     INTEGER               :: Status
     CHARACTER*256         :: mess
-    Comm = 0 ; IOComm = 0 ; DomainDesc = 0
+    Comm = 0 ; IOComm = 0 ; DomainDesc = 0 
 
     DO ii = 1, num_entries
       WRITE(mess,*)'writing ', &
@@ -728,7 +728,7 @@ integer i,j
 
     JoinedPatches(:,:) = -1
     ! Initialise these arrays to catch failures in the above allocate on
-    ! linux-based systems (e.g. Cray XE) where allocation only actually
+    ! linux-based systems (e.g. Cray XE) where allocation only actually 
     ! performed when requested memory is touched.
     PatchCount(:) = 0
     OldPatchStart(:,:) = 0
@@ -742,7 +742,7 @@ integer i,j
        JoinedPatches(1,jpatch) = jpatch
        PatchCount(jpatch) = 1
 
-       ! Store the location of each patch for use after we've decided how to
+       ! Store the location of each patch for use after we've decided how to 
        ! stitch them together
        OldPatchStart(:,jpatch) = outpatch_table(ibuf)%PatchList(jpatch)%PatchStart(:)
     END DO
@@ -764,7 +764,7 @@ integer i,j
 
           ! Look for patches that can be concatenated with ipatch in the first
           ! dimension (preferred since that is contiguous in memory in F90)
-          !  ________________         ____________
+          !  ________________         ____________  
           !  |               |        |           |
           ! Startx(j)     Endx(j) Startx(i)   Endx(i)
           !
@@ -781,7 +781,7 @@ integer i,j
                   outpatch_table(ibuf)%PatchList(ipatch)%PatchStart(3) ) .AND.&
 		 (outpatch_table(ibuf)%PatchList(jpatch)%PatchEnd(3)  ==      &
                   outpatch_table(ibuf)%PatchList(ipatch)%PatchEnd(3)) )THEN
-
+		
                 ! We can concatenate these two patches in first dimension
 !                WRITE(mess,"('Can concatenate patches ',I3,' and ',I3,' in dim 1')") ipatch, jpatch
 !                CALL wrf_message(mess)
@@ -796,7 +796,7 @@ integer i,j
                 CYCLE OUTER
              END IF
           END IF
-          !  ______________         ____________
+          !  ______________         ____________  
           !  |             |        |           |
           ! Startx(i)    Endx(i) Startx(j)   Endx(j)
           !
@@ -884,7 +884,7 @@ integer i,j
 
                  ! Go again...
                  ipatch = 1
-                 CYCLE OUTER
+                 CYCLE OUTER                 
               END IF
            END IF
 
@@ -914,7 +914,7 @@ integer i,j
 
                  ! Go again...
                  ipatch = 1
-                 CYCLE OUTER
+                 CYCLE OUTER                 
               END IF
            END IF
 
@@ -943,7 +943,7 @@ integer i,j
 
                  ! Go again...
                  ipatch = 1
-                 CYCLE OUTER
+                 CYCLE OUTER                 
               END IF
            END IF
 
@@ -970,7 +970,7 @@ integer i,j
        ! Count how many patches we're left with
        npatches = npatches + 1
 
-       ! If no patches have been merged together to make this patch then we
+       ! If no patches have been merged together to make this patch then we 
        ! don't have to do any more with it
        IF(PatchCount(jpatch) == 1) CYCLE
 
@@ -1002,7 +1002,7 @@ integer i,j
 
              ! Work out where to put it - the PatchList(i)%PatchStart() has been
              ! updated to hold the start of the newly quilted patch i. It will
-             ! therefore be less than or equal to the starts of each of the
+             ! therefore be less than or equal to the starts of each of the 
              ! constituent patches.
              pos(:) = OldPatchStart(:,ii) - &
                       outpatch_table(ibuf)%PatchList(jpatch)%PatchStart(:) + 1
@@ -1015,7 +1015,7 @@ integer i,j
                              = &
                       outpatch_table(ibuf)%PatchList(ii)%rptr(:, :, :)
 
-             ! Having copied the data from this patch, we can free-up the
+             ! Having copied the data from this patch, we can free-up the 
              ! associated buffer
              DEALLOCATE(outpatch_table(ibuf)%PatchList(ii)%rptr)
           END DO
@@ -1083,7 +1083,7 @@ integer i,j
     INTEGER :: ii
 
     ! Keep track of which patches we've merged: ipatch takes
-    ! on all of the original patches which currently make up
+    ! on all of the original patches which currently make up 
     ! jpatch.
     DO ii=1,PatchCount(jpatch),1
        PatchCount(ipatch) = PatchCount(ipatch) + 1
@@ -1099,23 +1099,23 @@ integer i,j
 END MODULE module_quilt_outbuf_ops
 
 ! don't let other programs see the definition of this; type mismatches
-! on inbuf will result;  may want to make a module program at some point
+! on inbuf will result;  may want to make a module program at some point 
   SUBROUTINE store_patch_in_outbuf( inbuf_r, inbuf_i, DateStr, VarName , FieldType, MemoryOrder, Stagger, DimNames, &
                                     DomainStart , DomainEnd , &
                                     MemoryStart , MemoryEnd , &
                                     PatchStart , PatchEnd )
 !<DESCRIPTION>
 !<PRE>
-! This routine does the "output quilting".
+! This routine does the "output quilting".  
 !
-! It stores a patch in the appropriate location in a domain-sized array
-! within an element of the outbuf_table data structure.  DateStr, VarName, and
-! MemoryOrder are used to uniquely identify which element of outbuf_table is
-! associated with this array.  If no element is associated, then this routine
-! first assigns an unused element and allocates space within that element for
-! the globally-sized array.  This routine also stores DateStr, VarName,
-! FieldType, MemoryOrder, Stagger, DimNames, DomainStart, and DomainEnd within
-! the same element of outbuf.
+! It stores a patch in the appropriate location in a domain-sized array 
+! within an element of the outbuf_table data structure.  DateStr, VarName, and 
+! MemoryOrder are used to uniquely identify which element of outbuf_table is 
+! associated with this array.  If no element is associated, then this routine 
+! first assigns an unused element and allocates space within that element for 
+! the globally-sized array.  This routine also stores DateStr, VarName, 
+! FieldType, MemoryOrder, Stagger, DimNames, DomainStart, and DomainEnd within 
+! the same element of outbuf.  
 !</PRE>
 !</DESCRIPTION>
     USE module_quilt_outbuf_ops
@@ -1135,7 +1135,7 @@ END MODULE module_quilt_outbuf_ops
     ii = 1
     found = .false.
     DO WHILE ( .NOT. found .AND. ii .LE. num_entries )
-      !TBH:  need to test other attributes too!
+      !TBH:  need to test other attributes too!  
       IF ( TRIM(VarName) .EQ. TRIM(outbuf_table(ii)%VarName) ) THEN
         IF ( TRIM(DateStr) .EQ. TRIM(outbuf_table(ii)%DateStr) ) THEN
           IF ( TRIM(MemoryOrder) .EQ. TRIM(outbuf_table(ii)%MemoryOrder) ) THEN
@@ -1201,7 +1201,7 @@ END MODULE module_quilt_outbuf_ops
   END SUBROUTINE store_patch_in_outbuf
 
 ! don't let other programs see the definition of this; type mismatches
-! on inbuf will result;  may want to make a module program at some point
+! on inbuf will result;  may want to make a module program at some point 
   SUBROUTINE store_patch_in_outbuf_pnc( inbuf_r, inbuf_i, DateStr, VarName , &
                                         FieldType, MemoryOrder, Stagger,     &
                                         DimNames ,                &
@@ -1211,14 +1211,14 @@ END MODULE module_quilt_outbuf_ops
                                         ntasks )
 !<DESCRIPTION>
 !<PRE>
-! This routine stores a patch in an array within an element of the
-! outpatch_table%PatchList data structure.  DateStr, VarName, and
-! MemoryOrder are used to uniquely identify which element of outpatch_table is
-! associated with this array.  If no element is associated, then this routine
-! first assigns an unused element and allocates space within that element.
-! This routine also stores DateStr, VarName,
-! FieldType, MemoryOrder, Stagger, DimNames, DomainStart, and DomainEnd within
-! the same element of outpatch.
+! This routine stores a patch in an array within an element of the 
+! outpatch_table%PatchList data structure.  DateStr, VarName, and 
+! MemoryOrder are used to uniquely identify which element of outpatch_table is 
+! associated with this array.  If no element is associated, then this routine 
+! first assigns an unused element and allocates space within that element.  
+! This routine also stores DateStr, VarName, 
+! FieldType, MemoryOrder, Stagger, DimNames, DomainStart, and DomainEnd within 
+! the same element of outpatch.  
 !</PRE>
 !</DESCRIPTION>
     USE module_quilt_outbuf_ops, Only: outpatch_table, tabsize, num_entries
@@ -1232,7 +1232,7 @@ END MODULE module_quilt_outbuf_ops
                                           MemoryEnd , PatchStart , PatchEnd
     CHARACTER*(*)         , INTENT(IN) :: DateStr , VarName, MemoryOrder , &
                                           Stagger, DimNames(3)
-    INTEGER, INTENT(IN) :: ntasks ! Number of compute tasks associated with
+    INTEGER, INTENT(IN) :: ntasks ! Number of compute tasks associated with 
                                   ! this IO server
 ! Local
     CHARACTER*256         :: mess
@@ -1245,7 +1245,7 @@ END MODULE module_quilt_outbuf_ops
     ii = 1
     found = .false.
     DO WHILE ( .NOT. found .AND. ii .LE. num_entries )
-      !TBH:  need to test other attributes too!
+      !TBH:  need to test other attributes too!  
       IF ( TRIM(VarName) .EQ. TRIM(outpatch_table(ii)%VarName) ) THEN
         IF ( TRIM(DateStr) .EQ. TRIM(outpatch_table(ii)%DateStr) ) THEN
           IF ( TRIM(MemoryOrder) .EQ. TRIM(outpatch_table(ii)%MemoryOrder) ) THEN
@@ -1300,7 +1300,7 @@ END MODULE module_quilt_outbuf_ops
          outpatch_table(num_entries)%PatchList(ii)%PatchStart(:) = 0
          outpatch_table(num_entries)%PatchList(ii)%PatchEnd(:) = 0
          outpatch_table(num_entries)%PatchList(ii)%PatchExtent(:) = 0
-      END DO
+      END DO 
 
       ii = num_entries
 
@@ -1398,11 +1398,11 @@ END MODULE module_quilt_outbuf_ops
   SUBROUTINE add_to_bufsize_for_field( VarName, Nbytes )
 !<DESCRIPTION>
 !<PRE>
-! This routine is a wrapper for C routine add_to_bufsize_for_field_c() that
-! is used to accumulate buffer sizes.  Buffer size Nbytes is added to the
-! curent buffer size for the buffer named VarName.  Any buffer space
-! associated with VarName is freed.  If a buffer named VarName does not exist,
-! a new one is assigned and its size is set to Nbytes.
+! This routine is a wrapper for C routine add_to_bufsize_for_field_c() that 
+! is used to accumulate buffer sizes.  Buffer size Nbytes is added to the 
+! curent buffer size for the buffer named VarName.  Any buffer space 
+! associated with VarName is freed.  If a buffer named VarName does not exist, 
+! a new one is assigned and its size is set to Nbytes.  
 !</PRE>
 !</DESCRIPTION>
     USE module_quilt_outbuf_ops
@@ -1420,15 +1420,15 @@ END MODULE module_quilt_outbuf_ops
     CALL add_to_bufsize_for_field_c ( VarNameAsInts, Nbytes )
     RETURN
   END SUBROUTINE add_to_bufsize_for_field
-
+  
   SUBROUTINE store_piece_of_field( inbuf, VarName, Nbytes )
 !<DESCRIPTION>
 !<PRE>
-! This routine is a wrapper for C routine store_piece_of_field_c() that
-! is used to store pieces of a field in an internal buffer.  Nbytes bytes of
-! buffer inbuf are appended to the end of the internal buffer named VarName.
-! An error occurs if either an internal buffer named VarName does not exist or
-! if there are fewer than Nbytes bytes left in the internal buffer.
+! This routine is a wrapper for C routine store_piece_of_field_c() that 
+! is used to store pieces of a field in an internal buffer.  Nbytes bytes of 
+! buffer inbuf are appended to the end of the internal buffer named VarName.  
+! An error occurs if either an internal buffer named VarName does not exist or 
+! if there are fewer than Nbytes bytes left in the internal buffer.  
 !</PRE>
 !</DESCRIPTION>
     USE module_quilt_outbuf_ops
@@ -1453,15 +1453,15 @@ END MODULE module_quilt_outbuf_ops
   SUBROUTINE retrieve_pieces_of_field( outbuf, VarName, obufsz, Nbytes_tot, lret )
 !<DESCRIPTION>
 !<PRE>
-! This routine is a wrapper for C routine retrieve_pieces_of_field_c() that
-! is used to extract the entire contents (i.e. all previously stored pieces of
-! fields) of the next internal buffer.  The name associated with this internal
-! buffer is returned in VarName.  The number of bytes read is returned in
-! Nbytes_tot.  Bytes are stored in outbuf whose size (in bytes) is obufsz.
-! If there are more than obufsz bytes left in the next internal buffer, then
-! only obufsz bytes are returned and the rest are discarded (probably an error
-! in the making!).  The internal buffer is then freed.  Flag lret is set to
-! .TRUE. iff there are more fields left to extract.
+! This routine is a wrapper for C routine retrieve_pieces_of_field_c() that 
+! is used to extract the entire contents (i.e. all previously stored pieces of 
+! fields) of the next internal buffer.  The name associated with this internal 
+! buffer is returned in VarName.  The number of bytes read is returned in 
+! Nbytes_tot.  Bytes are stored in outbuf whose size (in bytes) is obufsz.  
+! If there are more than obufsz bytes left in the next internal buffer, then 
+! only obufsz bytes are returned and the rest are discarded (probably an error 
+! in the making!).  The internal buffer is then freed.  Flag lret is set to 
+! .TRUE. iff there are more fields left to extract.  
 !</PRE>
 !</DESCRIPTION>
     USE module_quilt_outbuf_ops

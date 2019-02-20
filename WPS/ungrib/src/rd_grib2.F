@@ -18,6 +18,7 @@
 !                 stored.                                                     !
 !       gribflnm     : File name to open, if it is not already open.          !
 !       debug_level  : Integer for various amounts of printout.               !
+!       pmin         : Minimum pressure level (Pa) to process.                !
 !                                                                             !
 !    Output:                                                                  !
 !                                                                             !
@@ -33,9 +34,9 @@
 ! Code is based on code developed by Steve Gilbert NCEP & Kevin Manning NCAR  !
 ! Adapted for WPS: Jim Bresch, NCAR/MMM. Sept 2006                            !
 !*****************************************************************************!
-
-      SUBROUTINE rd_grib2(junit, gribflnm, hdate,
-     &  grib_edition, ireaderr, debug_level)
+      
+      SUBROUTINE rd_grib2(junit, gribflnm, hdate, 
+     &  grib_edition, ireaderr, debug_level, pmin)
 
       use grib_mod
       use params
@@ -75,6 +76,7 @@
       integer , dimension(maxlvl) :: level_array
       real :: glevel1, glevel2
       logical :: first = .true.
+      real :: pmin
 
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 C  SET ARGUMENTS
@@ -106,14 +108,14 @@ C  SET ARGUMENTS
 !/* -9    Error in close                                 */
 !/* -10   Read or wrote fewer data than requested        */
 
-!if ireaderr =1 we have hit the end of a file.
-!if ireaderr =2 we have hit the end of all the files.
-
+!if ireaderr =1 we have hit the end of a file. 
+!if ireaderr =2 we have hit the end of all the files. 
+ 
 
       ! Open a byte-addressable file.
       CALL BAOPENR(junit,gribflnm,IOS)
       first = .true.
-      if (ios.eq.0) then
+      if (ios.eq.0) then 
       VERSION: do
 
          ! Search opend file for the next GRIB2 messege (record).
@@ -121,7 +123,7 @@ C  SET ARGUMENTS
 
          ! Check for EOF, or problem
          if (lgrib.eq.0) then
-            exit
+            exit 
          endif
 
          ! Check size, if needed allocate more memory.
@@ -157,7 +159,7 @@ C  SET ARGUMENTS
          if (grib_edition.ne.2) then
               exit VERSION
          endif
-
+         
          ! Additional print statments for developer.
 !MGD         if ( debug_level .GT. 100 ) then
 !MGD     print *,'G2 SECTION 0: ',(listsec0(j),j=1,3)
@@ -170,7 +172,7 @@ C  SET ARGUMENTS
          ! ----
          ! Once per file fill in date, model and projection values.
 
-         if (first) then
+         if (first) then 
            first = .false.
 
            ! Build the 19-character date string, based on GRIB2 header date
@@ -206,14 +208,14 @@ C  SET ARGUMENTS
      &            newline=.true.,i1=gfld%ipdtmpl(8))
 	     endif
 	   else
-!  pdt 4.8 data are time-averaged, accumulated, or min/max fields with the
-!  ending (valid) time provided.
-	     year  =gfld%ipdtmpl(16)
+!  pdt 4.8 data are time-averaged, accumulated, or min/max fields with the 
+!  ending (valid) time provided. 
+	     year  =gfld%ipdtmpl(16) 
 	     month =gfld%ipdtmpl(17)
 	     day   =gfld%ipdtmpl(18)
 	     hour  =gfld%ipdtmpl(19)
-	     minute=gfld%ipdtmpl(20)
-	     second=gfld%ipdtmpl(21)
+	     minute=gfld%ipdtmpl(20) 
+	     second=gfld%ipdtmpl(21) 
 	     fcst = 0.
 	   endif
 
@@ -222,7 +224,7 @@ C  SET ARGUMENTS
 
            !print *, 'ymd',gfld%idsect(6),gfld%idsect(7),gfld%idsect(8)
            !print *, 'hhmm  ',gfld%idsect(9),gfld%idsect(10)
-
+   
            call build_hdate(hdate,year,month,day,hour,minute,second)
            call mprintf(.true.,DEBUG,"G2 hdate = %s ", newline=.true.,
      &                  s1=hdate)
@@ -312,7 +314,7 @@ C  SET ARGUMENTS
                map%source = 'NOAA GSD HRRR Model'
              else if (iprocess .eq. 105) then
                map%source = 'NOAA GSD'
-             else
+             else 
                print *,'Unknown GSD source'
                stop
              endif
@@ -327,13 +329,25 @@ C  SET ARGUMENTS
            else
              map%source = 'unknown model and orig center'
            end if
+           if (icenter.eq.7) then
+             if (iprocess.eq.81 .or. iprocess.eq.82 .or.
+     &           iprocess.eq.96) then
+!  pmin should not be 15 or 40 hPa for gfs files. Use the next highest level.
+               if (pmin .eq. 1500.) then
+                 pmin = 1000.
+               else if (pmin .eq. 4000.) then
+                 pmin = 3000.
+               endif
+             endif
+           endif
+
            call mprintf(.true.,DEBUG,"G2 source is = %s ",
      &                  newline=.true., s1=map%source)
 
            !--
 
            ! Store information about the grid containing the data.
-           ! This stuff gets stored in the MAP variable, as defined in
+           ! This stuff gets stored in the MAP variable, as defined in 
            ! module GRIDINFO.
 
            map%startloc = 'SWCORNER'
@@ -353,7 +367,7 @@ C  SET ARGUMENTS
      &                         gfld%igdtmpl(2),gfld%igdtmpl(3))
 
 ! Fix for NCEP 1/12 degree grids (e.g. rtgsst)
-              if (icenter .eq. 7 .and. map%dx .eq. 83000. .and. map%nx
+              if (icenter .eq. 7 .and. map%dx .eq. 83000. .and. map%nx 
      &              .eq. 4320) then
                 map%lat1 = 89958333.
                 map%lon1 = 41667.
@@ -375,13 +389,13 @@ C  SET ARGUMENTS
      &                     (gfld%igdtmpl(11)/gfld%igdtmpl(10))
                 map%lon1 = map%lon1 *
      &                     (gfld%igdtmpl(11)/gfld%igdtmpl(10))
-                map%dx = map%dx *
+                map%dx = map%dx * 
      &                     (gfld%igdtmpl(11)/gfld%igdtmpl(10))
-                map%dy = map%dy *
+                map%dy = map%dy * 
      &                     (gfld%igdtmpl(11)/gfld%igdtmpl(10))
-               call mprintf(.true.,STDOUT,"WARNING - Basic angle option
+               call mprintf(.true.,STDOUT,"WARNING - Basic angle option 
      &has not been tested, continuing anyway")
-               call mprintf(.true.,LOGFILE,"WARNING - Basic angle option
+               call mprintf(.true.,LOGFILE,"WARNING - Basic angle option 
      & has not been tested, continuing anyway")
               endif
 
@@ -393,7 +407,7 @@ C  SET ARGUMENTS
               if ( jscan .eq. 0 .and. map%dy .gt. 0. ) then
                 map%dy = -1. * map%dy
               endif
-!             if ( map%lat1 .gt. gfld%igdtmpl(15) .and.
+!             if ( map%lat1 .gt. gfld%igdtmpl(15) .and. 
 !    &               map%dy .gt. 0. ) then
 !               map%dy = -1. * map%dy
 !               write(6,*) 'Resetting map%dy for iprocess = ',iprocess
@@ -461,14 +475,14 @@ C  SET ARGUMENTS
      &                       gfld%igdtmpl(2),gfld%igdtmpl(3))
 
               ! Scale dx/dy values to degrees, default range is 1e6.
-              if (map%dx.gt.10000) then
+              if (map%dx.gt.10000) then 
                  map%dx = map%dx/scale_factor
               endif
-              if (map%dy.gt.10000) then
+              if (map%dy.gt.10000) then 
                  map%dy = (map%dy/scale_factor)*(-1)
               endif
 
-              ! Fix for zonal shift in CFSR data, following a similar fix
+              ! Fix for zonal shift in CFSR data, following a similar fix 
               ! for global lat-lon data in rd_grib1.F
               if ( ABS(map%nx * map%dx - 360.0) < 1.0 ) then
                  if (ABS(map%dx - (360./real(map%nx))) > 0.00001) then
@@ -478,10 +492,10 @@ C  SET ARGUMENTS
               endif
 
               ! Scale lat/lon values to 0-180, default range is 1e6.
-              if (map%lat1.ge.scale_factor) then
+              if (map%lat1.ge.scale_factor) then 
                  map%lat1 = map%lat1/scale_factor
               endif
-              if (map%lon1.ge.scale_factor) then
+              if (map%lon1.ge.scale_factor) then 
                  map%lon1 = map%lon1/scale_factor
               endif
               if ( debug_level .gt. 2 ) then
@@ -491,15 +505,15 @@ C  SET ARGUMENTS
      &     i1=nint(map%dy))
               end if
            elseif (gfld%igdtnum.eq.32769) then ! Arakawa Non-E Staggered grid.
-              map%igrid = 6
-              map%nx = gfld%igdtmpl(8)
-              map%ny = gfld%igdtmpl(9)
-              map%dx = gfld%igdtmpl(17)
-              map%dy = gfld%igdtmpl(18)
-              map%lat1 = gfld%igdtmpl(12)
-              map%lon1 = gfld%igdtmpl(13)
-              map%lat0 = gfld%igdtmpl(15)
-              map%lon0 = gfld%igdtmpl(16)
+              map%igrid = 6               
+              map%nx = gfld%igdtmpl(8)        
+              map%ny = gfld%igdtmpl(9)        
+              map%dx = gfld%igdtmpl(17)        
+              map%dy = gfld%igdtmpl(18)       
+              map%lat1 = gfld%igdtmpl(12)        
+              map%lon1 = gfld%igdtmpl(13)        
+              map%lat0 = gfld%igdtmpl(15)        
+              map%lon0 = gfld%igdtmpl(16)        
               map%r_earth = earth_radius (gfld%igdtmpl(1),
      &                         gfld%igdtmpl(2),gfld%igdtmpl(3))
               if ((gfld%igdtmpl(10) .eq. 0).OR.
@@ -516,13 +530,13 @@ C  SET ARGUMENTS
      &                     (gfld%igdtmpl(11)/gfld%igdtmpl(10))
                 map%lon1 = map%lon1 *
      &                     (gfld%igdtmpl(11)/gfld%igdtmpl(10))
-                map%dx = map%dx *
+                map%dx = map%dx * 
      &                     (gfld%igdtmpl(11)/gfld%igdtmpl(10))
-                map%dy = map%dy *
+                map%dy = map%dy * 
      &                     (gfld%igdtmpl(11)/gfld%igdtmpl(10))
-               call mprintf(.true.,STDOUT,"WARNING - Basic angle option
+               call mprintf(.true.,STDOUT,"WARNING - Basic angle option 
      &has not been tested, continuing anyway")
-               call mprintf(.true.,LOGFILE,"WARNING - Basic angle option
+               call mprintf(.true.,LOGFILE,"WARNING - Basic angle option 
      & has not been tested, continuing anyway")
               endif
 
@@ -530,13 +544,13 @@ C  SET ARGUMENTS
               call mprintf(.true.,STDOUT,"GRIB2 Unknown Projection: %i",
      &          newline=.true.,i1=gfld%igdtnum)
               call mprintf(.true.,STDOUT,
-     &          "ungrib understands projections 0, 20, 30, and 40",
+     &          "ungrib understands projections 0, 20, 30, and 40", 
      &          newline=.true.)
               call mprintf(.true.,LOGFILE,
      &          "GRIB2 Unknown Projection: %i",
      &          newline=.true.,i1=gfld%igdtnum)
               call mprintf(.true.,LOGFILE,
-     &          "ungrib understands projections 0, 10, 20, 30, and 40",
+     &          "ungrib understands projections 0, 10, 20, 30, and 40", 
      &          newline=.true.)
        ! If the projection is not known, then it can't be processed by metgrid/plotfmt
                 stop 'Stop in rd_grib2'
@@ -544,7 +558,7 @@ C  SET ARGUMENTS
 
            call mprintf(.true.,DEBUG,"G2 igrid = %i ,  dx = %f ,  dy = %
      &f ", newline=.true., i1 = map%igrid, f1=map%dx, f2=map%dy)
-
+         
            if (icenter.eq.7) then
              call ncep_grid_num (gfld%igdtnum)
            endif
@@ -557,7 +571,7 @@ C  SET ARGUMENTS
          ! ----
 
          ! Continue to unpack GRIB2 field.
-         NUM_FIELDS: do n = 1, numfields
+         NUM_FIELDS: do n = 1, numfields 
 	   ! e.g. U and V would =2, otherwise its usually =1
            call gf_getfld(cgrib,lengrib,n,.FALSE.,expand,gfld,ierr)
            if (ierr.ne.0) then
@@ -629,17 +643,17 @@ C  SET ARGUMENTS
 !MGD     &             (gfld%coord_list(j),j=1,gfld%num_coord)
 !MGD           endif
            if ( gfld%ibmap .ne. 255 ) then
-              call mprintf(.true.,DEBUG,
-     &             'G2 Num. of Data Points = %i with BIT-MAP %i',
+              call mprintf(.true.,DEBUG, 
+     &             'G2 Num. of Data Points = %i with BIT-MAP %i', 
      &             newline=.true., i1=gfld%ndpts, i2=gfld%ibmap)
            else
-              call mprintf(.true.,DEBUG,
-     &             'G2 Num. of Data Points = %i NO BIT-MAP',
+              call mprintf(.true.,DEBUG, 
+     &             'G2 Num. of Data Points = %i NO BIT-MAP', 
      &             newline=.true., i1=gfld%ndpts)
            endif
 !MGD           print *,'G2 DRS TEMPLATE 5.',gfld%idrtnum,': ',
 !MGD     &          (gfld%idrtmpl(j),j=1,gfld%idrtlen)
-         endif ! Additional Print information
+         endif ! Additional Print information 
 ! ------------------------------------
 
 !         do i = 1, maxvar
@@ -656,13 +670,13 @@ C  SET ARGUMENTS
      & i5 = gfld%ipdtmpl(12), i6 = gfld%ipdtnum )
 
 
-         ! Test this data record against list of desired variables
+         ! Test this data record against list of desired variables 
          ! found in Vtable.
          ! ----
          MATCH_LOOP: do i=1,maxvar ! Max variables found in Vtable,
                                    ! maxvar is defined in table.mod
 
-           if ( gfld%discipline .eq. g2code(1,i) .and.   !Discipline
+           if ( gfld%discipline .eq. g2code(1,i) .and.   !Discipline 
      &          gfld%ipdtmpl(1) .eq. g2code(2,i) .and.   !Category
      &          gfld%ipdtmpl(2) .eq. g2code(3,i) .and.   !Parameter
      &          gfld%ipdtmpl(10) .eq. g2code(4,i) .and.  !Elevation
@@ -674,7 +688,7 @@ C  SET ARGUMENTS
      &                               gfld%ipdtmpl(2))
 
               !my_field (e.g. RH, TMP, similar to, but not the same as pabbrev)
-              my_field=namvar(i)
+              my_field=namvar(i) 
 
 !MGD    if (debug_level .gt. 50) then
 !MGD     write(6,*) 'namvar(i) = ',namvar(i),' pabbrev = ',pabbrev
@@ -704,8 +718,8 @@ C  SET ARGUMENTS
                 if ( ( gfld%ipdtmpl(14) .EQ. -1*(2**07-1) ) .AND.
 !    &               ( gfld%ipdtmpl(15) .EQ. -1*(2**31-1) ) ) THEN ! Some compilers cannot
                                                                    ! handle the initial 2**31
-                                                                   ! part of the computation,
-                                                                   ! which is an arithmetic
+                                                                   ! part of the computation, 
+                                                                   ! which is an arithmetic 
                                                                    ! overflow on 32 bit signed ints
      &               ( gfld%ipdtmpl(15) .EQ. -2147483647  ) ) THEN
 ! special UM grib2
@@ -729,7 +743,7 @@ C  SET ARGUMENTS
                 enddo TMP8LOOP
                 if (j .gt. maxvar ) then
                   write(6,'(a,i6,a)') 'Subsoil level ',
-     &               gfld%ipdtmpl(12),
+     &               gfld%ipdtmpl(12), 
      &           ' in the GRIB2 file, was not found in the Vtable'
                   cycle MATCH_LOOP
                 endif
@@ -741,6 +755,7 @@ C  SET ARGUMENTS
                  ! Pressure level (range from 1000mb to 0mb)
                  level=gfld%ipdtmpl(12) *
      &                           (10. ** (-1. * gfld%ipdtmpl(11)))
+		 if ( level .lt. pmin ) cycle MATCH_LOOP
               elseif((gfld%ipdtmpl(10).eq.105).or.
      &               (gfld%ipdtmpl(10).eq.118))then
                  ! Hybrid level (range from 1 to N)
@@ -753,7 +768,7 @@ C  SET ARGUMENTS
                  level=201300.
               elseif(gfld%ipdtmpl(10).eq.103) then
 	         ! Height above ground (m)
-		 if (gfld%ipdtmpl(12) .eq. 2. .or.
+		 if (gfld%ipdtmpl(12) .eq. 2. .or. 
      &               gfld%ipdtmpl(12) .eq. 1000. .or.     ! temp fix for hrrr maxref
      &               gfld%ipdtmpl(12) .eq. 10. ) then
                    level=200100.
@@ -762,7 +777,7 @@ C  SET ARGUMENTS
 		 endif
               elseif((gfld%ipdtmpl(10).ge.206 .and.
      &               gfld%ipdtmpl(10).le.234) .or.
-     &              (gfld%ipdtmpl(10).ge.242 .and.
+     &              (gfld%ipdtmpl(10).ge.242 .and.     
      &               gfld%ipdtmpl(10).le.254) .or.
      &              (gfld%ipdtmpl(10).eq.200) .or.
      &              (gfld%ipdtmpl(10).eq.10) ) then
@@ -774,7 +789,7 @@ C  SET ARGUMENTS
                  level=200100.
               elseif(gfld%ipdtmpl(10).eq.6) then
                  ! Level of Max wind
-                 level=200100.
+                 level=200100.  
               elseif(gfld%ipdtmpl(10).eq.7) then
                  ! Tropopause
                  level=200100.
@@ -797,12 +812,12 @@ C  SET ARGUMENTS
 
 !   Some grids need to be reordered. Until we get an example, this is
 !   a placeholder
-!             call reorder_it (hold_array, map%nx, map%ny, map%dx,
+!             call reorder_it (hold_array, map%nx, map%ny, map%dx, 
 !    &                 map%dy, iorder)
 
-              ! When we have reached this point, we have a data array ARRAY
-              ! which has some data we want to save, with field name FIELD
-              ! at pressure level LEVEL (Pa).  Dimensions of this data are
+              ! When we have reached this point, we have a data array ARRAY 
+              ! which has some data we want to save, with field name FIELD 
+              ! at pressure level LEVEL (Pa).  Dimensions of this data are 
               ! map%nx and map%ny.  Put this data into storage.
 
               !print *,'call put_storage',iplvl,my_field,hold_array(55),ith
@@ -816,8 +831,8 @@ C  SET ARGUMENTS
      &           (/map%nx, map%ny/)), map%nx,map%ny)
               deallocate(hold_array)
 
-              ! If Specific Humidity is present on hybrid levels AND
-              ! upper-air RH is missing, see if we can compute RH from
+              ! If Specific Humidity is present on hybrid levels AND 
+              ! upper-air RH is missing, see if we can compute RH from 
               ! Specific Humidity.
               if (.not. is_there(iplvl, 'RH') .and.
      &            is_there(iplvl, 'SH') .and.
@@ -827,8 +842,8 @@ C  SET ARGUMENTS
                  !call llstor_remove(iplvl, 'SH') !We are done with SH
               endif
 
-              ! If Specific Humidity is present on hybrid levels AND
-              ! upper-air RH is missing, see if we can compute RH from
+              ! If Specific Humidity is present on hybrid levels AND 
+              ! upper-air RH is missing, see if we can compute RH from 
               ! Specific Humidity - v2
               if (.not. is_there(iplvl, 'RH') .and.
      &            is_there(iplvl, 'SPECHUMD') .and.
@@ -872,12 +887,12 @@ C  SET ARGUMENTS
 
        nullify(gfld%local)            ! must be nullified before opening next file
        ireaderr=1
-      else
+      else 
         call mprintf (.true.,DEBUG,"open status failed because %i ",
      &                newline=.true., i1=ios)
         hdate = '9999-99-99_99:99:99'
         ireaderr=2
-      endif ! ireaderr check
+      endif ! ireaderr check 
 
       END subroutine rd_grib2
 
@@ -902,7 +917,7 @@ C  SET ARGUMENTS
 !       GRIB2FILE: File name to open, if it is not already open.              !
 !                                                                             !
 !    Output:                                                                  !
-!       GRIB_EDITION: Set to 1 for GRIB and set to 2 for GRIB2                !
+!       GRIB_EDITION: Set to 1 for GRIB and set to 2 for GRIB2                ! 
 !       IERR     : Error flag: 0 - no error on read from GRIB2 file.          !
 !                              1 - Hit the end of the GRIB2 file.             !
 !                              2 - The file GRIBFLNM we tried to open does    !
@@ -911,8 +926,8 @@ C  SET ARGUMENTS
 ! NOAA/FSL                                                                    !
 ! Sept 2004                                                                   !
 !*****************************************************************************!
-
-      SUBROUTINE edition_num(junit, gribflnm,
+      
+      SUBROUTINE edition_num(junit, gribflnm, 
      &  grib_edition, ireaderr)
 
       use grib_mod
@@ -956,13 +971,13 @@ C  SET ARGUMENTS
 !/* -9    Error in close                                 */
 !/* -10   Read or wrote fewer data than requested        */
 
-!if ireaderr =1 we have hit the end of a file.
-!if ireaderr =2 we have hit the end of all the files.
+!if ireaderr =1 we have hit the end of a file. 
+!if ireaderr =2 we have hit the end of all the files. 
 !if ireaderr =3 beginning characters 'GRIB' not found
 
       ! Open a byte-addressable file.
       CALL BAOPENR(junit,gribflnm,IOS)
-      if (ios.eq.0) then
+      if (ios.eq.0) then 
 
          ! Search opend file for the next GRIB2 messege (record).
          call skgb(junit,iseek,msk1,lskip,lgrib)
@@ -971,7 +986,7 @@ C  SET ARGUMENTS
          call mprintf((lgrib.eq.0),ERROR,
      &     "Grib2 file or date problem, stopping in edition_num.",
      &     newline=.true.)
-
+ 
          ! Check size, if needed allocate more memory.
          if (lgrib.gt.currlen) then
             if (allocated(cgrib)) deallocate(cgrib)
@@ -995,7 +1010,7 @@ C  SET ARGUMENTS
             ireaderr=3
             print*, "The beginning 4 characters >GRIB< were not found."
          endif
-
+   
          ! Unpack Section 0 - Indicator Section to extract GRIB edition field
          iofst=8*(istart+5)
          call gbyte(cgrib,discipline,iofst,8)     ! Discipline
@@ -1006,12 +1021,12 @@ C  SET ARGUMENTS
          CALL BACLOSE(junit,IOS)
          ireaderr=1
       else if (ios .eq. -4) then
-        call mprintf(.true.,ERROR,
+        call mprintf(.true.,ERROR, 
      &    "edition_num: unable to open %s",newline=.true.,s1=gribflnm)
-      else
+      else 
          print *,'edition_num: open status failed because',ios,gribflnm
          ireaderr=2
-      endif ! ireaderr check
+      endif ! ireaderr check 
 
       END subroutine edition_num
 
@@ -1025,23 +1040,23 @@ C  SET ARGUMENTS
       integer :: iiplvl
       real :: lat1, lon1, dx, dy
       real, dimension(ix,jx) :: T, P, RH, Q
-
+    
       real, parameter :: svp1=611.2
       real, parameter :: svp2=17.67
       real, parameter :: svp3=29.65
       real, parameter :: svpt0=273.15
       real, parameter :: eps = 0.622
-
+    
       real startlat, startlon, deltalat, deltalon
 
       call get_storage(iiplvl, 'P', P, ix, jx)
       call get_storage(iiplvl, 'TT', T, ix, jx)
       call get_storage(iiplvl, 'SH', Q, ix, jx)
-
+    
       rh=1.E2*(p*q/(q*(1.-eps)+eps))/(svp1*exp(svp2*(t-svpt0)/(T-svp3)))
-
+     
       call put_storage(iiplvl, 'RH', rh, ix, jx)
-
+    
       end subroutine g2_compute_rh_spechumd_upa
 
 !*****************************************************************************!
@@ -1054,25 +1069,25 @@ C  SET ARGUMENTS
       integer :: iiplvl
       real :: lat1, lon1, dx, dy
       real, dimension(ix,jx) :: T, TH, RH, Q, P
-
+    
       real, parameter :: svp1=611.2
       real, parameter :: svp2=17.67
       real, parameter :: svp3=29.65
       real, parameter :: svpt0=273.15
       real, parameter :: eps = 0.622
-
+    
       real startlat, startlon, deltalat, deltalon
 
       call get_storage(iiplvl, 'THETA', TH, ix, jx)
       call get_storage(iiplvl, 'TT', T, ix, jx)
       call get_storage(iiplvl, 'SPECHUMD', Q, ix, jx)
-
+    
       p=1.e5*(t/th)**(1005/287.05)
-
+     
       rh=1.E2*(p*q/(q*(1.-eps)+eps))/(svp1*exp(svp2*(t-svpt0)/(T-svp3)))
-
+     
       call put_storage(iiplvl, 'RH', rh, ix, jx)
-
+    
       end subroutine g2_compute_rh_spechumd_upa2
 
 !*****************************************************************************!
@@ -1085,22 +1100,22 @@ C  SET ARGUMENTS
       integer :: iiplvl
       real :: lat1, lon1, dx, dy
       real, dimension(ix,jx) :: T, TH, P
-
+    
       real, parameter :: svp1=611.2
       real, parameter :: svp2=17.67
       real, parameter :: svp3=29.65
       real, parameter :: svpt0=273.15
       real, parameter :: eps = 0.622
-
+    
       real startlat, startlon, deltalat, deltalon
 
       call get_storage(iiplvl, 'THETA', TH, ix, jx)
       call get_storage(iiplvl, 'TT', T, ix, jx)
-
+    
       p=1.e5*(t/th)**(1005/287.05)
-
+     
       call put_storage(iiplvl, 'PRESSURE', p, ix, jx)
-
+    
       end subroutine g2_compute_pressure_tth_upa
 
 !*****************************************************************************!
@@ -1109,7 +1124,7 @@ C  SET ARGUMENTS
 !
 !  Find the grib number for descriptive  labelling.
 !  Grib2 doesn't have a grid-number entry, so we have to figure it out
-!  from the parameters.
+!  from the parameters. 
 !
       use gridinfo       ! Included to define map%
       integer :: pnum
@@ -1121,35 +1136,35 @@ C  SET ARGUMENTS
       tmp8 = '        '
       if (pnum .eq. 30) then            ! lambert conformal
         if ( abs(map%dx - 12.19058) .lt. eps .and. map%nx .eq. 614) then
-          write(tmp8,'("GRID 218")')
-        else if (abs(map%dx - 40.63525) .lt. eps
+          write(tmp8,'("GRID 218")') 
+        else if (abs(map%dx - 40.63525) .lt. eps 
      &     .and. map%nx .eq. 185) then
-          write(tmp8,'("GRID 212")')
-        else if (abs(map%dx - 40.63525) .lt. eps
+          write(tmp8,'("GRID 212")') 
+        else if (abs(map%dx - 40.63525) .lt. eps 
      &     .and. map%nx .eq. 151) then
-          write(tmp8,'("GRID 236")')
-        else if (abs(map%dx - 81.2705) .lt. eps
+          write(tmp8,'("GRID 236")') 
+        else if (abs(map%dx - 81.2705) .lt. eps 
      &     .and. map%nx .eq. 93) then
-          write(tmp8,'("GRID 211")')
-        else if (abs (map%dx - 32.46341) .lt. eps
+          write(tmp8,'("GRID 211")') 
+        else if (abs (map%dx - 32.46341) .lt. eps 
      &     .and. map%nx .eq. 349) then
-          write(tmp8,'("GRID 221")')
-        else if (abs(map%dx - 20.317625) .lt. eps
+          write(tmp8,'("GRID 221")') 
+        else if (abs(map%dx - 20.317625) .lt. eps 
      &     .and. map%nx .eq. 301) then
-          write(tmp8,'("GRID 252")')
-        else if (abs(map%dx - 13.545087) .lt. eps
+          write(tmp8,'("GRID 252")') 
+        else if (abs(map%dx - 13.545087) .lt. eps 
      &     .and. map%nx .eq. 451) then
-          write(tmp8,'("GRID 130")')
+          write(tmp8,'("GRID 130")') 
         endif
       else if (pnum .eq. 20) then     ! polar stereographic
         if (abs(map%dx - 15.0) .lt. eps) then
-          write(tmp8,'("GRID  88")')
+          write(tmp8,'("GRID  88")') 
         endif
       else if (pnum .eq. 0) then      ! lat/lon
         if (abs(map%dx - 1.) .lt. eps .and. map%nx .eq. 360) then
-          write(tmp8,'("GRID   3")')
+          write(tmp8,'("GRID   3")') 
         else if (abs(map%dx - 0.5) .lt. eps .and. map%nx .eq. 720) then
-          write(tmp8,'("GRID   4")')
+          write(tmp8,'("GRID   4")') 
         endif
       endif
       map%source(25:32) = tmp8

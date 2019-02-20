@@ -5,7 +5,7 @@
 !   PRGMMR: Gilbert          ORG: W/NP11    DATE: 2002-12-19
 !
 ! ABSTRACT: This subroutine packs a spectral data field using the complex
-!   packing algorithm for spherical harmonic data as
+!   packing algorithm for spherical harmonic data as 
 !   defined in the GRIB2 Data Representation Template 5.51.
 !
 ! PROGRAM HISTORY LOG:
@@ -61,7 +61,7 @@
       enddo
 !
 !   Separate spectral coeffs into two lists; one to contain unpacked
-!   values within the sub-spectrum Js, Ks, Ms, and the other with values
+!   values within the sub-spectrum Js, Ks, Ms, and the other with values 
 !   outside of the sub-spectrum to be packed.
 !
       inc=1
@@ -93,7 +93,7 @@
       incu=incu-1
       if (incu .ne. Ts) then
          print *,'specpack: Incorrect number of unpacked values ',
-     &           'given:',Ts
+     &           'given:',Ts     
          print *,'specpack: Resetting idrstmpl(9) to ',incu
          Ts=incu
       endif
@@ -104,7 +104,7 @@
       ipos=4*Ts
 !
 !  Scale and pack the rest of the coefficients
-!
+! 
       tmplsim(2)=idrstmpl(2)
       tmplsim(3)=idrstmpl(3)
       tmplsim(4)=idrstmpl(4)

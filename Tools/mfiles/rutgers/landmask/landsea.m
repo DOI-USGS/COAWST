@@ -1,8 +1,10 @@
-function [F]=landsea(ncfile, clon, clat)
+function [F]=landsea(ncfile, varargin)
 
 % LANDSEA:  Computes and writes ROMS Land/Sea masks
 %
-% [F]=landsea(ncfile,Clon,Clat)
+% [F]=landsea(ncfile)
+% [F]=landsea(ncfile, database)
+% [F]=landsea(ncfile, clon, clat)
 %
 % Computes automatically the Land/Sea mask for an application grid and
 % writes it into input NetCDF file. The Land/Sea mask is computed from
@@ -11,8 +13,16 @@ function [F]=landsea(ncfile, clon, clat)
 % On Input:
 %
 %    ncfile      NetCDF file name (string)
-%    Clon        Coastline longitude (real vector)
-%    Clat        Coastline latitude  (real vector)
+%
+%    database    GSHHS database (character, OPTIONAL)
+%                  'f'    full resolution
+%                  'h'    high resolution
+%                  'i'    intermediate resolution (default)
+%                  'l'    load resolution
+%                  'c'    crude resolution
+% or
+%    clon        Coastline longitude (real vector, OPTIONAL)
+%    clat        Coastline latitude  (real vector, OPTIONAL)
 %
 % On Output:
 %
@@ -31,66 +41,86 @@ function [F]=landsea(ncfile, clon, clat)
 % "domask.m" from the SeaGrid package.
 %
 
-% svn $Id: landsea.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: landsea.m 926 2018-10-09 21:53:45Z arango $
 %=========================================================================%
 %  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
 
-extract_coast=false;
+Tstart=tic;                         % time profile
 
-if (nargin < 3),
-  DIR='~/ocean/GSHHS/Version_1.2';                % GSHHS directory path
+extract_coast=false;                % extract coastlines from GSHHS switch
 
-  extract_coast=true;           % Extract coastlines from GSHHS database
-% database='full';              % Full resolution database
-% database='high';              % High resolution database
-  database='intermediate';      % Intermediate resolution database
-% database='low';               % Low resolution database
-% database='crude';             % crude resolution database
-
-  switch database,
-    case 'full'
-      name='gshhs_f.b';
-    case 'high'
-      name='gshhs_h.b';
-    case 'intermediate'
-      name='gshhs_i.b';
-    case 'low'
-      name='gshhs_l.b';
-    case 'crude'
-      name='gshhs_c.b';
-  end
-
-  Cname=fullfile(DIR,name);
-  F.Cname=Cname;
-end
+Cfile=which('gshhs_h.b','-ALL');    % select first directory found
+DIR=fileparts(Cfile{1});            % others are shadowed
 
 F.ncfile=ncfile;
+
+switch numel(varargin)
+  case 0
+    extract_coast=true;
+    name='gshhs_i.b';               % intermediate resolution
+    Cname=fullfile(DIR,name);
+    F.Cname=Cname;
+  case 1
+    extract_coast=true;
+    database=varargin{1};
+    switch database
+      case 'f'                      % full resolution
+        name='gshhs_f.b';
+      case 'h'                      % high resolution
+        name='gshhs_h.b';
+      case 'i'                      % intermediate resolution
+        name='gshhs_i.b';
+      case 'l'                      % low resolution
+        name='gshhs_l.b';
+      case 'c'                      % crude resolution
+        name='gshhs_c.b';
+      otherwise
+        error(['LANDSEA: illegal GSHHS dataset resolution, ',database])
+    end
+    Cname=fullfile(DIR,name);
+    F.Cname=Cname;
+ case 2
+   clon=varargin{1};
+   clat=varargin{2};
+end
+
+% Open GRID NetCDF file for writing.
+
+ncid=netcdf.open(ncfile, 'WRITE');
 
 %-----------------------------------------------------------------------
 % Inquire grid NetCDF file about mask variables.
 %-----------------------------------------------------------------------
 
-got.mask_rho=false;  Vname.mask_rho='mask_rho';
-got.mask_psi=false;  Vname.mask_psi='mask_psi';
-got.mask_u  =false;  Vname.mask_u  ='mask_u';
-got.mask_v  =false;  Vname.mask_v  ='mask_v';
+VarList={'mask_rho', 'mask_psi', 'mask_u', 'mask_v'};
+
+for var = VarList
+  field=char(var);
+  got.(field)=false;
+  Vname.(field)=field;
+end
 
 V=nc_vnames(ncfile);
 nvars=length(V.Variables);
-for n=1:nvars,
+
+for n=1:nvars
   name=char(V.Variables(n).Name);
   switch name
     case {Vname.mask_rho}
       got.mask_rho=true;
+      Vid.(name)=netcdf.inqVarID(ncid,name);
     case {Vname.mask_psi}
       got.mask_psi=true;
-    case {Vname.mask_u}
+      Vid.(name)=netcdf.inqVarID(ncid,name);
+   case {Vname.mask_u}
       got.mask_u  =true;
+      Vid.(name)=netcdf.inqVarID(ncid,name);
     case {Vname.mask_v}
       got.mask_v  =true;
+      Vid.(name)=netcdf.inqVarID(ncid,name);
   end
 end
 
@@ -100,7 +130,7 @@ end
 
 defmode=~got.mask_rho || ~got.mask_psi || ~got.mask_u || ~got.mask_v;
 
-if (defmode),
+if (defmode)
 
 % Inquire about dimensions.
 
@@ -109,9 +139,9 @@ if (defmode),
   Dname.xu='xi_u';    Dname.yu='eta_u';
   Dname.xv='xi_v';    Dname.yv='eta_v';
 
-  D=nc_dinfo(Fname);
+  D=nc_dinfo(ncfile);
   ndims=length(D);
-  for n=1:ndims,
+  for n=1:ndims
     name=char(D(n).Name);
     switch name
       case {Dname.xr}
@@ -141,101 +171,73 @@ if (defmode),
     end
   end
 
-% Open GRID NetCDF file.
-
-  [ncid,status]=mexnc('open',ncfile,'nc_write');
-  if (status ~= 0),
-    disp('  ');
-    disp(mexnc('strerror',status));
-    error(['LANDSEA: OPEN - unable to open file: ', ncfile])
-  end
-
 % Put GRID NetCDF file in definition mode.
 
-  [status]=mexnc('redef',ncid);
-  if (status ~= 0),
-    disp('  ');
-    disp(mexnc('strerror',status));
-    error('LANDSEA: REDEF - unable to put into define mode.')
-  end
+  netcdf.reDef(ncid);
 
 % Define RHO-points mask.
 
-  if (~got.mask_rho),
-    Var.name          = Vname.mask_rho;
-    Var.type          = nc_constant('nc_double');
-    Var.dimid         = [did.yr did.xr];
-    Var.long_name     = 'mask on RHO-points';
-    Var.flag_values   = [0.0 1.0];
-    Var.flag_meanings = ['land', blanks(1),                             ...
-                         'water'];
-    [~,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end
-    clear Var
+  if (~got.mask_rho)
+    field='mask_rho';
+    Vid.(field)=netcdf.defVar(ncid, field, 'NC_DOUBLE', [did.xr did.yr]);
+    netcdf.putAtt(ncid, Vid.(field), 'long_name',                       ...
+                  'land/sea mask on RHO-points');
+    netcdf.putAtt(ncid, Vid.(field), 'flag_values',                     ...
+                  [double(0) double(1)]);
+    netcdf.putAtt(ncid, Vid.(field), 'flag_meanings',                   ...
+                  'land water');
+    netcdf.putAtt(ncid, Vid.(field), 'coordinates',                     ...
+                  'lon_rho lat_rho');
   end
 
 % Define PSI-points mask.
 
-  if (~got.mask_psi),
-    Var.name          = Vname.mask_psi;
-    Var.type          = nc_constant('nc_double');
-    Var.dimid         = [did.yp did.xp];
-    Var.long_name     = 'mask on PSI-points';
-    Var.flag_values   = [0.0 1.0];
-    Var.flag_meanings = ['land', blanks(1),                             ...
-                         'water'];
-    [~,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end
-    clear Var
+  if (~got.mask_psi)
+    field='mask_psi';
+    Vid.(field)=netcdf.defVar(ncid, field, 'NC_DOUBLE', [did.xp did.yp]);
+    netcdf.putAtt(ncid, Vid.(field), 'long_name',                       ...
+                  'land/sea mask on PSI-points');
+    netcdf.putAtt(ncid, Vid.(field), 'flag_values',                     ...
+                  [double(0) double(1)]);
+    netcdf.putAtt(ncid, Vid.(field), 'flag_meanings',                   ...
+                  'land water');
+    netcdf.putAtt(ncid, Vid.(field), 'coordinates',                     ...
+                  'lon_psi lat_psi');
   end
 
 % Define U-points mask.
 
-  if (~got.mask_u),
-    Var.name          = Vname.mask_u;
-    Var.type          = nc_constant('nc_double');
-    Var.dimid         = [did.yu did.xu];
-    Var.long_name     = 'mask on U-points';
-    Var.flag_values   = [0.0 1.0];
-    Var.flag_meanings = ['land', blanks(1),                             ...
-                         'water'];
-    [~,status]=nc_vdef(ncid,Var);
-    if (status ~= 0), return, end
-    clear Var
+  if (~got.mask_u)
+    field='mask_u';
+    Vid.(field)=netcdf.defVar(ncid, field, 'NC_DOUBLE', [did.xu did.yu]);
+    netcdf.putAtt(ncid, Vid.(field), 'long_name',                       ...
+                  'land/sea mask on U-points');
+    netcdf.putAtt(ncid, Vid.(field), 'flag_values',                     ...
+                  [double(0) double(1)]);
+    netcdf.putAtt(ncid, Vid.(field), 'flag_meanings',                   ...
+                  'land water');
+    netcdf.putAtt(ncid, Vid.(field), 'coordinates',                     ...
+                  'lon_u lat_u');
   end
 
 % Define V-points mask.
 
-  if (~got.mask_v),
-    Var.name          = Vname.mask_v;
-    Var.type          = nc_constant('nc_double');
-    Var.dimid         = [did.yv did.xv];
-    Var.long_name     = 'mask on V-points';
-    Var.flag_values   = [0.0 1.0];
-    Var.flag_meanings = ['land', blanks(1), ...
-                         'water'];
-    [~,status]=nc_vdef(ncid,Var);
-    clear Var
-    if (status ~= 0), return, end
+  if (~got.mask_v)
+    field='mask_v';
+    Vid.(field)=netcdf.defVar(ncid, field, 'NC_DOUBLE', [did.xv did.yv]);
+    netcdf.putAtt(ncid, Vid.(field), 'long_name',                       ...
+                  'land/sea mask on V-points');
+    netcdf.putAtt(ncid, Vid.(field), 'flag_values',                     ...
+                  [double(0) double(1)]);
+    netcdf.putAtt(ncid, Vid.(field), 'flag_meanings',                   ...
+                  'land water');
+    netcdf.putAtt(ncid, Vid.(field), 'coordinates',                     ...
+                  'lon_v lat_v');
   end
 
 % Leave definition mode.
 
-  [status]=mexnc('enddef',ncid);
-  if (status ~= 0),
-    disp('  ');
-    disp(mexnc('strerror',status));
-    error('LANDSEA: ENDDEF - unable to leave definition mode.')
-  end
-
-% Close GRID NetCDF file.
-
-  [status]=mexnc('close',ncid);
-  if (status ~= 0),
-    disp('  ');
-    disp(mexnc('strerror',status));
-    error(['LANDSEA: CLOSE - unable to close NetCDF file: ', ncfile])
-  end
+  netcdf.endDef(ncid)
 
 end
 
@@ -243,18 +245,20 @@ end
 % Get grid coordinates at rho-points.
 %--------------------------------------------------------------------------
 
-F.lon_rho=nc_read(ncfile,'lon_rho');
-F.lat_rho=nc_read(ncfile,'lat_rho');
+Vid.lon_rho = netcdf.inqVarID(ncid, 'lon_rho');
+F.lon_rho = netcdf.getVar(ncid, Vid.lon_rho, 'double');
+
+Vid.lat_rho = netcdf.inqVarID(ncid, 'lat_rho');
+F.lat_rho = netcdf.getVar(ncid, Vid.lat_rho, 'double');
 
 lon_rho=F.lon_rho';
 lat_rho=F.lat_rho';
-[Jm,Im]=size(lon_rho);
 
 %--------------------------------------------------------------------------
 % Extract coastlines from GSHHS database.
 %--------------------------------------------------------------------------
 
-if (extract_coast),
+if (extract_coast)
 
   dx=5*abs(mean(mean(gradient(lon_rho))));
   dy=5*abs(mean(mean(gradient(lat_rho))));
@@ -280,72 +284,61 @@ end
 % Compute Land/Sea mask on RHO-points.
 %--------------------------------------------------------------------------
 
-[i,~]=size(clon);  if (i > 1), clon=clon'; end,
-[i,~]=size(clat);  if (i > 1), clat=clat'; end,
+[i,~]=size(clon);  if (i > 1), clon=clon'; end
+[i,~]=size(clat);  if (i > 1), clat=clat'; end
 
 f=find(~isfinite(clon) | ~isfinite(clat));
 f=f(:).';
-if ~any(f),
+if ~any(f)
   f=[0 length(clon)+1];
 end
-if (f(1) ~= 1),
+if (f(1) ~= 1)
   f=[0 f];
 end
-if (f(end) ~= length(clon)),
+if (f(end) ~= length(clon))
   f(end+1)=length(clon)+1;
 end
 
 Mask=zeros(size(lon_rho));
 
-for i=2:length(f),
+for i=2:length(f)
   g=find(Mask == 0);
-  if (~any(g)),
+  if (~any(g))
     break
   end
   j=f(i-1)+1:f(i)-1;
-  if (length(j) > 2),
+  if (length(j) > 2)
     Mask(g)=inpolygon(lon_rho(g),lat_rho(g),clon(j),clat(j));
   end
 end
 
 mask_rho=1-Mask;
+F.mask_rho=mask_rho';
 
-clear Mask clon clat f g lon_rho lat_rho
+clear Mask mask_rho clon clat f g lon_rho lat_rho
 
 %--------------------------------------------------------------------------
 % Compute Land/Sea mask on PSI-, U-, and V-points.
 %--------------------------------------------------------------------------
 
-mask_psi(1:Jm-1,1:Im-1)=mask_rho(2:Jm  ,2:Im  ).*                       ...
-                        mask_rho(2:Jm  ,1:Im-1).*                       ...
-                        mask_rho(1:Jm-1,2:Im  ).*                       ...
-                        mask_rho(1:Jm-1,1:Im-1);
-mask_u  (1:Jm  ,1:Im-1)=mask_rho(1:Jm  ,2:Im  ).*                       ...
-                        mask_rho(1:Jm  ,1:Im-1);
-mask_v  (1:Jm-1,1:Im  )=mask_rho(2:Jm  ,1:Im  ).*                       ...
-                        mask_rho(1:Jm-1,1:Im  );
+[F.mask_u, F.mask_v, F.mask_psi]=uvp_masks(F.mask_rho);
 
 %--------------------------------------------------------------------------
 % Write out Land/Sea masking into GRID NetCDF file.
 %--------------------------------------------------------------------------
 
-F.mask_rho=mask_rho';
-F.mask_psi=mask_psi';
-F.mask_u  =mask_u';
-F.mask_v  =mask_v';
+disp(' ');
+for var = VarList
+  field=char(var);
+  disp(['writing ',sprintf('%10s',field),                               ...
+        ',   size = ', num2str(size(F.(field)))]);
+  netcdf.putVar(ncid, Vid.(field), F.(field));
+end
 
-[status]=nc_write(ncfile,Vname.mask_rho,F.mask_rho);
-if (status ~= 0), return, end
+netcdf.close(ncid)
 
-[status]=nc_write(ncfile,Vname.mask_psi,F.mask_psi);
-if (status ~= 0), return, end
-
-[status]=nc_write(ncfile,Vname.mask_u  ,F.mask_u  );
-if (status ~= 0), return, end
-
-[status]=nc_write(ncfile,Vname.mask_v  ,F.mask_v  );
-if (status ~= 0), return, end
+disp(' ');
+F.profile=strcat(num2str(toc(Tstart)),' sec');
+disp(['Elapsed time to compute mask ', F.profile])
 
 return
-
-

@@ -169,15 +169,15 @@
 
 !***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
+!                .      .    .     
 ! SUBPROGRAM:    ADJPPT    PRECIPITATION/CLOUD ADJUSTMENT
 !    PRGRMMR:    Y. LIN    ORG: W/NP22     DATE: 2005/03/30
-!
+!     
 ! ABSTRACT:
 !     ADJPPT  MAKES ADJUSTMENT TO MODEL'S TEMPERATURE, MOISTURE, HYDROMETEOR
 !     FIELDS TO BE MORE CONSISTENT WITH THE OBSERVED PRECIPITATION AND CLOUD
 !     TOP PRESSURE
-!
+!     
 !     FOR NOW, AS A FIRST STEP, JUST PARTITION THE INPUT HOURLY PRECIPITATION
 !     OBSERVATION INTO TIME STEPS, AND FEED IT INTO THE SOIL.
 ! PROGRAM HISTORY LOG:
@@ -185,8 +185,8 @@
 !   2005/03/30  LIN      - BAREBONES PRECIPITATION PARTITION/FEEDING TO GROUND
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
-!   MACHINE : IBM
-!$$$
+!   MACHINE : IBM 
+!$$$  
 !-----------------------------------------------------------------------
 !
       IMPLICIT NONE
@@ -221,7 +221,7 @@
 !
 ! Compute the beginning and ending time of the current physics time step,
 ! TPHS1 and TPHS2:
-!
+!  
       NTSP=NTSD/NPHS+1
       TPHS1=(NTSP-1)*DTPHS
       TPHS2=NTSP*DTPHS
@@ -231,7 +231,7 @@
 !
 ! Fraction of an hour that falls into IHR1 and IHR2.  Note that IHR1 and IHR2
 ! might be identical.
-      IF (IHR1 > 3) THEN
+      IF (IHR1 > 3) THEN 
         GO TO 200
       ELSEIF (IHR2 > 3) THEN
         IHR2=3
@@ -265,7 +265,7 @@
 !-----------------------------------------------------------------------
       DO J=MYJS2,MYJE2
       DO I=MYIS1,MYIE1
-! Note sometimes IHR1=IHR2.
+! Note sometimes IHR1=IHR2.  
         IF (PPTDAT(I,J,IHR1).GT.900..OR.PPTDAT(I,J,IHR2).GT.900.) THEN
           DDATA(I,J) = 999.
           LSPA(I,J) = LSPA(I,J) + PREC(I,J)
@@ -275,7 +275,7 @@
             DDATA(I,J) = PPTDAT(I,J,IHR1)*FRACT1                        &
      &                 + PPTDAT(I,J,IHR2)*FRACT2
           ELSE
-            DDATA(I,J) = PPTDAT(I,J,IHR1)*FRACT1
+            DDATA(I,J) = PPTDAT(I,J,IHR1)*FRACT1 
           ENDIF
 !
            LSPA(I,J) = LSPA(I,J) + DDATA(I,J)

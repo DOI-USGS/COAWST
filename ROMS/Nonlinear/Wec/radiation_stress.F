@@ -24,7 +24,7 @@
 !                                                                      !
 !  Mellor, G.L., 2008. The depth-dependent current and wave            !
 !  interaction equations: a revision. J. Phys. Oceanogr.               !
-!  38, 2587-2596.                                                   !
+!  38, 2587–2596.                                                   !
 !                                                                      !
 !=======================================================================
 !

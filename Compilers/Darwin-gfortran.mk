@@ -1,6 +1,6 @@
-# svn $Id: Darwin-gfortran.mk 834 2017-01-25 18:49:17Z arango $
+# svn $Id: Darwin-gfortran.mk 889 2018-02-10 03:32:52Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2018 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2019 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -18,8 +18,13 @@
 # CXX            Name of the C++ compiler
 # CXXFLAGS       Flags to the C++ compiler
 # CLEAN          Name of cleaning executable after C-preprocessing
+# HDF5_INCDIR    HDF5 include directory
+# HDF5_LIBDIR    HDF5 library directory
+# HDF5_LIBS      HDF5 library switches
+# NF_CONFIG      NetCDF Fortran configuration script
 # NETCDF_INCDIR  NetCDF include directory
 # NETCDF_LIBDIR  NetCDF libary directory
+# NETCDF_LIBS    NetCDF library switches
 # LD             Program to load the objects into an executable
 # LDFLAGS        Flags to the loader
 # RANLIB         Name of ranlib command
@@ -29,6 +34,8 @@
 #
                FC := gfortran
            FFLAGS := -frepack-arrays
+       FIXEDFLAGS := -132
+        FREEFLAGS := -free
               CPP := /usr/bin/cpp
          CPPFLAGS := -P -traditional
                CC := gcc
@@ -156,6 +163,14 @@ ifdef USE_TANGENT
 $(SCRATCH_DIR)/tl_biology.o: FFLAGS += -ffree-form -ffree-line-length-none
 endif
 
+
+ifdef USE_MCT
+       MCT_INCDIR ?= /usr/local/mct/include
+       MCT_LIBDIR ?= /usr/local/mct/lib
+           FFLAGS += -I$(MCT_INCDIR)
+             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
+endif
+
 ifdef USE_WRF
              FFLAGS += -I$(WRF_DIR)/main -I$(WRF_DIR)/external/esmf_time_f90 -I$(WRF_DIR)/frame -I$(WRF_DIR)/share
              LIBS += WRF/main/module_wrf_top.o
@@ -174,13 +189,6 @@ endif
 ifdef USE_WW3
              FFLAGS += -I${COAWST_WW3_DIR}/mod_DIST/
              LIBS += WW3/obj/libWW3.a
-endif
-
-ifdef USE_MCT
-       MCT_INCDIR ?= /usr/local/mct/include
-       MCT_LIBDIR ?= /usr/local/mct/lib
-           FFLAGS += -I$(MCT_INCDIR)
-             LIBS += -L$(MCT_LIBDIR) -lmct -lmpeu
 endif
 
 #

@@ -3,15 +3,15 @@ MODULE module_ra_cam_support
   implicit none
       integer, parameter :: r8 = 8
       real(r8), parameter:: inf = 1.e20 ! CAM sets this differently in infnan.F90
-      integer, parameter:: bigint = O'17777777777'           ! largest possible 32-bit integer
+      integer, parameter:: bigint = O'17777777777'           ! largest possible 32-bit integer 
 
-      integer :: ixcldliq
+      integer :: ixcldliq 
       integer :: ixcldice
 !     integer :: levsiz    ! size of level dimension on dataset
       integer, parameter :: nbands = 2          ! Number of spectral bands
       integer, parameter :: naer_all = 12 + 1
       integer, parameter :: naer = 10 + 1
-      integer, parameter :: bnd_nbr_LW=7
+      integer, parameter :: bnd_nbr_LW=7 
       integer, parameter :: ndstsz = 4    ! number of dust size bins
       integer :: idxSUL
       integer :: idxSSLT
@@ -21,7 +21,7 @@ MODULE module_ra_cam_support
       integer :: idxBCPHO
       integer :: idxOCPHI
       integer :: idxBCPHI
-      integer :: idxBG
+      integer :: idxBG  
       integer :: idxVOLC
       real, pointer :: ozmixin_save(:,:,:,:), lat_ozone_save(:), plev_ozone_save(:)
       integer :: levsiz_ozone_save=-1
@@ -200,7 +200,7 @@ real(r8) ::   latice             ! latent heat of fusion ~ J/kg
 real(r8) ::   zvir               ! R_V/R_D - 1.
   integer plenest  ! length of saturation vapor pressure table
   parameter (plenest=250)
-!
+! 
 ! Table of saturation vapor pressure values es from tmin degrees
 ! to tmax+1 degrees k in one degree increments.  ttrice defines the
 ! transition region where es is a combination of ice & water values
@@ -379,14 +379,14 @@ integer, parameter :: cyr = 233  ! number of years of co2 data
          93.6658, 98.5739, 103.603, 108.752, 114.025, 119.424, 	&
          124.954, 130.630, 136.457, 142.446, 148.608, 154.956,	&
          161.503, 168.262, 175.248, 182.473, 189.952, 197.699,	&
-         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/
+         205.728, 214.055, 222.694, 231.661, 240.971, 250.639/	
     !
     save retab
 contains
 
 
 
-subroutine sortarray(n, ain, indxa)
+subroutine sortarray(n, ain, indxa) 
 !-----------------------------------------------
 !
 ! Purpose:
@@ -411,36 +411,36 @@ subroutine sortarray(n, ain, indxa)
    integer :: ni                  ! Starting increment
    integer :: itmp                ! Temporary index
    real(r8):: atmp                ! Temporary value to swap
-
-   ni = 1
-   do while(.TRUE.)
-      ni = 3*ni + 1
-      if (ni <= n) cycle
-      exit
-   end do
-
-   do while(.TRUE.)
-      ni = ni/3
-      do i = ni + 1, n
-         atmp = ain(i)
-         itmp = indxa(i)
-         j = i
-         do while(.TRUE.)
-            if (ain(j-ni) <= atmp) exit
-            ain(j) = ain(j-ni)
-            indxa(j) = indxa(j-ni)
-            j = j - ni
-            if (j > ni) cycle
-            exit
-         end do
-         ain(j) = atmp
-         indxa(j) = itmp
-      end do
-      if (ni > 1) cycle
-      exit
-   end do
-   return
-
+ 
+   ni = 1 
+   do while(.TRUE.) 
+      ni = 3*ni + 1 
+      if (ni <= n) cycle  
+      exit  
+   end do 
+ 
+   do while(.TRUE.) 
+      ni = ni/3 
+      do i = ni + 1, n 
+         atmp = ain(i) 
+         itmp = indxa(i) 
+         j = i 
+         do while(.TRUE.) 
+            if (ain(j-ni) <= atmp) exit  
+            ain(j) = ain(j-ni) 
+            indxa(j) = indxa(j-ni) 
+            j = j - ni 
+            if (j > ni) cycle  
+            exit  
+         end do 
+         ain(j) = atmp 
+         indxa(j) = itmp 
+      end do 
+      if (ni > 1) cycle  
+      exit  
+   end do 
+   return  
+ 
 end subroutine sortarray
 subroutine trcab(lchnk   ,ncol    ,pcols, pverp,               &
                  k1      ,k2      ,ucfc11  ,ucfc12  ,un2o0   , &
@@ -450,17 +450,17 @@ subroutine trcab(lchnk   ,ncol    ,pcols, pverp,               &
                  s2c     ,uptype  ,dplh2o  ,abplnk1 ,tco2    , &
                  th2o    ,to3     ,abstrc  , &
                  aer_trn_ttl)
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Calculate absorptivity for non nearest layers for CH4, N2O, CFC11 and
 ! CFC12.
-!
-! Method:
+! 
+! Method: 
 ! See CCM3 description for equations.
-!
+! 
 ! Author: J. Kiehl
-!
+! 
 !-----------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
 !  use ppgrid
@@ -628,7 +628,7 @@ subroutine trcab(lchnk   ,ncol    ,pcols, pverp,               &
 !
    do i=1,ncol
       tw(i,1)=tw(i,1)*(0.7*aer_trn_ttl(i,k1,k2,idx_LW_0650_0800)+&! l=1: 0750--0820 cm-1
-                       0.3*aer_trn_ttl(i,k1,k2,idx_LW_0800_1000))
+                       0.3*aer_trn_ttl(i,k1,k2,idx_LW_0800_1000)) 
       tw(i,2)=tw(i,2)*aer_trn_ttl(i,k1,k2,idx_LW_0800_1000) ! l=2: 0820--0880 cm-1
       tw(i,3)=tw(i,3)*aer_trn_ttl(i,k1,k2,idx_LW_0800_1000) ! l=3: 0880--0900 cm-1
       tw(i,4)=tw(i,4)*aer_trn_ttl(i,k1,k2,idx_LW_0800_1000) ! l=4: 0900--1000 cm-1
@@ -738,16 +738,16 @@ subroutine trcabn(lchnk   ,ncol    ,pcols, pverp,               &
                   uptype  ,dw      ,s2c     ,up2     ,pnew    , &
                   abstrc  ,uinpl   , &
                   aer_trn_ngh)
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Calculate nearest layer absorptivity due to CH4, N2O, CFC11 and CFC12
-!
-! Method:
+! 
+! Method: 
 ! Equations in CCM3 description
-!
+! 
 ! Author: J. Kiehl
-!
+! 
 !-----------------------------------------------------------------------
 !
 !  use shr_kind_mod, only: r8 => shr_kind_r8
@@ -755,7 +755,7 @@ subroutine trcabn(lchnk   ,ncol    ,pcols, pverp,               &
 !  use volcrad
 
    implicit none
-
+ 
 !------------------------------Arguments--------------------------------
 !
 ! Input arguments
@@ -794,8 +794,8 @@ subroutine trcabn(lchnk   ,ncol    ,pcols, pverp,               &
    real(r8), intent(in) :: uptype(pcols,pverp)  ! p-type path length
    real(r8), intent(in) :: up2(pcols)           ! p squared path length
    real(r8), intent(in) :: uinpl(pcols,4)       ! Nearest layer subdivision factor
-   real(r8), intent(in) :: aer_trn_ngh(pcols,bnd_nbr_LW)
-                             ! [fraction] Total transmission between
+   real(r8), intent(in) :: aer_trn_ngh(pcols,bnd_nbr_LW) 
+                             ! [fraction] Total transmission between 
                              !            nearest neighbor sub-levels
 !
 !  Output Arguments
@@ -1031,16 +1031,16 @@ subroutine trcems(lchnk   ,ncol    ,pcols, pverp,               &
                   up2     ,emplnk  ,th2o    ,tco2    ,to3     , &
                   emstrc  , &
                  aer_trn_ttl)
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 !  Calculate emissivity for CH4, N2O, CFC11 and CFC12 bands.
-!
-! Method:
+! 
+! Method: 
 !  See CCM3 Description for equations.
-!
+! 
 ! Author: J. Kiehl
-!
+! 
 !-----------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
 !  use ppgrid
@@ -1195,7 +1195,7 @@ subroutine trcems(lchnk   ,ncol    ,pcols, pverp,               &
       end do
    end do
 
-!     Overlap H2O tranmission with STRAER continuum in 6 trace gas
+!     Overlap H2O tranmission with STRAER continuum in 6 trace gas 
 !                 subbands
 
       do i=1,ncol
@@ -1236,7 +1236,7 @@ subroutine trcems(lchnk   ,ncol    ,pcols, pverp,               &
 !
       tlw = exp(-1.0*sqrt(up2(i)))
 
-!     Overlap H2O vibration rotation band with STRAER continuum
+!     Overlap H2O vibration rotation band with STRAER continuum 
 !             for CH4 1306 cm-1 and N2O 1285 cm-1 bands
 
             tlw=tlw*aer_trn_ttl(i,k,1,idx_LW_1200_2000)
@@ -1299,21 +1299,21 @@ end subroutine trcems
 subroutine trcmix(lchnk   ,ncol     ,pcols, pver, &
                   pmid    ,clat, n2o      ,ch4     ,          &
                   cfc11   , cfc12   )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Specify zonal mean mass mixing ratios of CH4, N2O, CFC11 and
 ! CFC12
-!
-! Method:
+! 
+! Method: 
 ! Distributions assume constant mixing ratio in the troposphere
 ! and a decrease of mixing ratio in the stratosphere. Tropopause
 ! defined by ptrop. The scale height of the particular trace gas
 ! depends on latitude. This assumption produces a more realistic
 ! stratospheric distribution of the various trace gases.
-!
+! 
 ! Author: J. Kiehl
-!
+! 
 !-----------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
 !  use ppgrid
@@ -1439,21 +1439,21 @@ subroutine trcmix_clwrf(lchnk   ,ncol     ,pcols, pver,       &
                   pmid    ,clat, n2ovmr, ch4vmr, f11vmr,      &
                   f12vmr, n2o      ,ch4     ,                 &
                   cfc11   , cfc12   )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Specify zonal mean mass mixing ratios of CH4, N2O, CFC11 and
 ! CFC12
-!
-! Method:
+! 
+! Method: 
 ! Distributions assume constant mixing ratio in the troposphere
 ! and a decrease of mixing ratio in the stratosphere. Tropopause
 ! defined by ptrop. The scale height of the particular trace gas
 ! depends on latitude. This assumption produces a more realistic
 ! stratospheric distribution of the various trace gases.
-!
+! 
 ! Author: J. Kiehl
-!
+! 
 !-----------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
 !  use ppgrid
@@ -1583,7 +1583,7 @@ subroutine trcmix_clwrf(lchnk   ,ncol     ,pcols, pver,       &
            ' cfc11:',cfc11(ncol/2,pver/2),' cfc12:',cfc12(ncol/2,pver/2)
    endif
    CALL wrf_debug(0, message)
-
+   
    return
 !
 end subroutine trcmix_clwrf
@@ -1596,17 +1596,17 @@ end subroutine trcmix_clwrf
 subroutine trcplk(lchnk   ,ncol    ,pcols, pver, pverp,         &
                   tint    ,tlayr   ,tplnke  ,emplnk  ,abplnk1 , &
                   abplnk2 )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 !   Calculate Planck factors for absorptivity and emissivity of
 !   CH4, N2O, CFC11 and CFC12
-!
-! Method:
+! 
+! Method: 
 !   Planck function and derivative evaluated at the band center.
-!
+! 
 ! Author: J. Kiehl
-!
+! 
 !-----------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
 !  use ppgrid
@@ -1691,17 +1691,17 @@ subroutine trcpth(lchnk   ,ncol    ,pcols, pver, pverp,         &
                   un2o1   ,uch4    ,uco211  ,uco212  ,uco213  , &
                   uco221  ,uco222  ,uco223  ,bn2o0   ,bn2o1   , &
                   bch4    ,uptype  )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Calculate path lengths and pressure factors for CH4, N2O, CFC11
 ! and CFC12.
-!
-! Method:
+! 
+! Method: 
 ! See CCM3 description for details
-!
+! 
 ! Author: J. Kiehl
-!
+! 
 !-----------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
 !  use ppgrid
@@ -1841,21 +1841,21 @@ end subroutine trcpth
 
 subroutine aqsat(t       ,p       ,es      ,qs        ,ii      , &
                  ilen    ,kk      ,kstart  ,kend      )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Utility procedure to look up and return saturation vapor pressure from
 ! precomputed table, calculate and return saturation specific humidity
 ! (g/g),for input arrays of temperature and pressure (dimensioned ii,kk)
 ! This routine is useful for evaluating only a selected region in the
 ! vertical.
-!
-! Method:
-! <Describe the algorithm(s) used in the routine.>
-! <Also include any applicable external references.>
-!
+! 
+! Method: 
+! <Describe the algorithm(s) used in the routine.> 
+! <Also include any applicable external references.> 
+! 
 ! Author: J. Hack
-!
+! 
 !------------------------------Arguments--------------------------------
 !
 ! Input arguments
@@ -1906,16 +1906,16 @@ end subroutine aqsat
 !===============================================================================
   subroutine cldefr(lchnk   ,ncol    ,pcols, pver, pverp, &
        landfrac,t       ,rel     ,rei     ,ps      ,pmid    , landm, icefrac, snowh)
-!-----------------------------------------------------------------------
-!
-! Purpose:
-! Compute cloud water and ice particle size
-!
-! Method:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
+! Compute cloud water and ice particle size 
+! 
+! Method: 
 ! use empirical formulas to construct effective radii
-!
+! 
 ! Author: J.T. Kiehl, B. A. Boville, P. Rasch
-!
+! 
 !-----------------------------------------------------------------------
 
     implicit none
@@ -2048,13 +2048,13 @@ subroutine get_int_scales(scales)
   scales = 1.
 
   scales(idxBG) = 1._r8
-  scales(idxSUL) = sulscl
-  scales(idxSSLT) = ssltscl
-
+  scales(idxSUL) = sulscl 
+  scales(idxSSLT) = ssltscl  
+  
   do i = idxCARBONfirst, idxCARBONfirst+numCARBON-1
     scales(i) = carscl
   enddo
-
+  
   do i = idxDUSTfirst, idxDUSTfirst+numDUST-1
     scales(i) = dustscl
   enddo
@@ -2122,7 +2122,7 @@ subroutine vert_interpolate (Match_ps, aerosolc, m_hybi, paerlev, naer_c, pint, 
 !
 ! assign total mass to topmost level
 !
-
+   
    do i=1,ncol
    do m=1,naer
    AEROSOL(i,1,m) = AEROSOLc(i,1,m)
@@ -2186,7 +2186,7 @@ subroutine vert_interpolate (Match_ps, aerosolc, m_hybi, paerlev, naer_c, pint, 
 
       if(.not.lev_interp_comp) then
          do i=1,ncol
-          do m=1,naer
+          do m=1,naer 
             if (pint(i,k) .lt. M_hybi(1)*Match_ps(i)) then
                AEROSOL(i,k,m) =  AEROSOLc(i,1,m)
             else if (pint(i,k) .gt. M_hybi(paerlev)*Match_ps(i)) then
@@ -2269,17 +2269,17 @@ end subroutine vert_interpolate
 
 !===============================================================================
   subroutine cldems(lchnk   ,ncol    ,pcols, pver, pverp, clwp    ,fice    ,rei     ,emis    )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Compute cloud emissivity using cloud liquid water path (g/m**2)
-!
-! Method:
-! <Describe the algorithm(s) used in the routine.>
-! <Also include any applicable external references.>
-!
+! 
+! Method: 
+! <Describe the algorithm(s) used in the routine.> 
+! <Also include any applicable external references.> 
+! 
 ! Author: J.T. Kiehl
-!
+! 
 !-----------------------------------------------------------------------
 
     implicit none
@@ -2325,21 +2325,21 @@ end subroutine vert_interpolate
 
 !===============================================================================
   subroutine cldovrlap(lchnk   ,ncol    ,pcols, pver, pverp, pint    ,cld     ,nmxrgn  ,pmxrgn  )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Partitions each column into regions with clouds in neighboring layers.
 ! This information is used to implement maximum overlap in these regions
 ! with random overlap between them.
 ! On output,
 !    nmxrgn contains the number of regions in each column
 !    pmxrgn contains the interface pressures for the lower boundaries of
-!           each region!
-! Method:
+!           each region! 
+! Method: 
 
-!
+! 
 ! Author: W. Collins
-!
+! 
 !-----------------------------------------------------------------------
 
     implicit none
@@ -2403,17 +2403,17 @@ end subroutine vert_interpolate
 
 !===============================================================================
   subroutine cldclw(lchnk   ,ncol    ,pcols, pver, pverp, zi      ,clwp    ,tpw     ,hl      )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Evaluate cloud liquid water path clwp (g/m**2)
-!
-! Method:
-! <Describe the algorithm(s) used in the routine.>
-! <Also include any applicable external references.>
-!
+! 
+! Method: 
+! <Describe the algorithm(s) used in the routine.> 
+! <Also include any applicable external references.> 
+! 
 ! Author: J.T. Kiehl
-!
+! 
 !-----------------------------------------------------------------------
 
     implicit none
@@ -2473,16 +2473,16 @@ end subroutine vert_interpolate
 
 !===============================================================================
   subroutine reltab(ncol, pcols, pver, t, landfrac, landm, icefrac, rel, snowh)
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Compute cloud water size
-!
-! Method:
+! 
+! Method: 
 ! analytic formula following the formulation originally developed by J. T. Kiehl
-!
+! 
 ! Author: Phil Rasch
-!
+! 
 !-----------------------------------------------------------------------
 !   use physconst,          only: tmelt
     implicit none
@@ -2556,7 +2556,7 @@ end subroutine vert_interpolate
     !
     return
   end subroutine reitab
-
+  
   function exp_interpol(x, f, y) result(g)
 
     ! Purpose:
@@ -2604,7 +2604,7 @@ end subroutine vert_interpolate
   end function exp_interpol
 
   function lin_interpol(x, f, y) result(g)
-
+    
     ! Purpose:
     !   interpolates f(x) to point y
     !   assuming f(x) = f(x0) + a * (x - x0)
@@ -2617,12 +2617,12 @@ end subroutine vert_interpolate
 !   use shr_kind_mod, only: r8 => shr_kind_r8
 
     implicit none
-
+    
     real(r8), intent(in), dimension(:) :: x  ! grid points
     real(r8), intent(in), dimension(:) :: f  ! grid function values
     real(r8), intent(in) :: y                ! interpolation point
     real(r8) :: g                            ! interpolated function value
-
+    
     integer :: k  ! interpolation point index
     integer :: n  ! length of x
     real(r8) :: a
@@ -2632,12 +2632,12 @@ end subroutine vert_interpolate
     ! find k such that x(k) < y =< x(k+1)
     ! set k = 1 if y <= x(1)  and  k = n-1 if y > x(n)
 
-    if (y <= x(1)) then
-      k = 1
+    if (y <= x(1)) then 
+      k = 1 
     else if (y >= x(n)) then
       k = n - 1
-    else
-      k = 1
+    else 
+      k = 1 
       do while (y > x(k+1) .and. k < n)
         k = k + 1
       end do
@@ -2691,7 +2691,7 @@ end subroutine vert_interpolate
     a = (  f(k+1) - f(k) ) / ( x(k+1) - x(k) )
     g = f(k) + a * (y - x(k))
 
-  end function lin_interpol2
+  end function lin_interpol2    
 
 
 subroutine getfactors (cycflag, np1, cdayminus, cdayplus, cday, &
@@ -2823,7 +2823,7 @@ subroutine get_rf_scales(scales)
 end subroutine get_rf_scales
 
 function psi(tpx,iband)
-!
+!    
 ! History: First version for Hitran 1996 (C/H/E)
 !          Current version for Hitran 2000 (C/LT/E)
 ! Short function for Hulst-Curtis-Godson temperature factors for
@@ -2837,13 +2837,13 @@ function psi(tpx,iband)
 ! Reference: Edwards, D.P., 1992: GENLN2, A General Line-by-Line Atmospheric
 !                     Transmittance and Radiance Model, Version 3.0 Description
 !                     and Users Guide, NCAR/TN-367+STR, 147 pp.
-!
+!     
 ! Note: functions have been normalized by dividing by their values at
 !       a path temperature of 160K
 !
-! spectral intervals:
+! spectral intervals:     
 !   1 = 0-800 cm^-1 and 1200-2200 cm^-1
-!   2 = 800-1200 cm^-1
+!   2 = 800-1200 cm^-1      
 !
 ! Formulae: Goody and Yung, Atmospheric Radiation: Theoretical Basis,
 !           2nd edition, Oxford University Press, 1989.
@@ -2934,17 +2934,17 @@ end function fh2oself
 ! from wv_saturation.F90
 
 subroutine esinti(epslon  ,latvap  ,latice  ,rh2o    ,cpair   ,tmelt   )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Initialize es lookup tables
-!
-! Method:
-! <Describe the algorithm(s) used in the routine.>
-! <Also include any applicable external references.>
-!
+! 
+! Method: 
+! <Describe the algorithm(s) used in the routine.> 
+! <Also include any applicable external references.> 
+! 
 ! Author: J. Hack
-!
+! 
 !-----------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
 !  use wv_saturation, only: gestbl
@@ -3019,7 +3019,7 @@ subroutine gestbl(tmn     ,tmx     ,trice   ,ip      ,epsil   , &
 !---------------------------Local variables-----------------------------
 !
    real(r8) t             ! Temperature
-   real(r8) rgasv
+   real(r8) rgasv 
    real(r8) cp
    real(r8) hlatf
    real(r8) ttrice
@@ -3116,14 +3116,14 @@ subroutine gestbl(tmn     ,tmx     ,trice   ,ip      ,epsil   , &
 end subroutine gestbl
 
 subroutine gffgch(t       ,es      ,itype   )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Computes saturation vapor pressure over water and/or over ice using
-! Goff & Gratch (1946) relationships.
-! <Say what the routine does>
-!
-! Method:
+! Goff & Gratch (1946) relationships. 
+! <Say what the routine does> 
+! 
+! Method: 
 ! T (temperature), and itype are input parameters, while es (saturation
 ! vapor pressure) is an output parameter.  The input parameter itype
 ! serves two purposes: a value of zero indicates that saturation vapor
@@ -3137,14 +3137,14 @@ subroutine gffgch(t       ,es      ,itype   )
 ! degrees c, the saturation vapor pressures are assumed to be a weighted
 ! average of the vapor pressure over supercooled water and ice (all
 ! water at 0 c; all ice at -itype c).  Maximum transition range => 40 c
-!
+! 
 ! Author: J. Hack
-!
+! 
 !-----------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
 !  use physconst, only: tmelt
 !  use abortutils, only: endrun
-
+    
    implicit none
 !------------------------------Arguments--------------------------------
 !
@@ -3262,9 +3262,9 @@ end subroutine gffgch
 
 
 function findvalue(ix,n,ain,indxa)
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Subroutine for finding ix-th smallest value in the array
 ! The elements are rearranged so that the ix-th smallest
 ! element is in the ix place and all smaller elements are
@@ -3273,7 +3273,7 @@ function findvalue(ix,n,ain,indxa)
 ! Algorithm: Based on the quicksort algorithm.
 !
 ! Author:       T. Craig
-!
+! 
 !-----------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
    implicit none
@@ -3357,18 +3357,18 @@ end function findvalue
 
 
 subroutine radini(gravx   ,cpairx  ,epsilox ,stebolx, pstdx )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Initialize various constants for radiation scheme; note that
 ! the radiation scheme uses cgs units.
-!
-! Method:
-! <Describe the algorithm(s) used in the routine.>
-! <Also include any applicable external references.>
-!
+! 
+! Method: 
+! <Describe the algorithm(s) used in the routine.> 
+! <Also include any applicable external references.> 
+! 
 ! Author: W. Collins (H2O parameterization) and J. Kiehl
-!
+! 
 !-----------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
 !  use ppgrid,       only: pver, pverp
@@ -3466,7 +3466,7 @@ subroutine oznini(ozmixm,pin,levsiz,num_months,XLAT,                &
 
    INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
-                                       its,ite, jts,jte, kts,kte
+                                       its,ite, jts,jte, kts,kte   
 
    INTEGER,      INTENT(IN   )    ::   levsiz, num_months
 
@@ -3647,7 +3647,7 @@ subroutine aerosol_init(m_psp,m_psn,m_hybi,aerosolcp,aerosolcn,paerlev,naer_c,sh
                                        ims,ime, jms,jme, kms,kme, &
                                        its,ite, jts,jte, kts,kte
 
-   INTEGER,      INTENT(IN   )    ::   paerlev,naer_c
+   INTEGER,      INTENT(IN   )    ::   paerlev,naer_c 
 
    REAL,     intent(in)                        :: pptop
    REAL,     DIMENSION( kms:kme ), intent(in)  :: shalf
@@ -3656,10 +3656,10 @@ subroutine aerosol_init(m_psp,m_psn,m_hybi,aerosolcp,aerosolcn,paerlev,naer_c,sh
           INTENT(INOUT   ) ::                                  aerosolcn , aerosolcp
 
    REAL,  DIMENSION(paerlev), INTENT(OUT )  ::                m_hybi
-   REAL,  DIMENSION( ims:ime, jms:jme),  INTENT(OUT )  ::       m_psp,m_psn
+   REAL,  DIMENSION( ims:ime, jms:jme),  INTENT(OUT )  ::       m_psp,m_psn 
 
    REAL ::                                                      psurf
-   real, dimension(29) :: hybi
+   real, dimension(29) :: hybi  
    integer k ! index through vertical levels
 
    INTEGER :: i, j, itf, jtf, ktf,m
@@ -3670,8 +3670,8 @@ subroutine aerosol_init(m_psp,m_psn,m_hybi,aerosolcp,aerosolcn,paerlev,naer_c,sh
     0.187830001115799, 0.232859998941422, 0.284209996461868,         &
     0.341369986534119, 0.403340011835098, 0.468600004911423,         &
     0.535290002822876, 0.601350009441376, 0.66482001543045,          &
-    0.724009990692139, 0.777729988098145, 0.825269997119904,         &
-    0.866419970989227, 0.901350021362305, 0.930540025234222,         &
+    0.724009990692139, 0.777729988098145, 0.825269997119904,         & 
+    0.866419970989227, 0.901350021362305, 0.930540025234222,         & 
     0.954590022563934, 0.974179983139038, 0.990000009536743, 1/
 
    jtf=min0(jte,jde-1)
@@ -3739,7 +3739,7 @@ subroutine aerosol_init(m_psp,m_psn,m_hybi,aerosolcp,aerosolcn,paerlev,naer_c,sh
      ENDDO
 
      call aer_optics_initialize
-
+ 
 
 END subroutine aerosol_init
 
@@ -3823,30 +3823,30 @@ USE module_wrf_error
 
          IF ( wrf_dm_on_monitor() ) then
          READ (cam_aer_unit,ERR=9010) dummy
-         READ (cam_aer_unit,ERR=9010) rh_opac
-         READ (cam_aer_unit,ERR=9010) ksul_opac
-         READ (cam_aer_unit,ERR=9010) wsul_opac
-         READ (cam_aer_unit,ERR=9010) gsul_opac
-         READ (cam_aer_unit,ERR=9010) kssam_opac
-         READ (cam_aer_unit,ERR=9010) wssam_opac
-         READ (cam_aer_unit,ERR=9010) gssam_opac
-         READ (cam_aer_unit,ERR=9010) ksscm_opac
-         READ (cam_aer_unit,ERR=9010) wsscm_opac
+         READ (cam_aer_unit,ERR=9010) rh_opac 
+         READ (cam_aer_unit,ERR=9010) ksul_opac 
+         READ (cam_aer_unit,ERR=9010) wsul_opac 
+         READ (cam_aer_unit,ERR=9010) gsul_opac 
+         READ (cam_aer_unit,ERR=9010) kssam_opac 
+         READ (cam_aer_unit,ERR=9010) wssam_opac 
+         READ (cam_aer_unit,ERR=9010) gssam_opac 
+         READ (cam_aer_unit,ERR=9010) ksscm_opac 
+         READ (cam_aer_unit,ERR=9010) wsscm_opac 
          READ (cam_aer_unit,ERR=9010) gsscm_opac
-         READ (cam_aer_unit,ERR=9010) kcphil_opac
-         READ (cam_aer_unit,ERR=9010) wcphil_opac
-         READ (cam_aer_unit,ERR=9010) gcphil_opac
-         READ (cam_aer_unit,ERR=9010) kcb
-         READ (cam_aer_unit,ERR=9010) wcb
-         READ (cam_aer_unit,ERR=9010) gcb
-         READ (cam_aer_unit,ERR=9010) kdst
-         READ (cam_aer_unit,ERR=9010) wdst
-         READ (cam_aer_unit,ERR=9010) gdst
-         READ (cam_aer_unit,ERR=9010) kbg
-         READ (cam_aer_unit,ERR=9010) wbg
+         READ (cam_aer_unit,ERR=9010) kcphil_opac 
+         READ (cam_aer_unit,ERR=9010) wcphil_opac 
+         READ (cam_aer_unit,ERR=9010) gcphil_opac 
+         READ (cam_aer_unit,ERR=9010) kcb 
+         READ (cam_aer_unit,ERR=9010) wcb 
+         READ (cam_aer_unit,ERR=9010) gcb 
+         READ (cam_aer_unit,ERR=9010) kdst 
+         READ (cam_aer_unit,ERR=9010) wdst 
+         READ (cam_aer_unit,ERR=9010) gdst 
+         READ (cam_aer_unit,ERR=9010) kbg 
+         READ (cam_aer_unit,ERR=9010) wbg 
          READ (cam_aer_unit,ERR=9010) gbg
-         READ (cam_aer_unit,ERR=9010) kvolc
-         READ (cam_aer_unit,ERR=9010) wvolc
+         READ (cam_aer_unit,ERR=9010) kvolc 
+         READ (cam_aer_unit,ERR=9010) wvolc 
          READ (cam_aer_unit,ERR=9010) gvolc
          endif
 
@@ -3950,7 +3950,7 @@ USE module_wrf_error
 ! Input variables
 !
    real(r8), intent(in) :: pstdx   ! Standard pressure (dynes/cm^2)
-   real(r8), intent(in) :: mwdryx  ! Molecular weight of dry air
+   real(r8), intent(in) :: mwdryx  ! Molecular weight of dry air 
    real(r8), intent(in) :: mwco2x  ! Molecular weight of carbon dioxide
 !
 !      Variables for loading absorptivity/emissivity
@@ -3979,7 +3979,7 @@ USE module_wrf_error
    integer cn_eh2owid             ! var. id for continuum trans. for wndw ems.
    integer ln_ah2owid             ! var. id for line trans. for wndw abs.
    integer ln_eh2owid             ! var. id for line trans. for wndw ems.
-
+   
 !  character*(NF_MAX_NAME) tmpname! dummy variable for var/dim names
    character(len=256) locfn       ! local filename
    integer tmptype                ! dummy variable for variable type
@@ -4009,7 +4009,7 @@ USE module_wrf_error
    amd    = mwdryx
    amco2  = mwco2x
 !
-! Coefficients for h2o emissivity and absorptivity for overlap of H2O
+! Coefficients for h2o emissivity and absorptivity for overlap of H2O 
 !    and trace gases.
 !
    c16  = coefj(3,1)/coefj(2,1)
@@ -4059,12 +4059,12 @@ USE module_wrf_error
 
          IF ( wrf_dm_on_monitor() ) then
          READ (cam_abs_unit,ERR=9010) ah2onw
-         READ (cam_abs_unit,ERR=9010) eh2onw
-         READ (cam_abs_unit,ERR=9010) ah2ow
-         READ (cam_abs_unit,ERR=9010) cn_ah2ow
-         READ (cam_abs_unit,ERR=9010) cn_eh2ow
-         READ (cam_abs_unit,ERR=9010) ln_ah2ow
-         READ (cam_abs_unit,ERR=9010) ln_eh2ow
+         READ (cam_abs_unit,ERR=9010) eh2onw 
+         READ (cam_abs_unit,ERR=9010) ah2ow 
+         READ (cam_abs_unit,ERR=9010) cn_ah2ow 
+         READ (cam_abs_unit,ERR=9010) cn_eh2ow 
+         READ (cam_abs_unit,ERR=9010) ln_ah2ow 
+         READ (cam_abs_unit,ERR=9010) ln_eh2ow 
 
          endif
 
@@ -4077,9 +4077,9 @@ USE module_wrf_error
          DM_BCAST_MACRO(ln_eh2ow)
 
          IF ( wrf_dm_on_monitor() ) CLOSE (cam_abs_unit)
-
+      
 ! Set up table of H2O saturation vapor pressures for use in calculation
-!     effective path RH.  Need separate table from table in wv_saturation
+!     effective path RH.  Need separate table from table in wv_saturation 
 !     because:
 !     (1. Path temperatures can fall below minimum of that table; and
 !     (2. Abs/Emissivity tables are derived with RH for water only.
@@ -4099,5 +4099,5 @@ USE module_wrf_error
      CALL wrf_error_fatal(errmess)
 end subroutine radaeini
 
-
+ 
 end MODULE module_ra_cam_support

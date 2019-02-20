@@ -21,7 +21,7 @@ module module_gfs_physcons
   real(kind=kind_phys),parameter:: con_csol    =2.1060e+3 ! spec heat H2O ice   (J/kg/K)
   real(kind=kind_phys),parameter:: con_hvap    =2.5000e+6 ! lat heat H2O cond   (J/kg)
   real(kind=kind_phys),parameter:: con_hfus    =3.3358e+5 ! lat heat H2O fusion (J/kg)
-  real(kind=kind_phys),parameter:: con_psat    =6.1078e+2 ! pres at H2O 3pt     (Pa)
+  real(kind=kind_phys),parameter:: con_psat    =6.1078e+2 ! pres at H2O 3pt     (Pa)  
   real(kind=kind_phys),parameter:: con_sbc     =5.6730e-8 ! stefan-boltzmann    (W/m2/K4)
   real(kind=kind_phys),parameter:: con_solr    =1.3533e+3 ! solar constant      (W/m2)
   real(kind=kind_phys),parameter:: con_t0c     =2.7315e+2 ! temp at 0C          (K)

@@ -1,8 +1,8 @@
 #!/bin/csh -f
 #
-# svn $Id: submit_i4dvar.sh 830 2017-01-24 21:21:11Z arango $
+# svn $Id: submit_i4dvar.sh 889 2018-02-10 03:32:52Z arango $
 #######################################################################
-# Copyright (c) 2002-2018 The ROMS/TOMS Group                         #
+# Copyright (c) 2002-2019 The ROMS/TOMS Group                         #
 #   Licensed under a MIT/X style license                              #
 #   See License_ROMS.txt                                              #
 ################################################## Hernan G. Arango ###
@@ -104,16 +104,16 @@ set OBSname=sw06.gliders.4dvar.grid_2.v2.nc
 
 #  Set ROMS nonlinear and data assimilation executables.
 
-set NL_ROMS="nl_oceanM"
-set DA_ROMS="da_oceanM"
+set NL_ROMS="nl_romsM"
+set DA_ROMS="da_romsM"
 
 #  Set ROMS nonlinear and data assimilation standard input scripts.
 
-set NL_TEMPLATE=nl_ocean.tmp
-set DA_TEMPLATE=da_ocean.tmp
+set NL_TEMPLATE=nl_roms.tmp
+set DA_TEMPLATE=da_roms.tmp
 
-set NL_STDINP=nl_ocean_${PREFIX}.in
-set DA_STDINP=da_ocean_${PREFIX}.in
+set NL_STDINP=nl_roms_${PREFIX}.in
+set DA_STDINP=da_roms_${PREFIX}.in
 
 #  Set ROMS Metatada variables file.
 
@@ -232,10 +232,10 @@ while ($DAY <= $END_DAY)
   endif
   cp $IS4DVAR_TEMPLATE $IS4DVAR_PARAM
 
-  $SUBSTITUTE $IS4DVAR_PARAM ocean_std.nc $STDname
-  $SUBSTITUTE $IS4DVAR_PARAM ocean_nrm.nc $NRMname
-  $SUBSTITUTE $IS4DVAR_PARAM ocean_obs.nc $OBSname
-  $SUBSTITUTE $IS4DVAR_PARAM ocean_mod.nc ${PREFIX}_mod_${DAY}.nc
+  $SUBSTITUTE $IS4DVAR_PARAM roms_std.nc $STDname
+  $SUBSTITUTE $IS4DVAR_PARAM roms_nrm.nc $NRMname
+  $SUBSTITUTE $IS4DVAR_PARAM roms_obs.nc $OBSname
+  $SUBSTITUTE $IS4DVAR_PARAM roms_mod.nc ${PREFIX}_mod_${DAY}.nc
 
 # Modify 4DVar ROMS standard input script.
 
@@ -252,17 +252,17 @@ while ($DAY <= $END_DAY)
   $SUBSTITUTE $DA_STDINP MyNinner $Ninner
   $SUBSTITUTE $DA_STDINP myDSTART ${DAY}.0d0
 
-  $SUBSTITUTE $DA_STDINP ocean_grd.nc $GRDname
-  $SUBSTITUTE $DA_STDINP ocean_ini.nc $INIname
-  $SUBSTITUTE $DA_STDINP ocean_itl.nc $ITLname
-  $SUBSTITUTE $DA_STDINP ocean_bry.nc $BRYname
-  $SUBSTITUTE $DA_STDINP ocean_fwd.nc ${PREFIX}_fwd_${DAY}.nc
+  $SUBSTITUTE $DA_STDINP roms_grd.nc $GRDname
+  $SUBSTITUTE $DA_STDINP roms_ini.nc $INIname
+  $SUBSTITUTE $DA_STDINP roms_itl.nc $ITLname
+  $SUBSTITUTE $DA_STDINP roms_bry.nc $BRYname
+  $SUBSTITUTE $DA_STDINP roms_fwd.nc ${PREFIX}_fwd_${DAY}.nc
 
-  $SUBSTITUTE $DA_STDINP ocean_rst.nc ${PREFIX}_rst_${DAY}.nc
-  $SUBSTITUTE $DA_STDINP ocean_his.nc ${PREFIX}_his_${DAY}.nc
-  $SUBSTITUTE $DA_STDINP ocean_avg.nc ${PREFIX}_avg_${DAY}.nc
-  $SUBSTITUTE $DA_STDINP ocean_tlm.nc ${PREFIX}_tlm_${DAY}.nc
-  $SUBSTITUTE $DA_STDINP ocean_adj.nc ${PREFIX}_adj_${DAY}.nc
+  $SUBSTITUTE $DA_STDINP roms_rst.nc ${PREFIX}_rst_${DAY}.nc
+  $SUBSTITUTE $DA_STDINP roms_his.nc ${PREFIX}_his_${DAY}.nc
+  $SUBSTITUTE $DA_STDINP roms_avg.nc ${PREFIX}_avg_${DAY}.nc
+  $SUBSTITUTE $DA_STDINP roms_tlm.nc ${PREFIX}_tlm_${DAY}.nc
+  $SUBSTITUTE $DA_STDINP roms_adj.nc ${PREFIX}_adj_${DAY}.nc
   $SUBSTITUTE $DA_STDINP s4dvar.in $IS4DVAR_PARAM
 
 # Run incremental 4DVar algorithm.
@@ -306,13 +306,13 @@ while ($DAY <= $END_DAY)
   $SUBSTITUTE $NL_STDINP MyNRST $NRST
   $SUBSTITUTE $NL_STDINP myDSTART ${DAY}.0d0
 
-  $SUBSTITUTE $NL_STDINP ocean_grd.nc $GRDname
-  $SUBSTITUTE $NL_STDINP ocean_ini.nc $STORAGE/$INIname
-  $SUBSTITUTE $NL_STDINP ocean_bry.nc $BRYname
+  $SUBSTITUTE $NL_STDINP roms_grd.nc $GRDname
+  $SUBSTITUTE $NL_STDINP roms_ini.nc $STORAGE/$INIname
+  $SUBSTITUTE $NL_STDINP roms_bry.nc $BRYname
 
-  $SUBSTITUTE $NL_STDINP ocean_rst.nc $RSTname
-  $SUBSTITUTE $NL_STDINP ocean_his.nc ${PREFIX}_his_${DAY}.nc
-  $SUBSTITUTE $NL_STDINP ocean_avg.nc ${PREFIX}_avg_${DAY}.nc
+  $SUBSTITUTE $NL_STDINP roms_rst.nc $RSTname
+  $SUBSTITUTE $NL_STDINP roms_his.nc ${PREFIX}_his_${DAY}.nc
+  $SUBSTITUTE $NL_STDINP roms_avg.nc ${PREFIX}_avg_${DAY}.nc
 
 # Run nonlinear ROMS.
 

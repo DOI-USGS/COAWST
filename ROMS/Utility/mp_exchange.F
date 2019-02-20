@@ -2,9 +2,9 @@
       MODULE mp_exchange_mod
 #ifdef DISTRIBUTE
 !
-!svn $Id: mp_exchange.F 857 2017-07-29 04:05:27Z arango $
+!svn $Id: mp_exchange.F 923 2018-09-26 21:20:30Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -364,6 +364,11 @@
 !  Determine rank of tile neighbors and number of ghost-points to
 !  exchange.
 !-----------------------------------------------------------------------
+!
+!  Maximum automatic buffer memory size in bytes.
+!
+      BmemMax(ng)=MAX(BmemMax(ng), REAL((4*SIZE(SendW)+                 &
+     &                                   4*SIZE(SendS))*KIND(A),r8))
 !
       CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
@@ -973,6 +978,11 @@
 !  exchange.
 !-----------------------------------------------------------------------
 !
+!  Maximum automatic buffer memory size in bytes.
+!
+      BmemMax(ng)=MAX(BmemMax(ng), REAL((4*SIZE(SendW)+                 &
+     &                                   4*SIZE(SendS))*KIND(A),r8))
+!
       CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
      &                     GrecvE, GsendE, Etile, Eexchange,            &
@@ -1478,6 +1488,11 @@
 !  Determine rank of tile neighbors and number of ghost-points to
 !  exchange.
 !-----------------------------------------------------------------------
+!
+!  Maximum automatic buffer memory size in bytes.
+!
+      BmemMax(ng)=MAX(BmemMax(ng), REAL((4*SIZE(SendW)+                 &
+     &                                   4*SIZE(SendS))*KIND(A),r8))
 !
       CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
@@ -2186,6 +2201,11 @@
 !  exchange.
 !-----------------------------------------------------------------------
 !
+!  Maximum automatic buffer memory size in bytes.
+!
+      BmemMax(ng)=MAX(BmemMax(ng), REAL((4*SIZE(SendW)+                 &
+     &                                   4*SIZE(SendS))*KIND(A),r8))
+!
       CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
      &                     GrecvE, GsendE, Etile, Eexchange,            &
@@ -2807,6 +2827,11 @@
 !  Determine rank of tile neighbors and number of ghost-points to
 !  exchange.
 !-----------------------------------------------------------------------
+!
+!  Maximum automatic buffer memory size in bytes.
+!
+      BmemMax(ng)=MAX(BmemMax(ng), REAL((4*SIZE(SendW)+                 &
+     &                                   4*SIZE(SendS))*KIND(A),r8))
 !
       CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
@@ -3474,6 +3499,11 @@
 !  Determine rank of tile neighbors and number of ghost-points to
 !  exchange.
 !-----------------------------------------------------------------------
+!
+!  Maximum automatic buffer memory size in bytes.
+!
+      BmemMax(ng)=MAX(BmemMax(ng), REAL((4*SIZE(SendW)+                 &
+     &                                   4*SIZE(SendS))*KIND(ad_A),r8))
 !
       CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
@@ -4217,6 +4247,11 @@
 !  exchange.
 !-----------------------------------------------------------------------
 !
+!  Maximum automatic buffer memory size in bytes.
+!
+      BmemMax(ng)=MAX(BmemMax(ng), REAL((4*SIZE(SendW)+                 &
+     &                                   4*SIZE(SendS))*KIND(ad_A),r8))
+!
       CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
      &                     GrecvE, GsendE, Etile, Eexchange,            &
@@ -4856,6 +4891,11 @@
 !  Determine rank of tile neighbors and number of ghost-points to
 !  exchange.
 !-----------------------------------------------------------------------
+!
+!  Maximum automatic buffer memory size in bytes.
+!
+      BmemMax(ng)=MAX(BmemMax(ng), REAL((4*SIZE(SendW)+                 &
+     &                                   4*SIZE(SendS))*KIND(ad_A),r8))
 !
       CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
@@ -5697,6 +5737,11 @@
 !  exchange.
 !-----------------------------------------------------------------------
 !
+!  Maximum automatic buffer memory size in bytes.
+!
+      BmemMax(ng)=MAX(BmemMax(ng), REAL((4*SIZE(SendW)+                 &
+     &                                   4*SIZE(SendS))*KIND(ad_A),r8))
+!
       CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &
      &                     GrecvE, GsendE, Etile, Eexchange,            &
@@ -6450,6 +6495,11 @@
 !  Determine rank of tile neighbors and number of ghost-points to
 !  exchange.
 !-----------------------------------------------------------------------
+!
+!  Maximum automatic buffer memory size in bytes.
+!
+      BmemMax(ng)=MAX(BmemMax(ng), REAL((4*SIZE(SendW)+                 &
+     &                                   4*SIZE(SendS))*KIND(ad_A),r8))
 !
       CALL tile_neighbors (ng, Nghost, EW_periodic, NS_periodic,        &
      &                     GrecvW, GsendW, Wtile, Wexchange,            &

@@ -23,8 +23,8 @@
       integer  :: idACtp                    ! absolute peak period
       integer  :: idACag                    ! energy angle direction
       integer  :: idACac                    ! energy angle direction centered
-      integer  :: idACen                    ! wave action
-      integer  :: idACcx                    ! wave action celerity in xi
+      integer  :: idACen                    ! wave action 
+      integer  :: idACcx                    ! wave action celerity in xi  
       integer  :: idACcy                    ! wave action celerity in eta
       integer  :: idACct                    ! wave action celerity in theta dir
 

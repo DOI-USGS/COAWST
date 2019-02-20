@@ -17,14 +17,14 @@ CONTAINS
                                                                    )
 
 !  This module was written by Joseph Olson (CIRES-NOAA/GSD/AMB) to allow
-!  gravitational settling of cloud droplets in the atmosphere for all
-!  PBL schemes (when grav_settling > 0). Previously, this option was only
+!  gravitational settling of cloud droplets in the atmosphere for all 
+!  PBL schemes (when grav_settling > 0). Previously, this option was only 
 !  available for the MYNN PBL scheme.
 !
-!  This module is a companion to module_sf_fogdes, which calulcates the
+!  This module is a companion to module_sf_fogdes, which calulcates the 
 !  (fog) deposition onto the surface, so it uses a consistent formulation
 !  at k=1. Currently, it uses a simple form taken from Dyunkerke (1991)
-!  and Dyunkerke and Driedonks (1988), but uses a lower settling
+!  and Dyunkerke and Driedonks (1988), but uses a lower settling 
 !  velocity coefficient (gno = 1.0 instead of 4.6).
 !
 !    settling velocity:            Vd = gno*(qc)**(2/3)
@@ -38,7 +38,7 @@ CONTAINS
 ! Dyunkerke, P.G. (1991), Radiation fog: a comparison of model simulations
 !     with detailed observations, Mon. Wea. Rev., 119, 324-341.
 ! Nakanishi, Mikio (2000), Large-eddy simulation of radiation fog,
-!     Boundary Layer Meteorology, 94, 461-493.
+!     Boundary Layer Meteorology, 94, 461-493. 
 !
 !======================================================================
 ! Definitions
@@ -106,9 +106,9 @@ CONTAINS
 
        !!====================================================
        !! Calculate gravitational settling in the atmosphere.
-       !! This uses Dyunkerke (referenced above). Note that
+       !! This uses Dyunkerke (referenced above). Note that 
        !! only the cloud mixing ratio is settled, not the
-       !! number concentration.
+       !! number concentration. 
        !!====================================================
 
        k=kts

@@ -18,7 +18,7 @@
   end interface
 
   integer :: nunit1 = 12
-  character(LEN=120) :: gribflnm
+  character(LEN=120) :: gribflnm 
 
   integer :: iprint
 
@@ -66,7 +66,7 @@
 ! Determine GRIB Edition number
   grib_version=0
   call edition_num(nunit1, trim(gribflnm), grib_version, ierr)
-  if (ierr.eq.3) STOP 'GRIB file problem'
+  if (ierr.eq.3) STOP 'GRIB file problem' 
 
 
      debug_level = 0
@@ -80,15 +80,15 @@
 
            ! If we need to read a new grib record, then read one.
 
-              if (grib_version.ne.2) then
+              if (grib_version.ne.2) then 
 !                write(6,*) 'calling r_grib1 with iunit ', nunit1
 !                write(6,*) 'flnm = ',gribflnm
                  write(6,*) 'This is a Grib1 file. Please use g1print.\n'
                  stop
-                 ! Read one record at a time from GRIB1 (and older Editions)
+                 ! Read one record at a time from GRIB1 (and older Editions) 
 !                call r_grib1(nunit1, gribflnm, level, field, &
 !                     hdate, debug_level, ierr, iuarr, iprint)
-              else
+              else 
 
                  ! Read one file of records from GRIB2.
                  if (debug_level .gt. 100) write(6,*) 'calling r_grib2'
@@ -97,7 +97,7 @@
 
               endif
 
-              if (ierr.eq.1) then
+              if (ierr.eq.1) then 
                  ! We have hit the end of a file.  Exit LOOP1.
                  exit LOOP1
               endif
@@ -107,7 +107,7 @@
      if (grib_version.ne.2) then
         call c_close(iuarr(nunit1), iprint, ierr)
         iuarr(nunit1) = 0
-     endif
+     endif 
 
 ! And Now we are done:
 
@@ -141,7 +141,7 @@ contains
 end program g2print
 
 !*****************************************************************************!
-
+      
       SUBROUTINE r_grib2(junit, gribflnm, hdate,  &
         grib_edition, debug_level, ireaderr)
 
@@ -223,9 +223,9 @@ end program g2print
 !/* -9    Error in close                                 */
 !/* -10   Read or wrote fewer data than requested        */
 
-!if ireaderr =1 we have hit the end of a file.
-!if ireaderr =2 we have hit the end of all the files.
-
+!if ireaderr =1 we have hit the end of a file. 
+!if ireaderr =2 we have hit the end of all the files. 
+ 
 
       if ( debug_level .gt. 100 ) verbose = .true.
       if (verbose) write(6,*) 'begin r_grib2, flnm = ',gribflnm
@@ -233,7 +233,7 @@ end program g2print
       CALL BAOPENR(junit,gribflnm,IOS)
       first = .true.
       if (verbose) write(6,*) 'back from baopenr, ios = ',ios
-      if (ios.eq.0) then
+      if (ios.eq.0) then 
       VERSION: do
 
          ! Search opend file for the next GRIB2 messege (record).
@@ -242,7 +242,7 @@ end program g2print
 
          ! Check for EOF, or problem
          if (lgrib.eq.0) then
-            exit
+            exit 
          endif
 
          ! Check size, if needed allocate more memory.
@@ -258,7 +258,7 @@ end program g2print
 
          if (lgrib.ne.lengrib) then
             print *,'G2 r_grib2: IO Error.',lgrib,".ne.",lengrib
-            stop 9
+            stop 9 
          endif
          iseek=lskip+lgrib
          icount=icount+1
@@ -278,7 +278,7 @@ end program g2print
          if (grib_edition.ne.2) then
               exit VERSION
          endif
-
+         
          ! Additional print statments for developer.
          if (verbose) then
            print *,'G2 SECTION 0: ',(listsec0(j),j=1,3)
@@ -290,7 +290,7 @@ end program g2print
          ! ----
          ! Once per file fill in date, model and projection values.
 
-         if (first) then
+         if (first) then 
            first = .false.
 
            ! Build the 19-character date string, based on GRIB2 header date
@@ -298,7 +298,7 @@ end program g2print
 
            n=1
            call gf_getfld(cgrib,lengrib,n,unpack,expand,gfld,ierr)
-
+           
           if (debug_level .gt. 100 ) then
           write(6,*) 'gfld%version = ',gfld%version
           if (gfld%discipline .eq. 0) then
@@ -307,7 +307,7 @@ end program g2print
             string = 'Hydrological products'
           else if (gfld%discipline .eq. 2) then
             string = 'Land Surface products'
-          else
+          else 
             string = 'See code table 0.0'
           endif
           write(6,*) 'Discipline = ',gfld%discipline,'   ',string
@@ -391,13 +391,13 @@ end program g2print
              fcst = 999
            endif
 
-           ! Compute valid time.
+           ! Compute valid time. 
 
           if (verbose) then
             print *, 'ymd',gfld%idsect(6),gfld%idsect(7),gfld%idsect(8)
             print *, 'hhmm  ',gfld%idsect(9),gfld%idsect(10)
           endif
-
+   
            call build_hdate(hdate,year,month,day,hour,minute,second)
            if (verbose) print *, 'G2 hdate = ',hdate
 !          call geth_newdate(hdate,hdate,3600*fcst)   ! no need for this in print
@@ -497,8 +497,8 @@ end program g2print
 
            !--
 
-           ! Store information about the grid on which the data is.
-           ! This stuff gets stored in the MAP variable, as defined in
+           ! Store information about the grid on which the data is. 
+           ! This stuff gets stored in the MAP variable, as defined in 
            ! module GRIDINFO.
 
            map%startloc = 'SWCORNER'
@@ -554,18 +554,18 @@ end program g2print
               map%lon1 = gfld%igdtmpl(13)
 
               ! Scale dx/dy values to degrees, default range is 1e6.
-              if (map%dx.gt.10000) then
+              if (map%dx.gt.10000) then 
                  map%dx = map%dx/scale_factor
               endif
-              if (map%dy.gt.10000) then
+              if (map%dy.gt.10000) then 
                  map%dy = (map%dy/scale_factor)*(-1)
               endif
 
               ! Scale lat/lon values to 0-180, default range is 1e6.
-              if (map%lat1.ge.scale_factor) then
+              if (map%lat1.ge.scale_factor) then 
                  map%lat1 = map%lat1/scale_factor
               endif
-              if (map%lon1.ge.scale_factor) then
+              if (map%lon1.ge.scale_factor) then 
                  map%lon1 = map%lon1/scale_factor
               endif
            print *,'Gaussian Grid: Dx,Dy,lat,lon',map%dx,map%dy, &
@@ -587,7 +587,7 @@ end program g2print
               print*, 'GRIB2 Unknown Projection: ',gfld%igdtnum
               print*, 'see Code Table 3.1: Grid Definition Template No'
            endif
-
+         
             call gf_free(gfld)
          endif
 
@@ -595,7 +595,7 @@ end program g2print
 
          ! Continue to unpack GRIB2 field.
          if (debug_level .gt. 100) write(6,*) 'numfields = ',numfields
-         NUM_FIELDS: do n = 1, numfields
+         NUM_FIELDS: do n = 1, numfields 
 ! e.g. U and V would =2, otherwise its usually =1
            call gf_getfld(cgrib,lengrib,n,unpack,expand,gfld,ierr)
            if (ierr.ne.0) then
@@ -895,14 +895,14 @@ end program g2print
 !              write(*,*) j, gfld%fld(j)
 !           enddo
          endif
-         endif ! Additional Print information
+         endif ! Additional Print information 
 ! ------------------------------------
          if ( debug_level .le. 50) then
            if(gfld%ipdtmpl(10).eq.100) then    ! pressure level
              level=gfld%ipdtmpl(12) *  &
                      (10. ** (-1. * gfld%ipdtmpl(11)))
            else if(gfld%ipdtmpl(10).eq.101 .or.&    ! sea level, sfc, or trop
-                gfld%ipdtmpl(10).eq.1 .or. gfld%ipdtmpl(10).eq.7) then
+                gfld%ipdtmpl(10).eq.1 .or. gfld%ipdtmpl(10).eq.7) then 
              level = 0
            else if(gfld%ipdtmpl(10).eq.106) then  ! below ground sfc is in cm in Vtable
              level= 100. * gfld%ipdtmpl(12)*(10.**(-1.*gfld%ipdtmpl(11)))
@@ -958,11 +958,11 @@ end program g2print
         CALL BACLOSE(junit,IOS)
 
         ireaderr=1
-      else
+      else 
         print *,'open status failed because',ios
         hdate = '9999-99-99_99:99:99'
         ireaderr=2
-      endif ! ireaderr check
+      endif ! ireaderr check 
 
       END subroutine r_grib2
 
@@ -987,7 +987,7 @@ end program g2print
 !       GRIB2FILE: File name to open, if it is not already open.              !
 !                                                                             !
 !    Output:                                                                  !
-!       GRIB_EDITION: Set to 1 for GRIB and set to 2 for GRIB2                !
+!       GRIB_EDITION: Set to 1 for GRIB and set to 2 for GRIB2                ! 
 !       IERR     : Error flag: 0 - no error on read from GRIB2 file.          !
 !                              1 - Hit the end of the GRIB2 file.             !
 !                              2 - The file GRIBFLNM we tried to open does    !
@@ -996,7 +996,7 @@ end program g2print
 ! NOAA/FSL                                                                    !
 ! Sept 2004                                                                   !
 !*****************************************************************************!
-
+      
       SUBROUTINE edition_num(junit, gribflnm, grib_edition, ireaderr)
 
       use grib_mod
@@ -1039,8 +1039,8 @@ end program g2print
 !/* -9    Error in close                                 */
 !/* -10   Read or wrote fewer data than requested        */
 
-!if ireaderr =1 we have hit the end of a file.
-!if ireaderr =2 we have hit the end of all the files.
+!if ireaderr =1 we have hit the end of a file. 
+!if ireaderr =2 we have hit the end of all the files. 
 !if ireaderr =3 beginning characters 'GRIB' not found
 
 !     write(6,*) 'junit = ',junit,' gribflnm = ',gribflnm
@@ -1048,7 +1048,7 @@ end program g2print
       ! Open a byte-addressable file.
       CALL BAOPENR(junit,gribflnm,IOS)      ! from w3lib
 !     write(6,*) 'ios = ',ios
-      if (ios.eq.0) then
+      if (ios.eq.0) then 
 
          ! Search opend file for the next GRIB2 messege (record).
          call skgb(junit,iseek,msk1,lskip,lgrib)
@@ -1059,7 +1059,7 @@ end program g2print
             write(*,'("\tPerhaps it is not a Grib2 file?\n")')
             STOP "Grib2 file or date problem, stopping in edition_num."
          endif
-
+ 
          ! Check size, if needed allocate more memory.
          if (lgrib.gt.currlen) then
             if (allocated(cgrib)) deallocate(cgrib)
@@ -1083,7 +1083,7 @@ end program g2print
             ireaderr=3
             print*, "The beginning 4 characters >GRIB< were not found."
          endif
-
+   
          ! Unpack Section 0 - Indicator Section to extract GRIB edition field
          iofst=8*(istart+5)
          call gbyte(cgrib,discipline,iofst,8)     ! Discipline
@@ -1096,10 +1096,10 @@ end program g2print
       else if (ios .eq. -4) then
         print *,'edition_num: unable to open ',gribflnm
         stop 'edition_num'
-      else
+      else 
          print *,'edition_num: open status failed because',ios,gribflnm
          ireaderr=2
-      endif ! ireaderr check
+      endif ! ireaderr check 
 
       END subroutine edition_num
 subroutine parse_args(err, a1, h1, i1, l1, a2, h2, i2, l2, a3, h3, i3, l3, &

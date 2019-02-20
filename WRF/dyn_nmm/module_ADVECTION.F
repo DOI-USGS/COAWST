@@ -40,7 +40,7 @@
 !----------------------------------------------------------------------
       CONTAINS
 !
-!***********************************************************************
+!*********************************************************************** 
       SUBROUTINE ADVE(NTSD,DT,DETA1,DETA2,PDTOP                         &
      &               ,CURV,F,FAD,F4D,EM_LOC,EMT_LOC,EN,ENT,DX,DY        &
      &               ,HBM2,VBM2                                         &
@@ -57,10 +57,10 @@
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
 !***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
+!                .      .    .     
 ! SUBPROGRAM:    ADVE        HORIZONTAL AND VERTICAL ADVECTION
-!   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 93-10-28
-!
+!   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 93-10-28       
+!     
 ! ABSTRACT:
 !     ADVE CALCULATES THE CONTRIBUTION OF THE HORIZONTAL AND VERTICAL
 !     ADVECTION TO THE TENDENCIES OF TEMPERATURE AND WIND AND THEN
@@ -69,7 +69,7 @@
 !     FOR ALL VARIABLES INSIDE THE FIFTH ROW.  AN UPSTREAM SCHEME
 !     IS USED ON ALL VARIABLES IN THE THIRD, FOURTH, AND FIFTH
 !     OUTERMOST ROWS.  THE ADAMS-BASHFORTH TIME SCHEME IS USED.
-!
+!     
 ! PROGRAM HISTORY LOG:
 !   87-06-??  JANJIC       - ORIGINATOR
 !   95-03-25  BLACK        - CONVERSION FROM 1-D TO 2-D IN HORIZONTAL
@@ -83,27 +83,27 @@
 !                            CONVERT TO GLOBAL INDEXING
 !   02-09-06  WOLFE        - MORE CONVERSION TO GLOBAL INDEXING
 !   04-05-29  JANJIC,BLACK - CRANK-NICHOLSON VERTICAL ADVECTION
-!   04-11-23  BLACK        - THREADED
+!   04-11-23  BLACK        - THREADED 
 !   05-12-14  BLACK        - CONVERTED FROM IKJ TO IJK
-!
+!     
 ! USAGE: CALL ADVE FROM SUBROUTINE SOLVE_NMM
 !   INPUT ARGUMENT LIST:
-!
-!   OUTPUT ARGUMENT LIST:
-!
+!  
+!   OUTPUT ARGUMENT LIST: 
+!     
 !   OUTPUT FILES:
 !     NONE
-!
+!     
 !   SUBPROGRAMS CALLED:
-!
+!  
 !     UNIQUE: NONE
-!
+!  
 !     LIBRARY: NONE
-!
+!  
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
 !   MACHINE : IBM SP
-!$$$
+!$$$  
 !***********************************************************************
 !-----------------------------------------------------------------------
 !
@@ -1143,7 +1143,7 @@
               rr=abs(rr &
      &          /((aeta1(llap)-aeta1(k))*pdtop &
      &           +(aeta2(llap)-aeta2(k))*pdsl(i,j)))
-              if(rr.gt.0.999) rr=0.999
+              if(rr.gt.0.999) rr=0.999   
 !
               AFR(K)=(((FF4*RR+FF3)*RR+FF2)*RR+FF1)*RR
               dql(k)=(q3(llap)-q3(k))*rr
@@ -1697,9 +1697,9 @@
 !
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
-        DO K=KMS,KME
-        DO J=JMS,JME
-        DO I=IMS,IME
+        DO K=KMS,KME 
+        DO J=JMS,JME 
+        DO I=IMS,IME 
           XSUMS_L(I,J,K,N)=0.
         ENDDO
         ENDDO
@@ -1707,9 +1707,9 @@
 !
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
-        DO K=KDS,KDE
-        DO J=JDS,JDE
-        DO I=IDS,IDE
+        DO K=KDS,KDE 
+        DO J=JDS,JDE 
+        DO I=IDS,IDE 
           XSUMS_G(I,J,K,N)=0.
         ENDDO
         ENDDO
@@ -1870,9 +1870,9 @@
 !-----------------------------------------------------------------------
       DO N=1,6
         CALL WRF_PATCH_TO_GLOBAL_REAL(XSUMS_L(IMS,JMS,KMS,N)            &
-     &,                               XSUMS_G(1,1,1,N),DOMDESC          &
+     &,                               XSUMS_G(1,1,1,N),DOMDESC          & 
      &,                              'xyz','xyz'                        &
-     &,                               IDS,IDE,JDS,JDE,KDS,KDE           &
+     &,                               IDS,IDE,JDS,JDE,KDS,KDE           &    
      &,                               IMS,IME,JMS,JME,KMS,KME           &
      &,                               ITS,ITE,JTS,JTE,KTS,KTE)
       ENDDO
@@ -2138,24 +2138,24 @@
 !
 !   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 96-07-19
 !            GRELL,PECKHAM   ORG: NOAA/FSL   DATE: 05-02-03
-!
-! ABSTRACT:
-!     VAD2_SCAL CALCULATES THE CONTRIBUTION OF THE VERTICAL ADVECTION
-!     TO THE TENDENCIES OF SCALAR SUBSTANCES AND THEN UPDATES
-!     THOSE VARIABLES.  AN ANTI-FILTERING TECHNIQUE IS USED.
-!
+!     
+! ABSTRACT:          
+!     VAD2_SCAL CALCULATES THE CONTRIBUTION OF THE VERTICAL ADVECTION   
+!     TO THE TENDENCIES OF SCALAR SUBSTANCES AND THEN UPDATES           
+!     THOSE VARIABLES.  AN ANTI-FILTERING TECHNIQUE IS USED.            
+!    
 ! PROGRAM HISTORY LOG:
 !   96-07-19  JANJIC           - ORIGINATOR
-!   05-02-03  GRELL,PECKHAM    - MODIFIED FOR SCALARS
-!
-! USAGE: CALL VAD2_SCAL FROM SUBROUTINE SOLVE_NMM
+!   05-02-03  GRELL,PECKHAM    - MODIFIED FOR SCALARS                   
+!    
+! USAGE: CALL VAD2_SCAL FROM SUBROUTINE SOLVE_NMM                       
 !   INPUT ARGUMENT LIST:
 !
 !   OUTPUT ARGUMENT LIST
-!
+!                
 !   OUTPUT FILES:
 !       NONE
-!   SUBPROGRAMS CALLED:
+!   SUBPROGRAMS CALLED:      
 !
 !     UNIQUE: NONE
 !
@@ -2163,7 +2163,7 @@
 !
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
-!   MACHINE : IBM
+!   MACHINE : IBM 
 !$$$
 !***********************************************************************
 !----------------------------------------------------------------------
@@ -2288,7 +2288,7 @@
      &                  +PETDT(I+IHW(J+1),J+1,KTS)                      &
      &                  +PETDT(I+IHE(J+1),J+1,KTS)                      &
      &                  +PETDT(I,J,KTS)*4.        )*0.0625
-
+ 
           ENDIF
 !
 !-----------------------------------------------------------------------
@@ -2450,12 +2450,12 @@
       END SUBROUTINE VAD2_SCAL
 !
 !-----------------------------------------------------------------------
-!
+!         
 !***********************************************************************
       SUBROUTINE HAD2_SCAL(                                             &
 #if defined(DM_PARALLEL)
      &                DOMDESC ,                                         &
-#endif
+#endif  
      &                NTSD,DT,IDTAD,DX,DY                               &
      &               ,AETA1,AETA2,DETA1,DETA2,PDSL,PDTOP                &
      &               ,HBM2,HBM3                                         &
@@ -2499,15 +2499,15 @@
 !
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
-!   MACHINE : IBM
+!   MACHINE : IBM 
 !$$$
 !***********************************************************************
 !-----------------------------------------------------------------------
-!
-      IMPLICIT NONE
-!
+!    
+      IMPLICIT NONE  
+!    
 !-----------------------------------------------------------------------
-!
+!    
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE
@@ -2724,9 +2724,9 @@
 !
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
-        DO K=KMS,KME
-        DO J=JMS,JME
-        DO I=IMS,IME
+        DO K=KMS,KME 
+        DO J=JMS,JME 
+        DO I=IMS,IME 
           XSUMS_L(I,J,K,N)=0.
         ENDDO
         ENDDO
@@ -2734,9 +2734,9 @@
 !
 !$omp parallel do                                                       &
 !$omp& private(i,j,k)
-        DO K=KDS,KDE
-        DO J=JDS,JDE
-        DO I=IDS,IDE
+        DO K=KDS,KDE 
+        DO J=JDS,JDE 
+        DO I=IDS,IDE 
           XSUMS_G(I,J,K,N)=0.
         ENDDO
         ENDDO
@@ -2825,9 +2825,9 @@
 !-----------------------------------------------------------------------
       DO N=1,2
         CALL WRF_PATCH_TO_GLOBAL_REAL(XSUMS_L(IMS,JMS,KMS,N)            &
-     &,                               XSUMS_G(1,1,1,N),DOMDESC          &
+     &,                               XSUMS_G(1,1,1,N),DOMDESC          & 
      &,                              'xyz','xzy'                        &
-     &,                               IDS,IDE,KDS,KDE,JDS,JDE           &
+     &,                               IDS,IDE,KDS,KDE,JDS,JDE           &    
      &,                               IMS,IME,KMS,KME,JMS,JME           &
      &,                               ITS,ITE,KTS,KTE,JTS,JTE)
       ENDDO

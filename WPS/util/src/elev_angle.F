@@ -35,10 +35,10 @@ program elev_angle
    n_bins = 180
    allocate(topo_angle(we_dim, sn_dim, n_bins))
 
-   !
+   ! 
    ! Compute elevation angles for each azimuth angle bin
    !
-   topo_angle = 10.0
+   topo_angle = 10.0 
 
    !
    ! Write elevation angle data to intermediate file
@@ -71,7 +71,7 @@ subroutine read_topo_field(filename, hgt, we_dim, sn_dim, istatus)
    character (len=NF90_MAX_NAME) :: toponame, we_name, sn_name
 
 
-   istatus = nf90_open(trim(filename), 0, ncid)
+   istatus = nf90_open(trim(filename), 0, ncid) 
    if (istatus /= NF90_NOERR) then
       write(6,*) ' '
       write(6,*) 'Error: Could not open file '//trim(filename)
@@ -141,7 +141,7 @@ subroutine read_topo_field(filename, hgt, we_dim, sn_dim, istatus)
    end if
 
    istatus = nf90_close(ncid)
-
+  
    istatus = 0
 
 end subroutine read_topo_field
@@ -155,7 +155,7 @@ subroutine write_elev_angles(field, we_dim, sn_dim, kdim, istatus)
 
    ! Arguments
    real, dimension(we_dim, sn_dim, kdim), intent(in) :: field
-   integer, intent(in)                               :: we_dim, sn_dim, kdim
+   integer, intent(in)                               :: we_dim, sn_dim, kdim 
    integer, intent(out)                              :: istatus
 
    ! Local variables

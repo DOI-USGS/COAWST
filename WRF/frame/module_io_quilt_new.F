@@ -14,49 +14,49 @@
 MODULE module_wrf_quilt
 !<DESCRIPTION>
 !<PRE>
-! This module contains WRF-specific I/O quilt routines called by both
-! client (compute) and server (I/O quilt) tasks.  I/O quilt servers are
-! a run-time optimization that allow I/O operations, executed on the I/O
-! quilt server tasks, to be overlapped with useful computation, executed on
-! the compute tasks.  Since I/O operations are often quite slow compared to
-! computation, this performance optimization can increase parallel
-! efficiency.
+! This module contains WRF-specific I/O quilt routines called by both 
+! client (compute) and server (I/O quilt) tasks.  I/O quilt servers are 
+! a run-time optimization that allow I/O operations, executed on the I/O 
+! quilt server tasks, to be overlapped with useful computation, executed on 
+! the compute tasks.  Since I/O operations are often quite slow compared to 
+! computation, this performance optimization can increase parallel 
+! efficiency.  
 !
-! Currently, one group of I/O servers can be specified at run-time.  Namelist
-! variable "nio_tasks_per_group" is used to specify the number of I/O server
-! tasks in this group.  In most cases, parallel efficiency is optimized when
-! the minimum number of I/O server tasks are used.  If memory needed to cache
-! I/O operations fits on a single processor, then set nio_tasks_per_group=1.
-! If not, increase the number of I/O server tasks until I/O operations fit in
-! memory.  In the future, multiple groups of I/O server tasks will be
-! supported.  The number of groups will be specified by namelist variable
-! "nio_groups".  For now, nio_groups must be set to 1.  Currently, I/O servers
-! only support overlap of output operations with computation.  Also, only I/O
-! packages that do no support native parallel I/O may be used with I/O server
-! tasks.  This excludes PHDF5 and MCEL.
+! Currently, one group of I/O servers can be specified at run-time.  Namelist 
+! variable "nio_tasks_per_group" is used to specify the number of I/O server 
+! tasks in this group.  In most cases, parallel efficiency is optimized when 
+! the minimum number of I/O server tasks are used.  If memory needed to cache 
+! I/O operations fits on a single processor, then set nio_tasks_per_group=1.  
+! If not, increase the number of I/O server tasks until I/O operations fit in 
+! memory.  In the future, multiple groups of I/O server tasks will be 
+! supported.  The number of groups will be specified by namelist variable 
+! "nio_groups".  For now, nio_groups must be set to 1.  Currently, I/O servers 
+! only support overlap of output operations with computation.  Also, only I/O 
+! packages that do no support native parallel I/O may be used with I/O server 
+! tasks.  This excludes PHDF5 and MCEL.  
 !
-! In this module, the I/O quilt server tasks call package-dependent
-! WRF-specific I/O interfaces to perform I/O operations requested by the
-! client (compute) tasks.  All of these calls occur inside subroutine
-! quilt().
+! In this module, the I/O quilt server tasks call package-dependent 
+! WRF-specific I/O interfaces to perform I/O operations requested by the 
+! client (compute) tasks.  All of these calls occur inside subroutine 
+! quilt().  
+! 
+! The client (compute) tasks call package-independent WRF-specific "quilt I/O" 
+! interfaces that send requests to the I/O quilt servers.  All of these calls 
+! are made from module_io.F.  
 !
-! The client (compute) tasks call package-independent WRF-specific "quilt I/O"
-! interfaces that send requests to the I/O quilt servers.  All of these calls
-! are made from module_io.F.
-!
-! These routines have the same names and (roughly) the same arguments as those
+! These routines have the same names and (roughly) the same arguments as those 
 ! specified in the WRF I/O API except that:
-! - "Quilt I/O" routines defined in this file and called by routines in
+! - "Quilt I/O" routines defined in this file and called by routines in 
 !   module_io.F have the "wrf_quilt_" prefix.
-! - Package-dependent routines called from routines in this file are defined
+! - Package-dependent routines called from routines in this file are defined 
 !   in the external I/O packages and have the "ext_" prefix.
 !
-! Both client (compute) and server tasks call routine init_module_wrf_quilt()
-! which then calls setup_quilt_servers() determine which tasks are compute
-! tasks and which are server tasks.  Before the end of init_module_wrf_quilt()
-! server tasks call routine quilt() and remain there for the rest of the model
-! run.  Compute tasks return from init_module_wrf_quilt() to perform model
-! computations.
+! Both client (compute) and server tasks call routine init_module_wrf_quilt() 
+! which then calls setup_quilt_servers() determine which tasks are compute 
+! tasks and which are server tasks.  Before the end of init_module_wrf_quilt() 
+! server tasks call routine quilt() and remain there for the rest of the model 
+! run.  Compute tasks return from init_module_wrf_quilt() to perform model 
+! computations.  
 !
 ! See http://www.mmm.ucar.edu/wrf/WG2/software_2.0/IOAPI.doc for the latest
 ! version of the WRF I/O API.  This document includes detailed descriptions
@@ -130,7 +130,7 @@ MODULE module_wrf_quilt
       INTEGER, INTENT(IN) :: dhandle
 ! local
       INTEGER :: id
-
+      
       IF ( dhandle .GE. 1 .AND. dhandle .LE. int_num_handles ) THEN
         id = which_grid_is_handle(dhandle)
         IF ( id .LT. 1 .OR. id .GT. max_domains ) THEN
@@ -171,7 +171,7 @@ MODULE module_wrf_quilt
        ENDIF
     END SUBROUTINE set_server_id
 
-    LOGICAL FUNCTION get_poll_servers()
+    LOGICAL FUNCTION get_poll_servers() 
       implicit none
       get_poll_servers=poll_servers
     end FUNCTION get_poll_servers
@@ -217,35 +217,35 @@ MODULE module_wrf_quilt
                                      mpi_comm_io_groups,      &
                                      compute_node   )
 !<DESCRIPTION>
-! Both client (compute) and server tasks call this routine to
-! determine which tasks are compute tasks and which are I/O server tasks.
+! Both client (compute) and server tasks call this routine to 
+! determine which tasks are compute tasks and which are I/O server tasks.  
 !
-! Module variables MPI_COMM_LOCAL and MPI_COMM_IO_GROUPS(:) are set up to
-! contain MPI communicators as follows:
+! Module variables MPI_COMM_LOCAL and MPI_COMM_IO_GROUPS(:) are set up to 
+! contain MPI communicators as follows:  
 !
-! MPI_COMM_LOCAL is the Communicator for the local groups of tasks. For the
-! compute tasks it is the group of compute tasks; for a server group it the
+! MPI_COMM_LOCAL is the Communicator for the local groups of tasks. For the 
+! compute tasks it is the group of compute tasks; for a server group it the 
 ! communicator of tasks in the server group.
 !
-! Elements of MPI_COMM_IO_GROUPS are communicators that each contain one or
-! more compute tasks and a single I/O server assigned to those compute tasks.
-! The I/O server tasks is always the last task in these communicators.
-! On a compute task, which has a single associate in each of the server
-! groups, MPI_COMM_IO_GROUPS is treated as an array; each element corresponds
-! to a different server group.
-! On a server task only the first element of MPI_COMM_IO_GROUPS is used
-! because each server task is part of only one io_group.
+! Elements of MPI_COMM_IO_GROUPS are communicators that each contain one or 
+! more compute tasks and a single I/O server assigned to those compute tasks.  
+! The I/O server tasks is always the last task in these communicators.  
+! On a compute task, which has a single associate in each of the server 
+! groups, MPI_COMM_IO_GROUPS is treated as an array; each element corresponds 
+! to a different server group. 
+! On a server task only the first element of MPI_COMM_IO_GROUPS is used 
+! because each server task is part of only one io_group.  
 !
-! I/O server tasks in each I/O server group are divided among compute tasks as
-! evenly as possible.
+! I/O server tasks in each I/O server group are divided among compute tasks as 
+! evenly as possible.  
 !
-! When multiple I/O server groups are used, each must have the same number of
-! tasks.  When the total number of extra I/O tasks does not divide evenly by
-! the number of io server groups requested, the remainder tasks are not used
-! (wasted).
+! When multiple I/O server groups are used, each must have the same number of 
+! tasks.  When the total number of extra I/O tasks does not divide evenly by 
+! the number of io server groups requested, the remainder tasks are not used 
+! (wasted).  
 !
-! For example, communicator membership for 18 tasks with nio_groups=2 and
-! nio_tasks_per_group=3 is shown below:
+! For example, communicator membership for 18 tasks with nio_groups=2 and 
+! nio_tasks_per_group=3 is shown below:  
 !
 !<PRE>
 ! Membership for MPI_COMM_LOCAL communicators:
@@ -253,7 +253,7 @@ MODULE module_wrf_quilt
 !   1ST I/O SERVER GROUP:  12  13  14
 !   2ND I/O SERVER GROUP:  15  16  17
 !
-! Membership for MPI_COMM_IO_GROUPS(1):
+! Membership for MPI_COMM_IO_GROUPS(1):  
 !   COMPUTE TASKS 0, 3, 6, 9:   0   3   6   9  12
 !   COMPUTE TASKS 1, 4, 7,10:   1   4   7  10  13
 !   COMPUTE TASKS 2, 5, 8,11:   2   5   8  11  14
@@ -264,7 +264,7 @@ MODULE module_wrf_quilt
 !   I/O SERVER TASK       16:   1   4   7  10  16
 !   I/O SERVER TASK       17:   2   5   8  11  17
 !
-! Membership for MPI_COMM_IO_GROUPS(2):
+! Membership for MPI_COMM_IO_GROUPS(2):  
 !   COMPUTE TASKS 0, 3, 6, 9:   0   3   6   9  15
 !   COMPUTE TASKS 1, 4, 7,10:   1   4   7  10  16
 !   COMPUTE TASKS 2, 5, 8,11:   2   5   8  11  17
@@ -380,9 +380,9 @@ MODULE module_wrf_quilt
       nprocy = nest_pes_y(id)
 
       IF ( nio .GT. nprocy*nprocx ) THEN
-        CALL wrf_error_fatal( 'more io tasks than compute tasks specified' )
+        CALL wrf_error_fatal( 'more io tasks than compute tasks specified' ) 
       ENDIF
-
+  
       m = mod(nprocy*nprocx,nio)  ! divide up remainder, 1 row per, until gone
       ii = 0
       j = 1
@@ -426,7 +426,7 @@ MODULE module_wrf_quilt
 
 
       if(poll_servers) then
-         ! If server polling is enabled, we need to create mpi_comm_avail,
+         ! If server polling is enabled, we need to create mpi_comm_avail, 
          ! which contains the monitor process, and the I/O server master process
          ! for each I/O server group.  This will be used in the routines
          ! wrf_quilt_find_server and wrf_quilt_server_ready to find inactive
@@ -478,18 +478,18 @@ MODULE module_wrf_quilt
             ) THEN
 
          CALL MPI_Comm_Size( mpi_comm_io_groups(j,id) , iisize, ierr )
-         ! Get the rank of this compute task in the compute+io
+         ! Get the rank of this compute task in the compute+io 
          ! communicator to which it belongs
          CALL MPI_Comm_Rank( mpi_comm_io_groups(j,id) , me , ierr )
 
          ! If I am an I/O server for this group then make that group's
-         ! communicator the first element in the mpi_comm_io_groups array
+         ! communicator the first element in the mpi_comm_io_groups array 
          ! (I will ignore all of the other elements).
 
          IF ( (found .LE. mytask .AND. mytask .LT.  ncompute_tasks ) ) THEN
             compute_node = .TRUE.
-            ! If I am a compute task, check whether I am the member of my
-            ! group that will communicate things that should be sent just
+            ! If I am a compute task, check whether I am the member of my 
+            ! group that will communicate things that should be sent just 
             ! once (e.g. commands) to the IO server of my group.
             compute_group_master(j,id) = (me .EQ. 0)
          ELSE
@@ -540,14 +540,14 @@ MODULE module_wrf_quilt
 
     SUBROUTINE quilt
 !<DESCRIPTION>
-! I/O server tasks call this routine and remain in it for the rest of the
-! model run.  I/O servers receive I/O requests from compute tasks and
-! perform requested I/O operations by calling package-dependent WRF-specific
-! I/O interfaces.  Requests are sent in the form of "data headers".  Each
-! request has a unique "header" message associated with it.  For requests that
-! contain large amounts of data, the data is appended to the header.  See
-! file module_internal_header_util.F for detailed descriptions of all
-! headers.
+! I/O server tasks call this routine and remain in it for the rest of the 
+! model run.  I/O servers receive I/O requests from compute tasks and 
+! perform requested I/O operations by calling package-dependent WRF-specific 
+! I/O interfaces.  Requests are sent in the form of "data headers".  Each 
+! request has a unique "header" message associated with it.  For requests that 
+! contain large amounts of data, the data is appended to the header.  See 
+! file module_internal_header_util.F for detailed descriptions of all 
+! headers.  
 !
 ! We wish to be able to link to different packages depending on whether
 ! the I/O is restart, initial, history, or boundary.
@@ -592,14 +592,14 @@ character*120 sysline
 ! within the group of I/O servers rather than gathering the data onto the
 ! root I/O server. Unfortunately, this approach means that we can no-longer
 ! select different I/O layers for use with quilting at run time. ARPDBG.
-! This code is sufficiently different that it is kept in the separate
+! This code is sufficiently different that it is kept in the separate 
 ! quilt_pnc() routine.
 #ifdef PNETCDF_QUILT
       CALL quilt_pnc()
       RETURN
 #endif
 
-! Call ext_pkg_ioinit() routines to initialize I/O packages.
+! Call ext_pkg_ioinit() routines to initialize I/O packages.  
       SysDepInfo = " "
 #ifdef NETCDF
       if ( config_flags%use_netcdf_classic ) SysDepInfo="use_netcdf_classic"
@@ -652,8 +652,8 @@ character*120 sysline
 !
 
 ! infinite loop until shutdown message received
-! This is the main request-handling loop.  I/O quilt servers stay in this loop
-! until the model run ends.
+! This is the main request-handling loop.  I/O quilt servers stay in this loop 
+! until the model run ends.  
       okay_to_w = .FALSE.
 
       DO WHILE (.TRUE.)  ! {
@@ -662,13 +662,13 @@ character*120 sysline
 ! Each I/O server receives requests from its compute tasks.  Each request
 ! is contained in a data header (see module_internal_header_util.F for
 ! detailed descriptions of data headers).
-! Each request is sent in two phases.  First, sizes of all messages that
-! will be sent from the compute tasks to this I/O server are summed on the
-! I/O server via MPI_reduce().  The I/O server then allocates buffer "obuf"
-! and receives concatenated messages from the compute tasks in it via the
-! call to collect_on_comm().  Note that "sizes" are generally expressed in
-! *bytes* in this code so conversion to "count" (number of Fortran words) is
-! required for Fortran indexing and MPI calls.
+! Each request is sent in two phases.  First, sizes of all messages that 
+! will be sent from the compute tasks to this I/O server are summed on the 
+! I/O server via MPI_reduce().  The I/O server then allocates buffer "obuf" 
+! and receives concatenated messages from the compute tasks in it via the 
+! call to collect_on_comm().  Note that "sizes" are generally expressed in 
+! *bytes* in this code so conversion to "count" (number of Fortran words) is 
+! required for Fortran indexing and MPI calls.  
 !</DESCRIPTION>
 
          if(poll_servers .and. call_server_ready) then
@@ -681,16 +681,16 @@ character*120 sysline
         ! wait for info from compute tasks in the I/O group that we're ready to rock
         ! obufsize will contain number of *bytes*
 !CALL start_timing()
-        ! first element of reduced is obufsize, second is DataHandle
+        ! first element of reduced is obufsize, second is DataHandle 
         ! if needed (currently needed only for ioclose).
         reduced_dummy = 0
 
 !write(0,*)'before mpi_x_reduce on quilt server '
         CALL mpi_x_reduce( reduced_dummy, reduced, 2, MPI_INTEGER, MPI_SUM, mytask_io_group, mpi_comm_io_groups(1,1), ierr )
         obufsize = reduced(1)
-!CALL end_timing("MPI_Reduce at top of forever loop")
+!CALL end_timing("MPI_Reduce at top of forever loop") 
 !JMDEBUGwrite(0,*)'obufsize = ',obufsize
-! Negative obufsize will trigger I/O server exit.
+! Negative obufsize will trigger I/O server exit.  
 !write(0,*)'after mpi_x_reduce on quilt server ',obufsize
         IF ( obufsize .LT. 0 ) THEN
           IF ( obufsize .EQ. -100 ) THEN         ! magic number
@@ -717,8 +717,8 @@ character*120 sysline
 #endif
             CALL wrf_message ( 'I/O QUILT SERVERS DONE' )
 #if ( DA_CORE != 1 )
-            IF (coupler_on) THEN
-               CALL cpl_finalize()
+            IF (coupler_on) THEN 
+               CALL cpl_finalize() 
             ELSE
 #endif
                CALL mpi_finalize(ierr)
@@ -736,8 +736,8 @@ character*120 sysline
 ! Obufsize of zero signals a close
 
 ! Allocate buffer obuf to be big enough for the data the compute tasks
-! will send.  Note: obuf is size in *bytes* so we need to pare this
-! down, since the buffer is INTEGER.
+! will send.  Note: obuf is size in *bytes* so we need to pare this 
+! down, since the buffer is INTEGER.  
         IF ( obufsize .GT. 0 ) THEN
           ALLOCATE( obuf( (obufsize+1)/itypesize ) )
 
@@ -749,18 +749,18 @@ character*120 sysline
 !          CALL end_timing( "quilt on server: collecting data from compute procs" )
         ELSE
           ! Necessarily, the compute processes send the ioclose signal,
-          ! if there is one, after the iosync, which means they
-          ! will stall on the ioclose message waiting for the quilt
+          ! if there is one, after the iosync, which means they 
+          ! will stall on the ioclose message waiting for the quilt 
           ! processes if we handle the way other messages are collected,
           ! using collect_on_comm.  This avoids this, but we need
           ! a special signal (obufsize zero) and the DataHandle
           ! to be closed. That handle is send as the second
           ! word of the io_close message received by the MPI_Reduce above.
           ! Then a header representing the ioclose message is constructed
-          ! here and handled below as if it were received from the
+          ! here and handled below as if it were received from the 
           ! compute processes. The clients (compute processes) must be
           ! careful to send this correctly (one compule process sends the actual
-          ! handle and everone else sends a zero, so the result sums to
+          ! handle and everone else sends a zero, so the result sums to 
           ! the value of the handle).
           !
           ALLOCATE( obuf( 4096 ) )
@@ -768,7 +768,7 @@ character*120 sysline
           CALL int_gen_handle_header( obuf, obufsize, itypesize, &
                                       reduced(2) , int_ioclose )
 
-          if(poll_servers) then
+          if(poll_servers) then 
              ! Once we're done closing, we need to tell the master
              ! process that we're ready for more data.
              call_server_ready=.true.
@@ -776,25 +776,25 @@ character*120 sysline
         ENDIF
 
 !write(0,*)'calling init_store_piece_of_field'
-! Now all messages received from the compute clients are stored in
-! obuf.  Scan through obuf and extract headers and field data and store in
-! internal buffers.  The scan is done twice, first to determine sizes of
-! internal buffers required for storage of headers and fields and second to
-! actually store the headers and fields.  This bit of code does not do the
-! "quilting" (assembly of patches into full domains).  For each field, it
-! simply concatenates all received patches for the field into a separate
-! internal buffer (i.e. one buffer per field).  Quilting is done later by
-! routine store_patch_in_outbuf().
+! Now all messages received from the compute clients are stored in 
+! obuf.  Scan through obuf and extract headers and field data and store in 
+! internal buffers.  The scan is done twice, first to determine sizes of 
+! internal buffers required for storage of headers and fields and second to 
+! actually store the headers and fields.  This bit of code does not do the 
+! "quilting" (assembly of patches into full domains).  For each field, it 
+! simply concatenates all received patches for the field into a separate 
+! internal buffer (i.e. one buffer per field).  Quilting is done later by 
+! routine store_patch_in_outbuf().  
         CALL init_store_piece_of_field
         CALL mpi_type_size ( MPI_INTEGER , itypesize , ierr )
 !write(0,*)'mpi_type_size returns ', itypesize
-! Scan obuf the first time to calculate the size of the buffer required for
-! each field.  Calls to add_to_bufsize_for_field() accumulate sizes.
+! Scan obuf the first time to calculate the size of the buffer required for 
+! each field.  Calls to add_to_bufsize_for_field() accumulate sizes.  
         vid = 0
         icurs = itypesize
-        num_noops = 0
-        num_commit_messages = 0
-        num_field_training_msgs = 0
+        num_noops = 0 
+        num_commit_messages = 0 
+        num_field_training_msgs = 0 
         DO WHILE ( icurs .lt. obufsize ) ! {
           hdr_tag = get_hdr_tag( obuf ( icurs / itypesize ) )
           SELECT CASE ( hdr_tag )
@@ -845,18 +845,18 @@ character*120 sysline
 ! server and the other servers in this quilt group stay synchronized in
 ! the collection loop below, even when the servers are serving different
 ! numbers of clients. Here are some conditions:
-!
+! 
 !   1. The number of compute clients served will not differ by more than 1
 !   2. The servers with +1 number of compute clients begin with task 0
 !      of mpi_comm_local, the commicator shared by this group of servers
-!
+! 
 !   3. For each collective field or metadata output from the compute tasks,
 !      there will be one record sent to the associated i/o server task. The
 !      i/o server task collects these records and stores them contiguously
 !      in a buffer (obuf) using collect_on_comm above.  Thus, obuf on this
 !      server task will contain one record from each associated compute
 !      task, in order.
-!
+! 
 !   4. In the case of replicated output from the compute tasks
 !      (e.g. put_dom_ti records and control records like
 !      open_for_write_commit type records), compute task 0 is the only
@@ -865,7 +865,7 @@ character*120 sysline
 !      record from task 0 followed by noop records from the rest of the
 !      compute tasks associated with task 0.  Obuf on the other server
 !      tasks will contain nothing but noop records.
-!
+! 
 !   5. The logic below will not allow any noop records from server task 0.
 !      It allows only one noop record from each of the other server tasks
 !      in the i/o group.  This way, for replicated output, when the records
@@ -876,7 +876,7 @@ character*120 sysline
 
               IF ((hdr_tag.EQ.int_noop.AND.mytask_local.NE.0.AND.num_noops.LE.0)  &
                   .OR.hdr_tag.NE.int_noop) THEN
-                write(VarName,'(I5.5)')vid
+                write(VarName,'(I5.5)')vid 
 !write(0,*) 'X-2', hdrbufsize, get_hdr_tag( obuf ( icurs / itypesize ) ) , get_hdr_rec_size( obuf ( icurs / itypesize ) ), TRIM(VarName)
                 call add_to_bufsize_for_field( VarName, hdrbufsize )
                 vid = vid+1
@@ -885,14 +885,14 @@ character*120 sysline
               icurs = icurs + hdrbufsize
           END SELECT
         ENDDO ! }
-! Store the headers and field data in internal buffers.  The first call to
-! store_piece_of_field() allocates internal buffers using sizes computed by
-! calls to add_to_bufsize_for_field().
+! Store the headers and field data in internal buffers.  The first call to 
+! store_piece_of_field() allocates internal buffers using sizes computed by 
+! calls to add_to_bufsize_for_field().  
         vid = 0
         icurs = itypesize
-        num_noops = 0
-        num_commit_messages = 0
-        num_field_training_msgs = 0
+        num_noops = 0 
+        num_commit_messages = 0 
+        num_field_training_msgs = 0 
         DO WHILE ( icurs .lt. obufsize ) !{
 !write(0,*) 'A icurs ', icurs, ' obufsize ', obufsize
           hdr_tag = get_hdr_tag( obuf ( icurs / itypesize ) )
@@ -936,7 +936,7 @@ character*120 sysline
               hdrbufsize = obuf(icurs/itypesize)
               IF ((hdr_tag.EQ.int_noop.AND.mytask_local.NE.0.AND.num_noops.LE.0)  &
                   .OR.hdr_tag.NE.int_noop) THEN
-                write(VarName,'(I5.5)')vid
+                write(VarName,'(I5.5)')vid 
 !write(0,*) 'A-2b', hdrbufsize, get_hdr_tag( obuf ( icurs / itypesize ) ) , get_hdr_rec_size( obuf ( icurs / itypesize ) ), TRIM(VarName)
                 call store_piece_of_field( obuf(icurs/itypesize), VarName, hdrbufsize )
                 vid = vid+1
@@ -946,13 +946,13 @@ character*120 sysline
           END SELECT
         ENDDO !}
 
-! Now, for each field, retrieve headers and patches (data) from the internal
+! Now, for each field, retrieve headers and patches (data) from the internal 
 ! buffers and collect them all on the I/O quilt server "root" task.
         CALL init_retrieve_pieces_of_field
-! Retrieve header and all patches for the first field from the internal
-! buffers.
+! Retrieve header and all patches for the first field from the internal 
+! buffers.  
         CALL retrieve_pieces_of_field ( obuf , VarName, obufsize, sz, retval )
-! Sum sizes of all headers and patches (data) for this field from all I/O
+! Sum sizes of all headers and patches (data) for this field from all I/O 
 ! servers in this I/O server group onto the I/O server "root".
         CALL mpi_x_reduce( sz, bigbufsize, 1, MPI_INTEGER, MPI_SUM, ntasks_local_group-1, mpi_comm_local, ierr )
 !write(0,*)'seed: sz ',sz,' bigbufsize ',bigbufsize,' VarName ', TRIM(VarName),' retval ',retval
@@ -978,8 +978,8 @@ character*120 sysline
                                 onebyte,                                      &
                                 obuf, sz,                                     &
                                 bigbuf, bigbufsize )
-! The I/O server "root" now handles collected requests from all compute
-! tasks served by this I/O server group (i.e. all compute tasks).
+! The I/O server "root" now handles collected requests from all compute 
+! tasks served by this I/O server group (i.e. all compute tasks).  
           IF ( mytask_local .EQ. ntasks_local_group-1 ) THEN
 !jjj = 4
 !do iii = 1, ntasks_local_group
@@ -991,7 +991,7 @@ character*120 sysline
 
             stored_write_record = .false.
 
-! The I/O server "root" loops over the collected requests.
+! The I/O server "root" loops over the collected requests.  
             DO WHILE ( icurs .lt. bigbufsize ) !{
               CALL mpi_type_size ( MPI_INTEGER , itypesize , ierr )
 
@@ -1000,10 +1000,10 @@ character*120 sysline
 ! handles it by, in most cases, calling the appropriate external I/O package
 ! interface.
               SELECT CASE ( get_hdr_tag( bigbuf(icurs/itypesize) ) )
-! The I/O server "root" handles the "noop" (do nothing) request.  This is
-! actually quite easy.  "Noop" requests exist to help avoid race conditions.
-! In some cases, only one compute task will everything about a request so
-! other compute tasks send "noop" requests.
+! The I/O server "root" handles the "noop" (do nothing) request.  This is 
+! actually quite easy.  "Noop" requests exist to help avoid race conditions.  
+! In some cases, only one compute task will everything about a request so 
+! other compute tasks send "noop" requests.  
                 CASE ( int_noop )
                   CALL int_get_noop_header( bigbuf(icurs/itypesize), hdrbufsize, itypesize )
                   icurs = icurs + hdrbufsize
@@ -1152,7 +1152,7 @@ character*120 sysline
                   END SELECT
 
                   DEALLOCATE( IData)
-
+ 
 ! The I/O server "root" handles the "set_time" request.
                 CASE ( int_set_time )
                   CALL int_get_ti_header_char( bigbuf(icurs/itypesize), hdrbufsize, itypesize, &
@@ -1312,10 +1312,10 @@ character*120 sysline
 !write(0,*)' int_open_for_write_begin itypesize ',itypesize,' itypesize ',itypesize
 !write(0,*)' int_open_for_write_begin icurs ', icurs, hdrbufsize
 !write(0,*)' int_open_for_write_begin FileName ',TRIM(FileName) , ' DataHandle ', DataHandle
-!write(0,*)' int_open_for_write_begin SysDepInfo ',TRIM(SysDepInfo)
+!write(0,*)' int_open_for_write_begin SysDepInfo ',TRIM(SysDepInfo) 
                   icurs = icurs + hdrbufsize
 !write(0,*)' int_open_for_write_begin new icurs,tag,size ', icurs, get_hdr_tag( bigbuf(icurs/itypesize) ),get_hdr_rec_size( bigbuf(icurs/itypesize) )
-
+                
                   io_form(DataHandle) = io_form_arg
 !write(0,*)'io_form(DataHandle) ',io_form(DataHandle)
 
@@ -1344,7 +1344,7 @@ character*120 sysline
                     CASE DEFAULT
                       Status = 0
                   END SELECT
-
+                
                   okay_to_write(DataHandle) = .false.
 
 ! The I/O server "root" handles the "open_for_write_commit" request.
@@ -1385,8 +1385,8 @@ character*120 sysline
 !                        (PatchEnd(1)-PatchStart(1)+1)*(PatchEnd(2)-PatchStart(2)+1)*(PatchEnd(3)-PatchStart(3)+1)
 
                     IF ( FieldType .EQ. WRF_FLOAT .OR. FieldType .EQ. WRF_DOUBLE)  THEN
-                      ! Note that the WRF_DOUBLE branch of this IF statement must come first since
-                      ! WRF_FLOAT is set equal to WRF_DOUBLE during autopromotion builds.
+                      ! Note that the WRF_DOUBLE branch of this IF statement must come first since 
+                      ! WRF_FLOAT is set equal to WRF_DOUBLE during autopromotion builds.  
                       IF ( FieldType .EQ. WRF_DOUBLE)  THEN
 ! this branch has not been tested TBH: 20050406
                         CALL mpi_type_size( MPI_DOUBLE_PRECISION, ftypesize, ierr )
@@ -1450,8 +1450,8 @@ character*120 sysline
 ! store_patch_in_outbuf() when handling write_field (int_field)
 ! commands which only arrive AFTER an "iosync" command.
 !              CALL start_timing
-              CALL write_outbuf ( handle(DataHandle), use_package(io_form(DataHandle)))
-!              CALL end_timing( "quilt: call to write_outbuf" )
+              CALL write_outbuf ( handle(DataHandle), use_package(io_form(DataHandle))) 
+!              CALL end_timing( "quilt: call to write_outbuf" ) 
             ENDIF
 
 ! If one or more "open_for_write_commit" commands were encountered from the
@@ -1511,15 +1511,15 @@ character*120 sysline
         ENDIF
 #endif
         if(allocated(bigbuf)) deallocate(bigbuf)
-! Retrieve header and all patches for the next field from the internal
-! buffers.
+! Retrieve header and all patches for the next field from the internal 
+! buffers.  
         CALL retrieve_pieces_of_field ( obuf , VarName, obufsize, sz, retval )
-! Sum sizes of all headers and patches (data) for this field from all I/O
+! Sum sizes of all headers and patches (data) for this field from all I/O 
 ! servers in this I/O server group onto the I/O server "root".
         CALL mpi_x_reduce( sz, bigbufsize, 1, MPI_INTEGER,MPI_SUM, ntasks_local_group-1,mpi_comm_local, ierr )
-! Then, return to the top of the loop to collect headers and data from all
-! I/O servers in this I/O server group onto the I/O server "root" and handle
-! the next batch of commands.
+! Then, return to the top of the loop to collect headers and data from all 
+! I/O servers in this I/O server group onto the I/O server "root" and handle 
+! the next batch of commands.  
       END DO !}
 
       DEALLOCATE( obuf )
@@ -1569,7 +1569,7 @@ character*120 sysline
     SUBROUTINE quilt_pnc
 !<DESCRIPTION>
 ! Same as quilt() routine except that _all_ of the IO servers that call it
-! actually write data to disk using pNetCDF. This version is only used when
+! actually write data to disk using pNetCDF. This version is only used when 
 ! the  code is compiled with PNETCDF_QUILT defined.
 !</DESCRIPTION>
       USE module_state_description
@@ -1602,7 +1602,7 @@ character*120 sysline
 !      logical okay_to_w
 !      character*120 sysline
 
-! Call ext_pkg_ioinit() routines to initialize I/O packages.
+! Call ext_pkg_ioinit() routines to initialize I/O packages.  
       SysDepInfo = " "
 #ifdef NETCDF
       CALL ext_ncd_ioinit( SysDepInfo, ierr)
@@ -1651,8 +1651,8 @@ character*120 sysline
 !
 
 ! infinite loop until shutdown message received
-! This is the main request-handling loop.  I/O quilt servers stay in this loop
-! until the model run ends.
+! This is the main request-handling loop.  I/O quilt servers stay in this loop 
+! until the model run ends.  
 !okay_to_w = .false.
       DO WHILE (.TRUE.)  ! {
 
@@ -1660,25 +1660,25 @@ character*120 sysline
 ! Each I/O server receives requests from its compute tasks.  Each request
 ! is contained in a data header (see module_internal_header_util.F for
 ! detailed descriptions of data headers).
-! Each request is sent in two phases.  First, sizes of all messages that
-! will be sent from the compute tasks to this I/O server are summed on the
-! I/O server via MPI_reduce().  The I/O server then allocates buffer "obuf"
-! and receives concatenated messages from the compute tasks in it via the
-! call to collect_on_comm().  Note that "sizes" are generally expressed in
-! *bytes* in this code so conversion to "count" (number of Fortran words) is
-! required for Fortran indexing and MPI calls.
+! Each request is sent in two phases.  First, sizes of all messages that 
+! will be sent from the compute tasks to this I/O server are summed on the 
+! I/O server via MPI_reduce().  The I/O server then allocates buffer "obuf" 
+! and receives concatenated messages from the compute tasks in it via the 
+! call to collect_on_comm().  Note that "sizes" are generally expressed in 
+! *bytes* in this code so conversion to "count" (number of Fortran words) is 
+! required for Fortran indexing and MPI calls.  
 !</DESCRIPTION>
         ! wait for info from compute tasks in the I/O group that we're ready to rock
         ! obufsize will contain number of *bytes*
 !CALL start_timing
-        ! first element of reduced is obufsize, second is DataHandle
+        ! first element of reduced is obufsize, second is DataHandle 
         ! if needed (currently needed only for ioclose).
         reduced_dummy = 0
         CALL mpi_x_reduce( reduced_dummy, reduced, 2, MPI_INTEGER, MPI_SUM, mytask_io_group, mpi_comm_io_groups(1,1), ierr )
         obufsize = reduced(1)
-!CALL end_timing("MPI_Reduce at top of forever loop")
+!CALL end_timing("MPI_Reduce at top of forever loop") 
 !JMDEBUGwrite(0,*)'obufsize = ',obufsize
-! Negative obufsize will trigger I/O server exit.
+! Negative obufsize will trigger I/O server exit.  
         IF ( obufsize .LT. 0 ) THEN
           IF ( obufsize .EQ. -100 ) THEN         ! magic number
 #ifdef NETCDF
@@ -1726,8 +1726,8 @@ character*120 sysline
 ! Obufsize of zero signals a close
 
 ! Allocate buffer obuf to be big enough for the data the compute tasks
-! will send.  Note: obuf is size in *bytes* so we need to pare this
-! down, since the buffer is INTEGER.
+! will send.  Note: obuf is size in *bytes* so we need to pare this 
+! down, since the buffer is INTEGER.  
         IF ( obufsize .GT. 0 ) THEN
           ALLOCATE( obuf( (obufsize+1)/itypesize ) )
 
@@ -1739,18 +1739,18 @@ character*120 sysline
 !          CALL end_timing( "quilt on server: collecting data from compute procs" )
         ELSE
           ! Necessarily, the compute processes send the ioclose signal,
-          ! if there is one, after the iosync, which means they
-          ! will stall on the ioclose message waiting for the quilt
+          ! if there is one, after the iosync, which means they 
+          ! will stall on the ioclose message waiting for the quilt 
           ! processes if we handle the way other messages are collected,
           ! using collect_on_comm.  This avoids this, but we need
           ! a special signal (obufsize zero) and the DataHandle
           ! to be closed. That handle is send as the second
           ! word of the io_close message received by the MPI_Reduce above.
           ! Then a header representing the ioclose message is constructed
-          ! here and handled below as if it were received from the
+          ! here and handled below as if it were received from the 
           ! compute processes. The clients (compute processes) must be
           ! careful to send this correctly (one compule process sends the actual
-          ! handle and everone else sends a zero, so the result sums to
+          ! handle and everone else sends a zero, so the result sums to 
           ! the value of the handle).
           !
           ALLOCATE( obuf( 4096 ) )
@@ -1760,12 +1760,12 @@ character*120 sysline
         ENDIF
 
 !write(0,*)'calling init_store_piece_of_field'
-! Now all messages received from the compute clients are stored in
-! obuf.  Scan through obuf and extract headers and field data and store in
-! internal buffers.  The scan is done twice, first to determine sizes of
-! internal buffers required for storage of headers and fields and second to
-! actually store the headers and fields.  This bit of code does not do any
-! "quilting" (assembly of patches into full domains).  For each field, it
+! Now all messages received from the compute clients are stored in 
+! obuf.  Scan through obuf and extract headers and field data and store in 
+! internal buffers.  The scan is done twice, first to determine sizes of 
+! internal buffers required for storage of headers and fields and second to 
+! actually store the headers and fields.  This bit of code does not do any 
+! "quilting" (assembly of patches into full domains).  For each field, it 
 ! simply writes all received patches for the field to disk.
 ! ARPDBG we can vastly reduce the number of writes to disk by stitching
 ! any contiguous patches together first. Has implications for synchronisation
@@ -1773,13 +1773,13 @@ character*120 sysline
         CALL init_store_piece_of_field
         CALL mpi_type_size ( MPI_INTEGER , itypesize , ierr )
 !write(0,*)'mpi_type_size returns ', itypesize
-! Scan obuf the first time to calculate the size of the buffer required for
-! each field.  Calls to add_to_bufsize_for_field() accumulate sizes.
+! Scan obuf the first time to calculate the size of the buffer required for 
+! each field.  Calls to add_to_bufsize_for_field() accumulate sizes.  
         vid = 0
         icurs = itypesize
-        num_noops = 0
-        num_commit_messages = 0
-        num_field_training_msgs = 0
+        num_noops = 0 
+        num_commit_messages = 0 
+        num_field_training_msgs = 0 
         DO WHILE ( icurs .lt. obufsize ) ! {
           hdr_tag = get_hdr_tag( obuf ( icurs / itypesize ) )
           SELECT CASE ( hdr_tag )
@@ -1830,30 +1830,30 @@ character*120 sysline
 ! server and the other servers in this quilt group stay synchronized in
 ! the collection loop below, even when the servers are serving different
 ! numbers of clients. Here are some conditions:
-!
+! 
 !   1. The number of compute clients served will not differ by more than 1
 !   2. The servers with +1 number of compute clients begin with task 0
 !      of mpi_comm_local, the commicator shared by this group of servers
-!
+! 
 !   3. For each collective field or metadata output from the compute tasks,
 !      there will be one record sent to the associated i/o server task. The
 !      i/o server task collects these records and stores them contiguously
 !      in a buffer (obuf) using collect_on_comm above.  Thus, obuf on this
 !      server task will contain one record from each associated compute
 !      task, in order.
-! !
+! ! 
 !   4. In the case of replicated output from the compute tasks
 !      (e.g. put_dom_ti records and control records like
-!      open_for_write_commit type records), only compute tasks for which
-!      (compute_group_master == .TRUE) send the record. The other compute
-!      tasks send noop records. This is done so that each server task
-!      receives exactly one record plus noops from the other compute tasks.
-!
-!   5. Logic below does not allow any noop records through since each IO
+!      open_for_write_commit type records), only compute tasks for which 
+!      (compute_group_master == .TRUE) send the record. The other compute 
+!      tasks send noop records. This is done so that each server task 
+!      receives exactly one record plus noops from the other compute tasks. 
+! 
+!   5. Logic below does not allow any noop records through since each IO 
 !      server task now receives a valid record (from the 'compute-group master'
 !      when doing replicated output
               IF (hdr_tag.NE.int_noop) THEN
-                write(VarName,'(I5.5)')vid
+                write(VarName,'(I5.5)')vid 
 !write(0,*) 'X-2', hdrbufsize, get_hdr_tag( obuf ( icurs / itypesize ) ) , get_hdr_rec_size( obuf ( icurs / itypesize ) ), TRIM(VarName)
                 call add_to_bufsize_for_field( VarName, hdrbufsize )
                 vid = vid+1
@@ -1863,14 +1863,14 @@ character*120 sysline
 
           END SELECT
         ENDDO ! }
-! Store the headers and field data in internal buffers.  The first call to
-! store_piece_of_field() allocates internal buffers using sizes computed by
-! calls to add_to_bufsize_for_field().
+! Store the headers and field data in internal buffers.  The first call to 
+! store_piece_of_field() allocates internal buffers using sizes computed by 
+! calls to add_to_bufsize_for_field().  
         vid = 0
         icurs = itypesize
-        num_noops = 0
-        num_commit_messages = 0
-        num_field_training_msgs = 0
+        num_noops = 0 
+        num_commit_messages = 0 
+        num_field_training_msgs = 0 
         DO WHILE ( icurs .lt. obufsize ) !{
 !write(0,*) 'A icurs ', icurs, ' obufsize ', obufsize
           hdr_tag = get_hdr_tag( obuf ( icurs / itypesize ) )
@@ -1914,7 +1914,7 @@ character*120 sysline
               hdrbufsize = obuf(icurs/itypesize)
               IF (hdr_tag.NE.int_noop) THEN
 
-                write(VarName,'(I5.5)')vid
+                write(VarName,'(I5.5)')vid 
 !write(0,*) 'A-2b', hdrbufsize, get_hdr_tag( obuf ( icurs / itypesize ) ) , get_hdr_rec_size( obuf ( icurs / itypesize ) ), TRIM(VarName)
                 call store_piece_of_field( obuf(icurs/itypesize), VarName, hdrbufsize )
                 vid = vid+1
@@ -1924,18 +1924,18 @@ character*120 sysline
           END SELECT
        ENDDO !} while(icurs < obufsize)
 
-! Now, for each field, retrieve headers and patches (data) from the internal
+! Now, for each field, retrieve headers and patches (data) from the internal 
 ! buffers
        CALL init_retrieve_pieces_of_field
-! Retrieve header and all patches for the first field from the internal
-! buffers.
+! Retrieve header and all patches for the first field from the internal 
+! buffers.  
        CALL retrieve_pieces_of_field ( obuf , VarName, obufsize, sz, retval )
        written_record = .false.
 
 ! Loop until there are no more fields to retrieve from the internal buffers.
        DO WHILE ( retval ) !{
 
-! This I/O server now handles the collected requests from the compute
+! This I/O server now handles the collected requests from the compute 
 ! tasks it serves
 
             icurs = itypesize  ! icurs is a byte counter, but buffer is integer
@@ -1950,8 +1950,8 @@ character*120 sysline
 ! handles it by, in most cases, calling the appropriate external I/O package
 ! interface.
               SELECT CASE ( get_hdr_tag( obuf(icurs/itypesize) ) )
-! The I/O server handles the "noop" (do nothing) request.  This is
-! actually quite easy.  "Noop" requests exist to help avoid race conditions.
+! The I/O server handles the "noop" (do nothing) request.  This is 
+! actually quite easy.  "Noop" requests exist to help avoid race conditions.  
                 CASE ( int_noop )
                   CALL int_get_noop_header( obuf(icurs/itypesize), &
                                             hdrbufsize, itypesize )
@@ -2114,7 +2114,7 @@ character*120 sysline
                   END SELECT
 
                   DEALLOCATE( IData)
-
+ 
 ! Every I/O server  handles the "set_time" request.
                 CASE ( int_set_time )
 
@@ -2274,10 +2274,10 @@ character*120 sysline
 !write(0,*)' int_open_for_write_begin itypesize ',itypesize,' itypesize ',itypesize
 !write(0,*)' int_open_for_write_begin icurs ', icurs, hdrbufsize
 !JMDEBUGwrite(0,*)' int_open_for_write_begin FileName ',TRIM(FileName) , ' DataHandle ', DataHandle
-!write(0,*)' int_open_for_write_begin SysDepInfo ',TRIM(SysDepInfo)
+!write(0,*)' int_open_for_write_begin SysDepInfo ',TRIM(SysDepInfo) 
                   icurs = icurs + hdrbufsize
 !write(0,*)' int_open_for_write_begin new icurs,tag,size ', icurs, get_hdr_tag( bigbuf(icurs/itypesize) ),get_hdr_rec_size( bigbuf(icurs/itypesize) )
-
+                
                   io_form(DataHandle) = io_form_arg
 
                   SELECT CASE (use_package(io_form(DataHandle)))
@@ -2309,7 +2309,7 @@ character*120 sysline
                     CASE DEFAULT
                       Status = 0
                   END SELECT
-
+                
                   okay_to_write(DataHandle) = .false.
 
 ! Every I/O server handles the "open_for_write_commit" request.
@@ -2354,8 +2354,8 @@ character*120 sysline
 !!$                          DomainStart(1),DomainEnd(1),DomainStart(2),DomainEnd(2),DomainStart(3),DomainEnd(3)
 
                     IF ( FieldType .EQ. WRF_FLOAT .OR. FieldType .EQ. WRF_DOUBLE)  THEN
-                      ! Note that the WRF_DOUBLE branch of this IF statement must come first since
-                      ! WRF_FLOAT is set equal to WRF_DOUBLE during autopromotion builds.
+                      ! Note that the WRF_DOUBLE branch of this IF statement must come first since 
+                      ! WRF_FLOAT is set equal to WRF_DOUBLE during autopromotion builds.  
                       IF ( FieldType .EQ. WRF_DOUBLE)  THEN
 ! this branch has not been tested TBH: 20050406
                         CALL mpi_type_size( MPI_DOUBLE_PRECISION, ftypesize, ierr )
@@ -2393,7 +2393,7 @@ character*120 sysline
                     ELSE IF ( FieldType .EQ. WRF_INTEGER ) THEN
                       CALL mpi_type_size( MPI_INTEGER, ftypesize, ierr )
 #ifdef PNETCDF_QUILT
-                      CALL store_patch_in_outbuf_pnc ( dummybuf,             &
+                      CALL store_patch_in_outbuf_pnc ( dummybuf,             & 
                                                    obuf(icurs/itypesize) ,   &
                                                    TRIM(DateStr) ,           &
                                                    TRIM(VarName) ,           &
@@ -2459,7 +2459,7 @@ character*120 sysline
 
             IF (stored_write_record) THEN
 ! If any field patches have been stored in internal output buffers
-! (via a call to store_patch_in_outbuf_pnc()) then call write_outbuf_pnc()
+! (via a call to store_patch_in_outbuf_pnc()) then call write_outbuf_pnc() 
 ! to write them to disk now.
 ! NOTE that the I/O server will only have called
 ! store_patch_in_outbuf() when handling write_field (int_field)
@@ -2469,9 +2469,9 @@ character*120 sysline
               CALL write_outbuf_pnc( handle(DataHandle), &
                                      use_package(io_form(DataHandle)), &
                                      mpi_comm_local, mytask_local,     &
-                                     ntasks_local_group)
+                                     ntasks_local_group) 
 #endif
-!              CALL end_timing( "quilt_pnc: call to write_outbuf_pnc" )
+!              CALL end_timing( "quilt_pnc: call to write_outbuf_pnc" ) 
               stored_write_record = .false.
               written_record = .true.
             ENDIF
@@ -2539,8 +2539,8 @@ character*120 sysline
           ENDIF
 !!endif
 
-! Retrieve header and all patches for the next field from the internal
-! buffers.
+! Retrieve header and all patches for the next field from the internal 
+! buffers.  
         CALL retrieve_pieces_of_field ( obuf , VarName, obufsize, sz, retval )
       END DO !}
 
@@ -2573,12 +2573,12 @@ character*120 sysline
       USE module_driver_constants
       USE module_dm, ONLY : compute_mesh,nest_pes_x, nest_pes_y, domain_active_this_task
 !<DESCRIPTION>
-! Both client (compute) and server tasks call this routine to initialize the
-! module.  Routine setup_quilt_servers() is called from this routine to
-! determine which tasks are compute tasks and which are server tasks.  Server
-! tasks then call routine quilt() and remain there for the rest of the model
-! run.  Compute tasks return from init_module_wrf_quilt() to perform model
-! computations.
+! Both client (compute) and server tasks call this routine to initialize the 
+! module.  Routine setup_quilt_servers() is called from this routine to 
+! determine which tasks are compute tasks and which are server tasks.  Server 
+! tasks then call routine quilt() and remain there for the rest of the model 
+! run.  Compute tasks return from init_module_wrf_quilt() to perform model 
+! computations.  
 !</DESCRIPTION>
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
       USE module_dm, ONLY : compute_mesh,nest_pes_x,nest_pes_y,domain_active_this_task,&
@@ -2625,7 +2625,7 @@ character*120 sysline
       ENDDO
       DO j = 1, max_domains
         DO i = 1,int_num_handles
-          server_for_handle(i,j) = 0
+          server_for_handle(i,j) = 0 
         ENDDO
       ENDDO
 
@@ -2786,7 +2786,7 @@ character*120 sysline
 
 DO id = 1, max_dom
 
-! when this returns,  mpi_comm_local will be set for server tasks
+! when this returns,  mpi_comm_local will be set for server tasks 
 !                     and compute tasks but these may be reset by split communicator
 !                     mpi_comm_io_groups will be set for the grid id
 !                     ntasks will be the number of tasks described in role_for_task
@@ -2813,7 +2813,7 @@ ENDDO
       CALL MPI_Comm_split(comdup,role_for_task(mytask+1),mytask,mpi_comm_local, ierr )
 
 
-      CALL wrf_set_dm_communicator( mpi_comm_local ) ! split_communicators will see this
+      CALL wrf_set_dm_communicator( mpi_comm_local ) ! split_communicators will see this 
 ! compute node should be true for any compute node and false for every server node
       IF ( compute_node ) THEN
 #if ( DA_CORE != 1 )
@@ -2829,7 +2829,7 @@ ENDDO
 #if ( DA_CORE != 1 )
           IF (coupler_on) CALL cpl_set_dm_communicator( MPI_COMM_NULL )
 #endif
-          mpi_comm_local = mpi_comm_local_io_server_tmp
+          mpi_comm_local = mpi_comm_local_io_server_tmp  
           CALL quilt    ! will not return on io server tasks
        ENDIF
 #endif
@@ -2847,7 +2847,7 @@ ENDDO
     ! Some MPI processes will get stuck in MPI_Reduce and not
     ! return until the PREVIOUS I/O server group finishes writing.
 
-    ! This workaround replaces the MPI_Reduce call with many
+    ! This workaround replaces the MPI_Reduce call with many 
     ! MPI_Send and MPI_Recv calls that perform the sum on the
     ! root of the communicator.
 
@@ -2891,8 +2891,8 @@ ENDDO
           ! Found the communicator
           if(curtag(j)-firsttag(j) >= tagloop) then
              ! Hit the max tag number so we need to reset.
-             ! To make sure >tagloop reduces don't happen
-             ! before someone finishes an old reduce, we
+             ! To make sure >tagloop reduces don't happen 
+             ! before someone finishes an old reduce, we 
              ! have an MPI_Barrier here.
              !call wrf_message('Hit tagloop limit so calling mpi_barrier in get_reduce_tag...')
              call mpi_barrier(comm,ierr)
@@ -2915,7 +2915,7 @@ ENDDO
     !write(message,'("Found a new communicator ",I0," in get_reduce_tag, so making a tag range for it")') comm
 
     ! If we get here, the communicator is new to us, so we need
-    ! to add it to the hash and give it a new tag.
+    ! to add it to the hash and give it a new tag.  
 
     ! First, figure out where we'll put the tag in the hashtable
     here=-1
@@ -3050,7 +3050,7 @@ END MODULE module_wrf_quilt
 SUBROUTINE disable_quilting
 !<DESCRIPTION>
 ! Call this in programs that you never want to be quilting (e.g. real)
-! Must call before call to init_module_wrf_quilt().
+! Must call before call to init_module_wrf_quilt().  
 !</DESCRIPTION>
   USE module_wrf_quilt
   disable_quilt = .TRUE.
@@ -3063,7 +3063,7 @@ LOGICAL FUNCTION  use_output_servers_for(ioform)
 ! AND the output servers can handle the given I/O form.  If the I/O
 ! form is 0, then the io form is not considered and the result is the
 ! same as calling use_output_servers.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
   USE module_wrf_quilt
   integer, intent(in) :: ioform
@@ -3075,7 +3075,7 @@ END FUNCTION use_output_servers_for
 LOGICAL FUNCTION  use_output_servers()
 !<DESCRIPTION>
 ! Returns .TRUE. if I/O quilt servers are in-use for write operations.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
   USE module_wrf_quilt
   use_output_servers = quilting_enabled
@@ -3085,7 +3085,7 @@ END FUNCTION use_output_servers
 LOGICAL FUNCTION  use_input_servers()
 !<DESCRIPTION>
 ! Returns .TRUE. if I/O quilt servers are in-use for read operations.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
   USE module_wrf_quilt
   use_input_servers = .FALSE.
@@ -3097,7 +3097,7 @@ SUBROUTINE wrf_quilt_open_for_write_begin( FileName , gridid, Comm_compute, Comm
 !<DESCRIPTION>
 ! Instruct the I/O quilt servers to begin data definition ("training") phase
 ! for writing to WRF dataset FileName.  io_form_arg indicates file format.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   USE module_wrf_quilt
@@ -3118,7 +3118,7 @@ SUBROUTINE wrf_quilt_open_for_write_begin( FileName , gridid, Comm_compute, Comm
   REAL dummy
   INTEGER, EXTERNAL :: use_package
 
-  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_open_for_write_begin' )
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_open_for_write_begin' ) 
   CALL int_get_fresh_handle(i)
   okay_to_write(i) = .false.
   DataHandle = i
@@ -3158,7 +3158,7 @@ SUBROUTINE wrf_quilt_open_for_write_begin( FileName , gridid, Comm_compute, Comm
 !write(0,*)'wrf_quilt_open_for_write_begin sysdepinfo = ', Trim(sysdepinfo)
 !write(0,*)'wrf_quilt_open_for_write_begin iserver = ', iserver
   CALL get_mpi_comm_io_groups( comm_io_group , iserver )
-!write(0,*)'wrf_quilt_open_for_write_begin comm_io_group  = ', comm_io_group
+!write(0,*)'wrf_quilt_open_for_write_begin comm_io_group  = ', comm_io_group 
 
   CALL mpi_x_comm_size( comm_io_group , tasks_in_group , ierr )
 !write(0,*)'mpi_x_comm_size tasks_in_group ',tasks_in_group, ierr
@@ -3166,11 +3166,11 @@ SUBROUTINE wrf_quilt_open_for_write_begin( FileName , gridid, Comm_compute, Comm
 !!JMTIMING  CALL start_timing
   ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
   reduced = 0
-  reduced(1) = hdrbufsize
+  reduced(1) = hdrbufsize 
 #ifdef PNETCDF_QUILT
   IF ( compute_group_master(1,current_id) ) reduced(2) = i
 #else
-  IF ( wrf_dm_on_monitor() )  reduced(2) = i
+  IF ( wrf_dm_on_monitor() )  reduced(2) = i 
 #endif
 !write(0,*)'calling mpi_x_reduce in wrf_quilt_open_for_write_begin '
   CALL mpi_x_reduce( reduced, reduced_dummy, 2, MPI_INTEGER, MPI_SUM, tasks_in_group-1, comm_io_group, ierr )
@@ -3186,7 +3186,7 @@ SUBROUTINE wrf_quilt_open_for_write_begin( FileName , gridid, Comm_compute, Comm
 
 
 #endif
-  RETURN
+  RETURN  
 END SUBROUTINE wrf_quilt_open_for_write_begin
 
 SUBROUTINE wrf_quilt_open_for_write_commit( DataHandle , Status )
@@ -3195,7 +3195,7 @@ SUBROUTINE wrf_quilt_open_for_write_commit( DataHandle , Status )
 ! for the dataset referenced by DataHandle.  The call to
 ! wrf_quilt_open_for_write_commit() must be paired with a call to
 ! wrf_quilt_open_for_write_begin().
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   USE module_wrf_quilt
@@ -3207,7 +3207,7 @@ SUBROUTINE wrf_quilt_open_for_write_commit( DataHandle , Status )
   INTEGER i, itypesize, tasks_in_group, ierr, comm_io_group
   REAL dummy
 
-  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_open_for_write_commit' )
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_open_for_write_commit' ) 
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
       okay_to_write( DataHandle ) = .true.
@@ -3243,7 +3243,7 @@ SUBROUTINE wrf_quilt_open_for_write_commit( DataHandle , Status )
 !!JMTIMING  CALL start_timing
   ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
   reduced = 0
-  reduced(1) = hdrbufsize
+  reduced(1) = hdrbufsize 
 #ifdef PNETCDF_QUILT
   IF ( compute_group_master(1,current_id) ) reduced(2) = DataHandle
 #else
@@ -3261,14 +3261,14 @@ SUBROUTINE wrf_quilt_open_for_write_commit( DataHandle , Status )
   Status = 0
 
 #endif
-  RETURN
+  RETURN  
 END SUBROUTINE wrf_quilt_open_for_write_commit
 
 SUBROUTINE wrf_quilt_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInfo, &
                                DataHandle , Status )
 !<DESCRIPTION>
 ! Instruct the I/O quilt servers to open WRF dataset FileName for reading.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 ! This is not yet supported.
 !</DESCRIPTION>
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
@@ -3279,19 +3279,19 @@ SUBROUTINE wrf_quilt_open_for_read ( FileName , Comm_compute, Comm_io, SysDepInf
   INTEGER ,       INTENT(OUT) :: DataHandle
   INTEGER ,       INTENT(OUT) :: Status
 
-  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_open_for_read' )
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_open_for_read' ) 
   DataHandle = -1
   Status = -1
   CALL wrf_error_fatal ( "frame/module_io_quilt.F: wrf_quilt_open_for_read not yet supported" )
 #endif
-  RETURN
+  RETURN  
 END SUBROUTINE wrf_quilt_open_for_read
 
 SUBROUTINE wrf_quilt_inquire_opened ( DataHandle, FileName , FileStatus, Status )
 !<DESCRIPTION>
 ! Inquire if the dataset referenced by DataHandle is open.
 ! Does not require communication with I/O servers.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   USE module_wrf_quilt
@@ -3304,7 +3304,7 @@ SUBROUTINE wrf_quilt_inquire_opened ( DataHandle, FileName , FileStatus, Status 
 
   Status = 0
 
-  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_inquire_opened' )
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_inquire_opened' ) 
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
       IF ( okay_to_write( DataHandle ) ) THEN
@@ -3313,7 +3313,7 @@ SUBROUTINE wrf_quilt_inquire_opened ( DataHandle, FileName , FileStatus, Status 
     ENDIF
   ENDIF
   Status = 0
-
+  
 #endif
   RETURN
 END SUBROUTINE wrf_quilt_inquire_opened
@@ -3327,7 +3327,7 @@ SUBROUTINE wrf_quilt_inquire_filename ( DataHandle, FileName , FileStatus, Statu
 ! Currenlty, WRF does not use this returned value.  Fixing this would simply
 ! require saving the file names on the client tasks in an array similar to
 ! okay_to_write().
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   USE module_wrf_quilt
@@ -3337,7 +3337,7 @@ SUBROUTINE wrf_quilt_inquire_filename ( DataHandle, FileName , FileStatus, Statu
   CHARACTER *(*), INTENT(OUT) :: FileName
   INTEGER ,       INTENT(OUT) :: FileStatus
   INTEGER ,       INTENT(OUT) :: Status
-  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_inquire_filename' )
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_inquire_filename' ) 
   Status = 0
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
     IF ( int_handle_in_use( DataHandle ) ) THEN
@@ -3376,9 +3376,9 @@ SUBROUTINE wrf_quilt_iosync ( DataHandle, Status )
 ! will end up waiting for the servers to finish writing to disk, thus wasting
 ! any performance benefits of having servers at all.
 !
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
-#if  defined( DM_PARALLEL ) && ! defined (STUBMPI)
+#if  defined( DM_PARALLEL ) && ! defined (STUBMPI) 
   USE module_wrf_quilt
   IMPLICIT NONE
   include "mpif.h"
@@ -3388,7 +3388,7 @@ SUBROUTINE wrf_quilt_iosync ( DataHandle, Status )
   INTEGER locsize , itypesize
   INTEGER ierr, tasks_in_group, comm_io_group, dummy, i, rank
 
-  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_iosync' )
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_iosync' ) 
 
 !  CALL start_timing
   IF ( associated ( int_local_output_buffer ) ) THEN
@@ -3403,7 +3403,7 @@ SUBROUTINE wrf_quilt_iosync ( DataHandle, Status )
 !    CALL start_timing
     ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
     reduced = 0
-    reduced(1) = locsize
+    reduced(1) = locsize 
 #ifdef PNETCDF_QUILT
 ! ARP Only want one command per IOServer if doing parallel IO
     IF ( compute_group_master(1,current_id) ) reduced(2) = DataHandle
@@ -3445,9 +3445,9 @@ SUBROUTINE wrf_quilt_ioclose ( DataHandle, Status )
 ! DataHandle.
 ! This routine also clears the client file handle and, if needed, deallocates
 ! int_local_output_buffer.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
-#if defined( DM_PARALLEL ) && ! defined( STUBMPI)
+#if defined( DM_PARALLEL ) && ! defined( STUBMPI) 
   USE module_wrf_quilt
   USE module_timing
   IMPLICIT NONE
@@ -3459,10 +3459,10 @@ SUBROUTINE wrf_quilt_ioclose ( DataHandle, Status )
   REAL dummy
 
 !!JMTIMING  CALL start_timing
-  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_ioclose' )
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_ioclose' ) 
   CALL MPI_TYPE_SIZE( MPI_INTEGER, itypesize, ierr )
 
-! If we're using pnetcdf then each IO server will need to receive the
+! If we're using pnetcdf then each IO server will need to receive the 
 ! handle just once as there is
 ! no longer a reduce over the IO servers to get it.
 #ifdef PNETCDF_QUILT
@@ -3510,7 +3510,7 @@ SUBROUTINE wrf_quilt_ioclose ( DataHandle, Status )
 #endif
 
   int_handle_in_use(DataHandle) = .false.
-  CALL set_server_id( DataHandle, 0 )
+  CALL set_server_id( DataHandle, 0 ) 
   okay_to_write(DataHandle) = .false.
   okay_to_commit(DataHandle) = .false.
   int_local_output_cursor = 1
@@ -3531,19 +3531,19 @@ SUBROUTINE wrf_quilt_ioexit( Status )
 !<DESCRIPTION>
 ! Instruct the I/O quilt servers to shut down the WRF I/O system.
 ! Do not call any wrf_quilt_*() routines after this routine has been called.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
-#if defined( DM_PARALLEL ) && ! defined (STUBMPI )
+#if defined( DM_PARALLEL ) && ! defined (STUBMPI ) 
   USE module_wrf_quilt
   IMPLICIT NONE
   INCLUDE 'mpif.h'
 #include "intio_tags.h"
   INTEGER ,       INTENT(OUT) :: Status
   INTEGER                     :: DataHandle, actual_iserver
-  INTEGER i, itypesize, tasks_in_group, comm_io_group, me, ierr
+  INTEGER i, itypesize, tasks_in_group, comm_io_group, me, ierr 
   REAL dummy
 
-  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_ioexit' )
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_ioexit' ) 
   CALL MPI_TYPE_SIZE( MPI_INTEGER, itypesize, ierr )
 
 !ARPDBG - potential bug. Have no access to what type of IO is being used for
@@ -3588,25 +3588,25 @@ SUBROUTINE wrf_quilt_ioexit( Status )
     CALL mpi_comm_rank( comm_io_group , me , ierr )
 
 ! BY SENDING A NEGATIVE SIZE WE GET THE SERVERS TO SHUT DOWN
-    hdrbufsize = -100
+    hdrbufsize = -100 
     reduced = 0
-    IF ( me .eq. 0 ) reduced(1) = hdrbufsize
+    IF ( me .eq. 0 ) reduced(1) = hdrbufsize 
     CALL mpi_x_reduce( reduced, reduced_dummy, 2, MPI_INTEGER, MPI_SUM, tasks_in_group-1, comm_io_group, ierr )
 
   ENDDO
   Status = 0
 
 #endif
-  RETURN
+  RETURN  
 END SUBROUTINE wrf_quilt_ioexit
 
 SUBROUTINE wrf_quilt_get_next_time ( DataHandle, DateStr, Status )
 !<DESCRIPTION>
 ! Instruct the I/O quilt servers to return the next time stamp.
 ! This is not yet supported.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
-#if defined( DM_PARALLEL ) && ! defined (STUBMPI)
+#if defined( DM_PARALLEL ) && ! defined (STUBMPI) 
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*)               :: DateStr
@@ -3619,7 +3619,7 @@ SUBROUTINE wrf_quilt_get_previous_time ( DataHandle, DateStr, Status )
 !<DESCRIPTION>
 ! Instruct the I/O quilt servers to return the previous time stamp.
 ! This is not yet supported.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
 #if defined( DM_PARALLEL ) && ! defined (STUBMPI)
   IMPLICIT NONE
@@ -3634,7 +3634,7 @@ SUBROUTINE wrf_quilt_set_time ( DataHandle, Data,  Status )
 !<DESCRIPTION>
 ! Instruct the I/O quilt servers to set the time stamp in the dataset
 ! referenced by DataHandle.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   USE module_wrf_quilt
@@ -3661,7 +3661,7 @@ SUBROUTINE wrf_quilt_set_time ( DataHandle, Data,  Status )
 ! this data so if PNETCDF_QUILT is defined then we assume that's what's being used.
 #ifdef PNETCDF_QUILT
       IF(compute_group_master(1,current_id) )THEN
-! Only want to send one time header to each IO server as
+! Only want to send one time header to each IO server as 
 ! can't tell that's what they are on the IO servers themselves - therefore use
 ! the compute_group_master process.
          CALL int_gen_ti_header_char( hdrbuf, hdrbufsize, itypesize, &
@@ -3684,7 +3684,7 @@ SUBROUTINE wrf_quilt_set_time ( DataHandle, Data,  Status )
 
       ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
       reduced = 0
-      reduced(1) = hdrbufsize
+      reduced(1) = hdrbufsize 
 #ifdef PNETCDF_QUILT
       IF ( compute_group_master(1,current_id) ) reduced(2) = DataHandle
 #else
@@ -3708,7 +3708,7 @@ SUBROUTINE wrf_quilt_get_next_var ( DataHandle, VarName, Status )
 ! When reading, instruct the I/O quilt servers to return the name of the next
 ! variable in the current time frame.
 ! This is not yet supported.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
@@ -3727,7 +3727,7 @@ SUBROUTINE wrf_quilt_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcou
 ! Metadata of type real are
 ! stored in array Data.
 ! Actual number of words read is returned in OutCount.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -3742,7 +3742,7 @@ SUBROUTINE wrf_quilt_get_dom_ti_real ( DataHandle,Element,   Data, Count, Outcou
   CALL wrf_message('wrf_quilt_get_dom_ti_real not supported yet')
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_dom_ti_real
+END SUBROUTINE wrf_quilt_get_dom_ti_real 
 
 SUBROUTINE wrf_quilt_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Status )
 !<DESCRIPTION>
@@ -3751,7 +3751,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Statu
 ! to the open dataset described by DataHandle.
 ! Metadata of type real are
 ! copied from array Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   USE module_wrf_quilt
@@ -3770,7 +3770,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Statu
 !
 !!JMTIMING  CALL start_timing
 !write(0,*)__FILE__,__LINE__,trim(element),count
-  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_put_dom_ti_real' )
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_put_dom_ti_real' ) 
   CALL MPI_TYPE_SIZE( MPI_INTEGER, itypesize, ierr )
   locElement = Element
 
@@ -3802,7 +3802,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Statu
 !!JMTIMING      CALL start_timing
       ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
       reduced = 0
-      reduced(1) = hdrbufsize
+      reduced(1) = hdrbufsize 
 #ifdef PNETCDF_QUILT
       IF( compute_group_master(1,current_id) )  reduced(2) = DataHandle
 #else
@@ -3822,7 +3822,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_real ( DataHandle,Element,   Data, Count,  Statu
 !!JMTIMING   CALL end_timing("wrf_quilt_put_dom_ti_real")
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_dom_ti_real
+END SUBROUTINE wrf_quilt_put_dom_ti_real 
 
 SUBROUTINE wrf_quilt_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outcount, Status )
 !<DESCRIPTION>
@@ -3832,7 +3832,7 @@ SUBROUTINE wrf_quilt_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outc
 ! Metadata of type double are
 ! stored in array Data.
 ! Actual number of words read is returned in OutCount.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -3847,7 +3847,7 @@ SUBROUTINE wrf_quilt_get_dom_ti_double ( DataHandle,Element,   Data, Count, Outc
   CALL wrf_error_fatal('wrf_quilt_get_dom_ti_double not supported yet')
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_dom_ti_double
+END SUBROUTINE wrf_quilt_get_dom_ti_double 
 
 SUBROUTINE wrf_quilt_put_dom_ti_double ( DataHandle,Element,   Data, Count,  Status )
 !<DESCRIPTION>
@@ -3856,7 +3856,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_double ( DataHandle,Element,   Data, Count,  Sta
 ! to the open dataset described by DataHandle.
 ! Metadata of type double are
 ! copied from array Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -3870,7 +3870,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_double ( DataHandle,Element,   Data, Count,  Sta
   CALL wrf_error_fatal('wrf_quilt_put_dom_ti_double not supported yet')
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_dom_ti_double
+END SUBROUTINE wrf_quilt_put_dom_ti_double 
 
 SUBROUTINE wrf_quilt_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Outcount, Status )
 !<DESCRIPTION>
@@ -3880,7 +3880,7 @@ SUBROUTINE wrf_quilt_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Out
 ! Metadata of type integer are
 ! stored in array Data.
 ! Actual number of words read is returned in OutCount.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -3895,7 +3895,7 @@ SUBROUTINE wrf_quilt_get_dom_ti_integer ( DataHandle,Element,   Data, Count, Out
   CALL wrf_message('wrf_quilt_get_dom_ti_integer not supported yet')
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_dom_ti_integer
+END SUBROUTINE wrf_quilt_get_dom_ti_integer 
 
 SUBROUTINE wrf_quilt_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  Status )
 !<DESCRIPTION>
@@ -3904,7 +3904,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  St
 ! to the open dataset described by DataHandle.
 ! Metadata of type integer are
 ! copied from array Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   USE module_wrf_quilt
@@ -3927,7 +3927,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  St
 !!JMTIMING  CALL start_timing
   locElement = Element
 
-  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_put_dom_ti_integer' )
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_put_dom_ti_integer' ) 
 !write(0,*)__FILE__,__LINE__,trim(element),count
 
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
@@ -3962,7 +3962,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  St
 !!JMTIMING      CALL start_timing
       ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
       reduced = 0
-      reduced(1) = hdrbufsize
+      reduced(1) = hdrbufsize 
 #ifdef PNETCDF_QUILT
       IF ( compute_group_master(1,current_id) ) reduced(2) = DataHandle
 #else
@@ -3978,12 +3978,12 @@ SUBROUTINE wrf_quilt_put_dom_ti_integer ( DataHandle,Element,   Data, Count,  St
                             dummy, 0 )
     ENDIF
   ENDIF
-  CALL wrf_debug ( DEBUG_LVL, 'returning from wrf_quilt_put_dom_ti_integer' )
+  CALL wrf_debug ( DEBUG_LVL, 'returning from wrf_quilt_put_dom_ti_integer' ) 
 !!JMTIMING   CALL end_timing("wrf_quilt_put_dom_ti_integer" )
 
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_dom_ti_integer
+END SUBROUTINE wrf_quilt_put_dom_ti_integer 
 
 SUBROUTINE wrf_quilt_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Outcount, Status )
 !<DESCRIPTION>
@@ -3993,7 +3993,7 @@ SUBROUTINE wrf_quilt_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Out
 ! Metadata of type logical are
 ! stored in array Data.
 ! Actual number of words read is returned in OutCount.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4008,7 +4008,7 @@ SUBROUTINE wrf_quilt_get_dom_ti_logical ( DataHandle,Element,   Data, Count, Out
 !  CALL wrf_message('wrf_quilt_get_dom_ti_logical not supported yet')
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_dom_ti_logical
+END SUBROUTINE wrf_quilt_get_dom_ti_logical 
 
 SUBROUTINE wrf_quilt_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  Status )
 !<DESCRIPTION>
@@ -4017,7 +4017,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  St
 ! to the open dataset described by DataHandle.
 ! Metadata of type logical are
 ! copied from array Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4043,7 +4043,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_logical ( DataHandle,Element,   Data, Count,  St
   CALL wrf_quilt_put_dom_ti_integer ( DataHandle,Element,   one_or_zero, Count,  Status )
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_dom_ti_logical
+END SUBROUTINE wrf_quilt_put_dom_ti_logical 
 
 SUBROUTINE wrf_quilt_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
 !<DESCRIPTION>
@@ -4052,7 +4052,7 @@ SUBROUTINE wrf_quilt_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
 ! from the open dataset described by DataHandle.
 ! Metadata of type char are
 ! stored in string Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4065,7 +4065,7 @@ SUBROUTINE wrf_quilt_get_dom_ti_char ( DataHandle,Element,   Data,  Status )
   CALL wrf_message('wrf_quilt_get_dom_ti_char not supported yet')
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_dom_ti_char
+END SUBROUTINE wrf_quilt_get_dom_ti_char 
 
 SUBROUTINE wrf_quilt_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
 !<DESCRIPTION>
@@ -4074,7 +4074,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
 ! to the open dataset described by DataHandle.
 ! Metadata of type char are
 ! copied from string Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   USE module_wrf_quilt
@@ -4089,7 +4089,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
   REAL dummy
 !
 !!JMTIMING  CALL start_timing
-  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_put_dom_ti_char' )
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_put_dom_ti_char' ) 
 !write(0,*)__FILE__,__LINE__,trim(element)
 
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
@@ -4128,9 +4128,9 @@ SUBROUTINE wrf_quilt_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
 
 !!JMTIMING      CALL start_timing
       ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
-      reduced_dummy = 0
+      reduced_dummy = 0 
       reduced = 0
-      reduced(1) = hdrbufsize
+      reduced(1) = hdrbufsize 
 #ifdef PNETCDF_QUILT
       IF(compute_group_master(1,current_id))    reduced(2) = DataHandle
 #else
@@ -4155,7 +4155,7 @@ SUBROUTINE wrf_quilt_put_dom_ti_char ( DataHandle, Element,  Data,  Status )
 
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_dom_ti_char
+END SUBROUTINE wrf_quilt_put_dom_ti_char 
 
 SUBROUTINE wrf_quilt_get_dom_td_real ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
 !<DESCRIPTION>
@@ -4165,7 +4165,7 @@ SUBROUTINE wrf_quilt_get_dom_td_real ( DataHandle,Element, DateStr,  Data, Count
 ! Metadata of type real are
 ! stored in array Data.
 ! Actual number of words read is returned in OutCount.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4180,7 +4180,7 @@ SUBROUTINE wrf_quilt_get_dom_td_real ( DataHandle,Element, DateStr,  Data, Count
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_dom_td_real
+END SUBROUTINE wrf_quilt_get_dom_td_real 
 
 SUBROUTINE wrf_quilt_put_dom_td_real ( DataHandle,Element, DateStr,  Data, Count,  Status )
 !<DESCRIPTION>
@@ -4189,7 +4189,7 @@ SUBROUTINE wrf_quilt_put_dom_td_real ( DataHandle,Element, DateStr,  Data, Count
 ! to the open dataset described by DataHandle.
 ! Metadata of type real are
 ! copied from array Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4203,7 +4203,7 @@ SUBROUTINE wrf_quilt_put_dom_td_real ( DataHandle,Element, DateStr,  Data, Count
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_dom_td_real
+END SUBROUTINE wrf_quilt_put_dom_td_real 
 
 SUBROUTINE wrf_quilt_get_dom_td_double ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
 !<DESCRIPTION>
@@ -4213,7 +4213,7 @@ SUBROUTINE wrf_quilt_get_dom_td_double ( DataHandle,Element, DateStr,  Data, Cou
 ! Metadata of type double are
 ! stored in array Data.
 ! Actual number of words read is returned in OutCount.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4229,7 +4229,7 @@ SUBROUTINE wrf_quilt_get_dom_td_double ( DataHandle,Element, DateStr,  Data, Cou
 #endif
   CALL wrf_error_fatal('wrf_quilt_get_dom_td_double not supported yet')
 RETURN
-END SUBROUTINE wrf_quilt_get_dom_td_double
+END SUBROUTINE wrf_quilt_get_dom_td_double 
 
 SUBROUTINE wrf_quilt_put_dom_td_double ( DataHandle,Element, DateStr,  Data, Count,  Status )
 !<DESCRIPTION>
@@ -4238,7 +4238,7 @@ SUBROUTINE wrf_quilt_put_dom_td_double ( DataHandle,Element, DateStr,  Data, Cou
 ! to the open dataset described by DataHandle.
 ! Metadata of type double are
 ! copied from array Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4253,7 +4253,7 @@ SUBROUTINE wrf_quilt_put_dom_td_double ( DataHandle,Element, DateStr,  Data, Cou
 #endif
   CALL wrf_error_fatal('wrf_quilt_put_dom_td_double not supported yet')
 RETURN
-END SUBROUTINE wrf_quilt_put_dom_td_double
+END SUBROUTINE wrf_quilt_put_dom_td_double 
 
 SUBROUTINE wrf_quilt_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
 !<DESCRIPTION>
@@ -4263,7 +4263,7 @@ SUBROUTINE wrf_quilt_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, Co
 ! Metadata of type integer are
 ! stored in array Data.
 ! Actual number of words read is returned in OutCount.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4278,7 +4278,7 @@ SUBROUTINE wrf_quilt_get_dom_td_integer ( DataHandle,Element, DateStr,  Data, Co
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_dom_td_integer
+END SUBROUTINE wrf_quilt_get_dom_td_integer 
 
 SUBROUTINE wrf_quilt_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, Count,  Status )
 !<DESCRIPTION>
@@ -4287,7 +4287,7 @@ SUBROUTINE wrf_quilt_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, Co
 ! to the open dataset described by DataHandle.
 ! Metadata of type integer are
 ! copied from array Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4301,7 +4301,7 @@ SUBROUTINE wrf_quilt_put_dom_td_integer ( DataHandle,Element, DateStr,  Data, Co
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_dom_td_integer
+END SUBROUTINE wrf_quilt_put_dom_td_integer 
 
 SUBROUTINE wrf_quilt_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, Count, Outcount, Status )
 !<DESCRIPTION>
@@ -4311,7 +4311,7 @@ SUBROUTINE wrf_quilt_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, Co
 ! Metadata of type logical are
 ! stored in array Data.
 ! Actual number of words read is returned in OutCount.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4326,7 +4326,7 @@ SUBROUTINE wrf_quilt_get_dom_td_logical ( DataHandle,Element, DateStr,  Data, Co
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_dom_td_logical
+END SUBROUTINE wrf_quilt_get_dom_td_logical 
 
 SUBROUTINE wrf_quilt_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, Count,  Status )
 !<DESCRIPTION>
@@ -4335,7 +4335,7 @@ SUBROUTINE wrf_quilt_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, Co
 ! to the open dataset described by DataHandle.
 ! Metadata of type logical are
 ! copied from array Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4349,7 +4349,7 @@ SUBROUTINE wrf_quilt_put_dom_td_logical ( DataHandle,Element, DateStr,  Data, Co
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_dom_td_logical
+END SUBROUTINE wrf_quilt_put_dom_td_logical 
 
 SUBROUTINE wrf_quilt_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status )
 !<DESCRIPTION>
@@ -4358,7 +4358,7 @@ SUBROUTINE wrf_quilt_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  Stat
 ! from the open dataset described by DataHandle.
 ! Metadata of type char are
 ! stored in string Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4371,7 +4371,7 @@ SUBROUTINE wrf_quilt_get_dom_td_char ( DataHandle,Element, DateStr,  Data,  Stat
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_dom_td_char
+END SUBROUTINE wrf_quilt_get_dom_td_char 
 
 SUBROUTINE wrf_quilt_put_dom_td_char ( DataHandle,Element, DateStr,  Data,  Status )
 !<DESCRIPTION>
@@ -4380,7 +4380,7 @@ SUBROUTINE wrf_quilt_put_dom_td_char ( DataHandle,Element, DateStr,  Data,  Stat
 ! to the open dataset described by DataHandle.
 ! Metadata of type char are
 ! copied from string Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4393,7 +4393,7 @@ SUBROUTINE wrf_quilt_put_dom_td_char ( DataHandle,Element, DateStr,  Data,  Stat
   INTEGER                          :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_dom_td_char
+END SUBROUTINE wrf_quilt_put_dom_td_char 
 
 SUBROUTINE wrf_quilt_get_var_ti_real ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
 !<DESCRIPTION>
@@ -4403,7 +4403,7 @@ SUBROUTINE wrf_quilt_get_var_ti_real ( DataHandle,Element,  Varname, Data, Count
 ! Attribute of type real is
 ! stored in array Data.
 ! Actual number of words read is returned in OutCount.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4411,14 +4411,14 @@ SUBROUTINE wrf_quilt_get_var_ti_real ( DataHandle,Element,  Varname, Data, Count
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   real                          :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: OutCount
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_var_ti_real
+END SUBROUTINE wrf_quilt_get_var_ti_real 
 
 SUBROUTINE wrf_quilt_put_var_ti_real ( DataHandle,Element,  Varname, Data, Count,  Status )
 !<DESCRIPTION>
@@ -4427,7 +4427,7 @@ SUBROUTINE wrf_quilt_put_var_ti_real ( DataHandle,Element,  Varname, Data, Count
 ! to the open dataset described by DataHandle.
 ! Attribute of type real is
 ! copied from array Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4435,13 +4435,13 @@ SUBROUTINE wrf_quilt_put_var_ti_real ( DataHandle,Element,  Varname, Data, Count
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   real ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_var_ti_real
+END SUBROUTINE wrf_quilt_put_var_ti_real 
 
 SUBROUTINE wrf_quilt_get_var_ti_double ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
 !<DESCRIPTION>
@@ -4451,7 +4451,7 @@ SUBROUTINE wrf_quilt_get_var_ti_double ( DataHandle,Element,  Varname, Data, Cou
 ! Attribute of type double is
 ! stored in array Data.
 ! Actual number of words read is returned in OutCount.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4459,7 +4459,7 @@ SUBROUTINE wrf_quilt_get_var_ti_double ( DataHandle,Element,  Varname, Data, Cou
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   real*8                      :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: OutCount
@@ -4467,7 +4467,7 @@ SUBROUTINE wrf_quilt_get_var_ti_double ( DataHandle,Element,  Varname, Data, Cou
 #endif
   CALL wrf_error_fatal('wrf_quilt_get_var_ti_double not supported yet')
 RETURN
-END SUBROUTINE wrf_quilt_get_var_ti_double
+END SUBROUTINE wrf_quilt_get_var_ti_double 
 
 SUBROUTINE wrf_quilt_put_var_ti_double ( DataHandle,Element,  Varname, Data, Count,  Status )
 !<DESCRIPTION>
@@ -4476,7 +4476,7 @@ SUBROUTINE wrf_quilt_put_var_ti_double ( DataHandle,Element,  Varname, Data, Cou
 ! to the open dataset described by DataHandle.
 ! Attribute of type double is
 ! copied from array Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4484,14 +4484,14 @@ SUBROUTINE wrf_quilt_put_var_ti_double ( DataHandle,Element,  Varname, Data, Cou
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   real*8 ,        INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: Status
 #endif
   CALL wrf_error_fatal('wrf_quilt_put_var_ti_double not supported yet')
 RETURN
-END SUBROUTINE wrf_quilt_put_var_ti_double
+END SUBROUTINE wrf_quilt_put_var_ti_double 
 
 SUBROUTINE wrf_quilt_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
 !<DESCRIPTION>
@@ -4501,7 +4501,7 @@ SUBROUTINE wrf_quilt_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Co
 ! Attribute of type integer is
 ! stored in array Data.
 ! Actual number of words read is returned in OutCount.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4509,14 +4509,14 @@ SUBROUTINE wrf_quilt_get_var_ti_integer ( DataHandle,Element,  Varname, Data, Co
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   integer                     :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: OutCount
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_var_ti_integer
+END SUBROUTINE wrf_quilt_get_var_ti_integer 
 
 SUBROUTINE wrf_quilt_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Count,  Status )
 !<DESCRIPTION>
@@ -4525,7 +4525,7 @@ SUBROUTINE wrf_quilt_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Co
 ! to the open dataset described by DataHandle.
 ! Attribute of type integer is
 ! copied from array Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4533,13 +4533,13 @@ SUBROUTINE wrf_quilt_put_var_ti_integer ( DataHandle,Element,  Varname, Data, Co
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   integer ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_var_ti_integer
+END SUBROUTINE wrf_quilt_put_var_ti_integer 
 
 SUBROUTINE wrf_quilt_get_var_ti_logical ( DataHandle,Element,  Varname, Data, Count, Outcount, Status )
 !<DESCRIPTION>
@@ -4549,7 +4549,7 @@ SUBROUTINE wrf_quilt_get_var_ti_logical ( DataHandle,Element,  Varname, Data, Co
 ! Attribute of type logical is
 ! stored in array Data.
 ! Actual number of words read is returned in OutCount.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4557,14 +4557,14 @@ SUBROUTINE wrf_quilt_get_var_ti_logical ( DataHandle,Element,  Varname, Data, Co
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   logical                     :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: OutCount
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_var_ti_logical
+END SUBROUTINE wrf_quilt_get_var_ti_logical 
 
 SUBROUTINE wrf_quilt_put_var_ti_logical ( DataHandle,Element,  Varname, Data, Count,  Status )
 !<DESCRIPTION>
@@ -4573,7 +4573,7 @@ SUBROUTINE wrf_quilt_put_var_ti_logical ( DataHandle,Element,  Varname, Data, Co
 ! to the open dataset described by DataHandle.
 ! Attribute of type logical is
 ! copied from array Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4581,13 +4581,13 @@ SUBROUTINE wrf_quilt_put_var_ti_logical ( DataHandle,Element,  Varname, Data, Co
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   logical ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_var_ti_logical
+END SUBROUTINE wrf_quilt_put_var_ti_logical 
 
 SUBROUTINE wrf_quilt_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Status )
 !<DESCRIPTION>
@@ -4596,7 +4596,7 @@ SUBROUTINE wrf_quilt_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Stat
 ! from the open dataset described by DataHandle.
 ! Attribute of type char is
 ! stored in string Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4604,12 +4604,12 @@ SUBROUTINE wrf_quilt_get_var_ti_char ( DataHandle,Element,  Varname, Data,  Stat
   IMPLICIT NONE
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   CHARACTER*(*)               :: Data
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_var_ti_char
+END SUBROUTINE wrf_quilt_get_var_ti_char 
 
 SUBROUTINE wrf_quilt_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Status )
 !<DESCRIPTION>
@@ -4618,7 +4618,7 @@ SUBROUTINE wrf_quilt_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Stat
 ! to the open dataset described by DataHandle.
 ! Attribute of type char is
 ! copied from string Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
 
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
@@ -4628,7 +4628,7 @@ SUBROUTINE wrf_quilt_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Stat
 #include "intio_tags.h"
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   CHARACTER*(*) , INTENT(IN)  :: Data
   INTEGER                     :: Status
   INTEGER i, itypesize, tasks_in_group, ierr, comm_io_group
@@ -4636,7 +4636,7 @@ SUBROUTINE wrf_quilt_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Stat
 !
 
 !!JMTIMING  CALL start_timing
-  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_put_var_ti_char' )
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_put_var_ti_char' ) 
 !write(0,*)__FILE__,__LINE__,trim(varname),trim(element)
 
   IF ( DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles ) THEN
@@ -4668,7 +4668,7 @@ SUBROUTINE wrf_quilt_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Stat
 !!JMTIMING      CALL start_timing
       ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
       reduced = 0
-      reduced(1) = hdrbufsize
+      reduced(1) = hdrbufsize 
 #ifdef PNETCDF_QUILT
       IF ( compute_group_master(1,current_id) ) reduced(2) = DataHandle
 #else
@@ -4687,7 +4687,7 @@ SUBROUTINE wrf_quilt_put_var_ti_char ( DataHandle,Element,  Varname, Data,  Stat
 
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_var_ti_char
+END SUBROUTINE wrf_quilt_put_var_ti_char 
 
 SUBROUTINE wrf_quilt_get_var_td_real ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
 !<DESCRIPTION>
@@ -4697,7 +4697,7 @@ SUBROUTINE wrf_quilt_get_var_td_real ( DataHandle,Element,  DateStr,Varname, Dat
 ! Attribute of type real is
 ! stored in array Data.
 ! Actual number of words read is returned in OutCount.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4706,14 +4706,14 @@ SUBROUTINE wrf_quilt_get_var_td_real ( DataHandle,Element,  DateStr,Varname, Dat
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   real                        :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: OutCount
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_var_td_real
+END SUBROUTINE wrf_quilt_get_var_td_real 
 
 SUBROUTINE wrf_quilt_put_var_td_real ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
 !<DESCRIPTION>
@@ -4722,7 +4722,7 @@ SUBROUTINE wrf_quilt_put_var_td_real ( DataHandle,Element,  DateStr,Varname, Dat
 ! to the open dataset described by DataHandle.
 ! Attribute of type real is
 ! copied from array Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4731,13 +4731,13 @@ SUBROUTINE wrf_quilt_put_var_td_real ( DataHandle,Element,  DateStr,Varname, Dat
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   real ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_var_td_real
+END SUBROUTINE wrf_quilt_put_var_td_real 
 
 SUBROUTINE wrf_quilt_get_var_td_double ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
 !<DESCRIPTION>
@@ -4747,7 +4747,7 @@ SUBROUTINE wrf_quilt_get_var_td_double ( DataHandle,Element,  DateStr,Varname, D
 ! Attribute of type double is
 ! stored in array Data.
 ! Actual number of words read is returned in OutCount.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4756,7 +4756,7 @@ SUBROUTINE wrf_quilt_get_var_td_double ( DataHandle,Element,  DateStr,Varname, D
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   real*8                      :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: OutCount
@@ -4764,7 +4764,7 @@ SUBROUTINE wrf_quilt_get_var_td_double ( DataHandle,Element,  DateStr,Varname, D
 #endif
   CALL wrf_error_fatal('wrf_quilt_get_var_td_double not supported yet')
 RETURN
-END SUBROUTINE wrf_quilt_get_var_td_double
+END SUBROUTINE wrf_quilt_get_var_td_double 
 
 SUBROUTINE wrf_quilt_put_var_td_double ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
 !<DESCRIPTION>
@@ -4773,7 +4773,7 @@ SUBROUTINE wrf_quilt_put_var_td_double ( DataHandle,Element,  DateStr,Varname, D
 ! to the open dataset described by DataHandle.
 ! Attribute of type double is
 ! copied from array Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4782,14 +4782,14 @@ SUBROUTINE wrf_quilt_put_var_td_double ( DataHandle,Element,  DateStr,Varname, D
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   real*8 ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: Status
 #endif
   CALL wrf_error_fatal('wrf_quilt_put_var_td_double not supported yet')
 RETURN
-END SUBROUTINE wrf_quilt_put_var_td_double
+END SUBROUTINE wrf_quilt_put_var_td_double 
 
 SUBROUTINE wrf_quilt_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount,Status)
 !<DESCRIPTION>
@@ -4799,7 +4799,7 @@ SUBROUTINE wrf_quilt_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, 
 ! Attribute of type integer is
 ! stored in array Data.
 ! Actual number of words read is returned in OutCount.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4808,14 +4808,14 @@ SUBROUTINE wrf_quilt_get_var_td_integer ( DataHandle,Element,  DateStr,Varname, 
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   integer                     :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: OutCount
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_var_td_integer
+END SUBROUTINE wrf_quilt_get_var_td_integer 
 
 SUBROUTINE wrf_quilt_put_var_td_integer ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
 !<DESCRIPTION>
@@ -4824,7 +4824,7 @@ SUBROUTINE wrf_quilt_put_var_td_integer ( DataHandle,Element,  DateStr,Varname, 
 ! to the open dataset described by DataHandle.
 ! Attribute of type integer is
 ! copied from array Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4833,13 +4833,13 @@ SUBROUTINE wrf_quilt_put_var_td_integer ( DataHandle,Element,  DateStr,Varname, 
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   integer ,       INTENT(IN)  :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_var_td_integer
+END SUBROUTINE wrf_quilt_put_var_td_integer 
 
 SUBROUTINE wrf_quilt_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, Data, Count, Outcount, Status )
 !<DESCRIPTION>
@@ -4849,7 +4849,7 @@ SUBROUTINE wrf_quilt_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, 
 ! Attribute of type logical is
 ! stored in array Data.
 ! Actual number of words read is returned in OutCount.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4858,14 +4858,14 @@ SUBROUTINE wrf_quilt_get_var_td_logical ( DataHandle,Element,  DateStr,Varname, 
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   logical                          :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                      :: OutCount
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_var_td_logical
+END SUBROUTINE wrf_quilt_get_var_td_logical 
 
 SUBROUTINE wrf_quilt_put_var_td_logical ( DataHandle,Element,  DateStr,Varname, Data, Count,  Status )
 !<DESCRIPTION>
@@ -4874,7 +4874,7 @@ SUBROUTINE wrf_quilt_put_var_td_logical ( DataHandle,Element,  DateStr,Varname, 
 ! to the open dataset described by DataHandle.
 ! Attribute of type logical is
 ! copied from array Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4883,13 +4883,13 @@ SUBROUTINE wrf_quilt_put_var_td_logical ( DataHandle,Element,  DateStr,Varname, 
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   logical ,            INTENT(IN) :: Data(*)
   INTEGER ,       INTENT(IN)  :: Count
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_var_td_logical
+END SUBROUTINE wrf_quilt_put_var_td_logical 
 
 SUBROUTINE wrf_quilt_get_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,  Status )
 !<DESCRIPTION>
@@ -4898,7 +4898,7 @@ SUBROUTINE wrf_quilt_get_var_td_char ( DataHandle,Element,  DateStr,Varname, Dat
 ! from the open dataset described by DataHandle.
 ! Attribute of type char is
 ! stored in string Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4907,12 +4907,12 @@ SUBROUTINE wrf_quilt_get_var_td_char ( DataHandle,Element,  DateStr,Varname, Dat
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   CHARACTER*(*)               :: Data
   INTEGER                     :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_get_var_td_char
+END SUBROUTINE wrf_quilt_get_var_td_char 
 
 SUBROUTINE wrf_quilt_put_var_td_char ( DataHandle,Element,  DateStr,Varname, Data,  Status )
 !<DESCRIPTION>
@@ -4921,7 +4921,7 @@ SUBROUTINE wrf_quilt_put_var_td_char ( DataHandle,Element,  DateStr,Varname, Dat
 ! to the open dataset described by DataHandle.
 ! Attribute of type char is
 ! copied from string Data.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -4930,12 +4930,12 @@ SUBROUTINE wrf_quilt_put_var_td_char ( DataHandle,Element,  DateStr,Varname, Dat
   INTEGER ,       INTENT(IN)  :: DataHandle
   CHARACTER*(*) , INTENT(IN)  :: Element
   CHARACTER*(*) , INTENT(IN)  :: DateStr
-  CHARACTER*(*) , INTENT(IN)  :: VarName
+  CHARACTER*(*) , INTENT(IN)  :: VarName 
   CHARACTER*(*) , INTENT(IN) :: Data
   INTEGER                    :: Status
 #endif
 RETURN
-END SUBROUTINE wrf_quilt_put_var_td_char
+END SUBROUTINE wrf_quilt_put_var_td_char 
 
 SUBROUTINE wrf_quilt_read_field ( DataHandle , DateStr , VarName , Field , FieldType , Comm , IOComm, &
                             DomainDesc , MemoryOrder , Stagger , DimNames ,              &
@@ -4946,13 +4946,13 @@ SUBROUTINE wrf_quilt_read_field ( DataHandle , DateStr , VarName , Field , Field
 !<DESCRIPTION>
 ! Instruct the I/O quilt servers to read the variable named VarName from the
 ! dataset pointed to by DataHandle.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   IMPLICIT NONE
-  INTEGER ,       INTENT(IN)    :: DataHandle
+  INTEGER ,       INTENT(IN)    :: DataHandle 
   CHARACTER*(*) , INTENT(INOUT) :: DateStr
   CHARACTER*(*) , INTENT(INOUT) :: VarName
   INTEGER ,       INTENT(INOUT) :: Field(*)
@@ -4994,7 +4994,7 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
 ! of int_local_output_buffer are actually sent to the I/O quilt server in
 ! routine wrf_quilt_iosync().  This scheme allows output of multiple variables
 ! to be aggregated into a single "iosync" operation.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
   USE module_state_description
@@ -5002,7 +5002,7 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
   IMPLICIT NONE
   INCLUDE 'mpif.h'
 #include "wrf_io_flags.h"
-  INTEGER ,       INTENT(IN)    :: DataHandle
+  INTEGER ,       INTENT(IN)    :: DataHandle 
   CHARACTER*(*) , INTENT(IN)    :: DateStr
   CHARACTER*(*) , INTENT(IN)    :: VarName
 !  INTEGER ,       INTENT(IN)    :: Field(*)
@@ -5028,7 +5028,7 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
   INTEGER, EXTERNAL :: use_package
 
 !!ARPTIMING  CALL start_timing
-  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_write_field' )
+  CALL wrf_debug ( DEBUG_LVL, 'in wrf_quilt_write_field' ) 
 
   IF ( .NOT. (DataHandle .GE. 1 .AND. DataHandle .LE. int_num_handles) ) THEN
     CALL wrf_error_fatal("frame/module_io_quilt.F: wrf_quilt_write_field: invalid data handle" )
@@ -5042,8 +5042,8 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
             (PatchEnd(3)-PatchStart(3)+1)
 
   CALL mpi_type_size( MPI_INTEGER, itypesize, ierr )
-  ! Note that the WRF_DOUBLE branch of this IF statement must come first since
-  ! WRF_FLOAT is set equal to WRF_DOUBLE during autopromotion builds.
+  ! Note that the WRF_DOUBLE branch of this IF statement must come first since 
+  ! WRF_FLOAT is set equal to WRF_DOUBLE during autopromotion builds.  
   IF ( FieldType .EQ. WRF_DOUBLE ) THEN
     CALL mpi_type_size( MPI_DOUBLE_PRECISION, typesize, ierr )
   ELSE IF ( FieldType .EQ. WRF_FLOAT ) THEN
@@ -5088,7 +5088,7 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
 !!ARPTIMING      CALL start_timing
       ! send the size of my local buffer to the i/o task (reduced_dummy doesnt mean anything on client side)
       reduced = 0
-      reduced(1) = hdrbufsize
+      reduced(1) = hdrbufsize 
 #ifdef PNETCDF_QUILT
       IF ( compute_group_master(1,current_id) ) reduced(2) = DataHandle
 #else
@@ -5122,16 +5122,16 @@ SUBROUTINE wrf_quilt_write_field ( DataHandle , DateStr , VarName , Field , Fiel
                              MemoryStart , MemoryEnd ,                                    &
                              PatchStart , PatchEnd )
 
-    ! Pack header into int_local_output_buffer.  It will be sent to the
-    ! I/O servers during the next "iosync" operation.
+    ! Pack header into int_local_output_buffer.  It will be sent to the 
+    ! I/O servers during the next "iosync" operation.  
 #ifdef DEREF_KLUDGE
     CALL int_pack_data ( hdrbuf , hdrbufsize , int_local_output_buffer(1), int_local_output_cursor )
 #else
     CALL int_pack_data ( hdrbuf , hdrbufsize , int_local_output_buffer, int_local_output_cursor )
 #endif
 
-    ! Pack field data into int_local_output_buffer.  It will be sent to the
-    ! I/O servers during the next "iosync" operation.
+    ! Pack field data into int_local_output_buffer.  It will be sent to the 
+    ! I/O servers during the next "iosync" operation.  
 #ifdef DEREF_KLUDGE
     CALL int_pack_data ( Field(PatchStart(1):PatchEnd(1),PatchStart(2):PatchEnd(2),PatchStart(3):PatchEnd(3) ), &
                                   locsize * typesize , int_local_output_buffer(1), int_local_output_cursor )
@@ -5153,7 +5153,7 @@ SUBROUTINE wrf_quilt_get_var_info ( DataHandle , VarName , NDim , MemoryOrder , 
 !<DESCRIPTION>
 ! This routine applies only to a dataset that is open for read.  It instructs
 ! the I/O quilt servers to return information about variable VarName.
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !
 ! This is not yet supported.
 !</DESCRIPTION>
@@ -5174,7 +5174,7 @@ subroutine wrf_quilt_find_server(iserver)
 
   ! This routine is called by the compute processes when they need an
   ! I/O server to write out a new file.  Upon return, this routine will
-  ! set iserver to the next available I/O server group.
+  ! set iserver to the next available I/O server group.  
 
   ! A mpi_recv to all of mpi_comm_avail is used to implement this, and
   ! that recv will not return until an I/O server group calls
@@ -5213,11 +5213,11 @@ subroutine wrf_quilt_server_ready()
 
   ! This routine is called by the I/O server group's master process once the
   ! I/O server group is done writing its current file, and is waiting for
-  ! a new one.  This information is passed to the monitor process by a
-  ! blocking send from the I/O server master process to the monitor.
+  ! a new one.  This information is passed to the monitor process by a 
+  ! blocking send from the I/O server master process to the monitor.  
 
   ! All processes in an I/O group must call this routine, and this routine
-  ! will not return (in any process) until the monitor process signals
+  ! will not return (in any process) until the monitor process signals 
   ! that it wants the I/O server group to write a file.  That signal is
   ! sent in a call to wrf_quilt_find_server on the compute processes.
 
@@ -5261,11 +5261,11 @@ SUBROUTINE get_mpi_comm_io_groups( retval, isrvr )
 !<DESCRIPTION>
 ! This routine returns the compute+io communicator to which this
 ! compute task belongs for I/O server group "isrvr".
-! This routine is called only by client (compute) tasks.
+! This routine is called only by client (compute) tasks.  
 !</DESCRIPTION>
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
       USE module_wrf_quilt
-      USE module_dm, ONLY : current_id
+      USE module_dm, ONLY : current_id  
       IMPLICIT NONE
       INTEGER, INTENT(IN ) :: isrvr
       INTEGER, INTENT(OUT) :: retval
@@ -5276,9 +5276,9 @@ END SUBROUTINE get_mpi_comm_io_groups
 
 SUBROUTINE get_nio_tasks_in_group( id, retval )
 !<DESCRIPTION>
-! This routine returns the number of I/O server tasks in each
-! I/O server group.  It can be called by both clients and
-! servers.
+! This routine returns the number of I/O server tasks in each 
+! I/O server group.  It can be called by both clients and 
+! servers.  
 !</DESCRIPTION>
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
       USE module_wrf_quilt
@@ -5300,7 +5300,7 @@ SUBROUTINE collect_on_comm_debug(file,line, comm_io_group,   &
   INTEGER comm_io_group
   INTEGER sze
   INTEGER hdrbuf(*), outbuf(*)
-  INTEGER hdrbufsize, outbufsize
+  INTEGER hdrbufsize, outbufsize 
 
   !write(0,*)'collect_on_comm_debug ',trim(file),line,sze,hdrbufsize,outbufsize
   CALL collect_on_comm( comm_io_group,                       &

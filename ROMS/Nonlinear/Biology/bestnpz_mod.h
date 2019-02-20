@@ -1,6 +1,6 @@
 !=======================================================================
 !   Parameters for BEST NPZ Biological Model
-!      Georgina Gibson
+!      Georgina Gibson 
 !=======================================================================
 
       USE mod_param
@@ -16,7 +16,7 @@
       integer :: iPhS                 ! Small Phytoplankton
       integer :: iPhL                 ! Large Phytoplankton
       integer :: iMZS                 ! Small Microzooplankton
-      integer :: iMZL                 ! Large Microzooplankton
+      integer :: iMZL                 ! Large Microzooplankton 
       integer :: iCop                 ! Small Coastal Copepods
       integer :: iNCaS                ! Neocalanus
       integer :: iEupS                ! Euphausiids

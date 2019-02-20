@@ -55,7 +55,7 @@ CONTAINS
                       ,ids,ide, jds,jde, kds,kde                   &
                       ,ims,ime, jms,jme, kms,kme                   &
                       ,its,ite, jts,jte, kts,kte                   &
-                  ! Optional
+                  ! Optional 
                       ,qlsink, precr, preci, precs, precg          &
                       , F_QG,F_QNDROP                              &
                       , qg, qndrop                                 &
@@ -301,13 +301,13 @@ CONTAINS
          preci(i,k,j)=preciz(k)
       ENDDO
    END IF
-
+      
    IF ( present(precs) ) THEN
       DO k = kts, kte
          precs(i,k,j)=precsz(k)
       ENDDO
    END IF                         !sg end
-
+      
    IF ( flag_qg .AND. PRESENT( qg ) ) THEN
       DO k = kts, kte
          qg(i,k,j)=qgz(k)
@@ -1038,7 +1038,7 @@ CONTAINS
    preciz(kte)=0. !wig
    precsz(kte)=0. !wig
    precgz(kte)=0. !wig
-
+   
 
 ! Microphysics processes
 !
@@ -1542,7 +1542,7 @@ CONTAINS
 
 ! set max allowed evaporation to 90% of the amount that
 !   would induce saturation wrt liquid in a single step.
-         tmpd = qswz(k)*xlv/(rvapor*tem(k)**2) ! d(qsat_liq)/dT
+         tmpd = qswz(k)*xlv/(rvapor*tem(k)**2) ! d(qsat_liq)/dT 
          tmpd = min( 0., 0.9*odtb*(qvz(k) + qlz(k) - qswz(k)) &
                           / (1. + xlvocp * tmpd) )
 
@@ -2232,7 +2232,7 @@ CONTAINS
      ! compute temperature in celsius
       tmp_temcc = tmp_tem - 273.15
 
-      ! estimate lower bound on saturation vapor pressure
+      ! estimate lower bound on saturation vapor pressure 
       !   (ice if <0C, liquid aboce)
       if (tmp_temcc .lt. 0.) then
          es=1000.*svp1*exp( 21.8745584*(tmp_tem-273.16)/(tmp_tem-7.66) ) !ice

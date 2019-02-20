@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_sources
 !
-!svn $Id: mod_sources.F 857 2017-07-29 04:05:27Z arango $
+!svn $Id: mod_sources.F 921 2018-09-06 18:27:34Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -171,40 +171,56 @@
 !  Allocate point Sources/Sinks variables.
 !
       allocate ( SOURCES(ng) % Isrc(Nsrc(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng),r8)
 
       allocate ( SOURCES(ng) % Jsrc(Nsrc(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng),r8)
 
       allocate ( SOURCES(ng) % Dsrc(Nsrc(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng),r8)
 
       allocate ( SOURCES(ng) % Fsrc(Nsrc(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng),r8)
 
       allocate ( SOURCES(ng) % Qbar(Nsrc(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng),r8)
 
       allocate ( SOURCES(ng) % Qshape(Nsrc(ng),N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng)*N(ng),r8)
 
       allocate ( SOURCES(ng) % Qsrc(Nsrc(ng),N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng)*N(ng),r8)
 
 #ifdef ONE_TRACER_SOURCE
       allocate ( SOURCES(ng) % Tsrc(NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(NT(ng),r8)
 #elif defined TWO_D_TRACER_SOURCE
       allocate ( SOURCES(ng) % Tsrc(Nsrc(ng),NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng)*NT(ng),r8)
 #else
       allocate ( SOURCES(ng) % Tsrc(Nsrc(ng),N(ng),NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng)*N(ng)*NT(ng),r8)
 #endif
 
       allocate ( SOURCES(ng) % Xsrc(Nsrc(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng),r8)
 
       allocate ( SOURCES(ng) % Ysrc(Nsrc(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng),r8)
 
 #ifndef ANA_PSOURCE
       allocate ( SOURCES(ng) % QbarG(Nsrc(ng),2) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nsrc(ng),r8)
 
 # ifdef ONE_TRACER_SOURCE
       allocate ( SOURCES(ng) % TsrcG(2,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(NT(ng),r8)
 # elif defined TWO_D_TRACER_SOURCE
       allocate ( SOURCES(ng) % TsrcG(Nsrc(ng),2,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nsrc(ng)*NT(ng),r8)
 # else
       allocate ( SOURCES(ng) % TsrcG(Nsrc(ng),N(ng),2,NT(ng)) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nsrc(ng)*N(ng)*NT(ng),r8)
 # endif
 #endif
 !

@@ -693,7 +693,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
          write(message,633) (grid%psfc_out(I,J)/100.,I=its,min(ite,IDE-1),iloopinc)
          CALL wrf_message(message)
        ENDDO
-
+       
        endif
 
   633   format(35(f5.0,1x))
@@ -2396,7 +2396,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
      &,                             IMS,IME,JMS,JME,KMS,KME             &
      &,                             ITS,ITE,JTS,JTE,KTS,KTE  )
 
-
+	
        IMPLICIT NONE
 
        real, allocatable:: dum2d(:,:),DUM2DB(:,:)
@@ -2417,7 +2417,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
        real :: zin(generic),pin(generic)
 
        character (len=255) :: message
-
+	
        logical :: DEFINED_PSFC(IMS:IME,JMS:JME), DEFINED_PSFCB(IMS:IME,JMS:JME)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2548,7 +2548,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
 !           ENDIF
 
           ENDIF
-       END DO
+       END DO	
 
 !!!!!!!!!!!!!!!!!!!!!! START HYDRO CHECK
 
@@ -2688,7 +2688,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
                write(message,*) 'z diff: ', BOT_INPUT_HGT, Z3D_IN(i,j,3)
                CALL wrf_message(message)
               ENDIF
-
+	
             ELSE
 
 !! Loop up to level 7 looking for a sufficiently thick layer
@@ -3178,7 +3178,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
            IF (TFIELD .and. K .eq. 1  .and. (desired_press - press_in(i,j,LMIN)) .gt. 3000.) then
             col_smooth=.TRUE.   ! due to large extrapolation distance
            ENDIF
-
+	
 
             IF ((desired_press - press_in(i,j,LMIN)).LT. 50.) THEN ! 0.5 mb
                data_out(i,j,k) = data_in(i,j,LMIN)
@@ -3876,7 +3876,7 @@ ips=its ; ipe=ite ;  jps=jts ; jpe=jte ; kps=kts ; kpe=kte
 
           enddo
           endif
-
+	
 
           if (ITE .eq. IDE) then
 !  Eastern Boundary
@@ -5493,7 +5493,7 @@ INTEGER, INTENT(IN):: ids,ide,jds,jde,kds,kde, &
          tw(j,i,k)=tc(j,i,k)
          ghw(j,i,k)=ghc(j,i,k)
          rhw(j,i,k)=rhc(j,i,k)
-         if(i .eq. 10 .and. j .eq. 10) then
+         if(i .eq. 10 .and. j .eq. 10) then 
             write(message,*)k,uw(j,i,k),vw(j,i,k),ghw(j,i,k),tw(j,i,k)
             call wrf_debug(1,message)
          endif
@@ -6310,7 +6310,7 @@ END SUBROUTINE EARTH_LATLON_hwrf
       TLAT=R2D*ATAN(Z/SQRT(X*X+Y*Y))
       TLON=R2D*ATAN(Y/X)
 
-!
+!    
       ROW=TLAT/DPHD1+JMT         ! JMT IS THE CENTRAL ROW OF THE PARENT DOMAIN
       COL=TLON/DLMD1+P_IDE-1     ! (P_IDE-1) IS THE CENTRAL COLUMN OF THE PARENT DOMAIN
       NROW=INT(ROW + 0.001)     ! ROUND-OFF IS AVOIDED WITHOUT USING NINT ON PURPOSE
@@ -6320,7 +6320,7 @@ END SUBROUTINE EARTH_LATLON_hwrf
 
 !      WRITE(60,*)'============================================================'
 !      WRITE(60,*)'              ','i=',i,'j=',j
-!***
+!*** 
 !***
 !***  FIRST CONSIDER THE SITUATION WHERE THE POINT h IS AT
 !***
@@ -6433,7 +6433,7 @@ END SUBROUTINE EARTH_LATLON_hwrf
     ELSE
       TLONHC=WB+(2*(MK-(P_IDE-1))-1)*DLM
     ENDIF
-
+ 
 !
 !***  EXECUTE CAUTION IF YOU NEED TO CHANGE THESE CONDITIONS. SINCE WE ARE
 !***  DEALING WITH SLOPES TO GENERATE DIAMOND SHAPE H BOXES, WE NEED TO BE
@@ -6613,7 +6613,7 @@ END SUBROUTINE EARTH_LATLON_hwrf
 !***                      4
 !***
 !***
-!***
+!*** 
 !***                   h
 !***             1                 2
 !***
@@ -6757,7 +6757,7 @@ END SUBROUTINE EARTH_LATLON_hwrf
        HRES_SM(1,J)=HRES_SM(2,J)
      END DO
 !    Boundary treatment in J direction and 4 corners
-     DO I=ITS,MIN(ITE,IDE)
+     DO I=ITS,MIN(ITE,IDE) 
        HRES_SM(I,2)=HRES_SM(I,3)
        HRES_SM(I,1)=HRES_SM(I,2)
      END DO

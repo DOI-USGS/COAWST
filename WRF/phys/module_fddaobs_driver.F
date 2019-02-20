@@ -1,37 +1,37 @@
 !WRF:MODEL_LAYER:PHYSICS
 MODULE module_fddaobs_driver
 
-! This obs-nudging FDDA module (RTFDDA) is developed by the
-! NCAR/RAL/NSAP (National Security Application Programs), under the
-! sponsorship of ATEC (Army Test and Evaluation Commands). ATEC is
-! acknowledged for releasing this capability for WRF community
+! This obs-nudging FDDA module (RTFDDA) is developed by the 
+! NCAR/RAL/NSAP (National Security Application Programs), under the 
+! sponsorship of ATEC (Army Test and Evaluation Commands). ATEC is 
+! acknowledged for releasing this capability for WRF community 
 ! research applications.
 !
-! The NCAR/RAL RTFDDA module was adapted, and significantly modified
-! from the obs-nudging module in the standard MM5V3.1 which was originally
-! developed by PSU (Stauffer and Seaman, 1994).
-!
-! Yubao Liu (NCAR/RAL): lead developer of the RTFDDA module
+! The NCAR/RAL RTFDDA module was adapted, and significantly modified 
+! from the obs-nudging module in the standard MM5V3.1 which was originally 
+! developed by PSU (Stauffer and Seaman, 1994). 
+! 
+! Yubao Liu (NCAR/RAL): lead developer of the RTFDDA module 
 ! Al Bourgeois (NCAR/RAL): lead engineer implementing RTFDDA into WRF-ARW
 ! Nov. 2006
-!
+! 
 ! References:
-!
+!   
 !   Liu, Y., A. Bourgeois, T. Warner, S. Swerdlin and J. Hacker, 2005: An
-!     implementation of obs-nudging-based FDDA into WRF for supporting
+!     implementation of obs-nudging-based FDDA into WRF for supporting 
 !     ATEC test operations. 2005 WRF user workshop. Paper 10.7.
 !
-!   Liu, Y., A. Bourgeois, T. Warner, S. Swerdlin and W. Yu, 2006: An update
-!     on "obs-nudging"-based FDDA for WRF-ARW: Verification using OSSE
-!     and performance of real-time forecasts. 2006 WRF user workshop. Paper 4.7.
+!   Liu, Y., A. Bourgeois, T. Warner, S. Swerdlin and W. Yu, 2006: An update 
+!     on "obs-nudging"-based FDDA for WRF-ARW: Verification using OSSE 
+!     and performance of real-time forecasts. 2006 WRF user workshop. Paper 4.7. 
 
-!
-!   Stauffer, D.R., and N.L. Seaman, 1994: Multi-scale four-dimensional data
+!   
+!   Stauffer, D.R., and N.L. Seaman, 1994: Multi-scale four-dimensional data 
 !     assimilation. J. Appl. Meteor., 33, 416-434.
 !
 !   http://www.rap.ucar.edu/projects/armyrange/references.html
 !
-
+ 
 CONTAINS
 
 !-----------------------------------------------------------------------
@@ -48,7 +48,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                parent_grid_ratio, maxdom, itimestep,             &
                xtime,                                            &
                dt, gmt, julday,                                  &
-#if ( EM_CORE == 1 )
+#if ( EM_CORE == 1 ) 
                fdob,                                             &
 #endif
                max_obs, nobs_ndg_vars,                           &
@@ -100,8 +100,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
   INTEGER, intent(in)  :: itimestep
   INTEGER, intent(in)  :: nudge_opt
-  LOGICAL, intent(in)  :: iprt_errob
-  LOGICAL, intent(in)  :: iprt_nudob
+  LOGICAL, intent(in)  :: iprt_errob 
+  LOGICAL, intent(in)  :: iprt_nudob 
   REAL, intent(in)     :: fdasta
   REAL, intent(in)     :: fdaend
   INTEGER, intent(in)  :: nudge_wind
@@ -117,7 +117,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   INTEGER, intent(in) :: npfi
   INTEGER, intent(in) :: ionf
   INTEGER, intent(in) :: obs_prt_max      ! max number of obs in printout
-  INTEGER, intent(in) :: obs_prt_freq     ! frequency (in obs index) printout
+  INTEGER, intent(in) :: obs_prt_freq     ! frequency (in obs index) printout 
   INTEGER, intent(in) :: idynin
   REAL, intent(inout) :: dtramp
   INTEGER, intent(in) :: parent_grid_ratio
@@ -134,8 +134,8 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   REAL, intent(in)     :: dx           ! this-domain grid cell-size (m)
   INTEGER, INTENT(IN) :: kpbl( ims:ime, jms:jme ) ! vertical layer index for PBL top
   REAL, INTENT(IN) :: ht( ims:ime, jms:jme )
-  REAL, INTENT(IN) :: mut( ims:ime , jms:jme )   ! Air mass on t-grid
-  REAL, INTENT(IN) :: muu( ims:ime , jms:jme )   ! Air mass on u-grid
+  REAL, INTENT(IN) :: mut( ims:ime , jms:jme )   ! Air mass on t-grid 
+  REAL, INTENT(IN) :: muu( ims:ime , jms:jme )   ! Air mass on u-grid 
   REAL, INTENT(IN) :: muv( ims:ime , jms:jme )   ! Air mass on v-grid
   REAL, INTENT(IN) :: msftx( ims:ime , jms:jme )  ! Map scale on t-grid
   REAL, INTENT(IN) :: msfty( ims:ime , jms:jme )  ! Map scale on t-grid
@@ -156,7 +156,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   REAL, INTENT(IN) :: z_at_w( ims:ime, kms:kme, jms:jme ) ! Model ht(m) asl, f-levs
   REAL, INTENT(IN) :: z( ims:ime, kms:kme, jms:jme )  ! Model ht(m) asl, h-levs
 
-#if ( EM_CORE == 1 )
+#if ( EM_CORE == 1 ) 
   TYPE(fdob_type), intent(inout)  :: fdob
 #endif
 
@@ -177,13 +177,13 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   REAL,   INTENT(INOUT) :: moist_tend( ims:ime, kms:kme, jms:jme )
 
 ! Local variables
-  logical            :: nudge_flag   ! Flag for doing nudging
+  logical            :: nudge_flag   ! Flag for doing nudging 
   integer            :: KTAU         ! Forecast timestep
   real               :: dtmin        ! dt in minutes
   integer            :: i, j, k      ! Loop counters.
   integer            :: idom         ! Loop counter.
   integer            :: nsta         ! Number of observation stations
-  integer            :: infr         ! Frequency for obs input and error calc
+  integer            :: infr         ! Frequency for obs input and error calc 
   integer            :: idarst       ! Flag for calling sub errob on restart
   real               :: dtr          ! Abs value of dtramp (for dynamic init)
   real               :: tconst       ! Reciprocal of dtr
@@ -199,7 +199,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 #endif
   character(len=200) :: msg  ! Argument to wrf_message
 
-#if ( EM_CORE == 1 )
+#if ( EM_CORE == 1 ) 
   nudge_flag = (nudge_opt  .eq. 1)
 
   if (.not. nudge_flag) return
@@ -208,7 +208,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 ! ***************       BEGIN FDDA SETUP SECTION        ***************
 
 ! Calculate forecast time.
-  dtmin = dt/60.
+  dtmin = dt/60.     
   ktau  = itimestep - 1        !ktau corresponds to xtime
 
 ! Set NSTA to zero on startup, or else retrieve value from last pass.
@@ -222,7 +222,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   ELSE
      nsta=fdob%nstat
   ENDIF
-
+  
   infr = ionf*(parent_grid_ratio**fdob%levidn(inest))
   nsta=fdob%nstat
   idarst = 0
@@ -501,7 +501,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   REAL,    INTENT(IN)  :: vif(6)                     ! Vert infl params for regimes
   REAL,    INTENT(IN)  :: hmax                       ! Max height to apply nudging
   REAL,    INTENT(IN)  :: fullmin                    ! Min height of full nudging
-  REAL,    INTENT(IN)  :: rampmin                    ! Min height to ramp full-to-0
+  REAL,    INTENT(IN)  :: rampmin                    ! Min height to ramp full-to-0 
   REAL,    INTENT(IN)  :: regime(ims:ime,jms:jme)    ! Stability regime
   REAL,    INTENT(IN)  :: pblh(ims:ime,jms:jme)      ! PBL height (m)
   REAL,    INTENT(IN)  :: terrh(ims:ime,jms:jme)     ! Terrain ht (m)
@@ -540,7 +540,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
                                  ' at grid coordinate i = ',i,' j = ',j
         call wrf_message(msg)
         call wrf_error_fatal ( 'fddaobs_driver: compute_VIH STOP' )
-
+        
       endif
 
     enddo
@@ -555,7 +555,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 
   SUBROUTINE get_vif_hts_slab(fullr, rampr, pblh, hmax, fullmin, rampmin, &
                               ht1, ht2, ims,ime, its,ite)
-! Compute VIF heights
+! Compute VIF heights 
 
   IMPLICIT NONE
 
@@ -564,7 +564,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
   REAL, INTENT(IN)    :: pblh(ims:ime)    ! PBL height (m)
   REAL, INTENT(IN)    :: hmax             ! Max height to apply nudging
   REAL, INTENT(IN)    :: fullmin          ! Min height of full nudging
-  REAL, INTENT(IN)    :: rampmin          ! Min height to ramp full-to-0
+  REAL, INTENT(IN)    :: rampmin          ! Min height to ramp full-to-0 
   REAL, INTENT(OUT)   :: ht1(its:ite)     ! Vert infl fcn height 1
   REAL, INTENT(OUT)   :: ht2(its:ite)     ! Vert infl fcn height 2
   INTEGER, INTENT(IN) :: ims,ime          ! Memory dims.
@@ -598,13 +598,13 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
 
 ! Apply hmax
     ht1(i) = min(ht1(i), hmax-rampmin)
-    ht2(i) = min(ht2(i), hmax)
+    ht2(i) = min(ht2(i), hmax) 
   enddo
   END SUBROUTINE get_vif_hts_slab
 
   SUBROUTINE get_vik_slab( h, hlevs, ht, vik, ims,ime, kms,kme, its,ite, kts,kte )
 
-! Compute VIK values from heights on j-slab
+! Compute VIK values from heights on j-slab 
 
   IMPLICIT NONE
 
@@ -627,7 +627,7 @@ SUBROUTINE fddaobs_driver( inest, domid, parid, restart,         &
        ht_ag(k) = hlevs(i,k) - ht(i)
     enddo
 !   Get k levels that correspond to height values
-    vik(i) = ht_to_k( h(i), ht_ag, kts,kte )
+    vik(i) = ht_to_k( h(i), ht_ag, kts,kte ) 
   enddo
   END SUBROUTINE get_vik_slab
 

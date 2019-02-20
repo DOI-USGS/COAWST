@@ -29,7 +29,7 @@
                     ,FNS,FEW,FNE,FSE                                    &
                     ,T,U,V,W,W_TOT,Q,CWM                                      &
                     ,DEF3D,HDAC,BARO                                    &
-                    ,WP,dwdt_damping_lev                                                 &
+                    ,WP,dwdt_damping_lev                                                 &    
                     ,IHE,IHW,IVE,IVW                                    &
                     ,IDS,IDE,JDS,JDE,KDS,KDE                            &
                     ,IMS,IME,JMS,JME,KMS,KME                            &
@@ -74,7 +74,7 @@
 !-----------------------------------------------------------------------
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
                            ,IMS,IME,JMS,JME,KMS,KME                     &
-                           ,ITS,ITE,JTS,JTE,KTS,KTE
+                           ,ITS,ITE,JTS,JTE,KTS,KTE 
 !
       INTEGER,DIMENSION(JMS:JME),INTENT(IN) :: IHE,IHW,IVE,IVW
 !
@@ -218,16 +218,16 @@
             HKSE_IJ=(DEF3D(I+IHE(J),J-1,K)+DEF3D(I,J,K))
             WNE(I,J)=(W (I+IHE(J),J+1,K)-W (I,J,K))*HKNE_IJ
             WSE(I,J)=(W (I+IHE(J),J-1,K)-W (I,J,K))*HKSE_IJ
-          ENDDO
-         ENDDO
+          ENDDO 
+         ENDDO 
 
          DO J=MYJS2,MYJE2
           DO I=MYIS,MYIE
               DWDT(I,J,K)= DWDT(I,J,K) - ( WNE (I,J)-WNE (I+IHW(J),J-1) +  &
                                            WSE (I,J)-WSE (I+IHW(J),J+1) ) * &
-                                           HDAC(I,J)*HBM2(I,J)*RDT
-          ENDDO
-         ENDDO
+                                           HDAC(I,J)*HBM2(I,J)*RDT 
+          ENDDO 
+         ENDDO 
         ENDDO
 
        ENDIF
@@ -470,7 +470,7 @@
         enddo
 
         ENDIF
-
+ 
       GDT=G*DT
       GDT2=GDT*GDT
       FFC=-R_D/GDT2
@@ -542,7 +542,7 @@
               COFF_IK(I,K)=T_IK(I,K)*TTFC*TFC*DPPL*FFC                  &
                           /((PNP1_I(I)+PNP)*(PNP+PNP1_I(I)))
               PNP1_I(I)=PNP
-            ENDDO
+            ENDDO 
           ENDIF
 !
         ENDDO
@@ -717,14 +717,14 @@
                      ,ITS,ITE,JTS,JTE,KTS,KTE)
 !***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
+!                .      .    .     
 ! SUBPROGRAM:    VADZ        VERTICAL ADVECTION OF HEIGHT
 !   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 93-11-17
-!
+!     
 ! ABSTRACT:
 !     VADV CALCULATES THE CONTRIBUTION OF THE VERTICAL ADVECTION
 !     OF HEIGHT IN ORDER TO COMPUTE W=DZ/DT DIAGNOSTICALLY
-!
+!     
 ! PROGRAM HISTORY LOG:
 !   96-05-??  JANJIC     - ORIGINATOR
 !   00-01-04  BLACK      - DISTRIBUTED MEMORY AND THREADS
@@ -732,7 +732,7 @@
 !   02-02-19  BLACK      - CONVERSION UPDATED
 !   04-11-22  BLACK      - THREADED
 !   05-12-12  BLACK      - CONVERTED FROM IKJ TO IJK
-!
+!     
 ! USAGE: CALL VADZ FROM MAIN PROGRAM
 !   INPUT ARGUMENT LIST:
 !
@@ -925,14 +925,14 @@
                      ,ITS,ITE,JTS,JTE,KTS,KTE)
 !***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
+!                .      .    .     
 ! SUBPROGRAM:    HADZ        HORIZONTAL ADVECTION OF HEIGHT
-!   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 96-05-??
-!
+!   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 96-05-??       
+!     
 ! ABSTRACT:
 !     HADZ CALCULATES DIAGNOSTICALLY THE CONTRIBUTION OF
 !     THE HORIZONTAL ADVECTION OF HEIGHT
-!
+!     
 ! PROGRAM HISTORY LOG:
 !   96-05-??  JANJIC     - ORIGINATOR
 !   00-01-04  BLACK      - DISTRIBUTED MEMORY AND THREADS
@@ -1132,7 +1132,7 @@
 !-----------------------------------------------------------------------
 !---taking external mode out--------------------------------------------
 !-----------------------------------------------------------------------
-
+	
        DO J=MYJS2_P1,MYJE2_P1
         DO I=MYIS1_P1,MYIE1_P1
           BARO(I,J)=0.
@@ -1162,7 +1162,7 @@
         ENDDO
        ENDDO
       ENDDO
-
+ 
       ENDIF
 !
 !-----------------------------------------------------------------------

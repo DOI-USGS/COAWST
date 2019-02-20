@@ -169,7 +169,7 @@ contains
     ! columns are always relaxed.  This is needed to overcome bad
     ! values fed in from the parent every timestep.  Setting the mask
     ! to true on the boundaries of the domain prevent them from being
-    ! used as boundaries of the overrelaxation.
+    ! used as boundaries of the overrelaxation.  
 
     ! (Some of the reasons for boundary issues: The parent and nest
     ! terrain will never match because the nest terrain is smoothed on
@@ -311,7 +311,7 @@ contains
     real :: numsum,densum,modelP1,modelP2,pdiff,presQ,presT,ZL,QSAT, U1, V1, U2, V2, dudy1,dvdx1, dudy2,dvdx2
     character*255 :: message
     logical :: wantuv
-
+    
 #ifdef DM_PARALLEL
 #      include "HALO_NMM_MEMBRANE_INTERP.inc"
 #endif
@@ -454,7 +454,7 @@ contains
           ksX=>ks850
           kd=k850
           preswind=>grid%p850wind
-          presrv=>grid%p850rv
+          presrv=>grid%p850rv 
           if(wantuv) then
              presu=>grid%p850u
              presv=>grid%p850v
@@ -524,7 +524,7 @@ contains
                V1=0.25*(grid%v(i,j-1,ks) + grid%v(i,j+1,ks) + grid%v(i-a,j,ks) + grid%v(i+1-a,j,ks))
                U2=0.25*(grid%u(i,j-1,ks-1) + grid%u(i,j+1,ks-1) + grid%u(i-a,j,ks-1) + grid%u(i+1-a,j,ks-1))
                V2=0.25*(grid%v(i,j-1,ks-1) + grid%v(i,j+1,ks-1) + grid%v(i-a,j,ks-1) + grid%v(i+1-a,j,ks-1))
-
+               
                dvdx1 = (grid%v(i+1-a,j,ks)-grid%v(i-a,j,ks))/(2.*grid%dx_nmm(i,j))
                dudy1 = (grid%u(i,j+1,ks)-grid%u(i,j-1,ks))/(2.*grid%dy_nmm)
                dvdx2 = (grid%v(i+1-a,j,ks-1)-grid%v(i-a,j,ks-1))/(2.*grid%dx_nmm(i,j))
@@ -541,7 +541,7 @@ contains
                ks=1
                U1=0.25*(grid%u(i,j-1,ks) + grid%u(i,j+1,ks) + grid%u(i-a,j,ks) + grid%u(i+1-a,j,ks))
                V1=0.25*(grid%v(i,j-1,ks) + grid%v(i,j+1,ks) + grid%v(i-a,j,ks) + grid%v(i+1-a,j,ks))
-
+               
                dvdx1 = (grid%v(i+1-a,j,ks)-grid%v(i-a,j,ks))/(2.*grid%dx_nmm(i,j))
                dudy1 = (grid%u(i,j+1,ks)-grid%u(i,j-1,ks))/(2.*grid%dy_nmm)
 
@@ -606,7 +606,7 @@ contains
     enddo
 
     ! Extrapolate below-ground temperature but not height.  Fill in
-    ! badheight for height below ground.
+    ! badheight for height below ground.  
     jloop2: do j=jps,min(jde-1,jpe)
        iloop2: do i=ips,min(ide-1,ipe)
           if(ground_level(i,j)>npres) then

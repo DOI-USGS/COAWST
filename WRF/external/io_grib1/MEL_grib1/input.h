@@ -41,7 +41,7 @@ typedef struct GEOM_IN {        /* info from tables grid_reg_geom/as_reg_im */
     double y_int_dis;           /* distance interval between rows in km */
     double parm_1;              /* geom parm 1, depends on projection
 				 * Spherical:	j Direction Increment (Latitude)
-				 * Lambert:*/
+				 * Lambert:*/	
     double parm_2;              /* geom parm 2, depends on projection */
     double parm_3;              /* geom parm 3, depends on projection */
 /* Do NOT MODIFY parameters before this point */

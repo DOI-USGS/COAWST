@@ -731,7 +731,7 @@ CONTAINS
 
           ZSLT=ZSL+ZU ! u,v and t are at the same level
 
-!-- BSF on 10/19/2011: Added new IF-ELSE block but commented out until
+!-- BSF on 10/19/2011: Added new IF-ELSE block but commented out until 
 !   final matter is resolved.
 !BSF          IF ( (IZ0TLND==0) .or. (VEGTYP == ISURBAN) ) THEN
 !BSF             ! Just use the original CZIL value.
@@ -743,11 +743,11 @@ CONTAINS
 !BSF          ENDIF
           CZIL=0.1
           ZILFC=-CZIL*VKARMAN*SQVISC
-
+          
 !----------------------------------------------------------------------
 !
 !mp   Topo modification of ZILFC term
-!
+!	
 !         TOPOTERM=TOPOFAC*ZSFC**2.
 !         TOPOTERM=MAX(TOPOTERM,3.0)
 !
@@ -1095,7 +1095,7 @@ CONTAINS
 !
       IF(SEAMASK>0.5)THEN
           QS=PQ0SEA/PSFC                                      &
-     &         *EXP(A2S*(TSK-A3S)/(TSK-A4S))
+     &         *EXP(A2S*(TSK-A3S)/(TSK-A4S)) 
         QS=QS/(1.-QS)
       ENDIF
 !----------------------------------------------------------------------

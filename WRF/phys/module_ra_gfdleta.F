@@ -41,7 +41,7 @@ MODULE MODULE_RA_GFDLETA
       REAL   ,SAVE, DIMENSION(109,109) :: TRANSA
       REAL   ,SAVE  :: CORE,UEXP,SEXP
 
-      EQUIVALENCE (EM1V(1),EM1(1,1)),(EM1VW(1),EM1WDE(1,1))
+      EQUIVALENCE (EM1V(1),EM1(1,1)),(EM1VW(1),EM1WDE(1,1)) 
       EQUIVALENCE (EM3V(1),EM3(1,1))
       EQUIVALENCE (T1(1),TABLE1(1,1)),(T2(1),TABLE2(1,1)), &
                   (T4(1),TABLE3(1,1))
@@ -61,7 +61,7 @@ MODULE MODULE_RA_GFDLETA
 
 !
 !--- Important parameters for cloud properties - see extensive comments in
-!    DO 580 loop within subroutine RADTN
+!    DO 580 loop within subroutine RADTN 
 !
       REAL, PARAMETER ::  &
      &   TRAD_ice=0.5*T_ice      & !--- Very tunable parameter
@@ -126,7 +126,7 @@ CONTAINS
         IF(PCLD>=PTOP_HI)LTOP(3)=N
 !       PRINT *,N,PCLD,SHALF(N),PSTAR,PPTOP
       ENDDO
-!***
+!***  
 !***  ASSIGN THE PRESSURES FOR CLOUD DOMAIN BOUNDARIES
 !***
       PTOPC(1)=PLBTM
@@ -177,11 +177,11 @@ CONTAINS
 !
 !
 !-----------------------------------------------------------------------
-      SUBROUTINE ETARA(DT,THRATEN,THRATENLW,THRATENSW,CLDFRA,PI3D       &
+      SUBROUTINE ETARA(DT,THRATEN,THRATENLW,THRATENSW,CLDFRA,PI3D       & 
      &                ,XLAND,P8W,DZ8W,RHO_PHY,P_PHY,T                   &
-     &                ,QV,QW,QI,QS                                      &
+     &                ,QV,QW,QI,QS                                      & 
      &                ,TSK2D,GLW,RSWIN,GSW,RSWINC                       &
-     &                ,RSWTOA,RLWTOA,CZMEAN                             &
+     &                ,RSWTOA,RLWTOA,CZMEAN                             & 
      &                ,GLAT,GLON,HTOP,HBOT,HTOPR,HBOTR,ALBEDO,CUPPT     &
      &                ,VEGFRA,SNOW,G,GMT                                &
 !BSF => for NAMX changes, pass in surface emissivity (SFCEMS) [different for snow]
@@ -200,8 +200,8 @@ CONTAINS
      &                     ,IMS,IME,JMS,JME,KMS,KME                     &
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE,ITIMESTEP           &
      &                     ,NPHS,NSTEPRA
-
-      INTEGER,INTENT(IN) :: julyr,julday
+ 
+      INTEGER,INTENT(IN) :: julyr,julday   
       INTEGER,INTENT(INOUT),DIMENSION(ims:ime,jms:jme) :: NCFRST        & !Added
                                                          ,NCFRCV          !Added
       REAL,INTENT(IN) :: DT,GMT,G,XTIME,JULIAN
@@ -273,7 +273,7 @@ CONTAINS
           TFLIP (I,K,J)=T(I,KFLIP,J)
           QFLIP (I,K,J)=MAX(0.,QV(I,KFLIP,J)/(1.+QV(I,KFLIP,J)))
           QWFLIP(I,K,J)=MAX(QW(I,KFLIP,J),0.)      !Modified
-! Note that QIFLIP will contain QS+QI if both are passed in, otherwise just QS
+! Note that QIFLIP will contain QS+QI if both are passed in, otherwise just QS 
 !     Eta MP now outputs QS instead of QI (JD 2006-05-12)
           QIFLIP(I,K,J)=MAX(QS(I,KFLIP,J),0.)      !Added QS
           IF(PRESENT(QI))QIFLIP(I,K,J)=QIFLIP(I,K,J)+QI(I,KFLIP,J)      !Added QI
@@ -292,7 +292,7 @@ CONTAINS
       ENDDO
       ENDDO
 !
-      CALL CAL_MON_DAY(JULDAY,JULYR,JMONTH,JDAY)
+      CALL CAL_MON_DAY(JULDAY,JULYR,JMONTH,JDAY)     
 !
       IDAT(1)=JMONTH
       IDAT(2)=JDAY
@@ -323,7 +323,7 @@ CONTAINS
 !     FSWrat=0.
 !     if (RSWIN(imd,jmd) .gt. 0.)   &
 !        FSWrat=(RSWIN(imd,jmd)-GSW(imd,jmd))/RSWIN(imd,jmd)
-!     write(6,"(2a,2i5,5f9.2,f8.4,i3,2f8.4)") &
+!     write(6,"(2a,2i5,5f9.2,f8.4,i3,2f8.4)") & 
 !       '{rad4 imd,jmd,GSW,RSWIN,RSWOUT=RSWIN-GSW,RSWINC,GLW,' &
 !      ,'ACFRCV,NCFRCV,ALBEDO,RSWOUT/RSWIN = '   &
 !      ,imd,jmd, GSW(imd,jmd),RSWIN(imd,jmd)  &
@@ -333,7 +333,7 @@ CONTAINS
 !
 !--- Need to save LW & SW tendencies since radiation calculates both and this block
 !    is skipped when GFDL SW is called, both only if GFDL LW is also called
-!
+!    
       IF(GFDL_LW)THEN
         DO J=JTS,JTE
         DO K = KTS,KTE
@@ -393,7 +393,7 @@ CONTAINS
      &                 PFLIP,P8WFLIP,XLAND,TSK2D,                       &
      &                 GLAT,GLON,CUTOP,CUBOT,ALB,CUPPT,                 &
      &                 ACFRCV,NCFRCV,ACFRST,NCFRST,                     &
-     &                 VEGFRC,SNO,GLW,GSW,RSWIN,RSWINC,                 &
+     &                 VEGFRC,SNO,GLW,GSW,RSWIN,RSWINC,                 & 
 !BSF => for NAMX changes, pass in surface emissivity (SFCEMS) [different for snow]
      &                 IDAT,IHRST,XTIME,JULIAN,                         &
      &                 NRADS,NRADL,NPHS,NTSD,                           &
@@ -465,17 +465,17 @@ CONTAINS
 !         where they are set in GFDLRD.F.
 
 ! LTOP  : a 3-element integer array holding the model layer that is at or
-!         immediately below the specified pressure levels for the tops
-!         of "high" (15000 Pa), "middle" (35000 Pa), and "low" (64200 Pa)
-!         stratiform clouds.  These are for the diagnostic cloud layers
+!         immediately below the specified pressure levels for the tops 
+!         of "high" (15000 Pa), "middle" (35000 Pa), and "low" (64200 Pa) 
+!         stratiform clouds.  These are for the diagnostic cloud layers 
 !         needed in the output but not in the integration.
 
 ! NRADS : integer number of fundamental timesteps (our smallest
-!         timestep, i.e., the one for inertial gravity wave adjustment)
-!         between updates of the shortwave tendencies.
+!         timestep, i.e., the one for inertial gravity wave adjustment) 
+!         between updates of the shortwave tendencies.  
 
 ! NRADL : integer number of fundamental timesteps between updates of
-!         the longwave tendencies.
+!         the longwave tendencies.  
 
 ! NTSD   : integer counter of the fundamental timesteps that have
 !         elapsed since the start of the forecast.
@@ -496,7 +496,7 @@ CONTAINS
 ! CFRACL,CFRACM,CFRACH : low, middle, & high (diagnosed) cloud fractions
 
 ! XTIME : time since simulation start (minutes)
-
+                                                                                                                                              
 ! JULIAN: Day of year (0.0 at 00Z Jan 1st)
 
 !**********************************************************************
@@ -513,7 +513,7 @@ CONTAINS
       INTEGER, INTENT(IN)        :: ids,ide, jds,jde, kds,kde ,         &
      &                              ims,ime, jms,jme, kms,kme ,         &
      &                              its,ite, jts,jte, kts,kte
-      INTEGER, INTENT(IN)        :: NRADS,NRADL,NTSD,NPHS
+      INTEGER, INTENT(IN)        :: NRADS,NRADL,NTSD,NPHS 
 !     LOGICAL, INTENT(IN)        :: RESTRT
       REAL   , INTENT(IN)        :: DT,XTIME,JULIAN
 !     REAL   , INTENT(IN), DIMENSION(37,NL) :: XDUO3N,XDO3N2,XDO3N3,XDO3N4
@@ -593,11 +593,11 @@ CONTAINS
 
       REAL,   DIMENSION(its:ite,kts:kte) :: PMID,TMID
       REAL,   DIMENSION(its:ite,kts:kte) :: QMID,THMID,OZN,POZN
-      REAL,   DIMENSION(its:ite,jts:jte) :: TOT
+      REAL,   DIMENSION(its:ite,jts:jte) :: TOT 
 
       REAL,   DIMENSION(its:ite,kts:kte+1) :: PINT,EMIS,CAMT
       INTEGER,DIMENSION(its:ite,kts:kte+1) :: KBTM,KTOP
-      INTEGER,DIMENSION(its:ite)   :: NCLDS,KCLD
+      INTEGER,DIMENSION(its:ite)   :: NCLDS,KCLD 
       REAL,   DIMENSION(its:ite)   :: TAUDAR
       REAL,   DIMENSION(its:ite,NB,kts:kte+1) ::RRCL,TTCL
 
@@ -672,14 +672,14 @@ CONTAINS
 !***
 !***  STATE WHETHER THE SHORT OR LONGWAVE COMPUTATIONS ARE TO BE DONE.
 !***
-      SHORT=.TRUE.
-      LONG=.TRUE.
+      SHORT=.TRUE. 
+      LONG=.TRUE. 
       ITIMSW=0
       ITIMLW=0
       IF(SHORT)ITIMSW=1
       IF(LONG) ITIMLW=1
 !***
-!***  FIND THE MEAN COSINE OF THE SOLAR ZENITH ANGLE
+!***  FIND THE MEAN COSINE OF THE SOLAR ZENITH ANGLE 
 !***  BETWEEN THE CURRENT TIME AND THE NEXT TIME RADIATION IS
 !***  CALLED.  ONLY AVERAGE IF THE SUN IS ABOVE THE HORIZON.
 !***
@@ -690,7 +690,7 @@ CONTAINS
      &            MYIS,MYIE,MYJS,MYJE,                                  &
      &            ids,ide, jds,jde, kds,kde,                            &
      &            ims,ime, jms,jme, kms,kme,                            &
-     &            its,ite, jts,jte, kts,kte                             )
+     &            its,ite, jts,jte, kts,kte                             ) 
 !-----------------------------------------------------------------------
 !     write(0,*)'1st ZEN ',TIME,DAYI,HOUR,IDAT,IHRST,CZEN(ITS,JTS)
       ADDL=0.
@@ -715,7 +715,7 @@ CONTAINS
      &                MYIS,MYIE,MYJS,MYJE,                              &
      &                ids,ide, jds,jde, kds,kde,                        &
      &                ims,ime, jms,jme, kms,kme,                        &
-     &                its,ite, jts,jte, kts,kte                         )
+     &                its,ite, jts,jte, kts,kte                         ) 
 !         write(0,*)'2nd ZEN ',TIMES,DAYI,HOUR,IDAT,IHRST,CZEN(ITS,JTS),&
 !    &                II,NRADS,NPHS,NTSD,DT
           DO J=MYJS,MYJE
@@ -789,7 +789,7 @@ CONTAINS
         TMID(I,L+LVLIJ)=T(I,L,J)
         THMID(I,L+LVLIJ)=T(I,L,J)*EXNER
         QMID(I,L+LVLIJ)=MAX(EPSQ, Q(I,L,J))
-!--- Note that rain is ignored, only effects from cloud water and
+!--- Note that rain is ignored, only effects from cloud water and 
 !    ice (cloud ice + snow) are considered
         QWMID(I,L+LVLIJ)=QCW(I,L,J)
         QIMID(I,L+LVLIJ)=QICE(I,L,J)
@@ -865,7 +865,7 @@ CONTAINS
             IF (QCLD .LE. EPSQ) GO TO 255       !--- Skip if no condensate is present
             CLFR=H0
             WV=QMID(I,LL)/(1.-QMID(I,LL))       !--- Water vapor mixing ratio
-
+               
     !
     !--- Saturation vapor pressure w/r/t water ( >=0C ) or ice ( <0C )
     !
@@ -916,7 +916,7 @@ CONTAINS
      & 'I,LL,J,IXSD,ARG,SDM,CLFR,RHtot,QSAT,T,P=', I,LL,J,IXSD,ARG,SDM,CLFR,RHtot     &
      & ,1000.*QSAT,TCLD,.01*PMID(I,LL)
                   IF (CLFR .LT. CLFRmin) CLFR=H0
-               ENDIF        !--- End IF (ARG .LE. XSDmin)
+               ENDIF        !--- End IF (ARG .LE. XSDmin) 
             ENDIF           !--- IF (ARG.LE.DXSD2 .AND. ARG.GE.DXSD2N)
             CSMID(I,LL)=CLFR
 255       CONTINUE         !--- End DO L=1,LML
@@ -925,10 +925,10 @@ CONTAINS
 !***********************************************************************
 !******************  END OF GRID-SCALE CLOUD FRACTIONS  ****************
 !
-!---  COMPUTE CONVECTIVE CLOUD COVER FOR RADIATION
+!---  COMPUTE CONVECTIVE CLOUD COVER FOR RADIATION 
 !
-!--- The parameterization of Slingo (1987, QJRMS, Table 1, p. 904) is
-!    used for convective cloud fraction as a function of precipitation
+!--- The parameterization of Slingo (1987, QJRMS, Table 1, p. 904) is 
+!    used for convective cloud fraction as a function of precipitation 
 !    rate.  Cloud fractions have been increased by 20% for each rainrate
 !    interval so that shallow, nonprecipitating convection is ascribed a
 !    constant cloud fraction of 0.1  (Ferrier, Feb '02).
@@ -970,14 +970,14 @@ CONTAINS
 !! !
 !! !---- For debugging
 !! !
-!!      WRITE(6,"(2(A,I3),2(A,I2),2(A,F5.2),2(A,I2),A,F6.4)")
+!!      WRITE(6,"(2(A,I3),2(A,I2),2(A,F5.2),2(A,I2),A,F6.4)") 
 !!     & ' J=',J,' I=',I,' LCNVB=',LCNVB,' LCNVT=',LCNVT
 !!     &, ' CUBOT=',CUBOT(I,J),' CUTOP=',CUTOP(I,J)
 !!     &,' LVL=',LVLIJ,' LMH=',LMH(I,J),' CCMID=',CLFR
 !! !
    !
-   !--- Build in small amounts of subgrid-scale convective condensate
-   !    (simple assumptions), but only if the convective cloud fraction
+   !--- Build in small amounts of subgrid-scale convective condensate 
+   !    (simple assumptions), but only if the convective cloud fraction 
    !    exceeds that of the grid-scale cloud fraction
    !
             DO LL=LCNVT,LCNVB
@@ -1003,7 +1003,7 @@ CONTAINS
        DO L=0,LM
          CLDAMT(L)=0.
        ENDDO
-!!
+!!  
 !!***  NOW GOES LOW, MIDDLE, HIGH
 !!
        DO 480 NLVL=1,3
@@ -1127,8 +1127,8 @@ CONTAINS
 !----------------------------------------------------------------------
 ! NOW, CALCULATE THE CLOUD RADIATIVE PROPERTIES AFTER DAVIS (1982),
 ! HARSHVARDHAN ET AL (1987) AND Y.H., K.A.C. AND A.K. (1993).
-!
-! UPDATE: THE FOLLOWING PARTS ARE MODIFIED, AFTER Y.T.H. (1994), TO
+! 
+! UPDATE: THE FOLLOWING PARTS ARE MODIFIED, AFTER Y.T.H. (1994), TO 
 !         CALCULATE THE RADIATIVE PROPERTIES OF CLOUDS ON EACH MODEL
 !         LAYER. BOTH CONVECTIVE AND STRATIFORM CLOUDS ARE USED
 !         IN THIS CALCULATIONS.
@@ -1250,7 +1250,7 @@ CONTAINS
             PRS2=PINT(I,LL+1)*0.01
             DELP=PRS2-PRS1
             TCLD=TMID(I,LL)-T0C
-            QSUM=QSUM+QMID(I,LL)*DELP*(PRS1+PRS2)                       &
+            QSUM=QSUM+QMID(I,LL)*DELP*(PRS1+PRS2)                       &     
      &           /(120.1612*SQRT(TMID(I,LL)))
 !
 !***********************************************************************
@@ -1272,15 +1272,15 @@ CONTAINS
 !         on mixing ratio is based on Stephens (1978, JAS, p. 2124, eq. 7).
 !         Result: CTau=800.*Qc => note that the "800." factor is referred to
 !         as an absorption coefficient
-!      2) For an assumed value of Q0=1 g/kg for "thick anvils", then
-!         CTau=80.*Qc, or an absorption coefficient that is an order of
+!      2) For an assumed value of Q0=1 g/kg for "thick anvils", then 
+!         CTau=80.*Qc, or an absorption coefficient that is an order of 
 !         magnitude less.
 !      => ABSCOEF_W can vary from 100. to 1000. !!
-!      3) From p. 3105 of Dudhia (1989), values of
+!      3) From p. 3105 of Dudhia (1989), values of 
 !         0.14 (m**2/g) * 1000 (g/kg) / 9.81 (m/s**2) = 14.27 /Pa
 !         => 14.27 (/Pa) * 100 (Pa/mb) = 1427 /mb
 !      4) From Dudhia's SW radiation, ABSCOEF_W ~ 1000.  after units conversion
-!      5) Again from p. 3105 of Dudhia (1989), he notes that ice absorption
+!      5) Again from p. 3105 of Dudhia (1989), he notes that ice absorption 
 !         coefficients are roughly half those of cloud water, it was decided
 !         to keep this simple and assume half that of water.
 !      => ABSCOEF_I=0.5*ABSCOEF_W
@@ -1304,7 +1304,7 @@ CONTAINS
 !
 !-- For crude estimation of grid-scale cloud optical depths
 !
-!--   => The following 2 lines were intended to reduce cloud optical depths further
+!--   => The following 2 lines were intended to reduce cloud optical depths further 
 !        than what's parameterized in the NAM and what's theoretically justified
 !            CTau=CTau+CSMID(I,LL)*   &
 !     &           ( ABSCOEF_W*QWMID(I,LL)+ABSCOEF_I*QIMID(I,LL) )
@@ -1359,7 +1359,7 @@ CONTAINS
                   ims,ime, jms,jme, kms,kme,                       &
                   its,ite, jts,jte, kts,kte                        )
 !
-!***
+!***  
 !***  NOW THE VARIABLES REQUIRED BY RADFS HAVE BEEN CALCULATED.
 !***
 !----------------------------------------------------------------------
@@ -1387,7 +1387,7 @@ CONTAINS
       IF(LONG)THEN
 !
 !--  All fluxes in W/m**2
-!--- GLW    => downward longwave at the surface (formerly RLWIN)
+!--- GLW    => downward longwave at the surface (formerly RLWIN) 
 !--- RLWTOA => outgoing longwave at the top of the atmosphere
 !-- Note:  RLWOUT & SIGT4 have been removed because they are no longer being used!
 !
@@ -1400,10 +1400,10 @@ CONTAINS
       IF(SHORT)THEN
 !
 !--  All fluxes in W/m**2
-!--- GSW    => NET shortwave at the surface
+!--- GSW    => NET shortwave at the surface 
 !--- RSWIN  => incoming shortwave at the surface (all sky)
 !--- RSWINC => clear-sky incoming shortwave at the surface
-!--- RSWTOA => outgoing (reflected) shortwave at the top of the atmosphere
+!--- RSWTOA => outgoing (reflected) shortwave at the top of the atmosphere 
 !
         DO I=MYIS,MYIE
           GSW(I,J)=FSWDNS(I)-FSWUPS(I)
@@ -1414,7 +1414,7 @@ CONTAINS
       ENDIF
 !
 !***  ARRAYS ACFRST AND ACFRCV ACCUMULATE AVERAGE STRATIFORM AND
-!***  CONVECTIVE CLOUD FRACTIONS, RESPECTIVELY.
+!***  CONVECTIVE CLOUD FRACTIONS, RESPECTIVELY. 
 !***  ACCUMLATE THESE VARIABLES ONLY ONCE PER RADIATION CALL.
 !
 !***  ASSUME RANDOM OVERLAP BETWEEN LOW, MIDDLE, & HIGH LAYERS.
@@ -1525,7 +1525,7 @@ CONTAINS
       REAL,    INTENT(OUT)       :: HOUR,DAYI
       INTEGER, INTENT(IN)        :: IHRST
 
-      INTEGER, INTENT(IN), DIMENSION(3) :: IDAT
+      INTEGER, INTENT(IN), DIMENSION(3) :: IDAT 
       REAL,    INTENT(IN), DIMENSION(IMS:IME,JMS:JME) :: GLAT,GLON
       REAL,    INTENT(OUT), DIMENSION(IMS:IME,JMS:JME) :: CZEN
 
@@ -1562,7 +1562,7 @@ CONTAINS
       ENDIF
 !***
 !***  CALCULATE EXACT NUMBER OF DAYS FROM BEGINNING OF YEAR TO
-!***  FORECAST TIME OF INTEREST
+!***  FORECAST TIME OF INTEREST 
 !***
       DAY=DAY+REAL(IDAT(2)-1)+(REAL(IHRST)+TIMES/3600.)/24.
       DAYI=REAL(INT(DAY)+1)
@@ -1609,7 +1609,7 @@ CONTAINS
       IF(SLON.GT.PI2)SLON=SLON-PI2
 !
 !***  DECLINATION AND RIGHT ASCENSION
-!
+! 
       DEC=ASIN(SIN(SLON)*SIN(OBLIQ))
       RA=ACOS(COS(SLON)/COS(DEC))
       IF(SLON.GT.PI)RA=PI2-RA
@@ -1665,7 +1665,7 @@ CONTAINS
 !----------------------------------------------------------------------
       INTEGER, INTENT(IN)        :: ids,ide, jds,jde, kds,kde ,      &
                                     ims,ime, jms,jme, kms,kme ,      &
-                                    its,ite, jts,jte, kts,kte
+                                    its,ite, jts,jte, kts,kte  
       INTEGER, INTENT(IN)        :: LK,MYIS,MYIE
       REAL,    INTENT(IN), DIMENSION(its:ite,kts:kte) :: POZN
       REAL,    INTENT(IN), DIMENSION(its:ite)  :: XLAT
@@ -1703,7 +1703,7 @@ CONTAINS
 !
 !***  NOW LATITUDINAL INTERPOLATION
 !***  AND CONVERT O3 INTO MASS MIXING RATIO (ORIG DATA MPY BY 1.E4)
-!
+! 
         QO3O3(I,K)=1.E-4*(DO3V+TTHAN(I)*(DO3VP-DO3V))
       ENDDO
       ENDDO
@@ -2199,7 +2199,7 @@ CONTAINS
  1033 FORMAT(19F6.5)
   101 FORMAT(5X,1H*,F6.5,1H,,F6.5,1H,,F6.5,1H,,F6.5,1H,,F6.5,1H,,F6.5, &
       1H,,F6.5,1H,,F6.5,1H,,F6.5,1H,)
-
+      
       END SUBROUTINE O3INT
 !----------------------------------------------------------------
 
@@ -2384,13 +2384,13 @@ CONTAINS
 
       INTEGER, INTENT(IN)        :: ids,ide, jds,jde, kds,kde ,      &
                                     ims,ime, jms,jme, kms,kme ,      &
-                                    its,ite, jts,jte, kts,kte
+                                    its,ite, jts,jte, kts,kte  
       REAL,    INTENT(IN)        :: ZERO,ONE,H18E3,P0INV,H6P08108,DIFFCTR
       REAL,    INTENT(IN)        :: GINV,H3M4,BETINW,RATH2OMW,GP0INV
       REAL,    INTENT(IN)        :: P0XZP8,P0XZP2,H3M3,P0,H1M3
       REAL,    INTENT(IN)        :: H1M2,H25E2,B0,B1,B2,B3,HAF
 !     REAL,    INTENT(IN)        :: TEN,HP1,FOUR,HM1EZ,SKO3R
-      REAL,    INTENT(IN)        :: TEN,HP1,FOUR,HM1EZ
+      REAL,    INTENT(IN)        :: TEN,HP1,FOUR,HM1EZ         
 !     REAL,    INTENT(IN)        :: AB15WD,SKC1R,RADCON,QUARTR,TWO
       REAL,    INTENT(IN)        :: RADCON,QUARTR,TWO
       REAL,    INTENT(IN)        :: HM6666M2,HMP66667,HMP5, HP166666,H41666M2
@@ -2407,7 +2407,7 @@ CONTAINS
       REAL,    INTENT(IN), DIMENSION(its:ite,kts:kte+1) :: CAMT
       INTEGER, INTENT(IN), DIMENSION(its:ite,kts:kte+1) :: KBTM,KTOP
       INTEGER, INTENT(IN), DIMENSION(its:ite)           :: NCLDS
-
+     
       REAL,    INTENT(IN), DIMENSION(its:ite,kts:kte+1) :: PRESS,TEMP
       REAL,    INTENT(IN), DIMENSION(its:ite,kts:kte)   :: RH2O,QO3
       REAL,    INTENT(OUT), DIMENSION(its:ite,kts:kte)   :: HEATRA
@@ -2417,7 +2417,7 @@ CONTAINS
 
 !     Include co2 data from a file, which needs to have exactly vertical
 !     dimension of the model.
-
+      
 
 !!! ??? co2 table
 !     REAL,    DIMENSION(kts:kte+1,kts:kte+1) :: CO251,CDT51,CDT58,C2D51,&
@@ -2433,7 +2433,7 @@ CONTAINS
 !     REAL,    DIMENSION(kts:kte+1) :: CLDROW
 
       REAL,    DIMENSION(its:ite,kts:kte+1) :: TEXPSL,TOTPHI,TOTO3,CNTVAL,&
-                                               TPHIO3,TOTVO2,TSTDAV,TDAV, &
+                                               TPHIO3,TOTVO2,TSTDAV,TDAV, & 
                                                VSUM3,CO2R1,D2CD21,DCO2D1, &
                                                CO2R2,D2CD22,DCO2D2,CO2SP1,&
                                                CO2SP2,CO2R,DCO2DT,D2CDT2, &
@@ -2444,7 +2444,7 @@ CONTAINS
       REAL,    DIMENSION(its:ite,kts:kte)   :: CO2MR,CO2MD,CO2M2D
       REAL,    DIMENSION(its:ite,kts:kte*2+1):: EMPL
 
-      REAL,    DIMENSION(its:ite)           :: EMX1,EMX2,VSUM1,VSUM2,A1,A2
+      REAL,    DIMENSION(its:ite)           :: EMX1,EMX2,VSUM1,VSUM2,A1,A2 
       REAL,    DIMENSION(its:ite,kts:kte+1,kts:kte+1) :: CO21
 
    !  COMMON/CO2BD3/CO251(LP1,LP1),CO258(LP1,LP1),CDT51(LP1,LP1),
@@ -2485,7 +2485,7 @@ CONTAINS
 !****COMPUTE FLUX PRESSURES (P) AND DIFFERENCES (DELP2,DELP)
 !****COMPUTE FLUX LEVEL TEMPERATURES (T) AND CONTINUUM TEMPERATURE
 !    CORRECTIONS (TEXPSL)
-
+    
       INTEGER :: K, I,KP
       INTEGER :: L,LP1,LP2,LP3,LM1,LM2,LM3,MYIS,MYIE,LLP1,LL
 
@@ -2827,7 +2827,7 @@ CONTAINS
 !     REAL,    INTENT(IN)        :: AB15WD,SKC1R,RADCON,QUARTR,TWO
       REAL,    INTENT(IN)        :: RADCON,QUARTR,TWO
       REAL,    INTENT(IN)        :: HM6666M2,HMP66667,HMP5
-      REAL,    INTENT(IN)        :: HP166666,H41666M2,RADCON1,H16E1, H28E1
+      REAL,    INTENT(IN)        :: HP166666,H41666M2,RADCON1,H16E1, H28E1 
 !     REAL,    INTENT(IN)        :: H25E2,H44194M2,H1P41819,SKO2D
       REAL,    INTENT(IN)        :: H25E2,H44194M2,H1P41819
 
@@ -2838,7 +2838,7 @@ CONTAINS
 !     REAL, INTENT(IN), DIMENSION(5040) :: EM3V
       REAL, INTENT(IN), DIMENSION(its:ite,kts:kte*2+1) :: EMPL
       REAL, INTENT(IN), DIMENSION(its:ite,kts:kte+1) :: TOTO3,TPHIO3,TOTPHI,CNTVAL,&
-                                                        CO2SP1,CO2SP2
+                                                        CO2SP1,CO2SP2   
 
       REAL,    INTENT(IN),DIMENSION(its:ite,kts:kte+1,kts:kte+1) :: CLDFAC
       REAL,    INTENT(IN), DIMENSION(its:ite,kts:kte+1) :: CAMT,TOTVO2
@@ -2855,7 +2855,7 @@ CONTAINS
                                                VAR1,VAR2,VAR3,VAR4
       REAL, INTENT(IN), DIMENSION(3) :: BO3RND,AO3RND
       REAL, INTENT(IN), DIMENSION(its:ite)   :: EMX1,EMX2
-
+      
       REAL, DIMENSION(its:ite,kts:kte*2+1) :: TPL,EMD,ALP,C,CSUB,CSUB2
       REAL, DIMENSION(its:ite,kts:kte*2+1) :: C2
       INTEGER, DIMENSION(its:ite,kts:kte+1) :: IXO
@@ -3761,7 +3761,7 @@ CONTAINS
       REAL,INTENT(IN),DIMENSION(its:ite,kts:kte+1,kts:kte+1) :: CLDFAC
       REAL,INTENT(IN), DIMENSION(its:ite,kts:kte+1) :: PRESS,TEMP
 
-      REAL,INTENT(IN),DIMENSION(its:ite,kts:kte) :: VAR1,VAR2
+      REAL,INTENT(IN),DIMENSION(its:ite,kts:kte) :: VAR1,VAR2 
       REAL,INTENT(IN),DIMENSION(its:ite,kts:kte+1) :: P
       REAL,INTENT(IN),DIMENSION(its:ite,kts:kte)   :: DELP,DELP2,TO3SPC
       REAL,INTENT(IN),DIMENSION(its:ite,kts:kte+1) ::TOTVO2,TO3SP,CO2SP1,&
@@ -3884,7 +3884,7 @@ CONTAINS
 !---EXCTS IS THE CTS COOLING RATE ACCUMULATED OVER FREQUENCY BANDS
       DO 453 K=1,L
       DO 453 I=MYIS,MYIE
-      EXCTS(I,K)=EXCTS(I,K)+SORC(I,K,2)* &
+      EXCTS(I,K)=EXCTS(I,K)+SORC(I,K,2)* & 
                    (CTMP(I,K+1)-CTMP(I,K))
 453   CONTINUE
 !---GXCTS IS THE EXACT CTS TOP FLUX ACCUMULATED OVER FREQUENCY BANDS
@@ -4585,7 +4585,7 @@ CONTAINS
       DU(I,K)=TMP3(I,K)-HP1*FYO(I,K)
       FYO(I,K)=H28E1*FYO(I,K)
       IVAL(I,K)=FYO(I,K)+FXOE2(I,KLEN+K-1)
-      EMISS(I,KLEN+K-1)=T1(IVAL(I,K))+DU(I,K)*T2(IVAL(I,K)) &
+      EMISS(I,KLEN+K-1)=T1(IVAL(I,K))+DU(I,K)*T2(IVAL(I,K)) & 
                                  +DTE2(I,KLEN+K-1)*T4(IVAL(I,K))
 132   CONTINUE
 !---THE SPECIAL CASE EMISS(I,L) (LAYER KP) IS OBTAINED NOW
@@ -4630,7 +4630,7 @@ CONTAINS
       INTEGER, INTENT(IN)        :: ids,ide, jds,jde, kds,kde ,      &
                                     ims,ime, jms,jme, kms,kme ,      &
                                     its,ite, jts,jte, kts,kte
-      REAL,INTENT(IN ) :: H16E1,TEN,H28E1,HP1
+      REAL,INTENT(IN ) :: H16E1,TEN,H28E1,HP1  
       REAL,INTENT(INOUT),DIMENSION(its:ite,kts:kte+1) :: EMISS
       REAL,INTENT(IN ),DIMENSION(its:ite,kts:kte+1) :: AVEPHI
       REAL,INTENT(IN ),DIMENSION(its:ite,2) :: FXOSP,DTSP
@@ -4675,7 +4675,7 @@ CONTAINS
       INTEGER, INTENT(IN)        :: ids,ide, jds,jde, kds,kde ,      &
                                     ims,ime, jms,jme, kms,kme ,      &
                                     its,ite, jts,jte, kts,kte
-      REAL,    INTENT(IN)  :: TEN,HP1,H28E1,H16E1
+      REAL,    INTENT(IN)  :: TEN,HP1,H28E1,H16E1 
 !-----------------------------------------------------------------------
       REAL, INTENT(OUT), DIMENSION(its:ite,kts:kte*2+1) :: EMV
       REAL, INTENT(IN),  DIMENSION(its:ite,kts:kte*2+1) :: TV,AV
@@ -4710,8 +4710,8 @@ CONTAINS
         WW1(I,K)=TEN-DT(I,K)
         WW2(I,K)=HP1-DU(I,K)
         EMV(I,K)=WW1(I,K)*WW2(I,K)*EM3V(IT(I,K)-9)+ &
-                 WW2(I,K)*DT(I,K)*EM3V(IT(I,K)-8)+ &
-                 WW1(I,K)*DU(I,K)*EM3V(IT(I,K)+19)+ &
+                 WW2(I,K)*DT(I,K)*EM3V(IT(I,K)-8)+ & 
+                 WW1(I,K)*DU(I,K)*EM3V(IT(I,K)+19)+ & 
                  DT(I,K)*DU(I,K)*EM3V(IT(I,K)+20)
 203   CONTINUE
 
@@ -4742,7 +4742,7 @@ CONTAINS
       REAL,INTENT(IN) :: RRCO2,SSOLAR
       REAL,INTENT(IN) :: H35E1,H1224E3,ONE,ZERO,HAF,H69766E5,HP219,HP816,RRAYAV,&
                          GINV,CFCO2,CFO3
-      REAL,INTENT(IN) :: TWO,H235M3,HP26,H129M2,H75826M4,H1036E2
+      REAL,INTENT(IN) :: TWO,H235M3,HP26,H129M2,H75826M4,H1036E2  
       REAL,INTENT(IN) :: H1P082,HMP805,H1386E2,H658M2,H2118M2,H42M2,H323M4,HM1EZ
       REAL,INTENT(IN) :: DIFFCTR,O3DIFCTR,FIFTY,RADCON
 !----------------------------------------------------------------------
@@ -4753,7 +4753,7 @@ CONTAINS
       INTEGER, INTENT(IN ),DIMENSION(its:ite) :: NCLDS
       INTEGER, INTENT(IN ),DIMENSION(its:ite,kts:kte+1) ::KTOPSW,KBTMSW
       REAL, INTENT(IN ),DIMENSION(its:ite,NB,kts:kte+1) ::CRR,CTT
-
+           
       REAL, INTENT(OUT),DIMENSION(its:ite,kts:kte+1) ::     &
                                        FSWC,HSWC,UFSWC,DFSWC,FSWL,HSWL,UFSWL,DFSWL
       REAL, INTENT(OUT),DIMENSION(its:ite) :: GDFVB,GDFVD,GDFNB,GDFND
@@ -4882,7 +4882,7 @@ CONTAINS
         URCO2(IP,LP1) = UDCO2(IP,LP1)
         URO3 (IP,LP1) = UDO3 (IP,LP1)
 ! SH
-        UO3  (IP,LP1+LP1) = URO3 (IP,LP1)
+        UO3  (IP,LP1+LP1) = URO3 (IP,LP1) 
         UCO2 (IP,LP1+LP1) = URCO2(IP,LP1)
 
 220   CONTINUE
@@ -5578,7 +5578,7 @@ CONTAINS
   END SUBROUTINE SWR93
 !-----------------------------------------------------------------------
 
-  SUBROUTINE RADFS &
+  SUBROUTINE RADFS & 
 
 !     *****************************************************************
 !     *                                                               *
@@ -5970,7 +5970,7 @@ CONTAINS
 !--------------------------------
 !     INTEGER, PARAMETER:: LNGTH=37*kte
 !--------------------------------
-
+     
 !     REAL, INTENT(IN) :: SKO3R,AB15WD,SKC1R,SKO2D
 
       REAL,    INTENT(IN), DIMENSION(its:ite,kts:kte):: PP,TT
@@ -5994,7 +5994,7 @@ CONTAINS
       REAL,  DIMENSION(NBLY) :: APCM,BPCM,ATPCM,BTPCM,ACOMB, &
                                 BCOMB,BETACM
 
-      DATA AO3RND / 0.543368E+02,  0.234676E+04,  0.384881E+02/
+      DATA AO3RND / 0.543368E+02,  0.234676E+04,  0.384881E+02/ 
       DATA BO3RND / 0.526064E+01,  0.922424E+01,  0.496515E+01/
 
       DATA ACOMB  / &
@@ -6041,7 +6041,7 @@ CONTAINS
        REAL, INTENT(INOUT),DIMENSION(its:ite,kts:kte)::SWH,HLW
        REAL, INTENT(OUT), DIMENSION(its:ite):: FSWUP,FSWUPS,FSWDN, &
                            FSWDNS,FLWUP,FLWDNS,FSWDNSC
-
+      
 !        *********************************************
 !====>   *   POSSIBLE OUTPUT TO CALLING PROGRAM      *
 !        *********************************************
@@ -6207,7 +6207,7 @@ CONTAINS
 !.....  NOW PUT SFC TEMP,PRESSURES, ZENITH ANGLE INTO SW COMMON BLOCK...
 !***ZHAO
 !  NOTE: ALL PRESSURES INPUT FROM THE ETA MODEL ARE IN PA
-!        THE UNIT FOR PRESS IS MICRO BAR
+!        THE UNIT FOR PRESS IS MICRO BAR 
 !        SURFACE TEMPERATURE ARE NEGATIVE OVER OCEANS IN THE ETA MODEL
 !***ZHAO
         PRESS(I,LP1)=QS(IR)*10.0
@@ -6395,18 +6395,18 @@ CONTAINS
 
 !....
 !================================================================================
-!--- IMPORTANT!!  Y.-T Hou advised Ferrier, Mitchell, & Ek on 7/28/05 to use
-!    the following algorithm, because the GFDL code calculates NET longwave flux
-!    (GRNFLX, Up - Down) as its fundamental quantity.
+!--- IMPORTANT!!  Y.-T Hou advised Ferrier, Mitchell, & Ek on 7/28/05 to use 
+!    the following algorithm, because the GFDL code calculates NET longwave flux 
+!    (GRNFLX, Up - Down) as its fundamental quantity.  
 !
 !    1.  Calculate upward LW at surface (FLWUPS)
 !    2.  Calculate downward LW at surface (FLWDNS) = FLWUPS - .001*GRNFLX
 !
 !--- Note:  The following fluxes must be multipled by .001 to convert to mks
-!       => GRNFLX, or GRound Net FLuX
+!       => GRNFLX, or GRound Net FLuX 
 !       => TOPFLX, or top of the atmosphere fluxes (FLWUP)
 !
-!--- IMPORTANT!!  If the surface emissivity (SFCEMS) differs from 1.0, then
+!--- IMPORTANT!!  If the surface emissivity (SFCEMS) differs from 1.0, then 
 !    uncomment the line below starting with "!BSF"
 !================================================================================
       DO 280 I=MYIS,MYIE
@@ -6499,8 +6499,8 @@ CONTAINS
       RETURN
  1000 FORMAT(1H ,' YOU ARE CALLING GFDL RADIATION CODE FOR',I5,' PTS', &
                  'AND',I4,' LYRS,WITH KDAPRX,KO3,KCZ,KEMIS,KALB = ',5I2)
-
-  END SUBROUTINE RADFS
+ 
+  END SUBROUTINE RADFS 
 
 !-----------------------------------------------------------------------
     SUBROUTINE O3CLIM
@@ -6517,43 +6517,43 @@ CONTAINS
 
 !     ******************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
+!                .      .    .     
 ! SUBPROGRAM:    O3CLIM      GENERATE SEASONAL OZONE DISTRIBUTION
 !   PRGRMMR: GFDL/CAMPANA    ORG: W/NP22     DATE: ??-??-??
-!
+!     
 ! ABSTRACT:
 !     O3CLIM COMPUTES THE SEASONAL CLIMATOLOGY OF OZONE USING
 !     81-LAYER DATA FROM GFDL.
-!
+!     
 ! PROGRAM HISTORY LOG:
 !   ??-??-??  GFDL/KC    - ORIGINATOR
 !   96-07-26  BLACK      - MODIFIED FOR ETA MODEL
-!
+!     
 ! USAGE: CALL O3CLIM FROM SUBROUTINE RADTN
 !   INPUT ARGUMENT LIST:
+!     NONE     
+!  
+!   OUTPUT ARGUMENT LIST: 
 !     NONE
-!
-!   OUTPUT ARGUMENT LIST:
-!     NONE
-!
+!     
 !   OUTPUT FILES:
 !     NONE
-!
+!     
 !   SUBPROGRAMS CALLED:
-!
+!  
 !     UNIQUE:
 !        NONE
-!
+!  
 !     LIBRARY:
 !        NONE
-!
+!  
 !   COMMON BLOCKS: SEASO3
 !                  O3DATA
-!
+!   
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
 !   MACHINE : IBM SP
-!$$$
+!$$$  
 !----------------------------------------------------------------------
 !      INTEGER   :: NL,NLP1,NLGTH,NKK,NK,NKP
        INTEGER, PARAMETER :: NL=81,NLP1=NL+1,NLGTH=37*NL,NKK=41,NK=81,NKP=NK+1
@@ -6614,7 +6614,7 @@ CONTAINS
            0.6839018E-03, 0.7759249E-03, 0.8803303E-03, 0.9987843E-03,     &
            0.1133178E-02, 0.1285955E-02, 0.1460360E-02, 0.1660001E-02,     &
            0.1888764E-02, 0.2151165E-02, 0.2452466E-02, 0.2798806E-02,     &
-           0.3197345E-02, 0.3656456E-02, 0.4185934E-02, 0.4797257E-02/
+           0.3197345E-02, 0.3656456E-02, 0.4185934E-02, 0.4797257E-02/     
       DATA PH2/     &
            0.5503893E-02, 0.6321654E-02, 0.7269144E-02, 0.8368272E-02,     &
            0.9644873E-02, 0.1112946E-01, 0.1285810E-01, 0.1487354E-01,     &
@@ -6625,7 +6625,7 @@ CONTAINS
            0.2065253E+00, 0.2415209E+00, 0.2814823E+00, 0.3266369E+00,     &
            0.3774861E+00, 0.4345638E+00, 0.4984375E+00, 0.5697097E+00,     &
            0.6490189E+00, 0.7370409E+00, 0.8344896E+00, 0.9421190E+00,     &
-           0.1000000E+01/
+           0.1000000E+01/     
       DATA P1/     &
            0.9300000E-05, 0.1129521E-04, 0.1360915E-04, 0.1635370E-04,     &
            0.1954990E-04, 0.2331653E-04, 0.2767314E-04, 0.3277707E-04,     &
@@ -6638,7 +6638,7 @@ CONTAINS
            0.1063498E-02, 0.1207423E-02, 0.1369594E-02, 0.1557141E-02,     &
            0.1769657E-02, 0.2015887E-02, 0.2295520E-02, 0.2620143E-02,     &
            0.2989651E-02, 0.3419469E-02, 0.3909867E-02, 0.4481491E-02,     &
-           0.5135272E-02, 0.5898971E-02, 0.6774619E-02, 0.7799763E-02/
+           0.5135272E-02, 0.5898971E-02, 0.6774619E-02, 0.7799763E-02/     
       DATA P2/     &
            0.8978218E-02, 0.1036103E-01, 0.1195488E-01, 0.1382957E-01,     &
            0.1599631E-01, 0.1855114E-01, 0.2151235E-01, 0.2501293E-01,     &
@@ -6648,7 +6648,7 @@ CONTAINS
            0.1908004E+00, 0.2235461E+00, 0.2609410E+00, 0.3036404E+00,     &
            0.3513750E+00, 0.4055375E+00, 0.4656677E+00, 0.5335132E+00,     &
            0.6083618E+00, 0.6923932E+00, 0.7845676E+00, 0.8875882E+00,     &
-           0.1000000E+01/
+           0.1000000E+01/     
       DATA O3HI1/     &
        .55,.50,.45,.45,.40,.35,.35,.30,.30,.30,     &
        .55,.51,.46,.47,.42,.38,.37,.36,.35,.35,     &
@@ -6665,7 +6665,7 @@ CONTAINS
        2.4,2.3,2.2,2.2,2.2,2.1,2.1,2.1,2.0,2.0,     &
        2.7,2.5,2.5,2.5,2.5,2.5,2.4,2.4,2.3,2.3,     &
        2.9,2.8,2.7,2.7,2.7,2.7,2.7,2.7,2.6,2.6,     &
-       3.1,3.1,3.0,3.0,3.0,3.0,3.0,3.0,2.9,2.8/
+       3.1,3.1,3.0,3.0,3.0,3.0,3.0,3.0,2.9,2.8/     
       DATA O3HI2/     &
        3.3,3.4,3.4,3.6,3.7,3.9,4.0,4.1,4.0,3.8,     &
        3.6,3.8,3.9,4.2,4.7,5.3,5.6,5.7,5.5,5.2,     &
@@ -6675,7 +6675,7 @@ CONTAINS
        9.2,9.3,9.4,9.6,10.3,10.6,10.0,8.5,7.7,7.3,     &
        12.6,12.1,12.0,12.1,11.7,11.0,10.0,8.6,7.8,7.4, &
        14.2,13.5,13.1,12.8,11.9,10.9,9.8,8.5,7.8,7.5,  &
-       14.3,14.0,13.4,12.7,11.6,10.6,9.3,8.4,7.6,7.3/
+       14.3,14.0,13.4,12.7,11.6,10.6,9.3,8.4,7.6,7.3/     
       DATA O3LO1/     &
        14.9,14.2,13.3,12.5,11.2,10.3,9.5,8.6,7.5,7.4,  &
        14.5,14.1,13.0,11.8,10.5,9.8,9.2,7.9,7.4,7.4,   &
@@ -6692,7 +6692,7 @@ CONTAINS
        .05,.05,.05,.06,.07,.07,.08,.09,.10,.13,     &
        .05,.05,.05,.05,.06,.06,.06,.06,.07,.07,     &
        .05,.05,.05,.05,.05,.05,.05,.06,.06,.06,     &
-       .04,.04,.04,.04,.04,.04,.04,.05,.05,.05/
+       .04,.04,.04,.04,.04,.04,.04,.05,.05,.05/     
       DATA O3LO2/     &
        14.8,14.2,13.8,12.2,11.0,9.8,8.5,7.8,7.4,6.9,   &
        13.2,13.0,12.5,11.3,10.4,9.0,7.8,7.5,7.0,6.6,   &
@@ -6709,7 +6709,7 @@ CONTAINS
        .03,.03,.045,.052,.055,.06,.07,.07,.06,.07,  &
        .03,.03,.04,.051,.052,.052,.06,.06,.05,.05,  &
        .02,.02,.03,.05,.05,.05,.04,.04,.04,.04,     &
-       .02,.02,.02,.04,.04,.04,.03,.03,.03,.03/
+       .02,.02,.02,.04,.04,.04,.03,.03,.03,.03/     
       DATA O3LO3/     &
        14.5,14.0,13.5,11.3,11.0,10.0,9.0,8.3,7.5,7.3,    &
        13.5,13.2,12.5,11.1,10.4,9.7,8.2,7.8,7.4,6.8,     &
@@ -6726,7 +6726,7 @@ CONTAINS
        .04,.04,.03,.04,.05,.06,.07,.07,.07,.08,     &
        .03,.03,.04,.05,.05,.05,.05,.05,.05,.05,     &
        .03,.03,.03,.04,.04,.04,.05,.05,.04,.04,     &
-       .02,.02,.02,.04,.04,.04,.04,.04,.03,.03/
+       .02,.02,.02,.04,.04,.04,.04,.04,.03,.03/      
       DATA O3LO4/     &
        14.2,13.8,13.2,12.5,11.7,10.5,8.6,7.8,7.5,6.6,  &
        12.5,12.4,12.2,11.7,10.8,9.8,7.8,7.2,6.5,6.1,   &
@@ -6743,7 +6743,7 @@ CONTAINS
        .04,.05,.06,.07,.07,.08,.08,.08,.08,.08,     &
        .04,.04,.05,.07,.07,.07,.07,.07,.06,.05,     &
        .02,.02,.04,.05,.05,.05,.05,.05,.04,.04,     &
-       .02,.02,.03,.04,.04,.04,.04,.04,.03,.03/
+       .02,.02,.03,.04,.04,.04,.04,.04,.03,.03/     
 !----------------------------------------------------------------------
 !***
 !***  COMPUTE DETAILED O3 PROFILE FROM THE ORIGINAL GFDL PRESSURES
@@ -6912,7 +6912,7 @@ CONTAINS
         XDO3N4(iindex,jindex)=B2
       ENDDO
 !***
-!***  CONVERT GFDL PRESSURE (MICROBARS) TO PA
+!***  CONVERT GFDL PRESSURE (MICROBARS) TO PA 
 !***
       DO N=1,NL
         PRGFDL(N)=PSTD(N)*1.E-1
@@ -6921,7 +6921,7 @@ CONTAINS
     END SUBROUTINE O3CLIM
 
 !---------------------------------------------------------------------
-      SUBROUTINE TABLE
+      SUBROUTINE TABLE 
 !                     (TABLE1,TABLE2,TABLE3,EM1,EM1WDE,EM3,          &
 !                      SOURCE,DSRCE                                  )
 !---------------------------------------------------------------------
@@ -7199,7 +7199,7 @@ CONTAINS
       INTEGER :: IBAND(40)
 
       REAL :: BANDL1(64),BANDL2(64),BANDL3(35)
-      REAL :: BANDH1(64),BANDH2(64),BANDH3(35)
+      REAL :: BANDH1(64),BANDH2(64),BANDH3(35) 
 !     REAL :: AB15WD,SKO2D,SKC1R,SKO3R
 
 !     REAL :: AWIDE,BWIDE,BETAWD,BETINW
@@ -7382,7 +7382,7 @@ CONTAINS
          0.991871E+03,  0.123907E+04,  0.457289E+02,  0.146146E+04, &
          0.319382E+03,  0.436074E+03,  0.374214E+03,  0.778217E+03, &
          0.140227E+03,  0.562540E+03,  0.682685E+02,  0.820292E+02, &
-         0.178779E+03,  0.186150E+03,  0.383864E+03,  0.567416E+01/
+         0.178779E+03,  0.186150E+03,  0.383864E+03,  0.567416E+01/ 
       DATA ARNDM3  / &
          0.225129E+03,  0.473099E+01,  0.753149E+02,  0.233689E+02, &
          0.339802E+02,  0.108855E+03,  0.380016E+02,  0.151039E+01, &
@@ -7426,7 +7426,7 @@ CONTAINS
          0.255323E+00,  0.198517E+00,  0.195500E+00,  0.208356E+00, &
          0.309603E+00,  0.112011E+00,  0.102570E+00,  0.128276E+00, &
          0.168100E+00,  0.177836E+00,  0.105533E+00,  0.903330E-01, &
-         0.126036E+00,  0.101430E+00,  0.124546E+00,  0.221406E+00/
+         0.126036E+00,  0.101430E+00,  0.124546E+00,  0.221406E+00/ 
       DATA BRNDM3  / &
          0.137509E+00,  0.911365E-01,  0.724508E-01,  0.795788E-01, &
          0.137411E+00,  0.549175E-01,  0.787714E-01,  0.165544E+00, &
@@ -7436,7 +7436,7 @@ CONTAINS
          0.100233E+00,  0.153754E+00,  0.130780E+00,  0.136136E+00, &
          0.159353E+00,  0.156634E+00,  0.272265E+00,  0.186874E+00, &
          0.192090E+00,  0.135397E+00,  0.131497E+00,  0.127463E+00, &
-         0.227233E+00,  0.190562E+00,  0.214005E+00/
+         0.227233E+00,  0.190562E+00,  0.214005E+00/ 
       DATA BETAD1  / &
          0.000000E+00,  0.000000E+00,  0.000000E+00,  0.000000E+00, &
          0.000000E+00,  0.000000E+00,  0.000000E+00,  0.000000E+00, &
@@ -7453,7 +7453,7 @@ CONTAINS
          0.127099E+03,  0.117796E+03,  0.109197E+03,  0.101249E+03, &
          0.939031E+02,  0.871127E+02,  0.808363E+02,  0.750349E+02, &
          0.497489E+02,  0.221212E+02,  0.113124E+02,  0.754174E+01, &
-         0.589554E+01,  0.495227E+01,  0.000000E+00,  0.000000E+00/
+         0.589554E+01,  0.495227E+01,  0.000000E+00,  0.000000E+00/ 
       DATA BETAD2  / &
          0.000000E+00,  0.000000E+00,  0.000000E+00,  0.000000E+00, &
          0.000000E+00,  0.000000E+00,  0.000000E+00,  0.000000E+00, &
@@ -7470,7 +7470,7 @@ CONTAINS
          0.000000E+00,  0.000000E+00,  0.000000E+00,  0.000000E+00, &
          0.000000E+00,  0.000000E+00,  0.000000E+00,  0.000000E+00, &
          0.000000E+00,  0.000000E+00,  0.000000E+00,  0.000000E+00, &
-         0.000000E+00,  0.000000E+00,  0.000000E+00,  0.000000E+00/
+         0.000000E+00,  0.000000E+00,  0.000000E+00,  0.000000E+00/ 
       DATA BETAD3  / &
          0.000000E+00,  0.000000E+00,  0.000000E+00,  0.000000E+00, &
          0.000000E+00,  0.000000E+00,  0.000000E+00,  0.000000E+00, &
@@ -7480,7 +7480,7 @@ CONTAINS
          0.000000E+00,  0.000000E+00,  0.000000E+00,  0.000000E+00, &
          0.000000E+00,  0.000000E+00,  0.000000E+00,  0.000000E+00, &
          0.000000E+00,  0.000000E+00,  0.000000E+00,  0.000000E+00, &
-         0.000000E+00,  0.000000E+00,  0.000000E+00/
+         0.000000E+00,  0.000000E+00,  0.000000E+00/ 
 !---------------------------------------------------------------
 !     EQUIVALENCE (BANDL1(1),BANDLO(1)),(BANDL2(1),BANDLO(65)), &
 !                 (BANDL3(1),BANDLO(129))
@@ -7490,7 +7490,7 @@ CONTAINS
 !     LP1V  = LP1*(1+2*L/2)
 !     IMAX  = ite
 !     LP2   = L + 2
-
+ 
       DO I = 1,64
          BANDLO(I)=BANDL1(I)
       ENDDO
@@ -7797,7 +7797,7 @@ CONTAINS
       DO 503 I=1,28
       EM1WDE(I,J)=R1WD(I)
 503   CONTINUE
-
+   
       END SUBROUTINE TABLE
 
 !---------------------------------------------------------------------
@@ -7808,41 +7808,41 @@ CONTAINS
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                               .
 ! SUBPROGRAM:    SOLARD      COMPUTE THE SOLAR-EARTH DISTANCE
-!   PRGRMMR: Q.ZHAO           ORG: W/NMC2     DATE: 96-7-23
-!
+!   PRGRMMR: Q.ZHAO           ORG: W/NMC2     DATE: 96-7-23       
+!     
 ! ABSTRACT:
 !     SOLARD CALCULATES THE SOLAR-EARTH DISTANCE ON EACH DAY
 !     FOR USE IN SHORT-WAVE RADIATION.
-!
+!     
 ! PROGRAM HISTORY LOG:
 !   96-07-23  Q.ZHAO      - ORIGINATOR
 !   98-10-09  Q.ZHAO      - CHANGED TO USE IW3JDN IN W3LIB TO
 !                           CALCULATE JD.
 !   04-11-18  Y.-T. HOU   - FIXED ERROR IN JULIAN DAY CALCULATION
-!
+!     
 ! USAGE: CALL SOLARD FROM SUBROUTINE INIT
 !
 !   INPUT ARGUMENT LIST:
 !       NONE
-!
-!   OUTPUT ARGUMENT LIST:
+!  
+!   OUTPUT ARGUMENT LIST: 
 !       R1   - THE NON-DIMENSIONAL DISTANCE BETWEEN SUN AND THE EARTH
 !              (LESS THAN 1.0 IN SUMMER AND LARGER THAN 1.0 IN WINTER).
-!
+!     
 !   INPUT FILES:
 !     NONE
-!
+!        
 !   OUTPUT FILES:
 !     NONE
-!
+!     
 !   SUBPROGRAMS CALLED:
-!
+!  
 !     UNIQUE: NONE
-!
+!  
 !     LIBRARY: IW3JDN
-!
+!  
 !   COMMON BLOCKS: CTLBLK
-!
+!   
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
 !   MACHINE : IBM SP
@@ -7858,7 +7858,7 @@ CONTAINS
 
       DATA JYR19/1900/, JMN/0/, CCR/1.3E-6/
       DATA NDM/0,31,59,90,120,151,181,212,243,273,304,334/
-
+ 
 !.....TPP = DAYS BETWEEN EPOCH AND PERIHELION PASSAGE OF 1900
 !.....JDOR1 = JD OF DECEMBER 30, 1899 AT 12 HOURS UT
 !.....JDOR2 = JD OF EPOCH WHICH IS JANUARY 0, 1990 AT 12 HOURS UT
@@ -7942,7 +7942,7 @@ CONTAINS
 !***
     END SUBROUTINE SOLARD
 !---------------------------------------------------------------------
-    SUBROUTINE CAL_MON_DAY(JULDAY,julyr,Jmonth,Jday)
+    SUBROUTINE CAL_MON_DAY(JULDAY,julyr,Jmonth,Jday)     
 !---------------------------------------------------------------------
     IMPLICIT NONE
 !-----------------------------------------------------------------------
@@ -8017,7 +8017,7 @@ CONTAINS
       DATA (DELTA(N,5),N=1,10)/ .4,   1.5,    .3 ,   .5,   1.0, &
                               1.0,   1.0,   1.0,   1.0,   1.0/
 ! ************ US STANDARD 1976 ******************************
-      DATA (ZB(N,6),N=1,10)/ 11.0,  20.0,  32.0,  47.0,  51.0, &
+      DATA (ZB(N,6),N=1,10)/ 11.0,  20.0,  32.0,  47.0,  51.0, & 
                              71.0,  84.8520,  90.0,  91.0,  92.0/
       DATA (C(N,6),N=1,11)/ -6.5,   0.0,   1.0,   2.80,  0.0, &
                              -2.80, -2.00,  0.0,   0.0,   0.0,  0.0/
@@ -8043,11 +8043,11 @@ CONTAINS
 !      FAC=EXP(EXPP)+EXP(-EXPP)
 !mp	write(6,*) '.........................................'
 !mp what in the hell does the next line do?
-!mp
+!mp	
 !mp	apparently if statement <0 or =0 then 23, else 24
 !mp     IF(ABS(EXPO)-100.0) 23,23,24
 !
-! changed to a more reasonable value for the workstation
+! changed to a more reasonable value for the workstation	
 !
       IF(ABS(EXPO)-50.0) 23,23,24
    23 X=EXP(EXPO)

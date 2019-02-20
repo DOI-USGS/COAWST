@@ -1,7 +1,7 @@
 /*
-** svn $Id: bio_toy.h 830 2017-01-24 21:21:11Z arango $
+** svn $Id: bio_toy.h 889 2018-02-10 03:32:52Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2018 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2019 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -9,7 +9,7 @@
 ** Options one-dimensional (vertical) Biology Toy.
 **
 ** Application flag:   BIO_TOY
-** Input script:       ocean_bio_toy.in
+** Input script:       roms_bio_toy.in
 **                     bioFennel.in, ecosim.in, npzd_Franks.in, npzd_Powell.in
 */
 

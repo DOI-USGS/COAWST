@@ -101,16 +101,16 @@ SUBROUTINE source_ss(imx,jmx,lmx,nmx, dt1, tc, &
                      bems,ipr)
 
 ! ****************************************************************************
-! *  Evaluate the source of each seasalt particles size classes  (kg/m3)
+! *  Evaluate the source of each seasalt particles size classes  (kg/m3) 
 ! *  by soil emission.
 ! *  Input:
 ! *         SSALTDEN  Sea salt density                               (kg/m3)
 ! *         DXY       Surface of each grid cell                     (m2)
 ! *         NDT1      Time step                                     (s)
 ! *         W10m      Velocity at the anemometer level (10meters)   (m/s)
-! *
+! *      
 ! *  Output:
-! *         DSRC      Source of each sea salt bins       (kg/timestep/cell)
+! *         DSRC      Source of each sea salt bins       (kg/timestep/cell) 
 ! *
 ! *
 ! * Number flux density: Original formula by Monahan et al. (1986) adapted
@@ -131,7 +131,7 @@ SUBROUTINE source_ss(imx,jmx,lmx,nmx, dt1, tc, &
 ! *               where rho_p is particle density [kg/m3]
 ! *    The factor 1.e-18 is to convert in micro-meter r_d^3
 ! ****************************************************************************
-
+ 
 
   USE module_data_gocart_seas
 
@@ -145,14 +145,14 @@ SUBROUTINE source_ss(imx,jmx,lmx,nmx, dt1, tc, &
   REAL*8,    INTENT(OUT)   :: bems(imx,jmx,nmx)
 
   REAL*8 :: c0(5), b0(2)
-!  REAL*8, PARAMETER :: c_old(5)=(/1.373, 3.41, 0.057, 1.05, 1.190/)
+!  REAL*8, PARAMETER :: c_old(5)=(/1.373, 3.41, 0.057, 1.05, 1.190/) 
 !  REAL*8, PARAMETER :: c_new(5)=(/1.373, 3.41, 0.057, 3.45, 1.607/)
   ! Change suggested by MC
-  REAL*8, PARAMETER :: c_old(5)=(/1.373, 3.2, 0.057, 1.05, 1.190/)
+  REAL*8, PARAMETER :: c_old(5)=(/1.373, 3.2, 0.057, 1.05, 1.190/) 
   REAL*8, PARAMETER :: c_new(5)=(/1.373, 3.2, 0.057, 3.45, 1.607/)
   REAL*8, PARAMETER :: b_old(2)=(/0.380, 0.650/)
   REAL*8, PARAMETER :: b_new(2)=(/0.433, 0.433/)
-  REAL*8, PARAMETER :: dr=5.0D-2 ! um
+  REAL*8, PARAMETER :: dr=5.0D-2 ! um   
   REAL*8, PARAMETER :: theta=30.0
   ! Swelling coefficient frh (d rwet / d rd)
 !!!  REAL*8,    PARAMETER :: frh = 1.65
@@ -173,19 +173,19 @@ SUBROUTINE source_ss(imx,jmx,lmx,nmx, dt1, tc, &
   REAL*8, TARGET :: tcms(imx,jmx,lmx,nmx) ! tracer mass (kg; kgS for sulfur case)
   REAL*8, TARGET :: tcgm(imx,jmx,lmx,nmx) ! g/m3
 
-  !-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------  
   ! sea salt specific
-  !-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------  
 ! REAL*8, DIMENSION(nmx) :: ra, rb
 ! REAL*8 :: ch_ss(nmx,12)
 
-  !-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------  
   ! emissions (input)
-  !-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------  
   REAL*8 :: e_an(imx,jmx,2,nmx), e_bb(imx,jmx,nmx), &
           e_ac(imx,jmx,lmx,nmx)
 
-  !-----------------------------------------------------------------------
+  !-----------------------------------------------------------------------  
   ! diagnostics (budget)
   !-----------------------------------------------------------------------
 !  ! tendencies per time step and process
@@ -196,7 +196,7 @@ SUBROUTINE source_ss(imx,jmx,lmx,nmx, dt1, tc, &
 !  REAL*8, TARGET :: tems(imx,jmx,nmx), tstl(imx,jmx,nmx)
 !  REAL*8, TARGET :: tdry(imx,jmx,nmx), twet(imx,jmx,nmx), tcnv(imx,jmx,nmx)
 
-  ! global mass balance per time step
+  ! global mass balance per time step 
   REAL*8 :: tmas0(nmx), tmas1(nmx)
   REAL*8 :: dtems(nmx), dttrp(nmx), dtdif(nmx), dtcnv(nmx)
   REAL*8 :: dtwet(nmx), dtdry(nmx), dtstl(nmx)
@@ -236,7 +236,7 @@ SUBROUTINE source_ss(imx,jmx,lmx,nmx, dt1, tc, &
         b = (b0(1) - LOG10(r_w))/b0(2)
         dfn = (c0(1)/r_w**a)*(1.0 + c0(3)*r_w**c0(4))* &
              10**(c0(5)*EXP(-(b**2)))
-
+        
         r_d = r_w/frh*1.0D-6  ! um -> m
         dfm = 4.0/3.0*pi*r_d**3*rho_d*frh*dfn*dr*dt1
         DO i = 1,imx

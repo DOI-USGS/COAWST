@@ -173,12 +173,12 @@
 !          ENDDO
 
           IF (Nbed.GT.2) THEN
-!  Compute cumulative depth
+!  Compute cumulative depth 
             zb(1)=bed(i,j,1,ithck)
             DO k=2,Nbed
               zb(k)=zb(k-1)+bed(i,j,k,ithck)
             END DO
-!  Compute depths of bed centers
+!  Compute depths of bed centers 
             zc(1)=0.5_r8*(bed(i,j,1,ithck))
             DO k=2,Nbed
               zc(k)=zb(k-1)+0.5_r8*bed(i,j,k,ithck)
@@ -187,7 +187,7 @@
 !  Set biodiffusivity profile
 #  if defined DB_PROFILE
 !  Depth-varying biodiffusivity profile
-!
+!   
 !ALF            Dbmx = bottom(i,j,idbmx)
 !ALF            Dbmm = bottom(i,j,idbmm)
 !ALF            zs = bottom(i,j,idbzs)
@@ -196,7 +196,7 @@
             DO k=1,Nbed
               Db(k)= Dbmx(ng)
 !              IF( zb(k).GT.Dbzp(ng))THEN          ! should be .GE. ?
-              IF( zb(k).GE.Dbzp(ng))THEN
+              IF( zb(k).GE.Dbzp(ng))THEN          
                 Db(k)=0.0_r8
               ELSE
                 IF((zb(k) .GT. Dbzs(ng)).AND.                                 &
@@ -211,7 +211,7 @@
               ENDIF
             END DO
 #  else
-!    Uniform biodiffusivity profile at max value
+!    Uniform biodiffusivity profile at max value 
 !
             DO k=1,Nbed
               Db(k)=Dbmx(ng)
@@ -248,7 +248,7 @@
 !
 !   Calculate mixing for each size fraction
             DO ised=1,NST
-!   ...make working copies
+!   ...make working copies 
               DO k=1,Nbed
                 cc(k) = bed_frac(i,j,k,ised)
                 dd(k)= d(k)
@@ -273,7 +273,7 @@
 !   ...solution stored in cc; copy out
               DO k = 1,Nbed
                 bed_frac(i,j,k,ised)=cc(k)
-              ENDDO
+              ENDDO           
             ENDDO
 ! TODO - Mix porosity or assign it as f(depth)?
 ! TODO - Mix age?

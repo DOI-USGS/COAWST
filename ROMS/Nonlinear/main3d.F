@@ -2,9 +2,9 @@
 #if defined NONLINEAR && defined SOLVE3D && (!defined OFFLINE)
       SUBROUTINE main3d (RunInterval)
 !
-!svn $Id: main3d.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: main3d.F 927 2018-10-16 03:51:56Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -126,7 +126,7 @@
 #  endif
 # endif
 # if defined VEGETATION && defined MARSH_WAVE_THRUST
-      USE mod_vegetation
+      USE mod_vegetation 
       USE mod_vegarr
       USE marsh_wave_thrust_mod, ONLY : marsh_wave_thrust
 # endif
@@ -174,7 +174,7 @@
 !
 !  Imported variable declarations.
 !
-      real(r8), intent(in) :: RunInterval
+      real(dp), intent(in) :: RunInterval
 !
 !  Local variable declarations.
 !
@@ -425,7 +425,7 @@
 # if defined ALBEDO && defined SHORTWAVE
 #  ifdef ANA_ALBEDO
                 CALL ana_albedo(ng, tile, iNLM)
-#  elif !defined NCEP_FLUXES && !defined ALBEDO_FILE
+#  elif !defined NCEP_FLUXES && !defined ALBEDO_FILE 
                 CALL albedo_eval(ng, tile)
 #  endif
 # endif
@@ -507,7 +507,7 @@
                    CALL marsh_wave_thrust (ng, tile)
                  END DO
                END DO
-# endif
+# endif 
 # ifdef ADJUST_BOUNDARY
 !
 !-----------------------------------------------------------------------
@@ -639,18 +639,22 @@
 !-----------------------------------------------------------------------
 !  If refinement grid, interpolate (space, time) state variables
 !  contact points from donor grid extracted data.
+#  ifdef NESTING_DEBUG
 !
 !  Also, fill BRY_CONTACT(:,:)%Mflux to check for mass conservation
 !  between coarse and fine grids.  This is only done for diagnostic
 !  purposes. Also, debugging is possible with very verbose output
 !  to fort.300 is allowed by activating uppercase(nesting_debug).
+#  endif
 !-----------------------------------------------------------------------
 !
             DO ig=1,GridsInLayer(nl)
               ng=GridNumber(ig,nl)
               IF (RefinedGrid(ng).and.(RefineScale(ng).gt.0)) THEN
                 CALL nesting (ng, iNLM, nputD)
+#  ifdef NESTING_DEBUG
                 CALL nesting (ng, iNLM, nmflx)
+#  endif
               END IF
             END DO
 # endif

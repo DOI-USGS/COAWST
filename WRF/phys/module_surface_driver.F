@@ -41,7 +41,7 @@ CONTAINS
 #if (HWRF==1)
      &          ,mznt                                                 &
 #endif
-     &          ,zs                                                   &
+     &          ,zs                                                   & 
      &          ,albsi, icedepth,snowsi                               &
 #if (NMM_CORE==1)
      &          ,xicem,isice,iswater,ct,tke_pbl,sfenth                &
@@ -51,14 +51,16 @@ CONTAINS
      &          ,albbck,embck,lh,sh2o,shdmax,shdmin,z0                &
      &          ,flqc,flhc,psfc,sst,sst_input,sstsk,dtw,sst_update,sst_skin     &
      &          ,scm_force_skintemp,scm_force_flux,t2,emiss           &
-     &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   &
+     &          ,sf_sfclay_physics,sf_surface_physics,ra_lw_physics   & 
+     &          ,bl_pbl_physics                                       &
      &          ,mosaic_lu,mosaic_soil                                &
      &          ,landusef,soilctop,soilcbot,ra,rs,nlcat,nscat,vegf_px & ! PX-LSM
      &          ,snowncv, anal_interval, lai, imperv, canfra          & ! PX-LSM
      &          ,pxlsm_smois_init, pxlsm_soil_nudge                   & ! PX-LSM
      &          ,idveg    ,iopt_crs  ,iopt_btr  ,iopt_run  ,iopt_sfc  ,iopt_frz     &
      &          ,iopt_inf ,iopt_rad  ,iopt_alb  ,iopt_snf  ,iopt_tbot ,iopt_stc     &
-     &          ,iopt_gla ,iopt_rsf                                                 &
+     &          ,iopt_gla ,iopt_rsf  ,iopt_soil ,iopt_pedo ,iopt_crop               &
+     &          ,soilcomp  , soilcl1, soilcl2, soilcl3, soilcl4                     &
      &          ,isnowxy  ,tvxy      ,tgxy      ,canicexy  ,canliqxy  ,eahxy        &
      &          ,tahxy    ,cmxy      ,chxy      ,fwetxy    ,sneqvoxy  ,alboldxy     &
      &          ,qsnowxy  ,wslakexy  ,zwtxy     ,waxy      ,wtxy      ,tsnoxy       &
@@ -70,14 +72,15 @@ CONTAINS
      &          ,tradxy   ,neexy     ,gppxy     ,nppxy     ,fvegxy    ,runsfxy      &
      &          ,runsbxy  ,ecanxy    ,edirxy    ,etranxy   ,fsaxy     ,firaxy       &
      &          ,aparxy   ,psnxy     ,savxy     ,sagxy     ,rssunxy   ,rsshaxy      &
-     &          ,bgapxy   ,wgapxy    ,tgvxy     ,tgbxy     ,chvxy     ,chbxy        &
+     &          ,bgapxy   ,wgapxy    ,tgvxy     ,tgbxy     ,chvxy     ,chbxy        &    
      &          ,shgxy    ,shcxy     ,shbxy     ,evgxy     ,evbxy     ,ghvxy        &
      &          ,ghbxy    ,irgxy     ,ircxy     ,irbxy     ,trxy      ,evcxy        &
-     &          ,chleafxy ,chucxy    ,chv2xy    ,chb2xy    ,chstarxy                &
+     &          ,chleafxy ,chucxy    ,chv2xy    ,chb2xy    ,chstarxy                &                      
            ! Noah-MP ground water
      &          ,smcwtdxy ,rechxy   ,deeprechxy,fdepthxy,areaxy   ,rivercondxy, riverbedxy &
      &          ,eqzwt    ,pexpxy   ,qrfxy    ,qspringxy,qslatxy  ,qrfsxy   ,qspringsxy &
      &          ,smoiseq  ,wtddt    ,stepwtd                                            &
+                ,gecros_state                                   & ! Optional gecros crop
      &          ,opt_thcnd                                                 &
            ! Noah UA changes
      &          ,ua_phys,flx4,fvb,fbur,fgsn                                  &
@@ -197,7 +200,7 @@ CONTAINS
      &          ,CTO3 ,FIO3 ,FLO3 ,BIO3 ,BLO3 ,HO3                    & ! ssib-snow
      &          ,DZO4 ,WO4 ,TSSN4 ,TSSNO4 ,BWO4 ,BTO4                 & ! ssib-snow
      &          ,CTO4 ,FIO4 ,FLO4 ,BIO4 ,BLO4 ,HO4                    & ! ssib-snow
-     &          ,ra_sw_physics                                        & ! ssib
+     &          ,ra_sw_physics                                        & ! ssib 
 !------------------------------------------------------------------------------
      &          , ids,ide,jds,jde,kds,kde                             &
      &          , ims,ime,jms,jme,kms,kme                             &
@@ -238,26 +241,27 @@ CONTAINS
      &          ,usemonalb                                            &
      &          ,noahres                                              &
              !  Optional adaptive time step
-     &          ,bldt,curr_secs,adapt_step_flag,bldtacttime           &
+     &          ,bldt,curr_secs,adapt_step_flag,bldtacttime           & 
          ! Optional urban with BEP
      &          ,sf_urban_physics,gmt,xlat,xlong,julday               &
      &          ,num_urban_layers                                     & !multi-layer urban
      &          ,num_urban_hi                                         & !multi-layer urban
+     &          ,tsk_rural                                            & !multi-layer urban
      &          ,trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d              & !multi-layer urban
      &          ,tlev_urb3d,qlev_urb3d                                & !multi-layer urban
      &          ,tw1lev_urb3d,tw2lev_urb3d                            & !multi-layer urban
      &          ,tglev_urb3d,tflev_urb3d                              & !multi-layer urban
      &          ,sf_ac_urb3d,lf_ac_urb3d,cm_ac_urb3d                  & !multi-layer urban
-     &          ,sfvent_urb3d,lfvent_urb3d                            & !multi-layer urban
-     &          ,sfwin1_urb3d,sfwin2_urb3d                            & !multi-layer urban
+     &          ,sfvent_urb3d,lfvent_urb3d                            & !multi-layer urban 
+     &          ,sfwin1_urb3d,sfwin2_urb3d                            & !multi-layer urban       
      &          ,sfw1_urb3d,sfw2_urb3d,sfr_urb3d,sfg_urb3d            & !multi-layer urban
      &          ,lp_urb2d,hi_urb2d,lb_urb2d,hgt_urb2d                 & !multi-layer urban
-     &          ,mh_urb2d,stdh_urb2d,lf_urb2d                         &
+     &          ,mh_urb2d,stdh_urb2d,lf_urb2d                         &           
      &          ,a_u_bep,a_v_bep,a_t_bep,a_q_bep                      &
      &          ,b_u_bep,b_v_bep,b_t_bep,b_q_bep                      &
      &          ,sf_bep,vl_bep                                        &
      &          ,a_e_bep,b_e_bep,dlg_bep                              &
-     &          ,dl_u_bep                                             &
+     &          ,dl_u_bep                                             &                          
      &          ,tsk_save                                             & !for fractional seaice
      &          ,cldfra                                               & !ssib
      &          ,sf_surface_mosaic,mosaic_cat,mosaic_cat_index                                    & !danli mosaic
@@ -265,19 +269,21 @@ CONTAINS
      &          ,CANWAT_mosaic,SNOW_mosaic,SNOWH_mosaic,SNOWC_mosaic                              & !danli mosaic
      &          ,ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic   & !danli mosaic
      &          ,HFX_mosaic,QFX_mosaic, LH_mosaic, GRDFLX_mosaic,SNOTIME_mosaic                   & !danli mosaic
-     &          ,TR_URB2D_mosaic,TB_URB2D_mosaic                      &  !danli mosaic
-     &          ,TG_URB2D_mosaic,TC_URB2D_mosaic                      &  !danli mosaic
-     &          ,QC_URB2D_mosaic,UC_URB2D_mosaic                      &  !danli mosaic
-     &          ,TRL_URB3D_mosaic,TBL_URB3D_mosaic                    &  !danli mosaic
-     &          ,TGL_URB3D_mosaic                                     &  !danli mosaic
-     &          ,SH_URB2D_mosaic,LH_URB2D_mosaic                      &  !danli mosaic
-     &          ,G_URB2D_mosaic,RN_URB2D_mosaic                       &  !danli mosaic
-     &          ,TS_URB2D_mosaic                                      &  !danli mosaic
-     &          ,TS_RUL2D_mosaic                                      &  !danli mosaic
+     &          ,RS_mosaic,LAI_mosaic                                 &  !mosaic
+     &          ,TR_URB2D_mosaic,TB_URB2D_mosaic                      &  !danli mosaic 
+     &          ,TG_URB2D_mosaic,TC_URB2D_mosaic                      &  !danli mosaic 
+     &          ,QC_URB2D_mosaic,UC_URB2D_mosaic                      &  !danli mosaic                  
+     &          ,TRL_URB3D_mosaic,TBL_URB3D_mosaic                    &  !danli mosaic 
+     &          ,TGL_URB3D_mosaic                                     &  !danli mosaic 
+     &          ,SH_URB2D_mosaic,LH_URB2D_mosaic                      &  !danli mosaic 
+     &          ,G_URB2D_mosaic,RN_URB2D_mosaic                       &  !danli mosaic 
+     &          ,TS_URB2D_mosaic                                      &  !danli mosaic 
+     &          ,TS_RUL2D_mosaic                                      &  !danli mosaic     
      &          ,ZOL                                                  &  !ckay
      &          ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas  &  !fasdas
      &          ,spp_lsm,pattern_spp_lsm,field_sf                     &  !SPP
      &          ,spp_pbl,pattern_spp_pbl                              &  !SPP
+     &          ,XLAIDYN                                              &
      &                                                             )
 
 #if ( ! NMM_CORE == 1 )
@@ -285,6 +291,8 @@ CONTAINS
                                        ,SFCLAYREVSCHEME           &
                                        ,MYJSFCSCHEME              &
                                        ,QNSESFCSCHEME             &
+                                       ,MYJPBLSCHEME              &
+                                       ,QNSEPBLSCHEME             &
                                        ,GFSSFCSCHEME              &
                                        ,PXSFCSCHEME               &
                                        ,NOAHMPSCHEME              &
@@ -304,6 +312,8 @@ CONTAINS
                                        ,SFCLAYREVSCHEME           &
                                        ,MYJSFCSCHEME              &
                                        ,QNSESFCSCHEME             &
+                                       ,MYJPBLSCHEME              &
+                                       ,QNSEPBLSCHEME             &
                                        ,GFSSFCSCHEME              &
                                        ,PXSFCSCHEME               &
                                        ,NOAHMPSCHEME              &
@@ -315,7 +325,7 @@ CONTAINS
                                        ,TEMFSFCSCHEME             &
                                        ,GFDLSFCSCHEME             &
                                        ,SSIBSCHEME                & ! ssib
-                                       ,GFDLSLAB
+                                       ,GFDLSLAB 
 
 
 #endif
@@ -326,7 +336,7 @@ CONTAINS
    USE module_sf_myjsfc
    USE module_sf_qnsesfc
    USE module_sf_gfs
-   USE module_sf_noahdrv                           ! danli mosaic, the " ,only : lsm " needs to be deleted
+   USE module_sf_noahdrv                           ! danli mosaic, the " ,only : lsm " needs to be deleted 
    USE module_sf_noahlsm, only : LOW_DENSITY_RESIDENTIAL, HIGH_DENSITY_RESIDENTIAL, HIGH_INTENSITY_INDUSTRIAL
    USE module_sf_noahmpdrv, only : noahmplsm, noahmp_urban
    USE module_sf_noahmp_groundwater
@@ -347,7 +357,7 @@ CONTAINS
    USE module_sf_ocean_driver
    USE module_sf_idealscmsfclay
 #endif
-   USE module_sf_scmflux
+   USE module_sf_scmflux       
    USE module_sf_scmskintemp
 
 #if ( NMM_CORE == 1 )
@@ -374,7 +384,7 @@ CONTAINS
 !      1. slab
 !      2. Noah LSM
 !      7. Pleim-Xiu LSM
-!     11. Revised sfclay (option 1)
+!     11. Revised sfclay (option 1) 
 !
 !  surface: ground temp/lsm scheme for urban:
 !      2.  BEP
@@ -515,7 +525,7 @@ CONTAINS
 !-- SOILCTOP     Top soil fraction                     ! P-X LSM
 !-- SOILCBOT     Bottom soil fraction                  ! P-X LSM
 !-- RA           Aerodynamic resistence                ! P-X LSM
-!-- RS           Stomatal resistence                   ! P-X LSM
+!-- RS           Stomatal resistence                   ! P-X LSM, also from Noah lsm, lsm_mosaic, or noahmp
 !-- VEGF_PX      PX LSM internal LU-based Veg Fraction ! P-X LSM
 !-- IMPERV       Impervious surface fraction           ! P-X LSM
 !-- CANFRA       Canopy/Tree fraction                  ! P-X LSM
@@ -579,9 +589,9 @@ CONTAINS
 
    INTEGER, INTENT(IN) :: sf_sfclay_physics, sf_surface_physics,      &
                           sf_urban_physics,ra_lw_physics,sst_update,  &
-                          ra_sw_physics
+                          ra_sw_physics, bl_pbl_physics
    INTEGER, INTENT(IN),OPTIONAL :: sst_skin, tmn_update,              &
-                                   scm_force_skintemp, scm_force_flux
+                                   scm_force_skintemp, scm_force_flux 
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                       &
      &           i_start,i_end,j_start,j_end
@@ -608,7 +618,7 @@ CONTAINS
    REAL , INTENT(IN )::   U_FRAME
    REAL , INTENT(IN )::   V_FRAME
 
-  !added by Wei Yu for WRF_HYDRO
+  !added by Wei Yu for WRF_HYDRO 
    real ::  HYDRO_dt
    REAL, DIMENSION( ims:ime , jms:jme ):: sfcheadrt,INFXSRT, soldrain
 
@@ -836,7 +846,7 @@ CONTAINS
    REAL,       INTENT(IN   ),OPTIONAL    ::     bldt
    REAL,       INTENT(IN   ),OPTIONAL    ::     curr_secs
    LOGICAL,    INTENT(IN   ),OPTIONAL    ::     adapt_step_flag
-   REAL,       INTENT(INOUT),OPTIONAL    ::     bldtacttime
+   REAL,       INTENT(INOUT),OPTIONAL    ::     bldtacttime  
 
 !  arguments for NCAR surface physics
 
@@ -852,7 +862,9 @@ CONTAINS
 
    INTEGER, OPTIONAL, INTENT(IN) ::    idveg, iopt_crs, iopt_btr, iopt_run, iopt_sfc , iopt_frz, &
                                     iopt_inf, iopt_rad, iopt_alb, iopt_snf, iopt_tbot, iopt_stc, &
-				    iopt_gla, iopt_rsf
+				    iopt_gla, iopt_rsf, iopt_soil,iopt_pedo,iopt_crop
+   REAL,    OPTIONAL, DIMENSION(ims:ime ,8, jms:jme), INTENT(IN) :: SOILCOMP
+   REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme)  , INTENT(IN) :: SOILCL1,SOILCL2,SOILCL3,SOILCL4
 
    INTEGER, OPTIONAL, DIMENSION(ims:ime , jms:jme),                    INTENT(INOUT) :: ISNOWXY,   PGSXY
    REAL,    OPTIONAL, DIMENSION(ims:ime ,-2:num_soil_layers, jms:jme), INTENT(INOUT) :: ZSNSOXY
@@ -865,7 +877,7 @@ CONTAINS
           NPPXY,  FVEGXY, RUNSFXY, RUNSBXY,  ECANXY,  EDIRXY, ETRANXY,   FSAXY,  FIRAXY,  APARXY,   PSNXY, &
 	  SAVXY,   SAGXY, RSSUNXY, RSSHAXY,  BGAPXY,  WGAPXY,   TGVXY,   TGBXY,   CHVXY,   CHBXY,   SHGXY, &
 	  SHCXY,   SHBXY,   EVGXY,   EVBXY,   GHVXY,   GHBXY,   IRGXY,   IRCXY,   IRBXY,    TRXY,   EVCXY, &
-       CHLEAFXY,  CHUCXY,  CHV2XY,  CHB2XY,CHSTARXY
+       CHLEAFXY,  CHUCXY,  CHV2XY,  CHB2XY,CHSTARXY                         
    INTEGER,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: CROPCAT
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: PLANTING
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme), INTENT(IN) :: HARVEST
@@ -878,7 +890,9 @@ CONTAINS
    REAL,    OPTIONAL, DIMENSION(ims:ime , 1:num_soil_layers, jms:jme ), INTENT(INOUT)::  smoiseq
    REAL,    OPTIONAL, DIMENSION(ims:ime , jms:jme),                    INTENT(INOUT) ::  &
     SMCWTDXY,   RECHXY, DEEPRECHXY, FDEPTHXY,  AREAXY,  RIVERCONDXY, RIVERBEDXY,  &
-    EQZWT,      PEXPXY, QRFXY,      QSPRINGXY, QSLATXY, QRFSXY,      QSPRINGSXY
+    EQZWT,      PEXPXY, QRFXY,      QSPRINGXY, QSLATXY, QRFSXY,      QSPRINGSXY                         
+
+   REAL,    OPTIONAL, DIMENSION(ims:ime,60,jms:jme) :: gecros_state                  ! Optional gecros crop
 
    INTEGER, INTENT(IN )::   OPT_THCND
 ! Noah UA changes
@@ -886,11 +900,12 @@ CONTAINS
    REAL, DIMENSION(ims:ime , jms:jme), INTENT(OUT) ::  flx4,fvb,fbur,fgsn
 
 ! Variables for multi-layer UCM
-   REAL, OPTIONAL, INTENT(IN  )   ::                                   GMT
+   REAL, OPTIONAL, INTENT(IN  )   ::                                   GMT 
    INTEGER, OPTIONAL, INTENT(IN  ) ::                               JULDAY
    REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   )        ::XLAT, XLONG
    INTEGER, INTENT(IN )::   NUM_URBAN_LAYERS
    INTEGER, INTENT(IN )::   NUM_URBAN_HI
+   REAL, OPTIONAL, DIMENSION( ims:ime,                     jms:jme ), INTENT(INOUT) :: tsk_rural
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: trb_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw1_urb4d
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_urban_layers, jms:jme ), INTENT(INOUT) :: tw2_urb4d
@@ -1153,7 +1168,7 @@ CONTAINS
 !
    INTEGER :: i,J,K,NK,jj,ij
    INTEGER :: gfdl_ntsflg
-   LOGICAL :: radiation, myj, frpcpn, isisfc
+   LOGICAL :: radiation, myj, myjpbl, frpcpn, isisfc
    LOGICAL, INTENT(in), OPTIONAL :: rdlai2d
    LOGICAL, INTENT(in), OPTIONAL :: usemonalb
    REAL    :: total_depth,mid_point_depth
@@ -1230,11 +1245,11 @@ CONTAINS
      REAL,  DIMENSION( ims:ime, jms:jme )  :: TH2_URB2D   !urban local var
      REAL,  DIMENSION( ims:ime, jms:jme )  :: Q2_URB2D    !urban local var
      REAL,  DIMENSION( ims:ime, jms:jme )  :: UST_URB2D  !urban local var
-
+     
 !-------------------------------------------------
 ! Noah-mosaic related variables are added to declaration  (danli)
 !-------------------------------------------------
-
+  
   INTEGER, INTENT(IN) :: sf_surface_mosaic
   INTEGER, INTENT(IN) :: mosaic_cat
   INTEGER, DIMENSION( ims:ime, NLCAT, jms:jme ), INTENT(INOUT), OPTIONAL :: mosaic_cat_index
@@ -1244,22 +1259,23 @@ CONTAINS
         TSK_mosaic, QSFC_mosaic, CANWAT_mosaic, SNOW_mosaic,SNOWH_mosaic, SNOWC_mosaic
   REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::   &
         ALBEDO_mosaic,ALBBCK_mosaic, EMISS_mosaic, EMBCK_mosaic, ZNT_mosaic, Z0_mosaic,   &
-        HFX_mosaic,QFX_mosaic, LH_mosaic, GRDFLX_mosaic,SNOTIME_mosaic
+        HFX_mosaic,QFX_mosaic, LH_mosaic,GRDFLX_mosaic,SNOTIME_mosaic, &
+        RS_mosaic,LAI_mosaic
   REAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), OPTIONAL, INTENT(INOUT)::   &
         TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic
 
    REAL, DIMENSION( ims:ime, 1:mosaic_cat, jms:jme ) , OPTIONAL, INTENT(INOUT)::  &
          TR_URB2D_mosaic, TB_URB2D_mosaic, TG_URB2D_mosaic, TC_URB2D_mosaic,QC_URB2D_mosaic, UC_URB2D_mosaic, &
-         SH_URB2D_mosaic,LH_URB2D_mosaic,G_URB2D_mosaic,RN_URB2D_mosaic,TS_URB2D_mosaic, TS_RUL2D_mosaic
-
+         SH_URB2D_mosaic,LH_URB2D_mosaic,G_URB2D_mosaic,RN_URB2D_mosaic,TS_URB2D_mosaic, TS_RUL2D_mosaic  
+                  
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TRL_URB3D_mosaic
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TBL_URB3D_mosaic
    REAL, OPTIONAL, DIMENSION( ims:ime, 1:num_soil_layers*mosaic_cat, jms:jme ), INTENT(INOUT) :: TGL_URB3D_mosaic
-
+     
 !-------------------------------------------------
-! End of Noah-mosaic related variables
-!-------------------------------------------------
-
+! End of Noah-mosaic related variables 
+!-------------------------------------------------     
+     
 !--------fds (06/2010)---------------------------------------------
      REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ),               &
             OPTIONAL, INTENT(IN) ::                                 CLDFRA
@@ -1293,7 +1309,7 @@ CONTAINS
                                                                                h2osno2d,       &
                                                                                snl2d,          &
                                                                                t_grnd2d
-
+ 
     real,    dimension( ims:ime,1:nlevlake, jms:jme ),INTENT(inout)          :: t_lake3d,       &
                                                                                lake_icefrac3d
     real,    dimension( ims:ime,-nlevsnow+1:nlevsoil, jms:jme ),INTENT(inout) :: t_soisno3d,     &
@@ -1313,15 +1329,15 @@ CONTAINS
                                                                                tksatu3d
     real,    dimension(ims:ime,jms:jme ),intent(in)                         :: lakedepth2d
 #if (EM_CORE==1)
-    real ,    dimension(ims:ime,jms:jme )  ::  lakemask
+    real ,    dimension(ims:ime,jms:jme )  ::  lakemask       
 !    INTEGER  :: lakeflag
 #endif
-!    logical, dimension(ims:ime,jms:jme ),intent(in)                         :: lake
-
+!    logical, dimension(ims:ime,jms:jme ),intent(in)                         :: lake 
+ 
 !
    REAL   :: xice_threshold
 
-! cyl 3d ocean variable
+! cyl 3d ocean variable 
    integer :: okms, okme
    real, optional , dimension(ims:ime, okms:okme, jms:jme), INTENT(INOUT):: OM_TMP,OM_S,OM_U,OM_V,OM_DEPTH
    real, optional , dimension(ims:ime, okms:okme, jms:jme), INTENT(IN):: OM_TINI,OM_SINI
@@ -1348,6 +1364,8 @@ CONTAINS
    REAL                                                ::   HFX_KAY, QFX_KAY
 ! local var for SPP_LSM
    INTEGER                                             ::   spp_lsm_loc
+
+   real,    optional,  dimension(ims:ime,jms:jme ),intent(inout) :: XLAIDYN
 !
 !------------------------------------------------------------------
 ! Initialize local variables
@@ -1382,25 +1400,25 @@ CONTAINS
   endif
 
   IF ( coupler_on .and. present(cplmask) .and. present(sst_input) ) THEN
-
+     
      CALL cpl_rcv( id, 'SST',            &
         &              ids, ide, jds, jde, kds, kde, &
         &              ims, ime, jms, jme, kms, kme, &
         &              ips, ipe, jps, jpe, kps, kpe, &
         &              max_edom, cplmask, SST, SST_INPUT )
-
+     
      CALL cpl_rcv( id, 'UOCE',            &
         &              ids, ide, jds, jde, kds, kde, &
         &              ims, ime, jms, jme, kms, kme, &
         &              ips, ipe, jps, jpe, kps, kpe, &
         &              max_edom, cplmask, UOCE )
-
+     
      CALL cpl_rcv( id, 'VOCE',            &
         &              ids, ide, jds, jde, kds, kde, &
         &              ims, ime, jms, jme, kms, kme, &
         &              ips, ipe, jps, jpe, kps, kpe, &
         &              max_edom, cplmask, VOCE )
-
+     
   END IF
 
 #if (EM_CORE==1)
@@ -1409,7 +1427,7 @@ CONTAINS
      spp_lsm_loc = 0
 #endif
 
-
+  
 !$OMP PARALLEL DO &
 !$OMP PRIVATE (ij, i, j, k)
   DO ij = 1,num_tiles
@@ -1472,7 +1490,7 @@ CONTAINS
     DO ij = 1 , num_tiles
       DO j=j_start(ij),j_end(ij)
       DO i=i_start(ij),i_end(ij)
- ! check for lake model
+ ! check for lake model 
 #if (EM_CORE==1)
           if ( lakemodel==1) then
             if(lakemask(i,j).eq.1.) then
@@ -1480,7 +1498,7 @@ CONTAINS
                    xice(i,j)=0.0
                endif
              endif
-          endif
+          endif 
 #else
           if ( lakemodel==1) then
             if(ht(i,j)>=lake_min_elev) then
@@ -1488,15 +1506,15 @@ CONTAINS
                    xice(i,j)=0.0
                endif
              endif
-          endif
+          endif 
 #endif
-! end check lake model
-         XICE_save(I,J) = XICEM(I,J)
+! end check lake model    
+         XICE_save(I,J) = XICEM(I,J) 
 
          IF ( FRACTIONAL_SEAICE == 1 ) then
             IF ( ( XICE(I,J) .NE. XICEM(I,J) ) .AND. ( XICEM(I,J) .GT. XICE_THRESHOLD ) ) THEN
-               ! Fractional values of ALBEDO and EMISSIVITY are valid according to the
-               ! earlier fractional seaice value, XICEM.  Recompute them for the new
+               ! Fractional values of ALBEDO and EMISSIVITY are valid according to the 
+               ! earlier fractional seaice value, XICEM.  Recompute them for the new 
                ! seaice value XICE.
                 IF ( SEAICE_ALBEDO_OPT ==2 ) THEN
                     IF ( ALBSI(I,J) < -1.E6 ) THEN
@@ -1532,8 +1550,8 @@ CONTAINS
               ALBEDO(I,J) = SEAICE_ALBEDO_DEFAULT * XICE(I,J) + 0.08 * ( 1.0-XICE(I,J) )
               ALBBCK(I,J) = SEAICE_ALBEDO_DEFAULT
 
-          CASE ( 2 )
-
+          CASE ( 2 ) 
+              
               IF ( ALBSI(I,J) < -1.E6 ) THEN
                   call wrf_error_fatal("Field ALBSI not found in input.  Field ALBSI is required if SEAICE_ALBEDO_OPT=2")
               ENDIF
@@ -1730,6 +1748,10 @@ CONTAINS
   frpcpn = .false.
   myj    = ((sf_sfclay_physics .EQ. MYJSFCSCHEME) .OR. &
             (sf_sfclay_physics .EQ. QNSESFCSCHEME) )
+
+  myjpbl = ((bl_pbl_physics .EQ. MYJPBLSCHEME) .OR. &
+            (bl_pbl_physics .EQ. QNSEPBLSCHEME) )
+
   isisfc = ( FRACTIONAL_SEAICE .EQ. 1  .AND. (          &
             (sf_sfclay_physics .EQ. SFCLAYSCHEME ) .OR. &
             (sf_sfclay_physics .EQ. SFCLAYREVSCHEME ) .OR. &
@@ -2063,9 +2085,18 @@ CONTAINS
 !!           ch(i,j) = flhc(i,j)/( cpm(i,j)*rho(i,kts,j) )
             END DO
          END DO
-#endif
+#endif         
 
         ENDIF
+#if ( EM_CORE==1)
+!       ustm is not available in NMM
+!       ustm is needed for LES tke calculation (ustm is ust used in friction)
+         DO j = j_start(ij),j_end(ij)
+            DO i = i_start(ij),i_end(ij)
+               ustm(i,j) = ust(i,j)
+            END DO
+         END DO
+#endif
        ELSE
          CALL wrf_error_fatal('Lacking arguments for MYJSFC in surface driver')
        ENDIF
@@ -2146,7 +2177,7 @@ CONTAINS
 !!           ch(i,j) = flhc(i,j)/( cpm(i,j)*rho(i,kts,j) )
             END DO
          END DO
-#endif
+#endif         
 
         ENDIF
         ELSE
@@ -2195,8 +2226,8 @@ CONTAINS
 
        IF (PRESENT(qv_curr)    .AND.  PRESENT(qc_curr)     &
             & .AND.  PRESENT(qcg) ) THEN
-
-          CALL wrf_debug(100,'in MYNNSFC')
+          
+          CALL wrf_debug(100,'in MYNNSFC')          
 
          IF (FRACTIONAL_SEAICE == 1) THEN
           CALL MYNN_SEAICE_WRAPPER(u_phytmp,v_phytmp,t_phy,qv_curr,&
@@ -2219,7 +2250,7 @@ CONTAINS
                TICE2TSK_IF2COLD,XICE_THRESHOLD,                    &
                ids,ide, jds,jde, kds,kde,                          &
                ims,ime, jms,jme, kms,kme,                          &
-               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &
+               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &   
                ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,bl_mynn_cloudpdf)
          ELSE
           CALL SFCLAY_mynn(u_phytmp,v_phytmp,t_phy,qv_curr,        &
@@ -2243,7 +2274,7 @@ CONTAINS
          ENDIF
        ELSE
           CALL wrf_error_fatal('Lacking arguments for SFCLAY_mynn in surface driver')
-
+ 
        ENDIF
 #endif
 
@@ -2321,7 +2352,7 @@ CONTAINS
 #if (HWRF==1)
                    MZNT,                                                  &
 #endif
-                   UST,PSIM,PSIH,                                         &
+                   UST,PSIM,PSIH,                                         &  
                    XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,  & ! gopal's doing for Ocean coupling
                    QGH,QSFC,U10,V10,                              &
                    ICOEF_SF,IWAVECPL,LCURR_SF,CHARN, MSANG, SCURX, SCURY, &
@@ -2490,8 +2521,8 @@ CONTAINS
          ENDIF
          IF ( FRACTIONAL_SEAICE == 1) THEN
             ! The fields passed to LSM need to represent the full ice values, not
-            ! the fractional values.  Convert ALBEDO and EMISS from the blended value
-            ! to a value representing only the sea-ice portion.   Albedo over open
+            ! the fractional values.  Convert ALBEDO and EMISS from the blended value 
+            ! to a value representing only the sea-ice portion.   Albedo over open 
             ! water is taken to be 0.08. Emissivity over open water is taken to be 0.98
             DO j = j_start(ij) , j_end(ij)
                DO i = i_start(ij) , i_end(ij)
@@ -2510,7 +2541,7 @@ CONTAINS
                ! just use what we have.  Use ice component of TSK
                !
                CALL get_local_ice_tsk( ims, ime, jms, jme,                   &
-                                       i_start(ij), i_end(ij),               &
+                                       i_start(ij), i_end(ij),               & 
                                        j_start(ij), j_end(ij),               &
                                        itimestep, .false., tice2tsk_if2cold, &
                                        XICE, XICE_THRESHOLD,                 &
@@ -2529,10 +2560,20 @@ CONTAINS
          if(HYDRO_dt .ge. 0) HYDRO_dt = dtbl
 #endif
 
+! added RA population for WRF/Noah-CMAQ RS Consistency
+! following Garland et al. (1977) and Nemitz et al., 2009
+         IF ( PRESENT(RA) ) THEN
+         DO j=j_start(ij),j_end(ij)
+         DO i=i_start(ij),i_end(ij)
+            RA(I,J) = WSPD(I,J)/UST(I,J)**2.0
+         ENDDO
+         ENDDO
+         END IF
+
          CALL wrf_debug(100,'in NOAH DRV')
-
+                
          IF (sf_surface_mosaic == 1) THEN
-
+          
            IF ( PRESENT( TSK_mosaic ) .AND. PRESENT( HFX_mosaic ) ) THEN
              CALL lsm_mosaic(dz8w,qv_curr,p8w,t_phy,tsk,                 &
                 hfx,qfx,lh,grdflx,qgh,gsw,swdown,glw,smstav,smstot,    &
@@ -2557,16 +2598,17 @@ CONTAINS
                 br,                                             & !?
                 NOAHRES,opt_thcnd,                              &
                 NLCAT,landusef,landusef2,                       & ! danli mosaic
-                sf_surface_mosaic,mosaic_cat,mosaic_cat_index,  & ! danli mosaic
-                TSK_mosaic,QSFC_mosaic,                         & ! danli mosaic
-                TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic,           & ! danli mosaic
+                sf_surface_mosaic,mosaic_cat,mosaic_cat_index,  & ! danli mosaic 
+                TSK_mosaic,QSFC_mosaic,                         & ! danli mosaic 
+                TSLB_mosaic,SMOIS_mosaic,SH2O_mosaic,           & ! danli mosaic 
                 CANWAT_mosaic,SNOW_mosaic,                      & ! danli mosaic
-                SNOWH_mosaic,SNOWC_mosaic,                      & ! danli mosaic
+                SNOWH_mosaic,SNOWC_mosaic,                      & ! danli mosaic 
                 ALBEDO_mosaic,ALBBCK_mosaic,                    & ! danli mosaic
                 EMISS_mosaic, EMBCK_mosaic,                     & ! danli mosaic
-                ZNT_mosaic, Z0_mosaic,                          & ! danli mosaic
+                ZNT_mosaic, Z0_mosaic,                          & ! danli mosaic 
                 HFX_mosaic,QFX_mosaic,                          & ! danli mosaic
                 LH_mosaic, GRDFLX_mosaic, SNOTIME_mosaic,       & ! danli mosaic
+                RS_mosaic, LAI_mosaic,                          & ! mosaic
                 ua_phys,flx4,fvb,fbur,fgsn,                     &
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
@@ -2582,13 +2624,13 @@ CONTAINS
                 sh_urb2d,lh_urb2d,g_urb2d,rn_urb2d,ts_urb2d,    & !H urban
                 TR_URB2D_mosaic,TB_URB2D_mosaic,                & !H urban  danli mosaic
                 TG_URB2D_mosaic,TC_URB2D_mosaic,                & !H urban  danli mosaic
-                QC_URB2D_mosaic,UC_URB2D_mosaic,                & !H urban  danli mosaic
+                QC_URB2D_mosaic,UC_URB2D_mosaic,                & !H urban  danli mosaic                  
                 TRL_URB3D_mosaic,TBL_URB3D_mosaic,              & !H urban  danli mosaic
                 TGL_URB3D_mosaic,                               & !H urban  danli mosaic
                 SH_URB2D_mosaic,LH_URB2D_mosaic,                & !H urban  danli mosaic
                 G_URB2D_mosaic,RN_URB2D_mosaic,                 & !H urban  danli mosaic
                 TS_URB2D_mosaic,                                & !H urban  danli mosaic
-                TS_RUL2D_mosaic,                                & !H urban  danli mosaic
+                TS_RUL2D_mosaic,                                & !H urban  danli mosaic                
                 psim_urb2d,psih_urb2d,u10_urb2d,v10_urb2d,      & !O urban
                 GZ1OZ0_urb2d, AKMS_URB2D,                       & !O urban
                 th2_urb2d,q2_urb2d,ust_urb2d,                   & !O urban
@@ -2603,6 +2645,7 @@ CONTAINS
                 FRC_URB2D, UTYPE_URB2D,                         & !I urban
                 num_urban_layers,                               & !I multi-layer urban
                 num_urban_hi,                                   & !I multi-layer urban
+                tsk_rural,                                      & !H multi-layer urban
                 trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,        & !H multi-layer urban
                 tlev_urb3d,qlev_urb3d,                          & !H multi-layer urban
                 tw1lev_urb3d,tw2lev_urb3d,                      & !H multi-layer urban
@@ -2621,14 +2664,13 @@ CONTAINS
                 dl_u_bep,sf_bep,vl_bep                          & !O multi-layer urban
                 ,sfcheadrt,INFXSRT, soldrain                    & !hydro
                 ,SDA_HFX, SDA_QFX, HFX_BOTH, QFX_BOTH, QNORM, fasdas    & ! fasdas
-                )
-
+                ,RS,XLAIDYN)
            ELSE
                CALL wrf_error_fatal('Lack arguments to call lsm_mosaic')
            ENDIF
 
 	  ELSEIF (sf_surface_mosaic == 0) THEN
-
+	                  
 !
 !  FASDAS
 !
@@ -2636,7 +2678,7 @@ CONTAINS
                DO j=j_start(ij),j_end(ij)
                DO i=i_start(ij),i_end(ij)
 
-!ckay2015 only do indirect nudging over land areas
+!ckay2015 only do indirect nudging over land areas 
                      IF(XLAND(i,j) .GT. 1.5) then
                       SDA_QFX(I,J) = 0.0
                       SDA_HFX(I,J) = 0.0
@@ -2708,6 +2750,7 @@ CONTAINS
                 FRC_URB2D, UTYPE_URB2D,                         & !I urban
                 num_urban_layers,                               & !I multi-layer urban
                 num_urban_hi,                                   & !I multi-layer urban
+                tsk_rural,                                      & !H multi-layer urban
                 trb_urb4d,tw1_urb4d,tw2_urb4d,tgb_urb4d,        & !H multi-layer urban
                 tlev_urb3d,qlev_urb3d,                          & !H multi-layer urban
                 tw1lev_urb3d,tw2lev_urb3d,                      & !H multi-layer urban
@@ -2732,7 +2775,7 @@ CONTAINS
 !
 !  END FASDAS
 !
-                )
+                ,RS,XLAIDYN)
          ENDIF
 
          call seaice_noah( SEAICE_ALBEDO_OPT, SEAICE_ALBEDO_DEFAULT, SEAICE_THICKNESS_OPT, &
@@ -2881,21 +2924,21 @@ CONTAINS
 !          PRESENT(frc_urb2d) .AND. PRESENT(utype_urb2d)   .AND.      &
 #if (EM_CORE==1)
            PRESENT(smcwtdxy)       .AND.                              &
-           PRESENT(rechxy)         .AND.                              &
+           PRESENT(rechxy)         .AND.                              &   
            PRESENT(deeprechxy)     .AND.                              &
            PRESENT(fdepthxy)       .AND.                              &
-           PRESENT(areaxy)         .AND.                              &
+           PRESENT(areaxy)         .AND.                              &   
            PRESENT(rivercondxy)    .AND.                              &
-           PRESENT(riverbedxy)     .AND.                              &
-           PRESENT(eqzwt)          .AND.                              &
-           PRESENT(pexpxy)         .AND.                              &
-           PRESENT(qrfxy)          .AND.                              &
+           PRESENT(riverbedxy)     .AND.                              & 
+           PRESENT(eqzwt)          .AND.                              &    
+           PRESENT(pexpxy)         .AND.                              &   
+           PRESENT(qrfxy)          .AND.                              &    
            PRESENT(qspringxy)      .AND.                              &
-           PRESENT(qslatxy)        .AND.                              &
-           PRESENT(qrfsxy)         .AND.                              &
-           PRESENT(qspringsxy)     .AND.                              &
-           PRESENT(smoiseq)        .AND.                              &
-           PRESENT(wtddt)          .AND.                              &
+           PRESENT(qslatxy)        .AND.                              &  
+           PRESENT(qrfsxy)         .AND.                              &   
+           PRESENT(qspringsxy)     .AND.                              & 
+           PRESENT(smoiseq)        .AND.                              &  
+           PRESENT(wtddt)          .AND.                              &    
            PRESENT(stepwtd)        .AND.                              &
 #endif
                                                       .TRUE. ) THEN
@@ -2904,8 +2947,8 @@ CONTAINS
 
          IF ( FRACTIONAL_SEAICE == 1) THEN
             ! The fields passed to LSM need to represent the full ice values, not
-            ! the fractional values.  Convert ALBEDO and EMISS from the blended value
-            ! to a value representing only the sea-ice portion.   Albedo over open
+            ! the fractional values.  Convert ALBEDO and EMISS from the blended value 
+            ! to a value representing only the sea-ice portion.   Albedo over open 
             ! water is taken to be 0.08. Emissivity over open water is taken to be 0.98
             DO j = j_start(ij) , j_end(ij)
                DO i = i_start(ij) , i_end(ij)
@@ -2950,7 +2993,9 @@ CONTAINS
                PLANTING,  HARVEST,SEASON_GDD,                               &
                   IDVEG, IOPT_CRS, IOPT_BTR, IOPT_RUN,  IOPT_SFC,   IOPT_FRZ, &
 	       IOPT_INF, IOPT_RAD, IOPT_ALB, IOPT_SNF, IOPT_TBOT,   IOPT_STC, &
-	       IOPT_GLA, IOPT_RSF,  IZ0TLND, SF_URBAN_PHYSICS,                &
+	       IOPT_GLA, IOPT_RSF, IOPT_SOIL,IOPT_PEDO,IOPT_CROP,             &
+                IZ0TLND, SF_URBAN_PHYSICS,                                    &
+	       SOILCOMP,  SOILCL1,  SOILCL2,  SOILCL3,   SOILCL4,             &
 		  T_PHY,  QV_CURR,    U_PHY,    V_PHY,    SWDOWN,        GLW, &
 		    P8W,   RAINBL,       SR,                                  &
 		    TSK,      HFX,      QFX,       LH,    GRDFLX,     SMSTAV, &
@@ -2964,6 +3009,7 @@ CONTAINS
 		ZSNSOXY,  SNICEXY,  SNLIQXY, LFMASSXY,  RTMASSXY,   STMASSXY, &
 		 WOODXY, STBLCPXY, FASTCPXY,      LAI,    XSAIXY,    TAUSSXY, &
 	        SMOISEQ, SMCWTDXY,DEEPRECHXY,  RECHXY,   GRAINXY,      GDDXY,PGSXY, & ! IN/OUT Noah MP only
+               GECROS_STATE,                                                  & ! IN/OUT gecros model
 	         T2MVXY,   T2MBXY,   Q2MVXY,   Q2MBXY,                        &
                  TRADXY,    NEEXY,    GPPXY,    NPPXY,    FVEGXY,    RUNSFXY, &
 	        RUNSBXY,   ECANXY,   EDIRXY,  ETRANXY,     FSAXY,     FIRAXY, &
@@ -2971,7 +3017,7 @@ CONTAINS
                  BGAPXY,   WGAPXY,    TGVXY,    TGBXY,     CHVXY,      CHBXY, &
 		  SHGXY,    SHCXY,    SHBXY,    EVGXY,     EVBXY,      GHVXY, &
 		  GHBXY,    IRGXY,    IRCXY,    IRBXY,      TRXY,      EVCXY, &
-	       CHLEAFXY,   CHUCXY,   CHV2XY,   CHB2XY,                        &
+	       CHLEAFXY,   CHUCXY,   CHV2XY,   CHB2XY,    RS,                 &
 #ifdef WRF_HYDRO
                  sfcheadrt,INFXSRT,soldrain,                          &    !O
 #endif
@@ -2983,13 +3029,13 @@ CONTAINS
 		MP_SNOW  = SNOWNCV, MP_GRAUP  = GRAUPELNCV, MP_HAIL = HAILNCV )
 
          IF(SF_URBAN_PHYSICS > 0 ) THEN  !urban
-
-	   call noahmp_urban (sf_urban_physics,     NUM_SOIL_LAYERS,     IVGTYP,ITIMESTEP,  & ! IN : Model configuration
+         
+	   call noahmp_urban (sf_urban_physics,     NUM_SOIL_LAYERS,     IVGTYP,ITIMESTEP,  & ! IN : Model configuration 
                                  DT,         COSZEN,     XLAT_URB2D,                        & ! IN : Time/Space-related
                               T_PHY,        QV_CURR,          U_PHY,      V_PHY,   SWDOWN,  & ! IN : Forcing
 		                GLW,            P8W,         RAINBL,       DZ8W,      ZNT,  & ! IN : Forcing
-                                TSK,            HFX,            QFX,         LH,   GRDFLX,  & ! IN/OUT : LSM
-		             ALBEDO,          EMISS,           QSFC,                        & ! IN/OUT : LSM
+                                TSK,            HFX,            QFX,         LH,   GRDFLX,  & ! IN/OUT : LSM 
+		             ALBEDO,          EMISS,           QSFC,                        & ! IN/OUT : LSM 
                             ids,ide,        jds,jde,        kds,kde,                        &
                             ims,ime,        jms,jme,        kms,kme,                        &
               i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte,                        &
@@ -3030,8 +3076,8 @@ CONTAINS
                             a_e_bep,        b_u_bep,        b_v_bep,                        & !O multi-layer urban
                             b_t_bep,        b_q_bep,        b_e_bep,    dlg_bep,            & !O multi-layer urban
                            dl_u_bep,         sf_bep,         vl_bep)                          !O multi-layer urban
-
-	 ENDIF
+	 
+	 ENDIF 
 
   if(iopt_run.eq.5.and.mod(itimestep,STEPWTD).eq.0)then
            CALL wrf_debug( 100, 'calling WTABLE' )
@@ -3128,7 +3174,7 @@ CONTAINS
                Q2(I,J)  = -1.E36
            ENDDO
            ENDDO
-
+           
 !jref: sfc diagnostics
            DO j=j_start(ij),j_end(ij)
            DO i=i_start(ij),i_end(ij)
@@ -3140,7 +3186,7 @@ CONTAINS
                    Q2(I,J) = QSFC(I,J) - QFX(I,J)/(PSFC(I,J)/(R_d * TSK(I,J))*CQS2(I,J))
                  ENDIF
                  IF(CHS2(I,J).lt.1.E-5) then
-                   T2(I,J) = TSK(I,J)
+                   T2(I,J) = TSK(I,J) 
                  ELSE
                    T2(I,J) = TSK(I,J) - HFX(I,J)/(PSFC(I,J)/(R_d * TSK(I,J))*CP*CHS2(I,J))
                  ENDIF
@@ -3161,7 +3207,7 @@ CONTAINS
               ENDIF
            ENDDO
            ENDDO
-
+           
 !          CALL SFCDIAGS(HFX,QFX,TSK,QSFC,CHS2,CQS2,T2,TH2,Q2,      &
 !                     PSFC,CP,R_d,RCP,CHS,t_phy,qv_curr,ua_phys,    &
 !                     ids,ide, jds,jde, kds,kde,                    &
@@ -3207,6 +3253,15 @@ CONTAINS
            ENDDO                                                  !urban
          ENDIF
 
+! added RA population for WRF/Noah-CMAQ RS Consistency
+! following Garland et al. (1977) and Nemitz et al., 2009
+         IF ( PRESENT(RA) ) THEN
+         DO j=j_start(ij),j_end(ij)
+         DO i=i_start(ij),i_end(ij)
+            RA(I,J) = WSPD(I,J)/UST(I,J)**2.0
+         ENDDO
+         ENDDO
+         END IF
 !------------------------------------------------------------------
 
        ELSE
@@ -3238,8 +3293,8 @@ CONTAINS
            ENDDO
            IF ( FRACTIONAL_SEAICE == 1 ) THEN
               ! The fields passed to LSMRUC need to represent the full ice values, not
-              ! the fractional values.  Convert ALBEDO and EMISS from the blended value
-              ! to a value representing only the sea-ice portion.   Albedo over open
+              ! the fractional values.  Convert ALBEDO and EMISS from the blended value 
+              ! to a value representing only the sea-ice portion.   Albedo over open 
               ! water is taken to be 0.08. Emissivity over open water is taken to be 0.98
               DO j = j_start(ij) , j_end(ij)
                  DO i = i_start(ij) , i_end(ij)
@@ -3300,7 +3355,7 @@ CONTAINS
                 sfcrunoff,udrunoff,acrunoff,sfcexc,             &
                 sfcevp,grdflx,snowfallac,acsnow,acsnom,         &
                 smfr3d,keepfr3dflag,                            &
-                myj,shdmin,shdmax,rdlai2d,                      &
+                myjpbl,shdmin,shdmax,rdlai2d,                   &
                 ids,ide, jds,jde, kds,kde,                      &
                 ims,ime, jms,jme, kms,kme,                      &
                 i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte    )
@@ -3491,8 +3546,8 @@ CONTAINS
          ENDIF
          IF ( FRACTIONAL_SEAICE == 1) THEN
             ! The fields passed to LSM need to represent the full ice values, not
-            ! the fractional values.  Convert ALBEDO and EMISS from the blended value
-            ! to a value representing only the sea-ice portion.   Albedo over open
+            ! the fractional values.  Convert ALBEDO and EMISS from the blended value 
+            ! to a value representing only the sea-ice portion.   Albedo over open 
             ! water is taken to be 0.08. Emissivity over open water is taken to be 0.98
             DO j = j_start(ij) , j_end(ij)
                DO i = i_start(ij) , i_end(ij)
@@ -3506,10 +3561,10 @@ CONTAINS
               ! Use surface layer routine values from the ice portion of grid
               ! point
             ELSE
-               !
+               !    
                ! We don't have surface layer routine values at this time, so
                ! just use what we have.  Use ice component of TSK
-               !
+               !    
                DO j = j_start(ij) , j_end(ij)
                   DO i = i_start(ij) , i_end(ij)
                      IF ( ( XICE(I,J) .GE. XICE_THRESHOLD ) .AND. ( XICE(i,j) .LE. 1 ) ) THEN
@@ -3828,7 +3883,7 @@ CONTAINS
                      swvisdir(i,j), swvisdif(i,j), swnirdir(i,j), swnirdif(i,j),  &
                      hfx(i,j), lh(i,j), grdflx(i,j), qfx(i,j), tsk(i,j),          &
                      ust(i,j), ssib_br(i,j), ssib_fm(i,j), ssib_fh(i,j), ssib_cm(i,j), &
-                     ssib_lhf(i,j), ssib_shf(i,j), ssib_ghf(i,j), ssib_egs(i,j),  &
+                     ssib_lhf(i,j), ssib_shf(i,j), ssib_ghf(i,j), ssib_egs(i,j),  & 
                      ssib_eci(i,j), ssib_ect(i,j), ssib_egi(i,j), ssib_egt(i,j),  &
                      ssib_sdn(i,j), ssib_sup(i,j), ssib_ldn(i,j), ssib_lup(i,j),  &
                      ssib_wat(i,j), ssib_shc(i,j), ssib_shg(i,j), ssib_lai(i,j),  &
@@ -3864,8 +3919,8 @@ CONTAINS
          U10(i,j) = UV10*u_phytmp(i,1,j)/SQRT(u_phytmp(i,1,j)**2+v_phytmp(i,1,j)**2)
          V10(i,j) = UV10*v_phytmp(i,1,j)/SQRT(u_phytmp(i,1,j)**2+v_phytmp(i,1,j)**2)
 !        Overwrite WSPD to remove convective velocity (wspd=wspd1 in YSU)
-         WSPD(I,J)=sqrt( u_phytmp(i,1,j)*u_phytmp(i,1,j) +      &
-                         v_phytmp(i,1,j)*v_phytmp(i,1,j) ) + 1.e-9
+!        WSPD(I,J)=sqrt( u_phytmp(i,1,j)*u_phytmp(i,1,j) +      &
+!                        v_phytmp(i,1,j)*v_phytmp(i,1,j) ) + 1.e-9
 !
        ENDIF
 !
@@ -3874,7 +3929,7 @@ CONTAINS
 !
        IF ( FRACTIONAL_SEAICE == 1 ) THEN
           ! SSIB_seaice returns full land/ice albedo values, no fractional values.
-          ! We return to a fractional component here.
+          ! We return to a fractional component here. 
           DO j=j_start(ij),j_end(ij)
              DO i=i_start(ij),i_end(ij)
                 IF ( ( XICE(I,J) .GE. XICE_THRESHOLD) .AND. ( XICE(i,j) .LE. 1.0 ) ) THEN
@@ -3942,13 +3997,13 @@ CONTAINS
                      dtbl,STBOLT,oml_relaxation_time,             &
                      ids,ide, jds,jde, kds,kde,                   &
                      ims,ime, jms,jme, kms,kme,                   &
-                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, &
+                     i_start(ij),i_end(ij), j_start(ij),j_end(ij), kts,kte, & 
                      sf_ocean_physics,okms, okme,                 & !cyl
                      om_tmp,om_s,om_u, om_v,  om_depth, om_ml,    & !cyl
                      om_lat, om_lon,                              & !cyl
-                     QFX,                                         & !cyl
-                     rdx, rdy, msfu, msfv, msft,xtime,            & !cyl
-                     om_tini,om_sini,id,omdt,                     & !cyl
+                     QFX,                                         & !cyl 
+                     rdx, rdy, msfu, msfv, msft,xtime,            & !cyl 
+                     om_tini,om_sini,id,omdt,                     & !cyl 
                      itimestep )                                    !cyl
      ENDDO
      !$OMP END PARALLEL DO
@@ -3956,11 +4011,11 @@ CONTAINS
 #endif
 ! adding a lake model -- 07/02/2010
    IF ( LakeModel == 1 ) THEN
-
+ 
       CALL wrf_debug( 100, 'Call LakeModel' )
-
+ 
       DO ij = 1 , num_tiles
-
+ 
          CALL Lake(  t_phy        ,p8w            ,dz8w         ,qv_curr         ,&  !i
                      u_phy        ,v_phy          , glw         ,emiss           ,&
                      rainbl       ,dtbl           ,swdown       ,albedo          ,&
@@ -3983,10 +4038,10 @@ CONTAINS
 #endif
                      hfx          ,lh             ,grdflx       ,tsk             ,&  !o
                      qfx          ,t2             ,th2          ,q2 )
-
-
+ 
+ 
       ENDDO
-
+ 
    ENDIF
 
 ! Reset RAINBL in mm (Accumulation between PBL calls)
@@ -4003,6 +4058,23 @@ CONTAINS
        ENDDO
        !$OMP END PARALLEL DO
      ENDIF
+
+! Limit Q2 diagnostic to no more than 5 per cent higher than lowest level value
+!     This prevents unrealistic values when QFX is not mostly surface flux 
+!          because calculation is based on surface flux only
+!     Problems occurred in transition periods and weak winds and vegetation source
+       !$OMP PARALLEL DO   &
+       !$OMP PRIVATE ( ij, i, j, k )
+       DO ij = 1 , num_tiles
+         DO j=j_start(ij),j_end(ij)
+         DO i=i_start(ij),i_end(ij)
+            IF (XLAND(I,J).LT.1.5) THEN
+            Q2(i,j) = MIN(Q2(i,j),1.05*QV_CURR(i,1,j))
+            END IF
+         ENDDO
+         ENDDO
+       ENDDO
+       !$OMP END PARALLEL DO
 
      IF( PRESENT(slope_rad).AND. radiation )THEN
 ! topographic slope effects removed from SWDOWN and GSW here for output
@@ -4719,7 +4791,7 @@ CONTAINS
 
 !
 ! Scale the appropriate terms between open-water values and ice-covered values
-
+         
 
      DO j = JTS, JTE
         DO i = ITS, ITE
@@ -5704,7 +5776,7 @@ TICE2TSK_IF2COLD,XICE_THRESHOLD,                                   &
      T2_HOLD = T2
      Q2_HOLD = Q2
      TSK_HOLD = TSK
-
+     
 ! INTENT(OUT) from SFCLAY.  Input shouldn't matter, but we'll want to
 ! keep things around for weighting after the second call to SFCLAY.
      ! CD
@@ -6123,7 +6195,7 @@ ITIMESTEP,TICE2TSK_IF2COLD,XICE_THRESHOLD,                         &
      TSK_HOLD = TSK
      U10_HOLD = U10 !fds (01/2014)
      V10_HOLD = V10 !fds (01/2014)
-
+     
 ! INTENT(OUT) from SFCLAY.  Input shouldn't matter, but we'll want to
 ! keep things around for weighting after the second call to SFCLAY.
      ! CD
@@ -6617,8 +6689,8 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
          INTENT(IN   )   ::       XLAT,XLONG
    REAL, DIMENSION( ims:ime, jms:jme ),                           &
          INTENT(INOUT)   ::       SWDOWN,GSW,SWNORM,GSWSAVE
-   real,intent(in)  :: solcon
-   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: hrang2d,coszen
+   real,intent(in)  :: solcon   
+   REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: hrang2d,coszen 
 
 
    REAL, INTENT(IN    )  ::       declin
@@ -6700,9 +6772,9 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
      XXLAT=XLAT1*DEGRAD
 
 ! RETURN IF NIGHT
-         IF(CSZA.LE.1.E-4) return
-
-!  Parameterize diffuse fraction of global solar radiation as a function of the ratio
+         IF(CSZA.LE.1.E-4) return 
+        
+!  Parameterize diffuse fraction of global solar radiation as a function of the ratio 
 !    between TOA radiation and surface global radiation
 !             diffuse_frac = min(1.,1./(max(0.1,2.1-2.8*log(log(csza*solcon/max(SWDOWN_IN,1.e-3))))))
               diffuse_frac = diffuse_frac_in
@@ -6724,7 +6796,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
 ! Topographic shading
         if (shadow.eq.1) csza_slp = 0
 
-! Correction factor for sloping topography; the diffuse fraction of solar radiation
+! Correction factor for sloping topography; the diffuse fraction of solar radiation 
 !   is assumed to be unaffected by the slope
         corr_fac = diffuse_frac + (1-diffuse_frac)*csza_slp/csza
 
@@ -6745,7 +6817,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                                   SST, TSK, TSK_SEA, TSK_ICE )
 !<DESCRIPTION>
 !
-! For grid cells with a fractional ice area, derive the ice surface
+! For grid cells with a fractional ice area, derive the ice surface 
 ! temperature from the area-averaged surface temperature (the blended
 ! result of the open-water values (SST) and the ice-covered value).
 !
@@ -6765,10 +6837,10 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                                                    !-- ice fraction and surface temperature.
 
       REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)    :: XICE        ! Ice fraction
-      REAL                                , INTENT(IN)    :: XICE_THRESHOLD
+      REAL                                , INTENT(IN)    :: XICE_THRESHOLD 
       REAL, DIMENSION( ims:ime , jms:jme ), INTENT(IN)    :: TSK         ! Surface temperature (K)
       REAL, DIMENSION( ims:ime , jms:jme ), INTENT(INOUT) :: SST         ! Sea surface temperature (K)
-      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(OUT)   :: TSK_SEA     ! Sfc temp of open water portion of grid cell
+      REAL, DIMENSION( ims:ime , jms:jme ), INTENT(OUT)   :: TSK_SEA     ! Sfc temp of open water portion of grid cell 
       REAL, DIMENSION( ims:ime , jms:jme ), INTENT(OUT)   :: TSK_ICE     ! Sfc temp of ice oprtion of grid cell
 
 ! Local
@@ -6780,11 +6852,11 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
       DO j = JTS , JTE
          DO i = ITS , ITE
             IF ( ( XICE(i,j) >= XICE_THRESHOLD ) .AND. ( XICE(I,J) <= 1.0 ) ) THEN
-
+ 
                IF ( SST(i,j) < 271.4 ) THEN
                   SST(i,j) = 271.4
                ENDIF
-
+ 
                IF (sfc_layer_values) THEN
                   IF ( SST(i,j) > 273. .AND. itimestep <= 3) then
                      ! Why the dependence on the time step count, here?
@@ -6800,11 +6872,11 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                   ENDIF
                ENDIF
                TSK_SEA(i,j) = SST(i,j)
-
+ 
                IF ( tice2tsk_if2cold ) THEN
 !------------------------------------------------------------------------------------
 ! This avoids unphysically low ice temperatures for grid cells with low ice fractions
-! and low area-averaged temperatures.  This can happen when the initial ice fraction
+! and low area-averaged temperatures.  This can happen when the initial ice fraction 
 ! and surface temperature come from different data sets.
 !------------------------------------------------------------------------------------
                   TSK_ICE(i,j) = MIN( TSK(i,j), 273.15 )
@@ -6812,7 +6884,7 @@ HFX_SEA, LH_SEA, QFX_SEA, QGH_SEA, QSFC_SEA, TSK_SEA,  &
                   TSK_ICE(i,j) = ( TSK(i,j) - (1.0-XICE(i,j)) * SST(i,j) ) / XICE(i,j)
                   IF ( TSK_ICE(i,j) < TICE_MIN ) TSK_ICE(i,j) = TICE_MIN
                ENDIF
-
+ 
                IF ( ( XICE(i,j) < 0.2 ) .AND. ( TSK(i,j) < 253.15 ) ) THEN
                   TSK_ICE(i,j) = 253.15
                ENDIF

@@ -40,7 +40,7 @@ PROGRAM test_read_grib2map
      print *, '  DecScl     ',DecScl
      print *, '  BinScl     ',BinScl
   endif
-
+  
   CALL free_grib2map(grib2tbls)
 
 END PROGRAM

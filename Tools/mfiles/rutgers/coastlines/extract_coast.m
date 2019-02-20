@@ -5,12 +5,12 @@
 %  data from the GSHHS database at the specified coordinates.
 %
 
-% svn $Id: extract_coast.m 895 2018-02-11 23:15:37Z arango $
-%===========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                              %
-%    Licensed under a MIT/X style license                                   %
-%    See License_ROMS.txt                           Hernan G. Arango        %
-%===========================================================================%
+% svn $Id: extract_coast.m 916 2018-07-14 01:28:47Z arango $
+%=========================================================================%
+%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%    Licensed under a MIT/X style license                                 %
+%    See License_ROMS.txt                           Hernan G. Arango      %
+%=========================================================================%
 
 
  job='seagrid';            % Prepare coastlines for SeaGrid
@@ -22,17 +22,18 @@
 %database='low';           % Low resolution database
 %database='crude';         % crude resolution database
 
-switch job,
+switch job
   case 'seagrid'
     Oname='uswest_coast.mat';
   case 'ploting'
     Oname='uswest_inter.cst';
-end,
+end
 
- GSHHS_DIR='/home/arango/ocean/GSHHS/Version_1.2/';
-%GSHHS_DIR='/home/arango/ocean/GSHHS/Version_1.5/';
+ GSHHS_DIR='~/ocean/GSHHS/Version_1.2/';
+%GSHHS_DIR='~/ocean/GSHHS/Version_1.5/';
+%GSHHS_DIR='~/ocean/GSHHS/Version_2.3.6/';
 
-switch database,
+switch database
   case 'full'
     Cname=strcat(GSHHS_DIR,'gshhs_f.b');
     name='gshhs_f.b';
@@ -48,7 +49,7 @@ switch database,
   case 'crude'
     Cname=strcat(GSHHS_DIR,'gshhs_c.b');
     name='gshhs_c.b';
-end,
+end
 
 Llon=-134.0;              % Left   corner longitude     % US west Coast
 Rlon=-118.0;              % Right  corner longitude
@@ -57,55 +58,55 @@ Tlat=49.0;                % Top    corner latitude
 
 spval=999.0;              % Special value
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 %  Extract coastlines from GSHHS database.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
 disp(['Reading GSHHS database: ',name]);
 [Coast]=r_gshhs(Llon,Rlon,Blat,Tlat,Cname);
 
-disp(['Processing read coastline data']);
-switch job,
+disp('Processing read coastline data');
+switch job
   case 'seagrid'
     [C]=x_gshhs(Llon,Rlon,Blat,Tlat,Coast,'patch');
   case 'ploting'
     [C]=x_gshhs(Llon,Rlon,Blat,Tlat,Coast,'on');
-end,
+end
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 %  Save extrated coastlines.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
 lon=C.lon;
 lat=C.lat;
 
-switch job,
+switch job
   case 'seagrid'
     save(Oname,'lon','lat');
   case 'ploting'
     x=lon;
     y=lat;
     ind=find(isnan(x));
-    if (~isempty(ind)),
-      if (length(ind) == length(C.type)),
+    if (~isempty(ind))
+      if (length(ind) == length(C.type))
         x(ind)=C.type;
         y(ind)=spval;
 
 % Cliping of out-of-range values failed. Try original values.
       
-      elseif (length(ind) == length(Coast.type)), 
+      elseif (length(ind) == length(Coast.type)) 
 	x(ind)=Coast.type;
         y(ind)=spval;
-      else,      
+      else      
 	x(ind)=1;
         y(ind)=spval;
-      end,
-    end,
+      end
+    end
     fid=fopen(Oname,'w');
-    if (fid ~= -1),
-      for i=1:length(x),
+    if (fid ~= -1)
+      for i=1:length(x)
         fprintf(fid,'%11.6f  %11.6f\n',y(i),x(i));
-      end,
+      end
       fclose(fid);
-    end,
-end,
+    end
+end

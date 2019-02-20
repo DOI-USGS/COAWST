@@ -26,7 +26,7 @@ PROGRAM test_g2lib
   integer, parameter                        :: ngrdpts=20*25
   real                                      :: fld(ngrdpts)
 
-  !
+  ! 
   ! Create the grib message
   !
   listsec0(1) = 0          ! Discipline (Table 0.0)
@@ -55,7 +55,7 @@ PROGRAM test_g2lib
 
   igds(1) = 0      ! Source of grid definition
   igds(2) = ngrdpts! Number of points in grid
-  igds(3) = 0      !
+  igds(3) = 0      ! 
   igds(4) = 0
 
   ! Here, setup the parameters that are common to all WRF projections
@@ -80,12 +80,12 @@ PROGRAM test_g2lib
   igdstmpl(14) = 128  ! Resolution and component flags
   igdstmpl(15) = 0*1000000
   igdstmpl(16) = 40*1000000
-
+  
   ! Warning, the following assumes that dx and dy are valid at the equator.
   !    It is not clear in WRF where dx and dy are valid for latlon projections
   igdstmpl(17) = 12000 ! i-direction increment in micro degs
   igdstmpl(18) = 12000 ! j-direction increment in micro degs
-
+  
   igdstmpl(19) = 64   ! Scanning mode
 
   call addgrid(cgrib,lcgrib,igds,igdstmpl,igdstmplen,ideflist,idefnum,ierr)
@@ -114,28 +114,28 @@ PROGRAM test_g2lib
   ipdstmpl(15) = 0
   numcoord = 0
   coordlist(1) = 0
-
-  ! Set Data Representation templ (40 for JPEG2000, 41 for PNG)
+  
+  ! Set Data Representation templ (40 for JPEG2000, 41 for PNG)  
   idrsnum = 40
   idrstmpl(1) = 255       ! Reference value - ignored on input
   idrstmpl(2) = 0         ! Binary scale factor
-  idrstmpl(3) = 3         ! Decimal scale factor
+  idrstmpl(3) = 3         ! Decimal scale factor 
   idrstmpl(4) = 0         ! number of bits for each data value - ignored on
   idrstmpl(5) = 0         ! Original field type - ignored on input
   idrstmpl(6) = 0         ! 0 for lossless compression
   idrstmpl(7) = 255       ! Desired compression ratio if idrstmpl(6) != 0
   ibmap = 255                ! Flag for bitmap
-
+  
   fld = 1.2
 
   call addfield(cgrib, lcgrib, ipdsnum, ipdstmpl, ipdstmplen, coordlist,      &
        numcoord, idrsnum, idrstmpl, idrstmplen, fld, ngrdpts, ibmap,          &
        bmap, ierr)
-
+  
   if (ierr .ne. 0) then
      print *, 'addfield failed with ierr: ',ierr
   endif
-
-
+  
+  
 end PROGRAM test_g2lib
 

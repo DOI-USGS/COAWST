@@ -1,8 +1,8 @@
 #!/bin/csh -f
 #
-# svn $Id: job_array_modes.sh 830 2017-01-24 21:21:11Z arango $
+# svn $Id: job_array_modes.sh 889 2018-02-10 03:32:52Z arango $
 #######################################################################
-# Copyright (c) 2002-2018 The ROMS/TOMS Group                         #
+# Copyright (c) 2002-2019 The ROMS/TOMS Group                         #
 #   Licensed under a MIT/X style license                              #
 #   See License_ROMS.txt                                              #
 #######################################################################
@@ -88,16 +88,16 @@
  endif
  cp s4dvar.in $R4DVAR
 
- $SUBSTITUTE $R4DVAR ocean_std_m.nc $STDnameM
- $SUBSTITUTE $R4DVAR ocean_std_i.nc $STDnameI
- $SUBSTITUTE $R4DVAR ocean_std_b.nc $STDnameB
- $SUBSTITUTE $R4DVAR ocean_std_f.nc $STDnameF
- $SUBSTITUTE $R4DVAR ocean_nrm_m.nc $NRMnameM
- $SUBSTITUTE $R4DVAR ocean_nrm_i.nc $NRMnameI
- $SUBSTITUTE $R4DVAR ocean_nrm_b.nc $NRMnameB
- $SUBSTITUTE $R4DVAR ocean_nrm_f.nc $NRMnameF
- $SUBSTITUTE $R4DVAR ocean_obs.nc $OBSname
- $SUBSTITUTE $R4DVAR ocean_hss.nc wc13_hss.nc
- $SUBSTITUTE $R4DVAR ocean_lcz.nc wc13_lcz.nc
- $SUBSTITUTE $R4DVAR ocean_mod.nc wc13_mod.nc
- $SUBSTITUTE $R4DVAR ocean_err.nc wc13_err.nc
+ $SUBSTITUTE $R4DVAR roms_std_m.nc $STDnameM
+ $SUBSTITUTE $R4DVAR roms_std_i.nc $STDnameI
+ $SUBSTITUTE $R4DVAR roms_std_b.nc $STDnameB
+ $SUBSTITUTE $R4DVAR roms_std_f.nc $STDnameF
+ $SUBSTITUTE $R4DVAR roms_nrm_m.nc $NRMnameM
+ $SUBSTITUTE $R4DVAR roms_nrm_i.nc $NRMnameI
+ $SUBSTITUTE $R4DVAR roms_nrm_b.nc $NRMnameB
+ $SUBSTITUTE $R4DVAR roms_nrm_f.nc $NRMnameF
+ $SUBSTITUTE $R4DVAR roms_obs.nc $OBSname
+ $SUBSTITUTE $R4DVAR roms_hss.nc wc13_hss.nc
+ $SUBSTITUTE $R4DVAR roms_lcz.nc wc13_lcz.nc
+ $SUBSTITUTE $R4DVAR roms_mod.nc wc13_mod.nc
+ $SUBSTITUTE $R4DVAR roms_err.nc wc13_err.nc

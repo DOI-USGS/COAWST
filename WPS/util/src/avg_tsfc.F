@@ -81,40 +81,40 @@ program avg_tsfc
                         call mprintf(.true.,ERROR,'Mismatch in Tsfc field dimensions in file %s', &
                                      s1=trim(input_name)//':'//temp_date(1:13))
                      end if
-
+                      
                      avg_data%slab = avg_data%slab + fg_data%slab
                   end if
-
+   
                   if (associated(fg_data%slab)) deallocate(fg_data%slab)
-
+   
                end if
-
+   
             end do
-
+   
             call read_met_close()
 
          else
             call mprintf(.true.,ERROR,'Problem opening %s at time %s', s1=input_name, s2=temp_date(1:13))
          end if
 
-      end do
+      end do 
 
       if (associated(avg_data%slab)) then
          avg_data%slab = avg_data%slab /real(n_times-discardtimes+1)
 
          call write_met_init('TAVGSFC', .true., temp_date(1:13), istatus)
 
-         call write_next_met_field(avg_data, istatus)
+         call write_next_met_field(avg_data, istatus) 
 
          call write_met_close()
-
+  
          deallocate(avg_data%slab)
       end if
 
       fg_idx = fg_idx + 1
       input_name = fg_name(fg_idx)
 
-   end do
+   end do 
 
    call mprintf(.true.,STDOUT,' *** Successful completion of program avg_tsfc.exe *** ')
 

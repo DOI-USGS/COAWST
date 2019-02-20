@@ -11,7 +11,7 @@
 #endif
 
   implicit none
-  private
+  private      
   save
 
   public init_tms                             ! Initialization
@@ -25,7 +25,7 @@
   real(r8), parameter :: z0max  = 100._r8     ! Maximum value of z_0 for orography [ m ]
   real(r8), parameter :: dv2min = 0.01_r8     ! Minimum shear squared [ m2/s2 ]
   real(r8)            :: orocnst              ! Converts from standard deviation to height [ no unit ]
-  real(r8)            :: z0fac                ! Factor determining z_0 from orographic standard deviation [ no unit ]
+  real(r8)            :: z0fac                ! Factor determining z_0 from orographic standard deviation [ no unit ] 
   real(r8)            :: karman               ! von Karman constant
   real(r8)            :: gravit               ! Acceleration due to gravity
   real(r8)            :: rair                 ! Gas constant for dry air
@@ -37,10 +37,10 @@
   !============================================================================ !
 
   subroutine init_tms( kind, oro_in, z0fac_in, karman_in, gravit_in, rair_in )
-
-    integer,  intent(in) :: kind
+    
+    integer,  intent(in) :: kind   
     real(r8), intent(in) :: oro_in, z0fac_in, karman_in, gravit_in, rair_in
-
+    
     if( kind .ne. r8 ) then
         write(iulog,*) 'KIND of reals passed to init_tms -- exiting.'
         stop 'compute_tms'
@@ -51,7 +51,7 @@
     karman   = karman_in
     gravit   = gravit_in
     rair     = rair_in
-
+    
     return
   end subroutine init_tms
 
@@ -61,11 +61,11 @@
 
   subroutine compute_tms( pcols    , pver    , ncol    ,                     &
                           u        , v       , t       , pmid    , exner   , &
-                          zm       , sgh     , ksrf    , taux    , tauy    , &
+                          zm       , sgh     , ksrf    , taux    , tauy    , & 
                           landfrac )
 
     !------------------------------------------------------------------------------ !
-    ! Turbulent mountain stress parameterization                                    !
+    ! Turbulent mountain stress parameterization                                    !  
     !                                                                               !
     ! Returns surface drag coefficient and stress associated with subgrid mountains !
     ! For points where the orographic variance is small ( including ocean ),        !
@@ -75,7 +75,7 @@
     !------------------------------------------------------------------------------ !
 
     ! ---------------------- !
-    ! Input-Output Arguments !
+    ! Input-Output Arguments ! 
     ! ---------------------- !
 
     integer,  intent(in)  :: pcols                 ! Number of columns dimensioned
@@ -90,7 +90,7 @@
     real(r8), intent(in)  :: zm(pcols,pver)        ! Layer mid-point height [ m ]
     real(r8), intent(in)  :: sgh(pcols)            ! Standard deviation of orography [ m ]
     real(r8), intent(in)  :: landfrac(pcols)       ! Land fraction [ fraction ]
-
+    
     real(r8), intent(out) :: ksrf(pcols)           ! Surface drag coefficient [ kg/s/m2 ]
     real(r8), intent(out) :: taux(pcols)           ! Surface zonal      wind stress [ N/m2 ]
     real(r8), intent(out) :: tauy(pcols)           ! Surface meridional wind stress [ N/m2 ]
@@ -101,7 +101,7 @@
 
     integer  :: i                                  ! Loop index
     integer  :: kb, kt                             ! Bottom and top of source region
-
+    
     real(r8) :: horo                               ! Orographic height [ m ]
     real(r8) :: z0oro                              ! Orographic z0 for momentum [ m ]
     real(r8) :: dv2                                ! (delta v)**2 [ m2/s2 ]
@@ -114,7 +114,7 @@
     ! ----------------------- !
     ! Main Computation Begins !
     ! ----------------------- !
-
+       
     do i = 1, ncol
 
      ! determine subgrid orgraphic height ( mean to peak )
@@ -149,7 +149,7 @@
          !                inverse exner function. Here, exner function is not multiplied in
          !                the denominator. Also, we should use moist Ri not dry Ri.
          !                Also, this approach using the two lowest model layers can be potentially
-         !                sensitive to the vertical resolution.
+         !                sensitive to the vertical resolution.  
          ! OK. I only modified the part associated with exner function.
 
            ri  = 2._r8 * gravit * ( t(i,kt) * exner(i,kt) - t(i,kb) * exner(i,kb) ) * ( zm(i,kt) - zm(i,kb) ) &
@@ -159,7 +159,7 @@
          !                      / ( ( t(i,kt) + t(i,kb) ) * dv2 )
 
          ! Calculate the instability function and modify the neutral drag cofficient.
-         ! We should probably follow more elegant approach like Louis et al (1982) or Bretherton and Park (2009)
+         ! We should probably follow more elegant approach like Louis et al (1982) or Bretherton and Park (2009) 
          ! but for now we use very crude approach : just 1 for ri < 0, 0 for ri > 1, and linear ramping.
 
            stabfri = max( 0._r8, min( 1._r8, 1._r8 - ri ) )
@@ -167,7 +167,7 @@
 
          ! Compute density, velocity magnitude and stress using bottom level properties
 
-           rho     = pmid(i,pver) / ( rair * t(i,pver) )
+           rho     = pmid(i,pver) / ( rair * t(i,pver) ) 
            vmag    = sqrt( u(i,pver)**2 + v(i,pver)**2 )
            ksrf(i) = rho * cd * vmag * landfrac(i)
            taux(i) = -ksrf(i) * u(i,pver)
@@ -176,7 +176,7 @@
        end if
 
     end do
-
+    
     return
   end subroutine compute_tms
 

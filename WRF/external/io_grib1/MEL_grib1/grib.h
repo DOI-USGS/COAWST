@@ -1,6 +1,6 @@
 /*** FILE:  grib.h ***/
 /* Revisions:
-10/16/97/atn:  +usData_type to mercator, space view structs
+10/16/97/atn:  +usData_type to mercator, space view structs 
 11/04/97/atn:  reduced DEF+MSG_LEN  from 250k;
 02/18/98/atn:  + Projection codes; -ENC_DELIMITOR; -struct space_view;
 04/22/98/atn:  + extension flag;
@@ -15,14 +15,14 @@
 /* Todd Hutchinson 8/11/05 */
 /*
  * The above definition for MAX_INP_PROJ_SIZE only works with machines that
- *    have 4 byte long ints.  Here, we will quadruple this to handle up to
+ *    have 4 byte long ints.  Here, we will quadruple this to handle up to 
  *    16 byte long ints.  This was an issue on the IBM in 64 bit mode.
  */
 #define MAX_INP_PROJ_SIZE 288
 
-/* WMO projection codes
-	***  MUST keep parallel to 'prjn_name' array       ***
-	***  IF altered, must also update the 'PRJ_COUNT'  ***
+/* WMO projection codes 
+	***  MUST keep parallel to 'prjn_name' array       *** 
+	***  IF altered, must also update the 'PRJ_COUNT'  *** 
 */
 #define LATLON_PRJ		0
 #define MERC_PRJ		1
@@ -78,7 +78,7 @@ static char* 	prjn_name[] = {
 	"(33) Unsupported Grid",
 	"(34) Stretched Rotated Gaussian Grid"
 	};
-
+	
 /*.................................................................*/
 typedef struct GRIB_HDR {	/* holds one Grib Msg & its info */
    char shuffled;                       /* set if sections are out of order */
@@ -206,13 +206,13 @@ typedef struct mercator  /*  mercator grids */
    unsigned short   usRes_flag;  /* Resolution and component flag (Table 7)*/
    long La2;               /* latitude of last grid point, or # point / row */
    long Lo2;               /* longitude of last grid point, or # point / column */
-   long latin;             /* Latin - the latitude at which the mercator
+   long latin;             /* Latin - the latitude at which the mercator 
                                       projection intersects the earth */
    unsigned short   usZero1;   /* Reserved (set to 0)                    */
    unsigned short   usScan_mode; /* Scanning mode (Table 8)                */
-   float lon_inc;       /* Di - the longitudinal direction increment
+   float lon_inc;       /* Di - the longitudinal direction increment 
                            (west to east) */
-   float lat_inc;       /* Dj - the latitudinal direction increment
+   float lat_inc;       /* Dj - the latitudinal direction increment 
                            (south to north) */
    long             usZero;              /* Reserved (set to 0)                    */
  }mercator;
@@ -274,9 +274,9 @@ typedef struct PDS_GRIB {              /* PDS -Product Definition Section 1     
    unsigned char PDS_47[4];              /* forecast time 2 */
    unsigned char PDS_51;                 /* Time range indicator - Table 5 */
    unsigned char PDS_52[2];           /* Top of atmosphere--used with sigma coord*/
-
-  /*
-   * The following was removed by Todd Hutchinson, WSI, 4/11/2002
+  
+  /* 
+   * The following was removed by Todd Hutchinson, WSI, 4/11/2002 
    *   The extended pds section is now replaced with the values above
    */
   /* unsigned char    chExt_flag;          Oct-41: Grib extensions usage flag*/
@@ -289,7 +289,7 @@ typedef struct PDS_GRIB {              /* PDS -Product Definition Section 1     
 typedef struct GDS_HEAD {              /* GDS header                              */
    unsigned char    achGDS_length[3];    /* Section length (in octets)             */
    unsigned char    chNV;                /* # of vertical coord. parameters (not used)*/
-   unsigned char    chPV;                /* Location of vert. coord., 255 if none  */
+   unsigned char    chPV;                /* Location of vert. coord., 255 if none  */ 
    unsigned char    chData_type;         /* Data representation type (Table 6)     */
 } GDS_HEAD;
 

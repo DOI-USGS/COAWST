@@ -1,5 +1,5 @@
-/*
- * version 1.2.1 of grib headers  w. ebisuzaki
+/* 
+ * version 1.2.1 of grib headers  w. ebisuzaki 
  *         1.2.2 added access to spectral reference value l. kornblueh
  */
 

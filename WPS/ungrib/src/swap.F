@@ -13,6 +13,6 @@ subroutine swap4(in,nn)
      ia = in(i+3:i:-1)
      in(i:i+3) = ia
   enddo
-
+	
 #endif
 end

@@ -9,7 +9,7 @@
 #  define VSQRT vsqrt
 #endif
 
-!Including inline expansion statistical function
+!Including inline expansion statistical function 
 MODULE module_mp_wsm5
 !
    USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
@@ -67,7 +67,7 @@ CONTAINS
                  ,sr                                               &
                  ,refl_10cm, diagflag, do_radar_ref                &
                  ,has_reqc, has_reqi, has_reqs                     &  ! for radiation
-                 ,re_cloud, re_ice,   re_snow                      &  ! for radiation
+                 ,re_cloud, re_ice,   re_snow                      &  ! for radiation       
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,its,ite, jts,jte, kts,kte                        &
@@ -245,7 +245,7 @@ CONTAINS
       ENDDO
 #else
   ! Code to call the XEON-optimized WSM5 is included here
-  ! this also contains OpenMP directives, so they are
+  ! this also contains OpenMP directives, so they are 
   ! removed from the driver in the case where WSM5SCHEME
   ! is selected.
 #  include "mic-wsm5-3-5-callsite.h"
@@ -279,7 +279,7 @@ CONTAINS
 #ifndef XEON_OPTIMIZED_WSM5
 !===================================================================
 !
-  SUBROUTINE wsm52D(t, q                                          &
+  SUBROUTINE wsm52D(t, q                                          & 
                    ,qci, qrs, den, p, delz                        &
                    ,delt,g, cpd, cpv, rd, rv, t0c                 &
                    ,ep1, ep2, qmin                                &
@@ -297,7 +297,7 @@ CONTAINS
   IMPLICIT NONE
 !-------------------------------------------------------------------
 !
-!  This code is a 5-class mixed ice microphyiscs scheme (WSM5) of the
+!  This code is a 5-class mixed ice microphyiscs scheme (WSM5) of the 
 !  Single-Moment MicroPhyiscs (WSMMP). The WSMMP assumes that ice nuclei
 !  number concentration is a function of temperature, and seperate assumption
 !  is developed, in which ice crystal number concentration is a function
@@ -444,7 +444,7 @@ CONTAINS
             value, xlf, pfrzdtc, pfrzdtr, supice,  holdc, holdci
 ! variables for optimization
   REAL, DIMENSION( its:ite )           ::                    tvec1
-  REAL ::                                                    temp
+  REAL ::                                                    temp 
   INTEGER :: i, j, k, mstepmax,                                   &
             iprt, latd, lond, loop, loops, ifsat, n, idim, kdim
 ! Temporaries used for inlining fpvs function
@@ -658,8 +658,8 @@ CONTAINS
 !
       do k = kte, kts, -1
         do i = its, ite
-          workr(i,k) = work1(i,k,1)
-          works(i,k) = work1(i,k,2)
+          workr(i,k) = work1(i,k,1) 
+          works(i,k) = work1(i,k,2) 
           denqrs1(i,k) = den(i,k)*qrs(i,k,1)
           denqrs2(i,k) = den(i,k)*qrs(i,k,2)
           if(qrs(i,k,1).le.0.0) workr(i,k) = 0.0
@@ -766,10 +766,10 @@ CONTAINS
         endif
         if(fallsum_qsi.gt.0.) then
           tstepsnow(i)   = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.            &
-                           +tstepsnow(i)
+                           +tstepsnow(i) 
         IF ( PRESENT (snowncv) .AND. PRESENT (snow)) THEN
-          snowncv(i,lat) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.            &
-                           +snowncv(i,lat)
+          snowncv(i,lat) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.            & 
+                           +snowncv(i,lat)    
           snow(i,lat) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snow(i,lat)
         ENDIF
         endif
@@ -873,8 +873,8 @@ CONTAINS
                      *exp(log(t(i,k))*(1.81))))))*sqrt(sqrt(den0/(den(i,k))))) &
                       /sqrt((1.496e-6*((t(i,k))*sqrt(t(i,k))))                 &
                       /(((t(i,k))+120.)*den(i,k)))
-        enddo
-      enddo
+        enddo 
+      enddo 
 !
 !===============================================================
 !
@@ -901,7 +901,7 @@ CONTAINS
 !        (C->R)
 !---------------------------------------------------------------
           if(qrs(i,k,1).gt.qcrmin.and.qci(i,k,1).gt.qmin) then
-            pracw(i,k) = min(pacrr*rslope3(i,k,1)*rslopeb(i,k,1)               &
+            pracw(i,k) = min(pacrr*rslope3(i,k,1)*rslopeb(i,k,1)               & 
                          *qci(i,k,1)*denfac(i,k),qci(i,k,1)/dtcld)
           endif
 !---------------------------------------------------------------
@@ -1106,7 +1106,7 @@ CONTAINS
 !    snow
 !
             value = max(qmin,qrs(i,k,2))
-            source = (-psdep(i,k)-psaut(i,k)-psaci(i,k)-psacw(i,k))*dtcld
+            source = (-psdep(i,k)-psaut(i,k)-psaci(i,k)-psacw(i,k))*dtcld  
             if (source.gt.value) then
               factor = value/source
               psdep(i,k) = psdep(i,k)*factor
@@ -1153,7 +1153,7 @@ CONTAINS
               pracw(i,k) = pracw(i,k)*factor
               prevp(i,k) = prevp(i,k)*factor
               psacw(i,k) = psacw(i,k)*factor
-            endif
+            endif  
 !
 !     snow
 !
@@ -1210,7 +1210,7 @@ CONTAINS
       do k = kts, kte
         do i = its, ite
 !         work1(i,k,1) = conden(t(i,k),q(i,k),qs(i,k,1),xl(i,k),cpm(i,k))
-          work1(i,k,1) = ((max(q(i,k),qmin)-(qs(i,k,1)))/(1.+(xl(i,k))         &
+          work1(i,k,1) = ((max(q(i,k),qmin)-(qs(i,k,1)))/(1.+(xl(i,k))         &   
                         *(xl(i,k))/(rv*(cpm(i,k)))*(qs(i,k,1))                 &
                         /((t(i,k))*(t(i,k)))))
           work2(i,k) = qci(i,k,1)+work1(i,k,1)
@@ -1539,7 +1539,7 @@ CONTAINS
           call slope_rain(qr,den,denfac,tk,tmp,tmp1,tmp2,tmp3,wa,1,1,1,km)
         else
           call slope_snow(qr,den,denfac,tk,tmp,tmp1,tmp2,tmp3,wa,1,1,1,km)
-        endif
+        endif 
         if( n.ge.2 ) wa(1:km)=0.5*(wa(1:km)+was(1:km))
         do k=1,km
 !#ifdef DEBUG
@@ -1905,11 +1905,11 @@ CONTAINS
                                 re_qc, re_qi, re_qs, kts, kte, ii, jj)
 
 !-----------------------------------------------------------------------
-!  Compute radiation effective radii of cloud water, ice, and snow for
+!  Compute radiation effective radii of cloud water, ice, and snow for 
 !  single-moment microphysics.
 !  These are entirely consistent with microphysics assumptions, not
 !  constant or otherwise ad hoc as is internal to most radiation
-!  schemes.
+!  schemes.  
 !  Coded and implemented by Soo ya Bae, KIAPS, January 2015.
 !-----------------------------------------------------------------------
 
@@ -1996,6 +1996,6 @@ CONTAINS
 
       end subroutine effectRad_wsm5
 !-----------------------------------------------------------------------
-
+                                                          
 END MODULE module_mp_wsm5
 #endif

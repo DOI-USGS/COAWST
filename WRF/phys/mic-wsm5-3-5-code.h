@@ -1,6 +1,6 @@
 #define WSM_NO_CONDITIONAL_IN_VECTOR
 
-  SUBROUTINE wsm52D(t, q                                          &
+  SUBROUTINE wsm52D(t, q                                          & 
                    ,qci, qrs, den, p, delz                        &
                    ,delt,g, cpd, cpv, rd, rv, t0c                 &
                    ,ep1, ep2, qmin                                &
@@ -17,7 +17,7 @@
   IMPLICIT NONE
 !-------------------------------------------------------------------
 !
-!  This code is a 5-class mixed ice microphyiscs scheme (WSM5) of the
+!  This code is a 5-class mixed ice microphyiscs scheme (WSM5) of the 
 !  Single-Moment MicroPhyiscs (WSMMP). The WSMMP assumes that ice nuclei
 !  number concentration is a function of temperature, and seperate assumption
 !  is developed, in which ice crystal number concentration is a function
@@ -167,7 +167,7 @@
 
 ! variables for optimization
   REAL, DIMENSION( its:ite )           ::                    tvec1
-  REAL ::                                                    temp
+  REAL ::                                                    temp 
   INTEGER :: i, j, k, mstepmax,                                   &
             iprt, latd, lond, loop, loops, ifsat, n, idim, kdim
 ! Temporaries used for inlining fpvs function, and other vector stuff
@@ -177,7 +177,7 @@
   INTEGER :: ifsat_v(CHUNK)
 ! mask variable
   LOGICAL*4 :: lmask(CHUNK)
-!
+! 
 
 #  define LAMDAR(x,y) sqrt(sqrt(pidn0r/((x)*(y))))
 #  define LAMDAS(x,y,z) sqrt(sqrt(pidn0s*(z)/((x)*(y))))
@@ -277,7 +277,7 @@
         flgcld(:) = .true.
       ENDWHERE
 
-! this seems to be needed for the standalone version to agree with its reference
+! this seems to be needed for the standalone version to agree with its reference 
       do k = kts, kte
         CALL VREC( tvec1(its), den(its,k), ite-its+1)
         WHERE( lmask )
@@ -304,7 +304,7 @@
 #ifdef WSM_NO_CONDITIONAL_IN_VECTOR
       do k = kts, kte
         WHERE( lmask )
-          WHERE(t(:,k).lt.ttp)
+          WHERE(t(:,k).lt.ttp) 
             xal(:) = xai
             xbl(:) = xbi
           ELSEWHERE
@@ -409,7 +409,7 @@
       WHERE( qrs(:,:,1) .le. 0.0 )
         workr = 0.0
       ELSEWHERE
-        workr = work1(:,:,1)
+        workr = work1(:,:,1) 
       ENDWHERE
       denqrs1 = den*qrs(:,:,1)
       call nislfv_rain_plm(idim,kdim,den,denfac,t,delz,workr,denqrs1,  &
@@ -420,7 +420,7 @@
       WHERE( qrs(:,:,2) .le. 0.0 )
         works = 0.0
       ELSEWHERE
-        works = work1(:,:,2)
+        works = work1(:,:,2) 
       ENDWHERE
       denqrs2 = den*qrs(:,:,2)
       call nislfv_rain_plm(idim,kdim,den,denfac,t,delz,works,denqrs2,  &
@@ -475,7 +475,7 @@
 ! Vice [ms-1] : fallout of ice crystal [HDC 5a]
 !---------------------------------------------------------------
       work1c = 0.
-      WHERE (qci(:,:,2).gt.0.)
+      WHERE (qci(:,:,2).gt.0.) 
         work1c =                                                            &
                1.49e4*exp(                                                  &
                  log(                                                       &
@@ -507,7 +507,7 @@
         WHERE (lmask .and. fallsum_qsi.gt.0.)
           tstepsnow   = fallsum_qsi*delz(:,kts)/denr*dtcld*1000.            &
                         +tstepsnow
-          snowncv    = fallsum_qsi*delz(:,kts)/denr*dtcld*1000.            &
+          snowncv    = fallsum_qsi*delz(:,kts)/denr*dtcld*1000.            & 
                         +snowncv
           snow    = fallsum_qsi*delz(:,kts)/denr*dtcld*1000. + snow
         ENDWHERE
@@ -522,7 +522,7 @@
           supcol_v = t0c-t(:,k)
           xlf_v = xlf0
           WHERE(supcol_v.ge.0.) xlf_v = xls-xl(:,k)
-          WHERE(supcol_v.lt.0..and.qci(:,k,2).gt.0.)
+          WHERE(supcol_v.lt.0..and.qci(:,k,2).gt.0.) 
             qci(:,k,1) = qci(:,k,1) + qci(:,k,2)
             t(:,k) = t(:,k) - xlf_v/cpm(:,k)*qci(:,k,2)
             qci(:,k,2) = 0.
@@ -531,7 +531,7 @@
 ! pihmf: homogeneous freezing of cloud water below -40c [HL A45]
 !        (T<-40C: C->I)
 !---------------------------------------------------------------
-          WHERE(supcol_v.gt.40..and.qci(:,k,1).gt.0.)
+          WHERE(supcol_v.gt.40..and.qci(:,k,1).gt.0.) 
             qci(:,k,2) = qci(:,k,2) + qci(:,k,1)
             t(:,k) = t(:,k) + xlf_v/cpm(:,k)*qci(:,k,1)
             qci(:,k,1) = 0.
@@ -541,7 +541,7 @@
 !        (T0>T>-40C: C->I)
 !---------------------------------------------------------------
           !jm note use of tr_v for temporary
-          WHERE(supcol_v.gt.0..and.qci(:,k,1).gt.0)
+          WHERE(supcol_v.gt.0..and.qci(:,k,1).gt.0) 
             supcolt_v=min(supcol_v,50.)
             tr_v = min(pfrz1*(exp(pfrz2*supcolt_v)-1.)                        &
             *den(:,k)/denr/xncr*qci(:,k,1)*qci(:,k,1)*dtcld,qci(:,k,1))
@@ -640,7 +640,7 @@
 ! praut: auto conversion rate from cloud to rain [HDC 16]
 !        (C->R)
 !---------------------------------------------------------------
-          WHERE (qci(:,k,1).gt.qc0)
+          WHERE (qci(:,k,1).gt.qc0) 
             praut(:,1) = qck1*exp(log(qci(:,k,1))*((7./3.)))
             praut(:,1) = min(praut(:,1),qci(:,k,1)/dtcld)
           ENDWHERE
@@ -648,7 +648,7 @@
 ! pracw: accretion of cloud water by rain [HL A40] [LFO 51]
 !        (C->R)
 !---------------------------------------------------------------
-
+    
           WHERE (qrs(:,k,1).gt.qcrmin.and.qci(:,k,1).gt.qmin)
             pracw(:,1) = min(pacrr*rslope3_v(:,1)*rslopeb_v(:,1)               &
                          *qci(:,k,1)*denfac(:,k),qci(:,k,1)/dtcld)
@@ -863,7 +863,7 @@
 !    snow
 !
             value = max(qmin,qrs(i,k,2))
-            source = (-psdep(i,1)-psaut(i,1)-psaci(i,1)-psacw(i,1))*dtcld
+            source = (-psdep(i,1)-psaut(i,1)-psaci(i,1)-psacw(i,1))*dtcld  
             if (source.gt.value) then
               factor = value/source
               psdep(i,1) = psdep(i,1)*factor
@@ -910,7 +910,7 @@
               pracw(i,1) = pracw(i,1)*factor
               prevp(i,1) = prevp(i,1)*factor
               psacw(i,1) = psacw(i,1)*factor
-            endif
+            endif  
 !
 !     snow
 !
@@ -967,7 +967,7 @@
 !
       do k = kts, kte
         do i = its, min(irestrict,ite)
-          work1(i,1,1) = ((max(q(i,k),qmin)-(qs(i,k,1)))/(1.+(xl(i,k))         &
+          work1(i,1,1) = ((max(q(i,k),qmin)-(qs(i,k,1)))/(1.+(xl(i,k))         &   
                         *(xl(i,k))/(rv*(cpm(i,k)))*(qs(i,k,1))                 &
                         /((t(i,k))*(t(i,k)))))
           pcond(i,1) = min(max(work1(i,1,1)/dtcld,0.),max(q(i,k),0.)/dtcld)
@@ -1299,7 +1299,7 @@ logical doit
           call slope_rain(qr,den,denfac,tk,tmp,tmp1,tmp2,tmp3,wa,1,1,1,km)
         else
           call slope_snow(qr,den,denfac,tk,tmp,tmp1,tmp2,tmp3,wa,1,1,1,km)
-        endif
+        endif 
         if( n.ge.2 ) wa(1:km)=0.5*(wa(1:km)+was(1:km))
         do k=1,km
 !#ifdef DEBUG
@@ -1421,7 +1421,7 @@ logical doit
   END SUBROUTINE nislfv_rain_plm
 #else
   SUBROUTINE slope_rain(qrs,den,denfac,t,rslope,rslopeb,                   &
-                            vt,irestrict,kts,kte,lmask)
+                            vt,irestrict,kts,kte,lmask) 
   IMPLICIT NONE
   INTEGER       ::               irestrict,kts,kte
   REAL, DIMENSION( its:ite , kts:kte) ::                                       &
@@ -1453,7 +1453,7 @@ logical doit
             rslopeb(:) = rslope(:)**bvtr
 !            rslopeb(:) = exp(log(rslope(:))*(bvtr))
           ENDWHERE
-          WHERE(qrs(:,k).le.0.0)
+          WHERE(qrs(:,k).le.0.0) 
             vt(:,k) = 0.0
           ELSEWHERE
             vt(:,k) = pvtr*rslopeb(:)*denfac(:,k)
@@ -1583,7 +1583,7 @@ logical doit
       do k=1,km
         where(lmask)allold = allold + qq(:,k)
       enddo
-      lmask = lmask .and. ( allold .gt. 0.0 )
+      lmask = lmask .and. ( allold .gt. 0.0 ) 
       IF ( .NOT. ANY(lmask) ) THEN
         precip0 = precip
         RETURN
@@ -1632,12 +1632,12 @@ logical doit
 ! diffusivity of wi
       con1 = 0.05
       do k=km,1,-1
-        where (lmask)
+        where (lmask) 
           decfl = (wi(:,k+1)-wi(:,k))*dt/dz(:,k)
         elsewhere
           decfl = 0.
         endwhere
-        where (lmask )
+        where (lmask ) 
           where (decfl .gt. con1 )
             wi(:,k) = wi(:,k+1) - con1*dz(:,k)/dt
           endwhere
@@ -1668,7 +1668,7 @@ logical doit
           call slope_rain(qr,den,denfac,tk,tmp,tmp1,wa,irestrict,1,km,lmask)
         else
           call slope_snow(qr,den,denfac,tk,tmp,tmp1,wa,irestrict,1,km,lmask)
-        endif
+        endif 
         do k=1,km
           if( n.ge.1 ) where (lmask) wa(:,k)=0.5*(wa(:,k)+was(:,k))
           where (lmask ) ww(:,k) = 0.5* ( wd(:,k)+wa(:,k) )
@@ -1758,7 +1758,7 @@ logical doit
                qmi_gath_t(i) = qmi(DX2)
              ENDDO
 
-             WHERE ( kt .eq. kb .AND. intp_mask )
+             WHERE ( kt .eq. kb .AND. intp_mask ) 
                tl=(zi(:,k)-za_gath_b)/dza_gath_b
                th=(zi(:,k+1)-za_gath_b)/dza_gath_b
                tl2 = tl*tl
@@ -1767,7 +1767,7 @@ logical doit
                qqh=qqd*th2+qmi_gath_b*th
                qql=qqd*tl2+qmi_gath_b*tl
                qn(:,k) = (qqh-qql)/(th-tl)
-             ELSE WHERE ( kt .gt. kb .AND. intp_mask )
+             ELSE WHERE ( kt .gt. kb .AND. intp_mask ) 
                tl=(zi(:,k)-za_gath_b)/dza_gath_b
                tl2=tl*tl
                qqd=0.5*(qpi_gath_b-qmi_gath_b)

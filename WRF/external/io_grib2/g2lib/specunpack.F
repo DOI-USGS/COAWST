@@ -4,8 +4,8 @@
 ! SUBPROGRAM:    specunpack
 !   PRGMMR: Gilbert          ORG: W/NP11    DATE: 2002-12-19
 !
-! ABSTRACT: This subroutine unpacks a spectral data field that was packed
-!   using the complex packing algorithm for spherical harmonic data as
+! ABSTRACT: This subroutine unpacks a spectral data field that was packed 
+!   using the complex packing algorithm for spherical harmonic data as 
 !   defined in the GRIB2 documention,
 !   using info from the GRIB2 Data Representation Template 5.51.
 !

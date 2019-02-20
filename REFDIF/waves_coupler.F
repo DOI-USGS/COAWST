@@ -60,10 +60,10 @@
 !  Declarations.
 !
       TYPE(GlobalSegMap) :: GSMapSWAN         ! GloabalSegMap variables
-
+ 
       TYPE(AttrVect) :: ToOceanAV             ! AttrVect variables
       TYPE(AttrVect) :: FromOceanAV
-
+ 
       type(Router) :: RoutSWAN                ! Router variables
 
       CONTAINS
@@ -84,7 +84,7 @@
 !
       include 'mpif.h'
 !
-!  Local variable declarations.
+!  Local variable declarations.  
 !
       integer :: MyColor, MyCOMM, MyError, MyRank, MyKey, MyValue
       integer :: npoints, Asize, nprocs, localsize
@@ -124,7 +124,7 @@
       END DO
 !
       Asize=Isize*Jsize
-!
+!  
       CALL GlobalSegMap_init(GSMapSWAN,start,length,0,                  &
      &                       WAV_COMM_WORLD,WavId)
 !

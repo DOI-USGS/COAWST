@@ -74,17 +74,17 @@ CONTAINS
 !         kms    ----- full level
 !
 !======================================================================
-!-- RUNDGDTEN       U tendency due to
+!-- RUNDGDTEN       U tendency due to 
 !                 FDDA analysis nudging (m/s^2)
-!-- RVNDGDTEN       V tendency due to
+!-- RVNDGDTEN       V tendency due to 
 !                 FDDA analysis nudging (m/s^2)
-!-- RTHNDGDTEN      Theta tendency due to
+!-- RTHNDGDTEN      Theta tendency due to 
 !                 FDDA analysis nudging (K/s)
 !-- RPHNDGDTEN      Geopotential tendency due to
 !                 FDDA analysis nudging (m^2/s^3)
-!-- RQVNDGDTEN      Qv tendency due to
+!-- RQVNDGDTEN      Qv tendency due to 
 !                 FDDA analysis nudging (kg/kg/s)
-!-- RMUNDGDTEN      mu tendency due to
+!-- RMUNDGDTEN      mu tendency due to 
 !                 FDDA analysis nudging (Pa/s)
 !-- itimestep     number of time steps
 !-- u3d           u-velocity staggered on u points (m/s)
@@ -121,7 +121,7 @@ CONTAINS
 !-- kte           end index for k in tile
 !
 !******************************************************************
-!------------------------------------------------------------------
+!------------------------------------------------------------------ 
    TYPE(grid_config_rec_type),  INTENT(IN   )    :: config_flags
    TYPE(domain) , TARGET          :: grid
 !
@@ -136,7 +136,7 @@ CONTAINS
                                        ipsx,ipex,jpsx,jpex,kpsx,kpex,   &
                                        imsy,imey,jmsy,jmey,kmsy,kmey,   &
                                        ipsy,ipey,jpsy,jpey,kpsy,kpey,   &
-                                       n_moist
+                                       n_moist           
 
    INTEGER, DIMENSION(num_tiles), INTENT(IN) ::                   &
   &                                    i_start,i_end,j_start,j_end
@@ -355,7 +355,7 @@ CONTAINS
       !3D Analysis nudging
 
       !The begin time of analysis nudging must be the model start time
-      !It appears the WRF code that reads analysis nudging files respects
+      !It appears the WRF code that reads analysis nudging files respects 
       !the start time settings, but the actual nudging code does not.  This
       !leads one to nudge towards 0 in all fields (including potential
       !temperature [K]) since the nudging code applies analysis nudging but has
@@ -385,7 +385,7 @@ CONTAINS
         'start time and so analysis nudging start time cannot be specified via gfdda_begin_s'
        CALL wrf_error_fatal ( wrf_err_message )
       ENDIF
-
+       
 
       !The end time of analysis nudging relative to the model start must be
       !specified in hours
@@ -429,7 +429,7 @@ CONTAINS
       IF( config_flags%grid_sfdda /= 0 ) THEN
 
        !The begin time of analysis nudging must be the model start time
-       !It appears the WRF code that reads analysis nudging files respects
+       !It appears the WRF code that reads analysis nudging files respects 
        !the start time settings, but the actual nudging code does not.  This
        !leads one to nudge towards 0 in all fields (including potential
        !temperature [K]) since the nudging code applies analysis nudging but has
@@ -459,8 +459,8 @@ CONTAINS
          'start time and so analysis nudging start time cannot be specified via sgfdda_begin_s'
         CALL wrf_error_fatal ( wrf_err_message )
        ENDIF
-
-
+        
+ 
        !The end time of analysis nudging relative to the model start must be
        !specified in hours
        IF( config_flags%sgfdda_end_y /= 0 ) THEN
@@ -479,7 +479,7 @@ CONTAINS
         WRITE( wrf_err_message , * ) 'The option sgfdda_end_s is ignored, use sgfdda_end_h instead'
         CALL wrf_error_fatal ( wrf_err_message )
        ENDIF
-
+ 
        !The interval between analyses must be specified in minutes
        IF( config_flags%sgfdda_interval_y /= 0 ) THEN
         WRITE( wrf_err_message , * ) 'The option sgfdda_interval_y is ignored, use sgfdda_interval_m instead'
@@ -577,6 +577,7 @@ CONTAINS
                config_flags%if_no_pbl_nudging_uv, &
                config_flags%if_no_pbl_nudging_t, &
                config_flags%if_no_pbl_nudging_ph, &
+               config_flags%if_no_pbl_nudging_q, &
                config_flags%if_zfac_uv, &
                config_flags%k_zfac_uv, &
                config_flags%dk_zfac_uv,  &
@@ -586,15 +587,20 @@ CONTAINS
                config_flags%if_zfac_ph, &
                config_flags%k_zfac_ph, &
                config_flags%dk_zfac_ph,  &
+               config_flags%if_zfac_q, &
+               config_flags%k_zfac_q, &
+               config_flags%dk_zfac_q, &
+               config_flags%ktrop, &
                config_flags%guv, &
                config_flags%gt,  &
                config_flags%gph,  &
+               config_flags%gq,  &
                config_flags%if_ramping, config_flags%dtramp_min, &
                config_flags%xwavenum, config_flags%ywavenum, &
-               u3d,v3d,th_phy,ph,                 &
-               u_ndg_old,v_ndg_old,t_ndg_old,ph_ndg_old,       &
-               u_ndg_new,v_ndg_new,t_ndg_new,ph_ndg_new,       &
-               RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN,&
+               u3d,v3d,th_phy,ph,moist(ims,kms,jms,P_QV),                &
+               u_ndg_old,v_ndg_old,t_ndg_old,ph_ndg_old,q_ndg_old,       &
+               u_ndg_new,v_ndg_new,t_ndg_new,ph_ndg_new,q_ndg_new,       &
+               RUNDGDTEN,RVNDGDTEN,RTHNDGDTEN,RPHNDGDTEN,RQVNDGDTEN,&
                pblh, ht, z, z_at_w,                             &
                ids,ide, jds,jde, kds,kde,                           &
                ims,ime, jms,jme, kms,kme,                           &

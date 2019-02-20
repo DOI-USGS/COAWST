@@ -120,8 +120,8 @@ CONTAINS
 !
   INTEGER,      INTENT(IN   )    ::   ids,ide, jds,jde, kds,kde , &
                                       ims,ime, jms,jme, kms,kme , &
-                                      its,ite, jts,jte, kts,kte
-  INTEGER,      INTENT(IN   )    ::   itimestep, ihail, ice2
+                                      its,ite, jts,jte, kts,kte 
+  INTEGER,      INTENT(IN   )    ::   itimestep, ihail, ice2 
 
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
         INTENT(INOUT) ::                                          &
@@ -151,11 +151,11 @@ CONTAINS
   REAL, DIMENSION( ims:ime , jms:jme ),                           &
         INTENT(INOUT) ::                               rainnc,    &
                                                        rainncv,   &
-                                                       snownc,    &
+                                                       snownc,    &   
                                                        snowncv,   &
                                                        sr,        &
                                                        graupelnc, &
-                                                       graupelncv
+                                                       graupelncv 
 
 !+---+-----------------------------------------------------------------+
   REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::           &  ! GT
@@ -186,13 +186,13 @@ CONTAINS
   INTEGER ::  itaobraun, istatmin, new_ice_sat, id
 
   INTEGER :: i, j, k
-  INTEGER :: iskip, ih, icount, ibud, i24h
+  INTEGER :: iskip, ih, icount, ibud, i24h 
   REAL    :: hour
   REAL    , PARAMETER :: cmin=1.e-20
-  REAL    :: dth, dqv, dqrest, dqall, dqall1, rhotot, a1, a2
+  REAL    :: dth, dqv, dqrest, dqall, dqall1, rhotot, a1, a2 
 !  REAL, DIMENSION( its:ite , kts:kte , jts:jte ) ::                   &
 !                         th1, qv1, ql1, qr1, qi1, qs1, qg1
-
+ 
   LOGICAL :: flag_qg
 
 !+---+-----------------------------------------------------------------+
@@ -243,7 +243,7 @@ CONTAINS
      write(6,*) 'ihail=',ihail,'  ice2=',ice2
      if (ice2.eq.0) then
         write(6,*) 'Running 3-ice scheme in GSFCGCE with'
-        if (ihail.eq.0) then
+        if (ihail.eq.0) then 
            write(6,*) '     ice, snow and graupel'
         else if (ihail.eq.1) then
                 write(6,*) '     ice, snow and hail'
@@ -265,8 +265,8 @@ CONTAINS
      endif !ice2
   endif !itimestep
 
-!c  new_ice_sat = 0, 1 or 2
-    new_ice_sat = 2
+!c  new_ice_sat = 0, 1 or 2 
+    new_ice_sat = 2 
 
 !c istatmin
     istatmin = 180
@@ -307,7 +307,7 @@ CONTAINS
 !c Negative values correction
 
    iskip = 1
-
+ 
    if (iskip.eq.0) then
       call negcor(qv,rho,dz8w,ims,ime,jms,jme,kms,kme, &
                            itimestep,1,             &
@@ -340,13 +340,13 @@ CONTAINS
                    qi, qs, qg,                                  &
 !                   qvold, qlold, qrold,                         &
 !                   qiold, qsold, qgold,                         &
-                   rho, pii, p, itimestep,                      &
+                   rho, pii, p, itimestep,                      & 
                    refl_10cm, diagflag, do_radar_ref,           & ! GT added for reflectivity calcs
 !                  refl_10cm, grid_clock, grid_alarms,          & ! GT added for reflectivity calcs
                    ids,ide, jds,jde, kds,kde,                   & ! domain dims
                    ims,ime, jms,jme, kms,kme,                   & ! memory dims
                    its,ite, jts,jte, kts,kte                    & ! tile   dims
-                                                                )
+                                                                ) 
 
 
    END SUBROUTINE gsfcgce
@@ -369,10 +369,10 @@ CONTAINS
   IMPLICIT NONE
   INTEGER, INTENT(IN   )               :: ihail, ice2,                &
                                           ims,ime, jms,jme, kms,kme,  &
-                                          its,ite, jts,jte, kts,kte
+                                          its,ite, jts,jte, kts,kte 
   INTEGER, INTENT(IN   )               :: itimestep
   REAL,    DIMENSION( ims:ime , kms:kme , jms:jme ),                  &
-           INTENT(INOUT)               :: qr, qi, qs, qg
+           INTENT(INOUT)               :: qr, qi, qs, qg       
   REAL,    DIMENSION( ims:ime , jms:jme ),                            &
            INTENT(INOUT)               :: rainnc, rainncv,            &
                                           snownc, snowncv, sr,        &
@@ -384,7 +384,7 @@ CONTAINS
 
 
   REAL,    DIMENSION( ims:ime , jms:jme ),                            &
-           INTENT(IN   )               :: topo
+           INTENT(IN   )               :: topo   
 
 ! temperary vars
 
@@ -443,7 +443,7 @@ CONTAINS
 !     write(6, *) 'ihail=', ihail
 !     write(6, *) 'ICE2=', ICE2
 !     write(6, *) 'dt=', dt
-!   endif
+!   endif 
 
 !-----------------------------------------------------------------------
 !  This program calculates precipitation fluxes due to terminal velocities.
@@ -644,10 +644,10 @@ CONTAINS
     ENDDO
 
 !
-!   ice2=0 --- with hail/graupel
-!   ice2=1 --- without hail/graupel
+!   ice2=0 --- with hail/graupel 
+!   ice2=1 --- without hail/graupel 
 !
-  if (ice2.eq.0) then
+  if (ice2.eq.0) then 
 !
 !-- If IHAIL=1, use hail.
 !-- If IHAIL=0, use graupel.
@@ -817,7 +817,7 @@ CONTAINS
 !   psnowc(i,j)=psnowc(i,j)+pptsnow
 !   pgrauc(i,j)=pgrauc(i,j)+pptgraul
 !   picec(i,j)=picec(i,j)+pptice
-!
+!                     
 
 !   write(6,*) 'i=',i,' j=',j,'   ', pptrain, pptsnow, pptgraul, pptice
 !   flush(6)
@@ -825,11 +825,11 @@ CONTAINS
    snowncv(i,j) = pptsnow
    snownc(i,j) = snownc(i,j) + pptsnow
    graupelncv(i,j) = pptgraul
-   graupelnc(i,j) = graupelnc(i,j) + pptgraul
-   RAINNCV(i,j) = pptrain + pptsnow + pptgraul + pptice
+   graupelnc(i,j) = graupelnc(i,j) + pptgraul 
+   RAINNCV(i,j) = pptrain + pptsnow + pptgraul + pptice                 
    RAINNC(i,j)  = RAINNC(i,j) + pptrain + pptsnow + pptgraul + pptice
    sr(i,j) = 0.
-   if (RAINNCV(i,j) .gt. 0.) sr(i,j) = (pptsnow + pptgraul + pptice) / RAINNCV(i,j)
+   if (RAINNCV(i,j) .gt. 0.) sr(i,j) = (pptsnow + pptgraul + pptice) / RAINNCV(i,j) 
 
   ENDDO i_loop
   ENDDO j_loop
@@ -837,7 +837,7 @@ CONTAINS
 !  if (itimestep.eq.6480) then
 !     write(51,*) 'in the end of fallflux, itimestep=',itimestep
 !     do j=jts,jte
-!        do i=its,ite
+!        do i=its,ite 
 !           if (rainnc(i,j).gt.400.) then
 !              write(50,*) 'i=',i,' j=',j,' rainnc=',rainnc
 !           endif
@@ -878,17 +878,17 @@ CONTAINS
       END FUNCTION ggamma
 
 !-----------------------------------------------------------------------
-!c Correction of negative values
+!c Correction of negative values  
    SUBROUTINE negcor ( X, rho, dz8w,                         &
                       ims,ime, jms,jme, kms,kme,              & ! memory dims
                       itimestep, ics,                         &
                       its,ite, jts,jte, kts,kte               ) ! tile   dims
 !-----------------------------------------------------------------------
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
-        INTENT(INOUT) ::                                     X
+        INTENT(INOUT) ::                                     X   
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
-        INTENT(IN   ) ::                              rho, dz8w
-  integer, INTENT(IN   ) ::                           itimestep, ics
+        INTENT(IN   ) ::                              rho, dz8w  
+  integer, INTENT(IN   ) ::                           itimestep, ics 
 
 !c Local variables
 !  REAL, DIMENSION( kts:kte ) ::  Y1, Y2
@@ -914,15 +914,15 @@ CONTAINS
 
   A0=0.0
 
-  if (A1.NE.0.0.and.A1.GT.A2) then
+  if (A1.NE.0.0.and.A1.GT.A2) then 
      A0=(A1-A2)/A1
 
   if (mod(itimestep,540).eq.0) then
      if (ics.eq.1) then
         write(61,*) 'kms=',kms,'  kme=',kme,'  kts=',kts,'  kte=',kte
-        write(61,*) 'jms=',jms,'  jme=',jme,'  jts=',jts,'  jte=',jte
-        write(61,*) 'ims=',ims,'  ime=',ime,'  its=',its,'  ite=',ite
-     endif
+        write(61,*) 'jms=',jms,'  jme=',jme,'  jts=',jts,'  jte=',jte 
+        write(61,*) 'ims=',ims,'  ime=',ime,'  its=',its,'  ite=',ite 
+     endif 
      if (ics.eq.1) then
          write(61,*) 'qv timestep=',itimestep
          write(61,*) '  A1=',A1,'   A2=',A2,'   A0=',A0
@@ -943,8 +943,8 @@ CONTAINS
              write(61,*) '  A1=',A1,'   A2=',A2,'   A0=',A0
      else
              write(61,*) 'wrong cloud specieis number'
-     endif
-  endif
+     endif 
+  endif 
 
      do k=kts,kte
         do j=jts,jte
@@ -1286,7 +1286,7 @@ CONTAINS
 !
 !      COMPUTE ICE PHASE MICROPHYSICS AND SATURATION PROCESSES
 !
-  integer,    parameter ::  nt=2880, nt2=2*nt
+  integer,    parameter ::  nt=2880, nt2=2*nt 
 
 !cc   using scott braun's way for pint, pidep computations
   integer  ::   itaobraun,ice2,ihail,new_ice_sat,id,istatmin
@@ -1303,7 +1303,7 @@ CONTAINS
 !JJS      common/bt/ dt,d2t,rijl2,dts,f5,rd1,rd2,bound,al,cp,ra,ck,ce,eps,
 !JJS     1    psfc,fcor,sec,aminut,rdt
 
-!JJS   the following common blocks have been moved to the top of
+!JJS   the following common blocks have been moved to the top of 
 !JJS   module_mp_gsfcgce_driver_instat.F
 
 !      common/bt/ rd1,rd2,al,cp
@@ -1355,7 +1355,7 @@ CONTAINS
 
 !JJS
 
-  real, dimension (ims:ime, kms:kme, jms:jme) ::  ptwrf, qvwrf
+  real, dimension (ims:ime, kms:kme, jms:jme) ::  ptwrf, qvwrf 
   real, dimension (ims:ime, kms:kme, jms:jme) ::  qlwrf, qrwrf,        &
                                                   qiwrf, qswrf, qgwrf
 !JJS 10/16/06    vvvv
@@ -1436,7 +1436,7 @@ CONTAINS
 
 !JJS      COMMON/B5/
   real, dimension (its:ite,jts:jte,kts:kte) ::  rho
-  real, dimension (kts:kte) ::                 &
+  real, dimension (kts:kte) ::                 & 
            tb,      qb,    rho1,              &
            ta,      qa,     ta1,     qa1,     &
          coef,      z1,      z2,      z3,     &
@@ -1446,18 +1446,18 @@ CONTAINS
 
 !JJS      COMMON/B6/
   real, dimension (its:ite,jts:jte,kts:kte) ::  p0, pi, f0
-  real, dimension (kts:kte) ::    &
+  real, dimension (kts:kte) ::    & 
            fd,      fe,        &
            st,      sv,        &
            sq,      sc,        &
            se,     sqa
 
 !JJS      COMMON/BRH1/
-  real, dimension (kts:kte) ::    &
+  real, dimension (kts:kte) ::    & 
          srro,    qrro,    sqc,    sqr,    &
           sqi,     sqs,    sqg,   stqc,    &
          stqr,    stqi,   stqs,   stqg
-  real, dimension (nt) ::    &
+  real, dimension (nt) ::    & 
           tqc,     tqr,    tqi,    tqs,    tqg
 
 !JJS     common/bls/ y0(nx,ny),ts0new(nx,ny),qss0new(nx,ny)
@@ -1467,16 +1467,16 @@ CONTAINS
            y0,     ts0,   qss0
 
 !JJS      COMMON/BI/ IT(its:ite,jts:jte), ICS(its:ite,jts:jte,4)
-  integer, dimension (its:ite,jts:jte) ::        it
-  integer, dimension (its:ite,jts:jte, 4) ::    ics
+  integer, dimension (its:ite,jts:jte) ::        it  
+  integer, dimension (its:ite,jts:jte, 4) ::    ics 
 
   integer :: i24h
   integer :: iwarm
   real :: r2is, r2ig
-
+  
 
 !JJS      COMMON/MICRO/
-!  real, dimension (ims:ime,kms:kme,jms:jme)  ::    dbz
+!  real, dimension (ims:ime,kms:kme,jms:jme)  ::    dbz 
 
 !23456789012345678901234567890123456789012345678901234567890123456789012
 
@@ -1516,7 +1516,7 @@ CONTAINS
 !
 !jm 20090220      save
 
-!    i24h=nint(86400./dt)
+!    i24h=nint(86400./dt) 
 !    if (mod(itimestep,i24h).eq.1) then
 !       write(6, *) 'ims=', ims, '  ime=', ime
 !       write(6, *) 'jms=', jms, '  jme=', jme
@@ -1615,7 +1615,7 @@ CONTAINS
               r2is=0.
           endif
 !C  TAO 2007 END
-
+     
 !JJS  10/7/2008
 !   ICE2=3 ! no ice, warm rain only
     iwarm = 0
@@ -1822,7 +1822,7 @@ CONTAINS
                  PRAUT(I,J)=MIN(Y1(I,J), PRAUT(I,J))
                  PRACW(I,J)=MIN(Y1(I,J), PRACW(I,J))
                  Y1(I,J)=(PRAUT(I,J)+PRACW(I,J))*D2T
-
+               
                if (qc(i,j) .lt. y1(i,j) .and. y1(i,j) .ge. cmin2) then
                    y2(i,j)=qc(i,j)/(y1(i,j)+cmin2)
                    praut(i,j)=praut(i,j)*y2(i,j)
@@ -1831,12 +1831,12 @@ CONTAINS
                else
                   qc(i,j)=qc(i,j)-y1(i,j)
                endif
-
+               
                PR(I,J)=(PRAUT(I,J)+PRACW(I,J))*D2T
                QR(I,J)=QR(I,J)+PR(I,J)
-
+                        
 !*****   TAO ET AL (1989) SATURATION TECHNIQUE  ***********************
-
+           
            cnd(i,j)=0.0
            tair(i,j)=(pt(i,j)+tb0)*pi0
               y1(i,j)=1./(tair(i,j)-c358)
@@ -2837,12 +2837,12 @@ CONTAINS
 !           physs(i,k,j) = ascp * ssss / d2t
 !           physf(i,k,j) = afcp * sfff / d2t
 !           physm(i,k,j) = afcp * smmm / d2t
-!           physc(i,k,j) = physc(i,k,j) + avcp * sccc
-!           physe(i,k,j) = physc(i,k,j) + avcp * seee
-!           physd(i,k,j) = physd(i,k,j) + ascp * sddd
-!           physs(i,k,j) = physs(i,k,j) + ascp * ssss
-!           physf(i,k,j) = physf(i,k,j) + afcp * sfff
-!           physm(i,k,j) = physm(i,k,j) + afcp * smmm
+!           physc(i,k,j) = physc(i,k,j) + avcp * sccc 
+!           physe(i,k,j) = physc(i,k,j) + avcp * seee 
+!           physd(i,k,j) = physd(i,k,j) + ascp * sddd 
+!           physs(i,k,j) = physs(i,k,j) + ascp * ssss 
+!           physf(i,k,j) = physf(i,k,j) + afcp * sfff 
+!           physm(i,k,j) = physm(i,k,j) + afcp * smmm 
 
 !JJS modified by JJS on 5/1/2007  ^^^^^
 

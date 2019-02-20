@@ -1,4 +1,4 @@
-function [hp, ht] = mvec(s, x, y, varargin)  % and color, etc
+function [hp, ht] = m_vec(s, x, y, varargin)  % and color, etc
 % M_VEC Draws fancy arrows/quiverplots on a map.
 %    [HP, HT]=M_VEC(S,LONG,LAT,VARARGIN) draws arrows as a patch 
 %    object on a map created by the M_Map package.
@@ -40,6 +40,10 @@ function [hp, ht] = mvec(s, x, y, varargin)  % and color, etc
 %                                arrow, and the second argument
 %                                returned, ht, is the handle of
 %                                the string.
+%          'edgeclip', 'off'  If 'on' then arrows IN the axes
+%                             are clipped if their heads are
+%                             OUT of the axes.
+%
 %      optional patch parameters: any valid patch properties
 %         may be specified here; they are passed directly
 %         to the patch function.
@@ -51,6 +55,8 @@ function [hp, ht] = mvec(s, x, y, varargin)  % and color, etc
 %
 % 6/Nov/00 - eliminate returned stuff if ';' neglected (thx to D Byrne)
 % 2/May/01 - small bug fix (thx to Pierre Jaccard)
+% 7/jun/06 - arrows near boundaries were not done correctly - now fixed.
+% 12/Dec/12 - added clipping for arrows at boundaries ('edgeclip')
 
 global MAP_PROJECTION
 
@@ -66,7 +72,7 @@ if nargin==0,  % demo
     % Set up the figure and axes at the start, so that the vector lengths
     % will come out right when the figure is printed:
 
-    orient tall
+  %  orient tall
     % Main axes, for the map.
     ha1 = axes;
     pos = get(ha1,'position');
@@ -86,14 +92,14 @@ if nargin==0,  % demo
     % something looks reasonable on the screen, it is likely to look
     % wrong when printed.
 
-    ha2 = axes('position', pos2);
+    %ha2 = axes('position', pos2);
 
     axes(ha1); % Back to the main axes.
 
     m_proj('ortho','lat',48','long',-123', 'rad', 10, ...
         	'rec', 'off' );
     m_coast('patch',[0.9 0.95 0.9]);
-    m_grid('linest','-','xtick',[-135:5:-110]);
+    m_grid('linestyle','-','xtick',[-135:5:-110],'linewi',2);
     title('Demonstration of m\_vec')
 
 
@@ -126,16 +132,17 @@ if nargin==0,  % demo
     %% with an ADCP along a cruise track.  Color is specified by letter,
     %% in this case. The arrows and heads are about as skinny as they
     %% can reasonably be.
-    hpv3 = m_vec(100, vlon, vlat, uu, vv, 'm', ...
+    hpv3 = m_vec(100, vlon, vlat+2, uu, vv, 'm', ...
      'shaftwidth', 0.2, 'headlength', 2.5);
 
     %% Now let's make a similar vectors, but with colors based on the
     %% colormap, simulating SST, for example:
     vlon = vlon - 3;
     sst = 12 - incs * 4;
-    hpv4 = m_vec(100, vlon, vlat, uu, vv, sst);
-    colorbar(ha2);
-    axes(ha2); xlabel('SST'); axes(ha1);
+    hpv4 = m_vec(100, vlon-4, vlat, uu, vv, sst);
+    ha2=colorbar('southoutside');
+    set(get(ha2,'xlabel'),'string','SST');
+    %axes(ha2); xlabel('SST'); axes(ha1);
     %% These vectors will not show up well on the screen because they
     %% have no edges, but they will print adequately.  There does not
     %% seem to be any easy way to get around this; I would have to
@@ -144,6 +151,8 @@ if nargin==0,  % demo
     %% method anyway, so that the colors are clear when printed; and in
     %% this case the screen display will look OK also.
 
+    % Here I show the edgeclip property
+    hpv4 = m_vec(100, vlon+4, vlat-5, uu, vv, sst,'edgeclip','on');
 
 
     %% Key: Note that it can be on or off the map. The vector and
@@ -183,7 +192,7 @@ c = 'k';
 key = '';
 
 clip = 'on'; % except for the key
-
+edgeclip = 'off';  % for arrows at the edge
 
 if nargin < 5,   % Minimum: s,x,y,u,v
    help('mvec');
@@ -215,7 +224,7 @@ if istr0 > 0,    % There are strings.
    n_numeric = istr0 - 1;  %Actually, numeric or colorspec.
    keyvars = varargin(istr0:nvarargin);
    finished = 0;
-   while ~isempty(keyvars) & ~finished,
+   while ~isempty(keyvars) && ~finished,
       kv = lower(keyvars{1});
       value = keyvars{2};
       if     strcmp(kv, 'headlength')
@@ -227,11 +236,13 @@ if istr0 > 0,    % There are strings.
 
       elseif strcmp(kv, 'shaftwidth')
          shaftwidth = value/72;
-      elseif strcmp(kv, 'centered')  & lower(value(1)) == 'y',
+      elseif strcmp(kv, 'centered')  && lower(value(1)) == 'y',
          centered = 1;
       elseif strcmp(kv, 'key')
          key = value;
          clip = 'off'; % Can put key outside the map.
+      elseif strcmp(kv, 'edgeclip')
+         edgeclip = value;
       else
          finished = 1;  % no match; break out
       end
@@ -244,12 +255,12 @@ else
 end
 
 % Calculate the headwidth if it is not given explicitly:
-if isnan(headwidth) & headangle < 170 & headangle > 0
+if isnan(headwidth) && headangle < 170 && headangle > 0
    headwidth = headlength * tan(headangle*pi/180);
 end
 headwidth = max([headwidth; shaftwidth]);
 
-if n_numeric == 2 | n_numeric == 3,
+if n_numeric == 2 || n_numeric == 3,
    u = varargin{1}(:);
    v = varargin{2}(:);
    if n_numeric == 3,
@@ -267,12 +278,12 @@ else
 end
 
 [nr,nc] = size(c);
-if nr == 1 & nc == length(u) & (nc ~= 3 | (any(c<=1) | any(c>=0))),
+if nr == 1 && nc == length(u) && (nc ~= 3 || (any(c<=1) || any(c>=0))),
    c = c(:);
 end
 % c could be a 1x3 colorspec
 
-if (length(x) == 1 & length(y) == 1 & length(u) > 1)
+if (length(x) == 1 && length(y) == 1 && length(u) > 1)
    x = x(ones(size(u)));
    y = y(ones(size(u)));
 end
@@ -308,10 +319,19 @@ uvmag = abs(u + i*v);
 % Arrow lengths in plot data units:
 L = uvmag*sc/UVperIn;
 
+% base of arrows. Don't plot if outside boundaries (except for keys for which clip is off)
 [xs, ys] = m_ll2xy(x,y, 'clip', clip);
-[xsp, ysp] = m_ll2xy(x+0.1*u./uvmag, y+0.1*v.*cos(y*pi/180)./uvmag, 'clip', clip);
+
+%[xsp, ysp] = m_ll2xy(x+0.1*u./uvmag, y+0.1*v.*cos(y*pi/180)./uvmag, 'clip', clip);
 % Vector angles in the Cartesian data-unit system of m_map:
-Ang = angle( (xsp-xs) + i*(ysp-ys) );
+%Ang = angle( (xsp-xs) + i*(ysp-ys) );
+% ABove angle calc could fail when arrows were near boundaries. Replace with this.
+% Now we calculate angles. Use a small offset, and keep clipping off to prevent odd things
+% happening.
+%    - RP 7/Jun/06
+[xsp, ysp] = m_ll2xy([x x+0.00001*u./uvmag]',[y y+0.00001*v.*cos(y*pi/180)./uvmag]' , 'clip', 'off');
+Ang = angle( diff(xsp)' + i*diff(ysp)' );
+
 if ~isempty(key), Ang = 0; end
 
 
@@ -413,8 +433,19 @@ Faces = reshape(Faces,7,nvec).';
 % Extremely narrow patches don't show up on the screen (although they seem
 % to be printed OK) when EdgeColor is 'none', so when the arrows are all
 % the same color, set the EdgeColor to be the same as FaceColor.
-hp = patch('Faces', Faces, 'Vertices', Vert, 'tag', 'm_vec');
-if ischar(c) | (size(c,1) == 1 & size(c,2) == 3),
+% Set clip off here so arrows are complete - RP 7/Jun/06
+
+% Request to clip arrows at the plot edge.
+
+if strcmp(edgeclip,'off'),
+ hp = patch('Faces', Faces, 'Vertices', Vert, 'tag', 'm_vec','clipping','off');
+else,
+  [LG,LN]=m_xy2ll(reshape(Vert(:,1),7,nvec),reshape(Vert(:,2),7,nvec)); % Converts vertices in 7 point lines (i.e. columns) in lat/long
+  [X,Y]=m_ll2xy(LG,LN  ,'clip','patch');                                % Converts back to x/y, but does clipping on for each column
+  hp = patch('Faces', Faces, 'Vertices', [X(:) Y(:)], 'tag', 'm_vec','clipping','off');
+end;
+
+if ischar(c) || (size(c,1) == 1 && size(c,2) == 3),
    set(hp, 'EdgeColor', c, 'FaceColor', c, 'LineWidth', 0.1);
 else
    set(hp, 'EdgeColor', 'none', 'FaceColor','Flat', ...
@@ -426,7 +457,7 @@ end
 
 if ~isempty(key)
    ht = text(X(1), Y(1)-0.5*HW, Z(1), key, ...
-      'color', c, 'horiz','left','vert','top', 'tag','m_vec', ...
+      'color', c, 'horizontalalignment','left','verticalalignment','top', 'tag','m_vec', ...
       'clipping','off');
    set(hp,'clipping','off')
 else

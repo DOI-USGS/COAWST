@@ -1,10 +1,10 @@
       subroutine mkieee(a,rieee,num)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    mkieee
+! SUBPROGRAM:    mkieee 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-09
 !
-! ABSTRACT: This subroutine stores a list of real values in
+! ABSTRACT: This subroutine stores a list of real values in 
 !   32-bit IEEE floating point format.
 !
 ! PROGRAM HISTORY LOG:
@@ -15,7 +15,7 @@
 !     a        - Input array of floating point values.
 !     num      - Number of floating point values to convert.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     rieee    - Output array of floating point values in 32-bit IEEE format.
 !
 ! REMARKS: None
@@ -30,7 +30,7 @@
       real(4),intent(out) :: rieee(num)
       integer,intent(in) :: num
 
-      integer(4) :: ieee
+      integer(4) :: ieee 
 
       real,save :: two23
       real,save :: two126
@@ -54,7 +54,7 @@
 !       write(6,fmt='(f20.10,5x,b32)') rieee,rieee
           cycle
         endif
-
+        
 !
 !  Set Sign bit (bit 31 - leftmost bit)
 !
@@ -76,7 +76,7 @@
         call mvbits(iexp,0,8,ieee,23)
 !
 !  Determine Mantissa
-!
+! 
         if (iexp.ne.255) then
           if (iexp.ne.0) then
             atemp=(atemp/(2.0**n))-1.0

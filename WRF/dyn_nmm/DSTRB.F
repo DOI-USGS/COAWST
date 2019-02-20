@@ -64,7 +64,7 @@
       ENDDO
 !
 !-----------------------------------------------------------------------
-!***  TASK 0 FILLS ITS OWN LOCAL DOMAIN THEN PARCELS OUT ALL THE OTHER
+!***  TASK 0 FILLS ITS OWN LOCAL DOMAIN THEN PARCELS OUT ALL THE OTHER 
 !***  PIECES TO THE OTHER TASKS.
 !-----------------------------------------------------------------------
 !
@@ -102,7 +102,7 @@
 !
           NUMVALS=(IEND-ISTART+1)*(JEND-JSTART+1)*(LGE-LGS+1)
           ALLOCATE(ARRAYX(NUMVALS),STAT=I)
-
+          
           KNT=0
 !
           DO L=LGS,LGE

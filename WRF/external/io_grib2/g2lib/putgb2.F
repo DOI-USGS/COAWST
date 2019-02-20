@@ -7,7 +7,7 @@ C   PRGMMR: GILBERT          ORG: W/NP11     DATE: 2002-04-22
 C
 C ABSTRACT: PACKS A SINGLE FIELD INTO A GRIB2 MESSAGE
 C   AND WRITES OUT THAT MESSAGE TO THE FILE ASSOCIATED WITH UNIT LUGB.
-C   NOTE THAT FILE/UNIT LUGB SHOULD BE OPENED WOTH A CALL TO
+C   NOTE THAT FILE/UNIT LUGB SHOULD BE OPENED WOTH A CALL TO 
 C   SUBROUTINE BAOPENW BEFORE THIS ROUTINE IS CALLED.
 C
 C   The information to be packed into the GRIB field
@@ -18,14 +18,14 @@ C   the line "USE GRIB_MOD" in their calling routine.  Each component of the
 C   gribfield type is described in the INPUT ARGUMENT LIST section below.
 C
 C PROGRAM HISTORY LOG:
-C 2002-04-22  GILBERT
+C 2002-04-22  GILBERT  
 C 2005-02-28  GILBERT   - Changed dimension of array cgrib to be a multiple
 C                         of gfld%ngrdpts instead of gfld%ndpts.
 C
 C USAGE:    CALL PUTGB2(LUGB,GFLD,IRET)
 C   INPUT ARGUMENTS:
 C     LUGB         INTEGER UNIT OF THE UNBLOCKED GRIB DATA FILE.
-C                  FILE MUST BE OPENED WITH BAOPEN OR BAOPENW BEFORE CALLING
+C                  FILE MUST BE OPENED WITH BAOPEN OR BAOPENW BEFORE CALLING 
 C                  THIS ROUTINE.
 C     gfld - derived type gribfield ( defined in module grib_mod )
 C            ( NOTE: See Remarks Section )
@@ -171,7 +171,7 @@ C   addgrid        Add grid info to a GRIB2 message
 C   addfield       Add data field to a GRIB2 message
 C   gribend        End GRIB2 message
 C
-C REMARKS:
+C REMARKS: 
 C
 C   Note that derived type gribfield contains pointers to many
 C   arrays of data.  The memory for these arrays is allocated

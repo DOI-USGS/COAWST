@@ -190,7 +190,7 @@
               Npts=load_r(Nval, Rval, Ngrids, TCRIT)
             CASE ('KM')
               Npts=load_r(Nval, Rval, Ngrids, KM)
-#endif
+#endif 
             CASE ('TNU2')
               Npts=load_r(Nval, Rval, NBT*Ngrids, Rbio)
               DO ng=1,Ngrids
@@ -547,22 +547,22 @@
                 Dout(i,ng)=Lbio(ng)
               END DO
 #endif
-#if defined SPECTRAL_LIGHT
-            CASE ('Hout(idPARo)')
+#if defined SPECTRAL_LIGHT 
+            CASE ('Hout(idPARo)') 
               IF (idPARo.eq.0) THEN
                 IF (Master) WRITE (out,40) 'idPARo'
                 exit_flag=5
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idPARo,1:Ngrids))
-            CASE ('Hout(idPARs)')
+            CASE ('Hout(idPARs)') 
               IF (idPARs.eq.0) THEN
                 IF (Master) WRITE (out,40) 'idPARs'
                 exit_flag=5
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idPARs,1:Ngrids))
-            CASE ('Hout(idSpKd)')
+            CASE ('Hout(idSpKd)') 
               IF (idSpKd.eq.0) THEN
                 IF (Master) WRITE (out,40) 'idSpKd'
                 exit_flag=5
@@ -825,7 +825,7 @@
      &            'Crit. temp. development of abovegrd. biomass (deg C).'
             WRITE (out,80) KM(ng), 'KM',                                &
      &            'Below ground biomass mortality (1/d).'
-#endif
+#endif 
 #ifdef TS_DIF2
             DO itrc=1,NBT
               i=idbio(itrc)
@@ -1105,7 +1105,7 @@
             WRITE (out,70) Ndom, 'Ndom',                      &
      &            'Number of DOM constituents.'
 #endif
-#ifdef SAV_BIOMASS
+#ifdef SAV_BIOMASS 
           IF (Hout(iddins,ng)) WRITE (out,120) Hout(iddins,ng),         &
      &       'Hout(iddins)',                                            &
      &       'Write out sediment dissolved inorganic N in units (mu-M).'

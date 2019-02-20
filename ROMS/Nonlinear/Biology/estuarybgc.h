@@ -79,8 +79,8 @@
       USE mod_ocean
       USE mod_stepping
 #if defined SAV_BIOMASS && defined VEG_BIOMASS
-      USE mod_vegetation
-      USE mod_vegarr
+      USE mod_vegetation 
+      USE mod_vegarr                            
 #endif
 !
 !  Imported variable declarations.
@@ -146,7 +146,7 @@
      &                   OCEAN(ng) % DINwcr,                            &
      &                   OCEAN(ng) % DINsed,                            &
      &                   OCEAN(ng) % DOwcr,                             &
-!     &                   OCEAN(ng) % CO2wcr,                            &
+!     &                   OCEAN(ng) % CO2wcr,                            &     
      &                   OCEAN(ng) % DINwcr_sav,                        &
 !     &                   OCEAN(ng) % LDeNwcr,                           &
 !     &                   OCEAN(ng) % LDeCwcr,                           &
@@ -208,8 +208,8 @@
      &                         DOwcr,                                   &
 !     &                         CO2wcr,                                  &
      &                         DINwcr_sav,                              &
-!     &                         LDeNwcr,                                 &
-!     &                         LDeCwcr,                                 &
+!     &                         LDeNwcr,                                 &        
+!     &                         LDeCwcr,                                 &  
      &                         AGB,                                     &
      &                         BGB,                                     &
      &                         PP,                                      &
@@ -458,12 +458,12 @@
       real(r8) :: br20, brthta, N_Flux_BaseResp
 #endif
 ! Local SAV variables
-#ifdef SAV_BIOMASS
+#ifdef SAV_BIOMASS 
       real(r8), dimension(LBi:UBi,LBj:UBj,UBk) :: CO2wcr
       real(r8), dimension(LBi:UBi,LBj:UBj,UBk) :: LDeCwcr
       real(r8), dimension(LBi:UBi,LBj:UBj,UBk) :: LDeNwcr
       real(r8) :: cff1_sav
-#endif
+#endif 
       real(r8), dimension(Nsink) :: Wbio
 !
       integer, dimension(IminS:ImaxS,N(ng)) :: ksource
@@ -502,7 +502,7 @@
       real(r8), dimension(IminS:ImaxS,N(ng),NBands) :: specir_scal
       real(r8), dimension(IminS:ImaxS,N(ng)+1,NBands) :: specir_ga
       real(r8), dimension(IminS:ImaxS,N(ng),Nphy,NBands) :: aPHYN_at
-      real(r8) :: Ed_tot, aph442, tChl, slope_AC, WLE
+      real(r8) :: Ed_tot, aph442, tChl, slope_AC, WLE 
       integer :: iband, iphy, ipig, indsed, ibb
       real(r8) :: avgcos_min, par_b, par_bb, FV1, FV2, factint
 # ifdef CDOM_DEFAULT
@@ -638,7 +638,7 @@
         END DO
 !
 #ifdef SPECTRAL_LIGHT
-!  Add modulation from srflux into otherwise idealized
+!  Add modulation from srflux into otherwise idealized 
 !    spectral irradiance model. Using a transfer factor such that
 !    total irradiance from spectral model matchs value from srflux
 
@@ -646,33 +646,33 @@
         DO i=Istr,Iend
         Ed_tot=0.0_r8
           DO iband=1,NBands
-!  we redefine specir_m because SpecIr is only intended for input
+!  we redefine specir_m because SpecIr is only intended for input 
             specir_m(i,iband)=SpecIr(i,j,iband)
             Ed_tot=Ed_tot+specir_m(i,iband)
           END DO
 !
 #  ifdef MOD_SWR_SPECT
-!  MOD_SWR_SPECT modulates the short wave radiation PARsur
+!  MOD_SWR_SPECT modulates the short wave radiation PARsur 
 !                      based on spectral irradiance using Gallegos
           DO iband=1,NBands
             IF (Ed_tot.gt.eps) THEN
               specir_m(i,iband)=PARsur(i)*specir_m(i,iband)/Ed_tot
               specir_m(i,iband)=specir_m(i,iband)/DLAM
-            ELSE
+            ELSE 
               specir_m(i,iband)=PARsur(i)/(NBands*DLAM)
-            END IF
+            END IF          
           END DO
 #  elif defined MOD_SWR_HOMO
-!  MOD_SWR_HOMO modulates the short wave radiation PARsur
+!  MOD_SWR_HOMO modulates the short wave radiation PARsur 
 !                                evenly through the spectrum
           DO iband=1,NBands
             specir_m(i,iband)=PARsur(i)/(NBands*DLAM)
           END DO
-#  endif
+#  endif                
         END DO
 #endif
 
-!
+!        
 !
 !=======================================================================
 !  Start internal iterations to achieve convergence of the nonlinear
@@ -734,7 +734,7 @@
 !-----------------------------------------------------------------------
 !  Light-limited computations.
 !-----------------------------------------------------------------------
-!
+!                
 # ifdef SPECTRAL_LIGHT
 !############################################
 ! ! ADD GALLEGOS LIGHT ATTENUATION
@@ -756,10 +756,10 @@
                      indsed=idsed(ised)
                      TOTSED=TOTSED+t(i,j,k,nstp,indsed)
                   END DO
-            ! CHANGE TO NTU
+            ! CHANGE TO NTU 
               ! Define TU_alpha +TU_beta +TU_gamma
               ! TURB=TU_alpha*TOTSED**TU_beta +TU_gamma
-            ! Set to TURB(NTU) equal to TOTSED(mg/l)
+            ! Set to TURB(NTU) equal to TOTSED(mg/l) 
               !TU_alpha=1.0_r8
                   TU_alpha=1.0e3_r8 !transform kg/m3 to mg/l
                   TU_beta=1.0_r8
@@ -768,17 +768,17 @@
 # else
                   TURB=5.0_r8
 # endif
-
-! In-water solar angle, (deg.)
-      THETADEG=acos(avgcos(k,1))*180.0_r8/pi
+      
+! In-water solar angle, (deg.)	      
+      THETADEG=acos(avgcos(k,1))*180.0_r8/pi 
 !      THETADEG=90.0_r8
 !
                 E0_nz(i,k)=0.0_r8
-! Calculate total absoption
+! Calculate total absoption      
                   DO iband=1,NBands
                     tot_ab=0.0_r8
 ! Chlorophyll absorption
-	                tot_ab=tot_ab+tChl*achlgal(iband)
+	                tot_ab=tot_ab+tChl*achlgal(iband)  
 ! Add water absorption
                     tot_ab=tot_ab+awater(iband)
 ! Add cdom absorption (when defined)
@@ -807,7 +807,7 @@
                     par_b =0.3_r8*(tChl**0.62_r8)
 !
 # ifdef CHL_BACKSCAT
-! Add Chlorophyll backscatter from ecosim (not in gallegos) (when defined)
+! Add Chlorophyll backscatter from ecosim (not in gallegos) (when defined) 
                     IF (tChl.gt.0.0_r8) THEN
                       par_bb=par_b*(0.002_r8+0.01_r8*                   &
      &                              (0.5_r8-0.25_r8*LOG10(tChl))*       &
@@ -844,7 +844,7 @@
 !  Calculate spectral scalar irradiance
                     E0_nz(i,k)=E0_nz(i,k)+specir_ga(i,k,iband)
 !
-                  END DO
+                  END DO 
 ! Interpolate from Nbands (mod_eclight + fennel_mod.h) to NBAND from input file
 !                ec_wave_ab set by default to 60 bands in mod_eclight + fennel_mod.h
 !                NBAND set in input file (ocean.in)
@@ -856,9 +856,9 @@
                       DO WHILE (ec_wave_ab(iband)<WLE)
                          factint=(WLE-ec_wave_ab(iband))/DLAM
                          SpKd(i,j,ibb)=SPECKD(1,iband)+factint*       &
-     &                        (SPECKD(1,iband+1)-SPECKD(1,iband))
+     &                        (SPECKD(1,iband+1)-SPECKD(1,iband))              
                          PARs(i,j,ibb)=specir_ga(i,1,iband)+factint*  &
-     &                    (specir_ga(i,1,iband+1)-specir_ga(i,1,iband))
+     &                    (specir_ga(i,1,iband+1)-specir_ga(i,1,iband))              
                          iband=iband+1
                       END DO
                     END DO
@@ -866,7 +866,7 @@
                   E0_nz(i,k)=max(E0_nz(i,k),0.0_r8)
                   Ed_tot=E0_nz(i,k)
               END DO
-          END DO
+          END DO 
 !
 !############################################
 ! END OF ATTENUATION FROM GALLEGOS
@@ -905,7 +905,7 @@
                 PARout(i,j,k)=PAR
 # else
                 PAR=Itop*(1.0_r8-ExpAtt)/Att    ! average at cell center
-# endif
+# endif                
 !
 !  Compute Chlorophyll-a phytoplankton ratio, [mg Chla / (mg C)].
 !
@@ -1019,11 +1019,11 @@
 !  Light attenuation at the bottom of the grid cell. It is the starting
 !  PAR value for the next (deeper) vertical grid cell.
 !
-# if defined SPECTRAL_LIGHT
+# if defined SPECTRAL_LIGHT 
                 PAR=E0_nz(i,k)
 # else
                 PAR=Itop*ExpAtt
-# endif
+# endif                
               END DO
 !
 !  If PARsur=0, nitrification occurs at the maximum rate (NitriR).
@@ -1031,9 +1031,9 @@
             ELSE
               cff3=dtdays*NitriR(ng)
               DO k=N(ng),1,-1
-# if defined SPECTRAL_LIGHT
+# if defined SPECTRAL_LIGHT 
                 PARout(i,j,k)=0.0_r8
-# endif
+# endif                
                 Bio(i,k,iNH4_)=Bio(i,k,iNH4_)/(1.0_r8+cff3)
                 N_Flux_Nitrifi=Bio(i,k,iNH4_)*cff3
                 Bio(i,k,iNO3_)=Bio(i,k,iNO3_)+N_Flux_Nitrifi
@@ -1569,23 +1569,23 @@
             cff3=115.0_r8/16.0_r8
             cff4=106.0_r8/16.0_r8
 # endif
-# ifdef SAV_BIOMASS
-!
-!  Calling the SAV MODEL developed by Dr. Jeremy Testa
+# ifdef SAV_BIOMASS 
+!  
+!  Calling the SAV MODEL developed by Dr. Jeremy Testa 
 !  Need sediment biogechemical equations to get DINsed and DINwcr
 !
 !
-! Remember you know that you are in iterative and J loop
+! Remember you know that you are in iterative and J loop 
 !
 !
-! Calculation of DINwcr for SAV MODEL
+! Calculation of DINwcr for SAV MODEL 
 !
             DO k=1,N(ng)
               DO i=Istr,Iend
                 DINwcr(i,j,k)=Bio(i,k,iNH4_)+Bio(i,k,iNO3_)
               END DO
             END DO
-            DO k = 1,N(ng)
+            DO k = 1,N(ng) 
               CALL SAV_BIOMASS (ng, Istr, Iend, LBi, UBi,                 &
      &                     pmonth, t(:,j,1,nstp,itemp),                   &
      &                     PARout(:,j,k), DINwcr(:,j,k), DINsed(:,j,k),   &
@@ -1594,7 +1594,7 @@
      &                     AGB(:,j),BGB(:,j), PP(:,j,k), AGM(:,j,k),      &
      &                     AGAR(:,j,k), AGBR(:,j,k), SEARS(:,j,k),        &
      &                     AGBG(:,j,k), BGAG(:,j,k), BGR(:,j,k),          &
-     &                     BGM(:,j,k))
+     &                     BGM(:,j,k)) 
             END DO
 !
 !  Only getting the SAV model to work for the bottomost vertical layer
@@ -1602,37 +1602,37 @@
 !
             DO i=Istr,Iend
               cff1_sav=DINwcr_sav(i,j,1)*Hz(i,j,1)
-
-              IF (DINwcr_sav(i,j,1).gt.0) THEN
+               
+              IF (DINwcr_sav(i,j,1).gt.0) THEN 
                 Bio(i,1,iNH4_)=Bio(i,1,iNH4_)+cff1_sav
               ELSE
-                Bio(i,1,iNO3_)=Bio(i,1,iNO3_)+cff1_sav*0.5_r8
+                Bio(i,1,iNO3_)=Bio(i,1,iNO3_)+cff1_sav*0.5_r8 
                 Bio(i,1,iNH4_)=Bio(i,1,iNH4_)+cff1_sav*0.5_r8
-              END IF
+              END IF 
               Bio(i,1,iLDeN)=Bio(i,1,iLDeN)+LDeNwcr(i,j,1)*Hz(i,j,1)
 #  ifdef OXYGEN
               Bio(i,1,iOxyg)=Bio(i,1,iOxyg)+DOwcr(i,j,1)*Hz(i,j,1)
-#  endif
+#  endif	
 #  ifdef CARBON
               Bio(i,1,iTIC_)=Bio(i,1,iTIC_)+CO2wcr(i,j,1)*Hz(i,j,1)
               Bio(i,1,iLDeC)=Bio(i,1,iLDeC)+LDeCwcr(i,j,1)*Hz(i,j,1)
 #  endif
-            END DO
+            END DO 
 !
-#  ifdef VEG_BIOMASS
+#  ifdef VEG_BIOMASS  
             DO k=1,NVEG
               DO i=Istr,Iend
                 plant(i,j,iveg,pagbm)=AGB(i,j)
                 plant(i,j,iveg,pbgbm)=BGB(i,j)
-              END DO
-            END DO
-#  endif
+              END DO 
+            END DO 
+#  endif 
 # endif
-!----------------------------------------------------------------------
+!----------------------------------------------------------------------	
             IF ((ibio.eq.iPhyt).or.                                     &
      &          (ibio.eq.iSDeN).or.                                     &
      &          (ibio.eq.iLDeN)) THEN
-              DO i=Istr,Iend
+              DO i=Istr,Iend                        
                 cff1=FC(i,0)*Hz_inv(i,1)
 # ifdef DENITRIFICATION
                 Bio(i,1,iNH4_)=Bio(i,1,iNH4_)+cff1*cff2
@@ -1710,9 +1710,9 @@
       RETURN
       END SUBROUTINE biology_tile
 !
-# ifdef SAV_BIOMASS
+# ifdef SAV_BIOMASS   
 #  include "sav_biomass.h"
-# endif
+# endif  
 !
 #ifdef CARBON
 # ifdef pCO2_RZ

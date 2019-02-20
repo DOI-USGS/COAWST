@@ -42,7 +42,12 @@ function [lon,lat]=get_coast(Llon,Rlon,Blat,Tlat,varargin)
 %
 %    GSHHS_dir    GSHHS database directory (Optional, string)
 %
-%                   GSHHS_DIR = '~/ocean/GSHHS/Version_1.2'  (default)
+%                   GSHHS_dir = '~/ocean/GSHHS/Version_1.2'   or
+%                               '~/ocean/GSHHS/Version_1.5'   or
+%                               '~/ocean/GSHHS/Version_2.3.6'
+%
+%                   default:   Cfile = which('gshhs_i.b', '-ALL')
+%                              GSHHS_dir = fileparts(Cfile{1})
 %
 % On Ouput:
 %
@@ -51,22 +56,22 @@ function [lon,lat]=get_coast(Llon,Rlon,Blat,Tlat,varargin)
 %    lat          Extracted coastline latitude       
 %
  
-% svn $Id: get_coast.m 895 2018-02-11 23:15:37Z arango $
-%===========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                              %
-%    Licensed under a MIT/X style license                                   %
-%    See License_ROMS.txt                           Hernan G. Arango        %
-%===========================================================================%
+% svn $Id: get_coast.m 926 2018-10-09 21:53:45Z arango $
+%=========================================================================%
+%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%    Licensed under a MIT/X style license                                 %
+%    See License_ROMS.txt                           Hernan G. Arango      %
+%=========================================================================%
 
 % Set optional arguments
 
-OutFile    = [];
-Resolution = 'intermediate';
-GSHHS_dir  = '~/ocean/GSHHS/Version_1.2';
+OutFile   = [];
+GSHHS_dir = [];
 
 switch numel(varargin)
  case 1
    OutFile    = varargin{1};
+   Resolution = 'intermediate'; 
  case 2
    OutFile    = varargin{1};
    Resolution = varargin{2};
@@ -78,26 +83,27 @@ end
 
 % Select GSHHS file according to specified resolution.
 
-switch lower(Resolution),
+switch lower(Resolution)
   case {'f', 'full'}
-    Cname = fullfile(GSHHS_dir, 'gshhs_f.b');
     name  = 'gshhs_f.b';
   case {'h', 'high'}
-    Cname = fullfile(GSHHS_dir, 'gshhs_h.b');
     name  = 'gshhs_h.b';
   case {'i', 'intermediate'}
-    Cname = fullfile(GSHHS_dir, 'gshhs_i.b');
     name  = 'gshhs_i.b';
   case {'l', 'low'}
-    Cname = fullfile(GSHHS_dir, 'gshhs_l.b');
     name  = 'gshhs_l.b';
   case {'c', 'crude'}
-    Cname = fullfile(GSHHS_dir, 'gshhs_c.b');
     name  = 'gshhs_c.b';
   otherwise
-    Cname = fullfile(GSHHS_dir, 'gshhs_i.b');
     name  = 'gshhs_i.b';
 end
+
+if (isempty(GSHHS_dir))
+  Cfile = which(name,'-ALL');          % select first file found
+  GSHHS_DIR = fileparts(Cfile{1});     % others are shadowed
+end
+
+Cname = fullfile(GSHHS_DIR, name);
 
 % Set special value.
 
@@ -114,43 +120,43 @@ spval = 999.0;
 
 cliptype = 'patch';
  
-if (~isempty(OutFile)),
+if (~isempty(OutFile))
   if (strfind(lower(OutFile), '.cst'))
     cliptype = 'on';                             % ROMS plotting package
   end
 end
 
-disp(['Reading GSHHS database: ',name]);
+disp(['Reading GSHHS database: ',Cname]);
 
 Coast = r_gshhs(Llon,Rlon,Blat,Tlat,Cname);
 
-disp(['Processing read coastline data']);
+disp('Processing read coastline data');
 
 C = x_gshhs(Llon,Rlon,Blat,Tlat,Coast,cliptype);
 
 lon = C.lon;
 lat = C.lat;
 
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 %  Save extrated coastlines.
-%---------------------------------------------------------------------------
+%--------------------------------------------------------------------------
 
-if (~isempty(OutFile)),
-  switch cliptype,
+if (~isempty(OutFile))
+  switch cliptype
     case 'patch'
       save (OutFile,'lon','lat');
     case 'on'
       x = lon;
       y = lat;
       ind = find(isnan(x));
-      if (~isempty(ind)),
-        if (length(ind) == length(C.type)),
+      if (~isempty(ind))
+        if (length(ind) == length(C.type))
           x(ind) = C.type;
           y(ind) = spval;
 
 % Cliping of out-of-range values failed. Try original values.
       
-        elseif (length(ind) == length(Coast.type)), 
+        elseif (length(ind) == length(Coast.type)) 
 	  x(ind) = Coast.type;
           y(ind) = spval;
         else      
@@ -159,8 +165,8 @@ if (~isempty(OutFile)),
         end
       end
       fid = fopen(OutFile,'w');
-      if (fid ~= -1),
-        for i=1:length(x),
+      if (fid ~= -1)
+        for i=1:length(x)
           fprintf(fid,'%11.6f  %11.6f\n',y(i),x(i));
         end
         fclose(fid);

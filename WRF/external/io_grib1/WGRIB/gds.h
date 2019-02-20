@@ -158,9 +158,9 @@
 #define GDS_Triangular_nd(gds)  INT3(gds[10],gds[11],gds[12])
 
 /* Harmonics data */
-#define GDS_Harmonic_nj(gds)     ((int) ((gds[6] << 8) + gds[7]))
-#define GDS_Harmonic_nk(gds)     ((int) ((gds[8] << 8) + gds[9]))
-#define GDS_Harmonic_nm(gds)     ((int) ((gds[10] << 8) + gds[11]))
+#define GDS_Harmonic_nj(gds)     ((int) ((gds[6] << 8) + gds[7])) 
+#define GDS_Harmonic_nk(gds)     ((int) ((gds[8] << 8) + gds[9])) 
+#define GDS_Harmonic_nm(gds)     ((int) ((gds[10] << 8) + gds[11])) 
 #define GDS_Harmonic_type(gds)   (gds[12])
 #define GDS_Harmonic_mode(gds)   (gds[13])
 

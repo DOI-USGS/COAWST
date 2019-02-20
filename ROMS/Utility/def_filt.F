@@ -61,7 +61,7 @@
 !  Activate creation of filter NetCDF file.  Create a new filter
 !  file if during a restart run, the filter filename "FIL%name"
 !  is different than the restart filename "RST%name".  I would prefer to
-!  not create a new filter file during a restart run, but simply write to
+!  not create a new filter file during a restart run, but simply write to 
 !  one assumed to have been created before, but this doesn't work yet.
 !
       IF (exit_flag.ne.NoError) RETURN
@@ -268,7 +268,7 @@
           IF (exit_flag.eq.NoError) THEN
             status = nf90_put_att(FIL(ifile,ng)%ncid, nf90_global,      &
      &               'type', TRIM(type))
-            IF (status.ne.nf90_noerr) THEN
+            IF (status.ne.nf90_noerr) THEN 
               IF (Master) WRITE (stdout,20) 'type', TRIM(ncname)
               exit_flag=3
               ioerror=status

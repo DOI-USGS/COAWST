@@ -120,7 +120,7 @@ CONTAINS
     !   PRGRMMR: Original by Young Kwon, modified by Sam Trahan
     !
     ! ABSTRACT:
-    !         Call this routine to write one line to the given LUN,
+    !         Call this routine to write one line to the given LUN, 
     !         containing the minimum MSLP, max 10m wind, their locations,
     !         and the nest center location.
     ! PROGRAM HISTORY LOG:
@@ -376,6 +376,6 @@ CONTAINS
 #endif
   END SUBROUTINE hifreq_open
 
-! only used by HWRF...
+! only used by HWRF...  
 #endif
 end module module_HIFREQ

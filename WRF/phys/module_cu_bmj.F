@@ -12,7 +12,7 @@
 !
       REAL,PARAMETER ::                                                 &
      &                  DSPC=-3000.                                     &
-     &                 ,DTTOP=0.,EFIFC=5.0,EFIMN=0.20,EFMNT=0.70        &
+     &                 ,DTTOP=0.,EFIFC=5.0,EFIMN=0.20,EFMNT=0.70        & 
      &                 ,ELIWV=2.683E6,ENPLO=20000.,ENPUP=15000.         &
      &                 ,EPSDN=1.05,EPSDT=0.                             &
      &                 ,EPSNTP=.0001,EPSNTT=.0001,EPSPR=1.E-7           &
@@ -90,7 +90,7 @@ CONTAINS
       IMPLICIT NONE
 !-----------------------------------------------------------------------
       INTEGER,INTENT(IN) :: IDS,IDE,JDS,JDE,KDS,KDE                     &
-     &                     ,IMS,IME,JMS,JME,KMS,KME                     &
+     &                     ,IMS,IME,JMS,JME,KMS,KME                     & 
      &                     ,ITS,ITE,JTS,JTE,KTS,KTE
 !
       INTEGER,INTENT(IN) :: ITIMESTEP,STEPCU
@@ -108,8 +108,8 @@ CONTAINS
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,JMS:JME)                           &
      &    ,OPTIONAL                                                     &
-     &    ,INTENT(INOUT) ::                        RQVCUTEN,RTHCUTEN
-!
+     &    ,INTENT(INOUT) ::                        RQVCUTEN,RTHCUTEN 
+! 
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: CLDEFI,RAINCV,   &
            PRATEC
 !
@@ -126,7 +126,7 @@ CONTAINS
       INTEGER :: LBOT,LPBL,LTOP
 !
       REAL :: DTCNVC,LANDMASK,PCPCOL,PSFC,PTOP
-!
+! 
       REAL,DIMENSION(KTS:KTE) :: DPCOL,DQDT,DTDT,PCOL,QCOL,TCOL
 !
       INTEGER :: I,J,K,KFLIP,LMH
@@ -138,7 +138,7 @@ CONTAINS
 !***  End debugging convection
 !
 !-----------------------------------------------------------------------
-!***********************************************************************
+!*********************************************************************** 
 !-----------------------------------------------------------------------
 !
 !***  PREPARE TO CALL BMJ CONVECTION SCHEME
@@ -161,7 +161,7 @@ CONTAINS
 !
         DTCNVC=DT*STEPCU
 !
-        DO J=JTS,JTE
+        DO J=JTS,JTE  
         DO I=ITS,ITE
 !
           DO K=KTS,KTE
@@ -179,8 +179,8 @@ CONTAINS
 !
           LANDMASK=XLAND(I,J)-1.
 !
-!***  FILL 1-D VERTICAL ARRAYS
-!***  AND FLIP DIRECTION SINCE BMJ SCHEME
+!***  FILL 1-D VERTICAL ARRAYS 
+!***  AND FLIP DIRECTION SINCE BMJ SCHEME 
 !***  COUNTS DOWNWARD FROM THE DOMAIN'S TOP
 !
           DO K=KTS,KTE
@@ -212,13 +212,13 @@ CONTAINS
           CALL BMJ(ITIMESTEP,I,J,DTCNVC,LMH,LANDMASK,CLDEFI(I,J)        &
      &            ,DPCOL,PCOL,QCOL,TCOL,PSFC,PTOP                       &
      &            ,DQDT,DTDT,PCPCOL,LBOT,LTOP,LPBL                      &
-     &            ,CP,R,ELWV,ELIV,G,TFRZ,D608                           &
-     &            ,PRINT_DIAG                                           &
-     &            ,IDS,IDE,JDS,JDE,KDS,KDE                              &
+     &            ,CP,R,ELWV,ELIV,G,TFRZ,D608                           &   
+     &            ,PRINT_DIAG                                           &   
+     &            ,IDS,IDE,JDS,JDE,KDS,KDE                              &     
      &            ,IMS,IME,JMS,JME,KMS,KME                              &
      &            ,ITS,ITE,JTS,JTE,KTS,KTE)
 !-----------------------------------------------------------------------
-!
+! 
 !***  COMPUTE HEATING AND MOISTENING TENDENCIES
 !
           IF ( PRESENT( RTHCUTEN ) .AND. PRESENT( RQVCUTEN )) THEN
@@ -289,7 +289,7 @@ CONTAINS
      & ,DPRS,PRSMID,Q,T,PSFC,PT                                         &
      & ,DQDT,DTDT,PCPCOL,LBOT,LTOP,LPBL                                 &
      & ,CP,R,ELWV,ELIV,G,TFRZ,D608                                      &
-     & ,PRINT_DIAG                                                      &
+     & ,PRINT_DIAG                                                      &   
      & ,IDS,IDE,JDS,JDE,KDS,KDE                                         &
      & ,IMS,IME,JMS,JME,KMS,KME                                         &
      & ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -300,7 +300,7 @@ CONTAINS
                            ,IMS,IME,JMS,JME,KMS,KME                     &
                            ,ITS,ITE,JTS,JTE,KTS,KTE                     &
                            ,I,J,ITIMESTEP
-!
+! 
       INTEGER,INTENT(IN) :: LMH,LPBL
 !
       INTEGER,INTENT(OUT) :: LBOT,LTOP
@@ -316,7 +316,7 @@ CONTAINS
 !-----------------------------------------------------------------------
 !***  DEFINE LOCAL VARIABLES
 !-----------------------------------------------------------------------
-!
+!                                                            
       REAL,DIMENSION(KTS:KTE) :: APEK,APESK,EL,FPK                      &
                                 ,PK,PSK,QK,QREFK,QSATK                  &
                                 ,THERK,THEVRF,THSK                      &
@@ -401,7 +401,7 @@ CONTAINS
       DSPT=0.
 !-----------------------------------------------------------------------
       TAUK=DTCNVC/TREL
-      TAUKSC=DTCNVC/(1.0*TREL)
+      TAUKSC=DTCNVC/(1.0*TREL) 
 !-----------------------------------------------------------------------
 !-----------------------------PREPARATIONS------------------------------
 !-----------------------------------------------------------------------
@@ -446,7 +446,7 @@ CONTAINS
 !
 !-----------------------------------------------------------------------
 !***  SEARCH OVER A SCALED DEPTH IN FINDING THE PARCEL
-!***  WITH THE MAX THETA-E
+!***  WITH THE MAX THETA-E 
 !-----------------------------------------------------------------------
 !
         QBT=Q(KB)
@@ -516,7 +516,7 @@ CONTAINS
             IF(P<PBTmx)LBOT=L
           ENDDO
           PBOT=PRSMID(LBOT)
-        ENDIF
+        ENDIF 
 !
 !-----------------------------------------------------------------------
 !----------------CLOUD TOP COMPUTATION----------------------------------
@@ -534,7 +534,7 @@ CONTAINS
 !
 !### IMPORTANT: THIS "DO KB=LMH,1,-1" loop must be broken up into two
 !    separate loops in order for entrainment as programmed below to work
-!    properly.
+!    properly.  
 !
 !---------------  ENTRAINMENT DURING PARCEL ASCENT  --------------------
 !
@@ -614,7 +614,7 @@ CONTAINS
 !-----------------------------------------------------------------------
 !       lbot_ltop: IF(LBOT>LTOP)THEN
 !-----------------------------------------------------------------------
-!-- Begin: Buoyancy check including deep convection (24 Aug 2006)
+!-- Begin: Buoyancy check including deep convection (24 Aug 2006) 
 !-----------------------------------------------------------------------
           DENTPY=0.
           L=KB
@@ -747,7 +747,7 @@ CONTAINS
           ENDDO      !-- End DO L=KB,KTS,-1
 !
           LTOP=MIN(LTP1,LBOT)
-!
+! 
 !-----------------------------------------------------------------------
 !--------------- CHECK FOR MAXIMUM INSTABILITY  ------------------------
 !-----------------------------------------------------------------------
@@ -837,7 +837,7 @@ CONTAINS
 !***  BUILDING THE REFERENCE PROFILE FROM SOME OTHER LEVEL (SUCH AS
 !***  ONE LEVEL ABOVE THE GROUND), THEN TREFK SHOULD BE FILLED WITH
 !***  THE TEMPERATURES IN TREF(L) WHICH ARE THE TEMPERATURES OF
-!***  THE MOIST ADIABAT THROUGH CLOUD BASE.  BY THE TIME THE LINE
+!***  THE MOIST ADIABAT THROUGH CLOUD BASE.  BY THE TIME THE LINE 
 !***  NUMBERED 450 HAS BEEN REACHED, TREFK ACTUALLY DOES HOLD THE
 !***  REFERENCE TEMPERATURE PROFILE.
 !***
@@ -878,7 +878,7 @@ CONTAINS
 !
 !------------TEMPERATURE REFERENCE PROFILE BELOW FREEZING LEVEL-------
 !
-      EL(LB) = ELWV
+      EL(LB) = ELWV    
       L0=LB
       PK0=PK(LB)
       TREFKX=TREFK(LB)
@@ -949,7 +949,7 @@ CONTAINS
 !--------------- ITERATION LOOP FOR CLOUD EFFICIENCY -------------------
 !-----------------------------------------------------------------------
 !
-      cloud_efficiency : DO ITREFI=1,ITREFI_MAX
+      cloud_efficiency : DO ITREFI=1,ITREFI_MAX  
 !
 !-----------------------------------------------------------------------
         DSPBK=((EFI-EFIMN)*SLOPBS+DSPBSS*PBOTFC)*SM                     &
@@ -1733,7 +1733,7 @@ CONTAINS
       JTF=MIN0(JTE,JDE-1)
       KTF=MIN0(KTE,KDE-1)
       ITF=MIN0(ITE,IDE-1)
-!
+! 
       IF(.NOT.RESTART)THEN
         DO J=JTS,JTF
         DO K=KTS,KTF

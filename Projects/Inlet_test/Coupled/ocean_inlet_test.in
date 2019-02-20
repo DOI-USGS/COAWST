@@ -73,7 +73,7 @@
 ! Input variable information file name.  This file needs to be processed
 ! first so all information arrays can be initialized properly.
 
-     VARNAME = ../../../ROMS/External/varinfo.dat 
+     VARNAME = ROMS/External/varinfo.dat
 
 ! Number of nested grids.
 
@@ -600,7 +600,8 @@ Hout(idW3St) == T       ! w_stokes           3D W-Stokes velocity
 Hout(idWamp) == T       ! Hwave              wave height
 Hout(idWlen) == T       ! Lwave              wave length-mean
 Hout(idWlep) == T       ! Lwavep             wave length-peak
-Hout(idWdir) == T       ! Dwave              wave direction
+Hout(idWdir) == T       ! Dwave              wave direction-mean
+Hout(idWdip) == T       ! Dwavep             wave direction-peak
 Hout(idWptp) == T       ! Pwave_top          wave surface period
 Hout(idWpbt) == T       ! Pwave_bot          wave bottom period
 Hout(idWorb) == T       ! Uwave_rms          wave bottom orbital velocity
@@ -709,7 +710,8 @@ Qout(idV3Sd) == F       ! v_stokes           3D V-Stokes velocity
 
 Qout(idWamp) == F       ! Hwave              wave height
 Qout(idWlen) == F       ! Lwave              wave length
-Qout(idWdir) == F       ! Dwave              wave direction
+Qout(idWdir) == F       ! Dwave              wave direction-mean
+Qout(idWdip) == F       ! Dwavep             wave direction-peak
 Qout(idWptp) == F       ! Pwave_top          wave surface period
 Qout(idWpbt) == F       ! Pwave_bot          wave bottom period
 Qout(idWorb) == F       ! Ub_swan            wave bottom orbital velocity
@@ -957,7 +959,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == inlet_test_grid.nc 
+     GRDNAME == Projects/Inlet_test/Coupled/inlet_test_grid.nc 
      ININAME == ocean_ini.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
@@ -1037,12 +1039,12 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 
 ! Input ASCII parameter filenames.
 
-     APARNAM =  s4dvar.in
-     SPOSNAM =  stations_inlet_test.in
-     FPOSNAM =  floats.in
-     BPARNAM =  bioFasham.in
-     SPARNAM =  sediment_inlet_test.in 
-     USRNAME =  MyFile.dat
+     APARNAM =  ROMS/External/s4dvar.in
+     SPOSNAM =  Projects/Inlet_test/Coupled/stations_inlet_test.in
+     FPOSNAM =  ROMS/External/floats.in
+     BPARNAM =  ROMS/External/bioFasham.in
+     SPARNAM =  Projects/Inlet_test/Coupled/sediment_inlet_test.in 
+     USRNAME =  ROMS/External/MyFile.dat
      VEGNAM  =  vegetation.in
 
 !
@@ -1269,13 +1271,13 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !  LBC(isV2Sd) 2D V-stokes,  [1:4, Ngrids] values are expected.
 !  LBC(isU3Sd) 3D U-stokes,  [1:4, Ngrids] values are expected.
 !  LBC(isV3Sd) 3D V-stokes,  [1:4, Ngrids] values are expected.
-
+!
 ! InWave boundary conditions
-
-   LBC(isAC3d) Wave action density, [1:4, Ngrids] values are expected.
-   LBC(isCT3d) Wave theta celerity, [1:4, Ngrids] values are expected.
-   LBC(isCX3d) Wave x-dir celerity, [1:4, Ngrids] values are expected.
-   LBC(isCY3d) Wave y-dir celerity, [1:4, Ngrids] values are expected.
+!
+!  LBC(isAC3d) Wave action density, [1:4, Ngrids] values are expected.
+!  LBC(isCT3d) Wave theta celerity, [1:4, Ngrids] values are expected.
+!  LBC(isCX3d) Wave x-dir celerity, [1:4, Ngrids] values are expected.
+!  LBC(isCY3d) Wave y-dir celerity, [1:4, Ngrids] values are expected.
 !
 ! Similarly, the adjoint-based algorithms (ADM, TLM, RPM) can have different
 ! lateral boundary conditions keywords:

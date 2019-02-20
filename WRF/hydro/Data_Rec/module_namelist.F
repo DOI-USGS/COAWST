@@ -2,20 +2,20 @@
 !  Author(s)/Contact(s):
 !  Abstract:
 !  History Log:
-!
+! 
 !  Usage:
 !  Parameters: <Specify typical arguments passed>
 !  Input Files:
 !        <list file names and briefly describe the data they include>
 !  Output Files:
 !        <list file names and briefly describe the information they include>
-!
+! 
 !  Condition codes:
 !        <list exit condition or error codes returned >
 !        If appropriate, descriptive troubleshooting instructions or
 !        likely causes for failures could be mentioned here with the
 !        appropriate error code
-!
+! 
 !  User controllable options: <if applicable>
 
 Module module_namelist
@@ -29,11 +29,11 @@ Module module_namelist
 
 #include "namelist.inc"
     TYPE(namelist_rt_field) , dimension(max_domain) :: nlst_rt
-    save nlst_rt
+    save nlst_rt 
 
-CONTAINS
+CONTAINS 
 
-    subroutine read_rt_nlst(nlst)
+    subroutine read_rt_nlst(nlst)     
           implicit none
 
           TYPE(namelist_rt_field) nlst
@@ -68,7 +68,7 @@ CONTAINS
 
        integer :: i
 
-
+       
           integer ::CHRTOUT_DOMAIN           ! Netcdf point timeseries output at all channel points
           integer ::CHRTOUT_GRID                ! Netcdf grid of channel streamflow values
           integer ::LSMOUT_DOMAIN              ! Netcdf grid of variables passed between LSM and routing components
@@ -77,7 +77,7 @@ CONTAINS
           integer  :: outlake
 
 
-!!! add the following two dummy variables
+!!! add the following two dummy variables 
        integer  :: NSOIL
        real :: ZSOIL8(8)
 
@@ -88,7 +88,7 @@ CONTAINS
        logical            :: readTimesliceParallel
        logical            :: temporalPersistence
        character(len=256) :: nudgingLastObsFile
-#endif
+#endif 
 
        namelist /HYDRO_nlist/ NSOIL, ZSOIL8,&
             RESTART_FILE,SPLIT_OUTPUT_COUNT,IGRID,&
@@ -116,15 +116,15 @@ CONTAINS
    namelist /NUDGING_nlist/ nudgingParamFile,      netwkReExFile,       &
                             readTimesliceParallel, temporalPersistence, &
                             nudgingLastObsFile
-   ! Default values...
+   ! Default values... 
    nudgingParamFile = "DOMAIN/nudgingParams.nc"
    netwkReExFile    = "DOMAIN/netwkReExFile.nc"
    readTimesliceParallel = .true.
    temporalPersistence   = .true.
    nudgingLastObsFile = ""
-#endif
+#endif 
 
-
+                    
 #ifdef MPP_LAND
        if(IO_id .eq. my_id) then
 #endif
@@ -136,7 +136,7 @@ CONTAINS
           read(12, HYDRO_nlist, iostat=ierr)
           if(ierr .ne. 0) call hydro_stop("HYDRO_nlst namelist error in read_rt_nlst")
 
-#ifdef WRF_HYDRO_NUDGING
+#ifdef WRF_HYDRO_NUDGING          
           read(12, NUDGING_nlist, iostat=ierr)
           if(ierr .ne. 0) call hydro_stop("NUDGING_nlst namelist error in read_rt_nlst")
 #endif
@@ -247,12 +247,12 @@ CONTAINS
   call mpp_land_bcast_char(256, nudgingLastObsFile)
   call mpp_land_bcast_log1(readTimesliceParallel)
   call mpp_land_bcast_log1(temporalPersistence)
-#endif
+#endif 
 #endif /* MPP_LAND */
 
 
-
-! run Rapid
+ 
+! run Rapid 
     if(channel_option .eq. 4) then
        CHANRTSWCRT = 0
        OVRTSWCRT = 0
@@ -267,8 +267,8 @@ CONTAINS
     nlst%RTOUT_DOMAIN = RTOUT_DOMAIN
     nlst%RT_OPTION = RT_OPTION
     nlst%CHANRTSWCRT = CHANRTSWCRT
-    nlst%GW_RESTART  = GW_RESTART
-    nlst%RSTRT_SWC   = RSTRT_SWC
+    nlst%GW_RESTART  = GW_RESTART 
+    nlst%RSTRT_SWC   = RSTRT_SWC  
     nlst%channel_option = channel_option
     nlst%DTRT_TER   = DTRT_TER
     nlst%DTRT_CH   = DTRT_CH
@@ -277,21 +277,21 @@ CONTAINS
 #ifdef MPP_LAND
   if(my_id .eq. IO_id) then
 #endif
-    if(nlst%DT .lt. DTRT_CH) then
+    if(nlst%DT .lt. DTRT_CH) then 
           print*, "nlst%DT,  DTRT_CH = ",nlst%DT,  DTRT_CH
           print*, "reset DTRT_CH=nlst%DT "
           DTRT_CH=nlst%DT
     endif
-    if(nlst%DT .lt. DTRT_TER) then
+    if(nlst%DT .lt. DTRT_TER) then 
           print*, "nlst%DT,  DTRT_TER = ",nlst%DT,  DTRT_TER
           print*, "reset DTRT_TER=nlst%DT "
           DTRT_TER=nlst%DT
     endif
-    if(nlst%DT/DTRT_TER .ne. real(int(nlst%DT) / int(DTRT_TER)) ) then
+    if(nlst%DT/DTRT_TER .ne. real(int(nlst%DT) / int(DTRT_TER)) ) then 
          print*, "nlst%DT,  DTRT_TER = ",nlst%DT,  DTRT_TER
          call hydro_stop("module_namelist: DT not a multiple of DTRT_TER")
     endif
-    if(nlst%DT/DTRT_CH .ne. real(int(nlst%DT) / int(DTRT_CH)) ) then
+    if(nlst%DT/DTRT_CH .ne. real(int(nlst%DT) / int(DTRT_CH)) ) then 
          print*, "nlst%DT,  DTRT_CH = ",nlst%DT,  DTRT_CH
          call hydro_stop("module_namelist: DT not a multiple of DTRT_CH")
     endif
@@ -322,7 +322,7 @@ CONTAINS
     nlst%order_to_write = order_to_write
 ! files
     nlst%route_topo_f   =  route_topo_f
-    nlst%route_chan_f = route_chan_f
+    nlst%route_chan_f = route_chan_f 
     nlst%route_link_f = route_link_f
     nlst%route_lake_f =route_lake_f
     nlst%route_direction_f =  route_direction_f
@@ -350,8 +350,8 @@ CONTAINS
     write(6,*) "nlst%UDMP_OPT ", nlst%UDMP_OPT
     write(6,*) " nlst%RT_OPTION ", RT_OPTION
     write(6,*) " nlst%CHANRTSWCRT ", CHANRTSWCRT
-    write(6,*) " nlst%GW_RESTART  ", GW_RESTART
-    write(6,*) " nlst%RSTRT_SWC   ", RSTRT_SWC
+    write(6,*) " nlst%GW_RESTART  ", GW_RESTART 
+    write(6,*) " nlst%RSTRT_SWC   ", RSTRT_SWC  
     write(6,*) " nlst%channel_option ", channel_option
     write(6,*) " nlst%DTRT_TER   ", DTRT_TER
     write(6,*) " nlst%DTRT_CH   ", DTRT_CH
@@ -373,7 +373,7 @@ CONTAINS
     write(6,*) " nlst%rst_typ ", rst_typ
     write(6,*) " nlst%order_to_write ", order_to_write
     write(6,*) " nlst%route_topo_f   ",  route_topo_f
-    write(6,*) " nlst%route_chan_f ", route_chan_f
+    write(6,*) " nlst%route_chan_f ", route_chan_f 
     write(6,*) " nlst%route_link_f ", route_link_f
     write(6,*) " nlst%route_lake_f ",route_lake_f
     write(6,*) " nlst%route_direction_f ",  route_direction_f

@@ -37,16 +37,16 @@ MODULE module_wps_io_arw
 ! Define arrays for default definition
   integer, parameter, private :: num_i_kinds = 4
   integer, parameter, dimension( num_i_kinds ), private :: integer_types = (/ &
-       i_byte, i_short, i_long,  i_llong  /)
+       i_byte, i_short, i_long,  i_llong  /) 
   integer, parameter, dimension( num_i_kinds ), private :: integer_byte_sizes = (/ &
        num_bytes_for_i_byte, num_bytes_for_i_short, &
        num_bytes_for_i_long, num_bytes_for_i_llong  /)
 
 ! Default values
 ! **** CHANGE THE FOLLOWING TO CHANGE THE DEFAULT INTEGER TYPE KIND ***
-  integer, parameter, private :: default_integer = 2  ! 1=byte,
-                                                      ! 2=short,
-                                                      ! 3=long,
+  integer, parameter, private :: default_integer = 2  ! 1=byte, 
+                                                      ! 2=short, 
+                                                      ! 3=long, 
                                                       ! 4=llong
   integer, parameter, public  :: i_kind = integer_types( default_integer )
   integer, parameter, public  :: num_bytes_for_i_kind = &
@@ -69,15 +69,15 @@ MODULE module_wps_io_arw
 ! Define arrays for default definition
   integer, parameter, private :: num_r_kinds = 3
   integer, parameter, dimension( num_r_kinds ), private :: real_kinds = (/ &
-       r_single, r_double, r_quad    /)
+       r_single, r_double, r_quad    /) 
   integer, parameter, dimension( num_r_kinds ), private :: real_byte_sizes = (/ &
        num_bytes_for_r_single, num_bytes_for_r_double, &
        num_bytes_for_r_quad    /)
 
 ! Default values
 ! **** CHANGE THE FOLLOWING TO CHANGE THE DEFAULT REAL TYPE KIND ***
-  integer, parameter, private :: default_real = 2  ! 1=single,
-                                                   ! 2=double,
+  integer, parameter, private :: default_real = 2  ! 1=single, 
+                                                   ! 2=double, 
 !! END FROM MODULE_KINDS
 
       !  Input 3D meteorological fields.
@@ -96,7 +96,7 @@ MODULE module_wps_io_arw
                                                soilm100_input , soilm200_input , &
                                                psfc_in,pmsl
 
-      REAL , DIMENSION(:,:)   , ALLOCATABLE :: lat_wind, lon_wind
+      REAL , DIMENSION(:,:)   , ALLOCATABLE :: lat_wind, lon_wind 
 
 
       !  Local input arrays
@@ -140,7 +140,7 @@ CONTAINS
       INTEGER :: DATAHANDLE, num_metgrid_levels
       INTEGER :: Sysdepinfo, Status
       INTEGER :: istatus,ioutcount,iret,index,ierr
-
+      
       integer :: nrecs,iunit, L,hor_size,hor_size_u,hor_size_v
 
 !!
@@ -219,7 +219,7 @@ CONTAINS
       flag_st010040 = 0
       flag_st040100 = 0
       flag_st100200 = 0
-      flag_sm000010 = 0
+      flag_sm000010 = 0 
       flag_sm010040 = 0
       flag_sm040100 = 0
       flag_sm100200 = 0
@@ -229,8 +229,8 @@ CONTAINS
       flag_soilt010 = 0
       flag_soilt040 = 0
       flag_soilt100 = 0
-      flag_soilt200 = 0
-      flag_soilm010 = 0
+      flag_soilt200 = 0 
+      flag_soilm010 = 0 
       flag_soilm040 = 0
       flag_soilm100 = 0
       flag_soilm200 = 0
@@ -264,7 +264,7 @@ CONTAINS
       allocate (start_byte(nrecs))
       allocate (end_byte(nrecs))
       allocate (file_offset(nrecs))
-
+ 
       call inventory_wrf_binary_file(iunit, trim(filename), nrecs,  &
                       datestr_all,varname_all,domainend_all,   &
                       start_block,end_block,start_byte,end_byte,file_offset)
@@ -344,7 +344,7 @@ CONTAINS
                               igarb,1,mpi_integer4,             &
                               mpi_status_ignore, ierr)
 	write(a_message,*) 'setting iswater to be: ', igarb
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
         CALL nl_set_iswater (grid%id, igarb )
 
       VarName='ISICE'
@@ -353,7 +353,7 @@ CONTAINS
                               igarb2,1,mpi_integer4,             &
                               mpi_status_ignore, ierr)
 	write(a_message,*) 'setting isice to be: ', igarb2
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
         CALL nl_set_isice (grid%id, igarb2 )
 
       IF ( igarb .eq. 16 .and. igarb2 .eq. 24 ) THEN
@@ -753,7 +753,7 @@ CONTAINS
            grid%v_gc(I,K,J)=dumdata_v(I,J,K)
 	if (grid%v_gc(I,K,J) .ne. grid%v_gc(I,K,J) .or. abs(grid%v_gc(I,K,J)) .gt. 100.) then
 	write(a_message,*) 'bad v_gc defined: ', I,K,J,grid%v_gc(I,K,J)
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
 	call wrf_error_fatal(" bad v_gc")
 	endif
          ENDDO
@@ -771,7 +771,7 @@ CONTAINS
            grid%u_gc(I,K,J)=dumdata_u(I,J,K)
 	if (grid%u_gc(I,K,J) .ne. grid%u_gc(I,K,J) .or. abs(grid%u_gc(I,K,J)) .gt. 100.) then
 	write(a_message,*) 'bad u_gc defined: ', I,K,J,grid%u_gc(I,K,J)
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
 	call wrf_error_fatal(" bad u_gc")
 	endif
          ENDDO
@@ -789,7 +789,7 @@ CONTAINS
            grid%t_gc(I,K,J)=dumdata(I,J,K)
 	if (grid%t_gc(I,K,J) .ne. grid%t_gc(I,K,J) .or. abs(grid%t_gc(I,K,J)) .gt. 350.) then
 	write(a_message,*) 'bad t_gc defined: ', I,K,J,grid%t_gc(I,K,J)
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
 	call wrf_error_fatal(" bad t_gc")
 	endif
          ENDDO
@@ -874,17 +874,6 @@ CONTAINS
         ENDDO
 
 
-    varName='SLOPECAT'
-    CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
-    CALL mpi_file_read_at(iunit,file_offset(index+1),     &
-                             dumdata,hor_size,mpi_real4,             &
-                             mpi_status_ignore, ierr)
-        DO J=JTS,min(JTE,JDE-1)
-         DO I=ITS,min(ITE,IDE-1)
-           grid%slopecat(I,J)=dumdata(I,J,1)
-         ENDDO
-        ENDDO
-
     varName='SNOALB'
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
@@ -956,7 +945,7 @@ CONTAINS
         ENDDO
 
 	write(a_message,*) 'veg_cat and soil_cat sizes:::: ', num_veg_cat , num_soil_top_cat
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
 
     varName='SOILCTOP'
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
@@ -1101,16 +1090,16 @@ CONTAINS
 !! bandaid for newly created WPS geogrid static files
         if (grid%msfu(I,J) .lt. 0.7) then
         write(a_message,*) 'weird msfu at I,J: ', I,J,grid%msfu(I,J)
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
 
         if(J .eq. min(JTE,JDE-1)) then
         grid%msfu(I,J)=dumdata_u(I,J-1,1)
         write(a_message,*) 'changing msfu to: ',I,J,  grid%msfu(I,J)
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
         endif
-
+        
         endif
-!! end bandaid
+!! end bandaid 
 
          ENDDO
         ENDDO
@@ -1126,11 +1115,11 @@ CONTAINS
 
         if (grid%msfv(I,J) .lt. 0.7 ) then
         write(a_message,*) 'weird msfv at I,J: ', I,J,grid%msfv(I,J)
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
         grid%msfv(I,J)=dumdata_v(I,J-1,1)
         if( J .eq. min(JTE,JDE)) then
         write(a_message,*) 'changing msfv to: ',I,J,  grid%msfv(I,J)
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
         endif
 
         endif
@@ -1217,7 +1206,7 @@ CONTAINS
         ENDDO
 
 	write(a_message,*) 'reading XLAT_M'
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
     varName='XLAT_M'
     CALL retrieve_index(index,VarName,varname_all,nrecs,iret)
     CALL mpi_file_read_at(iunit,file_offset(index+1),     &
@@ -1230,12 +1219,12 @@ CONTAINS
          ENDDO
         ENDDO
 	write(a_message,*) 'xlat_gc defined'
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
 
       call mpi_file_close(mpi_comm_world, ierr)
 
 	write(a_message,*) 'to ST000010 def'
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
        varName='ST000010'
        flag_st000010 = 1
        num_st_levels_input = num_st_levels_input + 1
@@ -1246,7 +1235,7 @@ CONTAINS
         ENDDO
        ENDDO
 	write(a_message,*) 'past ST000010 def'
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
 
        varName='ST010040'
        flag_st010040 = 1
@@ -1267,7 +1256,7 @@ CONTAINS
               st_input(I,num_st_levels_input + 1,J) = grid%st040100(i,j)
         ENDDO
        ENDDO
-
+ 
        varName='ST100200'
        flag_st100200 = 1
        num_st_levels_input = num_st_levels_input + 1
@@ -1307,7 +1296,7 @@ CONTAINS
               sm_input(I,num_sm_levels_input + 1,J) = grid%sm040100(i,j)
         ENDDO
        ENDDO
-
+ 
        varName='SM100200'
        flag_sm100200 = 1
        num_sm_levels_input = num_sm_levels_input + 1
@@ -1321,13 +1310,13 @@ CONTAINS
 !           flag_sst = 1
 
         write(a_message,*) 'maxval st_input(1): ', maxval(st_input(:,1,:))
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
         write(a_message,*) 'maxval st_input(2): ', maxval(st_input(:,2,:))
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
         write(a_message,*) 'maxval st_input(3): ', maxval(st_input(:,3,:))
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
         write(a_message,*) 'maxval st_input(4): ', maxval(st_input(:,4,:))
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
 
         DEALLOCATE(pmsl)
         DEALLOCATE(psfc_in)
@@ -1545,7 +1534,11 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
   integer memorystart(3),memoryend(3)
   integer patchstart(3),patchend(3)
   character(132) datestr,varname
+#if (WRFPLUS == 1)
+  real(r_double) dummy_field(1)
+#else
   real dummy_field(1)
+#endif
 !  real(r_single) dummy_field(1)
 !  integer dummy_field
 !  real dummy_field
@@ -1559,10 +1552,10 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
   blanks=trim(' ')
 
 	write(a_message,*) 'inventory subroutine'
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
 
 	write(a_message,*) 'opening file : ', trim(wrf_ges_filename)
-        CALL wrf_message ( a_message )
+        CALL wrf_message ( a_message )            
 
   open(in_unit,file=trim(wrf_ges_filename),access='direct',recl=lrecl)
   irecs=0
@@ -1601,8 +1594,8 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
     domainend_all(1:3,irecs)=0
 
     loc_count=1
-!	write(a_message,*) '1, hdrbuf4(1): 1', hdrbuf4(1)
-!       CALL wrf_message ( a_message )
+!	write(a_message,*) '1, hdrbuf4(1): 1', hdrbuf4(1) 
+!       CALL wrf_message ( a_message )            
     do i=2,8
        if(loc_count.ge.lenrec) exit
        loc_count=loc_count+1
@@ -1616,7 +1609,7 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
 
 !         if(lenrec==2048) then write(0,*)' irecs,hdrbuf(2),int_dom_ti_char,int_field=', &
 !                                      irecs,hdrbuf(2),int_dom_ti_char,int_field, int_dom_ti_real, int_dom_ti_integer
-
+	
     if(lenrec==2048.and.(hdrbuf(2) == int_dom_ti_char .or. hdrbuf(2) == int_field &
     .or. hdrbuf(2) == int_dom_ti_real .or. hdrbuf(2) == int_dom_ti_integer)) then
 
@@ -1631,7 +1624,7 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
 !	write(0,*) 'I, hdrbuf4(I): ', I, hdrbuf4(I)
        end do
 !	write(0,*) 'past 9,lenrec loop'
-!	write(0,*) 'hdrbuf(2): ', hdrbuf(2)
+!	write(0,*) 'hdrbuf(2): ', hdrbuf(2) 
 
        if(hdrbuf(2) == int_dom_ti_char) then
 
@@ -1640,7 +1633,7 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
           varname_all(irecs)=trim(element)
           datestr_all(irecs)=trim(strdata)
               write(a_message,*)'(1) irecs,varname,datestr = ',irecs,trim(varname_all(irecs)),trim(datestr_all(irecs))
-              CALL wrf_message ( a_message )
+              CALL wrf_message ( a_message )      
 
        else if(hdrbuf(2) == int_dom_ti_real) then
 
@@ -1662,9 +1655,9 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
 !          datestr_all(irecs)=trim(strdata)
 
               write(a_message,*)'(2) irecs,varname,datestr = ',irecs,trim(varname_all(irecs)),rdata(1)
-              CALL wrf_message ( a_message )
+              CALL wrf_message ( a_message )      
 !	write(0,*) ' --------------------------- '
-
+         
        else if(hdrbuf(2) == int_dom_ti_integer) then
 
           call int_get_ti_header_integer(hdrbuf,hdrbufsize,inttypesize,typesize, &
@@ -1714,36 +1707,36 @@ subroutine inventory_wrf_binary_file(in_unit,wrf_ges_filename,nrecs, &
 
 885  continue
      write(a_message,*)' problem in inventory_wrf_binary_file, lenrec has bad value before end of file'
-     CALL wrf_message ( a_message )
+     CALL wrf_message ( a_message )               
      write(a_message,*)'     lenrec =',lenrec
-     CALL wrf_message ( a_message )
+     CALL wrf_message ( a_message )               
      close(in_unit)
      return
 
 890  continue
      write(a_message,*)' problem in inventory_wrf_binary_file, beginning and ending rec len words unequal'
-     CALL wrf_message ( a_message )
+     CALL wrf_message ( a_message )               
      write(a_message,*)'     begining reclen =',lensave
-     CALL wrf_message ( a_message )
+     CALL wrf_message ( a_message )               
      write(a_message,*)'       ending reclen =',lenrec
-     CALL wrf_message ( a_message )
+     CALL wrf_message ( a_message )               
      write(a_message,*)'               irecs =',irecs
-     CALL wrf_message ( a_message )
+     CALL wrf_message ( a_message )               
      write(a_message,*)'               nrecs =',nrecs
-     CALL wrf_message ( a_message )
+     CALL wrf_message ( a_message )               
      call wrf_error_fatal("curious reclen discrepancy")
      close(in_unit)
      return
 
 900  continue
      write(a_message,*)' normal end of file reached in inventory_wrf_binary_file'
-     CALL wrf_message ( a_message )
+     CALL wrf_message ( a_message )               
      write(a_message,*)'        nblocks=',thisblock
-     CALL wrf_message ( a_message )
+     CALL wrf_message ( a_message )               
      write(a_message,*)'          irecs,nrecs=',irecs,nrecs
-     CALL wrf_message ( a_message )
+     CALL wrf_message ( a_message )               
      write(a_message,*)'         nreads=',nreads
-     CALL wrf_message ( a_message )
+     CALL wrf_message ( a_message )               
      close(in_unit)
 
 end subroutine inventory_wrf_binary_file

@@ -17,11 +17,11 @@
 !                                                                      !
 !  Thornton, E. B., and R. T. Guza, Surf zone longshore currents and   !
 !  random waves: field data and models, J. Phys. Oceanogr.,            !
-!  16,1165-1178, 1986.                                                 !
+!  16,1165–1178, 1986.                                                 !
 !                                                                      !
 !  Church, J. C., and E. B. Thornton, Effects of breaking wave induced !
 !  turbulence within a longshore current model, Coastal Eng., 20,      !
-!  1-28, 1993.                                                         !
+!  1–28, 1993.                                                         !
 !=======================================================================
 !
       implicit none
@@ -120,7 +120,7 @@
 !
 # ifdef WDISS_THORGUZA
 !
-!  Calcualate wave dissipation using empirical parameters of
+!  Calcualate wave dissipation using empirical parameters of 
 !  Thornton and Guza, 1986
 !
           cff2=1.0_r8/((gammaw**4.0_r8)*(Dstp**5.0_r8))
@@ -132,10 +132,10 @@
 !
 !  Calculate wave dissipation using empirical parameters of
 !  Church and Thornton, 1993.
-!
+! 
           cff2=1.0_r8/(gammaw*Dstp)
           RB1=1.0_r8+tanh(8.0_r8*((cff1*cff2)-1.0_r8))
-          RB2=1.0_r8-(1.0_r8+(cff1*cff2)**2.0_r8)**(-2.5_r8)
+          RB2=1.0_r8-(1.0_r8+(cff1*cff2)**2.0_r8)**(-2.5_r8) 
           Dissip_break(i,j)=(0.2621_r8/Dstp)*fac1*sigmat*               &
      &                      (cff1**3.0_r8)*RB1*RB2
           Dissip_wcap(i,j)=0.0_r8

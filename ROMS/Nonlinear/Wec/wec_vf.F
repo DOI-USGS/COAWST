@@ -392,21 +392,23 @@
 # ifdef WET_DRY
           waveAA(i,j)=waveAA(i,j)*rmask_wet(i,j)
 # endif
-          sigma(i,j)=SQRT(g*waven(i,j)*TANH(waven(i,j)*Dstp(i,j)))
+          sigma(i,j)=SQRT(MAX(g*waven(i,j)*TANH(waven(i,j)*Dstp(i,j)),  &
+     &                    eps))
           osigma(i,j)=1.0_r8/sigma(i,j)
 !
 !  Compute wave celerity and nonlinear water depth
 !
           kD(i,j)=MIN(waven(i,j)*Dstp(i,j), kDmax)
-          wavec(i,j)=SQRT(g*owaven(i,j)*TANH(kD(i,j)))
+          wavec(i,j)=SQRT(MAX(g*owaven(i,j)*TANH(kD(i,j)),eps))
 !
 !  Compute metrics for vertical dissipation distribution.
 !
           odiss(i,j)=0.0_r8
-          gamr(i,j)=MIN(0.707_r8*Dstp(i,j)/                             &
-     &              (1.25_r8*Hwave(i,j)+eps),1.0_r8)
+          gamr(i,j)=MAX(MIN(0.707_r8*Dstp(i,j)/                         &
+     &              (1.25_r8*Hwave(i,j)+eps),1.0_r8),0.0_r8)
           DO k=1,N(ng)
-            cff2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)*gamr(i,j)
+            cff2=MAX(MIN((z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)*gamr(i,j),  &
+     &           1.0_r8),0.0_r8)
             odiss(i,j)=odiss(i,j)+Hz(i,j,k)*                            &
      &                   COSH(2.0_r8*pi*cff2)
           END DO
@@ -418,7 +420,7 @@
       END DO
 !
 !---------------------------------------------------------------------------
-!  Compute Bernoulli's Head (BH), represented as the
+!  Compute Bernoulli's Head (BH), represented as the 
 !  symbol cursive K in Eqn. 5.
 !---------------------------------------------------------------------------
 !
@@ -470,12 +472,12 @@
           DO k=2,N(ng)
             cff=Hz(i,j,k)
             fac2=(z_r(i,j,N(ng))-z_r(i,j,k))*oDstp(i,j)
-            vi1=vi1+cff*shear2(i,k)*SINH(2.0_r8*kD(i,j)*fac2)
+            vi1=vi1+cff*shear2(i,k)*SINH(2.0_r8*kD(i,j)*fac2)             
           END DO
 !
 !  Calculate Bernoulli's Head at the surface
 !
-          bh(i,j)=0.25_r8*vi1*sigma(i,j)*waveAA(i,j)/                   &
+          bh(i,j)=0.25_r8*vi1*sigma(i,j)*waveAA(i,j)/                   & 
      &                    (waven(i,j)*(SINH(kD(i,j)))**2.0_r8)
         END DO
 !
@@ -540,7 +542,7 @@
           END DO
         END DO
 !
-!  Compute gradients for shear du/dz at cell faces. notice reuse of
+!  Compute gradients for shear du/dz at cell faces. notice reuse of 
 !  shear1 and shear2.
 !
         DO k=1,N(ng)-1
@@ -741,7 +743,7 @@
 #  ifdef DIAGNOSTICS_UV
 !
 !---------------------------------------------------------------------------
-!  To obtain the full horizotal 'J' vortex force term:
+!  To obtain the full horizotal 'J' vortex force term: 
 !  Compute term for diagnostics only.  Subtract from hadv and add to vorf.
 !---------------------------------------------------------------------------
 !
@@ -788,7 +790,7 @@
           END DO
         END DO
         DO i=Istr,Iend
-          DO j=JstrV,Jend
+          DO j=JstrV,Jend 
             cff2=VFe(i+1,j)-VFe(i,j)
             cff=cff2*Huston(i,j)
             DiaRV(i,j,k,nrhs,M3xadv)=0.0_r8
@@ -800,7 +802,7 @@
 #  endif
 !
 !---------------------------------------------------------------------------
-! Contribution of a term corresponding to product of
+! Contribution of a term corresponding to product of 
 ! Stokes and Eulerian Velocity Eqn. 26 and 27.
 ! This removes terms that were unneccessarily added in flux form.
 !---------------------------------------------------------------------------
@@ -862,11 +864,11 @@
           END DO
         END DO
         DO i=Istr,Iend
-          DO j=JstrV,Jend
+          DO j=JstrV,Jend 
             cff1=UFe(i,j)-UFe(i,j-1)
             cff2=VFe(i,j)-VFe(i,j-1)
             cff3=Hustom(i,j)*cff1
-            cff4=Hvstom(i,j)*cff2
+            cff4=Hvstom(i,j)*cff2 
             rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff3-cff4
 #  ifdef DIAGNOSTICS_UV
             DiaRV(i,j,k,nrhs,M3yadv)=DiaRV(i,j,k,nrhs,M3yadv)+cff4

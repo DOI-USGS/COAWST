@@ -3,11 +3,11 @@ MODULE module_ra_cam
   use module_cam_support, only: endrun
 
   implicit none
-!
+! 
 ! A. Slingo's data for cloud particle radiative properties (from 'A GCM
 ! Parameterization for the Shortwave Properties of Water Clouds' JAS
 ! vol. 46 may 1989 pp 1419-1427)
-!
+! 
    real(r8) abarl(4)         ! A coefficient for extinction optical depth
    real(r8) bbarl(4)         ! B coefficient for extinction optical depth
    real(r8) cbarl(4)         ! C coefficient for single scat albedo
@@ -33,12 +33,12 @@ MODULE module_ra_cam
    real(r8) ebarli           ! E coefficient for current spectral band
    real(r8) fbarli           ! F coefficient for current spectral band
 #endif
-!
+! 
 ! Caution... A. Slingo recommends no less than 4.0 micro-meters nor
 ! greater than 20 micro-meters
-!
+! 
 ! ice water coefficients (Ebert and Curry,1992, JGR, 97, 3831-3836)
-!
+! 
    real(r8) abari(4)         ! a coefficient for extinction optical depth
    real(r8) bbari(4)         ! b coefficient for extinction optical depth
    real(r8) cbari(4)         ! c coefficient for single scat albedo
@@ -64,7 +64,7 @@ MODULE module_ra_cam
    real(r8) ebarii           ! E coefficient for current spectral band
    real(r8) fbarii           ! F coefficient for current spectral band
 #endif
-!
+! 
    real(r8) delta            ! Pressure (in atm) for stratos. h2o limit
    real(r8) o2mmr            ! O2 mass mixing ratio:
 
@@ -80,7 +80,7 @@ MODULE module_ra_cam
    data o2mmr / .23143 /
 
 ! Next series depends on spectral interval
-!
+! 
    real(r8) frcsol(nspint)   ! Fraction of solar flux in spectral interval
    real(r8) wavmin(nspint)   ! Min wavelength (micro-meters) of interval
    real(r8) wavmax(nspint)   ! Max wavelength (micro-meters) of interval
@@ -100,9 +100,9 @@ MODULE module_ra_cam
                  .003869, .026336, .360739, .065392, .526861, &
                  .526861, .526861, .526861, .526861, .526861, &
                  .526861, .006239, .001834, .001834/
-!
+! 
 ! weight for 0.64 - 0.7 microns  appropriate to clear skies over oceans
-!
+! 
    data nirwgt /  0.0,   0.0,   0.0,      0.0,   0.0, &
                   0.0,   0.0,   0.0, 0.320518,   1.0,  1.0, &
                   1.0,   1.0,   1.0,      1.0,   1.0, &
@@ -128,7 +128,7 @@ MODULE module_ra_cam
    parameter( &
         v_raytau_35 = 0.155208, &
         v_raytau_64 = 0.0392, &
-        v_abo3_35 = 2.4058030e+01, &
+        v_abo3_35 = 2.4058030e+01, &  
         v_abo3_64 = 2.210e+01 &
         )
 
@@ -142,9 +142,9 @@ MODULE module_ra_cam
 ! END UPDATE
 !
 
-!
+! 
 ! Absorption coefficients
-!
+! 
 !
 ! UPDATE TO H2O NEAR-IR: abh2o optimized for Hitran 2K and CKD 2.4
 !
@@ -169,11 +169,11 @@ MODULE module_ra_cam
 
    data abo2  /    .000,     .000,    .000,    .000,    .000, &
                    .000,     .000,    .000,1.11e-05,6.69e-05, &
-                   .000,     .000,    .000,    .000,    .000, &
+                   .000,     .000,    .000,    .000,    .000, &  
                    .000,     .000,    .000,    .000/
-!
+! 
 ! Spectral interval weights
-!
+! 
    data ph2o  /    .000,     .000,    .000,    .000,    .000, &
         .000,     .000,    .000,    .000,    .505,     &
         .210,     .120,    .070,    .048,    .029,     &
@@ -205,11 +205,11 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
                      GSW,GLW,XLAT,XLONG,                           &
                      ALBEDO,t_phy,TSK,EMISS,                       &
                      QV3D,QC3D,QR3D,QI3D,QS3D,QG3D,                &
-                     ALSWVISDIR,ALSWVISDIF,                        & !ssib
-                     ALSWNIRDIR,ALSWNIRDIF,                        & !ssib
-                     SWVISDIR,SWVISDIF,                            & !ssib
-                     SWNIRDIR,SWNIRDIF,                            & !ssib
-                     sf_surface_physics,                           & !ssib
+                     ALSWVISDIR,ALSWVISDIF,                        & !ssib  
+                     ALSWNIRDIR,ALSWNIRDIF,                        & !ssib 
+                     SWVISDIR,SWVISDIF,                            & !ssib 
+                     SWNIRDIR,SWNIRDIF,                            & !ssib 
+                     sf_surface_physics,                           & !ssib 
                      SWDDIR,SWDDIF,SWDDNI,                         & ! amontornes-bcodina (2014-04-20)
                      F_QV,F_QC,F_QR,F_QI,F_QS,F_QG,                &
                      f_ice_phy,f_rain_phy,                         &
@@ -354,7 +354,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
          INTENT(INOUT)  ::                                  swcf, &
                                                             lwcf, &
                                                              olr, &
-                                                            coszr
+                                                            coszr    
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme )                 , &
          INTENT(OUT   )  ::                               cemiss, &        ! cloud emissivity for isccp
                                                          taucldc, &        ! cloud water optical depth for isccp
@@ -369,7 +369,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
   real, dimension(ims:ime,jms:jme), optional, intent(in) :: coszen
 
 ! LOCAL VARIABLES
-
+ 
    INTEGER :: lchnk, ncol, pcols, pver, pverp, pverr, pverrp
    INTEGER :: pcnst, pnats, ppcnst, i, j, k, ii, kk, kk1, m, n
    integer :: begchunk, endchunk
@@ -377,7 +377,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    real(r8) doymodel, doydatam, doydatap, deltat, fact1, fact2
 
    REAL :: XT24, TLOCTM, HRANG, XXLAT, oldXT24
-
+ 
    real(r8), DIMENSION( 1:ite-its+1 ) :: coszrs, landfrac, landm, snowh, icefrac, lwups
    real(r8), DIMENSION( 1:ite-its+1 ) :: asdir, asdif, aldir, aldif, ps
    real(r8), DIMENSION( 1:ite-its+1, 1:kte-kts+1 ) :: cld, pmid, lnpmid, pdel, zm, t
@@ -414,7 +414,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    real(r8), dimension(  1:ite-its+1, 1:kte-kts+2 )  :: fldnc       ! Downward clear sky longwave
    real(r8), dimension(  1:ite-its+1 ) :: swcftoa                 ! Top of the atmosphere solar cloud forcing
    real(r8), dimension(  1:ite-its+1 ) :: lwcftoa                 ! Top of the atmosphere longwave cloud forcing
-   real(r8), dimension(  1:ite-its+1 ) :: olrtoa                  ! Top of the atmosphere outgoing longwave
+   real(r8), dimension(  1:ite-its+1 ) :: olrtoa                  ! Top of the atmosphere outgoing longwave 
 !
    real(r8), dimension(  1:ite-its+1 ) :: sols          ! Downward solar rad onto surface (sw direct)
    real(r8), dimension(  1:ite-its+1 ) :: soll          ! Downward solar rad onto surface (lw direct)
@@ -441,7 +441,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 
 !ccc
 #ifdef CLWRFGHG
-! CLWRF-UC June.09
+! CLWRF-UC June.09 
    REAL(r8)                                         :: co2vmr, n2ovmr, ch4vmr, f11vmr, f12vmr
 #endif
    LOGICAL, EXTERNAL                                :: wrf_dm_on_monitor
@@ -472,10 +472,10 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
    if(naer_c.ne.naer_all) then
              WRITE( wrf_err_message , * ) 'naer_c-1 ne naer_all ', naer_c, naer_all
              CALL wrf_error_fatal ( wrf_err_message )
-   endif
+   endif 
 
 ! update CO2 volume mixing ratio (co2vmr)
-
+  
 ! determine time interpolation factors, check sanity
 ! of interpolation factors to within 32-bit roundoff
 ! assume that day of year is 1 for all input data
@@ -553,7 +553,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       else
          do i = its,ite
             ii = i - its + 1
-            ! XT24 is the fractional part of simulation days plus half of RADT expressed in
+            ! XT24 is the fractional part of simulation days plus half of RADT expressed in 
             ! units of minutes
             ! JULIAN is in days
             ! RADT is in minutes
@@ -569,7 +569,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
 ! moist variables
 
       do k = kts,kte
-      kk = kte - k + kts
+      kk = kte - k + kts 
       do i = its,ite
       ii = i - its + 1
 !    convert to specific humidity
@@ -671,7 +671,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       endif
 
       do k = kts,kte
-      kk = kte - k + kts
+      kk = kte - k + kts 
       do i = its,ite
       ii = i - its + 1
       pmid(ii,kk) = p_phy(i,k,j)
@@ -763,7 +763,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
                    pint, lnpmid, lnpint, pdel, t, q,   &
                    cld, cicewp, cliqwp, tauxcl, tauxci, coszrs, clat, asdir, asdif,               &
                    aldir, aldif, solcon, GMT,JULDAY,JULIAN,DT,XTIME,   &
-                   pin, ozmixmj, ozmix, levsiz, num_months,  &
+                   pin, ozmixmj, ozmix, levsiz, num_months,  & 
                    m_psjp,m_psjn, aerosoljp, aerosoljn,  m_hybi, paerlev, naer_c, pmxrgn, nmxrgn, &
                    dolw, dosw, doabsems, abstot, absnxt, emstot, &
                    fsup, fsupc, fsdn, fsdnc,            &
@@ -781,7 +781,7 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
                    landfrac, zm, fsds, fsdsdir, fsdsdif) ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes
 
       do k = kts,kte
-      kk = kte - k + kts
+      kk = kte - k + kts 
       do i = its,ite
       ii = i - its + 1
       if(dolw)RTHRATENLW(I,K,J) = 1.e4*qrl(ii,kk)/(cpair*pi_phy(i,k,j))
@@ -901,10 +901,10 @@ subroutine camrad(RTHRATENLW,RTHRATENSW,                           &
       if(dosw)then
       do i = its,ite
         ii = i - its + 1
-        SWVISDIR(I,J) = sols(ii)  !SSiB
-        SWVISDIF(I,J) = solsd(ii) !SSiB
-        SWNIRDIR(I,J) = soll(ii)  !SSiB
-        SWNIRDIF(I,J) = solld(ii) !SSiB
+        SWVISDIR(I,J) = sols(ii)  !SSiB 
+        SWVISDIF(I,J) = solsd(ii) !SSiB 
+        SWNIRDIR(I,J) = soll(ii)  !SSiB 
+        SWNIRDIF(I,J) = solld(ii) !SSiB 
       enddo
       endif
   CASE (CLMSCHEME)
@@ -993,7 +993,7 @@ end subroutine camrad
    ixcldliq = 2
    ixcldice = 3
 #if (NMM_CORE != 1)
-! aerosol array is not in the NMM Registry
+! aerosol array is not in the NMM Registry 
 !   since CAM radiation not available to NMM (yet)
 !   so this is blocked out to enable CAM compilation with NMM
    idxSUL = P_SUL
@@ -1019,7 +1019,7 @@ end subroutine camrad
    mwf12 = 120.              ! molecular weight cfc12
    cappa = R_D/CP
    rair = R_D
-   tmelt = 273.16            ! freezing T of fresh water ~ K
+   tmelt = 273.16            ! freezing T of fresh water ~ K 
    r_universal = 6.02214e26 * STBOLT   ! Universal gas constant ~ J/K/kmole
    latvap = 2.501e6          ! latent heat of evaporation ~ J/kg
    latice = 3.336e5          ! latent heat of fusion ~ J/kg
@@ -1034,7 +1034,7 @@ end subroutine camrad
    CALL oznini(ozmixm,pin,levsiz,num_months,XLAT,                   &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
-                     its, ite, jts, jte, kts, kte)
+                     its, ite, jts, jte, kts, kte)                   
    CALL aerosol_init(m_psp,m_psn,m_hybi,aerosolcp,aerosolcn,paerlev,naer_c,shalf,pptop,    &
                      ids, ide, jds, jde, kds, kde,                  &
                      ims, ime, jms, jme, kms, kme,                  &
@@ -1053,7 +1053,7 @@ subroutine oznint(julday,julian,dt,gmt,xtime,ozmixmj,ozmix,levsiz,num_months,pco
    INTEGER,      INTENT(IN   )    ::   levsiz, num_months,pcols
 
    REAL(r8),  DIMENSION( pcols, levsiz, num_months ),      &
-          INTENT(IN   ) ::                                  ozmixmj
+          INTENT(IN   ) ::                                  ozmixmj 
 
    REAL, INTENT(IN    )      ::        XTIME,GMT
    INTEGER, INTENT(IN )      ::        JULDAY
@@ -1077,7 +1077,7 @@ subroutine oznint(julday,julian,dt,gmt,xtime,ozmixmj,ozmix,levsiz,num_months,pco
    intJULIAN = JULIAN + 1.0_r8    ! offset by one day
 ! jan 1st 00z is julian=1.0 here
    IJUL=INT(intJULIAN)
-!  Note that following will drift.
+!  Note that following will drift. 
 !    Need to use actual month/day info to compute julian.
    intJULIAN=intJULIAN-FLOAT(IJUL)
    IJUL=MOD(IJUL,365)
@@ -1103,7 +1103,7 @@ subroutine oznint(julday,julian,dt,gmt,xtime,ozmixmj,ozmix,levsiz,num_months,pco
    nm=12
    endif
    call getfactors(ozncyc,np1, cdayozm, cdayozp,intjulian, &
-                    fact1, fact2)
+                    fact1, fact2) 
 
 !
 ! Time interpolation.
@@ -1154,8 +1154,8 @@ subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosolj
    REAL, INTENT(IN    )      ::        JULIAN
    REAL, INTENT(IN    )      ::        DT
    real(r8), intent(in   )      ::        m_psp(pcols),m_psn(pcols)  ! Match surface pressure
-   real(r8), intent(in   )   ::        aerosoljp(pcols,paerlev,naer_c)
-   real(r8), intent(in   )   ::        aerosoljn(pcols,paerlev,naer_c)
+   real(r8), intent(in   )   ::        aerosoljp(pcols,paerlev,naer_c) 
+   real(r8), intent(in   )   ::        aerosoljn(pcols,paerlev,naer_c) 
    real(r8), intent(in   )   ::        m_hybi(paerlev)
 
    real(r8), intent(out) :: AEROSOLt(pcols, pver, naer_all) ! aerosols
@@ -1200,7 +1200,7 @@ subroutine get_aerosol(c, julday, julian, dt, gmt, xtime, m_psp, m_psn, aerosolj
    intJULIAN = JULIAN + 1.0_r8    ! offset by one day
 ! jan 1st 00z is julian=1.0 here
    IJUL=INT(intJULIAN)
-!  Note that following will drift.
+!  Note that following will drift. 
 !    Need to use actual month/day info to compute julian.
    intJULIAN=intJULIAN-FLOAT(IJUL)
    IJUL=MOD(IJUL,365)
@@ -1587,17 +1587,17 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 #endif
 !ccc
                   landfrac,zm      ,fsds, fsdsdir,fsdsdif     ) ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Driver for radiation computation.
-!
-! Method:
+! 
+! Method: 
 ! Radiation uses cgs units, so conversions must be done from
 ! model fields to radiation fields.
 !
 ! Author: CCM1,  CMS Contact: J. Truesdale
-!
+! 
 !-----------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
 !  use ppgrid
@@ -1643,7 +1643,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
    real(r8), intent(in) :: rel(pcols,pver)      ! liquid effective drop size (microns)
    real(r8), intent(in) :: rei(pcols,pver)      ! ice effective drop size (microns)
    real(r8), intent(in) :: piln(pcols,pverp)    ! Natural log of pint
-   real(r8), intent(in) :: pdel(pcols,pverp)    ! Pressure difference across layer
+   real(r8), intent(in) :: pdel(pcols,pverp)    ! Pressure difference across layer 
    real(r8), intent(in) :: t(pcols,pver)        ! Model level temperatures
    real(r8), intent(in) :: qm1(pcols,pver,ppcnst) ! Specific humidity and tracers
    real(r8), intent(in) :: cld(pcols,pver)      ! Fractional cloud cover
@@ -1652,7 +1652,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
    real(r8), intent(inout) :: tauxcl(pcols,0:pver) ! cloud water optical depth
    real(r8), intent(inout) :: tauxci(pcols,0:pver) ! cloud ice optical depth
    real(r8), intent(in) :: coszrs(pcols)        ! Cosine solar zenith angle
-   real(r8), intent(in) :: clat(pcols)          ! latitude in radians for columns
+   real(r8), intent(in) :: clat(pcols)          ! latitude in radians for columns 
    real(r8), intent(in) :: asdir(pcols)         ! albedo shortwave direct
    real(r8), intent(in) :: asdif(pcols)         ! albedo shortwave diffuse
    real(r8), intent(in) :: aldir(pcols)         ! albedo longwave direct
@@ -1663,7 +1663,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
    real(r8), intent(in) :: ozmixmj(pcols,levsiz,num_months)  ! monthly ozone mixing ratio
    real(r8), intent(inout) :: ozmix(pcols,levsiz)  ! Ozone data
    real, intent(in) :: solcon               ! solar constant with eccentricity factor
-   REAL, INTENT(IN    )      ::        XTIME,GMT
+   REAL, INTENT(IN    )      ::        XTIME,GMT              
    INTEGER, INTENT(IN )      ::        JULDAY
    REAL,    INTENT(IN )      ::        JULIAN
    REAL,    INTENT(IN )      ::        DT
@@ -1671,7 +1671,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
    real(r8), intent(in)     :: aerosoljp(pcols,paerlev,naer_c)   ! aerosol concentrations
    real(r8), intent(in)     :: aerosoljn(pcols,paerlev,naer_c)   ! aerosol concentrations
    real(r8), intent(in)     :: m_hybi(paerlev)
-!  type(physics_state), intent(in) :: state
+!  type(physics_state), intent(in) :: state     
    real(r8), intent(inout) :: pmxrgn(pcols,pverp) ! Maximum values of pmid for each
 !    maximally overlapped region.
 !    0->pmxrgn(i,1) is range of pmid for
@@ -1834,11 +1834,11 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 
          ! overwrite with prognostics aerosols
 
-!   no feedback from prognostic aerosols
+!   no feedback from prognostic aerosols 
 !        call set_aerosol_from_prognostics (ncol, q, aerosol)
 
          call aerosol_indirect(ncol,lchnk,pcols,pver,ppcnst,landfrac,pmid,t,qm1,cld,zm,rel)
-
+   
 !        call t_startf('radcswmx_rf')
          call radcswmx(j, lchnk   ,ncol ,pcols, pver, pverp,         &
                     pnm     ,pbr     ,qm1     ,rh      ,o3mmr   , &
@@ -1876,7 +1876,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 !        call outfld('FSNS_RF ',fsns  ,pcols,lchnk)
 !        call outfld('FSNTC_RF',fsntc ,pcols,lchnk)
 !        call outfld('FSNSC_RF',fsnsc ,pcols,lchnk)
-
+ 
       endif ! if (radforce)
 
       call get_int_scales(scales)
@@ -2009,7 +2009,7 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 !        call cnst_get_ind('CFC11', if11)
 !        call cnst_get_ind('CFC12', if12)
 !        call t_startf("radclwmx")
-         call radclwmx(lchnk   ,ncol    ,pcols, pver, pverp ,        &
+         call radclwmx(lchnk   ,ncol    ,pcols, pver, pverp ,        & 
                        lwupcgs ,t       ,qm1(1,1,1)       ,o3vmr ,   &
                        pbr     ,pnm     ,pmln    ,piln    ,          &
                        qm1(1,1,in2o)    ,qm1(1,1,ich4)    ,          &
@@ -2039,9 +2039,9 @@ subroutine radctl(j, lchnk   ,ncol    , pcols, pver, pverp, pverr, pverrp, ppcns
 #endif
          IF ( wrf_dm_on_monitor() ) THEN
            WRITE(message,*)'CLWRF post_trcmix_values. n2o:', n2o(pcols/2,pver/2), ' ch4:',      &
-             ch4(pcols/2,pver/2),' cfc11:', cfc11(pcols/2,pver/2),' cfc12:', cfc12(pcols/2,pver/2)
+             ch4(pcols/2,pver/2),' cfc11:', cfc11(pcols/2,pver/2),' cfc12:', cfc12(pcols/2,pver/2) 
            CALL wrf_debug(1, message)
-         END IF
+         END IF 
 !ccc
 !        call t_startf("radclwmx")
          call radclwmx(lchnk     ,ncol    ,pcols, pver, pverp ,        &
@@ -2102,7 +2102,7 @@ end subroutine radctl
 !
 ! Compute (liquid+ice) water path and cloud water/ice diagnostics
 ! *** soon this code will compute liquid and ice paths from input liquid and ice mixing ratios
-!
+! 
 ! **** mixes interface and physics code temporarily
 !-----------------------------------------------------------------------
 !   use physics_types, only: physics_state
@@ -2117,9 +2117,9 @@ end subroutine radctl
     real(r8), intent(in)  :: cldn(pcols,pver)        ! new cloud fraction
     real(r8), intent(in)  :: pdel(pcols,pver)        ! pressure thickness
     real(r8), intent(in)  :: t(pcols,pver)           ! temperature
-    real(r8), intent(in)  :: pmid(pcols,pver)        ! pressure
-    real(r8), intent(in)  :: pint(pcols,pverp)       ! pressure
-    real(r8), intent(in)  :: ps(pcols)               ! surface pressure
+    real(r8), intent(in)  :: pmid(pcols,pver)        ! pressure 
+    real(r8), intent(in)  :: pint(pcols,pverp)       ! pressure 
+    real(r8), intent(in)  :: ps(pcols)               ! surface pressure 
     real(r8), intent(in)  :: landfrac(pcols)         ! Land fraction
     real(r8), intent(in)  :: icefrac(pcols)          ! Ice fraction
     real(r8), intent(in)  :: landm(pcols)            ! Land fraction ramped
@@ -2170,14 +2170,14 @@ end subroutine radctl
 !!$          cwp   (i,k) = gwp   (i,k) / max(0.01_r8,cldn(i,k))
           ficemr(i,k) = q(i,k,ixcldice) /                 &
                max(1.e-10_r8,(q(i,k,ixcldice)+q(i,k,ixcldliq)))
-
+          
           tgicewp(i)  = tgicewp(i) + gicewp(i,k)
           tgliqwp(i)  = tgliqwp(i) + gliqwp(i,k)
        end do
     end do
     tgwp(:ncol) = tgicewp(:ncol) + tgliqwp(:ncol)
-    gwp(:ncol,:pver) = gicewp(:ncol,:pver) + gliqwp(:ncol,:pver)
-    cwp(:ncol,:pver) = cicewp(:ncol,:pver) + cliqwp(:ncol,:pver)
+    gwp(:ncol,:pver) = gicewp(:ncol,:pver) + gliqwp(:ncol,:pver) 
+    cwp(:ncol,:pver) = cicewp(:ncol,:pver) + cliqwp(:ncol,:pver) 
 
 ! Compute total preciptable water in column (in mm)
     tpw(:ncol) = 0.0
@@ -2228,12 +2228,12 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
    bn2o0  ,bn2o1   ,bch4    ,abplnk1  ,abplnk2 , &
    abstot ,absnxt  ,plh2ob  ,wb       , &
    aer_mpp ,aer_trn_ttl)
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Compute absorptivities for h2o, co2, o3, ch4, n2o, cfc11 and cfc12
-!
-! Method:
+! 
+! Method: 
 ! h2o  ....  Uses nonisothermal emissivity method for water vapor from
 !            Ramanathan, V. and  P.Downey, 1986: A Nonisothermal
 !            Emissivity and Absorptivity Formulation for Water Vapor
@@ -2278,9 +2278,9 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
 ! Computes individual absorptivities for non-adjacent layers, accounting
 ! for band overlap, and sums to obtain the total; then, computes the
 ! nearest layer contribution.
-!
+! 
 ! Author: W. Collins (H2O absorptivity) and J. Kiehl
-!
+! 
 !-----------------------------------------------------------------------
 !------------------------------Arguments--------------------------------
 !
@@ -2308,12 +2308,12 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
    real(r8), intent(in) :: plos(pcols,pverp)          ! Ozone path length
    real(r8), intent(in) :: pmln(pcols,pver)           ! Ln(pmidm1)
    real(r8), intent(in) :: piln(pcols,pverp)          ! Ln(pintm1)
-   real(r8), intent(in) :: plh2ob(nbands,pcols,pverp) ! Pressure weighted h2o path with
-                                                      !    Hulst-Curtis-Godson temp. factor
-                                                      !    for H2O bands
-   real(r8), intent(in) :: wb(nbands,pcols,pverp)     ! H2o path length with
-                                                      !    Hulst-Curtis-Godson temp. factor
-                                                      !    for H2O bands
+   real(r8), intent(in) :: plh2ob(nbands,pcols,pverp) ! Pressure weighted h2o path with 
+                                                      !    Hulst-Curtis-Godson temp. factor 
+                                                      !    for H2O bands 
+   real(r8), intent(in) :: wb(nbands,pcols,pverp)     ! H2o path length with 
+                                                      !    Hulst-Curtis-Godson temp. factor 
+                                                      !    for H2O bands 
 
    real(r8), intent(in) :: aer_mpp(pcols,pverp) ! STRAER path above kth interface level
    real(r8), intent(in) :: aer_trn_ttl(pcols,pverp,pverp,bnd_nbr_LW) ! aer trn.
@@ -2468,7 +2468,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
    real(r8) dbvtit(pcols,pverp)! Intrfc drvtv plnck fnctn for o3
    real(r8) dbvtly(pcols,pver) ! Level drvtv plnck fnctn for o3
 !
-! Variables for Collins/Hackney/Edwards (C/H/E) &
+! Variables for Collins/Hackney/Edwards (C/H/E) & 
 !       Collins/Lee-Taylor/Edwards (C/LT/E) H2O parameterization
 
 !
@@ -2492,7 +2492,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
    real(r8) te4              ! te^4
    real(r8) te5              ! te^5
 
-   real(r8) log_u            ! log base 10 of U
+   real(r8) log_u            ! log base 10 of U 
    real(r8) log_uc           ! log base 10 of H2O continuum path
    real(r8) log_p            ! log base 10 of P
    real(r8) t_p              ! T_p
@@ -2585,8 +2585,8 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
       real(r8) aer_pth_ngh(pcols)
                              ! [kg m-2] STRAER path between neighboring layers
       real(r8) odap_aer_ttl  ! [fraction] Total path absorption optical depth
-      real(r8) aer_trn_ngh(pcols,bnd_nbr_LW)
-                             ! [fraction] Total transmission between
+      real(r8) aer_trn_ngh(pcols,bnd_nbr_LW) 
+                             ! [fraction] Total transmission between 
                              !            nearest neighbor sub-levels
 !
 !--------------------------Statement function---------------------------
@@ -2692,7 +2692,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
 !
 ! Calculate effective u, pnew for each band using
 !        Hulst-Curtis-Godson approximation:
-! Formulae: Goody and Yung, Atmospheric Radiation: Theoretical Basis,
+! Formulae: Goody and Yung, Atmospheric Radiation: Theoretical Basis, 
 !           2nd edition, Oxford University Press, 1989.
 ! Effective H2O path (w)
 !      eq. 6.24, p. 228
@@ -2701,7 +2701,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
 !
             ub(1) = abs(plh2ob(1,i,k1) - plh2ob(1,i,k2)) / psi(t_p,1)
             ub(2) = abs(plh2ob(2,i,k1) - plh2ob(2,i,k2)) / psi(t_p,2)
-
+            
             pnewb(1) = ub(1) / abs(wb(1,i,k1) - wb(1,i,k2)) * phi(t_p,1)
             pnewb(2) = ub(2) / abs(wb(2,i,k1) - wb(2,i,k2)) * phi(t_p,2)
 
@@ -2721,7 +2721,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
 !                only 2 slots needed for H2O absorptivity
 !
 ! Notation:
-! U   = integral (P/P_0 dW)
+! U   = integral (P/P_0 dW)  
 ! P   = atmospheric pressure
 ! P_0 = reference atmospheric pressure
 ! W   = precipitable water path
@@ -2746,14 +2746,14 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
             itp1 = itp + 1
             wtp = dvar - floor(dvar)
             wtp1 = 1.0 - wtp
-
+            
             t_e = min(max(tplnka(i,k2)-t_p, min_te_h2o), max_te_h2o)
             dvar = (t_e - min_te_h2o) / dte_h2o
             ite = min(max(int(aint(dvar,r8)) + 1, 1), n_te - 1)
             ite1 = ite + 1
             wte = dvar - floor(dvar)
             wte1 = 1.0 - wte
-
+            
             rh_path = min(max(q_path / qsx, min_rh_h2o), max_rh_h2o)
             dvar = (rh_path - min_rh_h2o) / drh_h2o
             irh = min(max(int(aint(dvar,r8)) + 1, 1), n_rh - 1)
@@ -2763,9 +2763,9 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
 
             w_0_0_ = wtp  * wte
             w_0_1_ = wtp  * wte1
-            w_1_0_ = wtp1 * wte
+            w_1_0_ = wtp1 * wte 
             w_1_1_ = wtp1 * wte1
-
+            
             w_0_00 = w_0_0_ * wrh
             w_0_01 = w_0_0_ * wrh1
             w_0_10 = w_0_1_ * wrh
@@ -2780,13 +2780,13 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
 !
 !    Assume foreign continuum dominates total H2O continuum in these bands
 !    per Clough et al, JGR, v. 97, no. D14 (Oct 20, 1992), p. 15776
-!    Then the effective H2O path is just
+!    Then the effective H2O path is just 
 !         U_c = integral[ f(P) dW ]
-!    where
-!           W = water-vapor mass and
-!        f(P) = dependence of foreign continuum on pressure
+!    where 
+!           W = water-vapor mass and 
+!        f(P) = dependence of foreign continuum on pressure 
 !             = P / sslp
-!    Then
+!    Then 
 !         U_c = U (the same effective H2O path as for lines)
 !
 !
@@ -2794,10 +2794,10 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
 !
 !    Assume self continuum dominates total H2O continuum for this band
 !    per Clough et al, JGR, v. 97, no. D14 (Oct 20, 1992), p. 15776
-!    Then the effective H2O self-continuum path is
+!    Then the effective H2O self-continuum path is 
 !         U_c = integral[ h(e,T) dW ]                        (*eq. 1*)
-!    where
-!           W = water-vapor mass and
+!    where 
+!           W = water-vapor mass and 
 !           e = partial pressure of H2O along path
 !           T = temperature along path
 !      h(e,T) = dependence of foreign continuum on e,T
@@ -2826,7 +2826,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
 !
 !        U' = (U_c * epsilo) / (q * f(T))
 !
-            fch2o = fh2oself(t_p)
+            fch2o = fh2oself(t_p) 
             uch2o = (pch2o * epsilo) / (q_path * fch2o)
 
 !
@@ -2841,30 +2841,30 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
             iu1 = iu + 1
             wu = dvar - floor(dvar)
             wu1 = 1.0 - wu
-
+            
             log_p  = min(log10(max(pnewb(ib), min_p_h2o)), max_lp_h2o)
             dvar = (log_p - min_lp_h2o) / dlp_h2o
             ip = min(max(int(aint(dvar,r8)) + 1, 1), n_p - 1)
             ip1 = ip + 1
             wp = dvar - floor(dvar)
             wp1 = 1.0 - wp
-
-            w00_00 = wp  * w_0_00
-            w00_01 = wp  * w_0_01
-            w00_10 = wp  * w_0_10
-            w00_11 = wp  * w_0_11
-            w01_00 = wp  * w_1_00
-            w01_01 = wp  * w_1_01
-            w01_10 = wp  * w_1_10
-            w01_11 = wp  * w_1_11
-            w10_00 = wp1 * w_0_00
-            w10_01 = wp1 * w_0_01
-            w10_10 = wp1 * w_0_10
-            w10_11 = wp1 * w_0_11
-            w11_00 = wp1 * w_1_00
-            w11_01 = wp1 * w_1_01
-            w11_10 = wp1 * w_1_10
-            w11_11 = wp1 * w_1_11
+         
+            w00_00 = wp  * w_0_00 
+            w00_01 = wp  * w_0_01 
+            w00_10 = wp  * w_0_10 
+            w00_11 = wp  * w_0_11 
+            w01_00 = wp  * w_1_00 
+            w01_01 = wp  * w_1_01 
+            w01_10 = wp  * w_1_10 
+            w01_11 = wp  * w_1_11 
+            w10_00 = wp1 * w_0_00 
+            w10_01 = wp1 * w_0_01 
+            w10_10 = wp1 * w_0_10 
+            w10_11 = wp1 * w_0_11 
+            w11_00 = wp1 * w_1_00 
+            w11_01 = wp1 * w_1_01 
+            w11_10 = wp1 * w_1_10 
+            w11_11 = wp1 * w_1_11 
 !
 ! Asymptotic value of absorptivity as U->infinity
 !
@@ -2907,7 +2907,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
                  ah2onw(ip1, itp1, iu1, ite , irh ) * w00_11 * wu  + &
                  ah2onw(ip1, itp1, iu1, ite , irh1) * w00_10 * wu  + &
                  ah2onw(ip1, itp1, iu1, ite1, irh ) * w00_01 * wu  + &
-                 ah2onw(ip1, itp1, iu1, ite1, irh1) * w00_00 * wu
+                 ah2onw(ip1, itp1, iu1, ite1, irh1) * w00_00 * wu 
             abso(i,ib) = min(max(fa * (1.0 - (1.0 - a_star) * &
                                  aer_trn_ttl(i,k1,k2,ib)), &
                              0.0_r8), 1.0_r8)
@@ -2918,7 +2918,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
                uscl = uvar / min_u_h2o
                abso(i,ib) = abso(i,ib) * uscl
             endif
-
+                         
 !
 ! Band-dependent indices for window
 !
@@ -2931,30 +2931,30 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
             iu1 = iu + 1
             wu = dvar - floor(dvar)
             wu1 = 1.0 - wu
-
+            
             log_p  = min(log10(max(pnewb(ib), min_p_h2o)), max_lp_h2o)
             dvar = (log_p - min_lp_h2o) / dlp_h2o
             ip = min(max(int(aint(dvar,r8)) + 1, 1), n_p - 1)
             ip1 = ip + 1
             wp = dvar - floor(dvar)
             wp1 = 1.0 - wp
-
-            w00_00 = wp  * w_0_00
-            w00_01 = wp  * w_0_01
-            w00_10 = wp  * w_0_10
-            w00_11 = wp  * w_0_11
-            w01_00 = wp  * w_1_00
-            w01_01 = wp  * w_1_01
-            w01_10 = wp  * w_1_10
-            w01_11 = wp  * w_1_11
-            w10_00 = wp1 * w_0_00
-            w10_01 = wp1 * w_0_01
-            w10_10 = wp1 * w_0_10
-            w10_11 = wp1 * w_0_11
-            w11_00 = wp1 * w_1_00
-            w11_01 = wp1 * w_1_01
-            w11_10 = wp1 * w_1_10
-            w11_11 = wp1 * w_1_11
+         
+            w00_00 = wp  * w_0_00 
+            w00_01 = wp  * w_0_01 
+            w00_10 = wp  * w_0_10 
+            w00_11 = wp  * w_0_11 
+            w01_00 = wp  * w_1_00 
+            w01_01 = wp  * w_1_01 
+            w01_10 = wp  * w_1_10 
+            w01_11 = wp  * w_1_11 
+            w10_00 = wp1 * w_0_00 
+            w10_01 = wp1 * w_0_01 
+            w10_10 = wp1 * w_0_10 
+            w10_11 = wp1 * w_0_11 
+            w11_00 = wp1 * w_1_00 
+            w11_01 = wp1 * w_1_01 
+            w11_10 = wp1 * w_1_10 
+            w11_11 = wp1 * w_1_11 
 
             log_uc  = min(log10(max(uch2o * fdif, min_u_h2o)), max_lu_h2o)
             dvar = (log_uc - min_lu_h2o) / dlu_h2o
@@ -3004,7 +3004,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
                  ln_ah2ow(ip1, itp1, iu1, ite , irh ) * w00_11 * wu  + &
                  ln_ah2ow(ip1, itp1, iu1, ite , irh1) * w00_10 * wu  + &
                  ln_ah2ow(ip1, itp1, iu1, ite1, irh ) * w00_01 * wu  + &
-                 ln_ah2ow(ip1, itp1, iu1, ite1, irh1) * w00_00 * wu
+                 ln_ah2ow(ip1, itp1, iu1, ite1, irh1) * w00_00 * wu 
 
             c_star = &
                  cn_ah2ow(ip , itp , iuc , ite , irh ) * w11_11 * wuc1 + &
@@ -3038,10 +3038,10 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
                  cn_ah2ow(ip1, itp1, iuc1, ite , irh ) * w00_11 * wuc  + &
                  cn_ah2ow(ip1, itp1, iuc1, ite , irh1) * w00_10 * wuc  + &
                  cn_ah2ow(ip1, itp1, iuc1, ite1, irh ) * w00_01 * wuc  + &
-                 cn_ah2ow(ip1, itp1, iuc1, ite1, irh1) * w00_00 * wuc
+                 cn_ah2ow(ip1, itp1, iuc1, ite1, irh1) * w00_00 * wuc 
             abso(i,ib) = min(max(fa * (1.0 - l_star * c_star * &
                                  aer_trn_ttl(i,k1,k2,ib)), &
-                             0.0_r8), 1.0_r8)
+                             0.0_r8), 1.0_r8) 
 !
 ! Invoke linear limit for scaling wrt u below min_u_h2o
 !
@@ -3070,7 +3070,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
                (1. + (c28 + c29*(dty(i)-10.))*sqrtu(i))
             tr1    = exp(-(k21*(sqrtu(i) + fc1*fwku(i))))
             tr2    = exp(-(k22*(sqrtu(i) + fc1*fwku(i))))
-            tr1=tr1*aer_trn_ttl(i,k1,k2,idx_LW_0650_0800)
+            tr1=tr1*aer_trn_ttl(i,k1,k2,idx_LW_0650_0800) 
 !                                          ! H2O line+STRAER trn 650--800 cm-1
             tr2=tr2*aer_trn_ttl(i,k1,k2,idx_LW_0500_0650)
 !                                          ! H2O line+STRAER trn 500--650 cm-1
@@ -3179,8 +3179,8 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
             abstot(i,k1,k2) = abso(i,1) + abso(i,2) + &
                abso(i,3) + abso(i,4) + abstrc(i)
          end do
-      end do ! do k2 =
-   end do ! do k1 =
+      end do ! do k2 = 
+   end do ! do k1 = 
 !
 ! Adjacent layer absorptivity:
 !
@@ -3230,7 +3230,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
             bplnk(wvl,i,4) = bplnk(wvl,i,2)
          end do
       end do
-
+      
       do i=1,ncol
          rdpnmsq    = 1./(pnmsq(i,k2+1) - pnmsq(i,k2))
          rdpnm      = 1./dpnm(i)
@@ -3272,22 +3272,22 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
                  (t_p - min_tp_h2o - iest)
             qsx = epsilo * esx / (pnew_mks - omeps * esx)
             q_path = dw(i) / ABS(dpnm(i)) / rga
-
+            
             ds2c     = abs(s2c(i,k2) - s2c(i,k2+1))
             uc1(i)   = uinpl(i,kn)*ds2c
             pch2o    = uc1(i)
             uc1(i)   = (uc1(i) + 1.7e-3*u(i))*(1. +  2.*uc1(i))/(1. + 15.*uc1(i))
             dtx(i)      = temh2o(i,kn) - 250.
             dty(i)      = tbar(i,kn) - 250.
-
+            
             fwk(i)    = fwcoef + fwc1/(1. + fwc2*u(i))
             fwku(i)   = fwk(i)*u(i)
 
             if(strat_volcanic) then
               aer_pth_dlt=uinpl(i,kn)*aer_pth_ngh(i)
-
+  
               do bnd_idx=1,bnd_nbr_LW
-                 odap_aer_ttl=abs_cff_mss_aer(bnd_idx) * aer_pth_dlt
+                 odap_aer_ttl=abs_cff_mss_aer(bnd_idx) * aer_pth_dlt 
                  aer_trn_ngh(i,bnd_idx)=exp(-fdif * odap_aer_ttl)
               end do
             else
@@ -3305,7 +3305,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
 !                only 2 slots needed for H2O absorptivity
 !
 ! Notation:
-! U   = integral (P/P_0 dW)
+! U   = integral (P/P_0 dW)  
 ! P   = atmospheric pressure
 ! P_0 = reference atmospheric pressure
 ! W   = precipitable water path
@@ -3323,7 +3323,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
             te5  = te4 * te1
 
 !
-! Indices for lines and continuum tables
+! Indices for lines and continuum tables 
 ! Note: because we are dealing with the nearest layer,
 !       the Hulst-Curtis-Godson corrections
 !       for inhomogeneous paths are not applied.
@@ -3335,39 +3335,39 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
             iu1 = iu + 1
             wu = dvar - floor(dvar)
             wu1 = 1.0 - wu
-
+            
             log_p  = min(log10(max(pnew(i), min_p_h2o)), max_lp_h2o)
             dvar = (log_p - min_lp_h2o) / dlp_h2o
             ip = min(max(int(aint(dvar,r8)) + 1, 1), n_p - 1)
             ip1 = ip + 1
             wp = dvar - floor(dvar)
             wp1 = 1.0 - wp
-
+            
             dvar = (t_p - min_tp_h2o) / dtp_h2o
             itp = min(max(int(aint(dvar,r8)) + 1, 1), n_tp - 1)
             itp1 = itp + 1
             wtp = dvar - floor(dvar)
             wtp1 = 1.0 - wtp
-
+            
             t_e = min(max(temh2o(i,kn)-t_p,min_te_h2o),max_te_h2o)
             dvar = (t_e - min_te_h2o) / dte_h2o
             ite = min(max(int(aint(dvar,r8)) + 1, 1), n_te - 1)
             ite1 = ite + 1
             wte = dvar - floor(dvar)
             wte1 = 1.0 - wte
-
+            
             rh_path = min(max(q_path / qsx, min_rh_h2o), max_rh_h2o)
             dvar = (rh_path - min_rh_h2o) / drh_h2o
             irh = min(max(int(aint(dvar,r8)) + 1, 1), n_rh - 1)
             irh1 = irh + 1
             wrh = dvar - floor(dvar)
             wrh1 = 1.0 - wrh
-
+            
             w_0_0_ = wtp  * wte
             w_0_1_ = wtp  * wte1
-            w_1_0_ = wtp1 * wte
+            w_1_0_ = wtp1 * wte 
             w_1_1_ = wtp1 * wte1
-
+            
             w_0_00 = w_0_0_ * wrh
             w_0_01 = w_0_0_ * wrh1
             w_0_10 = w_0_1_ * wrh
@@ -3376,36 +3376,36 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
             w_1_01 = w_1_0_ * wrh1
             w_1_10 = w_1_1_ * wrh
             w_1_11 = w_1_1_ * wrh1
-
-            w00_00 = wp  * w_0_00
-            w00_01 = wp  * w_0_01
-            w00_10 = wp  * w_0_10
-            w00_11 = wp  * w_0_11
-            w01_00 = wp  * w_1_00
-            w01_01 = wp  * w_1_01
-            w01_10 = wp  * w_1_10
-            w01_11 = wp  * w_1_11
-            w10_00 = wp1 * w_0_00
-            w10_01 = wp1 * w_0_01
-            w10_10 = wp1 * w_0_10
-            w10_11 = wp1 * w_0_11
-            w11_00 = wp1 * w_1_00
-            w11_01 = wp1 * w_1_01
-            w11_10 = wp1 * w_1_10
-            w11_11 = wp1 * w_1_11
+            
+            w00_00 = wp  * w_0_00 
+            w00_01 = wp  * w_0_01 
+            w00_10 = wp  * w_0_10 
+            w00_11 = wp  * w_0_11 
+            w01_00 = wp  * w_1_00 
+            w01_01 = wp  * w_1_01 
+            w01_10 = wp  * w_1_10 
+            w01_11 = wp  * w_1_11 
+            w10_00 = wp1 * w_0_00 
+            w10_01 = wp1 * w_0_01 
+            w10_10 = wp1 * w_0_10 
+            w10_11 = wp1 * w_0_11 
+            w11_00 = wp1 * w_1_00 
+            w11_01 = wp1 * w_1_01 
+            w11_10 = wp1 * w_1_10 
+            w11_11 = wp1 * w_1_11 
 
 !
 ! Non-window absorptivity
 !
             ib = 1
-
+            
             fa = fat(1,ib) + &
                  fat(2,ib) * te1 + &
                  fat(3,ib) * te2 + &
                  fat(4,ib) * te3 + &
                  fat(5,ib) * te4 + &
                  fat(6,ib) * te5
-
+            
             a_star = &
                  ah2onw(ip , itp , iu , ite , irh ) * w11_11 * wu1 + &
                  ah2onw(ip , itp , iu , ite , irh1) * w11_10 * wu1 + &
@@ -3439,7 +3439,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
                  ah2onw(ip1, itp1, iu1, ite , irh1) * w00_10 * wu  + &
                  ah2onw(ip1, itp1, iu1, ite1, irh ) * w00_01 * wu  + &
                  ah2onw(ip1, itp1, iu1, ite1, irh1) * w00_00 * wu
-
+            
             abso(i,ib) = min(max(fa * (1.0 - (1.0 - a_star) * &
                                  aer_trn_ngh(i,ib)), &
                              0.0_r8), 1.0_r8)
@@ -3451,19 +3451,19 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
                uscl = uvar / min_u_h2o
                abso(i,ib) = abso(i,ib) * uscl
             endif
-
+            
 !
 ! Window absorptivity
 !
             ib = 2
-
+            
             fa = fat(1,ib) + &
                  fat(2,ib) * te1 + &
                  fat(3,ib) * te2 + &
                  fat(4,ib) * te3 + &
                  fat(5,ib) * te4 + &
                  fat(6,ib) * te5
-
+            
             a_star = &
                  ah2ow(ip , itp , iu , ite , irh ) * w11_11 * wu1 + &
                  ah2ow(ip , itp , iu , ite , irh1) * w11_10 * wu1 + &
@@ -3497,7 +3497,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
                  ah2ow(ip1, itp1, iu1, ite , irh1) * w00_10 * wu  + &
                  ah2ow(ip1, itp1, iu1, ite1, irh ) * w00_01 * wu  + &
                  ah2ow(ip1, itp1, iu1, ite1, irh1) * w00_00 * wu
-
+            
             abso(i,ib) = min(max(fa * (1.0 - (1.0 - a_star) * &
                                  aer_trn_ngh(i,ib)), &
                              0.0_r8), 1.0_r8)
@@ -3509,7 +3509,7 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
                uscl = uvar / min_u_h2o
                abso(i,ib) = abso(i,ib) * uscl
             endif
-
+            
          end do
 !
 ! Line transmission in 800-1000 and 1000-1200 cm-1 intervals
@@ -3531,9 +3531,9 @@ subroutine radabs(lchnk   ,ncol    ,pcols, pver, pverp,   &
             k22        = term7(i,2) + term8(i,2)/denom
             tr1     = exp(-(k21*(sqrtu(i) + fc1*fwku(i))))
             tr2     = exp(-(k22*(sqrtu(i) + fc1*fwku(i))))
-            tr1=tr1*aer_trn_ngh(i,idx_LW_0650_0800)
+            tr1=tr1*aer_trn_ngh(i,idx_LW_0650_0800) 
 !                                         ! H2O line+STRAER trn 650--800 cm-1
-            tr2=tr2*aer_trn_ngh(i,idx_LW_0500_0650)
+            tr2=tr2*aer_trn_ngh(i,idx_LW_0500_0650) 
 !                                         ! H2O line+STRAER trn 500--650 cm-1
             tr5     = exp(-((coefh(1,3) + coefh(2,3)*dtx(i))*uc1(i)))
             tr6     = exp(-((coefh(1,4) + coefh(2,4)*dtx(i))*uc1(i)))
@@ -3638,12 +3638,12 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
                   co2t    ,h2otr   ,abplnk1 ,abplnk2 ,emstot  , &
                   plh2ob  ,wb      , &
                   aer_trn_ttl)
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Compute emissivity for H2O, CO2, O3, CH4, N2O, CFC11 and CFC12
-!
-! Method:
+! 
+! Method: 
 ! H2O  ....  Uses nonisothermal emissivity method for water vapor from
 !            Ramanathan, V. and  P.Downey, 1986: A Nonisothermal
 !            Emissivity and Absorptivity Formulation for Water Vapor
@@ -3688,7 +3688,7 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! sums to obtain the total.
 !
 ! Author: W. Collins (H2O emissivity) and J. Kiehl
-!
+! 
 !-----------------------------------------------------------------------
 !------------------------------Arguments--------------------------------
 !
@@ -3711,16 +3711,16 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8), intent(in) :: tlayr4(pcols,pverp)     ! Tlayr to the 4th power
    real(r8), intent(in) :: plol(pcols,pverp)       ! Pressure wghtd ozone path
    real(r8), intent(in) :: plos(pcols,pverp)       ! Ozone path
-   real(r8), intent(in) :: plh2ob(nbands,pcols,pverp) ! Pressure weighted h2o path with
-                                                      !    Hulst-Curtis-Godson temp. factor
-                                                      !    for H2O bands
-   real(r8), intent(in) :: wb(nbands,pcols,pverp)     ! H2o path length with
-                                                      !    Hulst-Curtis-Godson temp. factor
-                                                      !    for H2O bands
+   real(r8), intent(in) :: plh2ob(nbands,pcols,pverp) ! Pressure weighted h2o path with 
+                                                      !    Hulst-Curtis-Godson temp. factor 
+                                                      !    for H2O bands 
+   real(r8), intent(in) :: wb(nbands,pcols,pverp)     ! H2o path length with 
+                                                      !    Hulst-Curtis-Godson temp. factor 
+                                                      !    for H2O bands 
 
-   real(r8), intent(in) :: aer_trn_ttl(pcols,pverp,pverp,bnd_nbr_LW)
+   real(r8), intent(in) :: aer_trn_ttl(pcols,pverp,pverp,bnd_nbr_LW) 
 !                               ! [fraction] Total strat. aerosol
-!                               ! transmission between interfaces k1 and k2
+!                               ! transmission between interfaces k1 and k2  
 
 !
 ! Trace gas variables
@@ -3768,7 +3768,7 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! The 500-800 cm^-1 emission in emis(i,4) has been combined
 !              into the 0-800 cm^-1 emission in emis(i,1)
 !
-   real(r8) emis(pcols,2)           ! H2O emissivity
+   real(r8) emis(pcols,2)           ! H2O emissivity 
 !
 !
 !
@@ -3888,7 +3888,7 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8) te4              ! te^4
    real(r8) te5              ! te^5
 
-   real(r8) log_u            ! log base 10 of U
+   real(r8) log_u            ! log base 10 of U 
    real(r8) log_uc           ! log base 10 of H2O continuum path
    real(r8) log_p            ! log base 10 of P
    real(r8) t_p              ! T_p
@@ -4078,7 +4078,7 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
 !
 ! Calculate effective u, pnew for each band using
 !        Hulst-Curtis-Godson approximation:
-! Formulae: Goody and Yung, Atmospheric Radiation: Theoretical Basis,
+! Formulae: Goody and Yung, Atmospheric Radiation: Theoretical Basis, 
 !           2nd edition, Oxford University Press, 1989.
 ! Effective H2O path (w)
 !      eq. 6.24, p. 228
@@ -4108,7 +4108,7 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! emis(i,3)   = 0.0
 !
 ! Notation:
-! U   = integral (P/P_0 dW)
+! U   = integral (P/P_0 dW)  
 ! P   = atmospheric pressure
 ! P_0 = reference atmospheric pressure
 ! W   = precipitable water path
@@ -4148,7 +4148,7 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
 
          w_0_0_ = wtp  * wte
          w_0_1_ = wtp  * wte1
-         w_1_0_ = wtp1 * wte
+         w_1_0_ = wtp1 * wte 
          w_1_1_ = wtp1 * wte1
 
          w_0_00 = w_0_0_ * wrh
@@ -4164,13 +4164,13 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
 !
 !    Assume foreign continuum dominates total H2O continuum in these bands
 !    per Clough et al, JGR, v. 97, no. D14 (Oct 20, 1992), p. 15776
-!    Then the effective H2O path is just
+!    Then the effective H2O path is just 
 !         U_c = integral[ f(P) dW ]
-!    where
-!           W = water-vapor mass and
-!        f(P) = dependence of foreign continuum on pressure
+!    where 
+!           W = water-vapor mass and 
+!        f(P) = dependence of foreign continuum on pressure 
 !             = P / sslp
-!    Then
+!    Then 
 !         U_c = U (the same effective H2O path as for lines)
 !
 !
@@ -4178,10 +4178,10 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
 !
 !    Assume self continuum dominates total H2O continuum for this band
 !    per Clough et al, JGR, v. 97, no. D14 (Oct 20, 1992), p. 15776
-!    Then the effective H2O self-continuum path is
+!    Then the effective H2O self-continuum path is 
 !         U_c = integral[ h(e,T) dW ]                        (*eq. 1*)
-!    where
-!           W = water-vapor mass and
+!    where 
+!           W = water-vapor mass and 
 !           e = partial pressure of H2O along path
 !           T = temperature along path
 !      h(e,T) = dependence of foreign continuum on e,T
@@ -4225,7 +4225,7 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
          iu1 = iu + 1
          wu = dvar - floor(dvar)
          wu1 = 1.0 - wu
-
+         
          log_p  = min(log10(max(pnewb(ib), min_p_h2o)), max_lp_h2o)
          dvar = (log_p - min_lp_h2o) / dlp_h2o
          ip = min(max(int(aint(dvar,r8)) + 1, 1), n_p - 1)
@@ -4233,22 +4233,22 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
          wp = dvar - floor(dvar)
          wp1 = 1.0 - wp
 
-         w00_00 = wp  * w_0_00
-         w00_01 = wp  * w_0_01
-         w00_10 = wp  * w_0_10
-         w00_11 = wp  * w_0_11
-         w01_00 = wp  * w_1_00
-         w01_01 = wp  * w_1_01
-         w01_10 = wp  * w_1_10
-         w01_11 = wp  * w_1_11
-         w10_00 = wp1 * w_0_00
-         w10_01 = wp1 * w_0_01
-         w10_10 = wp1 * w_0_10
-         w10_11 = wp1 * w_0_11
-         w11_00 = wp1 * w_1_00
-         w11_01 = wp1 * w_1_01
-         w11_10 = wp1 * w_1_10
-         w11_11 = wp1 * w_1_11
+         w00_00 = wp  * w_0_00 
+         w00_01 = wp  * w_0_01 
+         w00_10 = wp  * w_0_10 
+         w00_11 = wp  * w_0_11 
+         w01_00 = wp  * w_1_00 
+         w01_01 = wp  * w_1_01 
+         w01_10 = wp  * w_1_10 
+         w01_11 = wp  * w_1_11 
+         w10_00 = wp1 * w_0_00 
+         w10_01 = wp1 * w_0_01 
+         w10_10 = wp1 * w_0_10 
+         w10_11 = wp1 * w_0_11 
+         w11_00 = wp1 * w_1_00 
+         w11_01 = wp1 * w_1_01 
+         w11_10 = wp1 * w_1_10 
+         w11_11 = wp1 * w_1_11 
 
 !
 ! Asymptotic value of emissivity as U->infinity
@@ -4292,7 +4292,7 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
               eh2onw(ip1, itp1, iu1, ite , irh ) * w00_11 * wu  + &
               eh2onw(ip1, itp1, iu1, ite , irh1) * w00_10 * wu  + &
               eh2onw(ip1, itp1, iu1, ite1, irh ) * w00_01 * wu  + &
-              eh2onw(ip1, itp1, iu1, ite1, irh1) * w00_00 * wu
+              eh2onw(ip1, itp1, iu1, ite1, irh1) * w00_00 * wu 
          emis(i,ib) = min(max(fe * (1.0 - (1.0 - e_star) * &
                               aer_trn_ttl(i,k1,1,ib)), &
                           0.0_r8), 1.0_r8)
@@ -4304,7 +4304,7 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
             emis(i,ib) = emis(i,ib) * uscl
          endif
 
-
+                      
 
 !
 ! Band-dependent indices for window
@@ -4318,7 +4318,7 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
          iu1 = iu + 1
          wu = dvar - floor(dvar)
          wu1 = 1.0 - wu
-
+         
          log_p  = min(log10(max(pnewb(ib), min_p_h2o)), max_lp_h2o)
          dvar = (log_p - min_lp_h2o) / dlp_h2o
          ip = min(max(int(aint(dvar,r8)) + 1, 1), n_p - 1)
@@ -4326,22 +4326,22 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
          wp = dvar - floor(dvar)
          wp1 = 1.0 - wp
 
-         w00_00 = wp  * w_0_00
-         w00_01 = wp  * w_0_01
-         w00_10 = wp  * w_0_10
-         w00_11 = wp  * w_0_11
-         w01_00 = wp  * w_1_00
-         w01_01 = wp  * w_1_01
-         w01_10 = wp  * w_1_10
-         w01_11 = wp  * w_1_11
-         w10_00 = wp1 * w_0_00
-         w10_01 = wp1 * w_0_01
-         w10_10 = wp1 * w_0_10
-         w10_11 = wp1 * w_0_11
-         w11_00 = wp1 * w_1_00
-         w11_01 = wp1 * w_1_01
-         w11_10 = wp1 * w_1_10
-         w11_11 = wp1 * w_1_11
+         w00_00 = wp  * w_0_00 
+         w00_01 = wp  * w_0_01 
+         w00_10 = wp  * w_0_10 
+         w00_11 = wp  * w_0_11 
+         w01_00 = wp  * w_1_00 
+         w01_01 = wp  * w_1_01 
+         w01_10 = wp  * w_1_10 
+         w01_11 = wp  * w_1_11 
+         w10_00 = wp1 * w_0_00 
+         w10_01 = wp1 * w_0_01 
+         w10_10 = wp1 * w_0_10 
+         w10_11 = wp1 * w_0_11 
+         w11_00 = wp1 * w_1_00 
+         w11_01 = wp1 * w_1_01 
+         w11_10 = wp1 * w_1_10 
+         w11_11 = wp1 * w_1_11 
 
          log_uc  = min(log10(max(uch2o * fdif, min_u_h2o)), max_lu_h2o)
          dvar = (log_uc - min_lu_h2o) / dlu_h2o
@@ -4391,7 +4391,7 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
               ln_eh2ow(ip1, itp1, iu1, ite , irh ) * w00_11 * wu  + &
               ln_eh2ow(ip1, itp1, iu1, ite , irh1) * w00_10 * wu  + &
               ln_eh2ow(ip1, itp1, iu1, ite1, irh ) * w00_01 * wu  + &
-              ln_eh2ow(ip1, itp1, iu1, ite1, irh1) * w00_00 * wu
+              ln_eh2ow(ip1, itp1, iu1, ite1, irh1) * w00_00 * wu 
 
          c_star = &
               cn_eh2ow(ip , itp , iuc , ite , irh ) * w11_11 * wuc1 + &
@@ -4425,10 +4425,10 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
               cn_eh2ow(ip1, itp1, iuc1, ite , irh ) * w00_11 * wuc  + &
               cn_eh2ow(ip1, itp1, iuc1, ite , irh1) * w00_10 * wuc  + &
               cn_eh2ow(ip1, itp1, iuc1, ite1, irh ) * w00_01 * wuc  + &
-              cn_eh2ow(ip1, itp1, iuc1, ite1, irh1) * w00_00 * wuc
+              cn_eh2ow(ip1, itp1, iuc1, ite1, irh1) * w00_00 * wuc 
          emis(i,ib) = min(max(fe * (1.0 - l_star * c_star * &
                               aer_trn_ttl(i,k1,1,ib)), &
-                          0.0_r8), 1.0_r8)
+                          0.0_r8), 1.0_r8) 
 !
 ! Invoke linear limit for scaling wrt u below min_u_h2o
 !
@@ -4437,7 +4437,7 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
             emis(i,ib) = emis(i,ib) * uscl
          endif
 
-
+                      
 !
 ! Compute total emissivity for H2O
 !
@@ -4465,9 +4465,9 @@ subroutine radems(lchnk   ,ncol    ,pcols, pver, pverp,         &
          fwk    = fwcoef + fwc1/(1.+fwc2*u(i))
          tr1(i) = exp(-(k21(i)*(sqrt(u(i)) + fc1*fwk*u(i))))
          tr2(i) = exp(-(k22(i)*(sqrt(u(i)) + fc1*fwk*u(i))))
-         tr1(i)=tr1(i)*aer_trn_ttl(i,k1,1,idx_LW_0650_0800)
+         tr1(i)=tr1(i)*aer_trn_ttl(i,k1,1,idx_LW_0650_0800) 
 !                                            ! H2O line+aer trn 650--800 cm-1
-         tr2(i)=tr2(i)*aer_trn_ttl(i,k1,1,idx_LW_0500_0650)
+         tr2(i)=tr2(i)*aer_trn_ttl(i,k1,1,idx_LW_0500_0650) 
 !                                            ! H2O line+aer trn 500--650 cm-1
          tr3(i) = exp(-((coefh(1,1) + coefh(2,1)*dtx(i))*uc1(i)))
          tr4(i) = exp(-((coefh(1,2) + coefh(2,2)*dtx(i))*uc1(i)))
@@ -4609,12 +4609,12 @@ subroutine radtpl(lchnk   ,ncol    ,pcols, pver, pverp,                 &
    real(r8), intent(out) :: tint4(pcols,pverp)   ! Tint to the 4th power
    real(r8), intent(out) :: tlayr(pcols,pverp)   ! K-1 level temperature
    real(r8), intent(out) :: tlayr4(pcols,pverp)  ! Tlayr to the 4th power
-   real(r8), intent(out) :: plh2ob(nbands,pcols,pverp)! Pressure weighted h2o path with
-                                                      !    Hulst-Curtis-Godson temp. factor
-                                                      !    for H2O bands
-   real(r8), intent(out) :: wb(nbands,pcols,pverp)    ! H2o path length with
-                                                      !    Hulst-Curtis-Godson temp. factor
-                                                      !    for H2O bands
+   real(r8), intent(out) :: plh2ob(nbands,pcols,pverp)! Pressure weighted h2o path with 
+                                                      !    Hulst-Curtis-Godson temp. factor 
+                                                      !    for H2O bands 
+   real(r8), intent(out) :: wb(nbands,pcols,pverp)    ! H2o path length with 
+                                                      !    Hulst-Curtis-Godson temp. factor 
+                                                      !    for H2O bands 
 
 !
 !---------------------------Local variables--------------------------
@@ -4761,12 +4761,12 @@ subroutine radclwmx(lchnk   ,ncol    ,pcols, pver, pverp,         &
                     flut    ,flutc   , &
                     flup    ,flupc   ,fldn    ,fldnc   ,          &
                     aer_mass)
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Compute longwave radiation heating rates and boundary fluxes
-!
-! Method:
+! 
+! Method: 
 ! Uses broad band absorptivity/emissivity method to compute clear sky;
 ! assumes randomly overlapped clouds with variable cloud emissivity to
 ! include effects of clouds.
@@ -4778,9 +4778,9 @@ subroutine radclwmx(lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! Note: This subroutine contains vertical indexing which proceeds
 !       from bottom to top rather than the top to bottom indexing
 !       used in the rest of the model.
-!
+! 
 ! Author: B. Collins
-!
+! 
 !-----------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
 !  use ppgrid
@@ -4842,9 +4842,9 @@ subroutine radclwmx(lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8), intent(out) :: flutc(pcols)         ! Upward clear-sky flux at top of model
    real(r8), intent(out) :: flwds(pcols)         ! Down longwave flux at surface
 ! Added downward/upward total and clear sky fluxes
-   real(r8), intent(out) :: flup(pcols,pverp)      ! Total sky upward longwave flux
-   real(r8), intent(out) :: flupc(pcols,pverp)     ! Clear sky upward longwave flux
-   real(r8), intent(out) :: fldn(pcols,pverp)      ! Total sky downward longwave flux
+   real(r8), intent(out) :: flup(pcols,pverp)      ! Total sky upward longwave flux 
+   real(r8), intent(out) :: flupc(pcols,pverp)     ! Clear sky upward longwave flux 
+   real(r8), intent(out) :: fldn(pcols,pverp)      ! Total sky downward longwave flux 
    real(r8), intent(out) :: fldnc(pcols,pverp)     ! Clear sky downward longwave flux
 !
    real(r8), intent(inout) :: abstot(pcols,pverp,pverp) ! Total absorptivity
@@ -4904,12 +4904,12 @@ subroutine radclwmx(lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8) tint4(pcols,pverp)   ! Interface temperature**4
    real(r8) tlayr(pcols,pverp)   ! Level temperature
    real(r8) tlayr4(pcols,pverp)  ! Level temperature**4
-   real(r8) plh2ob(nbands,pcols,pverp)! Pressure weighted h2o path with
-                                      !    Hulst-Curtis-Godson temp. factor
-                                      !    for H2O bands
-   real(r8) wb(nbands,pcols,pverp)    ! H2o path length with
-                                      !    Hulst-Curtis-Godson temp. factor
-                                      !    for H2O bands
+   real(r8) plh2ob(nbands,pcols,pverp)! Pressure weighted h2o path with 
+                                      !    Hulst-Curtis-Godson temp. factor 
+                                      !    for H2O bands 
+   real(r8) wb(nbands,pcols,pverp)    ! H2o path length with 
+                                      !    Hulst-Curtis-Godson temp. factor 
+                                      !    for H2O bands 
 
    real(r8) cld0                 ! previous cloud amt (for max overlap)
    real(r8) cld1                 ! next cloud amt (for max overlap)
@@ -4939,7 +4939,7 @@ subroutine radclwmx(lchnk   ,ncol    ,pcols, pver, pverp,         &
 
 !  real aer_trn_ttl(pcols,pverp,pverp,bnd_nbr_LW) ! [fraction] Total
   real(r8) aer_trn_ttl(pcols,pverp,pverp,bnd_nbr_LW) ! [fraction] Total
-!                               ! transmission between interfaces k1 and k2
+!                               ! transmission between interfaces k1 and k2  
 !
 ! Pointer variables to 3d structures
 !
@@ -5715,29 +5715,29 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                     fsdsdir ,fsdsdif ,fsdscdir,fsdscdif,          & ! amontornes-bcodina (2014-04-20) Dir/Dif fluxes sfc
                     aertau  ,aerssa  ,aerasm  ,aerfwd             )
 !-----------------------------------------------------------------------
-!
-! Purpose:
+! 
+! Purpose: 
 ! Solar radiation code
-!
-! Method:
+! 
+! Method: 
 ! Basic method is Delta-Eddington as described in:
-!
+! 
 ! Briegleb, Bruce P., 1992: Delta-Eddington
 ! Approximation for Solar Radiation in the NCAR Community Climate Model,
 ! Journal of Geophysical Research, Vol 97, D7, pp7603-7612).
-!
+! 
 ! Five changes to the basic method described above are:
 ! (1) addition of sulfate aerosols (Kiehl and Briegleb, 1993)
-! (2) the distinction between liquid and ice particle clouds
+! (2) the distinction between liquid and ice particle clouds 
 ! (Kiehl et al, 1996);
 ! (3) provision for calculating TOA fluxes with spectral response to
 ! match Nimbus-7 visible/near-IR radiometers (Collins, 1998);
 ! (4) max-random overlap (Collins, 2001)
-! (5) The near-IR absorption by H2O was updated in 2003 by Collins,
+! (5) The near-IR absorption by H2O was updated in 2003 by Collins, 
 !     Lee-Taylor, and Edwards for consistency with the new line data in
 !     Hitran 2000 and the H2O continuum version CKD 2.4.  Modifications
 !     were optimized by reducing RMS errors in heating rates relative
-!     to a series of benchmark calculations for the 5 standard AFGL
+!     to a series of benchmark calculations for the 5 standard AFGL 
 !     atmospheres.  The benchmarks were performed using DISORT2 combined
 !     with GENLN3.  The near-IR scattering optical depths for Rayleigh
 !     scattering were also adjusted, as well as the correction for
@@ -5745,26 +5745,26 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 !
 ! The treatment of maximum-random overlap is described in the
 ! comment block "INDEX CALCULATIONS FOR MAX OVERLAP".
-!
+! 
 ! Divides solar spectrum into 19 intervals from 0.2-5.0 micro-meters.
 ! solar flux fractions specified for each interval. allows for
 ! seasonally and diurnally varying solar input.  Includes molecular,
-! cloud, aerosol, and surface scattering, along with h2o,o3,co2,o2,cloud,
+! cloud, aerosol, and surface scattering, along with h2o,o3,co2,o2,cloud, 
 ! and surface absorption. Computes delta-eddington reflections and
-! transmissions assuming homogeneously mixed layers. Adds the layers
-! assuming scattering between layers to be isotropic, and distinguishes
+! transmissions assuming homogeneously mixed layers. Adds the layers 
+! assuming scattering between layers to be isotropic, and distinguishes 
 ! direct solar beam from scattered radiation.
-!
+! 
 ! Longitude loops are broken into 1 or 2 sections, so that only daylight
 ! (i.e. coszrs > 0) computations are done.
-!
+! 
 ! Note that an extra layer above the model top layer is added.
-!
+! 
 ! cgs units are used.
-!
+! 
 ! Special diagnostic calculation of the clear sky surface and total column
 ! absorbed flux is also done for cloud forcing diagnostics.
-!
+! 
 !-----------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
 !  use ppgrid
@@ -5786,61 +5786,61 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 !-----------------------Constants for new band (640-700 nm)-------------
 
 !-------------Parameters for accelerating max-random solution-------------
-!
-! The solution time scales like prod(j:1->N) (1 + n_j) where
+! 
+! The solution time scales like prod(j:1->N) (1 + n_j) where 
 ! N   = number of max-overlap regions (nmxrgn)
 ! n_j = number of unique cloud amounts in region j
-!
+! 
 ! Therefore the solution cost can be reduced by decreasing n_j.
 ! cldmin reduces n_j by treating cloud amounts < cldmin as clear sky.
 ! cldeps reduces n_j by treating cloud amounts identical to log(1/cldeps)
 ! decimal places as identical
-!
+! 
 ! areamin reduces the cost by dropping configurations that occupy
 ! a surface area < areamin of the model grid box.  The surface area
 ! for a configuration C(j,k_j), where j is the region number and k_j is the
 ! index for a unique cloud amount (in descending order from biggest to
 ! smallest clouds) in region j, is
-!
+! 
 ! A = prod(j:1->N) [C(j,k_j) - C(j,k_j+1)]
-!
+! 
 ! where C(j,0) = 1.0 and C(j,n_j+1) = 0.0.
-!
+! 
 ! nconfgmax reduces the cost and improves load balancing by setting an upper
 ! bound on the number of cloud configurations in the solution.  If the number
 ! of configurations exceeds nconfgmax, the nconfgmax configurations with the
 ! largest area are retained, and the fluxes are normalized by the total area
-! of these nconfgmax configurations.  For the current max/random overlap
-! assumption (see subroutine cldovrlap), 30 levels, and cloud-amount
-! parameterization, the mean and RMS number of configurations are
+! of these nconfgmax configurations.  For the current max/random overlap 
+! assumption (see subroutine cldovrlap), 30 levels, and cloud-amount 
+! parameterization, the mean and RMS number of configurations are 
 ! both roughly 5.  nconfgmax has been set to the mean+2*RMS number, or 15.
-!
-! Minimum cloud amount (as a fraction of the grid-box area) to
+! 
+! Minimum cloud amount (as a fraction of the grid-box area) to 
 ! distinguish from clear sky
-!
+! 
    real(r8) cldmin
    parameter (cldmin = 1.0e-80_r8)
-!
-! Minimimum horizontal area (as a fraction of the grid-box area) to retain
+! 
+! Minimimum horizontal area (as a fraction of the grid-box area) to retain 
 ! for a unique cloud configuration in the max-random solution
-!
+! 
    real(r8) areamin
    parameter (areamin = 0.01_r8)
-!
+! 
 ! Decimal precision of cloud amount (0 -> preserve full resolution;
 ! 10^-n -> preserve n digits of cloud amount)
-!
+! 
    real(r8) cldeps
    parameter (cldeps = 0.0_r8)
-!
+! 
 ! Maximum number of configurations to include in solution
-!
+! 
    integer nconfgmax
    parameter (nconfgmax = 15)
 !------------------------------Commons----------------------------------
-!
+! 
 ! Input arguments
-!
+! 
    integer, intent(in) :: lchnk,jj             ! chunk identifier
    integer, intent(in) :: pcols, pver, pverp
    integer, intent(in) :: ncol              ! number of atmospheric columns
@@ -5851,13 +5851,13 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8), intent(in) :: o3mmr(pcols,pver) ! Ozone mass mixing ratio
    real(r8), intent(in) :: aermmr(pcols,pver,naer_all) ! Aerosol mass mixing ratio
    real(r8), intent(in) :: rh(pcols,pver)   ! Relative humidity (fraction)
-!
+! 
    real(r8), intent(in) :: cld(pcols,pver)  ! Fractional cloud cover
    real(r8), intent(in) :: cicewp(pcols,pver) ! in-cloud cloud ice water path
    real(r8), intent(in) :: cliqwp(pcols,pver) ! in-cloud cloud liquid water path
    real(r8), intent(in) :: rel(pcols,pver)  ! Liquid effective drop size (microns)
    real(r8), intent(in) :: rei(pcols,pver)  ! Ice effective drop size (microns)
-!
+! 
    real(r8), intent(in) :: eccf             ! Eccentricity factor (1./earth-sun dist^2)
    real, intent(in) :: solcon           ! solar constant with eccentricity factor
    real(r8), intent(in) :: coszrs(pcols)    ! Cosine solar zenith angle
@@ -5866,19 +5866,19 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8), intent(in) :: asdif(pcols)     ! 0.2-0.7 micro-meter srfc alb: diffuse rad
    real(r8), intent(in) :: aldif(pcols)     ! 0.7-5.0 micro-meter srfc alb: diffuse rad
 
-   real(r8), intent(in) :: scon             ! solar constant
-!
+   real(r8), intent(in) :: scon             ! solar constant 
+! 
 ! IN/OUT arguments
-!
+! 
    real(r8), intent(inout) :: pmxrgn(pcols,pverp) ! Maximum values of pressure for each
-!                                                 !    maximally overlapped region.
+!                                                 !    maximally overlapped region. 
 !                                                 !    0->pmxrgn(i,1) is range of pressure for
 !                                                 !    1st region,pmxrgn(i,1)->pmxrgn(i,2) for
 !                                                 !    2nd region, etc
    integer, intent(inout) ::  nmxrgn(pcols)    ! Number of maximally overlapped regions
-!
+! 
 ! Output arguments
-!
+! 
 
    real(r8), intent(out) :: solin(pcols)     ! Incident solar flux
    real(r8), intent(out) :: qrs(pcols,pver)  ! Solar heating rate
@@ -5886,7 +5886,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8), intent(out) :: fsnt(pcols)      ! Total column absorbed solar flux
    real(r8), intent(out) :: fsntoa(pcols)    ! Net solar flux at TOA
    real(r8), intent(out) :: fsds(pcols)      ! Flux shortwave downwelling surface
-!
+! 
    real(r8), intent(out) :: fsnsc(pcols)     ! Clear sky surface absorbed solar flux
    real(r8), intent(out) :: fsdsc(pcols)     ! Clear sky surface downwelling solar flux
 
@@ -5926,22 +5926,22 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 !  real(r8), intent(out) :: aerssa(pcols,nspint,naer_groups) ! Aerosol column averaged single scattering albedo
 !  real(r8), intent(out) :: aerasm(pcols,nspint,naer_groups) ! Aerosol column averaged asymmetry parameter
 !  real(r8), intent(out) :: aerfwd(pcols,nspint,naer_groups) ! Aerosol column averaged forward scattering
-!
+! 
 !---------------------------Local variables-----------------------------
-!
+! 
 ! Max/random overlap variables
-!
+! 
    real(r8) asort(pverp)     ! 1 - cloud amounts to be sorted for max ovrlp.
    real(r8) atmp             ! Temporary storage for sort when nxs = 2
    real(r8) cld0             ! 1 - (cld amt) used to make wstr, cstr, nstr
-   real(r8) totwgt           ! Total of xwgts = total fractional area of
+   real(r8) totwgt           ! Total of xwgts = total fractional area of 
 !   grid-box covered by cloud configurations
 !   included in solution to fluxes
 
    real(r8) wgtv(nconfgmax)  ! Weights for fluxes
 !   1st index is configuration number
    real(r8) wstr(pverp,pverp) ! area weighting factors for streams
-!   1st index is for stream #,
+!   1st index is for stream #, 
 !   2nd index is for region #
 
    real(r8) xexpt            ! solar direct beam trans. for layer above
@@ -5967,28 +5967,28 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    logical new_term          ! Flag for configurations to include in fluxes
    logical region_found      ! flag for identifying regions
 
-   integer ccon(0:pverp,nconfgmax)
+   integer ccon(0:pverp,nconfgmax)                                
 ! flags for presence of clouds
-!   1st index is for level # (including
+!   1st index is for level # (including 
 !    layer above top of model and at surface)
 !   2nd index is for configuration #
-   integer cstr(0:pverp,pverp)
+   integer cstr(0:pverp,pverp)                                
 ! flags for presence of clouds
-!   1st index is for level # (including
+!   1st index is for level # (including 
 !    layer above top of model and at surface)
 !   2nd index is for stream #
    integer icond(0:pverp,nconfgmax)
 ! Indices for copying rad. properties from
 !     one identical downward cld config.
 !     to another in adding method (step 2)
-!   1st index is for interface # (including
+!   1st index is for interface # (including 
 !     layer above top of model and at surface)
 !   2nd index is for configuration # range
    integer iconu(0:pverp,nconfgmax)
 ! Indices for copying rad. properties from
 !     one identical upward configuration
 !     to another in adding method (step 2)
-!   1st index is for interface # (including
+!   1st index is for interface # (including 
 !     layer above top of model and at surface)
 !   2nd index is for configuration # range
    integer iconfig           ! Counter for random-ovrlap configurations
@@ -5998,13 +5998,13 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    integer isn               ! Stream index
    integer istr(pverp+1)     ! index for stream #s during flux calculation
    integer istrtd(0:pverp,0:nconfgmax+1)
-! indices into icond
-!   1st index is for interface # (including
+! indices into icond 
+!   1st index is for interface # (including 
 !     layer above top of model and at surface)
 !   2nd index is for configuration # range
    integer istrtu(0:pverp,0:nconfgmax+1)
-! indices into iconu
-!   1st index is for interface # (including
+! indices into iconu 
+!   1st index is for interface # (including 
 !     layer above top of model and at surface)
 !   2nd index is for configuration # range
    integer j                 ! Configuration index
@@ -6014,7 +6014,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    integer ktmp              ! Temporary storage for sort when nxs = 2
    integer kx1(0:pverp)      ! Level index for top of max-overlap region
    integer kx2(0:pverp)      ! Level index for bottom of max-overlap region
-   integer l                 ! Index
+   integer l                 ! Index 
    integer l0                ! Index
    integer mrgn              ! Counter for nrgn
    integer mstr              ! Counter for nstr
@@ -6024,17 +6024,17 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    integer nconfigm          ! Value of config before testing for areamin,
 !    nconfgmax
    integer npasses           ! number of passes over the indexing loop
-   integer nrgn              ! Number of max overlap regions at current
+   integer nrgn              ! Number of max overlap regions at current 
 !    longitude
    integer nstr(pverp)       ! Number of unique cloud configurations
 !   ("streams") in a max-overlapped region
 !   1st index is for region #
    integer nuniq             ! # of unique cloud configurations
-   integer nuniqd(0:pverp)   ! # of unique cloud configurations: TOA
+   integer nuniqd(0:pverp)   ! # of unique cloud configurations: TOA 
 !   to level k
    integer nuniqu(0:pverp)   ! # of unique cloud configurations: surface
-!   to level k
-   integer nxs               ! Number of cloudy layers between k1 and k2
+!   to level k 
+   integer nxs               ! Number of cloudy layers between k1 and k2 
    integer ptr0(nconfgmax)   ! Indices of configurations with ccon(k,:)==0
    integer ptr1(nconfgmax)   ! Indices of configurations with ccon(k,:)==1
    integer ptrc(nconfgmax)   ! Pointer for configurations sorted by wgtv
@@ -6042,9 +6042,9 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 !   in a vector
 !  external findvalue
 
-!
+! 
 ! Other
-!
+! 
    integer ns                ! Spectral loop index
    integer i                 ! Longitude loop index
    integer k                 ! Level loop index
@@ -6059,16 +6059,16 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    integer kaer              ! aerosol group index
    real(r8) wrh              ! weight for linear interpolation between lut points
    real(r8) :: rhtrunc       ! rh, truncated for the purposes of extrapolating
-                             ! aerosol optical properties
+                             ! aerosol optical properties 
    real(r8) albdir(pcols,nspint) ! Current spc intrvl srf alb to direct rad
    real(r8) albdif(pcols,nspint) ! Current spc intrvl srf alb to diffuse rad
-!
+! 
    real(r8) wgtint           ! Weight for specific spectral interval
 
-!
+! 
 ! Diagnostic and accumulation arrays; note that sfltot, fswup, and
 ! fswdn are not used in the computation,but are retained for future use.
-!
+! 
    real(r8) solflx           ! Solar flux in current interval
    real(r8) sfltot           ! Spectrally summed total solar flux
    real(r8) totfld(0:pver)   ! Spectrally summed flux divergence
@@ -6078,9 +6078,9 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8) fswdnc(0:pverp)  ! Spectrally summed down clear sky flux
    real(r8) fswdndir(0:pverp) ! Spectrally summed direct flux in all sky    (amontornes-bcodina 2014-04-20)
    real(r8) fswdncdir(0:pverp)! Spectrally summed direct flux in clear sky  (amontornes-bcodina 2014-04-20)
-!
+! 
 ! Cloud radiative property arrays
-!
+! 
 !  real(r8) tauxcl(pcols,0:pver) ! water cloud extinction optical depth
 !  real(r8) tauxci(pcols,0:pver) ! ice cloud extinction optical depth
    real(r8) wcl(pcols,0:pver) ! liquid cloud single scattering albedo
@@ -6171,17 +6171,17 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
   real(r8) gsuli               ! asymmetry parameter interpolated between rh look-up-table points, sulfate
   real(r8) gsslti              ! asymmetry parameter interpolated between rh look-up-table points, sea-salt
   real(r8) gcphili             ! asymmetry parameter interpolated between rh look-up-table points, hydrophilic carbon
-!
+! 
 ! Aerosol radiative property arrays
-!
+! 
    real(r8) tauxar(pcols,0:pver) ! aerosol extinction optical depth
    real(r8) wa(pcols,0:pver) ! aerosol single scattering albedo
    real(r8) ga(pcols,0:pver) ! aerosol assymetry parameter
    real(r8) fa(pcols,0:pver) ! aerosol forward scattered fraction
 
-!
+! 
 ! Various arrays and other constants:
-!
+! 
    real(r8) pflx(pcols,0:pverp) ! Interface press, including extra layer
    real(r8) zenfac(pcols)    ! Square root of cos solar zenith angle
    real(r8) sqrco2           ! Square root of the co2 mass mixg ratio
@@ -6207,26 +6207,26 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8) rdirexp          ! layer direct ref times exp transmission
    real(r8) tdnmexp          ! total transmission - exp transmission
    real(r8) psf(nspint)      ! Frac of solar flux in spect interval
-!
+! 
 ! Layer absorber amounts; note that 0 refers to the extra layer added
 ! above the top model layer
-!
+! 
    real(r8) uh2o(pcols,0:pver) ! Layer absorber amount of h2o
    real(r8) uo3(pcols,0:pver) ! Layer absorber amount of  o3
    real(r8) uco2(pcols,0:pver) ! Layer absorber amount of co2
    real(r8) uo2(pcols,0:pver) ! Layer absorber amount of  o2
-   real(r8) uaer(pcols,0:pver) ! Layer aerosol amount
-!
+   real(r8) uaer(pcols,0:pver) ! Layer aerosol amount 
+! 
 ! Total column absorber amounts:
-!
+! 
    real(r8) uth2o(pcols)     ! Total column  absorber amount of  h2o
    real(r8) uto3(pcols)      ! Total column  absorber amount of  o3
    real(r8) utco2(pcols)     ! Total column  absorber amount of  co2
    real(r8) uto2(pcols)      ! Total column  absorber amount of  o2
-!
+! 
 ! These arrays are defined for pver model layers; 0 refers to the extra
 ! layer on top:
-!
+! 
    real(r8) rdir(nspint,pcols,0:pver) ! Layer reflectivity to direct rad
    real(r8) rdif(nspint,pcols,0:pver) ! Layer reflectivity to diffuse rad
    real(r8) tdir(nspint,pcols,0:pver) ! Layer transmission to direct rad
@@ -6240,29 +6240,29 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8) explayc(nspint,pcols,0:pver) ! Solar beam exp trans. clear layer
 
    real(r8) flxdiv           ! Flux divergence for layer
-!
-!
+! 
+! 
 ! Radiative Properties:
-!
+! 
 ! There are 1 classes of properties:
 ! (1. All-sky bulk properties
 ! (2. Clear-sky properties
-!
+! 
 ! The first set of properties are generated during step 2 of the solution.
-!
+! 
 ! These arrays are defined at model interfaces; in 1st index (for level #),
 ! 0 is the top of the extra layer above the model top, and
 ! pverp is the earth surface.  2nd index is for cloud configuration
 ! defined over a whole column.
-!
+! 
    real(r8) exptdn(0:pverp,nconfgmax) ! Sol. beam trans from layers above
    real(r8) rdndif(0:pverp,nconfgmax) ! Ref to dif rad for layers above
    real(r8) rupdif(0:pverp,nconfgmax) ! Ref to dif rad for layers below
    real(r8) rupdir(0:pverp,nconfgmax) ! Ref to dir rad for layers below
    real(r8) tdntot(0:pverp,nconfgmax) ! Total trans for layers above
-!
+! 
 ! Bulk properties used during the clear-sky calculation.
-!
+! 
    real(r8) exptdnc(0:pverp) ! clr: Sol. beam trans from layers above
    real(r8) rdndifc(0:pverp) ! clr: Ref to dif rad for layers above
    real(r8) rupdifc(0:pverp) ! clr: Ref to dif rad for layers below
@@ -6290,17 +6290,17 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
    real(r8) fbarii           ! F coefficient for current spectral band
 ! JM 20100217
 
-!
+! 
 !-----------------------------------------------------------------------
 ! START OF CALCULATION
 !-----------------------------------------------------------------------
-!
+! 
 !  write (6, '(a, x, i3)') 'radcswmx : chunk identifier', lchnk
 
    do i=1, ncol
-!
+! 
 ! Initialize output fields:
-!
+! 
       fsds(i)     = 0.0_r8
 
       fsnirtoa(i) = 0.0_r8
@@ -6347,7 +6347,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
          qrs(i,k) = 0.0_r8
       end do
 
-      ! initialize aerosol diagnostic fields to 0.0
+      ! initialize aerosol diagnostic fields to 0.0 
       ! Average can be obtained by dividing <aerod>/<frc_day>
       do kaer = 1, naer_groups
          do ns = 1, nspint
@@ -6360,11 +6360,11 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
       end do
 
    end do
-!
+! 
 ! Compute starting, ending daytime loop indices:
 !  *** Note this logic assumes day and night points are contiguous so
 !  *** will not work in general with chunked data structure.
-!
+! 
    ndayc = 0
    do i=1,ncol
       if (coszrs(i) > 0.0_r8) then
@@ -6372,22 +6372,22 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
          idayc(ndayc) = i
       end if
    end do
-!
+! 
 ! If night everywhere, return:
-!
+! 
    if (ndayc == 0) return
-!
+! 
 ! Perform other initializations
-!
+! 
    tmp1   = 0.5_r8/(gravit*sslp)
    tmp2   = delta/gravit
    sqrco2 = sqrt(co2mmr)
 
    do n=1,ndayc
       i=idayc(n)
-!
+! 
 ! Define solar incident radiation and interface pressures:
-!
+! 
 !        solin(i)  = scon*eccf*coszrs(i)
 !WRF use SOLCON (MKS) calculated outside
          solin(i)  = solcon*coszrs(i)*1000.
@@ -6395,9 +6395,9 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
          do k=1,pverp
             pflx(i,k) = pint(i,k)
          end do
-!
+! 
 ! Compute optical paths:
-!
+! 
          ptop      = pflx(i,1)
          ptho2     = o2mmr * ptop / gravit
          ptho3     = o3mmr(i,1) * ptop / gravit
@@ -6423,8 +6423,8 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
             uco2(i,k) = zenfac(i)*pthco2
             uo2 (i,k) = zenfac(i)*ptho2
             uo3 (i,k) = ptho3
-            usul(i,k) = aermmr(i,k,idxSUL) * path
-            ubg(i,k) = aermmr(i,k,idxBG) * path
+            usul(i,k) = aermmr(i,k,idxSUL) * path 
+            ubg(i,k) = aermmr(i,k,idxBG) * path 
             usslt(i,k) = aermmr(i,k,idxSSLT) * path
             if (usslt(i,k) .lt. 0.0) then  ! usslt is sometimes small and negative, will be fixed
               usslt(i,k) = 0.0
@@ -6437,9 +6437,9 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
               udst(ksz,i,k) = aermmr(i,k,idxDUSTfirst-1+ksz) * path
             end do
          end do
-!
+! 
 ! Compute column absorber amounts for the clear sky computation:
-!
+! 
          uth2o(i) = 0.0_r8
          uto3(i)  = 0.0_r8
          utco2(i) = 0.0_r8
@@ -6451,11 +6451,11 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
             utco2(i) = utco2(i) + uco2(i,k)
             uto2(i)  = uto2(i)  + uo2(i,k)
          end do
-!
+! 
 ! Set cloud properties for top (0) layer; so long as tauxcl is zero,
 ! there is no cloud above top of model; the other cloud properties
 ! are arbitrary:
-!
+! 
          tauxcl(i,0)  = 0._r8
          wcl(i,0)     = 0.999999_r8
          gcl(i,0)     = 0.85_r8
@@ -6464,33 +6464,33 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
          wci(i,0)     = 0.999999_r8
          gci(i,0)     = 0.85_r8
          fci(i,0)     = 0.725_r8
-!
-! Aerosol
-!
+! 
+! Aerosol 
+! 
          tauxar(i,0)  = 0._r8
          wa(i,0)      = 0.925_r8
          ga(i,0)      = 0.850_r8
          fa(i,0)      = 0.7225_r8
-!
+! 
 ! End  do n=1,ndayc
-!
+! 
    end do
-!
+! 
 ! Begin spectral loop
-!
+! 
    do ns=1,nspint
-!
+! 
 ! Set index for cloud particle properties based on the wavelength,
 ! according to A. Slingo (1989) equations 1-3:
 ! Use index 1 (0.25 to 0.69 micrometers) for visible
 ! Use index 2 (0.69 - 1.19 micrometers) for near-infrared
 ! Use index 3 (1.19 to 2.38 micrometers) for near-infrared
 ! Use index 4 (2.38 to 4.00 micrometers) for near-infrared
-!
+! 
 ! Note that the minimum wavelength is encoded (with .001, .002, .003)
 ! in order to specify the index appropriate for the near-infrared
 ! cloud absorption properties
-!
+! 
       if(wavmax(ns) <= 0.7_r8) then
          indxsl = 1
       else if(wavmin(ns) == 0.700_r8) then
@@ -6500,27 +6500,27 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
       else if(wavmin(ns) == 0.702_r8 .or. wavmin(ns) > 2.38_r8) then
          indxsl = 4
       end if
-!
+! 
 ! Set cloud extinction optical depth, single scatter albedo,
 ! asymmetry parameter, and forward scattered fraction:
-!
+! 
       abarli = abarl(indxsl)
       bbarli = bbarl(indxsl)
       cbarli = cbarl(indxsl)
       dbarli = dbarl(indxsl)
       ebarli = ebarl(indxsl)
       fbarli = fbarl(indxsl)
-!
+! 
       abarii = abari(indxsl)
       bbarii = bbari(indxsl)
       cbarii = cbari(indxsl)
       dbarii = dbari(indxsl)
       ebarii = ebari(indxsl)
       fbarii = fbari(indxsl)
-!
+! 
 ! adjustfraction within spectral interval to allow for the possibility of
 ! sub-divisions within a particular interval:
-!
+! 
       psf(ns) = 1.0_r8
       if(ph2o(ns)/=0._r8) psf(ns) = psf(ns)*ph2o(ns)
       if(pco2(ns)/=0._r8) psf(ns) = psf(ns)*pco2(ns)
@@ -6538,15 +6538,15 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
          end do
 
             do k=1,pver
-!
+! 
 ! liquid
-!
+! 
                tmp1l = abarli + bbarli/rel(i,k)
                tmp2l = 1._r8 - cbarli - dbarli*rel(i,k)
                tmp3l = fbarli*rel(i,k)
-!
+! 
 ! ice
-!
+! 
                tmp1i = abarii + bbarii/rei(i,k)
                tmp2i = 1._r8 - cbarii - dbarii*rei(i,k)
                tmp3i = fbarii*rei(i,k)
@@ -6558,22 +6558,22 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                   tauxcl(i,k) = 0.0
                   tauxci(i,k) = 0.0
                endif
-!
+! 
 ! Do not let single scatter albedo be 1.  Delta-eddington solution
 ! for non-conservative case has different analytic form from solution
 ! for conservative case, and raddedmx is written for non-conservative case.
-!
+! 
                wcl(i,k) = min(tmp2l,.999999_r8)
                gcl(i,k) = ebarli + tmp3l
                fcl(i,k) = gcl(i,k)*gcl(i,k)
-!
+! 
                wci(i,k) = min(tmp2i,.999999_r8)
                gci(i,k) = ebarii + tmp3i
                fci(i,k) = gci(i,k)*gci(i,k)
-!
+! 
 ! Set aerosol properties
 ! Conversion factor to adjust aerosol extinction (m2/g)
-!
+! 
                rhtrunc = rh(i,k)
                rhtrunc = min(rh(i,k),1._r8)
 !              if(rhtrunc.lt.0._r8) call endrun ('RADCSWMX')
@@ -6736,9 +6736,9 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                aerfwd(i,ns,6) = aerfwd(i,ns,6) + tau_w_f_volc
                aerfwd(i,ns,7) = aerfwd(i,ns,7) + tau_w_f_tot
 
-!
+! 
 ! End do k=1,pver
-!
+! 
             end do
 
             ! normalize aerosol optical diagnostic fields
@@ -6761,27 +6761,27 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
             end do
 
 
-!
+! 
 ! End do n=1,ndayc
-!
+! 
       end do
 
-!
+! 
 ! Set reflectivities for surface based on mid-point wavelength
-!
+! 
       wavmid(ns) = 0.5_r8*(wavmin(ns) + wavmax(ns))
-!
+! 
 ! Wavelength less  than 0.7 micro-meter
-!
+! 
       if (wavmid(ns) < 0.7_r8 ) then
          do n=1,ndayc
             i=idayc(n)
                albdir(i,ns) = asdir(i)
                albdif(i,ns) = asdif(i)
          end do
-!
+! 
 ! Wavelength greater than 0.7 micro-meter
-!
+! 
       else
          do n=1,ndayc
             i=idayc(n)
@@ -6790,11 +6790,11 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
          end do
       end if
       trayoslp = raytau(ns)/sslp
-!
+! 
 ! Layer input properties now completely specified; compute the
 ! delta-Eddington solution reflectivities and transmissivities
 ! for each layer
-!
+! 
       call raddedmx(pver, pverp, pcols, coszrs   ,ndayc    ,idayc   , &
               abh2o(ns),abo3(ns) ,abco2(ns),abo2(ns) , &
               uh2o     ,uo3      ,uco2     ,uo2      , &
@@ -6804,64 +6804,64 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
               tauxar   ,wa       ,ga       ,fa       , &
               rdir     ,rdif     ,tdir     ,tdif     ,explay  , &
               rdirc    ,rdifc    ,tdirc    ,tdifc    ,explayc )
-!
+! 
 ! End spectral loop
-!
+! 
    end do
-!
+! 
 !----------------------------------------------------------------------
-!
-! Solution for max/random cloud overlap.
-!
+! 
+! Solution for max/random cloud overlap.  
+! 
 ! Steps:
 ! (1. delta-Eddington solution for each layer (called above)
-!
+! 
 ! (2. The adding method is used to
 ! compute the reflectivity and transmissivity to direct and diffuse
 ! radiation from the top and bottom of the atmosphere for each
 ! cloud configuration.  This calculation is based upon the
 ! max-random overlap assumption.
-!
+! 
 ! (3. to solve for the fluxes, combine the
 ! bulk properties of the atmosphere above/below the region.
-!
+! 
 ! Index calculations for steps 2-3 are performed outside spectral
 ! loop to avoid redundant calculations.  Index calculations (with
-! application of areamin & nconfgmax conditions) are performed
-! first to identify the minimum subset of terms for the configurations
-! satisfying the areamin & nconfgmax conditions. This minimum set is
-! used to identify the corresponding minimum subset of terms in
+! application of areamin & nconfgmax conditions) are performed 
+! first to identify the minimum subset of terms for the configurations 
+! satisfying the areamin & nconfgmax conditions. This minimum set is 
+! used to identify the corresponding minimum subset of terms in 
 ! steps 2 and 3.
-!
+! 
 
    do n=1,ndayc
       i=idayc(n)
 
 !----------------------------------------------------------------------
 ! INDEX CALCULATIONS FOR MAX OVERLAP
-!
-! The column is divided into sets of adjacent layers, called regions,
+! 
+! The column is divided into sets of adjacent layers, called regions, 
 ! in which the clouds are maximally overlapped.  The clouds are
 ! randomly overlapped between different regions.  The number of
 ! regions in a column is set by nmxrgn, and the range of pressures
-! included in each region is set by pmxrgn.
-!
-! The following calculations determine the number of unique cloud
+! included in each region is set by pmxrgn.  
+! 
+! The following calculations determine the number of unique cloud 
 ! configurations (assuming maximum overlap), called "streams",
 ! within each region. Each stream consists of a vector of binary
-! clouds (either 0 or 100% cloud cover).  Over the depth of the region,
+! clouds (either 0 or 100% cloud cover).  Over the depth of the region, 
 ! each stream requires a separate calculation of radiative properties. These
 ! properties are generated using the adding method from
 ! the radiative properties for each layer calculated by raddedmx.
-!
+! 
 ! The upward and downward-propagating streams are treated
 ! separately.
-!
+! 
 ! We will refer to a particular configuration of binary clouds
-! within a single max-overlapped region as a "stream".  We will
+! within a single max-overlapped region as a "stream".  We will 
 ! refer to a particular arrangement of binary clouds over the entire column
 ! as a "configuration".
-!
+! 
 ! This section of the code generates the following information:
 ! (1. nrgn    : the true number of max-overlap regions (need not = nmxrgn)
 ! (2. nstr    : the number of streams in a region (>=1)
@@ -6869,33 +6869,33 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! (4. wstr    : the fractional horizontal area of a grid box covered
 ! by each stream
 ! (5. kx1,2   : level indices for top/bottom of each region
-!
+! 
 ! The max-overlap calculation proceeds in 3 stages:
 ! (1. compute layer radiative properties in raddedmx.
-! (2. combine these properties between layers
-! (3. combine properties to compute fluxes at each interface.
-!
+! (2. combine these properties between layers 
+! (3. combine properties to compute fluxes at each interface.  
+! 
 ! Most of the indexing information calculated here is used in steps 2-3
 ! after the call to raddedmx.
-!
+! 
 ! Initialize indices for layers to be max-overlapped
-!
-! Loop to handle fix in totwgt=0. For original overlap config
+! 
+! Loop to handle fix in totwgt=0. For original overlap config 
 ! from npasses = 0.
-!
+! 
          npasses = 0
          do
             do irgn = 0, nmxrgn(i)
                kx2(irgn) = 0
             end do
             mrgn = 0
-!
+! 
 ! Outermost loop over regions (sets of adjacent layers) to be max overlapped
-!
+! 
             do irgn = 1, nmxrgn(i)
-!
-! Calculate min/max layer indices inside region.
-!
+! 
+! Calculate min/max layer indices inside region.  
+! 
                region_found = .false.
                if (kx2(irgn-1) < pver) then
                   k1 = kx2(irgn-1)+1
@@ -6914,19 +6914,19 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                endif
 
                if (region_found) then
-!
-! Sort cloud areas and corresponding level indices.
-!
+! 
+! Sort cloud areas and corresponding level indices.  
+! 
                   nxs = 0
-                  if (cldeps > 0) then
+                  if (cldeps > 0) then 
                      do k = k1,k2
                         if (cld(i,k) >= cldmin .and. cld(i,k) >= cldeps) then
                            nxs = nxs+1
                            ksort(nxs) = k
-!
+! 
 ! We need indices for clouds in order of largest to smallest, so
 ! sort 1-cld in ascending order
-!
+! 
                            asort(nxs) = 1.0_r8-(floor(cld(i,k)/cldeps)*cldeps)
                         end if
                      end do
@@ -6935,19 +6935,19 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                         if (cld(i,k) >= cldmin) then
                            nxs = nxs+1
                            ksort(nxs) = k
-!
+! 
 ! We need indices for clouds in order of largest to smallest, so
 ! sort 1-cld in ascending order
-!
+! 
                            asort(nxs) = 1.0_r8-cld(i,k)
                         end if
                      end do
                   endif
-!
-! If nxs eq 1, no need to sort.
+! 
+! If nxs eq 1, no need to sort. 
 ! If nxs eq 2, sort by swapping if necessary
 ! If nxs ge 3, sort using local sort routine
-!
+! 
                   if (nxs == 2) then
                      if (asort(2) < asort(1)) then
                         ktmp = ksort(1)
@@ -6961,9 +6961,9 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                   else if (nxs >= 3) then
                      call sortarray(nxs,asort,ksort)
                   endif
-!
+! 
 ! Construct wstr, cstr, nstr for this region
-!
+! 
                   cstr(k1:k2,1:nxs+1) = 0
                   mstr = 1
                   cld0 = 0.0_r8
@@ -6977,25 +6977,25 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                   end do
                   nstr(mrgn) = mstr
                   wstr(mstr,mrgn) = 1.0_r8 - cld0
-!
+! 
 ! End test of region_found = true
-!
+! 
                endif
-!
+! 
 ! End loop over regions irgn for max-overlap
-!
+! 
             end do
             nrgn = mrgn
-!
+! 
 ! Finish construction of cstr for additional top layer
-!
+! 
             cstr(0,1:nstr(1)) = 0
-!
+! 
 ! INDEX COMPUTATIONS FOR STEP 2-3
 ! This section of the code generates the following information:
 ! (1. totwgt     step 3     total frac. area of configurations satisfying
 ! areamin & nconfgmax criteria
-! (2. wgtv       step 3     frac. area of configurations
+! (2. wgtv       step 3     frac. area of configurations 
 ! (3. ccon       step 2     binary flag for clouds in each configuration
 ! (4. nconfig    steps 2-3  number of configurations
 ! (5. nuniqu/d   step 2     Number of unique cloud configurations for
@@ -7005,13 +7005,13 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! (7. iconu/d    step 2     Cloud configurations which are identical
 ! for up/downwelling rad. between surface/TOA
 ! and level k
-!
+! 
 ! Number of configurations (all permutations of streams in each region)
-!
+! 
             nconfigm = product(nstr(1: nrgn))
-!
+! 
 ! Construction of totwgt, wgtv, ccon, nconfig
-!
+! 
             istr(1: nrgn) = 1
             nconfig = 0
             totwgt = 0.0_r8
@@ -7054,14 +7054,14 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                   mrgn = mrgn - 1
                   istr(mrgn) = istr(mrgn) + 1
                end do
-!
+! 
 ! End do iconfig = 1, nconfigm
-!
+! 
             end do
-!
+! 
 ! If totwgt = 0 implement maximum overlap and make another pass
 ! if totwgt = 0 on this second pass then terminate.
-!
+! 
             if (totwgt > 0.) then
                exit
             else
@@ -7077,15 +7077,15 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 ! End npasses = 0, do
 !
          end do
-!
-!
+! 
+! 
 ! Finish construction of ccon
-!
+! 
          ccon(0,:) = 0
          ccon(pverp,:) = 0
-!
-! Construction of nuniqu/d, istrtu/d, iconu/d using binary tree
-!
+! 
+! Construction of nuniqu/d, istrtu/d, iconu/d using binary tree 
+! 
          nuniqd(0) = 1
          nuniqu(pverp) = 1
 
@@ -7167,7 +7167,7 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
             end do
             nuniqu(k) = nuniq
          end do
-!
+! 
 !----------------------------------------------------------------------
 ! End of index calculations
 !----------------------------------------------------------------------
@@ -7176,9 +7176,9 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
 !----------------------------------------------------------------------
 ! Start of flux calculations
 !----------------------------------------------------------------------
-!
+! 
 ! Initialize spectrally integrated totals:
-!
+! 
          do k=0,pver
             totfld(k) = 0.0_r8
             fswup (k) = 0.0_r8
@@ -7197,30 +7197,30 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
          fswdndir(pverp) = 0.0_r8 ! amontornes-bcodina (2014-04-20)
          fswdncdir(pverp)= 0.0_r8 ! amontornes-bcodina (2014-04-20)
 
-!
+! 
 ! Start spectral interval
-!
+! 
          do ns = 1,nspint
             wgtint = nirwgt(ns)
 !----------------------------------------------------------------------
 ! STEP 2
-!
-!
+! 
+! 
 ! Apply adding method to solve for radiative properties
-!
+! 
 ! First initialize the bulk properties at TOA
-!
+! 
             rdndif(0,1:nconfig) = 0.0_r8
             exptdn(0,1:nconfig) = 1.0_r8
             tdntot(0,1:nconfig) = 1.0_r8
-!
+! 
 ! Solve for properties involving downward propagation of radiation.
 ! The bulk properties are:
-!
+! 
 ! (1. exptdn   Sol. beam dwn. trans from layers above
 ! (2. rdndif   Ref to dif rad for layers above
 ! (3. tdntot   Total trans for layers above
-!
+! 
             do k = 1, pverp
                km1 = k - 1
                do l0 = 1, nuniqd(km1)
@@ -7234,9 +7234,9 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                   tdnmexp = tdntot(km1,j) - xexpt
 
                   if (ccon(km1,j) == 1) then
-!
+! 
 ! If cloud in layer, use cloudy layer radiative properties
-!
+! 
                      ytdnd = tdif(ns,i,km1)
                      yrdnd = rdif(ns,i,km1)
 
@@ -7247,9 +7247,9 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                      zrdnd = yrdnd + xrdnd*(ytdnd**2)*rdenom
                      ztdnt = xexpt*tdir(ns,i,km1) + ytdnd*(tdnmexp + xrdnd*rdirexp)*rdenom
                   else
-!
+! 
 ! If clear layer, use clear-sky layer radiative properties
-!
+! 
                      ytdnd = tdifc(ns,i,km1)
                      yrdnd = rdifc(ns,i,km1)
 
@@ -7262,34 +7262,34 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                                             (tdnmexp + xrdnd*rdirexp)*rdenom
                   endif
 
-!
+! 
 ! If 2 or more configurations share identical properties at a given level k,
-! the properties (at level k) are computed once and copied to
+! the properties (at level k) are computed once and copied to 
 ! all the configurations for efficiency.
-!
+! 
                   do isn = is0, is1
                      j = icond(km1,isn)
                      exptdn(k,j) = zexpt
                      rdndif(k,j) = zrdnd
                      tdntot(k,j) = ztdnt
                   end do
-!
+! 
 ! end do l0 = 1, nuniqd(k)
-!
+! 
                end do
-!
+! 
 ! end do k = 1, pverp
-!
+! 
             end do
-!
+! 
 ! Solve for properties involving upward propagation of radiation.
 ! The bulk properties are:
-!
+! 
 ! (1. rupdif   Ref to dif rad for layers below
 ! (2. rupdir   Ref to dir rad for layers below
-!
+! 
 ! Specify surface boundary conditions (surface albedos)
-!
+! 
             rupdir(pverp,1:nconfig) = albdir(i,ns)
             rupdif(pverp,1:nconfig) = albdif(i,ns)
 
@@ -7304,9 +7304,9 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                   xrups = rupdir(k+1,j)
 
                   if (ccon(k,j) == 1) then
-!
+! 
 ! If cloud in layer, use cloudy layer radiative properties
-!
+! 
                      yexpt = explay(ns,i,k)
                      yrupd = rdif(ns,i,k)
                      ytupd = tdif(ns,i,k)
@@ -7318,9 +7318,9 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                      zrupd = yrupd + xrupd*(ytupd**2)*rdenom
                      zrups = rdir(ns,i,k) + ytupd*(rdirexp + xrupd*tdnmexp)*rdenom
                   else
-!
+! 
 ! If clear layer, use clear-sky layer radiative properties
-!
+! 
                      yexpt = explayc(ns,i,k)
                      yrupd = rdifc(ns,i,k)
                      ytupd = tdifc(ns,i,k)
@@ -7333,41 +7333,41 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                      zrups = rdirc(ns,i,k) + ytupd*(rdirexp + xrupd*tdnmexp)*rdenom
                   endif
 
-!
+! 
 ! If 2 or more configurations share identical properties at a given level k,
-! the properties (at level k) are computed once and copied to
+! the properties (at level k) are computed once and copied to 
 ! all the configurations for efficiency.
-!
+! 
                   do isn = is0, is1
                      j = iconu(k,isn)
                      rupdif(k,j) = zrupd
                      rupdir(k,j) = zrups
                   end do
-!
+! 
 ! end do l0 = 1, nuniqu(k)
-!
+! 
                end do
-!
+! 
 ! end do k = pver,0,-1
-!
+! 
             end do
-!
+! 
 !----------------------------------------------------------------------
-!
+! 
 ! STEP 3
-!
+! 
 ! Compute up and down fluxes for each interface k.  This requires
 ! adding up the contributions from all possible permutations
 ! of streams in all max-overlap regions, weighted by the
 ! product of the fractional areas of the streams in each region
 ! (the random overlap assumption).  The adding principle has been
-! used in step 2 to combine the bulk radiative properties
+! used in step 2 to combine the bulk radiative properties 
 ! above and below the interface.
-!
+! 
             do k = 0,pverp
-!
+! 
 ! Initialize the fluxes
-!
+! 
                fluxup(k)=0.0_r8
                fluxdn(k)=0.0_r8
                fluxdndir(k) = 0.0_r8 ! amontornes-bcodina (2014-04-20)
@@ -7379,9 +7379,9 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                   xrdnd = rdndif(k,iconfig)
                   xrupd = rupdif(k,iconfig)
                   xrups = rupdir(k,iconfig)
-!
+! 
 ! Flux computation
-!
+! 
                   rdenom = 1._r8/(1._r8 - xrdnd * xrupd)
 
                   fluxup(k) = fluxup(k) + xwgt *  &
@@ -7389,25 +7389,25 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                   fluxdn(k) = fluxdn(k) + xwgt *  &
                               (xexpt + (xtdnt - xexpt + xexpt * xrups * xrdnd) * rdenom)
                   fluxdndir(k) = fluxdndir(k) + xwgt * xexpt ! Beer's Law amontornes-bcodina (2014-04-20)
-
-!
+                  
+! 
 ! End do iconfig = 1, nconfig
-!
+! 
                end do
-!
+! 
 ! Normalize by total area covered by cloud configurations included
 ! in solution
-!
+! 
                fluxup(k)=fluxup(k) / totwgt
-               fluxdn(k)=fluxdn(k) / totwgt
+               fluxdn(k)=fluxdn(k) / totwgt           
                fluxdndir(k)=fluxdndir(k) / totwgt    ! amontornes-bcodina (2014-04-20)
-!
+! 
 ! End do k = 0,pverp
-!
+! 
             end do
-!
+! 
 ! Initialize the direct-beam flux at surface
-!
+! 
             wexptdn = 0.0_r8
 
             do iconfig = 1, nconfig
@@ -7415,9 +7415,9 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
             end do
 
             wexptdn = wexptdn / totwgt
-!
+! 
 ! Monochromatic computation completed; accumulate in totals
-!
+! 
             solflx   = solin(i)*frcsol(ns)*psf(ns)
             fsnt(i)  = fsnt(i) + solflx*(fluxdn(1) - fluxup(1))
             fsntoa(i)= fsntoa(i) + solflx*(fluxdn(0) - fluxup(0))
@@ -7426,9 +7426,9 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
             fswup(0) = fswup(0) + solflx*fluxup(0)
             fswdn(0) = fswdn(0) + solflx*fluxdn(0)
             fswdndir(0) = fswdndir(0) + solflx*fluxdndir(0)  ! amontornes-bcodina (2014-04-20)
-!
+! 
 ! Down spectral fluxes need to be in mks; thus the .001 conversion factors
-!
+! 
             if (wavmid(ns) < 0.7_r8) then
                sols(i)  = sols(i) + wexptdn*solflx*0.001_r8
                solsd(i) = solsd(i)+(fluxdn(pverp)-wexptdn)*solflx*0.001_r8
@@ -7440,10 +7440,10 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
             fsnirtoa(i) = fsnirtoa(i) + wgtint*solflx*(fluxdn(0) - fluxup(0))
 
             do k=0,pver
-!
+! 
 ! Compute flux divergence in each layer using the interface up and down
 ! fluxes:
-!
+! 
                kp1 = k+1
                flxdiv = (fluxdn(k  ) - fluxdn(kp1)) + (fluxup(kp1) - fluxup(k  ))
                totfld(k)  = totfld(k)  + solflx*flxdiv
@@ -7451,9 +7451,9 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
                fswup(kp1) = fswup(kp1) + solflx*fluxup(kp1)
                fswdndir(kp1) = fswdndir(kp1) + solflx*fluxdndir(kp1)  ! amontornes-bcodina (2014-04-20)
             end do
-!
+! 
 ! Perform clear-sky calculation
-!
+! 
             exptdnc(0) =   1.0_r8
             rdndifc(0) =   0.0_r8
             tdntotc(0) =   1.0_r8
@@ -7519,17 +7519,17 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
             fsnsc(i)    = fsnsc(i)+solflx*(fluxdn(pverp)-fluxup(pverp))
             fsdsc(i)    = fsdsc(i)+solflx*(fluxdn(pverp))
             fsnrtoac(i) = fsnrtoac(i)+wgtint*solflx*(fluxdn(0)-fluxup(0))
-!
+! 
 ! End of clear sky calculation
-!
+! 
 
-!
+! 
 ! End of spectral interval loop
-!
+! 
          end do
-!
+! 
 ! Compute solar heating rate (J/kg/s)
-!
+! 
          do k=1,pver
             qrs(i,k) = -1.E-4*gravit*totfld(k)/(pint(i,k) - pint(i,k+1))
          end do
@@ -7547,18 +7547,18 @@ subroutine radcswmx(jj, lchnk   ,ncol    ,pcols, pver, pverp,         &
             fsdncdif(i,k) = fswdnc(k)-fswdncdir(k) ! amontornes-bcodina (2014-04-20)
          end do
 
-!
-! Set the downwelling flux at the surface
-!
+! 
+! Set the downwelling flux at the surface 
+! 
          fsds(i) = fswdn(pverp)
 ! amontornes-bcodina (2014-04-20) :: Save surface direct/difuse fluxes
       fsdscdir(i) = fsdncdir(i,pverp) ! amontornes-bcodina (2014-04-20)
       fsdscdif(i) = fsdncdif(i,pverp) ! amontornes-bcodina (2014-04-20)
       fsdsdir(i)  = fsdndir(i,pverp)  ! amontornes-bcodina (2014-04-20)
       fsdsdif(i)  = fsdndif(i,pverp)  ! amontornes-bcodina (2014-04-20)
-!
+! 
 ! End do n=1,ndayc
-!
+! 
    end do
 
 !  write (6, '(a, x, i3)') 'radcswmx : exiting, chunk identifier', lchnk
@@ -7574,22 +7574,22 @@ subroutine raddedmx(pver, pverp, pcols, coszrs  ,ndayc   ,idayc   ,abh2o   , &
                     ga      ,fa      ,rdir    ,rdif    ,tdir    , &
                     tdif    ,explay  ,rdirc   ,rdifc   ,tdirc   , &
                     tdifc   ,explayc )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Computes layer reflectivities and transmissivities, from the top down
 ! to the surface using the delta-Eddington solutions for each layer
-!
-! Method:
+! 
+! Method: 
 ! For more details , see Briegleb, Bruce P., 1992: Delta-Eddington
 ! Approximation for Solar Radiation in the NCAR Community Climate Model,
 ! Journal of Geophysical Research, Vol 97, D7, pp7603-7612).
 !
 ! Modified for maximum/random cloud overlap by Bill Collins and John
 !    Truesdale
-!
+! 
 ! Author: Bill Collins
-!
+! 
 !-----------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
 !  use ppgrid
@@ -7845,20 +7845,20 @@ end subroutine raddedmx
 subroutine radinp(lchnk   ,ncol    , pcols, pver, pverp,     &
                   pmid    ,pint    ,o3vmr   , pmidrd  ,&
                   pintrd  ,eccf    ,o3mmr   )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Set latitude and time dependent arrays for input to solar
 ! and longwave radiation.
 ! Convert model pressures to cgs, and compute ozone mixing ratio, needed for
 ! the solar radiation.
-!
-! Method:
-! <Describe the algorithm(s) used in the routine.>
-! <Also include any applicable external references.>
-!
+! 
+! Method: 
+! <Describe the algorithm(s) used in the routine.> 
+! <Also include any applicable external references.> 
+! 
 ! Author: CCM1, CMS Contact J. Kiehl
-!
+! 
 !-----------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
 !  use ppgrid
@@ -7928,18 +7928,18 @@ subroutine radinp(lchnk   ,ncol    , pcols, pver, pverp,     &
    return
 end subroutine radinp
 subroutine radoz2(lchnk   ,ncol    ,pcols, pver, pverp, o3vmr   ,pint    ,plol    ,plos, ntoplw    )
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! Computes the path length integrals to the model interfaces given the
 ! ozone volume mixing ratio
-!
-! Method:
-! <Describe the algorithm(s) used in the routine.>
-! <Also include any applicable external references.>
-!
+! 
+! Method: 
+! <Describe the algorithm(s) used in the routine.> 
+! <Also include any applicable external references.> 
+! 
 ! Author: CCM1, CMS Contact J. Kiehl
-!
+! 
 !-----------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
 !  use ppgrid
@@ -7991,14 +7991,14 @@ end subroutine radoz2
 
 
 subroutine radozn (lchnk, ncol, pcols, pver,pmid, pin, levsiz, ozmix, o3vmr)
-!-----------------------------------------------------------------------
-!
+!----------------------------------------------------------------------- 
+! 
 ! Purpose: Interpolate ozone from current time-interpolated values to model levels
-!
+! 
 ! Method: Use pressure values to determine interpolation levels
-!
+! 
 ! Author: Bruce Briegleb
-!
+! 
 !--------------------------------------------------------------------------
 !  use shr_kind_mod, only: r8 => shr_kind_r8
 !  use ppgrid

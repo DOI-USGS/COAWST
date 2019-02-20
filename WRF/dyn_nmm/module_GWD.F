@@ -2,7 +2,7 @@
 !-- Module for Gravity Wave Drag (GWD) and Mountain Blocking (MB)
 !
 !-- Initially incorporated into the WRF NMM from the GFS by B. Ferrier
-!   in April/May 2007.
+!   in April/May 2007.  
 !
 !   Search for "ORIGINAL DOCUMENTATION BLOCK" for further description.
 !
@@ -47,8 +47,8 @@
 !-- HANGL  - angle of the mountain range w/r/t east (convert to degrees)
 !
 !-- Saved variables within module:
-!-- IMX - in the GFS it is an equivalent number of points along a latitude
-!         circle (e.g., IMX=3600 for a model resolution of 0.1 deg)
+!-- IMX - in the GFS it is an equivalent number of points along a latitude 
+!         circle (e.g., IMX=3600 for a model resolution of 0.1 deg) 
 !       => Calculated at start of model integration in GWD_init
 !-- NMTVR - number of input 2D orographic fields
 !-- GRAV = gravitational acceleration
@@ -277,7 +277,7 @@
       REAL(KIND=KIND_PHYS), DIMENSION (IM,KTS:KTE) :: DUDTcol,DVDTcol   &
      &,                    Ucol,Vcol,Tcol,Qcol,DPcol,Pcol,EXNcol,PHIcol
       REAL(KIND=KIND_PHYS), DIMENSION (IM,KTS:KTE+1) :: PINTcol,PHILIcol
-      INTEGER :: I,J,IJ,K,Imid,Jmid
+      INTEGER :: I,J,IJ,K,Imid,Jmid                             
       REAL :: Ugeo,Vgeo,Umod,Vmod, TERRtest,TERRmin
       REAL(KIND=KIND_PHYS) :: TEST
       CHARACTER(LEN=255) :: message
@@ -486,7 +486,7 @@ endif   ! if (itime <= 1) then
             Pcol(IM,K)=.001*PMID(I,K,J)
             EXNcol(IM,K)=EXNR(I,K,J)
 !
-!-- Next 2 fields are geopotential above the surface at the lower interface
+!-- Next 2 fields are geopotential above the surface at the lower interface 
 !   and at midlayer
 !
             PHILIcol(IM,K)=G*(Z(I,K,J)-Z(I,1,J))
@@ -724,7 +724,7 @@ label,' => k=',k,'  dudt=',dudt(i,k,j),'  dvdt=',dvdt(i,k,j)
 !-- KDT - number of time steps into integration for diagnostics
 !-- HPRIME - orographic standard deviation
 !-- OC - normalized 4th moment of the orographic convexity
-!-- OA4 - orographic asymmetry for upstream & downstream flow measured
+!-- OA4 - orographic asymmetry for upstream & downstream flow measured 
 !         along 4 vertical planes (W-E, S-N, SW-NE, NW-SE)
 !-- CLX4 - orographic length scale or mountain width measured along
 !          4 vertical planes (W-E, S-N, SW-NE, NW-SE)
@@ -754,13 +754,13 @@ label,' => k=',k,'  dudt=',dudt(i,k,j),'  dvdt=',dvdt(i,k,j)
 !-----         ALSO INCLUDED IS RI  SMOOTH OVER A THICK LOWER LAYER
 !-----         ALSO INCLUDED IS DECREASE IN DE-ACC AT TOP BY 1/2
 !-----     THE NMC GWD INCORPORATING BOTH GLAS(P&S) AND GFDL(MIGWD)
-!-----        MOUNTAIN INDUCED GRAVITY WAVE DRAG
+!-----        MOUNTAIN INDUCED GRAVITY WAVE DRAG 
 !-----    CODE FROM .FR30(V3MONNX) FOR MONIN3
 !-----        THIS VERSION (06 MAR 1987)
 !-----        THIS VERSION (26 APR 1987)    3.G
 !-----        THIS VERSION (01 MAY 1987)    3.9
 !-----    CHANGE TO FORTRAN 77 (FEB 1989)     --- HANN-MING HENRY JUANG
-!-----
+!----- 
 !
 !   VERSION 4
 !                ----- This code -----
@@ -797,7 +797,7 @@ label,' => k=',k,'  dudt=',dudt(i,k,j),'  dvdt=',dvdt(i,k,j)
 !        MB3a expt to enhance elvmax mtn hgt see sigfac & hncrit
 !-----
 !----------------------------------------------------------------------C
-!==== Below in "!GFS " are the original subroutine call and comments from
+!==== Below in "!GFS " are the original subroutine call and comments from 
 !     /nwprod/sorc/global_fcst.fd/gwdps_v.f as of April 2007
 !GFS       SUBROUTINE GWDPS(IM,IX,IY,KM,A,B,U1,V1,T1,Q1,KPBL,
 !GFS      &               PRSI,DEL,PRSL,PRSLK,PHII, PHIL,RCL,DELTIM,KDT,
@@ -825,7 +825,7 @@ label,' => k=',k,'  dudt=',dudt(i,k,j),'  dvdt=',dvdt(i,k,j)
 !GFS !        Q1(IX,KM) SPECIFIC HUMIDITY AT T0-DT
 !GFS !
 !GFS !        RCL     A scaling factor = RECIPROCAL OF SQUARE OF COS(LAT)
-!GFS !                FOR MRF GFS.
+!GFS !                FOR MRF GFS.  
 !GFS !        DELTIM  TIME STEP    SECS
 !GFS !        SI(N)   P/PSFC AT BASE OF LAYER N
 !GFS !        SL(N)   P/PSFC AT MIDDLE OF LAYER N
@@ -875,7 +875,7 @@ label,' => k=',k,'  dudt=',dudt(i,k,j),'  dvdt=',dvdt(i,k,j)
      &,        FRC=1.0, CE=0.8, CEOFRC=CE/FRC, frmax=100.             &
      &,        CG=0.5, GMAX=1.0, CRITAC=5.0E-4, VELEPS=1.0            &
      &,        FACTOP=0.5, RLOLEV=500.0, HZERO=0., HONE=1.            & ! or RLOLEV=0.5
-     &,        HE_4=.0001, HE_2=.01                                   &
+     &,        HE_4=.0001, HE_2=.01                                   & 
 !
 !-- Lott & Miller mountain blocking => aka "lm mtn blocking"
 !
@@ -955,7 +955,7 @@ real :: rcl,rcs  !dbg
 !
       ipt = 0
       npt = 0
-      IF (NMTVR >= 14) then
+      IF (NMTVR >= 14) then 
         DO I = 1,IM
           IF (elvmax(i) > HMINMT .AND. hprime(i) > HE_4) then
              npt = npt + 1
@@ -969,7 +969,7 @@ real :: rcl,rcs  !dbg
             ipt(npt) = i
           ENDIF
         ENDDO
-      ENDIF    !-- IF (NMTVR >= 14) then
+      ENDIF    !-- IF (NMTVR >= 14) then 
 !
 
 !dbg
@@ -1020,7 +1020,7 @@ rcs=1.
       LCAPP1 = LCAP + 1
 !
 !
-      IF (NMTVR .eq. 14) then
+      IF (NMTVR .eq. 14) then 
 ! ----  for lm and gwd calculation points
 !
 ! --- iwklm is the level above the height of the mountain.
@@ -1042,7 +1042,7 @@ rcs=1.
 !      then do not need hncrit -- test with large hncrit first.
 !       KMLL  = km / 2 ! maximum mtnlm height : # of vertical levels / 2
         KMLL = kmm1
-! --- No mtn should be as high as KMLL (so we do not have to start at
+! --- No mtn should be as high as KMLL (so we do not have to start at 
 ! --- the top of the model but could do calc for all levels).
 !
 
@@ -1068,9 +1068,9 @@ rcs=1.
             pklog =  phil(j,k) * ROG
             if ( ( ELEVMX(j) .le.  pkp1log ) .and.                      &
      &           ( ELEVMX(j) .ge.   pklog  ) ) THEN
-! ---        wk for diags but can be saved and reused.
+! ---        wk for diags but can be saved and reused.  
                wk(i)  = G * ELEVMX(j) / ( phil(j,k+1) - phil(j,k) )
-               iwklm(I)  =  MAX(iwklm(I), k+1 )
+               iwklm(I)  =  MAX(iwklm(I), k+1 ) 
 
 !dbg if (lprnt) print *,'k,wk(i),iwklm(i)=',k,wk(i),iwklm(i)    !dbg
 
@@ -1094,17 +1094,17 @@ rcs=1.
 !         jhit = 0
 !        do i = 1, npt
 !        j=ipt(i)
-!          if ( iwklm(i) .gt. ihit ) then
+!          if ( iwklm(i) .gt. ihit ) then 
 !            ihit = iwklm(i)
 !            jhit = j
 !          endif
 !        enddo
 !     if (lprnt) print *, ' mb: kdt,max(iwklm),jhit,phil,me=',   &
 !    &          kdt,ihit,jhit,phil(jhit,ihit),me
-!
+!        
 !dbg if (lprnt) print *,'k    rdz    bnv2lm(i,k)'   !dbg
         klevm1 = KMLL - 1
-        DO K = 1, klevm1
+        DO K = 1, klevm1  
           DO I = 1, npt
            j   = ipt(i)
             RDZ  = g   / ( phil(j,k+1) - phil(j,k) )
@@ -1130,7 +1130,7 @@ rcs=1.
           BNV2bar(I) = (PRSL(J,1)-PRSL(J,2)) * DELKS1(I) * BNV2LM(I,1)
         ENDDO
 !
-! --- find the dividing stream line height
+! --- find the dividing stream line height 
 ! --- starting from the level above the max mtn downward
 ! --- iwklm(i) is the k-index of mtn elevmx elevation
 !
@@ -1149,7 +1149,7 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
 ! ---  make averages, guess dividing stream (DS) line layer.
 ! ---  This is not used in the first cut except for testing and
 ! --- is the vert ave of quantities from the surface to mtn top.
-!
+!   
 
 !dbg
 !dbg if (lprnt) print *,' k      rdelks      ubar        vbar     roll       ' &
@@ -1162,10 +1162,10 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
 
 !dbg
             RCSKS      = RCS      * RDELKS
-            UBAR(I)    = UBAR(I)  + RCSKS  * U1(J,K) ! trial Mean U below
-            VBAR(I)    = VBAR(I)  + RCSKS  * V1(J,K) ! trial Mean V below
+            UBAR(I)    = UBAR(I)  + RCSKS  * U1(J,K) ! trial Mean U below 
+            VBAR(I)    = VBAR(I)  + RCSKS  * V1(J,K) ! trial Mean V below 
 
-            ROLL(I)    = ROLL(I)  + RDELKS * RO(I,K) ! trial Mean RO below
+            ROLL(I)    = ROLL(I)  + RDELKS * RO(I,K) ! trial Mean RO below 
             RDELKS     = (PRSL(J,K)-PRSL(J,K+1)) * DELKS1(I)
             BNV2bar(I) = BNV2bar(I) + BNV2lm(I,K) * RDELKS
 ! --- these vert ave are for diags, testing and GWD to follow (*j*).
@@ -1188,7 +1188,7 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
 
 !
 ! --- integrate to get PE in the trial layer.
-! --- Need the first layer where PE>EK - as soon as
+! --- Need the first layer where PE>EK - as soon as 
 ! --- IDXZB is not 0 we have a hit and Zb is found.
 !
         DO I = 1, npt
@@ -1226,7 +1226,7 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
 ! --- kinetic energy is at the layer Zb
 ! --- THETA ranges from -+90deg |_ to the mtn "largest topo variations"
               UP(I)  =  UDS(I,K) * cos(DEG_TO_RAD*ANG(I,K))
-              EK(I)  = 0.5 *  UP(I) * UP(I)
+              EK(I)  = 0.5 *  UP(I) * UP(I) 
 
 ! --- Dividing Stream lime  is found when PE =exceeds EK.
               IF ( PE(I) .ge.  EK(I) ) IDXZB(I) = K
@@ -1253,7 +1253,7 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
 
 !
 ! --- The drag for mtn blocked flow
-!
+! 
 
 !dbg
 !dbg if (lprnt) print *,'k   phil(j,k)  g*hprime(j)   '   &
@@ -1263,7 +1263,7 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
         DO I = 1, npt
           J = ipt(i)
           ZLEN = 0.
-          IF ( IDXZB(I) .gt. 0 ) then
+          IF ( IDXZB(I) .gt. 0 ) then 
             DO K = IDXZB(I), 1, -1
               IF (PHIL(J,IDXZB(I)) > PHIL(J,K)) THEN
                 ZLEN = SQRT( ( PHIL(J,IDXZB(I))-PHIL(J,K) ) /           &
@@ -1275,8 +1275,8 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
                 DBTMP = 0.25 *  CDmb *                                  &
      &                  MAX( 2. - 1. / R, HZERO ) * sigma(J) *          &
      &                  MAX(cos(DEG_TO_RAD*ANG(I,K)), gamma(J)*sin(DEG_TO_RAD*ANG(I,K))) *  &
-     &                  ZLEN / hprime(J)
-                DB(I,K) =  DBTMP * UDS(I,K)
+     &                  ZLEN / hprime(J) 
+                DB(I,K) =  DBTMP * UDS(I,K)    
 !
 
 !dbg
@@ -1293,7 +1293,7 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
 !.............................
 ! end  mtn blocking section
 !
-      ENDIF      !-- IF ( NMTVR .eq. 14) then
+      ENDIF      !-- IF ( NMTVR .eq. 14) then 
 !
 !.............................
 !.............................
@@ -1319,7 +1319,7 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
           J         = ipt(i)
           VTJ(I,K)  = T1(J,K)  * (1.+FV*Q1(J,K))
           VTK(I,K)  = VTJ(I,K) / PRSLK(J,K)
-          RO(I,K)   = RDI * PRSL(J,K) / VTJ(I,K)  ! DENSITY
+          RO(I,K)   = RDI * PRSL(J,K) / VTJ(I,K)  ! DENSITY 
           TAUP(I,K) = 0.0
 
 !dbg
@@ -1402,7 +1402,7 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
       KMPS = KM
       DO I=1,npt
         J         = ipt(i)
-        kref(I)   = MAX(IWK(I), KPBL(J)+1 ) ! reference level
+        kref(I)   = MAX(IWK(I), KPBL(J)+1 ) ! reference level 
         DELKS(I)  = 1.0 / (PRSI(J,1) - PRSI(J,kref(I)))
         DELKS1(I) = 1.0 / (PRSL(J,1) - PRSL(J,kref(I)))
         UBAR (I)  = 0.0
@@ -1571,7 +1571,7 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
 !dbg ,'  yn=',yn(npt),'  efact=',efact,'  coefm=',coefm,'  xlinv(npt)=',xlinv(npt)   &
 !dbg ,'  gfobnv=',gfobnv,'  taub(npt)=',taub(npt),'  scor(npt)=',scor(npt)
 
-!
+!                                                                       
 !----SET UP BOTTOM VALUES OF STRESS
 !
       DO K = 1, KBPS
@@ -1613,7 +1613,7 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
                 SCORK   = BNV2(I,K) * TEMV * TEMV
                 RSCOR   = MIN(HONE, SCORK / SCOR(I))
                 SCOR(I) = SCORK
-              ELSE
+              ELSE 
                 RSCOR   = 1.
               ENDIF
 !
@@ -1648,7 +1648,7 @@ if (lprnt) print *,'Ktrial,iwklm(i),kreflm(i)=',Ktrial,iwklm(i),kreflm(I)
                  TEMC = 2.0 + 1.0 / TEM2
                  HD   = VELCO(I,K) * (2.*SQRT(TEMC)-TEMC) / BRVF
                  TAUP(I,KP1) = TEM1 * HD * HD
-              ELSE
+              ELSE 
                  TAUP(I,KP1) = TAUP(I,K) * RSCOR
               ENDIF
               taup(i,kp1) = min(taup(i,kp1), taup(i,k))

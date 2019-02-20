@@ -1,13 +1,3 @@
-#if ( HYBRID_COORD==1 )
-#  define mub(...) (c1(k)*XXPCBXX(__VA_ARGS__)+c2(k))
-#  define XXPCBXX(...) mub(__VA_ARGS__)
-
-#  define mut(...) (c1(k)*XXPCTXX(__VA_ARGS__)+c2(k))
-#  define XXPCTXX(...) mut(__VA_ARGS__)
-
-#  define mu_old(...) (c1(k)*XXPCOLDXX(__VA_ARGS__))
-#  define XXPCOLDXX(...) mu_old(__VA_ARGS__)
-#endif
 
 !WRF:MODEL_LAYER:DYNAMICS
 !
@@ -101,7 +91,7 @@ SUBROUTINE column (loop , data_list, its,ite)
       OPEN (unit=7,file = "x_locations.txt" , &
       form = "formatted" , &
       access = "sequential" )
-
+      
       DO i = its,ite
          write (7,*) i
       END DO
@@ -112,13 +102,13 @@ SUBROUTINE column (loop , data_list, its,ite)
    OPEN (unit=7,file = filename , &
    form = "formatted" , &
    access = "sequential" )
-
+   
    data_int = NINT(data_list * 100 )
    DO i = its,ite
       write (7,*) data_int(i)
    END DO
    close (7)
-
+   
 END SUBROUTINE column
 !----------------------------------------------------------------
 #elif ( ! defined(ADVECT_KERNEL) )
@@ -146,9 +136,9 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
                         its, ite, jts, jte, kts, kte  )
 
    IMPLICIT NONE
-
+   
    ! Input data
-
+   
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
@@ -182,7 +172,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
    INTEGER ,                                     INTENT(IN   ) :: time_step
 
    ! Local data
-
+   
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
@@ -197,7 +187,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
    REAL,  DIMENSION( its-1:ite+1, kts:kte ) :: fqx
    REAL,  DIMENSION( its:ite, kts:kte, 2) :: fqy
-
+   
    LOGICAL :: degrade_xs, degrade_ys
    LOGICAL :: degrade_xe, degrade_ye
 
@@ -1258,7 +1248,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
         DO j = j_start, j_end
         DO k = kts, ktf
-          ub = MIN(ru(its,k,j)-cb*mut(its,j), 0.)
+          ub = MIN(ru(its,k,j)-cb*(c1(k)*mut(its,j)+c2(k)), 0.)
           tendency(its,k,j) = tendency(its,k,j)                    &
                       - rdx*ub*(u_old(its+1,k,j) - u_old(its,k,j))
         ENDDO
@@ -1273,7 +1263,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
 
         DO j = j_start, j_end
         DO k = kts, ktf
-          ub = MAX(ru(ite,k,j)+cb*mut(ite-1,j), 0.)
+          ub = MAX(ru(ite,k,j)+cb*(c1(k)*mut(ite-1,j)+c2(k)), 0.)
           tendency(ite,k,j) = tendency(ite,k,j)                    &
                       - rdx*ub*(u_old(ite,k,j) - u_old(ite-1,k,j))
         ENDDO
@@ -1367,7 +1357,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
      vflux(i,kte)=0.
    ENDDO
 
-   vert_order_test : IF (vert_order == 6) THEN
+   vert_order_test : IF (vert_order == 6) THEN    
 
       DO j = j_start, j_end
 
@@ -1407,7 +1397,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
          ENDDO
       ENDDO
 
-    ELSE IF (vert_order == 5) THEN
+    ELSE IF (vert_order == 5) THEN    
 
       DO j = j_start, j_end
 
@@ -1447,7 +1437,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
          ENDDO
       ENDDO
 
-    ELSE IF (vert_order == 4) THEN
+    ELSE IF (vert_order == 4) THEN    
 
       DO j = j_start, j_end
 
@@ -1477,7 +1467,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
          ENDDO
       ENDDO
 
-    ELSE IF (vert_order == 3) THEN
+    ELSE IF (vert_order == 3) THEN    
 
       DO j = j_start, j_end
 
@@ -1507,7 +1497,7 @@ SUBROUTINE advect_u   ( u, u_old, tendency,            &
          ENDDO
       ENDDO
 
-    ELSE IF (vert_order == 2) THEN
+    ELSE IF (vert_order == 2) THEN    
 
       DO j = j_start, j_end
          DO k=kts+1,ktf
@@ -1550,9 +1540,9 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
                         its, ite, jts, jte, kts, kte  )
 
    IMPLICIT NONE
-
+   
    ! Input data
-
+   
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
@@ -1587,7 +1577,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
 
    ! Local data
-
+   
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
@@ -1602,7 +1592,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
    INTEGER :: horz_order
    INTEGER :: vert_order
-
+   
    LOGICAL :: degrade_xs, degrade_ys
    LOGICAL :: degrade_xe, degrade_ye
 
@@ -2726,7 +2716,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
         DO i = i_start, i_end
         DO k = kts, ktf
-          vb = MIN(rv(i,k,jts)-cb*mut(i,jts), 0.)
+          vb = MIN(rv(i,k,jts)-cb*(c1(k)*mut(i,jts)+c2(k)), 0.)
           tendency(i,k,jts) = tendency(i,k,jts)                    &
                       - rdy*vb*(v_old(i,k,jts+1) - v_old(i,k,jts))
         ENDDO
@@ -2741,7 +2731,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
         DO i = i_start, i_end
         DO k = kts, ktf
-          vb = MAX(rv(i,k,jte)+cb*mut(i,jte-1), 0.)
+          vb = MAX(rv(i,k,jte)+cb*(c1(k)*mut(i,jte-1)+c2(k)), 0.)
           tendency(i,k,jte) = tendency(i,k,jte)                    &
                       - rdy*vb*(v_old(i,k,jte) - v_old(i,k,jte-1))
         ENDDO
@@ -2843,7 +2833,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
       IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
       IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
 
-    vert_order_test : IF (vert_order == 6) THEN
+    vert_order_test : IF (vert_order == 6) THEN    
 
       DO j = j_start, j_end
 
@@ -2888,7 +2878,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
       ENDDO
 
-   ELSE IF (vert_order == 5) THEN
+   ELSE IF (vert_order == 5) THEN    
 
       DO j = j_start, j_end
 
@@ -2933,7 +2923,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
       ENDDO
 
-    ELSE IF (vert_order == 4) THEN
+    ELSE IF (vert_order == 4) THEN    
 
       DO j = j_start, j_end
 
@@ -2968,7 +2958,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
 
       ENDDO
 
-    ELSE IF (vert_order == 3) THEN
+    ELSE IF (vert_order == 3) THEN    
 
       DO j = j_start, j_end
 
@@ -3004,7 +2994,7 @@ SUBROUTINE advect_v   ( v, v_old, tendency,            &
       ENDDO
 
 
-    ELSE IF (vert_order == 2) THEN
+    ELSE IF (vert_order == 2) THEN    
 
    DO j = j_start, j_end
       DO k=kts+1,ktf
@@ -3049,9 +3039,9 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
                              its, ite, jts, jte, kts, kte  )
 
    IMPLICIT NONE
-
+   
    ! Input data
-
+   
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
@@ -3086,7 +3076,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
 
    ! Local data
-
+   
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
@@ -3100,7 +3090,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
    REAL,  DIMENSION( its:ite, kts:kte, 2 ) :: fqy
 
    INTEGER :: horz_order, vert_order
-
+   
    LOGICAL :: degrade_xs, degrade_ys
    LOGICAL :: degrade_xe, degrade_ye
 
@@ -4076,7 +4066,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
       ENDDO
       ENDDO
       ENDDO
-
+   
       ! Polar boundary condtions
       ! These won't be covered in the loop above...
       IF (config_flags%polar) THEN
@@ -4202,7 +4192,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
          vflux(i,kte)=0.
       ENDDO
 
-    vert_order_test : IF (vert_order == 6) THEN
+    vert_order_test : IF (vert_order == 6) THEN    
 
       DO j = j_start, j_end
 
@@ -4219,7 +4209,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
            k=kts+1
            vflux(i,k)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
-
+                                   
            k = kts+2
            vel=rom(i,k,j)
            vflux(i,k) = vel*flux4(               &
@@ -4243,7 +4233,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
       ENDDO
 
-   ELSE IF (vert_order == 5) THEN
+   ELSE IF (vert_order == 5) THEN    
 
       DO j = j_start, j_end
 
@@ -4260,7 +4250,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
            k=kts+1
            vflux(i,k)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
-
+                                   
            k = kts+2
            vel=rom(i,k,j)
            vflux(i,k) = vel*flux3(               &
@@ -4284,7 +4274,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
       ENDDO
 
-   ELSE IF (vert_order == 4) THEN
+   ELSE IF (vert_order == 4) THEN    
 
       DO j = j_start, j_end
 
@@ -4313,7 +4303,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
       ENDDO
 
-   ELSE IF (vert_order == 3) THEN
+   ELSE IF (vert_order == 3) THEN    
 
       DO j = j_start, j_end
 
@@ -4342,7 +4332,7 @@ SUBROUTINE advect_scalar   ( field, field_old, tendency,    &
 
       ENDDO
 
-   ELSE IF (vert_order == 2) THEN
+   ELSE IF (vert_order == 2) THEN    
 
   DO j = j_start, j_end
      DO k = kts+1, ktf
@@ -4384,9 +4374,9 @@ SUBROUTINE advect_w    ( w, w_old, tendency,            &
                          its, ite, jts, jte, kts, kte  )
 
    IMPLICIT NONE
-
+   
    ! Input data
-
+   
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
@@ -4421,7 +4411,7 @@ SUBROUTINE advect_w    ( w, w_old, tendency,            &
 
 
    ! Local data
-
+   
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
@@ -4434,7 +4424,7 @@ SUBROUTINE advect_w    ( w, w_old, tendency,            &
 
    REAL,  DIMENSION( its:ite+1, kts:kte ) :: fqx
    REAL,  DIMENSION( its:ite, kts:kte, 2 ) :: fqy
-
+   
    LOGICAL :: degrade_xs, degrade_ys
    LOGICAL :: degrade_xe, degrade_ye
 
@@ -5870,7 +5860,7 @@ ELSE IF (horz_order == 2 ) THEN
          vflux(i,kte)=0.
       ENDDO
 
-    vert_order_test : IF (vert_order == 6) THEN
+    vert_order_test : IF (vert_order == 6) THEN    
 
       DO j = j_start, j_end
 
@@ -5919,7 +5909,7 @@ ELSE IF (horz_order == 2 ) THEN
 
       ENDDO
 
- ELSE IF (vert_order == 5) THEN
+ ELSE IF (vert_order == 5) THEN    
 
       DO j = j_start, j_end
 
@@ -5936,7 +5926,7 @@ ELSE IF (horz_order == 2 ) THEN
 
            k=kts+1
            vflux(i,k)=0.25*(rom(i,k,j)+rom(i,k-1,j))*(w(i,k,j)+w(i,k-1,j))
-
+                                   
            k = kts+2
            vel=0.5*(rom(i,k,j)+rom(i,k-1,j))
            vflux(i,k) = vel*flux3(               &
@@ -5967,7 +5957,7 @@ ELSE IF (horz_order == 2 ) THEN
 
       ENDDO
 
- ELSE IF (vert_order == 4) THEN
+ ELSE IF (vert_order == 4) THEN    
 
       DO j = j_start, j_end
 
@@ -6003,7 +5993,7 @@ ELSE IF (horz_order == 2 ) THEN
 
       ENDDO
 
- ELSE IF (vert_order == 3) THEN
+ ELSE IF (vert_order == 3) THEN    
 
       DO j = j_start, j_end
 
@@ -6040,7 +6030,7 @@ ELSE IF (horz_order == 2 ) THEN
 
       ENDDO
 
- ELSE IF (vert_order == 2) THEN
+ ELSE IF (vert_order == 2) THEN    
 
   DO j = j_start, j_end
      DO k=kts+1,ktf+1
@@ -6103,9 +6093,9 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 !  WCS, 3 December 2002, 24 February 2003
 
    IMPLICIT NONE
-
+   
    ! Input data
-
+   
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    LOGICAL ,                 INTENT(IN   ) :: tenddec  ! tendency flag
@@ -6143,7 +6133,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
    INTEGER ,                                     INTENT(IN   ) :: time_step
 
    ! Local data
-
+   
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
@@ -6158,7 +6148,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
    REAL,  DIMENSION( its-1:ite+2, kts:kte, jts-1:jte+2  ) :: fqxl, fqyl, fqzl
 
    INTEGER :: horz_order, vert_order
-
+   
    LOGICAL :: degrade_xs, degrade_ys
    LOGICAL :: degrade_xe, degrade_ye
 
@@ -6290,7 +6280,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO i = i_start, i_end
 
           dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-          mu = 0.5*(mut(i,j)+mut(i,j-1))
+          mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
           vel = rv(i,k,j)
           cr = vel*dt/dy/mu
           fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -6310,7 +6300,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO i = i_start, i_end
 
               dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
               fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -6329,7 +6319,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO i = i_start, i_end
 
               dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
               fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -6347,7 +6337,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO i = i_start, i_end
 
               dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
               fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -6365,7 +6355,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO i = i_start, i_end
 
               dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
               fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -6421,7 +6411,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO i = i_start_f, i_end_f
 
           dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-          mu = 0.5*(mut(i,j)+mut(i-1,j))
+          mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
           vel = ru(i,k,j)
           cr = vel*dt/dx/mu
           fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -6444,7 +6434,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             IF(i == ids+1) THEN ! second order
               DO k=kts,ktf
                 dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
                 vel = ru(i,k,j)/mu
                 cr = vel*dt/dx
                 fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -6457,7 +6447,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             IF(i == ids+2) THEN  ! fourth order
               DO k=kts,ktf
                 dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
                 vel = ru(i,k,j)
                 cr = vel*dt/dx/mu
                 fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -6479,7 +6469,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             IF( i == ide-1 ) THEN ! second order flux next to the boundary
               DO k=kts,ktf
                 dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
                 vel = ru(i,k,j)
                 cr = vel*dt/dx/mu
                 fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -6493,7 +6483,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             IF( i == ide-2 ) THEN ! fourth order flux one in from the boundary
               DO k=kts,ktf
                 dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
                 vel = ru(i,k,j)
                 cr = vel*dt/dx/mu
                 fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -6566,7 +6556,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO i = i_start, i_end
 
           dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-          mu = 0.5*(mut(i,j)+mut(i,j-1))
+          mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
           vel = rv(i,k,j)
           cr = vel*dt/dy/mu
           fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -6586,7 +6576,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO i = i_start, i_end
 
               dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
               fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -6605,7 +6595,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO i = i_start, i_end
 
               dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
               fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -6623,7 +6613,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO i = i_start, i_end
 
               dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
               fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -6641,7 +6631,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO i = i_start, i_end
 
               dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
               fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -6697,7 +6687,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO i = i_start_f, i_end_f
 
           dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-          mu = 0.5*(mut(i,j)+mut(i-1,j))
+          mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
           vel = ru(i,k,j)
           cr = vel*dt/dx/mu
           fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -6720,7 +6710,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             IF(i == ids+1) THEN ! second order
               DO k=kts,ktf
                 dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
                 vel = ru(i,k,j)/mu
                 cr = vel*dt/dx
                 fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -6733,7 +6723,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             IF(i == ids+2) THEN  ! third order
               DO k=kts,ktf
                 dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
                 vel = ru(i,k,j)
                 cr = vel*dt/dx/mu
                 fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -6755,7 +6745,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             IF( i == ide-1 ) THEN ! second order flux next to the boundary
               DO k=kts,ktf
                 dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
                 vel = ru(i,k,j)
                 cr = vel*dt/dx/mu
                 fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -6769,7 +6759,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             IF( i == ide-2 ) THEN ! third order flux one in from the boundary
               DO k=kts,ktf
                 dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
                 vel = ru(i,k,j)
                 cr = vel*dt/dx/mu
                 fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -6840,7 +6830,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO i = i_start, i_end
 
           dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-          mu = 0.5*(mut(i,j)+mut(i,j-1))
+          mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
           vel = rv(i,k,j)
           cr = vel*dt/dy/mu
           fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -6859,7 +6849,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO i = i_start, i_end
 
               dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
               fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -6878,7 +6868,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO i = i_start, i_end
 
               dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
               fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -6931,7 +6921,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO i = i_start_f, i_end_f
 
           dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-          mu = 0.5*(mut(i,j)+mut(i-1,j))
+          mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
           vel = ru(i,k,j)
           cr = vel*dt/dx/mu
           fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -6951,7 +6941,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO k=kts,ktf
 
               dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-              mu = 0.5*(mut(i,j)+mut(i-1,j))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
               vel = ru(i,k,j)/mu
               cr = vel*dt/dx
               fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -6970,7 +6960,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             i = ide-1
             DO k=kts,ktf
               dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-              mu = 0.5*(mut(i,j)+mut(i-1,j))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
               vel = ru(i,k,j)
               cr = vel*dt/dx/mu
               fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -7038,7 +7028,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO i = i_start, i_end
 
           dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-          mu = 0.5*(mut(i,j)+mut(i,j-1))
+          mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
           vel = rv(i,k,j)
           cr = vel*dt/dy/mu
           fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -7057,7 +7047,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO i = i_start, i_end
 
               dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
               fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -7076,7 +7066,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO i = i_start, i_end
 
               dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
               fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -7129,7 +7119,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO i = i_start_f, i_end_f
 
           dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-          mu = 0.5*(mut(i,j)+mut(i-1,j))
+          mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
           vel = ru(i,k,j)
           cr = vel*dt/dx/mu
           fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -7150,7 +7140,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             DO k=kts,ktf
 
               dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-              mu = 0.5*(mut(i,j)+mut(i-1,j))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
               vel = ru(i,k,j)/mu
               cr = vel*dt/dx
               fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -7169,7 +7159,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
             i = ide-1
             DO k=kts,ktf
               dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-              mu = 0.5*(mut(i,j)+mut(i-1,j))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
               vel = ru(i,k,j)
               cr = vel*dt/dx/mu
               fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -7222,7 +7212,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO k=kts,ktf
         DO i = i_start, i_end
            dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-           mu = 0.5*(mut(i,j)+mut(i,j-1))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
            vel = rv(i,k,j)
            cr = vel*dt/dy/mu
            fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -7241,7 +7231,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
         DO k=kts,ktf
         DO i = i_start, i_end+1
             dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx ! ADT eqn 48 d/dx
-            mu = 0.5*(mut(i,j)+mut(i-1,j))
+            mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
             vel = ru(i,k,j)
             cr = vel*dt/dx/mu
             fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -7387,7 +7377,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
     IF(degrade_ys) j_start = MAX(jts-1,jds)
     IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
 
-    vert_order_test : IF (vert_order == 6) THEN
+    vert_order_test : IF (vert_order == 6) THEN    
 
       DO j = j_start, j_end
 
@@ -7401,7 +7391,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
          DO k=kts+3,ktf-2
          DO i = i_start, i_end
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7416,7 +7406,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
            k=kts+1
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7425,7 +7415,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
            k=kts+2
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7437,7 +7427,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
            k=ktf-1
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7449,7 +7439,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
            k=ktf
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7460,7 +7450,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
       ENDDO
 
-    ELSE IF (vert_order == 5) THEN
+    ELSE IF (vert_order == 5) THEN    
 
       DO j = j_start, j_end
 
@@ -7474,7 +7464,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
          DO k=kts+3,ktf-2
          DO i = i_start, i_end
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7489,7 +7479,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
            k=kts+1
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7498,7 +7488,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
            k=kts+2
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7510,7 +7500,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
            k=ktf-1
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7522,7 +7512,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
            k=ktf
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7533,7 +7523,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
       ENDDO
 
-    ELSE IF (vert_order == 4) THEN
+    ELSE IF (vert_order == 4) THEN    
 
       DO j = j_start, j_end
 
@@ -7548,7 +7538,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
          DO i = i_start, i_end
 
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7564,7 +7554,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
            k=kts+1
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7573,7 +7563,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
            k=ktf
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7584,7 +7574,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
       ENDDO
 
-    ELSE IF (vert_order == 3) THEN
+    ELSE IF (vert_order == 3) THEN    
 
       DO j = j_start, j_end
 
@@ -7600,7 +7590,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
          DO i = i_start, i_end
 
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7616,7 +7606,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
            k=kts+1
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7625,7 +7615,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
            k=ktf
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7636,7 +7626,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
       ENDDO
 
-   ELSE IF (vert_order == 2) THEN
+   ELSE IF (vert_order == 2) THEN    
 
       DO j = j_start, j_end
 
@@ -7651,7 +7641,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
          DO i = i_start, i_end
 
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -7722,7 +7712,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 #endif
    DO i=i_start, i_end
 
-     ph_low(i,k,j) = (mub(i,j)+mu_old(i,j))*field_old(i,k,j) &
+     ph_low(i,k,j) = ((c1(k)*mub(i,j)+c2(k))+(c1(k)*mu_old(i,j)))*field_old(i,k,j) &
                 - dt*( msftx(i,j)*msfty(i,j)*(               &
                        rdx*(fqxl(i+1,k,j)-fqxl(i,k,j)) +     &
                        rdy*(fqyl(i,k,j+1)-fqyl(i,k,j))  )    &
@@ -7812,7 +7802,7 @@ SUBROUTINE advect_scalar_pd   ( field, field_old, tendency,    &
 
   DO j = j_start, j_end
   DO k = kts, ktf
-!DEC$ vector always
+!DEC$ vector always  
   DO i = i_start, i_end
 
      ! Un-"canceled" map scale factor, ADT Eq. 48
@@ -7890,20 +7880,20 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
                              ims, ime, jms, jme, kms, kme,  &
                              its, ite, jts, jte, kts, kte  )
 !
-! 5th-order WENO (Weighted Essentially Non-Oscillatory) scheme adapted from COMMAS.
+! 5th-order WENO (Weighted Essentially Non-Oscillatory) scheme adapted from COMMAS.  
 ! See Jiang and Shu, 1996, J. Comp. Phys. v. 126, 202-223;
 ! Shu 2003, Int. J. Comp. Fluid Dyn. v. 17 107-118;  Also used by Bryan 2005, Mon. Wea. Rev.
 !
    IMPLICIT NONE
-
+   
    ! Input data
-
+   
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
                                               ims, ime, jms, jme, kms, kme, &
                                               its, ite, jts, jte, kts, kte
-
+   
    REAL , DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(IN   ) :: field,     &
                                                                       field_old, &
                                                                       ru,    &
@@ -7932,7 +7922,7 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
 
 
    ! Local data
-
+   
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
@@ -7949,7 +7939,7 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
    REAL,  DIMENSION( its:ite, kts:kte, 2 ) :: fqy
 
    INTEGER :: horz_order, vert_order
-
+   
    LOGICAL :: degrade_xs, degrade_ys
    LOGICAL :: degrade_xe, degrade_ye
 
@@ -7962,8 +7952,8 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
 
 
    integer kt,kb
-
-
+   
+    
     real               :: qim2, qim1, qi, qip1, qip2
     double precision               :: beta0, beta1, beta2, f0, f1, f2, wi0, wi1, wi2, sumwk
     double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps=1.0d-28
@@ -8099,21 +8089,21 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
             qim1 = field(i,k,j+1)
             qim2 = field(i,k,j+2)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps + beta0)**pw
          wi1 = gi1 / (eps + beta1)**pw
          wi2 = gi2 / (eps + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
           fqy( i, k, jp1 ) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 !          fqy( i, k, jp1 ) = vel*flux5(                                &
@@ -8235,7 +8225,7 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
         ENDIF
 
         END IF
-
+       
        ENDIF
 
         jtmp = jp1
@@ -8294,21 +8284,21 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
             qim1 = field(i+1,k,j)
             qim2 = field(i+2,k,j)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps + beta0)**pw
          wi1 = gi1 / (eps + beta1)**pw
          wi2 = gi2 / (eps + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
          fqx(i,k) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 !          fqx( i,k ) = vel*flux5( field(i-3,k,j), field(i-2,k,j),  &
@@ -8390,7 +8380,7 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
 
 
    ENDIF
-
+   
 
 !  pick up the rest of the horizontal radiation boundary conditions.
 !  (these are the computations that don't require 'cb'.
@@ -8505,21 +8495,21 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
             qim1 = field(i,k+1,j)
             qim2 = field(i,k+2,j)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps + beta0)**pw
          wi1 = gi1 / (eps + beta1)**pw
          wi2 = gi2 / (eps + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
           vflux(i,k) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 !           vflux(i,k) = vel*flux5(                                 &
@@ -8532,7 +8522,7 @@ SUBROUTINE advect_scalar_weno ( field, field_old, tendency,     &
 
            k=kts+1
            vflux(i,k)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
-
+                                   
            k = kts+2
            vel=rom(i,k,j)
            vflux(i,k) = vel*flux3(               &
@@ -8594,9 +8584,9 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
 !
 
    IMPLICIT NONE
-
+   
    ! Input data
-
+   
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
@@ -8631,7 +8621,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
    INTEGER ,                                     INTENT(IN   ) :: time_step
 
    ! Local data
-
+   
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
@@ -8645,12 +8635,12 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
    REAL,  DIMENSION( its-1:ite+2, kts:kte, jts-1:jte+2  ) :: fqxl, fqyl, fqzl
 
    INTEGER :: horz_order, vert_order
-
+   
    LOGICAL :: degrade_xs, degrade_ys
    LOGICAL :: degrade_xe, degrade_ye
 
    INTEGER :: jp1, jp0, jtmp
-
+   
    REAL,DIMENSION( its-1:ite+2, kts:kte, jts-1:jte+2  ) :: flux_out, ph_low
    REAL :: scale
    REAL, PARAMETER :: eps=1.e-20
@@ -8788,7 +8778,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
         DO i = i_start, i_end
 
           dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-          mu = 0.5*(mut(i,j)+mut(i,j-1))
+          mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
           vel = rv(i,k,j)
           cr = vel*dt/dy/mu
           fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -8806,21 +8796,21 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
             qim1 = field(i,k,j+1)
             qim2 = field(i,k,j+2)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps1 + beta0)**pw
          wi1 = gi1 / (eps1 + beta1)**pw
          wi2 = gi2 / (eps1 + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
           fqy( i, k, j ) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 !          fqy( i, k, j  ) = vel*flux5(                                  &
@@ -8838,7 +8828,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
             DO i = i_start, i_end
 
               dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
               fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -8857,7 +8847,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
             DO i = i_start, i_end
 
               dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
               fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -8875,7 +8865,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
             DO i = i_start, i_end
 
               dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
               fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -8893,7 +8883,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
             DO i = i_start, i_end
 
               dy = 2./(msftx(i,j)+msftx(i,j-1))/rdy  ! ADT eqn 48 d/dy
-              mu = 0.5*(mut(i,j)+mut(i,j-1))
+              mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j-1)+c2(k)))
               vel = rv(i,k,j)
               cr = vel*dt/dy/mu
               fqyl(i,k,j) = mu*(dy/dt)*flux_upwind(field_old(i,k,j-1), field_old(i,k,j  ), cr)
@@ -8949,7 +8939,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
         DO i = i_start_f, i_end_f
 
           dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-          mu = 0.5*(mut(i,j)+mut(i-1,j))
+          mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
           vel = ru(i,k,j)
           cr = vel*dt/dx/mu
           fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -8968,21 +8958,21 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
             qim1 = field(i+1,k,j)
             qim2 = field(i+2,k,j)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps1 + beta0)**pw
          wi1 = gi1 / (eps1 + beta1)**pw
          wi2 = gi2 / (eps1 + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
          fqx(i,k,j) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 !          fqx( i,k,j ) = vel*flux5( field(i-3,k,j), field(i-2,k,j),  &
@@ -9003,7 +8993,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
             IF(i == ids+1) THEN ! second order
               DO k=kts,ktf
                 dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
                 vel = ru(i,k,j)/mu
                 cr = vel*dt/dx
                 fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -9016,7 +9006,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
             IF(i == ids+2) THEN  ! third order
               DO k=kts,ktf
                 dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
                 vel = ru(i,k,j)
                 cr = vel*dt/dx/mu
                 fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -9038,7 +9028,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
             IF( i == ide-1 ) THEN ! second order flux next to the boundary
               DO k=kts,ktf
                 dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
                 vel = ru(i,k,j)
                 cr = vel*dt/dx/mu
                 fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -9052,7 +9042,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
             IF( i == ide-2 ) THEN ! third order flux one in from the boundary
               DO k=kts,ktf
                 dx = 2./(msfty(i,j)+msfty(i-1,j))/rdx  ! ADT eqn 48 d/dx
-                mu = 0.5*(mut(i,j)+mut(i-1,j))
+                mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i-1,j)+c2(k)))
                 vel = ru(i,k,j)
                 cr = vel*dt/dx/mu
                 fqxl(i,k,j) = mu*(dx/dt)*flux_upwind(field_old(i-1,k,j), field_old(i,k,j  ), cr)
@@ -9203,10 +9193,10 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
     IF(degrade_ys) j_start = MAX(jts-1,jds)
     IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
 
-!    vert_order_test : IF (vert_order == 6) THEN
+!    vert_order_test : IF (vert_order == 6) THEN    
 
 
-!    ELSE IF (vert_order == 5) THEN
+!    ELSE IF (vert_order == 5) THEN    
 
       DO j = j_start, j_end
 
@@ -9220,7 +9210,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
          DO k=kts+3,ktf-2
          DO i = i_start, i_end
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -9239,21 +9229,21 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
             qim1 = field(i,k+1,j)
             qim2 = field(i,k+2,j)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps1 + beta0)**pw
          wi1 = gi1 / (eps1 + beta1)**pw
          wi2 = gi2 / (eps1 + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
           fqz(i,k,j) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 !           fqz(i,k,j) = vel*flux5( field(i,k-3,j), field(i,k-2,j), field(i,k-1,j),      &
@@ -9266,7 +9256,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
 
            k=kts+1
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -9275,7 +9265,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
 
            k=kts+2
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -9287,7 +9277,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
 
            k=ktf-1
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -9299,7 +9289,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
 
            k=ktf
            dz = 2./(rdzw(k)+rdzw(k-1))
-           mu = 0.5*(mut(i,j)+mut(i,j))
+           mu = 0.5*((c1(k)*mut(i,j)+c2(k))+(c1(k)*mut(i,j)+c2(k)))
            vel = rom(i,k,j)
            cr = vel*dt/dz/mu
            fqzl(i,k,j) = mu*(dz/dt)*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
@@ -9370,7 +9360,7 @@ SUBROUTINE advect_scalar_wenopd ( field, field_old, tendency,    &
 #endif
    DO i=i_start, i_end
 
-     ph_low(i,k,j) = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)        &
+     ph_low(i,k,j) = ((c1(k)*mub(i,j)+c2(k))+(c1(k)*mu_old(i,j)))*field_old(i,k,j)        &
                 - dt*( msftx(i,j)*msfty(i,j)*(               &
                        rdx*(fqxl(i+1,k,j)-fqxl(i,k,j)) +     &
                        rdy*(fqyl(i,k,j+1)-fqyl(i,k,j))  )    &
@@ -9509,9 +9499,9 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
 !  fluxes initially
 
    IMPLICIT NONE
-
+   
    ! Input data
-
+   
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    LOGICAL ,                 INTENT(IN   ) :: tenddec ! tendency flag
@@ -9548,7 +9538,7 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
                                                                   dt
 
    ! Local data
-
+   
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
@@ -9567,7 +9557,7 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
    REAL :: ph_upwind
 
    INTEGER :: horz_order, vert_order
-
+   
    LOGICAL :: degrade_xs, degrade_ys
    LOGICAL :: degrade_xe, degrade_ye
 
@@ -10107,7 +10097,7 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
     IF(degrade_ye) j_end   = MIN(jte+1,jde-1)
 
 
-    vert_order_test : IF (vert_order == 3) THEN
+    vert_order_test : IF (vert_order == 3) THEN    
 
       DO j = j_start, j_end
 
@@ -10172,6 +10162,108 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
              qmax(i,k-1,j)  = amax1(qmax(i,k-1,j),field_old(i,k,j))
              qmin(i,k-1,j)  = amin1(qmin(i,k-1,j),field_old(i,k,j))
           end if
+         ENDDO
+
+      ENDDO
+
+    ELSE IF (vert_order == 5) THEN
+
+      DO j = j_start, j_end
+
+         DO i = i_start, i_end
+           fqz(i,1,j)  = 0.
+           fqzl(i,1,j) = 0.
+           fqz(i,kde,j)  = 0.
+           fqzl(i,kde,j) = 0.
+         ENDDO
+
+         DO k=kts+3,ktf-2
+         DO i = i_start, i_end
+
+           vel = rom(i,k,j)
+           cr = -vel
+           fqzl(i,k,j) = vel*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
+
+           fqz(i,k,j) = vel*flux5(                                 &
+                   field(i,k-3,j), field(i,k-2,j), field(i,k-1,j),       &
+                   field(i,k  ,j), field(i,k+1,j), field(i,k+2,j),  -vel )
+           fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+
+          if(cr.gt. 0) then
+             qmax(i,k,j)  = amax1(qmax(i,k,j),field_old(i,k-1,j))
+             qmin(i,k,j)  = amin1(qmin(i,k,j),field_old(i,k-1,j))
+          else
+             qmax(i,k-1,j)  = amax1(qmax(i,k-1,j),field_old(i,k,j))
+             qmin(i,k-1,j)  = amin1(qmin(i,k-1,j),field_old(i,k,j))
+          end if
+
+         ENDDO
+         ENDDO
+
+         DO i = i_start, i_end
+
+           k=kts+1
+           vel = rom(i,k,j)
+           cr = -vel
+           fqzl(i,k,j) = vel*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
+           fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
+           fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+
+          if(cr.gt. 0) then
+             qmax(i,k,j)  = amax1(qmax(i,k,j),field_old(i,k-1,j))
+             qmin(i,k,j)  = amin1(qmin(i,k,j),field_old(i,k-1,j))
+          else
+             qmax(i,k-1,j)  = amax1(qmax(i,k-1,j),field_old(i,k,j))
+             qmin(i,k-1,j)  = amin1(qmin(i,k-1,j),field_old(i,k,j))
+          end if
+
+           k=kts+2
+           vel = rom(i,k,j)
+           cr = -vel
+           fqzl(i,k,j) = vel*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
+           fqz(i,k,j)= vel*flux3(field(i,k-2,j), field(i,k-1,j),   &
+                                 field(i,k  ,j), field(i,k+1,j), -vel )
+           fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+
+          if(cr.gt. 0) then
+             qmax(i,k,j)  = amax1(qmax(i,k,j),field_old(i,k-1,j))
+             qmin(i,k,j)  = amin1(qmin(i,k,j),field_old(i,k-1,j))
+          else
+             qmax(i,k-1,j)  = amax1(qmax(i,k-1,j),field_old(i,k,j))
+             qmin(i,k-1,j)  = amin1(qmin(i,k-1,j),field_old(i,k,j))
+          end if
+
+           k=ktf-1
+           vel = rom(i,k,j)
+           cr = -vel
+           fqzl(i,k,j) = vel*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
+           fqz(i,k,j)= vel*flux3( field(i,k-2,j), field(i,k-1,j),   &
+                                  field(i,k  ,j), field(i,k+1,j), -vel )
+           fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+
+          if(cr.gt. 0) then
+             qmax(i,k,j)  = amax1(qmax(i,k,j),field_old(i,k-1,j))
+             qmin(i,k,j)  = amin1(qmin(i,k,j),field_old(i,k-1,j))
+          else
+             qmax(i,k-1,j)  = amax1(qmax(i,k-1,j),field_old(i,k,j))
+             qmin(i,k-1,j)  = amin1(qmin(i,k-1,j),field_old(i,k,j))
+          end if
+
+           k=ktf
+           vel = rom(i,k,j)
+           cr = -vel
+           fqzl(i,k,j) = vel*flux_upwind(field_old(i,k-1,j), field_old(i,k,j  ), cr)
+           fqz(i,k,j)=rom(i,k,j)*(fzm(k)*field(i,k,j)+fzp(k)*field(i,k-1,j))
+           fqz(i,k,j) = fqz(i,k,j) - fqzl(i,k,j)
+
+          if(cr.gt. 0) then
+             qmax(i,k,j)  = amax1(qmax(i,k,j),field_old(i,k-1,j))
+             qmin(i,k,j)  = amin1(qmin(i,k,j),field_old(i,k-1,j))
+          else
+             qmax(i,k-1,j)  = amax1(qmax(i,k-1,j),field_old(i,k,j))
+             qmin(i,k-1,j)  = amin1(qmin(i,k-1,j),field_old(i,k,j))
+          end if
+
          ENDDO
 
       ENDDO
@@ -10252,7 +10344,7 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
    DO k=kts, ktf
    DO i=i_start, i_end
 
-     ph_upwind = (mub(i,j)+mu_old(i,j))*field_old(i,k,j)        &
+     ph_upwind = ((c1(k)*mub(i,j)+c2(k))+(c1(k)*mu_old(i,j)))*field_old(i,k,j)        &
                    - dt*( msftx(i,j)*msfty(i,j)*(               &
                           rdx*(fqxl(i+1,k,j)-fqxl(i,k,j)) +     &
                           rdy*(fqyl(i,k,j+1)-fqyl(i,k,j))  )    &
@@ -10266,7 +10358,7 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
                +msfty(i,j)*rdzw(k)*(  max(0.,fqz (i,k+1,j))      &
                                      -min(0.,fqz (i,k  ,j)) )   )
 
-     ph_hi = mut(i,j)*qmax(i,k,j) - ph_upwind
+     ph_hi = (c1(k)*mut(i,j)+c2(k))*qmax(i,k,j) - ph_upwind
      IF( flux_in .gt. ph_hi ) scale_in(i,k,j) = max(0.,ph_hi/(flux_in+eps))
 
 
@@ -10278,7 +10370,7 @@ SUBROUTINE advect_scalar_mono   ( field, field_old, tendency,    &
                 +msfty(i,j)*rdzw(k)*(  min(0.,fqz (i,k+1,j))      &
                                       -max(0.,fqz (i,k  ,j)) )   )
 
-     ph_low = ph_upwind - mut(i,j)*qmin(i,k,j)
+     ph_low = ph_upwind - (c1(k)*mut(i,j)+c2(k))*qmin(i,k,j)
      IF( flux_out .gt. ph_low ) scale_out(i,k,j) = max(0.,ph_low/(flux_out+eps))
 
    ENDDO
@@ -10490,9 +10582,9 @@ PROGRAM feeder
    ALLOCATE ( rom(ims:ime , kms:kme , jms:jme ) )
    PRINT *,'ALLOCATE three 2d MU fields'
    PRINT *,(ime-ims+1)*(jme-jms+1)
-   ALLOCATE ( mut( ims:ime , jms:jme ) )
-   ALLOCATE ( mub( ims:ime , jms:jme ) )
-   ALLOCATE ( mu_old( ims:ime , jms:jme ) )
+   ALLOCATE ( mut(ims:ime , jms:jme) )
+   ALLOCATE ( mub(ims:ime , jms:jme) )
+   ALLOCATE ( mu_old(ims:ime , jms:jme) )
    PRINT *,'ALLOCATE three 3d tendency'
    PRINT *,(ime-ims+1)*(kme-kms+1)*(jme-jms+1)
    ALLOCATE ( tendency( ims:ime , kms:kme , jms:jme ) )
@@ -10746,15 +10838,15 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
                         its, ite, jts, jte, kts, kte  )
 
 !
-! 5th-order WENO (Weighted Essentially Non-Oscillatory) scheme adapted from COMMAS.
+! 5th-order WENO (Weighted Essentially Non-Oscillatory) scheme adapted from COMMAS.  
 ! See Jiang and Shu, 1996, J. Comp. Phys. v. 126, 202-223;
 ! Shu 2003, Int. J. Comp. Fluid Dyn. v. 17 107-118;  Also used by Bryan 2005, Mon. Wea. Rev.
 !
 
    IMPLICIT NONE
-
+   
    ! Input data
-
+   
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
@@ -10788,7 +10880,7 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
    INTEGER ,                                     INTENT(IN   ) :: time_step
 
    ! Local data
-
+   
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
@@ -10802,8 +10894,8 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
 
 
    integer kt,kb
-
-
+   
+    
     real               :: qim2, qim1, qi, qip1, qip2
     double precision               :: beta0, beta1, beta2, f0, f1, f2, wi0, wi1, wi2, sumwk
     double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps=1.0d-18
@@ -10818,7 +10910,7 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
 
    REAL,  DIMENSION( its-1:ite+1, kts:kte ) :: fqx
    REAL,  DIMENSION( its:ite, kts:kte, 2) :: fqy
-
+   
    LOGICAL :: degrade_xs, degrade_ys
    LOGICAL :: degrade_xe, degrade_ye
 
@@ -10948,21 +11040,21 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
             qim1 = u(i,k,j+1)
             qim2 = u(i,k,j+2)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps + beta0)**pw
          wi1 = gi1 / (eps + beta1)**pw
          wi2 = gi2 / (eps + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
           fqy( i, k, jp1 ) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 !          fqy( i, k, jp1 ) = vel*flux5(               &
@@ -11101,21 +11193,21 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
             qim1 = u(i+1,k,j)
             qim2 = u(i+2,k,j)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps + beta0)**pw
          wi1 = gi1 / (eps + beta1)**pw
          wi2 = gi2 / (eps + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
          fqx(i,k) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 !          fqx( i,k ) = vel*flux5( u(i-3,k,j), u(i-2,k,j),  &
@@ -11193,7 +11285,7 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
 
         DO j = j_start, j_end
         DO k = kts, ktf
-          ub = MIN(ru(its,k,j)-cb*mut(its,j), 0.)
+          ub = MIN(ru(its,k,j)-cb*(c1(k)*mut(its,j)+c2(k)), 0.)
           tendency(its,k,j) = tendency(its,k,j)                    &
                       - rdx*ub*(u_old(its+1,k,j) - u_old(its,k,j))
         ENDDO
@@ -11208,7 +11300,7 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
 
         DO j = j_start, j_end
         DO k = kts, ktf
-          ub = MAX(ru(ite,k,j)+cb*mut(ite-1,j), 0.)
+          ub = MAX(ru(ite,k,j)+cb*(c1(k)*mut(ite-1,j)+c2(k)), 0.)
           tendency(ite,k,j) = tendency(ite,k,j)                    &
                       - rdx*ub*(u_old(ite,k,j) - u_old(ite-1,k,j))
         ENDDO
@@ -11302,9 +11394,9 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
      vflux(i,kte)=0.
    ENDDO
 
-!   vert_order_test : IF (vert_order == 6) THEN
+!   vert_order_test : IF (vert_order == 6) THEN    
 
-!    ELSE IF (vert_order == 5) THEN
+!    ELSE IF (vert_order == 5) THEN    
 
       DO j = j_start, j_end
 
@@ -11325,21 +11417,21 @@ SUBROUTINE advect_weno_u ( u, u_old, tendency,            &
             qim1 = u(i,k+1,j)
             qim2 = u(i,k+2,j)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps + beta0)**pw
          wi1 = gi1 / (eps + beta1)**pw
          wi2 = gi2 / (eps + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
           vflux(i,k) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 !           vflux(i,k) = vel*flux5(                     &
@@ -11393,15 +11485,15 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
                         its, ite, jts, jte, kts, kte  )
 
 !
-! 5th-order WENO (Weighted Essentially Non-Oscillatory) scheme adapted from COMMAS.
+! 5th-order WENO (Weighted Essentially Non-Oscillatory) scheme adapted from COMMAS.  
 ! See Jiang and Shu, 1996, J. Comp. Phys. v. 126, 202-223;
 ! Shu 2003, Int. J. Comp. Fluid Dyn. v. 17 107-118;  Also used by Bryan 2005, Mon. Wea. Rev.
 !
 
    IMPLICIT NONE
-
+   
    ! Input data
-
+   
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
@@ -11436,7 +11528,7 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
 
 
    ! Local data
-
+   
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
@@ -11449,8 +11541,8 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
 
 
    integer kt,kb
-
-
+   
+    
     real               :: qim2, qim1, qi, qip1, qip2
     double precision               :: beta0, beta1, beta2, f0, f1, f2, wi0, wi1, wi2, sumwk
     double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps=1.0d-18
@@ -11466,7 +11558,7 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
 
    INTEGER :: horz_order
    INTEGER :: vert_order
-
+   
    LOGICAL :: degrade_xs, degrade_ys
    LOGICAL :: degrade_xe, degrade_ye
 
@@ -11593,21 +11685,21 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
             qim1 = v(i,k,j+1)
             qim2 = v(i,k,j+2)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps + beta0)**pw
          wi1 = gi1 / (eps + beta1)**pw
          wi2 = gi2 / (eps + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
           fqy( i, k, jp1 ) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 
@@ -11760,21 +11852,21 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
             qim1 = v(i+1,k,j)
             qim2 = v(i+2,k,j)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps + beta0)**pw
          wi1 = gi1 / (eps + beta1)**pw
          wi2 = gi2 / (eps + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
          fqx(i,k) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 !          fqx( i, k ) = vel*flux5( v(i-3,k,j), v(i-2,k,j),  &
@@ -11873,7 +11965,7 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
 
         DO i = i_start, i_end
         DO k = kts, ktf
-          vb = MIN(rv(i,k,jts)-cb*mut(i,jts), 0.)
+          vb = MIN(rv(i,k,jts)-cb*(c1(k)*mut(i,jts)+c2(k)), 0.)
           tendency(i,k,jts) = tendency(i,k,jts)                    &
                       - rdy*vb*(v_old(i,k,jts+1) - v_old(i,k,jts))
         ENDDO
@@ -11888,7 +11980,7 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
 
         DO i = i_start, i_end
         DO k = kts, ktf
-          vb = MAX(rv(i,k,jte)+cb*mut(i,jte-1), 0.)
+          vb = MAX(rv(i,k,jte)+cb*(c1(k)*mut(i,jte-1)+c2(k)), 0.)
           tendency(i,k,jte) = tendency(i,k,jte)                    &
                       - rdy*vb*(v_old(i,k,jte) - v_old(i,k,jte-1))
         ENDDO
@@ -11990,9 +12082,9 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
       IF ( config_flags%open_ys .or. specified .or. config_flags%polar ) j_start = MAX(jds+1,jts)
       IF ( config_flags%open_ye .or. specified .or. config_flags%polar ) j_end   = MIN(jde-1,jte)
 
-!    vert_order_test : IF (vert_order == 6) THEN
+!    vert_order_test : IF (vert_order == 6) THEN    
 
-!   ELSE IF (vert_order == 5) THEN
+!   ELSE IF (vert_order == 5) THEN    
 
       DO j = j_start, j_end
 
@@ -12014,21 +12106,21 @@ SUBROUTINE advect_weno_v   ( v, v_old, tendency,            &
             qim1 = v(i,k+1,j)
             qim2 = v(i,k+2,j)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps + beta0)**pw
          wi1 = gi1 / (eps + beta1)**pw
          wi2 = gi2 / (eps + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
           vflux(i,k) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 
@@ -12088,15 +12180,15 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
                          its, ite, jts, jte, kts, kte  )
 
 !
-! 5th-order WENO (Weighted Essentially Non-Oscillatory) scheme adapted from COMMAS.
+! 5th-order WENO (Weighted Essentially Non-Oscillatory) scheme adapted from COMMAS.  
 ! See Jiang and Shu, 1996, J. Comp. Phys. v. 126, 202-223;
 ! Shu 2003, Int. J. Comp. Fluid Dyn. v. 17 107-118;  Also used by Bryan 2005, Mon. Wea. Rev.
 !
 
    IMPLICIT NONE
-
+   
    ! Input data
-
+   
    TYPE(grid_config_rec_type), INTENT(IN   ) :: config_flags
 
    INTEGER ,                 INTENT(IN   ) :: ids, ide, jds, jde, kds, kde, &
@@ -12131,7 +12223,7 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
 
 
    ! Local data
-
+   
    INTEGER :: i, j, k, itf, jtf, ktf
    INTEGER :: i_start, i_end, j_start, j_end
    INTEGER :: i_start_f, i_end_f, j_start_f, j_end_f
@@ -12147,8 +12239,8 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
 
 
    integer kt,kb
-
-
+   
+    
     real               :: qim2, qim1, qi, qip1, qip2
     double precision               :: beta0, beta1, beta2, f0, f1, f2, wi0, wi1, wi2, sumwk
     double precision, parameter    :: gi0 = 1.d0/10.d0, gi1 = 6.d0/10.d0, gi2 = 3.d0/10.d0, eps=1.0d-18
@@ -12160,7 +12252,7 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
 
    REAL,  DIMENSION( its:ite+1, kts:kte ) :: fqx
    REAL,  DIMENSION( its:ite, kts:kte, 2 ) :: fqy
-
+   
    LOGICAL :: degrade_xs, degrade_ys
    LOGICAL :: degrade_xe, degrade_ye
 
@@ -12282,21 +12374,21 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
             qim1 = w(i,k,j+1)
             qim2 = w(i,k,j+2)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps + beta0)**pw
          wi1 = gi1 / (eps + beta1)**pw
          wi2 = gi2 / (eps + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
           fqy( i, k, jp1 ) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 !          fqy( i, k, jp1 ) = vel*flux5(                     &
@@ -12322,21 +12414,21 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
             qim1 = w(i,k,j+1)
             qim2 = w(i,k,j+2)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps + beta0)**pw
          wi1 = gi1 / (eps + beta1)**pw
          wi2 = gi2 / (eps + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
           fqy( i, k, jp1 ) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 !          fqy( i, k, jp1 ) = vel*flux5(                     &
@@ -12501,21 +12593,21 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
             qim1 = w(i+1,k,j)
             qim2 = w(i+2,k,j)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps + beta0)**pw
          wi1 = gi1 / (eps + beta1)**pw
          wi2 = gi2 / (eps + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
          fqx(i,k) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 !          fqx( i,k ) = vel*flux5( w(i-3,k,j), w(i-2,k,j),  &
@@ -12542,21 +12634,21 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
             qim1 = w(i+1,k,j)
             qim2 = w(i+2,k,j)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps + beta0)**pw
          wi1 = gi1 / (eps + beta1)**pw
          wi2 = gi2 / (eps + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
          fqx(i,k) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 !          fqx( i,k ) = vel*flux5( w(i-3,k,j), w(i-2,k,j),  &
@@ -12816,9 +12908,9 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
          vflux(i,kte)=0.
       ENDDO
 
-!    vert_order_test : IF (vert_order == 6) THEN
+!    vert_order_test : IF (vert_order == 6) THEN    
 
-! ELSE IF (vert_order == 5) THEN
+! ELSE IF (vert_order == 5) THEN    
 
       DO j = j_start, j_end
 
@@ -12839,21 +12931,21 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
             qim1 = w(i,k+1,j)
             qim2 = w(i,k+2,j)
          ENDIF
-
+    
          f0 =  1./3.*qim2 - 7./6.*qim1 + 11./6.*qi
          f1 = -1./6.*qim1 + 5./6.*qi   + 1./3. *qip1
          f2 =  1./3.*qi   + 5./6.*qip1 - 1./6. *qip2
-
+    
          beta0 = 13./12.*(qim2 - 2.*qim1 + qi  )**2 + 1./4.*(qim2 - 4.*qim1 + 3.*qi)**2
          beta1 = 13./12.*(qim1 - 2.*qi   + qip1)**2 + 1./4.*(qim1 - qip1)**2
          beta2 = 13./12.*(qi   - 2.*qip1 + qip2)**2 + 1./4.*(qip2 - 4.*qip1 + 3.*qi)**2
-
+    
          wi0 = gi0 / (eps + beta0)**pw
          wi1 = gi1 / (eps + beta1)**pw
          wi2 = gi2 / (eps + beta2)**pw
-
+    
          sumwk = wi0 + wi1 + wi2
-
+    
           vflux(i,k) = vel * (wi0*f0 + wi1*f1 + wi2*f2) / sumwk
 
 !           vflux(i,k) = vel*flux5(                                   &
@@ -12866,7 +12958,7 @@ SUBROUTINE advect_weno_w    ( w, w_old, tendency,            &
 
            k=kts+1
            vflux(i,k)=0.25*(rom(i,k,j)+rom(i,k-1,j))*(w(i,k,j)+w(i,k-1,j))
-
+                                   
            k = kts+2
            vel=0.5*(rom(i,k,j)+rom(i,k-1,j))
            vflux(i,k) = vel*flux3(               &

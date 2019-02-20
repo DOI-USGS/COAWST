@@ -1,7 +1,7 @@
 /*
-** svn $Id: bl_test.h 830 2017-01-24 21:21:11Z arango $
+** svn $Id: bl_test.h 889 2018-02-10 03:32:52Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2018 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2019 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -9,7 +9,7 @@
 ** Boundary Layers Test.
 **
 ** Application flag:   BL_TEST
-** Input scripts:      ocean_bl_test.in
+** Input scripts:      roms_bl_test.in
 **                     stations_bl_test.in
 */
 

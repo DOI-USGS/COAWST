@@ -1,13 +1,13 @@
 module module_debug
 
-#ifdef _GEOGRID
+#ifdef _GEOGRID 
    use parallel_module
 #else
 #ifdef _METGRID
    use parallel_module
 #else
-   integer, parameter :: IO_NODE = 0
-   integer :: my_proc_id = 0
+   integer, parameter :: IO_NODE = 0 
+   integer :: my_proc_id = 0 
 #endif
 #endif
 
@@ -34,7 +34,7 @@ module module_debug
    subroutine set_debug_level(ilev)
 
       implicit none
-
+     
       ! Arguments
       integer, intent(in) :: ilev
 
@@ -66,7 +66,7 @@ module module_debug
       logical, intent(in), optional :: l1, l2, l3, l4, l5, l6
       character (len=*), intent(in), optional :: s1, s2, s3, s4, s5, s6
 
-      ! Local variables
+      ! Local variables 
       integer :: idxi, idxf, idxs, idxl, istart, i, iend, ia
       real :: fa
       logical :: continuing_line, la
@@ -120,9 +120,9 @@ module module_debug
 #endif
 
          ! If this is a debug message give up if level is not high enough
-         if (level == DEBUG .and. the_debug_level > DEBUG) return
+         if (level == DEBUG .and. the_debug_level > DEBUG) return 
 
-         if (level /= STDOUT) then
+         if (level /= STDOUT) then 
             call date_and_time(date=cur_date,time=cur_time)
          end if
 
@@ -166,7 +166,7 @@ module module_debug
                call cio_prints(0,ctemp,7)
             call cio_prints(1,ctemp,7)
          end if
-
+      
          i = index(fmtstring(istart:iend),'%')
          do while (i > 0 .and. i < iend)
             i = i + istart - 1
@@ -175,14 +175,14 @@ module module_debug
                call cio_prints(0,ctemp,i-istart)
             if (level /= STDOUT) &
                call cio_prints(1,ctemp,i-istart)
-
+   
             if (fmtstring(i+1:i+1) == '%') then
                write(ctemp,'(a)') '%'
                if (level >= the_debug_level .and. level /= DEBUG) &
                   call cio_prints(0,ctemp,1)
                if (level /= STDOUT) &
                   call cio_prints(1,ctemp,1)
-
+                            
             else if (fmtstring(i+1:i+1) == 'i') then
                if (idxi == 1 .and. present(i1)) then
                   ia = i1
@@ -197,14 +197,14 @@ module module_debug
                else if (idxi == 6 .and. present(i6)) then
                   ia = i6
                end if
-
+   
                if (level >= the_debug_level .and. level /= DEBUG) &
                   call cio_printi(0,ia)
                if (level /= STDOUT) &
                   call cio_printi(1,ia)
 
                idxi = idxi + 1
-
+   
             else if (fmtstring(i+1:i+1) == 'f') then
                if (idxf == 1 .and. present(f1)) then
                   fa = f1
@@ -219,14 +219,14 @@ module module_debug
                else if (idxf == 6 .and. present(f6)) then
                   fa = f6
                end if
-
+   
                if (level >= the_debug_level .and. level /= DEBUG) &
                   call cio_printf(0,fa)
                if (level /= STDOUT) &
                   call cio_printf(1,fa)
 
                idxf = idxf + 1
-
+   
             else if (fmtstring(i+1:i+1) == 's') then
                if (idxs == 1 .and. present(s1)) then
                   sa = s1
@@ -241,7 +241,7 @@ module module_debug
                else if (idxs == 6 .and. present(s6)) then
                   sa = s6
                end if
-
+   
                write(ctemp,'(a)') trim(sa)
                if (level >= the_debug_level .and. level /= DEBUG) &
                   call cio_prints(0,ctemp,len_trim(ctemp))
@@ -263,7 +263,7 @@ module module_debug
                else if (idxl == 6 .and. present(l6)) then
                   la = l6
                end if
-
+   
                if (la) then
                   write(ctemp,'(a)') '.TRUE.'
                else
@@ -274,20 +274,20 @@ module module_debug
                if (level /= STDOUT) &
                   call cio_prints(1,ctemp,len_trim(ctemp))
                idxl = idxl + 1
-
+   
             end if
-
+   
             istart = i+2
             i = index(fmtstring(istart:iend),'%')
          end do
-
+   
          continuing_line = .false.
          if (present(newline)) then
             if (.not.newline) then
                continuing_line = .true.
             end if
          end if
-
+ 
          if (continuing_line) then
             write(ctemp,'(a)') fmtstring(istart:iend)
          else
@@ -314,10 +314,10 @@ module module_debug
             call cio_prints(1,ctemp,iend-istart+2)
 
          if (level == ERROR) then
-#ifdef _GEOGRID
+#ifdef _GEOGRID 
             call parallel_abort()
 #endif
-#ifdef _METGRID
+#ifdef _METGRID 
             call parallel_abort()
 #endif
             stop

@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE check_multifile (ng, model)
 !
-!svn $Id: check_multifile.F 885 2017-12-27 23:18:30Z arango $
+!svn $Id: check_multifile.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -40,7 +40,7 @@
 
       integer :: Fcount, Nfiles, i, ifile, lstr
 
-      real(r8) :: Tfinal, Tmax, Tmin, Tscale
+      real(dp) :: Tfinal, Tmax, Tmin, Tscale
 
       character (len=1), parameter :: blank = ' '
       character (len= 22) :: F_code, I_code, Tmin_code, Tmax_code
@@ -99,8 +99,8 @@
       IF (model.eq.iADM) THEN
         Tfinal=time(ng)-ntimes(ng)*dt(ng)
       ELSE
-        Tfinal=time(ng)+ntimes(ng)*dt(ng)
-!       Tfinal=dstart*day2sec+ntimes(ng)*dt(ng)
+!       Tfinal=time(ng)+ntimes(ng)*dt(ng)
+        Tfinal=dstart*day2sec+ntimes(ng)*dt(ng)
       END IF
       CALL time_string (tfinal, F_code)
 !
@@ -115,16 +115,12 @@
             ncname=BRY(i,ng)%files(ifile)
             foundit=check_file(ng, model, ncname, Tmin, Tmax, Tscale,   &
      &                         Lcheck)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                   __FILE__)) RETURN
             BRY(i,ng)%time_min(ifile)=Tmin
             BRY(i,ng)%time_max(ifile)=Tmax
           END DO
 !
 !  Set the appropriate file counter to use during initialization or
-!  restart. The EXIT below is removed because when restarting there is
-!  a possibility that the restart time is not included in the first
-!  boundary file in the list to avoid getting an IO error.
+!  restart.
 !
           Fcount=0
           IF (Lcheck) THEN
@@ -140,7 +136,6 @@
                 Tmin=Tscale*BRY(i,ng)%time_min(ifile)
                 IF (time(ng).ge.Tmin) THEN
                   Fcount=ifile
-!!                EXIT
                 END IF
               END DO
             END IF
@@ -170,6 +165,8 @@
               END DO
             END IF
             exit_flag=4
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END IF
 !
 !  Check if there is boundary data to the end of the simulation.
@@ -193,9 +190,11 @@
                 IF (Master) THEN
                   WRITE (stdout,30) 'Lateral Boundary',                 &
      &                              TRIM(BRY(i,ng)%files(Nfiles)),      &
-     &                              Tmax_code, F_code
+     &                              'last  ', Tmax_code, F_code
                 END IF
                 exit_flag=4
+                IF (FoundError(exit_flag, NoError, __LINE__,            &
+     &                         __FILE__)) RETURN
               END IF
             END IF
           END IF
@@ -563,7 +562,7 @@
 
       character (*), intent(in) :: ncname
 
-      real(r8), intent(out) :: Tmin, Tmax, Tscale
+      real(dp), intent(out) :: Tmin, Tmax, Tscale
 !
 !  Local variable declarations.
 !
@@ -681,16 +680,16 @@
 !
 !  Read in time variable minimum and maximun values (input time units).
 !
-      CALL netcdf_get_fvar (ng, model, ncname, TvarName,                &
-     &                      Tmin,                                       &
+      CALL netcdf_get_time (ng, model, ncname, TvarName,                &
+     &                      Rclock%DateNumber, Tmin,                    &
      &                      ncid = ncid,                                &
      &                      start = (/1/),                              &
      &                      total = (/1/))
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
 !
-      CALL netcdf_get_fvar (ng, model, ncname, TvarName,                &
-     &                      Tmax,                                       &
+      CALL netcdf_get_time (ng, model, ncname, TvarName,                &
+     &                      Rclock%DateNumber, Tmax,                    &
      &                      ncid = ncid,                                &
      &                      start = (/Nrec/),                           &
      &                      total = (/1/))

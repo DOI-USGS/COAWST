@@ -1,5 +1,5 @@
 #include "cppdefs.h"
-! THIS IS ALL COPIED (DTI-DONT TRUST IT)
+! THIS IS ALL COPIED (DTI-DONT TRUST IT) 
       MODULE sed_biomass_mod
 
 #if defined NONLINEAR && defined SEDIMENT && defined SED_BIOMASS
@@ -141,7 +141,7 @@
 
 !
 !-----------------------------------------------------------------------
-!  Compute
+!  Compute 
 !-----------------------------------------------------------------------
 !
 !  Compute number of model steps for each hour.
@@ -167,7 +167,7 @@
             Dstp=z_w(i,j,N(ng))-z_w(i,j,0)
             Dstp_max(i,j,sstp)=Dstp
             cff=0.0_r8
-            DO k=1,nTbiom
+            DO k=1,nTbiom                        
               cff=MAX(cff,Dstp_max(i,j,k))
             END DO
             bottom(i,j,imaxD)=cff

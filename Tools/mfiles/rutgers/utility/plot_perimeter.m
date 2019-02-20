@@ -20,7 +20,7 @@ function h=plot_perimeter(G, LineType)
 %    h            Plot handler (vector)
 %
 
-% svn $Id: plot_perimeter.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: plot_perimeter.m 916 2018-07-14 01:28:47Z arango $
 %=========================================================================%
 %  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
@@ -29,31 +29,35 @@ function h=plot_perimeter(G, LineType)
 
 % Check if input variable G is a structure.
   
-if (~isstruct(G)),
+if (~isstruct(G))
   disp(blanks(1));
   error('Input grid variable is not a structure...');
 end
   
 % Initialize line color and type.
 
-if (nargin < 2),
-  LineType = 'r-'
+if (nargin < 2)
+  LineType = 'r-';
 end
-
-% Get grids perimeter structure.
-
-S = grid_perimeter(G);
 
 % Draw perimeter to current figure.
 
 hold on;
 
-h = zeros([1 S.Ngrids]);
+Ngrids = length(G);
+
+h = zeros([1 Ngrids]);
 
 for ng = 1:S.Ngrids,
-  h(ng) = plot(S.grid(ng).perimeter.X_psi,                              ...
-               S.grid(ng).perimeter.Y_psi,                              ...
-               LineType, 'LineWidth', 2);
+  if (G(ng).spherical),
+    h(ng) = plot(G(ng).lon_perimeter,                                   ...
+                 G(ng).lat_perimeter,                                   ...
+                 LineType, 'LineWidth', 2);
+  else
+    h(ng) = plot(G(ng).x_perimeter,                                     ...
+                 G(ng).y_perimeter,                                     ...
+                 LineType, 'LineWidth', 2);
+  end
 end
 
 hold off

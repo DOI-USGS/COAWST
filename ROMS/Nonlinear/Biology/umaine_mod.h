@@ -223,7 +223,7 @@
 !   colorFR1  Color fraction for labile DOC [nondimensional].          !
 !                                                                      !
 !   colorFR2  Color fraction for semi-labile DOC [nondimensional].     !
-!           							       !
+!           							       !	
 !   T_Fe      Iron uptake timescale [day]                              !
 !								       !
 !   A_Fe      Empirical FE:C power [nondimensional]                    !
@@ -235,7 +235,7 @@
 !   S2_FeC    Diatom Fe:C at F=0.5 [muM-Fe/M-C]                        !
 ! 								       !
 !   S3_FeC    Coccolithophores Fe:C at F=0.5 [muM-Fe/M-C]              !
-! 								       !
+! 								       !	
 !   FeRR      Fe remineralization rate [day-1]                         !
 !								       !
 !======================================================================!

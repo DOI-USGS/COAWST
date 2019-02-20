@@ -2,20 +2,20 @@
 !  Author(s)/Contact(s):
 !  Abstract:
 !  History Log:
-!
+! 
 !  Usage:
 !  Parameters: <Specify typical arguments passed>
 !  Input Files:
 !        <list file names and briefly describe the data they include>
 !  Output Files:
 !        <list file names and briefly describe the information they include>
-!
+! 
 !  Condition codes:
 !        <list exit condition or error codes returned >
 !        If appropriate, descriptive troubleshooting instructions or
 !        likely causes for failures could be mentioned here with the
 !        appropriate error code
-!
+! 
 !  User controllable options: <if applicable>
 
 MODULE module_noah_chan_param_init_rt
@@ -31,7 +31,7 @@ CONTAINS
 
     integer :: IINDEX, CHANCATS
     integer :: ORDER, IUNIT
-    integer, PARAMETER :: NCHANTYPES=50
+    integer, PARAMETER :: NCHANTYPES=50 
     real,dimension(NCHANTYPES)    :: BOTWID,HLINK_INIT,CHAN_SS,CHMann
     character(LEN=11) :: DATATYPE
 
@@ -40,7 +40,7 @@ CONTAINS
 !            BOTWID: Channel Bottom Width (meters)
 !        HLINK_INIT: Initial depth of flow in channel (meters)
 !           CHAN_SS: Channel side slope (assuming trapezoidal channel geom)
-!            CHMann: Channel Manning's N roughness coefficient
+!            CHMann: Channel Manning's N roughness coefficient 
 
 
 !-----READ IN CHANNEL PROPERTIES FROM CHANPARM.TBL :
@@ -93,7 +93,7 @@ CONTAINS
     implicit none
     integer :: IINDEX, CHANCATS
     integer :: ORDER
-    integer, PARAMETER :: NCHANTYPES=50
+    integer, PARAMETER :: NCHANTYPES=50 
     real,dimension(NCHANTYPES)    :: BOTWID,HLINK_INIT,CHAN_SS,CHMann
     character(LEN=11) :: DATATYPE
 
@@ -104,7 +104,7 @@ CONTAINS
        call mpp_land_bcast_real(NCHANTYPES,HLINK_INIT)
        call mpp_land_bcast_real(NCHANTYPES,CHAN_SS)
        call mpp_land_bcast_real(NCHANTYPES,CHMann)
-    return
+    return 
     END SUBROUTINE mpp_CHAN_PARM_INIT
 #endif
 !-----------------------------------------------------------------

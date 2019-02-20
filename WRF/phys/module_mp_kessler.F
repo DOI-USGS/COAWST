@@ -20,12 +20,12 @@ CONTAINS
    !  taken from the COMMAS code - WCS 10 May 1999.
    !  converted from FORTRAN 77 to 90, tiled, WCS 10 May 1999.
 !----------------------------------------------------------------
-   REAL    , PARAMETER ::  c1 = .001
-   REAL    , PARAMETER ::  c2 = .001
-   REAL    , PARAMETER ::  c3 = 2.2
-   REAL    , PARAMETER ::  c4 = .875
-   REAL    , PARAMETER ::  fudge = 1.0
-   REAL    , PARAMETER ::  mxfall = 10.0
+   REAL    , PARAMETER ::  c1 = .001 
+   REAL    , PARAMETER ::  c2 = .001 
+   REAL    , PARAMETER ::  c3 = 2.2 
+   REAL    , PARAMETER ::  c4 = .875 
+   REAL    , PARAMETER ::  fudge = 1.0 
+   REAL    , PARAMETER ::  mxfall = 10.0 
 !----------------------------------------------------------------
    INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde, &
                                      ims,ime, jms,jme, kms,kme, &
@@ -45,7 +45,7 @@ CONTAINS
          INTENT(IN   ) ::                                       &
                                                            rho, &
                                                            pii, &
-                                                          dz8w
+                                                          dz8w 
 
    REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),              &
          INTENT(IN   ) ::                                    z
@@ -77,7 +77,7 @@ CONTAINS
 
     dt = dt_in
 
-!   f5 = 237.3 * 17.27 * 2.5e6 / cp
+!   f5 = 237.3 * 17.27 * 2.5e6 / cp 
     f5 = svp2*(svpt0-svp3)*xlv/cp
     ernmax = 0.
     maxqrp = -100.
@@ -145,7 +145,7 @@ CONTAINS
       ppt=rhok(k)*prodk(k)*vt(k)*dtfall/rhowater
       RAINNCV(i,j)=ppt*1000.
       RAINNC(i,j)=RAINNC(i,j)+ppt*1000.  ! unit = mm
-
+ 
 !------------------------------------------------------------------------------
 ! Time split loop, Fallout done with flux upstream
 !------------------------------------------------------------------------------
@@ -160,7 +160,7 @@ CONTAINS
       prodk(k) = prodk(k) - factor(k)*prodk(k)*vt(k)
 
 !------------------------------------------------------------------------------
-! compute new sedimentation velocity, and check/recompute new
+! compute new sedimentation velocity, and check/recompute new 
 ! sedimentation timestep if this isn't the last split step.
 !------------------------------------------------------------------------------
 
@@ -168,7 +168,7 @@ CONTAINS
 
         nfall = nfall - 1
         crmax = 0.
-        DO k = kts, kte
+        DO k = kts, kte 
           qrr = amax1(0.,prodk(k)*0.001*rhok(k))
           vt(k) = 36.34*(qrr**0.1364) * vtden(k)
 !          vtmax = amax1(vt(k), vtmax)
@@ -204,7 +204,7 @@ CONTAINS
      DO i = its, ite
        factorn = 1.0 / (1.+c3*dt*amax1(0.,qr(i,k,j))**c4)
        qrprod = qc(i,k,j) * (1.0 - factorn)           &
-             + factorn*c1*dt*amax1(qc(i,k,j)-c2,0.)
+             + factorn*c1*dt*amax1(qc(i,k,j)-c2,0.)      
        rcgs = 0.001*rho(i,k,j)
 
        qc(i,k,j) = amax1(qc(i,k,j) - qrprod,0.)

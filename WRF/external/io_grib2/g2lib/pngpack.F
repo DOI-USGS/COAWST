@@ -27,7 +27,7 @@
 !                (5) = Original field type - currently ignored on input
 !                      Data values assumed to be reals.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST: 
 !     idrstmpl - Contains the array of values for Data Representation
 !                Template 5.41 or 5.40010
 !                (1) = Reference value - set by pngpack routine.
@@ -59,7 +59,7 @@
       integer,parameter :: zero=0
       integer :: enc_png
       character(len=1),allocatable :: ctemp(:)
-
+      
       ndpts=width*height
       bscale=2.0**real(-idrstmpl(2))
       dscale=10.0**real(idrstmpl(3))
@@ -81,12 +81,12 @@
 !
       if (rmin.ne.rmax .AND. maxdif.ne.0) then
         !
-        !  Determine which algorithm to use based on user-supplied
+        !  Determine which algorithm to use based on user-supplied 
         !  binary scale factor and number of bits.
         !
         if (idrstmpl(2).eq.0) then
            !
-           !  No binary scaling and calculate minimum number of
+           !  No binary scaling and calculate minimum number of 
            !  bits in which the data will fit.
            !
            imin=nint(rmin*dscale)
@@ -101,7 +101,7 @@
            enddo
         else
            !
-           !  Use binary scaling factor and calculate minimum number of
+           !  Use binary scaling factor and calculate minimum number of 
            !  bits in which the data will fit.
            !
            rmin=rmin*dscale
@@ -124,7 +124,7 @@
             nbits=16
         elseif (nbits.le.24) then
             nbits=24
-        else
+        else 
             nbits=32
         endif
         nbytes=(nbits/8)*ndpts

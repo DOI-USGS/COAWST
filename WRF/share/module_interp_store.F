@@ -1,7 +1,7 @@
 module module_interp_store
   ! MODULE module_interp_store
   ! PURPOSE: Stores interpolation information for the current
-  !   high-resolution domain.  The actual information is not
+  !   high-resolution domain.  The actual information is not 
   !   stored; just pointers to the corresponding elements of
   !   the grid (domain) object.  To update the pointers, call
   !   store_interp_info.  Note that, regardless of the direction
@@ -37,7 +37,7 @@ subroutine store_interp_info(grid, parent_grid)
   use module_interp_store
   implicit none
   type(domain), intent(in) :: grid, parent_grid
-
+  
 #if (NMM_CORE == 1 && NMM_NEST == 1)
   kpres=-99999
   grid_id=grid%id
@@ -55,21 +55,21 @@ subroutine store_interp_info(grid, parent_grid)
   iinfo_bxe=>grid%iinfo_bxe
   iinfo_bys=>grid%iinfo_bys
   iinfo_bye=>grid%iinfo_bye
-
+  
   parent_winfo=>parent_grid%winfo
   winfo=>grid%winfo
   winfo_bxs=>grid%winfo_bxs
   winfo_bxe=>grid%winfo_bxe
   winfo_bys=>grid%winfo_bys
   winfo_bye=>grid%winfo_bye
-
+  
   IIV=>grid%IIV
   JJV=>grid%JJV
   VBWGT1=>grid%VBWGT1
   VBWGT2=>grid%VBWGT2
   VBWGT3=>grid%VBWGT3
   VBWGT4=>grid%VBWGT4
-
+  
   IIH=>grid%IIH
   JJH=>grid%JJH
   HBWGT1=>grid%HBWGT1

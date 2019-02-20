@@ -4,7 +4,7 @@
 ! SUBPROGRAM:    jpcunpack
 !   PRGMMR: Gilbert          ORG: W/NP11    DATE: 2002-12-17
 !
-! ABSTRACT: This subroutine unpacks a data field that was packed into a
+! ABSTRACT: This subroutine unpacks a data field that was packed into a 
 !   JPEG2000 code stream
 !   using info from the GRIB2 Data Representation Template 5.40 or 5.40000.
 !

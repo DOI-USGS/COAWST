@@ -4,9 +4,9 @@ MODULE module_sf_3dpwp
 
 CONTAINS
 
-!-------------------------------------------------------------------
-! cyl: Implemented a three-dimensional ocean model (DPWP)    Chiaying Lee RSMAS/UM
-!---------------------------------------------------------------------------
+!-------------------------------------------------------------------          
+! cyl: Implemented a three-dimensional ocean model (DPWP)    Chiaying Lee RSMAS/UM        
+!---------------------------------------------------------------------------          
        SUBROUTINE DPWP   (ims,ime, jms,jme, kms,kme,its,ite, jts,jte, kts,kte, &
                           ids,ide, jds,jde, kds,kde,okms, okme,                &
                           om_tmp,om_s,om_u, om_v, om_density, om_depth, om_ml,   &
@@ -17,22 +17,22 @@ CONTAINS
 !----------------------------------------------------------------------------
         implicit none
 !----------------------------------------------------------------------------
-! Subroutine DPWP is a three-dimensional full physics ocean circulation model based
-! on Price et al. (1994, JPO). This ocean model is coupled with WRF
-! at every ocean time step. It is developed as a part of the University of Miami Coupled Model
+! Subroutine DPWP is a three-dimensional full physics ocean circulation model based 
+! on Price et al. (1994, JPO). This ocean model is coupled with WRF    
+! at every ocean time step. It is developed as a part of the University of Miami Coupled Model 
 ! (UMCM, Chen et al. 2012, JAS). A detailed description of the coupling process can
-! be found in Lee and Chen (2013, MWR).
+! be found in Lee and Chen (2013, MWR). 
 !
-! This ocean model can be used with multi-nested grids the same manner as in WRF. It is recommended
-! to use grid spacing > 3 km for the ocean model while WRF can be configured at smaller
+! This ocean model can be used with multi-nested grids the same manner as in WRF. It is recommended 
+! to use grid spacing > 3 km for the ocean model while WRF can be configured at smaller    
 ! grid spacing then the ocean model.
 !
-! The ocean model can be initialized with observed satellite SST or global model analyzed SST.
-! The and upper ocean temperature and sanility profiles can be initialized from climatology,
+! The ocean model can be initialized with observed satellite SST or global model analyzed SST. 
+! The and upper ocean temperature and sanility profiles can be initialized from climatology, 
 ! in-situ observations, and global ocean model analysis fields.
 !
 !-- om_tmp	3-dimensional ocean temperature (k)
-!-- om_s	3-dimensional ocean salinity (psu)
+!-- om_s	3-dimensional ocean salinity (psu) 
 !-- om_u	3-dimensional ocean current in x-direction (ms-1)
 !-- om_v	3-dimensional ocean current in y-direction (ms-1)
 !-- om_depth	3-dimensional ocean depth (m)
@@ -40,7 +40,7 @@ CONTAINS
 !-- om_tini	temperature reference profile based on ocean initial condition (k)
 !-- om_sini	salinity reference profile based on ocean initial condition (psu)
 !-- om_dt 	ocean timestep (s)
-!-------------------------------------------------------------------------------
+!-------------------------------------------------------------------------------   
 
         !logical number to control the dynamics of ocean model
         integer :: noasym, nonlcl, nodeep, nopg, idia
@@ -123,7 +123,7 @@ CONTAINS
        sva = 0.0
        uva = 0.0
        pgx = 0.0
-       pgy = 0.0
+       pgy = 0.0 
        !----------------------------------------------------------------
        !  these flags control the dynamics of the model:
        !
@@ -167,7 +167,7 @@ CONTAINS
        rb = 0.65
        rg = 0.25
        cp = 1.5
-
+  
        do i = i_start-1, i_end+1
          do j = j_start-1, j_end+1
           f (i,j)= 2.0*7.29e-5*sin(om_lat(i,j)*d2r)
@@ -236,7 +236,7 @@ CONTAINS
     89 continue
       do 635 j = j_start, j_end
         do 635 i = i_start, i_end
-
+                                                                                                      
          jp = j + 1
          jm = j - 1
          ip = i + 1
@@ -248,7 +248,7 @@ CONTAINS
           om_w(i,k,j) = 0.0
          enddo
        else
-
+         
          do 6381 k = 1, okme
            mrdx = rdx* msfu(i,j)
            mrdy = rdy* msfv(i,j)
@@ -264,7 +264,7 @@ CONTAINS
           do k = 2, okme
            om_w(i,k,j) = om_w(i,k,j)+om_w(i,k-1,j)
           enddo
-
+                                                                                                      
        endif
   635 continue
       do 6328 k = 1, okme
@@ -314,7 +314,7 @@ CONTAINS
            endif
         enddo
 
-        if (om_tmp(i,1,j) .gt. 0) then
+        if (om_tmp(i,1,j) .gt. 0) then 
            pp (i,okme,j) = -g*dz(i,okme,j)*(aalpha(i,okme,j)*(om_tmp(i,okme,j)-trr(i,okme,j))+ &
                            bbeta(i,okme,j)*(om_s(i,okme,j)-srr(i,okme,j)))
 
@@ -324,7 +324,7 @@ CONTAINS
                           bbeta(i,kk,j)*(om_s(i,kk,j)-srr(i,kk,j)))+pp(i,kk+1,j)
 
    632     continue
-        endif
+        endif 
 
 
  6327 continue
@@ -381,7 +381,7 @@ CONTAINS
 
                  if ( k .eq. 1) go to 3323
                     wavg = 0.5*(om_w(i,k-1,j) + om_w(i,k,j))
-
+                                                                                                      
                     km = k - 1
                     kp = k + 1
                     if (k .eq. okme) kp = k
@@ -417,11 +417,11 @@ CONTAINS
                      st(i,k,j) = st(i,k,j) + sha*hascale + sva*vascale
                      ut(i,k,j) = ut(i,k,j) + uha*hascale + uva*vascale  - pgx*pscale/1023.0
                      vt(i,k,j) = vt(i,k,j) + vha*hascale + vva*vascale  - pgy*pscale/1023.0
-                 endif
+                 endif                                                                                           
     420       continue
 
     410 continue
-
+                                                                                                      
 
 
         do 700 k = 1, okme
@@ -486,10 +486,10 @@ CONTAINS
      700  enddo
 
 
-
+                                                                                                      
 !!end radiation bc
 ! apply the wind stress and air-sea heat hluxes, and deepen the mixed layer by 1Dpwp
-
+                                                                                                      
 !  do 510 i = i_start, i_end
 !        do 510 j = j_start, j_end
   do 510 i = its, ite
@@ -564,41 +564,41 @@ CONTAINS
       return
 
     END subroutine DPWP
-! cyl: end 3D PWP
+! cyl: end 3D PWP 
 !------------------------------------------------------------------
-! cyl: add 1D PWP
+! cyl: add 1D PWP 
         SUBROUTINE PWP(i,j,k,ims, ime, jms, jme, okms,okme,om_tmp,om_s, &
         om_density, om_depth,om_u, om_v,om_ml,om_lat, om_lon,    &
          HFX, QFX,LH, GSW, GLW, UST,UAIR,VAIR,STBOLT,DELTSM,aalpha,bbeta,&
          om_tini, om_sini,trr,srr,omdt)
         implicit none
 !----------------------------------------------------------------------------
-! Subroutine PWP is a one-dimensional vertical mixing scheme used in DPWP
-! based on on Price et al. (1994, JPO).
+! Subroutine PWP is a one-dimensional vertical mixing scheme used in DPWP 
+! based on on Price et al. (1994, JPO).   
 !----------------------------------------------------------------------------
 
 
-        integer i, j, k
+        integer i, j, k                                  
         integer ,intent(in) ::ims, ime, jms, jme, okms,okme            !dimensions
-        integer ::ml,kml,mml
+        integer ::ml,kml,mml                               
         real, dimension(okms:okme), intent(inout):: om_tmp, om_s,                &
               om_density,om_depth
         real, dimension(okms:okme),intent(inout):: om_u, om_v
-
-        real,intent(inout) :: om_ml
+                                                      
+        real,intent(inout) :: om_ml         
         real,intent(inout) :: om_lat, om_lon
         real TSK
         real,intent(in) :: HFX, QFX,LH, GSW, GLW, ust,STBOLT,DELTSM
-
+                                                      
         real, dimension(okms:okme)::absrb,u,v
-        real dt, dz
+        real dt, dz                                      
         real  :: tauxair, tauyair, taux, tauy,                     &
               wspd
-
+                                                      
         real d2r, g, hcon, f, tr, sr, dr, alpha, beta, energy, sg, &
             ang,dml
-
-        real ro, rhoair, cpw
+                                                     
+        real ro, rhoair, cpw                             
         real beta1, beta2, ql, qi
         real sipe
         real rb,rv, rvc, delr, duv,rg,du,dv
@@ -657,7 +657,7 @@ CONTAINS
              call mix1(om_v, ml, i, j,ims,ime,jms,jme,okms,okme,om_depth)
              call mix1(om_density, ml, i, j,ims,ime,jms,jme,okms,okme,om_depth)
           endif
-           ! above this, should be statically stable
+           ! above this, should be statically stable 
 
           ang = f*dt/2.
           sa = sin(ang)
@@ -738,7 +738,7 @@ CONTAINS
       return
       END SUBROUTINE PWP
 ! cyl : end PWP
-! cyl : PWP's subrouting
+! cyl : PWP's subrouting  
 ! cyl--------------------
 SUBROUTINE absorb(i,j, ims, ime, jms, jme, okms,okme,beta1, &
        beta2, absrb, om_depth,GSW,GLW)

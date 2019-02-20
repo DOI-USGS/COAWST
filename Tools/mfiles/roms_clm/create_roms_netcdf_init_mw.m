@@ -44,9 +44,13 @@ evdimID = netcdf.defDim(nc_init,'ev',M);
 
 s_rhodimID = netcdf.defDim(nc_init,'sc_r',N);
 s_wdimID = netcdf.defDim(nc_init,'sc_w',N+1);
-NbeddimID = netcdf.defDim(nc_init,'Nbed',Nbed);
 timedimID = netcdf.defDim(nc_init,'time',1);
-NvegdimID = netcdf.defDim(nc_init,'Nveg',NVEG);
+if (NNS+NCS>0)
+  NbeddimID = netcdf.defDim(nc_init,'Nbed',Nbed);
+end
+if (NVEG>0)
+  NvegdimID = netcdf.defDim(nc_init,'Nveg',NVEG);
+end
 
 %% Variables and attributes:
 disp(' ## Defining Dimensions, Variables, and Attributes...')
@@ -204,83 +208,85 @@ for mm=1:NNS
     eval(['netcdf.putAtt(nc_init,bedload_Vsand_',count,'ID,''field'',''bedload_Vsand_',count,', scalar, series'');'])
 end
 
-bed_thicknessID = netcdf.defVar(nc_init,'bed_thickness','double',[xrhodimID erhodimID NbeddimID timedimID]);
-netcdf.putAtt(nc_init,bed_thicknessID,'long_name','sediment layer thickness');
-netcdf.putAtt(nc_init,bed_thicknessID,'units','meter');
-netcdf.putAtt(nc_init,bed_thicknessID,'time','ocean_time');
-netcdf.putAtt(nc_init,bed_thicknessID,'field','bed thickness, scalar, series');
+if (NNS+NCS>0)
+  bed_thicknessID = netcdf.defVar(nc_init,'bed_thickness','double',[xrhodimID erhodimID NbeddimID timedimID]);
+  netcdf.putAtt(nc_init,bed_thicknessID,'long_name','sediment layer thickness');
+  netcdf.putAtt(nc_init,bed_thicknessID,'units','meter');
+  netcdf.putAtt(nc_init,bed_thicknessID,'time','ocean_time');
+  netcdf.putAtt(nc_init,bed_thicknessID,'field','bed thickness, scalar, series');
 
-bed_ageID = netcdf.defVar(nc_init,'bed_age','double',[xrhodimID erhodimID NbeddimID timedimID]);
-netcdf.putAtt(nc_init,bed_ageID,'long_name','sediment layer age');
-netcdf.putAtt(nc_init,bed_ageID,'units','day');
-netcdf.putAtt(nc_init,bed_ageID,'time','ocean_time');
-netcdf.putAtt(nc_init,bed_ageID,'field','bed age, scalar, series');
+  bed_ageID = netcdf.defVar(nc_init,'bed_age','double',[xrhodimID erhodimID NbeddimID timedimID]);
+  netcdf.putAtt(nc_init,bed_ageID,'long_name','sediment layer age');
+  netcdf.putAtt(nc_init,bed_ageID,'units','day');
+  netcdf.putAtt(nc_init,bed_ageID,'time','ocean_time');
+  netcdf.putAtt(nc_init,bed_ageID,'field','bed age, scalar, series');
 
-bed_porosityID = netcdf.defVar(nc_init,'bed_porosity','double',[xrhodimID erhodimID NbeddimID timedimID]);
-netcdf.putAtt(nc_init,bed_porosityID,'long_name','sediment layer porosity');
-netcdf.putAtt(nc_init,bed_porosityID,'units','nondimensional');
-netcdf.putAtt(nc_init,bed_porosityID,'time','ocean_time');
-netcdf.putAtt(nc_init,bed_porosityID,'field','bed porosity, scalar, series');
+  bed_porosityID = netcdf.defVar(nc_init,'bed_porosity','double',[xrhodimID erhodimID NbeddimID timedimID]);
+  netcdf.putAtt(nc_init,bed_porosityID,'long_name','sediment layer porosity');
+  netcdf.putAtt(nc_init,bed_porosityID,'units','nondimensional');
+  netcdf.putAtt(nc_init,bed_porosityID,'time','ocean_time');
+  netcdf.putAtt(nc_init,bed_porosityID,'field','bed porosity, scalar, series');
 
-bed_biodiffID = netcdf.defVar(nc_init,'bed_biodiff','double',[xrhodimID erhodimID NbeddimID timedimID]);
-netcdf.putAtt(nc_init,bed_biodiffID,'long_name','biodiffusivity at bottom of each layer');
-netcdf.putAtt(nc_init,bed_biodiffID,'units','meter2 second-1');
-netcdf.putAtt(nc_init,bed_biodiffID,'time','ocean_time');
-netcdf.putAtt(nc_init,bed_biodiffID,'field','bed biodiffusivity, scalar, series');
+  bed_biodiffID = netcdf.defVar(nc_init,'bed_biodiff','double',[xrhodimID erhodimID NbeddimID timedimID]);
+  netcdf.putAtt(nc_init,bed_biodiffID,'long_name','biodiffusivity at bottom of each layer');
+  netcdf.putAtt(nc_init,bed_biodiffID,'units','meter2 second-1');
+  netcdf.putAtt(nc_init,bed_biodiffID,'time','ocean_time');
+  netcdf.putAtt(nc_init,bed_biodiffID,'field','bed biodiffusivity, scalar, series');
 
-grain_diameterID = netcdf.defVar(nc_init,'grain_diameter','double',[xrhodimID erhodimID timedimID]);
-netcdf.putAtt(nc_init,grain_diameterID,'long_name','sediment median grain diameter size');
-netcdf.putAtt(nc_init,grain_diameterID,'units','meter');
-netcdf.putAtt(nc_init,grain_diameterID,'time','ocean_time');
-netcdf.putAtt(nc_init,grain_diameterID,'field','grain diameter, scalar, series');
+  grain_diameterID = netcdf.defVar(nc_init,'grain_diameter','double',[xrhodimID erhodimID timedimID]);
+  netcdf.putAtt(nc_init,grain_diameterID,'long_name','sediment median grain diameter size');
+  netcdf.putAtt(nc_init,grain_diameterID,'units','meter');
+  netcdf.putAtt(nc_init,grain_diameterID,'time','ocean_time');
+  netcdf.putAtt(nc_init,grain_diameterID,'field','grain diameter, scalar, series');
 
-grain_densityID = netcdf.defVar(nc_init,'grain_density','double',[xrhodimID erhodimID timedimID]);
-netcdf.putAtt(nc_init,grain_densityID,'long_name','sediment median grain density');
-netcdf.putAtt(nc_init,grain_densityID,'units','kilogram meter-3');
-netcdf.putAtt(nc_init,grain_densityID,'time','ocean_time');
-netcdf.putAtt(nc_init,grain_densityID,'field','grain density, scalar, series');
+  grain_densityID = netcdf.defVar(nc_init,'grain_density','double',[xrhodimID erhodimID timedimID]);
+  netcdf.putAtt(nc_init,grain_densityID,'long_name','sediment median grain density');
+  netcdf.putAtt(nc_init,grain_densityID,'units','kilogram meter-3'); 
+  netcdf.putAtt(nc_init,grain_densityID,'time','ocean_time');
+  netcdf.putAtt(nc_init,grain_densityID,'field','grain density, scalar, series');
 
-settling_velID = netcdf.defVar(nc_init,'settling_vel','double',[xrhodimID erhodimID timedimID]);
-netcdf.putAtt(nc_init,settling_velID,'long_name','sediment median grain settling velocity');
-netcdf.putAtt(nc_init,settling_velID,'units','meter second-1');
-netcdf.putAtt(nc_init,settling_velID,'time','ocean_time');
-netcdf.putAtt(nc_init,settling_velID,'field','settling vel, scalar, series');
+  settling_velID = netcdf.defVar(nc_init,'settling_vel','double',[xrhodimID erhodimID timedimID]);
+  netcdf.putAtt(nc_init,settling_velID,'long_name','sediment median grain settling velocity');
+  netcdf.putAtt(nc_init,settling_velID,'units','meter second-1');
+  netcdf.putAtt(nc_init,settling_velID,'time','ocean_time');
+  netcdf.putAtt(nc_init,settling_velID,'field','settling vel, scalar, series');
 
-erosion_stressID = netcdf.defVar(nc_init,'erosion_stress','double',[xrhodimID erhodimID timedimID]);
-netcdf.putAtt(nc_init,erosion_stressID,'long_name','sediment median critical erosion stress');
-netcdf.putAtt(nc_init,erosion_stressID,'units','meter2 second-2');
-netcdf.putAtt(nc_init,erosion_stressID,'time','ocean_time');
-netcdf.putAtt(nc_init,erosion_stressID,'field','erosion stress, scalar, series');
+  erosion_stressID = netcdf.defVar(nc_init,'erosion_stress','double',[xrhodimID erhodimID timedimID]);
+  netcdf.putAtt(nc_init,erosion_stressID,'long_name','sediment median critical erosion stress');
+  netcdf.putAtt(nc_init,erosion_stressID,'units','meter2 second-2');
+  netcdf.putAtt(nc_init,erosion_stressID,'time','ocean_time');
+  netcdf.putAtt(nc_init,erosion_stressID,'field','erosion stress, scalar, series');
 
-ripple_lengthID = netcdf.defVar(nc_init,'ripple_length','double',[xrhodimID erhodimID timedimID]);
-netcdf.putAtt(nc_init,ripple_lengthID,'long_name','bottom ripple length');
-netcdf.putAtt(nc_init,ripple_lengthID,'units','meter');
-netcdf.putAtt(nc_init,ripple_lengthID,'time','ocean_time');
-netcdf.putAtt(nc_init,ripple_lengthID,'field','ripple length, scalar, series');
+  ripple_lengthID = netcdf.defVar(nc_init,'ripple_length','double',[xrhodimID erhodimID timedimID]);
+  netcdf.putAtt(nc_init,ripple_lengthID,'long_name','bottom ripple length');
+  netcdf.putAtt(nc_init,ripple_lengthID,'units','meter');
+  netcdf.putAtt(nc_init,ripple_lengthID,'time','ocean_time');
+  netcdf.putAtt(nc_init,ripple_lengthID,'field','ripple length, scalar, series');
 
-ripple_heightID = netcdf.defVar(nc_init,'ripple_height','double',[xrhodimID erhodimID timedimID]);
-netcdf.putAtt(nc_init,ripple_heightID,'long_name','bottom ripple height');
-netcdf.putAtt(nc_init,ripple_heightID,'units','meter');
-netcdf.putAtt(nc_init,ripple_heightID,'time','ocean_time');
-netcdf.putAtt(nc_init,ripple_heightID,'field','ripple height, scalar, series');
+  ripple_heightID = netcdf.defVar(nc_init,'ripple_height','double',[xrhodimID erhodimID timedimID]);
+  netcdf.putAtt(nc_init,ripple_heightID,'long_name','bottom ripple height');
+  netcdf.putAtt(nc_init,ripple_heightID,'units','meter');
+  netcdf.putAtt(nc_init,ripple_heightID,'time','ocean_time');
+  netcdf.putAtt(nc_init,ripple_heightID,'field','ripple height, scalar, series');
 
-dmix_offsetID = netcdf.defVar(nc_init,'dmix_offset','double',[xrhodimID erhodimID timedimID]);
-netcdf.putAtt(nc_init,dmix_offsetID,'long_name','dmix erodibility profile offset');
-netcdf.putAtt(nc_init,dmix_offsetID,'units','meter');
-netcdf.putAtt(nc_init,dmix_offsetID,'time','ocean_time');
-netcdf.putAtt(nc_init,dmix_offsetID,'field','dmix_offset, scalar, series');
+  dmix_offsetID = netcdf.defVar(nc_init,'dmix_offset','double',[xrhodimID erhodimID timedimID]);
+  netcdf.putAtt(nc_init,dmix_offsetID,'long_name','dmix erodibility profile offset');
+  netcdf.putAtt(nc_init,dmix_offsetID,'units','meter');
+  netcdf.putAtt(nc_init,dmix_offsetID,'time','ocean_time');
+  netcdf.putAtt(nc_init,dmix_offsetID,'field','dmix_offset, scalar, series');
 
-dmix_slopeID = netcdf.defVar(nc_init,'dmix_slope','double',[xrhodimID erhodimID timedimID]);
-netcdf.putAtt(nc_init,dmix_slopeID,'long_name','dmix erodibility profile slope');
-netcdf.putAtt(nc_init,dmix_slopeID,'units','_');
-netcdf.putAtt(nc_init,dmix_slopeID,'time','ocean_time');
-netcdf.putAtt(nc_init,dmix_slopeID,'field','dmix_slope, scalar, series');
+  dmix_slopeID = netcdf.defVar(nc_init,'dmix_slope','double',[xrhodimID erhodimID timedimID]);
+  netcdf.putAtt(nc_init,dmix_slopeID,'long_name','dmix erodibility profile slope');
+  netcdf.putAtt(nc_init,dmix_slopeID,'units','_');
+  netcdf.putAtt(nc_init,dmix_slopeID,'time','ocean_time');
+  netcdf.putAtt(nc_init,dmix_slopeID,'field','dmix_slope, scalar, series');
 
-dmix_timeID = netcdf.defVar(nc_init,'dmix_time','double',[xrhodimID erhodimID timedimID]);
-netcdf.putAtt(nc_init,dmix_timeID,'long_name','dmix erodibility profile time scale');
-netcdf.putAtt(nc_init,dmix_timeID,'units','seconds');
-netcdf.putAtt(nc_init,dmix_timeID,'time','ocean_time');
-netcdf.putAtt(nc_init,dmix_timeID,'field','dmix_time, scalar, series');
+  dmix_timeID = netcdf.defVar(nc_init,'dmix_time','double',[xrhodimID erhodimID timedimID]);
+  netcdf.putAtt(nc_init,dmix_timeID,'long_name','dmix erodibility profile time scale');
+  netcdf.putAtt(nc_init,dmix_timeID,'units','seconds');
+  netcdf.putAtt(nc_init,dmix_timeID,'time','ocean_time');
+  netcdf.putAtt(nc_init,dmix_timeID,'field','dmix_time, scalar, series');
+end
 
 if (NVEG>0)
     vegID = netcdf.defVar(nc_init,'plant_height','double',[xrhodimID erhodimID NvegdimID timedimID]);

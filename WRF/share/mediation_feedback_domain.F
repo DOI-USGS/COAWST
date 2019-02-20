@@ -225,7 +225,7 @@ SUBROUTINE med_feedback_domain ( parent_grid , nested_grid )
    ! NOTE: the intermediate grid is a grid with the spatial extent and
    ! processor decomposition of the nest, at the resolution of the
    ! parent.  It is stored as nested_grid%intermediate_grid.
-
+ 
    ! STEP 1: Copy from parent grid to intermediate grid:
    grid => parent_grid
 #if (NMM_NEST==1)

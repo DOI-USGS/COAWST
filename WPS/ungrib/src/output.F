@@ -55,7 +55,7 @@ subroutine output(hdate, nlvl, maxlvl, plvl, interval, iflag, out_format, prefix
 ! DATELEN:  length of date strings to use for our output file names.
   integer :: datelen
 
-! Decide the length of date strings to use for output file names.
+! Decide the length of date strings to use for output file names.  
 ! DATELEN is 13 for hours, 16 for minutes, and 19 for seconds.
   if (mod(interval,3600) == 0) then
      datelen = 13
@@ -64,7 +64,7 @@ subroutine output(hdate, nlvl, maxlvl, plvl, interval, iflag, out_format, prefix
   else
      datelen = 19
   endif
-
+ 
   call get_plvls(plvl, maxlvl, nlvl)
 
   if ( debug_level .ge. 0 ) then
@@ -129,7 +129,7 @@ subroutine output(hdate, nlvl, maxlvl, plvl, interval, iflag, out_format, prefix
   write(*,FMT='(79("-"))')
   call mprintf(.true.,LOGFILE,"-------------------------------------------------")
   endif
-
+  
   if (iflag.eq.1) then
      if (nfiles.eq.0) then
         open(iunit, file=trim(get_path(prefix))//'PFILE:'//HDATE(1:datelen), form='unformatted', &
@@ -180,7 +180,7 @@ subroutine output(hdate, nlvl, maxlvl, plvl, interval, iflag, out_format, prefix
         endif
         units = dunits(mm)
         if ((iflag.eq.1).or.(iflag.eq.2.and.desc(1:1).ne.' ')) then
-          if (is_there(ilev,field)) then
+          if (is_there(ilev,field)) then 
             call get_dims(ilev, field)
 
 !MGD            if ( debug_level .gt. 100 ) then
@@ -217,7 +217,7 @@ subroutine output(hdate, nlvl, maxlvl, plvl, interval, iflag, out_format, prefix
                 "Unrecognized map%%igrid: %i in subroutine output 1",i1=map%igrid)
               endif
               write (iunit) scr2d
-	    else if (out_format(1:2) .eq. 'WP') then
+	    else if (out_format(1:2) .eq. 'WP') then   
                 call mprintf(.true.,DEBUG, &
          "writing in WPS format  iunit = %i, map%%igrid = %i",i1=iunit,i2=map%igrid)
               write(iunit) 5

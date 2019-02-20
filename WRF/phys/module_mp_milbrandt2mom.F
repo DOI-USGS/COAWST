@@ -502,7 +502,7 @@ END SUBROUTINE cfg
                   Qh(i,k)>=x_low .and. Qh(i,k)<Q_high  )) then
            print*,'** WARNING IN MICRO **'
            print*, '** src,i,k,Qc,Qr,Qi,Qn,Qg,Qh: ',source_ind,i,k,Qc(i,k),Qr(i,k),       &
-                   Qi(i,k),Qn(i,k),Qg(i,k),Qh(i,k)
+                   Qi(i,k),Qn(i,k),Qg(i,k),Qh(i,k)  
            trap = .true.
         endif
         if (.not.(Nc(i,k)>=x_low .and. Nc(i,k)<N_high .and.                               &
@@ -1555,7 +1555,7 @@ SUBROUTINE sedi_1D(QX1d,NX1d,cat,DE1d,iDE1d,iDP1d,gamfact1d,epsQ,epsN,dmx,VxMax,
  !Compute thickness of layers for sedimentation calculation: (optional use if height coordiates)
  ! note - from 'cldoptx4.ftn':  dz(i,k)= dp(i,k)/aird(i,k)*rec_grav
   iDZ = DE*GRAV*iDP
-  DZ  = 1./iDZ
+  DZ  = 1./iDZ  
 
  !Compute height above surface (zheight) and height above lowest prog level (zz):
   zheight(:,kbot)= DZ(:,kbot)
@@ -3557,7 +3557,7 @@ END MODULE my2_mod
 
 
       SUBROUTINE mp_milbrandt2mom_driver(qv, qc, qr, qi, qs, qg, qh, nc, nr, ni, ns, ng,  &
-                              nh, th, pii, p, w, dz, dt_in, itimestep, p8w,               &
+                              nh, th, pii, p, w, dz, dt_in, itimestep, p8w,               & 
                               RAINNC, RAINNCV, SNOWNC, SNOWNCV, GRPLNC, GRPLNCV,          &
                               HAILNC, HAILNCV, SR, Zet,                                   &
                               ids,ide, jds,jde, kds,kde,                                  &  ! domain dims
@@ -3574,7 +3574,7 @@ END MODULE my2_mod
                             qv,qc,qr,qi,qs,qg,qh,nc,nr,ni,ns,ng,nh,th,Zet
       real, dimension(ims:ime, kms:kme, jms:jme), intent(in)::                           &
                             pii,p,w,dz
-      real, dimension(ims:ime, kms:kme, jms:jme), intent(in):: p8w
+      real, dimension(ims:ime, kms:kme, jms:jme), intent(in):: p8w                                  
       real, dimension(ims:ime, jms:jme), intent(inout)::                                 &
                             RAINNC,RAINNCV,SNOWNC,SNOWNCV,GRPLNC,GRPLNCV,HAILNC,HAILNCV, &
                             SR
@@ -3643,13 +3643,13 @@ END MODULE my2_mod
 !           write(6,'(a8,6e15.5)') 'W,T,qv: ',minval( w(its:ite,kts:kte,jts:jte)),maxval( w(its:ite,kts:kte,jts:jte)),minval(t3d(its:ite,kts:kte,jts:jte)),&
 !                                             maxval(t3d(its:ite,kts:kte,jts:jte)),minval(qv(its:ite,kts:kte,jts:jte)),maxval(qv(its:ite,kts:kte,jts:jte))
 !       endif
-
+      
       do j = jts, jte
 
          t2d(:,:) = th(its:ite,kts:kte,j)*pii(its:ite,kts:kte,j)
          p2d(:,:) = p(its:ite,kts:kte,j)
       !   p_sfc(:) = p2d(:,k2d_max)
-         p_sfc(:) = p8w(its:ite,kms, j)
+         p_sfc(:) = p8w(its:ite,kms, j)  
 
          do i = its, ite
             i2d = i-its+1

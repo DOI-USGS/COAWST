@@ -1,4 +1,4 @@
-
+   
    module module_trajectory
 
    use module_driver_constants,  only : max_domains
@@ -61,7 +61,7 @@
    integer, parameter :: dchm_pkg = 6
    real, parameter    :: missing_val = -9999.
    real, parameter    :: zero_val    = 0.
-
+   
    integer :: n_dom        ! domain count
    integer, pointer :: n_vals                         ! wrking count of time points in buffer
    integer, target  :: n_vals_dm(max_domains)         ! count of time points in buffer per domain
@@ -372,7 +372,7 @@ input_file: &
           traj_type(trj)%msc_ndx(:) = 0
           traj_type(trj)%dchm_ndx(:) = 0
           traj_type(trj)%n_chm_var = 0 ; traj_type(trj)%n_ct_var = 0
-          traj_type(trj)%n_hyd_var = 0 ; traj_type(trj)%n_trc_var = 0
+          traj_type(trj)%n_hyd_var = 0 ; traj_type(trj)%n_trc_var = 0 
           traj_type(trj)%n_dyn_var = 0 ; traj_type(trj)%n_msc_var = 0
           traj_type(trj)%n_dchm_var = 0
           traj_type(trj)%is_stationary = .false.
@@ -737,9 +737,9 @@ has_trajectories: &
     do trj = 1,n_traj
       n = traj_type(trj)%n_dchm_var
       if( n > 0 .and.  any( traj_type(trj)%dchm_ndx(1:n-1) > traj_type(trj)%dchm_ndx(2:n) ) ) then
-        trj_mask(:num_chem) = .false.
+        trj_mask(:num_chem) = .false. 
         do m = 1,n
-          trj_mask(traj_type(trj)%dchm_ndx(m)) = .true.
+          trj_mask(traj_type(trj)%dchm_ndx(m)) = .true. 
         end do
         traj_type(trj)%dchm_ndx(:n) = pack( (/ (m,m=1,num_chem) /),trj_mask(:num_chem) )
         do m = 1,n
@@ -1256,12 +1256,12 @@ pkg_loop:  do pkg = 1,pkg_max
              enddo
              if( valid ) then
                cnt = cnt + 1
-               St_Vars(cnt)%Varname = p%Varname
-               St_Vars(cnt)%Description = p%Description
-               St_Vars(cnt)%Units   = p%Units
-               St_Vars(cnt)%MemOrd  = p%MemoryOrder
+               St_Vars(cnt)%Varname = p%Varname 
+               St_Vars(cnt)%Description = p%Description 
+               St_Vars(cnt)%Units   = p%Units 
+               St_Vars(cnt)%MemOrd  = p%MemoryOrder 
                St_Vars(cnt)%Stagger = p%Stagger
-               St_Vars(cnt)%Ndim = p%Ndim
+               St_Vars(cnt)%Ndim = p%Ndim 
                St_Vars(cnt)%rfield_3d => p%rfield_3d
              endif
            elseif( p%Ndim == 4 ) then
@@ -1278,9 +1278,9 @@ pkg_loop:  do pkg = 1,pkg_max
                if( valid ) then
                  cnt = cnt + 1
                  St_Vars(cnt)%Varname = trim(p%dname_table(dm,n))
-                 St_Vars(cnt)%Description = p%Description
-                 St_Vars(cnt)%Units   = p%Units
-                 St_Vars(cnt)%MemOrd  = p%MemoryOrder
+                 St_Vars(cnt)%Description = p%Description 
+                 St_Vars(cnt)%Units   = p%Units 
+                 St_Vars(cnt)%MemOrd  = p%MemoryOrder 
                  St_Vars(cnt)%Stagger = p%Stagger
                  St_Vars(cnt)%Ndim = 3
                  St_Vars(cnt)%rfield_3d => p%rfield_4d(:,:,:,p%index_table(n,dm))
@@ -1367,7 +1367,7 @@ var_loop: &
          mask(n) = .true.
          ndx(n)  = m1
          exit
-       endif
+       endif 
      end do
      if( .not. mask(n) ) then
        write(err_mes,'(''scan_vars('',i2.2,''): '',a,'' not in '',a,'' opt'')') dm,trim(var_name),var_type
@@ -1686,7 +1686,7 @@ has_trajectories: &
      end do
 
 pkg_loop: &
-     do pkg = 1,pkg_max
+     do pkg = 1,pkg_max 
 pkg_has_active_traj: &
        if( any( pkg_is_active(:n_traj,pkg) ) ) then
 !-----------------------------------------------------------------------------

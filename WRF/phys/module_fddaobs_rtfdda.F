@@ -1,7 +1,3 @@
-#if ( HYBRID_COORD==1 )
-#define MU(...) (c1h(k)*XXPCXX(__VA_ARGS__)+c2h(k))
-#define XXPCXX(...) MU(__VA_ARGS__)
-#endif
 
 !WRF:MODEL_LAYER:PHYSICS
 !
@@ -22,7 +18,7 @@ MODULE module_fddaobs_rtfdda
 ! Nov. 2006
 !
 ! References:
-!
+!   
 !   Liu, Y., A. Bourgeois, T. Warner, S. Swerdlin and J. Hacker, 2005: An
 !     implementation of obs-nudging-based FDDA into WRF for supporting
 !     ATEC test operations. 2005 WRF user workshop. Paper 10.7.
@@ -31,7 +27,7 @@ MODULE module_fddaobs_rtfdda
 !     on "obs-nudging"-based FDDA for WRF-ARW: Verification using OSSE
 !     and performance of real-time forecasts. 2006 WRF user workshop. Paper 4.7.
 
-!
+!   
 !   Stauffer, D.R., and N.L. Seaman, 1994: Multi-scale four-dimensional data
 !     assimilation. J. Appl. Meteor., 33, 416-434.
 !
@@ -74,7 +70,7 @@ CONTAINS
                           iprt,                                        &
                           ids,ide, jds,jde, kds,kde,                   &
                           ims,ime, jms,jme, kms,kme,                   &
-                          its,ite, jts,jte, kts,kte)
+                          its,ite, jts,jte, kts,kte)     
 !-----------------------------------------------------------------------
 !  This routine does initialization for real time fdda obs-nudging.
 !
@@ -109,7 +105,7 @@ CONTAINS
   INTEGER , INTENT(IN) :: sfc_scheme_horiz ! horizontal spreading scheme for surf obs (wrf or orig mm5)
   INTEGER , INTENT(IN) :: sfc_scheme_vert  ! vertical spreading scheme for surf obs (orig or regime vif)
   REAL    , INTENT(IN) :: maxsnd_gap      ! max allowed pressure gap in soundings, for interp (centibars)
-  REAL, intent(in)     :: sfcfact      ! scale factor applied to time window for surface obs
+  REAL, intent(in)     :: sfcfact      ! scale factor applied to time window for surface obs  
   REAL, intent(in)     :: sfcfacr      ! scale fac applied to horiz rad of infl for sfc obs
   REAL, intent(in)     :: dpsmx        ! max press change allowed within hor rad of infl
   INTEGER , INTENT(IN) :: nudge_wind(maxdom)       ! wind-nudging flag
@@ -766,14 +762,14 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 ! the pob calculation, pob will be zero in all procs except the one that calculated
 ! it, and so pob is dm_summed over all procs and stored into varobs(5,n). So on
 ! subsequent passes, the dm_sum will not occur because varobs(5,n) will not have a
-! missing value. If this is not an obs-in-height,
+! missing value. If this is not an obs-in-height,  
 
         pob = 0.0
 
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
 !       Set mask for obs to be handled by this processor
         MP_LOCAL_DUMMASK(N) = TILE_MASK(IOB, JOB, its, ite, jts, jte)
-
+  
         IF ( MP_LOCAL_DUMMASK(N) ) THEN
 #endif
 
@@ -784,12 +780,12 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                (1.-DYOB_MS)*( (1.-DXOB_MS)*pbase(IOB_MS,K,JOB_MS) +     &
                                   DXOB_MS *pbase(IOB_MS+1,K,JOB_MS) ) + &
                    DYOB_MS* ( (1.-DXOB_MS)*pbase(IOB_MS,K,JOB_MS+1) +   &
-                                  DXOB_MS *pbase(IOB_MS+1,K,JOB_MS+1) ) )
+                                  DXOB_MS *pbase(IOB_MS+1,K,JOB_MS+1) ) )  
             ppbo(k) = .001*(                                            &
                (1.-DYOB_MS)*( (1.-DXOB_MS)*pp(IOB_MS,K,JOB_MS) +        &
                                   DXOB_MS *pp(IOB_MS+1,K,JOB_MS) ) +    &
                    DYOB_MS* ( (1.-DXOB_MS)*pp(IOB_MS,K,JOB_MS+1) +      &
-                                  DXOB_MS *pp(IOB_MS+1,K,JOB_MS+1) ) )
+                                  DXOB_MS *pp(IOB_MS+1,K,JOB_MS+1) ) )  
           enddo
 
 !ajb      20040119: Note based on bugfix for dot/cross points split across processors,
@@ -948,7 +944,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
         RC(N)=RKO(N)
 
       ENDDO      ! END FINE MESH LOOP OVER NSTA
-
+    
     ENDIF      ! end if(inest.eq.1)
 
 !   INITIALIZE THE ARRAY OF DIFFERENCES BETWEEN THE OBSERVATIONS
@@ -1126,7 +1122,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
 !           Store model surface pressure (not the error!) at U point.
             ERRF(7,N)=.001*( (1.-DXOB)*PUG1 + DXOB*PUG2 )
-
+  
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
           ENDIF       ! end IF( MP_LOCAL_UOBMASK(N) )
 #endif
@@ -1182,7 +1178,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !           INITIAL ERRF(IVAR,N) IS ZERO FOR OBSERVATIONS POINTS
 !           WITHIN THE DOMAIN, AND A LARGE DUMMY VALUE FOR POINTS
 !           OUTSIDE THE CURRENT DOMAIN
-
+  
 !           V COMPONENT WIND ERROR
             ERRF(2,N)=ERRF(2,N)+vratiob*VAROBS(2,N)-((1.-DZOB)*        &
                      ((1.-DyOB)*((1.-                                  &
@@ -1205,10 +1201,10 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !        write(6,*)
 !      endif
 
-
+  
 !           Store model surface pressure (not the error!) at V point.
             ERRF(8,N)=.001*( (1.-DYOB)*PVG1 + DYOB*PVG2 )
-
+  
 #if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
           ENDIF       ! end IF( MP_LOCAL_VOBMASK(N) )
 #endif
@@ -1498,7 +1494,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   LOGICAL FUNCTION TILE_MASK(iloc, jloc, its, ite, jts, jte)
 !------------------------------------------------------------------------------
 ! PURPOSE: Check to see if an i, j grid coordinate is in the tile index range.
-!
+!      
 ! Returns: TRUE if the grid coordinate (ILOC,JLOC) is in the tile defined by
 !                  tile-range indices (its,jts) and (ite,jte)
 !          FALSE otherwise.
@@ -1690,7 +1686,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   real :: wtsig(kms:kme),wt(ims:ime,kms:kme),wt2err(ims:ime,kms:kme)
   real :: rscale(ims:ime)           ! For converting to rho-coupled units.
   real :: wtij(ims:ime)             ! For holding weights in i-loop
-  real :: reserf(100)
+  real :: reserf(kms:kme)
   character*40 name
   character*3 chr_hr
   character(len=200) :: msg            ! Argument to wrf_message
@@ -1856,7 +1852,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
 !yliu
 !  note for sfc data: nsndlev=1 and njcsnd=1
-    nsndlev=int(nlevs_ob(n)-lev_in_ob(n))+1
+    nsndlev=int(nlevs_ob(n)-lev_in_ob(n))+1   
 
 ! yliu start -- set together with the other parts
 ! test: do the sounding levels as individual obs
@@ -2012,7 +2008,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                   WT(I,K)=WT(I,K)+TIMEWT*WTSIG(K)*WTIJ(i)
 
                   !See Reen et al. poster/extended abstract (P13) from 2013 WRF
-                  !User's Workshop regarding the following moisture innovation
+                  !User's Workshop regarding the following moisture innovation 
                   !scaling code.
                   !If dealing with moisture and user chose to scale certain
                   !negative QV innovations
@@ -2135,7 +2131,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
         endif   ! end check for obs in domain
 ! END SURFACE-LAYER OBS NUDGING
 
-      ELSE
+      ELSE    
 
 ! Compute temporal weight
         timewt = get_timewt(xtime,dtmin,twindo,1.,timeob(n))
@@ -2166,11 +2162,11 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
         MINI=MAX0(1,MINI)
 
 ! yliu start
-! use also obs outside of but close to this domain  -- upr data
+! use also obs outside of but close to this domain  -- upr data   
 !     if(   RA(N).LT.(0.-RINFAC*RINDX)
 !    & .or. RA(N).GT.float(IL)+RINFAC*RINDX
 !    & .or. RB(N).LT.(0.-RINFAC*RINDX)
-!    & .or. RB(N).GT.float(JL)+RINFAC*RINDX)then
+!    & .or. RB(N).GT.float(JL)+RINFAC*RINDX)then          
 !        print *, " skipped obs far away from this I-range"
 ! currently can use obs within this domain or ones very close to (1/3
 !   influence of radius in the coarse domain) this
@@ -2268,7 +2264,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
  326          continue
 
 ! yliu: single-level upper-air data will act either above or below the PBL top
-! ajb: Reset komin or komax. if kobs>kpbl_obs, komin=kpbl_obs+1, else komax=kpbl_obs
+! ajb: Reset komin or komax. if kobs>kpbl_obs, komin=kpbl_obs+1, else komax=kpbl_obs  
 
               if( (kpblt(i).le.komax) .and. (kpblt(i).ge.komin) ) then
                  kobs = 1
@@ -2368,7 +2364,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                   call wrf_message("in nudobs.F: sounding level messed up, stopping")
                 ENDIF
                 call wrf_error_fatal ( 'wrf_fddaobs_in: in4dob' )
-             endif
+             endif       
 !yliu end
 ! This is for a multi-level observation
 ! The trick here is that the sounding is "one ob". You don't
@@ -2388,7 +2384,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 !yliu end
 
               do k=komax,komin,-1
-
+  
                 pijk = .001*(pbase(i,k)+pp(i,k))
 
 ! if sigma level pressure is .gt. than the lowest ob level, don't interpolate
@@ -2403,16 +2399,16 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
 ! now interpolate sounding to this k
 ! yliu start-- recalculate WTij for each k-level
-!ajb      SLOPE = (RINFMN-RINFMX)/(pdoc(i,j)+PTOP-PFREE)
+!ajb      SLOPE = (RINFMN-RINFMX)/(pdoc(i,j)+PTOP-PFREE)        
                 slope = (RINFMN-RINFMX)/ (.001*pbase(i,1)-PFREE)
-                RINFAC=SLOPE*pijk+RINFMX-SLOPE*PFREE
-                RINFAC=AMAX1(RINFAC,RINFMN)
+                RINFAC=SLOPE*pijk+RINFMX-SLOPE*PFREE              
+                RINFAC=AMAX1(RINFAC,RINFMN)      
                 RINFAC=AMIN1(RINFAC,RINFMX)
-                RIS=RINDX*RINFAC*RINDX*RINFAC
-                RSQ=RX*RX+RY*RY
+                RIS=RINDX*RINFAC*RINDX*RINFAC  
+                RSQ=RX*RX+RY*RY               
 
 ! for upper-air data, keep D1 influence radii
-                WTIJ(i)=(RIS-RSQ)/(RIS+RSQ)
+                WTIJ(i)=(RIS-RSQ)/(RIS+RSQ)      
                 WTIJ(i)=AMAX1(0.0,WTIJ(i))
 ! yliu end
 ! Set the pressure difference between the current model level and
@@ -2532,7 +2528,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                 ENDIF
 
                 wtsig(k)=1.
-
+  
  1501           continue
 
 ! now calculate WT and WT2ERR for each i,j,k point                               cajb
@@ -2540,7 +2536,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
                 if(nudge_pbl .or. k.gt.kpblt(i)) then
 
                   WT(I,K)=WT(I,K)+TIMEWT*WTIJ(i)*wtsig(k)
-
+  
                   WT2ERR(I,K)=WT2ERR(I,K)+TIMEWT*TIMEWT*WTIJ(i)*WTIJ(i)*        &
                               reserf(k)*wtsig(k)*wtsig(k)
                 endif
@@ -2704,26 +2700,26 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
       ENDIF
 
 !        if(ivar .eq. 3 .and. i.eq.39 .and. j.eq.49) then
-!            scratch = GITQ*MU(I)*W2EOWT*TFACI*ISTQ*GFACTOR
+!            scratch = GITQ*(c1h(k)*MU(I)+c2h(k))*W2EOWT*TFACI*ISTQ*GFACTOR
 !            write(6,*) 'ATEN calc: k = ',k
 !            write(6,*) 'T before: aten = ',aten(i,k),' scr = ',scratch
-!            write(6,*) 'GITQ = ',gitq,' MU = ',MU(i),                  &
+!            write(6,*) 'GITQ = ',gitq,' MU = ',(c1h(k)*MU(i)+c2h(k)),                  &
 !                       ' W2EOWT = ',w2eowt
 !            write(6,*) ' TFACI = ',tfaci,' ISTQ = ',istq,              &
 !                       ' GFACTOR = ',gfactor
 !        endif
 
 !        if(ivar .eq. 4 .and. i.eq.39 .and. j.eq.29) then
-!            scratch = GITQ*MU(I)*W2EOWT*TFACI*ISTQ*GFACTOR
+!            scratch = GITQ*(c1h(k)*MU(I)+c2h(k))*W2EOWT*TFACI*ISTQ*GFACTOR
 !            write(6,*) 'ATEN calc: k = ',k
 !            write(6,*) 'Q before: aten = ',aten(i,k),' scr = ',scratch
-!            write(6,*) 'GITQ = ',gitq,' MU = ',MU(i),
+!            write(6,*) 'GITQ = ',gitq,' MU = ',(c1h(k)*MU(i)+c2h(k)),
 !     $                 ' W2EOWT = ',w2eowt
 !            write(6,*) ' TFACI = ',tfaci,' ISTQ = ',istq,
 !     $                 ' GFACTOR = ',gfactor
 !        endif
 
-      ATEN(i,k)=ATEN(i,k)+GITQ*MU(I)                       &
+      ATEN(i,k)=ATEN(i,k)+GITQ*(c1h(k)*MU(I)+c2h(k))                       &
                   *W2EOWT*TFACI*ISTQ       *GFACTOR   !yliu *GFACTOR
 
 !        if(ivar .eq. 3 .and. i.eq.39 .and. j.eq.49) then
@@ -2891,7 +2887,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   IMPLICIT NONE
 
   REAL,    INTENT(IN)  :: h                                ! height value (m)
-  INTEGER, INTENT(IN)  :: k_start, k_end                   ! loop bounds
+  INTEGER, INTENT(IN)  :: k_start, k_end                   ! loop bounds  
   INTEGER, INTENT(IN)  :: kds,kde                          ! vertical dim.
   INTEGER, INTENT(IN)  :: ims,ime, jms,jme, kms,kme        ! memory dims.
   REAL,    INTENT(IN)  :: pbbc(kds:kde)                    ! column base pressure (cb)
@@ -2957,7 +2953,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
 
   IMPLICIT NONE
 
-  INTEGER, INTENT(IN)  :: k_start, k_end                   ! Loop bounds
+  INTEGER, INTENT(IN)  :: k_start, k_end                   ! Loop bounds  
   INTEGER, INTENT(IN)  :: kds,kde                          ! vertical dim.
   INTEGER, INTENT(IN)  :: ims,ime, jms,jme, kms,kme        ! memory dims.
   REAL,    INTENT(IN)  :: z( ims:ime, kms:kme, jms:jme )   ! ht (m) on half-levels
@@ -3002,7 +2998,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   REAL, INTENT(IN)     :: a            ! base state lapse rate
   REAL, INTENT(IN)     :: g                ! gravity constant
   REAL, INTENT(IN)     :: r_d              ! gas constant
-  INTEGER, INTENT(IN)  :: k_start, k_end   ! Loop bounds
+  INTEGER, INTENT(IN)  :: k_start, k_end   ! Loop bounds  
   INTEGER, INTENT(IN)  :: kds,kde          ! vertical dim.
   INTEGER, INTENT(IN)  :: kms,kme          ! vertical memory dim.
   REAL, INTENT(IN)  :: znu( kms:kme )      ! eta values on half (mass) levels
@@ -3014,7 +3010,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
   real    :: pb(kms:kme)   ! pressure on half eta levels
   real    :: logterm       ! temporary for Z calculation
   real    :: ginv          ! 1/g
-
+  
   ginv = 1/g
 
 ! Compute base state pressure on half eta levels.
@@ -3107,7 +3103,7 @@ SUBROUTINE errob(inest, ub, vb, tb, t0, qvb, pbase, pp, rovcp,  &
     call wrf_message(msg1)
     call wrf_error_fatal ( 'print_vif_var: module_fddaobs_rtfdda STOP' )
   endif
-
+      
   call wrf_message(msg1)
 
 ! For this variable, print a description of the vif for each regime

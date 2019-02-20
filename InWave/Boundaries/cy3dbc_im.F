@@ -50,7 +50,7 @@
       USE mod_inwave_params
       USE mod_grid
       USE mod_boundary
-      USE mod_scalars
+      USE mod_scalars      
 !
 !  Imported variable declarations.
 !

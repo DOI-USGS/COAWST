@@ -237,13 +237,14 @@
           cff=1.5_r8*pi-Dwave(i,j)-angler(i,j)
           wavenx(i,j)=waven(i,j)*COS(cff)
           waveny(i,j)=waven(i,j)*SIN(cff)
-          sigma(i,j)=SQRT(g*waven(i,j)*TANH(waven(i,j)*Dstp(i,j)))
+          sigma(i,j)=SQRT(MAX(g*waven(i,j)*TANH(waven(i,j)*Dstp(i,j)),  &
+     &                    eps))
           waveE(i,j)=0.0625_r8*g*Hwave(i,j)*Hwave(i,j)
 !
 !  Compute wave celerity and kD
 !
           kD(i,j)=MIN(waven(i,j)*Dstp(i,j),kDmax)
-          wavec(i,j)=SQRT(g*owaven(i,j)*TANH(kD(i,j)))
+          wavec(i,j)=SQRT(MAX(g*owaven(i,j)*TANH(kD(i,j)),eps))
         END DO
       END DO
 !

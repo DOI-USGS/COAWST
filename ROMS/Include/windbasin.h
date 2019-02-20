@@ -1,7 +1,7 @@
 /*
-** svn $Id: windbasin.h 830 2017-01-24 21:21:11Z arango $
+** svn $Id: windbasin.h 889 2018-02-10 03:32:52Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2018 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2019 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -9,7 +9,7 @@
 ** Options for Wind-Driven Constant Coriolis Basin Test.
 **
 ** Application flag:   WINDBASIN
-** Input script:       ocean_windbasin.in
+** Input script:       roms_windbasin.in
 */
 
 #define ROMS_MODEL

@@ -143,7 +143,7 @@
 !!
 !          NUMVALS=(IEND-ISTART+1)*(JEND-JSTART+1)
 !          ALLOCATE(ARRAYX(NUMVALS),STAT=I)
-!
+! 
 !          KNT=0
 !!
 !          DO J=JSTART,JEND
@@ -208,7 +208,7 @@
      &                  ,IMS,IME,JMS,JME,KMS,KME                        &
      &                  ,ITS,ITE,JTS,JTE,KTS,KTE)
 !-----------------------------------------------------------------------
-!     QUILT_2 PULLS TOGETHER THE MPI TASKS' LOCAL ARRAYS ARRAYL AND
+!     QUILT_2 PULLS TOGETHER THE MPI TASKS' LOCAL ARRAYS ARRAYL AND 
 !     THEN QUILTS THEM TOGETHER INTO A SINGLE GLOBAL ARRAY ARRAYG.
 !
 !     AUTHOR: TOM BLACK

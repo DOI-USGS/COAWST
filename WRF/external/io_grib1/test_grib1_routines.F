@@ -13,7 +13,7 @@ PROGRAM test_grib1_routines
 
   INTEGER :: parmid
   CHARACTER(40) :: datestr
-  INTEGER :: leveltype
+  INTEGER :: leveltype 
   INTEGER :: level1
   INTEGER :: level2
   INTEGER :: fcsttime1
@@ -28,7 +28,7 @@ PROGRAM test_grib1_routines
   integer :: ierr
   integer :: numcols, numrows
   integer :: center, subcenter, parmtbl
-
+  
 
   parmid=33
   datestr = '2005041412'

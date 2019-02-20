@@ -35,7 +35,7 @@
 !                      Set to 255, if idrstmpl(6)=0.
 !     lcpack   - size of array cpack().
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST: 
 !     idrstmpl - Contains the array of values for Data Representation
 !                Template 5.0
 !                (1) = Reference value - set by jpcpack routine.
@@ -74,7 +74,7 @@
       integer :: orig_dscalefct
       integer :: orig_bscalefct
       integer(8) :: maxdif,imin,imax
-
+      
       ierr = 0
 
       ndpts=width*height
@@ -106,19 +106,19 @@
 !
       if (rmin.ne.rmax .AND. maxdif.ne.0) then
         !
-        !  Determine which algorithm to use based on user-supplied
+        !  Determine which algorithm to use based on user-supplied 
         !  binary scale factor and number of bits.
         !
 
         if (idrstmpl(2).eq.0) then
            !
-           !  No binary scaling and calculate minimum number of
+           !  No binary scaling and calculate minimum number of 
            !  bits in which the data will fit.
            !
 
            nbits = 25
 
-           do while (nbits .gt. 24)
+           do while (nbits .gt. 24) 
               imin=nint(rmin*dscale,8)
               imax=nint(rmax*dscale,8)
               maxdif=imax-imin
@@ -129,7 +129,7 @@
               !
               !  Todd Hutchinson, WSI 9/23/05
               !
-              if (nbits .le. 24) then
+              if (nbits .le. 24) then 
                  exit
               else
                  idrstmpl(3) = idrstmpl(3) - 1
@@ -144,12 +144,12 @@
            enddo
         else
            !
-           !  Use binary scaling factor and calculate minimum number of
+           !  Use binary scaling factor and calculate minimum number of 
            !  bits in which the data will fit.
            !
            nbits = 25
 
-           do while (nbits .gt. 24)
+           do while (nbits .gt. 24) 
               rmin=rmin*dscale
               rmax=rmax*dscale
               maxdif=nint((rmax-rmin)*bscale)
@@ -160,12 +160,12 @@
               !
               !  Todd Hutchinson, WSI 9/23/05
               !
-              if (nbits .le. 24) then
+              if (nbits .le. 24) then 
                  exit
               else
                  idrstmpl(2) = idrstmpl(2) + 1
                  bscale=2.0**real(-idrstmpl(2))
-              endif
+              endif              
            enddo
            !   scale data
            do j=1,ndpts
@@ -173,7 +173,7 @@
            enddo
         endif
 
-        if (idrstmpl(2) .ne. orig_bscalefct) then
+        if (idrstmpl(2) .ne. orig_bscalefct) then 
            write(6,'(A,I2,A,I2,A)')
      &          ' JPCPACK: Reduced binary scale fctr from ',
      &          orig_bscalefct,' to ',idrstmpl(2),
@@ -181,10 +181,10 @@
            ierr = 12
         endif
 
-        if (idrstmpl(3) .ne. orig_dscalefct) then
+        if (idrstmpl(3) .ne. orig_dscalefct) then 
            write(6,'(A,I2,A,I2,A)')
      &          ' JPCPACK: Reduced decimal scale fctr from ',
-     &          orig_dscalefct,' to ',idrstmpl(3),
+     &          orig_dscalefct,' to ',idrstmpl(3), 
      &          ' to prevent overflow'
            ierr = 11
         endif

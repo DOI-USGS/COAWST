@@ -29,7 +29,7 @@ subroutine file_delete(hdates, ndates, root, interval)
 ! DATELEN:  length of date strings to use for our output file names.
   integer :: datelen
 
-! Decide the length of date strings to use for output file names.
+! Decide the length of date strings to use for output file names.  
 ! DATELEN is 13 for hours, 16 for minutes, and 19 for seconds.
   if (mod(interval,3600) == 0) then
      datelen = 13

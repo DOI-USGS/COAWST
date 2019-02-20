@@ -8,7 +8,7 @@
 **
 ** Kumar, N., Voulgaris, G., Warner, J.C., and M., Olabarrieta (2012).
 ** Implementation of a vortex force formalism in a coupled modeling system
-** for inner-shelf and surf-zone applications. Ocean Modelling, 47, 65-95.
+** for inner-shelf and surf-zone applications. Ocean Modelling, 47, 65-95. 
 **
 ** Options for Rip_current.
 ** Application flag:   RIP_CURRENT
@@ -44,11 +44,11 @@
 #define SOLVE3D
 #ifdef SOLVE3D
 # define SPLINES_VVISC
-# define SPLINES_VDIFF
+# define SPLINES_VDIFF 
 # define SSW_BBL
 # ifdef SSW_BBL
 #  define SSW_CALC_ZNOT
-#  undef  SSW_ZORIP
+#  undef  SSW_ZORIP 
 #  undef  SSW_LOGINT
 # endif
 

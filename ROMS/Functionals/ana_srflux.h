@@ -1,8 +1,8 @@
       SUBROUTINE ana_srflux (ng, tile, model)
 !
-!! svn $Id: ana_srflux.h 841 2017-04-19 21:42:22Z arango $
+!! svn $Id: ana_srflux.h 927 2018-10-16 03:51:56Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -101,8 +101,9 @@
 !
       integer :: i, j
 #if defined ALBEDO_CLOUD || defined DIURNAL_SRFLUX
+      real(dp) :: hour, yday
       real(r8) :: Dangle, Hangle, LatRad
-      real(r8) :: cff1, cff2, hour, yday
+      real(r8) :: cff1, cff2
 # ifdef ALBEDO_CLOUD
       real(r8) :: Rsolar, e_sat, vap_p, zenith
 # endif
@@ -116,7 +117,7 @@
 !-----------------------------------------------------------------------
 !  Compute shortwave radiation (degC m/s):
 !
-!  ALBEDO_CLOUD option: Compute shortwave radiation flux using the Laevastu
+!  ALBEDO option: Compute shortwave radiation flux using the Laevastu
 !                 cloud correction to the Zillman equation for cloudless
 !  radiation (Parkinson and Washington 1979, JGR, 84, 311-337).  Notice
 !  that flux is scaled from W/m2 to degC m/s by dividing by (rho0*Cp).
@@ -140,11 +141,11 @@
 !
 !  Get time clock day-of-year and hour.
 !
-      CALL caldate (tdays(ng), yd_r8=yday, h_r8=hour)
+      CALL caldate (tdays(ng), yd_dp=yday, h_dp=hour)
 !
 !  Estimate solar declination angle (radians).
 !
-      Dangle=23.44_r8*COS((172.0_r8-yday)*2.0_r8*pi/365.25_r8)
+      Dangle=23.44_dp*COS((172.0_dp-yday)*2.0_dp*pi/365.25_dp)
       Dangle=Dangle*deg2rad
 !
 !  Compute hour angle (radians).

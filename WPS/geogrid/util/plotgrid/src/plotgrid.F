@@ -180,8 +180,8 @@ program plotgrid
       width = 1.02*(right-left)/real(nx)
       height = 1.02*(top-bottom)/real(ny)
 
-      do j=1,ny
-         do i=1,nx
+      do j=1,ny 
+         do i=1,nx 
             call map_square(xlat(i,j), xlon(i,j), width, height, lu(i,j)+1)
          end do
       end do
@@ -285,8 +285,8 @@ program plotgrid
 
          maxter = -10000.
          minter = 10000.
-         do j=1,ny
-            do i=1,nx
+         do j=1,ny 
+            do i=1,nx 
                if (ter(i,j) > maxter) maxter = ter(i,j)
                if (ter(i,j) < minter) minter = ter(i,j)
             end do
@@ -300,8 +300,8 @@ program plotgrid
       width = 1.02*(right-left)/real(nx)
       height = 1.02*(top-bottom)/real(ny)
 
-      do j=1,ny
-         do i=1,nx
+      do j=1,ny 
+         do i=1,nx 
             if (lu(i,j) ==  16) then
                ter(i,j) = ((ter(i,j)-minter) * 99.)/(maxter-minter) + 26.
                call map_square(xlat(i,j), xlon(i,j), width, height, 17)

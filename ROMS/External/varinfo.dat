@@ -1,9 +1,9 @@
 !
 !  ROMS/TOMS IO NetCDF variables.
 !
-!svn $Id: varinfo.dat 830 2017-01-24 21:21:11Z arango $
+!svn $Id: varinfo.dat 889 2018-02-10 03:32:52Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -2089,11 +2089,20 @@
   1.0d0
 
 'Dwave'                                            ! Input
-  'wind-induced wave direction'
+  'wind-induced wave direction - mean'
   'degrees'                                        ! [radians]
   'Dwave, scalar, series'
   'wave_time'
   'idWdir'
+  'r2dvar'
+  0.017453292519943295                             ! pi/180
+
+'Dwavep'                                           ! Input
+  'wind-induced wave direction -  peak'
+  'degrees'                                        ! [radians]
+  'Dwavep, scalar, series'
+  'wave_time'
+  'idWdip'
   'r2dvar'
   0.017453292519943295                             ! pi/180
 
@@ -3624,6 +3633,132 @@
   'ocean_time'
   'idVbld'
   'v2dvar'
+  1.0d0
+
+'ursell_no'                                       ! Output
+  'Ursell number'
+  'non-dimensional'                               ! [Non-dimensional]
+  'Ursell_nu, scalar, series'
+  'ocean_time'
+  'idsurs'
+  'r2dvar'
+  1.0d0
+
+'RR_asymwave'                                     ! Output
+  'Velocity skewness parameter of the asymmetric wave'
+  'non-dimensional'                               ! [Non-dimensional]
+  'RR_asymwave, scalar, series'
+  'ocean_time'
+  'idsrrw'
+  'r2dvar'
+  1.0d0
+
+'beta_asymwave'                                     ! Output
+  'Acceleration asymmetry parameter of the asymmetric wave'
+  'non-dimensional'                               ! [Non-dimensional]
+  'beta_asymwave, scalar, series'
+  'ocean_time'
+  'idsbtw'
+  'r2dvar'
+  1.0d0
+
+'Zr_wbl'                                         ! Output
+  'Reference height to get near bottom current velocity.'
+  'meter-s'                                      ! [m/s]
+  'Zr_wbl, scalar, series' 
+  'ocean_time'
+  'idszrw'
+  'r2dvar'
+  1.0d0
+
+'ksd_wbl'                                         ! Output
+  'Bed roughness (Zo) for wave boundary layer calc.' 
+  'meter'                                         ! [m/s]
+  'ksd_wbl, scalar, series' 
+  'ocean_time'
+  'idsksd'
+  'r2dvar'
+  1.0d0
+
+'ustrc_wbl'                                       ! Output
+  'Current friction velocity at the wave boundary layer' 
+  'meter'                                         ! [m/s]
+  'ustrc_wbl, scalar, series' 
+  'ocean_time'
+  'idsusc'
+  'r2dvar'
+  1.0d0
+
+'thck_wbl'                                        ! Output
+  'Thickness of the wave boundary layer' 
+  'meter'                                         ! [m]
+  'thck_wbl, scalar, series' 
+  'ocean_time'
+  'idstbl'
+  'r2dvar'
+  1.0d0
+
+'udelta_wbl'                                      ! Output
+  'Current velocity at the wave boundary layer' 
+  'meter s-1'                                     ! [m/s]
+  'udelta_wbl, scalar, series' 
+  'ocean_time'
+  'idsubl'
+  'r2dvar'
+  1.0d0
+
+'phi_wc'                                          ! Output
+  'Angle between waves and currents' 
+  'radians'                                       ! [Non-dimensional]
+  'phi_wc, scalar, series' 
+  'ocean_time'
+  'idspwc'
+  'r2dvar'
+  1.0d0
+
+'fd_wbl'                                          ! Output
+  'Friction factor from the currents' 
+  'non-dimensional'                               ! [Non-dimensional]
+  'fd_wbl, scalar, series' 
+  'ocean_time'
+  'idsfdw'
+  'r2dvar'
+  1.0d0
+
+'ucrest_r'                                        ! Output
+  'Crest velocity of the asymmetric wave' 
+  'meter s-1'                                     ! [m/s]
+  'ucrest_r, scalar, series' 
+  'ocean_time'
+  'idsucr'
+  'r2dvar'
+  1.0d0
+
+'utrough_r'                                       ! Output
+  'Trough velocity of the asymmetric wave' 
+  'meter s-1'                                     ! [m/s]
+  'utrough_r, scalar, series' 
+  'ocean_time'
+  'idsutr'
+  'r2dvar'
+  1.0d0
+
+'T_crest'                                         ! Output
+  'Crest wave time period of the asymmetric wave' 
+  's'                                             ! [s]
+  'T_crest, scalar, series' 
+  'ocean_time'
+  'idstcr'
+  'r2dvar'
+  1.0d0
+
+'T_trough'                                       ! Output
+  'Trough wave time period of the asymmetric wave' 
+  's'                                            ! [s]
+  'T_trough, scalar, series' 
+  'ocean_time'
+  'idsttr'
+  'r2dvar'
   1.0d0
 
 'ero_flux'                                         ! Output

@@ -2,9 +2,9 @@
       MODULE set_avg_mod
 #ifdef AVERAGES
 !
-!svn $Id: set_avg.F 855 2017-07-29 03:10:57Z arango $
+!svn $Id: set_avg.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -133,6 +133,9 @@
 # endif
       USE mod_ocean
       USE mod_scalars
+# if defined BBL_MODEL
+      USE mod_bbl
+# endif
 # if defined SEDIMENT && defined BEDLOAD
       USE mod_sedbed
       USE mod_sediment
@@ -190,6 +193,9 @@
 # endif
       real(r8) :: potvor_bar(LBi:UBi,LBj:UBj)
       real(r8) :: relvor_bar(LBi:UBi,LBj:UBj)
+#ifdef BBL_MODEL
+      real(r8), allocatable :: wrk(:,:)
+#endif
 
 # include "set_bounds.h"
 !
@@ -702,11 +708,11 @@
             END DO
           END DO
         END IF
-# ifdef BBL
+# ifdef BBL_MODEL
         IF (Aout(idUbrs,ng)) THEN
           DO j=JstrR,JendR
             DO i=Istr,IendR
-              AVERAGE(ng)%avgUbrs(i,j)=FORCES(ng)%bustrc(i,j)
+              AVERAGE(ng)%avgUbrs(i,j)=BBL(ng)%bustrc(i,j)
 #  ifdef WET_DRY
               AVERAGE(ng)%avgUbrs(i,j)=AVERAGE(ng)%avgUbrs(i,j)*        &
      &                                 GRID(ng)%umask_full(i,j)
@@ -717,7 +723,7 @@
         IF (Aout(idVbrs,ng)) THEN
           DO j=JstrR,JendR
             DO i=Istr,IendR
-              AVERAGE(ng)%avgVbrs(i,j)=FORCES(ng)%bvstrc(i,j)
+              AVERAGE(ng)%avgVbrs(i,j)=BBL(ng)%bvstrc(i,j)
 #  ifdef WET_DRY
               AVERAGE(ng)%avgVbrs(i,j)=AVERAGE(ng)%avgVbrs(i,j)*        &
      &                                 GRID(ng)%umask_full(i,j)
@@ -728,7 +734,7 @@
         IF (Aout(idUbws,ng)) THEN
           DO j=JstrR,JendR
             DO i=Istr,IendR
-              AVERAGE(ng)%avgUbws(i,j)=FORCES(ng)%bustrw(i,j)
+              AVERAGE(ng)%avgUbws(i,j)=BBL(ng)%bustrw(i,j)
 #  ifdef WET_DRY
               AVERAGE(ng)%avgUbws(i,j)=AVERAGE(ng)%avgUbws(i,j)*        &
      &                                 GRID(ng)%umask_full(i,j)
@@ -739,7 +745,7 @@
         IF (Aout(idVbws,ng)) THEN
           DO j=JstrR,JendR
             DO i=Istr,IendR
-              AVERAGE(ng)%avgVbws(i,j)=FORCES(ng)%bvstrw(i,j)
+              AVERAGE(ng)%avgVbws(i,j)=BBL(ng)%bvstrw(i,j)
 #  ifdef WET_DRY
               AVERAGE(ng)%avgVbws(i,j)=AVERAGE(ng)%avgVbws(i,j)*        &
      &                                 GRID(ng)%umask_full(i,j)
@@ -750,7 +756,7 @@
         IF (Aout(idUbcs,ng)) THEN
           DO j=JstrR,JendR
             DO i=Istr,IendR
-              AVERAGE(ng)%avgUbcs(i,j)=FORCES(ng)%bustrcwmax(i,j)
+              AVERAGE(ng)%avgUbcs(i,j)=BBL(ng)%bustrcwmax(i,j)
 #  ifdef WET_DRY
               AVERAGE(ng)%avgUbcs(i,j)=AVERAGE(ng)%avgUbcs(i,j)*        &
      &                                 GRID(ng)%umask_full(i,j)
@@ -761,7 +767,7 @@
         IF (Aout(idVbcs,ng)) THEN
           DO j=JstrR,JendR
             DO i=Istr,IendR
-              AVERAGE(ng)%avgVbcs(i,j)=FORCES(ng)%bvstrcwmax(i,j)
+              AVERAGE(ng)%avgVbcs(i,j)=BBL(ng)%bvstrcwmax(i,j)
 #  ifdef WET_DRY
               AVERAGE(ng)%avgVbcs(i,j)=AVERAGE(ng)%avgVbcs(i,j)*        &
      &                                 GRID(ng)%umask_full(i,j)
@@ -772,8 +778,6 @@
         IF (Aout(idUVwc,ng)) THEN
           allocate (wrk(LBi:UBi,LBj:UBj))
           wrk(LBi:UBi,LBj:UBj)=0.0_r8
-          scale=rho0
-          gtype=gfactor*r2dvar
           wrk=sqrt(BBL(ng)%bustrcwmax*BBL(ng)%bustrcwmax+               &
      &             BBL(ng)%bvstrcwmax*BBL(ng)%bvstrcwmax+1.0E-10_r8)
           DO j=JstrR,JendR
@@ -812,7 +816,7 @@
         IF (Aout(idUbur,ng)) THEN
           DO j=JstrR,JendR
             DO i=Istr,IendR
-              AVERAGE(ng)%avgUbur(i,j)=BBL(ng)%Ubur(i,j)
+              AVERAGE(ng)%avgUbur(i,j)=BBL(ng)%Ur(i,j)
 #  ifdef WET_DRY
               AVERAGE(ng)%avgUbur(i,j)=AVERAGE(ng)%avgUbur(i,j)*        &
      &                                 GRID(ng)%umask_full(i,j)
@@ -823,7 +827,7 @@
         IF (Aout(idVbvr,ng)) THEN
           DO j=JstrR,JendR
             DO i=Istr,IendR
-              AVERAGE(ng)%avgVbvr(i,j)=BBL(ng)%Vbur(i,j)
+              AVERAGE(ng)%avgVbvr(i,j)=BBL(ng)%Vr(i,j)
 #  ifdef WET_DRY
               AVERAGE(ng)%avgVbvr(i,j)=AVERAGE(ng)%avgVbvr(i,j)*        &
      &                                 GRID(ng)%umask_full(i,j)
@@ -1762,6 +1766,19 @@
           END DO
         END IF
 # endif
+# ifdef WAVES_DIRP
+        IF (Aout(idWdip,ng)) THEN
+          DO j=JstrR,JendR
+            DO i=IstrR,IendR
+              AVERAGE(ng)%avgWdip(i,j)=FORCES(ng)%Dwavep(i,j)
+#  ifdef WET_DRY
+              AVERAGE(ng)%avgWdip(i,j)=AVERAGE(ng)%avgWdip(i,j)*        &
+     &                                 GRID(ng)%rmask_full(i,j)
+#  endif
+            END DO
+          END DO
+        END IF
+# endif
 # ifdef WAVES_TOP_PERIOD
         IF (Aout(idWptp,ng)) THEN
           DO j=JstrR,JendR
@@ -2687,11 +2704,20 @@
             END DO
           END DO
         END IF
+        IF (Aout(idVbcs,ng)) THEN
+          DO j=JstrR,JendR
+            DO i=IstrR,IendR
+              AVERAGE(ng)%avgVbcs(i,j)=AVERAGE(ng)%avgVbcs(i,j)+        &
+# ifdef WET_DRY
+     &                                GRID(ng)%rmask_full(i,j)*         &
+# endif
+     &                                FORCES(ng)%bvstrcwmax(i,j)
+            END DO
+          END DO
+        END IF
         IF (Aout(idUVwc,ng)) THEN
           allocate (wrk(LBi:UBi,LBj:UBj))
           wrk(LBi:UBi,LBj:UBj)=0.0_r8
-          scale=rho0
-          gtype=gfactor*r2dvar
           wrk=sqrt(BBL(ng)%bustrcwmax*BBL(ng)%bustrcwmax+               &
      &             BBL(ng)%bvstrcwmax*BBL(ng)%bvstrcwmax+1.0E-10_r8)
           DO j=JstrR,JendR
@@ -3673,6 +3699,19 @@
      &                                 GRID(ng)%rmask_full(i,j)*        &
 #  endif
      &                                 FORCES(ng)%Dwave(i,j)
+            END DO
+          END DO
+        END IF
+# endif
+# ifdef WAVES_DIRP
+        IF (Aout(idWdip,ng)) THEN
+          DO j=JstrR,JendR
+            DO i=IstrR,IendR
+              AVERAGE(ng)%avgWdip(i,j)=AVERAGE(ng)%avgWdip(i,j)+        &
+#  ifdef WET_DRY
+     &                                 GRID(ng)%rmask_full(i,j)*        &
+#  endif
+     &                                 FORCES(ng)%Dwavep(i,j)
             END DO
           END DO
         END IF
@@ -6629,6 +6668,28 @@
           END IF
         END IF
 # endif
+# ifdef WAVES_DIRP
+        IF (Aout(idWdip,ng)) THEN
+          DO j=JstrR,JendR
+            DO i=IstrR,IendR
+              AVERAGE(ng)%avgWdip(i,j)=rfac(i,j)*                       &
+     &                                  AVERAGE(ng)%avgWdip(i,j)
+            END DO
+          END DO
+          IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+            CALL exchange_r2d_tile (ng, tile,                           &
+     &                              LBi, UBi, LBj, UBj,                 &
+     &                              AVERAGE(ng)%avgWdip)
+#  ifdef DISTRIBUTE
+            CALL mp_exchange2d (ng, tile, iNLM, 1,                      &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          AVERAGE(ng)%avgWdip)
+#  endif
+          END IF
+        END IF
+# endif
 # ifdef WAVES_TOP_PERIOD
         IF (Aout(idWptp,ng)) THEN
           DO j=JstrR,JendR
@@ -7281,12 +7342,12 @@
       USE mod_param
       USE mod_ncparam
       USE mod_average
+#  ifdef WET_DRY
+      USE mod_grid
+#  endif
       USE mod_ocean
       USE mod_scalars
       USE mod_tides, only: TIDES
-# ifdef WET_DRY
-      USE mod_grid
-# endif
 !
       implicit none
 !

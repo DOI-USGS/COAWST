@@ -1,12 +1,12 @@
       module grib_mod
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! MODULE:    grib_mod
+! MODULE:    grib_mod 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2002-01-23
 !
 ! ABSTRACT: This Fortran Module contains the declaration
 !   of derived type gribfield.
-!   If variable gfld is declared of type gribfield
+!   If variable gfld is declared of type gribfield 
 !   ( i.e. TYPE(GRIBFIELD) :: GFLD ), it would have the following componenets:
 !
 !        gfld%version = GRIB edition number ( currently 2 )

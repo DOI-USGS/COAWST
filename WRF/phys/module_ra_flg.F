@@ -1,4 +1,4 @@
-    MODULE PARA_FILE
+    MODULE PARA_FILE 
     implicit none
 !vertical layer parameters
     integer, parameter :: &
@@ -9,18 +9,18 @@
 !   &                      mdfs   = nv + 1,   &
 !   &                      ndfs4  = 4 * ndfs, &
    &                      nvx    = 100,      &
-   &                      nv1x   = nvx + 1
-
-!spectral band parameters
+   &                      nv1x   = nvx + 1 
+     
+!spectral band parameters  
     integer, parameter :: mbs       = 6,        &!number of sw bands
    &                      mbir      = 12,       &!number of lw bands
    &                      mb        = 18,       &!number of bands
    &                      mbx       = 18,       &!number of bands
    &                      mby       = 10         !number of sub-bands in 0.2-0.7 um
 
-!number of drop size distributions
+!number of drop size distributions  
     integer, parameter :: nc    = 8
-
+   
 !fractional cloud parameters
 !    integer, parameter :: ngroup    = 3,        &!number of cloud groups
     integer, save :: ngroup    = 3,        &!number of cloud groups
@@ -38,13 +38,13 @@
    &                      mxac      = naer       !max number of aerosol constituents
 
 !parameter for AOT_ SPLINEFIT
-    integer, parameter :: nsub      = 5               ,  &
-   &                      nfuo      = 15              ,  &
-   &                      nwo       = 75
+    integer, parameter :: nsub      = 5               ,  & 
+   &                      nfuo      = 15              ,  & 
+   &                      nwo       = 75                   
+   
+    integer, parameter :: icoln = 3 
 
-    integer, parameter :: icoln = 3
-
-    END module PARA_FILE
+    END module PARA_FILE 
 
 !---------------------- Controlling Parameters -------------------------
     MODULE control_para
@@ -62,20 +62,20 @@
                                     ! =0, fixed value;
                                     ! NPDE = 3 & 4 is still under testing ---- CCCC
    &                 NGAS   = 0, &  !add for new gases: =0, no new gases; = 1, new gases included and takes longer computer time
-   &                 NOZONE = 1 , &  ! if =0, no ozone; = 1, predescribed profiles; = 2, input from WRF
+   &                 NOZONE = 1 , &  ! if =0, no ozone; = 1, predescribed profiles; = 2, input from WRF 
    &                 NICE   = 2     !add for cloud:
                                     !nice=0, use old ones (FLIce93);
-                                    !nice=1, use new coefficients for ice by Feng;
+                                    !nice=1, use new coefficients for ice by Feng; 
                                     !nice=2, use new coefficients by Qing Yue 2006;
                                     !seperate tropics and midlatitute: nice = 3, tropics; nice = 4, midlat
     integer, save :: itps(mxac) = 0              ,  & !aerosol type: itps(iac)=1 stands for existing aerosol type iac
    &                 nfraca    = 1               ,  & ! --if nfraca=0, use aerosol types and fractions passed from the driver
-                                                      !      nfraca=1, use precribed total AOD, aerosol types and fractions;
+                                                      !      nfraca=1, use precribed total AOD, aerosol types and fractions; 
                                                       !      nfraca=2, input total AOD, aerosol types and fractions from screen;
-                                                      !      nfraca=3, input aerosol types and optical depths.
-   &                 ivd       = 1               ,  & ! --if ivd=0, use Spinhirne Vertical tau distribution;
-                                                      !      ivd=1, use aer_scale_hgt;
-                                                      !      ivd=2, pass vertical tau from driver;
+                                                      !      nfraca=3, input aerosol types and optical depths. 
+   &                 ivd       = 1               ,  & ! --if ivd=0, use Spinhirne Vertical tau distribution; 
+                                                      !      ivd=1, use aer_scale_hgt; 
+                                                      !      ivd=2, pass vertical tau from driver; 
                                                       !      ivd=3, inpput vertical AOD profile for each aerosol type
    &                 ifg       = 0               ,  & !aerosol humidity dependence
    &                 iaform    = 3               ,  & !iaform: 1 for CERES; 2 for CAGEX; 3 for AOT_ SPLINEFIT
@@ -88,7 +88,7 @@
    &                 edding, quadra, hemisp
     logical, save :: pderandom = .false.
 
-
+  
     real, save    :: umco2  = 345.0     , &
    &                 umch4  = 1.6       , &
    &                 umn2o  = 0.28      , &
@@ -122,7 +122,7 @@
   &                      nh2ocl    = 1, &
   &                      nrayle    = 1, &
   &                      nCFC11l   = 1, &
-  &                      nCFC12l   =1
+  &                      nCFC12l   =1 
    end module control_para
 
 
@@ -284,7 +284,7 @@
         0.5746E-07,  0.5468E-07,  0.5227E-07,  0.5006E-07,  0.4789E-07, &
         0.4576E-07,  0.4402E-07,  0.4230E-07,  0.4062E-07,  0.3897E-07, &
         0.3793E-07,  0.3697E-07,  0.3602E-07,  0.3506E-07,  0.3413E-07, &
-        0.3326E-07,  0.3239E-07,  0.3153E-07,  0.3069E-07,  0.2987E-07/
+        0.3326E-07,  0.3239E-07,  0.3153E-07,  0.3069E-07,  0.2987E-07/ 
 
 !--------------------------------------------------------------------------------
 !   data set 5
@@ -323,7 +323,7 @@
         0.5855E-07,  0.5823E-07,  0.5772E-07,  0.5703E-07,  0.5635E-07, &
         0.5570E-07,  0.5492E-07,  0.5412E-07,  0.5335E-07,  0.5260E-07, &
         0.5167E-07,  0.5063E-07,  0.4961E-07,  0.4860E-07,  0.4761E-07/
-
+      
       end module module_ozone
 
 !---------------------- begin ice block data ---------------------------
@@ -331,10 +331,10 @@
         module ice0
 !c *********************************************************************
 !c ap and bp are empirical coefficients of Eqs. (2.9) and (2.10) to
-!c calculate the extiction coefficient (1/m) and single scattering
+!c calculate the extiction coefficient (1/m) and single scattering 
 !c albedo, cps and dps are empirical coefficients of Eq. (2.13) to
-!c compute the expansion coefficients of the phase function (1, 2,
-!c 3, 4) in the solar bands, cpir is the empirical coefficients of
+!c compute the expansion coefficients of the phase function (1, 2, 
+!c 3, 4) in the solar bands, cpir is the empirical coefficients of 
 !c Eq. (2.15) to calculate the asymmetry factor in the IR bands (Fu
 !c and Liou, 1992). The units of mean effective size and ice water
 !c content are um and g/m*m*m, respectively, in these equations.
@@ -354,7 +354,7 @@
        &         -6.656e-3,          3.686,           0.00,     &
        &         -7.770e-3,          3.734,          11.85,     &
        &         -8.088e-3,          3.717,          17.17,     &
-       &         -8.441e-3,          3.715,          19.48,     &
+       &         -8.441e-3,          3.715,          19.48,     &     
        &         -9.061e-3,          3.741,          26.48,     &
        &         -9.609e-3,          3.768,          34.11,     &
        &         -1.153e-2,          4.109,          17.32,     &
@@ -410,7 +410,7 @@
        &           .12363E+00, -.44419E-03,  .14038E-04, -.68851E-07,&
        &           .12117E+00, -.48474E-03,  .12495E-04, -.62411E-07,&
        &           .11581E+00, -.55031E-03,  .98776E-05, -.50193E-07,&
-       &          -.15968E-03,  .10115E-04, -.12472E-06,  .48667E-09,&
+       &          -.15968E-03,  .10115E-04, -.12472E-06,  .48667E-09,& 
        &           .13830E+00, -.18921E-02,  .12030E-04, -.31698E-07 /
         data cpir / .79550,     2.524e-3,    -1.022e-5,     0.000e+0,&
        &            .86010,     1.599e-3,    -6.465e-6,     0.000e+0,&
@@ -424,8 +424,8 @@
        &            .72900,     2.132e-3,    -5.584e-6,     0.000e+0,&
        &            .70240,     4.581e-3,    -3.054e-5,     6.684e-8,&
        &            .22920,     1.724e-2,    -1.573e-4,     4.995e-7 /
-!	end
-        end module ice0
+!	end  
+        end module ice0 
 
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !C---- new coefficients for ice parameterization by Feng Zhang
@@ -912,7 +912,7 @@
 !                       cp(4,mb), dps(4,mbs)
         implicit none
         real, save :: ap(3,mb), bps(4,mbs), bpir(4, mbir), &
-       &              cp(4,mb), dps(4,mbs)
+       &              cp(4,mb), dps(4,mbs) 
         data ap / &
        &         -2.9172062e-05,  2.5192544e+00,  0.0,&
        &         -2.2948980e-05,  2.5212550e+00,  0.0,&
@@ -1199,8 +1199,8 @@
 !c *********************************************************************
 !c bz, wz and gz are the extinction coefficient(1/km), single scattering
        !c albedo and asymmetry factor for the water clouds (St II, Sc I, St I, &
-!c As, Ns, Sc II, Cu, and Cb) in different bands.   re is the effective
-!c radius and fl is the liquid water content (LWC).  See Tables 4.2-4.4
+!c As, Ns, Sc II, Cu, and Cb) in different bands.   re is the effective 
+!c radius and fl is the liquid water content (LWC).  See Tables 4.2-4.4 
 !c of Fu (1991).
 !c *********************************************************************
 !# include "para.file"
@@ -1344,7 +1344,7 @@
 !c *********************************************************************
 !c brn,  wrnf and  grn  are  the extinction coefficient (1/km),  single
 !c scattering  albedo  and  asymmetry  factor  for  the rain.  The size
-!c distribution of  rain  is  in the form of a truncated constant-slope
+!c distribution of  rain  is  in the form of a truncated constant-slope 
 !c gamma function (Manton and Cotton, 1977)  where rmin = 60 um, rmax =
 !c 1800 um,  rc = 162 um,  density of water = 1 g/cm**3, and rain water
 !c content (rwc) = 0.5 g/m**3.
@@ -1380,7 +1380,7 @@
 !C For graupel
 !c bg,  wgf  and  gg are  the  extinction  coefficient (1/km),   single
 !c scattering  albedo  and  asymmetry  factor for the graupel. The size
-!c distribution of graupel is in the form of a truncated constant-slope
+!c distribution of graupel is in the form of a truncated constant-slope 
 !c gamma function (Manton and Cotton, 1977)  where rmin = 60 um, rmax =
 !c 5000 um, rc = 500 um, density of graupel = 0.6 g/cm**3, and  graupel
 !c water content (gwc) = 0.5 g/m**3.
@@ -1430,7 +1430,7 @@
       implicit none
       real, dimension(4) :: a, u, p0d, p1d, p2d, p3d
       real, dimension(4,4) :: p11d, p22d, p33d
-
+    
       data a / 0.5, 0.5, 0.5, 0.5 /
       data u / -0.7886752, -0.2113247, 0.2113247, 0.7886752 /
 !    end
@@ -1456,7 +1456,7 @@
 !c	end
 
 !c **********************************************************************
-!c p0d(4), p1d(4), p2d(4), and p3d(4) are Legendre polynomials p0(x),
+!c p0d(4), p1d(4), p2d(4), and p3d(4) are Legendre polynomials p0(x), 
 !c p1(x), p2(x), and p3(x) when x = u(1), u(2), u(3), and u(4).
 !c **********************************************************************
 !      block data legend
@@ -1488,14 +1488,14 @@
       end module numericals
 
 
-    module band
+    module band 
     implicit none
     integer, private :: i, j, k
 !    block data ckd1
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0 to
+!c hk is the interval in the g (cumulative probability) space from 0 to 
 !c one. fko3 is the corresponding ozone absorption coefficient in units
-!c of (cm-atm)**-1 (Fu, 1991). The spectral region is from 50000 cm**-1
+!c of (cm-atm)**-1 (Fu, 1991). The spectral region is from 50000 cm**-1 
 !c to 14500 cm**-1.
 !c *********************************************************************
     real, save :: hk_1(10), fko3_1(10),        &
@@ -1518,9 +1518,9 @@
    &              hk_16(7), coeh2o_16(3,19,7),                       &
    &              hk_17(7), coeh2o_17(3,19,7),                       &
    &              hk_18(8), coeh2o_18(3,19,8)
-
+   
 !    common /band1/ hk(10), fko3(10)
-    data hk_1 / .24, .16, .24, .28, .03,&
+    data hk_1 / .24, .16, .24, .28, .03,& 
    &            .016, .01, .008, .008, .008 /
     data fko3_1 / .2204e-08,.1207e-01,.4537e-01,.1032e+00,.1740e+00,&
    &              .1210e+01,.7367e+01,.2050e+02,.8100e+02,.2410e+03 /
@@ -1528,9 +1528,9 @@
 
 !    block data ckd2
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
-!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven
+!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven 
 !c pressures,  and eight cumulative probabilities  ( Fu,  1991 ). The
 !c spectral region is from 14500 to 7700 cm**-1.
 !c *********************************************************************
@@ -1584,12 +1584,12 @@
    &  -.3805E-06,-.1142E-05,-.3807E-06, .2512E-05,-.1599E-04,-.7231E-05,&
    &  -.5709E-05,-.4567E-05, .1522E-05,-.2284E-05,-.3941E-10, .5290E-05/
 
-
+      
 !    block data ckd3
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
-!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven
+!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven 
 !c pressures,  and twelve cumulative probabilities ( Fu,  1991 ). The
 !c spectral region is from 7700 to 5250 cm**-1.
 !c *********************************************************************
@@ -1667,12 +1667,12 @@
    &  -.3235E-04,-.2093E-04,-.1294E-04,-.1142E-04,-.1180E-04,-.6851E-05,&
    &  -.3045E-05,-.7611E-06, .1256E-05,-.7231E-06, .9924E-05, .3578E-05/
 
-
+      
 !    block data ckd4
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
-!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven
+!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven 
 !c pressures,  and seven cumulative probabilities ( Fu,  1991 ). The
 !c spectral region is from 5250 to 4000 cm**-1.
 !c *********************************************************************
@@ -1720,18 +1720,18 @@
    &    -.3343E-04,-.1294E-04,-.1294E-04,-.1751E-04,-.2512E-04,-.1560E-04, &
    &    -.2854E-04,-.7003E-05,-.8753E-05,-.1028E-04,-.1751E-04,-.2512E-04, &
    &   -.1713E-04,-.1713E-04,-.1245E-04 /
-
-
+	
+      
 !    block data ckd5
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
-!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven
+!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven 
 !c pressures,  and twelve cumulative probabilities ( Fu,  1991 ). The
 !c spectral region is from 4000 to 2850 cm**-1.
 !c *********************************************************************
 !    common /band5/ hk(12), coeh2o(3,11,12)
-	data hk_5 / .13, .14, .13, .16, .18, .14, &
+	data hk_5 / .13, .14, .13, .16, .18, .14, & 
    &            .07, .02, .016, .008, .004, .002 /
 !c   .411549E+01    .443207E+01    .411549E+01    .506522E+01    .569837E+01
 !c   .443207E+01    .221603E+01    .633153E+00    .506522E+00    .253261E+00
@@ -1803,13 +1803,13 @@
    &   -.2474E-05,-.2577E-05,-.2284E-05,-.4187E-06, .7650E-05,-.3425E-05, &
    &   -.3083E-04,-.1827E-04,-.1370E-04,-.1751E-04,-.1104E-04,-.9515E-05, &
    &   -.6318E-05,-.4358E-05,-.7613E-07, .4643E-05, .4415E-05, .1028E-04/
-
-
+	
+      
 !    block data ckd6
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
-!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven
+!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven 
 !c pressures,  and  five  cumulative probabilities ( Fu,  1991 ). The
 !c spectral region is from 2850 to 2500 cm**-1.
 !c *********************************************************************
@@ -1845,11 +1845,11 @@
    &   -.6090E-04,-.1218E-04,-.2664E-05, .3804E-06, .3045E-05,-.6698E-04, &
    &   -.1218E-04,-.2664E-05, .1523E-05,-.1142E-05,-.6508E-04,-.1218E-04, &
    &   -.3425E-05, .1903E-05, .7612E-06 /
-
+	
 
 !    block data ckd7
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
 !c coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 !c teen pressures, and  two  cumulative probabilities ( Fu,  1991 ).
@@ -1877,11 +1877,11 @@
    &   -.1100E-03,-.3045E-04,-.9248E-04,-.3197E-04,-.7346E-04,-.2436E-04, &
    &   -.5100E-04,-.2131E-04,-.5861E-04,-.2550E-04,-.5328E-04,-.3311E-04, &
    &   -.6090E-04,-.4225E-04,-.5443E-04,-.4415E-04,-.4034E-04,-.4339E-04/
-
+	
 
 !    block data ckd8
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
 !c coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 !c teen pressures, and  three cumulative probabilities ( Fu,  1991 ).
@@ -1919,11 +1919,11 @@
    &   -.4948E-05,-.1713E-04,-.8183E-05,-.5481E-04,-.1713E-04,-.1447E-04, &
    &   -.4986E-04,-.1903E-04,-.1353E-04,-.5138E-04,-.1484E-04,-.1147E-04, &
    &   -.5328E-04,-.1560E-04,-.6588E-05/
-
+	
 
 !    block data ckd9
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
 !c coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 !c teen pressures, and  four cumulative probabilities ( Fu,  1991 ).
@@ -1970,11 +1970,11 @@
    &   -.6584E-05,-.8716E-05,-.8374E-10, .1522E-05,-.6356E-05, .1294E-05, &
    &   -.9515E-05, .7612E-06,-.3235E-05,-.1066E-05,-.7612E-05, .1142E-05, &
    &   -.4529E-05, .3730E-05,-.2664E-05,-.3806E-06,-.3501E-05,-.5328E-06/
-
+	
 
 !    block data ckd10
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
 !c coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 !c teen pressures, and  four cumulative probabilities ( Fu,  1991 ).
@@ -2046,11 +2046,11 @@
    &   -.6851E-05,-.7231E-05,-.5709E-05,-.6470E-05,-.4186E-05, .8754E-05, &
    &   -.7612E-05,-.9134E-06,-.8640E-05,-.8487E-05,-.8259E-05,-.9553E-05, &
    &   -.8107E-05,-.1654E-04,-.1858E-04/
-
+	
 
 !    block data ckd11
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
 !c coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 !c teen pressures, and three cumulative probabilities ( Fu,  1991 ).
@@ -2113,11 +2113,11 @@
    &   -.1522E-04,-.1560E-04,-.1522E-04,-.1522E-04,-.1598E-04,-.1484E-04, &
    &   -.9895E-05,-.1028E-04,-.7612E-05,-.1903E-05, .1903E-05, .0000E+00, &
    &    .2283E-05, .6166E-05,-.2740E-05/
-
+	
 
 !    block data ckd12
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeo3 is the coefficient to calculate the ozone absorption
 !c coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 !c teen pressures, and  five cumulative probabilities ( Fu,  1991 ).
@@ -2188,11 +2188,11 @@
    &    .1911E-03, .1165E-03, .4225E-04,-.3121E-04,-.8982E-04,-.9553E-04, &
    &   -.9705E-04,-.9591E-04,-.9287E-04,-.9172E-04,-.9096E-04,-.9134E-04, &
    &   -.9248E-04,-.1050E-03,-.1031E-03/
-
+	
 
 !    block data ckd13
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
 !c coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 !c teen pressures, and  two  cumulative probabilities ( Fu,  1991 ).
@@ -2220,7 +2220,7 @@
    &    .7612E-05,-.8525E-04,-.1248E-03,-.9439E-04,-.9477E-04,-.9172E-04, &
    &   -.8982E-04,-.8640E-04,-.7916E-04,-.6813E-04,-.7574E-04,-.6090E-04, &
    &   -.7612E-04,-.7117E-04,-.7498E-04,-.7041E-04,-.7269E-04,-.7992E-04/
-
+	
 
 !    block data ckd14
 !c **********************************************************************
@@ -2328,7 +2328,7 @@
    &    -.5785E-05,-.6394E-05,-.6851E-05,-.1142E-05,-.1093E-03,-.4731E-04, &
    &    -.6761E-04, .1808E-04, .1754E-04,-.5079E-05,-.5809E-05,-.5649E-05, &
    &    -.3988E-05,-.5849E-06,-.1151E-03,-.4965E-04,-.7163E-04, .7839E-05, &
-   &     .5505E-05,-.6084E-05,-.3344E-05,-.3894E-05,-.1391E-05,-.1327E-05/
+   &     .5505E-05,-.6084E-05,-.3344E-05,-.3894E-05,-.1391E-05,-.1327E-05/ 
 	data ( ( ( coehcb_14(k,j,i), i = 1, 10 ), j = 1, 19 ), k = 1, 3 ) /   &
    &   -.9398E+01,-.5678E+01,-.3606E+01,-.2192E+01, .2104E+01, .3044E+01, &
    &   -.4587E+02,-.4587E+02,-.4587E+02,-.4587E+02,-.9094E+01,-.5422E+01, &
@@ -2425,7 +2425,7 @@
    &   -.1127E-03,-.1527E-03,-.3238E-03,-.7373E-02, .7877E-02, .7840E-02, &
    &    .7997E-02, .8345E-02,-.8800E-04,-.1072E-03,-.1046E-03,-.1777E-03, &
    &   -.2146E-03,-.7016E-02, .1516E-01, .1532E-01, .1509E-01, .8268E-02/
-
+	
 
 !    block data ckd15
 !c **********************************************************************
@@ -2670,11 +2670,11 @@
    &   -.1119E-03,-.1657E-03,-.4695E-03,-.8112E-02,-.7587E-02, .8217E-02, &
    &   -.6812E-04,-.4558E-04,-.6739E-04,-.8861E-04,-.9386E-04,-.1334E-03, &
    &   -.2007E-03,-.2179E-03,-.1650E-03,-.8001E-02, .8273E-02, .8118E-02/
-
+	
 
 !    block data ckd16
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
 !c coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 !c teen pressures, and  seven cumulative probabilities ( Fu,  1991 ).
@@ -2750,11 +2750,11 @@
    &   -.2550E-05,-.7650E-04,-.3159E-04,-.2778E-04,-.3121E-04,-.2169E-04, &
    &   -.4365E-04,-.1546E-04,-.7916E-04,-.2931E-04,-.2854E-04,-.3654E-04, &
    &   -.1979E-04,-.4811E-04,-.1435E-04/
-
+	
 
 !    block data ckd17
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
 !c coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 !c teen pressures, and  seven cumulative probabilities ( Fu,  1991 ).
@@ -2830,11 +2830,11 @@
    &   -.4643E-04,-.4301E-04,-.3578E-04,-.5176E-04,-.4594E-04,-.4551E-04, &
    &   -.3920E-04,-.3425E-04,-.4491E-04,-.3654E-04,-.5138E-04,-.4377E-04, &
    &   -.5614E-04,-.5758E-04,-.3600E-04/
-
+	
 
 !    block data ckd18
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
 !c coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 !c teen pressures, and eight cumulative probabilities ( Fu,  1991 ).
@@ -2922,10 +2922,10 @@
     end module band
 !c              pgwc(nv)  aerosol concentration ( # / m ** 3 )
 
-!c---------- 4/1/97 (7) -- NEXT 1142 LINES -- Replaces old
+!c---------- 4/1/97 (7) -- NEXT 1142 LINES -- Replaces old 
 !c                         aerosol1,aerosol2 block data.
 !      block data aerosol1
-      module aerosol1
+      module aerosol1 
 !c                              4/1/97
 !c  ********************************************************************
 !c
@@ -2938,7 +2938,7 @@
 !c  number of relative humidities, and number of aerosol types.
 !c  Properties for ocean, continental, and urban were extracted from
 !c  tables and interpolated (energy-weighted) into the Fu-Liou
-!c  spectral bands.  Tegen and Lacis values are not RH-dependent,
+!c  spectral bands.  Tegen and Lacis values are not RH-dependent, 
 !c  so values are repeated.
 !c
 !c  a_ssa:  single-scattering albedo.  One data statement for EACH type
@@ -2965,9 +2965,9 @@
       real a_ssax(mbx,nrh,naer),a_extx(mbx,nrh,naer)
       real a_asyx(mbx,nrh,naer)
 
-!c  *******************************************
-!c  Data statements for aerosol type 1 (marine)
-!c  *******************************************
+!c  *******************************************     
+!c  Data statements for aerosol type 1 (marine)     
+!c  *******************************************     
       data ((a_ssax(i,j,1),i=1,mbx),j=1,nrh) / &
      &   .1000E+01,.9984E+00,.9525E+00,.9053E+00,.7378E+00,.8873E+00, &
      &   .8528E+00,.8678E+00,.6329E+00,.7734E+00,.7571E+00,.7446E+00, &
@@ -3123,9 +3123,9 @@
      &  .5112E+00,.5218E+00,.4872E+00,.5553E+00,.5396E+00,.5633E+00, &
      &  .6177E+00,.5629E+00,.5322E+00,.5821E+00,.6221E+00,.6250E+00/
 
-!c  ******************************************
-!c  Data statements for aerosol type 3 (urban)
-!c  ******************************************
+!c  ******************************************      
+!c  Data statements for aerosol type 3 (urban)      
+!c  ******************************************      
       data ((a_ssax(i,j,3),i=1,mbx),j=1,nrh) / &
      &  .9371E+00,.8999E+00,.7175E+00,.3628E+00,.6462E+00,.6564E+00, &
      &  .4011E+00,.2856E+00,.1754E+00,.3630E-01,.6500E-01,.8672E-01, &
@@ -3596,22 +3596,22 @@
 !====================================================================
 ! OPAC X
 !-----------------------------------------------------------
- !9)  inso	Insoluble
-      data ((a_extx(i,j, 9 ),i=1,mbx),  j=1,1 ) /          &
+ !9)  inso	Insoluble                                         
+      data ((a_extx(i,j, 9 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.9992E+00,0.1055E+01,0.1097E+01,0.9565E+00,0.7209E+00,0.8266E+00, &
      & 0.6757E+00,0.4984E+00,0.4294E+00,0.4649E+00,0.5541E+00,0.8549E+00, &
      & 0.6774E+00,0.5136E+00,0.4909E+00,0.4952E+00,0.4213E+00,0.3563E+00/
-      data ((a_ssax(i,j, 9 ),i=1,mbx),  j=1,1 ) /          &
+      data ((a_ssax(i,j, 9 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.7289E+00,0.7933E+00,0.8553E+00,0.8828E+00,0.8465E+00,0.8840E+00, &
      & 0.8537E+00,0.7561E+00,0.5914E+00,0.6595E+00,0.5205E+00,0.5811E+00, &
      & 0.6361E+00,0.6307E+00,0.6348E+00,0.5020E+00,0.4057E+00,0.3352E+00/
-      data ((a_asyx(i,j, 9 ),i=1,mbx),  j=1,1 ) /          &
+      data ((a_asyx(i,j, 9 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.8317E+00,0.7882E+00,0.8003E+00,0.8834E+00,0.9145E+00,0.8506E+00, &
      & 0.8563E+00,0.8778E+00,0.8615E+00,0.8283E+00,0.7892E+00,0.6657E+00, &
      & 0.6808E+00,0.6886E+00,0.6387E+00,0.5706E+00,0.4973E+00,0.3480E+00/
  !-----------------------------------------------------------
- !10) waso      Water Soluble 			(8 RH%)
-      data ((a_extx(i,j,10 ),i=1,mbx),  j=1,8 ) /          &
+ !10) waso      Water Soluble 			(8 RH%)                     
+      data ((a_extx(i,j,10 ),i=1,mbx),  j=1,8 ) /          & 
      & 0.1015E+01,0.4304E+00,0.1407E+00,0.4076E-01,0.2793E-01,0.9580E-02, &
      & 0.8208E-02,0.8256E-02,0.1281E-01,0.1857E-01,0.3590E-01,0.2404E-01, &
      & 0.8152E-02,0.8273E-02,0.2205E-01,0.1285E-01,0.1426E-01,0.2008E-01, &
@@ -3636,7 +3636,7 @@
      & 0.1010E+01,0.5447E+00,0.2230E+00,0.8651E-01,0.1583E+00,0.4224E-01, &
      & 0.2339E-01,0.2363E-01,0.2874E-01,0.1684E-01,0.1855E-01,0.1772E-01, &
      & 0.3399E-01,0.6967E-01,0.6553E-01,0.4195E-01,0.2624E-01,0.2355E-01/
-      data ((a_ssax(i,j,10 ),i=1,mbx),  j=1,8 ) /          &
+      data ((a_ssax(i,j,10 ),i=1,mbx),  j=1,8 ) /          & 
      & 0.9633E+00,0.8961E+00,0.7687E+00,0.7940E+00,0.5192E+00,0.7595E+00, &
      & 0.3996E+00,0.2073E+00,0.9201E-01,0.1337E-01,0.3585E-01,0.4407E-01, &
      & 0.3943E-01,0.1419E-01,0.4977E-02,0.3965E-02,0.8396E-03,0.1067E-03, &
@@ -3661,7 +3661,7 @@
      & 0.9968E+00,0.9924E+00,0.9834E+00,0.9730E+00,0.6038E+00,0.9087E+00, &
      & 0.6692E+00,0.4563E+00,0.2352E+00,0.1938E+00,0.1231E+00,0.7513E-01, &
      & 0.1802E-01,0.9667E-02,0.1084E-01,0.9370E-02,0.5020E-02,0.9152E-03/
-      data ((a_asyx(i,j,10 ),i=1,mbx),  j=1,8 ) /          &
+      data ((a_asyx(i,j,10 ),i=1,mbx),  j=1,8 ) /          & 
      & 0.6143E+00,0.5585E+00,0.4813E+00,0.4255E+00,0.3592E+00,0.3090E+00, &
      & 0.2571E+00,0.2231E+00,0.1912E+00,0.1539E+00,0.1519E+00,0.1543E+00, &
      & 0.1251E+00,0.9279E-01,0.7617E-01,0.6363E-01,0.3473E-01,0.1405E-01, &
@@ -3687,22 +3687,22 @@
      & 0.4559E+00,0.4108E+00,0.3712E+00,0.3412E+00,0.3106E+00,0.2803E+00, &
      & 0.2242E+00,0.1672E+00,0.1436E+00,0.1248E+00,0.9454E-01,0.5018E-01/
  !-----------------------------------------------------------
- !11) soot	Soot
-      data ((a_extx(i,j,11 ),i=1,mbx),  j=1,1 ) /          &
+ !11) soot	Soot                                              
+      data ((a_extx(i,j,11 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.1017E+01,0.5114E+00,0.2718E+00,0.1911E+00,0.1446E+00,0.1113E+00, &
      & 0.8555E-01,0.7200E-01,0.6089E-01,0.5213E-01,0.4566E-01,0.4003E-01, &
      & 0.3392E-01,0.2769E-01,0.2254E-01,0.1702E-01,0.1213E-01,0.7093E-02/
-      data ((a_ssax(i,j,11 ),i=1,mbx),  j=1,1 ) /          &
+      data ((a_ssax(i,j,11 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.2102E+00,0.1127E+00,0.4250E-01,0.2007E-01,0.9655E-02,0.5070E-02, &
      & 0.2738E-02,0.1795E-02,0.1192E-02,0.8190E-03,0.6116E-03,0.4481E-03, &
      & 0.2918E-03,0.1761E-03,0.1049E-03,0.5490E-04,0.2308E-04,0.5530E-05/
-      data ((a_asyx(i,j,11 ),i=1,mbx),  j=1,1 ) /          &
+      data ((a_asyx(i,j,11 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.3375E+00,0.2412E+00,0.1541E+00,0.1086E+00,0.7644E-01,0.5501E-01, &
      & 0.3917E-01,0.3088E-01,0.2415E-01,0.1913E-01,0.1581E-01,0.1289E-01, &
      & 0.9727E-02,0.6915E-02,0.4858E-02,0.3121E-02,0.1759E-02,0.1141E-02/
  !-----------------------------------------------------------
- !12) ssam	Sea Salt (Accumulation Mode) 	(8 RH%)
-      data ((a_extx(i,j,12 ),i=1,mbx),  j=1,8 ) /          &
+ !12) ssam	Sea Salt (Accumulation Mode) 	(8 RH%)             
+      data ((a_extx(i,j,12 ),i=1,mbx),  j=1,8 ) /          & 
      & 0.9977E+00,0.9420E+00,0.7044E+00,0.4678E+00,0.4148E+00,0.2336E+00, &
      & 0.1493E+00,0.7957E-01,0.7247E-01,0.4367E-01,0.5551E-01,0.4474E-01, &
      & 0.2241E-01,0.1365E-01,0.2654E-01,0.2912E-01,0.3158E-01,0.1472E+00, &
@@ -3727,7 +3727,7 @@
      & 0.9998E+00,0.1066E+01,0.1149E+01,0.1154E+01,0.1059E+01,0.1105E+01, &
      & 0.9090E+00,0.7161E+00,0.7000E+00,0.5694E+00,0.4561E+00,0.3430E+00, &
      & 0.3119E+00,0.5031E+00,0.5565E+00,0.4695E+00,0.3264E+00,0.2343E+00/
-      data ((a_ssax(i,j,12 ),i=1,mbx),  j=1,8 ) /          &
+      data ((a_ssax(i,j,12 ),i=1,mbx),  j=1,8 ) /          & 
      & 0.1000E+01,0.9991E+00,0.9957E+00,0.9892E+00,0.9560E+00,0.9897E+00, &
      & 0.9825E+00,0.9471E+00,0.9222E+00,0.8519E+00,0.7555E+00,0.8130E+00, &
      & 0.7537E+00,0.5286E+00,0.2979E+00,0.1749E+00,0.6170E-01,0.1383E-01, &
@@ -3752,7 +3752,7 @@
      & 0.1000E+01,0.9998E+00,0.9970E+00,0.9801E+00,0.7611E+00,0.9558E+00, &
      & 0.9043E+00,0.8251E+00,0.7236E+00,0.7714E+00,0.7266E+00,0.6232E+00, &
      & 0.2972E+00,0.2351E+00,0.2662E+00,0.2865E+00,0.2670E+00,0.1236E+00/
-      data ((a_asyx(i,j,12 ),i=1,mbx),  j=1,8 ) /          &
+      data ((a_asyx(i,j,12 ),i=1,mbx),  j=1,8 ) /          & 
      & 0.6925E+00,0.7030E+00,0.7037E+00,0.7018E+00,0.6290E+00,0.6210E+00, &
      & 0.5823E+00,0.5754E+00,0.5304E+00,0.5025E+00,0.4631E+00,0.4344E+00, &
      & 0.4025E+00,0.3539E+00,0.3069E+00,0.2526E+00,0.1773E+00,0.5475E-01, &
@@ -3778,8 +3778,8 @@
      & 0.8112E+00,0.8339E+00,0.8106E+00,0.8033E+00,0.8011E+00,0.7995E+00, &
      & 0.7670E+00,0.6642E+00,0.5932E+00,0.5376E+00,0.4736E+00,0.3449E+00/
  !-----------------------------------------------------------
- !13) sscm	Sea Salt (Coarse Mode) 		(8 RH%)
-      data ((a_extx(i,j,13 ),i=1,mbx),  j=1,8 ) /          &
+ !13) sscm	Sea Salt (Coarse Mode) 		(8 RH%)                  
+      data ((a_extx(i,j,13 ),i=1,mbx),  j=1,8 ) /          & 
      & 0.9980E+00,0.1032E+01,0.1084E+01,0.1141E+01,0.1180E+01,0.1239E+01, &
      & 0.1267E+01,0.1223E+01,0.1223E+01,0.1131E+01,0.1187E+01,0.1193E+01, &
      & 0.1003E+01,0.7764E+00,0.8981E+00,0.8734E+00,0.7043E+00,0.1087E+01, &
@@ -3804,7 +3804,7 @@
      & 0.9997E+00,0.1011E+01,0.1027E+01,0.1043E+01,0.1048E+01,0.1071E+01, &
      & 0.1097E+01,0.1109E+01,0.1124E+01,0.1152E+01,0.1169E+01,0.1167E+01, &
      & 0.1027E+01,0.1055E+01,0.1127E+01,0.1180E+01,0.1203E+01,0.1130E+01/
-      data ((a_ssax(i,j,13 ),i=1,mbx),  j=1,8 ) /          &
+      data ((a_ssax(i,j,13 ),i=1,mbx),  j=1,8 ) /          & 
      & 0.1000E+01,0.9930E+00,0.9727E+00,0.9556E+00,0.8560E+00,0.9741E+00, &
      & 0.9710E+00,0.9527E+00,0.9273E+00,0.9159E+00,0.8371E+00,0.8800E+00, &
      & 0.9069E+00,0.8668E+00,0.6916E+00,0.5906E+00,0.4595E+00,0.2559E+00, &
@@ -3829,7 +3829,7 @@
      & 0.1000E+01,0.9992E+00,0.9761E+00,0.8453E+00,0.6583E+00,0.7726E+00, &
      & 0.6703E+00,0.6494E+00,0.5614E+00,0.6001E+00,0.6039E+00,0.5952E+00, &
      & 0.4959E+00,0.4723E+00,0.4807E+00,0.4801E+00,0.4769E+00,0.4282E+00/
-      data ((a_asyx(i,j,13 ),i=1,mbx),  j=1,8 ) /          &
+      data ((a_asyx(i,j,13 ),i=1,mbx),  j=1,8 ) /          & 
      & 0.7964E+00,0.7818E+00,0.7631E+00,0.7611E+00,0.7325E+00,0.7164E+00, &
      & 0.7131E+00,0.7702E+00,0.7411E+00,0.7655E+00,0.7186E+00,0.6815E+00, &
      & 0.7176E+00,0.7450E+00,0.6774E+00,0.6201E+00,0.5680E+00,0.2940E+00, &
@@ -3855,64 +3855,64 @@
      & 0.9008E+00,0.9166E+00,0.9314E+00,0.9176E+00,0.9221E+00,0.9365E+00, &
      & 0.9578E+00,0.9277E+00,0.8974E+00,0.8722E+00,0.8395E+00,0.7834E+00/
  !-----------------------------------------------------------
- !14) minm	Mineral Dust (Nucleation Mode)
-      data ((a_extx(i,j,14 ),i=1,mbx),  j=1,1 ) /          &
+ !14) minm	Mineral Dust (Nucleation Mode)                    
+      data ((a_extx(i,j,14 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.6970E+00,0.3724E+00,0.1420E+00,0.6483E-01,0.3820E-01,0.1519E-01, &
      & 0.8261E-02,0.1004E-01,0.1296E-01,0.1639E-01,0.3130E-01,0.2811E-01, &
      & 0.2521E-01,0.1703E-01,0.1988E-01,0.1697E-01,0.9376E-02,0.9107E-02/
-      data ((a_ssax(i,j,14 ),i=1,mbx),  j=1,1 ) /          &
+      data ((a_ssax(i,j,14 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.9647E+00,0.9747E+00,0.9551E+00,0.9100E+00,0.6865E+00,0.7466E+00, &
      & 0.5914E+00,0.2448E+00,0.1105E+00,0.2806E-01,0.1280E-01,0.9266E-01, &
      & 0.2898E-01,0.1546E-01,0.4009E-02,0.7202E-02,0.3913E-02,0.4404E-03/
-      data ((a_asyx(i,j,14 ),i=1,mbx),  j=1,1 ) /          &
+      data ((a_asyx(i,j,14 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.6649E+00,0.6163E+00,0.5404E+00,0.4736E+00,0.4018E+00,0.3402E+00, &
      & 0.2763E+00,0.2324E+00,0.1920E+00,0.1511E+00,0.1181E+00,0.1573E+00, &
      & 0.1089E+00,0.8380E-01,0.5339E-01,0.5149E-01,0.3630E-01,0.1260E-01/
  !-----------------------------------------------------------
- !15) miam	Mineral Dust (Accumulation Mode)
-      data ((a_extx(i,j,15 ),i=1,mbx),  j=1,1 ) /          &
+ !15) miam	Mineral Dust (Accumulation Mode)                  
+      data ((a_extx(i,j,15 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.9984E+00,0.1086E+01,0.1096E+01,0.9933E+00,0.8202E+00,0.6341E+00, &
      & 0.4556E+00,0.3471E+00,0.2878E+00,0.1996E+00,0.2565E+00,0.6046E+00, &
      & 0.3391E+00,0.2277E+00,0.1790E+00,0.2234E+00,0.1218E+00,0.6990E-01/
-      data ((a_ssax(i,j,15 ),i=1,mbx),  j=1,1 ) /          &
+      data ((a_ssax(i,j,15 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.8711E+00,0.9378E+00,0.9463E+00,0.9390E+00,0.8556E+00,0.9280E+00, &
      & 0.9132E+00,0.7796E+00,0.6446E+00,0.3766E+00,0.1883E+00,0.4505E+00, &
      & 0.3751E+00,0.3398E+00,0.1766E+00,0.2689E+00,0.2345E+00,0.6417E-01/
-      data ((a_asyx(i,j,15 ),i=1,mbx),  j=1,1 ) /          &
+      data ((a_asyx(i,j,15 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.7372E+00,0.6959E+00,0.6875E+00,0.6870E+00,0.6976E+00,0.6754E+00, &
      & 0.6587E+00,0.6577E+00,0.6356E+00,0.6194E+00,0.5500E+00,0.3734E+00, &
      & 0.4415E+00,0.4217E+00,0.3678E+00,0.2494E+00,0.2310E+00,0.1612E+00/
  !-----------------------------------------------------------
- !16) micm	Mineral Dust (Coarse Mode)
-      data ((a_extx(i,j,16 ),i=1,mbx),  j=1,1 ) /          &
+ !16) micm	Mineral Dust (Coarse Mode)                        
+      data ((a_extx(i,j,16 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.9996E+00,0.1027E+01,0.1068E+01,0.1107E+01,0.1148E+01,0.1198E+01, &
      & 0.1233E+01,0.1224E+01,0.1191E+01,0.1019E+01,0.8557E+00,0.1258E+01, &
      & 0.1215E+01,0.1151E+01,0.9892E+00,0.1223E+01,0.1120E+01,0.8345E+00/
-      data ((a_ssax(i,j,16 ),i=1,mbx),  j=1,1 ) /          &
+      data ((a_ssax(i,j,16 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.6601E+00,0.7660E+00,0.7855E+00,0.7760E+00,0.6695E+00,0.8055E+00, &
      & 0.8213E+00,0.7032E+00,0.6400E+00,0.5581E+00,0.4115E+00,0.5215E+00, &
      & 0.4952E+00,0.5059E+00,0.4368E+00,0.4754E+00,0.4695E+00,0.3922E+00/
-      data ((a_asyx(i,j,16 ),i=1,mbx),  j=1,1 ) /          &
+      data ((a_asyx(i,j,16 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.8973E+00,0.8441E+00,0.8113E+00,0.7920E+00,0.8221E+00,0.7620E+00, &
      & 0.7560E+00,0.8061E+00,0.8300E+00,0.8774E+00,0.8754E+00,0.6871E+00, &
      & 0.7447E+00,0.7345E+00,0.7462E+00,0.5502E+00,0.4931E+00,0.4435E+00/
  !-----------------------------------------------------------
- !17) mitr	Mineral Dust (Transported Mode)
-      data ((a_extx(i,j,17 ),i=1,mbx),  j=1,1 ) /          &
+ !17) mitr	Mineral Dust (Transported Mode)                   
+      data ((a_extx(i,j,17 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.9986E+00,0.1075E+01,0.1146E+01,0.1147E+01,0.1071E+01,0.9633E+00, &
      & 0.8081E+00,0.6535E+00,0.5407E+00,0.3475E+00,0.3921E+00,0.9254E+00, &
      & 0.5998E+00,0.4218E+00,0.3044E+00,0.4378E+00,0.2417E+00,0.1079E+00/
-      data ((a_ssax(i,j,17 ),i=1,mbx),  j=1,1 ) /          &
+      data ((a_ssax(i,j,17 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.8289E+00,0.9121E+00,0.9248E+00,0.9199E+00,0.8342E+00,0.9235E+00, &
      & 0.9212E+00,0.8118E+00,0.7005E+00,0.4500E+00,0.2373E+00,0.4742E+00, &
      & 0.4401E+00,0.4147E+00,0.2391E+00,0.3436E+00,0.2894E+00,0.6579E-01/
-      data ((a_asyx(i,j,17 ),i=1,mbx),  j=1,1 ) /          &
+      data ((a_asyx(i,j,17 ),i=1,mbx),  j=1,1 ) /          & 
      & 0.7784E+00,0.7216E+00,0.6970E+00,0.6933E+00,0.7183E+00,0.6974E+00, &
      & 0.7035E+00,0.7204E+00,0.7080E+00,0.6903E+00,0.6241E+00,0.4321E+00, &
      & 0.5088E+00,0.4685E+00,0.3810E+00,0.2530E+00,0.1987E+00,0.7565E-01/
  !-----------------------------------------------------------
- !18) suso 	Sulfate Droplets		(8 RH%)
-      data ((a_extx(i,j,18 ),i=1,mbx),  j=1,8 ) /          &
+ !18) suso 	Sulfate Droplets		(8 RH%)                        
+      data ((a_extx(i,j,18 ),i=1,mbx),  j=1,8 ) /          & 
      & 0.1009E+01,0.5315E+00,0.1916E+00,0.7670E-01,0.7874E-01,0.9590E-01, &
      & 0.6253E-01,0.7484E-01,0.4925E-01,0.9857E-01,0.1587E+00,0.9879E-01, &
      & 0.4700E-01,0.2393E-01,0.3030E-01,0.5892E-02,0.9433E-02,0.7848E-02, &
@@ -3937,7 +3937,7 @@
      & 0.1000E+01,0.8626E+00,0.5794E+00,0.3284E+00,0.3569E+00,0.2076E+00, &
      & 0.1130E+00,0.8469E-01,0.8470E-01,0.5441E-01,0.4914E-01,0.4181E-01, &
      & 0.6305E-01,0.1209E+00,0.1170E+00,0.7631E-01,0.4595E-01,0.3786E-01/
-      data ((a_ssax(i,j,18 ),i=1,mbx),  j=1,8 ) /          &
+      data ((a_ssax(i,j,18 ),i=1,mbx),  j=1,8 ) /          & 
      & 0.1000E+01,0.1000E+01,0.9976E+00,0.9708E+00,0.4906E+00,0.1774E+00, &
      & 0.1232E+00,0.6446E-01,0.5671E-01,0.1527E-01,0.2826E-01,0.4081E-01, &
      & 0.4101E-01,0.2760E-01,0.3588E-01,0.7646E-01,0.4123E-02,0.9668E-03, &
@@ -3962,7 +3962,7 @@
      & 0.1000E+01,0.1000E+01,0.9988E+00,0.9880E+00,0.7286E+00,0.9306E+00, &
      & 0.8321E+00,0.6533E+00,0.5139E+00,0.4686E+00,0.3312E+00,0.2294E+00, &
      & 0.7508E-01,0.5140E-01,0.5907E-01,0.5688E-01,0.3758E-01,0.8392E-02/
-      data ((a_asyx(i,j,18 ),i=1,mbx),  j=1,8 ) /          &
+      data ((a_asyx(i,j,18 ),i=1,mbx),  j=1,8 ) /          & 
      & 0.7172E+00,0.6760E+00,0.6086E+00,0.5473E+00,0.4571E+00,0.3765E+00, &
      & 0.3163E+00,0.2661E+00,0.2370E+00,0.1704E+00,0.1353E+00,0.1478E+00, &
      & 0.1519E+00,0.1258E+00,0.9522E-01,0.8572E-01,0.5257E-01,0.2308E-01, &
@@ -3986,15 +3986,15 @@
      & 0.3392E+00,0.2584E+00,0.2196E+00,0.1909E+00,0.1477E+00,0.8069E-01, &
      & 0.7967E+00,0.8007E+00,0.7892E+00,0.7825E+00,0.7117E+00,0.6735E+00, &
      & 0.6423E+00,0.6084E+00,0.5632E+00,0.5303E+00,0.4951E+00,0.4587E+00, &
-     & 0.3850E+00,0.2951E+00,0.2518E+00,0.2202E+00,0.1738E+00,0.9837E-01/
+     & 0.3850E+00,0.2951E+00,0.2518E+00,0.2202E+00,0.1738E+00,0.9837E-01/   
       end module aerosol1
-
+      
 !      block data aerosol2
       module aerosol2
 !c                              4/1/97
 !c  ********************************************************************
 !c
-!c  Data statements providing aerosol properties for the 10
+!c  Data statements providing aerosol properties for the 10 
 !c  subintervals in the first Fu-Liou SW band.
 !c
 !c  mb:     Number of bands in code (will always be 10)
@@ -4002,15 +4002,15 @@
 !c          aerosol subroutine.
 !c  nrh:    Number of different relative humidities (currently 8)
 !c
-!c  Optical properties are dimensioned (10,8,naer): Number of
-!c  sw sunintervals, number of relative humidities, and number of
-!c  aerosol types. Properties were extracted from tables and mapped for
-!c  the most part into the Fu-Liou spectral bands.  sub-intervals 1-4,
-!c  not available in the tables, were filled with properties from the
-!c  5th sub-interval.  Intervals 5-6 were filled by direct insertion
-!c  (1 table value per interval). The last two intervals were filled
-!c  with 2 table values per interval, which were averaged using
-!c  energy weighting.  Tegen and Lacis values are not RH-dependent,
+!c  Optical properties are dimensioned (10,8,naer): Number of 
+!c  sw sunintervals, number of relative humidities, and number of 
+!c  aerosol types. Properties were extracted from tables and mapped for 
+!c  the most part into the Fu-Liou spectral bands.  sub-intervals 1-4, 
+!c  not available in the tables, were filled with properties from the 
+!c  5th sub-interval.  Intervals 5-6 were filled by direct insertion 
+!c  (1 table value per interval). The last two intervals were filled 
+!c  with 2 table values per interval, which were averaged using 
+!c  energy weighting.  Tegen and Lacis values are not RH-dependent, 
 !c  so values are repeated.
 !c
 !c  a_ssa:  single-scattering albedo.  One data statement for EACH type
@@ -4035,9 +4035,9 @@
       real a_asyy(mby,nrh,naer)
 !      common /aer_opty/ a_ssay,a_exty,a_asyy
 
-!c  ****************************************************
-!c  Data statements for aerosol type 1 (marine) sw bnd 1
-!c  ****************************************************
+!c  ****************************************************     
+!c  Data statements for aerosol type 1 (marine) sw bnd 1     
+!c  ****************************************************     
       data ((a_ssay(i,j,1),i=1,mby),j=1,nrh) / &
      &  .1000E+01,.1000E+01,.1000E+01,.1000E+01,.1000E+01,.1000E+01, &
      &  .1000E+01,.1000E+01,.1000E+01,.1000E+01, &
@@ -4145,9 +4145,9 @@
      &  .7723E+00,.7723E+00,.7723E+00,.7723E+00,.7723E+00,.7715E+00, &
      &  .7706E+00,.7678E+00,.7635E+00,.7559E+00/
 
-!c  ***************************************************
-!c  Data statements for aerosol type 3 (urban) sw bnd 1
-!c  ***************************************************
+!c  ***************************************************      
+!c  Data statements for aerosol type 3 (urban) sw bnd 1      
+!c  ***************************************************      
       data ((a_ssay(i,j,3),i=1,mby),j=1,nrh) / &
      &  .9180E+00,.9180E+00,.9180E+00,.9180E+00,.9180E+00,.9394E+00, &
      &  .9404E+00,.9417E+00,.9391E+00,.9333E+00, &
@@ -4474,19 +4474,19 @@
 !=====================================================================
 !OPAC Y
 !-----------------------------------------------------------
- !9)  inso	Insoluble
-      data ((a_exty(i,j, 9 ),i=1,mby),  j=1,1 ) /          &
+ !9)  inso	Insoluble                                         
+      data ((a_exty(i,j, 9 ),i=1,mby),  j=1,1 ) /          & 
      & 0.9429E+00,0.9453E+00,0.9513E+00,0.9558E+00,0.9595E+00,0.9650E+00, &
      & 0.9753E+00,0.9866E+00,0.9992E+00,0.1015E+01/
-      data ((a_ssay(i,j, 9 ),i=1,mby),  j=1,1 ) /          &
+      data ((a_ssay(i,j, 9 ),i=1,mby),  j=1,1 ) /          & 
      & 0.4624E+00,0.5098E+00,0.6053E+00,0.6511E+00,0.6674E+00,0.6750E+00, &
      & 0.6918E+00,0.7100E+00,0.7289E+00,0.7486E+00/
-      data ((a_asyy(i,j, 9 ),i=1,mby),  j=1,1 ) /          &
+      data ((a_asyy(i,j, 9 ),i=1,mby),  j=1,1 ) /          & 
      & 0.9788E+00,0.9585E+00,0.9122E+00,0.8872E+00,0.8773E+00,0.8720E+00, &
      & 0.8597E+00,0.8458E+00,0.8317E+00,0.8163E+00/
  !-----------------------------------------------------------
- !10) waso      Water Soluble 			(8 RH%)
-      data ((a_exty(i,j,10 ),i=1,mby),  j=1,8 ) /          &
+ !10) waso      Water Soluble 			(8 RH%)                     
+      data ((a_exty(i,j,10 ),i=1,mby),  j=1,8 ) /          & 
      & 0.2636E+01,0.2534E+01,0.2300E+01,0.2142E+01,0.2022E+01,0.1846E+01, &
      & 0.1535E+01,0.1261E+01,0.1015E+01,0.7892E+00, &
      & 0.2564E+01,0.2466E+01,0.2240E+01,0.2089E+01,0.1975E+01,0.1808E+01, &
@@ -4503,7 +4503,7 @@
      & 0.1350E+01,0.1182E+01,0.1011E+01,0.8404E+00, &
      & 0.1752E+01,0.1718E+01,0.1638E+01,0.1581E+01,0.1534E+01,0.1460E+01, &
      & 0.1311E+01,0.1165E+01,0.1010E+01,0.8518E+00/
-      data ((a_ssay(i,j,10 ),i=1,mby),  j=1,8 ) /          &
+      data ((a_ssay(i,j,10 ),i=1,mby),  j=1,8 ) /          & 
      & 0.6646E+00,0.7653E+00,0.8981E+00,0.9419E+00,0.9569E+00,0.9666E+00, &
      & 0.9685E+00,0.9688E+00,0.9633E+00,0.9558E+00, &
      & 0.7687E+00,0.8417E+00,0.9345E+00,0.9639E+00,0.9735E+00,0.9796E+00, &
@@ -4520,7 +4520,7 @@
      & 0.9959E+00,0.9961E+00,0.9956E+00,0.9949E+00, &
      & 0.9465E+00,0.9651E+00,0.9870E+00,0.9934E+00,0.9954E+00,0.9966E+00, &
      & 0.9970E+00,0.9972E+00,0.9968E+00,0.9964E+00/
-      data ((a_asyy(i,j,10 ),i=1,mby),  j=1,8 ) /          &
+      data ((a_asyy(i,j,10 ),i=1,mby),  j=1,8 ) /          & 
      & 0.7099E+00,0.6998E+00,0.6762E+00,0.6623E+00,0.6551E+00,0.6486E+00, &
      & 0.6386E+00,0.6267E+00,0.6143E+00,0.5985E+00, &
      & 0.7400E+00,0.7344E+00,0.7212E+00,0.7131E+00,0.7084E+00,0.7033E+00, &
@@ -4538,19 +4538,19 @@
      & 0.7749E+00,0.7755E+00,0.7768E+00,0.7777E+00,0.7784E+00,0.7789E+00, &
      & 0.7779E+00,0.7750E+00,0.7701E+00,0.7619E+00/
  !-----------------------------------------------------------
- !11) soot	Soot
-      data ((a_exty(i,j,11 ),i=1,mby),  j=1,1 ) /          &
+ !11) soot	Soot                                              
+      data ((a_exty(i,j,11 ),i=1,mby),  j=1,1 ) /          & 
      & 0.2564E+01,0.2504E+01,0.2357E+01,0.2233E+01,0.2108E+01,0.1900E+01, &
      & 0.1552E+01,0.1267E+01,0.1017E+01,0.8078E+00/
-      data ((a_ssay(i,j,11 ),i=1,mby),  j=1,1 ) /          &
+      data ((a_ssay(i,j,11 ),i=1,mby),  j=1,1 ) /          & 
      & 0.3009E+00,0.3045E+00,0.3124E+00,0.3138E+00,0.3091E+00,0.2954E+00, &
      & 0.2666E+00,0.2384E+00,0.2102E+00,0.1789E+00/
-      data ((a_asyy(i,j,11 ),i=1,mby),  j=1,1 ) /          &
+      data ((a_asyy(i,j,11 ),i=1,mby),  j=1,1 ) /          & 
      & 0.5324E+00,0.5169E+00,0.4811E+00,0.4589E+00,0.4449E+00,0.4272E+00, &
      & 0.3957E+00,0.3664E+00,0.3375E+00,0.3079E+00/
  !-----------------------------------------------------------
- !12) ssam	Sea Salt (Accumulation Mode) 	(8 RH%)
-      data ((a_exty(i,j,12 ),i=1,mby),  j=1,8 ) /          &
+ !12) ssam	Sea Salt (Accumulation Mode) 	(8 RH%)             
+      data ((a_exty(i,j,12 ),i=1,mby),  j=1,8 ) /          & 
      & 0.8629E+00,0.8715E+00,0.8930E+00,0.9073E+00,0.9173E+00,0.9311E+00, &
      & 0.9576E+00,0.9787E+00,0.9977E+00,0.1004E+01, &
      & 0.8793E+00,0.8838E+00,0.8954E+00,0.9047E+00,0.9137E+00,0.9279E+00, &
@@ -4567,7 +4567,7 @@
      & 0.9668E+00,0.9813E+00,0.9994E+00,0.1018E+01, &
      & 0.9437E+00,0.9462E+00,0.9524E+00,0.9566E+00,0.9596E+00,0.9641E+00, &
      & 0.9729E+00,0.9851E+00,0.9998E+00,0.1013E+01/
-      data ((a_ssay(i,j,12 ),i=1,mby),  j=1,8 ) /          &
+      data ((a_ssay(i,j,12 ),i=1,mby),  j=1,8 ) /          & 
      & 0.9998E+00,0.9998E+00,0.9998E+00,0.9999E+00,0.9999E+00,0.1000E+01, &
      & 0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01, &
      & 0.9995E+00,0.9998E+00,0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01, &
@@ -4584,7 +4584,7 @@
      & 0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01, &
      & 0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01, &
      & 0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01/
-      data ((a_asyy(i,j,12 ),i=1,mby),  j=1,8 ) /          &
+      data ((a_asyy(i,j,12 ),i=1,mby),  j=1,8 ) /          & 
      & 0.7300E+00,0.7254E+00,0.7146E+00,0.7078E+00,0.7037E+00,0.6998E+00, &
      & 0.6978E+00,0.6951E+00,0.6925E+00,0.6965E+00, &
      & 0.7850E+00,0.7850E+00,0.7846E+00,0.7830E+00,0.7798E+00,0.7750E+00, &
@@ -4602,8 +4602,8 @@
      & 0.8448E+00,0.8449E+00,0.8450E+00,0.8444E+00,0.8431E+00,0.8406E+00, &
      & 0.8373E+00,0.8299E+00,0.8244E+00,0.8185E+00/
  !-----------------------------------------------------------
- !13) sscm	Sea Salt (Coarse Mode) 		(8 RH%)
-      data ((a_exty(i,j,13 ),i=1,mby),  j=1,8 ) /          &
+ !13) sscm	Sea Salt (Coarse Mode) 		(8 RH%)                  
+      data ((a_exty(i,j,13 ),i=1,mby),  j=1,8 ) /          & 
      & 0.9630E+00,0.9648E+00,0.9695E+00,0.9730E+00,0.9758E+00,0.9790E+00, &
      & 0.9821E+00,0.9899E+00,0.9980E+00,0.1007E+01, &
      & 0.9727E+00,0.9743E+00,0.9783E+00,0.9809E+00,0.9829E+00,0.9856E+00, &
@@ -4620,7 +4620,7 @@
      & 0.9948E+00,0.9969E+00,0.9997E+00,0.1003E+01, &
      & 0.9901E+00,0.9891E+00,0.9872E+00,0.9870E+00,0.9887E+00,0.9911E+00, &
      & 0.9895E+00,0.9966E+00,0.9997E+00,0.1002E+01/
-      data ((a_ssay(i,j,13 ),i=1,mby),  j=1,8 ) /          &
+      data ((a_ssay(i,j,13 ),i=1,mby),  j=1,8 ) /          & 
      & 0.9974E+00,0.9980E+00,0.9990E+00,0.9994E+00,0.9996E+00,0.9998E+00, &
      & 0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01, &
      & 0.9995E+00,0.9995E+00,0.9995E+00,0.9997E+00,0.9999E+00,0.1000E+01, &
@@ -4637,7 +4637,7 @@
      & 0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01, &
      & 0.9995E+00,0.9998E+00,0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01, &
      & 0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01/
-      data ((a_asyy(i,j,13 ),i=1,mby),  j=1,8 ) /          &
+      data ((a_asyy(i,j,13 ),i=1,mby),  j=1,8 ) /          & 
      & 0.8085E+00,0.8092E+00,0.8108E+00,0.8106E+00,0.8085E+00,0.8049E+00, &
      & 0.8045E+00,0.8017E+00,0.7964E+00,0.7932E+00, &
      & 0.8452E+00,0.8456E+00,0.8467E+00,0.8476E+00,0.8486E+00,0.8498E+00, &
@@ -4655,52 +4655,52 @@
      & 0.8070E+00,0.8121E+00,0.8244E+00,0.8326E+00,0.8384E+00,0.8465E+00, &
      & 0.8575E+00,0.8605E+00,0.8671E+00,0.8673E+00/
  !-----------------------------------------------------------
- !14) minm	Mineral Dust (Nucleation Mode)
-      data ((a_exty(i,j,14 ),i=1,mby),  j=1,1 ) /          &
+ !14) minm	Mineral Dust (Nucleation Mode)                    
+      data ((a_exty(i,j,14 ),i=1,mby),  j=1,1 ) /          & 
      & 0.1013E+01,0.1007E+01,0.9897E+00,0.9760E+00,0.9624E+00,0.9367E+00, &
      & 0.8702E+00,0.7911E+00,0.6970E+00,0.5919E+00/
-      data ((a_ssay(i,j,14 ),i=1,mby),  j=1,1 ) /          &
+      data ((a_ssay(i,j,14 ),i=1,mby),  j=1,1 ) /          & 
      & 0.7841E+00,0.7925E+00,0.8134E+00,0.8331E+00,0.8543E+00,0.8839E+00, &
      & 0.9211E+00,0.9491E+00,0.9647E+00,0.9740E+00/
-      data ((a_asyy(i,j,14 ),i=1,mby),  j=1,1 ) /          &
+      data ((a_asyy(i,j,14 ),i=1,mby),  j=1,1 ) /          & 
      & 0.7398E+00,0.7359E+00,0.7260E+00,0.7185E+00,0.7118E+00,0.7018E+00, &
      & 0.6876E+00,0.6759E+00,0.6649E+00,0.6521E+00/
  !-----------------------------------------------------------
- !15) miam	Mineral Dust (Accumulation Mode)
-      data ((a_exty(i,j,15 ),i=1,mby),  j=1,1 ) /          &
+ !15) miam	Mineral Dust (Accumulation Mode)                  
+      data ((a_exty(i,j,15 ),i=1,mby),  j=1,1 ) /          & 
      & 0.8958E+00,0.8998E+00,0.9097E+00,0.9170E+00,0.9230E+00,0.9325E+00, &
      & 0.9520E+00,0.9736E+00,0.9984E+00,0.1028E+01/
-      data ((a_ssay(i,j,15 ),i=1,mby),  j=1,1 ) /          &
+      data ((a_ssay(i,j,15 ),i=1,mby),  j=1,1 ) /          & 
      & 0.5676E+00,0.5719E+00,0.5844E+00,0.6014E+00,0.6254E+00,0.6655E+00, &
      & 0.7403E+00,0.8148E+00,0.8711E+00,0.9093E+00/
-      data ((a_asyy(i,j,15 ),i=1,mby),  j=1,1 ) /          &
+      data ((a_asyy(i,j,15 ),i=1,mby),  j=1,1 ) /          & 
      & 0.9144E+00,0.9086E+00,0.8938E+00,0.8802E+00,0.8654E+00,0.8411E+00, &
      & 0.8007E+00,0.7640E+00,0.7372E+00,0.7162E+00/
  !-----------------------------------------------------------
- !16) micm	Mineral Dust (Coarse Mode)
-      data ((a_exty(i,j,16 ),i=1,mby),  j=1,1 ) /          &
+ !16) micm	Mineral Dust (Coarse Mode)                        
+      data ((a_exty(i,j,16 ),i=1,mby),  j=1,1 ) /          & 
      & 0.9717E+00,0.9730E+00,0.9761E+00,0.9783E+00,0.9801E+00,0.9828E+00, &
      & 0.9880E+00,0.9935E+00,0.9996E+00,0.1007E+01/
-      data ((a_ssay(i,j,16 ),i=1,mby),  j=1,1 ) /          &
+      data ((a_ssay(i,j,16 ),i=1,mby),  j=1,1 ) /          & 
      & 0.5462E+00,0.5457E+00,0.5448E+00,0.5454E+00,0.5477E+00,0.5523E+00, &
      & 0.5714E+00,0.6059E+00,0.6601E+00,0.7118E+00/
-      data ((a_asyy(i,j,16 ),i=1,mby),  j=1,1 ) /          &
+      data ((a_asyy(i,j,16 ),i=1,mby),  j=1,1 ) /          & 
      & 0.9433E+00,0.9447E+00,0.9478E+00,0.9490E+00,0.9485E+00,0.9466E+00, &
      & 0.9380E+00,0.9212E+00,0.8973E+00,0.8741E+00/
  !-----------------------------------------------------------
- !17) mitr	Mineral Dust (Transported Mode)
-      data ((a_exty(i,j,17 ),i=1,mby),  j=1,1 ) /          &
+ !17) mitr	Mineral Dust (Transported Mode)                   
+      data ((a_exty(i,j,17 ),i=1,mby),  j=1,1 ) /          & 
      & 0.9243E+00,0.9273E+00,0.9348E+00,0.9403E+00,0.9447E+00,0.9516E+00, &
      & 0.9657E+00,0.9810E+00,0.9986E+00,0.1019E+01/
-      data ((a_ssay(i,j,17 ),i=1,mby),  j=1,1 ) /          &
+      data ((a_ssay(i,j,17 ),i=1,mby),  j=1,1 ) /          & 
      & 0.5535E+00,0.5553E+00,0.5615E+00,0.5724E+00,0.5898E+00,0.6205E+00, &
      & 0.6873E+00,0.7635E+00,0.8289E+00,0.8763E+00/
-      data ((a_asyy(i,j,17 ),i=1,mby),  j=1,1 ) /          &
+      data ((a_asyy(i,j,17 ),i=1,mby),  j=1,1 ) /          & 
      & 0.9371E+00,0.9340E+00,0.9257E+00,0.9168E+00,0.9057E+00,0.8860E+00, &
      & 0.8473E+00,0.8087E+00,0.7784E+00,0.7532E+00/
  !-----------------------------------------------------------
- !18) suso 	Sulfate Droplets		(8 RH%)
-      data ((a_exty(i,j,18 ),i=1,mby),  j=1,8 ) /          &
+ !18) suso 	Sulfate Droplets		(8 RH%)                        
+      data ((a_exty(i,j,18 ),i=1,mby),  j=1,8 ) /          & 
      & 0.1618E+01,0.1603E+01,0.1566E+01,0.1534E+01,0.1500E+01,0.1438E+01, &
      & 0.1299E+01,0.1155E+01,0.1009E+01,0.8521E+00, &
      & 0.1357E+01,0.1352E+01,0.1341E+01,0.1329E+01,0.1315E+01,0.1285E+01, &
@@ -4717,7 +4717,7 @@
      & 0.1022E+01,0.1020E+01,0.1001E+01,0.9637E+00, &
      & 0.9078E+00,0.9155E+00,0.9348E+00,0.9483E+00,0.9585E+00,0.9724E+00, &
      & 0.9917E+00,0.1002E+01,0.1000E+01,0.9817E+00/
-      data ((a_ssay(i,j,18 ),i=1,mby),  j=1,8 ) /          &
+      data ((a_ssay(i,j,18 ),i=1,mby),  j=1,8 ) /          & 
      & 0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01, &
      & 0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01, &
      & 0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01, &
@@ -4734,7 +4734,7 @@
      & 0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01, &
      & 0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01, &
      & 0.1000E+01,0.1000E+01,0.1000E+01,0.1000E+01/
-      data ((a_asyy(i,j,18 ),i=1,mby),  j=1,8 ) /          &
+      data ((a_asyy(i,j,18 ),i=1,mby),  j=1,8 ) /          & 
      & 0.6955E+00,0.6978E+00,0.7034E+00,0.7076E+00,0.7112E+00,0.7165E+00, &
      & 0.7227E+00,0.7231E+00,0.7172E+00,0.7080E+00, &
      & 0.7408E+00,0.7444E+00,0.7532E+00,0.7586E+00,0.7617E+00,0.7650E+00, &
@@ -4753,30 +4753,30 @@
      & 0.7909E+00,0.7937E+00,0.7967E+00,0.7995E+00/
 !=====================================================================
       end module aerosol2
-
-
+      
+      
 !===========================================================
-!    block data opac_extinctions
+!    block data opac_extinctions  
       module opac_ext
-!    common /opac_ext/ wl(24) ,edat(24,8,9:18)
+!    common /opac_ext/ wl(24) ,edat(24,8,9:18) 
       implicit none
       integer, private :: i, j
       real :: wl(24) ,edat(24,8,9:18)
-      data wl /                                            &
+      data wl /                                            & 
      &  0.2500E+00,0.3000E+00,0.3500E+00,0.4000E+00,0.4500E+00,0.5000E+00, &
      &  0.5500E+00,0.6000E+00,0.6500E+00,0.7000E+00,0.7500E+00,0.8000E+00, &
      &  0.9000E+00,0.1000E+01,0.1250E+01,0.1500E+01,0.1750E+01,0.2000E+01, &
      &  0.2500E+01,0.3000E+01,0.3200E+01,0.3390E+01,0.3500E+01,0.3750E+01/
  !-----------------------------------------------------------
- !9)  inso	Insoluble
-      data (( edat(i,j, 9),i=1,24), j=1,1 ) /              &
+ !9)  inso	Insoluble                                         
+      data (( edat(i,j, 9),i=1,24), j=1,1 ) /              & 
      &  0.9477E+00,0.9572E+00,0.9667E+00,0.9748E+00,0.9839E+00,0.9916E+00, &
      &  0.1000E+01,0.1008E+01,0.1016E+01,0.1024E+01,0.1031E+01,0.1038E+01, &
      &  0.1052E+01,0.1064E+01,0.1093E+01,0.1105E+01,0.1088E+01,0.1012E+01, &
      &  0.7983E+00,0.6625E+00,0.7897E+00,0.8403E+00,0.8668E+00,0.8205E+00/
  !-----------------------------------------------------------
- !10) waso      Water Soluble 			(8 RH%)
-      data (( edat(i,j,10),i=1,24), j=1,8 ) /              &
+ !10) waso      Water Soluble 			(8 RH%)                     
+      data (( edat(i,j,10),i=1,24), j=1,8 ) /              & 
      &  0.2438E+01,0.2095E+01,0.1793E+01,0.1539E+01,0.1326E+01,0.1148E+01, &
      &  0.1000E+01,0.8739E+00,0.7689E+00,0.6782E+00,0.6032E+00,0.5249E+00, &
      &  0.4251E+00,0.3497E+00,0.2191E+00,0.1520E+00,0.9186E-01,0.4897E-01, &
@@ -4810,15 +4810,15 @@
      &  0.5496E+00,0.4702E+00,0.3238E+00,0.2331E+00,0.1648E+00,0.1196E+00, &
      &  0.5785E-01,0.2815E+00,0.1521E+00,0.7776E-01,0.5825E-01,0.4012E-01/
  !-----------------------------------------------------------
- !11) soot	Soot
-      data (( edat(i,j,11),i=1,24), j=1,1 ) /              &
+ !11) soot	Soot                                              
+      data (( edat(i,j,11),i=1,24), j=1,1 ) /              & 
      &  0.2447E+01,0.2188E+01,0.1837E+01,0.1555E+01,0.1331E+01,0.1153E+01, &
      &  0.1000E+01,0.8818E+00,0.7906E+00,0.7082E+00,0.6445E+00,0.5904E+00, &
      &  0.5087E+00,0.4453E+00,0.3412E+00,0.2767E+00,0.2367E+00,0.2055E+00, &
      &  0.1639E+00,0.1398E+00,0.1284E+00,0.1218E+00,0.1189E+00,0.1105E+00/
  !-----------------------------------------------------------
- !12) ssam	Sea Salt (Accumulation Mode) 	(8 RH%)
-      data (( edat(i,j,12),i=1,24), j=1,8 ) /              &
+ !12) ssam	Sea Salt (Accumulation Mode) 	(8 RH%)             
+      data (( edat(i,j,12),i=1,24), j=1,8 ) /              & 
      &  0.8801E+00,0.9114E+00,0.9354E+00,0.9580E+00,0.9733E+00,0.9887E+00, &
      &  0.1000E+01,0.1002E+01,0.1005E+01,0.1003E+01,0.9963E+00,0.9846E+00, &
      &  0.9618E+00,0.9232E+00,0.8315E+00,0.7230E+00,0.6190E+00,0.5382E+00, &
@@ -4852,8 +4852,8 @@
      &  0.1064E+01,0.1079E+01,0.1119E+01,0.1148E+01,0.1164E+01,0.1166E+01, &
      &  0.1091E+01,0.1025E+01,0.1148E+01,0.1162E+01,0.1150E+01,0.1102E+01/
  !-----------------------------------------------------------
- !13) sscm	Sea Salt (Coarse Mode) 		(8 RH%)
-      data (( edat(i,j,13),i=1,24), j=1,8 ) /              &
+ !13) sscm	Sea Salt (Coarse Mode) 		(8 RH%)                  
+      data (( edat(i,j,13),i=1,24), j=1,8 ) /              & 
      &  0.9667E+00,0.9741E+00,0.9797E+00,0.9810E+00,0.9885E+00,0.9930E+00, &
      &  0.1000E+01,0.9993E+00,0.1010E+01,0.1015E+01,0.1013E+01,0.1015E+01, &
      &  0.1029E+01,0.1039E+01,0.1062E+01,0.1075E+01,0.1107E+01,0.1123E+01, &
@@ -4887,36 +4887,36 @@
      &  0.1010E+01,0.1013E+01,0.1020E+01,0.1026E+01,0.1032E+01,0.1038E+01, &
      &  0.1049E+01,0.1044E+01,0.1056E+01,0.1063E+01,0.1066E+01,0.1071E+01/
  !-----------------------------------------------------------
- !14) minm	Mineral Dust (Nucleation Mode)
-      data (( edat(i,j,14),i=1,24), j=1,1 ) /              &
+ !14) minm	Mineral Dust (Nucleation Mode)                    
+      data (( edat(i,j,14),i=1,24), j=1,1 ) /              & 
      &  0.1000E+01,0.9711E+00,0.9279E+00,0.8725E+00,0.8129E+00,0.7512E+00, &
      &  0.6916E+00,0.6347E+00,0.5817E+00,0.5327E+00,0.4879E+00,0.4470E+00, &
      &  0.3760E+00,0.3175E+00,0.2129E+00,0.1474E+00,0.1051E+00,0.7735E-01, &
      &  0.4556E-01,0.3771E-01,0.2699E-01,0.2199E-01,0.1993E-01,0.1462E-01/
  !-----------------------------------------------------------
- !15) miam	Mineral Dust (Accumulation Mode)
-      data (( edat(i,j,15),i=1,24), j=1,1 ) /              &
+ !15) miam	Mineral Dust (Accumulation Mode)                  
+      data (( edat(i,j,15),i=1,24), j=1,1 ) /              & 
      &  0.9037E+00,0.9193E+00,0.9354E+00,0.9513E+00,0.9682E+00,0.9837E+00, &
      &  0.1000E+01,0.1015E+01,0.1031E+01,0.1045E+01,0.1056E+01,0.1069E+01, &
      &  0.1088E+01,0.1103E+01,0.1117E+01,0.1105E+01,0.1074E+01,0.1030E+01, &
      &  0.9115E+00,0.7974E+00,0.7466E+00,0.7089E+00,0.6875E+00,0.6277E+00/
  !-----------------------------------------------------------
- !16) micm	Mineral Dust (Coarse Mode)
-      data (( edat(i,j,16),i=1,24), j=1,1 ) /              &
+ !16) micm	Mineral Dust (Coarse Mode)                        
+      data (( edat(i,j,16),i=1,24), j=1,1 ) /              & 
      &  0.9742E+00,0.9790E+00,0.9836E+00,0.9878E+00,0.9922E+00,0.9959E+00, &
      &  0.1000E+01,0.1004E+01,0.1008E+01,0.1012E+01,0.1014E+01,0.1018E+01, &
      &  0.1026E+01,0.1032E+01,0.1048E+01,0.1065E+01,0.1082E+01,0.1096E+01, &
      &  0.1128E+01,0.1151E+01,0.1167E+01,0.1178E+01,0.1184E+01,0.1199E+01/
  !-----------------------------------------------------------
- !17) mitr	Mineral Dust (Transported Mode)
-      data (( edat(i,j,17),i=1,24), j=1,1 ) /              &
+ !17) mitr	Mineral Dust (Transported Mode)                   
+      data (( edat(i,j,17),i=1,24), j=1,1 ) /              & 
      &  0.9303E+00,0.9420E+00,0.9537E+00,0.9652E+00,0.9773E+00,0.9879E+00, &
      &  0.1000E+01,0.1010E+01,0.1021E+01,0.1032E+01,0.1042E+01,0.1052E+01, &
      &  0.1073E+01,0.1089E+01,0.1124E+01,0.1145E+01,0.1158E+01,0.1155E+01, &
      &  0.1123E+01,0.1056E+01,0.1031E+01,0.1010E+01,0.9970E+00,0.9592E+00/
  !-----------------------------------------------------------
- !18) suso 	Sulfate Droplets		(8 RH%)
-      data (( edat(i,j,18),i=1,24), j=1,8 ) /              &
+ !18) suso 	Sulfate Droplets		(8 RH%)                        
+      data (( edat(i,j,18),i=1,24), j=1,8 ) /              & 
      &  0.1589E+01,0.1522E+01,0.1418E+01,0.1303E+01,0.1190E+01,0.1092E+01, &
      &  0.1000E+01,0.9143E+00,0.8376E+00,0.7654E+00,0.6996E+00,0.6399E+00, &
      &  0.5385E+00,0.4523E+00,0.2965E+00,0.1989E+00,0.1377E+00,0.9764E-01, &
@@ -4949,7 +4949,7 @@
      &  0.1000E+01,0.9924E+00,0.9792E+00,0.9644E+00,0.9463E+00,0.9258E+00, &
      &  0.8810E+00,0.8331E+00,0.7091E+00,0.5986E+00,0.4932E+00,0.4068E+00, &
      &  0.2352E+00,0.4729E+00,0.4135E+00,0.3016E+00,0.2589E+00,0.2015E+00/
-      end module opac_ext
+      end module opac_ext  
 
 !=============================================================
 !    block data tegen_lacis_ext
@@ -5412,9 +5412,9 @@
       integer, private :: i, j, k
 !	block data ckd1_new
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0 to
+!c hk is the interval in the g (cumulative probability) space from 0 to 
 !c one. fko3 is the corresponding ozone absorption coefficient in units
-!c of (cm-atm)**-1 (Fu, 1991). The spectral region is from 50000 cm**-1
+!c of (cm-atm)**-1 (Fu, 1991). The spectral region is from 50000 cm**-1 
 !c to 14500 cm**-1.
 !c *********************************************************************
 !	common /band1_new/ hk(10), fko3(10)
@@ -5423,12 +5423,12 @@
      &            .016, .01, .008, .008, .008 /
       data fko3_1_new / .2204e-08,.1207e-01,.4537e-01,.1032e+00,.1740e+00, &
      &              .1210e+01,.7367e+01,.2050e+02,.8100e+02,.2410e+03 /
-
+     
 !	block data ckd2_new
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
-!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven
+!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven 
 !c pressures,  and eight cumulative probabilities  ( Fu,  1991 ). The
 !c spectral region is from 14500 to 7700 cm**-1.
 !c in this block data, Z.F. has added coefficients for O2 and Water vapor
@@ -5648,12 +5648,12 @@
      &0.1544E-05,0.4504E-06,-.8275E-06,-.8392E-06,0.4323E-05,0.1294E-05, &
      &-.1702E-07,-.2656E-04,-.1525E-04,-.6871E-05,-.9906E-06,-.2592E-05, &
      &0.6030E-06,0.1797E-05,0.1264E-05,-.1128E-05,0.3285E-05,-.3950E-06/
-
+      
 !	block data ckd3_new
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
-!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven
+!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven 
 !c pressures,  and twelve cumulative probabilities ( Fu,  1991 ). The
 !c spectral region is from 7700 to 5250 cm**-1.
 !c in this block data, Z.F. has added the coefficients for water vapor
@@ -5804,12 +5804,12 @@
      &-.2033E-05,0.1950E-05,-.6272E-06,-.3702E-05,0.5905E-05,0.1447E-05, &
      &-.2863E-04,-.2574E-04,-.1508E-04,-.7480E-05,-.1153E-04,-.7744E-05, &
      &0.9411E-06,0.1926E-05,0.1190E-05,-.2848E-05,-.1600E-05,0.9887E-05/
-
+      
 !	block data ckd4_new
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
-!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven
+!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven 
 !c pressures,  and seven cumulative probabilities ( Fu,  1991 ). The
 !c spectral region is from 5250 to 4000 cm**-1.
 !c in this block data, Z.F. has added the coefficients for CO2, CO, and
@@ -6174,16 +6174,16 @@
      &-.2472E-04,-.1897E-04,-.1358E-04,-.1416E-04,-.1574E-04,-.2061E-04, &
      &-.2316E-04,-.1710E-04,-.1221E-04,-.2155E-04/
 
-
+      
 !	block data ckd5_new
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
-!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven
+!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven 
 !c pressures,  and twelve cumulative probabilities ( Fu,  1991 ). The
 !c spectral region is from 4000 to 2850 cm**-1.
        !c in this block data, Z.F. has added the coefficients for CO2, CH4, &
-!c  N2O and water vapor continuum absorption in Jun,2003.
+!c  N2O and water vapor continuum absorption in Jun,2003. 
 !c *********************************************************************
 !       common /band5_new/ hk(20), coehh52(3,11,20),coeco2(3,11,20), &
 !               coen2o(3,11),coech4(3,11),coeh2o(3,11,20)
@@ -6550,12 +6550,12 @@
      &-.1708E-04,-.1658E-04,-.4971E-05,-.8482E-05,0.4900E-06,-.2855E-05, &
      &-.8621E-06,0.6185E-06,0.2429E-05,0.2445E-05,-.4034E-06,-.4563E-05, &
      &-.8940E-05,0.1794E-05,0.2715E-05,-.5026E-06/
-
+      
 !	block data ckd6_new
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
-!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven
+!c coefficient in units of (cm-atm)**-1 at there temperatures, eleven 
 !c pressures,  and  five  cumulative probabilities ( Fu,  1991 ). The
 !c spectral region is from 2850 to 2500 cm**-1.
 !c in this block data, Z.F. has added the coefficients for SO2 and water
@@ -6808,7 +6808,7 @@
 
 !	block data ckd7_new
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
 !c coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 !c teen pressures, and  two  cumulative probabilities ( Fu,  1991 ).
@@ -6840,7 +6840,7 @@
 
 !	block data ckd8_new
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
 !c coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 !c teen pressures, and  three cumulative probabilities ( Fu,  1991 ).
@@ -6893,7 +6893,7 @@
 
 !	block data ckd9_new
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
 !c coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 !c teen pressures, and  four cumulative probabilities ( Fu,  1991 ).
@@ -6955,7 +6955,7 @@
 
 !	block data ckd10_new
 !c *********************************************************************
-!c hk is the interval in the g (cumulative probability) space from 0
+!c hk is the interval in the g (cumulative probability) space from 0 
 !c to one. coeh2o is the coefficient to calculate the H2O absorption
 !c coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 !c teen pressures, and  four cumulative probabilities ( Fu,  1991 ).
@@ -7046,7 +7046,7 @@
 
 !      block data ckd11_new
 ! *********************************************************************
-! hk is the interval in the g (cumulative probability) space from 0
+! hk is the interval in the g (cumulative probability) space from 0 
 ! to one. coeh2o is the coefficient to calculate the H2O absorption
 ! coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 ! teen pressures, and three cumulative probabilities ( Fu,  1991 ).
@@ -7057,7 +7057,7 @@
 ! *********************************************************************
       real hk_11_new(3), coeh2o_11_new(3,19,3), coech4_11_new(3,19) &
      &                 , coen2o_11_new(3,19) &
-     &                 , c11CFC11_11_new, c11CFC12_11_new
+     &                 , c11CFC11_11_new, c11CFC12_11_new      
       data hk_11_new / 0.80, 0.15, 0.05 /
       data c11CFC11_11_new / 0.13273E+02 /
       data c11CFC12_11_new / 0.19158E+02 /
@@ -7116,7 +7116,7 @@
 
 !      block data ckd12_new
 ! *********************************************************************
-! hk is the interval in the g (cumulative probability) space from 0
+! hk is the interval in the g (cumulative probability) space from 0 
 ! to one. coeo3 is the coefficient to calculate the ozone absorption
 ! coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 ! teen pressures, and  five cumulative probabilities ( Fu,  1991 ).
@@ -7193,7 +7193,7 @@
 
 !      block data ckd13_new
 ! *********************************************************************
-! hk is the interval in the g (cumulative probability) space from 0
+! hk is the interval in the g (cumulative probability) space from 0 
 ! to one. coeh2o is the coefficient to calculate the H2O absorption
 ! coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 ! teen pressures, and  two  cumulative probabilities ( Fu,  1991 ).
@@ -7688,7 +7688,7 @@
 
 !      block data ckd16_new
 ! *********************************************************************
-! hk is the interval in the g (cumulative probability) space from 0
+! hk is the interval in the g (cumulative probability) space from 0 
 ! to one. coeh2o is the coefficient to calculate the H2O absorption
 ! coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 ! teen pressures, and  seven cumulative probabilities ( Fu,  1991 ).
@@ -7767,7 +7767,7 @@
 
 !      block data ckd17_new
 ! *********************************************************************
-! hk is the interval in the g (cumulative probability) space from 0
+! hk is the interval in the g (cumulative probability) space from 0 
 ! to one. coeh2o is the coefficient to calculate the H2O absorption
 ! coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 ! teen pressures, and  seven cumulative probabilities ( Fu,  1991 ).
@@ -7846,7 +7846,7 @@
 
 !      block data ckd18_new
 ! *********************************************************************
-! hk is the interval in the g (cumulative probability) space from 0
+! hk is the interval in the g (cumulative probability) space from 0 
 ! to one. coeh2o is the coefficient to calculate the H2O absorption
 ! coefficient in units of (cm-atm)**-1 at there temperatures, nine-
 ! teen pressures, and eight cumulative probabilities ( Fu,  1991 ).
@@ -7935,11 +7935,11 @@
 
 
 !--------------------------------------------------------------------------------
-
+ 
 MODULE module_ra_FLG
   contains
 !******************************************************************************
-!* This subroutine drives the Fu-Liou radiation program which solves the solar
+!* This subroutine drives the Fu-Liou radiation program which solves the solar 
 !* and IR radiation in the atmosphere.
 !* ****************************************************************************
     subroutine RAD_FLG                    &
@@ -7955,12 +7955,12 @@ MODULE module_ra_FLG
      & ,   F_QV,F_QC,F_QR,F_QI,F_QS,F_QG  &
      & ,   warm_rain                      &
 !-- for partly cloudy                 &
-     & ,   cloudstrf                      &
+     & ,   cloudstrf                      & 
      & ,   emiss                          &
      & ,   air_den                        &
      & ,   dz3d                           &
      & ,   SOLCON                         &
-     & ,   declin                         &
+     & ,   declin                         & 
      & ,   xtime, xlong, xlat, JULDAY, gmt, radt, degrad &
      & ,   dtcolumn                       &
 !-- change over
@@ -7968,19 +7968,19 @@ MODULE module_ra_FLG
 !    & ,    vertical_w
 !-- add over
      & ,   ids,ide, jds,jde, kds,kde      &
-     & ,   ims,idim, jms,jdim, kms,kmax   &
+     & ,   ims,idim, jms,jdim, kms,kmax   & 
      & ,   its,ite, jts,jte, kts,kte      &
 !-- output
 !    & ,    dswtop, dswbot, swinc        &
 !    & ,    ulwtop, ulwbot, dlwbot, netlwstr, netlwbot  &
-     & ,   uswtop, ulwtop,NETSWBOT,DLWBOT,DSWBOT &
+     & ,   uswtop, ulwtop,NETSWBOT,DLWBOT,DSWBOT & 
      & ,   deltat,dtshort, dtlongwv       &
 !-- amontornes-bcodina (2014-04-29): return direct and diffuse fluxes at surface
      & ,   swddir,swddif,swddni           &
 !-- for optional aerosol input
 !     & ,   tau_aer_2D, tau_aer_3D, fraca_in      &
 !-- change over
-     & )
+     & ) 
 
 !C$Id: driver_rad.F,v 1.8 2002/04/17 18:40:13 gu Exp gu $
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
@@ -7995,7 +7995,7 @@ MODULE module_ra_FLG
 !* CLD_ICCLD = Ice water mixing ratio (kg/kg). need to conver to content (g/m**3)
 !* CLD_WLCLD = Liquid water mixing ratio (kg/kg). Need to convert content (g/m**3)
 !* air_den: air density (kg/m**3)
-!* dz3d:   dz between full levels
+!* dz3d:   dz between full levels 
 !* COSZENTH = cosine of the zenith angle
 !* emiss = IR surface emissivity
 !* ALBEDO = surface albedo
@@ -8020,8 +8020,8 @@ MODULE module_ra_FLG
 !* ULWBOT = upward IR flux at surface
 !* DLWBOT = downward IR flux at surface
 !* ULWTOP = upward IR flux at TOA
-!* NETLWSTR = net IR flux at top of PBL stratus cloud layer
-!* NETLWBOT = net IR flux at surface (up-down)
+!* NETLWSTR = net IR flux at top of PBL stratus cloud layer 
+!* NETLWBOT = net IR flux at surface (up-down) 
 !* DELTAT = total column physics increment to theta (K)
 
 !* 1D array input to Fu-Liou program:
@@ -8094,7 +8094,7 @@ MODULE module_ra_FLG
 
 !--- add for cloud inhomogeneity
 	real ccc_inho(ims:idim,kms:kmax,jms:jdim)
-	real temp_inho_low(ims:idim,jms:jdim)
+	real temp_inho_low(ims:idim,jms:jdim) 
 	real temp_inho_mid(ims:idim, jms:jdim)
 	real temp_inho_high(ims:idim, jms:jdim)
 
@@ -8108,7 +8108,7 @@ MODULE module_ra_FLG
 	real, dimension(mxac) :: fraca = -9999., tauindividual = -9999.
 	integer :: iac
 	character   :: reading = "Y"
-
+	 
     character*3 aerosol_type
 !-- add over
 
@@ -8150,7 +8150,7 @@ MODULE module_ra_FLG
 !c--- add over
 
 !C--- for NPDE = 3, De-IWC using satellite data
-    logical clean
+    logical clean 
     real a_sat(2),b_sat(2)
     data a_sat /4.07, 4.03/
     data b_sat /0.032, 0.046/
@@ -8178,11 +8178,11 @@ MODULE module_ra_FLG
 	real swddir(ims:idim,jms:jdim)
         real swddif(ims:idim,jms:jdim)
 	real swddni(ims:idim,jms:jdim)
-	real uswtop(ims:idim,jms:jdim)
-	real netswbot(ims:idim,jms:jdim)
-	real swinc(ims:idim,jms:jdim)
+	real uswtop(ims:idim,jms:jdim)  	
+	real netswbot(ims:idim,jms:jdim)  	
+	real swinc(ims:idim,jms:jdim)  	
 	real ulwbot(ims:idim,jms:jdim), dlwbot(ims:idim,jms:jdim)
-	real ulwtop(ims:idim,jms:jdim)
+	real ulwtop(ims:idim,jms:jdim) 
 	real netlwstr(ims:idim,jms:jdim), netlwbot(ims:idim,jms:jdim)
 
 	real dtshort(ims:idim,kms:kmax,jms:jdim)
@@ -8196,7 +8196,7 @@ MODULE module_ra_FLG
 !       = 4  :  sub-arctic   winter profile
 !       = 5  :  tropical profile
         integer :: iprof
-        integer :: is_summer, ie_summer
+        integer :: is_summer, ie_summer  
         real    :: center_lat
 
     integer :: NK
@@ -8229,12 +8229,12 @@ MODULE module_ra_FLG
 
 !C     FAC CONVERTS TO DEGREES / TIME STEP
 !      FAC    = 9.8d-01 * dtcolumn / (1.0030d04)
-    FAC    = 0.01*G /Cp
+    FAC    = 0.01*G /Cp 
 
-!C     CNVERT INCLUDES STEFAN BOLTZMAN CONSTANT FOR CALCULATION OF netlwstr
+!C     CNVERT INCLUDES STEFAN BOLTZMAN CONSTANT FOR CALCULATION OF netlwstr 
 
     CNVERT = 1.171d-07*420.0d0/864.0d0
-    RZERO = 0.
+    RZERO = 0. 
 
 !C*************************************************************************
     if (ngas.eq.0) then
@@ -8256,21 +8256,21 @@ MODULE module_ra_FLG
 !C---  aerosol input
 !C---- No aerosol
     if (NAERO.eq.0) then
-!	do j=jms,jdim
-!	do i=ims,idim
+!	do j=jms,jdim 
+!	do i=ims,idim 
 	  tau_aer = 0.0
 	endif
 
     if (NAERO.eq.1) then
-!	do j=jms,jdim
-!	do i=ims,idim
+!	do j=jms,jdim 
+!	do i=ims,idim 
 	  tau_aer = 0.2
 	endif
 
 !C---- aerosol data use uniform optical depth
 !	if (NAERO.eq.2) then
-!	do j=jms,jdim
-!	do i=ims,idim
+!	do j=jms,jdim 
+!	do i=ims,idim 
 !	  if (present(fraca_in)) then
 !	    fraca  = fraca_in
 !	    nfraca = 0
@@ -8283,15 +8283,15 @@ MODULE module_ra_FLG
 !	if (NAERO.eq.2) then
 !C	print *, 'b4 read aero'
 !	open (unit=97,file='aero_gcm_annual.climo_4x5', status='old')
-!	read(97,*) ((tau_aer_2D(i,j), i=1,72),j=1,44)
+!	read(97,*) ((tau_aer_2D(i,j), i=1,72),j=1,44)	
 !c	open (unit=87,file='aero_gcm_annual_china.climo_4x5', status='old')
-!c	read(87,*) tau_aer_2D
+!c	read(87,*) tau_aer_2D	
 !C	print *, 'a4 read aero'
 !c	close(87)
 !	close(97)
 !	endif
 
-!C-- add over
+!C-- add over 
 
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
@@ -8300,11 +8300,11 @@ MODULE module_ra_FLG
 !* Note: The vertical levels of radiation program starts from top, end at surface
 !********************************************************************************
 !**** start column ***********************
-    HORIZONTAL_J: do j = jts,jte
-      HORIZONTAL_I: do i = its,ite
-!	do 300 j=jms, jmid
-!	    do 200 i=ims,imid
-!C--- Zero out all water contents
+    HORIZONTAL_J: do j = jts,jte 
+      HORIZONTAL_I: do i = its,ite 
+!	do 300 j=jms, jmid 
+!	    do 200 i=ims,imid 
+!C--- Zero out all water contents 
         VERTICAL_PROFILE: do k=kts,kte
 	  piwc(k) = rzero
 	  pde(k) = rzero
@@ -8316,9 +8316,9 @@ MODULE module_ra_FLG
 !c--- change for fractional cloud
 	  cldamnt(k) = rzero
 !c--- add for inhomogeneous cloud
-          if (ninho.eq.0) then
-	    cc_inho(k) = 1.0
-          else
+          if (ninho.eq.0) then    
+	    cc_inho(k) = 1.0 
+          else 
             cc_inho(k) = 0.7
           endif
 !C--- change over
@@ -8350,16 +8350,16 @@ MODULE module_ra_FLG
 
 
 !C---- ee is the IR surface emissivity
-	    ee(1:mbir) = emiss(i,j)
+	    ee(1:mbir) = emiss(i,j) 
 
 ! *** the model k=1 start from sfc. need to reverse variable for radiation
-! calculation
+! calculation          
 
 !C
         tsij = tskin(i,j)
 !C-- change by 2Yu, 12/05/01, deal with too big ts
-	    if (tsij.gt.320.) tsij = 320.
-	    if (tsij.lt.180.) tsij = 180.
+	    if (tsij.gt.320.) tsij = 320. 
+	    if (tsij.lt.180.) tsij = 180. 
 !C--- change over
 
 	    qij(1) = h2o(i,kmax,j)
@@ -8389,7 +8389,7 @@ MODULE module_ra_FLG
         PHYD(kts) = peven(I,kts,J)
 
         DO K = KTS,KTE
-          PHYD(K+1) = peven(I,k+1,J)
+          PHYD(K+1) = peven(I,k+1,J) 
         ENDDO
 
 !	      pij(1) = peven(i,kmax,j)/100.
@@ -8465,7 +8465,7 @@ MODULE module_ra_FLG
         o3ij(1)    = po3(i,kmax,j)
         o3ij(kmax) = po3(i,1,j)
 
-	    tij(1) = t8w(i,kmax,j)
+	    tij(1) = t8w(i,kmax,j) 
 	    tij(kmax) = t8w(i,1,j)
 !C--- if temp > 320, set to 320. by yu Gu, 11/14/01, if < 180, set to 180
 !C--- if change rad.F, no need to do it here
@@ -8475,7 +8475,7 @@ MODULE module_ra_FLG
 !c	      if (tij(kmax) . lt. 180.) tij(1) = 180.
 
 !!!!!!!!!!!!!!! Assign Column Profile -----
-        VERTICAL_PROFILE2: do k=2,kte
+        VERTICAL_PROFILE2: do k=2,kte 
           NK=kmax-k+kms !mark
 	  pij(k) = PHYD(NK)/100.
           tij(k) = t8w(i,NK,j)
@@ -8524,7 +8524,7 @@ MODULE module_ra_FLG
                 piwc(k) = piwc(k) + prwc(k)
                 prwc(k) = 0.
               ENDIF
-            ENDIF
+            ENDIF 
           ENDIF
 
 ! --- radius of liquid water droplet
@@ -8556,7 +8556,7 @@ MODULE module_ra_FLG
 !c		  TEMP_DE = 326.3+12.42*TEMP_T-0.197*TEMP_T*TEMP_T
                           +0.0012*TEMP_T**3
 		      pde(k) = (piwc(k)/TEMP_IWC)**(1./3.)*TEMP_DE
-
+		  
 		      if (pde(k).gt.150.) pde(k)=150.
 		      if (pde(k).lt.10.) pde(k)=10.
 
@@ -8577,7 +8577,7 @@ MODULE module_ra_FLG
 	    if (abs(xlat(i,j)).lt.30.) ncoef = 1
 !C--- for midlatitude
 !	        if (j.lt.17.and.j.gt.7.or.j.gt.28.and.j.le.38) then
-	    if (abs(xlat(i,j)).ge.30.and.abs(xlat(i,j)).le.60.) then
+	    if (abs(xlat(i,j)).ge.30.and.abs(xlat(i,j)).le.60.) then 
 !C--- for cold cirrus
               if (degrees(i,NK,j).lt.233) then !mchen
 	            ncoef = 2
@@ -8616,7 +8616,7 @@ MODULE module_ra_FLG
             diff_max = pde_max - pde_mean
             diff_min = pde_mean - pde_min
             diff = diff_max
-
+        
 !C-- using smaller difference
 !c          if (diff_min.lt.diff_max) diff = diff_min
 !C-- using larger difference
@@ -8655,8 +8655,8 @@ MODULE module_ra_FLG
 !C---- for clean
             if (clean) then
               ncoef = 1
-            else
-              ncoef = 2
+            else 
+              ncoef = 2 
 	        endif
 
 !C--- calculate ln(De)
@@ -8666,15 +8666,15 @@ MODULE module_ra_FLG
 !C--- calculate de
             pde_mean = exp(pde_mean)
             pde(k) = pde_mean
-
-!C--- if para. out of De range
+	  
+!C--- if para. out of De range 
             if (pde(k).gt.150.) pde(k)=150.
             if (pde(k).lt.10.) pde(k)=10.
 !c--- end of npde=3
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 
 !C******************************************************************
-!C--- NPDE =4
+!C--- NPDE =4 
 !C--- De-IWC-AOT relations from satellite data
 !C******************************************************************
           else if (NPDE.eq.4.and.piwc(k).gt.0.) then
@@ -8682,19 +8682,19 @@ MODULE module_ra_FLG
 !C--- Coefficients for De parameterizations
 !c--- for South America: -40<lat<15(j), 270<lon<355(i)
             if (j.ge.13.and.j.le.27.and.i.ge.19.and.i.le.32) then
-              NSAT = 2
+              NSAT = 2 
 
-              palpha = palpha_all(nsat)
-              pbeta =pbeta_all(nsat)
-              pgama = pgamma_all(nsat)
-              peta = peta_all(nsat)
-              pde0 = pde0_all(nsat)
-              piwc0 = piwc0_all(nsat)
-              pco0 = pco0_all(nsat)
+              palpha = palpha_all(nsat) 
+              pbeta =pbeta_all(nsat) 
+              pgama = pgamma_all(nsat) 
+              peta = peta_all(nsat) 
+              pde0 = pde0_all(nsat) 
+              piwc0 = piwc0_all(nsat) 
+              pco0 = pco0_all(nsat) 
 
 !C--- AOT for polluted (0.5)  or clean (0.2)
 !c        paot = tau_aer_2D(i,j)
-              paot = 0.5
+              paot = 0.5 
 !C****piwc use mg/m**3
               a1denom = (piwc(k)*1000./piwc0)**(-palpha) + 1.
               a2num = (peta*paot-1.1108)**pgama
@@ -8703,11 +8703,11 @@ MODULE module_ra_FLG
               pde(k) = (pde0/a1denom)*(a2num/a2denom)
 !C--- convert to mean effective size for hexagonal (Fu 1996)
 !c        pde(k) = pde(k) * 8./(3*sqrt(3))
-!C--- convert to mean effective size for mixture
-!C----(Francis et al 1994; Chou et al 2002)
-              pde(k) = 2. * pde(k)
+!C--- convert to mean effective size for mixture 
+!C----(Francis et al 1994; Chou et al 2002) 
+              pde(k) = 2. * pde(k) 
 !c        print *, pde(k)
-!C--- if para. out of De range
+!C--- if para. out of De range 
               if (pde(k).gt.150.) pde(k)=150.
 !c                  if (pde(k).lt.10.) pde(k)=10.
               if (pde(k).le.15.) pde(k)=15.
@@ -8722,7 +8722,7 @@ MODULE module_ra_FLG
 
 !c--- NPDE=0, prescribed pde
 !C******************************************************************
-          else
+          else 
 	        if (piwc(k).gt.0.) then
 !CCCCCCCCCCCC-------- CTRL value --------CCCCCCCCCCCCCC
 		      pde(k) = 85.
@@ -8746,9 +8746,9 @@ MODULE module_ra_FLG
               cldamnt(k) = 1.
             endif
           endif
-
+        
         end do VERTICAL_PROFILE2
-
+	
 !100 continue
 
 !C--- add by Yu for aerosol
@@ -8766,44 +8766,44 @@ MODULE module_ra_FLG
               if (fraca(iac).gt.0.0) itps(iac) = 1
             end do
           else if (nfraca.eq.2) then ! -- type in aerosol types and fractions
-
+          
           else if (nfraca.eq.3) then ! -- type in aerosol optical depth for each type
-
+          
           end if
 
 
 !          if (present(tau_aer_3D)) then
 !            tau_aer = sum(tau_aer_3D(i,j,1:kmax-1))
 !          else if (present(tau_aer_2D)) then
-!            tau_aer = tau_aer_2D(i,j)
+!            tau_aer = tau_aer_2D(i,j) 
 !          else
 !            tau_aer = 0.2
 !          end if
-
+          
           do iac = 1, mxac
             if (itps(iac).eq.1) then
               Select case (ivd)
               case default
               CALL wrf_error_fatal('ivd: No VERTICAL Aerosol Profile')  !mchen
-
+              
               case(0)
-
+              
               case(1)
                 sh_aer(iac) = 3.
                 call aer_scale_hgt(kmax-1,pij,sh_aer(iac),aprofs(1:kmax-1,iac))
 
 !              case(2)
 !                aprofs(1:kmax-1,iac) = tau_aer_3D(i,j,1:kmax-1) / tau_aer
-
+              
 !              case(3) !ivd=3, inpput vertical AOD profile for each aerosol type
-
-
+                
+                
               end Select
               a_wlis(1,iac)= 0.53                          !Wavelength (microns) corresponding to "a_tau"
               a_taus(1,iac)= tau_aer * fraca(iac)
             end if
           end do
-        end if
+        end if  
 
 !C--- aerosol type
 !          itp=0
@@ -8831,9 +8831,9 @@ MODULE module_ra_FLG
 
 !C--- aerosol composition
 !C--- fraction for the second type
-!          iafrac = 2
+!          iafrac = 2 
 !C--- only one type
-!c        iafrac = 0
+!c        iafrac = 0 
 
 !          if( iafrac == 0) fraca=0
 !          if( iafrac == 1) fraca=0.01
@@ -8912,7 +8912,7 @@ MODULE module_ra_FLG
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
 !C---- unified program to include all choices
 !CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC
-        call rad_all (    kmax-1, kmax,            &
+        call rad_all (    kmax-1, kmax,            & 
     &            as, u0ij, solcon, tsij, ee        &
 !C--- atmospheric profile
     &  ,         pij, tij, qij, o3ij               &
@@ -8937,9 +8937,9 @@ MODULE module_ra_FLG
 !* Store the output from Fu-Liou code into standard arrays
 !**********************************************************************
 !*** surface
-!*** net solar at sfc
+!*** net solar at sfc 
         netswbot(i,j) = fds(kmax) - fus(kmax)
-!*** downward solar at sfc
+!*** downward solar at sfc 
         dswbot(i,j) = fds(kmax)
 !*** DNI, DIR and DIF values (amontornes-bcodina 2014-04-29)
      if(u0ij .gt. 0.0001) then
@@ -8950,19 +8950,19 @@ MODULE module_ra_FLG
 	swddni(i,j) = 0.
 	swddir(i,j) = 0.
 	swddif(i,j) = 0.
-     endif
-!*** downward IR at sfc
+     endif	
+!*** downward IR at sfc 
         dlwbot(i,j) = fdir(kmax)
 !*** upward IR at sfc
         ulwbot(i,j) = fuir(kmax)
 !*** net IR at sfc
         netlwbot(i,j) = fuir(kmax) - fdir(kmax)
 !*** TOA
-!*** downward solar at top
+!*** downward solar at top 
         swinc(i,j) = fds(1)
-!*** upward solar at toa
+!*** upward solar at toa 
         uswtop = fus(1)
-!*** net solar at toa
+!*** net solar at toa 
         dswtop(i,j) = fds(1) - fus(1)
 !*** upward IR at TOA
         ulwtop(i,j) = fuir(1)
@@ -8971,10 +8971,10 @@ MODULE module_ra_FLG
 !*** value test
 	if (abs(ulwtop(i,j)).gt.1000.) then
        !   write (0,*) 'i=',i,' j=',j,' ulwtop=',ulwtop(i,j)
-       !   write(0,*) 'fd=', fds
-       !   write(0,*) 'fus=', fus
-       !   write(0,*) 'fdir=', fdir
-       !   write(0,*) 'fuir=', fuir
+       !   write(0,*) 'fd=', fds 
+       !   write(0,*) 'fus=', fus 
+       !   write(0,*) 'fdir=', fdir 
+       !   write(0,*) 'fuir=', fuir 
        !   write (0,*) '---------------------------'
        !   write (0,*) as, u0ij, solcon, tsij,ee
        !   write (0,*) '---------------------------'
@@ -8987,36 +8987,36 @@ MODULE module_ra_FLG
 !      , cldamnt(ii)
 !          enddo
         CALL wrf_error_fatal('Flux out of range. Stop program')  !mchen
-	endif
+	endif 
 !C---test oevr
 
 
-
+	
 !**********************************************************************************
 !* Update the total column physics increment to theta
 !**********************************************************************************
-        do k = 1,kte
-          NK=kte-k+kms
+        do k = 1,kte 
+          NK=kte-k+kms 
 !--- heating rate in k s-1
           dtshort(i,k,j) = dts(NK) * FAC/pi3d(i,k,j)
           dtlongwv(i,k,j) = dtir(NK) * FAC/pi3d(i,k,j)
-!	      deltat(i,k,j) =  dt_rad(NK) * FAC
+!	      deltat(i,k,j) =  dt_rad(NK) * FAC 
           deltat(i,k,j) = deltat(i,k,j) + dt_rad(Nk) * FAC/pi3d(i,k,j)
 !--- heating rate in pa k s-1
-!	      dtshort(i,k,j) =  dtshort(i,k,j)*(pij(NK)-pij(NK-1))*100.
-!	      dtlongwv(i,k,j) =  dtlongwv(i,k,j)*(pij(NK)-pij(NK-1))*100.
-!	      deltat(i,k,j) =  deltat(i,k,j)*(pij(NK)-pij(NK-1))*100.
+!	      dtshort(i,k,j) =  dtshort(i,k,j)*(pij(NK)-pij(NK-1))*100.  
+!	      dtlongwv(i,k,j) =  dtlongwv(i,k,j)*(pij(NK)-pij(NK-1))*100.  
+!	      deltat(i,k,j) =  deltat(i,k,j)*(pij(NK)-pij(NK-1))*100.  
 !	      dtshort(i,k,j) = dts(NK) * FAC/pi3d(i,K,j)
 !	      dtlongwv(i,k,j) = dtir(NK) * FAC/pi3d(i,k,j)
 
 !*** Value test
-        if (abs(dtir(Nk)).gt.100.) then
+        if (abs(dtir(Nk)).gt.100.) then 
          CALL wrf_error_fatal('Heating rate out of range. Stop program')  !mchen
         endif
 !C---test oevr
 
           enddo
-
+ 
 200	continue
 
 
@@ -9059,7 +9059,7 @@ MODULE module_ra_FLG
     integer nv
     real pp(nv+1)
     real aprof(nv)
-    real pbar, z, tot, h
+    real pbar, z, tot, h 
     integer i
 
     do i=1,nv
@@ -9089,16 +9089,16 @@ MODULE module_ra_FLG
    &   ,          asij, u0, ss, pts, eeij            &
 !C--- atmospheric profile
    &   ,          pij, tij, qij, o3ij                &
-!C--- cloud water content and sizes
+!C--- cloud water content and sizes 
    &   ,          piwcij, pdeij, plwcij, preij       &
    &   ,          prwcij, pgwcij                     &
 !C--- cloud amount
-   &   ,		  cldamntij                          &
+   &   ,		  cldamntij                          & 
 !c--- cloud inhomogeneity factor
-   &   ,		  cc_inhoij                          &
+   &   ,		  cc_inhoij                          & 
 !c--- for aerosol
    &   ,           a_wlisij, a_tausij, aprofsij      &
-!C--- output: fluxes and heating rates
+!C--- output: fluxes and heating rates 
    &   ,           fdsij, fusij, dtsij               &
    &   ,           fdirij, fuirij, dtirij            &
    &   ,           fdij, fuij, dtij                  &
@@ -9107,8 +9107,8 @@ MODULE module_ra_FLG
    &   )
 
 !c *********************************************************************
-!c In this radiation scheme,  six  and  12 bands are selected for solar
-!c and thermal IR regions, respectively. The spectral division is below:
+!c In this radiation scheme,  six  and  12 bands are selected for solar 
+!c and thermal IR regions, respectively. The spectral division is below: 
        !c 0.2 - 0.7 um, 0.7 - 1.3 um, 1.3 - 1.9 um, 1.9 - 2.5 um, 2.5 -3.5 um, &
 !c 3.5 - 4.0 um, and 2200 - 1900 cm**-1, 1900 - 1700 cm**-1, 1700 -1400
        !c cm**-1,  1400 - 1250 cm**-1,  1250 - 1100 cm**-1, 1100 - 980 cm**-1, &
@@ -9145,8 +9145,8 @@ MODULE module_ra_FLG
 !c             the atmosphere with concentrations of 330, 1.6 and  0.28
 !c             ppmv, respectively.  The  concentrations  can be changed
 !c             through 'common /umcon/ umco2, umch4, umn2o '.
-!c        (3)  nv, nv1, nv, nv1, nv * 4, mb, mbs, mbir,  and  nc  are
-!c             given through 'para.file'.
+!c        (3)  nv, nv1, nv, nv1, nv * 4, mb, mbs, mbir,  and  nc  are  
+!c             given through 'para.file'. 
 !c        (4)  nv1 and 1 are the surface and top levels, respectively.
 !c
 !c                       **********************
@@ -9182,13 +9182,13 @@ MODULE module_ra_FLG
     real fdsij(nv1), fusij(nv1), dtsij(nv)
     real fdirij(nv1), fuirij(nv1), dtirij(nv)
     real fdij(nv1), fuij(nv1), dtij(nv)
-
+        
 !C--- aerosol optical properties
     real, dimension(mxat,mxac) :: a_wlisij,a_tausij
     real, dimension(nvx,mxac)  :: aprofsij
 !    integer, dimension(mxac)     :: itpsij
 
-!C--- variables in the offline version
+!C--- variables in the offline version      
     real, dimension(nv1) :: pp, pt, ph, po
     real, dimension(nv1) :: fds, fus, fdir, fuir, fd, fu
 !C--- amontornes-bcodina (2014-04-29): new to save the direct and diffuse information
@@ -9199,7 +9199,7 @@ MODULE module_ra_FLG
     real                 :: asij(mbs), eeij(mbir)
     real                 :: as(mbs), ss, ee(mbir)
     real                 :: pts, u0
-
+      
     real, dimension(nv1)              :: fu1, fd1
 !C--- amontornes-bcodina (2014-04-29): new to save the direct and diffuse information
     real, dimension(nv1)              :: ffddir,ffdif
@@ -9213,7 +9213,7 @@ MODULE module_ra_FLG
     integer :: nc1, nc2, nc3, k, kl, kk
 ! -- add for partial clouds
     real, dimension(nv1)  :: fds_tot, fus_tot, fdir_tot, fuir_tot, &
-   &                         fd_tot, fu_tot
+   &                         fd_tot, fu_tot 
     real    :: ctau(nv)
     real    :: hk, fuq1, fuq2, xx, dz(nv), trp(nv)
     integer :: ib, mbn, kg1_num, kg2_num, iac, ig1, ig2, i    !cycle control
@@ -9221,18 +9221,18 @@ MODULE module_ra_FLG
    &                                 a_tau1,a_ssa1,a_asy1, &
    &                                 a_tau2,a_ssa2,a_asy2
     real, dimension(mxat,mxac)    :: a_wlis,a_taus
-    real, dimension(nvx,mxac)     :: aprofs
+    real, dimension(nvx,mxac)     :: aprofs      
  !   integer, dimension(mxac)      :: itps
     real :: ti(nv), wi(nv), wwi(nv,4)
     real :: tw(nv), ww(nv), www(nv,4)
     real :: trn(nv), wrn(nv), wwrn(nv,4)
     real :: tgr(nv), wgr(nv), wwgr(nv,4)
     real :: tae(nvx,mxac), wae(nvx,mxac), wwae(nvx,4,mxac)
-    real :: tgm(nv)
+    real :: tgm(nv)      
     real :: tr(nv), wr(nv), wwr (nv,4), tg(nv)
     real :: area
     real :: cc_inho(nv)
-
+      
 
 !c kg(mb) is the number of intervals to perform the g-quadrature in
        !c each band to consider the nongray gaseous absorption.  In total, &
@@ -9266,7 +9266,7 @@ MODULE module_ra_FLG
 	  pt(i) = tij(i)
 	  ph(i) = qij(i)
 	  po(i) = o3ij(i)
-!C-----
+!C----- 
 	  fds(i) = 0.0
 	  fus(i) = 0.0
 	  fdir(i) = 0.0
@@ -9275,7 +9275,7 @@ MODULE module_ra_FLG
 	  fdsdir(i) = 0.0
 	  fdsdif(i) = 0.0
 10	end do
-
+    
     as = asij
     ee = eeij
 
@@ -9314,19 +9314,19 @@ MODULE module_ra_FLG
 ! --------- using new coefficients
           call ice_new_ZF ( nv,nv1,ib,pre,pde,plwc,piwc,dz,ti,wi,wwi )
         else if (nice.eq.2) then
-! --------- using new coefficients by Qing for combine
+! --------- using new coefficients by Qing for combine 
           call ice_new_comb ( nv,nv1,ib,pre,pde,plwc,piwc,dz,ti,wi,wwi )
         else if (nice.eq.3) then
-! --------- using new coefficients by Qing for tropics
+! --------- using new coefficients by Qing for tropics 
           call ice_new_trop ( nv,nv1,ib,pre,pde,plwc,piwc,dz,ti,wi,wwi )
         else if (nice.eq.4) then
-! --------- using new coefficients by Qing for midlat
+! --------- using new coefficients by Qing for midlat 
           call ice_new_midlat ( nv,nv1,ib,pre,pde,plwc,piwc,dz,ti,wi,wwi )
         else if (nice.eq.5) then
-! --------- using FLIce98
+! --------- using FLIce98 
           call ice_98 ( nv,nv1,ib,pre,pde,plwc,piwc,dz,ti,wi,wwi )
         else if (nice.eq.6) then
-! --------- using single ice by Feng using new data Ping Yang 2000
+! --------- using single ice by Feng using new data Ping Yang 2000 
           call ice_singleice ( nv,nv1,ib,pre,pde,plwc,piwc,dz,ti,wi,wwi )
         else if (nice.eq.7) then
 ! --------- using single ice by Qing using new data Ping Yang 2005
@@ -9407,7 +9407,7 @@ MODULE module_ra_FLG
 
 !C--- 02/13/02 Yu Gu
 !C--- change by Yu for fractional cloud - calculate radiation for each section
-
+        
             do nc1 = nb(1), n_group(1)
               do nc2 = nb(2), n_group(2)
                 do nc3 = nb(3), n_group(3)
@@ -9429,22 +9429,22 @@ MODULE module_ra_FLG
 220               end do
 
 !C--- assign the optical properties for each section
-!c--- for layers above clouds
+!c--- for layers above clouds 
 !                  do k = 1,nv-nclouds
                   do k = 1,nv-nsubcld*ngroup
-                    wc1(k) = wc1_2(k,1)
-                    wc2(k) = wc2_2(k,1)
-                    wc3(k) = wc3_2(k,1)
-                    wc4(k) = wc4_2(k,1)
+                    wc1(k) = wc1_2(k,1) 
+                    wc2(k) = wc2_2(k,1) 
+                    wc3(k) = wc3_2(k,1) 
+                    wc4(k) = wc4_2(k,1) 
                     wc(k) = wc_2(k,1)
                     tt(k) = tt_2(k,1)
                   enddo
-
+            
 ! -- for cloudy layers
                   do k=1,ngroup
-!                    kl = (k-1)*nsubcld + nv1-nclouds
-                    kl = (k-1)*nsubcld + nv1-nsubcld*ngroup
-                    do kk = kl, kl+nsubcld-1
+!                    kl = (k-1)*nsubcld + nv1-nclouds 
+                    kl = (k-1)*nsubcld + nv1-nsubcld*ngroup 
+                    do kk = kl, kl+nsubcld-1 
                       wc1(kk) = wc1_2(kk, n_loop(k))
                       wc2(kk) = wc2_2(kk, n_loop(k))
                       wc3(kk) = wc3_2(kk, n_loop(k))
@@ -9477,7 +9477,7 @@ MODULE module_ra_FLG
                       fus(i) = fus(i) + fu1(i) * hk * area
 !c amontornes-bcodina (2014-04-29): this line was added for the direct and diffuse outputs
 		      fdsdir(i) = fdsdir(i) + ffddir(i) * hk * area
-		      fdsdif(i) = fdsdif(i) + ffdif(i)  * hk * area
+		      fdsdif(i) = fdsdif(i) + ffdif(i)  * hk * area           
 40                  end do
                   else
                     if ( foursir ) then
@@ -9506,12 +9506,12 @@ MODULE module_ra_FLG
                 end do
               end do
             end do
-31        end do
-30      end do
+31        end do  
+30      end do  
 20    end do
 	  fuq1 = ss / 1340.0
 !c In this model, we used the solar spectral irradiance determined by
-!c Thekaekara (1973), and 1340.0 W/m**2 is the solar energy contained
+!c Thekaekara (1973), and 1340.0 W/m**2 is the solar energy contained 
 !c in the spectral region 0.2 - 4.0 um.
 	  fuq2 = bs * 0.03 * 3.14159 * ee(12)
 !c fuq2 is the surface emitted flux in the band 0 - 280 cm**-1 with a
@@ -9532,7 +9532,7 @@ MODULE module_ra_FLG
 	    fdirij(i) = fdir(i)
 	    fuirij(i) = fuir(i)
 	    fdij(i) = fd(i)
-	    fuij(i) = fu(i)
+	    fuij(i) = fu(i) 
 !C---
 60    end do
 
@@ -9558,7 +9558,7 @@ MODULE module_ra_FLG
 
 
 
-      subroutine thicks(nv,nv1,pp,pt,ph,po,dz)
+      subroutine thicks(nv,nv1,pp,pt,ph,po,dz) 
 ! *********************************************************************
 ! dz is the thickness of a layer in units of km.
 ! *********************************************************************
@@ -9574,10 +9574,10 @@ MODULE module_ra_FLG
       return
       end subroutine thicks
 
-    subroutine gases_new ( nv,nv1,ib, ig1, ig2, hk,pp,pt,ph,po,tg )
+    subroutine gases_new ( nv,nv1,ib, ig1, ig2, hk,pp,pt,ph,po,tg ) 
 !c *********************************************************************
 !c tg(nv) are the optical depthes due to nongray gaseous absorption, in
-!c nv layers for a given band ib and cumulative probability ig.
+!c nv layers for a given band ib and cumulative probability ig. 
 !c *********************************************************************
 !# include "para.file"
     USE PARA_FILE
@@ -9621,7 +9621,7 @@ MODULE module_ra_FLG
                         &  hk16=>hk_16_new,c16h2o=>coeh2o_16_new,       &
                         &  hk17=>hk_17_new,c17h2o=>coeh2o_17_new,       &
                         &  hk18=>hk_18_new,c18h2o=>coeh2o_18_new
-    USE control_para, only:  umco2,umch4,umn2o,umo2,       &
+    USE control_para, only:  umco2,umch4,umn2o,umo2,       & 
                           &  umno,umso2,umno2,umch3cl,     &
                           &  umco,umCFC11,umCFC12,         &
                           &  no2s,nco2s,nso2s,nch4s,nnol,  &
@@ -9637,13 +9637,13 @@ MODULE module_ra_FLG
     real    :: tg(nv)
     integer :: ib, ig, ig1, ig2
     real    :: hk
-
+      
     real, dimension(nv1) :: fkg, fkga, fkgb, fkgc, fkgd, fkge,  &
    &                        pq, fkg1
     real, dimension(nv)  :: tg1, tg2, tg3, tg4, tg5
     real    :: fk
     integer :: i
-
+ 
     select case(ib)
     case default
       stop
@@ -9664,7 +9664,7 @@ MODULE module_ra_FLG
 ! the band in units of Wm**-2.
     case(2)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-! 2nd --- 6 nd bands have been changed by Z.F.in Jun.,2003
+! 2nd --- 6 nd bands have been changed by Z.F.in Jun.,2003 
 !
 2     do i=1,nv1
         fkg(i)=0.0
@@ -9862,7 +9862,7 @@ MODULE module_ra_FLG
           tg1(i)=0.0
         end do
       end if
-      if(nch4l.eq.1) then
+      if(nch4l.eq.1) then 
         call qki ( nv,nv1,c11ch4, fkg,pp,pt,ph,po )
         call qopch4 ( nv,nv1,fkg, tg2,pp,pt,ph,po )
       else
@@ -9894,7 +9894,7 @@ MODULE module_ra_FLG
       end if
       do i = 1, nv
         tg(i) = tg1(i) + tg2(i)/1.6*umch4 + tg3(i)/0.28*umn2o + &
-       &        tg4(i)/0.22e-3*umCFC11 + tg5(i)/0.375e-3*umCFC12
+       &        tg4(i)/0.22e-3*umCFC11 + tg5(i)/0.375e-3*umCFC12         
       end do
       hk = hk11(ig)
 ! In this band ( 1250 - 1100 cm**-1 ), we have considered the overlapping
@@ -9909,7 +9909,7 @@ MODULE module_ra_FLG
           tg1(i)=0.0
         end do
       end if
-      if(nh2ol.eq.1) then
+      if(nh2ol.eq.1) then 
         call qki ( nv,nv1,c12h2o, fkg,pp,pt,ph,po )
         call qoph2o ( nv,nv1,fkg, tg2,pp,pt,ph,po )
       else
@@ -9967,7 +9967,7 @@ MODULE module_ra_FLG
        &        tg3(i)/0.375e-3*umCFC12
       enddo
       hk = hk13(ig)
-! In this band ( 980 - 800 cm**-1 ), we have considered the overlapping
+! In this band ( 980 - 800 cm**-1 ), we have considered the overlapping 
 ! absorption of H2O, CFC11 and CFC12 by approach one of fu (1991).
     case(14)
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!c
@@ -10097,7 +10097,7 @@ MODULE module_ra_FLG
       real    :: ti(nv), wi(nv), wwi(nv,4)
       real    :: fw1, fw2, fw3, wf1, wf2, wf3, wf4, gg, x1, x2, x3, x4, fd
       integer :: i ,ib, ibr
-
+      
       do i = 1, nv
         if ( piwc(i) .lt. 1.0e-5 ) then
           ti(i) = 0.0
@@ -10267,7 +10267,7 @@ MODULE module_ra_FLG
       real    :: ti(nv), wi(nv), wwi(nv,4)
       real    :: fw1, fw2, fw3, wf1, wf2, wf3, wf4, gg, x1, x2, x3, x4
       integer :: i, ib, ibr
-
+      
 ! changed by Z.F.
 !      common /zf_solar/tizfs(nv,mbs),wizfs(nv,mbs),wwi1s(nv,mbs),
 !     &            wwi2s(nv,mbs),wwi3s(nv,mbs),wwi4s(nv,mbs)
@@ -10455,7 +10455,7 @@ MODULE module_ra_FLG
       real, dimension(nv) :: pre, plwc, pde, piwc, dz
       real    :: ti(nv), wi(nv), wwi(nv,4)
       real    :: fw1, fw2, fw3, wf1, wf2, wf3, wf4, gg, x1, x2, x3, x4
-      integer :: i, ib, ibr
+      integer :: i, ib, ibr      
 
 ! changed by Z.F.
 !      common /zf_solar/tizfs(nv,mbs),wizfs(nv,mbs),wwi1s(nv,mbs),
@@ -10552,7 +10552,7 @@ MODULE module_ra_FLG
       real fw1, fw2, fw3, tau, omega, asy, fd, f, fw,  &
      &     gg, x1, x2, x3, x4, betae, betaa
       integer i, ib, ibr
-
+      
       do i = 1, nv
         if ( piwc(i) .lt. 1.0e-5 ) then
           ti(i) = 0.0
@@ -10702,8 +10702,8 @@ MODULE module_ra_FLG
       real, dimension(nv) :: pre, plwc, pde, piwc, dz
       real    :: ti(nv), wi(nv), wwi(nv,4)
       real    :: fw1, fw2, fw3, wf1, wf2, wf3, wf4, gg, x1, x2, x3, x4
-      integer :: i, ib, ibr
-
+      integer :: i, ib, ibr   
+      
 ! changed by Z.F.
 !      common /zf_solar/tizfs(nv,mbs),wizfs(nv,mbs),wwi1s(nv,mbs),
 !     &            wwi2s(nv,mbs),wwi3s(nv,mbs),wwi4s(nv,mbs)
@@ -10782,12 +10782,12 @@ MODULE module_ra_FLG
 !c *********************************************************************
 !c tw, ww, and www are the optical depth, single scattering albedo, &
 !c and expansion coefficients of the phase function ( 1, 2, 3, and
-!c 4) due to the Mie scattering of water clouds for a given layer.
+!c 4) due to the Mie scattering of water clouds for a given layer. 
 !c By using the mean single scattering properties of the eight drop
 !c size distributions in each spectral band, the single scattering
 !c properties of a water cloud with the given liquid water content
 !c and effective radius are obtained by interpolating (Eqs. 4.25 -
-!c 4.27 of Fu, 1991).
+!c 4.27 of Fu, 1991). 
 !c *********************************************************************
 !# include "para.file"
       USE PARA_FILE
@@ -10800,7 +10800,7 @@ MODULE module_ra_FLG
       integer :: ib
       real    :: x1, x2, x3, x4, gg
       integer :: i, j
-
+      
       do i = 1, nv
         if ( plwc(i) .lt. 1.0e-5 ) then
           tw(i) = 0.0
@@ -10813,7 +10813,7 @@ MODULE module_ra_FLG
           if ( pre(i) .le. re(1) ) then
 ! A cloud with the effective radius smaller than 4.18 um is assumed
 ! to have an effective radius of 4.18 um with respect to the single
-! scattering properties.
+! scattering properties.  
             tw(i) = dz(i) * plwc(i) * bz(1,ib) / fl(1)
             ww(i) = wz(1,ib)
             x1 = gz(1,ib)
@@ -10827,7 +10827,7 @@ MODULE module_ra_FLG
           elseif ( pre(i) .ge. re(nc) ) then
 ! A cloud with the effective radius larger than 31.23 um is assumed
 ! to have an effective radius of 31.18 um with respect to the single
-! scattering properties.
+! scattering properties.  
             tw(i) = dz(i) * plwc(i) * bz(nc,ib) / fl(nc)
             ww(i) = wz(nc,ib)
             x1 = gz(nc,ib)
@@ -10866,7 +10866,7 @@ MODULE module_ra_FLG
       end subroutine
 
 
-      subroutine rayle2(nv,nv1,pp,pt,ph,po,trp)
+      subroutine rayle2(nv,nv1,pp,pt,ph,po,trp) 
 !c *********************************************************************
 !c trp is P(mb)/T(K)*DZ(m) and the constant 14.6337=R(287)/g(9.806)/2.
 !c *********************************************************************
@@ -10879,7 +10879,7 @@ MODULE module_ra_FLG
       integer              :: i
       do i = 1, nv
         trp(i) = 14.6337 * ( pp(i) + pp(i+1) ) &
-     &     * alog( pp(i+1) / pp(i) )
+     &     * alog( pp(i+1) / pp(i) ) 
       end do
       return
       end subroutine
@@ -10901,7 +10901,7 @@ MODULE module_ra_FLG
       real    :: tr(nv), wr(nv), wwr(nv,4)
       integer :: ib, i
       real    :: x
-
+      
       if ( ib .le. mbs ) then
         if ( ib .eq. 1 ) then
           x = -3.902860e-6 * u0 * u0+6.120070e-6 * u0+4.177440e-6
@@ -10934,7 +10934,7 @@ MODULE module_ra_FLG
 !c *********************************************************************
        !c trn, wrn, and wwrn are the optical depth, single scattering albedo, &
 !c and expansion coefficients of the phase function ( 1, 2, 3, and 4 )
-!c due to the Mie scattering of rain for a given layer.
+!c due to the Mie scattering of rain for a given layer. 
 !c                        Jan. 19, 1993
 !c *********************************************************************
 !# include "para.file"
@@ -10946,7 +10946,7 @@ MODULE module_ra_FLG
       real    :: trn(nv), wrn(nv), wwrn(nv,4)
       integer :: ib, i
       real    :: x1, x2, x3, x4, y1, y2, y3, y4
-
+      
       x1 = grn(ib)
       x2 = x1 * grn(ib)
       x3 = x2 * grn(ib)
@@ -10980,7 +10980,7 @@ MODULE module_ra_FLG
 !c *********************************************************************
        !c tgr, wgr, and wwgr are the optical depth, single scattering albedo, &
 !c and expansion coefficients of the phase function ( 1, 2, 3, and 4 )
-!c due to the Mie scattering of graupel for a given layer.
+!c due to the Mie scattering of graupel for a given layer. 
 !c                        Jan. 19, 1993
 !c *********************************************************************
 !# include "para.file"
@@ -11027,7 +11027,7 @@ MODULE module_ra_FLG
 !c tgm(nv) are the optical depthes due to water vapor continuum absorp-
 !c tion in nv layers for a given band ib. We include continuum absorp-
 !c tion in the 280 to 1250 cm**-1 region. vv(11)-vv(17) are the central
-!c wavenumbers of each band in this region.
+!c wavenumbers of each band in this region. 
 !c *********************************************************************
 !# include "para.file"
       USE PARA_FILE
@@ -11053,7 +11053,7 @@ MODULE module_ra_FLG
       subroutine gases ( nv,nv1,ib,ig,hk,pp,pt,ph,po,tg )
 ! *********************************************************************
 ! tg(nv) are the optical depthes due to nongray gaseous absorption, in
-! nv layers for a given band ib and cumulative probability ig.
+! nv layers for a given band ib and cumulative probability ig. 
 ! *********************************************************************
       USE PARA_FILE
       USE band, only: hk1=>hk_1,fk1o3=>fko3_1,            &
@@ -11080,8 +11080,8 @@ MODULE module_ra_FLG
                  &    hk17=>hk_17,c17h2o=>coeh2o_17,      &
                  &    hk18=>hk_18,c18h2o=>coeh2o_18
 
-      use control_para, only:     umco2,umch4,umn2o,umo2,       &
-                              &   umno,umso2,umno2,umch3cl,     &
+      use control_para, only:     umco2,umch4,umn2o,umo2,       &    
+                              &   umno,umso2,umno2,umch3cl,     &  
                               &   umco,umCFC11,umCFC12,         &
                               &   nco2s,nso2s,nch4s,nnol,no2s,  &
                               &   nno2l,nso2l,nch3cll,ncos,     &
@@ -11100,10 +11100,10 @@ MODULE module_ra_FLG
       real    :: fk
       integer :: i
 
-      select case(ib)
+      select case(ib) 
       case default
         stop
-!-------------------------------------
+!-------------------------------------        
       case(1)
 1       fk = fk1o3(ig)
         call qopo3s ( nv,nv1,fk,tg,pp,pt,ph,po )
@@ -11168,7 +11168,7 @@ MODULE module_ra_FLG
 10      call qki ( nv,nv1,c10h2o(1,1,ig), fkg,pp,pt,ph,po )
         call qoph2o ( nv,nv1,fkg, tg1,pp,pt,ph,po )
         call qki ( nv,nv1,c10ch4, fkg,pp,pt,ph,po )
-        call qopch4 ( nv,nv1,fkg, tg2,pp,pt,ph,po )
+        call qopch4 ( nv,nv1,fkg, tg2,pp,pt,ph,po ) 
         call qki ( nv,nv1,c10n2o, fkg,pp,pt,ph,po )
         call qopn2o ( nv,nv1,fkg, tg3,pp,pt,ph,po )
         do i = 1, nv
@@ -11301,7 +11301,7 @@ MODULE module_ra_FLG
          &          * ( pp(i) - stanp(10) )
         else
 
-          do while ( pp(i) .ge. stanp(i1) )
+          do while ( pp(i) .ge. stanp(i1) ) 
             i1 = i1 + 1
           end do
           y1 = ( pt(i) - 245.0 ) * ( pt(i) - 245.0 )
@@ -11427,7 +11427,7 @@ MODULE module_ra_FLG
 5     end do
       return
       end subroutine
-
+      
 !---------------------------------------------------
       subroutine qopo3s ( nv,nv1,fk,tg,pp,pt,ph,po )
 !# include "para.file"
@@ -11448,7 +11448,7 @@ MODULE module_ra_FLG
 ! 476.16 = 2.24e4 / M * 10.0 / 9.8, where M = 48 for O3.?
       return
       end subroutine
-
+      
 !----------------------------------------------------
       subroutine qoph2o ( nv,nv1,fkg, tg,pp,pt,ph,po )
 !# include "para.file"
@@ -11458,7 +11458,7 @@ MODULE module_ra_FLG
       real, dimension(nv1) :: pp, pt, ph, po
       real    :: fkg(nv1), tg(nv)
       integer :: i
-
+      
       do i = 1, nv
         tg(i) = ( fkg(i) * ph(i) + fkg(i+1) * ph(i+1) ) &
      &         * ( pp(i+1) - pp(i) ) * 634.9205
@@ -11469,7 +11469,7 @@ MODULE module_ra_FLG
 ! 1269.841 = 2.24e4 / M * 10.0 / 9.8, where M = 18 for H2O.
       return
       end subroutine
-
+      
 !-----------------------------------------------------
 
       subroutine qopch4 ( nv,nv1,fkg, tg,pp,pt,ph,po )
@@ -11480,18 +11480,18 @@ MODULE module_ra_FLG
       real, dimension(nv1) :: pp, pt, ph, po
       real    :: fkg(nv1), tg(nv)
       integer :: i
-
+      
       do i = 1, nv
         tg(i) = ( fkg(i)+fkg(i+1) ) *( pp(i+1)-pp(i) )* 6.3119e-4
 10    end do
 !     do 20 i = 1, nv
 !         tg(i) = tg(i) * 1.26238e-3
 !20      continue
-! 1.26238e-3 = 2.24e4 / M * 10.0 / 9.8 * 1.6e-6 * M / 28.97, where
+! 1.26238e-3 = 2.24e4 / M * 10.0 / 9.8 * 1.6e-6 * M / 28.97, where 
 ! M = 16 for CH4.
       return
       end subroutine
-
+      
 !-------------------------------------------------------
 
       subroutine qopn2o ( nv,nv1,fkg, tg,pp,pt,ph,po )
@@ -11502,7 +11502,7 @@ MODULE module_ra_FLG
       real, dimension(nv1) :: pp, pt, ph, po
       real    :: fkg(nv1), tg(nv)
       integer :: i
-
+      
       do i = 1, nv
         tg(i) = ( fkg(i)+fkg(i+1) ) * (pp(i+1)-pp(i))*1.10459e-4
 10    end do
@@ -11513,7 +11513,7 @@ MODULE module_ra_FLG
 ! M = 44 for N2O.
       return
       end subroutine
-
+      
 !--------------------------------------------------------
 
       subroutine qopo3i ( nv,nv1,fkg, tg,pp,pt,ph,po )
@@ -11524,7 +11524,7 @@ MODULE module_ra_FLG
       real, dimension(nv1) :: pp, pt, ph, po
       real    :: fkg(nv1), tg(nv)
       integer :: i
-
+      
       do i = 1, nv
         tg(i) = ( fkg(i) * po(i) + fkg(i+1) * po(i+1) ) &
      &         * ( pp(i+1) - pp(i) ) * 238.08
@@ -11545,7 +11545,7 @@ MODULE module_ra_FLG
       real, dimension(nv1) :: pp, pt, ph, po
       real    :: fkg(nv1), tg(nv)
       integer :: i
-
+      
       do i = 1, nv
         tg(i) = ( fkg(i) + fkg(i+1) ) * ( pp(i+1) - pp(i) ) * 0.5
 10    end do
@@ -11565,7 +11565,7 @@ MODULE module_ra_FLG
       real    :: vv, tg(nv)
       real    :: x, y, z, r, s, w
       integer :: i
-
+      
       x = 4.18
       y = 5577.8
       z = 0.00787
@@ -11614,7 +11614,7 @@ MODULE module_ra_FLG
 10    end do
       return
       end subroutine
-
+      
 !-------------------------------------------------------------
 
       subroutine qopco2 ( nv,nv1,fkg, tg,pp,pt,ph,po )
@@ -11728,7 +11728,7 @@ MODULE module_ra_FLG
 10    end do
       return
       end subroutine
-
+      
 !----------------------------------------------------------------
 
       subroutine qopCFC12 ( nv,nv1,coefCFC, tg,pp,pt,ph,po )
@@ -11744,7 +11744,7 @@ MODULE module_ra_FLG
       enddo
       do i = 1, nv
         tg(i) = 0.5* ( fkg(i)+fkg(i+1) ) * ( pp(i+1)-pp(i) ) *  &
-       &        2.24e4/aM*10.0/9.8*0.375e-3*1.0e-6*aM/28.97
+       &        2.24e4/aM*10.0/9.8*0.375e-3*1.0e-6*aM/28.97         
 10    end do
       return
       end subroutine
@@ -11774,7 +11774,7 @@ MODULE module_ra_FLG
 !!# include "para.file"
 !      USE PARA_FILE
 !      USE control_para
-!
+!      
 !        common /ic/ ti(nv), wi(nv), wwi(nv,4)
 !        common /wat/ tw(nv), ww(nv), www(nv,4)
 !        common /rai/ trn(nv), wrn(nv), wwrn(nv,4)
@@ -11799,10 +11799,10 @@ MODULE module_ra_FLG
 !        common /cld_loop/ nb(3)
 !!c-- change over
 !
-!!C-- added by Yu Gu 11/2006 to add control parameter
+!!C-- added by Yu Gu 11/2006 to add control parameter 
 !      common /nctrl/ naero, nfract, nice,ngas
 !
-!!C-- change by Yu Gu 01/2003 to add aerosol
+!!C-- change by Yu Gu 01/2003 to add aerosol 
 !!c---------- 10/29/96 (4)
 !      real tae,wae,wwae,taes(0:4)
 !      common /aer/ tae(nvx,mxac), wae(nvx,mxac), wwae(nvx,4,mxac)
@@ -12094,7 +12094,7 @@ MODULE module_ra_FLG
 !        end subroutine
 
 
-!C--- with aerosol & partly cloudy
+!C--- with aerosol & partly cloudy 
       subroutine comscp_aero_cld (  nv,nv1                            &
      &                             ,cldamnt,area_group,cld_group      &
      &                             ,n_group,nb                        &
@@ -12133,7 +12133,7 @@ MODULE module_ra_FLG
       real    :: tgm(nv)
       real    :: tg(nv)
       real    :: tae(nvx,mxac), wae(nvx,mxac), wwae(nvx,4,mxac)
-
+      
       real, dimension(nv) :: wc1, wc2, wc3, wc4, wc, tt
       real    :: tc(nv), tc_2(nv,2),tis, tws, trns, tgrs, &
      &           taes(0:4), fw, fw1, fw2, &
@@ -12158,8 +12158,8 @@ MODULE module_ra_FLG
 !c--- determine n_group(k), cld_group(k), and area_group(k,1), area_group(k,2)
 !c--- hight,middle, and low three cloud groups
       do k=1,ngroup
-!        kl = (k-1)*ngroup + nv1 - nclouds
-        kl = (k-1)*nsubcld + nv1 - nsubcld*ngroup
+!        kl = (k-1)*ngroup + nv1 - nclouds 
+        kl = (k-1)*nsubcld + nv1 - nsubcld*ngroup 
         cld_group(k) = cldamnt(kl)
         do i=kl+1,kl+nsubcld-1
           if (cldamnt(i).gt.cld_group(k)) then
@@ -12177,13 +12177,13 @@ MODULE module_ra_FLG
           n_group(k) = 1
           nb(k) = 1
           area_group(k,1) = 1.
-          area_group(k,2) = 0.
-! - overcast
+          area_group(k,2) = 0. 
+! - overcast 
         elseif(cld_group(k).eq.1.) then
-          n_group(k) = 2
-          nb(k) = 2
+          n_group(k) = 2 
+          nb(k) = 2 
           area_group(k,1) = 0.
-          area_group(k,2) = 1.
+          area_group(k,2) = 1. 
         endif
 
       enddo
@@ -12195,13 +12195,13 @@ MODULE module_ra_FLG
      &             trn(i) + tgr(i)
 !--- value test
         if(tc_2(i,1).lt.0.) then
-                write(0,*)'tau clear less then 0 at level ', i
+                write(0,*)'tau clear less then 0 at level ', i 
                 write(0,*)'tau=', tc_2(i,1)
-                write(0,*)'tr=',tr(i)
-                write(0,*)'tgm=',tgm(i)
-                write(0,*)'tg=',tg(i)
-                write(0,*)'trn=',trn(i)
-                write(0,*)'tgr=',tgr(i)
+                write(0,*)'tr=',tr(i) 
+                write(0,*)'tgm=',tgm(i) 
+                write(0,*)'tg=',tg(i) 
+                write(0,*)'trn=',trn(i) 
+                write(0,*)'tgr=',tgr(i) 
          endif
 !--- test over
 
@@ -12220,9 +12220,9 @@ MODULE module_ra_FLG
         adj_pari = 0.
         adj_parw = 0.
         if (cldamnt(i).gt. 0.) then
-          n_cld = (i-(nv1-nsubcld*ngroup))/nsubcld+1
+          n_cld = (i-(nv1-nsubcld*ngroup))/nsubcld+1 
           if (n_cld.gt.0.and.cld_group(n_cld).ne.0) then   !mchen
-! -- determine adjust parameter
+! -- determine adjust parameter 
             fcloud = cldamnt(i) / cld_group(n_cld)
             if (fcloud.le.0.1) then
               if (ti(i).le.15.) then
@@ -12262,7 +12262,7 @@ MODULE module_ra_FLG
                 adj_parw = 0.6 * fcloud
               endif
             endif
-
+  
             if (fcloud.le.0.7.and.fcloud.gt.0.5) then
               if (ti(i).le.15.) then
                 adj_pari = fcloud - fcloud * 0.286 * ti(i) / 15.
@@ -12317,15 +12317,15 @@ MODULE module_ra_FLG
        &             trn(i) + tgr(i)
 ! --- test value
         if(tc_2(i,2).lt.0.) then
-                write(0,*)'tau cloudy less then 0 at level ', i
+                write(0,*)'tau cloudy less then 0 at level ', i 
                 write(0,*)'tau=', tc_2(i,2)
-                write(0,*)'ti=',ti(i)
-                write(0,*)'tw=',tw(i)
-                write(0,*)'tr=',tr(i)
-                write(0,*)'tgm=',tgm(i)
-                write(0,*)'tg=',tg(i)
-                write(0,*)'trn=',trn(i)
-                write(0,*)'tgr=',tgr(i)
+                write(0,*)'ti=',ti(i) 
+                write(0,*)'tw=',tw(i) 
+                write(0,*)'tr=',tr(i) 
+                write(0,*)'tgm=',tgm(i) 
+                write(0,*)'tg=',tg(i) 
+                write(0,*)'trn=',trn(i) 
+                write(0,*)'tgr=',tgr(i) 
          endif
 !--- test over
 !C-- add by Yu Gu for aerosol (01/2003)
@@ -12341,7 +12341,7 @@ MODULE module_ra_FLG
 
 !c       print *, 'i=',i,' tc=', tc_2(i,2)
         tis = ti(i) * wi(i)
-        tws = tw(i) * ww(i)
+        tws = tw(i) * ww(i) 
         trns = trn(i) * wrn(i)
         tgrs = tgr(i) * wgr(i)
 !c           fw1 = tr(i) + trns + tgrs
@@ -12616,15 +12616,15 @@ MODULE module_ra_FLG
 !
 !                if (ti(i).gt.0.) &
 !               ti(i) = ti(i) * adj_pari &
-!                       * cc_inho(i)
-!!c     &                  * c_inho
+!                       * cc_inho(i) 
+!!c     &                  * c_inho 
 !!C-- above: change by Yu: to include the inhomogeneity effect
 !!c     &         ti(i) = ti(i) * cldamnt(i)
 !!c     &                       / cld_group(n_cld)
 !                if (tw(i).gt.0.) &
 !               tw(i) = tw(i) * adj_parw &
-!                       * cc_inho(i)
-!!c     &                  * c_inho
+!                       * cc_inho(i) 
+!!c     &                  * c_inho 
 !!C-- above: change by Yu: to include the inhomogeneity effect
 !!c     &         tw(i) = tw(i) * cldamnt(i)
 !!c     &                       / cld_group(n_cld)
@@ -12723,7 +12723,7 @@ MODULE module_ra_FLG
 !	   tc(i) = ti(i) + tw(i) + tr(i) + tgm(i) + tg(i) + &
 !                  trn(i) + tgr(i)
 !	   tis = ti(i) * wi(i)
-!	   tws = tw(i) * ww(i)
+!	   tws = tw(i) * ww(i) 
 !           trns = trn(i) * wrn(i)
 !           tgrs = tgr(i) * wgr(i)
 !           fw = tis + tws + tr(i) + trns + tgrs
@@ -12799,7 +12799,7 @@ MODULE module_ra_FLG
       integer :: nd(mbir)
       integer :: ib, i, j, nv11, ibr
       real    :: v1, v2, w, fq1, fq2, bts, x
-
+      
       data ve / 2200.0, 1900.0, 1700.0, 1400.0, 1250.0, 1100.0, &
      &            980.0, 800.0, 670.0, 540.0, 400.0, 280.001 /
       data nd / 30, 20, 30, 15, 15, 12, &
@@ -12853,7 +12853,7 @@ MODULE module_ra_FLG
       real, intent(out)   :: b(4,3)
       integer :: i, j
       real    :: x, w0w, w1w, w2w, w3w, fw, q1, q2, q3, fq, c(4,5)
-
+      
       x = 0.5 * w
       w0w = x
       w1w = x * w1
@@ -12869,8 +12869,8 @@ MODULE module_ra_FLG
       do i = 3, 4
         do j = 1, 4
           c(i,j) = fq + w1w * p11d(i,j) + &
-     &            w2w * p22d(i,j) + w3w * p33d(i,j)
-          if ( i .eq. j ) then
+     &            w2w * p22d(i,j) + w3w * p33d(i,j) 
+          if ( i .eq. j ) then 
             c(i,j) = ( c(i,j) - 1.0 ) / u(i)
           else
             c(i,j) = c(i,j) / u(i)
@@ -12880,7 +12880,7 @@ MODULE module_ra_FLG
       do i = 1, 4
         if ( ib .le. mbs ) then
           c(i,5) = w0w + q1 * p1d(i) + &
-     &           q2 * p2d(i) + q3 * p3d(i)
+     &           q2 * p2d(i) + q3 * p3d(i) 
         else
           c(i,5) = 1.0
         endif
@@ -12906,12 +12906,12 @@ MODULE module_ra_FLG
 !c **********************************************************************
       subroutine coeff2 ( u0,b,a,d )
       implicit none
-
+      
       real, intent(in)  :: u0
       real, intent(in)  :: b(4,3)
       real, intent(out) :: a(2,2,2), d(4)
       real              :: fw1, fw2, fw3, fw4
-
+      
       fw1 = b(1,1) * b(1,2)
       fw2 = b(2,1) * b(3,2)
       fw3 = b(3,1) * b(2,2)
@@ -12943,7 +12943,7 @@ MODULE module_ra_FLG
       real, intent(in)   :: a(2,2,2), d(4)
       real, intent(out)  :: z(4), b1, c1
       real :: x
-
+      
       x = u0 * u0
       b1 = a(2,2,1) + a(1,1,1)
       c1 = a(2,1,1) * a(1,2,1) - a(1,1,1) * a(2,2,1)
@@ -12977,7 +12977,7 @@ MODULE module_ra_FLG
      &                       fk1, fk2
       integer :: i
       real    :: dt, x, y, fw, fw1, fw2, a2, b2, zx, fq0, fq1
-
+            
       dt = t1 - t0
       x = sqrt ( b1 * b1 + 4.0 * c1 )
       fk1 = sqrt ( ( b1 + x ) * 0.5 )
@@ -12996,10 +12996,10 @@ MODULE module_ra_FLG
 ! --------- 4/2/97 (4)
 
       fw = 0.5 * f0 / x
-      z(1) = fw * z(1)
-      z(2) = fw * z(2)
-      z(3) = fw * z(3)
-      z(4) = fw * z(4)
+      z(1) = fw * z(1) 
+      z(2) = fw * z(2) 
+      z(3) = fw * z(3) 
+      z(4) = fw * z(4) 
       z1(1) = 0.5 * ( z(1) + z(3) )
       z1(2) = 0.5 * ( z(2) + z(4) )
       z1(3) = 0.5 * ( z(2) - z(4) )
@@ -13009,14 +13009,14 @@ MODULE module_ra_FLG
       x = b(1,1) * b(4,1) - b(3,1) * b(2,1)
       fw1 = fk1 / x
       fw2 = fk2 / x
-      y = fw2 * ( b2 * b(2,1) - b(4,1) )
+      y = fw2 * ( b2 * b(2,1) - b(4,1) ) 
       zx = fw1 * ( a2 * b(2,1) - b(4,1) )
       a1(1,1) = 0.5 * ( 1 - y )
       a1(1,2) = 0.5 * ( 1 - zx )
       a1(1,3) = 0.5 * ( 1 + zx )
       a1(1,4) = 0.5 * ( 1 + y )
-      y = fw2 * ( b(3,1) - b2 * b(1,1) )
-      zx = fw1 * ( b(3,1) - a2 * b(1,1) )
+      y = fw2 * ( b(3,1) - b2 * b(1,1) ) 
+      zx = fw1 * ( b(3,1) - a2 * b(1,1) ) 
       a1(2,1) = 0.5 * ( b2 - y )
       a1(2,2) = 0.5 * ( a2 - zx )
       a1(2,3) = 0.5 * ( a2 + zx )
@@ -13066,7 +13066,7 @@ MODULE module_ra_FLG
      &                        z(4), b1, c1,                        &
      &                        aa(4,4,2), zz(4,2), a1(4,4), z1(4),  &
      &                        fk1, fk2
-
+     
       call coeff1 ( ib,w,w1,w2,w3,t0,t1,u0,f0,b )
       call coeff2 ( u0,b,a,d )
       call coeff4 ( u0,a,d,z,b1,c1 )
@@ -13085,14 +13085,14 @@ MODULE module_ra_FLG
       USE PARA_FILE
       use numericals
       implicit none
-
+      
       integer, intent(in) :: ib
       real, intent(in)    :: w, w1, w2, w3, t0, t1, u0, f0
       real, intent(out)   :: aa(4,4,2), zz(4,2), a1(4,4), z1(4),  &
      &                       fk1, fk2
       integer             :: i, jj, j, k
       real                :: x, y, fw, temp, dt
-
+      
       fk1 = 4.7320545
       fk2 = 1.2679491
       y = exp ( - ( t1 - t0 ) / u0 )
@@ -13112,7 +13112,7 @@ MODULE module_ra_FLG
 !            z1(i) = fw / ( 1.0 + u(jj) / u0 )
 ! -- change over
 
-            zz(i,1) = z1(i)
+            zz(i,1) = z1(i) 
             zz(i,2) = z1(i) * y
           endif
         do j = 1, 4
@@ -13139,7 +13139,7 @@ MODULE module_ra_FLG
       aa(4,1,2) = y
       return
       end subroutine
-
+      
 !c **********************************************************************
 !c In the solar band  asbs is the surface albedo, while in the infrared
 !c band asbs is  blackbody intensity emitted at the surface temperature
@@ -13148,7 +13148,7 @@ MODULE module_ra_FLG
 !c 'qcfel' for array AB(13,4*n).
 !c **********************************************************************
       subroutine qcfe ( nv,nv1,ib,asbs,ee,w1,w2,w3,w,t,u0,f0,  &
-     &                  fk1,fk2,a4,z4,g4 )
+     &                  fk1,fk2,a4,z4,g4 )  
 !# include "para.file"
       USE PARA_FILE
       implicit none
@@ -13160,7 +13160,7 @@ MODULE module_ra_FLG
      &                       z4(4,nv), g4(4,nv)
       real    :: b(4,3), a(2,2,2), d(4), z(4), b1, c1,  &
      &           aa(4,4,2), zz(4,2), a1(4,4), z1(4), fk1t, fk2t
-      real    :: ab(13,nv * 4), bx(nv * 4), xx(nv * 4)
+      real    :: ab(13,nv * 4), bx(nv * 4), xx(nv * 4)      
       integer :: n, n4, i, j, k, ibn, i8, kf, i1, i2, i3, j1, j2, j3, &
      &           m1, m2, m18, m28
       real    :: wn, w1n, w2n, w3n, t0n, t1n, u0n, f0n
@@ -13368,7 +13368,7 @@ MODULE module_ra_FLG
 !# include "para.file"
       USE PARA_FILE
       implicit none
-
+      
       integer :: nv, nv1
       real    :: ab(13,nv * 4), b(nv * 4), x(nv * 4)
       integer :: i, j, k, l, m, n,  &
@@ -13376,7 +13376,7 @@ MODULE module_ra_FLG
      &           m1f, m1, m2, m3, m4, m18, m28, m38, m48,  &
      &           n1, n2, n3, n4, n44
       real    :: p, t, xx, yy
-
+      
       n = nv
       n4 = nv * 4
       do k = 1, n - 1
@@ -13513,7 +13513,7 @@ MODULE module_ra_FLG
 
 !c **********************************************************************
 !c In this subroutine, we incorporate a delta-function adjustment to
-!c account for the  forward  diffraction  peak in the context of the
+!c account for the  forward  diffraction  peak in the context of the 
        !c four-stream or two stream approximations ( Liou, Fu and Ackerman, &
 !c 1988 ).  The w1(n), w2(n), w3(n), w(n), and t(n) are the adjusted
 !c parameters.
@@ -13523,7 +13523,7 @@ MODULE module_ra_FLG
       USE PARA_FILE
       USE control_para, dfsasl=>d4s, dtsasl=>d2s, dfsair=>d4ir, dtsair=>d2ir
       implicit none
-
+      
       integer :: nv, nv1
       real, intent(in), dimension(nv)  :: ww1, ww2, ww3, ww4, ww, tt
       real, intent(out), dimension(nv) :: w1, w2, w3, w, t
@@ -13542,7 +13542,7 @@ MODULE module_ra_FLG
         endif
 ! 11/4/95 (end)
 ! - clear
-        fw = 1.0 - f * ww(i)
+        fw = 1.0 - f * ww(i) 
         w1(i) = ( ww1(i) - 3.0 * f ) / ( 1.0 - f )
         w2(i) = ( ww2(i) - 5.0 * f ) / ( 1.0 - f )
         w3(i) = ( ww3(i) - 7.0 * f ) / ( 1.0 - f )
@@ -13591,7 +13591,7 @@ MODULE module_ra_FLG
       m = nv1
       ee = 0.0
       asbs = as
-      call adjust ( nv,nv1,ww1,ww2,ww3,ww4,ww,tt,w1,w2,w3,w,t )
+      call adjust ( nv,nv1,ww1,ww2,ww3,ww4,ww,tt,w1,w2,w3,w,t ) 
       do i = 1, n
         u0a(i) = u0
         f0a(i) = f0
@@ -13600,7 +13600,7 @@ MODULE module_ra_FLG
      &            fk1,fk2,a4,z4,g4 )
       fw1 = 0.6638961
       fw2 = 2.4776962
-      fw3 = u0 * 3.14159 * f0
+      fw3 = u0 * 3.14159 * f0 
       do i = 1, m
         if ( i .eq. 1 ) then
           x(1) = 1.0
@@ -13634,7 +13634,7 @@ MODULE module_ra_FLG
             fi(jj) = fi(jj) + a4(jj,ii,k) * fw4
 45        end do
 40      end do
-        ffu(i)= fw1 * fi(2) + fw2 * fi(1)
+        ffu(i)= fw1 * fi(2) + fw2 * fi(1) 
         ffd(i)= fw1 * fi(3) + fw2 * fi(4) + fw3 * y
 !c amontornes-bcodina (2014-04-29): save direct and diffuse terms
         ffddir(i) = fw3 * y					! amontornes-bcodina Direct downward flux
@@ -13648,7 +13648,7 @@ MODULE module_ra_FLG
 !c is used for the infrared ( Fu, 1991). Since the direct solar radiation
 !c source has an exponential function form in terms of optical depth, the
 !c formulation of the delta-four-stream approximation for infrared  wave-
-!c lengths is the same as that for solar wavelengths.
+!c lengths is the same as that for solar wavelengths. 
 !c **********************************************************************
       subroutine qfti ( nv, nv1, ib,ee,bf,bs,ww1,ww2,ww3,ww4,ww,tt,ffu,ffd )
 !# include "para.file"
@@ -13748,10 +13748,10 @@ MODULE module_ra_FLG
 !c This subroutine is used to calculate the Coefficients For Generalized
 !c Two-Stream scheme.  We can make choices between Eddington, quadrature
        !c and  hemispheric  mean  schemes  through  logical variables 'edding', &
-!c 'quadra', and 'hemisp'.  The  Eddington  and  quadrature  schemes are
-!c discussed in detail by Liou (1992).  The  hemispheric  mean scheme is
-!c derived by assuming that the phase function is equal to 1 + g in  the
-!c forward scattering hemisphere and 1 - g  in  the  backward scattering
+!c 'quadra', and 'hemisp'.  The  Eddington  and  quadrature  schemes are 
+!c discussed in detail by Liou (1992).  The  hemispheric  mean scheme is 
+!c derived by assuming that the phase function is equal to 1 + g in  the 
+!c forward scattering hemisphere and 1 - g  in  the  backward scattering 
 !c hemisphere where g is the asymmetry factor.   The hemispheric mean is
 !c only used for infrared wavelengths (Toon et al. 1989).
 !c **********************************************************************
@@ -13764,7 +13764,7 @@ MODULE module_ra_FLG
       real, intent(in)    :: w, w1, t0, t1, u0, f0
       real, intent(out)   :: gamma1, gamma2, gamma3, gamma4, ugts1
       real x, y, z
-
+      
       if ( edding ) then
         x = 0.25 * w1
         y = w * x
@@ -13808,18 +13808,18 @@ MODULE module_ra_FLG
      &                   lamda,gamma,cadd0,cadd1,cmin0,cmin1,g1g2 )
 !c **********************************************************************
 !c This subroutine is used to calculate the Coefficients For Generalized
-!c Two-Stream scheme.
+!c Two-Stream scheme. 
 !c **********************************************************************
 !# include "para.file"
       USE PARA_FILE
       implicit none
-
+      
       integer, intent(in) :: ib
       real, intent(in)    :: w, w1, t0, t1, u0, f0
       real :: lamda, gamma, cadd0, cadd1, cmin0, cmin1, g1g2
       real :: gamma1, gamma2, gamma3, gamma4, ugts1
       real :: fq, alfa, beta, fw, x, z
-
+      
       call cfgts0 ( ib, w, w1, t0, t1, u0, f0, &
      &              gamma1, gamma2, gamma3, gamma4, ugts1 )
       lamda = sqrt ( ( gamma1 + gamma2 ) * ( gamma1 - gamma2 ) )
@@ -13853,7 +13853,7 @@ MODULE module_ra_FLG
       cmin1 = cmin0 * x
       return
       end subroutine
-
+      
 
       subroutine qccgts ( nv, nv1, ib, asbs, ee, &
      &                    w1,w2,w3,w,t,u0,f0, &
@@ -13864,7 +13864,7 @@ MODULE module_ra_FLG
 !c band asbs is  blackbody intensity emitted at the surface temperature
 !c times surface emissivity.  In this subroutine,  the generalized two-
 !c stream is applied to nonhomogeneous atmospheres. ee is the IR surface
-!c emissivity.
+!c emissivity. 
 !c **********************************************************************
 !# include "para.file"
       USE PARA_FILE
@@ -13936,8 +13936,8 @@ MODULE module_ra_FLG
       c(nv * 2) = 0.0
       r(nv * 2) = rsfc * cminn(nv) - caddn(nv) + ssfc
 ! test
-!      write(0,*) 'a,b,gam=',a, b, gam
-!      write(0,*) 'rsfc,gamman, xn, expn=',rsfc,gamman,xn,expn
+!      write(0,*) 'a,b,gam=',a, b, gam 
+!      write(0,*) 'rsfc,gamman, xn, expn=',rsfc,gamman,xn,expn 
       call tridag ( a, b, c, r, u, gam, nv * 2 )
       do k = 1, nv
         k1 = k + k - 1
@@ -13952,11 +13952,11 @@ MODULE module_ra_FLG
       subroutine tridag ( a, b, c, r, u, gam, n )
 !c **********************************************************************
 !c
-!c   | b1 c1 0  ...                |   | u1   |   | r1   |
-!c   | a2 b2 c2 ...                |   | u2   |   | r2   |
+!c   | b1 c1 0  ...                |   | u1   |   | r1   |                    
+!c   | a2 b2 c2 ...                |   | u2   |   | r2   |                
 !c   |          ...                | . | .    | = | .    |
-!c   |          ... an-1 bn-1 cn-1 |   | un-1 |   | rn-1 |
-!c   |              0    an   bn   |   | un   |   | rn   |
+!c   |          ... an-1 bn-1 cn-1 |   | un-1 |   | rn-1 |                    
+!c   |              0    an   bn   |   | un   |   | rn   |                
 !c
 !c This  subroutine solves for  a vector U of length N the tridiagonal
 !c linear set given by above equation. A, B, C and R are input vectors
@@ -13968,7 +13968,7 @@ MODULE module_ra_FLG
       integer :: i, j
       real    :: bet
 !      if ( b(1) .eq. 0. ) pause
-      if ( b(1) .eq. 0. ) then
+      if ( b(1) .eq. 0. ) then 
            CALL wrf_error_fatal('subroutine tridag failed. Stop program')  !mchen
       endif
 ! If this happens then you should rewrite your equations as a set of
@@ -14057,7 +14057,7 @@ MODULE module_ra_FLG
 !c is used for the infrared ( Fu, 1991). Since the direct solar radiation
 !c source has an exponential function form in terms of optical depth, the
 !c formulation of generalized two stream approximation for infrared  wave
-!c lengths is the same as that for solar wavelengths.
+!c lengths is the same as that for solar wavelengths. 
 !c The generalized two stream approximation for nonhomgeneous atmospheres
 !c in the infrared wavelengths.  The  input  parameters are those through
 !c 'para.file', through argument of 'qftits' and through common statement
@@ -14082,7 +14082,7 @@ MODULE module_ra_FLG
       n = nv
       m = nv1
       asbs = bs * ee
-      call adjust ( nv,nv1,ww1,ww2,ww3,ww4,ww,tt,w1,w2,w3,w,t )
+      call adjust ( nv,nv1,ww1,ww2,ww3,ww4,ww,tt,w1,w2,w3,w,t ) 
       t0 = 0.0
       do i = 1, n
         q1 = alog ( bf(i+1) / bf(i) )
@@ -14104,10 +14104,10 @@ MODULE module_ra_FLG
       call qccgts ( nv,nv1,ib, asbs, ee,  &
      &              w1,w2,w3,w,t,u0a,f0a, &
      &             lamdan,gamman,caddn,cminn, &
-     &             caddn0,cminn0,aa,bb,expn,g1g2n )
+     &             caddn0,cminn0,aa,bb,expn,g1g2n ) 
       xx = aa(1) * expn(1)
       ffu(1) = xx + gamman(1) * bb(1) + caddn0(1)
-      ffd(1) = gamman(1) * xx + bb(1) + cminn0(1)
+      ffd(1) = gamman(1) * xx + bb(1) + cminn0(1) 
       do i = 2, m
         k = i - 1
         xx = bb(k) * expn(k)
@@ -14126,7 +14126,7 @@ MODULE module_ra_FLG
 !c the source function technique (Toon et al. 1989) is used to calculate
 !c the IR radiative fluxes. The exponential approximation for the Planck
 !c function in optical depth is used ( Fu, 1991).
-!c At IR wavelengths, the two-stream results are not exact in the limit
+!c At IR wavelengths, the two-stream results are not exact in the limit 
 !c of no scattering. It also introduces large error in the case of sca-
 !c ttering. Since the no-scattering limit is of considerable significance
 !c at IR wavelengths, we have used  the source function technique  that
@@ -14143,13 +14143,13 @@ MODULE module_ra_FLG
       USE control_para, only: quadra
       implicit none
       integer :: nv, nv1
-	  integer, parameter :: nq = 2
+	  integer, parameter :: nq = 2 
       integer :: ib
       real    :: ee, bf(nv1), bs
       real, dimension(nv) :: ww1, ww2, ww3, ww4, ww, tt
       real, dimension(nv) :: w1, w2, w3, w, t, u0, f0
       real, dimension(nv1) :: ffu, ffd
-
+      
       real, dimension(nv) :: lamdan, gamman, caddn, cminn, &
                                caddn0, cminn0, aa, bb, expn, g1g2n
       real, dimension(nv) :: fuq1, fuq2, fg, fh, fj, fk
@@ -14166,7 +14166,7 @@ MODULE module_ra_FLG
  	data ug / 0.2113248, 0.7886752 /
  	data wg / 0.5, 0.5 /
  	data ugwg / 0.105662, 0.394338 /
-
+ 	
       if ( quadra ) then
         ugts1 = 0.57735
       else
@@ -14175,7 +14175,7 @@ MODULE module_ra_FLG
       n = nv
       m = nv1
       asbs = bs * ee
-      call adjust ( nv,nv1,ww1,ww2,ww3,ww4,ww,tt,w1,w2,w3,w,t )
+      call adjust ( nv,nv1,ww1,ww2,ww3,ww4,ww,tt,w1,w2,w3,w,t ) 
       t0 = 0.0
       do i = 1, n
         q1 = alog ( bf(i+1) / bf(i) )
@@ -14264,18 +14264,18 @@ MODULE module_ra_FLG
 !-- test
 !        if (abs(fid(i,j)).gt.1000.) then
 !               write(0,*) 'i,j,fid=',i,j,fid(i,j)
-!               write(0,*) 'tau b4 adjust=',tt
-!               write(0,*) 'tau=',t
+!               write(0,*) 'tau b4 adjust=',tt 
+!               write(0,*) 'tau=',t 
 !               write(0,*) 'fx=', fx
 !               write(0,*) 'fj=', fj
 !               write(0,*) 'fz1=', fz1
 !               write(0,*) 'fk=', fk
 !               write(0,*) 'fz2=', fz2
-!               write(0,*) 'tempugbeta=', tempugbeta
-!               write(0,*) 'ug=', ug
-!               write(0,*) 'beta=', beta
-!               write(0,*) 'alfa=', alfa
-!               write(0,*) 'fuq2=', fuq2
+!               write(0,*) 'tempugbeta=', tempugbeta 
+!               write(0,*) 'ug=', ug 
+!               write(0,*) 'beta=', beta 
+!               write(0,*) 'alfa=', alfa 
+!               write(0,*) 'fuq2=', fuq2 
 !         endif
 
           t0 = t(i1)
@@ -14311,9 +14311,9 @@ MODULE module_ra_FLG
 !               write(0,*) 'fz1=', fz1
 !               write(0,*) 'fh=', fh
 !               write(0,*) 'fz2=', fz2
-!               write(0,*) 'ugbeta=', ugbeta
-!               write(0,*) 'alfa=', alfa
-!               write(0,*) 'fuq1=', fuq1
+!               write(0,*) 'ugbeta=', ugbeta 
+!               write(0,*) 'alfa=', alfa 
+!               write(0,*) 'fuq1=', fuq1 
 !         endif
         enddo
       enddo
@@ -14342,13 +14342,13 @@ MODULE module_ra_FLG
 !	parameter(nsub=25,nfuo=15 ,nwo=nsub*nfuo)
 !	common /aot_spect_25/ wlo2(25,15) , hkas(25,15) ,sflx (25,15)  !!! Higer resolution Convolution
       implicit none
-
+      
       integer                    :: irh,itp
       real, dimension(mxat)      :: aoti, wli
       real, dimension(nwo)       :: aoto, wlo
       real, dimension(nsub,nfuo) :: aoto2
       real, dimension(15)        :: aotf, wlf
-
+      
       integer :: ii, jj, kk, i, j
       real    :: zord
 
@@ -14379,19 +14379,19 @@ MODULE module_ra_FLG
         do i = 1,nsub
           wlf(j) =  wlf(j)+  wlo2(i,j) * hkas(i,j)
           aotf(j)= aotf(j)+ aoto2(i,j) * hkas(i,j)
-          zord = zord + sflx (i,j)*exp(-aoto2(i,j))
+          zord = zord + sflx (i,j)*exp(-aoto2(i,j)) 
         enddo
       enddo
 
 !-  WRITE OUT interpolated AOTs
-
+	
 !	do i=1,nwo
 !	write(11) d1,d2,wlo(i),aoto(i),float(irec),log(wlo(i)),log(aoto(i)),float(ityp)
 !	enddo
 !	print'(A6,f10.3, 3i4)','FLUX= ',zord ,nsub,ityp,irh
 	return
 	end subroutine
-
+	
 !----------------------------------------------------------------
 
       subroutine aot_ext (aotin,wlin,wlo,aoto,irh,ityp)
@@ -14400,7 +14400,7 @@ MODULE module_ra_FLG
       USE opac_ext, wlopac=>wl, datopac=>edat
       USE mineral_ext, wlt=>wl, datt=>dat
       USE dalm_ext, wld=>wl, datd=>dat
-
+    
       implicit none
 
       integer                   :: irh,ityp
@@ -14415,7 +14415,7 @@ MODULE module_ra_FLG
 
 !    common /dalm_ext/    wld(24) ,datd(24,8,3)
 !    common /mineral_ext/ wlt(24) ,datt(24,4:8)
-!    common /opac_ext/ wlopac(24) ,datopac(24,8,9:18)
+!    common /opac_ext/ wlopac(24) ,datopac(24,8,9:18) 
 ! Wavelength MICRONS
 ! wlix,aoti = Monotonicly increasing
 
@@ -14428,7 +14428,7 @@ MODULE module_ra_FLG
 	    wlp  = wlt
 	    extp = datt(1:24,ityp)
 	    idtl=2
-	  elseif ( ityp >=9 .and. ityp <= 18) then ! OPAC
+	  elseif ( ityp >=9 .and. ityp <= 18) then ! OPAC 
 	    wlp  = wlopac
 	    if (ityp==10 .or. ityp==12 .or.ityp==13 .or.ityp==18 ) then
 	      extp = datopac(1:24,irh,ityp)
@@ -14446,12 +14446,12 @@ MODULE module_ra_FLG
         ! nes=-3; nel=19                 ! 1 chan @ 500nm
         if(wlin(1)<=.325.or.wlin(1)>=.675) &
      &      CALL wrf_error_fatal('OUT OF ALLOWABLE ARANGE. STOP program')  !mchen
-        nes=-(wlin(1)-0.325)/0.05;
+        nes=-(wlin(1)-0.325)/0.05; 
         if(idtl==3) nes=nes-1  ! OPAC starts at 0.25um instead of 0.30
         nel=22+nes
         ! print*,'NES NEL',nes,nel,wlin(1)
       else
-        nes=0
+        nes=0  
         if(idtl==1)then         !  >= 2um long d'Almedia
           nel=8
         elseif(idtl==2)then    !  >= 2um long Tegin&Lacis
@@ -14494,7 +14494,7 @@ MODULE module_ra_FLG
       aoti(nwin+1:iend)=aoti(nwin)*(extp(nb:ne)/ext_norm1)
 !C-- change over
 
-!------
+!------	
       if(nwin==1)then
         ! print*,1,wlix(1),aoti(1)
         SHORTSIDE: do i=1,ne
@@ -14537,13 +14537,13 @@ MODULE module_ra_FLG
       dy= log(y2) - log(y1)
       dx1=log(x)  - log(x1)
       yy= (dy/dx) * dx1
-      rlnintrp = exp(log(y1)+yy)
+      rlnintrp = exp(log(y1)+yy) 
       return
       end function
 !====================================================================
       subroutine aotspline(nwi,aoti,wli,nwo,wlo,aoto)
       implicit none
-
+      
       integer :: nwi, nwo
       real ,dimension(nwi)  :: aoti,wli
       real ,dimension(nwi+1):: xa,ya,y2a
@@ -14551,21 +14551,21 @@ MODULE module_ra_FLG
       integer :: nwi2, iwo
       real    :: x, y
       real    :: yp1 = 1.0E+32, ypn = 1.0E+32
-
+	
       nwi2=nwi+1
 
       xa(2:nwi+1)=log(wli(1:nwi))
       ya(2:nwi+1)=log(aoti(1:nwi))
       xa(1)=log(1.0E-6) !; xa(nwi2)=log(1.0E+6) !TENSION
-      ya(1)=0           !; ya(nwi2)= ya(nwi+1)!TENSION
+      ya(1)=0           !; ya(nwi2)= ya(nwi+1)!TENSION      
 
       call spline(xa,ya,nwi2,yp1,ypn,y2a)
 
       do iwo = 1,nwo
         x=log(wlo(iwo))
         call splint(xa,ya,y2a,nwi2,x,y)
-        aoto(iwo)=exp(y)
-      enddo
+        aoto(iwo)=exp(y) 
+      enddo        
 
       return
       end subroutine
@@ -14585,7 +14585,7 @@ MODULE module_ra_FLG
       REAL    :: yp1,ypn,x(n),y(n),y2(n)
       INTEGER :: i,k
       REAL    :: p,qn,sig,un,u(500)
-
+      
       if (yp1.gt..99e30) then
         y2(1)=0.
         u(1)=0.
@@ -14701,7 +14701,7 @@ MODULE module_ra_FLG
       rh= ql/ws *100.
       return
       end subroutine
-
+      
 !--------------------------------------------------------------------
 
       real function satvap(temp2)
@@ -14728,7 +14728,7 @@ MODULE module_ra_FLG
       end if
       return
       end function
-
+      
 !-----------------------------------------------------------------------
 
       subroutine aerosol_init(nv,nv1,pp,pt,ph,po,dz, &
@@ -14741,7 +14741,7 @@ MODULE module_ra_FLG
 !c
 !c  **********************************************************************
 !c  Subroutine to create aerosol optical properties.  There are several
-!c  inputs and 6 outputs.
+!c  inputs and 6 outputs.  
 !c
 !c    INPUTS FROM COMMON BLOCKS OR HEADER FILE:
 !c
@@ -14768,24 +14768,24 @@ MODULE module_ra_FLG
 !c               If the number of relative humidities changes, these
 !c               numbers will have to be modified.
 !c
-!c    ivd:       Vertical tau distribution flag.  If set to zero, the
-!c               distribution is based on Jim Spinhirne's marine
-!c               distribution formulation, and no user input is required.
-!c               If set to one, the user's own vertical distribution is
+!c    ivd:       Vertical tau distribution flag.  If set to zero, the 
+!c               distribution is based on Jim Spinhirne's marine 
+!c               distribution formulation, and no user input is required.  
+!c               If set to one, the user's own vertical distribution is 
 !c               used, and must be present in the array aprof(nlayers).
-!c               NOTE: This vertical distribution is used as a weighting
+!c               NOTE: This vertical distribution is used as a weighting 
 !c               factor ONLY, to distribute input column optical depths!
 !c
 !c----------------------------------------------------------------------------
 !c    a_ssa, a_ext, a_asy:  Input single-scattering albedos, extinction
-!c           coefficients, and asymmetry parameters.  These variables
+!c           coefficients, and asymmetry parameters.  These variables 
        !c           are dimensioned (# of bands, # of relative humidities, &
-!c           # of aerosol types). An x or y is appended on these
-!c           variable names: if x, the numbers correspond to the 18
-!c           original bands.  If y, the numbers are for the 10
-!c           sub-intervals in the first shortwave band (.2-.7 microns).
-!c           All of these variables come from the block data statements
-!c           aerosol# (# corresponds to an integer, eg. aerosol1) and
+!c           # of aerosol types). An x or y is appended on these 
+!c           variable names: if x, the numbers correspond to the 18 
+!c           original bands.  If y, the numbers are for the 10 
+!c           sub-intervals in the first shortwave band (.2-.7 microns).  
+!c           All of these variables come from the block data statements 
+!c           aerosol# (# corresponds to an integer, eg. aerosol1) and 
 !c           are in common blocks aer_optx and aer_opty.
 !c
 !c    nv,mb,pp,pt,ph,dz: number of layers, number of bands, and the
@@ -14797,11 +14797,11 @@ MODULE module_ra_FLG
        !c    a_tau1,a_ssa1,a_asy1:  The optical depth, single-scattering albedo, &
 !c       and asymmetry parameter vertical profiles for 18 bands.  These
 !c       are dimensioned (nvx, 18)  These are in the common block
-!c       aer_initx, which is shared by the subroutine "aerosolx".
+!c       aer_initx, which is shared by the subroutine "aerosolx".  
 !c
-!c    a_tau2,a_ssa2,a_asy2:  Properties for SW band 1's 10 subintervals.
+!c    a_tau2,a_ssa2,a_asy2:  Properties for SW band 1's 10 subintervals.  
 !c       These are dimensioned (nvx, 10)  These are in the common block
-!c       aer_inity, which is shared by the subroutine "aerosoly".
+!c       aer_inity, which is shared by the subroutine "aerosoly".  
 !c
 !c  **********************************************************************
 !c      USE RadParams
@@ -14814,10 +14814,10 @@ MODULE module_ra_FLG
 !c##      include 'rad_0698.h'
 !c	implicit none
       implicit none
-      integer :: nv, nv1
+      integer :: nv, nv1            
       real, dimension(nv1) :: pp, pt, ph, po
       real    :: dz(nv)
-
+      
       integer :: iq,mtop,n,m,ict,ix,iy,irh,krh,iac,itp
 !      real, dimension(mbx,nrh,naer) :: a_ssax,a_extx,a_asyx
 !      real, dimension(mby,nrh,naer) :: a_ssay,a_exty,a_asyy
@@ -14843,18 +14843,18 @@ MODULE module_ra_FLG
 !      real :: spinhirne_sig, spinhirne_tau
 
 
-      real,dimension(mxat,mxac) :: a_wlis,a_taus
+      real,dimension(mxat,mxac) :: a_wlis,a_taus      
       real,dimension(nvx,mxac)  :: aprofs
-
+ 
 !c  Initialize.
 
 	  rh     = -9999.
 	  a_ssa1 = 0. ; a_ext1 = 0. ; a_asy1 = 0. ; a_tau1 = 0.
 	  a_ssa2 = 0. ; a_ext2 = 0. ; a_asy2 = 0. ; a_tau2 = 0.
 
-      if (n_atau<0 .or.n_atau>mxat) CALL wrf_error_fatal('errro in Aerosol Tau / Wavelengths. STOP program')  !mchen
+      if (n_atau<0 .or.n_atau>mxat) CALL wrf_error_fatal('errro in Aerosol Tau / Wavelengths. STOP program')  !mchen 
       if (ifg < 0 .or. ifg > 8) CALL wrf_error_fatal('Error in ifg: Aerosol RH% Flag. STOP program')  !mchen
-
+      
       AEROSOL_CONSTITUENTS : do iac = 1,mxac
       if (itps(iac).eq.1) then
 
@@ -14865,10 +14865,10 @@ MODULE module_ra_FLG
         if ( itp < 1 .or. itp > naer ) CALL wrf_error_fatal('Error in itp: bad Aerosol type. STOP program')  !mchen
 !      print*,'CONSTITUENTS',iac,itp
 
-! FOR Aerosol Optical Properties types that are constant with RH
+! FOR Aerosol Optical Properties types that are constant with RH       
         if (itp==1  .or. itp==2 .or. itp==3 .or. &
        &      itp==10 .or. itp==12 .or.itp==13 .or. itp==18 ) then
-!!       Has already been filled in Block data
+!!       Has already been filled in Block data 
         else
           do krh=2,8
             a_extx(1:mbx,krh,itp)= a_extx(1:mbx,1,itp)
@@ -14880,7 +14880,7 @@ MODULE module_ra_FLG
             a_asyy(1:mby,krh,itp)= a_asyy(1:mby,1,itp)
 
           enddo
-
+  
         endif
 !	if ( ifg .ne.0) print*,'CHECK',ifg,itp,a_ssax(1:mbx,ifg,itp)
 
@@ -14903,7 +14903,7 @@ MODULE module_ra_FLG
           p1=(pp(m)+pp(m+1))/2.
           tp=(pt(m)+pt(m+1))/2.
           h1=(ph(m)+ph(m+1))/2.
-          call ql_rh(rh(m),tp,p1,h1)
+          call ql_rh(rh(m),tp,p1,h1) 
           if (rh(m).gt.98.9) rh(m)=98.9
           if ((rh(m).lt..01).and.(rh(m).gt.-999.)) rh(m)=0.
           m=m-1
@@ -14911,9 +14911,9 @@ MODULE module_ra_FLG
 
 !c  *************************************************************
 !c  Calculate vertical distribution of asymmetry, ss albedo and
-!c  extinction, based on aerosol type and relative humidity.
-!c  If ifg is not equal to 0, parameters  will corresponds to a
-!c  single RH, as described in header file. Loop 31 deals with
+!c  extinction, based on aerosol type and relative humidity.  
+!c  If ifg is not equal to 0, parameters  will corresponds to a 
+!c  single RH, as described in header file. Loop 31 deals with 
 !c  the 18 original bands, loop 32 with the 10 band 1 subintervals.
 !c  *************************************************************
         do m=mtop,nv
@@ -14973,17 +14973,17 @@ MODULE module_ra_FLG
 !c  ******************************************************************
 !c  Vertical distribution of aerosol optical depths - CAGEX and CERES.
 !c       --------------------------------------------------------------
-!c       Use Spinhirne's vertical distribution of scattering properties
-!c       to calculate vertical distribution of optical depths.  The
-!c       distribution gives a scattering coefficient ("sig"). Use this,
-!c       along with the single-scattering albedo, to produce an
-!c       RH-dependent extinction coefficient (extx, exty, etc.), from
-!c       which optical depth is calculated (taux, tauy, etc.).  This
-!c       optical depth is summed (sum1, sumy2, sum, etc.) to give
+!c       Use Spinhirne's vertical distribution of scattering properties 
+!c       to calculate vertical distribution of optical depths.  The  
+!c       distribution gives a scattering coefficient ("sig"). Use this,  
+!c       along with the single-scattering albedo, to produce an  
+!c       RH-dependent extinction coefficient (extx, exty, etc.), from  
+!c       which optical depth is calculated (taux, tauy, etc.).  This  
+!c       optical depth is summed (sum1, sumy2, sum, etc.) to give  
 !c       column tau for weighting purposes.
 !c       --------------------------------------------------------------
 
-        select case (ivd)
+        select case (ivd) 
         case default
           CALL wrf_error_fatal('ivd : Aerosol Profile flag. STOP program')  !mchen
         case (0)  !! DEFAULT VERTICAL DISTRIBUTION Spinhirne
@@ -14991,9 +14991,9 @@ MODULE module_ra_FLG
           sumxxx=0.0
 
           do  m=mtop,nv
-
-            sig = spinhirne_sig( ht(m))
-            tauxxx(m) = spinhirne_tau(sig,a_ssa2(m,9,iac),dz(m))
+       
+            sig = spinhirne_sig( ht(m)) 
+            tauxxx(m) = spinhirne_tau(sig,a_ssa2(m,9,iac),dz(m)) 
             sumxxx   = sumxxx + tauxxx(m)
 !            print*,m,sig,a_ssa2(m,9,iac)
           enddo
@@ -15005,9 +15005,9 @@ MODULE module_ra_FLG
 
 ! ----------------------------------------------------------------
         case (1:2)   ! USER'S OWN VERTICAL DISTRIBUTION IVD=1 & 2
-
+      
           sump =   sum( aprof(mtop:nv) )
-          tauxxx(mtop:nv)= aprof(mtop:nv) / sump
+          tauxxx(mtop:nv)= aprof(mtop:nv) / sump 
 
           if(sump.eq.0.) CALL wrf_error_fatal('No VERTICAL Profile OF AEROSOL TAU. STOP program')  !mchen
 
@@ -15017,19 +15017,19 @@ MODULE module_ra_FLG
 !c  ********************************************************************
 !c  IAFORM=2
 !c
-!c  Distribute optical depth spectrally into the first 2 Fu-Liou bands.
-!c  Band 1 will consist of the first 4 MFRSR bands, weighted with
-!c  respect to energy.  Band two will be the fifth MFRSR band.
+!c  Distribute optical depth spectrally into the first 2 Fu-Liou bands.  
+!c  Band 1 will consist of the first 4 MFRSR bands, weighted with 
+!c  respect to energy.  Band two will be the fifth MFRSR band. 
 !c
-!c  Also, distribute optical depths into 4 of the 10 band 1 subintervals.
-!c  Subinterval 7 is directly inserted, since there is one MFRSR
-!c  measurement within the range of this band.  Subintervals 7 and 8
-!c  straddle the .497 micron MFRSR measurement, so interpolated values
-!c  are inserted into these, using .409 and .497 measurements for 7, and
-!c  .497 and .606 for 8.  Subinterval 10 contains two MFRSR measurements,
-!c  so it is filled using an energy-weighted average.  This is all
-!c  hardwired, so we need all of the MFRSR bands (.409, .497, .606, and
-!c  .661) for it to work. (The .855 micron band is also needed, but not
+!c  Also, distribute optical depths into 4 of the 10 band 1 subintervals.  
+!c  Subinterval 7 is directly inserted, since there is one MFRSR 
+!c  measurement within the range of this band.  Subintervals 7 and 8 
+!c  straddle the .497 micron MFRSR measurement, so interpolated values 
+!c  are inserted into these, using .409 and .497 measurements for 7, and 
+!c  .497 and .606 for 8.  Subinterval 10 contains two MFRSR measurements, 
+!c  so it is filled using an energy-weighted average.  This is all 
+!c  hardwired, so we need all of the MFRSR bands (.409, .497, .606, and 
+!c  .661) for it to work. (The .855 micron band is also needed, but not 
 !c  for this interval distribution.
 !c  ********************************************************************
 
@@ -15040,7 +15040,7 @@ MODULE module_ra_FLG
 !! No operations necessary
 
         case(2)        ! For CAGEX
-
+      
           tau3(1)=a_tau(1)*wts(1)+a_tau(2)*wts(2)+ &
        &          a_tau(3)*wts(3)+a_tau(4)*wts(4)
           tau3(2)=a_tau(5)
@@ -15048,20 +15048,20 @@ MODULE module_ra_FLG
           tau3y(2)=a_tau(1)+.6705*(a_tau(2)-a_tau(1)) ! Subi 8 of band 1
           tau3y(3)=a_tau(2)+.4541*(a_tau(3)-a_tau(2)) ! Subi 9 of band 1
           tau3y(4)=a_tau(3)*.5175+a_tau(4)*.4825      ! Subi 10 of band 1
-
+ 
         case(3)        ! For AOT_SPLINEFIT
-
-          if ( ifg == 0 ) then ! Find Aerosol weighted collumn mean RH index
+      
+          if ( ifg == 0 ) then ! Find Aerosol weighted collumn mean RH index 
             rirh=0
             do m =mtop,nv
               rirh = rirh + rhp(m)* tauxxx(m)  !! Aerosol Profile weighted mean RH
 !       print*,m,rhp(m),tauxxx(m)
-            enddo
+            enddo 
 
             irh =1
             do ix= 1,7
               if( rirh >= rhx(ix) .and. rirh < rhx(ix+1) ) irh=ix
-            enddo
+            enddo 
             if( rirh >= rhx(8) ) irh =8
 
           else  ! Use assigned RH index
@@ -15095,18 +15095,18 @@ MODULE module_ra_FLG
 
 
 ! ----------------------------------------------------------------
-!c       Use weighted optical depths  to distribute our input
-!c       column optical depths vertically and spectrally where needed.
-!c       For bands with "measured" input, we simply do the weighting.
-!c       For the remaining bands, we weight according to our vertically
-!c       distributed extinction coefficients (calculated in loop 30),
-!c       which carry all the spectral resolution we need.  a_tau1 is for
+!c       Use weighted optical depths  to distribute our input 
+!c       column optical depths vertically and spectrally where needed.  
+!c       For bands with "measured" input, we simply do the weighting.  
+!c       For the remaining bands, we weight according to our vertically 
+!c       distributed extinction coefficients (calculated in loop 30), 
+!c       which carry all the spectral resolution we need.  a_tau1 is for 
 !c       the 18 original bands, a_tau2 is for the 10 band 1 subintervals.
 ! ----------------------------------------------------------------
         VERTICAL : do  m=mtop,nv
 
           select case ( iaform )
-
+        
           case(1)       ! For CERES
 
             a_tau1(m,1,iac)   = a_tau(1) * tauxxx(m)
@@ -15131,7 +15131,7 @@ MODULE module_ra_FLG
           case(3)       ! For AOT_SPLINEFIT
 
 
-
+       
 !      a_tau2(m,1:10,iac) = aotf(1:10)  * tauxxx(m)
             a_tau2(m,1:10,iac) = aotf(1:10)  * wvd_y(m,1:10)
 !      a_tau1(m,1,iac)    = aotf(9)     * tauxxx(m)
@@ -15184,9 +15184,9 @@ MODULE module_ra_FLG
 !c
        !c tae, wae, and wwae are the optical depth, single scattering albedo, &
 !c and expansion coefficients of the phase function ( 1, 2, 3, and 4 )
-!c due to the Mie scattering of aerosols for a given layer.
+!c due to the Mie scattering of aerosols for a given layer. 
 !c
-!c  This subroutine is called for bands 2 - 18 (ib)
+!c  This subroutine is called for bands 2 - 18 (ib) 
 !c  or vis subbands 1-10 (ig)
 !c *********************************************************************
 !c      USE RadParams
@@ -15202,7 +15202,7 @@ MODULE module_ra_FLG
       real ,dimension(nvx,18,mxac) :: a_tau1,a_ssa1,a_asy1
       real ,dimension(nvx,10,mxac) :: a_tau2,a_ssa2,a_asy2
       real :: tae(nvx,mxac), wae(nvx,mxac), wwae(nvx,4,mxac)
-
+     
       AEROSOL_CONSTITUENTS  : do iac=1,mxac
       if (itps(iac).eq.1) then
 
@@ -15225,7 +15225,7 @@ MODULE module_ra_FLG
           y2 = 5.0 * x2
           y3 = 7.0 * x3
           y4 = 9.0 * x4
-
+  
           wwae(i,1,iac) = y1
           wwae(i,2,iac) = y2
           wwae(i,3,iac) = y3
@@ -15237,7 +15237,7 @@ MODULE module_ra_FLG
 
       return
       end subroutine
-
+      
 !----------------------------------------------------------------
 
       real function spinhirne_sig(ht)
@@ -15280,9 +15280,9 @@ MODULE module_ra_FLG
       integer iprof, kts, kte
       integer k, kk, ks, ke
        real p(kts:kte), o3(kts:kte), lp(kts:kte), lpres(np)
-
-!     Statement function
-
+ 
+!     Statement function 
+ 
       real Linear, x1, y1, x2, y2, x
       Linear(x1, y1, x2, y2, x) =  &
             (y1 * (x2 - x) + y2 * (x - x1)) / (x2 - x1)
@@ -15310,7 +15310,7 @@ MODULE module_ra_FLG
         if (o3(ks).lt.0.0) o3(ks) = 0.0
         ks = ks + 1
       end do
-
+      
       kk = np
       do k = ks, ke
         do while (lp(k).lt.lpres(kk).and.kk.gt.1)
@@ -15320,7 +15320,7 @@ MODULE module_ra_FLG
                          lpres(kk+1), ozone(kk+1,iprof),  &
                          lp(k))
       end do
-
+      
       end subroutine o3prof
 
 END MODULE module_ra_FLG

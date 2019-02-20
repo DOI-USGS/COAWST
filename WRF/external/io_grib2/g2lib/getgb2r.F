@@ -11,7 +11,7 @@ C   This routine assumes that the "metadata" for this field
 C   already exists in derived type gribfield.  Specifically,
 C   it requires gfld%ibmap,gfld%ngrdpts,gfld%idrtnum,gfld%idrtmpl,
 C   and gfld%ndpts.
-C
+C   
 C   The decoded information for the selected GRIB field
 C   is returned in a derived type variable, gfld.
 C   Gfld is of type gribfield, which is defined
@@ -174,9 +174,9 @@ C
 C SUBPROGRAMS CALLED:
 C   BAREAD         BYTE-ADDRESSABLE READ
 C   GF_UNPACK6     UNAPCKS BIT_MAP SECTION
-C   GF_UNPACK7     UNAPCKS DATA SECTION
+C   GF_UNPACK7     UNAPCKS DATA SECTION 
 C
-C REMARKS:
+C REMARKS: 
 C   DO NOT ENGAGE THE SAME LOGICAL UNIT FROM MORE THAN ONE PROCESSOR.
 C   THIS SUBPROGRAM IS INTENDED FOR PRIVATE USE BY GETGB2 ROUTINES ONLY.
 C
@@ -256,7 +256,7 @@ C  READ AND UNPACK BIT_MAP, IF PRESENT
          DEALLOCATE(CTEMP)
       ENDIF
 C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-C  READ AND UNPACK DATA FIELD
+C  READ AND UNPACK DATA FIELD 
       ISKIP=LSKIP+SKIP7
       CALL BAREAD(LUGB,ISKIP,4,LREAD,CSIZE)    ! GET LENGTH OF SECTION
       CALL G2LIB_GBYTE(CSIZE,ILEN,0,32)

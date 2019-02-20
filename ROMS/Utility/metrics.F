@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE metrics_mod
 !
-!svn $Id: metrics.F 875 2017-11-03 01:10:02Z arango $
+!svn $Id: metrics.F 927 2018-10-16 03:51:56Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -288,16 +288,20 @@
       real(r8), parameter :: Uscale = 0.1_r8
 #endif
       real(r8) :: cff, cff1, cff2
-      real(r8) :: my_DXmax, my_DXmin, my_DYmax, my_DYmin
-#ifdef SOLVE3D
-      real(r8) :: my_DZmax, my_DZmin
+#ifdef NESTING
+      real(r8) :: SecScale
 #endif
-      real(r8) :: my_Cg_Cor, my_Cg_max, my_Cg_min, my_grdmax
+      real(dp) :: my_DXmax, my_DXmin, my_DYmax, my_DYmin
+
+#ifdef SOLVE3D
+      real(dp) :: my_DZmax, my_DZmin
+#endif
+      real(dp) :: my_Cg_Cor, my_Cg_max, my_Cg_min, my_grdmax
 #if defined DIFF_3DCOEF
-      real(r8) :: my_DiffMax, my_DiffMin
+      real(dp) :: my_DiffMax, my_DiffMin
 #endif
 #if defined VISC_3DCOEF
-      real(r8) :: my_ViscMax, my_ViscMin
+      real(dp) :: my_ViscMax, my_ViscMin
 #endif
 #if defined DIFF_3DCOEF || defined VISC_3DCOEF
       character (len=4) :: units
@@ -307,7 +311,7 @@
 #endif
 
 #ifdef DISTRIBUTE
-      real(r8), dimension(14) :: buffer
+      real(dp), dimension(14) :: buffer
       character (len=3), dimension(14) :: op_handle
 #endif
 
@@ -1076,15 +1080,19 @@
 !  Check refined grid time-step.  The time-step size for refined grids
 !  needs to be an exact mode multiple of its coarser donor grid.  In
 !  principle, it can be a "RefineScale" factor smaller.  However, other
-!  integer smaller or larger factor are allowed such that:
+!  integer smaller or larger factor is allowed such that:
 !
-!          MOD(dt(dg), dt(rg)) = 0        dg:  donor  coarse grid
-!                                         rg:  receiver fine grid
+!    MOD(dt(dg)*SecScale, dt(rg)*SecScale) = 0   dg:  donor  coarse grid
+!                                                rg:  receiver fine grid
 !
+!  Notice that SecScale is used to avoid roundoff when the timestep
+!  between donor and receiver grids are small and less than one.
+!
+        SecScale=1000.0_dp              ! seconds to milliseconds
         DO ig=1,Ngrids
           IF (RefinedGrid(ig).and.(RefineScale(ig).gt.0)) THEN
             dg=CoarserDonor(ig)
-            IF (MOD(dt(dg),dt(ig)).ne.0.0d0) THEN
+            IF (MOD(dt(dg)*SecScale,dt(ig)*SecScale).ne.0.0_dp) THEN
               IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
                 IF (Master) THEN
                   WRITE (stdout,100) ig, dt(ig), dg, dt(dg),            &

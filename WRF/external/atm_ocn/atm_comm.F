@@ -55,7 +55,7 @@
       logical PHYS,zeroSF,nrmSF,sendSF,getSST
 
       TYPE SST_ARRAY
-        real(kind=kind_SST),dimension(:,:),pointer:: a
+        real(kind=kind_SST),dimension(:,:),pointer:: a 
       END TYPE SST_ARRAY
       TYPE SF_ARRAY
         real(kind=kind_sfcflux),dimension(:,:,:),pointer:: a
@@ -224,27 +224,27 @@
 
       if (kind_R.eq.kind_REAL) then
         MPI_kind_R=MPI_kind_REAL
-      else
+      else 
         MPI_kind_R=MPI_kind_alt_REAL
       end if
       if (kind_sfcflux.eq.kind_REAL) then
         MPI_kind_sfcflux=MPI_kind_REAL
-      else
+      else 
         MPI_kind_sfcflux=MPI_kind_alt_REAL
       end if
       if (kind_SST.eq.kind_REAL) then
         MPI_kind_SST=MPI_kind_REAL
-      else
+      else 
         MPI_kind_SST=MPI_kind_alt_REAL
       end if
       if (kind_SLM.eq.kind_REAL) then
         MPI_kind_SLM=MPI_kind_REAL
-      else
+      else 
         MPI_kind_SLM=MPI_kind_alt_REAL
       end if
       if (kind_lonlat.eq.kind_REAL) then
         MPI_kind_lonlat=MPI_kind_REAL
-      else
+      else 
         MPI_kind_lonlat=MPI_kind_alt_REAL
       end if
 
@@ -323,7 +323,7 @@
      &'Abort: in ATM_TSTEP_INIT gid is neither 1 nor 2 nor 3',rc)
       KDT=NTSD/NPHS+1
       PHYS=MOD(NTSD,NPHS).eq.0 ! .and. gid.eq.1 <-removed to bring MG in
-      dta=dta_
+      dta=dta_ 
 
       write(s1,'("gid=",i1," NTSD=",i5," NPHS=",i3," KDT=",i5,'// &
      &'" PHYS=",L1)') gid,NTSD,NPHS,KDT,PHYS
@@ -505,7 +505,7 @@
       implicit none
 
       real(kind=kind_lonlat),dimension(ims:ime,jms:jme):: &
-     &HLON,HLAT,VLON,VLAT
+     &HLON,HLAT,VLON,VLAT 
 
       real(kind=kind_lonlat),dimension(ids:idf,jds:jdf):: &
      &ALONt,ALATt,ALONv,ALATv
@@ -518,7 +518,7 @@
       IF (.not.PHYS .or. n_ts(gid).ne.1) RETURN
 
       IF (gid.gt.2) RETURN ! innermost grid's dim. / coor. are not sent
-
+      
 !temporarily excluded      if (Coupler_id.lt.0) return    !   <- standalone mode
 
       buf(1)=idf-ids+1
@@ -568,7 +568,7 @@
       IF (.not.PHYS .or. n_ts(gid).ne.1) RETURN
 
       IF (gid.gt.2) RETURN ! innermost grid's mask is not sent
-
+      
 !temporarily excluded      if (Coupler_id.lt.0) return    !   <- standalone mode
 
       call ASSEMBLE(SLM_g,SLM,kind_SLM)
@@ -626,12 +626,12 @@
         call DISASSEMBLE(SST_g,SST_cc(gid)%a,kind_SST)
         call ATM_ANNOUNCE('ATM_GETSST: SST received',3)
       end if
-
+      
       if (Coupler_id.lt.0) return    !   <- standalone mode
 
       do j=jts,jte
       do i=its,ite
-        if (abs(SLM(i,j)-SLM_OS_value).lt.0.01) then
+        if (abs(SLM(i,j)-SLM_OS_value).lt.0.01) then 
                                   ! i.e. if it is OS (open sea) AMGP
                                   !
           if (SST_cc(gid)%a(i,j).gt.unrealistically_low_SST) &
@@ -798,16 +798,16 @@
 
 SUBROUTINE atm_getcur(ucur,vcur)
 
-! Bringing ocean currents ..
+! Bringing ocean currents .. 
 ! Biju Thomas,  GSO/URI  on 4/8/2015
-!
+! 
    USE atm_cc
    IMPLICIT NONE
    REAL(KIND = kind_cur), DIMENSION(ims:ime,jms:jme) :: ucur, vcur
    REAL(KIND = kind_cur), DIMENSION(ids:idf,jds:jdf) :: ucur_g, vcur_g
    REAL, PARAMETER :: cur_ll = 0._kind_cur, cur_ul = 5._kind_cur,  &
                       cur_k = 0._kind_cur
-
+                      
    INTEGER :: i, j
    LOGICAL :: getcur
 
@@ -815,9 +815,9 @@ SUBROUTINE atm_getcur(ucur,vcur)
    IF (.NOT. phys .OR. gid > 2) RETURN
    IF (ocean_spec /= 1) CALL atm_announce('Warn: ocean currents needed',3)
    CALL atm_announce('atm_getcur entered (phys = .true.)',3)
-
+   
    getcur = ((n_ts(gid)-1)/i_dtc2dta)*i_dtc2dta == n_ts(gid)-1
-
+   
    IF (getcur .NEQV. zerosf) THEN
       CALL glob_abort(1, 'Warn: getcur does not match zerosf', rc)
    END IF
@@ -829,8 +829,8 @@ SUBROUTINE atm_getcur(ucur,vcur)
       CALL disassemble(ucur_g, ucur_cc(gid)%a, kind_cur)
       CALL disassemble(vcur_g, vcur_cc(gid)%a, kind_cur)
       CALL atm_announce('atm_getcur: CUR received',3)
-   END IF
-
+   END IF  
+   
    IF ( coupler_id .LT. 0 ) RETURN
 
 
@@ -851,11 +851,11 @@ SUBROUTINE atm_getcur(ucur,vcur)
    ENDDO
    ENDDO
 
-END SUBROUTINE atm_getcur
+END SUBROUTINE atm_getcur 
 
 SUBROUTINE atm_getwstate(alpha,gamma)
 
-! Bringing Wave state (Charnok coeff & misalignment Angle)
+! Bringing Wave state (Charnok coeff & misalignment Angle) 
 ! Biju Thomas,  GSO/URI  on 4/8/2015
 !
    USE atm_cc
@@ -863,7 +863,7 @@ SUBROUTINE atm_getwstate(alpha,gamma)
    REAL(KIND = kind_wstate), DIMENSION(ims:ime,jms:jme) :: alpha, gamma
    REAL(KIND = kind_wstate), DIMENSION(ids:idf,jds:jdf) :: alpha_g, &
                                                            gamma_g
-   REAL, PARAMETER :: deg2rad=3.1415926_kind_wstate/180_kind_wstate
+   REAL, PARAMETER :: deg2rad=3.1415926_kind_wstate/180_kind_wstate 
    REAL, PARAMETER :: alpha_ll = 0.0_kind_wstate, &
                       alpha_ul = 0.2_kind_wstate, &
                       alpha_k = 0.0185_kind_wstate, &
@@ -896,8 +896,8 @@ SUBROUTINE atm_getwstate(alpha,gamma)
    END IF
 
    IF ( coupler_id .LT. 0 ) RETURN
-
-
+   
+   
    DO j = jts,jte
    DO i = its,ite
 !     IF ( alpha_cc(gid)%a(i,j) .GT. alpha_ll .AND.                &
@@ -905,7 +905,7 @@ SUBROUTINE atm_getwstate(alpha,gamma)
 !        alpha(i,j) = alpha_cc(gid)%a(i,j)
 !     ELSE
 !        alpha(i,j) = alpha_k
-!     ENDIF
+!     ENDIF 
      alpha(i,j) = alpha_cc(gid)%a(i,j)
      IF ( gamma_cc(gid)%a(i,j) .GT. gamma_ll .AND.                &
           gamma_cc(gid)%a(i,j) .LT. gamma_ul ) THEN
@@ -915,12 +915,12 @@ SUBROUTINE atm_getwstate(alpha,gamma)
      ENDIF
    ENDDO
    ENDDO
-
+ 
 END SUBROUTINE atm_getwstate
 
 SUBROUTINE atm_prepwindp(ulowl, vlowl, richn, zlowl)
 
-! Preparing Wind and adjusting variables (Height of lowest model level
+! Preparing Wind and adjusting variables (Height of lowest model level 
 !                                          Richarson number)
 ! Biju Thomas,  GSO/URI  on 4/8/2015
 !
@@ -936,13 +936,13 @@ SUBROUTINE atm_prepwindp(ulowl, vlowl, richn, zlowl)
    CALL atm_announce('atm_atm_prepwindp: entered',3)
 
    IF (zerosf) wwinp(gid)%a = 0.0
-
+   
    wwinp(gid)%a(its:ite,jts:jte,NSF_WM-1) =    &  ! D.S.
                               wwinp(gid)%a(its:ite,jts:jte,NSF_WM-1) + &
                               ulowl(its:ite,jts:jte)
    wwinp(gid)%a(its:ite,jts:jte,NSF_WM) =      &  ! D.S.
                               wwinp(gid)%a(its:ite,jts:jte,NSF_WM)   + &
-                              vlowl(its:ite,jts:jte)
+                              vlowl(its:ite,jts:jte) 
    wwinp(gid)%a(its:ite,jts:jte,NSF_WM-3) =    &  ! D.S.
                               wwinp(gid)%a(its:ite,jts:jte,NSF_WM-3) + &
                               richn(its:ite,jts:jte)
@@ -951,8 +951,8 @@ SUBROUTINE atm_prepwindp(ulowl, vlowl, richn, zlowl)
                               zlowl(its:ite,jts:jte)
    IF (nrmsf) THEN
       wwinp(gid)%a = wwinp(gid)%a*dta2dtc
-   END IF
-
+   END IF  
+ 
    CALL atm_announce('atm_atm_prepwindp: returned',3)
 
 END SUBROUTINE atm_prepwindp
@@ -972,7 +972,7 @@ SUBROUTINE atm_sendwindp
       IF ( ia2w .LT. 1 ) RETURN
    IF (wm_id <= 0)  RETURN
    IF (.NOT. phys .OR. gid > 2) RETURN
-
+ 
    IF (.NOT. sendsf) THEN
       CALL atm_announce('atm_sendwindp entered with PHYS but not sendSF: returning'// &
       sgid,3)
@@ -983,7 +983,7 @@ SUBROUTINE atm_sendwindp
 
    DO n = 1, NSF_WM
       CALL assemble(field, wwinp(gid)%a(:,:,n), kind_windp)
-      CALL cmp_gnr_send(field, ngp, mpi_kind_windp)
+      CALL cmp_gnr_send(field, ngp, mpi_kind_windp) 
    END DO
 
    CALL atm_announce('atm_prepwindp: reterned'//sgid,3)

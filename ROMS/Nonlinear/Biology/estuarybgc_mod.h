@@ -100,11 +100,11 @@
 #endif
 #ifdef SAV_BIOMASS
       integer :: iddinw                 ! DINwcr  Dissolved Inorganic Nitrogen (water column)
-      integer :: iddins                 ! DINsed  Dissolved Inorganic Nitrogen (sediment column)
-      integer :: iddowc                 ! DOwcr   Dissolved Oxygen (water column)
+      integer :: iddins                 ! DINsed  Dissolved Inorganic Nitrogen (sediment column) 
+      integer :: iddowc                 ! DOwcr   Dissolved Oxygen (water column) 
       integer :: idwsvl                 ! DINwcr_sav Dissolved Inorganic N in water column due to SAV
-      integer :: idsagb                 ! AGB     Above ground biomass
-      integer :: idsbgb                 ! BGB     Below ground biomass
+      integer :: idsagb                 ! AGB     Above ground biomass 
+      integer :: idsbgb                 ! BGB     Below ground biomass 
       integer :: idsvpp                 ! PP
       integer :: idsvam                 ! AGM
       integer :: idsgar                 ! AGAR
@@ -174,7 +174,7 @@
       real(r8), allocatable :: ZooMin(:)             ! mmol_N/m3
       real(r8), allocatable :: ZooMR(:)              ! 1/day
       real(r8), allocatable :: pCO2air(:)            ! ppmv
-
+      
 #ifdef SPECTRAL_LIGHT
       integer, parameter :: NBands = 60      ! spectral bands
 !  Spectral band width used in light calculations.
@@ -189,36 +189,36 @@
       integer, parameter :: irct=2    ! relict index for DOC.
       character (len=11), dimension(Ndom) :: DomName
 # endif
-      real(r8), allocatable :: SIGATRB(:)
-      real(r8), allocatable :: STRB(:)
-      real(r8), allocatable :: BLTRB(:)
-      real(r8), allocatable :: SIGBTRB(:)
-      real(r8), allocatable :: ETASPEC(:)
-      real(r8), allocatable :: BB2B(:)
+      real(r8), allocatable :: SIGATRB(:)             
+      real(r8), allocatable :: STRB(:)                
+      real(r8), allocatable :: BLTRB(:)             
+      real(r8), allocatable :: SIGBTRB(:)             
+      real(r8), allocatable :: ETASPEC(:)             
+      real(r8), allocatable :: BB2B(:)             
 #endif
 #ifdef SAV_BIOMASS
       integer,  allocatable :: GMODopt(:)
-      real(r8), allocatable :: KNSED(:)
-      real(r8), allocatable :: KNWC(:)
-      real(r8), allocatable :: TOPT(:)
-      real(r8), allocatable :: THTA(:)
-      real(r8), allocatable :: THTA2(:)
-      real(r8), allocatable :: SCL(:)
-      real(r8), allocatable :: SCL2(:)
-      real(r8), allocatable :: KI(:)
-      real(r8), allocatable :: SR(:)
-      real(r8), allocatable :: LMBAMX(:)
-      real(r8), allocatable :: KMAG(:)
-      real(r8), allocatable :: ARSC(:)
-      real(r8), allocatable :: ARC(:)
-      real(r8), allocatable :: BSRC(:)
-      real(r8), allocatable :: RC(:)
-      real(r8), allocatable :: RTStTL(:)
-      real(r8), allocatable :: DOWNt(:)
-      real(r8), allocatable :: TRNS(:)
-      real(r8), allocatable :: TCRIT(:)
-      real(r8), allocatable :: KM(:)
-#endif
+      real(r8), allocatable :: KNSED(:)             
+      real(r8), allocatable :: KNWC(:)             
+      real(r8), allocatable :: TOPT(:)             
+      real(r8), allocatable :: THTA(:)             
+      real(r8), allocatable :: THTA2(:)             
+      real(r8), allocatable :: SCL(:)             
+      real(r8), allocatable :: SCL2(:)             
+      real(r8), allocatable :: KI(:)             
+      real(r8), allocatable :: SR(:)             
+      real(r8), allocatable :: LMBAMX(:)             
+      real(r8), allocatable :: KMAG(:)             
+      real(r8), allocatable :: ARSC(:)             
+      real(r8), allocatable :: ARC(:)             
+      real(r8), allocatable :: BSRC(:)             
+      real(r8), allocatable :: RC(:)             
+      real(r8), allocatable :: RTStTL(:)             
+      real(r8), allocatable :: DOWNt(:)             
+      real(r8), allocatable :: TRNS(:)             
+      real(r8), allocatable :: TCRIT(:)             
+      real(r8), allocatable :: KM(:)             
+#endif 
 
       CONTAINS
 

@@ -6,9 +6,9 @@
    (defined POSTERIOR_ERROR_I || defined POSTERIOR_ERROR_F)
 
 !
-!svn $Id: posterior_var.F 854 2017-07-18 23:28:45Z arango $
+!svn $Id: posterior_var.F 900 2018-03-21 03:23:08Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

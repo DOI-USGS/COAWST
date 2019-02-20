@@ -48,7 +48,7 @@
       real, allocatable :: xlon(:,:), ylat(:,:)
       real, allocatable :: xlonb(:,:), ylatb(:,:)
       real :: cff1, cff2, cff3, angler, DEG2RAD
-!
+! 
 ! Compute SWAN grid angles for rotation of winds from WRF.
 !
       ALLOCATE(M_GENARR_MOD(ng)%CosAngler_G(MXCGL*MYCGL))

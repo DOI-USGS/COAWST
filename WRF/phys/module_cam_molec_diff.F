@@ -5,11 +5,11 @@
 
   !------------------------------------------------------------------------------------------------- !
   ! Module to compute molecular diffusivity for various constituents                                 !
-  !                                                                                                  !
+  !                                                                                                  !    
   ! Public interfaces :                                                                              !
   !                                                                                                  !
   !    init_molec_diff           Initializes time independent coefficients                           !
-  !    init_timestep_molec_diff  Time-step initialization for molecular diffusivity                  !
+  !    init_timestep_molec_diff  Time-step initialization for molecular diffusivity                  ! 
   !    compute_molec_diff        Computes constituent-independent terms for moleculuar diffusivity   !
   !    vd_lu_qdecomp             Computes constituent-dependent terms for moleculuar diffusivity and !
   !                              updates terms in the triadiagonal matrix used for the implicit      !
@@ -19,29 +19,29 @@
   ! Modularized     :  J. McCaa, September 2004                                                      !
   ! Lastly Arranged :  S. Park,  January.  2010                                                      !
   !------------------------------------------------------------------------------------------------- !
-#ifndef WRF_PORT
+#ifndef WRF_PORT 
   use perf_mod
   use cam_logfile,  only : iulog
 #else
   use module_cam_support,   only: iulog, t_stopf, t_startf
 #endif
   implicit none
-  private
+  private       
   save
 
-  public init_molec_diff
-#ifndef WRF_PORT
+  public init_molec_diff 
+#ifndef WRF_PORT    
   public init_timestep_molec_diff
 #endif
-  public compute_molec_diff
+  public compute_molec_diff 
   public vd_lu_qdecomp
 
   ! ---------- !
-  ! Parameters !
+  ! Parameters ! 
   ! ---------- !
 
   integer,  parameter   :: r8 = selected_real_kind(12) ! 8 byte real
-
+  
   real(r8), parameter   :: km_fac = 3.55E-7_r8         ! Molecular viscosity constant [ unit ? ]
   real(r8), parameter   :: pr_num = 1._r8              ! Prandtl number [ no unit ]
   real(r8), parameter   :: pwr    = 2._r8/3._r8        ! Exponentiation factor [ unit ? ]
@@ -52,14 +52,14 @@
   real(r8)              :: rair                        ! Gas constant for dry air
   real(r8)              :: mw_dry                      ! Molecular weight of dry air
   real(r8)              :: n_avog                      ! Avogadro's number [ molec/kmol ]
-  real(r8)              :: gravit
+  real(r8)              :: gravit     
   real(r8)              :: cpair
   real(r8)              :: kbtz                        ! Boltzman constant
 
   integer               :: ntop_molec                  ! Top    interface level to which molecular vertical diffusion is applied ( = 1 )
   integer               :: nbot_molec                  ! Bottom interface level to which molecular vertical diffusion is applied ( = pver )
   real(r8), allocatable :: mw_fac(:)                   ! sqrt(1/M_q + 1/M_d) in constituent diffusivity [  unit ? ]
-
+  
   contains
 
   !============================================================================ !
@@ -68,10 +68,10 @@
 
   subroutine init_molec_diff( kind, ncnst, rair_in, ntop_molec_in, nbot_molec_in, &
                               mw_dry_in, n_avog_in, gravit_in, cpair_in, kbtz_in )
-
+    
     use constituents,     only : cnst_mw
     use upper_bc,         only : ubc_init
-
+    
     integer,  intent(in)  :: kind           ! Kind of reals being passed in
     integer,  intent(in)  :: ncnst          ! Number of constituents
     integer,  intent(in)  :: ntop_molec_in  ! Top interface level to which molecular vertical diffusion is applied ( = 1 )
@@ -83,15 +83,15 @@
     real(r8), intent(in)  :: cpair_in
     real(r8), intent(in)  :: kbtz_in        ! Boltzman constant
     integer               :: m              ! Constituent index
-
+    
     if( kind .ne. r8 ) then
         write(iulog,*) 'KIND of reals passed to init_molec_diff -- exiting.'
 #ifdef WRF_PORT
         call wrf_message(iulog)
-#endif
+#endif 
         stop 'init_molec_diff'
     endif
-
+    
     rair       = rair_in
     mw_dry     = mw_dry_in
     n_avog     = n_avog_in
@@ -100,14 +100,14 @@
     kbtz       = kbtz_in
     ntop_molec = ntop_molec_in
     nbot_molec = nbot_molec_in
-
+    
   ! Initialize upper boundary condition variables
 
     call ubc_init()
 
   ! Molecular weight factor in constitutent diffusivity
   ! ***** FAKE THIS FOR NOW USING MOLECULAR WEIGHT OF DRY AIR FOR ALL TRACERS ****
-
+ 
     allocate(mw_fac(ncnst))
     do m = 1, ncnst
        mw_fac(m) = d0 * mw_dry * sqrt(1._r8/mw_dry + 1._r8/cnst_mw(m)) / n_avog
@@ -118,19 +118,19 @@
   !============================================================================ !
   !                                                                             !
   !============================================================================ !
-#ifndef WRF_PORT
+#ifndef WRF_PORT 
   subroutine init_timestep_molec_diff(state)
     !--------------------------- !
-    ! Timestep dependent setting !
+    ! Timestep dependent setting ! 
     !--------------------------- !
     use upper_bc,     only : ubc_timestep_init
     use physics_types,only: physics_state
     use ppgrid,       only: begchunk, endchunk
 
-    type(physics_state), intent(in) :: state(begchunk:endchunk)
+    type(physics_state), intent(in) :: state(begchunk:endchunk)                 
 
     call ubc_timestep_init( state)
-
+    
   end subroutine init_timestep_molec_diff
 #endif
   !============================================================================ !
@@ -142,14 +142,14 @@
                                        zi          , ztodt      , kvh        , kvm      , tint   , rhoi   , tmpi2       , &
                                        kq_scal     , ubc_t      , ubc_mmr    , dse_top  , cc_top , cd_top , cnst_mw_out , &
                                        cnst_fixed_ubc_out , mw_fac_out , ntop_molec_out , nbot_molec_out )
-
+    
     use upper_bc,        only : ubc_get_vals
     use constituents,    only : cnst_mw, cnst_fixed_ubc
 
     ! --------------------- !
     ! Input-Output Argument !
     ! --------------------- !
-
+    
     integer,  intent(in)    :: pcols
     integer,  intent(in)    :: pver
     integer,  intent(in)    :: ncnst
@@ -160,7 +160,7 @@
     real(r8), intent(in)    :: pint(pcols,pver+1)        ! Interface pressures
     real(r8), intent(in)    :: zi(pcols,pver+1)          ! Interface heights
     real(r8), intent(in)    :: ztodt                     ! 2 delta-t
-
+    
     real(r8), intent(inout) :: kvh(pcols,pver+1)         ! Diffusivity for heat
     real(r8), intent(inout) :: kvm(pcols,pver+1)         ! Viscosity ( diffusivity for momentum )
     real(r8), intent(inout) :: tint(pcols,pver+1)        ! Interface temperature
@@ -175,10 +175,10 @@
     real(r8), intent(out)   :: dse_top(pcols)            ! dse on top boundary
     real(r8), intent(out)   :: cc_top(pcols)             ! Lower diagonal at top interface
     real(r8), intent(out)   :: cd_top(pcols)             ! cc_top * dse ubc value
-    integer,  intent(out)   :: ntop_molec_out
-    integer,  intent(out)   :: nbot_molec_out
+    integer,  intent(out)   :: ntop_molec_out   
+    integer,  intent(out)   :: nbot_molec_out   
 
-    ! --------------- !
+    ! --------------- ! 
     ! Local variables !
     ! --------------- !
 
@@ -203,7 +203,7 @@
     mw_fac_out(:ncnst)         = mw_fac(:ncnst)
     ntop_molec_out             = ntop_molec
     nbot_molec_out             = nbot_molec
-
+    
   ! Density and related factors for moecular diffusion and ubc.
   ! Always have a fixed upper boundary T if molecular diffusion is active. Why ?
 
@@ -211,7 +211,7 @@
     rhoi (:ncol,ntop_molec) = pint(:ncol,ntop_molec) / ( rair * tint(:ncol,ntop_molec) )
     tmpi2(:ncol,ntop_molec) = ztodt * ( gravit * rhoi(:ncol,ntop_molec))**2 &
                                     / ( pmid(:ncol,ntop_molec) - pint(:ncol,ntop_molec) )
-
+    
   ! Compute molecular kinematic viscosity, heat diffusivity and factor for constituent diffusivity
   ! This is a key part of the code.
 
@@ -225,7 +225,7 @@
        end do
     end do
     kq_scal(:ncol,nbot_molec+1:pver+1) = 0._r8
-
+    
   ! Top boundary condition for dry static energy
 
     dse_top(:ncol) = cpair * tint(:ncol,ntop_molec) + gravit * zi(:ncol,ntop_molec)
@@ -237,7 +237,7 @@
                    ( ( pint(i,2) - pint(i,1) ) * ( pmid(i,1) - pint(i,1) ) )
     enddo
     cd_top(:ncol) = cc_top(:ncol) * dse_top(:ncol)
-
+    
     compute_molec_diff = 1
     return
   end function compute_molec_diff
@@ -304,7 +304,7 @@
 
     ! ----------------------- !
     ! Main Computation Begins !
-    ! ----------------------- !
+    ! ----------------------- !   
 
     ! --------------------------------------------------------------------- !
     ! Determine superdiagonal (ca(k)) and subdiagonal (cc(k)) coeffs of the !
@@ -322,7 +322,7 @@
     do k = ntop_molec, nbot_molec
        do i = 1, ncol
           rghd(i,k) = gravit / ( kbtz * n_avog * tint(i,k) ) * ( mw - mw_dry )
-          rghd(i,k) = ztodt * gravit * rhoi(i,k) * rghd(i,k)
+          rghd(i,k) = ztodt * gravit * rhoi(i,k) * rghd(i,k) 
        enddo
     enddo
 
@@ -385,7 +385,7 @@
 
     !-------------------------------------------------------- !
     ! Calculate e(k).                                         !
-    ! This term is required in solution of tridiagonal matrix !
+    ! This term is required in solution of tridiagonal matrix ! 
     ! defined by implicit diffusion equation.                 !
     !-------------------------------------------------------- !
 

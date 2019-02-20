@@ -2,11 +2,11 @@
      &                   mapdrslen,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    gf_unpack5
+! SUBPROGRAM:    gf_unpack5 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-26
 !
 ! ABSTRACT: This subroutine unpacks Section 5 (Data Representation Section)
-!   starting at octet 6 of that Section.
+!   starting at octet 6 of that Section.  
 !
 ! PROGRAM HISTORY LOG:
 ! 2000-05-26  Gilbert
@@ -21,11 +21,11 @@
 !     lcgrib   - Length (in bytes) of GRIB message array cgrib.
 !     iofst    - Bit offset of the beginning of Section 5.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     iofst    - Bit offset at the end of Section 5, returned.
 !     ndpts    - Number of data points unpacked and returned.
 !     idrsnum  - Data Representation Template Number ( see Code Table 5.0)
-!     idrstmpl - Pointer to an integer array containing the data values for
+!     idrstmpl - Pointer to an integer array containing the data values for 
 !                the specified Data Representation
 !                Template ( N=idrsnum ).  Each element of this integer
 !                array contains an entry (in the order specified) of Data

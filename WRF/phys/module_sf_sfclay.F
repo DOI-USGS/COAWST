@@ -24,11 +24,13 @@ CONTAINS
                      ids,ide, jds,jde, kds,kde,                    &
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
-                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux    )
+                     ustm,ck,cka,cd,cda,isftcflx,iz0tlnd,scm_force_flux &
+                    ,dxCell                                        &
+                         )
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
-!   Changes in V3.7 over water surfaces:
+!   Changes in V3.7 over water surfaces: 
 !          1. for ZNT/Cd, replacing constant OZO with 0.11*1.5E-5/UST(I)
 !             the COARE 3.5 (Edson et al. 2013) formulation is also available
 !          2. for VCONV, reducing magnitude by half
@@ -84,7 +86,7 @@ CONTAINS
 !-- SVP3        constant for saturation vapor pressure (K)
 !-- SVPT0       constant for saturation vapor pressure (K)
 !-- EP1         constant for virtual temperature (R_v/R_d - 1) (dimensionless)
-!-- EP2         constant for specific humidity calculation
+!-- EP2         constant for specific humidity calculation 
 !               (R_d/R_v) (dimensionless)
 !-- KARMAN      Von Karman constant
 !-- EOMEG       angular velocity of earth's rotation (rad/s)
@@ -117,7 +119,7 @@ CONTAINS
       INTEGER,  INTENT(IN )   ::        ids,ide, jds,jde, kds,kde, &
                                         ims,ime, jms,jme, kms,kme, &
                                         its,ite, jts,jte, kts,kte
-!
+!                                                               
       INTEGER,  INTENT(IN )   ::        ISFFLX
       REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
       REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN,EOMEG,STBOLT
@@ -125,7 +127,7 @@ CONTAINS
 !
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                 INTENT(IN   )   ::                           dz8w
-
+                                        
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                 INTENT(IN   )   ::                           QV3D, &
                                                               P3D, &
@@ -136,13 +138,6 @@ CONTAINS
                                                              PBLH, &
                                                             XLAND, &
                                                               TSK
-      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
-                INTENT(OUT  )               ::                U10, &
-                                                              V10, &
-                                                              TH2, &
-                                                               T2, &
-                                                               Q2, &
-                                                             QSFC
 
 !
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
@@ -160,7 +155,7 @@ CONTAINS
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                 INTENT(IN   )   ::                            U3D, &
                                                               V3D
-
+                                        
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
                 INTENT(IN   )               ::               PSFC
 
@@ -181,7 +176,7 @@ CONTAINS
                                                               QGH
 
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
-
+ 
       REAL, OPTIONAL, DIMENSION( ims:ime, jms:jme )              , &
                 INTENT(OUT)     ::                  ck,cka,cd,cda
 
@@ -190,6 +185,17 @@ CONTAINS
 
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     ISFTCFLX, IZ0TLND
       INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX
+
+      real,intent(in),dimension(ims:ime,jms:jme),optional:: dxCell
+
+      real,intent(inout),dimension(ims:ime,jms:jme):: qsfc
+
+      REAL,     DIMENSION( ims:ime, jms:jme )                    , &
+                INTENT(OUT  )               ::                U10, &
+                                                              V10, &
+                                                              TH2, &
+                                                               T2, &
+                                                               Q2
 
 ! LOCAL VARS
 
@@ -207,7 +213,7 @@ CONTAINS
         DO i=its,ite
           dz8w1d(I) = dz8w(i,1,j)
         ENDDO
-
+   
         DO i=its,ite
            U1D(i) =U3D(i,1,j)
            V1D(i) =V3D(i,1,j)
@@ -235,15 +241,19 @@ CONTAINS
                 ids,ide, jds,jde, kds,kde,                         &
                 ims,ime, jms,jme, kms,kme,                         &
                 its,ite, jts,jte, kts,kte                          &
-#if ( EM_CORE == 1 )
+#if defined(mpas) 
                 ,isftcflx,iz0tlnd,scm_force_flux,                  &
                 USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
-                CD(ims,j),CDA(ims,j)                               &
+                CD(ims,j),CDA(ims,j),dxCell(ims,j)                 &
+#elif ( EM_CORE == 1)
+                ,isftcflx,iz0tlnd,scm_force_flux,                  &
+                USTM(ims,j),CK(ims,j),CKA(ims,j),                  &
+                CD(ims,j),CDA(ims,j)                               & 
 #endif
                                                                    )
       ENDDO
 
-
+ 
    END SUBROUTINE SFCLAY
 
 
@@ -261,7 +271,7 @@ CONTAINS
                      ims,ime, jms,jme, kms,kme,                    &
                      its,ite, jts,jte, kts,kte,                    &
                      isftcflx, iz0tlnd, scm_force_flux,            &
-                     ustm,ck,cka,cd,cda                            )
+                     ustm,ck,cka,cd,cda,dxCell                     )
 !-------------------------------------------------------------------
       IMPLICIT NONE
 !-------------------------------------------------------------------
@@ -272,7 +282,7 @@ CONTAINS
                                         ims,ime, jms,jme, kms,kme, &
                                         its,ite, jts,jte, kts,kte, &
                                         J
-!
+!                                                               
       INTEGER,  INTENT(IN )   ::        ISFFLX
       REAL,     INTENT(IN )   ::        SVP1,SVP2,SVP3,SVPT0
       REAL,     INTENT(IN )   ::        EP1,EP2,KARMAN,EOMEG,STBOLT
@@ -315,11 +325,13 @@ CONTAINS
                 INTENT(INOUT)   ::                                 &
                                                               QGH
 
+      REAL,     DIMENSION( ims:ime ), INTENT(INOUT)  ::      QSFC
+
       REAL,     DIMENSION( ims:ime )                             , &
                 INTENT(OUT)     ::                        U10,V10, &
-                                                TH2,T2,Q2,QSFC,LH
+                                                     TH2,T2,Q2,LH
 
-
+                                    
       REAL,     INTENT(IN   )               ::   CP,G,ROVCP,R,XLV,DX
 
 ! MODULE-LOCAL VARIABLES, DEFINED IN SUBROUTINE SFCLAY
@@ -330,6 +342,8 @@ CONTAINS
                                                              QV1D, &
                                                               P1D, &
                                                               T1D
+ 
+      real,intent(in),dimension(ims:ime),optional:: dxCell
 
       REAL, OPTIONAL, DIMENSION( ims:ime )                       , &
                 INTENT(OUT)     ::                  ck,cka,cd,cda
@@ -380,112 +394,112 @@ CONTAINS
 ! PSFC cb
          PSFC(I)=PSFCPA(I)/1000.
       ENDDO
-!
-!----CONVERT GROUND TEMPERATURE TO POTENTIAL TEMPERATURE:
-!
-      DO 5 I=its,ite
-        TGDSA(I)=TSK(I)
+!                                                      
+!----CONVERT GROUND TEMPERATURE TO POTENTIAL TEMPERATURE:  
+!                                                            
+      DO 5 I=its,ite                                   
+        TGDSA(I)=TSK(I)                                    
 ! PSFC cb
-!        THGB(I)=TSK(I)*(100./PSFC(I))**ROVCP
-        THGB(I)=TSK(I)*(P1000mb/PSFCPA(I))**ROVCP
-    5 CONTINUE
-!
+!        THGB(I)=TSK(I)*(100./PSFC(I))**ROVCP                
+        THGB(I)=TSK(I)*(P1000mb/PSFCPA(I))**ROVCP   
+    5 CONTINUE                                               
+!                                                            
 !-----DECOUPLE FLUX-FORM VARIABLES TO GIVE U,V,T,THETA,THETA-VIR.,
-!     T-VIR., QV, AND QC AT CROSS POINTS AND AT KTAU-1.
-!
-!     *** NOTE ***
-!         THE BOUNDARY WINDS MAY NOT BE ADEQUATELY AFFECTED BY FRICTION,
-!         SO USE ONLY INTERIOR VALUES OF UX AND VX TO CALCULATE
-!         TENDENCIES.
-!
-   10 CONTINUE
+!     T-VIR., QV, AND QC AT CROSS POINTS AND AT KTAU-1.  
+!                                                                 
+!     *** NOTE ***                                           
+!         THE BOUNDARY WINDS MAY NOT BE ADEQUATELY AFFECTED BY FRICTION,         
+!         SO USE ONLY INTERIOR VALUES OF UX AND VX TO CALCULATE 
+!         TENDENCIES.                             
+!                                                           
+   10 CONTINUE                                                     
 
 !     DO 24 I=its,ite
 !        UX(I)=U1D(I)
 !        VX(I)=V1D(I)
-!  24 CONTINUE
-
-   26 CONTINUE
-
-!.....SCR3(I,K) STORE TEMPERATURE,
-!     SCR4(I,K) STORE VIRTUAL TEMPERATURE.
-
+!  24 CONTINUE                                             
+                                                             
+   26 CONTINUE                                               
+                                                   
+!.....SCR3(I,K) STORE TEMPERATURE,                           
+!     SCR4(I,K) STORE VIRTUAL TEMPERATURE.                                       
+                                                                                 
       DO 30 I=its,ite
 ! PL cb
          PL=P1D(I)/1000.
-         SCR3(I)=T1D(I)
-!         THCON=(100./PL)**ROVCP
+         SCR3(I)=T1D(I)                                                   
+!         THCON=(100./PL)**ROVCP                                                 
          THCON=(P1000mb*0.001/PL)**ROVCP
-         THX(I)=SCR3(I)*THCON
-         SCR4(I)=SCR3(I)
-         THVX(I)=THX(I)
-         QX(I)=0.
-   30 CONTINUE
-!
+         THX(I)=SCR3(I)*THCON                                               
+         SCR4(I)=SCR3(I)                                                    
+         THVX(I)=THX(I)                                                     
+         QX(I)=0.                                                             
+   30 CONTINUE                                                                 
+!                                                                                
       DO I=its,ite
-         QGH(I)=0.
-         FLHC(I)=0.
-         FLQC(I)=0.
-         CPM(I)=CP
+         QGH(I)=0.                                                                
+         FLHC(I)=0.                                                               
+         FLQC(I)=0.                                                               
+         CPM(I)=CP                                                                
       ENDDO
-!
-!     IF(IDRY.EQ.1)GOTO 80
+!                                                                                
+!     IF(IDRY.EQ.1)GOTO 80                                                   
       DO 50 I=its,ite
-         QX(I)=QV1D(I)
-         TVCON=(1.+EP1*QX(I))
-         THVX(I)=THX(I)*TVCON
-         SCR4(I)=SCR3(I)*TVCON
-   50 CONTINUE
-!
+         QX(I)=QV1D(I)                                                    
+         TVCON=(1.+EP1*QX(I))                                      
+         THVX(I)=THX(I)*TVCON                                               
+         SCR4(I)=SCR3(I)*TVCON                                              
+   50 CONTINUE                                                                 
+!                                                                                
       DO 60 I=its,ite
-        E1=SVP1*EXP(SVP2*(TGDSA(I)-SVPT0)/(TGDSA(I)-SVP3))
+        E1=SVP1*EXP(SVP2*(TGDSA(I)-SVPT0)/(TGDSA(I)-SVP3))                       
 !  for land points QSFC can come from previous time step
-        if(xland(i).gt.1.5.or.qsfc(i).le.0.0)QSFC(I)=EP2*E1/(PSFC(I)-E1)
+        if(xland(i).gt.1.5.or.qsfc(i).le.0.0)QSFC(I)=EP2*E1/(PSFC(I)-E1)                                                 
 ! QGH CHANGED TO USE LOWEST-LEVEL AIR TEMP CONSISTENT WITH MYJSFC CHANGE
 ! Q2SAT = QGH IN LSM
-        E1=SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))
+        E1=SVP1*EXP(SVP2*(T1D(I)-SVPT0)/(T1D(I)-SVP3))                       
         PL=P1D(I)/1000.
-        QGH(I)=EP2*E1/(PL-E1)
-        CPM(I)=CP*(1.+0.8*QX(I))
-   60 CONTINUE
+        QGH(I)=EP2*E1/(PL-E1)                                                 
+        CPM(I)=CP*(1.+0.8*QX(I))                                   
+   60 CONTINUE                                                                   
    80 CONTINUE
-
-!-----COMPUTE THE HEIGHT OF FULL- AND HALF-SIGMA LEVELS ABOVE GROUND
-!     LEVEL, AND THE LAYER THICKNESSES.
-
+                                                                                 
+!-----COMPUTE THE HEIGHT OF FULL- AND HALF-SIGMA LEVELS ABOVE GROUND             
+!     LEVEL, AND THE LAYER THICKNESSES.                                          
+                                                                                 
       DO 90 I=its,ite
         ZQKLP1(I)=0.
-        RHOX(I)=PSFC(I)*1000./(R*SCR4(I))
-   90 CONTINUE
-!
-      DO 110 I=its,ite
+        RHOX(I)=PSFC(I)*1000./(R*SCR4(I))                                       
+   90 CONTINUE                                                                   
+!                                                                                
+      DO 110 I=its,ite                                                   
            ZQKL(I)=dz8w1d(I)+ZQKLP1(I)
-  110 CONTINUE
-!
+  110 CONTINUE                                                                 
+!                                                                                
       DO 120 I=its,ite
-         ZA(I)=0.5*(ZQKL(I)+ZQKLP1(I))
-  120 CONTINUE
-!
+         ZA(I)=0.5*(ZQKL(I)+ZQKLP1(I))                                        
+  120 CONTINUE                                                                 
+!                                                                                
       DO 160 I=its,ite
-        GOVRTH(I)=G/THX(I)
-  160 CONTINUE
-
-!-----CALCULATE BULK RICHARDSON NO. OF SURFACE LAYER, ACCORDING TO
-!     AKB(1976), EQ(12).
-
+        GOVRTH(I)=G/THX(I)                                                    
+  160 CONTINUE                                                                   
+                                                                                 
+!-----CALCULATE BULK RICHARDSON NO. OF SURFACE LAYER, ACCORDING TO               
+!     AKB(1976), EQ(12).                                                         
+                   
       DO 260 I=its,ite
-        GZ1OZ0(I)=ALOG(ZA(I)/ZNT(I))
-        GZ2OZ0(I)=ALOG(2./ZNT(I))
-        GZ10OZ0(I)=ALOG(10./ZNT(I))
-        IF((XLAND(I)-1.5).GE.0)THEN
-          ZL=ZNT(I)
-        ELSE
-          ZL=0.01
-        ENDIF
-        WSPD(I)=SQRT(UX(I)*UX(I)+VX(I)*VX(I))
+        GZ1OZ0(I)=ALOG(ZA(I)/ZNT(I))                                        
+        GZ2OZ0(I)=ALOG(2./ZNT(I))                                        
+        GZ10OZ0(I)=ALOG(10./ZNT(I))                                        
+        IF((XLAND(I)-1.5).GE.0)THEN                                            
+          ZL=ZNT(I)                                                            
+        ELSE                                                                     
+          ZL=0.01                                                                
+        ENDIF                                                                    
+        WSPD(I)=SQRT(UX(I)*UX(I)+VX(I)*VX(I))                        
 
-        TSKV=THGB(I)*(1.+EP1*QSFC(I))
-        DTHVDZ=(THVX(I)-TSKV)
+        TSKV=THGB(I)*(1.+EP1*QSFC(I))                     
+        DTHVDZ=(THVX(I)-TSKV)                                                 
 !  Convective velocity scale Vc and subgrid-scale velocity Vsg
 !  following Beljaars (1994, QJRMS) and Mahrt and Sun (1995, MWR)
 !                                ... HONG Aug. 2001
@@ -507,62 +521,66 @@ CONTAINS
         VCONV = SQRT(DTHVM)
         endif
 ! Mahrt and Sun low-res correction
-        VSGD = 0.32 * (max(dx/5000.-1.,0.))**.33
+        if(present(dxCell)) then
+           vsgd = 0.32 * (max(dxCell(i)/5000.-1.,0.))**.33
+        else
+           VSGD = 0.32 * (max(dx/5000.-1.,0.))**.33
+        endif
         WSPD(I)=SQRT(WSPD(I)*WSPD(I)+VCONV*VCONV+vsgd*vsgd)
         WSPD(I)=AMAX1(WSPD(I),0.1)
-        BR(I)=GOVRTH(I)*ZA(I)*DTHVDZ/(WSPD(I)*WSPD(I))
+        BR(I)=GOVRTH(I)*ZA(I)*DTHVDZ/(WSPD(I)*WSPD(I))                        
 !  IF PREVIOUSLY UNSTABLE, DO NOT LET INTO REGIMES 1 AND 2
         IF(MOL(I).LT.0.)BR(I)=AMIN1(BR(I),0.0)
 !jdf
         RMOL(I)=-GOVRTH(I)*DTHVDZ*ZA(I)*KARMAN
 !jdf
 
-  260 CONTINUE
+  260 CONTINUE                                                                   
 
-!
-!-----DIAGNOSE BASIC PARAMETERS FOR THE APPROPRIATED STABILITY CLASS:
-!
-!
-!     THE STABILITY CLASSES ARE DETERMINED BY BR (BULK RICHARDSON NO.)
-!     AND HOL (HEIGHT OF PBL/MONIN-OBUKHOV LENGTH).
-!
-!     CRITERIA FOR THE CLASSES ARE AS FOLLOWS:
-!
-!        1. BR .GE. 0.2;
-!               REPRESENTS NIGHTTIME STABLE CONDITIONS (REGIME=1),
-!
-!        2. BR .LT. 0.2 .AND. BR .GT. 0.0;
-!               REPRESENTS DAMPED MECHANICAL TURBULENT CONDITIONS
-!               (REGIME=2),
-!
-!        3. BR .EQ. 0.0
-!               REPRESENTS FORCED CONVECTION CONDITIONS (REGIME=3),
-!
-!        4. BR .LT. 0.0
-!               REPRESENTS FREE CONVECTION CONDITIONS (REGIME=4).
-!
-!CCCCC
+!                                                                                
+!-----DIAGNOSE BASIC PARAMETERS FOR THE APPROPRIATED STABILITY CLASS:            
+!                                                                                
+!                                                                                
+!     THE STABILITY CLASSES ARE DETERMINED BY BR (BULK RICHARDSON NO.)           
+!     AND HOL (HEIGHT OF PBL/MONIN-OBUKHOV LENGTH).                              
+!                                                                                
+!     CRITERIA FOR THE CLASSES ARE AS FOLLOWS:                                   
+!                                                                                
+!        1. BR .GE. 0.2;                                                         
+!               REPRESENTS NIGHTTIME STABLE CONDITIONS (REGIME=1),               
+!                                                                                
+!        2. BR .LT. 0.2 .AND. BR .GT. 0.0;                                       
+!               REPRESENTS DAMPED MECHANICAL TURBULENT CONDITIONS                
+!               (REGIME=2),                                                      
+!                                                                                
+!        3. BR .EQ. 0.0                                                          
+!               REPRESENTS FORCED CONVECTION CONDITIONS (REGIME=3),              
+!                                                                                
+!        4. BR .LT. 0.0                                                          
+!               REPRESENTS FREE CONVECTION CONDITIONS (REGIME=4).                
+!                                                                                
+!CCCCC                                                                           
 
       DO 320 I=its,ite
-!CCCCC
-!CC     REMOVE REGIME 3 DEPENDENCE ON PBL HEIGHT
-!CC          IF(BR(I).LT.0..AND.HOL(I,J).GT.1.5)GOTO 310
-        IF(BR(I).LT.0.)GOTO 310
-!
-!-----CLASS 1; STABLE (NIGHTTIME) CONDITIONS:
-!
-        IF(BR(I).LT.0.2)GOTO 270
-        REGIME(I)=1.
-        PSIM(I)=-10.*GZ1OZ0(I)
-!    LOWER LIMIT ON PSI IN STABLE CONDITIONS
-        PSIM(I)=AMAX1(PSIM(I),-10.)
-        PSIH(I)=PSIM(I)
+!CCCCC                                                                           
+!CC     REMOVE REGIME 3 DEPENDENCE ON PBL HEIGHT                                 
+!CC          IF(BR(I).LT.0..AND.HOL(I,J).GT.1.5)GOTO 310                         
+        IF(BR(I).LT.0.)GOTO 310                                                  
+!                                                                                
+!-----CLASS 1; STABLE (NIGHTTIME) CONDITIONS:                                    
+!                                                                                
+        IF(BR(I).LT.0.2)GOTO 270                                                 
+        REGIME(I)=1.                                                           
+        PSIM(I)=-10.*GZ1OZ0(I)                                                   
+!    LOWER LIMIT ON PSI IN STABLE CONDITIONS                                     
+        PSIM(I)=AMAX1(PSIM(I),-10.)                                              
+        PSIH(I)=PSIM(I)                                                          
         PSIM10(I)=10./ZA(I)*PSIM(I)
-        PSIM10(I)=AMAX1(PSIM10(I),-10.)
-        PSIH10(I)=PSIM10(I)
+        PSIM10(I)=AMAX1(PSIM10(I),-10.)                               
+        PSIH10(I)=PSIM10(I)                                          
         PSIM2(I)=2./ZA(I)*PSIM(I)
-        PSIM2(I)=AMAX1(PSIM2(I),-10.)
-        PSIH2(I)=PSIM2(I)
+        PSIM2(I)=AMAX1(PSIM2(I),-10.)                              
+        PSIH2(I)=PSIM2(I)                                         
 
 !       1.0 over Monin-Obukhov length
         IF(UST(I).LT.0.01)THEN
@@ -573,23 +591,23 @@ CONTAINS
         RMOL(I)=AMIN1(RMOL(I),9.999) ! ZA/L
         RMOL(I) = RMOL(I)/ZA(I) !1.0/L
 
-        GOTO 320
-!
-!-----CLASS 2; DAMPED MECHANICAL TURBULENCE:
-!
-  270   IF(BR(I).EQ.0.0)GOTO 280
-        REGIME(I)=2.
-        PSIM(I)=-5.0*BR(I)*GZ1OZ0(I)/(1.1-5.0*BR(I))
-!    LOWER LIMIT ON PSI IN STABLE CONDITIONS
-        PSIM(I)=AMAX1(PSIM(I),-10.)
-!.....AKB(1976), EQ(16).
-        PSIH(I)=PSIM(I)
+        GOTO 320                                                                 
+!                                                                                
+!-----CLASS 2; DAMPED MECHANICAL TURBULENCE:                                     
+!                                                                                
+  270   IF(BR(I).EQ.0.0)GOTO 280                                                 
+        REGIME(I)=2.                                                           
+        PSIM(I)=-5.0*BR(I)*GZ1OZ0(I)/(1.1-5.0*BR(I))                             
+!    LOWER LIMIT ON PSI IN STABLE CONDITIONS                                     
+        PSIM(I)=AMAX1(PSIM(I),-10.)                                              
+!.....AKB(1976), EQ(16).                                                         
+        PSIH(I)=PSIM(I)                                                          
         PSIM10(I)=10./ZA(I)*PSIM(I)
-        PSIM10(I)=AMAX1(PSIM10(I),-10.)
-        PSIH10(I)=PSIM10(I)
+        PSIM10(I)=AMAX1(PSIM10(I),-10.)                               
+        PSIH10(I)=PSIM10(I)                                          
         PSIM2(I)=2./ZA(I)*PSIM(I)
-        PSIM2(I)=AMAX1(PSIM2(I),-10.)
-        PSIH2(I)=PSIM2(I)
+        PSIM2(I)=AMAX1(PSIM2(I),-10.)                              
+        PSIH2(I)=PSIM2(I)                                         
 
         ! Linear form: PSIM = -0.5*ZA/L; e.g, see eqn 16 of
         ! Blackadar, Modeling the nocturnal boundary layer, Preprints,
@@ -609,63 +627,63 @@ CONTAINS
         ! 1.0 over Monin-Obukhov length
         RMOL(I)= ZOL(I)/ZA(I)
 
-        GOTO 320
-!
-!-----CLASS 3; FORCED CONVECTION:
-!
-  280   REGIME(I)=3.
-        PSIM(I)=0.0
-        PSIH(I)=PSIM(I)
-        PSIM10(I)=0.
-        PSIH10(I)=PSIM10(I)
-        PSIM2(I)=0.
-        PSIH2(I)=PSIM2(I)
+        GOTO 320                                                                 
+!                                                                                
+!-----CLASS 3; FORCED CONVECTION:                                                
+!                                                                                
+  280   REGIME(I)=3.                                                           
+        PSIM(I)=0.0                                                              
+        PSIH(I)=PSIM(I)                                                          
+        PSIM10(I)=0.                                                   
+        PSIH10(I)=PSIM10(I)                                           
+        PSIM2(I)=0.                                                  
+        PSIH2(I)=PSIM2(I)                                           
 
+                                                                                 
+        IF(UST(I).LT.0.01)THEN                                                 
+          ZOL(I)=BR(I)*GZ1OZ0(I)                                               
+        ELSE                                                                     
+          ZOL(I)=KARMAN*GOVRTH(I)*ZA(I)*MOL(I)/(UST(I)*UST(I)) 
+        ENDIF                                                                    
 
-        IF(UST(I).LT.0.01)THEN
-          ZOL(I)=BR(I)*GZ1OZ0(I)
-        ELSE
+        RMOL(I) = ZOL(I)/ZA(I)  
+
+        GOTO 320                                                                 
+!                                                                                
+!-----CLASS 4; FREE CONVECTION:                                                  
+!                                                                                
+  310   CONTINUE                                                                 
+        REGIME(I)=4.                                                           
+        IF(UST(I).LT.0.01)THEN                                                 
+          ZOL(I)=BR(I)*GZ1OZ0(I)                                               
+        ELSE                                                                     
           ZOL(I)=KARMAN*GOVRTH(I)*ZA(I)*MOL(I)/(UST(I)*UST(I))
-        ENDIF
-
-        RMOL(I) = ZOL(I)/ZA(I)
-
-        GOTO 320
-!
-!-----CLASS 4; FREE CONVECTION:
-!
-  310   CONTINUE
-        REGIME(I)=4.
-        IF(UST(I).LT.0.01)THEN
-          ZOL(I)=BR(I)*GZ1OZ0(I)
-        ELSE
-          ZOL(I)=KARMAN*GOVRTH(I)*ZA(I)*MOL(I)/(UST(I)*UST(I))
-        ENDIF
-        ZOL10=10./ZA(I)*ZOL(I)
-        ZOL2=2./ZA(I)*ZOL(I)
-        ZOL(I)=AMIN1(ZOL(I),0.)
-        ZOL(I)=AMAX1(ZOL(I),-9.9999)
-        ZOL10=AMIN1(ZOL10,0.)
-        ZOL10=AMAX1(ZOL10,-9.9999)
-        ZOL2=AMIN1(ZOL2,0.)
-        ZOL2=AMAX1(ZOL2,-9.9999)
-        NZOL=INT(-ZOL(I)*100.)
-        RZOL=-ZOL(I)*100.-NZOL
-        NZOL10=INT(-ZOL10*100.)
-        RZOL10=-ZOL10*100.-NZOL10
-        NZOL2=INT(-ZOL2*100.)
-        RZOL2=-ZOL2*100.-NZOL2
-        PSIM(I)=PSIMTB(NZOL)+RZOL*(PSIMTB(NZOL+1)-PSIMTB(NZOL))
-        PSIH(I)=PSIHTB(NZOL)+RZOL*(PSIHTB(NZOL+1)-PSIHTB(NZOL))
-        PSIM10(I)=PSIMTB(NZOL10)+RZOL10*(PSIMTB(NZOL10+1)-PSIMTB(NZOL10))
+        ENDIF                                                                    
+        ZOL10=10./ZA(I)*ZOL(I)                                    
+        ZOL2=2./ZA(I)*ZOL(I)                                     
+        ZOL(I)=AMIN1(ZOL(I),0.)                                              
+        ZOL(I)=AMAX1(ZOL(I),-9.9999)                                         
+        ZOL10=AMIN1(ZOL10,0.)                                          
+        ZOL10=AMAX1(ZOL10,-9.9999)                                    
+        ZOL2=AMIN1(ZOL2,0.)                                          
+        ZOL2=AMAX1(ZOL2,-9.9999)                                    
+        NZOL=INT(-ZOL(I)*100.)                                                 
+        RZOL=-ZOL(I)*100.-NZOL                                                 
+        NZOL10=INT(-ZOL10*100.)                                        
+        RZOL10=-ZOL10*100.-NZOL10                                     
+        NZOL2=INT(-ZOL2*100.)                                        
+        RZOL2=-ZOL2*100.-NZOL2                                      
+        PSIM(I)=PSIMTB(NZOL)+RZOL*(PSIMTB(NZOL+1)-PSIMTB(NZOL))                  
+        PSIH(I)=PSIHTB(NZOL)+RZOL*(PSIHTB(NZOL+1)-PSIHTB(NZOL))                  
+        PSIM10(I)=PSIMTB(NZOL10)+RZOL10*(PSIMTB(NZOL10+1)-PSIMTB(NZOL10))                                                    
         PSIH10(I)=PSIHTB(NZOL10)+RZOL10*(PSIHTB(NZOL10+1)-PSIHTB(NZOL10))
-        PSIM2(I)=PSIMTB(NZOL2)+RZOL2*(PSIMTB(NZOL2+1)-PSIMTB(NZOL2))
-        PSIH2(I)=PSIHTB(NZOL2)+RZOL2*(PSIHTB(NZOL2+1)-PSIHTB(NZOL2))
+        PSIM2(I)=PSIMTB(NZOL2)+RZOL2*(PSIMTB(NZOL2+1)-PSIMTB(NZOL2))    
+        PSIH2(I)=PSIHTB(NZOL2)+RZOL2*(PSIHTB(NZOL2+1)-PSIHTB(NZOL2))   
 
-!---LIMIT PSIH AND PSIM IN THE CASE OF THIN LAYERS AND HIGH ROUGHNESS
-!---  THIS PREVENTS DENOMINATOR IN FLUXES FROM GETTING TOO SMALL
-!       PSIH(I)=AMIN1(PSIH(I),0.9*GZ1OZ0(I))
-!       PSIM(I)=AMIN1(PSIM(I),0.9*GZ1OZ0(I))
+!---LIMIT PSIH AND PSIM IN THE CASE OF THIN LAYERS AND HIGH ROUGHNESS            
+!---  THIS PREVENTS DENOMINATOR IN FLUXES FROM GETTING TOO SMALL                 
+!       PSIH(I)=AMIN1(PSIH(I),0.9*GZ1OZ0(I))                                     
+!       PSIM(I)=AMIN1(PSIM(I),0.9*GZ1OZ0(I))                                     
         PSIH(I)=AMIN1(PSIH(I),0.9*GZ1OZ0(I))
         PSIM(I)=AMIN1(PSIM(I),0.9*GZ1OZ0(I))
         PSIH2(I)=AMIN1(PSIH2(I),0.9*GZ2OZ0(I))
@@ -673,29 +691,29 @@ CONTAINS
 ! AHW: mods to compute ck, cd
         PSIH10(I)=AMIN1(PSIH10(I),0.9*GZ10OZ0(I))
 
-        RMOL(I) = ZOL(I)/ZA(I)
+        RMOL(I) = ZOL(I)/ZA(I)  
 
-  320 CONTINUE
-!
-!-----COMPUTE THE FRICTIONAL VELOCITY:
-!     ZA(1982) EQS(2.60),(2.61).
-!
+  320 CONTINUE                                                                   
+!                                                                                
+!-----COMPUTE THE FRICTIONAL VELOCITY:                                           
+!     ZA(1982) EQS(2.60),(2.61).                                                 
+!                                                                                
       DO 330 I=its,ite
-        DTG=THX(I)-THGB(I)
-        PSIX=GZ1OZ0(I)-PSIM(I)
+        DTG=THX(I)-THGB(I)                                                   
+        PSIX=GZ1OZ0(I)-PSIM(I)                                                   
         PSIX10=GZ10OZ0(I)-PSIM10(I)
 !     LOWER LIMIT ADDED TO PREVENT LARGE FLHC IN SOIL MODEL
 !     ACTIVATES IN UNSTABLE CONDITIONS WITH THIN LAYERS OR HIGH Z0
         PSIT=AMAX1(GZ1OZ0(I)-PSIH(I),2.)
 
-        IF((XLAND(I)-1.5).GE.0)THEN
-          ZL=ZNT(I)
-        ELSE
-          ZL=0.01
-        ENDIF
-        PSIQ=ALOG(KARMAN*UST(I)*ZA(I)/XKA+ZA(I)/ZL)-PSIH(I)
-        PSIT2=GZ2OZ0(I)-PSIH2(I)
-        PSIQ2=ALOG(KARMAN*UST(I)*2./XKA+2./ZL)-PSIH2(I)
+        IF((XLAND(I)-1.5).GE.0)THEN                                            
+          ZL=ZNT(I)                                                            
+        ELSE                                                                     
+          ZL=0.01                                                                
+        ENDIF                                                                    
+        PSIQ=ALOG(KARMAN*UST(I)*ZA(I)/XKA+ZA(I)/ZL)-PSIH(I)   
+        PSIT2=GZ2OZ0(I)-PSIH2(I)                                     
+        PSIQ2=ALOG(KARMAN*UST(I)*2./XKA+2./ZL)-PSIH2(I)                                   
 ! AHW: mods to compute ck, cd
         PSIQ10=ALOG(KARMAN*UST(I)*10./XKA+10./ZL)-PSIH10(I)
 
@@ -757,14 +775,19 @@ CONTAINS
            Cda(I)=(karman/psix)*(karman/psix)
         ENDIF
         IF ( PRESENT(IZ0TLND) ) THEN
-           IF ( IZ0TLND.EQ.1 .AND. (XLAND(I)-1.5).LE.0. ) THEN
+           IF ( IZ0TLND.GE.1 .AND. (XLAND(I)-1.5).LE.0. ) THEN
               ZL=ZNT(I)
 !             CZIL RELATED CHANGES FOR LAND
               VISC=(1.32+0.009*(SCR3(I)-273.15))*1.E-5
               RESTAR=UST(I)*ZL/VISC
-!             Modify CZIL according to Chen & Zhang, 2009
+!             Modify CZIL according to Chen & Zhang, 2009 if iz0tlnd = 1
+!             If iz0tlnd = 2, use traditional value
 
-              CZIL = 10.0 ** ( -0.40 * ( ZL / 0.07 ) )
+              IF ( IZ0TLND.EQ.1 ) THEN
+                 CZIL = 10.0 ** ( -0.40 * ( ZL / 0.07 ) )
+              ELSE IF ( IZ0TLND.EQ.2 ) THEN
+                 CZIL = 0.1
+              END IF
 
               PSIT=GZ1OZ0(I)-PSIH(I)+CZIL*KARMAN*SQRT(RESTAR)
               PSIQ=GZ1OZ0(I)-PSIH(I)+CZIL*KARMAN*SQRT(RESTAR)
@@ -773,55 +796,55 @@ CONTAINS
 
            ENDIF
         ENDIF
-! TO PREVENT OSCILLATIONS AVERAGE WITH OLD VALUE
-        UST(I)=0.5*UST(I)+0.5*KARMAN*WSPD(I)/PSIX
+! TO PREVENT OSCILLATIONS AVERAGE WITH OLD VALUE 
+        UST(I)=0.5*UST(I)+0.5*KARMAN*WSPD(I)/PSIX                                             
 ! TKE coupling: compute ust without vconv for use in tke scheme
         WSPDI(I)=SQRT(UX(I)*UX(I)+VX(I)*VX(I))
         IF ( PRESENT(USTM) ) THEN
         USTM(I)=0.5*USTM(I)+0.5*KARMAN*WSPDI(I)/PSIX
         ENDIF
-        U10(I)=UX(I)*PSIX10/PSIX
-        V10(I)=VX(I)*PSIX10/PSIX
-        TH2(I)=THGB(I)+DTG*PSIT2/PSIT
-        Q2(I)=QSFC(I)+(QX(I)-QSFC(I))*PSIQ2/PSIQ
-!        T2(I) = TH2(I)*(PSFC(I)/100.)**ROVCP
-        T2(I) = TH2(I)*(PSFCPA(I)/P1000mb)**ROVCP
-!       LATER Q2 WILL BE OVERWRITTEN FOR LAND POINTS IN SURFCE
-!       QA2(I,J) = Q2(I)
-!       UA10(I,J) = U10(I)
-!       VA10(I,J) = V10(I)
+        U10(I)=UX(I)*PSIX10/PSIX                                    
+        V10(I)=VX(I)*PSIX10/PSIX                                   
+        TH2(I)=THGB(I)+DTG*PSIT2/PSIT                                
+        Q2(I)=QSFC(I)+(QX(I)-QSFC(I))*PSIQ2/PSIQ                   
+!        T2(I) = TH2(I)*(PSFC(I)/100.)**ROVCP                     
+        T2(I) = TH2(I)*(PSFCPA(I)/P1000mb)**ROVCP                     
+!       LATER Q2 WILL BE OVERWRITTEN FOR LAND POINTS IN SURFCE     
+!       QA2(I,J) = Q2(I)                                         
+!       UA10(I,J) = U10(I)                                      
+!       VA10(I,J) = V10(I)                                     
 !       write(*,1002)UST(I),KARMAN*WSPD(I),PSIX,KARMAN*WSPD(I)/PSIX
-!
-        IF((XLAND(I)-1.5).LT.0.)THEN
+!                                                                                
+        IF((XLAND(I)-1.5).LT.0.)THEN                                            
           UST(I)=AMAX1(UST(I),0.1)
-        ENDIF
-        MOL(I)=KARMAN*DTG/PSIT/PRT
+        ENDIF                                                                    
+        MOL(I)=KARMAN*DTG/PSIT/PRT                              
         DENOMQ(I)=PSIQ
         DENOMQ2(I)=PSIQ2
         DENOMT2(I)=PSIT2
         FM(I)=PSIX
         FH(I)=PSIT
-  330 CONTINUE
-!
-  335 CONTINUE
-
-!-----COMPUTE THE SURFACE SENSIBLE AND LATENT HEAT FLUXES:
+  330 CONTINUE                                                                   
+!                                                                                
+  335 CONTINUE                                                                   
+                                                                                  
+!-----COMPUTE THE SURFACE SENSIBLE AND LATENT HEAT FLUXES:                       
       IF ( PRESENT(SCM_FORCE_FLUX) ) THEN
-         IF (SCM_FORCE_FLUX.EQ.1) GOTO 350
+         IF (SCM_FORCE_FLUX.EQ.1) GOTO 350              
       ENDIF
       DO i=its,ite
-        QFX(i)=0.
-        HFX(i)=0.
+        QFX(i)=0.                                                              
+        HFX(i)=0.                                                              
       ENDDO
   350 CONTINUE
 
-      IF (ISFFLX.EQ.0) GOTO 410
-
+      IF (ISFFLX.EQ.0) GOTO 410                                                
+                                                                                 
 !-----OVER WATER, ALTER ROUGHNESS LENGTH (ZNT) ACCORDING TO WIND (UST).
-
+                                                                                 
       DO 360 I=its,ite
-        IF((XLAND(I)-1.5).GE.0)THEN
-!         ZNT(I)=CZO*UST(I)*UST(I)/G+OZO
+        IF((XLAND(I)-1.5).GE.0)THEN                                            
+!         ZNT(I)=CZO*UST(I)*UST(I)/G+OZO                                   
 ! Since V3.7 (ref: EC Physics document for Cy36r1)
           ZNT(I)=CZO*UST(I)*UST(I)/G+0.11*1.5E-5/UST(I)
 ! V3.9: Add limit as in isftcflx = 1,2
@@ -851,54 +874,54 @@ CONTAINS
           ZL = ZNT(I)
         ELSE
           ZL = 0.01
-        ENDIF
+        ENDIF                                                                    
         FLQC(I)=RHOX(I)*MAVAIL(I)*UST(I)*KARMAN/DENOMQ(I)
 !       FLQC(I)=RHOX(I)*MAVAIL(I)*UST(I)*KARMAN/(   &
 !               ALOG(KARMAN*UST(I)*ZA(I)/XKA+ZA(I)/ZL)-PSIH(I))
-        DTTHX=ABS(THX(I)-THGB(I))
-        IF(DTTHX.GT.1.E-5)THEN
-          FLHC(I)=CPM(I)*RHOX(I)*UST(I)*MOL(I)/(THX(I)-THGB(I))
+        DTTHX=ABS(THX(I)-THGB(I))                                            
+        IF(DTTHX.GT.1.E-5)THEN                                                   
+          FLHC(I)=CPM(I)*RHOX(I)*UST(I)*MOL(I)/(THX(I)-THGB(I))          
 !         write(*,1001)FLHC(I),CPM(I),RHOX(I),UST(I),MOL(I),THX(I),THGB(I),I
  1001   format(f8.5,2x,f12.7,2x,f12.10,2x,f12.10,2x,f13.10,2x,f12.8,f12.8,2x,i3)
-        ELSE
-          FLHC(I)=0.
-        ENDIF
+        ELSE                                                                     
+          FLHC(I)=0.                                                             
+        ENDIF                                                                    
   360 CONTINUE
 
-!
-!-----COMPUTE SURFACE MOIST FLUX:
+!                                                                                
+!-----COMPUTE SURFACE MOIST FLUX:                                               
 !
 !     IF(IDRY.EQ.1)GOTO 390
      IF ( PRESENT(SCM_FORCE_FLUX) ) THEN
-        IF (SCM_FORCE_FLUX.EQ.1) GOTO 405
+        IF (SCM_FORCE_FLUX.EQ.1) GOTO 405                                     
      ENDIF
-!
+!                                                                               
       DO 370 I=its,ite
-        QFX(I)=FLQC(I)*(QSFC(I)-QX(I))
-        QFX(I)=AMAX1(QFX(I),0.)
+        QFX(I)=FLQC(I)*(QSFC(I)-QX(I))                                     
+        QFX(I)=AMAX1(QFX(I),0.)                                            
         LH(I)=XLV*QFX(I)
-  370 CONTINUE
-
-!-----COMPUTE SURFACE HEAT FLUX:
-!
-  390 CONTINUE
+  370 CONTINUE                                                                 
+                                                                                
+!-----COMPUTE SURFACE HEAT FLUX:                                                 
+!                                                                                
+  390 CONTINUE                                                                 
       DO 400 I=its,ite
-        IF(XLAND(I)-1.5.GT.0.)THEN
-          HFX(I)=FLHC(I)*(THGB(I)-THX(I))
+        IF(XLAND(I)-1.5.GT.0.)THEN                                           
+          HFX(I)=FLHC(I)*(THGB(I)-THX(I))                                
 !         IF ( PRESENT(ISFTCFLX) ) THEN
 !            IF ( ISFTCFLX.NE.0 ) THEN
 ! AHW: add dissipative heating term (commented out in 3.6.1)
 !               HFX(I)=HFX(I)+RHOX(I)*USTM(I)*USTM(I)*WSPDI(I)
 !            ENDIF
 !         ENDIF
-        ELSEIF(XLAND(I)-1.5.LT.0.)THEN
-          HFX(I)=FLHC(I)*(THGB(I)-THX(I))
-          HFX(I)=AMAX1(HFX(I),-250.)
-        ENDIF
-  400 CONTINUE
+        ELSEIF(XLAND(I)-1.5.LT.0.)THEN                                       
+          HFX(I)=FLHC(I)*(THGB(I)-THX(I))                                
+          HFX(I)=AMAX1(HFX(I),-250.)                                       
+        ENDIF                                                                  
+  400 CONTINUE                                                                 
 
-  405 CONTINUE
-
+  405 CONTINUE                                                                 
+         
       DO I=its,ite
          IF((XLAND(I)-1.5).GE.0)THEN
            ZL=ZNT(I)
@@ -913,8 +936,8 @@ CONTAINS
          CQS2(I)=UST(I)*KARMAN/DENOMQ2(I)
          CHS2(I)=UST(I)*KARMAN/DENOMT2(I)
       ENDDO
-
-  410 CONTINUE
+                                                                        
+  410 CONTINUE                                                                   
 !jdf
 !     DO I=its,ite
 !       IF(UST(I).GE.0.1) THEN
@@ -925,11 +948,11 @@ CONTAINS
 !     ENDDO
 !jdf
 
-!
+!                                                                                
    END SUBROUTINE SFCLAY1D
 
 !====================================================================
-   SUBROUTINE sfclayinit( allowed_to_read )
+   SUBROUTINE sfclayinit( allowed_to_read )         
 
    LOGICAL , INTENT(IN)      ::      allowed_to_read
    INTEGER                   ::      N
@@ -946,6 +969,6 @@ CONTAINS
 
    END SUBROUTINE sfclayinit
 
-!-------------------------------------------------------------------
+!-------------------------------------------------------------------          
 
 END MODULE module_sf_sfclay

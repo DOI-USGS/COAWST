@@ -21,7 +21,7 @@ MODULE module_driver_constants
 #include "model_data_order.inc"
 
    !  1. Following are constants for use in defining maximal values for array
-   !     definitions.
+   !     definitions.  
    !
 
    !  The maximum number of levels in the model is how deeply the domains may
@@ -74,14 +74,17 @@ MODULE module_driver_constants
 
    INTEGER , PARAMETER :: max_outer_iterations = 100
 
+   !  The maximum number of cost functions to find sensitivity w.r.t (for custom sensitivity)
+
+   INTEGER , PARAMETER :: max_sens = 100
+
    !  The maximum number of instruments (for radiance DA)
 
    INTEGER , PARAMETER :: max_instruments =   30
 
-   !  The maximum number of obs indexes (for conventional DA obs)
+   !  The maximum number of obs indexes (for conventional DA obs) 
 
-   INTEGER , PARAMETER :: num_ob_indexes  =   28
-
+   INTEGER , PARAMETER :: num_ob_indexes  =   29
 
    !  The maximum number of bogus storms
 
@@ -144,7 +147,7 @@ MODULE module_driver_constants
  END MODULE module_driver_constants
 
 ! routines that external packages can call to get at WRF stuff that isn't available
-! through argument lists; since they are external we don't want them using WRF
+! through argument lists; since they are external we don't want them using WRF 
 ! modules unnecessarily (complicates the build even more)
  SUBROUTINE inquire_of_wrf_data_order_xyz( data_order )
    USE module_driver_constants, ONLY : DATA_ORDER_XYZ

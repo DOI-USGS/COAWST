@@ -6,6 +6,7 @@ PROGRAM ideal
    USE module_domain , ONLY : domain
    USE module_initialize_ideal
    USE module_configure , ONLY : grid_config_rec_type
+   USE module_check_a_mundo
 
    USE module_timing
    USE module_wrf_error
@@ -49,7 +50,7 @@ PROGRAM ideal
        USE module_configure , ONLY : grid_config_rec_type
        TYPE (domain) , POINTER :: grid
        TYPE (grid_config_rec_type) , INTENT(IN)   :: config_flags
-     END SUBROUTINE med_initialdata_output
+     END SUBROUTINE med_initialdata_output 
    END INTERFACE
 
 #include "version_decl"
@@ -93,6 +94,8 @@ PROGRAM ideal
    CALL set_wrf_debug_level ( debug_level )
 
    CALL  wrf_message ( program_name )
+   CALL  set_physics_rconfigs
+   CALL  check_nml_consistency
 
 
    ! allocated and configure the mother domain
@@ -105,14 +108,14 @@ PROGRAM ideal
                                      kid        = -1                   )
 
    grid => head_grid
-   ! TBH:  Note that historically, IDEAL did not set up clocks.  These
-   ! TBH:  are explicit replacements for old default initializations...  They
-   ! TBH:  are needed to ensure that time manager calls do not fail due to
-   ! TBH:  uninitialized clock.  Clean this up later...
+   ! TBH:  Note that historically, IDEAL did not set up clocks.  These 
+   ! TBH:  are explicit replacements for old default initializations...  They 
+   ! TBH:  are needed to ensure that time manager calls do not fail due to 
+   ! TBH:  uninitialized clock.  Clean this up later...  
    CALL WRFU_TimeSet(startTime, YY=1, MM=1, DD=1, H=0, M=0, S=0, rc=rc)
    stopTime = startTime
    currentTime = startTime
-   ! TBH:  Bogus time step value -- clock is never advanced...
+   ! TBH:  Bogus time step value -- clock is never advanced...  
    CALL WRFU_TimeIntervalSet(stepTime, S=180, rc=rc)
    grid%domain_clock = WRFU_ClockCreate( TimeStep= stepTime,  &
                                          StartTime=startTime, &
@@ -133,7 +136,7 @@ PROGRAM ideal
            config_flags%start_day, &
            config_flags%start_hour, &
            config_flags%start_minute, &
-           config_flags%start_second
+           config_flags%start_second 
 #else
    WRITE ( current_date , FMT = '(I4.4,"-",I2.2,"-",I2.2,"_",I2.2,":",I2.2,":",I2.2,".0000")' ) &
            config_flags%start_year, &
@@ -141,7 +144,7 @@ PROGRAM ideal
            config_flags%start_day, &
            config_flags%start_hour, &
            config_flags%start_minute, &
-           config_flags%start_second
+           config_flags%start_second 
 #endif
    CALL domain_clockprint ( 150, grid, &
           'DEBUG assemble_output:  clock before 1st currTime set,' )
@@ -160,7 +163,7 @@ PROGRAM ideal
    CALL wrf_dm_bcast_bytes( configbuf, nbytes )
    CALL set_config_as_buffer( configbuf, configbuflen )
 #endif
-
+      
 #if ( WRF_CHEM == 1 )
          IF( grid%chem_opt > 0 ) then
            ! Read the chemistry data from a previous wrf forecast (wrfout file)
@@ -278,7 +281,7 @@ SUBROUTINE med_initialdata_output ( grid , config_flags )
 
 
    IF ( config_flags%specified ) THEN
-
+ 
      CALL construct_filename1 ( bdyname , 'wrfbdy' , grid%id , 2 )
      CALL open_w_dataset ( id, TRIM(bdyname) , grid , config_flags , output_boundary , "DATASET=BOUNDARY", ierr )
      IF ( ierr .NE. 0 ) THEN
@@ -287,7 +290,7 @@ SUBROUTINE med_initialdata_output ( grid , config_flags )
      ENDIF
      CALL output_boundary ( id, grid , config_flags , ierr )
      CALL close_dataset ( id , config_flags , "DATASET=BOUNDARY" )
-
+ 
    ENDIF
 
    RETURN

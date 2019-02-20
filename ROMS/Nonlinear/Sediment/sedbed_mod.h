@@ -1,7 +1,7 @@
 !
 !svn $Id: sedbed_mod.h 830 2017-01-24 21:21:11Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group        John C. Warner   !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group        John C. Warner   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -35,7 +35,24 @@
 #ifdef BEDLOAD
 !  bedldu         Bed load u-transport (kg/m/s).                       !
 !  bedldv         Bed load v-transport (kg/m/s).                       !
+# ifdef BEDLOAD_VANDERA
+!  ursell_no      Ursell number of the asymmetric wave.                !
+!  RR_asymwave    Velocity skewness parameter of the asymmetric wave.  !
+!  beta_asymwave  Accleration assymetry parameter.                     !
+!  Zr_wbl         Reference height to get near bottom current vel.(m/s)! 
+!  ksd_wbl        Bed roughness from the currents (m).                 !
+!  ustrc_wbl      Current friction vel. (m/s).                         ! 
+!  thck_wbl       Thickness at WBL edge (m).                           ! 
+!  udelta_wbl     Current vel. at wave boundary layer(WBL) edge (m/s). ! 
+!  phi_wc         angle between waves/currents.                        !
+!  fd_wbl         Friction factor at WBL edge (m).                     ! 
+!  ucrest_r       Crest velocity of the asymmetric wave form (m/s).    !
+!  utrough_r      Trough velocity of the asymmetric wave form (m/s).   !
+!  T_crest        Crest time period of the asymmetric wave form (s).   !
+!  T_trough       Trough time period of the asymmetric wave form (s).  !
+# endif 
 #endif
+! 
 !  bottom         Exposed sediment layer properties:                   !
 !                   bottom(:,:,isd50) => mean grain diameter           !
 !                   bottom(:,:,idens) => mean grain density            !
@@ -116,6 +133,22 @@
 #ifdef BEDLOAD
         real(r8), pointer :: bedldu(:,:,:)
         real(r8), pointer :: bedldv(:,:,:)
+# ifdef BEDLOAD_VANDERA 
+        real(r8), pointer :: ursell_no(:,:)
+        real(r8), pointer :: RR_asymwave(:,:)
+        real(r8), pointer :: beta_asymwave(:,:)
+        real(r8), pointer :: Zr_wbl(:,:)
+        real(r8), pointer :: ksd_wbl(:,:)
+        real(r8), pointer :: ustrc_wbl(:,:)
+        real(r8), pointer :: thck_wbl(:,:)
+        real(r8), pointer :: udelta_wbl(:,:)
+        real(r8), pointer :: phi_wc(:,:)
+        real(r8), pointer :: fd_wbl(:,:)
+        real(r8), pointer :: ucrest_r(:,:)
+        real(r8), pointer :: utrough_r(:,:)
+        real(r8), pointer :: T_crest(:,:)
+        real(r8), pointer :: T_trough(:,:)
+# endif
 #endif
         real(r8), pointer :: bottom(:,:,:)
 #if defined SEDIMENT && defined SUSPLOAD
@@ -229,6 +262,22 @@
 #ifdef BEDLOAD
       allocate ( SEDBED(ng) % bedldu(LBi:UBi,LBj:UBj,NST) )
       allocate ( SEDBED(ng) % bedldv(LBi:UBi,LBj:UBj,NST) )
+# ifdef BEDLOAD_VANDERA 
+      allocate ( SEDBED(ng) % ursell_no(LBi:UBi,LBj:UBj) )
+      allocate ( SEDBED(ng) % RR_asymwave(LBi:UBi,LBj:UBj) )
+      allocate ( SEDBED(ng) % beta_asymwave(LBi:UBi,LBj:UBj) )
+      allocate ( SEDBED(ng) % Zr_wbl(LBi:UBi,LBj:UBj) )
+      allocate ( SEDBED(ng) % ksd_wbl(LBi:UBi,LBj:UBj) )
+      allocate ( SEDBED(ng) % ustrc_wbl(LBi:UBi,LBj:UBj) )
+      allocate ( SEDBED(ng) % thck_wbl(LBi:UBi,LBj:UBj) )
+      allocate ( SEDBED(ng) % udelta_wbl(LBi:UBi,LBj:UBj) )
+      allocate ( SEDBED(ng) % phi_wc(LBi:UBi,LBj:UBj) )
+      allocate ( SEDBED(ng) % fd_wbl(LBi:UBi,LBj:UBj) )
+      allocate ( SEDBED(ng) % ucrest_r(LBi:UBi,LBj:UBj) )
+      allocate ( SEDBED(ng) % utrough_r(LBi:UBi,LBj:UBj) )
+      allocate ( SEDBED(ng) % T_crest(LBi:UBi,LBj:UBj) )
+      allocate ( SEDBED(ng) % T_trough(LBi:UBi,LBj:UBj) )
+# endif 
 #endif
       allocate ( SEDBED(ng) % bottom(LBi:UBi,LBj:UBj,MBOTP) )
 #if defined SEDIMENT && defined SUSPLOAD
@@ -414,6 +463,24 @@
               SEDBED(ng) % bedldv(i,j,itrc) = IniVal
             END DO
           END DO
+# ifdef BEDLOAD_VANDERA 
+          DO i=Imin,Imax
+            SEDBED(ng) % ursell_no(i,j)    = IniVal
+            SEDBED(ng) % RR_asymwave(i,j)  = IniVal
+            SEDBED(ng) % beta_asymwave(i,j)= IniVal
+            SEDBED(ng) % Zr_wbl(i,j)       = IniVal
+            SEDBED(ng) % ksd_wbl(i,j)      = IniVal
+            SEDBED(ng) % ustrc_wbl(i,j)    = IniVal
+            SEDBED(ng) % thck_wbl(i,j)     = IniVal
+            SEDBED(ng) % udelta_wbl(i,j)   = IniVal
+            SEDBED(ng) % phi_wc(i,j)       = IniVal
+            SEDBED(ng) % fd_wbl(i,j)       = IniVal
+            SEDBED(ng) % ucrest_r(i,j)     = IniVal
+            SEDBED(ng) % utrough_r(i,j)    = IniVal
+            SEDBED(ng) % T_crest(i,j)      = IniVal
+            SEDBED(ng) % T_trough(i,j)     = IniVal
+          END DO
+# endif
 #endif
           DO itrc=1,MBOTP
             DO i=Imin,Imax

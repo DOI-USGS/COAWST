@@ -8,20 +8,20 @@ module module_mergesort
    ! Purpose:
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    recursive subroutine mergesort(array, n1, n2)
-
+   
       implicit none
-
+   
       ! Arguments
       integer, intent(in) :: n1, n2
       integer, dimension(n1:n2), intent(inout) :: array
-
+   
       ! Local variables
       integer :: i, j, k
       real :: rtemp
       real, dimension(1:n2-n1+1) :: temp
-
+   
       if (n1 >= n2) return
-
+   
       if (n2 - n1 == 1) then
          if (array(n1) < array(n2)) then
             rtemp = array(n1)
@@ -30,10 +30,10 @@ module module_mergesort
          end if
          return
       end if
-
+   
       call mergesort(array(n1:n1+(n2-n1+1)/2), n1, n1+(n2-n1+1)/2)
       call mergesort(array(n1+((n2-n1+1)/2)+1:n2), n1+((n2-n1+1)/2)+1, n2)
-
+   
       i = n1
       j = n1 + ((n2-n1+1)/2) + 1
       k = 1
@@ -48,7 +48,7 @@ module module_mergesort
             j = j + 1
          end if
       end do
-
+   
       if (i <= n1+(n2-n1+1)/2) then
          do while (i <= n1+(n2-n1+1)/2)
             temp(k) = array(i)
@@ -62,9 +62,9 @@ module module_mergesort
             k = k + 1
          end do
       end if
-
+   
       array(n1:n2) = temp(1:k-1)
-
+   
    end subroutine mergesort
-
+   
 end module module_mergesort

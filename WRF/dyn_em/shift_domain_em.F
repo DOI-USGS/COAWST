@@ -18,7 +18,7 @@ SUBROUTINE shift_domain_em ( grid , disp_x, disp_y &
   ! Arguments
    INTEGER disp_x, disp_y       ! number of parent domain points to move
    TYPE(domain) , POINTER                     :: grid
-  ! Local
+  ! Local 
    INTEGER i, j, ii, ipf
    INTEGER px, py       ! number and direction of nd points to move
    INTEGER                         :: ids , ide , jds , jde , kds , kde , &
@@ -108,7 +108,7 @@ SUBROUTINE shift_domain_em2 ( grid , disp_x, disp_y &
   ! Arguments
    INTEGER disp_x, disp_y       ! number of parent domain points to move
    TYPE(domain) , POINTER                     :: grid
-  ! Local
+  ! Local 
    INTEGER i, j, ii, jpf
    INTEGER px, py       ! number and direction of nd points to move
    INTEGER                         :: ids , ide , jds , jde , kds , kde , &

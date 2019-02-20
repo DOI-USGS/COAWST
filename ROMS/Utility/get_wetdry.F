@@ -2,9 +2,9 @@
 #ifdef WET_DRY
       SUBROUTINE get_wetdry (ng, model, IniRec)
 !
-!svn $Id: get_wetdry.F 875 2017-11-03 01:10:02Z arango $
+!svn $Id: get_wetdry.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -43,7 +43,7 @@
       integer :: varid_pmask, varid_rmask, varid_umask, varid_vmask
       integer :: Vsize(4)
 
-      real(r8), parameter :: Fscl = 1.0_r8
+      real(dp), parameter :: Fscl = 1.0_r8
 
       real(r8) :: Fmax, Fmin
 

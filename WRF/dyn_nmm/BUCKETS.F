@@ -21,19 +21,19 @@
      &                  ,ITS,ITE,JTS,JTE,KTS,KTE)
 !-----------------------------------------------------------------------
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
+!                .      .    .     
 ! SUBPROGRAM:    BUCKETS     EMPTY ACCUMULATION BUCKETS WHEN NEEDED
 !   PRGRMMR: BLACK           ORG: W/NP22     DATE: 04-08-18
-!
+!     
 ! ABSTRACT:
 !     VARIOUS ACCUMULATING QUANTITIES NEED TO BE RESET TO ZERO AT
 !     SPECIFIED INTERVALS.
-!
+!     
 ! USAGE: CALL BUCKETS FROM SOLVE_NMM
 !   INPUT ARGUMENT LIST:
 !        NTSD - CURRENT TIMESTEP
 !       NPREC - NUMBER OF TIMESTEPS BETWEEN EMPTYING BUCKETS FOR PRECIP
-!       NHEAT - NUMBER OF TIMESTEPS BETWEEN EMPTYING BUCKETS FOR
+!       NHEAT - NUMBER OF TIMESTEPS BETWEEN EMPTYING BUCKETS FOR 
 !               LATENT HEATING
 !       NCNVC - NUMBER OF TIMESTEPS BETWEEN CALLS TO CONVECTION
 !       TSPH - NUMBER OF DYNAMICS TIMESTEPS PER HOUR
@@ -55,21 +55,21 @@
 !     T02_MIN - 2m HOURLY MIN TEMPERATURE (K)
 !    RH02_MAX - 2m HOURLY MAX RELATIVE HUMIDITY (fraction)
 !    RH02_MIN - 2m HOURLY MIN RELATIVE HUMIDITY (fraction)
-!
+!  
 !   OUTPUT ARGUMENT LIST:  THE ACCUMULATED QUANTITIES
-!
+!     
 !   OUTPUT FILES:  NONE
-!
+!     
 !   SUBPROGRAMS CALLED:  NONE
-!
+!  
 !   UNIQUE: NONE
-!
+!  
 !   LIBRARY: NONE
-!
+!  
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
-!   MACHINE : IBM
-!$$$
+!   MACHINE : IBM 
+!$$$  
 !-----------------------------------------------------------------------
 !
       USE MODULE_MODEL_CONSTANTS,ONLY: CP,CPV,R_D,R_V,RCP
@@ -89,7 +89,7 @@
                            ,NSRFC,NTSD                                  &
                            ,IDS,IDE,JDS,JDE,KDS,KDE                     &
                            ,IMS,IME,JMS,JME,KMS,KME                     &
-                           ,ITS,ITE,JTS,JTE,KTS,KTE
+                           ,ITS,ITE,JTS,JTE,KTS,KTE 
 !
       INTEGER,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: NCFRST,NCFRCV
 !
@@ -123,7 +123,7 @@
       LOGICAL,INTENT(IN) :: RESTART
 !
 !-----------------------------------------------------------------------
-!***  LOCAL VARIABLES
+!***  LOCAL VARIABLES 
 !-----------------------------------------------------------------------
 !
       INTEGER :: I,J,K,NTSD_BUCKET,NTSPH
@@ -142,7 +142,7 @@
 !-----------------------------------------------------------------------
 !***  COMPUTE AND SAVE THE FACTORS IN R AND CP TO ACCOUNT FOR
 !***  WATER VAPOR IN THE AIR.
-!***
+!*** 
 !***  RECALL: R  = Rd * (1. + Q * (1./EPSILON - 1.))
 !***          CP = CPd * (1. + Q * (CPv/CPd - 1.))
 !
@@ -154,7 +154,7 @@
         R_FACTOR=1./EPSILON-1.
         CP_FACTOR=CPV/CP-1.
 ! Make sure saturation vapor pressure lookup table is initialized
-        CALL GPVS
+        CALL GPVS 
       ENDIF
 !
 !-----------------------------------------------------------------------

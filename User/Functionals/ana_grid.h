@@ -1,8 +1,8 @@
       SUBROUTINE ana_grid (ng, tile, model)
 !
-!! svn $Id: ana_grid.h 875 2017-11-03 01:10:02Z arango $
+!! svn $Id: ana_grid.h 889 2018-02-10 03:32:52Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -118,9 +118,6 @@
       USE mod_iounits
       USE mod_scalars
 !
-#ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_reduce
-#endif
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
 #ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
@@ -204,15 +201,11 @@
       logical, save :: first = .TRUE.
 
       integer :: Imin, Imax, Jmin, Jmax
-      integer :: NSUB, i, j, k
+      integer :: i, j, k
 
       real(r8) :: Esize, Xsize, beta, depth
       real(r8) :: dx, dy, f0, my_min, my_max, val1
 
-#ifdef DISTRIBUTE
-      real(r8), dimension(2) :: buffer
-      character (len=3), dimension(2) :: op_handle
-#endif
       real(r8) :: wrkX(IminS:ImaxS,JminS:JmaxS)
       real(r8) :: wrkY(IminS:ImaxS,JminS:JmaxS)
 
@@ -618,51 +611,6 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    h)
 #endif
-!
-! Determine minimum depth: first, determine minimum values of depth
-! within each subdomain, then determine global minimum by comparing
-! these subdomain minima.
-!
-      my_min=h(IstrT,JstrT)
-      my_max=h(IstrT,JstrT)
-      DO j=JstrT,JendT
-        DO i=IstrT,IendT
-          my_min=MIN(my_min,h(i,j))
-          my_max=MAX(my_max,h(i,j))
-        END DO
-      END DO
-#ifdef DISTRIBUTE
-      NSUB=1                             ! distributed-memory
-#else
-      IF (DOMAIN(ng)%SouthWest_Corner(tile).and.                        &
-     &    DOMAIN(ng)%NorthEast_Corner(tile)) THEN
-        NSUB=1                           ! non-tiled application
-      ELSE
-        NSUB=NtileX(ng)*NtileE(ng)       ! tiled application
-      END IF
-#endif
-!$OMP CRITICAL (H_RANGE)
-      IF (tile_count.eq.0) THEN
-        hmin(ng)=my_min
-        hmax(ng)=my_max
-      ELSE
-        hmin(ng)=MIN(hmin(ng),my_min)
-        hmax(ng)=MAX(hmax(ng),my_max)
-      END IF
-      tile_count=tile_count+1
-      IF (tile_count.eq.NSUB) THEN
-        tile_count=0
-#ifdef DISTRIBUTE
-        buffer(1)=hmin(ng)
-        buffer(2)=hmax(ng)
-        op_handle(1)='MIN'
-        op_handle(2)='MAX'
-        CALL mp_reduce (ng, model, 2, buffer, op_handle)
-        hmin(ng)=buffer(1)
-        hmax(ng)=buffer(2)
-#endif
-      END IF
-!$OMP END CRITICAL (H_RANGE)
 #ifdef ICESHELF
 !
 !-----------------------------------------------------------------------

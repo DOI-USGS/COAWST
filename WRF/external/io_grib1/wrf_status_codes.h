@@ -1,4 +1,4 @@
-
+  
 !WRF Error and Warning messages (1-999)
 !All i/o package-specific status codes you may want to add must be handled by your package (see below)
 ! WRF handles these and netCDF messages only
@@ -27,13 +27,13 @@
   integer, parameter  :: WRF_WARN_NOTSUPPORTED       = -22      !function not supportable
   integer, parameter  :: WRF_WARN_NOOP               = -23      !package implements this routine as NOOP
 
-!Fatal errors
+!Fatal errors 
   integer, parameter  :: WRF_ERR_FATAL_ALLOCATION_ERROR  = -100 !allocation error
   integer, parameter  :: WRF_ERR_FATAL_DEALLOCATION_ERR  = -101 !dealloc error
   integer, parameter  :: WRF_ERR_FATAL_BAD_FILE_STATUS   = -102 !bad file status
 
 
-!Package specific errors (1000+)
+!Package specific errors (1000+)        
 !Netcdf status codes
 !WRF will accept status codes of 1000+, but it is up to the package to handle
 ! and return the status to the user.
@@ -55,9 +55,9 @@
   integer, parameter  :: WRF_WARN_DRYRUN_READ        = -1018
   integer, parameter  :: WRF_WARN_ZERO_LENGTH_GET    = -1019
   integer, parameter  :: WRF_WARN_ZERO_LENGTH_PUT    = -1020
-  integer, parameter  :: WRF_WARN_NETCDF             = -1021
-  integer, parameter  :: WRF_WARN_LENGTH_LESS_THAN_1 = -1022
-  integer, parameter  :: WRF_WARN_MORE_DATA_IN_FILE  = -1023
+  integer, parameter  :: WRF_WARN_NETCDF             = -1021    
+  integer, parameter  :: WRF_WARN_LENGTH_LESS_THAN_1 = -1022    
+  integer, parameter  :: WRF_WARN_MORE_DATA_IN_FILE  = -1023    
   integer, parameter  :: WRF_WARN_DATE_LT_LAST_DATE  = -1024
 
 ! For HDF5 only

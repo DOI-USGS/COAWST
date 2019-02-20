@@ -212,7 +212,7 @@ CONTAINS
 
 ! ----------------------------------------------------------------------
 
-      Z0BRD = 0.001
+      Z0BRD = 0.001 
 !      ALB = 0.82  ! Arctic pre-melt spring and post-melt autumn
 !      ALB = 0.80  ! Antarctica
 !      ALB = 0.50  ! Arctic mid-summer (ice and melt ponds)
@@ -260,7 +260,7 @@ CONTAINS
 
           SNDENS = SNEQV / SNOWH
           SNOWH = MAX ( SEAICE_SNOWDEPTH_MIN , MIN ( SNOWH , SEAICE_SNOWDEPTH_MAX ) )
-          SNEQV = SNOWH * SNDENS
+          SNEQV = SNOWH * SNDENS 
 
       ELSEIF ( SEAICE_SNOWDEPTH_OPT == 1 ) THEN
 
@@ -324,7 +324,7 @@ CONTAINS
          !
          IF ( SNCOVR .GT. 0.99 ) THEN
             !
-            !  if soil temperature less than 268.15 K, treat as typical
+            !  if soil temperature less than 268.15 K, treat as typical 
             !  Antarctic/Greenland snow firn
             !
             IF ( STC(1) .LT. (TFREEZ - 5.) ) SNDENS = 0.2
@@ -338,7 +338,7 @@ CONTAINS
 ! ----------------------------------------------------------------------
 ! ALBEDO OF SEA ICE
 ! ----------------------------------------------------------------------
-
+      
 
       SELECT CASE ( SEAICE_ALBEDO_OPT )
 
@@ -383,7 +383,7 @@ CONTAINS
          SNCOVRR = SNOWH / ( SNOWH + Z0N )
 
          !
-         ! Final albedo over sea-ice point is a combination of the snow
+         ! Final albedo over sea-ice point is a combination of the snow 
          ! albedo and the snow-free ice albedo, weighted by the snow cover.
          !
          ALBEDO = (SNCOVRR * alb_snow ) + ( ( 1.0 - SNCOVRR) * alb_ice )
@@ -423,7 +423,7 @@ CONTAINS
 ! MID-LAYER SOIL TEMPERATURE
 ! ----------------------------------------------------------------------
       DF1 = DF1A * SNCOVR + DF1 * ( 1.0 - SNCOVR )
-
+      
       SSOIL = DF1 * ( T1 - STC(1) ) / DTOT
 
 ! ----------------------------------------------------------------------
@@ -479,7 +479,7 @@ CONTAINS
           !
           SNDENS = SNEQV / SNOWH
           SNOWH = MAX ( SEAICE_SNOWDEPTH_MIN , MIN ( SNOWH , SEAICE_SNOWDEPTH_MAX ) )
-          SNEQV = SNOWH * SNDENS
+          SNEQV = SNOWH * SNDENS 
 
       ELSEIF ( SEAICE_SNOWDEPTH_OPT == 1 ) THEN
 
@@ -954,7 +954,7 @@ CONTAINS
 ! ABOVE FREEZING BLOCK
 ! ----------------------------------------------------------------------
     ELSE
-       T1 = TFREEZ
+       T1 = TFREEZ 
        SSOIL = DF1 * (T1- STC (1)) / DTOT
 
 ! ----------------------------------------------------------------------
@@ -1217,10 +1217,10 @@ CONTAINS
       BURIAL = 7.0*Z0BRD - SNOWH
       IF(BURIAL.LE.0.0007) THEN
         Z0EFF = Z0S
-      ELSE
+      ELSE      
         Z0EFF = BURIAL/7.0
       ENDIF
-
+      
       Z0 = (1.- SNCOVR)* Z0BRD + SNCOVR * Z0EFF
 
 ! ----------------------------------------------------------------------

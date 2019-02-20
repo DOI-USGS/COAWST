@@ -1,7 +1,7 @@
 !This is a data converter program. Its actions are controlled by
 !the registry and the namelist.  It will read variables on the
 !'i' stream output and output variables on the 'o' stream as
-!indicated in the registry. The input and output forms are
+!indicated in the registry. The input and output forms are 
 !controlled by io_form_input and io_form_history in the namelist.input.
 
 
@@ -27,7 +27,7 @@ PROGRAM convert_data
 #if ( WRF_CHEM == 1 )
   ! interface
    INTERFACE
-     ! mediation-supplied
+     ! mediation-supplied 
      SUBROUTINE med_read_wrf_chem_bioemiss ( grid , config_flags)
        USE module_domain
        TYPE (domain) grid
@@ -48,7 +48,7 @@ PROGRAM convert_data
    INTEGER                :: number_at_same_level
 
    INTEGER :: max_dom, domain_id
-   INTEGER :: idum1, idum2
+   INTEGER :: idum1, idum2 
 #ifdef DM_PARALLEL
    INTEGER                 :: nbytes
    INTEGER, PARAMETER      :: configbuflen = 4* CONFIG_BUF_LEN
@@ -78,7 +78,7 @@ real::t1,t2
 
    !  Define the name of this program (program_name defined in module_domain)
 
-   ! NOTE: share/input_wrf.F tests first 7 chars of this name to decide
+   ! NOTE: share/input_wrf.F tests first 7 chars of this name to decide 
    ! whether to read P_TOP as metadata from the SI (yes, if .eq. REAL_EM)
 
    program_name = "CONVERT V2.1 "

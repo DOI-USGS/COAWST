@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE get_data (ng)
 !
-!svn $Id: get_data.F 858 2017-07-31 23:02:30Z arango $
+!svn $Id: get_data.F 900 2018-03-21 03:23:08Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -442,6 +442,18 @@
      &               __FILE__)) RETURN
 # endif
 
+# ifdef WAVES_DIRP
+      CALL get_2dfld (ng, iNLM, idWdip, ncFRCid(idWdip,ng),             &
+     &                nFfiles(ng), FRC(1,ng), update(1),                &
+     &                LBi, UBi, LBj, UBj, 2, 1,                         &
+#  ifdef MASKING
+     &                GRID(ng) % rmask,                                 &
+#  endif
+     &                FORCES(ng) % DwavepG)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+# endif
+
 # ifdef WAVES_HEIGHT
       CALL get_2dfld (ng, iNLM, idWamp, ncFRCid(idWamp,ng),             &
      &                nFfiles(ng), FRC(1,ng), update(1),                &
@@ -466,7 +478,7 @@
      &               __FILE__)) RETURN
 # endif
 # ifdef WAVES_LENGTHP
-      CALL get_2dfld (ng, iNLM, idWlen, ncFRCid(idWlep,ng),             &
+      CALL get_2dfld (ng, iNLM, idWlep, ncFRCid(idWlep,ng),             &
      &                nFfiles(ng), FRC(1,ng), update(1),                &
      &                LBi, UBi, LBj, UBj, 2, 1,                         &
 #  ifdef MASKING

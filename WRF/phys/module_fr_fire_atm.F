@@ -1,7 +1,3 @@
-#if ( HYBRID_COORD==1 )
-#  define mu(...) (c1h(k)*XXPCXX(__VA_ARGS__)+c2h(k))
-#  define XXPCXX(...) mu(__VA_ARGS__)
-#endif
 
 !WRF:MEDIATION_LAYER:FIRE_MODEL
 ! Routines dealing with the atmosphere
@@ -10,8 +6,68 @@ module module_fr_fire_atm
 
 use module_model_constants, only: cp,xlv
 use module_fr_fire_util
+use module_state_description, only: num_tracer 
+use module_state_description, only: p_fire_smoke
 
 contains
+
+! DME subroutine for passive tracers
+subroutine add_fire_tracer_emissions(    &
+       tracer_opt,dt,dx,dy,              &
+       ifms,ifme,jfms,jfme,              &
+       ifts,ifte,jtfs,jfte,              &
+       ids,ide,kds,kde,jds,jde,          &
+       ims,ime,kms,kme,jms,jme,          &
+       its,ite,kts,kte,jts,jte,          &
+       rho,dz8w,                         &
+       burnt_area_dt,fgip,               &
+       tracer,fire_tracer_smoke          &
+)
+
+implicit none
+! arguments
+integer,intent(in)::tracer_opt
+real,intent(in)::fire_tracer_smoke
+real,intent(in)::dt,dx,dy
+integer,intent(in)::ifms,ifme,jfms,jfme,ifts,ifte,jtfs,jfte,ids,ide,kds,kde,jds,jde,ims,ime,kms,kme,jms,jme,its,ite,kts,kte,jts,jte
+real,intent(in)::rho(ims:ime,kms:kme,jms:jme),dz8w(ims:ime,kms:kme,jms:jme)
+real,intent(in),dimension(ifms:ifme,jfms:jfme)::burnt_area_dt,fgip
+real,intent(inout)::tracer(ims:ime,kms:kme,jms:jme,num_tracer)
+! local
+integer::isz1,jsz1,isz2,jsz2,ir,jr
+integer::i,j,ibase,jbase,i_f,ioff,j_f,joff
+real::avgw,emis,conv
+
+isz1 = ite-its+1
+jsz1 = jte-jts+1
+isz2 = ifte-ifts+1
+jsz2 = jfte-jtfs+1
+ir=isz2/isz1
+jr=jsz2/jsz1
+avgw = 1.0/(ir*jr)
+
+do j=max(jds+1,jts),min(jte,jde-2)
+    jbase=jtfs+jr*(j-jts)
+    do i=max(ids+1,its),min(ite,ide-2)
+       ibase=ifts+ir*(i-its)
+       do joff=0,jr-1
+           j_f=joff+jbase
+           do ioff=0,ir-1
+               i_f=ioff+ibase
+               if (num_tracer >0)then
+                     emis=avgw*fire_tracer_smoke*burnt_area_dt(i_f,j_f)*fgip(i_f,j_f)*1000/(rho(i,kts,j)*dz8w(i,kts,j)) ! g_smoke/kg_air
+                     tracer(i,kts,j,p_fire_smoke)=tracer(i,kts,j,p_fire_smoke)+emis
+                endif
+           enddo
+       enddo
+    enddo
+enddo
+
+end subroutine add_fire_tracer_emissions
+
+!
+!***
+!
 
 SUBROUTINE fire_tendency( &
     ids,ide, kds,kde, jds,jde,   & ! dimensions
@@ -69,7 +125,7 @@ SUBROUTINE fire_tendency( &
    REAL :: alfg_i, alfc_i
 
    REAL, DIMENSION( its:ite,kts:kte,jts:jte ) :: hfx,qfx
-
+   
 !!   character(len=128)::msg
 
         do j=jts,jte
@@ -83,7 +139,7 @@ SUBROUTINE fire_tendency( &
 
 
 ! --- set some local constants
-
+   
 
    cp_i = 1./cp     ! inverse of specific heat
    xlv_i = 1./xlv   ! inverse of latent heat
@@ -138,7 +194,7 @@ SUBROUTINE fire_tendency( &
                fact_c = xlv_i * EXP( - alfc_i * (z_w - z1can) )
             END IF
             qfx(i,k,j) = fact_g * grnqfx(i,j) + fact_c * canqfx(i,j)
-
+            
 !!            if(hfx(i,k,j).ne.0. .or. qfx(i,k,j) .ne. 0.)then
 !!                write(msg,1)i,k,j,hfx(i,k,j),qfx(i,k,j)
 !!1               format('tend:',3i6,2e11.3)
@@ -160,8 +216,8 @@ SUBROUTINE fire_tendency( &
 
             rho_i = 1./rho(i,k,j)
 
-            rthfrten(i,k,j) = - mu(i,j) * rho_i * (hfx(i,k+1,j)-hfx(i,k,j)) / dz8w(i,k,j)
-            rqvfrten(i,k,j) = - mu(i,j) * rho_i * (qfx(i,k+1,j)-qfx(i,k,j)) / dz8w(i,k,j)
+            rthfrten(i,k,j) = - (c1h(k)*mu(i,j)+c2h(k)) * rho_i * (hfx(i,k+1,j)-hfx(i,k,j)) / dz8w(i,k,j)
+            rqvfrten(i,k,j) = - (c1h(k)*mu(i,j)+c2h(k)) * rho_i * (qfx(i,k+1,j)-qfx(i,k,j)) / dz8w(i,k,j)
 
          END DO
       END DO

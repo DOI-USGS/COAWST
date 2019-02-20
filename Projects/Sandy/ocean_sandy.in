@@ -77,23 +77,23 @@
 
 ! Number of nested grids.
 
-      Ngrids =  1
+      Ngrids =  2
 
 ! Number of grid nesting layers.  This parameter is used to allow refinement
 ! and composite grid combinations.
 
-  NestLayers =  1
+  NestLayers =  2
 
 ! Number of grids in each nesting layer [1:NestLayers].
 
-GridsInLayer =  1
+GridsInLayer =  1 1
 
 ! Grid dimension parameters. See notes below in the Glossary for how to set
 ! these parameters correctly.
 
-          Lm == 82 ! 114        ! Number of I-direction INTERIOR RHO-points
-          Mm == 62 !  84        ! Number of J-direction INTERIOR RHO-points
-           N == 16 !  16        ! Number of vertical levels
+          Lm == 85  114       ! Number of I-direction INTERIOR RHO-points
+          Mm == 63   84       ! Number of J-direction INTERIOR RHO-points
+           N == 16   16       ! Number of vertical levels
           ND ==  0            ! Number of wave directional bins
 
         Nbed =  0             ! Number of sediment bed layers
@@ -107,8 +107,8 @@ GridsInLayer =  1
 ! shared-memory configurations used to determine tile horizontal range
 ! indices (Istr,Iend) and (Jstr,Jend), [1:Ngrids].
 
-      NtileI == 4                               ! I-direction partition
-      NtileJ == 3                               ! J-direction partition
+      NtileI == 1                               ! I-direction partition
+      NtileJ == 1                               ! J-direction partition
 
 ! Set lateral boundary conditions keyword. Notice that a value is expected
 ! for each boundary segment per nested grid for each state variable.
@@ -146,34 +146,34 @@ GridsInLayer =  1
 !
 !                   1       2       3       4
 
-   LBC(isFsur) ==   Clo     Cha     Cha     Cha        ! free-surface
-!                    Nes     Nes     Nes     Nes
-   LBC(isUbar) ==   Clo     Fla     Fla     Fla        ! 2D U-momentum
-!                    Nes     Nes     Nes     Nes
-   LBC(isVbar) ==   Clo     Fla     Fla     Fla        ! 2D V-momentum
-!                    Nes     Nes     Nes     Nes
-   LBC(isUvel) ==   Clo     RadNud  RadNud  RadNud     ! 3D U-momentum
-!                    Nes     Nes     Nes     Nes
-   LBC(isVvel) ==   Clo     RadNud  RadNud  RadNud     ! 3D V-momentum
-!                    Nes     Nes     Nes     Nes
-   LBC(isMtke) ==   Clo     Gra     Gra     Gra        ! mixing TKE
-!                    Nes     Nes     Nes     Nes
+   LBC(isFsur) ==   Clo     Cha     Cha     Cha \       ! free-surface
+                    Nes     Nes     Nes     Nes
+   LBC(isUbar) ==   Clo     Fla     Fla     Fla \       ! 2D U-momentum
+                    Nes     Nes     Nes     Nes
+   LBC(isVbar) ==   Clo     Fla     Fla     Fla \       ! 2D V-momentum
+                    Nes     Nes     Nes     Nes
+   LBC(isUvel) ==   Clo     RadNud  RadNud  RadNud \    ! 3D U-momentum
+                    Nes     Nes     Nes     Nes
+   LBC(isVvel) ==   Clo     RadNud  RadNud  RadNud \    ! 3D V-momentum
+                    Nes     Nes     Nes     Nes
+   LBC(isMtke) ==   Clo     Gra     Gra     Gra \       ! mixing TKE
+                    Nes     Nes     Nes     Nes
 
    LBC(isTvar) ==   Gra     RadNud  RadNud  Gra \       ! temperature
-                    Gra     RadNud  RadNud  Gra         ! salinity
-!                    Nes     Nes     Nes     Nes \
-!                    Nes     Nes     Nes     Nes
+                    Gra     RadNud  RadNud  Gra \       ! salinity
+                    Nes     Nes     Nes     Nes \
+                    Nes     Nes     Nes     Nes
 
 ! Wec boundary conditions
 
-   LBC(isU2Sd) ==   Clo     Gra     Gra     Gra        ! 2D U-stokes
-!                    Nes     Nes     Nes     Nes
-   LBC(isV2Sd) ==   Clo     Gra     Gra     Gra        ! 2D V-stokes
-!                    Nes     Nes     Nes     Nes
-   LBC(isU3Sd) ==   Clo     Gra     Gra     Gra        ! 3D U-stokes
-!                    Nes     Nes     Nes     Nes
-   LBC(isV3Sd) ==   Clo     Gra     Gra     Gra        ! 3D V-stokes
-!                    Nes     Nes     Nes     Nes
+   LBC(isU2Sd) ==   Clo     Gra     Gra     Gra \       ! 2D U-stokes
+                    Nes     Nes     Nes     Nes
+   LBC(isV2Sd) ==   Clo     Gra     Gra     Gra \       ! 2D V-stokes
+                    Nes     Nes     Nes     Nes
+   LBC(isU3Sd) ==   Clo     Gra     Gra     Gra \       ! 3D U-stokes
+                    Nes     Nes     Nes     Nes
+   LBC(isV3Sd) ==   Clo     Gra     Gra     Gra \       ! 3D V-stokes
+                    Nes     Nes     Nes     Nes
 ! InWave boundary conditions
 
    LBC(isAC3d) ==   Gra     Clo     Gra     Cla         ! 3D wave action density
@@ -335,7 +335,7 @@ LtracerSponge == F F                            ! temperature, salinity, inert
 
    AKT_LIMIT == 1.0d-3 1.0d-3                   ! m2/s
 
-   AKV_LIMIT == 1.0d-3                          ! m2/s
+   AKV_LIMIT == 1.0d-3 1.0d-3                   ! m2/s
 
 ! Turbulent closure parameters.
 
@@ -395,8 +395,8 @@ LtracerSponge == F F                            ! temperature, salinity, inert
 ! Set vertical, terrain-following coordinates transformation equation and
 ! stretching function (see below for details), [1:Ngrids].
 
-  Vtransform == 1                          ! transformation equation
- Vstretching == 1                          ! stretching function
+  Vtransform == 2                          ! transformation equation
+ Vstretching == 4                          ! stretching function
 
 ! Vertical S-coordinates parameters (see below for details), [1:Ngrids].
 
@@ -463,7 +463,7 @@ LtracerSponge == F F                            ! temperature, salinity, inert
       Lm2CLM == F                          ! 2D momentum
       Lm3CLM == F                          ! 3D momentum
 
-  LtracerCLM == F F                        ! temperature, salinity, inert
+  LtracerCLM == T T T T                    ! temperature, salinity, inert
 
 ! Logical switches (TRUE/FALSE) to nudge the desired climatology field(s).
 ! If not analytical climatology fields, users need to turn ON the logical
@@ -473,7 +473,7 @@ LtracerSponge == F F                            ! temperature, salinity, inert
  LnudgeM2CLM == F                          ! 2D momentum
  LnudgeM3CLM == F                          ! 3D momentum
 
-  LnudgeTCLM == F F                        ! temperature, salinity, inert
+  LnudgeTCLM == T T T T                    ! temperature, salinity, inert
 
 ! Starting (DstrS) and ending (DendS) day for adjoint sensitivity forcing.
 ! DstrS must be less or equal to DendS. If both values are zero, their
@@ -612,6 +612,7 @@ Hout(idWamp) == T T     ! Hwave              wave height
 Hout(idWlen) == T T     ! Lwave              wave length-mean
 Hout(idWlep) == T T     ! Lwavep             wave length-peak
 Hout(idWdir) == T T     ! Dwave              wave direction
+Hout(idWdip) == T       ! Dwavep             wave direction-peak
 Hout(idWptp) == T T     ! Pwave_top          wave surface period
 Hout(idWpbt) == T T     ! Pwave_bot          wave bottom period
 Hout(idWorb) == T T     ! Uwave_rms          wave bottom orbital velocity
@@ -968,10 +969,10 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == Projects/Sandy/Sandy_roms_grid.nc
-!               Projects/Sandy/Sandy_roms_grid_ref3.nc
-     ININAME == Projects/Sandy/Sandy_ini.nc
-!               Projects/Sandy/Sandy_ini_ref3.nc
+     GRDNAME == Projects/Sandy/Sandy_roms_grid.nc \
+                Projects/Sandy/Sandy_roms_grid_ref3.nc
+     ININAME == Projects/Sandy/Sandy_ini.nc \
+                Projects/Sandy/Sandy_ini_ref3.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc
@@ -993,10 +994,16 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! except the last one.
 
      NCLMFILES == 1                         ! number of climate files
-     CLMNAME == ocean_clm.nc
+     CLMNAME == Projects/Sandy/Sandy_clm.nc \
+                Projects/Sandy/Sandy_clm_ref3.nc
 
      NBCFILES == 1                          ! number of boundary files
-     BRYNAME == Projects/Sandy/Sandy_bdy.nc
+!    BRYNAME == Projects/Sandy/Sandy_bdy.nc
+     BRYNAME == Projects/Sandy/coawst_bdy_20121028.nc |
+                Projects/Sandy/coawst_bdy_20121029.nc |
+                Projects/Sandy/coawst_bdy_20121030.nc |
+                Projects/Sandy/coawst_bdy_20121031.nc |
+                Projects/Sandy/coawst_bdy_20121101.nc
 
 ! Input climatology nudging coefficients file name.
 
@@ -1029,22 +1036,23 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! the last one.
 
      NFFILES == 1
-     FRCNAME == Projects/Sandy/romsforc_NARR_Sandy2012.nc
+     FRCNAME == Projects/Sandy/romsforc_NARR_Sandy2012.nc \
+                Projects/Sandy/romsforc_NARR_Sandy2012.nc
 
 ! Output NetCDF file names, [1:Ngrids].
 
      DAINAME == ocean_dai.nc
      GSTNAME == ocean_gst.nc
-     RSTNAME == Sandy_ocean_rst.nc
-!               Sandy_ocean_ref3_rst.nc
-     HISNAME == Sandy_ocean_his.nc
-!               Sandy_ocean_ref3_his.nc
+     RSTNAME == Sandy_ocean_rst.nc \
+                Sandy_ocean_ref3_rst.nc
+     HISNAME == Sandy_ocean_his.nc \
+                Sandy_ocean_ref3_his.nc
      QCKNAME == ocean_qck.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc
-     AVGNAME == Sandy_ocean_avg.nc
-!               Sandy_ocean_ref3_avg.nc
+     AVGNAME == Sandy_ocean_avg.nc \
+                Sandy_ocean_ref3_avg.nc
      HARNAME == ocean_har.nc
      DIANAME == ocean_dia.nc
      STANAME == ocean_sta.nc
@@ -1284,13 +1292,13 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !  LBC(isV2Sd) 2D V-stokes,  [1:4, Ngrids] values are expected.
 !  LBC(isU3Sd) 3D U-stokes,  [1:4, Ngrids] values are expected.
 !  LBC(isV3Sd) 3D V-stokes,  [1:4, Ngrids] values are expected.
-
+!
 ! InWave boundary conditions
-
-   LBC(isAC3d) Wave action density, [1:4, Ngrids] values are expected.
-   LBC(isCT3d) Wave theta celerity, [1:4, Ngrids] values are expected.
-   LBC(isCX3d) Wave x-dir celerity, [1:4, Ngrids] values are expected.
-   LBC(isCY3d) Wave y-dir celerity, [1:4, Ngrids] values are expected.
+!
+!  LBC(isAC3d) Wave action density, [1:4, Ngrids] values are expected.
+!  LBC(isCT3d) Wave theta celerity, [1:4, Ngrids] values are expected.
+!  LBC(isCX3d) Wave x-dir celerity, [1:4, Ngrids] values are expected.
+!  LBC(isCY3d) Wave y-dir celerity, [1:4, Ngrids] values are expected.
 !
 ! Similarly, the adjoint-based algorithms (ADM, TLM, RPM) can have different
 ! lateral boundary conditions keywords:

@@ -42,7 +42,7 @@ contains
     real :: xfar,yfar,far ! distance from center: x,y components and dist^2
     integer :: xshift ! for handling grid staggering
     integer :: i,j
-
+    
 #if ( HWRF == 1 )
     vortex_tracker=grid%vortex_tracker
     if(vortex_tracker<1 .or. vortex_tracker>7) then
@@ -107,7 +107,7 @@ contains
                             IDS,IDE,JDS,JDE,KDS,KDE, &
                             IMS,IME,JMS,JME,KMS,KME, &
                             ITS,ITE,JTS,JTE,KTS,KTE )
-
+       
     end if
 
     is_vt45: if(vortex_tracker==4 .or. vortex_tracker==5) then
@@ -122,7 +122,7 @@ contains
        endif
 
        if(vortex_tracker==5) then
-          if(init) then
+          if(init) then 
              grid%vt5searchrad=vt5_start_radius
 13011        format("Search radius now ",F0.3,"km for domain ",I0)
              !write(message,13011) grid%vt5searchrad/1000.0,grid%id
@@ -252,9 +252,9 @@ contains
     !   vortex_tracker=2 -- not a vortex tracker.  Instead, it tracks
     !       its child domain.  This is used in the 9km domain of the 27:9:3
     !   vortex_tracker=3 -- old HWRF-X algorithm.  This is a mass-based
-    !       centroid algorithm.  It works well for strong storms.  With
+    !       centroid algorithm.  It works well for strong storms.  With 
     !       weaker storms, it can be fooled by other nearby high- or
-    !       low-pressure systems, or noise in the MSLP field due to
+    !       low-pressure systems, or noise in the MSLP field due to 
     !       explicitly resolved gravity waves near sharp terrain changes.
     !   vortex_tracker=4 -- new centroid algorithm.  This is similar to
     !       option 3, but uses the dynamic pressure PDYN and includes PDYN
@@ -437,7 +437,7 @@ contains
                                 IDS,IDE,JDS,JDE,KDS,KDE,     &
                                 IMS,IME,JMS,JME,KMS,KME,     &
                                 ITS,ITE,JTS,JTE,KTS,KTE)
-          do i=1,config_flags%vt4_noise_iter
+          do i=1,config_flags%vt4_noise_iter          
 # ifdef DM_PARALLEL
 #         include "HALO_NMM_VT4_NOISE.inc"
 # endif
@@ -471,7 +471,7 @@ contains
     !
     ! PURPOSE: Takes in a "NOISY" array, finds all points where
     ! NOISY(I,J)/=01, and marks all surrounding points with a 1.
-    ! With repeated calls, this will produce diamond-shaped
+    ! With repeated calls, this will produce diamond-shaped 
     ! areas of 1s around areas that originally had a 1.
     !
     ! The first and last row and column are not modified.
@@ -484,7 +484,7 @@ contains
                            IMS,IME,JMS,JME,KMS,KME, &
                            ITS,ITE,JTS,JTE,KTS,KTE
     integer :: i,j,iadd
-
+    
 #if ( HWRF == 1 )
     do j = max(jds+1,jts), min(jte,jde-2)
        iadd=mod(j,2)-1
@@ -506,7 +506,7 @@ contains
                               ITS,ITE,JTS,JTE,KTS,KTE)
     ! VT4_NOISE_DETECT
     !
-    ! PURPOSE: Finds "noisy" MSLP values and marks a "1" in the
+    ! PURPOSE: Finds "noisy" MSLP values and marks a "1" in the 
     ! "NOISY" array wherever such noisy values occur.  An MSLP
     ! value is "noisy" if it meets one of these criteria:
     !
@@ -534,7 +534,7 @@ contains
 
     nprint=10
 #endif
-
+    
 #if ( HWRF == 1 )
     dy2=dy_nmm*dy_nmm*4
     dp2max=dpdr*dpdr
@@ -565,7 +565,7 @@ contains
              noisy(i,j)=1
           else
              dx2=dx_nmm(i,j)*dx_nmm(i,j)*4
-
+             
              notbdy: if(i>ids .and. i<ide-1 .and. j>jds .and. j<jde-1) then
                 ! northeast-southwest direction:
                 pdiff=mslp(i+1+iadd,j+1)-mslp(i+iadd,j-1)
@@ -621,12 +621,12 @@ contains
     real, intent(in) :: searchrad
     integer, intent(inout) :: xloc,yloc
     integer, intent(in) :: cx,cy,gridid
-    logical, intent(out) :: mvnest
+    logical, intent(out) :: mvnest 
     integer :: &
                       IDS,IDE,JDS,JDE,KDS,KDE,                   &
                       IMS,IME,JMS,JME,KMS,KME,                   &
                       ITS,ITE,JTS,JTE,KTS,KTE
-
+   
     real, parameter :: big_pdyn=999999.9
     integer i,j,iloc,jloc
     real pdynloc,xdiff,ydiff,radsq
@@ -700,12 +700,12 @@ contains
     logical, intent(in) :: gaveup,havefix
     integer, intent(inout) :: xloc,yloc
     integer, intent(in) :: cx,cy,gridid
-    logical, intent(out) :: mvnest
+    logical, intent(out) :: mvnest 
     integer :: &
                       IDS,IDE,JDS,JDE,KDS,KDE,                   &
                       IMS,IME,JMS,JME,KMS,KME,                   &
                       ITS,ITE,JTS,JTE,KTS,KTE
-
+   
     real, parameter :: big_pdyn=999999.9
     integer i,j,iloc,jloc
     real pdynloc,xdiff,ydiff,radsq
@@ -714,7 +714,7 @@ contains
     mvnest=.false.
     xloc=cx
     yloc=cy
-
+    
     if(gridid==1) then ! Do nothing for MOAD
        return
     endif
@@ -757,7 +757,7 @@ contains
     ! PURPOSE: Searches the MSLP field to find the center of the
     ! cyclone vortex.  This is done by first discarding points that
     ! don't match certain conditions, and then doing a weighted
-    ! average of the point locations to find a centroid.
+    ! average of the point locations to find a centroid.  
     !
     ! Several conditions are used to eliminate points.  The "NOISY"
     ! field is used to mask out areas where the MSLP may be
@@ -803,7 +803,7 @@ contains
 
     ! NOTE: cx and cy MUST match the domain center used in
     ! direction_of_move2 in mediation_nest_move.F
-
+    
     if(searchrad<dy_nmm*4) then
        call wrf_error_fatal('increase searchrad: searchrad<dy_nmm*4')
     endif
@@ -818,7 +818,7 @@ contains
     ! In situations where noisy is already 1, we retain the value of
     ! 1, except at the boundaries where it is set to 3.  This allows
     ! us to see where, outside the search area, there is noise.
-    ! Having "3" at the boundary avoids regions where there is
+    ! Having "3" at the boundary avoids regions where there is 
     ! noise from prior moves, and also allows us to see where the
     ! boundary was after the nest moves.
 
@@ -979,7 +979,7 @@ contains
     endif
 
     xwsum = wrf_dm_sum_real(xwsum)
-
+    
     no_vortex: if(xwsum <= 0) then
        ! All pressures are >= pmax so disable move by
        ! specifying the vortex center at the domain center.
@@ -991,7 +991,7 @@ contains
        call wrf_message(message)
        mvnest=.false.
        return
-    else
+    else 
        ywsum = wrf_dm_sum_real(ywsum)
        xsum = wrf_dm_sum_real(xsum)
        ysum = wrf_dm_sum_real(ysum)
@@ -1058,7 +1058,7 @@ contains
     !   2004?    : written by gopal
     ! 2004-2011  : various modifications by gopal, xuejin, young, sam
     ! Nov 08 2011: moved code into a seperate STATS_MAKE_MSLP routine
-
+    
     USE MODULE_MODEL_CONSTANTS
     IMPLICIT NONE
     INTEGER,INTENT(IN)  :: IDS,IDE,JDS,JDE,KDS,KDE   &
@@ -1147,7 +1147,7 @@ contains
     !   PRGRMMR: gopal
     !
     ! ABSTRACT:
-    !         THIS ROUTINE COMPUTES SOME STATS REQUIRED FOR AUTOMATIC GRID MOTION
+    !         THIS ROUTINE COMPUTES SOME STATS REQUIRED FOR AUTOMATIC GRID MOTION 
     !         THERE ARE THREE DIFFERENT MODES:
     !             vortex_tracker=1 -- follow vortex using pre-2012 HWRF algorithm
     !             vortex_tracker=2 -- follow child
@@ -1168,7 +1168,7 @@ contains
     !   MACHINE : IBM SP
     !$$$
     !**********************************************************************
-
+    
     USE MODULE_MODEL_CONSTANTS
     USE MODULE_DM
     USE MODULE_WRF_ERROR
@@ -1246,7 +1246,7 @@ contains
     !   BEGIN OLD TRACKER CODE ----------------------------------------------------
     old_tracker_1: if(vortex_tracker == 1) then
        !
-       !     DETERMINE THE LOCATION OF CENTER OF THE CIRCULATION DEFINED BY MIJ AND FIND THE CORRESPONDING PRES
+       !     DETERMINE THE LOCATION OF CENTER OF THE CIRCULATION DEFINED BY MIJ AND FIND THE CORRESPONDING PRES 
        !
        STMP0=MAXGBL_PRES*100.                 ! define arbitrary maximum
        MINGBL_MIJ=MINVAL(MIJ(ITS:ITF,JTS:JTF))
@@ -1280,7 +1280,7 @@ contains
                 NSUM1 = NSUM1 + I*(105000.1 - MIJ(I,J))
                 NSUM2 = NSUM2 + J*(105000.1 - MIJ(I,J))
                 NSUM3 = NSUM3 + (105000.1 - MIJ(I,J))
-                !         WRITE(0,*)'TEST',NSUM1,I,J,0.01*(105000.0 - MIJ(I,J)),MIJ(I,J)
+                !         WRITE(0,*)'TEST',NSUM1,I,J,0.01*(105000.0 - MIJ(I,J)),MIJ(I,J) 
              ENDIF
           ENDDO
        ENDDO
@@ -1302,7 +1302,7 @@ contains
     !   END HWRF-X TRACKER CODE ---------------------------------------------------
 
     !   BEGIN OLD TRACKER CODE ----------------------------------------------------
-    !     DETERMINE THE MAXIMUM MIJ AT ABOUT 18 GRID POINTS AWAY FROM THE STORM CENTER
+    !     DETERMINE THE MAXIMUM MIJ AT ABOUT 18 GRID POINTS AWAY FROM THE STORM CENTER 
     old_tracker_2: if ( vortex_tracker == 1 ) then
 
        STMP1=0.0
@@ -1332,7 +1332,7 @@ contains
        SMOUT=WRF_DM_SUM_REAL(SMSUM)/(IDE*JDE)
 
        !     STOP GRID MOTION. AVOID MOVING TOO RAPID GRID MOTION, SAY SOMETHING LIKE EVERY
-       !     OTHER TIME STEP OR SO
+       !     OTHER TIME STEP OR SO  
 
        PGR=STMP1-STMP0
     endif old_tracker_2

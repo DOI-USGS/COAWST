@@ -1,12 +1,12 @@
 function dist = m_xydist(x,y)
 % M_XYDIST Spherical earth distance between points in map projection coordinates.  
-%   RANGE=M_XYDIST(X,Y) gives the distance in meters between
+%   RANGE=M_XYDIST(X,Y) gives the distance in kilometers between
 %   successive points in the vectors X and Y which are coordinates
 %   in the current map projection. This function is useful for finding
 %   distances between points "picked off" a map, e.g.:
 %
 %   Example:
-%   G = GINPUT(2); km_dist = M_XYDIST(G(:,1),G(:,2))/1000;
+%   G = GINPUT(2); km_dist = M_XYDIST(G(:,1),G(:,2));
 %
 %   See also M_LLDIST
 
@@ -18,10 +18,10 @@ function dist = m_xydist(x,y)
 
 global MAP_PROJECTION MAP_VAR_LIST
 
-if isempty(MAP_PROJECTION),
+if isempty(MAP_PROJECTION)
   disp('No Map Projection initialized - call M_PROJ first!');
   return;
-end;
+end
 
 % get lon, lat coords
 [lon,lat] = m_xy2ll(x,y);

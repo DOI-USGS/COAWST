@@ -1269,13 +1269,13 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !  LBC(isV2Sd) 2D V-stokes,  [1:4, Ngrids] values are expected.
 !  LBC(isU3Sd) 3D U-stokes,  [1:4, Ngrids] values are expected.
 !  LBC(isV3Sd) 3D V-stokes,  [1:4, Ngrids] values are expected.
-
+!
 ! InWave boundary conditions
-
-   LBC(isAC3d) Wave action density, [1:4, Ngrids] values are expected.
-   LBC(isCT3d) Wave theta celerity, [1:4, Ngrids] values are expected.
-   LBC(isCX3d) Wave x-dir celerity, [1:4, Ngrids] values are expected.
-   LBC(isCY3d) Wave y-dir celerity, [1:4, Ngrids] values are expected.
+!
+!  LBC(isAC3d) Wave action density, [1:4, Ngrids] values are expected.
+!  LBC(isCT3d) Wave theta celerity, [1:4, Ngrids] values are expected.
+!  LBC(isCX3d) Wave x-dir celerity, [1:4, Ngrids] values are expected.
+!  LBC(isCY3d) Wave y-dir celerity, [1:4, Ngrids] values are expected.
 !
 ! Similarly, the adjoint-based algorithms (ADM, TLM, RPM) can have different
 ! lateral boundary conditions keywords:

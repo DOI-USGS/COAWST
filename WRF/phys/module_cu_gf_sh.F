@@ -6,11 +6,11 @@
 !    po               pressure at model levels (mb)
 !    psur             surface pressure (mb)
 !    z1               surface height
-!    dhdt             forcing for boundary layer equilibrium
+!    dhdt             forcing for boundary layer equilibrium   
 !    hfx,qfx          in w/m2 (positive, if upward from sfc)
 !    kpbl             level of boundaty layer height
 !    xland            land mask (1. for land)
-!    ichoice          which closure to choose
+!    ichoice          which closure to choose 
 !                     1: old g
 !                     2: zws
 !                     3: dhdt
@@ -76,7 +76,7 @@ contains
      integer, intent (in   )              ::                           &
         ichoice
   !
-  !
+  ! 
   !
   ! outtem = output temp tendency (per s)
   ! outq   = output q tendency (per s)
@@ -110,7 +110,7 @@ contains
      real, dimension (its:ite)                                         &
         ,intent (in   )                   ::                           &
         xland,Z1,PSUR,hfx,qfx
-
+       
        real                                                            &
         ,intent (in   )                   ::                           &
         dtime,tcrit
@@ -119,7 +119,7 @@ contains
   !                  variables. They carry a "_cup" if they are
   !                  on model cloud levels (staggered). They carry
   !                  an "o"-ending (z becomes zo), if they are the forced
-  !                  variables.
+  !                  variables. 
   !
   ! z           = heights of model levels
   ! q           = environmental mixing ratio
@@ -192,7 +192,7 @@ contains
      real                                 ::                           &
       dz,mbdt,zkbmax,      &
       cap_maxs,trash,trash2,frh
-
+      
       real buo_flux,pgeoh,dp,entup,detup,totmas
 
      real xff_shal(3),blqe,xkshal
@@ -201,7 +201,7 @@ contains
        up_massentr,up_massdetr,up_massentro,up_massdetro
      real :: C_up,x_add,qaver
      real,    dimension (its:ite,kts:kte) :: dtempdz
-     integer, dimension (its:ite,kts:kte) ::  k_inv_layers
+     integer, dimension (its:ite,kts:kte) ::  k_inv_layers 
      integer, dimension (its:ite) ::  start_level
      start_level(:)=0
      rand_vmas(:)=0.
@@ -223,7 +223,7 @@ contains
 !--- initial entrainment rate (these may be changed later on in the
 !--- program
 !
-
+      
 !
 !--- initial detrainmentrates
 !
@@ -246,7 +246,7 @@ contains
 !--- minimum depth (m), clouds must have
 !
 !
-!--- maximum depth (mb) of capping
+!--- maximum depth (mb) of capping 
 !--- inversion (larger cap = no convection)
 !
       cap_maxs=125.
@@ -270,7 +270,7 @@ contains
          if(zws(i) > TINY(pgeoh)) then
           !-convective-scale velocity w*
           zws(i) = 1.2*zws(i)**.3333
-          !- temperature excess
+          !- temperature excess 
           ztexec(i)     = MAX(flux_tun(i)*hfx(i)/(rho(i,1)*zws(i)*cp),0.0)
           !- moisture  excess
           zqexec(i)     = MAX(flux_tun(i)*qfx(i)/xlv/(rho(i,1)*zws(i)),0.)
@@ -526,7 +526,7 @@ contains
            qco (i,k)= qo_cup(i,k)
          enddo
          k=start_level(i)
-         qco (i,k)= qaver
+         qco (i,k)= qaver 
 !
          do k=start_level(i)+1,ktop(i)
           trash=QESo_cup(I,K)+(1./XLV)*(GAMMAo_cup(i,k) &
@@ -537,18 +537,18 @@ contains
                        up_massentr(i,k-1)*qo(i,k-1))   /            &
                        (zuo(i,k-1)-.5*up_massdetr(i,k-1)+up_massentr(i,k-1))
 
-          if(qco(i,k)>=trash ) then
+          if(qco(i,k)>=trash ) then 
               DZ=Z_cup(i,K)-Z_cup(i,K-1)
               ! cloud liquid water
               qrco(i,k)= (qco(i,k)-trash)/(1.+(c0_shal+c1_shal)*dz)
 !              qrco(i,k)= (qco(i,k)-trash)/(1.+c0_shal*dz)
               pwo(i,k)=c0_shal*dz*qrco(i,k)*zuo(i,k)
-              ! cloud water vapor
+              ! cloud water vapor 
               qco (i,k)= trash+qrco(i,k)
-
+        
           else
               qrco(i,k)= 0.0
-          endif
+          endif 
           cupclw(i,k)=qrco(i,k)
          enddo
          trash=0.
@@ -670,7 +670,7 @@ contains
              dellaqc(i,k)=   detup*qrco(i,k) *g/dp
             endif
 
-            !-- condensation source term = detrained + flux divergence of
+            !-- condensation source term = detrained + flux divergence of 
             !-- cloud liquid water (qrco)
             C_up = dellaqc(i,k)+(zuo(i,k+1)* qrco(i,k+1) -       &
                                   zuo(i,k  )* qrco(i,k  )  )*g/dp
@@ -698,7 +698,7 @@ contains
          dellat(i,k)=(1./cp)*(dellah(i,k)-xlv*(dellaq(i,k)))
          xt (i,k)= (-dellaqc(i,k)*xlv/cp+dellat(i,k))*mbdt+tn(i,k)
          xt (i,k)=  max(190.,xt(i,k))
-
+         
        enddo
       enddo
       do i=its,itf
@@ -751,7 +751,7 @@ contains
 !
       do i=its,itf
        if(ierr(i).eq.0)then
-        xzu(i,1:ktf)=zuo(i,1:ktf)
+        xzu(i,1:ktf)=zuo(i,1:ktf)	
         do k=start_level(i)+1,ktop(i)
          xhc(i,k)=(xhc(i,k-1)*xzu(i,k-1)-.5*up_massdetro(i,k-1)*xhc(i,k-1)+ &
                           up_massentro(i,k-1)*xhe(i,k-1))   /            &
@@ -783,7 +783,7 @@ contains
         xmb(i)=0.
         xff_shal(1:3)=0.
         if(ierr(i).eq.0)then
-          xmbmax(i)=1.0
+          xmbmax(i)=1.0  
 !         xmbmax(i)=100.*(p(i,kbcon(i))-p(i,kbcon(i)+1))/(g*dtime)
 !
 !-stabilization closure
@@ -806,7 +806,7 @@ contains
           trash=max((hc(i,kbcon(i))-he_cup(i,kbcon(i))),1.e1)
           xff_shal(3)=max(0.,blqe/trash)
           xff_shal(3)=min(xmbmax(i),xff_shal(3))
-!- average
+!- average 
           xmb(i)=(xff_shal(1)+xff_shal(2)+xff_shal(3))/3.
           xmb(i)=min(xmbmax(i),xmb(i))
           if(ichoice > 0)xmb(i)=min(xmbmax(i),xff_shal(ichoice))
@@ -825,7 +825,7 @@ contains
            outqc(i,:)=0.
         else if(ierr(i).eq.0)then
           xmb_out(i)=xmb(i)
-!
+! 
 ! final tendencies
 !
           pre(i)=0.
@@ -837,7 +837,7 @@ contains
           enddo
         endif
        enddo
-!
+!      
 ! done shallow
 !--------------------------done------------------------------
 !

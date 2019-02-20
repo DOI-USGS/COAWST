@@ -2,9 +2,9 @@
       MODULE mod_tides
 #if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES
 !
-!svn $Id: mod_tides.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: mod_tides.F 923 2018-09-26 21:20:30Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -197,6 +197,8 @@
       logical :: foundit
 
       integer :: Nfiles, Vid, i, ifile, mg, nvatt, nvdim
+
+      real(r8) :: size2d
 !
 !-----------------------------------------------------------------------
 !  Allocate module variables.
@@ -218,19 +220,6 @@
      &                       nVarAtt = nvatt)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__//", allocate_tides")) RETURN
-
-# if defined AVERAGES_DETIDE && defined AVERAGES
-!
-!  Check if detiding variables are available and set definition switch.
-!
-        IF (foundit) THEN
-          DO i=1,n_var
-            IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idFsuH))) THEN
-              LdefTIDE(ng)=.FALSE.
-            END IF
-          END DO
-        END IF
-# endif
 !
 !  Set maximum number of tidal components.  Allocate and initialize
 !  TIDE I/O structure. Notice that in nested applications, all the
@@ -241,25 +230,6 @@
           DO mg=1,Ngrids
             NTC(mg)=var_Dsize(1)
           END DO
-!
-!          Nfiles=FRC(ifile,mg)%Nfiles
-!          allocate ( TIDE(ng)%Nrec(Nfiles) )
-!          allocate ( TIDE(ng)%time_min(Nfiles) )
-!          allocate ( TIDE(ng)%time_max(Nfiles) )
-!          allocate ( TIDE(ng)%Vid(NV) )
-!          allocate ( TIDE(ng)%Tid(MT) )
-!          allocate ( TIDE(ng)%files(Nfiles) )
-!          TIDE(ng)%Nfiles=Nfiles
-!          TIDE(ng)%Fcount=1
-!          TIDE(ng)%Rindex=0
-!          TIDE(ng)%ncid=-1
-!          TIDE(ng)%Vid=-1
-!          TIDE(ng)%Tid=-1
-!          TIDE(ng)%Nrec(1:Nfiles)=0
-!          TIDE(ng)%time_min(1:Nfiles)=0.0_r8
-!          TIDE(ng)%time_max(1:Nfiles)=0.0_r8
-!          TIDE(ng)%name=TRIM(FRC(ifile,mg)%name)
-!          TIDE(ng)%label='TIDE - tidal forcing'
         END IF
       END IF
 !
@@ -267,41 +237,65 @@
 !
       IF (ng.eq.1) allocate ( TIDES(Ngrids) )
 !
+!  Set horizontal array size.
+!
+      size2d=REAL((UBi-LBi)*(UBj-LBj),r8)
+!
 !  Allocate tidal forcing variables.
 !
       allocate ( TIDES(ng) % Tperiod(MTC)  )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)
 
 # if defined SSH_TIDES
       allocate ( TIDES(ng) % SSH_Tamp(LBi:UBi,LBj:UBj,MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)*size2d
+
       allocate ( TIDES(ng) % SSH_Tphase(LBi:UBi,LBj:UBj,MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)*size2d
 # endif
 
 # if defined UV_TIDES
       allocate ( TIDES(ng) % UV_Tangle(LBi:UBi,LBj:UBj,MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)*size2d
+
       allocate ( TIDES(ng) % UV_Tmajor(LBi:UBi,LBj:UBj,MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)*size2d
+
       allocate ( TIDES(ng) % UV_Tminor(LBi:UBi,LBj:UBj,MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)*size2d
+
       allocate ( TIDES(ng) % UV_Tphase(LBi:UBi,LBj:UBj,MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)*size2d
 # endif
 
 # if defined POT_TIDES
       allocate ( TIDES(ng) % POT_Tamp(LBi:UBi,LBj:UBj,MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)*size2d
       allocate ( TIDES(ng) % POT_Tphase(LBi:UBi,LBj:UBj,MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)*size2d
       allocate ( TIDES(ng) % Ptide(LBi:UBi,LBj:UBj) )
-# endif
-
-# ifdef TIDES_ASTRO
-      allocate( TIDES(ng) % Vu_sat(LBi:UBi,LBj:UBj,MTC))
-      allocate( TIDES(ng) % f_sat(LBi:UBi,LBj:UBj,MTC))
+      Dmem(ng)=Dmem(ng)+size2d
 # endif
 
 # if defined TIDES_ASTRO
-       allocate ( doodson(6,MTC) )
-       allocate ( phase_corr(MTC) )
-       allocate ( num_sat(MTC) )
-       allocate ( sat_doodson(3,MAX_SAT,MTC) )
-       allocate ( sat_phase_corr(MAX_SAT,MTC) )
-       allocate ( sat_amp(MAX_SAT,MTC) )
-       allocate ( sat_flag(MAX_SAT,MTC) )
+      allocate( TIDES(ng) % Vu_sat(LBi:UBi,LBj:UBj,MTC))
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)*size2d
+      allocate( TIDES(ng) % f_sat(LBi:UBi,LBj:UBj,MTC))
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)*size2d
+      allocate ( doodson(6,MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)*6.0_r8
+      allocate ( phase_corr(MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)
+      allocate ( num_sat(MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)
+      allocate ( sat_doodson(3,MAX_SAT,MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MAX_SAT*MTC,r8)*3.0_r8
+      allocate ( sat_phase_corr(MAX_SAT,MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MAX_SAT*MTC,r8)
+      allocate ( sat_amp(MAX_SAT,MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MAX_SAT*MTC,r8)
+      allocate ( sat_flag(MAX_SAT,MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MAX_SAT*MTC,r8)
 # endif
 
 # if defined AVERAGES && defined AVERAGES_DETIDE
@@ -310,53 +304,90 @@
 !  time-averaged fields.
 !
       allocate ( TIDES(ng) % CosOmega(MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)
+
       allocate ( TIDES(ng) % SinOmega(MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)
+
       allocate ( TIDES(ng) % CosW_avg(MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)
+
       allocate ( TIDES(ng) % CosW_sum(MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)
+
       allocate ( TIDES(ng) % SinW_avg(MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)
+
       allocate ( TIDES(ng) % SinW_sum(MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC,r8)
+
       allocate ( TIDES(ng) % CosWCosW(MTC,MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC*MTC,r8)
+
       allocate ( TIDES(ng) % SinWSinW(MTC,MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC*MTC,r8)
+
       allocate ( TIDES(ng) % SinWCosW(MTC,MTC) )
+      Dmem(ng)=Dmem(ng)+REAL(MTC*MTC,r8)
 
       IF (Aout(idFsuD,ng)) THEN
         allocate ( TIDES(ng) % zeta_detided(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+
         allocate ( TIDES(ng) % zeta_tide(LBi:UBi,LBj:UBj,0:2*MTC) )
+        Dmem(ng)=Dmem(ng)+REAL(2*MTC+1,r8)*size2d
       END IF
 
       IF (Aout(idu2dD,ng)) THEN
         allocate ( TIDES(ng) % ubar_detided(LBi:UBi,LBj:UBj) )
+
         allocate ( TIDES(ng) % ubar_tide(LBi:UBi,LBj:UBj,0:2*MTC) )
+        Dmem(ng)=Dmem(ng)+REAL(2*MTC+1,r8)*size2d
       END IF
 
       IF (Aout(idv2dD,ng)) THEN
         allocate ( TIDES(ng) % vbar_detided(LBi:UBi,LBj:UBj) )
+
         allocate ( TIDES(ng) % vbar_tide(LBi:UBi,LBj:UBj,0:2*MTC) )
+        Dmem(ng)=Dmem(ng)+REAL(2*MTC+1,r8)*size2d
       END IF
 
 #  ifdef SOLVE3D
       IF (Aout(idu3dD,ng)) THEN
         allocate ( TIDES(ng) % u_detided(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
         allocate ( TIDES(ng) % u_tide(LBi:UBi,LBj:UBj,N(ng),0:2*MTC) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*(2*MTC+1),r8)*size2d
       END IF
 
       IF (Aout(idv3dD,ng)) THEN
         allocate ( TIDES(ng) % v_detided(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
+
         allocate ( TIDES(ng) % v_tide(LBi:UBi,LBj:UBj,N(ng),0:2*MTC) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*(2*MTC+1),r8)*size2d
       END IF
 
       IF (ANY(Aout(idTrcD(:),ng))) THEN
         allocate ( TIDES(ng) % t_detided(LBi:UBi,LBj:UBj,N(ng),NAT) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NAT,r8)*size2d
+
         allocate ( TIDES(ng) % t_tide(LBi:UBi,LBj:UBj,N(ng),            &
      &                                0:2*MTC,NAT) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*(2*MTC+1)*NAT,r8)*size2d
       END IF
 #  endif
 # endif
 # ifdef UV_WAVEDRAG
       allocate ( TIDES(ng) % sum_ubot(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( TIDES(ng) % sum_vbot(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( TIDES(ng) % filt_ubot(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( TIDES(ng) % filt_vbot(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # endif
 
       RETURN

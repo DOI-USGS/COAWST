@@ -34,7 +34,7 @@ subroutine load_grib2map(filename, msg, ierr)
 
   ! Find an open fileunit
   foundunit = .false.
-  do fileunit = 10,100
+  do fileunit = 10,100 
      inquire(unit=fileunit,opened=lerr)
      if (lerr .eqv. .false.) then
         foundunit = .true.
@@ -55,9 +55,9 @@ subroutine load_grib2map(filename, msg, ierr)
      return
   endif
 
-  ! Loop through each line to count the number of tables and entries in
+  ! Loop through each line to count the number of tables and entries in 
   !   each table.
-
+  
   READLINE: do
      !
      ! Read the line, skip line if line is comment, blank or invalid
@@ -85,7 +85,7 @@ subroutine load_grib2map(filename, msg, ierr)
      endif
 
 
-     !
+     ! 
      ! If the first value is -1, weve found a new table.  Allocate
      !    a new member in the linked list, and add the information
      !    to that member
@@ -114,7 +114,7 @@ subroutine load_grib2map(filename, msg, ierr)
         endif
         nullify(TblTail%next)
         nullify(TblTail%ParmHead)
-
+        
         !
         ! Parse the header line
         !
@@ -210,7 +210,7 @@ subroutine load_grib2map(filename, msg, ierr)
      lastpos = 0
      do idx = 1,7
         pos = index(line(lastpos+1:maxLineSize), "|")
-
+        
         if (pos .lt. 0) then
            print *,'Found invalid header line: '
            print *,'''',trim(line),''''
@@ -221,7 +221,7 @@ subroutine load_grib2map(filename, msg, ierr)
            endif
            cycle READLINE
         endif
-
+        
         SELECT CASE (idx)
         CASE (1)
            read(line(lastpos+1:lastpos+pos-1),*,iostat=status) TblTail%ParmTail%Disc
@@ -265,11 +265,11 @@ subroutine load_grib2map(filename, msg, ierr)
               cycle READLINE
            endif
         END SELECT
-
+        
         lastpos = lastpos+pos
-
+        
      enddo
-
+      
 #ifdef TEST
 ! Test Code
      delim = '|'
@@ -289,7 +289,7 @@ subroutine load_grib2map(filename, msg, ierr)
      status = 0
      lastpos = 0
      idx = 1
-     do while (pos .gt. 0)
+     do while (pos .gt. 0) 
         pos = index(TblTail%ParmTail%WRFNameString(lastpos+1:maxLineSize), ",")
         if (pos .le. 0) then
            end = lastpos+maxLineSize
@@ -317,14 +317,14 @@ end subroutine load_grib2map
 
 !*****************************************************************************
 !
-! Routine to find and return the grib2 information associated with a WRF
+! Routine to find and return the grib2 information associated with a WRF 
 !    parameter.
 !
 !*****************************************************************************
 
 subroutine get_parminfo(parmname, center, subcenter, MasterTblV, &
      LocalTblV, Disc, Category, ParmNum, DecScl, BinScl, ierr)
-
+  
   USE grib2tbls_types
   Implicit None
 
@@ -355,13 +355,13 @@ subroutine get_parminfo(parmname, center, subcenter, MasterTblV, &
      !
      ParmPtr => TblPtr%ParmHead
 
-     PARAMETER : DO
+     PARAMETER : DO 
 
         if ( .not. associated(ParmPtr)) then
            exit PARAMETER
         endif
 
-        !
+        ! 
         ! Loop through WRF parameter names for the table parameter entry
         !
         WRFNAME : do idx = 1,ParmPtr%numWRFNames
@@ -422,7 +422,7 @@ subroutine free_grib2map()
      !
      ParmPtr => TblPtr%ParmHead
 
-     PARAMETER : DO
+     PARAMETER : DO 
 
         if ( .not. associated(ParmPtr)) then
            exit PARAMETER
@@ -434,7 +434,7 @@ subroutine free_grib2map()
 
      ENDDO PARAMETER
 
-
+     
      TblSave => TblPtr%next
      deallocate(TblPtr)
      TblPtr => TblSave

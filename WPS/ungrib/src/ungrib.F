@@ -57,8 +57,8 @@ program ungrib
   interface
    subroutine read_namelist(hstart, hend, delta_time, ntimes,&
     ordered_by_date, debug_level, out_format, prefix,    &
-    add_lvls, new_plvl, interp_type)
-
+    add_lvls, new_plvl, interp_type, ec_rec_len, pmin)
+  
     use misc_definitions_module
 
     character(len=19) :: hstart, hend
@@ -70,9 +70,10 @@ program ungrib
     character(len=MAX_FILENAME_LEN) :: prefix
     logical :: add_lvls
     real, dimension(:) :: new_plvl
-    integer :: interp_type
+    integer :: interp_type, ec_rec_len
+    real :: pmin
    end subroutine read_namelist
-  end interface
+  end interface 
 
   integer :: nunit1 = 12
   character(LEN=132) :: gribflnm = 'GRIBFILE.AAA        '    ! won't work with len=12
@@ -84,7 +85,8 @@ program ungrib
   real , dimension(maxlvl) :: plvl, new_plvl
   integer :: iplvl
   logical :: add_lvls
-  integer :: interp_type
+  integer :: interp_type, ec_rec_len
+  real :: pmin
 
   integer :: nlvl
 
@@ -116,7 +118,7 @@ program ungrib
 
   call read_namelist(hstart, hend, interval, ntimes, &
        ordered_by_date, debug_level, out_format, prefix, &
-       add_lvls, new_plvl, interp_type)
+       add_lvls, new_plvl, interp_type, ec_rec_len, pmin)
 
   call mprintf(.true.,INFORM,"Interval value: %i seconds or  %f hours", &
                i1=interval, f1=float(interval)/3600.)
@@ -127,10 +129,16 @@ program ungrib
 ! -----------------
 ! Determine GRIB Edition number
   grib_version=0
-  call edition_num(nunit1, gribflnm, grib_version, ierr)
-  call mprintf((ierr.eq.3),ERROR,"GRIB file problem")
+!   NCAR/RDA's EC 113 data are grib1 with a non-standard record length
+  if ( ec_rec_len .eq. 0 ) then
+    call edition_num(nunit1, gribflnm, grib_version, ierr)
+    call mprintf((ierr.eq.3),ERROR,"GRIB file problem")
+  else
+    grib_version=1
+    ierr=0
+  endif
   if (grib_version.eq.2) then
-     vtable_columns=12
+     vtable_columns=12 
 #if defined (USE_PNG) && (USE_JPEG2000)
      call mprintf(.true.,INFORM, &
         "Linked in png and jpeg libraries for Grib Edition 2")
@@ -146,12 +154,12 @@ program ungrib
      call mprintf(.true.,ERROR,"NEED_GRIB2_LIBS")
 #endif
   else
-     vtable_columns=7
+     vtable_columns=7 
   endif
   call mprintf(.true.,INFORM,"Reading Grib Edition %i", i1=grib_version)
 
 ! -----------------
-! Read the "Vtable" file, and put the information contained therein into
+! Read the "Vtable" file, and put the information contained therein into 
 ! the module "table".
 
   call parse_table(debug_level,vtable_columns)
@@ -160,7 +168,7 @@ program ungrib
 
 ! -----------------
 ! Initialize the input filename to GRIBFILE.AA{character just before A}
-! That way, when we update the filename below for the first time, it will
+! That way, when we update the filename below for the first time, it will 
 ! have the correct value of GRIBFILE.AAA.
 
   gribflnm(12:12)=char(ichar(gribflnm(12:12))-1)
@@ -184,14 +192,14 @@ program ungrib
         gribflnm(12:12) = char(ichar(gribflnm(12:12))+1)
      endif
 
-     ! Set READIT to .TRUE., meaning that we have not read any records yet
+     ! Set READIT to .TRUE., meaning that we have not read any records yet 
      ! from the file GRIBFLNM.
 
      call mprintf(.true.,DEBUG,"Reading from gribflnm %s ",s1=gribflnm)
 
      readit = .TRUE.  ! i.e., "Yes, we want to read a record."
 
-
+    
 ! LOOP1 reads through the file GRIBFLNM, exiting under two conditions:
 !        1) We have hit the end-of-file
 !        2) We have read past the ending date HEND.
@@ -205,13 +213,13 @@ program ungrib
         plvl = -999.
         call clear_storage
 
-! LOOP0 reads through the file GRIBFLNM, looking for data of the current
+! LOOP0 reads through the file GRIBFLNM, looking for data of the current 
 ! date.  It exits under the following conditions.
 !          1) We have hit the end-of-file
 !          2) The GRIBFLNM variable has been updated to a nonexistent file.
-!          3) We start reading a new date and the data are assumed to be
+!          3) We start reading a new date and the data are assumed to be 
 !             ordered by date.
-!          4) We have a valid record and the data are not assumed to be
+!          4) We have a valid record and the data are not assumed to be 
 !             ordered by date.
 
         LOOP0 : DO
@@ -219,27 +227,27 @@ program ungrib
            ! If we need to read a new grib record, then read one.
            if (READIT) then
 
-              if (grib_version.ne.2) then
+              if (grib_version.ne.2) then 
                 call mprintf(.true.,DEBUG, &
 		     "Calling rd_grib1 with iunit %i", i1=nunit1)
                 call mprintf(.true.,DEBUG, &
 		     "flnm = %s",s1=gribflnm)
-                 ! Read one record at a time from GRIB1 (and older Editions)
+                 ! Read one record at a time from GRIB1 (and older Editions) 
                  call rd_grib1(nunit1, gribflnm, level, field, &
-                      hdate, ierr, iuarr, debug_level)
-              else
+                      hdate, ierr, iuarr, debug_level, ec_rec_len, pmin)
+              else 
 
                  ! Read one file of records from GRIB2.
                  call mprintf(.true.,DEBUG,"Calling rd_grib2")
                  call rd_grib2(nunit1, gribflnm, hdate, &
-                      grib_version, ierr, debug_level)
+                      grib_version, ierr, debug_level, pmin)
                  FIELD='NULL'
 
               endif
 
 	      call mprintf(.true.,DEBUG,"ierr = %i ",i1=ierr)
-              if (ierr.eq.1) then
-                 ! We have hit the end of a file.  Exit LOOP0 so we can
+              if (ierr.eq.1) then 
+                 ! We have hit the end of a file.  Exit LOOP0 so we can 
                  ! write output for date HDATE, and then exit LOOP1
                  ! to update the GRIBFLNM
                  hsave = hdate
@@ -276,7 +284,7 @@ program ungrib
 
            if (ordered_by_date .and. (hdate > hsave)) then
 
-              ! Exit LOOP0, because we started to read data from another
+              ! Exit LOOP0, because we started to read data from another 
               ! date.
 
 	      call mprintf(.true.,DEBUG, &
@@ -293,8 +301,8 @@ program ungrib
 
            endif
 
-! When we have reached this point, we have a data array ARRAY which has
-! some data we want to save, with field name FIELD at pressure level
+! When we have reached this point, we have a data array ARRAY which has 
+! some data we want to save, with field name FIELD at pressure level 
 ! LEVEL (Pa).  Dimensions of this data are map%nx and map%ny.  Put
 ! this data into storage.
 
@@ -321,7 +329,7 @@ program ungrib
 
         enddo LOOP0
 
-! When we have reached this point, we have either hit the end of file, or
+! When we have reached this point, we have either hit the end of file, or 
 ! hit the end of the current date.  Either way, we want to output
 ! the data found for this date.  This current date is in HSAVE.
 ! However, if (HSAVE == 0000-00-00_00:00:00), no output is necessary,
@@ -349,15 +357,15 @@ program ungrib
 
      enddo LOOP1
 
-! When we have reached this point, we read all the data we want to from
-! file GRIBFLNM (either because we reached the end-of-file, or we
-! read past the date HEND).  So we close the file and cycle LOOP2 to read
+! When we have reached this point, we read all the data we want to from 
+! file GRIBFLNM (either because we reached the end-of-file, or we 
+! read past the date HEND).  So we close the file and cycle LOOP2 to read 
 ! the next file.
 
      if (grib_version.ne.2) then
         call c_close(iuarr(nunit1), debug_level, ierr)
         iuarr(nunit1) = 0
-     endif
+     endif 
      hsave = '0000-00-00_00:00:00'
 
   enddo LOOP2

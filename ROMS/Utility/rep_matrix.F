@@ -2,9 +2,9 @@
 #if defined WEAK_CONSTRAINT && defined OBS_IMPACT
       SUBROUTINE rep_matrix (ng, model, outLoop, NinnLoop)
 !
-!svn $Id: rep_matrix.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: rep_matrix.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

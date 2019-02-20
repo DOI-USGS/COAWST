@@ -46,11 +46,11 @@
 
     ! rce - 06-aug-2007 - changed specmw for almost everything to match mozart
 #if ( defined MODAL_AERO_7MODE )
-#ifndef WRF_PORT
+#ifndef WRF_PORT  
     real(r8), parameter :: specmw_amode(ntot_aspectype)   = (/  96.0,  18.0,  62.0,   12.0,   12.0,   12.0,  58.5, 135.0 /)
 #else
     real(r8) :: specmw_amode(ntot_aspectype)   = (/  96.0,  18.0,  62.0,   12.0,   12.0,   12.0,  58.5, 135.0 /)
-#endif
+#endif    
 #elif ( defined MODAL_AERO_3MODE )
 #ifndef WRF_PORT
     real(r8), parameter :: specmw_amode(ntot_aspectype)   = (/ 115.0, 115.0,  62.0,   12.0,   12.0,   12.0,  58.5, 135.0 /)
@@ -225,36 +225,36 @@
 
 !   threshold for reporting negatives from subr qneg3
 #ifndef WRF_PORT
-      real(r8) :: qneg3_worst_thresh_amode(pcnst)
+      real(r8) :: qneg3_worst_thresh_amode(pcnst)   
 #else
       real(r8), allocatable :: qneg3_worst_thresh_amode(:)
 #endif
 
 #ifdef WRF_PORT
       !Following variables are defined to assist CAMMGMP decoupled from
-      !CAM MAM package.
+      !CAM MAM package. 
       character(len=16), allocatable :: cnst_name_cw_mp(:)
 
       integer  :: msectional_mp = -1
-      integer  :: modeptr_accum_mp
-      integer  :: modeptr_coarse_mp
+      integer  :: modeptr_accum_mp    
+      integer  :: modeptr_coarse_mp   
       integer  :: modeptr_coardust_mp !BSINGH - declared for MAM7 complaince
-      integer  :: modeptr_aitken_mp
+      integer  :: modeptr_aitken_mp   
       integer  :: ntot_amode_mp = ntot_amode
 
-      integer  :: numptrcw_amode_mp(ntot_amode)
+      integer  :: numptrcw_amode_mp(ntot_amode) 
       integer  :: lptr_dust_a_amode_mp(ntot_amode)
       integer  :: lptr_nacl_a_amode_mp(ntot_amode)
-      integer  :: numptr_amode_mp(ntot_amode)
+      integer  :: numptr_amode_mp(ntot_amode) 	 
 #if ( defined MODAL_AERO_7MODE )
       integer  :: nspec_amode_mp(ntot_amode)  = (/ 6, 4, 2, 3, 3, 3, 3 /)  ! SS
 #elif ( defined MODAL_AERO_3MODE )
       integer  :: nspec_amode_mp(ntot_amode)  = (/ 6, 3, 3 /)
-#endif
-      integer  :: lmassptr_amode_mp(maxd_aspectype, ntot_amode)
-      integer  :: lspectype_amode_mp(maxd_aspectype, ntot_amode)
+#endif    
+      integer  :: lmassptr_amode_mp(maxd_aspectype, ntot_amode) 
+      integer  :: lspectype_amode_mp(maxd_aspectype, ntot_amode)       
       integer  :: lmassptrcw_amode_mp(maxd_aspectype, ntot_amode)
-
+      
       real(r8) :: voltonumb_amode_mp( ntot_amode )
       real(r8) :: alnsg_amode_mp( ntot_amode )
       real(r8) :: voltonumbhi_amode_mp(ntot_amode)
@@ -262,9 +262,9 @@
       real(r8) :: sigmag_amode_mp(ntot_amode)  = sigmag_amode(1:ntot_amode)
       real(r8) :: dgnum_amode_mp(ntot_amode)   = dgnum_amode(1:ntot_amode)
       real(r8) :: dgnumlo_amode_mp(ntot_amode) = dgnumlo_amode(1:ntot_amode)
-      real(r8) :: dgnumhi_amode_mp(ntot_amode) = dgnumhi_amode(ntot_amode)
+      real(r8) :: dgnumhi_amode_mp(ntot_amode) = dgnumhi_amode(ntot_amode) 
       real(r8) :: specdens_amode_mp( maxd_aspectype )
-      real(r8) :: specmw_amode_mp(ntot_aspectype)
+      real(r8) :: specmw_amode_mp(ntot_aspectype)  
       real(r8) :: spechygro_mp( maxd_aspectype )
 #endif
 

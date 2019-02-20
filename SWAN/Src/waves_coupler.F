@@ -135,7 +135,7 @@
 # ifdef MCT_INTERP_WV2AT
       TYPE T_AV2_A
         TYPE(AttrVect) :: wav2atm_AV2         ! AttrVect variables
-        TYPE(AttrVect) :: atm2wav_AV2
+        TYPE(AttrVect) :: atm2wav_AV2 
       END TYPE T_AV2_A
       TYPE (T_AV2_A), ALLOCATABLE :: AV2_A(:,:)
 
@@ -471,6 +471,16 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
+      to_add=':DIREP'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+
+      to_add=':DIRNP'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
       to_add=':WLEN'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
@@ -502,7 +512,7 @@
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-#endif
+#endif  
 !
 !  Finalize and remove trailing spaces from the wostring
 !  for the rlist.
@@ -684,7 +694,8 @@
 !                                                                      !
 !  Fields exported to the OCEAN model:                                 !
 !                                                                      !
-!     * Wave direction (degrees)                                       !
+!     * Wave direction mean (degrees)                                  !
+!     * Wave direction peak (degrees)                                  !
 !     * Significant wave height (m)                                    !
 !     * Average wave length (m)                                        !
 !     * Surface wave relative peak period (s)                          !
@@ -736,6 +747,8 @@
       real(m8), pointer :: avdata(:)
       real(m8), pointer :: DIRE(:)
       real(m8), pointer :: DIRN(:)
+      real(m8), pointer :: DIREP(:)
+      real(m8), pointer :: DIRNP(:)
       character (len=40) :: code
 !
 !-----------------------------------------------------------------------
@@ -755,9 +768,13 @@
       allocate ( avdata(gsmsize),stat=ierr )
       allocate ( DIRE(gsmsize),stat=ierr )
       allocate ( DIRN(gsmsize),stat=ierr )
+      allocate ( DIREP(gsmsize),stat=ierr )
+      allocate ( DIRNP(gsmsize),stat=ierr )
       avdata=0.0_m8
       DIRE=0.0_m8
       DIRN=0.0_m8
+      DIREP=0.0_m8
+      DIRNP=0.0_m8
 !
 !  Ask for points in this tile.
 !
@@ -803,6 +820,15 @@
      &                             "DIRE",DIRE)
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "DIRN",DIRN)
+      ELSE IF (IVTYPE.eq.14) THEN
+        DO IP=1,gsmsize
+          DIREP(IP)=1.0*SIN(avdata(IP)*PI/180.0)
+          DIRNP(IP)=1.0*COS(avdata(IP)*PI/180.0)
+        END DO
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "DIREP",DIREP)
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "DIRNP",DIRNP)
       ELSE IF (IVTYPE.eq.17) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "WLEN",avdata)
@@ -820,11 +846,11 @@
      &                             "WQP",avdata)
 !
 #if defined VEGETATION && defined VEG_SWAN_COUPLING \
-      && defined VEG_STREAMING
+      && defined VEG_STREAMING      
       ELSE IF (IVTYPE.eq.57) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "DISVEG",avdata)
-#endif
+#endif   
       END IF
 !
       IF (IRQ.eq.Numcouple) THEN
@@ -855,7 +881,7 @@
           END IF
 # endif
       END IF
-      deallocate (avdata, points, DIRE, DIRN)
+      deallocate (avdata, points, DIRE, DIRN, DIREP, DIRNP)
 !
       RETURN
       END SUBROUTINE WAV2OCN_COUPLING
@@ -1044,7 +1070,8 @@
 !                                                                      !
 !  Fields exported to the OCEAN model:                                 !
 !                                                                      !
-!     * Wave direction (degrees)                                       !
+!     * Mean wave direction (degrees)                                  !
+!     * Peak wave direction (degrees)                                  !
 !     * Significant wave height (m)                                    !
 !     * Average wave length (m)                                        !
 !     * Surface wave relative peak period (s)                          !
@@ -1350,7 +1377,7 @@
           DO IX=Istr,Iend
             IP=IP+1
             INDXG=(IY-1)*MXC+IX
-            TEMPMCT(INDXG,idveg)=avdata(IP)
+            TEMPMCT(INDXG,idveg)=avdata(IP)                     
             range(1)=MIN(range(1),REAL(avdata(IP)))
             range(2)=MAX(range(2),REAL(avdata(IP)))
           END DO
@@ -1576,7 +1603,7 @@
 !
 # if defined WAVES_OCEAN && defined SED_MORPH
 ! Insert depth into SWAN array.
-! Here the depth is really the bottom level.
+! Here the depth is really the bottom level. 
 ! When the user requests depth for output, that value is written
 ! as COMPDA(INDX,JWLV2) which is DEPTH (really botlev) + watlev.
 !
@@ -1617,10 +1644,10 @@
         END IF
 # endif
 !
-! Insert bot level, water level, velx, vely, fric, and winds
+! Insert bot level, water level, velx, vely, fric, and winds 
 ! into SWAN arrays.
 !
-! If not using a BBL model, then determine the non-spatially
+! If not using a BBL model, then determine the non-spatially 
 ! varying friction coeff to enter into the JFRC2 array.
 !
 # if defined WAVES_OCEAN && !defined BBL_MODEL
@@ -1659,7 +1686,7 @@
                   COMPDA(INDX,JWLV2)=TEMPMCT(IP,idwlv)
                   COMPDA(INDX,JVX2)=TEMPMCT(IP,idvlx)
                   COMPDA(INDX,JVY2)=TEMPMCT(IP,idvly)
-#  if defined VEGETATION && defined VEG_SWAN_COUPLING
+#  if defined VEGETATION && defined VEG_SWAN_COUPLING 
                   COMPDA(INDX,JNPLA2)=TEMPMCT(IP,idveg)
 #  endif
                 ELSE
@@ -2105,10 +2132,10 @@
         END IF
 # endif
 !
-! Insert bot level, water level, velx, vely, fric, and winds
+! Insert bot level, water level, velx, vely, fric, and winds 
 ! into SWAN arrays.
 !
-! If not using a BBL model, then determine the non-spatially
+! If not using a BBL model, then determine the non-spatially 
 ! varying friction coeff to enter into the JFRC2 array.
 !
         IP=0

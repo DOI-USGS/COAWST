@@ -33,7 +33,7 @@ PROGRAM real_data
    INTEGER                :: number_at_same_level
 
    INTEGER :: max_dom, domain_id
-   INTEGER :: idum1, idum2
+   INTEGER :: idum1, idum2 
 #ifdef DM_PARALLEL
    INTEGER                 :: nbytes
 !   INTEGER, PARAMETER      :: configbuflen = 2*1024
@@ -58,7 +58,7 @@ PROGRAM real_data
    CHARACTER (LEN=80)     :: message
    CHARACTER*255 :: mess
 
-   INTEGER :: start_year , start_month , start_day
+   INTEGER :: start_year , start_month , start_day 
    INTEGER :: start_hour , start_minute , start_second
    INTEGER :: end_year ,   end_month ,   end_day ,   &
               end_hour ,   end_minute ,   end_second
@@ -85,9 +85,9 @@ PROGRAM real_data
 
 !       CALL start()
 
-   !  Initialize the modules used by the WRF system.
+   !  Initialize the modules used by the WRF system.  
    !  Many of the CALLs made from the
-   !  init_modules routine are NO-OPs.  Typical initializations
+   !  init_modules routine are NO-OPs.  Typical initializations 
    !  are: the size of a
    !  REAL, setting the file handles to a pre-use value, defining moisture and
    !  chemistry indices, etc.
@@ -114,7 +114,7 @@ PROGRAM real_data
 #else
    CALL initial_config
 #endif
-
+   
    CALL nl_set_use_wps_input ( 1,1 )
 
    CALL check_nml_consistency
@@ -166,7 +166,7 @@ PROGRAM real_data
    CALL set_config_as_buffer( configbuf, configbuflen )
 #endif
 
-   !   No looping in this layer.
+   !   No looping in this layer.  
 
    CALL med_sidata_input ( grid , config_flags )
 
@@ -203,7 +203,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    IMPLICIT NONE
 
 
-  ! Interface
+  ! Interface 
    INTERFACE
      SUBROUTINE start_domain ( grid , allowed_to_read )
        USE module_domain
@@ -280,7 +280,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
                                    model_config_rec%start_hour  (grid%id) , &
                                    model_config_rec%start_minute(grid%id) , &
                                    model_config_rec%start_second(grid%id) , &
-                                   model_config_rec%  end_year  (grid%id) , &
+                                   model_config_rec%  end_year  (grid%id) , & 
                                    model_config_rec%  end_month (grid%id) , &
                                    model_config_rec%  end_day   (grid%id) , &
                                    model_config_rec%  end_hour  (grid%id) , &
@@ -294,7 +294,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
    current_date_char = start_date_char
 !   start_date = start_date_char // '.0000'
-   start_date = start_date_char
+   start_date = start_date_char 
    current_date = start_date
 
    CALL nl_set_bdyfrq ( grid%id , REAL(model_config_rec%interval_seconds) )
@@ -306,13 +306,13 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
    DO loop = 1 , time_loop_max
 
      internal_time_loop=loop
-
+                                                                                                                                              
       write(message,*) 'loop=', loop
       CALL wrf_message(message)
-
+                                                                                                                                              
       write(message,*) '-----------------------------------------------------------'
       CALL wrf_message(message)
-
+                      
       write(message,*) ' '
       CALL wrf_message(message)
       write(message,'(A,A,A,I2,A,I2)') ' Current date being processed: ', &
@@ -324,7 +324,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       CALL geth_julgmt ( config_flags%julyr , config_flags%julday , &
                                               config_flags%gmt )
 
-      !  Now that the specific Julian info is available,
+      !  Now that the specific Julian info is available, 
       !  save these in the model config record.
 
       CALL nl_set_gmt (grid%id, config_flags%gmt)
@@ -333,11 +333,11 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
 
       CALL nl_get_io_form_auxinput1( 1, io_form_auxinput1 )
       using_binary_wrfsi=.false.
-
-
+       
+       
       write(message,*) 'TRIM(config_flags%auxinput1_inname): ', TRIM(config_flags%auxinput1_inname)
       CALL wrf_message(message)
-
+       
 #if ( HWRF == 1 )
      ifph_onlyfirst: if(.not.grid%use_prep_hybrid .or. loop==1) then
 #endif
@@ -352,7 +352,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
       !  Open the wrfinput file.
 
         current_date_char(11:11)='_'
-
+ 
        WRITE ( wrf_err_message , FMT='(A,A)' )'med_sidata_input: calling open_r_dataset for ',TRIM(config_flags%auxinput1_inname)
        CALL wrf_debug ( 100 , wrf_err_message )
        IF ( config_flags%auxinput1_inname(1:8) .NE. 'wrf_real' ) THEN
@@ -362,7 +362,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
           CALL construct_filename2a( si_inpname , config_flags%auxinput1_inname , grid%id , 2 , current_date_char )
        END IF
        CALL open_r_dataset ( idsi, TRIM(si_inpname) , grid , config_flags , "DATASET=AUXINPUT1", ierr )
-
+ 
        IF ( ierr .NE. 0 ) THEN
           CALL wrf_error_fatal( 'error opening ' // TRIM(si_inpname) // ' for input; bad date in namelist or file not in directory' )
        ENDIF
@@ -403,7 +403,7 @@ SUBROUTINE med_sidata_input ( grid , config_flags )
         current_date_char(11:11)='T'
 
       ELSE
-
+                                                                                                                                              
         write(message,*) 'binary WPS branch'
         CALL wrf_message(message)
         current_date_char(11:11)='_'
@@ -727,7 +727,7 @@ character *24 :: temp24 , temp24b
 				                cwmbdy3dtemp1 , qbdy3dtemp1,&
                                                 q2bdy3dtemp1 , pdbdy2dtemp1
    REAL, DIMENSION(:,:,:), ALLOCATABLE, SAVE :: ubdy3dtemp2 , vbdy3dtemp2 , &
-                                                tbdy3dtemp2 , &
+                                                tbdy3dtemp2 , & 
                                                 cwmbdy3dtemp2 , qbdy3dtemp2, &
                                                 q2bdy3dtemp2, pdbdy2dtemp2
    REAL :: t1,t2
@@ -797,14 +797,14 @@ character *24 :: temp24 , temp24b
         CALL wrf_message(message)
         write(message,*) 'assemble output (ips,ipe): ', ips,ipe
         CALL wrf_message(message)
-
+ 
         write(message,*) 'assemble output (jds,jde): ', jds,jde
         CALL wrf_message(message)
         write(message,*) 'assemble output (jms,jme): ', jms,jme
         CALL wrf_message(message)
         write(message,*) 'assemble output (jps,jpe): ', jps,jpe
         CALL wrf_message(message)
-
+ 
         write(message,*) 'assemble output (kds,kde): ', kds,kde
         CALL wrf_message(message)
         write(message,*) 'assemble output (kms,kme): ', kms,kme
@@ -899,8 +899,8 @@ character *24 :: temp24 , temp24b
 !***
       CALL close_dataset ( id1 , config_flags , "DATASET=INPUT" )
 
-      !  We need to save the 3d data to compute a
-      !  difference during the next loop.
+      !  We need to save the 3d data to compute a 
+      !  difference during the next loop. 
 
 !
 !-----------------------------------------------------------------------
@@ -1037,7 +1037,7 @@ character *24 :: temp24 , temp24b
         ENDIF
 
 
-      !  There are 2 components to the lateral boundaries.
+      !  There are 2 components to the lateral boundaries.  
       !  First, there is the starting
       !  point of this time period - just the outer few rows and columns.
 
@@ -1470,10 +1470,10 @@ character *24 :: temp24 , temp24b
      endif bdytmp_notph
 #endif
 !-----------------------------------------------------------------------
-      !  During all of the loops after the first loop,
+      !  During all of the loops after the first loop, 
       !  we first compute the boundary
-      !  tendencies with the current data values
-      !  (*bdy3dtemp2 arrays) and the previously
+      !  tendencies with the current data values 
+      !  (*bdy3dtemp2 arrays) and the previously 
       !  saved information stored in the *bdy3dtemp1 arrays.
 
 
@@ -1535,15 +1535,15 @@ character *24 :: temp24 , temp24b
 
 
 
-      !  Both pieces of the boundary data are now
+      !  Both pieces of the boundary data are now 
       !  available to be written (initial time and tendency).
-      !  This looks ugly, these date shifting things.
+      !  This looks ugly, these date shifting things.  
       !  What's it for?  We want the "Times" variable
-      !  in the lateral BDY file to have the valid times
+      !  in the lateral BDY file to have the valid times 
       !  of when the initial fields are written.
-      !  That's what the loop-2 thingy is for with the start date.
+      !  That's what the loop-2 thingy is for with the start date.  
       !  We increment the start_date so
-      !  that the starting time in the attributes is the
+      !  that the starting time in the attributes is the 
       !  second time period.  Why you may ask.  I
       !  agree, why indeed.
 
@@ -1561,7 +1561,7 @@ character *24 :: temp24 , temp24b
       current_date = temp24
       start_date = temp24b
 
-      !  OK, for all of the loops, we output the initialzation
+      !  OK, for all of the loops, we output the initialzation 
       !  data, which would allow us to
       !  start the model at any of the available analysis time periods.
 
@@ -1581,9 +1581,9 @@ character *24 :: temp24 , temp24b
 
       IF     ( loop .LT. time_loop_max ) THEN
 
-         !  We need to save the 3d data to compute a
+         !  We need to save the 3d data to compute a 
          !  difference during the next loop.  Couple the
-         !  3d fields with total mu (mub + mu_2) and the
+         !  3d fields with total mu (mub + mu_2) and the 
          !  stagger-specific map scale factor.
          !  We load up the boundary data again for use in the next loop.
 
@@ -1611,7 +1611,7 @@ character *24 :: temp24 , temp24b
             END DO
          END DO
 
-  !  There are 2 components to the lateral boundaries.
+  !  There are 2 components to the lateral boundaries.  
   !   First, there is the starting
   !  point of this time period - just the outer few rows and columns.
 

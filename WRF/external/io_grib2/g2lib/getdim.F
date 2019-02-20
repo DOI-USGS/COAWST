@@ -1,10 +1,10 @@
       subroutine getdim(csec3,lcsec3,width,height,iscan)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    getdim
+! SUBPROGRAM:    getdim 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2002-12-11
 !
-! ABSTRACT: This subroutine returns the dimensions and scanning mode of
+! ABSTRACT: This subroutine returns the dimensions and scanning mode of 
 !   a grid definition packed in GRIB2 Grid Definition Section 3 format.
 !
 ! PROGRAM HISTORY LOG:
@@ -15,7 +15,7 @@
 !     csec3    - Character array that contains the packed GRIB2 GDS
 !    lcsec3    - Length (in octets) of section 3
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     width    - x (or i) dimension of the grid.
 !     height   - y (or j) dimension of the grid.
 !     iscan    - Scanning mode ( see Code Table 3.4 )
@@ -29,11 +29,11 @@
 !
 !$$$
 !      use grib_mod
-
+    
       character(len=1),intent(in) :: csec3(*)
       integer,intent(in) :: lcsec3
       integer,intent(out) :: width,height,iscan
-
+      
       integer,pointer,dimension(:) :: igdstmpl,list_opt
       integer :: igds(5)
       integer iofst,igdtlen,num_opt,jerr

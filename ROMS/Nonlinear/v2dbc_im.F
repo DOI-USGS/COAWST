@@ -2,9 +2,9 @@
 
       MODULE v2dbc_mod
 !
-!svn $Id: v2dbc_im.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: v2dbc_im.F 925 2018-10-09 17:08:26Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -484,12 +484,14 @@
                 cff1=GRID(ng)%om_v(i,Jstr)/REFINED(cr)%om_v(m)
                 bry_val=cff1*REFINED(cr)%DV_avg2(1,m,tnew)/cff
 # ifdef WEC
-                bry_val=bry_val-OCEAN(ng)%vbar_stokes(i,Jstr)
-# endif
+                bry_val=bry_val-OCEAN(ng)%vbar_stokes(i,Jstr) 
+# endif 
 # ifdef MASKING
                 bry_val=bry_val*GRID(ng)%vmask(i,Jstr)
 # endif
+# ifdef NESTING_DEBUG
                 BRY_CONTACT(isouth,cr)%Mflux(i)=cff*bry_val
+# endif
                 vbar(i,Jstr,kout)=bry_val
               END DO
             END IF
@@ -533,7 +535,11 @@
                 ELSE
                   tau=obc_out
                 END IF
+#ifdef IMPLICIT_NUDGING
+                IF (tau.gt.0.0_r8) tau=1.0_r8/tau
+#else
                 tau=tau*dt2d
+#endif
               END IF
 
               IF ((dVdt*dVde).lt.0.0_r8) dVdt=0.0_r8
@@ -562,9 +568,16 @@
      &                            (cff+Ce)
 
               IF (LBC(inorth,isVbar,ng)%nudging) THEN
+#ifdef IMPLICIT_NUDGING
+                phi=dt(ng)/(tau+dt(ng))
+                vbar(i,Jend+1,kout)=(1.0_r8-phi)*vbar(i,Jend+1,kout)+   &
+     &                              phi*BOUNDARY(ng)%vbar_north(i)
+
+#else
                 vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)+                &
      &                              tau*(BOUNDARY(ng)%vbar_north(i)-    &
      &                                   vbar(i,Jend+1,know))
+#endif
               END IF
 #ifdef MASKING
               vbar(i,Jend+1,kout)=vbar(i,Jend+1,kout)*                  &
@@ -848,12 +861,14 @@
                 cff1=GRID(ng)%om_v(i,Jend+1)/REFINED(cr)%om_v(m)
                 bry_val=cff1*REFINED(cr)%DV_avg2(1,m,tnew)/cff
 # ifdef WEC
-                bry_val=bry_val-OCEAN(ng)%vbar_stokes(i,Jend+1)
-# endif
+                bry_val=bry_val-OCEAN(ng)%vbar_stokes(i,Jend+1) 
+# endif 
 # ifdef MASKING
                 bry_val=bry_val*GRID(ng)%vmask(i,Jend+1)
 # endif
+# ifdef NESTING_DEBUG
                 BRY_CONTACT(inorth,cr)%Mflux(i)=cff*bry_val
+# endif
                 vbar(i,Jend+1,kout)=bry_val
               END DO
             END IF

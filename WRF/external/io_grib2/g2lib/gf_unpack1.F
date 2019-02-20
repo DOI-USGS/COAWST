@@ -1,11 +1,11 @@
       subroutine gf_unpack1(cgrib,lcgrib,iofst,ids,idslen,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    gf_unpack1
+! SUBPROGRAM:    gf_unpack1 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-26
 !
 ! ABSTRACT: This subroutine unpacks Section 1 (Identification Section)
-!   starting at octet 6 of that Section.
+!   starting at octet 6 of that Section.  
 !
 ! PROGRAM HISTORY LOG:
 ! 2000-05-26  Gilbert
@@ -19,9 +19,9 @@
 !     lcgrib   - Length (in bytes) of GRIB message array cgrib.
 !     iofst    - Bit offset of the beginning of Section 1.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     iofst    - Bit offset at the end of Section 1, returned.
-!     ids      - Pointer to integer array containing information read from
+!     ids      - Pointer to integer array containing information read from 
 !                Section 1, the Identification section.
 !            ids(1)  = Identification of originating Centre
 !                                 ( see Common Code Table C-1 )
@@ -45,7 +45,7 @@
 !                0 = no error
 !                6 = memory allocation error
 !
-! REMARKS:
+! REMARKS: 
 !
 ! ATTRIBUTES:
 !   LANGUAGE: Fortran 90
@@ -82,12 +82,12 @@
          nullify(ids)
          return
       endif
-
+      
       do i=1,idslen
         nbits=mapid(i)*8
         call g2lib_gbyte(cgrib,ids(i),iofst,nbits)
         iofst=iofst+nbits
       enddo
-
+      
       return    ! End of Section 1 processing
       end

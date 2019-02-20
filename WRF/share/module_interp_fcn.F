@@ -29,7 +29,7 @@
      INTEGER ci, cj, ck, ni, nj, nk, ip, jp
 
      ! Iterate over the ND tile and comtute the values
-     ! from the CD tile.
+     ! from the CD tile. 
 
      DO nj = njts, njte
         cj = cjts + nj / nrj          ! coord of CD point

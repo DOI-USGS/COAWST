@@ -9,7 +9,7 @@
 typedef struct {
   float central_lat;
   float central_lon;
-  int map_proj;
+  int map_proj; 
   float truelat1;
   float truelat2;
 } Projection;
@@ -44,18 +44,18 @@ typedef struct {
 
 /* Public Interface */
 
-int GRID_init(float center_lat, float center_lon, int projection,
-	      float truelat1, float truelat2, int num_columns,
-	      int num_rows, float dx, float dy, float lat_origin,
-	      float lon_origin, float origin_column, float origin_row,
+int GRID_init(float center_lat, float center_lon, int projection, 
+	      float truelat1, float truelat2, int num_columns, 
+	      int num_rows, float dx, float dy, float lat_origin, 
+	      float lon_origin, float origin_column, float origin_row, 
 	      GridNav *gridnav);
-int GRID_to_latlon(GridNav *gridnav, float column, float row, float *lat,
+int GRID_to_latlon(GridNav *gridnav, float column, float row, float *lat, 
 		   float *lon);
-int GRID_from_latlon(GridNav *gridnav, float lat, float lon, float *column,
+int GRID_from_latlon(GridNav *gridnav, float lat, float lon, float *column, 
 		     float *row);
-int GRID_rotate_from_earth_coords(GridNav *gridnav, float lon, float u_earth,
+int GRID_rotate_from_earth_coords(GridNav *gridnav, float lon, float u_earth, 
 				  float v_earth, float *u_grid, float *v_grid);
-int GRID_rotate_to_earth_coords(GridNav *gridnav, float lon, float u_grid,
+int GRID_rotate_to_earth_coords(GridNav *gridnav, float lon, float u_grid, 
 				float v_grid, float *u_earth, float *v_earth);
 
 #define GRID_LATLON   0

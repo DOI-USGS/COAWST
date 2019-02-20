@@ -949,7 +949,7 @@ module remapper
         real :: wach_total                       ! The wachpress total weight
         integer :: i, j                                       ! Loop indices
         integer :: im1, i0, ip1                               ! im1 = (i-1), i0 = i, ip1 = (i+1)
-
+  
         ! triangle areas to compute wachspress coordinate
         real, dimension(nVertices) :: areaA
         real, dimension(nVertices) :: areaB
@@ -966,7 +966,7 @@ module remapper
                 im1 = mod(nVertices + i - 2, nVertices) + 1
                 i0  = mod(nVertices + i - 1, nVertices) + 1
                 ip1 = mod(nVertices + i    , nVertices) + 1
-
+   
                 ! precompute B_i areas
                 ! always the same because B_i independent of xp,yp,zp
                 ! (COULD CACHE AND USE RESULT FROM ARRAY FOR FURTHER OPTIMIZATION)
@@ -986,11 +986,11 @@ module remapper
             im1 = mod(nVertices + i - 2, nVertices) + 1
             i0  = mod(nVertices + i - 1, nVertices) + 1
             ip1 = mod(nVertices + i    , nVertices) + 1
-
+   
             ! compute A_ij areas
             ! must be computed each time
             areaA(i0) = mpas_triangle_signed_area_sphere(pointInterp, vertCoords(:, i0), vertCoords(:, ip1), radiusLocal)
-
+   
             ! precomputed B_i areas, cached
         end do
 
@@ -1041,40 +1041,40 @@ module remapper
         !-----------------------------------------------------------------
         real, dimension(3), intent(in) :: a, b, c  !< Input: 3d (x,y,z) points forming the triangle in which to calculate the bary weights
         real, intent(in) :: radius  !< sphere radius
-
+ 
         !-----------------------------------------------------------------
         ! local variables
         !-----------------------------------------------------------------
         real :: ab, bc, ca, semiperim, tanqe
         real, dimension(3) :: ablen, aclen, Dlen
-
+ 
         ab = mpas_arc_length(a(1), a(2), a(3), b(1), b(2), b(3))/radius
         bc = mpas_arc_length(b(1), b(2), b(3), c(1), c(2), c(3))/radius
         ca = mpas_arc_length(c(1), c(2), c(3), a(1), a(2), a(3))/radius
         semiperim = 0.5 * (ab + bc + ca)
-
+ 
         tanqe = sqrt(max(0.0,tan(0.5 * semiperim) * tan(0.5 * (semiperim - ab)) &
                      * tan(0.5 * (semiperim - bc)) * tan(0.5 * (semiperim - ca))))
-
+ 
         mpas_triangle_signed_area_sphere = 4.0 * radius * radius * atan(tanqe)
-
+ 
         ! computing correct signs (in similar fashion to mpas_sphere_angle)
         ablen(1) = b(1) - a(1)
         ablen(2) = b(2) - a(2)
         ablen(3) = b(3) - a(3)
-
+ 
         aclen(1) = c(1) - a(1)
         aclen(2) = c(2) - a(2)
         aclen(3) = c(3) - a(3)
-
+ 
         dlen(1) =   (ablen(2) * aclen(3)) - (ablen(3) * aclen(2))
         dlen(2) = -((ablen(1) * aclen(3)) - (ablen(3) * aclen(1)))
         dlen(3) =   (ablen(1) * aclen(2)) - (ablen(2) * aclen(1))
-
+ 
         if ((Dlen(1)*a(1) + Dlen(2)*a(2) + Dlen(3)*a(3)) < 0.0) then
             mpas_triangle_signed_area_sphere = -mpas_triangle_signed_area_sphere
         end if
-
+ 
     end function mpas_triangle_signed_area_sphere
 
 
@@ -1086,23 +1086,23 @@ module remapper
     !    same sphere centered at the origin.
     !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     real function mpas_arc_length(ax, ay, az, bx, by, bz)
-
+ 
         implicit none
-
+ 
         real, intent(in) :: ax, ay, az, bx, by, bz
-
+ 
         real :: r, c
         real :: cx, cy, cz
-
+ 
         cx = bx - ax
         cy = by - ay
         cz = bz - az
-
+  
         r = sqrt(ax*ax + ay*ay + az*az)
         c = sqrt(cx*cx + cy*cy + cz*cz)
 
         mpas_arc_length = r * 2.0 * asin(c/(2.0*r))
-
+ 
     end function mpas_arc_length
 
 
@@ -1187,7 +1187,7 @@ module remapper
                    no_more_queueing = .true.
                end if
             end if
-
+            
             !
             ! Add any neighbors of scan_cell within specified radius to the queue for processing
             !
@@ -1204,7 +1204,7 @@ module remapper
             if (no_more_queueing) then
                unscanned = unscanned - 1
             end if
-
+           
         end do
 
     end subroutine search_for_cells
@@ -1224,7 +1224,7 @@ module remapper
             return
         end if
         queue_size = queue_size + 1
-        queue_array(queue_head) = i
+        queue_array(queue_head) = i 
         queue_head = mod(queue_head + 1, max_queue_length)
 
     end subroutine queue_insert
@@ -1282,7 +1282,7 @@ module remapper
             write(0,*) 'Error: dictionary insert out of bounds'
             return
         end if
-
+     
         dictionary_array(n_integer) = ibset(dictionary_array(n_integer), n_bit)
 
     end subroutine dictionary_insert
@@ -1308,9 +1308,9 @@ module remapper
             dictionary_search = .false.
             return
         end if
-
+     
         dictionary_search = btest(dictionary_array(n_integer), n_bit)
-
+     
     end function dictionary_search
 
 

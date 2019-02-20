@@ -10,7 +10,7 @@ contains
     ! Also supports serial setups.
     !
     ! Author: Sam Trahan, September 2011
-
+    
     ! This is a replacement for, and based on, SMDHLD, which can be
     ! found lower down in this module.  This smooths boundaries of the
     ! grid%HRES_AVC.
@@ -276,16 +276,16 @@ contains
           hbms(i,j)=s1(i,j)
        enddo
     enddo
-    !
+    !     
     jmelin=jm-lines+1
     ibas=lines/2
     m2l=mod(lines,2)
-    !
+    !     
     do j=lines,jmelin
        ihl=ibas+mod(j,2)+m2l*mod(j+1,2)
        ihh=im-ibas-m2l*mod(j+1,2)
 
-       !
+       !     
        do i=ihl,ihh
           hbms(i,j)=0.
        enddo
@@ -305,7 +305,7 @@ contains
              hse(i,j)=h(i+ihe(j),j-1)-h(i,j)
           enddo
        enddo
-       !
+       !     
        do j=2,jm-1
           do i=1+mod(j,2),im-1
              h(i,j)=(hne(i,j)-hne(i+ihw(j),j-1) &

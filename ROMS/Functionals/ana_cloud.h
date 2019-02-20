@@ -1,8 +1,8 @@
       SUBROUTINE ana_cloud (ng, tile, model)
 !
-!! svn $Id: ana_cloud.h 830 2017-01-24 21:21:11Z arango $
+!! svn $Id: ana_cloud.h 927 2018-10-16 03:51:56Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -71,19 +71,20 @@
 !
 !  Local variable declarations.
 !
-      integer :: iday, i, j, month, year
-      real(r8) :: Cval, hour, yday
+      integer  :: i, j
+      real(r8) :: Cval
+      real(dp) :: yday
 
 #ifdef PAPA_CLM
-      real(r8), dimension(14) :: Coktas =                               &
+      real(dp), dimension(14) :: Coktas =                               &
      &         (/ 6.29_r8, 6.26_r8, 6.31_r8, 6.31_r8, 6.32_r8,          &
      &            6.70_r8, 7.12_r8, 7.26_r8, 6.93_r8, 6.25_r8,          &
      &            6.19_r8, 6.23_r8, 6.31_r8, 6.29_r8          /)
 
-      real(r8), dimension(14) :: Cyday =                                &
-     &          (/  0.0_r8,  16.0_r8,  46.0_r8,  75.0_r8, 105.0_r8,     &
-     &            136.0_r8, 166.0_r8, 197.0_r8, 228.0_r8, 258.0_r8,     &
-     &            289.0_r8, 319.0_r8, 350.0_r8, 365.0_r8           /)
+      real(dp), dimension(14) :: Cyday =                                &
+     &          (/  0.0_dp,  16.0_dp,  46.0_dp,  75.0_dp, 105.0_dp,     &
+     &            136.0_dp, 166.0_dp, 197.0_dp, 228.0_dp, 258.0_dp,     &
+     &            289.0_dp, 319.0_dp, 350.0_dp, 365.0_dp           /)
 #endif
 
 #include "set_bounds.h"
@@ -96,7 +97,7 @@
 
 !  OWS Papa cloud climatology.
 !
-      CALL caldate (tdays(ng), yd_r8=yday)
+      CALL caldate (tdays(ng), yd_dp=yday)
       DO i=1,13
         IF ((yday.ge.Cyday(i)).and.(yday.le.Cyday(i+1))) THEN
           Cval=0.125_r8*(Coktas(i  )*(Cyday(i+1)-yday)+                 &

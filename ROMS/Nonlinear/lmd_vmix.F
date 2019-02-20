@@ -2,9 +2,9 @@
       MODULE lmd_vmix_mod
 #if defined NONLINEAR && defined LMD_MIXING && defined SOLVE3D
 !
-!svn $Id: lmd_vmix.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: lmd_vmix.F 889 2018-02-10 03:32:52Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -157,7 +157,7 @@
 
       real(r8), parameter :: eps = 1.0E-14_r8
 
-      real(r8) :: cff, lmd_iwm, lmd_iws, nu_sx, shear2
+      real(r8) :: cff, lmd_iwm, lmd_iws, nu_sx, nu_sxc, shear2
 # ifdef LMD_DDMIX
       real(r8) :: Rrho, ddDS, ddDT, nu_dds, nu_ddt
 # endif

@@ -1,4 +1,4 @@
-function ww3gb_2TPAR(modelgrid,yearww3,mmww3,ww3_area,ddww3,specres)
+function ww3gb_2TPAR(modelgrid,yearww3,mmww3,ww3_area,ddww3,specpts)
 
 %this assumes data is historical data and is already downloaded to working
 %directory
@@ -23,7 +23,6 @@ time=time(tstart:tend);
 
 %determine spec pts from grid
 % specpoints assumes a masking of 0 for land and NaN for water
-[specpts]=ww3_specpoints(modelgrid,specres);
 
 for i=1:length(specpts)
     gx=specpts(i,1);

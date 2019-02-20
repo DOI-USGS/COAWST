@@ -1,27 +1,27 @@
       module pdstemplates
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! MODULE:    pdstemplates
+! MODULE:    pdstemplates 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-11
 !
-! ABSTRACT: This Fortran Module contains info on all the available
+! ABSTRACT: This Fortran Module contains info on all the available 
 !   GRIB2 Product Definition Templates used in Section 4 (PDS).
 !   Each Template has three parts: The number of entries in the template
 !   (mapgridlen);  A map of the template (mapgrid), which contains the
 !   number of octets in which to pack each of the template values; and
-!   a logical value (needext) that indicates whether the Template needs
-!   to be extended.  In some cases the number of entries in a template
-!   can vary depending upon values specified in the "static" part of
+!   a logical value (needext) that indicates whether the Template needs 
+!   to be extended.  In some cases the number of entries in a template 
+!   can vary depending upon values specified in the "static" part of 
 !   the template.  ( See Template 4.3 as an example )
 !
 !   This module also contains two subroutines.  Subroutine getpdstemplate
 !   returns the octet map for a specified Template number, and
 !   subroutine extpdstemplate will calculate the extended octet map
-!   of an appropriate template given values for the "static" part of the
-!   template.  See docblocks below for the arguments and usage of these
+!   of an appropriate template given values for the "static" part of the 
+!   template.  See docblocks below for the arguments and usage of these 
 !   routines.
 !
-!   NOTE:  Array mapgrid contains the number of octets in which the
+!   NOTE:  Array mapgrid contains the number of octets in which the 
 !   corresponding template values will be stored.  A negative value in
 !   mapgrid is used to indicate that the corresponding template entry can
 !   contain negative values.  This information is used later when packing
@@ -29,9 +29,9 @@
 !   are stored with the left most bit set to one, and a negative number
 !   of octets value in mapgrid() indicates that this possibility should
 !   be considered.  The number of octets used to store the data value
-!   in this case would be the absolute value of the negative value in
+!   in this case would be the absolute value of the negative value in 
 !   mapgrid().
-!
+!  
 !
 ! PROGRAM HISTORY LOG:
 ! 2000-05-11  Gilbert
@@ -60,7 +60,7 @@
       data templates(1)%template_num /0/     !  Fcst at Level/Layer
       data templates(1)%mappdslen /15/
       data templates(1)%needext /.false./
-      data (templates(1)%mappds(j),j=1,15)
+      data (templates(1)%mappds(j),j=1,15) 
      &                             /1,1,1,1,1,2,1,1,4,1,-1,-4,1,-1,-4/
 
       data templates(2)%template_num /1/     !  Ens fcst at level/layer
@@ -252,10 +252,10 @@
          subroutine getpdstemplate(number,nummap,map,needext,iret)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    getpdstemplate
+! SUBPROGRAM:    getpdstemplate 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-11
 !
-! ABSTRACT: This subroutine returns PDS template information for a
+! ABSTRACT: This subroutine returns PDS template information for a 
 !   specified Product Definition Template 4.NN.
 !   The number of entries in the template is returned along with a map
 !   of the number of octets occupied by each entry.  Also, a flag is
@@ -266,15 +266,15 @@
 !
 ! USAGE:    CALL getpdstemplate(number,nummap,map,needext,iret)
 !   INPUT ARGUMENT LIST:
-!     number   - NN, indicating the number of the Product Definition
+!     number   - NN, indicating the number of the Product Definition 
 !                Template 4.NN that is being requested.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     nummap   - Number of entries in the Template
-!     map()    - An array containing the number of octets that each
+!     map()    - An array containing the number of octets that each 
 !                template entry occupies when packed up into the PDS.
 !     needext  - Logical variable indicating whether the Product Defintion
-!                Template has to be extended.
+!                Template has to be extended.  
 !     ierr     - Error return code.
 !                0 = no error
 !                1 = Undefine Product Template number.
@@ -311,12 +311,12 @@
          subroutine extpdstemplate(number,list,nummap,map)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    extpdstemplate
+! SUBPROGRAM:    extpdstemplate 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-11
 !
 ! ABSTRACT: This subroutine generates the remaining octet map for a
 !   given Product Definition Template, if required.  Some Templates can
-!   vary depending on data values given in an earlier part of the
+!   vary depending on data values given in an earlier part of the 
 !   Template, and it is necessary to know some of the earlier entry
 !   values to generate the full octet map of the Template.
 !
@@ -325,14 +325,14 @@
 !
 ! USAGE:    CALL extpdstemplate(number,list,nummap,map)
 !   INPUT ARGUMENT LIST:
-!     number   - NN, indicating the number of the Product Definition
+!     number   - NN, indicating the number of the Product Definition 
 !                Template 4.NN that is being requested.
-!     list()   - The list of values for each entry in the
+!     list()   - The list of values for each entry in the 
 !                the Product Definition Template 4.NN.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     nummap   - Number of entries in the Template
-!     map()    - An array containing the number of octets that each
+!     map()    - An array containing the number of octets that each 
 !                template entry occupies when packed up into the GDS.
 !
 ! ATTRIBUTES:
@@ -454,7 +454,7 @@
 ! SUBPROGRAM:    getpdtlen
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2004-05-11
 !
-! ABSTRACT: This function returns the initial length (number of entries) in
+! ABSTRACT: This function returns the initial length (number of entries) in 
 !   the "static" part of specified Product Definition Template 4.number.
 !
 ! PROGRAM HISTORY LOG:
@@ -462,7 +462,7 @@
 !
 ! USAGE:    CALL getpdtlen(number)
 !   INPUT ARGUMENT LIST:
-!     number   - NN, indicating the number of the Product Definition
+!     number   - NN, indicating the number of the Product Definition 
 !                Template 4.NN that is being requested.
 !
 ! RETURNS:     Number of entries in the "static" part of PDT 4.number

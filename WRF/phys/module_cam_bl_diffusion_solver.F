@@ -5,10 +5,10 @@
 
   !------------------------------------------------------------------------------------ !
   ! Module to solve vertical diffusion equations using a tri-diagonal solver.           !
-  ! The module will also apply countergradient fluxes, and apply molecular              !
+  ! The module will also apply countergradient fluxes, and apply molecular              ! 
   ! diffusion for constituents.                                                         !
   !                                                                                     !
-  ! Public interfaces :                                                                 !
+  ! Public interfaces :                                                                 ! 
   !    init_vdiff       initializes time independent coefficients                       !
   !    compute_vdiff    solves diffusion equations                                      !
   !    vd_lu_solve      tridiagonal solver also used by gwd (should be private)         !
@@ -30,7 +30,7 @@
 #endif
 
   implicit none
-  private
+  private       
   save
 
   integer, parameter :: r8 = selected_real_kind(12)      ! 8 byte real
@@ -49,10 +49,10 @@
   public any                                             ! Provides functionality of intrinsic any for type vdiff_selector
 
   integer, public   :: nbot_molec                        ! Bottom level where molecular diffusivity is applied
-
+ 
   ! Below stores logical array of fields to be diffused
 
-  type vdiff_selector
+  type vdiff_selector 
        private
        logical, pointer, dimension(:) :: fields
   end type vdiff_selector
@@ -65,7 +65,7 @@
 
   ! Below provides functionality of intrinsic any for type vdiff_selector
 
-  interface any
+  interface any                           
        module procedure my_any
   end interface
 
@@ -103,19 +103,19 @@
     type(vdiff_selector), intent(out) :: fieldlist_wet   ! List of fields to be diffused using moist mixing ratio
     type(vdiff_selector), intent(out) :: fieldlist_dry   ! List of fields to be diffused using dry   mixing ratio
     character(128),       intent(out) :: errstring       ! Output status
-
+    
     errstring = ''
     if( kind .ne. r8 ) then
         write(iulog,*) 'KIND of reals passed to init_vdiff -- exiting.'
 #ifdef WRF_PORT
         call wrf_message(iulog)
-#endif
+#endif        
         errstring = 'init_vdiff'
         return
     endif
 
-    rair   = rair_in
-    gravit = gravit_in
+    rair   = rair_in     
+    gravit = gravit_in 
 
     allocate( fieldlist_wet%fields( 3 + ncnst ) )
     fieldlist_wet%fields(:) = .false.
@@ -143,16 +143,16 @@
     !-------------------------------------------------------------------------- !
     ! Driver routine to compute vertical diffusion of momentum, moisture, trace !
     ! constituents and dry static energy. The new temperature is computed from  !
-    ! the diffused dry static energy.                                           !
+    ! the diffused dry static energy.                                           ! 
     ! Turbulent diffusivities and boundary layer nonlocal transport terms are   !
     ! obtained from the turbulence module.                                      !
     !-------------------------------------------------------------------------- !
-#ifndef WRF_PORT
+#ifndef WRF_PORT 
     use phys_debug_util,    only : phys_debug_col
     use time_manager,       only : is_first_step, get_nstep
     use phys_control,       only : phys_getopts
 #endif
-
+  
   ! Modification : Ideally, we should diffuse 'liquid-ice static energy' (sl), not the dry static energy.
   !                Also, vertical diffusion of cloud droplet number concentration and aerosol number
   !                concentration should be done very carefully in the future version.
@@ -161,14 +161,14 @@
     ! Input Arguments !
     ! --------------- !
 
-    integer,  intent(in)    :: lchnk
+    integer,  intent(in)    :: lchnk                   
     integer,  intent(in)    :: pcols
     integer,  intent(in)    :: pver
     integer,  intent(in)    :: ncnst
     integer,  intent(in)    :: ncol                      ! Number of atmospheric columns
     integer,  intent(in)    :: ntop                      ! Top    interface level to which vertical diffusion is applied ( = 1 ).
     integer,  intent(in)    :: nbot                      ! Bottom interface level to which vertical diffusion is applied ( = pver ).
-    integer,  intent(in)    :: itaures                   ! Indicator determining whether 'tauresx,tauresy' is updated (1) or non-updated (0) in this subroutine.
+    integer,  intent(in)    :: itaures                   ! Indicator determining whether 'tauresx,tauresy' is updated (1) or non-updated (0) in this subroutine.   
 
     real(r8), intent(in)    :: pmid(pcols,pver)          ! Mid-point pressures [ Pa ]
     real(r8), intent(in)    :: pint(pcols,pver+1)        ! Interface pressures [ Pa ]
@@ -217,7 +217,7 @@
     character(128), intent(out) :: errstring             ! Output status
 
     ! --------------- !
-    ! Local Variables !
+    ! Local Variables ! 
     ! --------------- !
 
     integer  :: i, k, m, icol                            ! Longitude, level, constituent indices
@@ -238,9 +238,9 @@
     real(r8) :: tint(pcols,pver+1)                       ! Interface temperature
     real(r8) :: rhoi(pcols,pver+1)                       ! rho at interfaces
     real(r8) :: tmpi2(pcols,pver+1)                      ! dt*(g*rho)**2/dp at interfaces
-    real(r8) :: rrho(pcols)                              ! 1./bottom level density
+    real(r8) :: rrho(pcols)                              ! 1./bottom level density 
 
-    real(r8) :: zero(pcols)                              ! Zero array for surface heat exchange coefficients
+    real(r8) :: zero(pcols)                              ! Zero array for surface heat exchange coefficients 
     real(r8) :: tautotx(pcols)                           ! Total surface stress ( zonal )
     real(r8) :: tautoty(pcols)                           ! Total surface stress ( meridional )
 
@@ -250,7 +250,7 @@
     real(r8) :: dout_v                                   ! Vertical difference at interfaces, output v
     real(r8) :: dse_top(pcols)                           ! dse on top boundary
     real(r8) :: cc_top(pcols)                            ! Lower diagonal at top interface
-    real(r8) :: cd_top(pcols)                            !
+    real(r8) :: cd_top(pcols)                            ! 
     real(r8) :: rghd(pcols,pver+1)                       ! (1/H_i - 1/H) *(g*rho)^(-1)
 
     real(r8) :: qtm(pcols,pver)                          ! Temporary copy of q
@@ -263,7 +263,7 @@
     real(r8) :: ws(pcols)                                ! Lowest-level wind speed [ m/s ]
     real(r8) :: tau(pcols)                               ! Turbulent surface stress ( not including mountain stress )
     real(r8) :: ksrfturb(pcols)                          ! Surface drag coefficient of 'normal' stress. > 0. Virtual mass input per unit time per unit area [ kg/s/m2 ]
-    real(r8) :: ksrf(pcols)                              ! Surface drag coefficient of 'normal' stress + Surface drag coefficient of 'tms' stress.  > 0. [ kg/s/m2 ]
+    real(r8) :: ksrf(pcols)                              ! Surface drag coefficient of 'normal' stress + Surface drag coefficient of 'tms' stress.  > 0. [ kg/s/m2 ] 
     real(r8) :: usum_in(pcols)                           ! Vertical integral of input u-momentum. Total zonal     momentum per unit area in column  [ sum of u*dp/g = kg m/s m-2 ]
     real(r8) :: vsum_in(pcols)                           ! Vertical integral of input v-momentum. Total meridional momentum per unit area in column [ sum of v*dp/g = kg m/s m-2 ]
     real(r8) :: usum_mid(pcols)                          ! Vertical integral of u-momentum after adding explicit residual stress
@@ -278,7 +278,7 @@
     real(r8) :: ramda                                    ! dt/timeres [ no unit ]
     real(r8) :: psum
     real(r8) :: u_in, u_res, tauresx_in
-    real(r8) :: v_in, v_res, tauresy_in
+    real(r8) :: v_in, v_res, tauresy_in  
 
     ! ------------------------------------------------ !
     ! Parameters for implicit surface stress treatment !
@@ -287,7 +287,7 @@
     wsmin    = 1._r8                                     ! Minimum wind speed for ksrfturb computation        [ m/s ]
     ksrfmin  = 1.e-4_r8                                  ! Minimum surface drag coefficient                   [ kg/s/m^2 ]
     timeres  = 7200._r8                                  ! Relaxation time scale of residual stress ( >= dt ) [ s ]
-#ifndef WRF_PORT
+#ifndef WRF_PORT 
     call phys_getopts( do_iss_out = do_iss )
 #else
     do_iss = .true. !hardwired to true
@@ -325,7 +325,7 @@
     ! Computation of Molecular Diffusivities !
     !--------------------------------------- !
 
-  ! Modification : Why 'kvq' is not changed by molecular diffusion ?
+  ! Modification : Why 'kvq' is not changed by molecular diffusion ? 
 
     if( do_molec_diff ) then
 
@@ -336,8 +336,8 @@
 
       ! The next subroutine 'compute_molec_diff' :
       !     Modifies : kvh, kvm, tint, rhoi, and tmpi2
-      !     Returns  : kq_scal, ubc_t, ubc_mmr, dse_top, cc_top, cd_top, cnst_mw,
-      !                cnst_fixed_ubc , mw_fac , ntop_molec
+      !     Returns  : kq_scal, ubc_t, ubc_mmr, dse_top, cc_top, cd_top, cnst_mw, 
+      !                cnst_fixed_ubc , mw_fac , ntop_molec 
 
         status = compute_molec_diff( lchnk          ,                                                                &
                                      pcols          , pver    , ncnst      , ncol      , t      , pmid   , pint    , &
@@ -384,20 +384,20 @@
 
        if( do_iss ) then
 
-         ! Compute surface drag coefficient for implicit diffusion
-         ! including turbulent turbulent mountain stress.
+         ! Compute surface drag coefficient for implicit diffusion 
+         ! including turbulent turbulent mountain stress. 
 
            do i = 1, ncol
               ws(i)       = max( sqrt( u(i,pver)**2._r8 + v(i,pver)**2._r8 ), wsmin )
               tau(i)      = sqrt( taux(i)**2._r8 + tauy(i)**2._r8 )
               ksrfturb(i) = max( tau(i) / ws(i), ksrfmin )
-           end do
+           end do              
            ksrf(:ncol) = ksrfturb(:ncol) + ksrftms(:ncol)  ! Do all surface stress ( normal + tms ) implicitly
 
-         ! Vertical integration of input momentum.
+         ! Vertical integration of input momentum. 
          ! This is total horizontal momentum per unit area [ kg*m/s/m2 ] in each column.
          ! Note (u,v) are the raw input to the PBL scheme, not the
-         ! provisionally-marched ones within the iteration loop of the PBL scheme.
+         ! provisionally-marched ones within the iteration loop of the PBL scheme.  
 
            do i = 1, ncol
               usum_in(i) = 0._r8
@@ -406,7 +406,7 @@
                  usum_in(i) = usum_in(i) + (1._r8/gravit)*u(i,k)/rpdel(i,k)
                  vsum_in(i) = vsum_in(i) + (1._r8/gravit)*v(i,k)/rpdel(i,k)
               end do
-           end do
+           end do              
 
          ! Add residual stress of previous time step explicitly into the lowest
          ! model layer with a relaxation time scale of 'timeres'.
@@ -425,10 +425,10 @@
                  usum_mid(i) = usum_mid(i) + (1._r8/gravit)*u(i,k)/rpdel(i,k)
                  vsum_mid(i) = vsum_mid(i) + (1._r8/gravit)*v(i,k)/rpdel(i,k)
               end do
-           end do
+           end do              
 
-         ! Debug
-         ! icol = phys_debug_col(lchnk)
+         ! Debug 
+         ! icol = phys_debug_col(lchnk) 
          ! if ( icol > 0 .and. get_nstep() .ge. 1 ) then
          !      tauresx_in = tauresx(icol)
          !      tauresy_in = tauresy(icol)
@@ -441,14 +441,14 @@
 
        else
 
-         ! In this case, do 'turbulent mountain stress' implicitly,
+         ! In this case, do 'turbulent mountain stress' implicitly, 
          ! but do 'normal turbulent stress' explicitly.
          ! In this case, there is no 'redisual stress' as long as 'tms' is
          ! treated in a fully implicit wway, which is true.
 
          ! 1. Do 'tms' implicitly
 
-           ksrf(:ncol) = ksrftms(:ncol)
+           ksrf(:ncol) = ksrftms(:ncol) 
 
          ! 2. Do 'normal stress' explicitly
 
@@ -463,7 +463,7 @@
        !    For implicit 'normal' stress : ksrf = ksrftms + ksrfturb,                            !
        !                                   u(pver) : explicitly include 'redisual normal' stress !
        !    For explicit 'normal' stress : ksrf = ksrftms                                        !
-       !                                   u(pver) : explicitly include 'normal' stress          !
+       !                                   u(pver) : explicitly include 'normal' stress          !                                              
        ! Note that in all the two cases above, 'tms' is fully implicitly treated.                !
        ! --------------------------------------------------------------------------------------- !
 
@@ -479,7 +479,7 @@
 
        ! ---------------------------------------------------------------------- !
        ! Calculate 'total' ( tautotx ) and 'tms' ( tautmsx ) stresses that      !
-       ! have been actually added into the atmosphere at the current time step. !
+       ! have been actually added into the atmosphere at the current time step. ! 
        ! Also, update residual stress, if required.                             !
        ! ---------------------------------------------------------------------- !
 
@@ -488,7 +488,7 @@
           ! Compute the implicit 'tms' using the updated winds.
           ! Below 'tautmsx(i),tautmsy(i)' are pure implicit mountain stresses
           ! that has been actually added into the atmosphere both for explicit
-          ! and implicit approach.
+          ! and implicit approach. 
 
           tautmsx(i) = -ksrftms(i)*u(i,pver)
           tautmsy(i) = -ksrftms(i)*v(i,pver)
@@ -507,14 +507,14 @@
             ! Compute net stress added into the atmosphere at the current time step.
             ! Note that the difference between 'usum_in' and 'usum_out' are induced
             ! by 'explicit residual stress + implicit total stress' for implicit case, while
-            ! by 'explicit normal   stress + implicit tms   stress' for explicit case.
+            ! by 'explicit normal   stress + implicit tms   stress' for explicit case. 
             ! Here, 'tautotx(i)' is net stress added into the air at the current time step.
 
               tauimpx(i) = ( usum_out(i) - usum_in(i) ) / ztodt
               tauimpy(i) = ( vsum_out(i) - vsum_in(i) ) / ztodt
 
-              tautotx(i) = tauimpx(i)
-              tautoty(i) = tauimpy(i)
+              tautotx(i) = tauimpx(i) 
+              tautoty(i) = tauimpy(i) 
 
             ! Compute redisual stress and update if required.
             ! Note that the total stress we should have added at the current step is
@@ -536,11 +536,11 @@
 
        end do ! End of 'do i = 1, ncol' routine
 
-     ! Debug
-     ! icol = phys_debug_col(lchnk)
+     ! Debug 
+     ! icol = phys_debug_col(lchnk) 
      ! if ( icol > 0 .and. get_nstep() .ge. 1 ) then
      !      write(iulog,*)
-     !      write(iulog,*)  'diffusion_solver debug'
+     !      write(iulog,*)  'diffusion_solver debug'  
      !      write(iulog,*)
      !      write(iulog,*)  'u_in, u_res, u_out'
      !      write(iulog,*)   u_in, u_res, u(icol,pver)
@@ -554,19 +554,19 @@
      !      write(iulog,*)
      !      write(iulog,*)  'itaures, ksrf, ksrfturb, ksrftms'
      !      write(iulog,*)   itaures, ksrf(icol), ksrfturb(icol), ksrftms(icol)
-     !      write(iulog,*)
+     !      write(iulog,*) 
      ! endif
      ! Debug
 
        ! ------------------------------------ !
        ! Calculate kinetic energy dissipation !
-       ! ------------------------------------ !
+       ! ------------------------------------ !       
 
-     ! Modification : In future, this should be set exactly same as
-     !                the ones in the convection schemes
+     ! Modification : In future, this should be set exactly same as 
+     !                the ones in the convection schemes 
 
        ! 1. Compute dissipation term at interfaces
-       !    Note that 'u,v' are already diffused wind, and 'tautotx,tautoty' are
+       !    Note that 'u,v' are already diffused wind, and 'tautotx,tautoty' are 
        !    implicit stress that has been actually added. On the other hand,
        !    'dinp_u, dinp_v' were computed using non-diffused input wind.
 
@@ -604,7 +604,7 @@
     ! Diffuse Dry Static Energy !
     !-------------------------- !
 
-  ! Modification : In future, we should diffuse the fully conservative
+  ! Modification : In future, we should diffuse the fully conservative 
   !                moist static energy,not the dry static energy.
 
     if( diffuse(fieldlist,'s') ) then
@@ -631,7 +631,7 @@
                           dse   , ca   , tmpm  , dnom  , ntop  , nbot  , cd_top )
 
      ! Calculate flux at top interface
-
+     
      ! Modification : Why molecular diffusion does not work for dry static energy in all layers ?
 
        if( do_molec_diff ) then
@@ -645,8 +645,8 @@
     ! Diffuse Water Vapor Tracers !
     !---------------------------- !
 
-  ! Modification : For aerosols, I need to use separate treatment
-  !                for aerosol mass and aerosol number.
+  ! Modification : For aerosols, I need to use separate treatment 
+  !                for aerosol mass and aerosol number. 
 
     ! Loop through constituents
 
@@ -716,8 +716,8 @@
                            ksrf , kv  , tmpi , rpdel, ztodt , cc_top, &
                            ca   , cc  , dnom , ze   , ntop  , nbot    )
     !---------------------------------------------------------------------- !
-    ! Determine superdiagonal (ca(k)) and subdiagonal (cc(k)) coeffs of the !
-    ! tridiagonal diffusion matrix.                                         !
+    ! Determine superdiagonal (ca(k)) and subdiagonal (cc(k)) coeffs of the ! 
+    ! tridiagonal diffusion matrix.                                         ! 
     ! The diagonal elements (1+ca(k)+cc(k)) are not required by the solver. !
     ! Also determine ze factor and denominator for ze and zf (see solver).  !
     !---------------------------------------------------------------------- !
@@ -727,7 +727,7 @@
     ! --------------------- !
 
     integer,  intent(in)  :: pcols                 ! Number of allocated atmospheric columns
-    integer,  intent(in)  :: pver                  ! Number of allocated atmospheric levels
+    integer,  intent(in)  :: pver                  ! Number of allocated atmospheric levels 
     integer,  intent(in)  :: ncol                  ! Number of computed atmospheric columns
     integer,  intent(in)  :: ntop                  ! Top level to operate on
     integer,  intent(in)  :: nbot                  ! Bottom level to operate on
@@ -754,7 +754,7 @@
     ! Main Computation Begins !
     ! ----------------------- !
 
-    ! Determine superdiagonal (ca(k)) and subdiagonal (cc(k)) coeffs of the
+    ! Determine superdiagonal (ca(k)) and subdiagonal (cc(k)) coeffs of the 
     ! tridiagonal diffusion matrix. The diagonal elements  (cb=1+ca+cc) are
     ! a combination of ca and cc; they are not required by the solver.
 
@@ -772,7 +772,7 @@
        ca(i,nbot) = 0._r8
     end do
 
-    ! Calculate e(k).  This term is
+    ! Calculate e(k).  This term is 
     ! required in solution of tridiagonal matrix defined by implicit diffusion eqn.
 
     do i = 1, ncol
@@ -806,31 +806,31 @@
     ! Morton (1967,pp 198-200).                                                          !
     !                                                                                    !
     ! The equation solved is                                                             !
-    !                                                                                    !
+    !                                                                                    !  
     !     -ca(k)*q(k+1) + cb(k)*q(k) - cc(k)*q(k-1) = d(k),                              !
     !                                                                                    !
     ! where d(k) is the input profile and q(k) is the output profile                     !
-    !                                                                                    !
+    !                                                                                    ! 
     ! The solution has the form                                                          !
     !                                                                                    !
     !     q(k) = ze(k)*q(k-1) + zf(k)                                                    !
     !                                                                                    !
     !     ze(k) = cc(k) * dnom(k)                                                        !
-    !                                                                                    !
+    !                                                                                    !  
     !     zf(k) = [d(k) + ca(k)*zf(k+1)] * dnom(k)                                       !
     !                                                                                    !
     !     dnom(k) = 1/[cb(k) - ca(k)*ze(k+1)] =  1/[1 + ca(k) + cc(k) - ca(k)*ze(k+1)]   !
     !                                                                                    !
     ! Note that the same routine is used for temperature, momentum and tracers,          !
     ! and that input variables are replaced.                                             !
-    ! ---------------------------------------------------------------------------------- !
+    ! ---------------------------------------------------------------------------------- ! 
 
     ! --------------------- !
     ! Input-Output Argument !
     ! --------------------- !
 
     integer,  intent(in)    :: pcols                  ! Number of allocated atmospheric columns
-    integer,  intent(in)    :: pver                   ! Number of allocated atmospheric levels
+    integer,  intent(in)    :: pver                   ! Number of allocated atmospheric levels 
     integer,  intent(in)    :: ncol                   ! Number of computed atmospheric columns
     integer,  intent(in)    :: ntop                   ! Top level to operate on
     integer,  intent(in)    :: nbot                   ! Bottom level to operate on
@@ -842,7 +842,7 @@
     real(r8), intent(inout) :: q(pcols,pver)          ! Constituent field
 
     ! --------------- !
-    ! Local Variables !
+    ! Local Variables ! 
     ! --------------- !
 
     real(r8)                :: zf(pcols,pver)         ! Term in tri-diag solution
@@ -852,7 +852,7 @@
     ! Main Computation Begins !
     ! ----------------------- !
 
-    ! Calculate zf(k). Terms zf(k) and ze(k) are required in solution of
+    ! Calculate zf(k). Terms zf(k) and ze(k) are required in solution of 
     ! tridiagonal matrix defined by implicit diffusion equation.
     ! Note that only levels ntop through nbot need be solved for.
 
@@ -891,7 +891,7 @@
   ! =============================================================================== !
   !                                                                                 !
   ! =============================================================================== !
-
+  
   character(128) function vdiff_select( fieldlist, name, qindex )
     ! --------------------------------------------------------------------- !
     ! This function sets the field with incoming name as one to be diffused !
@@ -899,7 +899,7 @@
     type(vdiff_selector), intent(inout)        :: fieldlist
     character(*),         intent(in)           :: name
     integer,              intent(in), optional :: qindex
-
+    
     vdiff_select = ''
     select case (name)
     case ('u','U')
@@ -918,13 +918,13 @@
        write(vdiff_select,*) 'Bad argument to vdiff_index: ', name
     end select
     return
-
+    
   end function vdiff_select
 
   type(vdiff_selector) function not(a)
     ! ------------------------------------------------------------- !
     ! This function extends .not. to operate on type vdiff_selector !
-    ! ------------------------------------------------------------- !
+    ! ------------------------------------------------------------- !    
     type(vdiff_selector), intent(in)  :: a
     allocate(not%fields(size(a%fields)))
     not%fields(:) = .not. a%fields(:)
@@ -932,8 +932,8 @@
 
   logical function my_any(a)
     ! -------------------------------------------------- !
-    ! This function extends the intrinsic function 'any' !
-    ! to operate on type vdiff_selector                  !
+    ! This function extends the intrinsic function 'any' ! 
+    ! to operate on type vdiff_selector                  ! 
     ! -------------------------------------------------- !
     type(vdiff_selector), intent(in) :: a
     my_any = any(a%fields)
@@ -946,7 +946,7 @@
     type(vdiff_selector), intent(in)           :: fieldlist
     character(*),         intent(in)           :: name
     integer,              intent(in), optional :: qindex
-
+    
     select case (name)
     case ('u','U')
        diffuse = fieldlist%fields(1)

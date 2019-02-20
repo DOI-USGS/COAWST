@@ -2,14 +2,14 @@
 !
 
 !  This MODULE holds the routines which are used to perform various initializations
-!  for the individual domains.
+!  for the individual domains.  
 
 !  This MODULE CONTAINS the following routines:
 
 !  initialize_field_test - 1. Set different fields to different constant
 !                             values.  This is only a test.  If the correct
 !                             domain is not found (based upon the "id")
-!                             then a fatal error is issued.
+!                             then a fatal error is issued.               
 
 !-----------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ MODULE module_initialize_ideal
    USE module_dm
 #endif
    USE module_fr_fire_util, ONLY: continue_at_boundary,crash,read_array_2d_real, &
-     read_array_2d_integer,interpolate_2d,set_ideal_coord
+     read_array_2d_integer,interpolate_2d,set_ideal_coord 
 
 CONTAINS
 
@@ -38,7 +38,7 @@ CONTAINS
 ! Also dereferences the grid variables and passes them down as arguments.
 ! This is crucial, since the lower level routines may do message passing
 ! and this will get fouled up on machines that insist on passing down
-! copies of assumed-shape arrays (by passing down as arguments, the
+! copies of assumed-shape arrays (by passing down as arguments, the 
 ! data are treated as assumed-size -- ie. f77 -- arrays and the copying
 ! business is avoided).  Fie on the F90 designers.  Fie and a pox.
 
@@ -47,7 +47,7 @@ CONTAINS
    IMPLICIT NONE
 
    !  Input data.
-   TYPE (domain), POINTER :: grid
+   TYPE (domain), POINTER :: grid 
    !  Local data.
    INTEGER :: idum1, idum2
 
@@ -92,6 +92,7 @@ CONTAINS
 
 
    INTEGER :: icm,jcm, ii, im1, jj, jm1, loop, error, fid, nxc, nyc
+   REAL    :: B1, B2, B3, B4, B5
    REAL    :: u_mean,v_mean, f0, p_surf, p_level, qvf, z_at_v, z_at_u
    REAL    :: z_scale, xrad, yrad, zrad, rad, delt, cof1, cof2
    REAL    :: x_rad, y_rad, z_rad, hght_pert   !Ak/ak
@@ -100,7 +101,7 @@ CONTAINS
    REAL    :: hm
    REAL    :: pi
 
-!  stuff from original initialization that has been dropped from the Registry
+!  stuff from original initialization that has been dropped from the Registry 
    REAL    :: vnu, xnu, xnus, dinit0, cbh, p0_temp, t0_temp, zd, zt
    REAL    :: qvf1, qvf2, pd_surf
    INTEGER :: it
@@ -180,18 +181,18 @@ CONTAINS
 ! here we check to see if the boundary conditions are set properly
 
    CALL boundary_condition_check( config_flags, bdyzone, error, grid%id )
-
+ 
     delt = config_flags%delt_perturbation
     x_rad = config_flags%xrad_perturbation
     y_rad = config_flags%yrad_perturbation
     z_rad = config_flags%zrad_perturbation
     hght_pert = config_flags%hght_perturbation
 
-    stretch_grd = config_flags%stretch_grd
+    stretch_grd = config_flags%stretch_grd   
     stretch_hyp = config_flags%stretch_hyp
         z_scale = config_flags%z_grd_scale
        sfc_init = config_flags%sfc_full_init
-
+  
  moisture_init = .true.   !AK/ak
 
     grid%itimestep=0
@@ -201,8 +202,8 @@ CONTAINS
    CALL wrf_dm_bcast_bytes( jcm , IWORDSIZE )
 #endif
 
-!AK/ak land use initialization (USGS)
-   IF (sfc_init) THEN
+!AK/ak land use initialization (USGS) 
+   IF (sfc_init) THEN  
     mminlu2=' '
     mminlu2(1:4) = 'USGS'                !Ak/ak
     CALL nl_set_mminlu(1, mminlu2)       !Ak/ak
@@ -220,7 +221,7 @@ CONTAINS
     CALL nl_set_pole_lat (1,90.)
     CALL nl_set_map_proj(1,0)
 
-!  here we initialize data we currently is not initialized
+!  here we initialize data we currently is not initialized 
 !  in the input data
 
     DO j = jts, jte
@@ -237,7 +238,7 @@ CONTAINS
          grid%e(i,j)        = 0.
          grid%f(i,j)        = 0.
       END DO
-    END DO
+    END DO     
 
 !AK/ak surface initialization latitude, longitude, landuse index from from LANDUSE.TBL skin temperature and soil temperature
 write(6,*) '*************************************'
@@ -252,13 +253,13 @@ write(6,*) '*************************************'
            grid%tmn(i,j) = config_flags%sfc_tmn           !AK/ak  soil temperature at lower boundary [K] (285)
       END DO
     END DO
-      ! read land use data from files, overwriting the constant
+      ! read land use data from files, overwriting the constant 
       if(config_flags%fire_read_lu) &
-          call read_array_2d_real('input_lu',grid%lu_index,ids,ide,jds,jde,ims,ime,jms,jme)
+          call read_array_2d_real('input_lu',grid%lu_index,ids,ide,jds,jde,ims,ime,jms,jme) 
       if(config_flags%fire_read_tsk) &
-          call read_array_2d_real   ('input_tsk',grid%tsk,    ids,ide,jds,jde,ims,ime,jms,jme)
+          call read_array_2d_real   ('input_tsk',grid%tsk,    ids,ide,jds,jde,ims,ime,jms,jme) 
       if(config_flags%fire_read_tmn) &
-          call read_array_2d_real   ('input_tmn',grid%tmn,    ids,ide,jds,jde,ims,ime,jms,jme)
+          call read_array_2d_real   ('input_tmn',grid%tmn,    ids,ide,jds,jde,ims,ime,jms,jme) 
 
 ! for Noah LSM, additional variables need to be initializedi  !AK/ak |
 
@@ -306,7 +307,7 @@ write(6,*) '*************************************'
       write(6,*) ' full surface initialization activated '
       ! write(6,*) ' land use index =', config_flags%sfc_lu_index
       ! write(6,*) ' skin temperature=',grid%tsk(10,10),&
-      !         '[K] soil temperature=', grid%tmn(10,10),'[K]'
+      !         '[K] soil temperature=', grid%tmn(10,10),'[K]'    
 ! Process the soil; note that there are some things hard-wired into share/module_soil_pre.F
       CALL process_soil_ideal(grid%xland,grid%xice,grid%vegfra,grid%snow,grid%canwat, &
                      grid%ivgtyp,grid%isltyp,grid%tslb,grid%smois, &
@@ -328,20 +329,20 @@ write(6,*) '*************************************'
 
     IF (stretch_hyp) THEN ! hyperbolic tangential stretch (more levels at the surface)
      write(6,*) ' hyperbolic tangential stretching activated with z_scale =',z_scale
-     DO k=1, kde
+     DO k=1, kde          
       grid%znw(k) = -1.* (tanh(z_scale*(float(k-1) / float(kde-1) -1.)))/ &
                                  (tanh(z_scale))
      ENDDO
     ELSE                 ! exponential stretch for eta (nearly constant dz)
     write(6,*) ' exponential grid stretching activated with z_scale =',z_scale
-     DO k=1, kde
+     DO k=1, kde 
      grid%znw(k) = (exp(-(k-1)/float(kde-1)/z_scale) - exp(-1./z_scale))/ &
                             (1.-exp(-1./z_scale))
      ENDDO
-    ENDIF
+    ENDIF 
    ELSE
    write(6,*) ' no grid stretching'
-     DO k=1, kde
+     DO k=1, kde 
       grid%znw(k) = 1. - float(k-1)/float(kde-1)
      ENDDO
    ENDIF
@@ -353,22 +354,6 @@ write(6,*) '*************************************'
     grid%znu(k) = 0.5*(grid%znw(k+1)+grid%znw(k))
    ENDDO
 
-   IF ( config_flags%hybrid_opt .NE. 0 ) THEN
-      call wrf_error_fatal ( '--- ERROR: Hybrid Vertical Coordinate option not supported with this idealized case' )
-   END IF
-   grid%hybrid_opt = 0
-
-   DO k=1, kde
-    grid%c3f(k) = grid%znw(k)
-    grid%c4f(k) = 0.
-    grid%c3h(k) = grid%znu(k)
-    grid%c4h(k) = 0.
-    grid%c1f(k) = 1.
-    grid%c2f(k) = 0.
-    grid%c1h(k) = 1.
-    grid%c2h(k) = 0.
-   ENDDO
-
    DO k=2, kde-1
     grid%dn(k) = 0.5*(grid%dnw(k)+grid%dnw(k-1))
     grid%rdn(k) = 1./grid%dn(k)
@@ -376,18 +361,18 @@ write(6,*) '*************************************'
     grid%fnm(k) = .5* grid%dnw(k-1)/grid%dn(k)
    ENDDO
 
-   cof1 = (2.*grid%dn(2)+grid%dn(3))/(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(2)
-   cof2 =     grid%dn(2)        /(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(3)
+   cof1 = (2.*grid%dn(2)+grid%dn(3))/(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(2) 
+   cof2 =     grid%dn(2)        /(grid%dn(2)+grid%dn(3))*grid%dnw(1)/grid%dn(3) 
    grid%cf1  = grid%fnp(2) + cof1
    grid%cf2  = grid%fnm(2) - cof1 - cof2
-   grid%cf3  = cof2
+   grid%cf3  = cof2       
 
    grid%cfn  = (.5*grid%dnw(kde-1)+grid%dn(kde-1))/grid%dn(kde-1)
    grid%cfn1 = -.5*grid%dnw(kde-1)/grid%dn(kde-1)
    grid%rdx = 1./config_flags%dx
    grid%rdy = 1./config_flags%dy
 
-!  get the sounding from the ascii sounding file, first get dry sounding and
+!  get the sounding from the ascii sounding file, first get dry sounding and 
 !  calculate base state
 
   dry_sounding = .true.
@@ -404,7 +389,7 @@ write(6,*) '*************************************'
   CALL wrf_dm_bcast_real( u , nl_max )
   CALL wrf_dm_bcast_real( v , nl_max )
   CALL wrf_dm_bcast_real( qv , nl_max )
-  CALL wrf_dm_bcast_integer ( nl_in , 1 )
+  CALL wrf_dm_bcast_integer ( nl_in , 1 ) 
 
   write(6,*) ' returned from reading sounding, nl_in is ',nl_in
 
@@ -413,10 +398,100 @@ write(6,*) '*************************************'
 
   grid%p_top = interp_0( p_in, zk, config_flags%ztop, nl_in )
 
+  !  For hybrid coord
+
+  DO k=kts, kte
+     IF      ( config_flags%hybrid_opt .EQ. 0 ) THEN
+        grid%c3f(k) = grid%znw(k)
+     ELSE IF ( config_flags%hybrid_opt .EQ. 1 ) THEN
+        grid%c3f(k) = grid%znw(k)
+     ELSE IF ( config_flags%hybrid_opt .EQ. 2 ) THEN
+        B1 = 2. * grid%etac**2 * ( 1. - grid%etac )
+        B2 = -grid%etac * ( 4. - 3. * grid%etac - grid%etac**3 )
+        B3 = 2. * ( 1. - grid%etac**3 )
+        B4 = - ( 1. - grid%etac**2 )
+        B5 = (1.-grid%etac)**4
+        grid%c3f(k) = ( B1 + B2*grid%znw(k) + B3*grid%znw(k)**2 + B4*grid%znw(k)**3 ) / B5
+        IF ( grid%znw(k) .LT. grid%etac ) THEN
+           grid%c3f(k) = 0.
+        END IF
+        IF ( k .EQ. kds ) THEN
+           grid%c3f(k) = 1.
+        ELSE IF ( k .EQ. kde ) THEN
+           grid%c3f(k) = 0.
+        END IF
+     ELSE IF ( config_flags%hybrid_opt .EQ. 3 ) THEN
+        grid%c3f(k) = grid%znw(k)*sin(0.5*3.14159*grid%znw(k))**2
+        IF      ( k .EQ. kds ) THEN
+           grid%c3f(k) = 1.
+        ELSE IF ( k .EQ. kds ) THEN
+           grid%c3f(kde) = 0.
+        END IF
+     ELSE
+        CALL wrf_message     ( 'ERROR: --- hybrid_opt' )
+        CALL wrf_message     ( 'ERROR: --- hybrid_opt=0    ==> Standard WRF terrain-following coordinate' )
+        CALL wrf_message     ( 'ERROR: --- hybrid_opt=1    ==> Standard WRF terrain-following coordinate, hybrid c1, c2, c3, c4' )
+        CALL wrf_message     ( 'ERROR: --- hybrid_opt=2    ==> Hybrid, Klemp polynomial' )
+        CALL wrf_message     ( 'ERROR: --- hybrid_opt=3    ==> Hybrid, sin^2' )
+        CALL wrf_error_fatal ( 'ERROR: --- Invalid option' )
+     END IF
+  END DO
+
+  !  c4 is a function of c3 and eta.
+
+  DO k=1, kde
+     grid%c4f(k) = ( grid%znw(k) - grid%c3f(k) ) * ( p1000mb - grid%p_top )
+  ENDDO
+      
+  !  Now on half levels, just add up and divide by 2 (for c3h).  Use (eta-c3)*(p00-pt) for c4 on half levels.
+      
+  DO k=1, kde-1
+     grid%znu(k) = ( grid%znw(k+1) + grid%znw(k) ) * 0.5
+     grid%c3h(k) = ( grid%c3f(k+1) + grid%c3f(k) ) * 0.5
+     grid%c4h(k) = ( grid%znu(k) - grid%c3h(k) ) * ( p1000mb - grid%p_top )
+  ENDDO
+      
+  !  c1 = d(B)/d(eta).  We define c1f as c1 on FULL levels.  For a vertical difference,
+  !  we need to use B and eta on half levels.  The k-loop ends up referring to the
+  !  full levels, neglecting the top and bottom.
+      
+  DO k=kds+1, kde-1
+     grid%c1f(k) = ( grid%c3h(k) - grid%c3h(k-1) ) / ( grid%znu(k) - grid%znu(k-1) )
+  ENDDO
+      
+  !  The boundary conditions to get the coefficients:
+  !  1) At k=kts: define d(B)/d(eta) = 1.  This gives us the same value of B and d(B)/d(eta)
+  !     when doing the sigma-only B=eta.
+  !  2) At k=kte: define d(B)/d(eta) = 0.  The curve B SMOOTHLY goes to zero, and at the very
+  !     top, B continues to SMOOTHLY go to zero.  Note that for almost all cases of non B=eta,
+  !     B is ALREADY=ZERO at the top, so this is a reasonable BC to assume.
+      
+  grid%c1f(kds) = 1.
+  IF ( ( config_flags%hybrid_opt .EQ. 0 ) .OR. ( config_flags%hybrid_opt .EQ. 1 ) ) THEN
+     grid%c1f(kde) = 1.
+  ELSE
+     grid%c1f(kde) = 0.
+  END IF
+      
+  !  c2 = ( 1. - c1(k) ) * (p00 - pt).  There is no vertical differencing, so we can do the
+  !  full kds to kde looping.
+      
+  DO k=kds, kde
+     grid%c2f(k) = ( 1. - grid%c1f(k) ) * ( p1000mb - grid%p_top )
+  ENDDO
+      
+  !  Now on half levels for c1 and c2.  The c1h will result from the full level c3 and full
+  !  level eta differences.  The c2 value use the half level c1(k).
+      
+  DO k=1, kde-1
+     grid%c1h(k) = ( grid%c3f(k+1) - grid%c3f(k) ) / ( grid%znw(k+1) - grid%znw(k) )
+     grid%c2h(k) = ( 1. - grid%c1h(k) ) * ( p1000mb - grid%p_top )
+  ENDDO
+
 ! get fire mesh dimensions
     CALL get_ijk_from_subgrid (  grid ,                   &
-       ifds,ifde, jfds,jfde,kfds,kfde, &
-       ifms,ifme, jfms,jfme,kfms,kfme,  &
+       ifds,ifde, jfds,jfde,kfds,kfde, & 
+       ifms,ifme, jfms,jfme,kfms,kfme,  & 
        ifts,ifte, jfts,jfte,kfts,kfte)
 
   write (6,*)' ******** SFIRE ideal initialization ********'
@@ -445,11 +520,6 @@ write(6,*) '*************************************'
                 ifms,ifme,jfms,jfme,  &
                 ifts,ifte,jfts,jfte,  &
                 grid%fxlong,grid%fxlat          )
-  call set_ideal_coord( grid%dx,grid%dy, &
-                ids,ide,jds,jde,  &
-                ims,ime,jms,jme,  &
-                its,ite,jts,jte,  &
-                grid%xlong,grid%xlat          )
 
 ! set terrain height
 
@@ -460,7 +530,7 @@ write(6,*) '*************************************'
   ENDDO
 
   if(config_flags%fire_fuel_read.eq.2) &
-      call read_array_2d_real('input_fc',grid%nfuel_cat,ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme)
+      call read_array_2d_real('input_fc',grid%nfuel_cat,ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme) 
 
 
   have_fire_grad=.false.
@@ -482,13 +552,13 @@ write(6,*) '*************************************'
     ! idealized mountain
 
     ! atmospheric grid coordinates of the mountain
-    mtn_axs = mtn_xs/grid%dx + ids - 0.5
+    mtn_axs = mtn_xs/grid%dx + ids - 0.5 
     mtn_axe = mtn_xe/grid%dx + ids - 0.5
     mtn_ays = mtn_ys/grid%dy + jds - 0.5
     mtn_aye = mtn_ye/grid%dy + jds - 0.5
 
     ! fire grid coordinates of the mountain
-    mtn_fxs = mtn_xs/fdx + ifds - 0.5
+    mtn_fxs = mtn_xs/fdx + ifds - 0.5 
     mtn_fxe = mtn_xe/fdx + ifds - 0.5
     mtn_fys = mtn_ys/fdy + jfds - 0.5
     mtn_fye = mtn_ye/fdy + jfds - 0.5
@@ -537,18 +607,18 @@ write(6,*) '*************************************'
           grid%zsf(i,j) = mtn_z
         ENDDO
     ENDDO
-
+ 
     have_fire_ht=.true.
 
-  ELSE ! mtn_type
+  ELSE ! mtn_type 
 
     if(config_flags%fire_read_atm_ht)then !
-      call read_array_2d_real('input_ht',grid%ht,ids,ide,jds,jde,ims,ime,jms,jme)
+      call read_array_2d_real('input_ht',grid%ht,ids,ide,jds,jde,ims,ime,jms,jme) 
       ! no flag - we always have the terrain height on atm mesh, zero if not set
     endif
 
     if(config_flags%fire_read_fire_ht)then !
-      call read_array_2d_real('input_zsf',grid%zsf,ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme)
+      call read_array_2d_real('input_zsf',grid%zsf,ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme) 
       have_fire_ht=.true.
     endif
 
@@ -558,13 +628,13 @@ write(6,*) '*************************************'
     endif
 
     if(config_flags%fire_read_fire_grad)then !
-      call read_array_2d_real('input_dzdxf',grid%dzdxf,ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme)
-      call read_array_2d_real('input_dzdyf',grid%dzdyf,ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme)
+      call read_array_2d_real('input_dzdxf',grid%dzdxf,ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme) 
+      call read_array_2d_real('input_dzdyf',grid%dzdyf,ifds,ifde,jfds,jfde,ifms,ifme,jfms,jfme) 
       have_fire_grad=.true.
     endif
   ENDIF  ! mtn_type
 
-  if(have_fire_ht)then
+  if(have_fire_ht)then 
       write(6, *)'Fine-resolution terrain height on the fire mesh used.'
   else
       write(6,*)'Interpolating the terrain height from the atm mesh to the fire mesh'
@@ -581,7 +651,7 @@ write(6,*) '*************************************'
   endif
 
 
-  if(have_fire_grad)then
+  if(have_fire_grad)then 
      write(6, *)'Fine-resolution terrain gradient on the fire mesh used.'
   else
 
@@ -594,7 +664,7 @@ write(6,*) '*************************************'
            enddo
         enddo
       endif
-
+   
       ! extend the terrain height one beyond the domain
       call continue_at_boundary(1,1,0., & ! do x direction or y direction
               ifms,ifme,jfms,jfme, &            ! memory dims
@@ -603,7 +673,7 @@ write(6,*) '*************************************'
               ifts,ifte,jfts,jfte, &            ! tile dims
               iots,iote,jots,jote, &            ! tile dims out
               grid%zsf)                         ! array
-
+  
       ! compute the terrain gradient by differencing
       do j=jfts,jfte
          do i=ifts,ifte
@@ -613,9 +683,9 @@ write(6,*) '*************************************'
       enddo
       have_fire_grad=.true.
    endif ! have_fire_grad
-
+   
    if(.not.have_fire_grad)call crash('Fire mesh terrain gradient not set')
-
+ 
     mtn_max = 0.
     DO j=jts,jte
       DO i=its,ite
@@ -634,7 +704,7 @@ write(6,*) '*************************************'
     ENDDO
     write(6, *)' Max terrain height on the fire mesh       ',mtn_max
     write(6, *)' Max terrain gradient on the fire mesh     ',grad_max
-
+  
 ! the rest of initialization dependent on the atmosphere grid terrain height set
 
   DO j=jts,jte
@@ -654,7 +724,7 @@ write(6,*) '*************************************'
 !  interp theta (from interp) and compute 1/rho from eqn. of state
 
     DO K = 1, kte-1
-      p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+      p_level = grid%c3h(k)*(p_surf - grid%p_top)+grid%c4h(k) + grid%p_top
       grid%pb(i,k,j) = p_level
       grid%t_init(i,k,j) = interp_0( theta, p_in, p_level, nl_in ) - t0
       grid%alb(i,k,j) = (r_d/p1000mb)*(grid%t_init(i,k,j)+t0)*(grid%pb(i,k,j)/p1000mb)**cvpm
@@ -665,7 +735,7 @@ write(6,*) '*************************************'
 !  respect to the model eqns.
 
     DO k  = 2,kte
-      grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*grid%mub(i,j)*grid%alb(i,k-1,j)
+      grid%phb(i,k,j) = grid%phb(i,k-1,j) - grid%dnw(k-1)*(grid%c1h(k-1)*grid%mub(i,j)+grid%c2h(k-1))*grid%alb(i,k-1,j)
     ENDDO
 
   ENDDO
@@ -685,8 +755,8 @@ write(6,*) '*************************************'
   DO J = jts, min(jde-1,jte)
   DO I = its, min(ide-1,ite)
 
-!  At this point grid%p_top is already set. find the DRY mass in the column
-!  by interpolating the DRY pressure.
+!  At this point grid%p_top is already set. find the DRY mass in the column 
+!  by interpolating the DRY pressure.  
 
    pd_surf = interp_0( pd_in, zk, grid%phb(i,1,j)/g, nl_in )
 
@@ -701,12 +771,12 @@ write(6,*) '*************************************'
 
     do k=1,kde-1
 
-      p_level = grid%znu(k)*(pd_surf - grid%p_top) + grid%p_top
+      p_level = grid%c3h(k)*(pd_surf - grid%p_top)+grid%c4h(k) + grid%p_top
 
       moist(i,k,j,P_QV) = interp_0( qv, pd_in, p_level, nl_in )
       grid%t_1(i,k,j)          = interp_0( theta, pd_in, p_level, nl_in ) - t0
       grid%t_2(i,k,j)          = grid%t_1(i,k,j)
-
+      
 
     enddo
 
@@ -720,8 +790,7 @@ write(6,*) '*************************************'
     qvf2 = 1./(1.+qvf1)
     qvf1 = qvf1*qvf2
 
-!    grid%p(i,k,j) = - 0.5*grid%mu_1(i,j)/grid%rdnw(k)
-    grid%p(i,k,j) = - 0.5*(grid%mu_1(i,j)+qvf1*grid%mub(i,j))/grid%rdnw(k)/qvf2
+    grid%p(i,k,j) = - 0.5*((grid%c1f(k+1)*grid%mu_1(i,j))+qvf1*(grid%c1f(k+1)*grid%mub(i,j)+grid%c2f(k+1)))/grid%rdnw(k)/qvf2
     qvf = 1. + rvovrd*moist(i,k,j,P_QV)
     grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
                 (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
@@ -733,7 +802,7 @@ write(6,*) '*************************************'
       qvf1 = 0.5*(moist(i,k,j,P_QV)+moist(i,k+1,j,P_QV))
       qvf2 = 1./(1.+qvf1)
       qvf1 = qvf1*qvf2
-      grid%p(i,k,j) = grid%p(i,k+1,j) - (grid%mu_1(i,j) + qvf1*grid%mub(i,j))/qvf2/grid%rdn(k+1)
+      grid%p(i,k,j) = grid%p(i,k+1,j) - ((grid%c1f(k+1)*grid%mu_1(i,j)) + qvf1*(grid%c1f(k+1)*grid%mub(i,j)+grid%c2f(k+1)))/qvf2/grid%rdn(k+1)
       qvf = 1. + rvovrd*moist(i,k,j,P_QV)
       grid%alt(i,k,j) = (r_d/p1000mb)*(grid%t_1(i,k,j)+t0)*qvf* &
                   (((grid%p(i,k,j)+grid%pb(i,k,j))/p1000mb)**cvpm)
@@ -747,11 +816,11 @@ write(6,*) '*************************************'
 
     grid%ph_1(i,1,j) = 0.
     DO k  = 2,kte
-      grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
-                   (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
-                    grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
-
-      grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
+      grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &    
+                   ((grid%c1h(k-1)*grid%mub(i,j)+grid%c2h(k-1))+(grid%c1h(k-1)*grid%mu_1(i,j)))*grid%al(i,k-1,j)+ &
+                    (grid%c1h(k-1)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
+                                                   
+      grid%ph_2(i,k,j) = grid%ph_1(i,k,j) 
       grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
     ENDDO
 
@@ -777,7 +846,7 @@ write(6,*) '*************************************'
   write(6,'(A30,f18.12)') ' x radius of the perturbation ' ,x_rad
   write(6,'(A30,f18.12)') ' y radius of the perturbation ' ,y_rad
   write(6,'(A30,f18.12)') ' z radius of the perturbation ' ,z_rad
-  write(6,'(A30,f18.12)') ' height of the perturbation   ' ,hght_pert
+  write(6,'(A30,f18.12)') ' height of the perturbation   ' ,hght_pert  
 
   DO J = jts, min(jde-1,jte)
     yrad = config_flags%dy*float(j-nyc)/y_rad
@@ -804,15 +873,15 @@ write(6,*) '*************************************'
            grid%al(i,k,j) = grid%alt(i,k,j) - grid%alb(i,k,j)
         ENDIF
       ENDDO
-
+   
 !  rebalance hydrostatically
 
       DO k  = 2,kte
         grid%ph_1(i,k,j) = grid%ph_1(i,k-1,j) - (grid%dnw(k-1))*(       &
-                     (grid%mub(i,j)+grid%mu_1(i,j))*grid%al(i,k-1,j)+ &
-                      grid%mu_1(i,j)*grid%alb(i,k-1,j)  )
-
-        grid%ph_2(i,k,j) = grid%ph_1(i,k,j)
+                     ((grid%c1h(k-1)*grid%mub(i,j)+grid%c2h(k-1))+(grid%c1h(k-1)*grid%mu_1(i,j)))*grid%al(i,k-1,j)+ &
+                      (grid%c1h(k-1)*grid%mu_1(i,j))*grid%alb(i,k-1,j)  )
+                                                   
+        grid%ph_2(i,k,j) = grid%ph_1(i,k,j) 
         grid%ph0(i,k,j) = grid%ph_1(i,k,j) + grid%phb(i,k,j)
       ENDDO
 
@@ -854,7 +923,7 @@ ENDIF
     p_surf = interp_0( p_in, zk, z_at_v, nl_in )
 
     DO K = 1, kte-1
-      p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+      p_level = grid%c3h(k)*(p_surf - grid%p_top)+grid%c4h(k) + grid%p_top
       grid%v_1(i,k,j) = interp_0( v, p_in, p_level, nl_in )
       grid%v_2(i,k,j) = grid%v_1(i,k,j)
     ENDDO
@@ -878,7 +947,7 @@ ENDIF
     p_surf = interp_0( p_in, zk, z_at_u, nl_in )
 
     DO K = 1, kte-1
-      p_level = grid%znu(k)*(p_surf - grid%p_top) + grid%p_top
+      p_level = grid%c3h(k)*(p_surf - grid%p_top)+grid%c4h(k) + grid%p_top
       grid%u_1(i,k,j) = interp_0( u, p_in, p_level, nl_in )
       grid%u_2(i,k,j) = grid%u_1(i,k,j)
     ENDDO
@@ -948,6 +1017,31 @@ ENDIF
    ENDDO
    ENDDO
  ENDIF
+
+      !  Save the dry perturbation potential temperature.
+
+      DO j = jts, min(jde-1,jte)
+         DO k = kts, kte
+            DO i = its, min(ide-1,ite)
+               grid%th_phy_m_t0(i,k,j) = grid%t_2(i,k,j)
+            END DO
+         END DO
+      END DO
+
+ !  Turn dry potential temperature into moist potential temperature
+      !  at the very end of this routine
+      !  This field will be in the model IC and and used to construct the 
+      !  BC file.
+
+      IF ( ( config_flags%use_theta_m .EQ. 1 ) .AND. (P_Qv .GE. PARAM_FIRST_SCALAR) ) THEN
+      DO J  = jts, min(jde-1,jte)
+         DO K = kts, kte-1
+            DO I = its, min(ide-1,ite)
+               grid%t_2(i,k,j) = ( grid%t_2(i,k,j) + T0 ) * (1. + (R_v/R_d) * moist(i,k,j,p_qv)) - T0
+            END DO
+         END DO
+      END DO
+      ENDIF
 
  END SUBROUTINE init_domain_rk
 
@@ -1037,7 +1131,7 @@ ENDIF
       enddo
 
       p_surf = 100.*p_surf  ! convert to pascals
-      qvf = 1. + rvovrd*qv_input(1)
+      qvf = 1. + rvovrd*qv_input(1) 
       rho_surf = 1./((r/p1000mb)*th_surf*qvf*((p_surf/p1000mb)**cvpm))
       pi_surf = (p_surf/p1000mb)**(r/cp)
 
@@ -1051,7 +1145,7 @@ ENDIF
 !  specified surface pressure
 !  -> first, integrate from surface to lowest level
 
-          qvf = 1. + rvovrd*qv_input(1)
+          qvf = 1. + rvovrd*qv_input(1) 
           qvf1 = 1. + qv_input(1)
           rho_input(1) = rho_surf
           dz = h_input(1)
@@ -1068,7 +1162,7 @@ ENDIF
             dz = h_input(k)-h_input(k-1)
             qvf1 = 0.5*(2.+(qv_input(k-1)+qv_input(k)))
             qvf = 1. + rvovrd*qv_input(k)   ! qv is in g/kg here
-
+ 
             do it=1,10
               pm_input(k) = pm_input(k-1) &
                       - 0.5*dz*(rho_input(k)+rho_input(k-1))*g*qvf1

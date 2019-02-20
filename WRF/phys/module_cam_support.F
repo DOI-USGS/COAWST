@@ -8,33 +8,33 @@ MODULE module_cam_support
   !------------------------------------------------------------------------
   use module_state_description, only: param_num_moist
   use shr_kind_mod
-
+  
   implicit none
-
+  
   public
   save
-
+  
   integer(SHR_KIND_IN),parameter,private :: R8 = SHR_KIND_R8 ! rename for local readability only
-
+  
   ! From spmd_utils in CAM...
   logical, parameter :: masterproc = .TRUE.
   logical, parameter :: iam = .FALSE.
-
+  
   ! From ppgrid in CAM...
   integer, parameter :: pcols = 1   !Always have a chunk size of 1 in WRF
   integer :: pver                   !Number of model level middles in CAM speak
   integer :: pverp                  !Number of model level interfaces in CAM speak
-
+  
   ! From constituents in CAM...
-  integer, parameter :: pcnst = param_num_moist  !Number of tracer constituents for CAM q array
+  integer, parameter :: pcnst = param_num_moist  !Number of tracer constituents for CAM q array 
   !In WRF this is currently setup to only handle
   !the moist array, and then even in a half-handed way.
   !We allocate the max possible size, but loops need to
   !be over a smaller number.
   !Scalar and chem need to eventually be handled too.
-
+  
   ! 2010-06-16 rce - about pcnst ...
-  ! in CAM with modal aerosols, pcnst = 5 (water vapor + cloud water/ice mass/number) +
+  ! in CAM with modal aerosols, pcnst = 5 (water vapor + cloud water/ice mass/number) + 
   !     number of trace gas and aerosol species
   ! if we want to do things similarly in wrfchem, then we should have pcnst = 5 + num_chem,
   !     which means that pcnst is set at runtime,
@@ -47,38 +47,38 @@ MODULE module_cam_support
   !    before being set correctly
 
   !Balwinder.Singh@pnnl.gov: pcnst is now defined dynamically in module_physics_init.F. pcnst_runtime
-  !is referenced by pcnst for getting the runtime (dynamic) value of pcnst. TO accomplish this,
-  !all 'module level' or 'saved' arrays are declared 'allocatable' in CAM specific modules. The
-  !allocatable arrays are allocated in the 'initialization' call of the respective module. If a module
+  !is referenced by pcnst for getting the runtime (dynamic) value of pcnst. TO accomplish this, 
+  !all 'module level' or 'saved' arrays are declared 'allocatable' in CAM specific modules. The 
+  !allocatable arrays are allocated in the 'initialization' call of the respective module. If a module 
   !doesn't have an 'initialization' subroutine then allocatable arrays are allocated in module_physics_init.F.
   !Allocatable CAM arrays which are NOT currently used by WRF are not allocated
 
   integer :: pcnst_runtime    = -999888777 !Number of tracer constituents in CAM q array
 
-  !For assisting decoupled microphysics (MP) CAM MAM simulations (simulations, where MAM package is coupled with
+  !For assisting decoupled microphysics (MP) CAM MAM simulations (simulations, where MAM package is coupled with 
   !radiation but decoupled with MP- i.e. MP runs with 'prescribed' aerosols) 'pcnst_mp' is defined.'pcnst_mp' will
   !only be used in the CAMMGMP driver and its supporting modules (ndrop and microp_aero)
-  integer :: pcnst_mp         = -999888777
-
+  integer :: pcnst_mp         = -999888777 
+  
   integer :: gas_pcnst_modal_aero = -999888777 !Number of tracer constituents in CAM q array
 
-  !BSINGH - In simulations where no MAM chem package (501, 502,503 or 504) is used,
-  ! following integer(gas_pcnst_modal_aero_pos) is used to specify array dimensions,
+  !BSINGH - In simulations where no MAM chem package (501, 502,503 or 504) is used, 
+  ! following integer(gas_pcnst_modal_aero_pos) is used to specify array dimensions, 
   ! so it has to have a positive value. It will assume a positive value in chemistry
   ! initializations accordling to the chem package specified in the namelist
   integer :: gas_pcnst_modal_aero_pos = -999888777 !Number of tracer constituents in CAM q array
 
   ! excluding water vapor, cloud water, cloud ice, droplet number, ice number
-
+  
   integer :: pcnst_non_chem_modal_aero = -999888777  !Number of non-chemistry (i.e., moisture) species in CAM q array
-
+  
   ! From cam_logfile...
   character(len=750) :: iulog       !In CAM this is a file handle. In WRF, this is a string
   !that can be used to send messages via wrf_message, etc.
-
+  
   !From cam_pio_utils.F90
   integer, parameter, public :: phys_decomp=100
-
+  
   ! From cam_pio_utils (used in camuwpbl_driver module)...
   integer, parameter :: fieldname_len = 16   ! max chars for field name
 
@@ -93,9 +93,9 @@ MODULE module_cam_support
   !BSINGH - We are going to operate on only 6 gases (following MOSAIC -
   !module_mosaic_wetscav.F). MOSAIC actually operates upon 7 gases but MAM
   !doesn't have msa, therefore MAM will operate on only 6 gases
-
+  
   !so2,h2o2,h2so4,hno3,hcl,nh3 (msa not included)
-
+  
   integer, public, parameter :: gas_wetdep_cnt = 6
   character(len=3), public, parameter  :: gas_wetdep_method = 'MOZ'
   !BSINGH - Following list should be all UPPER CASE and 'sulf' should be replaced with 'H2SO4'
@@ -110,7 +110,7 @@ MODULE module_cam_support
   ! This variable is updated in module_physics_init.F
   logical :: cam_mam_aerosols = .FALSE.
 #endif
-
+  
   !------------------------------------------------------------------------
 CONTAINS
   !------------------------------------------------------------------------
@@ -119,15 +119,15 @@ CONTAINS
     ! converts a character string (txt_in) to lowercase (txt_lc)
     !
     implicit none
-
+    
     character(len=*), intent(in)  :: txt_in
     character(len=*), intent(out) :: txt_lc
-
+    
     integer :: i, j
     integer, parameter :: iachar_lowera = iachar('a')
     integer, parameter :: iachar_uppera = iachar('A')
     integer, parameter :: iachar_upperz = iachar('Z')
-
+    
     txt_lc = txt_in
     do i = 1, len( trim(txt_lc) )
        j = iachar( txt_lc(i:i) )
@@ -135,11 +135,11 @@ CONTAINS
        if (j > iachar_upperz) cycle
        txt_lc(i:i) = achar( j + iachar_lowera - iachar_uppera )
     end do
-
+    
     return
   end subroutine lower_case
-
-
+  
+  
   !------------------------------------------------------------------------
   SUBROUTINE endrun(msg)
     ! Pass through routine to wrf_error_fatal that mimics endrun in module
@@ -148,24 +148,24 @@ CONTAINS
     ! Replaces endrun in abortutils module in CAM.
     !
     ! Author: William.Gustafson@pnl.gov, Nov 2009
-    ! Modified : Balwinder.Singh@pnl.gov - Argument made optional
+    ! Modified : Balwinder.Singh@pnl.gov - Argument made optional 
     !------------------------------------------------------------------------
     USE module_wrf_error
-
-    ! Argument of the subroutine is made optional to accomodate endrun calls with no argument
+    
+    ! Argument of the subroutine is made optional to accomodate endrun calls with no argument 
     character(len=*), intent(in), optional :: msg
-
+    
     if(present(msg)) then
        call wrf_error_fatal(msg)
     else
        ! The error message is written to iulog before the endrun call
        call wrf_error_fatal(iulog)
     endif
-
+    
   END SUBROUTINE endrun
-
-
-
+  
+  
+  
   !------------------------------------------------------------------------
   SUBROUTINE t_stopf(event)
     ! Stub to accomodate stop time calls of CAM
@@ -174,12 +174,12 @@ CONTAINS
     !
     ! Author: Balwinder.Singh@pnl.gov
     !------------------------------------------------------------------------
-    character(len=*), intent(in) :: event
-
+    character(len=*), intent(in) :: event 
+    
   END SUBROUTINE t_stopf
-
-
-
+  
+  
+  
   !------------------------------------------------------------------------
   SUBROUTINE t_startf(event)
     ! Stub to accomodate start time calls of CAM
@@ -188,13 +188,13 @@ CONTAINS
     !
     ! Author: Balwinder.Singh@pnl.gov
     !------------------------------------------------------------------------
-
+    
     character(len=*), intent(in) :: event
-
+    
   END SUBROUTINE t_startf
-
-
-
+  
+  
+  
   !------------------------------------------------------------------------
   SUBROUTINE outfld( fname, field, idim, c)
     ! Stub to accomodate outfld calls of CAM
@@ -204,14 +204,14 @@ CONTAINS
     ! Author: Balwinder.Singh@pnl.gov
     !------------------------------------------------------------------------
     character(len=*), intent(in) :: fname
-    integer,          intent(in) :: idim
-    integer,          intent(in) :: c
+    integer,          intent(in) :: idim          
+    integer,          intent(in) :: c             
     real(r8),         intent(in) :: field(idim,*)
-
+    
   END SUBROUTINE outfld
-
-
-
+  
+  
+  
   !------------------------------------------------------------------------
   SUBROUTINE addfld(fname, units, numlev, avgflag, long_name, &
        decomp_type, flag_xyfill, flag_isccplev, sampling_seq)
@@ -221,35 +221,35 @@ CONTAINS
     !
     ! Author: Balwinder.Singh@pnl.gov
     !------------------------------------------------------------------------
-    character(len=*), intent(in) :: fname
-    character(len=*), intent(in) :: units
-    character(len=1), intent(in) :: avgflag
-    character(len=*), intent(in) :: long_name
-
-    integer, intent(in) :: numlev
-    integer, intent(in) :: decomp_type
-
+    character(len=*), intent(in) :: fname     
+    character(len=*), intent(in) :: units     
+    character(len=1), intent(in) :: avgflag   
+    character(len=*), intent(in) :: long_name 
+    
+    integer, intent(in) :: numlev             
+    integer, intent(in) :: decomp_type        
+    
     logical, intent(in), optional :: flag_xyfill
     logical, intent(in), optional :: flag_isccplev
     character(len=*), intent(in), optional :: sampling_seq
-
+    
   END SUBROUTINE ADDFLD
-
-
-
+  
+  
+  
   !------------------------------------------------------------------------
   SUBROUTINE ADD_DEFAULT (name, tindex, flag)
     !
-    ! Stub to accomodate add_default calls of CAM
+    ! Stub to accomodate add_default calls of CAM 
     ! Relaces add_default in cam_history module of CAM
-    !
+    ! 
     ! Author: Balwinder.Singh@pnl.gov
     !-----------------------------------------------------------------------
     character(len=*), intent(in) :: name  ! field name
     character(len=1), intent(in) :: flag  ! averaging flag
-
+    
     integer, intent(in) :: tindex         ! history tape index
-
+    
   END SUBROUTINE ADD_DEFAULT
-
+  
 END MODULE module_cam_support

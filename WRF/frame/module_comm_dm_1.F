@@ -16,7 +16,7 @@ MODULE module_comm_dm_1
 
 CONTAINS
 
-   ! Avoid complaints about empty CONTAINS from some compilers.
+   ! Avoid complaints about empty CONTAINS from some compilers.  
    SUBROUTINE module_comm_dm_dummy_1
      USE module_domain, ONLY:domain
      USE module_configure, ONLY:grid_config_rec_type,in_use_for_config
@@ -25,7 +25,7 @@ CONTAINS
      RETURN
    END SUBROUTINE module_comm_dm_dummy_1
 
-! Registry-generated communication subroutines.
+! Registry-generated communication subroutines.  
 #ifdef DM_PARALLEL
 #include "REGISTRY_COMM_DM_1_subs.inc"
 #endif

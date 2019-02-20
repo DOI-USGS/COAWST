@@ -1,4 +1,4 @@
-function m_gshhs_l(varargin);
+function h=m_gshhs_l(varargin)
 % M_GSHHS_L Add a coastline to a given map using the 'low' resolution of
 %           the Global Self-consistant Hierarchical High-resolution 
 %           Shorelines.
@@ -21,15 +21,9 @@ function m_gshhs_l(varargin);
 % This software is provided "as is" without warranty of any kind. But
 % it's mine, so you can't sell it.
 
+% Changes
+%  Nov/2017 - changed this into a stub calling gshhs.m (kept
+%             for backwards compatability)
 
-FILNAME='private/gshhs_l.b';
-
-
-if length(varargin)>1 & varargin{1}(1)=='s',
-  [ncst,Area,k]=mu_coast('l',FILNAME);
-  eval(['save ' varargin{2} ' ncst k Area']);
-else
-  mu_coast('l',FILNAME,varargin{:},'tag','m_gshhs_l');
-end;
-
+h=m_gshhs('lc',varargin{:});
 

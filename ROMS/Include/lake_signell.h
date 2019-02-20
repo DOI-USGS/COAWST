@@ -1,7 +1,7 @@
 /*
-** svn $Id: lake_signell.h 830 2017-01-24 21:21:11Z arango $
+** svn $Id: lake_signell.h 889 2018-02-10 03:32:52Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2018 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2019 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -9,7 +9,7 @@
 ** Options for Closed Basin (Lake) forced with wind.
 **
 ** Application flag:   LAKE_SIGNELL
-** Input script:       ocean_lake_signell.in
+** Input script:       roms_lake_signell.in
 **                     floats_lake_signell.in
 **                     sediment_lake_signell.in
 */

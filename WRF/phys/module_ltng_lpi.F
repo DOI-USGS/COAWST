@@ -140,14 +140,14 @@ CONTAINS
       lpi=0
       do k=1,nke-1
        if (t3d(k).le.t_base.and.t3d(k).gt.t_top)then ! set temp range
-
-        den_i = qi3d(k)+qg3d(k)
+        
+        den_i = qi3d(k)+qg3d(k)     
         den_s = qs3d(k)+qg3d(k)
         if (qs3d(k).eq.0.or.qg3d(k).eq.0.)then !checks for zeroes
          den_s=10000.
          num_s = 0.
         else
-         num_s = sqrt(qs3d(k)*qg3d(k))
+         num_s = sqrt(qs3d(k)*qg3d(k))   
         end if
         if (qi3d(k).eq.0.or.qg3d(k).eq.0.)then  ! checks for zeroes
          den_i=10000.
@@ -173,7 +173,7 @@ CONTAINS
 !
       if (del_z_tot.eq.0)del_z_tot=100000
       lpi=ave_z/del_z_tot
-
+       
 !
       return
       end subroutine calc_lpi

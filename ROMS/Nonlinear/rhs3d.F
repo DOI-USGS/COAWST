@@ -2,9 +2,9 @@
       MODULE rhs3d_mod
 #if defined NONLINEAR && defined SOLVE3D
 !
-!svn $Id: rhs3d.F 854 2017-07-18 23:28:45Z arango $
+!svn $Id: rhs3d.F 889 2018-02-10 03:32:52Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -169,7 +169,7 @@
 # if defined VEGETATION && defined VEG_DRAG
      &                 VEG(ng) % ru_veg,                                &
      &                 VEG(ng) % rv_veg,                                &
-# endif
+# endif	 
 # ifdef WEC
      &                 OCEAN(ng) % u_stokes,                            &
      &                 OCEAN(ng) % v_stokes,                            &
@@ -233,7 +233,7 @@
      &                       u, v, W,                                   &
 # if defined VEGETATION && defined VEG_DRAG
      &                       ru_veg, rv_veg,                            &
-# endif
+# endif	 
 # ifdef WEC
      &                       u_stokes, v_stokes, W_stokes,              &
 #  ifdef WEC_MELLOR
@@ -289,7 +289,7 @@
 #  if defined VEGETATION && defined VEG_DRAG
       real(r8), intent(in) :: ru_veg(LBi:,LBj:,:)
       real(r8), intent(in) :: rv_veg(LBi:,LBj:,:)
-#  endif
+#  endif	 
 #  ifdef WEC
       real(r8), intent(in) :: u_stokes(LBi:,LBj:,:)
       real(r8), intent(in) :: v_stokes(LBi:,LBj:,:)
@@ -341,7 +341,7 @@
 # if defined VEGETATION && defined VEG_DRAG
       real(r8), intent(in) :: ru_veg(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: rv_veg(LBi:UBi,LBj:UBj,N(ng))
-# endif
+# endif	 
 #  ifdef WEC
       real(r8), intent(in) :: u_stokes(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: v_stokes(LBi:UBi,LBj:UBj,N(ng))
@@ -543,12 +543,12 @@
 #  if defined VEGETATION && defined VEG_DRAG
 !
 !-----------------------------------------------------------------------
-!  Resistance imposed on the flow by the submerged (seagrass)
+!  Resistance imposed on the flow by the submerged (seagrass) 
 !  or emergent (marsh) vegetation.
 !-----------------------------------------------------------------------
 !
       DO k=1,N(ng)
-! Interpolate at cell face
+! Interpolate at cell face	
         DO j=Jstr,Jend
           DO i=IstrU,Iend
             cff=ru_veg(i,j,k)*om_u(i,j)*on_u(i,j)
@@ -567,7 +567,7 @@
 #  endif
           END DO
         END DO
-      END DO
+      END DO  
 #  endif
 !
       K_LOOP : DO k=1,N(ng)

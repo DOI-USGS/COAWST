@@ -2,14 +2,14 @@
 !
 
 !  This MODULE holds the routines which are used to perform various initializations
-!  for the individual domains.
+!  for the individual domains.  
 
 !  This MODULE CONTAINS the following routines:
 
 !  initialize_field_test - 1. Set different fields to different constant
 !                             values.  This is only a test.  If the correct
 !                             domain is not found (based upon the "id")
-!                             then a fatal error is issued.
+!                             then a fatal error is issued.               
 
 MODULE module_initialize
 
@@ -110,13 +110,13 @@ CONTAINS
    RETURN
 
    END SUBROUTINE init_domain_exp
-
+   
 !-------------------------------------------------------------------
 ! this is a wrapper for the solver-specific init_domain routines.
 ! Also dereferences the grid variables and passes them down as arguments.
 ! This is crucial, since the lower level routines may do message passing
 ! and this will get fouled up on machines that insist on passing down
-! copies of assumed-shape arrays (by passing down as arguments, the
+! copies of assumed-shape arrays (by passing down as arguments, the 
 ! data are treated as assumed-size -- ie. f77 -- arrays and the copying
 ! business is avoided).  Fie on the F90 designers.  Fie and a pox.
 
@@ -125,7 +125,7 @@ CONTAINS
    IMPLICIT NONE
 
    !  Input data.
-   TYPE (domain), POINTER :: grid
+   TYPE (domain), POINTER :: grid 
    !  Local data.
    INTEGER :: idum1, idum2
 

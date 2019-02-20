@@ -102,7 +102,7 @@ MODULE module_si_io_nmm
                                                soilm100_input , soilm200_input , &
                                                psfc_in,pmsl
 
-      REAL , DIMENSION(:,:)   , ALLOCATABLE :: lat_wind, lon_wind
+      REAL , DIMENSION(:,:)   , ALLOCATABLE :: lat_wind, lon_wind 
 
       REAL , DIMENSION(:)     , ALLOCATABLE :: DETA_in, AETA_in, ETAX_in
       REAL , DIMENSION(:)     , ALLOCATABLE :: DETA1_in, AETA1_in, ETA1_in
@@ -129,34 +129,34 @@ MODULE module_si_io_nmm
       INTEGER, PARAMETER          :: max_staggers_xy_old = 3
       INTEGER, PARAMETER          :: max_staggers_z = 2
       INTEGER, PARAMETER          :: max_standard_lats = 4
-      INTEGER, PARAMETER          :: max_standard_lons = 4
+      INTEGER, PARAMETER          :: max_standard_lons = 4  
       INTEGER, PARAMETER          :: max_fg_variables = 200
       INTEGER, PARAMETER          :: max_vertical_levels = 2000
 
 !   This module defines the items needed for the WRF metadata
-!   which is broken up into three levels:
+!   which is broken up into three levels:  
 !      Global metadata:  Those things which apply to the
-!                        entire simulation that are
+!                        entire simulation that are 
 !                        independent of time, domain, or
 !                        variable
 !
-!      Domain metadata:  Those things which apply to
+!      Domain metadata:  Those things which apply to 
 !                        a single domain (this may
 !                        or may not be time dependent)
 !
-!      Variable metadata: Those things which apply to
-!                        a specific variable at a
+!      Variable metadata: Those things which apply to 
+!                        a specific variable at a 
 !                        specific time
 !
-!      The variable names and definitions can be
+!      The variable names and definitions can be 
 !      found in the wrf_metadata spec, which is still
 !      a living document as coding goes on.   The names
-!      may not match exactly, but you should be able
-!      to figure things out.
+!      may not match exactly, but you should be able 
+!      to figure things out.  
 !
 
       TYPE wrf_var_metadata
-	 CHARACTER (LEN=8)         :: name
+	 CHARACTER (LEN=8)         :: name 
 	 CHARACTER (LEN=16)        :: units
 	 CHARACTER (LEN=80)        :: description
 	 INTEGER                   :: domain_id
@@ -184,7 +184,7 @@ MODULE module_si_io_nmm
 	 INTEGER                   :: id
 	 INTEGER                   :: parent_id
 	 CHARACTER(LEN=8)          :: dyn_init_src
-	 CHARACTER(LEN=8)          :: static_init_src
+	 CHARACTER(LEN=8)          :: static_init_src 
 	 INTEGER                   :: vt_date
 	 REAL                      :: vt_time
 	 INTEGER                   :: origin_parent_x
@@ -208,7 +208,7 @@ MODULE module_si_io_nmm
 	 CHARACTER(LEN=80)         :: simulation_name
 	 CHARACTER(LEN=80)         :: user_desc
 	 INTEGER                   :: si_version
-	 INTEGER                   :: analysis_version
+	 INTEGER                   :: analysis_version  
 	 INTEGER                   :: wrf_version
 	 INTEGER                   :: post_version
 	 CHARACTER(LEN=32)         :: map_projection
@@ -225,7 +225,7 @@ MODULE module_si_io_nmm
 	 REAL                      :: stagger_dir_y_new(max_staggers_xy_new)
 	 REAL                      :: stagger_dir_x_old(max_staggers_xy_old)
 	 REAL                      :: stagger_dir_y_old(max_staggers_xy_old)
-	 INTEGER                   :: num_stagger_z
+	 INTEGER                   :: num_stagger_z    
 	 REAL                      :: stagger_dir_z(max_staggers_z)
 	 CHARACTER(LEN=8)          :: vertical_coord
 	 INTEGER                   :: num_domains
@@ -235,7 +235,7 @@ MODULE module_si_io_nmm
 	 REAL                      :: end_time
 	 CHARACTER(LEN=4)          :: lu_source
 	 INTEGER                   :: lu_water
-	 INTEGER                   :: lu_ice
+	 INTEGER                   :: lu_ice  
       END TYPE wrf_global_metadata
       TYPE(wrf_global_metadata)   :: global_meta
 
@@ -318,7 +318,7 @@ CONTAINS
       flag_st010040 = 0
       flag_st040100 = 0
       flag_st100200 = 0
-      flag_sm000010 = 0
+      flag_sm000010 = 0 
       flag_sm010040 = 0
       flag_sm040100 = 0
       flag_sm100200 = 0
@@ -328,8 +328,8 @@ CONTAINS
       flag_soilt010 = 0
       flag_soilt040 = 0
       flag_soilt100 = 0
-      flag_soilt200 = 0
-      flag_soilm010 = 0
+      flag_soilt200 = 0 
+      flag_soilm010 = 0 
       flag_soilm040 = 0
       flag_soilm100 = 0
       flag_soilm200 = 0
@@ -366,7 +366,7 @@ CONTAINS
          READ(12) global_meta%simulation_name, global_meta%user_desc, &
                   global_meta%si_version, global_meta%analysis_version, &
                   global_meta%wrf_version, global_meta%post_version
-
+   
          REWIND (12)
 
          IF      ( global_meta%si_version .EQ. 1 ) THEN
@@ -400,7 +400,7 @@ CONTAINS
                      global_meta%lu_source, global_meta%lu_water, global_meta%lu_ice
          END IF
          CLOSE (12)
-
+   
          print *,'GLOBAL METADATA'
          print *,'global_meta%simulation_name', global_meta%simulation_name
          print *,'global_meta%user_desc', global_meta%user_desc
@@ -554,7 +554,7 @@ CONTAINS
       print *,' '
 
       !  A simple domain size test.
-
+    
 
 !!        relax constraint, as model namelist has +1 for i and j, while
 !!        si data has true dimensions
@@ -572,12 +572,12 @@ CONTAINS
 
       IF        ( global_meta%si_version .EQ. 1 ) THEN
          CALL nl_set_cen_lat ( grid%id , ( dom_meta%corner_lats_old(1,1) + dom_meta%corner_lats_old(2,1) +        &
-                                        dom_meta%corner_lats_old(3,1) + dom_meta%corner_lats_old(4,1) ) * 0.25 )
+                                        dom_meta%corner_lats_old(3,1) + dom_meta%corner_lats_old(4,1) ) * 0.25 ) 
       ELSE IF ( ( global_meta%si_version .EQ. 2 ) .AND. ( global_meta%moad_known_loc(1:6) .EQ. 'CENTER' ) ) THEN
          CALL nl_set_cen_lat ( grid%id , global_meta%moad_known_lat )
       ELSE IF   ( global_meta%si_version .EQ. 2 ) THEN
          CALL nl_set_cen_lat ( grid%id , ( dom_meta%corner_lats_new(1,1) + dom_meta%corner_lats_new(2,1) +        &
-                                        dom_meta%corner_lats_new(3,1) + dom_meta%corner_lats_new(4,1) ) * 0.25 )
+                                        dom_meta%corner_lats_new(3,1) + dom_meta%corner_lats_new(4,1) ) * 0.25 ) 
       END IF
 
 
@@ -605,8 +605,8 @@ CONTAINS
          PRINT '(A,A,A)','Undefined map projection: ',TRIM(global_meta%map_projection(1:20)),'.'
          STOP 'Undefined_map_proj_si'
       END IF
-      CALL nl_set_map_proj ( grid%id , map_proj )
-
+      CALL nl_set_map_proj ( grid%id , map_proj ) 
+     
 !      write(0,*) 'global_meta%si_version: ', global_meta%si_version
 !      write(0,*) 'global_meta%lu_source: ', global_meta%lu_source
 !      write(0,*) 'global_meta%lu_water: ', global_meta%lu_water
@@ -640,25 +640,25 @@ CONTAINS
          END IF
 
 !        print *,'VARIABLE METADATA'
-         PRINT '(A,A)','var_info%name=', var_info%name
-!        print *,'var_info%units=', var_info%units
-!        print *,'var_info%description=', var_info%description
-!        print *,'var_info%domain_id=', var_info%domain_id
-!        print *,'var_info%ndim=', var_info%ndim
-!        print *,'var_info%dim_val=', var_info%dim_val
-!        print *,'var_info%dim_desc=', var_info%dim_desc
-!        print *,'var_info%start_index=', var_info%start_index
-!        print *,'var_info%stop_index=', var_info%stop_index
-!        print *,'var_info%h_stagger_index=', var_info%h_stagger_index
+         PRINT '(A,A)','var_info%name=', var_info%name 
+!        print *,'var_info%units=', var_info%units 
+!        print *,'var_info%description=', var_info%description 
+!        print *,'var_info%domain_id=', var_info%domain_id 
+!        print *,'var_info%ndim=', var_info%ndim 
+!        print *,'var_info%dim_val=', var_info%dim_val 
+!        print *,'var_info%dim_desc=', var_info%dim_desc 
+!        print *,'var_info%start_index=', var_info%start_index 
+!        print *,'var_info%stop_index=', var_info%stop_index 
+!        print *,'var_info%h_stagger_index=', var_info%h_stagger_index 
 !        print *,'var_info%v_stagger_index=', var_info%v_stagger_index
-!        print *,'var_info%array_order=', var_info%array_order
-!        print *,'var_info%field_type=', var_info%field_type
-!        print *,'var_info%field_source_prog=', var_info%field_source_prog
-!        print *,'var_info%source_desc=', var_info%source_desc
-!        print *,'var_info%field_time_type=', var_info%field_time_type
-!        print *,'var_info%vt_date_start=', var_info%vt_date_start
-!        print *,'var_info%vt_time_start=', var_info%vt_time_start
-!        print *,'var_info%vt_date_stop=', var_info%vt_date_stop
+!        print *,'var_info%array_order=', var_info%array_order 
+!        print *,'var_info%field_type=', var_info%field_type 
+!        print *,'var_info%field_source_prog=', var_info%field_source_prog 
+!        print *,'var_info%source_desc=', var_info%source_desc 
+!        print *,'var_info%field_time_type=', var_info%field_time_type 
+!        print *,'var_info%vt_date_start=', var_info%vt_date_start 
+!        print *,'var_info%vt_time_start=', var_info%vt_time_start 
+!        print *,'var_info%vt_date_stop=', var_info%vt_date_stop 
 !        print *,'var_info%vt_time_stop=', var_info%vt_time_stop
 
         JMAX=min(JDE-1,JTE)
@@ -1281,7 +1281,7 @@ CONTAINS
          ELSE IF ( var_info%name(1:8) .EQ. 'ZETAFULL' ) THEN
             PRINT '(A)','Oops, you put in the height data.'
             STOP 'this_is_mass_not_height'
-
+ 
 
          !  Stuff that we do not want or need is just skipped over.
 
@@ -1409,7 +1409,7 @@ print *,'------------------> skipping ', var_info%name(1:8)
       CHARACTER (*) ,      INTENT(IN)     :: filename
       CHARACTER (LEN=19) , INTENT(IN)     :: file_date_string !not used
       INTEGER ,            INTENT(IN)     :: num_metgrid_levels
-
+      
    END SUBROUTINE read_wps
 #else
    SUBROUTINE read_wps ( grid, filename, file_date_string, num_metgrid_levels )
@@ -1648,10 +1648,6 @@ print *,'------------------> skipping ', var_info%name(1:8)
 
       call io_int_fetch_data(iunit, r, 'TT', &
                        grid%t_gc(its:imax, jts:jmax, kts:num_metgrid_levels),&
-                         ierr)
-
-      call io_int_fetch_data(iunit, r, 'SLOPECAT', &
-                         grid%slopecat(its:imax, jts:jmax), &
                          ierr)
 
       call io_int_fetch_data(iunit, r, 'SNOALB', &

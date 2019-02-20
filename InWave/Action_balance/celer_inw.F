@@ -107,7 +107,7 @@
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d
 # endif
-
+      
 !
 !  Imported variable declarations.
 !
@@ -290,9 +290,6 @@
               kh=MIN(kwc(i,j,d)*h_tot(i,j),kDmax)
               ct_r(i,j,d)=twopi/(MAX(Tamin,Tr(i,j,d))*sinh(2.0_r8*kh))* &
      &                   (sin(dir_edge)*dhdx-cos(dir_edge)*dhdy)
-
-              !jcw test
-!             ct_r(i,j,d)=0.0_r8
 #  ifdef DOPPLER
               dudx=pm(i,j)*(u_rho(i+1,j)-u_rho(i,j))
               dudy=0.5_r8*                                              &
@@ -315,7 +312,6 @@
      &            sinde*                                                &
      &            (sinde*pm(i,j)*dvdx-                                  &
      &             cosde*pn(i,j)*dvdy)
-            !jcw test
               ct_r(i,j,d)=ct_r(i,j,d)+cff
 #  endif
             ENDIF
@@ -419,7 +415,7 @@
 #  ifdef MASKING
 !  Apply Land/Sea mask
           ct(i,j,ND+1)=ct(i,j,ND+1)*rmask(i,j)
-#  endif
+#  endif 
 #  ifdef WET_DRY
           ct(i,j,ND+1)=ct(i,j,ND+1)*rmask_wet(i,j)
 #  endif

@@ -1,16 +1,16 @@
 !WRF:MODEL_LAYER:PHYSICS
 
-!--- The code is based on Lin and Colle (A New Bulk Microphysical Scheme
+!--- The code is based on Lin and Colle (A New Bulk Microphysical Scheme 
 !             that Includes Riming Intensity and Temperature Dependent Ice Characteristics, 2011, MWR)
 !             and Lin et al. (Parameterization of riming intensity and its impact on ice fall speed using ARM data, 2011, MWR)
 !--- NOTE: 1) Prognose variables are: qi,PI(precipitating ice, qs, which includes snow, partially rimed snow and graupel),qw,qr
-!---       2) Sedimentation flux is based on Prudue Lin scheme
-!---       2) PI has varying properties depending on riming intensity (Ri, diagnosed currently following Lin et al. (2011, MWR) and T
-!---       3) Autoconverion is based on Liu and Daum (2004)
+!---       2) Sedimentation flux is based on Prudue Lin scheme 
+!---       2) PI has varying properties depending on riming intensity (Ri, diagnosed currently following Lin et al. (2011, MWR) and T 
+!---       3) Autoconverion is based on Liu and Daum (2004)         
 !---       4) PI size distribution assuming Gamma distribution, but mu_s=0 (Exponential) currently
-!---       5) No density dependent fall speed since the V-D is derived using Best number approach, which already includes density effect
-!---       6) Future work will include radar equivalent reflectivity using the new PI property (A-D, M-D, N(D)). If you use RIP for reflectivity
-!---          computation, please note that snow is (1-Ri)*qs and graupel is Ri*qs. Otherwise, reflectivity will be underestimated.
+!---       5) No density dependent fall speed since the V-D is derived using Best number approach, which already includes density effect 
+!---       6) Future work will include radar equivalent reflectivity using the new PI property (A-D, M-D, N(D)). If you use RIP for reflectivity 
+!---          computation, please note that snow is (1-Ri)*qs and graupel is Ri*qs. Otherwise, reflectivity will be underestimated.      
 !---       7) The Liu and Daum autoconverion is quite sensitive on Nt_c. For mixed-phase cloud and marine environment, Nt_c of 10 or 20 is suggested.
 !---          default value is 10E.6. Change accordingly for your use.
 
@@ -101,7 +101,7 @@ CONTAINS
 
 
      REAL , DIMENSION( ims:ime , jms:jme ) , INTENT(IN) ::       ht
-     REAL, INTENT(IN   ) ::                                   dt_in
+     REAL, INTENT(IN   ) ::                                   dt_in  
 
      REAL, DIMENSION( ims:ime , jms:jme ),                           &
         INTENT(INOUT) ::                                  RAINNC, &
@@ -132,7 +132,7 @@ CONTAINS
 
       dt=dt_in
       rhoe_s=1.29
-
+  
       j_loop:  DO j = jts, jte
       i_loop:  DO i = its, ite
 !
@@ -305,10 +305,10 @@ CONTAINS
                                       schmidt, xka
 !---- new snow parameters
 
-     REAL, DIMENSION( kts:kte ):: ab_s,ab_r,ab_riming,lamc
+     REAL, DIMENSION( kts:kte ):: ab_s,ab_r,ab_riming,lamc 
      REAL, DIMENSION( kts:kte ):: cap_s       !---- capacitance of snow
-
-     REAL, PARAMETER :: vf1s = 0.65, vf2s = 0.44, vf1r =0.78 , vf2r = 0.31
+ 
+     REAL, PARAMETER :: vf1s = 0.65, vf2s = 0.44, vf1r =0.78 , vf2r = 0.31 
 
      REAL, PARAMETER :: am_c1=0.004, am_c2= 6e-5,    am_c3=0.15
      REAL, PARAMETER :: bm_c1=1.85,  bm_c2= 0.003,   bm_c3=1.25
@@ -316,8 +316,8 @@ CONTAINS
      REAL, PARAMETER :: ba_c1=1.5,   ba_c2= 0.0075,  ba_c3=0.5
 
      REAL, PARAMETER :: best_a=1.08 ,  best_b = 0.499
-     REAL, DIMENSION(kts:kte):: am_s,bm_s,av_s,bv_s,Ri,N0_s,tmp_ss,lams
-     REAL, DIMENSION(kts:kte):: aa_s,ba_s,tmp_sa
+     REAL, DIMENSION(kts:kte):: am_s,bm_s,av_s,bv_s,Ri,N0_s,tmp_ss,lams  
+     REAL, DIMENSION(kts:kte):: aa_s,ba_s,tmp_sa  
      REAL, PARAMETER :: mu_s=0.,mu_i=0.,mu_r=0.
 
      REAL :: tc0, disp, Dc_liu, eta, mu_c, R6c      !--- for Liu's autoconversion
@@ -361,7 +361,7 @@ CONTAINS
       xLfocp=xLf/cp
       Cpor=cp/Rair
       oxmi=1.0/xmi
-      cwoxlf=cw/xlf
+      cwoxlf=cw/xlf 
       av_r=2115.0*0.01**(1-bv_r)
       av_i=152.93*0.01**(1-bv_i)
       ocdrag=1./Cdrag
@@ -498,8 +498,8 @@ CONTAINS
 !                   rv*temp(k)/(diffu(k)*qvsi(k))
 
        do k = kts, kte
-         tc0   = tem(k)-273.15
-        if (rho(k)*qlz(k) .gt. 1e-5 .AND. rho(k)*qsz(k) .gt. 1e-5) then
+         tc0   = tem(k)-273.15       
+        if (rho(k)*qlz(k) .gt. 1e-5 .AND. rho(k)*qsz(k) .gt. 1e-5) then 
          Ri(k) = 1.0/(1.0+6e-5/(rho(k)**1.170*qlz(k)*qsz(k)**0.170))
         else
          Ri(k) = 0
@@ -517,13 +517,13 @@ CONTAINS
 
 !--- YLIN, get PI properties
       do k = kts, kte
-         Ri(k) = AMAX1(0.,AMIN1(Ri(k),1.0))
+         Ri(k) = AMAX1(0.,AMIN1(Ri(k),1.0))      
 ! Store the value of Ri(k) as Riz(k)
          Riz(k) = Ri(k)
 
          cap_s(k)= 0.25*(1+Ri(k))
-         tc0     = AMIN1(-0.1, tem(k)-273.15)
-         N0_s(k) = amin1(2.0E8, 2.0E6*exp(-0.12*tc0))
+         tc0     = AMIN1(-0.1, tem(k)-273.15)          
+         N0_s(k) = amin1(2.0E8, 2.0E6*exp(-0.12*tc0))          
          am_s(k) = am_c1+am_c2*tc0+am_c3*Ri(k)*Ri(k)   !--- Heymsfield 2007
          am_s(k) = AMAX1(0.000023,am_s(k))             !--- use the a_min in table 1 of Heymsfield
          bm_s(k) = bm_c1+bm_c2*tc0+bm_c3*Ri(k)
@@ -537,11 +537,11 @@ CONTAINS
 !---- get v from Mitchell 1996
          av_s(k) = best_a*viscmu(k)*(2*grav*am_s(k)/rho(k)/aa_s(k)/(viscmu(k)**2))**best_b
          bv_s(k) = best_b*(bm_s(k)-ba_s(k)+2)-1
-
+        
          tmp_ss(k)= bm_s(k)+mu_s+1
          tmp_sa(k)= ba_s(k)+mu_s+1
 
-      enddo
+      enddo 
 
 !
 !***********************************************************************
@@ -1013,7 +1013,7 @@ CONTAINS
 1200      continue
 !
 
-        else
+        else                        
 
 !
 !***********************************************************************
@@ -1115,7 +1115,7 @@ CONTAINS
            endif
        else
          praut(k) = 0.0
-       endif
+       endif 
 
 !c
 !c (2) ACCRETION OF CLOUD WATER BY RAIN (Pracw): Lin (51)
@@ -1187,7 +1187,7 @@ CONTAINS
 !c
 !c  combined all rain processes
 !c
-          tmp_r=piacr(k)+psacr(k)-prevp(k)-praut(k)-pracw(k)+pgfr(k)
+          tmp_r=piacr(k)+psacr(k)-prevp(k)-praut(k)-pracw(k)+pgfr(k) 
           if (tmp_r .gt. qrzodt(k) ) then
              factor=qrzodt(k)/tmp_r
              piacr(k)=piacr(k)*factor
@@ -1217,7 +1217,7 @@ CONTAINS
          qlz(k)=amax1( 0.0,qlz(k)+dtb*pclw(k) )
          pcli(k)=-psaut(k)-psfi(k)-psaci(k)-praci(k)
          qiz(k)=amax1( 0.0,qiz(k)+dtb*pcli(k) )
-         tmp_r=piacr(k)+psacr(k)-prevp(k)-praut(k)-pracw(k)+pgfr(k)-pracs(k)
+         tmp_r=piacr(k)+psacr(k)-prevp(k)-praut(k)-pracw(k)+pgfr(k)-pracs(k) 
          prain(k)=-tmp_r
          qrz(k)=amax1( 0.0,qrz(k)+dtb*prain(k) )
          tmp_s=-pssub(k)-(psaut(k)+psaci(k)+psacw(k)+psfw(k)+pgfr(k)+  &
@@ -1268,7 +1268,7 @@ CONTAINS
 !c
 !c  combined all rain processes
 !c
-          tmp_r=-prevp(k)-(praut(k)+pracw(k)+psacw(k)-psmlt(k))
+          tmp_r=-prevp(k)-(praut(k)+pracw(k)+psacw(k)-psmlt(k)) 
           if (tmp_r .gt. qrzodt(k) ) then
              factor=qrzodt(k)/tmp_r
              prevp(k)=prevp(k)*factor
@@ -1282,7 +1282,7 @@ CONTAINS
           qlz(k)=amax1( 0.0,qlz(k)+dtb*pclw(k) )
           pcli(k)=0.0
           qiz(k)=amax1( 0.0,qiz(k)+dtb*pcli(k) )
-          tmp_r=-prevp(k)-(praut(k)+pracw(k)+psacw(k)-psmlt(k))
+          tmp_r=-prevp(k)-(praut(k)+pracw(k)+psacw(k)-psmlt(k)) 
           prain(k)=-tmp_r
           tmpqrz=qrz(k)
           qrz(k)=amax1( 0.0,qrz(k)+dtb*prain(k) )
@@ -1502,7 +1502,7 @@ CONTAINS
                                         qswz, qvsbar
 
      REAL :: qsat, qlpqi, ratql, t0, t1, tmp1, ratqi, tsat, absft,    &
-             denom1, denom2, dqvsbar, ftsat, dftsat, qpz,es
+             denom1, denom2, dqvsbar, ftsat, dftsat, qpz,es             
 !
 !---------------------------------------------------------------------
 

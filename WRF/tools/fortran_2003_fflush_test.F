@@ -1,4 +1,4 @@
-      PROGRAM fortran_2003_test
+      PROGRAM fortran_2003_test         
 
       IMPLICIT NONE
 
@@ -7,8 +7,8 @@
 
       x = 1.e+10
       i = 1
-
+    
       WRITE (6,*) x,i
       CALL FFLUSH ( 6 )
 
-      END PROGRAM fortran_2003_test
+      END PROGRAM fortran_2003_test         

@@ -1,4 +1,4 @@
-#if ( RWORDSIZE == 4 )
+#if ( (defined(wrfmodel) ) && ( RWORDSIZE == 4 ) ) || ( ( defined(mpas) ) && defined(SINGLE_PRECISION) )
 #  define VREC vsrec
 #  define VSQRT vssqrt
 #else
@@ -8,8 +8,10 @@
 
 MODULE module_mp_wsm6
 !
+#if ( defined(wrfmodel) )
    USE module_utility, ONLY: WRFU_Clock, WRFU_Alarm
    USE module_domain, ONLY : HISTORY_ALARM, Is_alarm_tstep
+#endif
    USE module_mp_radar
 !
    REAL, PARAMETER, PRIVATE :: dtcldcr     = 120. ! maximum time step for minor loops
@@ -41,7 +43,7 @@ MODULE module_mp_wsm6
    REAL, PARAMETER, PRIVATE :: dens  =  100.0     ! Density of snow
    REAL, PARAMETER, PRIVATE :: qs0   =  6.e-4     ! threshold amount for aggretion to occur
    REAL, SAVE ::                                      &
-             qc0, qck1, pidnc,                        &
+             qc0, qck1, pidnc,                        & 
              bvtr1,bvtr2,bvtr3,bvtr4,g1pbr,           &
              g3pbr,g4pbr,g5pbro2,pvtr,eacrr,pacrr,    &
              bvtr6,g6pbr,                             &
@@ -72,7 +74,7 @@ CONTAINS
                  ,refl_10cm, diagflag, do_radar_ref                &
                  ,graupel, graupelncv                              &
                  ,has_reqc, has_reqi, has_reqs                     &  ! for radiation
-                 ,re_cloud, re_ice,   re_snow                      &  ! for radiation
+                 ,re_cloud, re_ice,   re_snow                      &  ! for radiation   
                  ,ids,ide, jds,jde, kds,kde                        &
                  ,ims,ime, jms,jme, kms,kme                        &
                  ,its,ite, jts,jte, kts,kte                        &
@@ -134,7 +136,7 @@ CONTAINS
                                                           re_ice, &
                                                          re_snow
 !+---+-----------------------------------------------------------------+
-  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT)::     &  ! GT
+  REAL, DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::     &  ! GT
                                                        refl_10cm
 !+---+-----------------------------------------------------------------+
 
@@ -256,8 +258,8 @@ CONTAINS
               re_cloud(i,k,j) = MAX(2.51E-6,  MIN(re_qc(k),  50.E-6))
               re_ice(i,k,j)   = MAX(10.01E-6, MIN(re_qi(k), 125.E-6))
               re_snow(i,k,j)  = MAX(25.E-6,   MIN(re_qs(k), 999.E-6))
-            enddo
-          enddo
+            enddo 
+          enddo   
         endif     ! has_reqc, etc...
 !+---+-----------------------------------------------------------------+
 #ifdef WRF_CHEM
@@ -272,7 +274,7 @@ CONTAINS
   END SUBROUTINE wsm6
 !===================================================================
 !
-  SUBROUTINE wsm62D(t, q                                          &
+  SUBROUTINE wsm62D(t, q                                          &   
                    ,qci, qrs, den, p, delz                        &
                    ,delt,g, cpd, cpv, rd, rv, t0c                 &
                    ,ep1, ep2, qmin                                &
@@ -294,7 +296,7 @@ CONTAINS
   IMPLICIT NONE
 !-------------------------------------------------------------------
 !
-!  This code is a 6-class GRAUPEL phase microphyiscs scheme (WSM6) of the
+!  This code is a 6-class GRAUPEL phase microphyiscs scheme (WSM6) of the 
 !  Single-Moment MicroPhyiscs (WSMMP). The WSMMP assumes that ice nuclei
 !  number concentration is a function of temperature, and seperate assumption
 !  is developed, in which ice crystal number concentration is a function
@@ -395,7 +397,7 @@ CONTAINS
                                                          rslope2, &
                                                          rslope3, &
                                                          rslopeb, &
-                                                         qrs_tmp, &
+                                                         qrs_tmp, & 
                                                             falk, &
                                                             fall, &
                                                            work1
@@ -447,12 +449,12 @@ CONTAINS
                                                          denqrs1, &
                                                          denqrs2, &
                                                          denqrs3, &
-                                                          denqci, &
+                                                          denqci, & 
                                                           n0sfac
   REAL, DIMENSION( its:ite ) ::                          delqrs1, &
                                                          delqrs2, &
                                                          delqrs3, &
-                                                           delqi
+                                                           delqi  
   REAL, DIMENSION( its:ite ) ::                        tstepsnow, &
                                                       tstepgraup
   INTEGER, DIMENSION( its:ite ) ::                         mstep, &
@@ -468,7 +470,7 @@ CONTAINS
             fallsum, fallsum_qsi, fallsum_qg,                     &
             vt2i,vt2r,vt2s,vt2g,acrfac,egs,egi,                   &
             xlwork2, factor, source, value,                       &
-            xlf, pfrzdtc, pfrzdtr, supice, alpha2, delta2, delta3
+            xlf, pfrzdtc, pfrzdtr, supice, alpha2, delta2, delta3  
   REAL  :: vt2ave
   REAL  :: holdc, holdci
   INTEGER :: i, j, k, mstepmax,                                   &
@@ -675,7 +677,7 @@ CONTAINS
           qrs_tmp(i,k,3) = qrs(i,k,3)
         enddo
       enddo
-      call slope_wsm6(qrs_tmp,den_tmp,denfac,t,rslope,rslopeb,rslope2,rslope3, &
+      call slope_wsm6(qrs_tmp,den_tmp,denfac,t,rslope,rslopeb,rslope2,rslope3, & 
                      work1,its,ite,kts,kte)
 !
       do k = kte, kts, -1
@@ -696,7 +698,7 @@ CONTAINS
       enddo
       call nislfv_rain_plm(idim,kdim,den_tmp,denfac,t,delz_tmp,workr,denqrs1,  &
                            delqrs1,dtcld,1,1)
-      call nislfv_rain_plm6(idim,kdim,den_tmp,denfac,t,delz_tmp,worka,         &
+      call nislfv_rain_plm6(idim,kdim,den_tmp,denfac,t,delz_tmp,worka,         & 
                            denqrs2,denqrs3,delqrs2,delqrs3,dtcld,1,1)
       do k = kts, kte
         do i = its, ite
@@ -723,7 +725,7 @@ CONTAINS
       call slope_wsm6(qrs_tmp,den_tmp,denfac,t,rslope,rslopeb,rslope2,rslope3, &
                      work1,its,ite,kts,kte)
 !
-      do k = kte, kts, -1
+      do k = kte, kts, -1 
         do i = its, ite
           supcol = t0c-t(i,k)
           n0sfac(i,k) = max(min(exp(alpha*supcol),n0smax/n0s),1.)
@@ -755,7 +757,7 @@ CONTAINS
                          *(t0c-t(i,k))*(precg1*rslope2(i,k,3)                &
                          +precg2*work2(i,k)*coeres)/den(i,k)
               pgmlt(i,k) = min(max(pgmlt(i,k)*dtcld/mstep(i),                &
-                          -qrs(i,k,3)/mstep(i)),0.)
+                          -qrs(i,k,3)/mstep(i)),0.)                          
               qrs(i,k,3) = qrs(i,k,3) + pgmlt(i,k)
               qrs(i,k,1) = qrs(i,k,1) - pgmlt(i,k)
               t(i,k) = t(i,k) + xlf/cpm(i,k)*pgmlt(i,k)
@@ -811,7 +813,7 @@ CONTAINS
           tstepsnow(i)   = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.            &
                            +tstepsnow(i)
         IF ( PRESENT (snowncv) .AND. PRESENT (snow)) THEN
-          snowncv(i,lat) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.            &
+          snowncv(i,lat) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000.            & 
                            +snowncv(i,lat)
           snow(i,lat) = fallsum_qsi*delz(i,kts)/denr*dtcld*1000. + snow(i,lat)
         ENDIF
@@ -820,7 +822,7 @@ CONTAINS
           tstepgraup(i)  = fallsum_qg*delz(i,kts)/denr*dtcld*1000.            &
                            +tstepgraup(i)
         IF ( PRESENT (graupelncv) .AND. PRESENT (graupel)) THEN
-          graupelncv(i,lat) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.          &
+          graupelncv(i,lat) = fallsum_qg*delz(i,kts)/denr*dtcld*1000.          &   
                               + graupelncv(i,lat)
           graupel(i,lat) = fallsum_qg*delz(i,kts)/denr*dtcld*1000. + graupel(i,lat)
         ENDIF
@@ -1052,7 +1054,7 @@ CONTAINS
 !        (T<T0: C->S, and T>=T0: C->R)
 !-------------------------------------------------------------
           if(qrs(i,k,2).gt.qcrmin.and.qci(i,k,1).gt.qmin) then
-            psacw(i,k) = min(pacrc*n0sfac(i,k)*rslope3(i,k,2)*rslopeb(i,k,2)   &
+            psacw(i,k) = min(pacrc*n0sfac(i,k)*rslope3(i,k,2)*rslopeb(i,k,2)   &    
                         *qci(i,k,1)*denfac(i,k),qci(i,k,1)/dtcld)
           endif
 !-------------------------------------------------------------
@@ -1064,13 +1066,13 @@ CONTAINS
                         *qci(i,k,1)*denfac(i,k),qci(i,k,1)/dtcld)
           endif
 !-------------------------------------------------------------
-! paacw: Accretion of cloud water by averaged snow/graupel
-!        (T<T0: C->G or S, and T>=T0: C->R)
+! paacw: Accretion of cloud water by averaged snow/graupel 
+!        (T<T0: C->G or S, and T>=T0: C->R) 
 !-------------------------------------------------------------
           if(qsum(i,k) .gt. 1.e-15) then
-            paacw(i,k) = (qrs(i,k,2)*psacw(i,k)+qrs(i,k,3)*pgacw(i,k))         &
+            paacw(i,k) = (qrs(i,k,2)*psacw(i,k)+qrs(i,k,3)*pgacw(i,k))         & 
                         /(qsum(i,k))
-          endif
+          endif      
 !-------------------------------------------------------------
 ! pracs: Accretion of snow by rain [HL A11] [LFO 27]
 !         (T<T0: S->G)
@@ -1110,7 +1112,7 @@ CONTAINS
 !
 !-------------------------------------------------------------
 ! pgacs: Accretion of snow by graupel [HL A13] [LFO 29]
-!        (S->G): This process is eliminated in V3.0 with the
+!        (S->G): This process is eliminated in V3.0 with the 
 !        new combined snow/graupel fall speeds
 !-------------------------------------------------------------
           if(qrs(i,k,3).gt.qcrmin.and.qrs(i,k,2).gt.qcrmin) then
@@ -1155,7 +1157,7 @@ CONTAINS
 !-------------------------------------------------------------
             if(qrs(i,k,2).gt.0..and.ifsat.ne.1) then
               coeres = rslope2(i,k,2)*sqrt(rslope(i,k,2)*rslopeb(i,k,2))
-              psdep(i,k) = (rh(i,k,2)-1.)*n0sfac(i,k)*(precs1*rslope2(i,k,2)   &
+              psdep(i,k) = (rh(i,k,2)-1.)*n0sfac(i,k)*(precs1*rslope2(i,k,2)   &    
                            + precs2*work2(i,k)*coeres)/work1(i,k,2)
               supice = satdt-prevp(i,k)-pidep(i,k)
               if(psdep(i,k).lt.0.) then
@@ -1270,7 +1272,7 @@ CONTAINS
 !     cloud ice
 !
             value = max(qmin,qci(i,k,2))
-            source = (psaut(i,k)-pigen(i,k)-pidep(i,k)+praci(i,k)+psaci(i,k)   &
+            source = (psaut(i,k)-pigen(i,k)-pidep(i,k)+praci(i,k)+psaci(i,k)   &     
                     +pgaci(i,k))*dtcld
             if (source.gt.value) then
               factor = value/source
@@ -1285,7 +1287,7 @@ CONTAINS
 !     rain
 !
             value = max(qmin,qrs(i,k,1))
-            source = (-praut(i,k)-prevp(i,k)-pracw(i,k)+piacr(i,k)+psacr(i,k)  &
+            source = (-praut(i,k)-prevp(i,k)-pracw(i,k)+piacr(i,k)+psacr(i,k)  &    
                      +pgacr(i,k))*dtcld
             if (source.gt.value) then
               factor = value/source
@@ -1300,7 +1302,7 @@ CONTAINS
 !     snow
 !
             value = max(qmin,qrs(i,k,2))
-            source = -(psdep(i,k)+psaut(i,k)-pgaut(i,k)+paacw(i,k)+piacr(i,k)  &
+            source = -(psdep(i,k)+psaut(i,k)-pgaut(i,k)+paacw(i,k)+piacr(i,k)  &        
                      *delta3+praci(i,k)*delta3-pracs(i,k)*(1.-delta2)          &
                      +psacr(i,k)*delta2+psaci(i,k)-pgacs(i,k) )*dtcld
             if (source.gt.value) then
@@ -1380,7 +1382,7 @@ CONTAINS
 !     rain
 !
             value = max(qmin,qrs(i,k,1))
-            source = (-paacw(i,k)-praut(i,k)+pseml(i,k)+pgeml(i,k)-pracw(i,k)  &
+            source = (-paacw(i,k)-praut(i,k)+pseml(i,k)+pgeml(i,k)-pracw(i,k)  &  
                      -paacw(i,k)-prevp(i,k))*dtcld
             if (source.gt.value) then
               factor = value/source
@@ -1668,9 +1670,9 @@ CONTAINS
   REAL, DIMENSION( its:ite , kts:kte,3) ::                                     &
                                                                           qrs, &
                                                                        rslope, &
-                                                                      rslopeb, &
-                                                                      rslope2, &
-                                                                      rslope3, &
+                                                                      rslopeb, &                                                 
+                                                                      rslope2, &                                                 
+                                                                      rslope3, &                                                 
                                                                            vt
   REAL, DIMENSION( its:ite , kts:kte) ::                                       &
                                                                           den, &
@@ -1738,7 +1740,7 @@ CONTAINS
       enddo
   END subroutine slope_wsm6
 !-----------------------------------------------------------------------------
-      subroutine slope_rain(qrs,den,denfac,t,rslope,rslopeb,rslope2,rslope3,   &
+      subroutine slope_rain(qrs,den,denfac,t,rslope,rslopeb,rslope2,rslope3,   & 
                             vt,its,ite,kts,kte)
   IMPLICIT NONE
   INTEGER       ::               its,ite, jts,jte, kts,kte
@@ -1748,7 +1750,7 @@ CONTAINS
                                                                       rslopeb, &
                                                                       rslope2, &
                                                                       rslope3, &
-                                                                           vt, &
+                                                                           vt, &      
                                                                           den, &
                                                                        denfac, &
                                                                             t
@@ -1791,7 +1793,7 @@ CONTAINS
                                                                       rslopeb, &
                                                                       rslope2, &
                                                                       rslope3, &
-                                                                           vt, &
+                                                                           vt, &  
                                                                           den, &
                                                                        denfac, &
                                                                             t
@@ -1839,7 +1841,7 @@ CONTAINS
                                                                       rslopeb, &
                                                                       rslope2, &
                                                                       rslope3, &
-                                                                           vt, &
+                                                                           vt, &  
                                                                           den, &
                                                                        denfac, &
                                                                             t
@@ -2567,11 +2569,11 @@ CONTAINS
                                 re_qc, re_qi, re_qs, kts, kte, ii, jj)
 
 !-----------------------------------------------------------------------
-!  Compute radiation effective radii of cloud water, ice, and snow for
+!  Compute radiation effective radii of cloud water, ice, and snow for 
 !  single-moment microphysics.
 !  These are entirely consistent with microphysics assumptions, not
 !  constant or otherwise ad hoc as is internal to most radiation
-!  schemes.
+!  schemes.  
 !  Coded and implemented by Soo ya Bae, KIAPS, January 2015.
 !-----------------------------------------------------------------------
 
@@ -2633,7 +2635,7 @@ CONTAINS
       if (has_qc) then
         do k=kts,kte
           if (rqc(k).le.R1) CYCLE
-          lamdac   = (pidnc*nc0/rqc(k))**obmr
+          lamdac   = (pidnc*nc0/rqc(k))**obmr 
           re_qc(k) =  max(2.51E-6,min(1.5*(1.0/lamdac),50.E-6))
         enddo
       endif

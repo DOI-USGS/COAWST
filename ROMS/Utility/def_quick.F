@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE def_quick (ng, ldef)
 !
-!svn $Id: def_quick.F 873 2017-10-05 20:27:10Z arango $
+!svn $Id: def_quick.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -426,7 +426,7 @@
         Vinfo( 4)=TRIM(Rclock%calendar)
         Vinfo(14)=Vname(4,idtime)
         status=def_var(ng, iNLM, QCK(ng)%ncid, QCK(ng)%Vid(idtime),     &
-     &                 NF_TYPE, 1, (/recdim/), Aval, Vinfo, ncname,     &
+     &                 NF_TOUT, 1, (/recdim/), Aval, Vinfo, ncname,     &
      &                 SetParAccess = .TRUE.)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
@@ -2167,6 +2167,27 @@
      &                   __FILE__)) RETURN
         END IF
 #endif
+#ifdef WAVES_DIRP
+!
+!  Define wind-induced peak wave direction.
+!
+        IF (Qout(idWdip,ng)) THEN
+          Vinfo( 1)=Vname(1,idWdip)
+          Vinfo( 2)=Vname(2,idWdip)
+          Vinfo( 3)=Vname(3,idWdip)
+          Vinfo(14)=Vname(4,idWdip)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWdip,ng),r8)
+          status=def_var(ng, iNLM, QCK(ng)%ncid, QCK(ng)%Vid(idWdip),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
+        END IF
+#endif
 #ifdef WAVES_TOP_PERIOD
 !
 !  Define wind-induced surface wave period.
@@ -2582,6 +2603,11 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdir))) THEN
             got_var(idWdir)=.TRUE.
             QCK(ng)%Vid(idWdir)=var_id(i)
+#endif
+#ifdef WAVES_DIRP
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdip))) THEN
+            got_var(idWdip)=.TRUE.
+            QCK(ng)%Vid(idWdip)=var_id(i)
 #endif
 #ifdef WAVES_TOP_PERIOD
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWptp))) THEN
@@ -3209,6 +3235,14 @@
 #ifdef WAVES_DIR
         IF (.not.got_var(idWdir).and.Qout(idWdir,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdir)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+#endif
+#ifdef WAVES_DIRP
+        IF (.not.got_var(idWdip).and.Qout(idWdip,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdip)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

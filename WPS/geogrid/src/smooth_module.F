@@ -10,31 +10,31 @@ module smooth_module
 
    contains
 
-
+ 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: one_two_one
    !
-   ! Purpose: Apply the 1-2-1 smoother from the MM5 program TERRAIN
+   ! Purpose: Apply the 1-2-1 smoother from the MM5 program TERRAIN 
    !   (found in smth121.F) to array.
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine one_two_one(array, start_dom_x, end_dom_x, start_dom_y, end_dom_y, &
                           start_x, end_x, start_y, end_y, start_z, end_z, npass, msgval)
-
+ 
       implicit none
-
+  
       ! Arguments
       integer, intent(in) :: start_dom_x, start_dom_y, start_x, start_y, start_z
       integer, intent(in) :: end_dom_x, end_dom_y, end_x, end_y, end_z
       integer, intent(in) :: npass
       real, intent(in) :: msgval
-      real, dimension(start_x:end_x, start_y:end_y, start_z:end_z), intent(inout) :: array
-
+      real, dimension(start_x:end_x, start_y:end_y, start_z:end_z), intent(inout) :: array 
+  
       ! Local variables
       integer :: ix, iy, iz, ipass
       real, pointer, dimension(:,:,:) :: scratch
-
+  
       allocate(scratch(start_x+1:end_x-1, start_y:end_y, start_z:end_z))
-
+  
       do ipass=1,npass
 
          do iy=start_y,end_y
@@ -44,7 +44,7 @@ module smooth_module
                end do
             end do
          end do
-
+   
          do iy=start_y+1,end_y-1
             do ix=start_x+1,end_x-1
                do iz=start_z,end_z
@@ -58,36 +58,36 @@ module smooth_module
                               start_dom_x, end_dom_x, start_dom_y, end_dom_y, start_z, end_z)
 
       end do
-
+  
       deallocate(scratch)
-
-   end subroutine one_two_one
-
-
+ 
+   end subroutine one_two_one 
+ 
+ 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: smth_desmth
    !
-   ! Purpose: Apply the smoother-desmoother from the MM5 program TERRAIN
+   ! Purpose: Apply the smoother-desmoother from the MM5 program TERRAIN 
    !   (found in smther.F) to array.
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine smth_desmth(array, start_dom_x, end_dom_x, start_dom_y, end_dom_y, &
                           start_x, end_x, start_y, end_y, start_z, end_z, npass, msgval)
-
+ 
       implicit none
-
+  
       ! Arguments
       integer, intent(in) :: start_dom_x, start_dom_y, start_x, start_y, start_z
       integer, intent(in) :: end_dom_x, end_dom_y, end_x, end_y, end_z
       integer, intent(in) :: npass
       real, intent(in) :: msgval
-      real, dimension(start_x:end_x, start_y:end_y, start_z:end_z), intent(inout) :: array
-
+      real, dimension(start_x:end_x, start_y:end_y, start_z:end_z), intent(inout) :: array 
+  
       ! Local variables
       integer :: ix, iy, iz, ipass
       real, pointer, dimension(:,:,:) :: scratch
-
+  
       allocate(scratch(start_x+1:end_x-1, start_y:end_y, start_z:end_z))
-
+  
       do ipass=1,npass
 
          !
@@ -100,7 +100,7 @@ module smooth_module
                end do
             end do
          end do
-
+   
          do iy=start_y+1,end_y-1
             do ix=start_x+1,end_x-1
                do iz=start_z,end_z
@@ -112,7 +112,7 @@ module smooth_module
          call exchange_halo_r(array, &
                               start_x, end_x, start_y, end_y, start_z, end_z, &
                               start_dom_x, end_dom_x, start_dom_y, end_dom_y, start_z, end_z)
-
+   
          !
          ! Desmoothing pass
          !
@@ -123,7 +123,7 @@ module smooth_module
                end do
             end do
          end do
-
+   
          do iy=start_y+1,end_y-1
             do ix=start_x+1,end_x-1
                do iz=start_z,end_z
@@ -137,16 +137,16 @@ module smooth_module
                               start_dom_x, end_dom_x, start_dom_y, end_dom_y, start_z, end_z)
 
       end do
-
+  
       deallocate(scratch)
-
+ 
    end subroutine smth_desmth
 
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: smth_desmth_special
    !
-   ! Purpose: Apply the smoother-desmoother from the MM5 program TERRAIN
+   ! Purpose: Apply the smoother-desmoother from the MM5 program TERRAIN 
    !   (found in smther.F) to array; however, any grid points that were not
    !   originally negative but which have been smoothed to a negative value
    !   will be restored to their original values.
@@ -246,7 +246,7 @@ module smooth_module
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: one_two_one_egrid
    !
-   ! Purpose: Apply the 1-2-1 smoother from the MM5 program TERRAIN
+   ! Purpose: Apply the 1-2-1 smoother from the MM5 program TERRAIN 
    !   (found in smth121.F) to array.
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine one_two_one_egrid(array, start_dom_x, end_dom_x, start_dom_y, end_dom_y, &
@@ -400,7 +400,7 @@ module smooth_module
 
          do iy=start_y,end_y
             do ix=start_x,end_x
-               scratch(ix,iy,1) = array(ix,iy,1)
+               scratch(ix,iy,1) = array(ix,iy,1) 
             end do
          end do
 
@@ -443,7 +443,7 @@ module smooth_module
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: smth_desmth_egrid
    !
-   ! Purpose: Apply the smoother-desmoother for E grid
+   ! Purpose: Apply the smoother-desmoother for E grid 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine smth_desmth_egrid(array, start_dom_x, end_dom_x, start_dom_y, end_dom_y, &
                                 start_x, end_x, start_y, end_y, start_z, end_z, npass, msgval, hflag)
@@ -511,7 +511,7 @@ module smooth_module
 
          do iy=start_y,end_y
          do ix=start_x,end_x
-            scratch(ix,iy,1)=array(ix,iy,1) ! for points used in 2nd computation but
+            scratch(ix,iy,1)=array(ix,iy,1) ! for points used in 2nd computation but 
                                             !    not defined in 1st
          end do
          end do

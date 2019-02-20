@@ -1,8 +1,8 @@
       subroutine build_hdate(hdate, iyr, imo, idy, ihr, imi, isc)
 
-! PURPOSE:
-!      From the Year, Month, Day, Hour, Minute, and Second values,
-!      creates a 19-character string representing the date, in the
+! PURPOSE: 
+!      From the Year, Month, Day, Hour, Minute, and Second values, 
+!      creates a 19-character string representing the date, in the 
 !      format:  "YYYY-MM-DD hh:mm:ss"
 
 ! INPUT:

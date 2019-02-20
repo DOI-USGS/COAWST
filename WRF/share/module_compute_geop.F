@@ -92,7 +92,7 @@ CONTAINS
         write(mess,*)'p: ',p
         call wrf_error_fatal( mess )
       end if
-
+ 
       pk = p(kp)
 
     enddo

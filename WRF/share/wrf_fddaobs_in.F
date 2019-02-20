@@ -1,32 +1,32 @@
 !WRF:MEDIATION_LAYER:IO
 !  ---
 
-! This obs-nudging FDDA module (RTFDDA) is developed by the
-! NCAR/RAL/NSAP (National Security Application Programs), under the
-! sponsorship of ATEC (Army Test and Evaluation Commands). ATEC is
-! acknowledged for releasing this capability for WRF community
+! This obs-nudging FDDA module (RTFDDA) is developed by the 
+! NCAR/RAL/NSAP (National Security Application Programs), under the 
+! sponsorship of ATEC (Army Test and Evaluation Commands). ATEC is 
+! acknowledged for releasing this capability for WRF community 
 ! research applications.
 !
-! The NCAR/RAL RTFDDA module was adapted, and significantly modified
-! from the obs-nudging module in the standard MM5V3.1 which was originally
-! developed by PSU (Stauffer and Seaman, 1994).
-!
-! Yubao Liu (NCAR/RAL): lead developer of the RTFDDA module
+! The NCAR/RAL RTFDDA module was adapted, and significantly modified 
+! from the obs-nudging module in the standard MM5V3.1 which was originally 
+! developed by PSU (Stauffer and Seaman, 1994). 
+! 
+! Yubao Liu (NCAR/RAL): lead developer of the RTFDDA module 
 ! Al Bourgeois (NCAR/RAL): lead engineer implementing RTFDDA into WRF-ARW
 ! Nov. 2006
-!
+! 
 ! References:
-!
+!   
 !   Liu, Y., A. Bourgeois, T. Warner, S. Swerdlin and J. Hacker, 2005: An
-!     implementation of obs-nudging-based FDDA into WRF for supporting
+!     implementation of obs-nudging-based FDDA into WRF for supporting 
 !     ATEC test operations. 2005 WRF user workshop. Paper 10.7.
 !
-!   Liu, Y., A. Bourgeois, T. Warner, S. Swerdlin and W. Yu, 2006: An update
-!     on "obs-nudging"-based FDDA for WRF-ARW: Verification using OSSE
-!     and performance of real-time forecasts. 2006 WRF user workshop. Paper 4.7.
+!   Liu, Y., A. Bourgeois, T. Warner, S. Swerdlin and W. Yu, 2006: An update 
+!     on "obs-nudging"-based FDDA for WRF-ARW: Verification using OSSE 
+!     and performance of real-time forecasts. 2006 WRF user workshop. Paper 4.7. 
 
-!
-!   Stauffer, D.R., and N.L. Seaman, 1994: Multi-scale four-dimensional data
+!   
+!   Stauffer, D.R., and N.L. Seaman, 1994: Multi-scale four-dimensional data 
 !     assimilation. J. Appl. Meteor., 33, 416-434.
 !
 !   http://www.rap.ucar.edu/projects/armyrange/references.html
@@ -65,7 +65,7 @@
     ktau   = grid%itimestep               ! ktau corresponds to xtime
     krest  = grid%fdob%ktaur
     inest  = grid%grid_id
-    nstlev = grid%fdob%levidn(inest)
+    nstlev = grid%fdob%levidn(inest) 
     infreq = grid%obs_ionf*(grid%parent_grid_ratio**nstlev)
     iprt_in4dob = grid%obs_ipf_in4dob
 
@@ -180,7 +180,7 @@
 ! IN CHRONOLOGICAL ORDER.
 !
 ! NOTE: This routine was originally designed for MM5, which uses
-!       a nonstandard (I,J) coordinate system. For WRF, I is the
+!       a nonstandard (I,J) coordinate system. For WRF, I is the 
 !       east-west running coordinate, and J is the south-north
 !       running coordinate. So "J-slab" here is west-east in
 !       extent, not south-north as for MM5. RIO and RJO have
@@ -240,14 +240,14 @@
   REAL, intent(in) :: stand_lon               ! standard longitude for map projection
   REAL, intent(in) :: true_lat1               ! truelat1 for map projection
   REAL, intent(in) :: true_lat2               ! truelat2 for map projection
-  REAL, intent(in) :: known_lat               ! latitude  of domain origin point (i,j)=(1,1)
+  REAL, intent(in) :: known_lat               ! latitude  of domain origin point (i,j)=(1,1) 
   REAL, intent(in) :: known_lon               ! longigude of domain origin point (i,j)=(1,1)
   REAL, intent(in) :: dxm                     ! grid size in x (meters)
   REAL, intent(in) :: dym                     ! grid size in y (meters)
   REAL, intent(in) :: rovg                    ! constant rho over g
   REAL, intent(in) :: t0                      ! background temperature
   INTEGER, intent(inout) :: obs_prt(prt_max)  ! For printout of obs index
-  REAL, intent(inout) :: lat_prt(prt_max)     ! For printout of obs latitude
+  REAL, intent(inout) :: lat_prt(prt_max)     ! For printout of obs latitude 
   REAL, intent(inout) :: lon_prt(prt_max)     ! For printout of obs longitude
   REAL, intent(inout) :: mlat_prt(prt_max)    ! For printout of model lat at obs (ri,rj)
   REAL, intent(inout) :: mlon_prt(prt_max)    ! For printout of model lon at obs (ri,rj)
@@ -268,11 +268,11 @@
   INTEGER, intent(in) :: j_parent_start       ! starting j coordinate in parent domain
   INTEGER, intent(in) :: maxdom               ! maximum number of domains
   LOGICAL, intent(in) :: iprt                 ! print flag
-
-!***  DECLARATIONS FOR IMPLICIT NONE
+      
+!***  DECLARATIONS FOR IMPLICIT NONE                                    
   integer :: n, ndum, nopen, nvol, idate, imm, iss
   integer :: nlast                      ! last obs in list of valid obs from prev window
-  integer :: nsta                       ! number of stations held in timeobs array
+  integer :: nsta                       ! number of stations held in timeobs array 
   integer :: nstaw                      ! # stations within the actual time window
   integer :: nprev                      ! previous n in obs read loop (for printout only)
   integer :: meas_count, imc, njend, njc, njcc, julob, kn
@@ -319,7 +319,7 @@
 ! Initialize obs for printout
   obs_prt = -999
   newpass = .true.
-  errcnt  = 0
+  errcnt  = 0 
 
 ! if start time, or restart time, set obs array to missing value
   IF(KTAU.EQ.0.OR.KTAU.EQ.KTAUR) THEN
@@ -369,7 +369,7 @@
 !   IF (iprt) print *,'ndum at 20=',ndum
     NDUM=ABS(NDUM)
     NMOVE=NIOBF-NDUM
-    IF(NMOVE.GT.0 .AND. NDUM.NE.0 ) THEN
+    IF(NMOVE.GT.0 .AND. NDUM.NE.0 ) THEN  
       DO N=1,NMOVE
         do KN = 1,nndgv
           VAROBS(KN,N)=VAROBS(KN,N+NDUM)
@@ -382,7 +382,7 @@
         nlevs_ob(n)=nlevs_ob(n+ndum)
         lev_in_ob(n)=lev_in_ob(n+ndum)
         plfo(n)=plfo(n+ndum)
-        elevob(n)=elevob(n+ndum)
+        elevob(n)=elevob(n+ndum) 
       ENDDO
     ENDIF
     NOPEN=NMOVE+1
@@ -427,7 +427,7 @@
       ifon(inest)=1
       write(fonc(1:2),'(i2)')ifon(inest)
       if(fonc(1:1).eq.' ')fonc(1:1)='0'
-    obs_domain_file_name='OBS_DOMAIN'//CHAR(INEST+ICHAR('0'))//fonc(1:2)
+    obs_domain_file_name='OBS_DOMAIN'//CHAR(INEST+ICHAR('0'))//fonc(1:2)  
     IF (.NOT. OPENED) THEN
       INQUIRE (file=obs_domain_file_name,EXIST=exist)
       if(exist)then
@@ -448,7 +448,7 @@
      !If the unit for observation nudging file is already open make sure the file
      !name matches the expected name to ensure that some other part of WRF has
      !not opened a file using the same unit number
-     IF(file_name_on_obs_unit .ne. obs_domain_file_name) THEN
+     IF(file_name_on_obs_unit .ne. obs_domain_file_name) THEN 
       write(msg,*) 'File open on obs nudging unit (',obs_domain_file_unit,') with wrong name'
       call wrf_message(msg)
       write(msg,*) 'File open on obs nudging unit is named ',&
@@ -462,7 +462,7 @@
     ENDIF
   ENDIF  !end if(KTAU.EQ.0.OR.KTAU.EQ.KTAUR)
 ! print *,'at jc check1'
-
+ 
 !**********************************************************************
 !       --------------   BIG 100 LOOP OVER N  --------------
 !**********************************************************************
@@ -489,8 +489,8 @@
          GOTO 130
       ENDIF
     ENDIF
-
-! OBSFILE: no more data in the obsfile
+ 
+! OBSFILE: no more data in the obsfile 
 ! AJB note: This is where we would implement multi-file reading.
     if(ieof(inest).eq.1 )then
       ieof(inest)=2
@@ -548,7 +548,7 @@
 !     if(ifon.eq.4)print *,'ifon=4',latitude,longitude
 ! this works only for lc projection
 ! yliu: add llxy for all 3 projection
-
+          
 !ajb Arguments ri and rj have been switched from MM5 orientation.
 
       CALL latlon_to_ij(obs_proj, latitude, longitude, ri, rj)
@@ -571,7 +571,7 @@
 !     write(6,*) 'platform,source,elevation,is_sound,bogus,meas_count:'
 !     write(6,*) platform,source,elevation,is_sound,bogus,meas_count
 
-! yliu
+! yliu 
       elevob(n)=elevation
 ! jc
 ! change platform from synop to profiler when needed
@@ -581,7 +581,7 @@
       if(namef(1:7).eq.'SATWNDS') platform(1:11)='SATWNDS    '
       if(namef(1:8).eq.'CLASS DA')platform(7:10)='TEMP'
 ! yliu end
-
+ 
       rko(n)=-99.
 !yliu 20050706
 !     if((platform(7:11).eq.'METAR').or.(platform(7:11).eq.'SPECI').or.
@@ -621,7 +621,7 @@
         lev_in_ob(n)=1.
         do imc=1,meas_count
 !             write(6,*) '0 inest = ',inest,' n = ',n
-! the sounding has one header, many levels. This part puts it into
+! the sounding has one header, many levels. This part puts it into 
 ! "individual" observations. There's no other way for nudob to deal
 ! with it.
           if(imc.gt.1)then                          ! sub-loop over N
@@ -669,11 +669,11 @@
 !         endif                                                                  FORE07E08
 ! yliu: Ens test - end
 
-
+ 
 ! jc
 ! hardwire to switch -777777. qc to 0. here temporarily
 ! -777777. is a sounding level that no qc was done on.
-
+ 
           if(temperature_qc.eq.-777777.)temperature_qc=0.
           if(pressure_qc.eq.-777777.)pressure_qc=0.
           if(height_qc.eq.-777777.)height_qc=0.
@@ -686,17 +686,17 @@
           if(u_met_data.eq.-888888.)u_met_qc=-888888.
           if(v_met_data.eq.-888888.)v_met_qc=-888888.
           if(rh_data.eq.-888888.)rh_qc=-888888.
-
+ 
 ! jc
 ! Hardwire so that only use winds in pilot obs (no winds from temp) and
 !    only use temperatures and rh in temp obs (no temps from pilot obs)
-! Do this because temp and pilot are treated as 2 platforms, but pilot
+! Do this because temp and pilot are treated as 2 platforms, but pilot 
 !    has most of the winds, and temp has most of the temps. If use both,
 !    the second will smooth the effect of the first. Usually temps come in after
-!    pilots. pilots usually don't have any temps, but temp obs do have some
+!    pilots. pilots usually don't have any temps, but temp obs do have some 
 !    winds usually.
 ! plfo=5 is TEMP ob, range sounding is an exception
-!yliu start -- comment out to test with merged PILOT and TEMP and
+!yliu start -- comment out to test with merged PILOT and TEMP and 
 !        do not use obs interpolated by little_r
 !       if(plfo(n).eq.5. .and. namef(1:8).ne.'CLASS DA')then
 !         u_met_data=-888888.
@@ -760,7 +760,7 @@
                 endif
               endif
             ENDIF
-          endif
+          endif 
           if(varobs(5,n).ge.0.)varobs(5,n)=varobs(5,n)*1.e-3
 ! don't use data above 80 mb
           if((varobs(5,n).gt.0.).and.(varobs(5,n).le.8.))then
@@ -958,7 +958,7 @@
       do njc=1,njend
 ! Check that time, lat, lon, and platform all match exactly.
 ! Platforms 1-4 (surface obs) can match with each other. Otherwise,
-!   platforms have to match exactly.
+!   platforms have to match exactly. 
         if( (timeob(n).eq.timeob(njc)) .and.                     &
             (rio(n).eq.rio(njc))       .and.                     &
             (rjo(n).eq.rjo(njc))       .and.                     &
@@ -972,7 +972,7 @@
           if( ( (plfo(n).le.4.).and.(plfo(njc).le.4.) ) .or.     &
                 (plfo(n).eq.plfo(njc)) ) then
 
-! if not a sounding, and levels are the same then replace first occurrence
+! if not a sounding, and levels are the same then replace first occurrence 
             if((.not.is_sound).and.(rko(njc).eq.rko(n))) then
 !             print *,'dup single ob-replace ',n,inest,
 !             plfo(n),plfo(njc)
@@ -1316,7 +1316,7 @@
       ENDIF
     ENDIF
   ENDIF
-
+ 
   IF(KTAU.EQ.KTAUR)THEN
     IF (iprt) then
       write(msg,601) INEST,IONF
@@ -1367,15 +1367,15 @@
       REAL, intent(out) :: TIMANL
       INTEGER, intent(in) :: JULDAY
       REAL, intent(in) :: GMT
-      INTEGER, intent(in) :: IND
+      INTEGER, intent(in) :: IND 
 
-!***  DECLARATIONS FOR IMPLICIT NONE
+!***  DECLARATIONS FOR IMPLICIT NONE                                    
       real :: MO(12), rjulanl, houranl, rhr
 
       integer :: iyr, idate1, imo, idy, ihr, my1, my2, my3, ileap
       integer :: juldayn, juldanl, idymax, mm
-
-
+      
+      
       IF(IND.EQ.2)GOTO 150
       IYR=INT(MDATE/1000000.+0.001)
       IDATE1=MDATE-IYR*1000000
@@ -1439,7 +1439,7 @@
   END SUBROUTINE julgmt
 
   SUBROUTINE rh2r(rh,t,p,r,iice)
-
+ 
 ! convert rh to r
 ! if iice=1, use saturation with respect to ice
 ! rh is 0-100.
@@ -1453,7 +1453,7 @@
       REAL, intent(out) :: r
       INTEGER, intent(in)  :: iice
 
-!***  DECLARATIONS FOR IMPLICIT NONE
+!***  DECLARATIONS FOR IMPLICIT NONE                                    
       real eps, e0, eslcon1, eslcon2, esicon1, esicon2, t0, rh1
       real esat, rsat
 
@@ -1464,10 +1464,10 @@
       esicon1=21.8745584
       esicon2=7.66
       t0=260.
-
+ 
 !     print *,'rh2r input=',rh,t,p
       rh1=rh*.01
-
+ 
       if(iice.eq.1.and.t.le.t0)then
         esat=e0*exp(esicon1*(t-273.16)/(t-esicon2))
       else
@@ -1476,28 +1476,28 @@
       rsat=eps*esat/(p-esat)
 !     print *,'rsat,esat=',rsat,esat
       r=rh1*rsat
-
+ 
 !      print *,'rh2r rh,t,p,r=',rh1,t,p,r
-
+ 
       return
   END SUBROUTINE rh2r
 
   SUBROUTINE rh2rb(rh,t,p,r,iice)
-
+ 
 ! convert rh to r
 ! if iice=1, use daturation with respect to ice
 ! rh is 0-100.
 ! r is g/g
 ! t is K
 ! p is mb
-
+ 
       REAL, intent(in)  :: rh
       REAL, intent(in)  :: t
       REAL, intent(in)  :: p
       REAL, intent(out) :: r
       INTEGER, intent(in)  :: iice
 
-!***  DECLARATIONS FOR IMPLICIT NONE
+!***  DECLARATIONS FOR IMPLICIT NONE                                    
       real eps, e0, eslcon1, eslcon2, esicon1, esicon2, t0, rh1
       real esat, rsat
       character(len=200) :: msg       ! Argument to wrf_message
@@ -1509,11 +1509,11 @@
       esicon1=22.514
       esicon2=6.15e3
       t0=273.15
-
+ 
       write(msg,*) 'rh2r input=',rh,t,p
       call wrf_message(msg)
       rh1=rh*.01
-
+ 
       if(iice.eq.1.and.t.le.t0)then
         esat=e0*exp(esicon1-esicon2/t)
       else
@@ -1522,11 +1522,11 @@
       rsat=eps*esat/(p-esat)
 !     print *,'rsat,esat=',rsat,esat
       r=rh1*eps*rsat/(eps+rsat*(1.-rh1))
-
+ 
       write(msg,*) 'rh2r rh,t,p,r=',rh1,t,p,r
       call wrf_message(msg)
       rh1=rh*.01
-
+ 
       return
 END SUBROUTINE rh2rb
 
@@ -1555,7 +1555,7 @@ END SUBROUTINE rh2rb
   REAL, intent(in) :: stand_lon               ! standard longitude for map projection
   INTEGER, intent(in) :: e_we                 ! max grid index in south-north coordinate
   INTEGER, intent(in) :: e_sn                 ! max grid index in west-east   coordinate
-  REAL, intent(in) :: known_lat               ! latitude  of domain origin point (i,j)=(1,1)
+  REAL, intent(in) :: known_lat               ! latitude  of domain origin point (i,j)=(1,1) 
   REAL, intent(in) :: known_lon               ! longigude of domain origin point (i,j)=(1,1)
   REAL, intent(in) :: dxm                     ! grid size in x (meters)
   REAL, intent(in) :: dym                     ! grid size in y (meters)
@@ -1660,7 +1660,7 @@ END SUBROUTINE rh2rb
 ! PURPOSE: Return the number of values in a (real) non-decreasing array that
 !          are less than or equal to the specified upper limit.
 ! NOTE: It is important that the array is non-decreasing!
-!
+!      
 !------------------------------------------------------------------------------
   IMPLICIT NONE
 
@@ -1821,7 +1821,7 @@ END SUBROUTINE rh2rb
                               ims,ime,jms,jme,its,ite,jts,jte,        &
                               mlat,mlon)
 !*************************************************************************
-! Purpose: Use bilinear interpolation to compute the model latitude and
+! Purpose: Use bilinear interpolation to compute the model latitude and 
 !          longitude at the observation point.
 !*************************************************************************
 
@@ -1848,8 +1848,8 @@ END SUBROUTINE rh2rb
 
 ! Local variables
   integer ndx                     ! Index into save arrays
-  real    :: ri, rj               ! Mass-pt coord of obs
-  integer :: ril, rjl             ! Mass-pt integer coord immed sw of obs
+  real    :: ri, rj               ! Mass-pt coord of obs 
+  integer :: ril, rjl             ! Mass-pt integer coord immed sw of obs 
   integer :: iend, jend           ! Upper i, j index for interpolation
   real    :: dxob, dyob           ! Grid fractions for interp
 

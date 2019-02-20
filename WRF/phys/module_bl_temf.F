@@ -426,7 +426,7 @@ contains
 ! Grid staggering:  Matlab version has mass and turbulence levels.
 ! WRF has full levels (with w) and half levels (u,v,theta,q*).  Both
 ! sets of levels use the same indices (kts:kte).  See pbl_driver or
-! WRF Physics doc for (a few) details.
+! WRF Physics doc for (a few) details.  
 ! So *mass levels correspond to half levels.*
 ! WRF full levels are ignored, we define our own turbulence levels
 ! in order to put the first one below the first half level.
@@ -462,7 +462,7 @@ contains
 !   to know where the surface is.  It won't work if kts .NE. 1.
 
 
-   do i = its,ite      ! Main loop
+   do i = its,ite      ! Main loop 
 
       ! Get incoming surface theta from TSK (WA for now)
       thetal(i,1) = tsk(i) / pi2d(i,1)  ! WA really should use Exner func. at z0
@@ -480,7 +480,7 @@ contains
       do k = kts+1,kte
          ! Convert specific humidities to mixing ratios
          rv(i,k) = qvx(i,k-1) / (1.-qvx(i,k-1))   ! Water vapor
-         rl(i,k) = qcx(i,k-1) / (1.-qcx(i,k-1))   ! Liquid water
+         rl(i,k) = qcx(i,k-1) / (1.-qcx(i,k-1))   ! Liquid water 
          rt(i,k) = rv(i,k) + rl(i,k)        ! Total water (without ice)
          chi_poisson(i,k) = rcp * (1.+rv(i,k)/ep2) / (1.+rv(i,k)*cpv/cp)
          gam(i,k) = rt(i,k) * r_v / (cp + rt(i,k)*cpv)
@@ -560,7 +560,7 @@ contains
          end if
       end do
 
-      ! Gradients at top level
+      ! Gradients at top level   
 
       dthdz(i,kte) = dthdz(i,kte-1)
       dqtdz(i,kte) = dqtdz(i,kte-1)
@@ -573,7 +573,7 @@ contains
       else
          wstr(i) = 0.
       end if
-
+      
 
       ! Set flag convective or not for use below
       is_convective = wstr(i) > 0. .AND. MFopt .AND. dthdz(i,1)<0. .AND. dthdz(i,2)<0.  ! WA 12/16/09 require two levels of negative (unstable) gradient
@@ -614,7 +614,7 @@ contains
          end if
          leps(i,kt) = 1./linv(i,kt)
          leps(i,kt) = max(leps(i,kt),lepsmin(i,kt))
-      end do
+      end do 
       S(i,kte) = 0.0
       N2(i,kte) = 0.0
       TKE(i,kte) = 0.0
@@ -691,8 +691,8 @@ contains
          thetavUPDmoist(i,1) = thup_temfx(i,1) * (1. + 0.608*qtup_temfx(i,1))  ! WA Assumes no liquid
          TEUPD(i,1) = te_temfx(i,1) + g / thetav(i,1) * sfcTHVF(i)
          qlUPD(i,1) = qcx(i,1)  ! WA allow environment liquid
-         TUPD(i,1) = thup_temfx(i,1) * pi2d(i,1)
-         rstUPD(i,1) = rsat(p2d(i,1),TUPD(i,1),ep2)
+         TUPD(i,1) = thup_temfx(i,1) * pi2d(i,1)   
+         rstUPD(i,1) = rsat(p2d(i,1),TUPD(i,1),ep2)  
          rlUPD(i,1) = 0.
 
          ! Calculate updraft parameters counting up
@@ -721,9 +721,9 @@ contains
                ! Need thetavUPDmoist, qlUPD
                rUPD(i,k) = qtup_temfx(i,k) / (1. - qtup_temfx(i,k))
                ! WA Updraft temperature assuming no liquid
-               TUPD(i,k) = thup_temfx(i,k) * pi2d(i,k)
-               ! Updraft saturation mixing ratio
-               rstUPD(i,k) = rsat(p2d(i,k-1),TUPD(i,k),ep2)
+               TUPD(i,k) = thup_temfx(i,k) * pi2d(i,k)   
+               ! Updraft saturation mixing ratio 
+               rstUPD(i,k) = rsat(p2d(i,k-1),TUPD(i,k),ep2)  
                ! Correct to actual temperature (Sommeria & Deardorff 1977)
                beta1(i,k) = 0.622 * (xlv/(r_d*TUPD(i,k))) * (xlv/(cp*TUPD(i,k)))
                rstUPD(i,k) = rstUPD(i,k) * (1.0+beta1(i,k)*rUPD(i,k)) / (1.0+beta1(i,k)*rstUPD(i,k))
@@ -764,7 +764,7 @@ contains
             hdidx(i) = kte  ! In case wUPD <= 0 not found
             do k = 2,kte
                ! if (wupd_dry(i,k) <= 0.) then
-               if (wupd_dry(i,k) <= 0. .OR. zm(i,k) > hmax) then
+               if (wupd_dry(i,k) <= 0. .OR. zm(i,k) > hmax) then 
                   hdidx(i) = k
                   goto 100   ! FORTRAN made me do it!
                end if
@@ -801,7 +801,7 @@ contains
             if (hctidx(i) <= hdidx(i)+1) then   ! No active cloud
                hct(i) = hd(i)
                hctidx(i) = hdidx(i)
-            else
+            else 
             end if
          else   ! No cloud
             hct(i) = hd(i)
@@ -858,7 +858,7 @@ contains
             mf_temfx(i,kt) = mf_temfx(i,kt-1) + dMdz(i,kt)
          end do
 
-         ! WA 12/28/09 If mass flux component > diffusive
+         ! WA 12/28/09 If mass flux component > diffusive 
          ! component at second level,
          ! reduce M to prevent a stable layer
          MFCth(i,2) = mf_temfx(i,2) * (thup_temfx(i,2)-thetal(i,2) + thup_temfx(i,3)-thetal(i,3)) / 2.
@@ -1003,7 +1003,7 @@ contains
       ! WA TEST 11/7/13 back to wm = u* but with "whole" wind in u* above
       wm(i) = ust(i)
       ! WA 7/23/10 reduce velocity scale to fix excessive fluxes
-      ! wm(i) = 0.5 * (1./5. * (wstr(i)**3. + 5. * ust(i)**3.)) ** (1./3.)
+      ! wm(i) = 0.5 * (1./5. * (wstr(i)**3. + 5. * ust(i)**3.)) ** (1./3.) 
 
       ! Specified flux versions (flux is modified by land surface)
       ! WA 5/31/13 use whole surface flux to improve heat conservation
@@ -1251,7 +1251,7 @@ contains
       rsatpar(k) = rsat(p(k-1),Tpar(k-1),ep2)
       qsatpar(k) = rsatpar(k) / (1. + rsatpar(k))
 
-      ! When parcel is unsaturated, its temperature changes
+      ! When parcel is unsaturated, its temperature changes 
       ! at dry adiabatic rate (in other words, theta is constant).
       if (rpar(k) <= rsatpar(k)) then
          thetapar(k) = thetapar(k-1)

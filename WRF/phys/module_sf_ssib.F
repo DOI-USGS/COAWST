@@ -4,9 +4,9 @@ MODULE module_sf_ssib
 !References for the SSiB:
 !Xue et al. 1991, J. Climate, 4, 345-364.
 !Sun and Xue, 2001,  Adv. in Atmos. Sci, 18, 335-354.
-!Xue et al., 2003, J. Geophy. Res. 108, D22, doi: 10.1029/2002JD003174.
+!Xue et al., 2003, J. Geophy. Res. 108, D22, doi: 10.1029/2002JD003174. 
 !Coding by Fernando De Sales and  Zhengxin Liu (2011)
-
+ 
   REAL, PARAMETER      ::    CPAIR    = 1004.6                  &
                             ,STEFAN   = 5.669 * 10E-9           &
                             ,GRAV     = 9.81                    &
@@ -891,7 +891,7 @@ CONTAINS
                           PM, PSUR, ivgtyp,                      &
                           SWDOWN1, SNOB,                         &
                           SALB11, SALB12, SALB21, SALB22,        &
-                     RADFRAC11, RADFRAC12, RADFRAC21, RADFRAC22, &
+                     RADFRAC11, RADFRAC12, RADFRAC21, RADFRAC22, & 
                           XHSFLX, ELATEN, GHTFLX, XHLFLX, TGEFF, &
                           USTAR, RIB, FM, FH, CM,                &
                           XLHF, XSHF, XGHF, XEGS, XECI, XECT,    & ! output
@@ -908,7 +908,7 @@ CONTAINS
                                                    )
 !**********************************************
 !-----------------------------------------------------------------------
-!   THERE ARE A MAIN SSIB PROGRAM AND 12 SUBROUTINE FILES, WHICH ARE:
+!   THERE ARE A MAIN SSIB PROGRAM AND 12 SUBROUTINE FILES, WHICH ARE:        
 !              VEGOUT
 !              CROPS
 !              RADAB
@@ -920,14 +920,14 @@ CONTAINS
 !              RASIT5
 !              STRES1
 !              NEWTON
-!                                      YONGKANG XUE
+!                                      YONGKANG XUE                     
 !-----------------------------------------------------------------------
-!                              INPUT
+!                              INPUT  
 !     DDTT:      TIME INTERVAL
 !     SUNANGLE: SOLAR ZENITH ANGLE
 !     SWDOWN:   SHORT WAVE DOWN(W/M*M);
 !     RADFRAC:  SHORT WAVE COMPONENTS (visible and near IR; direct and diffuse)
-!     RLWDOWN:   LONG WAVE DOWN(W/M*M);
+!     RLWDOWN:   LONG WAVE DOWN(W/M*M); 
 !     PPL, PPC: LARGE SCALE AND CONVECTIVE PRECIPITATIONS AT THE TIME STEP (mm)
 !     TM:       TEMPERETURE AT LOWEST MODEL LAYER (K)
 !     UMM,VMM:  ZONAL AND MERIDIONAL WINDS AT LOWEST MODEL LAYER (m/S)
@@ -941,9 +941,9 @@ CONTAINS
 !     IYEAR:    YEAR
 !                             OUTPUT
 !     ETMASS:   EVAPORATION (mm/step)
-!     ELATEN:   LATENT HEAT FLUX (w/m*m)
+!     ELATEN:   LATENT HEAT FLUX (w/m*m) 
 !     EVAPSOIL,EVAPWC,EVAPDC,EVAPSN: LATENT HEAT FROM (SOIL, INTERCEPTION,
-!               TRANSPIRATION, AND SNOW SURFACE)
+!               TRANSPIRATION, AND SNOW SURFACE)                  
 !     HFLUX:    SENSIBLE HEAT FLUX(w/m*m)
 !     GHTFLX:   GROUND HEAT FLUX(w/m*m) = CHF+SHF
 !     USTAR:    FRICTION VELOCITY (m/s)
@@ -962,7 +962,7 @@ CONTAINS
 !     WWW:      SOIL MOISTURE
 !     SOILM:    TOTAL SOIL WATER CONTENT
 !     ROFF:     RUN OFF
-!
+!     
 !----------------------------------------------------------------------
 
  INTEGER, DIMENSION (12) :: IDAYS
@@ -1005,7 +1005,7 @@ CONTAINS
      DATA IVMODIS / 4,  1,  5,  2,  3,  8,  9,  6,           &
                     6,  7,  7, 12, 11, 12, 13, 11,           &
                     0, 10, 10, 10/
-! Converts vegetation/land use types
+! Converts vegetation/land use types  
   IF(MMINLU.EQ.'SSIB') THEN
       ITYPE=IVGTYP
   ELSEIF(MMINLU.EQ.'USGS') THEN
@@ -1071,9 +1071,9 @@ CONTAINS
       IF (ITIME.EQ.1) THEN
           STLEV1=0.05    ! half of 10cm layer
           STLEV2=1.05    ! half of second + first layer
-
+    
           DEPTH = TD_DEPTH(ITYPE)
-
+    
             IF     (DEPTH.GT.STLEV1.AND.DEPTH.LE.STLEV2)THEN ! interp.
             TD = ( (STLEV2-DEPTH)*TGS + (DEPTH-STLEV1)*TD )             &
      &                        /(STLEV2-STLEV1)
@@ -1141,11 +1141,11 @@ CONTAINS
            IF(TM.ge.TF) IPTYPE=1
       END IF
 !C
-!
+!                                                                       
 !     CONVERT TO VAPOR PRES. TO MB
       EM=(PSURF*QM)/0.6220
       IF (ITIME.EQ.1) EA=EM
-!
+! 
       SUNANG=AMAX1(SUNANGLE,0.01746)
 ! By Zhenxin 2011-06-20
 !      IF (sw_physics.eq.3) THEN
@@ -1194,21 +1194,21 @@ CONTAINS
       RADN(2,2) = RADFRAC(2,2) * SWDOWN
       RADN(3,1) = 0.
       RADN(3,2) = RLWDOWN
-!
+!                                                                       
 !     END OF EMPIRICAL EQUATIONS
 !     *********************************************************
 !
       CALL RADAB (TRAN,REF,GREEN,VCOVER,CHIL,ZLT,Z2,Z1,SOREF,TC,          &
                  TGS,SATCAP,EXTK,RADFAC,THERMK,RADT,PAR,PD,ALBEDO,SALB,   &
                  TGEFF,SUNANG,XADJ,CAPAC,RADN,ZLWUP,RADFRAC,              &
-                 ISNOW,SNOWDEN,SNOWDEPTH,SWDOWN,BEDO,SNOCV,0,             &
+                 ISNOW,SNOWDEN,SNOWDEPTH,SWDOWN,BEDO,SNOCV,0,             &         
                  fsdown,fldown,fsup,flup)
 !
       CALL ROOT1(PHSAT,BEE,WWW,PHSOIL)
 !
       CALL STOMA1(GREEN,VCOVER,CHIL,ZLT,PAR,PD,EXTK,SUNANG,RST,           &
                  RSTPAR, CTLPA)
-!
+!     
       RSTUN = RST(1)
 
 !***************************************************************************************
@@ -1225,7 +1225,7 @@ CONTAINS
 !
       CALL SET0(TSSNO,BWO,BLO,BIO,HO,FLO,FIO,WO,DZO,                      &
                       SSO,CTO,BTO,DMLTO,WF,DHP)
-!
+!                                                                       
 !***************************************************************************************
        IF (ISNOW.EQ.0) THEN              ! MULTI-LAYER SNOW
 !***************************************************************************************
@@ -1276,7 +1276,7 @@ CONTAINS
 !
       END IF
 !***************************************************************************************
-!
+!                                                                       
       CALL UPDAT1(DTT,TC,TGS,TD,CAPAC,DTC,DTG,ECT,ECI,EGT,EGI,            &
          EGS,EG,HC,HG,HFLUX,ETMASS,ROFF,                                  &
          1,ROOTD,ROOTP,POROS,BEE,SATCO,SLOPE,                             &
@@ -1345,9 +1345,9 @@ CONTAINS
       FH=VKC/XCT
 !
 !
-        EVAPSOIL=EGS /DTT
-        EVAPWC=ECI /DTT
-        EVAPDC=ECT /DTT
+        EVAPSOIL=EGS /DTT 
+        EVAPWC=ECI /DTT 
+        EVAPDC=ECT /DTT 
         EVAPSN=EGI /DTT
         EVAPGX=EGT /DTT
         ELATEN=EVAPSOIL+EVAPWC+EVAPDC+EVAPSN+EVAPGX
@@ -1616,11 +1616,11 @@ CONTAINS
 ! By Zhenxin 2011-06-20
 !      IF (sw_physics.eq.3) THEN
        IF (sw_physics.eq.3 .or. sw_physics.eq.4) THEN
-! End by Zhenxin 2011-06-20
+! End by Zhenxin 2011-06-20 
 
 !**********************************************
 !fds - RADFRAC from radiation scheme 3 (06/2010)
-!fds - Otherwise use cloud cover to calculate radfrac
+!fds - Otherwise use cloud cover to calculate radfrac 
         radfrac11 = amax1(radfrac11,0.025)
         radfrac12 = amax1(radfrac12,0.025)
         radfrac21 = amax1(radfrac21,0.025)
@@ -1633,7 +1633,7 @@ CONTAINS
       ELSE
 ! ** CALCULATE THE CLOUD COVER USING AN EMPIRICAL EQUATION
 !    ONLY USE THIS PART WHEN IT IS NEEDED
-!  **  ONLY USE THIS PART WHEN SW_PHYSICS = 1 IS USED ** By Zhenxin 2011-06
+!  **  ONLY USE THIS PART WHEN SW_PHYSICS = 1 IS USED ** By Zhenxin 2011-06 
         swdown = amax1(swdown1,0.1)
         CLOUD = AMAX1(CLOUD,0.0)
         CLOUD = AMIN1(CLOUD,1.0)
@@ -1754,7 +1754,7 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE CROPS(XLAT,DAY,CHIL,ZLT,GREEN,XCOVER      &
       ,RSTPAR,TOPT,TL,TU,DEFAC,PH2,PH1)
 !
@@ -1839,7 +1839,7 @@ CONTAINS
 !
 ! ** DATE FOUND IN PHENOLOGY STAGE
    40  CONTINUE
-       IF ((RDAY.GT.PHENST(IHEAD)).AND.(RDAY.LE.DEND)) THEN
+       IF ((RDAY.GT.PHENST(IHEAD)).AND.(RDAY.LE.DEND)) THEN      
            TLAI=WLAI(IHEAD)
            GRLF=WGRN(IHEAD)
            GO TO 77
@@ -1873,47 +1873,47 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE ROOT1(PHSAT,BEE,WWW,PHSOIL)
-!                                                         12 AUG 2000
+!                                                         12 AUG 2000   
 !=======================================================================
-!
-!    CALCULATION OF SOIL MOISTURE POTENTIALS IN ROOT ZONE OF EACH
-!    VEGETATION LAYER AND SUMMED SOIL+ROOT RESISTANCE
-!
+!                                                                       
+!    CALCULATION OF SOIL MOISTURE POTENTIALS IN ROOT ZONE OF EACH       
+!    VEGETATION LAYER AND SUMMED SOIL+ROOT RESISTANCE                   
+!                                                                       
 !-----------------------------------------------------------------------
 !----------------------------------------------------------------------
  REAL, DIMENSION (3) :: WWW, PHSOIL
-!
-      DO 1000 IL = 1, 3
-      PHSOIL(IL) = PHSAT * AMAX1( 0.05, WWW(IL) ) ** ( - BEE )
- 1000 CONTINUE
-!
+!                                                                       
+      DO 1000 IL = 1, 3                                                 
+      PHSOIL(IL) = PHSAT * AMAX1( 0.05, WWW(IL) ) ** ( - BEE )          
+ 1000 CONTINUE                                                          
+!                                                                       
 !-----------------------------------------------------------------------
-!     AVERAGE SOIL MOISTURE POTENTIAL IN ROOT ZONE USED FOR SOURCE
+!     AVERAGE SOIL MOISTURE POTENTIAL IN ROOT ZONE USED FOR SOURCE      
 !-----------------------------------------------------------------------
-!
-!
-!     PHROOT(1) = PHSOIL(1)-0.01
-!
-!     DO 1200 I = 2 ,3
-!1200 PHROOT(1) = AMAX1( PHROOT(1), PHSOIL(I) )
-!     PHROOT(2) = PHROOT(1)
-!
-!
+!                                                                       
+!                                                                       
+!     PHROOT(1) = PHSOIL(1)-0.01                                        
+!                                                                       
+!     DO 1200 I = 2 ,3                                                  
+!1200 PHROOT(1) = AMAX1( PHROOT(1), PHSOIL(I) )                         
+!     PHROOT(2) = PHROOT(1)                                             
+!                                                                       
+!                                                                       
 !------------------------------------------------------
       END SUBROUTINE ROOT1
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE STOMA1(GREEN,VCOVER,CHIL,ZLT,PAR,PD,EXTK,SUNANG,RST,   &
                        RSTPAR,CTLPA)
 !                                                         12 AUG 2000
 !=======================================================================
-!
-!     CALCULATION OF PAR-LIMITED STOMATAL RESISTANCE
-!
+!                                                                       
+!     CALCULATION OF PAR-LIMITED STOMATAL RESISTANCE                    
+!                                                                       
 !-----------------------------------------------------------------------
 !----------------------------------------------------------------------
 
@@ -1921,69 +1921,69 @@ CONTAINS
  REAL, DIMENSION (2,3)   :: RSTPAR
  REAL, DIMENSION (2,3,2) :: EXTK
 
-!
-      DO 1000 IVEG = 1, 2
-!
-      AT = ZLT(IVEG) / VCOVER(IVEG)
-!
-      IF (SUNANG .LE. 0.02) THEN
-         XABC = RSTPAR(IVEG,1) / RSTPAR(IVEG,2) + RSTPAR(IVEG,3)
-         RST(IVEG) = 0.5 / XABC * AT
-         IF (RST(IVEG) .LT. 0.) RST(IVEG) = 0.00001
-         GO TO 1010
-      END IF
-!
+!                                                                       
+      DO 1000 IVEG = 1, 2                                               
+!                                                                       
+      AT = ZLT(IVEG) / VCOVER(IVEG)                                     
+!                                                                       
+      IF (SUNANG .LE. 0.02) THEN                                        
+         XABC = RSTPAR(IVEG,1) / RSTPAR(IVEG,2) + RSTPAR(IVEG,3)        
+         RST(IVEG) = 0.5 / XABC * AT                                     
+         IF (RST(IVEG) .LT. 0.) RST(IVEG) = 0.00001                     
+         GO TO 1010                                                     
+      END IF                                                            
+!                                                                       
       GAMMA = ( RSTPAR(IVEG,1) + RSTPAR(IVEG,2) * RSTPAR(IVEG,3) ) /     &
-                RSTPAR(IVEG,3)
-!
-      POWER1 = AMIN1( 50., AT * EXTK(IVEG,1,1) )
-      POWER2 = AMIN1( 50., AT * EXTK(IVEG,1,2) )
-!
+                RSTPAR(IVEG,3)                                          
+!                                                                       
+      POWER1 = AMIN1( 50., AT * EXTK(IVEG,1,1) )                        
+      POWER2 = AMIN1( 50., AT * EXTK(IVEG,1,2) )                        
+!                                                                       
 !-----------------------------------------------------------------------
-!     ROSS INCLINATION FUNCTION
+!     ROSS INCLINATION FUNCTION                                         
 !-----------------------------------------------------------------------
-!
-      AA = 0.5 - 0.633 * CHIL(IVEG)- 0.33 * CHIL(IVEG)* CHIL(IVEG)
-      BB = 0.877 * ( 1. - 2. * AA )
-!
+!                                                                       
+      AA = 0.5 - 0.633 * CHIL(IVEG)- 0.33 * CHIL(IVEG)* CHIL(IVEG)      
+      BB = 0.877 * ( 1. - 2. * AA )                                     
+!                                                                       
 !-----------------------------------------------------------------------
-!     COMBINED ESTIMATE OF K-PAR USING WEIGHTS FOR DIFFERENT COMPONENTS
+!     COMBINED ESTIMATE OF K-PAR USING WEIGHTS FOR DIFFERENT COMPONENTS 
 !-----------------------------------------------------------------------
-!
+!                                                                       
       ZAT = ALOG( ( EXP(-POWER1) + 1. )/2. ) * PD(IVEG)                  &
-            / ( POWER1/AT )
+            / ( POWER1/AT )                                             
       ZAT = ZAT + ALOG( ( EXP(-POWER2) + 1. )/2. )                       &
-       * ( 1. - PD(IVEG) ) / ( POWER2/AT )
-!
-      POW1 = AMIN1( 50., (POWER1*ZAT/AT) )
-      POW2 = AMIN1( 50., (POWER2*ZAT/AT) )
-!
+       * ( 1. - PD(IVEG) ) / ( POWER2/AT )                              
+!                                                                       
+      POW1 = AMIN1( 50., (POWER1*ZAT/AT) )                              
+      POW2 = AMIN1( 50., (POWER2*ZAT/AT) )                              
+!                                                                       
       ZK = 1. / ZAT * ALOG( PD(IVEG) * EXP ( POW1 )                      &
-            + ( 1. - PD(IVEG) ) * EXP ( POW2 ) )
-!
-!
-      POW = AMIN1( 50., ZK*AT )
-      EKAT = EXP ( POW )
-!
+            + ( 1. - PD(IVEG) ) * EXP ( POW2 ) )                        
+!                                                                       
+!                                                                       
+      POW = AMIN1( 50., ZK*AT )                                         
+      EKAT = EXP ( POW )                                                
+!                                                                       
       AVFLUX = PAR(IVEG) * ( PD(IVEG) / SUNANG * ( AA + BB * SUNANG )   &
             + ( 1. - PD(IVEG) )*( BB / 3. + AA * 1.5                    &
-            + BB / 4. * PIE ))
-!
-      RHO4 = GAMMA / AVFLUX
-!
+            + BB / 4. * PIE ))                                          
+!                                                                       
+      RHO4 = GAMMA / AVFLUX                                             
+!                                                                       
       RST(IVEG) = RSTPAR(IVEG,2)/GAMMA * ALOG(( RHO4 * EKAT + 1. ) /     &
-                    ( RHO4 + 1. ) )
+                    ( RHO4 + 1. ) )                                     
       RST(IVEG) = RST(IVEG) - ALOG (( RHO4 + 1. / EKAT ) /               &
-                    ( RHO4 + 1. ) )
-      RST(IVEG) = RST(IVEG) / ( ZK * RSTPAR(IVEG,3) )
-!
-!----------------------------------------------------------------------
-!     MODIFICATIONS FOR GREEN FRACTION : RST UPRIGHT
-!----------------------------------------------------------------------
-!
-1010  RST(IVEG) = 1. / ( RST(IVEG) * GREEN(IVEG) + 0.0000001)
-1000  CONTINUE
-!
+                    ( RHO4 + 1. ) )                                     
+      RST(IVEG) = RST(IVEG) / ( ZK * RSTPAR(IVEG,3) )                   
+!                                                                       
+!---------------------------------------------------------------------- 
+!     MODIFICATIONS FOR GREEN FRACTION : RST UPRIGHT                    
+!---------------------------------------------------------------------- 
+!                                                                       
+1010  RST(IVEG) = 1. / ( RST(IVEG) * GREEN(IVEG) + 0.0000001)           
+1000  CONTINUE                                                          
+!                                                                       
       RST(1) = RST(1) * CTLPA
 !
 !------------------------------------------------------
@@ -1991,59 +1991,59 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE VEGOUT(XTRAN,XREF,XGREEN,XVCOVER,XCHIL,             &
            XRSTPAR,XTOPT,XTL,XTU,XDEFAC,XPH1,XPH2,                   &
            XZLT,XZ0,XDD,XZ2,XZ1,XRDC,XRBC,XROOTD,XSOREF,             &
            XBEE, XPHSAT, XPOROS, XSATCO,XSLOPE,                      &
            XDEPTH,MONTH,ITYPE)
-!                                                     12 AUGUSTY 2000
+!                                                     12 AUGUSTY 2000 
 !=======================================================================
-!
-!     ASSIGN VEGETATION PHYSIOLOGY
-!
-!    SURFACE PARAMETERS ARE READ IN SAME ORDER AS IN GCM
-!    SUBROUTINE SIBINP. ONLY EXCEPTION IS THAT 1-D VERSION READS IN
-!    SITE SPECIFIC PARAMETERS CORB1 ... ZMET .
-!
-!     VARIABLES THAT ENTER THROUGH COMSIB:
-!        SUBSCRIPTS (IV, IW, IL) :
-!              IV = VEGETATION STORY; 1 = TOP AND 2 = BOTTOM
-!              IW = RADIATION WAVELENGTH; 1 = VISIBLE, 2 = NEAR
-!                   INFRARED AND 3 = THERMAL INFRARED
-!              IL = VEGETATION STATE; 1 = LIVE (GREEN) AND
-!                   2 = DEAD (STEMS AND TRUNK)
-!
-!   TRAN(IV,IW,IL): LEAF TRANSMITTANCE
-!   REF (IV,IW,IL): LEAF REFLECTANCE
-!   RSTPAR(IV,IW) : PAR-DEPENDENT LEAF STOMATAL RESISTANCE COEFFICIENTS
-!                          A =(J/M**3) B = 2(W/M**2) C = 3(S/M)
-!   SOREF(IW)     : SOIL REFLECTANCE
-!   CHIL(IV)      : LEAF ANGLE DISTRIBUTION FACTOR
-!   TOPT(IV)      : OPTIMUM TEMPERATURE FOR STOMATAL FUNCTIONING
-!   TL(IV)        : LOWER TEMPERATURE LIMIT FOR STOMATAL FUNCTIONING
-!   TU(IV)        : UPPER TEMPERATURE LIMIT FOR STOMATAL FUNCTIONING
-!   DEFAC(IV)     : VAPOR PRESSURE DEFICIT PARAMETER
-!   PH1(IV)       :
-!   PH2(IV)       :
-!   ROOTD(IV)     : ROOTING DEPTH
-!   BEE           : SOIL WETNESS EXPONENT
-!   PHSAT         : SOIL TENSION AT SATURATION
-!   SATCO         : HYDRAULIC CONDUCTIVITY AT SATURATION
-!   POROS         : SOIL POROSITY
-!   ZDEPTH        : DEPTH OF 3 SOIL MOISTURE LAYERS
-!   Z0            : ROUGHNESS LENGTH
-!   XDD           : ZERO PLANE DISPLACEMENT
-!   ZLT(IV)       : LEAF AREA INDEX
-!   GREEN(IV)     : GREEN LEAF FRACTION
-!   VCOVER(IV)    : VEGETATION COVER FRACTION
-!
-!     VARIABLES ( SPECIFIC TO SIB 1-D VERSION ONLY ) FROM COMSIB
-!
-!      ZWIND  : REFERENCE HEIGHT FOR WIND MEASUREMENT
-!      ZMET   : REFERENCE HEIGHT FOR TEMPERATURE, HUMIDITY MEASUREMENT
-!        THE ABOVE ARE GENERATED FROM SIBX + MOMOPT OUTPUT
-!
+!                                                                       
+!     ASSIGN VEGETATION PHYSIOLOGY                                        
+!                                                                       
+!    SURFACE PARAMETERS ARE READ IN SAME ORDER AS IN GCM                
+!    SUBROUTINE SIBINP. ONLY EXCEPTION IS THAT 1-D VERSION READS IN     
+!    SITE SPECIFIC PARAMETERS CORB1 ... ZMET .                          
+!                                                                       
+!     VARIABLES THAT ENTER THROUGH COMSIB:                              
+!        SUBSCRIPTS (IV, IW, IL) :                                      
+!              IV = VEGETATION STORY; 1 = TOP AND 2 = BOTTOM            
+!              IW = RADIATION WAVELENGTH; 1 = VISIBLE, 2 = NEAR         
+!                   INFRARED AND 3 = THERMAL INFRARED                   
+!              IL = VEGETATION STATE; 1 = LIVE (GREEN) AND              
+!                   2 = DEAD (STEMS AND TRUNK)                          
+!                                                                       
+!   TRAN(IV,IW,IL): LEAF TRANSMITTANCE                                  
+!   REF (IV,IW,IL): LEAF REFLECTANCE                                    
+!   RSTPAR(IV,IW) : PAR-DEPENDENT LEAF STOMATAL RESISTANCE COEFFICIENTS 
+!                          A =(J/M**3) B = 2(W/M**2) C = 3(S/M)         
+!   SOREF(IW)     : SOIL REFLECTANCE                                    
+!   CHIL(IV)      : LEAF ANGLE DISTRIBUTION FACTOR                      
+!   TOPT(IV)      : OPTIMUM TEMPERATURE FOR STOMATAL FUNCTIONING        
+!   TL(IV)        : LOWER TEMPERATURE LIMIT FOR STOMATAL FUNCTIONING    
+!   TU(IV)        : UPPER TEMPERATURE LIMIT FOR STOMATAL FUNCTIONING    
+!   DEFAC(IV)     : VAPOR PRESSURE DEFICIT PARAMETER                    
+!   PH1(IV)       :                                                     
+!   PH2(IV)       :                                                     
+!   ROOTD(IV)     : ROOTING DEPTH                                       
+!   BEE           : SOIL WETNESS EXPONENT                               
+!   PHSAT         : SOIL TENSION AT SATURATION                          
+!   SATCO         : HYDRAULIC CONDUCTIVITY AT SATURATION                
+!   POROS         : SOIL POROSITY                                       
+!   ZDEPTH        : DEPTH OF 3 SOIL MOISTURE LAYERS                     
+!   Z0            : ROUGHNESS LENGTH                                    
+!   XDD           : ZERO PLANE DISPLACEMENT                             
+!   ZLT(IV)       : LEAF AREA INDEX                                     
+!   GREEN(IV)     : GREEN LEAF FRACTION                                 
+!   VCOVER(IV)    : VEGETATION COVER FRACTION                           
+!                                                                       
+!     VARIABLES ( SPECIFIC TO SIB 1-D VERSION ONLY ) FROM COMSIB        
+!                                                                       
+!      ZWIND  : REFERENCE HEIGHT FOR WIND MEASUREMENT                   
+!      ZMET   : REFERENCE HEIGHT FOR TEMPERATURE, HUMIDITY MEASUREMENT  
+!        THE ABOVE ARE GENERATED FROM SIBX + MOMOPT OUTPUT              
+!                                                                       
 !----------------------------------------------------------------------
 !----------------------------------------------------------------------
 ! USE module_ssib_veg
@@ -2056,7 +2056,7 @@ CONTAINS
  REAL, DIMENSION (2,3,2) :: XTRAN, XREF
 
 !-----------------------------------------------------------------------
-!
+!                                                                       
        DO IW=1,3
        XTRAN(1,IW,1)=TRAN0(ITYPE,1,IW,1)
        XTRAN(1,IW,2)=TRAN0(ITYPE,1,IW,2)
@@ -2071,7 +2071,7 @@ CONTAINS
        XSOREF  (IW) =SOREF0(ITYPE,IW)
        END DO
        DO IV=1,2
-       XCHIL(IV)=CHIL0(ITYPE,IV)
+       XCHIL(IV)=CHIL0(ITYPE,IV) 
        XTOPT(IV)=TOPT0(ITYPE,IV)
        XTL(IV)=TL0(ITYPE,IV)
        XTU(IV)=TU0(ITYPE,IV)
@@ -2086,7 +2086,7 @@ CONTAINS
        DO IDEP=1,3
        XDEPTH(IDEP)=DEPTH0(ITYPE,IDEP)
        END DO
-!
+!                   
        XBEE=BEE0(ITYPE)
        XPHSAT=PHSAT0(ITYPE)
        XSATCO=SATCO0(ITYPE)
@@ -2104,7 +2104,7 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE COMBO (DDZ2,DZP,DZM,WP,WM,HP,HM,TP,TM,BWP,BWM,BIP,    &
           BIM,BLP,BLM,BTP,BTM,FIP,FIM,FLP,FLM,CTP,CTM,                 &
           DLIQVOLP,DLIQVOLM,DICEVOLP,DICEVOLM)
@@ -2146,7 +2146,7 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE COMPACT(BI,T,BL,OVERBURDEN,PDZDT,SS,DICE)
 !
 !=======================================================================
@@ -2171,7 +2171,7 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE GETMET(IPTYPE,PRCP_TOTAL,TAIR,                       &
                         PRCP_S,PRCP_W,FI_FALL,FL_FALL,BI_FALL,BL_FALL)
 !
@@ -2213,7 +2213,7 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE INTERCS (DTT,VCOVER,ZLAI,TM,TC,TGS,CAPAC,WWW,PPC,PPL, &
                          ROFF,ZDEPTH,POROS,CCX,CG,SATCO,SATCAP,SPWET,  &
                          EXTK,ISNOW,P0,CSOIL,DZSOIL,                   &
@@ -2701,7 +2701,7 @@ CONTAINS
       END SUBROUTINE INTERC
 !------------------------------------------------------
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE LAYER1 (CSOIL,TGS,DZSOIL,H,W,SNOWDEPTH,SWE,STEMP,ND)
 !
 !=======================================================================
@@ -2730,7 +2730,7 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
        SUBROUTINE LAYERN (TG,SNOW_WE,SNOW_DEPTH,  DZ0,BW0,W0,BT0,CT0,  &
                   FL0,FI0,H0,BL0,BI0,DLIQV0,DICEV0,TSSN0,DMLT0)
 !
@@ -2791,7 +2791,7 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE MODNODE(SNOWDEPTH,DZO,WO,HO,TSSNO,BWO,BIO,       &
                          BLO,BTO,FIO,FLO,CTO,DLIQVOL,DICEVOL)
 !
@@ -2856,7 +2856,7 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE NEWSNOW(PRCP,BIFALL,BLFALL,FLFALL,TKAIR,               &
        DZO,WO,BWO,CTO,HO,DMLTO,FIO,FLO,BIO,BLO,DLIQVOL,DICEVOL,TSSNO,WF)
 !
@@ -2902,7 +2902,7 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
        SUBROUTINE NEWTON(A1,Y,FINC,NOX,NONPOS,IWOLK,L,ZINC,A2,Y1,ITER)
 !
 !=======================================================================
@@ -3013,7 +3013,7 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE OLD(TSSN,BW,BL,BI,H,FL,FI,W,DZ,SS,CT,BT,DMLT,           &
                   TSSNO,BWO,BLO,BIO,HO,FLO,FIO,WO,DZO,SSO,CTO,BTO,DMLTO)
 !
@@ -3043,7 +3043,7 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE RADAB (TRAN,REF,GREEN,VCOVER,CHIL,ZLAI,Z2,Z1,SOREF,TC,  &
                  TGS,SATCAP,EXTK,RADFAC,THERMK,RADT,PAR,PD,ALBEDO,SALB,  &
                  TGEFF,SUNANG,XADJ,CAPAC,RADN,ZLWUP,FRAC,                &
@@ -3910,7 +3910,7 @@ CONTAINS
       END SUBROUTINE RADAB_ICE
 !------------------------------------------------------
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE RASIT5(TRIB,CTNI,CUNI,RA,Z2,Z0,D,ZZWIND,UMM1,        &
                  RHOA,TMM,U2,USTAR,DRAG,TA,bps,rib,CU,CT,UV10)
 !                                                      2001,1,11
@@ -4032,7 +4032,7 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE SDSOL(DSOL,DMASS,N,SOLAR,SOLSOIL)
 !
 !=======================================================================
@@ -4071,13 +4071,13 @@ CONTAINS
          end if
  20   continue
       solsoil = tsolb
-!
+!                                                                       
 !------------------------------------------------------
       END SUBROUTINE SDSOL
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE SET0(TSSNO,BWO,BLO,BIO,HO,FLO,FIO,WO,DZO,    &
                       SSO,CTO,BTO,DMLTO,WF,DHP)
 !
@@ -4111,7 +4111,7 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE SNOW_1ST (DTT,TM,SOLAR,PRCPW,PRCPS,BIO,BLO,DICEVOL,      &
                   DLIQVOL,TSSNO,PDZDTC,POROSITY,SO,SSO,WF,DHP,DZO,WO,     &
                   BWO,BTO,CTO,DMASS,DSOL,SNROFF,HROFF,SNOWDEPTH,SOLSOIL,  &
@@ -4226,13 +4226,13 @@ CONTAINS
 112     continue
         solsoil=0.0
       END IF
-!
+!                                                                       
 !------------------------------------------------------
       END SUBROUTINE SNOW_1ST
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE SNRESULT(DTT,I,ICASE,WFSOIL,TSOIL,B1,B2,FFF,DELTH,WWW,   &
                    ZDEPTH,POROS,BI,BIO,DZ,DZO,W,BW,BWO,H,HO,QK,BL,BT,CT,  &
                    FI,FL,WF,TSSN,DLIQVOL,DICEVOL,SNROFF,HROFF,QSOIL)
@@ -4409,13 +4409,13 @@ CONTAINS
 !cS  qsoil : downward is positive [ W/m**2]
         if (i.eq.1) qsoil =  qk(1)*(tssn(1) - tsoil) + hx
 !cs                                                       10/13/98
-!
+!                                                                       
 !------------------------------------------------------
       END SUBROUTINE SNRESULT
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE STRES1 (IFIRST,RSTM,ROOTP,                          &
            RSTFAC,RST,TC,ETC,RB,TGS,ETGS,RD,TU,TL,TOPT,EA,           &
            DEFAC,PH1,PH2,NROOT,ZDEPTH,PHSOIL,ROOTD,VCOVER,DROP)
@@ -4534,13 +4534,13 @@ CONTAINS
 !
       RST(IVEG) = AMIN1( RST(IVEG), 100000. )
 1000  CONTINUE
-!
+!                                                                       
 !------------------------------------------------------
       END SUBROUTINE STRES1
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE TEMRS1                                                 &
         (DTT,TC,TGS,TD,TA,TM,QM,EM,PSURF,WWW,CAPAC,SATCAP,              &
          DTC,DTG,RA,RST,ZDEPTH,BEE,PHSAT,POROS,D,Z0,RDC,RBC,VCOVER,Z2,  &
@@ -4951,7 +4951,7 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE TEMRS2                                                 &
         (DTT,TC,TGS,TD,TA,TM,QM,EM,PSURF,WWW,CAPAC,SATCAP,              &
          DTC,DTG,RA,RST,ZDEPTH,BEE,PHSAT,POROS,D,Z0,RDC,RBC,VCOVER,     &
@@ -5639,7 +5639,7 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE TPROPTY(THKSOIL,BWO,DZO,TKAIR,DZSOIL,  THK,QK)
 !
 !=======================================================================
@@ -5658,13 +5658,13 @@ CONTAINS
 47    continue
 !     YX2002 (test2) but do nothing at this stage
       qk(1)= 2.0*thk(1)*thksoil/(thk(1)*dzsoil+thksoil*dzo(1))
-!
+!                                                                       
 !------------------------------------------------------
       END SUBROUTINE TPROPTY
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
       SUBROUTINE UPDAT1(DTT,TC,TGS,TD,CAPAC,DTC,DTG,ECT,ECI,EGT,EGI,   &
          EGS,EG,HC,HG,HFLUX,ETMASS,ROFF,                               &
          NROOT,ROOTD,ROOTP,POROS,BEE,SATCO,SLOPE,                      &
@@ -6056,7 +6056,7 @@ CONTAINS
 !crr       RNOFFB=RNOFFB + (WWW(3)-1.)* ZDEPTH(3) * POROS *1000.
           WWW(3) = 1.
       END IF
-!
+!                                                                       
 !------------------------------------------------------
       END SUBROUTINE UPDAT1
 !------------------------------------------------------
@@ -6448,7 +6448,7 @@ CONTAINS
 !------------------------------------------------------
 
 !=======================================================================
-!
+!                                                                       
          SUBROUTINE CONVDIM(IOFLAG,                              &
    DZO1,WO1,TSSN1,TSSNO1,BWO1,BTO1,CTO1,FIO1,FLO1,BIO1,BLO1,HO1, &
    DZO2,WO2,TSSN2,TSSNO2,BWO2,BTO2,CTO2,FIO2,FLO2,BIO2,BLO2,HO2, &

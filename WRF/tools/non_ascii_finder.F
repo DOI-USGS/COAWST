@@ -4,44 +4,44 @@
 ! For completeness, from stackoverflow:
 ! perl -pi -e 's/\r\n|\n|\r/\r\n/g' file-to-convert  # Convert to DOS
 !
-! The purpose of this program is to scan through all of the
+! The purpose of this program is to scan through all of the 
 ! lines of a Fortran file to detect if there are any character
 ! codes (excluding the ubiquitously used tab character) outside
-! the range of 32 to 127 (the standard printable ASCII character
+! the range of 32 to 127 (the standard printable ASCII character 
 ! set).
 
 ! The "Fortran 2003 Handbook" (Adams et al. 2009), in section 3.1.1,
-! lists the standard Fortran character set, which is consistent
-! with the restriction of the ASCII character codes from 32
+! lists the standard Fortran character set, which is consistent 
+! with the restriction of the ASCII character codes from 32 
 ! through 127 (inclusive).
 
-! So far during source code testing, all of the special characters
-! outside of the ASCII printable character range have been used
-! within comments.  The WRF model strips comments before passing
-! the code through to the compiler.  These characters can
-! occasionally get introduced with physics routines when variable
-! names or units use special characters (superscripts, squared
-! terms, hats, etc), or when short- or long-dashes are used in
-! citing references.  Again, these sources are typical of
-! information that could be provided in a comment without
+! So far during source code testing, all of the special characters 
+! outside of the ASCII printable character range have been used 
+! within comments.  The WRF model strips comments before passing 
+! the code through to the compiler.  These characters can 
+! occasionally get introduced with physics routines when variable 
+! names or units use special characters (superscripts, squared 
+! terms, hats, etc), or when short- or long-dashes are used in 
+! citing references.  Again, these sources are typical of 
+! information that could be provided in a comment without 
 ! impacting the code to be built.
 
-! How to build the finder program:
+! How to build the finder program: 
 ! gfortran -ffree-form non_ascii_finder.F
 
 ! usage:
 ! ./a.out -v|-V file.F
 
-! Typically, the program is run twice.
+! Typically, the program is run twice.  
 
-! 1) The program is run the first time with the verbose flag
-! (mandatory) set to "-v".  Output only occurs when the input file
-! contains at least one offending character.  In this case, the
+! 1) The program is run the first time with the verbose flag 
+! (mandatory) set to "-v".  Output only occurs when the input file 
+! contains at least one offending character.  In this case, the 
 ! output is the file name containing the offending character.
 
-! 2) Once the list of problematic files is assembled, the program
-! is re-run with verbose flag set to "-V".  For each file processed,
-! the program outputs the line of source code that contains the
+! 2) Once the list of problematic files is assembled, the program 
+! is re-run with verbose flag set to "-V".  For each file processed, 
+! the program outputs the line of source code that contains the 
 ! offending character(s), and also output the line number (to help
 ! the user find the string).
 
@@ -49,7 +49,7 @@
 ! characters were removed.  From the top WRF directory:
 
 ! <type on the command line>
-! find . -name \*.F -exec tools/a.out -v {} \;
+! find . -name \*.F -exec tools/a.out -v {} \; 
 
 ! <output to screen>
 ! ./chem/module_cam_mam_newnuc.F
@@ -155,22 +155,22 @@ PROGRAM non_ascii_finder
    END IF
 
    IF      ( verbose_arg(1:3) .EQ. "-VV" ) THEN
-      verbose = 2
+      verbose = 2      
    ELSE IF ( verbose_arg(1:2) .EQ. "-v"  ) THEN
-      verbose = 0
+      verbose = 0      
    ELSE IF ( verbose_arg(1:2) .EQ. "-V"  ) THEN
-      verbose = 1
+      verbose = 1      
    ELSE
       PRINT *,'The verbose switch is either "-v" or "-V"'
       PRINT *,'Entered: ',verbose_arg(1:arg_len)
       STOP 3
-   END IF
+   END IF 
 
    CALL GET_COMMAND_ARGUMENT ( NUMBER=2, VALUE=filename, LENGTH=filename_length, STATUS=status )
 
    IF ( status .EQ. 0 ) THEN
       OPEN ( UNIT     = input_unit     , &
-             FILE     = TRIM(filename) , &
+             FILE     = TRIM(filename) , & 
              ACCESS   = 'SEQUENTIAL'   , &
              ACTION   = 'READ'         , &
              FORM     = 'FORMATTED'    , &
@@ -191,11 +191,11 @@ PROGRAM non_ascii_finder
 
    !  Loop over each line of the input file.
 
-   big_read_loop : DO
+   big_read_loop : DO 
 
       DO ind = 1 , MAX_LENGTH
          input_string(ind:ind) = ' '
-      END DO
+      END DO      
       READ (input_unit,FMT='(A)',IOSTAT=status) input_string
 
       IF ( status < 0 ) THEN
@@ -211,7 +211,7 @@ PROGRAM non_ascii_finder
                 ( ICHAR(input_string(ind:ind)) .NE. TAB         ) ) THEN
             problem_line_count = problem_line_count + 1
             IF ( verbose .EQ. 0 ) THEN
-            ELSE
+            ELSE 
                PRINT *,TRIM(filename)
                PRINT *,'Found something on line #',line_count
                PRINT *,TRIM(input_string)
@@ -220,7 +220,7 @@ PROGRAM non_ascii_finder
          END IF
       END DO
 
-      line_count = line_count + 1
+      line_count = line_count + 1 
 
    END DO big_read_loop
 

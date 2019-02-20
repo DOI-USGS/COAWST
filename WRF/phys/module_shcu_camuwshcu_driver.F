@@ -7,10 +7,10 @@ MODULE module_shcu_camuwshcu_driver
   !-------------------------------------------
   !Future modifications and important warnings (BSINGH:02/01/2013- Notes from WIG):
   !===========================================
-  !1. UWShCu is hard-wired for certain moisture variables that could cause trouble
-  !   depending on which MP is used
-  !2. Mixing for rain, snow, and graupel moist vars is commented out.
-  !   For other MP routines that treat this prognostically, we need to implement
+  !1. UWShCu is hard-wired for certain moisture variables that could cause trouble 
+  !   depending on which MP is used 
+  !2. Mixing for rain, snow, and graupel moist vars is commented out. 
+  !   For other MP routines that treat this prognostically, we need to implement 
   !   ShCu mixing of these (and other possible) moist species.
   !3. Fractional occurrence of shallow convection is currently not calculated.
   !-------------------------------------------
@@ -155,7 +155,7 @@ SUBROUTINE camuwshcu_driver(                                  &
                                  dt    !time step (s)
 
   REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT) ::   &
-                        dlf2           ! Required by CAMMGMP Microphysics
+                        dlf2           ! Required by CAMMGMP Microphysics                            
  REAL, DIMENSION( ims:ime, kms:kme, jms:jme ), INTENT(OUT) ::   &
                            shfrc3d     !Shallow cloud fraction
 
@@ -175,7 +175,7 @@ SUBROUTINE camuwshcu_driver(                                  &
                             flxsnow, & ! Shallow convective-scale flux of snow at interfaces [ kg/m2/s ]
                             cmfmc2     !cloud fraction
 
-
+                                                            
 
 
   REAL(r8), DIMENSION(pcols, kte) ::  &
@@ -313,8 +313,8 @@ SUBROUTINE camuwshcu_driver(                                  &
         !BSINGH - TKE at the interfaces
         do k = kts, kte+1
            kflip = kte - k + 2
-
-           tke8(1,kflip) = tke_pbl(i,k,j)  !Turbulent kinetic energy
+           
+           tke8(1,kflip) = tke_pbl(i,k,j)  !Turbulent kinetic energy            
         end do
 
         !Flip the tracer array -
@@ -340,14 +340,14 @@ SUBROUTINE camuwshcu_driver(                                  &
            moist8(1,kflip,m) = max(0.0,qni(i,k,j)/(1. + qv(i,k,j)))
 
 #if ( WRF_CHEM == 1 )
-           !Following Do-Loop is obtained from chem/module_cam_mam_aerchem_driver.F
+           !Following Do-Loop is obtained from chem/module_cam_mam_aerchem_driver.F 
            do l = param_first_scalar, num_chem
               l2 = lptr_chem_to_q(l)
               if ((l2 >= 1) .and. (l2 <= pcnst)) then
                  moist8(1,kflip,l2) = max(0.0,chem(i,k,j,l)*factconv_chem_to_q(l))
               end if
-           end do ! l
-#endif
+           end do ! l             
+#endif           
 
         end do
 
@@ -390,9 +390,9 @@ SUBROUTINE camuwshcu_driver(                                  &
               dum1 = ( 268.15_r8 - t8(1,kflip) ) / 30._r8
             endif
            qcten_det(1,kflip) = qc2(1,kflip) * ( 1._r8 - dum1 )
-           qiten_det(1,kflip) = qc2(1,kflip) * dum1
-           qcnten_det(1,kflip) = 3._r8 * (qc2(1,kflip)    * ( 1._r8 - dum1 ) ) / (4._r8*3.14159_r8*(10.e-6_r8**3)*997._r8)
-           qinten_det(1,kflip) = 3._r8 * (qc2(1,kflip)    *  dum1 ) / (4._r8*3.14159_r8*(50.e-6_r8**3)*500._r8)
+           qiten_det(1,kflip) = qc2(1,kflip) * dum1 
+           qcnten_det(1,kflip) = 3._r8 * (qc2(1,kflip)    * ( 1._r8 - dum1 ) ) / (4._r8*3.14159_r8*(10.e-6_r8**3)*997._r8) 
+           qinten_det(1,kflip) = 3._r8 * (qc2(1,kflip)    *  dum1 ) / (4._r8*3.14159_r8*(50.e-6_r8**3)*500._r8)  
            qsten_det(1,kflip)      =  qc2(1,kflip) * dum1 * latice                    ! liquid to ice heating
         end do
         do k = kts,kte
@@ -430,9 +430,9 @@ SUBROUTINE camuwshcu_driver(                                  &
               call cnst_get_ind( 'NUMICE', m )
               rqinshten(i,k,j) = (tnd_tracer(1,kflip,m)+qinten_det(1,kflip))*(1. + qv(i,k,j))
            endif
-        end do !k-loop to kte
+        end do !k-loop to kte              
 !PMA<
-
+           
 #if ( WRF_CHEM == 1 )
            !BSINGH - update moist8 by physics update call
            !Update chem array and state constituents
@@ -444,7 +444,7 @@ SUBROUTINE camuwshcu_driver(                                  &
            ptend_lq(1:5) = .FALSE.
            ptend_name    = 'convect_shallow'
 
-
+        
            call physics_update(lchnk,ztodt,moist8,tnd_tracer,state_s,ptend_s,ptend_name,ptend_lq,ptend_ls,pcnst)
            do k = kts,kte
               kflip = kte-k+1
@@ -454,8 +454,8 @@ SUBROUTINE camuwshcu_driver(                                  &
                     chem(i,k,j,l) = moist8(1,kflip,l2)/factconv_chem_to_q(l)
                  end if
               end do ! l
-           end do !k-loop to kte
-#endif
+           end do !k-loop to kte              
+#endif          
 
 
         do k = kts,kte+1

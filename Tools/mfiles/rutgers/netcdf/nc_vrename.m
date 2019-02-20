@@ -20,7 +20,7 @@ function status = nc_vrename(Fname, Vname_old, Vname_new)
 %    status       Error flag
 %
 
-% svn $Id: nc_vrename.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: nc_vrename.m 916 2018-07-14 01:28:47Z arango $
 %=========================================================================%
 %  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
@@ -98,6 +98,10 @@ end
 
 ncid  = netcdf.open(Fname, 'nc_write');
 varid = netcdf.inqVarID(ncid, Vname_old);
+
+% Put file into define mode.
+
+netcdf.reDef(ncid);
 
 % Rename variable.
 

@@ -47,7 +47,7 @@ module datatype_module
       integer :: projection_flag
 
       ! For ARW: M, U, or V; for NMM: H or V
-      integer :: stagger
+      integer :: stagger  
 
       real :: knownlat, knownlon, deltalat, deltalon
       real :: deltax, deltay, xlonc, truelat1, truelat2
@@ -56,11 +56,11 @@ module datatype_module
 
    ! This is the datatype that is understood by data_storage module
    type fg_input
-      ! BEGIN any types we want to keep and use for sorting in storage module
+      ! BEGIN any types we want to keep and use for sorting in storage module 
       type (header_info) :: header
       type (map_info) :: map
-      ! END any types we want to keep and use for sorting in storage module
-
+      ! END any types we want to keep and use for sorting in storage module 
+ 
       real, dimension(:,:), pointer :: r_arr     !!!!! REQUIRED !!!!!
       type (bitarray), pointer :: valid_mask, modified_mask
    end type fg_input
@@ -73,7 +73,7 @@ module datatype_module
       type (data_node), pointer :: next, prev
       integer, dimension(2) :: field_shape
 
-      ! If non-zero, the array is actually stored in a Fortran unit
+      ! If non-zero, the array is actually stored in a Fortran unit 
       integer :: filenumber
 
       ! The following two are used by heaps
@@ -93,7 +93,7 @@ module datatype_module
    contains
 
 
-   ! Compares two fg_input types; returns EQUAL if the two should
+   ! Compares two fg_input types; returns EQUAL if the two should 
    !   belong to the same secondary linked list, and NOT_EQUAL otherwise
    function primary_cmp(a, b)
 
@@ -103,7 +103,7 @@ module datatype_module
       type (fg_input), intent(in) :: a, b
 
       ! Return value
-      integer :: primary_cmp
+      integer :: primary_cmp 
 
 !      if ((a%header%date          == b%header%date) .and. &
 !          (a%header%forecast_hour == b%header%forecast_hour) .and. &
@@ -118,8 +118,8 @@ module datatype_module
    end function primary_cmp
 
 
-   ! Compares two fg_input types; returns EQUAL if the two belong
-   !   at the same position in a secondary linked list, LESS if "a" belongs
+   ! Compares two fg_input types; returns EQUAL if the two belong 
+   !   at the same position in a secondary linked list, LESS if "a" belongs 
    !   after "b", and GREATER if "a" belongs before "b"
    function secondary_cmp(a, b)
 
@@ -129,9 +129,9 @@ module datatype_module
       type (fg_input), intent(in) :: a, b
 
       ! Return value
-      integer :: secondary_cmp
+      integer :: secondary_cmp 
 
-! BUG: Eventually, we only want to sort pressure-level data this way, and
+! BUG: Eventually, we only want to sort pressure-level data this way, and 
 !      all others the opposite way, as in the else case below.
       if (a%header%time_dependent .or. a%header%constant_field) then
          if (a%header%vertical_level > b%header%vertical_level) then
@@ -172,7 +172,7 @@ module datatype_module
 
    end subroutine dup
 
-
+  
    function is_time_dependent(a)
 
       implicit none
@@ -183,7 +183,7 @@ module datatype_module
       ! Return value
       logical :: is_time_dependent
 
-      is_time_dependent = a%header%time_dependent
+      is_time_dependent = a%header%time_dependent 
 
    end function is_time_dependent
 
@@ -297,7 +297,7 @@ module datatype_module
 
    end function get_fieldname
 
-
+   
    ! Gives starting and ending indices for a field
    subroutine get_dims(a, start_mem_1, end_mem_1, start_mem_2, end_mem_2)
 
@@ -307,10 +307,10 @@ module datatype_module
       type (fg_input), intent(in) :: a
       integer, intent(out) :: start_mem_1, end_mem_1, start_mem_2, end_mem_2
 
-      start_mem_1 = a%header%dim1(1)
-      end_mem_1 = a%header%dim1(2)
-      start_mem_2 = a%header%dim2(1)
-      end_mem_2 = a%header%dim2(2)
+      start_mem_1 = a%header%dim1(1) 
+      end_mem_1 = a%header%dim1(2) 
+      start_mem_2 = a%header%dim2(1) 
+      end_mem_2 = a%header%dim2(2) 
 
    end subroutine get_dims
 

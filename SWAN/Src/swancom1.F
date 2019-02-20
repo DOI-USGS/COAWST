@@ -3072,7 +3072,7 @@
      &                 ANYWND     ,SPCDIR     ,                           40.00
      &                 COMPDA(1,JVX2) ,COMPDA(1,JVY2) ,
 #ifdef SWAN_MODEL
-     &                 COMPDA(1,JUSTAR),COMPDA(1,JCDRAG),
+     &                 COMPDA(1,JUSTAR),COMPDA(1,JCDRAG), 
 #endif
      &                 SPCSIG ,AC2)                                      41.33 30.70
 !TIMG          CALL SWTSTO(115)                                                40.23
@@ -5119,7 +5119,7 @@
 !     ETOT_SIG_2_DSIG    : Integration term for calculating ETOT_2
 !     ETOT_2             : (negative) second moment of the energy density
 !     EBSIN              : Integration term for calculatng EBSINTOT !PSD 09/21/2011
-!     EBCOS              : Integration term for calculating EBCOSTOT !PSD 09/21/2011
+!     EBCOS              : Integration term for calculating EBCOSTOT !PSD 09/21/2011     
 !     EBSINTOT           : Numerator in calculating DIRBOT !PSD 09/21/2011
 !     EBCOSTOT           : Denominator in calculating DIRBOT !PSD 09/21/2011
 !     FRINT_X_DDIR       : FRINTF * DDIR
@@ -5219,7 +5219,7 @@
           DO IS=1,MSC
             EBCOS(IS) = SUM(AC2(:,IS,KCGRD(1))*SPCDIR(:,2))
             EBSIN(IS) = SUM(AC2(:,IS,KCGRD(1))*SPCDIR(:,3))
-          ENDDO
+          ENDDO 
             EBCOS_INT = EBCOS(:) * SIGPOW(:,4) / SINH_K_X_DEP_2(:)
             EBSIN_INT = EBSIN(:) * SIGPOW(:,4) / SINH_K_X_DEP_2(:)
             EBCOSTOT = SUM(EBCOS_INT(:) * FRINTF_X_DDIR)
@@ -5473,7 +5473,7 @@
 !     ETOT_2             : (negative) second moment of the energy density
 #ifdef SWAN_MODEL
 !     EBSIN              : Integration term for calculatng EBSINTOT !PSD 09/21/2011
-!     EBCOS              : Integration term for calculating EBCOSTOT !PSD 09/21/2011
+!     EBCOS              : Integration term for calculating EBCOSTOT !PSD 09/21/2011     
 !     EBSINTOT           : Numerator in calculating DIRBOT !PSD 09/21/2011
 !     EBCOSTOT           : Denominator in calculating DIRBOT !PSD 09/21/2011
 #endif
@@ -5664,7 +5664,7 @@
           DO IS=1,MSC
             EBCOS(IS) = SUM(AC2(:,IS,KCGRD(1))*SPCDIR(:,2))
             EBSIN(IS) = SUM(AC2(:,IS,KCGRD(1))*SPCDIR(:,3))
-          ENDDO
+          ENDDO 
             EBCOS_INT = EBCOS(:) * SIGPOW(:,4) / SINH_K_X_DEP_2(:)
             EBSIN_INT = EBSIN(:) * SIGPOW(:,4) / SINH_K_X_DEP_2(:)
             EBCOSTOT = SUM(EBCOS_INT(:) * FRINTF_X_DDIR)

@@ -4,7 +4,7 @@
 module constituents
 
 !----------------------------------------------------------------------------------------------
-!
+! 
 ! Purpose: Contains data and functions for manipulating advected and non-advected constituents.
 !
 ! Revision history:
@@ -19,7 +19,7 @@ module constituents
   use shr_kind_mod, only: r8 => shr_kind_r8
   use physconst,    only: r_universal
 
-#ifndef WRF_PORT
+#ifndef WRF_PORT 
   use spmd_utils,   only: masterproc
   use abortutils,   only: endrun
   use cam_logfile,  only: iulog
@@ -42,7 +42,7 @@ module constituents
   public cnst_cam_outfld      ! Returns true if default CAM output was specified in the cnst_add calls.
 
 ! Public data
-#ifndef WRF_PORT
+#ifndef WRF_PORT 
   integer, parameter, public :: pcnst  = PCNST      ! number of advected constituents (including water vapor)
 
   character(len=16), public :: cnst_name(pcnst)     ! constituent names
@@ -57,7 +57,7 @@ module constituents
 
 !
 ! Constants for each tracer
-#ifndef WRF_PORT
+#ifndef WRF_PORT  
   real(r8),    public :: cnst_cp  (pcnst)          ! specific heat at constant pressure (J/kg/K)
   real(r8),    public :: cnst_cv  (pcnst)          ! specific heat at constant volume (J/kg/K)
   real(r8),    public :: cnst_mw  (pcnst)          ! molecular weight (kg/kmole)
@@ -79,7 +79,7 @@ real(r8),      allocatable, public :: cnst_cp  (:)          ! specific heat at c
 
 !++bee - temporary... These names should be declared in the module that makes the addfld and outfld calls.
 ! Lists of tracer names and diagnostics
-#ifndef WRF_PORT
+#ifndef WRF_PORT  
    character(len=16), public :: apcnst    (pcnst)   ! constituents after physics  (FV core only)
    character(len=16), public :: bpcnst    (pcnst)   ! constituents before physics (FV core only)
    character(len=16), public :: hadvnam   (pcnst)   ! names of horizontal advection tendencies
@@ -126,8 +126,8 @@ CONTAINS
 
   subroutine cnst_add (name, mwc, cpc, qminc, &
                        ind, longname, readiv, mixtype, cam_outfld, fixed_ubc)
-!-----------------------------------------------------------------------
-!
+!----------------------------------------------------------------------- 
+! 
 ! Purpose: Register a constituent to be advected by the large scale winds and transported by
 !          subgrid scale processes.
 !
@@ -154,7 +154,7 @@ CONTAINS
 
 !-----------------------------------------------------------------------
 #ifdef WRF_PORT
-    !Allocate local arrays
+    !Allocate local arrays    
     if(.NOT. allocated(read_init_vals)) allocate(read_init_vals(pcnst))
     if(.NOT. allocated(cam_outfld_)) allocate(cam_outfld_(pcnst))
 #endif
@@ -191,7 +191,7 @@ CONTAINS
        cnst_type(ind) = 'wet'
     end if
 
-! set outfld type
+! set outfld type 
 ! (false: the module declaring the constituent is responsible for outfld calls)
     if ( present(cam_outfld) ) then
        cam_outfld_(ind) = cam_outfld
@@ -233,12 +233,12 @@ CONTAINS
 !==============================================================================
 
   subroutine cnst_get_ind (name, ind, abort)
-!-----------------------------------------------------------------------
-!
-! Purpose: Get the index of a constituent
-!
+!----------------------------------------------------------------------- 
+! 
+! Purpose: Get the index of a constituent 
+! 
 ! Author:  B.A. Boville
-!
+! 
 #ifdef WRF_PORT
     use module_cam_support, only: lower_case, pcnst_runtime
 #endif
@@ -306,16 +306,16 @@ CONTAINS
 !==============================================================================================
 
   character*3 function cnst_get_type_byind (ind)
-!-----------------------------------------------------------------------
-!
-! Purpose: Get the type of a constituent
-!
-! Method:
-! <Describe the algorithm(s) used in the routine.>
-! <Also include any applicable external references.>
-!
+!----------------------------------------------------------------------- 
+! 
+! Purpose: Get the type of a constituent 
+! 
+! Method: 
+! <Describe the algorithm(s) used in the routine.> 
+! <Also include any applicable external references.> 
+! 
 ! Author:  P. J. Rasch
-!
+! 
 !-----------------------------Arguments---------------------------------
 !
     integer, intent(in)   :: ind    ! global constituent index (in q array)
@@ -342,16 +342,16 @@ CONTAINS
 !==============================================================================================
 
   character*3 function cnst_get_type_byname (name)
-!-----------------------------------------------------------------------
-!
-! Purpose: Get the type of a constituent
-!
-! Method:
-! <Describe the algorithm(s) used in the routine.>
-! <Also include any applicable external references.>
-!
+!----------------------------------------------------------------------- 
+! 
+! Purpose: Get the type of a constituent 
+! 
+! Method: 
+! <Describe the algorithm(s) used in the routine.> 
+! <Also include any applicable external references.> 
+! 
 ! Author:  P. J. Rasch
-!
+! 
 !-----------------------------Arguments---------------------------------
 !
     character(len=*), intent(in) :: name ! constituent name
@@ -379,12 +379,12 @@ CONTAINS
 
 !==============================================================================
   function cnst_read_iv(m)
-!-----------------------------------------------------------------------
-!
+!----------------------------------------------------------------------- 
+! 
 ! Purpose: Query whether constituent initial values are read from initial file.
-!
+! 
 ! Author:  B. Eaton
-!
+! 
 !-----------------------------Arguments---------------------------------
 !
     integer, intent(in) :: m    ! constituent index
@@ -397,17 +397,17 @@ CONTAINS
 
 !==============================================================================
   subroutine cnst_chk_dim
-!-----------------------------------------------------------------------
-!
+!----------------------------------------------------------------------- 
+! 
 ! Purpose: Check that the number of registered constituents of each type is the
 !          same as the dimension
-!
-! Method:
-! <Describe the algorithm(s) used in the routine.>
-! <Also include any applicable external references.>
-!
+! 
+! Method: 
+! <Describe the algorithm(s) used in the routine.> 
+! <Also include any applicable external references.> 
+! 
 ! Author:  B.A. Boville
-!
+! 
     integer i,m
 !-----------------------------------------------------------------------
 !
@@ -452,12 +452,12 @@ CONTAINS
 !==============================================================================
 
 function cnst_cam_outfld(m)
-!-----------------------------------------------------------------------
-!
+!----------------------------------------------------------------------- 
+! 
 ! Purpose:
 ! Query whether default CAM outfld calls should be made.
-!
-!-----------------------------------------------------------------------
+! 
+!----------------------------------------------------------------------- 
    integer, intent(in) :: m                ! constituent index
    logical             :: cnst_cam_outfld  ! true => use default CAM outfld calls
 !-----------------------------------------------------------------------

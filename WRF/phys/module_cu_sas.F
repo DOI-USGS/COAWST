@@ -1,22 +1,22 @@
 !!
-MODULE module_cu_sas
+MODULE module_cu_sas 
 
 CONTAINS
 
 !-----------------------------------------------------------------
       SUBROUTINE CU_SAS(DT,ITIMESTEP,STEPCU,                        &
                  RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,               &
-                 RUCUTEN,RVCUTEN,                                   &
+                 RUCUTEN,RVCUTEN,                                   & 
                  RAINCV,PRATEC,HTOP,HBOT,                           &
                  U3D,V3D,W,T3D,QV3D,QC3D,QI3D,PI3D,RHO3D,           &
                  DZ8W,PCPS,P8W,XLAND,CU_ACT_FLAG,                   &
-                 P_QC,                                              &
+                 P_QC,                                              & 
                  MOMMIX, & ! gopal's doing
                  PGCON,sas_mass_flux,                               &
                  pert_sas, ens_random_seed, ens_sasamp,             &
                  shalconv,shal_pgcon,                               &
                  HPBL2D,EVAP2D,HEAT2D,                              & !Kwon for shallow convection
-                 P_QI,P_FIRST_SCALAR,                               &
+                 P_QI,P_FIRST_SCALAR,                               & 
                  ids,ide, jds,jde, kds,kde,                         &
                  ims,ime, jms,jme, kms,kme,                         &
                  its,ite, jts,jte, kts,kte                          )
@@ -26,7 +26,7 @@ CONTAINS
       USE MODULE_GFS_FUNCPHYS , ONLY : gfuncphys
       USE MODULE_GFS_PHYSCONS, grav => con_g, CP => con_CP, HVAP => con_HVAP  &
      &,             RV => con_RV, FV => con_fvirt, T0C => con_T0C       &
-     &,             CVAP => con_CVAP, CLIQ => con_CLIQ                  &
+     &,             CVAP => con_CVAP, CLIQ => con_CLIQ                  & 
      &,             EPS => con_eps, EPSM1 => con_epsm1                  &
      &,             ROVCP => con_rocp, RD => con_rd
 !-------------------------------------------------------------------
@@ -130,8 +130,8 @@ CONTAINS
                                         RQVCUTEN,                       &
                                         RTHCUTEN
       REAL, DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(INOUT) ::      &
-                                        RUCUTEN,                        &
-                                        RVCUTEN
+                                        RUCUTEN,                        &  
+                                        RVCUTEN                             
       REAL, OPTIONAL,   INTENT(IN) ::    MOMMIX
 
       REAL, DIMENSION( ims:ime , jms:jme ), OPTIONAL,                   &
@@ -190,7 +190,7 @@ CONTAINS
                                         HPBL,EVAP,HEAT                     !Kwon for shallow convection
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte+1) ::       &
-                                        PRSI
+                                        PRSI                            
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte) ::         &
                                         DEL,                            &
@@ -198,15 +198,15 @@ CONTAINS
                                         PHIL,                           &
                                         PRSL,                           &
                                         PRSLK,                          &
-                                        Q1,                             &
-                                        T1,                             &
-                                        U1,                             &
-                                        V1,                             &
-                                        ZI,                             &
-                                        ZL
+                                        Q1,                             & 
+                                        T1,                             & 
+                                        U1,                             & 
+                                        V1,                             & 
+                                        ZI,                             & 
+                                        ZL 
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte, 2) ::      &
-                                        QL
+                                        QL 
 
       INTEGER, DIMENSION(its:ite) ::                                    &
                                         KBOT,                           &
@@ -223,7 +223,7 @@ CONTAINS
                                         KM,                             &
                                         KP,                             &
                                         KX,                             &
-                                        NCLOUD
+                                        NCLOUD 
 
       DATA IGPVS/0/
 
@@ -300,7 +300,7 @@ CONTAINS
          ! Default: Same as deep convection pgcon
          shal_pgcon_use  = pgcon_use
          ! Read the warning above though.  It may be advisable for
-         ! these to be different.
+         ! these to be different.  
       endif
 
       DO J=JTS,JTE
@@ -308,7 +308,7 @@ CONTAINS
             CU_ACT_FLAG(I,J)=.TRUE.
          ENDDO
       ENDDO
-
+ 
       IM=ITE-ITS+1
       KX=KTE-KTS+1
       JCAP=126
@@ -401,14 +401,14 @@ CONTAINS
       DO k=kts+1,kte+1
         km=k-1
         DO i=its,ite
-          PRSI(i,k)=PRSI(i,km)-del(i,km)
+          PRSI(i,k)=PRSI(i,km)-del(i,km) 
         ENDDO
       ENDDO
 
       CALL SASCNVN(IM,IM,KX,JCAP,DELT,DEL,PRSL,PS,PHIL,                 &
                   QL,Q1,T1,U1,V1,RCS,CLDWRK,RN,KBOT,                    &
                   KTOP,KCNV,SLIMSK,DOT,NCLOUD,PGCON_USE,massf,          &
-                  pert_sas, ens_random_seed, ens_sasamp)
+                  pert_sas, ens_random_seed, ens_sasamp)                         
 !
       do i=its,ite
         RAINCV1(I,J)=RN(I)*1000./STEPCU
@@ -462,7 +462,7 @@ CONTAINS
 
 !===============================================================================
 !     ADD MOMENTUM MIXING TERM AS TENDENCIES. This is gopal's doing for SAS
-!     MOMMIX is the reduction factor set to 0.7 by default. Because NMM has
+!     MOMMIX is the reduction factor set to 0.7 by default. Because NMM has 
 !     divergence damping term, a reducion factor for cumulum mixing may be
 !     required otherwise storms were too weak.
 !===============================================================================
@@ -501,7 +501,7 @@ CONTAINS
 
 !====================================================================
    SUBROUTINE sasinit(RTHCUTEN,RQVCUTEN,RQCCUTEN,RQICUTEN,          &
-                      RUCUTEN,RVCUTEN,                              &
+                      RUCUTEN,RVCUTEN,                              &   
                       RESTART,P_QC,P_QI,P_FIRST_SCALAR,             &
                       allowed_to_read,                              &
                       ids, ide, jds, jde, kds, kde,                 &
@@ -523,7 +523,7 @@ CONTAINS
                                                               RQICUTEN
    REAL,     DIMENSION( ims:ime , jms:jme , kms:kme ) , INTENT(OUT) ::  &
                                                               RUCUTEN,  & ! gopal's doing for SAS
-                                                              RVCUTEN
+                                                              RVCUTEN   
 
    INTEGER :: i, j, k, itf, jtf, ktf
 
@@ -543,8 +543,8 @@ CONTAINS
      DO i=its,itf
        RTHCUTEN(i,k,j)=0.
        RQVCUTEN(i,k,j)=0.
-       RUCUTEN(i,j,k)=0.
-       RVCUTEN(i,j,k)=0.
+       RUCUTEN(i,j,k)=0.   
+       RVCUTEN(i,j,k)=0.    
      ENDDO
      ENDDO
      ENDDO
@@ -629,17 +629,17 @@ CONTAINS
      &                     tem2,    terr,    val,     val1,             &
      &                     val2,    w1,      w1l,     w1s,              &
      &                     w2,      w2l,     w2s,     w3,               &
-     &                     w3l,     w3s,     w4,      w4l,              &
-     &                     w4s,     xdby,    xpw,     xpwd,             &
+     &                     w3l,     w3s,     w4,      w4l,              & 
+     &                     w4s,     xdby,    xpw,     xpwd,             & 
      &                     xqc,     xqrch,   xlambu,  mbdt,             &
      &                     tem
 !
 !
-      integer              JMIN(IM), KB(IM), KBCON(IM), KBDTR(IM),      &
+      integer              JMIN(IM), KB(IM), KBCON(IM), KBDTR(IM),      & 
      &                     KT2(IM),  KTCON(IM), LMIN(IM),               &
      &                     kbm(IM),  kbmax(IM), kmax(IM)
 !
-      real(kind=kind_phys) AA1(IM),     ACRT(IM),   ACRTFCT(IM),        &
+      real(kind=kind_phys) AA1(IM),     ACRT(IM),   ACRTFCT(IM),        & 
      &                     DELHBAR(IM), DELQ(IM),   DELQ2(IM),          &
      &                     DELQBAR(IM), DELQEV(IM), DELTBAR(IM),        &
      &                     DELTV(IM),   DTCONV(IM), EDT(IM),            &
@@ -652,7 +652,7 @@ CONTAINS
 !    &                     PSFC(IM),    PWAVO(IM),  PWEVO(IM),          &
      &                     QCDO(IM),    QCOND(IM),  QEVAP(IM),          &
      &                     QKBO(IM),    RNTOT(IM),  VSHEAR(IM),         &
-     &                     XAA0(IM),    XHCD(IM),   XHKB(IM),           &
+     &                     XAA0(IM),    XHCD(IM),   XHKB(IM),           & 
      &                     XK(IM),      XLAMB(IM),  XLAMD(IM),          &
      &                     XMB(IM),     XMBMAX(IM), XPWAV(IM),          &
      &                     XPWEV(IM),   XQCD(IM),   XQKB(IM)
@@ -686,7 +686,7 @@ CONTAINS
       DATA ACRITT/.0633,.0445,.0553,.0664,.075,.1082,.1521,.2216,       &
      &           .3151,.3677,.41,.5255,.7663,1.1686,1.6851/
 !  GDAS DERIVED ACRIT
-!     DATA ACRITT/.203,.515,.521,.566,.625,.665,.659,.688,              &
+!     DATA ACRITT/.203,.515,.521,.566,.625,.665,.659,.688,              & 
 !    &            .743,.813,.886,.947,1.138,1.377,1.896/
 !
       real(kind=kind_phys) TF, TCR, TCRF, RZERO, RONE
@@ -759,9 +759,9 @@ CONTAINS
       fkm     = (float(km) / 28.) ** 2
 !cmr  fkm     = max(fkm,1.)
       fkm     = max(fkm,val)
-      W1l     = -8.E-3
+      W1l     = -8.E-3 
       W2l     = -4.E-2
-      W3l     = -5.E-3
+      W3l     = -5.E-3 
       W4l     = -5.E-4
       W1s     = -2.E-4
       W2s     = -2.E-3
@@ -785,7 +785,7 @@ CONTAINS
         KMAX(I)  = KM
         TX1(I)   = 1.0 / PS(I)
       ENDDO
-!
+!     
       DO K = 1, KM
         DO I=1,IM
           IF (prSL(I,K)*tx1(I) .GT. 0.45) KBMAX(I) = K + 1
@@ -933,7 +933,7 @@ CONTAINS
 !           QO(I,k)   = MIN(QO(I,k),QESO(I,k))
             HEO(I,k)  = .5 * G * (ZO(I,k) + ZO(I,k+1)) +                &
      &                  CP * TO(I,k) + HVAP * QO(I,k)
-            HESO(I,k) = .5 * G * (ZO(I,k) + ZO(I,k+1)) +                &
+            HESO(I,k) = .5 * G * (ZO(I,k) + ZO(I,k+1)) +                & 
      &                  CP * TO(I,k) + HVAP * QESO(I,k)
             UO(I,k)   = .5 * (UO(I,k) + UO(I,k+1))
             VO(I,k)   = .5 * (VO(I,k) + VO(I,k+1))
@@ -1074,7 +1074,7 @@ CONTAINS
               ONEMF = 1. - FACTOR
               HCKO(I,k) = FACTOR * HCKO(I,k-1) + ONEMF *                &
      &                    .5 * (HEO(I,k) + HEO(I,k+1))
-              UCKO(I,k) = FACTOR * UCKO(I,k-1) + ONEMF *                &
+              UCKO(I,k) = FACTOR * UCKO(I,k-1) + ONEMF *                & 
      &                    .5 * (UO(I,k) + UO(I,k+1))
               VCKO(I,k) = FACTOR * VCKO(I,k-1) + ONEMF *                &
      &                    .5 * (VO(I,k) + VO(I,k+1))
@@ -1369,7 +1369,7 @@ CONTAINS
               val = 0.
               AA1(I)=AA1(I)+                                            &
      &                 DZ1 * G * DELTA *                                &
-!cmr &                 MAX( 0.,(QESO(I,k-1) - QO(I,k-1)))               &
+!cmr &                 MAX( 0.,(QESO(I,k-1) - QO(I,k-1)))               & 
      &                 MAX(val,(QESO(I,k-1) - QO(I,k-1)))
             ENDIF
           endif
@@ -1552,7 +1552,7 @@ CONTAINS
               AA1(I)=AA1(I)+EDTO(I)*DZ*(G/(CP*DT))*((DHH-DH)/(1.+DG))   &
      &               *(1.+DELTA*CP*DG*DT/HVAP)
               val=0.
-              AA1(I)=AA1(I)+EDTO(I)*                                    &
+              AA1(I)=AA1(I)+EDTO(I)*                                    & 
 !cmr &        DZ*G*DELTA*MAX( 0.,(QESO(I,k+1)-QO(I,k+1)))               &
      &        DZ*G*DELTA*MAX(val,(QESO(I,k+1)-QO(I,k+1)))
             ENDIF
@@ -1643,7 +1643,7 @@ CONTAINS
      &            ((AUP * ETA(I,k) - ADW * EDTO(I) * ETAD(I,k)) * DV1U  &
      &        - (AUP * ETA(I,k-1) - ADW * EDTO(I) * ETAD(I,k-1))* DV3U  &
      &                     - AUP * DETA * DV2U                          &
-     &                    + ADW * EDTO(I) * DETAD * UCDO(I)             &
+     &                    + ADW * EDTO(I) * DETAD * UCDO(I)             & 
      &                    ) * G / DP
               DELLAV(I,k) = DELLAV(I,k) +                               &
      &            ((AUP * ETA(I,k) - ADW * EDTO(I) * ETAD(I,k)) * DV1V  &
@@ -1665,7 +1665,7 @@ CONTAINS
           DV1 = HEO(I,INDX-1)
           DELLAH(I,INDX) = ETA(I,INDX-1) *                              &
      &                     (HCKO(I,INDX-1) - DV1) * G / DP
-          DVQ1 = QO(I,INDX-1)
+          DVQ1 = QO(I,INDX-1) 
           DELLAQ(I,INDX) = ETA(I,INDX-1) *                              &
      &                     (QCKO(I,INDX-1) - DVQ1) * G / DP
           DV1U = UO(I,INDX-1)
@@ -1875,14 +1875,14 @@ CONTAINS
               RFACT =  1. + DELTA * CP * GAMMA                          &
      &                 * TO(I,k-1) / HVAP
               XDBY = HCKO(I,k-1) - HESO(I,k-1)
-              XAA0(I) = XAA0(I)                                         &
+              XAA0(I) = XAA0(I)                                         & 
      &                + DZ1 * (G / (CP * TO(I,k-1)))                    &
      &                * XDBY / (1. + GAMMA)                             &
      &                * RFACT
               val=0.
               XAA0(I)=XAA0(I)+                                          &
      &                 DZ1 * G * DELTA *                                &
-!cmr &                 MAX( 0.,(QESO(I,k-1) - QO(I,k-1)))               &
+!cmr &                 MAX( 0.,(QESO(I,k-1) - QO(I,k-1)))               & 
      &                 MAX(val,(QESO(I,k-1) - QO(I,k-1)))
             ENDIF
           endif
@@ -1920,7 +1920,7 @@ CONTAINS
               DETAD    = ETAD(I,k+1) - ETAD(I,k)
               XPWD     = ETAD(I,k+1) * QRCD(I,k+1) -                    &
      &                   ETAD(I,k) * QRCD(I,k)
-              XPWD     = XPWD - DETAD *                                 &
+              XPWD     = XPWD - DETAD *                                 & 
      &                 .5 * (QRCD(I,k) + QRCD(I,k+1))
               XPWEV(I) = XPWEV(I) + XPWD
             ENDIF
@@ -1979,7 +1979,7 @@ CONTAINS
         IF(CNVFLG(I)) THEN
 !       IF(CNVFLG(I).AND.SLIMSK(I).NE.1.) THEN
           IF(PFLD(I,KTCON(I)).LT.PCRIT(15))THEN
-            ACRT(I)=ACRIT(15)*(975.-PFLD(I,KTCON(I)))                   &
+            ACRT(I)=ACRIT(15)*(975.-PFLD(I,KTCON(I)))                   &    
      &              /(975.-PCRIT(15))
           ELSE IF(PFLD(I,KTCON(I)).GT.PCRIT(1))THEN
             ACRT(I)=ACRIT(1)
@@ -2596,11 +2596,11 @@ CONTAINS
       RETURN
       END SUBROUTINE MSTADBT3
 
-      subroutine sascnvn(im,ix,km,jcap,delt,del,prsl,ps,phil,ql,   &
+      subroutine sascnvn(im,ix,km,jcap,delt,del,prsl,ps,phil,ql,   & 
      &     q1,t1,u1,v1,rcs,cldwrk,rn,kbot,ktop,kcnv,slimsk,        &
      &     dot,ncloud,pgcon,sas_mass_flux,                         &
-     &     pert_sas, ens_random_seed, ens_sasamp)
-!     &     dot,ncloud,ud_mf,dd_mf,dt_mf)
+     &     pert_sas, ens_random_seed, ens_sasamp)                         
+!     &     dot,ncloud,ud_mf,dd_mf,dt_mf)                         
 !    &     dot,ncloud,ud_mf,dd_mf,dt_mf,me)
 !
 !      use machine , only : kind_phys
@@ -2616,7 +2616,7 @@ CONTAINS
       implicit none
 !
       integer            im, ix,  km, jcap, ncloud,                &
-     &                   kbot(im), ktop(im), kcnv(im)
+     &                   kbot(im), ktop(im), kcnv(im) 
 !    &,                  me
       real(kind=kind_phys) delt,sas_mass_flux
       real(kind=kind_phys) ps(im),     del(ix,km),  prsl(ix,km),   &
@@ -2630,7 +2630,7 @@ CONTAINS
       integer              i, j, indx, jmn, k, kk, latd, lond, km1
 !
       real(kind=kind_phys) clam, cxlamu, xlamde, xlamdd
-!
+! 
       real(kind=kind_phys) adw,     aup,     aafac,                &
      &                     beta,    betal,   betas,                &
      &                     c0,      cpoel,   dellat,  delta,       &
@@ -2818,9 +2818,9 @@ CONTAINS
       fjcap   = max(fjcap,val)
       fkm     = (float(km) / 28.) ** 2
       fkm     = max(fkm,val)
-      w1l     = -8.e-3
+      w1l     = -8.e-3 
       w2l     = -4.e-2
-      w3l     = -5.e-3
+      w3l     = -5.e-3 
       w4l     = -5.e-4
       w1s     = -2.e-4
       w2s     = -2.e-3
@@ -2836,7 +2836,7 @@ CONTAINS
         kmax(i)  = km
         tx1(i)   = 1.0 / ps(i)
       enddo
-!
+!     
       do k = 1, km
         do i=1,im
           IF (prSL(I,K)*tx1(I) .GT. 0.04) KMAX(I)  = MIN(KM,K + 1)
@@ -2851,7 +2851,7 @@ CONTAINS
       enddo
 !c
 !c  hydrostatic height assume zero terr and initially assume
-!c    updraft entrainment rate as an inverse function of height
+!c    updraft entrainment rate as an inverse function of height 
 !c
       do k = 1, km
         do i=1,im
@@ -3398,7 +3398,7 @@ CONTAINS
       if(totflg) return
 !!
 !c
-!c  estimate the onvective overshooting as the level
+!c  estimate the onvective overshooting as the level 
 !c    where the [aafac * cloud work function] becomes zero,
 !c    which is the final cloud top
 !c
@@ -3433,8 +3433,8 @@ CONTAINS
         enddo
       enddo
 !c
-!c  compute cloud moisture property, detraining cloud water
-!c    and precipitation in overshooting layers
+!c  compute cloud moisture property, detraining cloud water 
+!c    and precipitation in overshooting layers 
 !c
       do k = 2, km1
         do i = 1, im
@@ -4438,7 +4438,7 @@ CONTAINS
 !      enddo
 !!
       return
-      end subroutine sascnvn
+      end subroutine sascnvn      
 
       subroutine shalcnv(im,ix,km,jcap,delt,del,prsl,ps,phil,ql,   &
      &     q1,t1,u1,v1,rcs,rn,kbot,ktop,kcnv,slimsk,               &
@@ -4453,14 +4453,14 @@ CONTAINS
       implicit none
 !
       integer            im, ix,  km, jcap, ncloud,                       &
-     &                   kbot(im), ktop(im), kcnv(im)
+     &                   kbot(im), ktop(im), kcnv(im)                   
       real(kind=kind_phys) delt
       real(kind=kind_phys) ps(im),     del(ix,km),  prsl(ix,km),          &
      &                     ql(ix,km,2),q1(ix,km),   t1(ix,km),            &
      &                     u1(ix,km),  v1(ix,km),   rcs(im),              &
      &                     rn(im),     slimsk(im),                        &
      &                     dot(ix,km), phil(ix,km), hpbl(im),             &
-     &                     heat(im),   evap(im)
+     &                     heat(im),   evap(im)                           
 !     &,                    ud_mf(im,km),dt_mf(im,km)
 
       real  ud_mf(im,km),dt_mf(im,km)
@@ -4595,9 +4595,9 @@ CONTAINS
       fjcap   = (float(jcap) / 126.) ** 2
       val     =           1.
       fjcap   = max(fjcap,val)
-      w1l     = -8.e-3
+      w1l     = -8.e-3 
       w2l     = -4.e-2
-      w3l     = -5.e-3
+      w3l     = -5.e-3 
       w4l     = -5.e-4
       w1s     = -2.e-4
       w2s     = -2.e-3
@@ -4612,7 +4612,7 @@ CONTAINS
         kmax(i)  = km
         tx1(i)   = 1.0 / ps(i)
       enddo
-!
+!     
       do k = 1, km
         do i=1,im
           if (prsl(i,k)*tx1(i) .gt. 0.70) kbm(i)   = k + 1
@@ -4859,7 +4859,7 @@ CONTAINS
       if(totflg) return
 !!
 !c
-!c  assume the detrainment rate for the updrafts to be same as
+!c  assume the detrainment rate for the updrafts to be same as 
 !c  the entrainment rate at cloud base
 !c
       do i = 1, im

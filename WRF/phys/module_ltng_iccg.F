@@ -45,7 +45,7 @@
  INTEGER, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
 
 ! Primary inputs and outpus
- REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: total_flashrate
+ REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: total_flashrate   
  REAL, DIMENSION( ims:ime, jms:jme ), INTENT(  OUT) :: ic_flashrate, cg_flashrate
 
 ! Local variables
@@ -115,7 +115,7 @@
  INTEGER, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
 
 ! Primary inputs and outpus
- REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: total_flashrate
+ REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: total_flashrate   
  REAL, DIMENSION( ims:ime, jms:jme ), INTENT(  OUT) :: ic_flashrate, cg_flashrate
 
 ! Local variables
@@ -142,9 +142,9 @@
         IF ( (xlat(i,j) .lt. conus_lat_min) .or. &
              (xlat(i,j) .gt. conus_lat_max) .or. &
              (xlon(i,j) .lt. conus_lon_min) .or. &
-             (xlon(i,j) .gt. conus_lon_max) ) THEN
+             (xlon(i,j) .gt. conus_lon_max) ) THEN 
             ! Outside CONUS, use prescribed ratio
-            IF ( iccg_prescribed_den .ne. 0. ) THEN
+            IF ( iccg_prescribed_den .ne. 0. ) THEN 
                 cg_flashrate(i,j) = total_flashrate(i,j) * (1./(prescribed_ratio+1.))
             ENDIF
         ELSE
@@ -202,7 +202,7 @@
  INTEGER, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
 
 ! Primary inputs and outpus
- REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) :: total_flashrate
+ REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) :: total_flashrate   
  REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(  OUT) :: ic_flashrate, cg_flashrate
 
 ! Local variables
@@ -286,7 +286,7 @@
  INTEGER, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
 
 ! Primary inputs and outpus
- REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: total_flashrate
+ REAL, DIMENSION( ims:ime, jms:jme ), INTENT(IN   ) :: total_flashrate   
  REAL, DIMENSION( ims:ime, jms:jme ), INTENT(  OUT) :: ic_flashrate, cg_flashrate
 
 ! Local variables

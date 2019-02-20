@@ -1,8 +1,8 @@
       SUBROUTINE ana_specir (ng, tile, model)
 !
-!! svn $Id: ana_specir.h 830 2017-01-24 21:21:11Z arango $
+!! svn $Id: ana_specir.h 927 2018-10-16 03:51:56Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -125,8 +125,9 @@
 !
       integer :: i, iband, ic, j, nc
 
+      real(dp) :: hour, yday
       real(r8) :: Dangle, Hangle, LatRad, LonRad
-      real(r8) :: cff, cff1, cff2, hour, yday
+      real(r8) :: cff, cff1, cff2
       real(r8) :: alpha, beta, gamma, theta, rtheta, rthetar
       real(r8) :: atra, gtra, otra, rtra, wtra
       real(r8) :: alg, arg, asymp, cosunz, Fa
@@ -150,11 +151,11 @@
 !
 !  Get time clock day-of-year and hour.
 !
-      CALL caldate (tdays(ng), yd_r8=yday, h_r8=hour)
+      CALL caldate (tdays(ng), yd_dp=yday, h_dp=hour)
 !
 !  Estimate solar declination angle (radians).
 !
-      Dangle=23.44_r8*COS((172.0_r8-yday)*2.0_r8*pi/365.25_r8)
+      Dangle=23.44_dp*COS((172.0_dp-yday)*2.0_dp*pi/365.25_dp)
       Dangle=Dangle*deg2rad
 !
 !  Compute hour angle (radians).
@@ -171,7 +172,7 @@
 !
 !  Correct solar constant for Earth-Sun distance.
 !
-      cff=(1.0_r8+0.0167_r8*COS(2.0_r8*pi*(yday-3.0_r8)/365.0_r8))**2
+      cff=(1.0_dp+0.0167_dp*COS(2.0_dp*pi*(yday-3.0_dp)/365.0_dp))**2
       DO iband=1,NBands
         Fo(iband)=ec_Fobar(iband)*cff
       END DO
@@ -187,7 +188,7 @@
 !  Compute Climatological Ozone.
 !
           to3=(235.0_r8+(150.0_r8+40.0_r8*                              &
-     &         SIN(0.9865_r8*(yday-30.0_r8)*deg2rad)+                   &
+     &         SIN(0.9865_dp*(yday-30.0_dp)*deg2rad)+                   &
      &         20.0_r8*SIN(3.0_r8*LonRad))*                             &
      &         SIN(1.28_r8*LatRad)*SIN(1.28_r8*LatRad))*                &
      &        0.001_r8                                 ! sco3 conversion

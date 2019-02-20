@@ -2,9 +2,9 @@
 #if defined FOUR_DVAR || defined VERIFICATION
       SUBROUTINE def_mod (ng)
 !
-!svn $Id: def_mod.F 880 2017-11-15 22:04:38Z arango $
+!svn $Id: def_mod.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -59,7 +59,7 @@
 # if defined BALANCE_OPERATOR && defined ZETA_ELLIPTIC
       integer :: RetaDim, RxiDim
 # endif
-      integer :: i, j, nvatt, nvdim, status, varid, vindex
+      integer :: i, j, lstr, nvatt, nvdim, status, varid, vindex
       integer :: OBSncid
       integer :: Vsize(4), vardim(3)
 # ifdef DISTRIBUTE
@@ -452,8 +452,10 @@
           END IF
 
           IF (exit_flag.eq.NoError) THEN
+            lstr=INDEX(my_fflags, 'free')-2
+            IF (lstr.le.0) lstr=LEN_TRIM(my_fflags)
             status=nf90_put_att(DAV(ng)%ncid, nf90_global,              &
-     &                          'compiler_flags', TRIM(my_fflags))
+     &                          'compiler_flags', my_fflags(1:lstr))
             IF (FoundError(status, nf90_noerr, __LINE__,                &
      &                     __FILE__)) THEN
               WRITE (stdout,50) 'compiler_flags', TRIM(ncname)
@@ -1091,7 +1093,7 @@
             END IF
           END DO
           status=def_var(ng, iNLM, DAV(ng)%ncid, DAV(ng)%Vid(idOday),   &
-     &                   NF_FRST, 1, (/surveyDim/), Aval, Vinfo, ncname)
+     &                   NF_TOUT, 1, (/surveyDim/), Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
@@ -1207,7 +1209,7 @@
             END IF
           END DO
           status=def_var(ng, iNLM, DAV(ng)%ncid, DAV(ng)%Vid(idObsT),   &
-     &                   NF_FRST, 1, (/datumDim/), Aval, Vinfo, ncname)
+     &                   NF_TOUT, 1, (/datumDim/), Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF

@@ -3,13 +3,13 @@
 !c   Common blocks for interface of Nearshore Community Model
 !c   It is used in master program, wave module, circulation module,
 !c   and sediment module.
-!c      Fyshi 01/21/2002
+!c      Fyshi 01/21/2002   
 !c ------------------------------------------------------------------
 
        integer Nx_Max, Ny_Max, Nx_Circ, Ny_Circ, Nx_Wave,Ny_Wave,       &
      &         Nx_Mast, Ny_Mast, Nx_Sedi, Ny_Sedi
-
-       parameter (Nx_Max = 300, Ny_Max = 300)
+  
+       parameter (Nx_Max = 300, Ny_Max = 300) 
 
 !c -- wave module:
 
@@ -32,7 +32,7 @@
      &      Pass_period,                                                &
      &      Intp_U_Wave(Nx_Max,Ny_Max), Intp_V_Wave(Nx_Max,Ny_Max),     &
      &      Intp_eta_Wave(Nx_Max,Ny_Max),Pass_uw(nx_max,ny_max,100)
-
+ 
        real Pass_ibrk(Nx_Max,Ny_Max)
 
 !c -- circulation module:
@@ -98,8 +98,8 @@
 
 !c -- vector rotate
        real Circ_Rotate_Angle, Wave_Rotate_Angle,                       &
-     &      Sedi_Rotate_Angle
-
+     &      Sedi_Rotate_Angle       
+ 
 !c -- control parameters
 
        integer Master_Start,nWave,nCirc,nSedi,nOut
@@ -107,7 +107,7 @@
        integer Wave_Stag_huv(3), Circ_Stag_huv(3),Sedi_Stag_huv(3)
 
        real N_Interval_CallWave,N_Interval_CallCirc,N_Interval_CallSedi,&
-     &     N_Delay_CallSedi,N_Interval_Output
+     &     N_Delay_CallSedi,N_Interval_Output   
        real Total_Time, Master_dt,Time_Master
        logical Grid_Mast_Wave_Same, Grid_Mast_Circ_Same,                &
      &         Grid_Mast_Sedi_Same, Grid_Wave_Circ_Same,                &
@@ -223,7 +223,7 @@
      &              U_Wind_Wave, V_Wind_Wave
 
       common/mast_rotate/Circ_Rotate_Angle, Wave_Rotate_Angle,          &
-     &                Sedi_Rotate_Angle
+     &                Sedi_Rotate_Angle 
 
       common/mast_contr/X_Mast,Y_Mast,                                  &
      &              Depth_Mast,                                         &
@@ -284,4 +284,4 @@
      &        f_xysedi,f_name6,f_name7,                                 &
      &        f_name8,                                                  &
      &        f_name9,f_name10,f_name11,f_name12,f_name13,f_name14,     &
-     &        f_name15,f_name16
+     &        f_name15,f_name16 

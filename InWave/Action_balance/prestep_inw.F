@@ -168,7 +168,7 @@
 # include "set_bounds.h"
 !
 !-----------------------------------------------------------------------
-! Compute intermediate action density at n+1/2 time-step, AC(i,j,dir,3)
+! Compute intermediate action density at n+1/2 time-step, AC(i,j,dir,3) 
 !-----------------------------------------------------------------------
 !
 !  Compute time rate of change of intermediate AC due to
@@ -320,7 +320,7 @@
           FD(i,1)=AC(i,j,1       ,nstp)-                                &
      &            AC(i,j,ND  ,nstp)
 # else
-!!IN THIS POINT IT DOESNT MATTER THE BOUNDARY CONDITION,
+!!IN THIS POINT IT DOESNT MATTER THE BOUNDARY CONDITION, 
 !!WE JUST PUT IT AS IF IT WAS A NO GRADIENT
 !!THE WALL BOUNDARY CONDITION WILL BE STABLISHED LATER
           FD(i,0)=0.0_r8

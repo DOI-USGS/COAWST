@@ -21,7 +21,7 @@
       CONTAINS
 !
 !***********************************************************************
-      SUBROUTINE MASS_BOUNDARY(GRIDID,NTSD,DT0,NEST,NBC,NBOCO,LAST_TIME,TSPH    &
+      SUBROUTINE MASS_BOUNDARY(GRIDID,NTSD,DT0,NEST,NBC,NBOCO,LAST_TIME,TSPH    & 
      &                ,LB,ETA1,ETA2,PDTOP,PT,RES                        &
      &                ,PD_BXS, PD_BXE, PD_BYS, PD_BYE                   &
      &                ,T_BXS, T_BXE, T_BYS, T_BYE                       &
@@ -44,22 +44,22 @@
      &                ,TH                                               &
 #endif
 !!END: LSM changes for LANDFALL : Subashini 7/27/2016
-     &                ,SPEC_BDY_WIDTH,Z                                 &
+     &                ,SPEC_BDY_WIDTH,Z                                 &  
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
 !***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
+!                .      .    .     
 ! SUBPROGRAM:    BOCOH       UPDATE MASS POINTS ON BOUNDARY
 !   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 94-03-08
-!
+!     
 ! ABSTRACT:
 !     TEMPERATURE, SPECIFIC HUMIDITY, AND SURFACE PRESSURE
 !     ARE UPDATED ON THE DOMAIN BOUNDARY BY APPLYING THE
 !     PRE-COMPUTED TENDENCIES AT EACH TIME STEP.
-!
+!     
 ! PROGRAM HISTORY LOG:
 !   87-??-??  MESINGER   - ORIGINATOR
 !   95-03-25  BLACK      - CONVERSION FROM 1-D TO 2-D in HORIZONTAL
@@ -71,34 +71,34 @@
 !   02-08-29  MICHALAKES - CHANGED II=I-MY_IS_GLB+1 TO II=I
 !                          ADDED CONDITIONAL COMPILATION AROUND MPI
 !                          CONVERT INDEXING FROM LOCAL TO GLOBAL
-!   02-09-06  WOLFE      - MORE CONVERSION TO GLOBAL INDEXING
+!   02-09-06  WOLFE      - MORE CONVERSION TO GLOBAL INDEXING 
 !   04-11-18  BLACK      - THREADED
 !   05-12-19  BLACK      - CONVERTED FROM IKJ TO IJK
 !   06-06-02  GOPAL      - MODIFICATIONS FOR NESTING
 !   07-11-14  PYLE       - UPDATED FOR NEW WRF BOUNDARY FILE STRUCTURE
-!
+!     
 ! USAGE: CALL BOCOH FROM SUBROUTINE SOLVE_NMM
 !   INPUT ARGUMENT LIST:
 !
 !     NOTE THAT IDE AND JDE INSIDE ROUTINE SHOULD BE PASSED IN
 !     AS WHAT WRF CONSIDERS THE UNSTAGGERED GRID DIMENSIONS; THAT
 !     IS, 1 LESS THAN THE IDE AND JDE SET BY WRF FRAMEWORK, JM
-!
-!   OUTPUT ARGUMENT LIST:
-!
+!  
+!   OUTPUT ARGUMENT LIST: 
+!     
 !   OUTPUT FILES:
 !     NONE
-!
+!     
 !   SUBPROGRAMS CALLED:
-!
+!  
 !     UNIQUE: NONE
-!
+!  
 !     LIBRARY: NONE
-!
+!  
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
-!   MACHINE : IBM
-!$$$
+!   MACHINE : IBM 
+!$$$  
 !***********************************************************************
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
@@ -144,7 +144,7 @@
      &                                            ,U_BTYS, U_BTYE      &
      &                                            ,V_BTYS, V_BTYE      &
      &                                            ,Q_BTYS, Q_BTYE      &
-     &                                            ,Q2_BTYS, Q2_BTYE
+     &                                            ,Q2_BTYS, Q2_BTYE    
 
       REAL,DIMENSION(JMS:JME,1,SPEC_BDY_WIDTH)                         &
      &                           ,INTENT(INOUT) :: PD_BXS, PD_BXE      &
@@ -166,8 +166,8 @@
      &                                            ,U_BTXS, U_BTXE      &
      &                                            ,V_BTXS, V_BTXE      &
      &                                            ,Q_BTXS, Q_BTXE      &
-     &                                            ,Q2_BTXS, Q2_BTXE
-
+     &                                            ,Q2_BTXS, Q2_BTXE    
+                                               
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: RES
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: PD
@@ -187,7 +187,7 @@
 !
       INTEGER :: I,IB,IBDY,II,IIM,IM,IRTN,ISIZ1,ISIZ2                &
      &          ,J,JB,JJ,JJM,JM,K,KK,N,NN,NREC,NUMGAS,NV,REC
-      INTEGER :: MY_IS_GLB,MY_JS_GLB,MY_IE_GLB,MY_JE_GLB
+      INTEGER :: MY_IS_GLB,MY_JS_GLB,MY_IE_GLB,MY_JE_GLB  
       INTEGER :: I_M,ILPAD1,IRPAD1,JBPAD1,JTPAD1
 !
       REAL :: BCHR,CONVFAC,CWK,DT,PLYR,RRI
@@ -235,12 +235,12 @@
 !
 !***  USE IBDY=1 FOR SOUTH; 2 FOR NORTH
 !
-      ns_do: DO IBDY=1,2
+      ns_do: DO IBDY=1,2 
 !
 !***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
 !
         activate=.false.
-        ns_if: IF(S_BDY.AND.IBDY==1) THEN
+        ns_if: IF(S_BDY.AND.IBDY==1) THEN 
             JB=1         ! Which cell in from boundary
             JJ=1         ! Which cell in the domain
             activate=.true.
@@ -298,15 +298,15 @@
 !***  WEST AND EAST BOUNDARIES
 !-----------------------------------------------------------------------
 !
-!***  USE IBDY=1 FOR WEST; 2 FOR EAST.
+!***  USE IBDY=1 FOR WEST; 2 FOR EAST. 
 !
-      ew_do: DO IBDY=1,2
+      ew_do: DO IBDY=1,2 
 !
 !***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
 !
         activate=.false.
-        ew_if: IF(W_BDY.AND.IBDY==1) THEN
-            IB=1         ! Which cell in from boundary
+        ew_if: IF(W_BDY.AND.IBDY==1) THEN  
+            IB=1         ! Which cell in from boundary 
             II=1         ! Which cell in the domain
             activate=.true.
           DO J=MAX(JTS-1,JDS+3-1),MIN(JTE+1,JDE-2)
@@ -624,27 +624,27 @@
 !
 !-----------------------------------------------------------------------
       END SUBROUTINE MASS_BOUNDARY
-      SUBROUTINE MP_BULK_BOUNDARY(GRIDID,NTSD,DT0    &
+      SUBROUTINE MP_BULK_BOUNDARY(GRIDID,NTSD,DT0    & 
      &                ,LB,ETA1,ETA2,PDTOP,PT                            &
      &                ,CWM_BXS, CWM_BXE, CWM_BYS, CWM_BYE               &
      &                ,CWM_BTXS, CWM_BTXE, CWM_BTYS, CWM_BTYE           &
      &                ,Q,CWM                                            &
      &                ,MOIST,N_MOIST,SCALAR,N_SCALAR                    &
-     &                ,SPEC_BDY_WIDTH                                   &
+     &                ,SPEC_BDY_WIDTH                                   &  
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
 !***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
+!                .      .    .     
 ! SUBPROGRAM:    BOCOH       UPDATE MASS POINTS ON BOUNDARY
 !   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 94-03-08
-!
+!     
 ! ABSTRACT:
 !     TEMPERATURE, SPECIFIC HUMIDITY, AND SURFACE PRESSURE
 !     ARE UPDATED ON THE DOMAIN BOUNDARY BY APPLYING THE
 !     PRE-COMPUTED TENDENCIES AT EACH TIME STEP.
-!
+!     
 ! PROGRAM HISTORY LOG:
 !   87-??-??  MESINGER   - ORIGINATOR
 !   95-03-25  BLACK      - CONVERSION FROM 1-D TO 2-D in HORIZONTAL
@@ -656,34 +656,34 @@
 !   02-08-29  MICHALAKES - CHANGED II=I-MY_IS_GLB+1 TO II=I
 !                          ADDED CONDITIONAL COMPILATION AROUND MPI
 !                          CONVERT INDEXING FROM LOCAL TO GLOBAL
-!   02-09-06  WOLFE      - MORE CONVERSION TO GLOBAL INDEXING
+!   02-09-06  WOLFE      - MORE CONVERSION TO GLOBAL INDEXING 
 !   04-11-18  BLACK      - THREADED
 !   05-12-19  BLACK      - CONVERTED FROM IKJ TO IJK
 !   06-06-02  GOPAL      - MODIFICATIONS FOR NESTING
 !   07-11-14  PYLE       - UPDATED FOR NEW WRF BOUNDARY FILE STRUCTURE
-!
+!     
 ! USAGE: CALL BOCOH FROM SUBROUTINE SOLVE_NMM
 !   INPUT ARGUMENT LIST:
 !
 !     NOTE THAT IDE AND JDE INSIDE ROUTINE SHOULD BE PASSED IN
 !     AS WHAT WRF CONSIDERS THE UNSTAGGERED GRID DIMENSIONS; THAT
 !     IS, 1 LESS THAN THE IDE AND JDE SET BY WRF FRAMEWORK, JM
-!
-!   OUTPUT ARGUMENT LIST:
-!
+!  
+!   OUTPUT ARGUMENT LIST: 
+!     
 !   OUTPUT FILES:
 !     NONE
-!
+!     
 !   SUBPROGRAMS CALLED:
-!
+!  
 !     UNIQUE: NONE
-!
+!  
 !     LIBRARY: NONE
-!
+!  
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
-!   MACHINE : IBM
-!$$$
+!   MACHINE : IBM 
+!$$$  
 !***********************************************************************
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
@@ -706,12 +706,12 @@
 !
       REAL,DIMENSION(IMS:IME,KMS:KME,SPEC_BDY_WIDTH)                   &
      &                           ,INTENT(INOUT) :: CWM_BYS, CWM_BYE    &
-     &                                            ,CWM_BTYS, CWM_BTYE
+     &                                            ,CWM_BTYS, CWM_BTYE  
 
       REAL,DIMENSION(JMS:JME,KMS:KME,SPEC_BDY_WIDTH)                   &
      &                           ,INTENT(INOUT) :: CWM_BXS, CWM_BXE    &
-     &                                            ,CWM_BTXS, CWM_BTXE
-
+     &                                            ,CWM_BTXS, CWM_BTXE  
+                                               
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: CWM,Q
 !
@@ -726,7 +726,7 @@
 !
       INTEGER :: I,IB,IBDY,II,IIM,IM,IRTN,ISIZ1,ISIZ2                &
      &          ,J,JB,JJ,JJM,JM,K,KK,N,NN,NREC,NUMGAS,NV,REC
-      INTEGER :: MY_IS_GLB,MY_JS_GLB,MY_IE_GLB,MY_JE_GLB
+      INTEGER :: MY_IS_GLB,MY_JS_GLB,MY_IE_GLB,MY_JE_GLB  
       INTEGER :: I_M,ILPAD1,IRPAD1,JBPAD1,JTPAD1
       INTEGER :: I1,I2,J1,J2,J1B,J2B
 !
@@ -790,12 +790,12 @@
 !
 !***  USE IBDY=1 FOR SOUTH; 2 FOR NORTH
 !
-      ns_do: DO IBDY=1,2
+      ns_do: DO IBDY=1,2 
 !
 !***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
 !
         activate=.false.
-        if_ns: IF(S_BDY.AND.IBDY==1) THEN
+        if_ns: IF(S_BDY.AND.IBDY==1) THEN 
             JB=1         ! Which cell in from boundary
             JJ=1         ! Which cell in the domain
             activate=.true.
@@ -859,15 +859,15 @@
 !***  WEST AND EAST BOUNDARIES
 !-----------------------------------------------------------------------
 !
-!***  USE IBDY=1 FOR WEST; 2 FOR EAST.
+!***  USE IBDY=1 FOR WEST; 2 FOR EAST. 
 !
-      ew_do: DO IBDY=1,2
+      ew_do: DO IBDY=1,2 
 !
 !***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
 !
          activate=.false.
-         if_ew: IF(W_BDY.AND.IBDY==1) THEN
-            IB=1         ! Which cell in from boundary
+         if_ew: IF(W_BDY.AND.IBDY==1) THEN  
+            IB=1         ! Which cell in from boundary 
             II=1         ! Which cell in the domain
             activate=.true.
 !$omp parallel do                                                       &
@@ -1036,14 +1036,14 @@
 !
             DO I_M=1,N_MOIST
               IF(I_M==P_QV)THEN
-                MOIST(1,JJ,K,I_M)=Q(1,JJ,K)/(1.-Q(1,JJ,K))
-              ELSE
+                MOIST(1,JJ,K,I_M)=Q(1,JJ,K)/(1.-Q(1,JJ,K))     
+              ELSE  
                 MOIST(1,JJ,K,I_M)=(MOIST(1,JJ-1,K,I_M)                  &
      &                            +MOIST(2,JJ-1,K,I_M)                  &
      &                            +MOIST(1,JJ+1,K,I_M)                  &
      &                            +MOIST(2,JJ+1,K,I_M))*0.25
               ENDIF
-            ENDDO
+            ENDDO    
 !
             DO I_M=2,N_SCALAR
               SCALAR(1,JJ,K,I_M)=(SCALAR(1,JJ-1,K,I_M)                  &
@@ -1095,61 +1095,61 @@
 !***********************************************************************
 !-----------------------------------------------------------------------
       SUBROUTINE BOCOV(GRIDID,NTSD,DT,LB                                &
-     &                ,U_BXS,U_BXE,U_BYS,U_BYE                         &
-     &                ,V_BXS,V_BXE,V_BYS,V_BYE                         &
-     &                ,U_BTXS,U_BTXE,U_BTYS,U_BTYE                     &
-     &                ,V_BTXS,V_BTXE,V_BTYS,V_BTYE                     &
+     &                ,U_BXS,U_BXE,U_BYS,U_BYE                         &  
+     &                ,V_BXS,V_BXE,V_BYS,V_BYE                         &  
+     &                ,U_BTXS,U_BTXE,U_BTYS,U_BTYE                     &  
+     &                ,V_BTXS,V_BTXE,V_BTYS,V_BTYE                     &  
      &                ,U,V                                              &
-     &                ,SPEC_BDY_WIDTH                                   &
+     &                ,SPEC_BDY_WIDTH                                   &  
      &                ,IHE,IHW,IVE,IVW                                  &
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
 !***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
+!                .      .    .     
 ! SUBPROGRAM:    BOCOV       UPDATE WIND POINTS ON BOUNDARY
 !   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 94-03-08
-!
+!     
 ! ABSTRACT:
 !     U AND V COMPONENTS OF THE WIND ARE UPDATED ON THE
 !     DOMAIN BOUNDARY BY APPLYING THE PRE-COMPUTED
 !     TENDENCIES AT EACH TIME STEP.  AN EXTRAPOLATION FROM
 !     INSIDE THE DOMAIN IS USED FOR THE COMPONENT TANGENTIAL
 !     TO THE BOUNDARY IF THE NORMAL COMPONENT IS OUTWARD.
-!
+!     
 ! PROGRAM HISTORY LOG:
 !   87-??-??  MESINGER   - ORIGINATOR
 !   95-03-25  BLACK      - CONVERSION FROM 1-D TO 2-D IN HORIZONTAL
 !   98-10-30  BLACK      - MODIFIED FOR DISTRIBUTED MEMORY
 !   01-03-13  BLACK      - CONVERTED TO WRF STRUCTURE
-!   02-09-06  WOLFE      - MORE CONVERSION TO GLOBAL INDEXING
+!   02-09-06  WOLFE      - MORE CONVERSION TO GLOBAL INDEXING 
 !   04-11-23  BLACK      - THREADED
 !   05-12-19  BLACK      - CONVERTED FROM IKJ TO IJK
 !   06-06-02  GOPAL      - MODIFICATIONS FOR NESTING
-!
+!     
 ! USAGE: CALL BOCOH FROM SUBROUTINE SOLVE_NMM
 !   INPUT ARGUMENT LIST:
 !
 !     NOTE THAT IDE AND JDE INSIDE ROUTINE SHOULD BE PASSED IN
 !     AS WHAT WRF CONSIDERS THE UNSTAGGERED GRID DIMENSIONS; THAT
 !     IS, 1 LESS THAN THE IDE AND JDE SET BY WRF FRAMEWORK, JM
-!
-!   OUTPUT ARGUMENT LIST:
-!
+!  
+!   OUTPUT ARGUMENT LIST: 
+!     
 !   OUTPUT FILES:
 !     NONE
-!
+!     
 !   SUBPROGRAMS CALLED:
-!
+!  
 !     UNIQUE: NONE
-!
+!  
 !     LIBRARY: NONE
-!
+!  
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
-!   MACHINE : IBM
-!$$$
+!   MACHINE : IBM 
+!$$$  
 !***********************************************************************
 !-----------------------------------------------------------------------
 !
@@ -1171,12 +1171,12 @@
       REAL,DIMENSION(IMS:IME,KMS:KME,SPEC_BDY_WIDTH),INTENT(INOUT) ::     &
      &                                          U_BYS,U_BYE,V_BYS,V_BYE &
      &                                         ,U_BTYS,U_BTYE           &
-     &                                         ,V_BTYS,V_BTYE
+     &                                         ,V_BTYS,V_BTYE           
 
       REAL,DIMENSION(JMS:JME,KMS:KME,SPEC_BDY_WIDTH),INTENT(INOUT) ::     &
      &                                          U_BXS,U_BXE,V_BXS,V_BXE &
      &                                         ,U_BTXS,U_BTXE           &
-     &                                         ,V_BTXS,V_BTXE
+     &                                         ,V_BTXS,V_BTXE 
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: U,V
 !-----------------------------------------------------------------------
@@ -1184,7 +1184,7 @@
 !***  LOCAL VARIABLES
 !
       INTEGER :: I,II,IIM,IM,J,JJ,JJM,JM,K,N
-      INTEGER :: MY_IS_GLB, MY_JS_GLB,MY_IE_GLB,MY_JE_GLB
+      INTEGER :: MY_IS_GLB, MY_JS_GLB,MY_IE_GLB,MY_JE_GLB  
       INTEGER :: IBDY,JB,IB
       INTEGER :: ILPAD1,IRPAD1,JBPAD1,JTPAD1
       LOGICAL :: E_BDY,W_BDY,N_BDY,S_BDY
@@ -1225,13 +1225,13 @@
 !***  USE IBDY=1 FOR SOUTH; 2 FOR NORTH.
 !-----------------------------------------------------------------------
 !
-      DO IBDY=1,2
+      DO IBDY=1,2  
 !
 !***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
 !
         IF(S_BDY.AND.IBDY==1) THEN
 !
-            JB=1         ! Which cell in from Boundary
+            JB=1         ! Which cell in from Boundary 
             JJ=1         ! Which cell in the Domain
 !
 !$omp parallel do                                                       &
@@ -1271,7 +1271,7 @@
 !***  USE IBDY=1 FOR WEST; 2 FOR EAST.
 !-----------------------------------------------------------------------
 !
-      DO IBDY=1,2
+      DO IBDY=1,2    
 !
 !***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
 !
@@ -1555,7 +1555,7 @@
 
           INTEGER :: I,IB,IBDY,II,IIM,IM,IRTN,ISIZ1,ISIZ2                &
          &          ,J,JB,JJ,JJM,JM,K,KK,N,NN,NREC,NUMGAS,NV,REC
-          INTEGER :: MY_IS_GLB,MY_JS_GLB,MY_IE_GLB,MY_JE_GLB
+          INTEGER :: MY_IS_GLB,MY_JS_GLB,MY_IE_GLB,MY_JE_GLB  
           INTEGER :: I_M,ILPAD1,IRPAD1,JBPAD1,JTPAD1
           REAL :: BCHR,CONVFAC,CWK,PLYR,RRI
           LOGICAL :: E_BDY,W_BDY,N_BDY,S_BDY
@@ -1590,7 +1590,7 @@
           ! I loop ends for N/S bdy copying:
           i1=MAX(ITS-1,IDS)
           i2=MIN(ITE+1,IDE)
-
+          
           ! J loop ends for E/W bdy copying:
           j1=MAX(JTS-1,JDS+3-1)
           if(mod(j1,2)/=1) j1=j1+1
@@ -1611,11 +1611,11 @@
           !
           !***  USE IBDY=1 FOR SOUTH; 2 FOR NORTH
           !
-          n_s_bdy: DO IBDY=1,2
+          n_s_bdy: DO IBDY=1,2 
              !
              !***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
              !
-             if_n_s_bdy: IF(S_BDY.AND.IBDY==1) THEN
+             if_n_s_bdy: IF(S_BDY.AND.IBDY==1) THEN 
                 JB=1         ! Which cell in from boundary
                 JJ=1         ! Which cell in the domain
                 !$omp parallel do                        &
@@ -1688,14 +1688,14 @@
 !***  WEST AND EAST BOUNDARIES
 !-----------------------------------------------------------------------
 !
-!***  USE IBDY=1 FOR WEST; 2 FOR EAST.
+!***  USE IBDY=1 FOR WEST; 2 FOR EAST. 
 !
-      east_west_bt: DO IBDY=1,2
+      east_west_bt: DO IBDY=1,2 
 !
 !***  MAKE SURE THE PROCESSOR HAS THIS BOUNDARY.
 !
-         if_e_w_bt: IF(W_BDY.AND.IBDY==1) THEN
-            IB=1         ! Which cell in from boundary
+         if_e_w_bt: IF(W_BDY.AND.IBDY==1) THEN  
+            IB=1         ! Which cell in from boundary 
             II=1         ! Which cell in the domain
 !$omp parallel do                                                       &
 !$omp& private(j,k)
@@ -1870,10 +1870,10 @@
           IF(I_M==P_QV)THEN
              DO K=KTS,KTE
                 DO J=J1B,J2B
-                   MOIST(1,J,K,I_M)=Q(1,J,K)/(1.-Q(1,J,K))
+                   MOIST(1,J,K,I_M)=Q(1,J,K)/(1.-Q(1,J,K))     
                 ENDDO
              ENDDO
-          ELSE
+          ELSE  
              DO K=KTS,KTE
                 DO J=J1B,J2B
                    MOIST(1,J,K,I_M)=(MOIST(1,J-1,K,I_M) &
@@ -1935,7 +1935,7 @@
           ENDDO
         ENDDO
      ENDIF e_bdy_avg
-
+       
       END SUBROUTINE MP_SPECIES_BDY
 !
 !-----------------------------------------------------------------------

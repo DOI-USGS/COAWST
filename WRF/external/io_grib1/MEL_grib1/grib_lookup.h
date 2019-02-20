@@ -1,4 +1,4 @@
-/* FILE:  grib_lookup.h
+/* FILE:  grib_lookup.h   
  Decoder Lookup Table (ie. g1tab_128_2.2) shows how to convert from GRIB
  units to DB units;
  Encoder Lookup Table (ie. neons2grib.2.2) shows how to convert from DB
@@ -21,14 +21,14 @@ Revisions:
 #define  NO_FNUM   	FLT_MAX   	/*  1E+37 */
 #define  LPRINT 	if (logfile!=NULL) fprintf
 
-enum {
-   NOTFOUND, FOUND, NULL_OK, NO_NULL, NO_SPACE, SPACE_OK, YES, NO,
-   OK, SKIP, ABORT
+enum { 
+   NOTFOUND, FOUND, NULL_OK, NO_NULL, NO_SPACE, SPACE_OK, YES, NO, 
+   OK, SKIP, ABORT 
    };
 
-/*
+/* 
 *   Use this to index the db_tbl_name[] array, so any changes would
-*   require updating db_tbl_name[] also.
+*   require updating db_tbl_name[] also.  
 *  To add new Parm tables, insert it before the Model_Type;
 */
 enum struct_types {
@@ -85,7 +85,7 @@ static char *db_tbl_name[]= {
  The following structs hold Parameter, Level, Model and Geom info;
  They are loaded from the external 'lookup tables';
  The following structs are used as ARRAY of structures, where # elements
- depends on what type of structs they are (usually 256 as defined in
+ depends on what type of structs they are (usually 256 as defined in 
  the # defines lines above;
  ******************************************************************/
 

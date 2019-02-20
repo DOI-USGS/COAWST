@@ -15,7 +15,7 @@ CONTAINS
                     F_QV,F_QC,F_QR,F_QI,F_QS,F_QG,                &
                     pm2_5_dry,pm2_5_water,pm2_5_dry_ec,           &
                     RADFRQ,ICLOUD,DEGRAD,warm_rain,               &
-                    ids,ide, jds,jde, kds,kde,                    &
+                    ids,ide, jds,jde, kds,kde,                    & 
                     ims,ime, jms,jme, kms,kme,                    &
                     its,ite, jts,jte, kts,kte,                    &
                     coszen,julian                                 & ! jararias, 14/08/2013
@@ -58,7 +58,7 @@ CONTAINS
 !
    REAL, INTENT(IN   )   ::                        GMT,R,CP,G,dt
 !
-   INTEGER, INTENT(IN  ) ::                               JULDAY
+   INTEGER, INTENT(IN  ) ::                               JULDAY  
 
    ! --- jararias 14/08/2013
    REAL, DIMENSION( ims:ime, jms:jme ), OPTIONAL, INTENT(IN) :: COSZEN
@@ -78,9 +78,9 @@ CONTAINS
                                                             QG3D
 
    LOGICAL, OPTIONAL, INTENT(IN )      ::        F_QV,F_QC,F_QR,F_QI,F_QS,F_QG
-
+ 
 ! LOCAL VARS
-
+ 
    REAL, DIMENSION( kts:kte ) ::                                  &
                                                           TTEN1D, &
                                                           RHO01D, &
@@ -106,7 +106,7 @@ CONTAINS
    j_loop: DO J=jts,jte
    i_loop: DO I=its,ite
 
-! reverse vars
+! reverse vars 
          DO K=kts,kte
             QV1D(K)=0.
             QC1D(K)=0.
@@ -197,7 +197,7 @@ CONTAINS
 
          IF (PRESENT(F_QS) .AND. PRESENT(QS3D)) THEN
             IF (F_QS) THEN
-               DO K=kts,kte
+               DO K=kts,kte          
                   NK=kme-1-K+kms
                   QS1D(K)=QS3D(I,NK,J)
                   QS1D(K)=max(0.,QS1D(K))
@@ -207,7 +207,7 @@ CONTAINS
 
          IF (PRESENT(F_QG) .AND. PRESENT(QG3D)) THEN
             IF (F_QG) THEN
-               DO K=kts,kte
+               DO K=kts,kte          
                   NK=kme-1-K+kms
                   QG1D(K)=QG3D(I,NK,J)
                   QG1D(K)=max(0.,QG1D(K))
@@ -227,13 +227,13 @@ CONTAINS
                        kts,kte,                                    &
                        coszen(i,j),julian                          ) ! jararias, 14/08/2013
          GSW(I,J)=GSW0
-         DO K=kts,kte
+         DO K=kts,kte          
             NK=kme-1-K+kms
             RTHRATEN(I,K,J)=RTHRATEN(I,K,J)+TTEN1D(NK)/pi3D(I,K,J)
          ENDDO
 !
    ENDDO i_loop
-   ENDDO j_loop
+   ENDDO j_loop                                          
 
    END SUBROUTINE SWRAD
 
@@ -350,7 +350,7 @@ CONTAINS
                + cos(xxlat) * cos(declin) * cos(hrang)
        end if
 
-!     RETURN IF NIGHT
+!     RETURN IF NIGHT        
       IF(CSZA.LE.1.E-9)GOTO 7
 !
       DO K=kts, kte
@@ -411,7 +411,7 @@ CONTAINS
          beta=0.4*(1.0-XMU)+0.1
 !     CSSCA - CLEAR-SKY SCATTERING SET FROM NAMELIST SWRAD_SCAT
          XSCA=(cssca*XATP(K)+beta*aer_dry1(K)*bext340*DZ(K) &
-              +beta*aer_water1(K)*bexth2o*DZ(K))/XMU
+              +beta*aer_water1(K)*bexth2o*DZ(K))/XMU   
 
 !     LAYER VAPOR ABSORPTION DONE FIRST
          XABS=(TOTABS-OLDABS)*(SDOWN(1)-DSCLD-DSCA-DABSA)/SDOWN(K)
@@ -502,10 +502,10 @@ CONTAINS
 ! Correction factor for sloping topography; the diffuse fraction of solar radiation is assumed to be unaffected by the slope
         corr_fac = diffuse_frac + (1-diffuse_frac)*csza_slp/csza
 
- 140	continue
+ 140	continue   
 
-        GSW=(1.-ALBEDO)*SDOWN(kte+1)*corr_fac
-
+        GSW=(1.-ALBEDO)*SDOWN(kte+1)*corr_fac 
+        
       endif
     ENDIF
 
@@ -522,7 +522,7 @@ CONTAINS
 !--------------------------------------------------------------------
    IMPLICIT NONE
 !--------------------------------------------------------------------
-   LOGICAL , INTENT(IN)           :: allowed_to_read
+   LOGICAL , INTENT(IN)           :: allowed_to_read 
    INTEGER , INTENT(IN)           :: ids, ide, jds, jde, kds, kde,  &
                                      ims, ime, jms, jme, kms, kme,  &
                                      its, ite, jts, jte, kts, kte

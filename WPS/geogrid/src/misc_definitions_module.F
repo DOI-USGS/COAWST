@@ -1,7 +1,7 @@
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! MODULE MISC_DEFINITIONS_MODULE
 !
-! This module defines various non-meteorological constants that are used
+! This module defines various non-meteorological constants that are used 
 !   by other modules for readability.
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -43,7 +43,7 @@ module misc_definitions_module
    INTEGER, PUBLIC, PARAMETER  :: PROJ_GAUSS = 4
    INTEGER, PUBLIC, PARAMETER  :: PROJ_CYL = 5
    INTEGER, PUBLIC, PARAMETER  :: PROJ_CASSINI = 6
-   INTEGER, PUBLIC, PARAMETER  :: PROJ_ALBERS_NAD83 = 105
+   INTEGER, PUBLIC, PARAMETER  :: PROJ_ALBERS_NAD83 = 105 
    INTEGER, PUBLIC, PARAMETER  :: PROJ_ROTLL = 203
 
 end module misc_definitions_module

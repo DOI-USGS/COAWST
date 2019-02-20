@@ -14,7 +14,7 @@
       USE MODULE_MODEL_CONSTANTS, only: R_d, p608
 !     USE MODULE_EXCHANGE
       USE MODULE_MPP,ONLY: MYPE
-      USE MODULE_WRF_ERROR
+      USE MODULE_WRF_ERROR     
 !     USE MODULE_TIMERS  ! this one creates a name conflict at compile time
 !-----------------------------------------------------------------------
 !***
@@ -82,7 +82,7 @@
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
 !   MACHINE : IBM SP
-!$$$
+!$$$  
 !-----------------------------------------------------------------------
 !***********************************************************************
 !-----------------------------------------------------------------------
@@ -150,26 +150,26 @@
 !-----------------------------------------------------------------------
 !***********************************************************************
 !
-!
+!                                       
 !                CSE                          CSE            -------  1
-!                 *                            *
-!                 *                            *
-!       *******   *                  *******   *
-!      *       *  *                 *       *  *
-!   CNE         * *              CNE         * *
+!                 *                            *  
+!                 *                            *    
+!       *******   *                  *******   *   
+!      *       *  *                 *       *  *  
+!   CNE         * *              CNE         * *       
 !               TEW----------OMGALF----------TEW             -------  0
-!   CSE         * *              CSE         * *
-!      *       *  *                 *       *  *
-!       *******   *                  *******   *
-!                 *                            *
-!                 *                            *
+!   CSE         * *              CSE         * *         
+!      *       *  *                 *       *  *       
+!       *******   *                  *******   *     
+!                 *                            *   
+!                 *                            * 
 !                CNE                          CNE            ------- -1
+!                                        
 !
 !
-!
-!
+! 
 !***********************************************************************
-!
+! 
 !                              CSE                           -------  2
 !                               *
 !                               *
@@ -193,7 +193,7 @@
 !                               *
 !                               *
 !                              CNE                           ------- -2
-!
+! 
 !***********************************************************************
 !-----------------------------------------------------------------------
 !***  PREPARATORY CALCULATIONS
@@ -408,7 +408,7 @@
 76501   format(' deta1=',z8,' deta2=',z8,' prsfrc=',z8,' wpdar=',z8,' ihe=',i2,' ihw=',i2)
 76502   format(' pcxc=',4(1x,z8))
 !     endif
-          DIV(I,J,K)=(DETA1(K)*PRSFRC                                   &
+          DIV(I,J,K)=(DETA1(K)*PRSFRC                                   &   
      &               +DETA2(K)*(1.-PRSFRC))*WPDAR(I,J)                  &
      &              *(PCXC(I+IHE(J),J)-PCXC(I,J+1)                      &
      &               +PCXC(I+IHW(J),J)-PCXC(I,J-1))
@@ -532,7 +532,7 @@
      &                    +TNE(I,J)       +TNE(I+IHW(J),J-1)            &
      &                    +TSE(I,J)       +TSE(I+IHW(J),J+1))           &
      &                    *RDPD(I,J)*FCP(I,J)*HM(I,J)
-!
+! 
 !     if(i==178.and.j==003.and.k==53)then
 !       write(0,36311)div(i,j,k),fdiv(i,j),ihe(j),ihw(j)
 !       write(0,36312)FEW(I+IHE(J),J,K),FEW(I+IHW(J),J,K),FNS(I,J+1,K),FNS(I,J-1,K)
@@ -574,22 +574,22 @@
      &                NTSD,DT,PT,ETA2,RES,HYDRO,HBM2                    &
      &               ,PD,PDSL,PDSLO                                     &
      &               ,PETDT,DIV,PSDT                                    &
-     &               ,IHE,IHW,IVE,IVW                                   &
+     &               ,IHE,IHW,IVE,IVW                                   &                 
      &               ,IDS,IDE,JDS,JDE,KDS,KDE                           &
      &               ,IMS,IME,JMS,JME,KMS,KME                           &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
 !***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
+!                .      .    .     
 ! SUBPROGRAM:    PDTE        SURFACE PRESSURE TENDENCY CALC
-!   PRGRMMR: JANJIC          ORG: W/NP2      DATE: 96-07-??
-!
+!   PRGRMMR: JANJIC          ORG: W/NP2      DATE: 96-07-??      
+!     
 ! ABSTRACT:
 !     PDTE VERTICALLY INTEGRATES THE MASS FLUX DIVERGENCE TO
 !     OBTAIN THE SURFACE PRESSURE TENDENCY AND VERTICAL VELOCITY ON
 !     THE LAYER INTERFACES.  THEN IT UPDATES THE HYDROSTATIC SURFACE
 !     PRESSURE AND THE NONHYDROSTATIC PRESSURE.
-!
+!     
 ! PROGRAM HISTORY LOG:
 !   87-06-??  JANJIC     - ORIGINATOR
 !   95-03-25  BLACK      - CONVERSION FROM 1-D TO 2-D IN HORIZONTAL
@@ -602,25 +602,25 @@
 !                          AND UPDATE OF PINT TO NEW ROUTINE VTOA
 !   04-11-23  BLACK      - THREADED
 !   05-12-09  BLACK      - CONVERTED FROM IKJ TO IJK
-!
+!     
 ! USAGE: CALL PDTE FROM SUBROUTINE SOLVE_RUNSTREAM
 !   INPUT ARGUMENT LIST:
-!
-!   OUTPUT ARGUMENT LIST:
-!
+!  
+!   OUTPUT ARGUMENT LIST: 
+!     
 !   OUTPUT FILES:
 !     NONE
-!
+!     
 !   SUBPROGRAMS CALLED:
-!
+!  
 !     UNIQUE: NONE
-!
+!  
 !     LIBRARY: NONE
-!
+!  
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
 !   MACHINE : IBM SP
-!$$$
+!$$$  
 !***********************************************************************
 #ifdef DM_PARALLEL
       USE module_domain, ONLY: DOMAIN
@@ -628,7 +628,7 @@
                                               ,MYTASK,NTASKS,NTASKS_X   &
                                               ,NTASKS_Y                 &
                                               ,wrf_dm_sum_real          &
-                                              ,wrf_dm_sum_integer
+                                              ,wrf_dm_sum_integer          
       USE MODULE_COMM_DM, only: HALO_NMM_E_sub
 #endif
 !-----------------------------------------------------------------------
@@ -653,7 +653,7 @@
 !
       REAL,DIMENSION(KMS:KME),INTENT(IN) :: ETA2
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: RES,HBM2
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(IN) :: RES,HBM2   
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: DIV
 !
@@ -896,43 +896,43 @@
      &               ,HBM2,EF4T                                         &
      &               ,T,DWDT,RTOP,OMGALF                                &
      &               ,PINT,DIV,PSDT,RES                                 &
-     &               ,IHE,IHW,IVE,IVW                                   &
+     &               ,IHE,IHW,IVE,IVW                                   &                 
      &               ,IDS,IDE,JDS,JDE,KDS,KDE                           &
      &               ,IMS,IME,JMS,JME,KMS,KME                           &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
 !***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
+!                .      .    .     
 ! SUBPROGRAM:    VTOA        OMEGA-ALPHA
-!   PRGRMMR: JANJIC          ORG: W/NP2      DATE: 04-02-17
-!
+!   PRGRMMR: JANJIC          ORG: W/NP2      DATE: 04-02-17      
+!     
 ! ABSTRACT:
 !     VTOA UPDATES THE NONHYDROSTATIC PRESSURE AND ADDS THE
 !     CONTRIBUTION OF THE OMEGA-ALPHA TERM OF THE THERMODYNAMIC
 !     EQUATION.  ALSO, THE OMEGA-ALPHA TERM IS COMPUTED FOR DIAGNOSTICS.
-!
+!     
 ! PROGRAM HISTORY LOG:
 !   04-02-17  JANJIC     - SEPARATED FROM ORIGINAL PDTEDT ROUTINE
 !   04-11-23  BLACK      - THREADED
-!
+!     
 
 !   INPUT ARGUMENT LIST:
-!
-!   OUTPUT ARGUMENT LIST:
-!
+!  
+!   OUTPUT ARGUMENT LIST: 
+!     
 !   OUTPUT FILES:
 !     NONE
-!
+!     
 !   SUBPROGRAMS CALLED:
-!
+!  
 !     UNIQUE: NONE
-!
+!  
 !     LIBRARY: NONE
-!
+!  
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
 !   MACHINE : IBM SP
-!$$$
+!$$$  
 !***********************************************************************
 !-----------------------------------------------------------------------
       IMPLICIT NONE
@@ -953,7 +953,7 @@
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(IN) :: DIV,DWDT    &
      &                                                     ,RTOP
 !
-      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: OMGALF,T
+      REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: OMGALF,T  
 !
       REAL,DIMENSION(IMS:IME,JMS:JME,KMS:KME),INTENT(INOUT) :: PINT
 !
@@ -1051,20 +1051,20 @@
 !***********************************************************************
       SUBROUTINE DDAMP(NTSD,DT,DETA1,DETA2,PDSL,PDTOP,DIV,HBM2          &
      &                ,T,U,V,DDMPU,DDMPV                                &
-     &                ,IHE,IHW,IVE,IVW                                  &
+     &                ,IHE,IHW,IVE,IVW                                  &              
      &                ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &                ,IMS,IME,JMS,JME,KMS,KME                          &
      &                ,ITS,ITE,JTS,JTE,KTS,KTE)
 !***********************************************************************
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
+!                .      .    .     
 ! SUBPROGRAM:    DDAMP       DIVERGENCE DAMPING
-!   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 94-03-08
-!
+!   PRGRMMR: JANJIC          ORG: W/NP22     DATE: 94-03-08       
+!     
 ! ABSTRACT:
 !     DDAMP MODIFIES THE WIND COMPONENTS SO AS TO REDUCE THE
 !     HORIZONTAL DIVERGENCE.
-!
+!     
 ! PROGRAM HISTORY LOG:
 !   87-08-??  JANJIC     - ORIGINATOR
 !   95-03-25  BLACK      - CONVERSION FROM 1-D TO 2-D IN HORIZONTAL
@@ -1073,26 +1073,26 @@
 !   01-03-12  BLACK      - CONVERTED TO WRF STRUCTURE
 !   04-11-18  BLACK      - THREADED
 !   05-12-09  BLACK      - CONVERTED FROM IKJ TO IJK
-!
+!     
 ! USAGE: CALL DDAMP FROM SUBROUTINE SOLVE_RUNSTREAM
 !
 !   INPUT ARGUMENT LIST:
-!
-!   OUTPUT ARGUMENT LIST:
-!
+!  
+!   OUTPUT ARGUMENT LIST: 
+!     
 !   OUTPUT FILES:
 !     NONE
-!
+!     
 !   SUBPROGRAMS CALLED:
-!
+!  
 !     UNIQUE: NONE
-!
+!  
 !     LIBRARY: NONE
-!
+!  
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
 !   MACHINE : IBM SP
-!$$$
+!$$$  
 !***********************************************************************
 !-----------------------------------------------------------------------
       IMPLICIT NONE
@@ -1170,7 +1170,7 @@
       DO J=MYJS2,MYJE2
       DO I=MYIS1_P1,MYIE1_P1
         RDPDX=DDMPU(I,J)*FCXM                                           &
-     &       /(PDE(I+IVW(J),J)  +PDE(I+IVE(J),J))
+     &       /(PDE(I+IVW(J),J)  +PDE(I+IVE(J),J))    
         RDPDY=DDMPV(I,J)*FCXM                                           &
      &       /(PDE(I       ,J-1)+PDE(I     ,J+1))
 !

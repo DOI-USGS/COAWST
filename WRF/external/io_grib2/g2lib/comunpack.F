@@ -104,7 +104,7 @@
          endif
       endif
       !print *,'RMISSs: ',rmiss1,rmiss2,ref
-!
+! 
 !  Extract Spatial differencing values, if using DRS Template 5.3
 !
       if (idrsnum.eq.3) then
@@ -326,7 +326,7 @@
 
       if ( allocated(ifld) ) deallocate(ifld)
 
-      !open(10,form='unformatted',recl=24180,access='direct')
+      !open(10,form='unformatted',recl=24180,access='direct') 
       !read(10,rec=1) (fldo(k),k=1,6045)
       !do i =1,6045
       !  print *,i,fldo(i),fld(i),fldo(i)-fld(i)

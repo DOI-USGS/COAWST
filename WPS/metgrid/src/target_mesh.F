@@ -71,7 +71,7 @@ module target_mesh
             open(22, file='target_domain', form='formatted')
             read(22,fmt='(a)',iostat=iostatus) spec
             j = 1
-            do while (iostatus >= 0)
+            do while (iostatus >= 0) 
                 call despace(spec)
                 eqIdx = index(spec, '=')
                 if (eqIdx /= 0) then
@@ -196,7 +196,7 @@ module target_mesh
        do i=1,length
            ! Check for a quote mark
            if (string(i:i) == '"' .or. string(i:i) == '''') iquoted = mod(iquoted+1,2)
-
+ 
            ! Check for non-space, non-tab character, or if we are inside quoted
            ! text
            if ((string(i:i) /= ' ' .and. string(i:i) /= achar(9)) .or. iquoted == 1) then
@@ -204,7 +204,7 @@ module target_mesh
                j = j + 1
            end if
        end do
-
+ 
        do i=j,length
            string(i:i) = ' '
        end do

@@ -37,9 +37,9 @@
 ! Number of parallel nodes assigned to each model in the coupled system.
 ! Their sum must be equal to the total number of processors.
 
-   NnodesATM =  12                   ! atmospheric model
-   NnodesWAV =  12                   ! wave model
-   NnodesOCN =  12                   ! ocean model
+   NnodesATM =  1                   ! atmospheric model
+   NnodesWAV =  1                   ! wave model
+   NnodesOCN =  1                   ! ocean model
 
 ! Time interval (seconds) between coupling of models.
 
@@ -54,9 +54,9 @@
 ! The Wav program needs multiple input files, one for each grid.
 
    ATM_name = namelist.input                            ! atmospheric model
-!  WAV_name = Projects/Sandy/swan_sandy.in \
-!             Projects/Sandy/swan_sandy_ref3.in         ! wave model
-   WAV_name = WW3/work/ww3_grid.inp
+   WAV_name = Projects/Sandy/swan_sandy.in \
+              Projects/Sandy/swan_sandy_ref3.in         ! wave model
+!  WAV_name = WW3/work/ww3_grid.inp
    OCN_name = Projects/Sandy/ocean_sandy.in             ! ocean model
 
 ! Sparse matrix interpolation weights files. You have 2 options:
@@ -71,8 +71,8 @@
 !           Lib/SCRIP_COAWST/scrip_coawst[.exe]
 
 !  SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_moving.nc
-!  SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_static.nc
-   SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_nowavenest.nc
+   SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_static.nc
+!  SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_nowavenest.nc
 
 ! Option 2: THIS OPTION WILL BE REMOVED IN FUTURE VERSIONS.
 !           IF you set "SCRIP_WEIGHT_OPTION = 2", then enter 

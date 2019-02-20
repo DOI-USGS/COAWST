@@ -3,10 +3,10 @@
 #define MODAL_AERO
 ! Updated to CESM1.0.3 (CAM5.1.01) by Balwinder.Singh@pnnl.gov
 module cldwat
-!-----------------------------------------------------------------------
-!
+!----------------------------------------------------------------------- 
+! 
 ! Purpose: Prognostic cloud water data and methods.
-!
+! 
 ! Public interfaces:
 !
 ! inimc -- Initialize constants
@@ -140,8 +140,8 @@ contains
    character(len=*), intent(in) :: nlfile  ! filepath for file containing namelist input
 #ifndef WRF_PORT
    ! Namelist variables
-   real(r8) :: cldwat_icritw  = unset_r8    !   icritw  = threshold for autoconversion of warm ice
-   real(r8) :: cldwat_icritc  = unset_r8    !   icritc  = threshold for autoconversion of cold ice
+   real(r8) :: cldwat_icritw  = unset_r8    !   icritw  = threshold for autoconversion of warm ice  
+   real(r8) :: cldwat_icritc  = unset_r8    !   icritc  = threshold for autoconversion of cold ice  
    real(r8) :: cldwat_conke   = unset_r8    !   conke   = tunable constant for evaporation of precip
    real(r8) :: cldwat_r3lcrit = unset_r8    !   r3lcrit = critical radius where liq conversion begins
 
@@ -167,7 +167,7 @@ contains
       call freeunit(unitn)
 
       ! set local variables
-      icritw  = cldwat_icritw
+      icritw  = cldwat_icritw 
       icritc  = cldwat_icritc
       conke   = cldwat_conke
       r3lcrit = cldwat_r3lcrit
@@ -190,9 +190,9 @@ end subroutine cldwat_readnl
   subroutine cldwat_fice(ncol, t, fice, fsnow)
 !
 ! Compute the fraction of the total cloud water which is in ice phase.
-! The fraction depends on temperature only.
+! The fraction depends on temperature only. 
 ! This is the form that was used for radiation, the code came from cldefr originally
-!
+! 
 ! Author: B. A. Boville Sept 10, 2002
 !  modified: PJR 3/13/03 (added fsnow to ascribe snow production for convection )
 !-----------------------------------------------------------------------
@@ -218,7 +218,7 @@ end subroutine cldwat_readnl
     tmax_fsnow = tmelt
     tmin_fsnow = tmelt   - 5._r8
 
-
+    
 ! Define fractional amount of cloud that is ice
     do k=1,pver
        do i=1,ncol
@@ -232,7 +232,7 @@ end subroutine cldwat_readnl
              fice(i,k) = 1.0_r8
 
 ! Otherwise mixed phase, with ice fraction decreasing linearly from tmin to tmax
-          else
+          else 
              fice(i,k) =(tmax_fice - t(i,k)) / (tmax_fice - tmin_fice)
           end if
 
@@ -247,7 +247,7 @@ end subroutine cldwat_readnl
              fsnow(i,k) = 1.0_r8
 
 ! Otherwise mixed phase, with ice fraction decreasing linearly from tmin to tmax
-          else
+          else 
              fsnow(i,k) =(tmax_fsnow - t(i,k)) / (tmax_fsnow - tmin_fsnow)
           end if
 
@@ -258,13 +258,13 @@ end subroutine cldwat_readnl
   end subroutine cldwat_fice
 #ifndef WRF_PORT
 subroutine inimc( tmeltx, rhonotx, gravitx, rh2ox)
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! initialize constants for the prognostic condensate
-!
+! 
 ! Author: P. Rasch, April 1997
-!
+! 
 !-----------------------------------------------------------------------
    use pmgrid,       only: plev, plevp
    use dycore,       only: dycore_is, get_resolution
@@ -281,7 +281,7 @@ subroutine inimc( tmeltx, rhonotx, gravitx, rh2ox)
    real(r8) signgam              ! variable required by cray gamma function
    external gamma
 #endif
-   character(len=16)    :: microp_scheme
+   character(len=16)    :: microp_scheme 
 
 ! Get microphysics option
 
@@ -402,7 +402,7 @@ subroutine inimc( tmeltx, rhonotx, gravitx, rh2ox)
 
 ! ice microphysics
       ciautb = 5.e-4_r8
-
+      
       if ( masterproc ) then
          write(iulog,*)'tuning parameters cldwat: icritw',icritw,'icritc',icritc,'conke',conke,'r3lcrit',r3lcrit
 #ifdef WRF_PORT
@@ -429,24 +429,24 @@ end subroutine inimc
 subroutine pcond (lchnk   ,ncol    , &
                   tn      ,ttend   ,qn      ,qtend   ,omega   , &
                   cwat    ,p       ,pdel    ,cldn    ,fice    , fsnow, &
-                  cme     ,prodprec,prodsnow,evapprec,evapsnow,evapheat, prfzheat, &
+                  cme     ,prodprec,prodsnow,evapprec,evapsnow,evapheat, prfzheat, &     
                   meltheat,precip  ,snowab  ,deltat  ,fwaut   , &
                   fsaut   ,fracw   ,fsacw   ,fsaci   ,lctend  , &
                   rhdfda  ,rhu00   ,seaicef, zi      ,ice2pr, liq2pr, &
                   liq2snow, snowh, rkflxprc, rkflxsnw, pracwo, psacwo, psacio)
 
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! The public interface to the cloud water parameterization
 ! returns tendencies to water vapor, temperature and cloud water variables
-!
-! For basic method
+! 
+! For basic method 
 !  See: Rasch, P. J, and J. E. Kristjansson, A Comparison of the CCM3
-!  model climate using diagnosed and
+!  model climate using diagnosed and 
 !  predicted condensate parameterizations, 1998, J. Clim., 11,
 !  pp1587---1614.
-!
+! 
 ! For important modifications to improve the method of determining
 ! condensation/evaporation see Zhang et al (2001, in preparation)
 !
@@ -552,14 +552,14 @@ subroutine pcond (lchnk   ,ncol    , &
    real(r8) cdt                  ! work variable
    real(r8) wtthick              ! work variable
 
-! Extra local work space for cloud scheme modification
+! Extra local work space for cloud scheme modification       
 
    real(r8) cpohl                !Cp/Hlatv
    real(r8) hlocp                !Hlatv/Cp
    real(r8) dto2                 !0.5*deltat (delta=2.0*dt)
    real(r8) calpha(pcols)        !alpha of new C - E scheme formulation
    real(r8) cbeta (pcols)        !beta  of new C - E scheme formulation
-   real(r8) cbetah(pcols)        !beta_hat at saturation portion
+   real(r8) cbetah(pcols)        !beta_hat at saturation portion 
    real(r8) cgamma(pcols)        !gamma of new C - E scheme formulation
    real(r8) cgamah(pcols)        !gamma_hat at saturation portion
    real(r8) rcgama(pcols)        !gamma/gamma_hat
@@ -608,11 +608,11 @@ subroutine pcond (lchnk   ,ncol    , &
       cldmax(i) = 0.0_r8
    end do
 !
-! initialize multi-level fields
+! initialize multi-level fields 
 !
    do k = 1,pver
       do i = 1,ncol
-         q(i,k) = qn(i,k)
+         q(i,k) = qn(i,k) 
          t(i,k) = tn(i,k)
 !         q(i,k)=qn(i,k)-qtend(i,k)*deltat
 !         t(i,k)=tn(i,k)-ttend(i,k)*deltat
@@ -706,11 +706,11 @@ subroutine pcond (lchnk   ,ncol    , &
       end do
 
 !
-! calculate cme and formation of precip.
+! calculate cme and formation of precip. 
 !
 ! The cloud microphysics is highly nonlinear and coupled with cme
 ! Both rain processes and cme are calculated iteratively.
-!
+! 
       do 100 l = 1,iter
 
         do i = 1,ncol
@@ -720,7 +720,7 @@ subroutine pcond (lchnk   ,ncol    , &
 ! ==================================
 !
            if(relhum(i) > rhu00(i,k)) then
-
+    
            ! 1. whole grid saturation
            ! ========================
               if(relhum(i) >= 0.999_r8 .or. cldm(i) >= 0.999_r8 ) then
@@ -749,17 +749,17 @@ subroutine pcond (lchnk   ,ncol    , &
                   cmec4(i) = csigma(i)*cgamma(i)*icwc(i)
 
                   ! Q=C-E=-C1*Al + C2*Aq - C3* At + C4*Er
-
+  
                   cme(i,k) = -cmec1(i)*lctend(i,k) + cmec2(i)*qtend(i,k)  &
                              -cmec3(i)*ttend(i,k) + cmec4(i)*evapprec(i,k)
                endif
 
            ! 3. when rh < rhu00, evaporate existing cloud water
-           ! ==================================================
+           ! ================================================== 
            else if(cwat(i,k) > 0.0_r8)then
-              ! liquid water should be evaporated but not to exceed
+              ! liquid water should be evaporated but not to exceed 
               ! saturation point. if qn > qsp, not to evaporate cwat
-              cme(i,k)=-min(max(0._r8,qsp(i,k)-qn(i,k)),cwat(i,k))/deltat
+              cme(i,k)=-min(max(0._r8,qsp(i,k)-qn(i,k)),cwat(i,k))/deltat 
 
            ! 4. no condensation nor evaporation
            ! ==================================
@@ -767,10 +767,10 @@ subroutine pcond (lchnk   ,ncol    , &
               cme(i,k)=0.0_r8
            endif
 
-
+  
         end do    !end loop for cme update
 
-! Because of the finite time step,
+! Because of the finite time step, 
 ! place a bound here not to exceed wet bulb point
 ! and not to evaporate more than available water
 !
@@ -779,11 +779,11 @@ subroutine pcond (lchnk   ,ncol    , &
 
 ! possibilities to have qtmp > qsp
 !
-!   1. if qn > qs(tn), it condenses;
-!      if after applying cme,  qtmp > qsp,  more condensation is applied.
-!
+!   1. if qn > qs(tn), it condenses; 
+!      if after applying cme,  qtmp > qsp,  more condensation is applied. 
+!      
 !   2. if qn < qs, evaporation should not exceed qsp,
-
+    
             if(qtmp > qsp(i,k)) then
               cme(i,k) = cme(i,k) + (qtmp-qsp(i,k))/deltat
             endif
@@ -808,7 +808,7 @@ subroutine pcond (lchnk   ,ncol    , &
          do i = 1,ncol
 !
 ! as a safe limit, condensation should not reduce grid mean rh below rhu00
-!
+! 
            if(cme(i,k) > 0.0_r8 .and. relhum(i) > rhu00(i,k) )  &
               cme(i,k) = min(cme(i,k), (qn(i,k)-qs(i)*rhu00(i,k))/deltat)
 !
@@ -828,7 +828,7 @@ subroutine pcond (lchnk   ,ncol    , &
             prprov(i) =  precab(i) + wtthick*prodprec(i,k)*pdel(i,k)/gravit
          end do
 
-! calculate conversion of condensate to precipitation by cloud microphysics
+! calculate conversion of condensate to precipitation by cloud microphysics 
          call findmcnew (lchnk   ,ncol    , &
                          k       ,prprov  ,snowab,  t       ,p        , &
                          cwm     ,cldm    ,cldmax  ,fice(1,k),coef    , &
@@ -840,7 +840,7 @@ subroutine pcond (lchnk   ,ncol    , &
 !
          error_found = .false.
          do i = 1,ncol
-            if (cldm(i) > 0) then
+            if (cldm(i) > 0) then  
 !
 ! first predict the cloud water
 !
@@ -866,9 +866,9 @@ subroutine pcond (lchnk   ,ncol    , &
 !old        liq2snow(i,k) = prodprec(i,k)*fsacw(i,k)
 
 !           revision suggested by Jim McCaa
-!           it controls the amount of snow hitting the sfc
+!           it controls the amount of snow hitting the sfc 
 !           by forcing a lot of conversion of cloud liquid to snow phase
-!           it might be better done later by an explicit representation of
+!           it might be better done later by an explicit representation of 
 !           rain accreting ice (and freezing), or by an explicit freezing of raindrops
             liq2snow(i,k) = max(prodprec(i,k)*fsacw(i,k), fsnow(i,k)*liq2pr(i,k))
 
@@ -887,7 +887,7 @@ subroutine pcond (lchnk   ,ncol    , &
             nliq2snow = nliq2snow*omsm
             nliq2pr = nliq2pr*omsm
             nice2pr = nice2pr*omsm
-
+            
 !           final estimates of conversion to precip and snow
             prodprec(i,k) = (nliq2pr + nice2pr)
             prodsnow(i,k) = (nice2pr + nliq2snow)
@@ -896,13 +896,13 @@ subroutine pcond (lchnk   ,ncol    , &
             rliq(i,l,k) = (cwat(i,k) + cme(i,k)*deltat)*(1._r8-fice(i,k)) - nliq2pr * deltat
             rice(i,l,k) = (cwat(i,k) + cme(i,k)*deltat)* fice(i,k)      -    nice2pr                     *deltat
 
-!           Save for sanity check later...
-!           Putting sanity checks inside loops 100 and 800 screws up the
+!           Save for sanity check later...  
+!           Putting sanity checks inside loops 100 and 800 screws up the 
 !           IBM compiler for reasons as yet unknown.  TBH
             cwnsave(i,l,k)      = cwn(i)
             cmesave(i,l,k)      = cme(i,k)
             prodprecsave(i,l,k) = prodprec(i,k)
-!           End of save for sanity check later...
+!           End of save for sanity check later...  
 
 !           final version of condensate to precip terms
             liq2pr(i,k) = nliq2pr
@@ -969,7 +969,7 @@ subroutine pcond (lchnk   ,ncol    , &
          if (evapprec(i,k) > 0._r8) then
             evapsnow(i,k) = evapprec(i,k) * snowab(i) / precab(i)
             evapheat(i,k) = -hlatv * evapprec(i,k) - hlatf * evapsnow(i,k)
-         else
+         else 
             evapsnow(i,k) = 0._r8
             evapheat(i,k) = 0._r8
          end if
@@ -978,14 +978,14 @@ subroutine pcond (lchnk   ,ncol    , &
       end do
 
 ! now remove the residual of any over-saturation. Normally,
-! the oversaturated water vapor should have been removed by
+! the oversaturated water vapor should have been removed by 
 ! cme formulation plus constraints by wet bulb tsp/qsp
 ! as computed above. However, because of non-linearity,
 ! addition of (cme-evapprec) to update t and q may still cause
 ! a very small amount of over saturation. It is called a
 ! residual of over-saturation because theoretically, cme
 ! should have taken care of all of large scale condensation.
-!
+! 
 
        do i = 1,ncol
           qtmp = qn(i,k)-(cme(i,k)-evapprec(i,k))*deltat
@@ -1000,7 +1000,7 @@ subroutine pcond (lchnk   ,ncol    , &
           !
           if(qtmp > qsn .and. qsn > 0) then
              !calculate dqsdt, a more precise calculation
-             !which taking into account different range of T
+             !which taking into account different range of T 
              !can be found in aqsatd.F. Here follows
              !cond.F to calculate it.
              !
@@ -1020,7 +1020,7 @@ subroutine pcond (lchnk   ,ncol    , &
              cmeres(i) = 0.0_r8
           endif
        end do
-
+              
  100 continue              ! end of do l = 1,iter
 
 !
@@ -1038,7 +1038,7 @@ subroutine pcond (lchnk   ,ncol    , &
          !!rkflxprc(i,k+1) = precab(i) - snowab(i)
          rkflxsnw(i,k+1) = snowab(i)
 
-!!$         if ((precab(i)) < 1.e-10) then
+!!$         if ((precab(i)) < 1.e-10) then      
 !!$            precab(i) = 0.
 !!$            snowab(i) = 0.
 !!$         endif
@@ -1075,7 +1075,7 @@ subroutine pcond (lchnk   ,ncol    , &
                      (cmesave(i,l,k)-prodprecsave(i,l,k))*deltat
 #ifdef WRF_PORT
                   call wrf_message(iulog)
-#endif
+#endif                  
                   call endrun('PCOND')
                endif
                if (rliq(i,l,k).lt.0._r8) then
@@ -1108,20 +1108,20 @@ subroutine findmcnew (lchnk   ,ncol    , &
                       cwm     ,cldm    ,cldmax  ,fice    ,coef    , &
                       fwaut   ,fsaut   ,fracw   ,fsacw   ,fsaci   , &
                       seaicef ,snowh,  pracwo, psacwo, psacio )
-
-!-----------------------------------------------------------------------
-!
-! Purpose:
+ 
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! calculate the conversion of condensate to precipitate
-!
-! Method:
+! 
+! Method: 
 ! See: Rasch, P. J, and J. E. Kristjansson, A Comparison of the CCM3
-!  model climate using diagnosed and
+!  model climate using diagnosed and 
 !  predicted condensate parameterizations, 1998, J. Clim., 11,
 !  pp1587---1614.
-!
+! 
 ! Author: P. Rasch
-!
+! 
 !-----------------------------------------------------------------------
    use phys_grid, only: get_rlat_all_p
    use comsrf,        only: landm
@@ -1139,7 +1139,7 @@ subroutine findmcnew (lchnk   ,ncol    , &
    real(r8), intent(in) :: cldmax(pcols)        ! max cloud fraction above this level
    real(r8), intent(in) :: cwm(pcols)           ! condensate mixing ratio (kg/kg)
    real(r8), intent(in) :: fice(pcols)          ! fraction of cwat that is ice
-   real(r8), intent(in) :: seaicef(pcols)       ! sea ice fraction
+   real(r8), intent(in) :: seaicef(pcols)       ! sea ice fraction 
    real(r8), intent(in) :: snowab(pcols)        ! rate of snow from above (kg / (m**2 * s))
     real(r8), intent(in) :: snowh(pcols)         ! Snow depth over land, water equivalent (m)
 
@@ -1323,7 +1323,7 @@ subroutine findmcnew (lchnk   ,ncol    , &
       ! Ramp between the resultant value and a sea ice value in the presence of ice.
       capn = capn + (capnsi-capn) * min(1.0_r8,max(0.0_r8,seaicef(i)))
 ! end jrm
-!
+!      
 #ifdef DEBUG2
       if ( (lat(i) == latlook(1)) .or. (lat(i) == latlook(2)) ) then
          if (i == ilook(1)) then
@@ -1496,27 +1496,27 @@ end subroutine findmcnew
 !##############################################################################
 
 subroutine findsp (lchnk, ncol, q, t, p, tsp, qsp)
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 !     find the wet bulb temperature for a given t and q
 !     in a longitude height section
-!     wet bulb temp is the temperature and spec humidity that is
+!     wet bulb temp is the temperature and spec humidity that is 
 !     just saturated and has the same enthalpy
 !     if q > qs(t) then tsp > t and qsp = qs(tsp) < q
 !     if q < qs(t) then tsp < t and qsp = qs(tsp) > q
 !
-! Method:
+! Method: 
 ! a Newton method is used
 ! first guess uses an algorithm provided by John Petch from the UKMO
 ! we exclude points where the physical situation is unrealistic
 ! e.g. where the temperature is outside the range of validity for the
 !      saturation vapor pressure, or where the water vapor pressure
-!      exceeds the ambient pressure, or the saturation specific humidity is
+!      exceeds the ambient pressure, or the saturation specific humidity is 
 !      unrealistic
-!
+! 
 ! Author: P. Rasch
-!
+! 
 !-----------------------------------------------------------------------
 !
 !     input arguments
@@ -1567,7 +1567,7 @@ subroutine findsp (lchnk, ncol, q, t, p, tsp, qsp)
    real(r8) denom
    real(r8) dttol
    real(r8) dqtol
-   integer doit(pcols)
+   integer doit(pcols) 
    real(r8) enin(pcols), enout(pcols)
    real(r8) tlim(pcols)
 
@@ -1597,7 +1597,7 @@ subroutine findsp (lchnk, ncol, q, t, p, tsp, qsp)
             write(iulog,*) ' '
 #ifdef WRF_PORT
             call wrf_message(iulog)
-#endif
+#endif            
             write(iulog,*) ' level, t, q, p', k, t(i,k), q(i,k), p(i,k)
 #ifdef WRF_PORT
             call wrf_message(iulog)
@@ -1728,7 +1728,7 @@ subroutine findsp (lchnk, ncol, q, t, p, tsp, qsp)
                   write(iulog,*) ' rel chg lev, iter, t, q ', k, l, dt, dq, g
 #ifdef WRF_PORT
                   call wrf_message(iulog)
-#endif
+#endif                  
                endif
 #endif
                dtm = max(dtm,dt)
@@ -1807,7 +1807,7 @@ subroutine findsp (lchnk, ncol, q, t, p, tsp, qsp)
             endif
          end do
       endif
-
+      
    end do                    ! level loop (k=1,pver)
 
    return

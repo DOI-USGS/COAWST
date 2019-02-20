@@ -362,13 +362,13 @@
         allocate ( AVERAGE2(ng) % avgWai(LBi:UBi,LBj:UBj) )
       END IF
       IF (Aout2(idWao,ng)) THEN
-        allocate ( AVERAGE2(ng) % avgWao(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE2(ng) % avgWao(LBi:UBi,LBj:UBj) ) 
       END IF
       IF (Aout2(idWio,ng)) THEN
-        allocate ( AVERAGE2(ng) % avgWio(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE2(ng) % avgWio(LBi:UBi,LBj:UBj) ) 
       END IF
       IF (Aout2(idWro,ng)) THEN
-        allocate ( AVERAGE2(ng) % avgWro(LBi:UBi,LBj:UBj) )
+        allocate ( AVERAGE2(ng) % avgWro(LBi:UBi,LBj:UBj) ) 
       END IF
       IF (Aout2(idTauiw,ng)) THEN
         allocate ( AVERAGE2(ng) % avgutau_iw(LBi:UBi,LBj:UBj) )

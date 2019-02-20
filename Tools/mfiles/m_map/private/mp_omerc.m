@@ -26,9 +26,9 @@ name={'Oblique Mercator'};
 
 pi180=pi/180;
 
-switch optn,
+switch optn
 
-  case 'name',
+  case 'name'
 
      X=name;
 
@@ -40,7 +40,7 @@ switch optn,
               '     <,''asp<ect>'',value>',...
               '     <,''dir<ection>'',( ''horizontal'' | ''vertical'' )'});
 
-  case 'get',
+  case 'get'
 
      X=char([' Projection: ' MAP_PROJECTION.name '  (function: ' MAP_PROJECTION.routine ')'],...
             [' longitudes: ' num2str(MAP_VAR_LIST.ulongs)],...
@@ -48,7 +48,7 @@ switch optn,
             [' Aspect ratio: ' num2str(MAP_VAR_LIST.aspect)],...
             [' Baseline direction ' MAP_VAR_LIST.direc]); 
 
-  case 'initialize',
+  case 'initialize'
 
     MAP_VAR_LIST=[];
     MAP_PROJECTION.name=varargin{1};
@@ -59,21 +59,21 @@ switch optn,
     MAP_VAR_LIST.rectbox='on';  % THis is always the case for this projection; it's just
                                 % too difficult to comtemplate the other possibility
     k=2;
-    while k<length(varargin),   
-      switch varargin{k}(1:3),
-         case 'lon',
+    while k<length(varargin)   
+      switch varargin{k}(1:3)
+         case 'lon'
            MAP_VAR_LIST.ulongs=varargin{k+1};
-         case 'asp',
+         case 'asp'
            MAP_VAR_LIST.aspect=varargin{k+1};
-         case 'lat',
+         case 'lat'
            MAP_VAR_LIST.ulats=varargin{k+1};
-         case 'dir',
+         case 'dir'
            MAP_VAR_LIST.direc=varargin{k+1};
          otherwise
            disp(['Unknown option: ' varargin{k}]);
-         end;
-       k=k+2;
-    end;
+      end
+      k=k+2;
+    end
     rulats=MAP_VAR_LIST.ulats*pi180;
     rulongs=MAP_VAR_LIST.ulongs*pi180;
 
@@ -88,78 +88,81 @@ switch optn,
                                  tan(rulats(1)));
 
     % Now get the map X/Y limits in the transformed plane
-    switch MAP_VAR_LIST.direc(1:3),
-      case 'hor',
+    switch MAP_VAR_LIST.direc(1:3)
+      case 'hor'
         [MAP_VAR_LIST.xlims,bY]=mp_omerc('ll2xy',MAP_VAR_LIST.ulongs,MAP_VAR_LIST.ulats,'clip','off');
         MAP_VAR_LIST.xlims=[min(MAP_VAR_LIST.xlims) max(MAP_VAR_LIST.xlims)];
         MAP_VAR_LIST.ylims=diff(MAP_VAR_LIST.xlims)*[-0.5 0.5]*MAP_VAR_LIST.aspect;
-      case 'ver',
+      case 'ver'
         [bX,MAP_VAR_LIST.ylims]=mp_omerc('ll2xy',MAP_VAR_LIST.ulongs,MAP_VAR_LIST.ulats,'clip','off');
         MAP_VAR_LIST.ylims=[min(MAP_VAR_LIST.ylims) max(MAP_VAR_LIST.ylims)];
         MAP_VAR_LIST.xlims=diff(MAP_VAR_LIST.ylims)*[-0.5 0.5]*MAP_VAR_LIST.aspect;
-    end;
+    end
   
     % For further use, it is useful to have the max/min lat/longs in the visible area
 
     mu_util('lllimits');
     
-  case 'll2xy',
+  case 'll2xy'
 
     l_0=MAP_VAR_LIST.rpolelong+pi/2;
     long=varargin{1}*pi180-l_0;
     lat=varargin{2}*pi180;
+    vals=zeros(size(long));
 
     A=sin(MAP_VAR_LIST.rpolelat)*sin(lat)- ...
       cos(MAP_VAR_LIST.rpolelat)*cos(lat).*sin(long);
 
-    switch MAP_VAR_LIST.direc(1:3),
-      case 'ver',
+    switch MAP_VAR_LIST.direc(1:3)
+      case 'ver'
         Y=atan2( tan(lat)*cos(MAP_VAR_LIST.rpolelat)+ ...
                  sin(MAP_VAR_LIST.rpolelat)*sin(long), cos(long) );
         X=-atanh(A);
-      case 'hor',
+      case 'hor'
         X=atan2( tan(lat)*cos(MAP_VAR_LIST.rpolelat)+ ...
                  sin(MAP_VAR_LIST.rpolelat)*sin(long), cos(long) );
         Y=atanh(A);
-    end;
+    end
 
-    if ~strcmp(varargin{4},'off'),
+    if ~strcmp(varargin{4},'off')
+        vals= vals | X<=MAP_VAR_LIST.xlims(1)+eps*10 | X>=MAP_VAR_LIST.xlims(2)-eps*10 | ...
+                     Y<=MAP_VAR_LIST.ylims(1)+eps*10 | Y>=MAP_VAR_LIST.ylims(2)-eps*10;
         [X,Y]=mu_util('clip',varargin{4},X,MAP_VAR_LIST.xlims(1),X<MAP_VAR_LIST.xlims(1),Y);
         [X,Y]=mu_util('clip',varargin{4},X,MAP_VAR_LIST.xlims(2),X>MAP_VAR_LIST.xlims(2),Y);
         [Y,X]=mu_util('clip',varargin{4},Y,MAP_VAR_LIST.ylims(1),Y<MAP_VAR_LIST.ylims(1),X);
         [Y,X]=mu_util('clip',varargin{4},Y,MAP_VAR_LIST.ylims(2),Y>MAP_VAR_LIST.ylims(2),X);
-    end;
+    end
 
-  case 'xy2ll',
+  case 'xy2ll'
     
      l_0=MAP_VAR_LIST.rpolelong+pi/2;
      
-     switch MAP_VAR_LIST.direc(1:3),
-       case 'hor',
+     switch MAP_VAR_LIST.direc(1:3)
+       case 'hor'
          Y=asin( sin(MAP_VAR_LIST.rpolelat)*tanh(varargin{2}) ...
                 +cos(MAP_VAR_LIST.rpolelat)*sin(varargin{1})./cosh(varargin{2}) )/pi180;
          X=(l_0+atan2( sin(MAP_VAR_LIST.rpolelat)*sin(varargin{1}) ...
                      -cos(MAP_VAR_LIST.rpolelat)*sinh(varargin{2}), cos(varargin{1}) ) )/pi180;
-       case 'ver',
+       case 'ver'
          Y=asin( sin(MAP_VAR_LIST.rpolelat)*tanh(-varargin{1}) ...
                 +cos(MAP_VAR_LIST.rpolelat)*sin(varargin{2})./cosh(-varargin{1}) )/pi180;
          X=(l_0+atan2( sin(MAP_VAR_LIST.rpolelat)*sin(varargin{2}) ...
                      -cos(MAP_VAR_LIST.rpolelat)*sinh(-varargin{1}), cos(varargin{2}) ) )/pi180;
-     end;  
+     end  
         
-  case 'xgrid',
+  case 'xgrid'
    
-    [X,Y,vals,labI]=mu_util('xgrid',MAP_VAR_LIST.longs,MAP_VAR_LIST.lats,varargin{1},31,varargin{2});
+    [X,Y,vals,labI]=mu_util('xgrid',MAP_VAR_LIST.longs,MAP_VAR_LIST.lats,varargin{1},31,varargin{2:3});
     
 
-  case 'ygrid',
+  case 'ygrid'
    
-    [X,Y,vals,labI]=mu_util('ygrid',MAP_VAR_LIST.lats,MAP_VAR_LIST.longs,varargin{1},31,varargin{2});
+    [X,Y,vals,labI]=mu_util('ygrid',MAP_VAR_LIST.lats,MAP_VAR_LIST.longs,varargin{1},31,varargin{2:3});
 
-  case 'box',
+  case 'box'
 
     [X,Y]=mu_util('box',2);
 
-end;
+end
 
 

@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE wrt_rst (ng)
 !
-!svn $Id: wrt_rst.F 857 2017-07-29 04:05:27Z arango $
+!svn $Id: wrt_rst.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -32,7 +32,7 @@
       USE mod_sedbed
       USE mod_sediment
 #endif
-#if defined VEGETATION
+#if defined VEGETATION 
       USE mod_vegetation
       USE mod_vegarr
 #endif
@@ -1442,7 +1442,6 @@
 #  endif
      &                   MIXING(ng) % tke,                              &
      &                   SetFillVal = .FALSE.)
-
       IF (FoundError(status, nf90_noerr, __LINE__,                      &
      &               __FILE__)) THEN
         IF (Master) THEN
@@ -1734,7 +1733,7 @@
 
 #ifdef VEGETATION
 #include "vegetation_wrt_rst.h"
-#endif
+#endif 
 
 # ifdef SEDIMENT
 #  ifdef BEDLOAD

@@ -3,10 +3,10 @@ subroutine lltoxy(lat,lon,rx,ry,stagger)
   implicit none
 
   ! Arguments
-  integer, intent(in) :: stagger
+  integer, intent(in) :: stagger 
   real, intent(in) :: lat, lon
   real, intent(out) :: rx, ry
-
+  
   ! Local variables
   real :: dphd,dlmd !Grid increments, degrees
   integer :: ii,imt,jj,jmt,k,krows,ncol,nrow

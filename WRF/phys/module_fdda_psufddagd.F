@@ -3,10 +3,10 @@
 !ckay=KIRAN ALAPATY @ US EPA -- November 01, 2015
 !
 ! Tim Glotfelty@CNSU; AJ Deng@PSU
-!modified for use with FASDAS
-!Flux Adjusting Surface Data Assimilation System to assimilate
+!modified for use with FASDAS 
+!Flux Adjusting Surface Data Assimilation System to assimilate 
 !surface layer and soil layers temperature and moisture using
-! surfance reanalsys
+! surfance reanalsys 
 !Reference: Alapaty et al., 2008: Development of the flux-adjusting surface
 ! data assimilation system for mesoscale models. JAMC, 47, 2331-2350
 
@@ -49,8 +49,8 @@ CONTAINS
    implicit none
 !-------------------------------------------------------------------
 !
-!   This code was implemented by Aijun Deng (Penn State).  The 3-D analysis nudging was comleted
-!   and released in December 2006.  The surface analysis nudging capability was added and
+!   This code was implemented by Aijun Deng (Penn State).  The 3-D analysis nudging was comleted 
+!   and released in December 2006.  The surface analysis nudging capability was added and 
 !   released in March 2009 with WRFV3.1.
 !
 !-- u3d         3d u-velocity staggered on u points
@@ -106,7 +106,7 @@ CONTAINS
    INTEGER,  INTENT(IN)   ::      ids,ide, jds,jde, kds,kde, &
                                   ims,ime, jms,jme, kms,kme, &
                                   its,ite, jts,jte, kts,kte
-
+ 
    REAL,     DIMENSION( ims:ime, kms:kme, jms:jme ), &
              INTENT(IN)   ::                   qv3d, &
                                                p3d, &
@@ -148,8 +148,8 @@ CONTAINS
                                           v_ndg_new, &
                                           t_ndg_new, &
                                           q_ndg_new
-
-   REAL,       DIMENSION( ims:ime, jms:jme ),            &
+                                                           
+   REAL,       DIMENSION( ims:ime, jms:jme ),            &   
                INTENT(IN)       ::                       u10_ndg_old,  &
                                                          v10_ndg_old,  &
                                                          t2_ndg_old,   &
@@ -167,7 +167,7 @@ CONTAINS
                                                          psl_ndg_new,  &
                                                          ps_ndg_new
 
-   REAL,       DIMENSION( ims:ime, jms:jme ),            &
+   REAL,       DIMENSION( ims:ime, jms:jme ),            &   
                INTENT(IN)       ::                       tob_ndg_old,  &
                                                          tob_ndg_new
 
@@ -175,7 +175,7 @@ CONTAINS
              INTENT(INOUT) ::   mu_ndg_old, &
                                 mu_ndg_new
 
-   REAL,       DIMENSION( ims:ime, jms:jme ),            &
+   REAL,       DIMENSION( ims:ime, jms:jme ),            &   
                INTENT(IN)       ::                       odis_ndg_old, odis_ndg_new
 
    REAL,     DIMENSION( ims:ime, kms:kme, jms:jme ), &
@@ -226,7 +226,7 @@ CONTAINS
    !IF( xtime > actual_end_fdda_min ) THEN
    IF( ( xtime > actual_end_fdda_min ) .AND. ( xtime > actual_end_fdda_min_sfc ) ) THEN
    !BPR END
-!  If xtime is greater than the end time, no need to calculate tendencies. Just set the tendencies
+!  If xtime is greater than the end time, no need to calculate tendencies. Just set the tendencies 
 !  to zero to turn off nudging and return.
      DO j = jts, jte
      DO k = kts, kte
@@ -273,7 +273,7 @@ CONTAINS
        IF( dbg_level .GE. 10 .AND. xtime <= actual_end_fdda_min ) THEN
 !        Find the mid point of the tile and print out the sample values
          i0 = (ite-its)/2+its
-         j0 = (jte-jts)/2+jts
+         j0 = (jte-jts)/2+jts 
 
          IF( guv > 0.0 ) THEN
            DO k = kts, kte
@@ -331,22 +331,22 @@ CONTAINS
    ktf=MIN0(kte,kde-1)
    itf=MIN0(ite,ide-1)
 !
-! If the user-defined namelist switches (if_no_pbl_nudging_uv, if_no_pbl_nudging_t,
-! if_no_pbl_nudging_q switches) are set to 1, compute the weighting function, wpbl(:,k,:,:),
-! based on the PBL depth.  wpbl = 1 above the PBL and wpbl = 0 in the PBL.  If all
+! If the user-defined namelist switches (if_no_pbl_nudging_uv, if_no_pbl_nudging_t, 
+! if_no_pbl_nudging_q switches) are set to 1, compute the weighting function, wpbl(:,k,:,:), 
+! based on the PBL depth.  wpbl = 1 above the PBL and wpbl = 0 in the PBL.  If all 
 ! the switches are set to zero, wpbl = 1 (default value).
 !
    wpbl(:,:,:,:) = 1.0
 
    IF( if_no_pbl_nudging_uv == 1 .OR. grid_sfdda >= 1 ) THEN
 
-     DO j=jts,jtf
+     DO j=jts,jtf 
      DO i=itsu,itf
 
        kpbl = 1
        zpbl = 0.5 * ( pblh(i-1,j) + pblh(i,j) )
 
-       loop_ku: DO k=kts,ktf
+       loop_ku: DO k=kts,ktf 
 !        zagl     = 0.5 * ( z(i-1,k,j)-ht(i-1,j) + z(i,k,j)-ht(i,j) )
          zagl_bot = 0.5 * ( z_at_w(i-1,k,  j)-ht(i-1,j) + z_at_w(i,k,  j)-ht(i,j) )
          zagl_top = 0.5 * ( z_at_w(i-1,k+1,j)-ht(i-1,j) + z_at_w(i,k+1,j)-ht(i,j) )
@@ -356,7 +356,7 @@ CONTAINS
          ENDIF
        ENDDO loop_ku
 
-       DO k=kts,ktf
+       DO k=kts,ktf 
          IF( k <= kpbl   ) wpbl(i, k, j, 1) = 0.0
          IF( k == kpbl+1 ) wpbl(i, k, j, 1) = 0.1
          IF( k >  kpbl+1 ) wpbl(i, k, j, 1) = 1.0
@@ -393,13 +393,13 @@ CONTAINS
    ENDIF
 
    IF( if_no_pbl_nudging_t == 1 .OR. grid_sfdda >= 1 ) THEN
-
+   
      DO j=jts,jtf
      DO i=its,itf
 
        kpbl = 1
        zpbl = pblh(i,j)
-
+        
        loop_kt: DO k=kts,ktf
 !        zagl     = z(i,k,j)-ht(i,j)
          zagl_bot = z_at_w(i,k,  j)-ht(i,j)
@@ -414,21 +414,21 @@ CONTAINS
          IF( k <= kpbl   ) wpbl(i, k, j, 3) = 0.0
          IF( k == kpbl+1 ) wpbl(i, k, j, 3) = 0.1
          IF( k >  kpbl+1 ) wpbl(i, k, j, 3) = 1.0
-       ENDDO
-
+       ENDDO 
+        
      ENDDO
      ENDDO
 
    ENDIF
 
    IF( if_no_pbl_nudging_q == 1 .OR. grid_sfdda >= 1 ) THEN
-
+   
      DO j=jts,jtf
      DO i=its,itf
 
        kpbl = 1
        zpbl = pblh(i,j)
-
+          
        loop_kq: DO k=kts,ktf
 !        zagl     = z(i,k,j)-ht(i,j)
          zagl_bot = z_at_w(i,k,  j)-ht(i,j)
@@ -443,16 +443,16 @@ CONTAINS
          IF( k <= kpbl   ) wpbl(i, k, j, 4) = 0.0
          IF( k == kpbl+1 ) wpbl(i, k, j, 4) = 0.1
          IF( k >  kpbl+1 ) wpbl(i, k, j, 4) = 1.0
-       ENDDO
-
+       ENDDO 
+            
+     ENDDO  
      ENDDO
-     ENDDO
-
+        
    ENDIF
 !
 ! If the user-defined namelist switches (if_zfac_uv, if_zfac_t,
 ! if_zfac_q swithes) are set to 1, compute the weighting function, wzfac(k,:),
-! based on the namelist specified k values (k_zfac_uv, k_zfac_t and k_zfac_q) below which analysis
+! based on the namelist specified k values (k_zfac_uv, k_zfac_t and k_zfac_q) below which analysis 
 ! nudging is turned off (wzfac = 1 above k_zfac_x and = 0 in below k_zfac_x).  If all
 ! the switche are set to zero, wzfac = 1 (default value).
 !
@@ -487,34 +487,34 @@ CONTAINS
    ENDIF
 
    IF( if_zfac_q == 1 ) THEN
-
+       
      DO j=jts,jtf
-     DO i=itsu,itf
+     DO i=itsu,itf 
      DO k=kts,ktf
        IF( k <= k_zfac_q   ) wzfac(k, 4) = 0.0
-       IF( k == k_zfac_q+1 ) wzfac(k, 4) = 0.1
+       IF( k == k_zfac_q+1 ) wzfac(k, 4) = 0.1 
        IF( k >  k_zfac_q+1 ) wzfac(k, 4) = 1.0
-     ENDDO
+     ENDDO  
      ENDDO
      ENDDO
 
    ENDIF
 !
-! If if_ramping and dtramp_min are defined by user, compute a time weighting function, tfac,
-! for analysis nudging so that at the end of the nudging period (which has to be at a
+! If if_ramping and dtramp_min are defined by user, compute a time weighting function, tfac, 
+! for analysis nudging so that at the end of the nudging period (which has to be at a 
 ! analysis time) we ramp down the nudging coefficient, based on the use-defined sign of dtramp_min.
 !
-! When dtramp_min is negative, ramping ends at end_fdda_hour and starts at
-! end_fdda_hour-ABS(dtramp_min).
+! When dtramp_min is negative, ramping ends at end_fdda_hour and starts at 
+! end_fdda_hour-ABS(dtramp_min).  
 !
-! When dtramp_min is positive, ramping starts at end_fdda_hour and ends at
-! end_fdda_hour+ABS(dtramp_min).
+! When dtramp_min is positive, ramping starts at end_fdda_hour and ends at 
+! end_fdda_hour+ABS(dtramp_min). 
 ! BPR BEGIN
 ! In this case, during the rampdown we nudge towards the most recent past analysis and ignore
 ! the future analysis (implemented by setting coef = 0.0)
 ! THE FOLLOWING COMMENT IS NO LONGER APPLICABLE
-! In this case, the obs values are extrapolated using
-! the obs tendency saved from the previous FDDA window.  More specifically for extrapolation,
+! In this case, the obs values are extrapolated using 
+! the obs tendency saved from the previous FDDA window.  More specifically for extrapolation, 
 ! coef (see codes below) is recalculated to reflect extrapolation during the ramping period.
 ! THE PRECEDING COMMENT IS NOT LONGER APPLICABLE
 ! BPR END
@@ -525,14 +525,14 @@ CONTAINS
    !BPR END
 
    IF( if_ramping == 1 .AND. ABS(dtramp_min) > 0.0 ) THEN
-
+ 
      IF( dtramp_min <= 0.0 ) THEN
        actual_end_fdda_min = end_fdda_hour*60.0
      ELSE
        actual_end_fdda_min = end_fdda_hour*60.0 + dtramp_min
      ENDIF
 
-     IF( xtime < actual_end_fdda_min-ABS(dtramp_min) )THEN
+     IF( xtime < actual_end_fdda_min-ABS(dtramp_min) )THEN 
        tfac = 1.0
      ELSEIF( xtime >= actual_end_fdda_min-ABS(dtramp_min) .AND. xtime <= actual_end_fdda_min )THEN
        tfac = ( actual_end_fdda_min - xtime ) / ABS(dtramp_min)
@@ -548,9 +548,9 @@ CONTAINS
        !time of the analysis nudging.
        !IF( dtramp_min > 0.0 ) coef = (xtime-xtime_old+analysis_interval)/(analysis_interval*1.0)
        !Use only the *_ndg_old values
-       IF( dtramp_min > 0.0 ) coef = 0.0
+       IF( dtramp_min > 0.0 ) coef = 0.0 
        !BPR END
-     ELSE
+     ELSE                                                     
        tfac = 0.0
      ENDIF
 
@@ -563,16 +563,16 @@ CONTAINS
        actual_end_fdda_min_sfc = end_fdda_hour_sfc*60.0 + dtramp_min
      ENDIF
 
-     IF( xtime < actual_end_fdda_min_sfc-ABS(dtramp_min) )THEN
+     IF( xtime < actual_end_fdda_min_sfc-ABS(dtramp_min) )THEN 
        tfac_sfc = 1.0
      ELSEIF( xtime >= actual_end_fdda_min_sfc-ABS(dtramp_min) .AND. xtime <= actual_end_fdda_min_sfc )THEN
        tfac_sfc = ( actual_end_fdda_min_sfc - xtime ) / ABS(dtramp_min)
-     ELSE
+     ELSE                                                     
        tfac_sfc = 0.0
      ENDIF
      !BPR END
 
-   ENDIF
+   ENDIF                                                  
 
 !
 ! Surface Analysis Nudging
@@ -657,12 +657,12 @@ CONTAINS
    ENDDO
    ENDDO
 
-   !BPR BEGIN
+   !BPR BEGIN 
    !Diagnostic print
    IF ( wrf_dm_on_monitor()) THEN
     IF( dbg_level .GE. 10 ) THEN
      i0 = (ite-its)/2+its
-     j0 = (jte-jts)/2+jts
+     j0 = (jte-jts)/2+jts 
      k0 = (kte-kts)/2+kts
      WRITE(message,'(a,i1,a,f7.2,a,i4,a,i4,a,i4,a,f7.2,a,f4.2,a,f7.2,a,f4.2,a,f4.2 )') &
       '    D0',id,' At xtime=',xtime,' FDDA sample pot. temp. analysis (i=',i0,', j=',j0,' k=', &
@@ -675,7 +675,7 @@ CONTAINS
      CALL wrf_message( TRIM(message) )
     END IF
    END IF
-   !BPR END
+   !BPR END 
 
    END SUBROUTINE fddagd
 
@@ -709,11 +709,11 @@ CONTAINS
                                               )
 !-------------------------------------------------------------------
    USE module_model_constants
-
+ 
    implicit none
 
 !-------------------------------------------------------------------
-!
+!  
 !   This code was implemented by Aijun Deng (Penn State).  The 3-D analysis nudging was comleted
 !   and released in December 2006.  The surface analysis nudging capability was added and
 !   released in March 2009 with WRFV3.1.
@@ -763,7 +763,7 @@ CONTAINS
    INTEGER,  INTENT(IN)   ::      ids,ide, jds,jde, kds,kde, &
                                   ims,ime, jms,jme, kms,kme, &
                                   its,ite, jts,jte, kts,kte
-
+ 
    REAL,     DIMENSION( ims:ime, kms:kme, jms:jme ), &
              INTENT(IN)   ::                   qv3d, &
                                                p3d, &
@@ -854,8 +854,8 @@ CONTAINS
 !
 ! END FASDAS
 !
-   iwinds = 1    ! 1: Scale the surface wind analysis to the lowest model level,
-                 ! if the first model half-layer is greater than 10 meters
+   iwinds = 1    ! 1: Scale the surface wind analysis to the lowest model level, 
+                 ! if the first model half-layer is greater than 10 meters 
                  ! and we are in the free convection regime (REGIME=4.0). else: no
    idd = 1       ! 1: Obs data density correction is applied. else: no
    iqsat = 1     ! 1: Remove super saturation. eles: no
@@ -888,7 +888,7 @@ CONTAINS
        IF( dbg_level .GE. 10 .AND. xtime <= actual_end_fdda_min_sfc ) THEN
 !        Find the mid point of the tile and print out the sample values
          i0 = (ite-its)/2+its
-         j0 = (jte-jts)/2+jts
+         j0 = (jte-jts)/2+jts 
 
          IF( guv_sfc > 0.0 ) THEN
            WRITE(message,'(a,i1,a,2i4,a,f10.4,a,f10.4)') &
@@ -948,9 +948,9 @@ CONTAINS
    itf=MIN0(ite,ide-1)
 
 !
-! Compute the vertical weighting function to scale the surface wind analysis to
+! Compute the vertical weighting function to scale the surface wind analysis to 
 ! the lowest model level, if the first model half-layer is greater
-! than 10 meters and we are in the free convection regime (REGIME=4.0).
+! than 10 meters and we are in the free convection regime (REGIME=4.0). 
 !
    IF( iwinds == 1 ) THEN
      wndcor_u(:,:) = 1.0
@@ -958,7 +958,7 @@ CONTAINS
      DO i=itsu,itf
        reg =  0.5 * ( regime(i-1,  j) + regime(i,  j) )
        difz = 0.5 * ( z(i-1,1,j) - ht(i-1,j)  &
-                    + z(i,  1,j) - ht(i,  j)    )
+                    + z(i,  1,j) - ht(i,  j)    ) 
        IF( reg > 3.5 .AND. difz > 10.0 ) THEN
          znt0 = 0.5 * (    znt(i-1,  j) +    znt(i,  j) )
          IF( znt0 <= 0.2) THEN
@@ -971,7 +971,7 @@ CONTAINS
          wr1z = log(difz/0.05)
          wr24 = log(40.0/1.0)
          wr2z = log(difz/1.0)
-         wndfac = 0.5*(WR1Z/WR14+WR2Z/WR24)
+         wndfac = 0.5*(WR1Z/WR14+WR2Z/WR24) 
          wndcor_u(i,j) = wndfac*wndcor_u(i,j)
        ENDIF
      ENDDO
@@ -989,7 +989,7 @@ CONTAINS
          ENDIF
        ENDIF
      ENDIF
-   ELSE
+   ELSE 
      wndcor_u(:,:) = 1.0
    ENDIF
 
@@ -1000,14 +1000,14 @@ CONTAINS
        reg =  0.5 * ( regime(i,  j-1) + regime(i,  j) )
        difz = 0.5 * ( z(i,1,j-1) - ht(i,j-1)  &
                   +   z(i,1,j  ) - ht(i,j  )    )
-       IF( reg > 3.5 .AND. difz > 10.0 ) THEN
+       IF( reg > 3.5 .AND. difz > 10.0 ) THEN 
          znt0 = 0.5 * (    znt(i,  j-1) +    znt(i,  j) )
          IF( znt0 <= 0.2) THEN
            wndcor_v(i,j) = 1.0+0.320*znt0**0.2
          ELSE
            wndcor_v(i,j) = 1.169+0.315*znt0
          ENDIF
-
+       
          wr14 = log(40.0/0.05)
          wr1z = log(difz/0.05)
          wr24 = log(40.0/1.0)
@@ -1029,7 +1029,7 @@ CONTAINS
          ENDIF
        ENDIF
      ENDIF
-   ELSE
+   ELSE 
      wndcor_v(:,:) = 1.0
    ENDIF
 !
@@ -1050,7 +1050,7 @@ CONTAINS
        IF( xtime-xtime_old_sfc < 0.5*dt/60.0 ) THEN
          IF( dbg_level .GE. 10 .AND. xtime <= actual_end_fdda_min_sfc ) THEN
            i0 = (ite-its)/2+its
-           j0 = (jte-jts)/2+jts
+           j0 = (jte-jts)/2+jts 
            DO k = kts, kte
              WRITE(message,'(a,i1,a,3i4,a,f10.4,a,f10.4)') &
                '    D0',id,' sample moisture values (g/kg) at i,k,j=', i0, k, j0, &
@@ -1147,13 +1147,13 @@ CONTAINS
     !time of the analysis nudging.
     !coef = (xtime-xtime_old_sfc+analysis_interval_sfc)/(analysis_interval_sfc*1.0)
     !Use only the *_ndg_old values
-    coef = 0.0
+    coef = 0.0 
     !BPR END
 
 !  print*, 'coef =', xtime_old_sfc, xtime, xtime_new_sfc, coef
-!
+!              
 ! Compute surface analysis nudging tendencies for u, v, t and q
-!
+!              
 ! FASDAS
 !
      IF( fasdas == 1 ) THEN
@@ -1196,7 +1196,7 @@ CONTAINS
    ENDDO
 
    DO j=jtsv,jtf
-   DO k=kts,ktf
+   DO k=kts,ktf 
    DO i=its,itf
 
      IF( idd == 1 ) THEN
@@ -1288,12 +1288,12 @@ CONTAINS
    ENDDO
    ENDDO
 
-   !BPR BEGIN
+   !BPR BEGIN 
    !Diagnostic print
    IF ( wrf_dm_on_monitor()) THEN
     IF( dbg_level .GE. 10 ) THEN
      i0 = (ite-its)/2+its
-     j0 = (jte-jts)/2+jts
+     j0 = (jte-jts)/2+jts 
      WRITE(message,'(a,i1,a,f7.2,a,i4,a,i4,a,f7.2,a,f4.2,a,f7.2,a,f4.2,a,f4.2 )') &
       '    D0',id,' At xtime=',xtime,' SFC FDDA sample TH2 analysis (i=',i0,', j=',j0,') = (th2_ndg_old=', &
       th2_ndg_old(i0,j0),') * ',1.0-coef,' + (th2_ndg_new=',th2_ndg_new(i0,j0),') * ',coef, &
@@ -1305,7 +1305,7 @@ CONTAINS
      CALL wrf_message( TRIM(message) )
     END IF
    END IF
-   !BPR END
+   !BPR END 
 
    END SUBROUTINE sfddagd
 
@@ -1368,7 +1368,7 @@ CONTAINS
 
    CHARACTER (LEN=256) :: message
 
-   IF ( wrf_dm_on_monitor() ) THEN
+   IF ( wrf_dm_on_monitor() ) THEN  
 
      IF( guv > 0.0 ) THEN
        WRITE(message,'(a,i1,a,e12.4)') &
@@ -1376,7 +1376,7 @@ CONTAINS
        CALL wrf_message(TRIM(message))
      ELSE IF( guv < 0.0 ) THEN
        CALL wrf_error_fatal('In grid FDDA, Guv must be positive.')
-     ELSE
+     ELSE 
        WRITE(message,'(a,i1,a,e12.4)') &
            'D0',id,' 3-D analysis nudging for wind is not applied and Guv= ', guv
        CALL wrf_message(TRIM(message))
@@ -1388,7 +1388,7 @@ CONTAINS
        CALL wrf_message(TRIM(message))
      ELSE IF( gt < 0.0 ) THEN
        CALL wrf_error_fatal('In grid FDDA, Gt must be positive.')
-     ELSE
+     ELSE 
        WRITE(message,'(a,i1,a,e12.4)') &
            'D0',id,' 3-D analysis nudging for temperature is not applied and Gt= ', gt
        CALL wrf_message(TRIM(message))
@@ -1528,7 +1528,7 @@ CONTAINS
           SDA_QFX(I,J)  = 0.0
           QNORM(I,J)    = 0.0
           HFX_BOTH(I,J) = 0.0
-          QFX_BOTH(I,J) = 0.0
+          QFX_BOTH(I,J) = 0.0  
        ENDDO
        ENDDO
      ENDIF
@@ -1547,7 +1547,7 @@ CONTAINS
 !
 !    Implemented based on the same smoothing subroutine used in MM5, with modifications to
 !    remove the extra loop that causes unneccessary desmoothing.  Aijun Deng (Penn State),
-!    December 2008
+!    December 2008 
 !
     IMPLICIT NONE
 

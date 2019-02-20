@@ -516,7 +516,7 @@
             OPSDATZ_MOD(ng)%OPSTMP%OPI(1) = MXK+1                                         40.31
             OPSDATZ_MOD(ng)%OPSTMP%OPI(2) = MYK+1                         40.31
             IF (ITEST .GE. 20 .OR. INTES .GE. 10)                       &
-     &        WRITE (PRINTF, 6020) (OPSDATZ_MOD(ng)%OPSTMP%OPR(II),     &
+     &        WRITE (PRINTF, 6020) (OPSDATZ_MOD(ng)%OPSTMP%OPR(II),     & 
      &               II=2,6)                                             40.31
  6020       FORMAT (' Subgrid parms.', 6(1X,E12.4))
           ENDIF

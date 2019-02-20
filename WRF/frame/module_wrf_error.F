@@ -54,9 +54,9 @@ MODULE module_wrf_error
 
 ! min_allowed_buffer_size: requested buffer sizes smaller than this
 ! will simply result in disabling of log file buffering.  This number
-! should be larger than any line WRF prints frequently.  If you set it
-! too small, the buffering code will still work.  However, any line
-! that is larger than the buffer may result in two writes: one for
+! should be larger than any line WRF prints frequently.  If you set it 
+! too small, the buffering code will still work.  However, any line 
+! that is larger than the buffer may result in two writes: one for 
 ! the message and one for the end-of-line character at the end (if the
 ! message didn't already have one).
   integer, parameter :: min_allowed_buffer_size=200
@@ -104,7 +104,7 @@ CONTAINS
     stderr_logging=0
 #endif
 500 format(A)
-    ! Open namelist.input using the same unit used by module_io_wrf
+    ! Open namelist.input using the same unit used by module_io_wrf 
     ! since we know nobody else will use that unit:
     OPEN(unit=27, file="namelist.input", form="formatted", status="old")
     READ(27,nml=logging,iostat=iostat)
@@ -236,7 +236,7 @@ END SUBROUTINE wrf_message
 ! Intentionally write to stderr only
 ! This is set to stderr, even in silent mode, because
 ! it is used for potentially fatal error or warning messages and
-! we want the message to get to the log file before any crash
+! we want the message to get to the log file before any crash 
 ! or MPI_Abort happens.
 SUBROUTINE wrf_message2( str )
 #ifdef ESMFIO
@@ -323,7 +323,7 @@ END SUBROUTINE wrf_error_fatal
 ! ------------------------------------------------------------------------------
 
 ! Check to see if expected value == actual value
-! If not, print message and exit.
+! If not, print message and exit.  
 SUBROUTINE wrf_check_error( expected, actual, str, file_str, line )
   USE module_wrf_error
   IMPLICIT NONE
@@ -345,7 +345,7 @@ END SUBROUTINE wrf_check_error
 ! ------------------------------------------------------------------------------
 
 !  Some compilers do not yet support the entirety of the Fortran 2003 standard.
-!  This is a small patch to pick up the two most common events.  Most xlf
+!  This is a small patch to pick up the two most common events.  Most xlf 
 !  compilers have an extension fflush.  That is available here.  For other older
 !  compilers with no flush capability at all, we just stub it out completely.
 !  These CPP ifdefs are defined in the configure file.
@@ -354,7 +354,7 @@ END SUBROUTINE wrf_check_error
 SUBROUTINE flush ( iunit )
   IMPLICIT NONE
   INTEGER :: iunit
-  CALL fflush ( iunit )
+  CALL fflush ( iunit ) 
 END SUBROUTINE flush
 #endif
 

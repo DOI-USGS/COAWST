@@ -12,6 +12,7 @@ function create_roms_child_init(parent_grid,child_grid,parent_ini,child_ini)
 % jcw 5-25-2005
 % jcw 3-7-07 add L and M for get grid
 % jcwarner adapt froma Brandy m file, 12Aug2014
+% jcwarner 7/27/18 add time index for init file
 %
 %!         W-level  RHO-level                                           !
 %!                                                                   
@@ -54,7 +55,8 @@ function create_roms_child_init(parent_grid,child_grid,parent_ini,child_ini)
 %   This time needs to be consistent with model time (ie dstart and time_ref).
 %   See *.in files for more detail. 
    init_time=ncread(parent_ini,'ocean_time');
-   init_time=init_time(1);
+   init_indx=1;
+   init_time=init_time(init_indx);
 
 %3) Enter number of vertical sigma levels in model.
     Cs_r=ncread(parent_ini,'Cs_r');
@@ -73,7 +75,12 @@ function create_roms_child_init(parent_grid,child_grid,parent_ini,child_ini)
 %5) Enter value of h, Lm, and Mm.
     h=ncread(child_grid,'h');
     hmin=min(min(h(:)));
-    hc=min([hmin,Tcline]);
+    if (Vtransform==1)
+      hmin=min(h(:));
+      hc=min(max(hmin,0),Tcline);
+    elseif (Vtransform==2)
+      hc=Tcline;
+    end
     [LP,MP]=size(h);
     L  = LP-1;
     M  = MP-1;
@@ -120,7 +127,7 @@ mav(mav==0)=nan;
 display('Initializing zeta')
 zt=ncread(parent_ini,'zeta');
 if (size(zt)>2)
-  zt=squeeze(zt(:,:,1));
+  zt=squeeze(zt(:,:,init_indx));
 end
 zt=double(zt.*mar);
 zt(zt<-9999)=nan;
@@ -132,7 +139,7 @@ clear zt
 display('Initializing ubar and vbar')
 ub=ncread(parent_ini,'ubar');
 if (size(ub)>2)
-  ub=squeeze(ub(:,:,1));
+  ub=squeeze(ub(:,:,init_indx));
 end
 ub=double(ub.*mau);
 ub(ub<-9999)=nan;
@@ -143,7 +150,7 @@ clear ub
 
 vb=ncread(parent_ini,'vbar');
 if (size(vb)>2)
-  vb=squeeze(vb(:,:,1));
+  vb=squeeze(vb(:,:,init_indx));
 end
 vb=double(vb.*mav);
 vb(vb<-9999)=nan;
@@ -155,7 +162,7 @@ clear vb
 display('Initializing u')
 ub=ncread(parent_ini,'u');
 if (size(ub)>3)
-  ub=squeeze(ub(:,:,:,1));
+  ub=squeeze(ub(:,:,:,init_indx));
 end
 ub=double(ub);
 for k=1:N
@@ -172,7 +179,7 @@ clear ub; clear ub2;
 display('Initializing v')
 vb=ncread(parent_ini,'v');
 if (size(vb)>3)
-  vb=squeeze(vb(:,:,:,1));
+  vb=squeeze(vb(:,:,:,init_indx));
 end
 vb=double(vb);
 for k=1:N
@@ -189,7 +196,7 @@ clear vb
 display('Initializing salt')
 sa=ncread(parent_ini,'salt');
 if (size(sa)>3)
-  sa=squeeze(sa(:,:,:,1));
+  sa=squeeze(sa(:,:,:,init_indx));
 end
 sa=double(sa);
 for k=1:N
@@ -206,7 +213,7 @@ clear sa; clear sa2;
 display('Initializing temp')
 te=ncread(parent_ini,'temp');
 if (size(te)>3)
-  te=squeeze(te(:,:,:,1));
+  te=squeeze(te(:,:,:,init_indx));
 end
 te=double(te);
 te(te<=0)=nan;
@@ -271,7 +278,7 @@ for idsed=1:NCS
   count=count(end-1:end);
   sa=ncread(parent_ini,['mud_',count]);
   if (size(sa)>3)
-    sa=squeeze(sa(:,:,:,1));
+    sa=squeeze(sa(:,:,:,init_indx));
   end
   sa=double(sa);
   for k=1:Nbed
@@ -294,7 +301,7 @@ for idsed=1:NNS
   count=count(end-1:end);
   sa=ncread(parent_ini,['sand_',count]);
   if (size(sa)>3)
-    sa=squeeze(sa(:,:,:,1));
+    sa=squeeze(sa(:,:,:,init_indx));
   end
   sa=double(sa);
   for k=1:Nbed
@@ -315,7 +322,7 @@ if (NST>0)
   display('Initializing bed thickness.')
   zt=ncread(parent_ini,'bed_thickness');
   if (size(zt)>3)
-    zt=squeeze(zt(:,:,:,1));
+    zt=squeeze(zt(:,:,:,init_indx));
   end
   zt=double(zt);
   for k=1:Nbed
@@ -332,7 +339,7 @@ if (NST>0)
   display('Initializing bed age.')
   zt=ncread(parent_ini,'bed_age');
   if (size(zt)>3)
-    zt=squeeze(zt(:,:,:,1));
+    zt=squeeze(zt(:,:,:,init_indx));
   end
   zt=double(zt);
   for k=1:Nbed
@@ -349,7 +356,7 @@ if (NST>0)
   display('Initializing bed porosity.')
   zt=ncread(parent_ini,'bed_porosity');
   if (size(zt)>3)
-    zt=squeeze(zt(:,:,:,1));
+    zt=squeeze(zt(:,:,:,init_indx));
   end
   zt=double(zt);
   for k=1:Nbed
@@ -366,7 +373,7 @@ if (NST>0)
   display('Initializing bed biodiff.')
   zt=ncread(parent_ini,'bed_biodiff');
   if (size(zt)>3)
-    zt=squeeze(zt(:,:,:,1));
+    zt=squeeze(zt(:,:,:,init_indx));
   end
   zt=double(zt);
   for k=1:Nbed
@@ -389,7 +396,7 @@ for idsed=1:NCS
   count=count(end-1:end);
   sa=ncread(parent_ini,['mudfrac_',count]);
   if (size(sa)>3)
-    sa=squeeze(sa(:,:,:,1));
+    sa=squeeze(sa(:,:,:,init_indx));
   end
   sa=double(sa);
   for k=1:Nbed
@@ -413,7 +420,7 @@ for idsed=1:NNS
   count=count(end-1:end);
   sa=ncread(parent_ini,['sandfrac_',count]);
   if (size(sa)>3)
-    sa=squeeze(sa(:,:,:,1));
+    sa=squeeze(sa(:,:,:,init_indx));
   end
   sa=double(sa);
   for k=1:Nbed
@@ -439,7 +446,7 @@ if (NST>0)
 %
   zt=ncread(parent_ini,'grain_diameter');
   if (size(zt)>2)
-    zt=squeeze(zt(:,:,1));
+    zt=squeeze(zt(:,:,init_indx));
   end
   zt=double(zt.*mar);
   zt(zt<-9999)=nan;
@@ -450,7 +457,7 @@ if (NST>0)
 %
   zt=ncread(parent_ini,'grain_density');
   if (size(zt)>2)
-    zt=squeeze(zt(:,:,1));
+    zt=squeeze(zt(:,:,init_indx));
   end
   zt=double(zt.*mar);
   zt(zt<-9999)=nan;
@@ -461,7 +468,7 @@ if (NST>0)
 %
   zt=ncread(parent_ini,'settling_vel');
   if (size(zt)>2)
-    zt=squeeze(zt(:,:,1));
+    zt=squeeze(zt(:,:,init_indx));
   end
   zt=double(zt.*mar);
   zt(zt<-9999)=nan;
@@ -472,7 +479,7 @@ if (NST>0)
 %
   zt=ncread(parent_ini,'erosion_stress');
   if (size(zt)>2)
-    zt=squeeze(zt(:,:,1));
+    zt=squeeze(zt(:,:,init_indx));
   end
   zt=double(zt.*mar);
   zt(zt<-9999)=nan;
@@ -483,7 +490,7 @@ if (NST>0)
 %
   zt=ncread(parent_ini,'ripple_length');
   if (size(zt)>2)
-    zt=squeeze(zt(:,:,1));
+    zt=squeeze(zt(:,:,init_indx));
   end
   zt=double(zt.*mar);
   zt(zt<-9999)=nan;
@@ -494,7 +501,7 @@ if (NST>0)
 %
   zt=ncread(parent_ini,'ripple_height');
   if (size(zt)>2)
-    zt=squeeze(zt(:,:,1));
+    zt=squeeze(zt(:,:,init_indx));
   end
   zt=double(zt.*mar);
   zt(zt<-9999)=nan;
@@ -505,7 +512,7 @@ if (NST>0)
 %
   zt=ncread(parent_ini,'dmix_offset');
   if (size(zt)>2)
-    zt=squeeze(zt(:,:,1));
+    zt=squeeze(zt(:,:,init_indx));
   end
   zt=double(zt.*mar);
   zt(zt<-9999)=nan;
@@ -516,7 +523,7 @@ if (NST>0)
 %
   zt=ncread(parent_ini,'dmix_slope');
   if (size(zt)>2)
-    zt=squeeze(zt(:,:,1));
+    zt=squeeze(zt(:,:,init_indx));
   end
   zt=double(zt.*mar);
   zt(zt<-9999)=nan;
@@ -527,7 +534,7 @@ if (NST>0)
 %
   zt=ncread(parent_ini,'dmix_time');
   if (size(zt)>2)
-    zt=squeeze(zt(:,:,1));
+    zt=squeeze(zt(:,:,init_indx));
   end
   zt=double(zt.*mar);
   zt(zt<-9999)=nan;
@@ -539,7 +546,7 @@ end
 
 %12 Vegetation
 Numdims=length(finfo.Dimensions);
-NVEG=1;
+NVEG=0;
 for i=1:Numdims
   if (strcmp(['Nveg'],finfo.Dimensions(i).Name))
       NVEG=finfo.Dimensions(i).Length
@@ -551,7 +558,7 @@ if (NVEG>0)
 %
   zt=ncread(parent_ini,'plant_density');
   if (size(zt)>2)
-    zt=squeeze(zt(:,:,1));
+    zt=squeeze(zt(:,:,init_indx));
   end
   zt=double(zt.*mar);
   zt(zt<-9999)=nan;
@@ -562,7 +569,7 @@ if (NVEG>0)
 %
   zt=ncread(parent_ini,'plant_height');
   if (size(zt)>2)
-    zt=squeeze(zt(:,:,1));
+    zt=squeeze(zt(:,:,init_indx));
   end
   zt=double(zt.*mar);
   zt(zt<-9999)=nan;
@@ -573,7 +580,7 @@ if (NVEG>0)
 %
   zt=ncread(parent_ini,'plant_diameter');
   if (size(zt)>2)
-    zt=squeeze(zt(:,:,1));
+    zt=squeeze(zt(:,:,init_indx));
   end
   zt=double(zt.*mar);
   zt(zt<-9999)=nan;
@@ -584,7 +591,7 @@ if (NVEG>0)
 %
   zt=ncread(parent_ini,'plant_thickness');
   if (size(zt)>2)
-    zt=squeeze(zt(:,:,1));
+    zt=squeeze(zt(:,:,init_indx));
   end
   zt=double(zt.*mar);
   zt(zt<-9999)=nan;
@@ -595,7 +602,7 @@ if (NVEG>0)
 %
   zt=ncread(parent_ini,'marsh_mask');
   if (size(zt)>2)
-    zt=squeeze(zt(:,:,1));
+    zt=squeeze(zt(:,:,init_indx));
   end
   zt=double(zt.*mar);
   zt(zt<-9999)=nan;

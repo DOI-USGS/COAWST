@@ -16,7 +16,7 @@
 !  References:                                                         !
 !                                                                      !
 !  Svendsen, I.A., 1984. Mass flux and undertow in a surf zone.        !
-!  Coastal Engineering 8, pp. 347-365.                              !
+!  Coastal Engineering 8, pp. 347–365.                              !
 !                                                                      !
 !  Reniers, A.J.M.H., Roelvink, J.A., and Thornton, E.B., 2004.        !
 !  Morphodynamic modeling of an embayed beach under wave group forcing.!
@@ -89,7 +89,7 @@
      &                                  Dissip_break,                   &
 # if defined ROLLER_SVENDSEN || ROLLER_MONO
      &                                  Wave_break,                     &
-# endif
+# endif                                   
      &                                  Dissip_roller,                  &
      &                                  rollA)
 !***********************************************************************
@@ -189,13 +189,14 @@
           cff=1.5_r8*pi-Dwave(i,j)-angler(i,j)
           wavenx(i,j)=waven(i,j)*COS(cff)
           waveny(i,j)=waven(i,j)*SIN(cff)
-          sigma(i,j)=SQRT(g*waven(i,j)*TANH(waven(i,j)*Dstp(i,j)))
+          sigma(i,j)=SQRT(MAX(g*waven(i,j)*TANH(waven(i,j)*Dstp(i,j)),  &
+     &                    eps))
           osigma(i,j)=1.0_r8/sigma(i,j)
 !
 !  Compute wave celerity and nonlinear water depth
 !
           kD(i,j)=MIN(waven(i,j)*Dstp(i,j)+eps,kDmax)
-          wavec(i,j)=SQRT(g*owaven(i,j)*TANH(kD(i,j)))
+          wavec(i,j)=SQRT(MAX(g*owaven(i,j)*TANH(kD(i,j)),eps))
         END DO
       END DO
 !
@@ -230,7 +231,7 @@
       numits=30
       DO it=1,numits
 !
-!  Compute roller breaking source term (Eqn 40) and
+!  Compute roller breaking source term (Eqn 40) and 
 !  roller disspation sink term (Eqn 41).
 !
         DO j=Jstr,Jend
@@ -261,7 +262,7 @@
 !
         DO j=Jstr,Jend
           DO i=Istr,Iend
-            Dissip_roller(i,j)=g*sinb*rollA(i,j)*sigma(i,j)/wavec(i,j)
+            Dissip_roller(i,j)=g*sinb*rollA(i,j)*sigma(i,j)/wavec(i,j) 
           END DO
         END DO
 !

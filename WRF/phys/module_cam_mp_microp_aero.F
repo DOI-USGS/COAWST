@@ -10,15 +10,15 @@ module microp_aero
 
 !---------------------------------------------------------------------------------
 ! Purpose:
-!   CAM Interface for aerosol activation
+!   CAM Interface for aerosol activation 
 !
 ! Author: Andrew Gettelman
 ! Based on code from: Hugh Morrison, Xiaohong Liu and Steve Ghan
 ! May 2010
 ! Description in: Morrison and Gettelman, 2008. J. Climate (MG2008)
-!                 Gettelman et al., 2010 J. Geophys. Res. - Atmospheres (G2010)
+!                 Gettelman et al., 2010 J. Geophys. Res. - Atmospheres (G2010)         
 ! for questions contact Andrew Gettelman  (andrew@ucar.edu)
-! Modifications: A. Gettelman Nov 2010  - changed to support separation of
+! Modifications: A. Gettelman Nov 2010  - changed to support separation of 
 !                microphysics and macrophysics and concentrate aerosol information here
 !
 !---------------------------------------------------------------------------------
@@ -41,7 +41,7 @@ module microp_aero
   use wv_saturation,  only: estblf, hlatv, tmin, hlatf, rgasv, pcf, cp, epsqs, ttrice, &
                             vqsatd2, vqsatd2_single,polysvp
 #ifndef WRF_PORT
-  use cam_history,    only: addfld, add_default, phys_decomp, outfld
+  use cam_history,    only: addfld, add_default, phys_decomp, outfld 
   use cam_logfile,    only: iulog
   use rad_constituents, only: rad_cnst_get_info, rad_cnst_get_aer_props
   use phys_control,   only: phys_getopts
@@ -65,7 +65,7 @@ module microp_aero
       real(r8), private:: rn_dst1, rn_dst2, rn_dst3, rn_dst4 !dust number mean radius for contact freezing
       real(r8), private:: pi    ! pi
       real(r8), private:: tt0   ! Freezing temperature
-      real(r8), private:: qsmall !min mixing ratio
+      real(r8), private:: qsmall !min mixing ratio 
 
   real(r8), private::  r              !Dry air Gas constant
 
@@ -119,14 +119,14 @@ contains
 
 subroutine ini_microp_aero
 
-!-----------------------------------------------------------------------
-!
-! Purpose:
+!----------------------------------------------------------------------- 
+! 
+! Purpose: 
 ! initialize constants for aerosols needed by microphysics
 ! called from stratiform.F90
-!
+! 
 ! Author: Andrew Gettelman May 2010
-!
+! 
 !-----------------------------------------------------------------------
 #ifdef MODAL_AERO
     use ndrop,           only: activate_init
@@ -144,7 +144,7 @@ subroutine ini_microp_aero
          nspec_amode    => nspec_amode_mp   , ntot_amode       => ntot_amode_mp,        &
          numptr_amode   => numptr_amode_mp  , numptrcw_amode   => numptrcw_amode_mp
 #endif
-
+      
     integer                        :: lphase, lspec
     character(len=fieldname_len)   :: tmpname
     character(len=fieldname_len+3) :: fieldname
@@ -215,24 +215,24 @@ subroutine ini_microp_aero
       write(iulog,*) 'ini_micro: iaer, name, dryrad, density, hygro, dispersion, num_to_mass'
 #ifdef WRF_PORT
         call wrf_message(iulog)
-#endif
+#endif 
       do iaer = 1, naer_all
          write(iulog,*) iaer, aername(iaer), dryrad_aer(iaer), density_aer(iaer), hygro_aer(iaer), &
             dispersion_aer(iaer), num_to_mass_aer(iaer)
 #ifdef WRF_PORT
          call wrf_message(iulog)
-#endif
+#endif 
       end do
       if (idxsul < 1) then
          write(iulog,*) 'ini_micro: SULFATE aerosol properties NOT FOUND'
 #ifdef WRF_PORT
          call wrf_message(iulog)
-#endif
+#endif          
       else
          write(iulog,*) 'ini_micro: SULFATE aerosol properties FOUND at index ',idxsul
 #ifdef WRF_PORT
          call wrf_message(iulog)
-#endif
+#endif 
       end if
    end if
 #endif
@@ -260,7 +260,7 @@ subroutine ini_microp_aero
 
 ! smallest mixing ratio considered in microphysics
 
-   qsmall = 1.e-18_r8
+   qsmall = 1.e-18_r8  
 
 ! set parameters for droplet activation, following abdul-razzak and ghan 2000, JGR
 
@@ -412,7 +412,7 @@ subroutine ini_microp_aero
         modeptr_coarse    => modeptr_coarse_mp   , modeptr_aitken    => modeptr_aitken_mp, &
         lptr_dust_a_amode => lptr_dust_a_amode_mp, lptr_nacl_a_amode => lptr_nacl_a_amode_mp, &
         ntot_amode        => ntot_amode_mp, modeptr_coardust => modeptr_coardust_mp  !BSINGH - Added modeptr_coarsedust for MAM7 compliance
-
+     
 #endif
 #endif
 
@@ -431,7 +431,7 @@ subroutine ini_microp_aero
    real(r8), intent(in) :: p(pcols,pver)        ! air pressure (pa)
    real(r8), intent(in) :: pdel(pcols,pver)     ! pressure difference across level (pa)
    real(r8), intent(in) :: cldn(pcols,pver)     ! cloud fraction
-   real(r8), intent(in) :: icecldf(pcols,pver)  ! ice cloud fraction
+   real(r8), intent(in) :: icecldf(pcols,pver)  ! ice cloud fraction   
    real(r8), intent(in) :: liqcldf(pcols,pver)  ! liquid cloud fraction
    real(r8), intent(in) :: cldo(pcols,pver)  ! old cloud fraction
    real(r8), intent(in) :: pint(pcols,pverp)    ! air pressure layer interfaces (pa)
@@ -535,15 +535,15 @@ subroutine ini_microp_aero
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 ! initialize  output fields for ice nucleation
-    nimey(1:ncol,1:pver)=0._r8
-    nihf(1:ncol,1:pver)=0._r8
-    nidep(1:ncol,1:pver)=0._r8
-    niimm(1:ncol,1:pver)=0._r8
+    nimey(1:ncol,1:pver)=0._r8 
+    nihf(1:ncol,1:pver)=0._r8  
+    nidep(1:ncol,1:pver)=0._r8 
+    niimm(1:ncol,1:pver)=0._r8  
 
 ! initialize output
     naai(1:ncol,1:pver)=0._r8
     naai_hom(1:ncol,1:pver)=0._r8
-    npccn(1:ncol,1:pver)=0._r8
+    npccn(1:ncol,1:pver)=0._r8  
     nacon(1:ncol,1:pver,:)=0._r8
 
 ! set default or fixed dust bins for contact freezing
@@ -551,10 +551,10 @@ subroutine ini_microp_aero
     rndst(1:ncol,1:pver,2)=rn_dst2
     rndst(1:ncol,1:pver,3)=rn_dst3
     rndst(1:ncol,1:pver,4)=rn_dst4
-
+     
 ! TKE initialization
-    tkem(1:ncol,1:pver)=0._r8
-    smm(1:ncol,1:pver)=0._r8
+    tkem(1:ncol,1:pver)=0._r8    
+    smm(1:ncol,1:pver)=0._r8    
 
     allocate(naermod(naer_all), &
       naer2(pcols,pver,naer_all), &
@@ -562,7 +562,7 @@ subroutine ini_microp_aero
       ntype(naer_all))
 
 ! assign variable deltat for sub-stepping...
-	deltat=deltatin
+	deltat=deltatin	
 
 ! initialize multi-level fields
         q(1:ncol,1:pver)=qn(1:ncol,1:pver)
@@ -580,7 +580,7 @@ subroutine ini_microp_aero
         end do
 
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-! More refined computation of sub-grid vertical velocity
+! More refined computation of sub-grid vertical velocity 
 ! Set to be zero at the surface by initialization.
 
         if( wsubTKE ) then
@@ -593,7 +593,7 @@ subroutine ini_microp_aero
                    tkem(i,k) = 0.5_r8 *  tke(i,k+1)
                    smm(i,k)  = 0.5_r8 * smaw(i,k+1)
                elseif( turbtype(i,k+1) .eq. 4._r8 ) then ! Top entrainment interface
-                   tkem(i,k) = 0.5_r8 *  tke(i,k)
+                   tkem(i,k) = 0.5_r8 *  tke(i,k)  
                    smm(i,k)  = 0.5_r8 * smaw(i,k)
                endif
                smm(i,k) = 0.259_r8*smm(i,k)
@@ -775,7 +775,7 @@ subroutine ini_microp_aero
 
 #ifdef MODAL_AERO
 !BSINGH - Following #if added for MAM7 compliance
-#ifdef MODAL_AERO_7MODE
+#ifdef MODAL_AERO_7MODE 
              nacon(i,k,3)=qaer(i,k,numptr_amode(modeptr_coardust))*rho(i,k)
              rndst(i,k,3)=0.5_r8*dgnumwet(i,k,modeptr_coardust)
 #elif ( defined MODAL_AERO_3MODE )
@@ -786,17 +786,17 @@ subroutine ini_microp_aero
                ssmc=qaer(i,k,lptr_nacl_a_amode(modeptr_coarse))
                if (dmc.gt.0.0_r8) then
                   nacon(i,k,3)=dmc/(ssmc+dmc) * qaer(i,k,numptr_amode(modeptr_coarse))*rho(i,k) !*tcnt
-               else
+               else 
                   nacon(i,k,3)=0._r8
                endif
-
+               
                !also redefine parameters based on size...
-
+               
                rndst(i,k,3)=0.5_r8*dgnumwet(i,k,modeptr_coarse)
 
 !BSINGH - Following #endif added for MAM7 compliance
-# endif
-           if (rndst(i,k,3).le.0._r8) then
+# endif 
+           if (rndst(i,k,3).le.0._r8) then 
               rndst(i,k,3)=rn_dst3
            endif
 
@@ -804,13 +804,13 @@ subroutine ini_microp_aero
 
 !For Bulk Aerosols: set equal to aerosol number for dust for bins 2-4 (bin 1=0)
 
-           if (idxdst2.gt.0) then
+           if (idxdst2.gt.0) then 
               nacon(i,k,2)=naer2(i,k,idxdst2) !*tcnt ! 1/m3
            endif
-           if (idxdst3.gt.0) then
+           if (idxdst3.gt.0) then 
               nacon(i,k,3)=naer2(i,k,idxdst3) !*tcnt
            endif
-           if (idxdst4.gt.0) then
+           if (idxdst4.gt.0) then 
               nacon(i,k,4)=naer2(i,k,idxdst4) ! *tcnt
            endif
 #endif
@@ -829,7 +829,7 @@ subroutine ini_microp_aero
                if(m.eq.idxsul)then
 	       ! Lohmann treatment for sulfate has variable size distribution
 	          do i=1,ncol
-                     if (naer2(i,k,m).gt.0._r8) then
+                     if (naer2(i,k,m).gt.0._r8) then 
 	                amcubesulfate(i)=amcubefactor(m)*aer_mmr(i,k,m)*rho(i,k)/(naer2(i,k,m))
                         smcritsulfate(i)=smcritfactor(m)/sqrt(amcubesulfate(i))
                      else
@@ -873,7 +873,7 @@ subroutine ini_microp_aero
   do i = 1,ncol
      do k=1,pver
         nihf(i,k)=nihf(i,k)*rho(i,k)
-        niimm(i,k)=niimm(i,k)*rho(i,k)
+        niimm(i,k)=niimm(i,k)*rho(i,k)   
         nidep(i,k)=nidep(i,k)*rho(i,k)
         nimey(i,k)=nimey(i,k)*rho(i,k)
      end do
@@ -1004,7 +1004,7 @@ end subroutine microp_aero_ts
          write(iulog,*)'maxmodes,pmode in activate =',maxmodes,pmode
 #ifdef WRF_PORT
          call wrf_message(iulog)
-#endif
+#endif 
 	 call endrun('activate')
       endif
 
@@ -1042,7 +1042,7 @@ end subroutine microp_aero_ts
 	    smc(m)=smcrit(m) ! only for prescribed size dist
 
             if(hygro(m).gt.1.e-10)then   ! loop only if variable size dist
-               smc(m)=2.*aten*sqrt(aten/(27.*hygro(m)*amcubeloc(m)))
+               smc(m)=2.*aten*sqrt(aten/(27.*hygro(m)*amcubeloc(m))) 
             else
               smc(m)=100.
             endif
@@ -1150,7 +1150,7 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
 #else
        na, ptype, naer_all, nuci, onihf, oniimm, onidep, onimey)
 #endif
-
+ 
 !---------------------------------------------------------------
 ! Purpose:
 !  The parameterization of ice nucleation.
@@ -1162,7 +1162,7 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
 !
 ! Authors: Xiaohong Liu, 01/2005, modifications by A. Gettelman 2009-2010
 !----------------------------------------------------------------
-#ifdef MODAL_AERO
+#ifdef MODAL_AERO      
 #ifndef WRF_PORT
       use modal_aero_data, only:numptr_amode, modeptr_accum, modeptr_coarse, modeptr_aitken, &
                                  ntot_amode, sigmag_amode, &
@@ -1190,9 +1190,9 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
   real(r8), intent(in) :: nfice               ! ice mass fraction
   real(r8), intent(in) :: rhoair              ! air density (kg/m3)
 #ifdef MODAL_AERO
-  real(r8), intent(in) :: qaerpt(pcnst) ! aerosol number and mass mixing ratios
+  real(r8), intent(in) :: qaerpt(pcnst) ! aerosol number and mass mixing ratios 
   real(r8), intent(in) :: dgnum(ntot_amode)   ! aerosol mode dry diameter (m)
-#else
+#else      
   real(r8), intent(in) :: na(naer_all)        ! aerosol number concentration (/m3)
 #endif
 
@@ -1230,7 +1230,7 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
     dst1_num = 0.0_r8
     dst2_num = 0.0_r8
     dst3_num = 0.0_r8
-    dst4_num = 0.0_r8
+    dst4_num = 0.0_r8     
 
 !For modal aerosols, assume for the upper troposphere:
 ! soot = accumulation mode
@@ -1248,7 +1248,7 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
       ssmc=qaerpt(lptr_nacl_a_amode(modeptr_coarse))
       if (dmc.gt.0._r8) then
          dst_num=dmc/(ssmc+dmc) * qaerpt(numptr_amode(modeptr_coarse))*1.0e-6_r8 !#/cm^3
-      else
+      else 
          dst_num=0.0_r8
       endif
 !BSINGH - Following #endif added for MAM7 compliance
@@ -1257,34 +1257,34 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
          so4_num  = qaerpt(numptr_amode(modeptr_aitken))*1.0e-6_r8 & !#/cm^3, only allow so4 with D>0.1 um in ice nucleation
                * (0.5_r8 - 0.5_r8*erf(log(0.1e-6_r8/dgnum(modeptr_aitken))/  &
                  (2._r8**0.5_r8*log(sigmag_amode(modeptr_aitken)))))
-      else
-         so4_num = 0.0_r8
+      else 
+         so4_num = 0.0_r8 
       endif
       so4_num = max(0.0_r8,so4_num)
 #else
-    if(idxsul .gt. 0) then
+    if(idxsul .gt. 0) then 
        so4_num=na(idxsul)*1.0e-6_r8 ! #/cm^3
     end if
 
 !continue above philosophy here....
 
-    if(idxbcphi .gt. 0) then
+    if(idxbcphi .gt. 0) then 
       soot_num=na(idxbcphi)*1.0e-6_r8 !#/cm^3
     end if
 
-    if(idxdst1 .gt. 0) then
+    if(idxdst1 .gt. 0) then 
        dst1_num=na(idxdst1)  *1.0e-6_r8 !#/cm^3
     end if
 
-    if(idxdst2 .gt. 0) then
+    if(idxdst2 .gt. 0) then 
        dst2_num=na(idxdst2)*1.0e-6_r8 !#/cm^3
     end if
 
-    if(idxdst3 .gt. 0) then
+    if(idxdst3 .gt. 0) then 
        dst3_num=na(idxdst3)*1.0e-6_r8 !#/cm^3
     end if
 
-    if(idxdst4 .gt. 0) then
+    if(idxdst4 .gt. 0) then 
        dst4_num=na(idxdst4)*1.0e-6_r8 !#/cm^3
     end if
 
@@ -1292,7 +1292,7 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
 
 #endif
 
-! no soot nucleation
+! no soot nucleation 
     soot_num=0.0_r8
 
     ni=0._r8
@@ -1366,7 +1366,7 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
       esl = polysvp(tair,0)     ! over water in mixed clouds
       esi = polysvp(tair,1)     ! over ice
       deles = (esl - esi)
-      nimey=1.e-3_r8*exp(12.96_r8*deles/esi - 0.639_r8)
+      nimey=1.e-3_r8*exp(12.96_r8*deles/esi - 0.639_r8) 
     else
       nimey=0._r8
     endif
@@ -1376,11 +1376,11 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
        write(iulog, *) 'Warning: incorrect ice nucleation number (nuci reset =0)'
 #ifdef WRF_PORT
        call wrf_message(iulog)
-#endif
+#endif 
        write(iulog, *) ni, tair, relhum, wbar, nihf, niimm, nidep,deles,esi,dst2_num,dst3_num,dst4_num
 #ifdef WRF_PORT
        call wrf_message(iulog)
-#endif
+#endif 
        nuci=0._r8
     endif
 
@@ -1509,7 +1509,7 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
 ! error function in single precision
 !
 !    Copyright(C) 1996 Takuya OOURA (email: ooura@mmm.t.u-tokyo.ac.jp).
-!    You may use, copy, modify this code for any purpose and
+!    You may use, copy, modify this code for any purpose and 
 !    without fee. You may distribute this ORIGINAL package.
 
       real(r8) function derf(x)
@@ -1519,14 +1519,14 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
       real(r8) a,b,x
       dimension a(0 : 64), b(0 : 64)
       integer i,k
-      data (a(i), i = 0, 12) / &
-         0.00000000005958930743d0, -0.00000000113739022964d0, &
+      data (a(i), i = 0, 12) / & 
+         0.00000000005958930743d0, -0.00000000113739022964d0, & 
          0.00000001466005199839d0, -0.00000016350354461960d0, &
          0.00000164610044809620d0, -0.00001492559551950604d0, &
          0.00012055331122299265d0, -0.00085483269811296660d0, &
          0.00522397762482322257d0, -0.02686617064507733420d0, &
          0.11283791670954881569d0, -0.37612638903183748117d0, &
-         1.12837916709551257377d0 /
+         1.12837916709551257377d0 / 
       data (a(i), i = 13, 25) / &
          0.00000000002372510631d0, -0.00000000045493253732d0, &
          0.00000000590362766598d0, -0.00000006642090827576d0, &
@@ -1534,7 +1534,7 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
          0.00005103883009709690d0, -0.00037015410692956173d0, &
          0.00233307631218880978d0, -0.01254988477182192210d0, &
          0.05657061146827041994d0, -0.21379664776456006580d0, &
-         0.84270079294971486929d0 /
+         0.84270079294971486929d0 / 
       data (a(i), i = 26, 38) / &
          0.00000000000949905026d0, -0.00000000018310229805d0, &
          0.00000000239463074000d0, -0.00000002721444369609d0, &
@@ -1542,7 +1542,7 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
          0.00002195455056768781d0, -0.00016358986921372656d0, &
          0.00107052153564110318d0, -0.00608284718113590151d0, &
          0.02986978465246258244d0, -0.13055593046562267625d0, &
-         0.67493323603965504676d0 /
+         0.67493323603965504676d0 / 
       data (a(i), i = 39, 51) / &
          0.00000000000382722073d0, -0.00000000007421598602d0, &
          0.00000000097930574080d0, -0.00000001126008898854d0, &
@@ -1550,7 +1550,7 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
          0.00000962023443095201d0, -0.00007404402135070773d0, &
          0.00050689993654144881d0, -0.00307553051439272889d0, &
          0.01668977892553165586d0, -0.08548534594781312114d0, &
-         0.56909076642393639985d0 /
+         0.56909076642393639985d0 / 
       data (a(i), i = 52, 64) / &
          0.00000000000155296588d0, -0.00000000003032205868d0, &
          0.00000000040424830707d0, -0.00000000471135111493d0, &
@@ -1558,15 +1558,15 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
          0.00000430683284629395d0, -0.00003445026145385764d0, &
          0.00024879276133931664d0, -0.00162940941748079288d0, &
          0.00988786373932350462d0, -0.05962426839442303805d0, &
-         0.49766113250947636708d0 /
+         0.49766113250947636708d0 / 
       data (b(i), i = 0, 12) / &
          -0.00000000029734388465d0, 0.00000000269776334046d0, &
          -0.00000000640788827665d0, -0.00000001667820132100d0, &
          -0.00000021854388148686d0, 0.00000266246030457984d0, &
          0.00001612722157047886d0, -0.00025616361025506629d0, &
          0.00015380842432375365d0, 0.00815533022524927908d0, &
-         -0.01402283663896319337d0, -0.19746892495383021487d0,&
-         0.71511720328842845913d0 /
+         -0.01402283663896319337d0, -0.19746892495383021487d0,& 
+         0.71511720328842845913d0 / 
       data (b(i), i = 13, 25) / &
          -0.00000000001951073787d0, -0.00000000032302692214d0, &
          0.00000000522461866919d0, 0.00000000342940918551d0, &
@@ -1574,23 +1574,23 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
          0.00002687044575042908d0, -0.00011843240273775776d0, &
          -0.00080991728956032271d0, 0.00661062970502241174d0, &
          0.00909530922354827295d0, -0.20160072778491013140d0, &
-         0.51169696718727644908d0 /
+         0.51169696718727644908d0 / 
       data (b(i), i = 26, 38) / &
          0.00000000003147682272d0, -0.00000000048465972408d0, &
          0.00000000063675740242d0, 0.00000003377623323271d0, &
-         -0.00000015451139637086d0, -0.00000203340624738438d0,&
+         -0.00000015451139637086d0, -0.00000203340624738438d0,& 
          0.00001947204525295057d0, 0.00002854147231653228d0, &
          -0.00101565063152200272d0, 0.00271187003520095655d0, &
          0.02328095035422810727d0, -0.16725021123116877197d0, &
-         0.32490054966649436974d0 /
+         0.32490054966649436974d0 / 
       data (b(i), i = 39, 51) / &
          0.00000000002319363370d0, -0.00000000006303206648d0, &
          -0.00000000264888267434d0, 0.00000002050708040581d0, &
          0.00000011371857327578d0, -0.00000211211337219663d0, &
          0.00000368797328322935d0, 0.00009823686253424796d0, &
-         -0.00065860243990455368d0, -0.00075285814895230877d0,&
+         -0.00065860243990455368d0, -0.00075285814895230877d0,& 
          0.02585434424202960464d0, -0.11637092784486193258d0, &
-         0.18267336775296612024d0 /
+         0.18267336775296612024d0 / 
       data (b(i), i = 52, 64) / &
          -0.00000000000367789363d0, 0.00000000020876046746d0, &
          -0.00000000193319027226d0, -0.00000000435953392472d0, &
@@ -1598,7 +1598,7 @@ subroutine nucleati(wbar, tair, relhum, cldn, qc, nfice, rhoair, &
          -0.00000675407647949153d0, 0.00008428418334440096d0, &
          -0.00017604388937031815d0, -0.00239729611435071610d0, &
          0.02064129023876022970d0, -0.06905562880005864105d0, &
-         0.09084526782065478489d0 /
+         0.09084526782065478489d0 / 
       w = abs(x)
       if (w .lt. 2.2d0) then
           t = w * w

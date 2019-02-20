@@ -1,7 +1,7 @@
 #include "cppdefs.h"
-
+ 
        MODULE vegetation_stream_mod
-#if defined VEGETATION && defined VEG_STREAMING
+#if defined VEGETATION && defined VEG_STREAMING 
 !
 !svn $Id: vegetation_stream.F 429 2015-04-20 17:30:26Z arango $
 !=======================================================================
@@ -12,8 +12,8 @@
 !================================================Neil K. Ganju  ========
 !================================================Alexis Beudin  ========
 !==============================================Tarandeep S. Kalra=======
-!                                                                      !
-!  References:                                                         !
+!                                                                      ! 
+!  References:                                                         !   
 !                                                                      !
 !=======================================================================
 !                                                                      !
@@ -59,12 +59,12 @@
      &                         VEG(ng) % Lveg,                          &
      &                         VEG(ng) % BWDXL_veg,                     &
      &                         VEG(ng) % BWDYL_veg)
-
+              
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 16)
 # endif
       RETURN
-      END SUBROUTINE vegetation_stream_cal
+      END SUBROUTINE vegetation_stream_cal 
 
 !***********************************************************************
       SUBROUTINE vegetation_stream_tile  (ng, tile,                     &
@@ -77,7 +77,7 @@
      &                              Dwave,                              &
      &                              Lwave,                              &
      &                              dissip_veg, Lveg,                   &
-     &                              BWDXL_veg, BWDYL_veg)
+     &                              BWDXL_veg, BWDYL_veg)  
 !***********************************************************************
 !
       USE mod_param
@@ -131,7 +131,7 @@
 !----------------------------------------------------------------------
 !----------Executing the code------------------------------------------
 !----------------------------------------------------------------------
-!
+!     
       DO k=1,N(ng)
         DO j=Jstr,Jend
           DO i=Istr,Iend
@@ -145,20 +145,20 @@
             waveny=waven*SIN(cff1)
             sigma=MIN(SQRT(g*waven*TANH(waven*Dstp)),2.0_r8)
             osigma=1.0_r8/sigma
-!
+! 
 !----------------------------------------------------------------------
-!   Note: Alexis - check if we need a local dissip_veg here
-!   Also Lveg is for 1 veg type only
+!   Note: Alexis - check if we need a local dissip_veg here 
+!   Also Lveg is for 1 veg type only 
 !----------------------------------------------------------------------
 !
             EWD_veg=dissip_veg(i,j)
             cff2=EWD_veg*osigma*Lveg(i,j,k)
             BWDXL_veg(i,j,k)=cff2*wavenx
             BWDYL_veg(i,j,k)=cff2*waveny
-!
+!           
            END DO
         END DO
-      END DO
+      END DO    
 !
       END SUBROUTINE vegetation_stream_tile
 #endif

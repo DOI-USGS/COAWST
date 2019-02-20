@@ -8,33 +8,33 @@
                         ,ITS,ITE,JTS,JTE,KTS,KTE)
 !----------------------------------------------------------------------
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
-!                .      .    .
+!                .      .    .     
 ! SUBPROGRAM:    CLTEND      TEMPERATURE CHANGE BY CLOUD PROCESSES
 !   PRGRMMR: FERRIER         ORG: W/NP22     DATE: 01-09-26
-!
+!     
 ! ABSTRACT:
-!     CLTEND GRADUALLY UPDATES TEMPERATURE TENDENCIES FROM CONVECTION
+!     CLTEND GRADUALLY UPDATES TEMPERATURE TENDENCIES FROM CONVECTION 
 !     GRID-SCALE MICROPHYSICS, AND PRECIPITATION ASSIMILATION.
-!
+!     
 ! USAGE: CALL CLTEND FROM SOLVE_RUNSTEAM
 !   INPUT ARGUMENT LIST:
 !     ICLTEND - FLAG SET TO -1 PRIOR TO PHYSICS CALLS, 0 AFTER PHYSICS
 !               CALLS, AND 1 FOR UPDATING TEMPERATURES EVERY TIME STEP
-!
+!  
 !   OUTPUT ARGUMENT LIST:  NONE
-!
+!     
 !   OUTPUT FILES:  NONE
-!
+!     
 !   SUBPROGRAMS CALLED:  NONE
-!
+!  
 !   UNIQUE: NONE
-!
+!  
 !   LIBRARY: NONE
-!
+!  
 ! ATTRIBUTES:
 !   LANGUAGE: FORTRAN 90
 !   MACHINE : IBM SP
-!$$$
+!$$$  
 !----------------------------------------------------------------------
       USE module_MPP
 !
@@ -52,7 +52,7 @@
                                                               ,T_ADJ   &
                                                               ,T_OLD
 !
-!***  LOCAL VARIABLES
+!***  LOCAL VARIABLES 
 !
       INTEGER :: I,J,K
 !

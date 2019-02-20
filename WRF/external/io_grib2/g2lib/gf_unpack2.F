@@ -1,7 +1,7 @@
       subroutine gf_unpack2(cgrib,lcgrib,iofst,lencsec2,csec2,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    gf_unpack2
+! SUBPROGRAM:    gf_unpack2 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2002-04-09
 !
 ! ABSTRACT: This subroutine unpacks Section 2 (Local Use Section)
@@ -16,7 +16,7 @@
 !     lcgrib   - Length (in bytes) of GRIB message array cgrib.
 !     iofst    - Bit offset of the beginning of Section 2.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     iofst    - Bit offset at the end of Section 2, returned.
 !     lencsec2 - Length (in octets) of Local Use data
 !     csec2()  - Pointer to a character*1 array containing local use data
@@ -45,10 +45,10 @@
       nullify(csec2)
 
       call g2lib_gbyte(cgrib,lensec,iofst,32)        ! Get Length of Section
-      iofst=iofst+32
+      iofst=iofst+32    
       lencsec2=lensec-5
       call g2lib_gbyte(cgrib,isecnum,iofst,8)         ! Get Section Number
-      iofst=iofst+8
+      iofst=iofst+8     
       ipos=(iofst/8)+1
 
       if ( isecnum.ne.2 ) then
@@ -63,7 +63,7 @@
          nullify(csec2)
          return
       endif
-
+      
       csec2(1:lencsec2)=cgrib(ipos:ipos+lencsec2-1)
       iofst=iofst+(lencsec2*8)
 

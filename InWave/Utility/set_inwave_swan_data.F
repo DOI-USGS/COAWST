@@ -75,13 +75,15 @@
       integer :: i, j, d, my_tile, tidx
       integer :: nt1, nt2
 
-      real(r8):: otwopi, cff1, cff2
-      real(r8):: phiw, cw, dist, toff
+      real(r8):: twopi, otwopi, cff1, cff2, cff3
+      real(r8):: phiw, cw, dist, toff, alpha
+      real(r8), parameter :: eps = 0.0001_r8
 
       logical :: update = .FALSE.
 
 # include "set_bounds.h"
 
+      twopi=2.0_r8*pi
       otwopi=1.0_r8/(2.0_r8*pi)
 !
 !     Compute the time index for the BC data. The Ampzeta array
@@ -89,17 +91,21 @@
 !
       tidx=MOD(iic(ng),WAVES(ng)%Insteps)+1
 !
-      IF (LBC(iwest,isAC3d,ng)%acquire) THEN
-        DO d=1,ND
-          DO j=Jstr,Jend
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
+        IF (LBC(iwest,isAC3d,ng)%acquire) THEN
+          DO d=1,ND
+            DO j=Jstr,Jend
 #ifdef VARY_ACBC
-            phiw=2.0_r8*pi-WAVEG(ng)%wd(d)-GRID(ng)%angler(Istr-1,j)
-            cw=sqrt(WAVEP(ng)%cx(Istr-1,j,d)**2+                        &
-     &              WAVEP(ng)%cy(Istr-1,j,d)**2+0.01_r8)*cos(phiw)
-            dist=REAL(j,r8)/GRID(ng)%pn(Istr-1,j)
-            toff=ABS(dist/cw)
+            cff1=0.5_r8*(WAVEP(ng)%cy(Istr-1,j  ,d)+                    &
+                         WAVEP(ng)%cy(Istr-1,j+1,d))
+            cff2=WAVEP(ng)%cx(Istr-1,j,d)
+            cw=sqrt(cff1**2+cff2**2)
+            dist=REAL(j,r8)/GRID(ng)%pn(Istr-1,j)*sin(WAVEG(ng)%wd(d)-  &
+     &           GRID(ng)%angler(Istr-1,j))
+            toff=ABS(dist/(cw+eps))
+            toff=MIN(toff,2.0_r8*WAVES(ng)%dur)
             cff1=toff/dt(ng)
-            nt1=tidx-INT(cff1)
+            nt1=tidx+INT(cff1)
             IF (nt1.le.0) nt1=MOD(nt1,WAVES(ng)%Insteps)
             IF (nt1.le.0) nt1=nt1+WAVES(ng)%Insteps
             nt2=nt1+1
@@ -112,21 +118,26 @@
             WAVEB(ng)%AC_west(j,d)=WAVES(ng)%Ampzeta(tidx,d)*           &
      &                             WAVEP(ng)%Tr(Istr-1,j,d)*otwopi
 #endif
+            END DO
           END DO
-        END DO
+        END IF
       END IF
-
-      IF (LBC(ieast,isAC3d,ng)%acquire) THEN
-        DO d=1,ND
-          DO j=Jstr,Jend
+!
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
+        IF (LBC(ieast,isAC3d,ng)%acquire) THEN
+          DO d=1,ND
+            DO j=Jstr,Jend
 #ifdef VARY_ACBC
-            phiw=2.0_r8*pi-WAVEG(ng)%wd(d)-GRID(ng)%angler(Iend+1,j)
-            cw=sqrt(WAVEP(ng)%cx(Iend+1,j,d)**2+                        &
-     &              WAVEP(ng)%cy(Iend+1,j,d)**2+0.01_r8)*cos(phiw)
-            dist=REAL(j,r8)/GRID(ng)%pn(Iend+1,j)
-            toff=ABS(dist/cw)
+            cff1=0.5_r8*(WAVEP(ng)%cy(Iend+1,j  ,d)+                    &
+                         WAVEP(ng)%cy(Iend+1,j+1,d))
+            cff2=WAVEP(ng)%cx(Iend+1,j,d)
+            cw=sqrt(cff1**2+cff2**2)
+            dist=REAL(j,r8)/GRID(ng)%pn(Iend+1,j)*sin(WAVEG(ng)%wd(d)-  &
+     &           GRID(ng)%angler(Iend+1,j))
+            toff=ABS(dist/(cw+eps))
+            toff=MIN(toff,2.0_r8*WAVES(ng)%dur)
             cff1=toff/dt(ng)
-            nt1=tidx-INT(cff1)
+            nt1=tidx+INT(cff1)
             IF (nt1.le.0) nt1=MOD(nt1,WAVES(ng)%Insteps)
             IF (nt1.le.0) nt1=nt1+WAVES(ng)%Insteps
             nt2=nt1+1
@@ -139,21 +150,26 @@
             WAVEB(ng)%AC_east(j,d)=WAVES(ng)%Ampzeta(tidx,d)*           &
      &                             WAVEP(ng)%Tr(Iend+1,j,d)*otwopi
 #endif
+            END DO
           END DO
-        END DO
+        END IF
       END IF
-
-      IF (LBC(inorth,isAC3d,ng)%acquire) THEN
-        DO d=1,ND
-          DO i=Istr,Iend
+!
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
+        IF (LBC(inorth,isAC3d,ng)%acquire) THEN
+          DO d=1,ND
+            DO i=Istr,Iend
 #ifdef VARY_ACBC
-            phiw=1.5_r8*pi-WAVEG(ng)%wd(d)-GRID(ng)%angler(i,Jend+1)
-            cw=sqrt(WAVEP(ng)%cx(i,Jend+1,d)**2+                        &
-     &              WAVEP(ng)%cy(i,Jend+1,d)**2+0.01_r8)*cos(phiw)
-            dist=REAL(i,r8)/GRID(ng)%pm(i,Jend+1)
-            toff=ABS(dist/cw)
+            cff1=0.5_r8*(WAVEP(ng)%cx(i  ,Jend+1,d)+                    &
+                         WAVEP(ng)%cx(i+1,Jend+1,d))
+            cff2=WAVEP(ng)%cy(i  ,Jend+1,d)
+            cw=sqrt(cff1**2+cff2**2)
+            dist=REAL(i,r8)/GRID(ng)%pm(i,Jend+1)*sin(WAVEG(ng)%wd(d)-  &
+     &           GRID(ng)%angler(i,Jend+1))
+            toff=ABS(dist/(cw+eps))
+            toff=MIN(toff,2.0_r8*WAVES(ng)%dur)
             cff1=toff/dt(ng)
-            nt1=tidx-INT(cff1)
+            nt1=tidx+INT(cff1)
             IF (nt1.le.0) nt1=MOD(nt1,WAVES(ng)%Insteps)
             IF (nt1.le.0) nt1=nt1+WAVES(ng)%Insteps
             nt2=nt1+1
@@ -166,23 +182,27 @@
             WAVEB(ng)%AC_north(i,d)=WAVES(ng)%Ampzeta(tidx,d)*          &
      &                              WAVEP(ng)%Tr(i,Jend+1,d)*otwopi
 #endif
+            END DO
           END DO
-        END DO
+        END IF
       END IF
-
-      IF (LBC(isouth,isAC3d,ng)%acquire) THEN
-        DO d=1,ND
-          DO i=Istr,Iend
+!
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
+        IF (LBC(isouth,isAC3d,ng)%acquire) THEN
+          DO d=1,ND
+            DO i=Istr,Iend
 #ifdef VARY_ACBC
-            phiw=1.5_r8*pi-WAVEG(ng)%wd(d)-GRID(ng)%angler(i,Jstr-1)
-            cw=sqrt(WAVEP(ng)%cx(i,Jstr-1,d)**2+                        &
-     &              WAVEP(ng)%cy(i,Jstr-1,d)**2+0.01_r8)*cos(phiw)
-            dist=REAL(i,r8)/GRID(ng)%pm(i,Jstr-1)
-            toff=ABS(dist/cw)
+            cff1=0.5_r8*(WAVEP(ng)%cx(i  ,Jstr-1,d)+                    &
+                         WAVEP(ng)%cx(i+1,Jstr-1,d))
+            cff2=WAVEP(ng)%cy(i  ,Jstr-1,d)
+            alpha=GRID(ng)%angler(i,Jstr-1)
+            cw=cff1*cos(alpha)-cff2*sin(alpha)
+            dist=REAL(i,r8)/GRID(ng)%pm(i,Jstr-1)*                      &
+     &           sin(pi-WAVEG(ng)%wd(d))
+            toff=ABS(dist/(cw+eps))
             cff1=toff/dt(ng)
-            nt1=tidx-INT(cff1)
-            IF (nt1.le.0) nt1=MOD(nt1,WAVES(ng)%Insteps)
-            IF (nt1.le.0) nt1=nt1+WAVES(ng)%Insteps
+            nt1=tidx+INT(cff1)
+            nt1=MAX(MOD(nt1,WAVES(ng)%Insteps),1)
             nt2=nt1+1
             IF (nt2>WAVES(ng)%Insteps) nt2=nt2-WAVES(ng)%Insteps
             phiw=toff/dt(ng)-INT(toff/dt(ng))
@@ -193,8 +213,9 @@
             WAVEB(ng)%AC_south(i,d)=WAVES(ng)%Ampzeta(tidx,d)*          &
      &                              WAVEP(ng)%Tr(i,Jstr-1,d)*otwopi
 #endif
+            END DO
           END DO
-        END DO
+        END IF
       END IF
 
       RETURN

@@ -1,11 +1,11 @@
       module g2grids
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! MODULE:    g2grids
+! MODULE:    g2grids 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2004-04-27
 !
-! ABSTRACT: This Fortran Module allows access to predefined GRIB2 Grid
-!   Definition Templates stored in a file.  The GDTs are represented by
+! ABSTRACT: This Fortran Module allows access to predefined GRIB2 Grid 
+!   Definition Templates stored in a file.  The GDTs are represented by 
 !   a predefined number or a character abbreviation.
 !
 !   At the first request, all the grid GDT entries in the file associated
@@ -24,7 +24,7 @@
 !      4) - Number of entries in the Grid Definition Template
 !      5) - A list of values for each entry in the Grid Definition Template.
 !
-!   As an example, this is the entry for the 1x1 GFS global grid
+!   As an example, this is the entry for the 1x1 GFS global grid 
 !   3:gbl_1deg:  0:19: 0 0 0 0 0 0 0 360 181 0 0 90000000 0 48 -90000000 359000000 1000000 1000000 0
 !
 !   Comments can be included in the file by specifying the symbol "#" as the
@@ -65,7 +65,7 @@
 ! SUBPROGRAM:    readgrids
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2001-06-28
 !
-! ABSTRACT: This function reads the list of GDT entries in the file
+! ABSTRACT: This function reads the list of GDT entries in the file 
 !   associated with fortran unit, lunit.  All the entries are stored in a
 !   linked list called gridlist.
 !
@@ -121,7 +121,7 @@
              pos3=index(cline,':')
              cline(pos3:pos3)=';'
              pos4=index(cline,':')
-             if ( pos1.eq.0 .or. pos2.eq.0 .or. pos3.eq.0 .or.
+             if ( pos1.eq.0 .or. pos2.eq.0 .or. pos3.eq.0 .or. 
      &            pos4.eq.0) cycle
 
              !
@@ -162,11 +162,11 @@
          subroutine getgridbynum(lunit,number,igdtn,igdtmpl,iret)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    getgridbynum
+! SUBPROGRAM:    getgridbynum 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2004-04-26
 !
 ! ABSTRACT: This subroutine searches a file referenced by fortran unit lunit
-!   for a Grid Definition Template assigned to the requested number.
+!   for a Grid Definition Template assigned to the requested number. 
 !   The input file format is described at the top of this module.
 !
 ! PROGRAM HISTORY LOG:
@@ -174,11 +174,11 @@
 !
 ! USAGE:    CALL getgridbynum(lunit,number,igdtn,igdtmpl,iret)
 !   INPUT ARGUMENT LIST:
-!     lunit    - Unit number of file containing Grid definitions
-!     number   - Grid number of the requested Grid definition
+!     lunit    - Unit number of file containing Grid definitions 
+!     number   - Grid number of the requested Grid definition 
 !
-!   OUTPUT ARGUMENT LIST:
-!     igdtn    - NN, indicating the number of the Grid Definition
+!   OUTPUT ARGUMENT LIST:      
+!     igdtn    - NN, indicating the number of the Grid Definition 
 !                Template 3.NN
 !     igdtmpl()- An array containing the values of each entry in
 !                the Grid Definition Template.
@@ -229,22 +229,22 @@
                else
                   tempgrid => tempgrid%next
                endif
-           enddo
-
+           enddo 
+ 
            iret=-1
            return
-
+ 
          end subroutine
 
 
          subroutine getgridbyname(lunit,name,igdtn,igdtmpl,iret)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    getgridbyname
+! SUBPROGRAM:    getgridbyname 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2004-04-26
 !
 ! ABSTRACT: This subroutine searches a file referenced by fortran unit lunit
-!   for a Grid Definition Template assigned to the requested name.
+!   for a Grid Definition Template assigned to the requested name. 
 !   The input file format is described at the top of this module.
 !
 ! PROGRAM HISTORY LOG:
@@ -252,11 +252,11 @@
 !
 ! USAGE:    CALL getgridbyname(lunit,name,igdtn,igdtmpl,iret)
 !   INPUT ARGUMENT LIST:
-!     lunit    - Unit number of file containing Grid definitions
-!     name     - Grid name of the requested Grid definition
+!     lunit    - Unit number of file containing Grid definitions 
+!     name     - Grid name of the requested Grid definition 
 !
-!   OUTPUT ARGUMENT LIST:
-!     igdtn    - NN, indicating the number of the Grid Definition
+!   OUTPUT ARGUMENT LIST:      
+!     igdtn    - NN, indicating the number of the Grid Definition 
 !                Template 3.NN
 !     igdtmpl()- An array containing the values of each entry in
 !                the Grid Definition Template.
@@ -308,11 +308,11 @@
                else
                   tempgrid => tempgrid%next
                endif
-           enddo
-
+           enddo 
+ 
            iret=-1
            return
-
+ 
          end subroutine
 
 

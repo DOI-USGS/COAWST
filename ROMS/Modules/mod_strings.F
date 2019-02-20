@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_strings
 !
-!svn $Id: mod_strings.F 854 2017-07-18 23:28:45Z arango $
+!svn $Id: mod_strings.F 914 2018-07-07 20:57:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -212,11 +212,37 @@
      &      'Message Passage: nesting array data gathering ....',       & !71
      &      'Message Passage: synchronization barrier .........',       & !72
      &      'Message Passage: multi-model coupling ............'/)        !73
-
-        character (len=80) :: my_os = MY_OS
-        character (len=80) :: my_cpu = MY_CPU
-        character (len=80) :: my_fort = MY_FORT
-        character (len=80) :: my_fc = MY_FC
-        character (len=160) :: my_fflags = MY_FFLAGS
-
+!
+!  The following variables are assigned during C-preprocessing.  They
+!  have information about operating sytem, CPU hardware, compiling
+!  system, compiler command, compiler flags, analytical directory,
+!  header directory, application header file, and root directory.
+!
+        character (len=80)  :: my_os = MY_OS
+        character (len=80)  :: my_cpu = MY_CPU
+        character (len=80)  :: my_fort = MY_FORT
+        character (len=80)  :: my_fc = MY_FC
+        character (len=512) :: my_fflags = MY_FFLAGS
+!
+#ifdef ANALYTICAL_DIR
+        character (len=256) :: Adir = ANALYTICAL_DIR
+#else
+        character (len=256) :: Adir = "NONE"
+#endif
+#ifdef HEADER_DIR
+        character (len=256) :: Hdir = HEADER_DIR
+#else
+        character (len=256) :: Hdir = "NONE"
+#endif
+#ifdef ROMS_HEADER
+        character (len=256) :: Hfile = HEADER
+#else
+        character (len=256) :: Hfile = "NONE"
+#endif
+#ifdef ROOT_DIR
+        character (len=256) :: Rdir = ROOT_DIR
+#else
+        character (len=256) :: Rdir = "NONE"
+#endif
+!
       END MODULE mod_strings

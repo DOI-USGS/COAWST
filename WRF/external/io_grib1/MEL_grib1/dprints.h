@@ -13,9 +13,9 @@
 #define p_double(expr)  fprintf(stdout," (double) " #expr "= %.5lf\n",expr)
 
 
-#ifdef  VERBOSE
-/************************************************
- *    DEBUG IS DESIRED (compiled with -DVERBOSE)
+#ifdef  VERBOSE	
+/************************************************ 
+ *    DEBUG IS DESIRED (compiled with -DVERBOSE)  
  ************************************************/
 #define VERB_ON          	1
 #define LIB_VERSION             	"verbose"
@@ -49,7 +49,7 @@
 
 #else
 /***********************************************
-*    ELSE TURN ALL DEBUG PRINTING OFF
+*    ELSE TURN ALL DEBUG PRINTING OFF                 
 *    null out function calls
 ************************************************/
 #define VERB_ON        0

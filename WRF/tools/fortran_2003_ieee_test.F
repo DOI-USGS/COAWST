@@ -1,4 +1,4 @@
-      PROGRAM fortran_2003_test
+      PROGRAM fortran_2003_test         
 
       USE , INTRINSIC :: IEEE_EXCEPTIONS
 
@@ -39,4 +39,4 @@
       FLUSH (UNIT=6)
 
       STOP
-      END PROGRAM fortran_2003_test
+      END PROGRAM fortran_2003_test         

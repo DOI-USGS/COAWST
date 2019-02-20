@@ -1,24 +1,24 @@
 module module_random
-  ! This module implements an array of pseudo-random number
-  ! generators (PRNGs).  The internal state of the PRNGs is stored
+  ! This module implements an array of pseudo-random number 
+  ! generators (PRNGs).  The internal state of the PRNGs is stored 
   ! in state1, state2, state3, and state4 arrays.  The rand_grid
-  ! routines will produce grids of random numbers from these
+  ! routines will produce grids of random numbers from these 
   ! generators.  The sequence of random numbers will not vary with
   ! processor decomposition, operating system, computer, compiler or
   ! compiler optimizations, and will be the same every time the
-  ! model is run (if the seed is unchanged).  Each gridpoint will
+  ! model is run (if the seed is unchanged).  Each gridpoint will 
   ! produce its own independent sequence of random numbers.
-
+  
   ! The srand_grid routine seeds the random number generators, given
   ! an optional "seed" argument.  Each random number generator in
   ! the grid is given a different seed, but those seeds are based on
   ! the seed you provide.  If you do not provide one, the same value
   ! (0) will be used every time the model is run.  That is chosen
-  ! intentionally to ensure reproducability of results.
+  ! intentionally to ensure reproducability of results.  
 
   ! The rand_grid routines will produce random numbers using the
   ! arrays of random number generators.  The floating-point
-  ! versions of rand_grid produce numbers between 0, inclusive, and 1,
+  ! versions of rand_grid produce numbers between 0, inclusive, and 1, 
   ! exclusive.  The integer versions produce numbers that span the
   ! entire range of values representable by the datatype.  The full
   ! precision of the floating-point values are generated.
@@ -45,7 +45,7 @@ contains
                            ITS,ITE,JTS,JTE,KTS,KTE,seed)
 
     ! This routine initializes a grid of random number generators,
-    ! using the optional seed argument.  Every random number
+    ! using the optional seed argument.  Every random number 
     ! generator will have its own seed, but the seed you provide
     ! will be used to modify those seeds.  If you provide the same
     ! seed, the same sequence of random numbers should be produced,
@@ -82,7 +82,7 @@ contains
           do i=its,ite
              seeds(i)=(kde-kds+1)*((jde-jds+1)*i+j)+k
              ! We can use the same seed here every time
-             ! because bobraninit will use both the
+             ! because bobraninit will use both the 
              ! "seeds" array and the "seed" integer to
              ! create the actual seed for each generator.
           enddo
@@ -139,7 +139,7 @@ contains
     !
     ! Make sure you call srand_grid before calling this routine.
     !
-    ! If you want integers that fall in a specified range, you
+    ! If you want integers that fall in a specified range, you 
     ! can produce them like this:
     !
     ! do (for each gridpoint)
@@ -216,7 +216,7 @@ contains
     !
     ! Make sure you call srand_grid before calling this routine.
     !
-    ! If you want integers that fall in a specified range, you
+    ! If you want integers that fall in a specified range, you 
     ! can produce them like this:
     !
     ! do (for each gridpoint)

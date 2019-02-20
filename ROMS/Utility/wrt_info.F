@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE wrt_info (ng, model, ncid, ncname)
 !
-!svn $Id: wrt_info.F 857 2017-07-29 04:05:27Z arango $
+!svn $Id: wrt_info.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -48,7 +48,7 @@
 #ifdef SEDIMENT
       USE mod_sediment
 #endif
-#ifdef VEGETATION
+#ifdef VEGETATION 
       USE mod_vegetation
 #endif
 #ifdef PROPAGATOR
@@ -1496,7 +1496,7 @@
 # include <inwave_wrt.h>
 #endif
 
-!#ifdef VEGETATION
+!#ifdef VEGETATION 
 !# include <vegetation_wrt_info.h>
 !#endif
 !
@@ -2496,7 +2496,7 @@
         IF (exit_flag.eq.NoError) THEN
           IF (ncid.ne.STA(ng)%ncid) THEN
             scale=1.0_r8
-# ifdef UV_LOGDRAG
+# if defined UV_LOGDRAG || defined BBL_MODEL
             IF (find_string(var_name, n_var, TRIM(Vname(1,idZoBL)),     &
      &                      varid)) THEN
               status=nf_fwrite2d(ng, model, ncid, varid, 0, r2dvar,     &

@@ -15,8 +15,8 @@
 */
 
 #define ROMS_MODEL
-#define SWAN_MODEL
-#define MCT_LIB
+#define SWAN_MODEL 
+#define MCT_LIB 
 
 #define UV_VIS2
 #define MIX_S_UV
@@ -46,9 +46,9 @@
 # define SSW_CALC_ZNOT
 #endif
 
-#define VEGETATION
-# ifdef VEGETATION
-#  undef ANA_VEGETATION
+#define VEGETATION 
+# ifdef VEGETATION 
+#  undef ANA_VEGETATION 
 #  define VEG_DRAG
 #  ifdef VEG_DRAG
 #   define VEG_FLEX

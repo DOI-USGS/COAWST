@@ -1,8 +1,8 @@
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 ! ------------------ Goddard Radiation Code   ---------------------------------
 !
-! Purpose :
+! Purpose : 
 !   Drive Goddard radiative transfer to compute radiative heating rate and surface radiation.
 !
 !
@@ -49,36 +49,36 @@
 !
 !
 ! Refferences :
-!  Chou M.-D., and M. J. Suarez, 1999: A solar radiation parameterization for atmospheric studies.
+!  Chou M.-D., and M. J. Suarez, 1999: A solar radiation parameterization for atmospheric studies. 
 !      NASA Tech. Rep. NASA/TM-1999-10460, vol. 15, 38 pp
 !  Chou M.-D., and M. J. Suarez, 2001: A thermal infrared radiation parameterization for atmospheric
 !      studies. NASA/TM-2001-104606, vol. 19, 55pp
-!  Matsui, T., W.-K. Tao, and J. J. Shi: 2007: Goddard Radiation and Aerosol Direct Effect in Goddard
+!  Matsui, T., W.-K. Tao, and J. J. Shi: 2007: Goddard Radiation and Aerosol Direct Effect in Goddard 
 !      WRF, NASA/UMD WRF Meeting, Sep 14 2007.
-!  Shi, J. J., W.-K. Tao, T. Matsui, R. Cifelli, A. Hou, S. Lang, A. Tokey, N.-Y. Wang,
-!      C. Peters-Lidard, G. Jackson, S. Rutledge, W. Petersen, 2010: WRF Simulations of the
-!      20-22 January 2007 Snow Events over Eastern Canada: Comparison with in-situ and Satellite
+!  Shi, J. J., W.-K. Tao, T. Matsui, R. Cifelli, A. Hou, S. Lang, A. Tokey, N.-Y. Wang, 
+!      C. Peters-Lidard, G. Jackson, S. Rutledge, W. Petersen, 2010: WRF Simulations of the 
+!      20-22 January 2007 Snow Events over Eastern Canada: Comparison with in-situ and Satellite 
 !      Observations. J. Applied Meteor. Climatol, 49, 2246-2266.
 !
 !
-!  Bug report:
+!  Bug report: 
 !      If you find any bug, please report to
 !      Toshi Matsui @ NASA GSFC, email:toshihisa.matsui-1@nasa.gov
 !      Jainn J. Shi @ NASA GSFC, email:jainn.j.shi@nasa.gov
 !
-!      We will report bugs to
-!      Ming-Dah Chou @ National Taiwa University mdchou@webmail.as.ntu.edu.tw
+!      We will report bugs to  
+!      Ming-Dah Chou @ National Taiwa University mdchou@webmail.as.ntu.edu.tw 
 !---------------------------------------------------------------------------------------------------------
  module module_ra_goddard
 
 ! encapsulation control
-  private  !-> privatize all variables in this module excepting public parameter (subroutine) below.
+  private  !-> privatize all variables in this module excepting public parameter (subroutine) below. 
   public :: goddardrad  !only this subroutine can be called from other module
 
   integer,parameter :: fp_kind = selected_real_kind(15) !Real precision (6-single 15-double 20-quad)
 
 !-------------------------------------------------------------------------------
-!---------------------    User Modification  -----------------------------------
+!---------------------    User Modification  -----------------------------------    
 
 ! (Both SW and LW radiation option)
 ! there is an option of providing either cloud ice/water mixing ratio
@@ -86,7 +86,7 @@
 !  cldwater=.true., and taucld is computed from cwc and reff as a
 !  function of spectra band. otherwise, set cldwater=.false., and
 !  specify taucld, independent of spectral band.
-
+  
    logical,parameter :: cldwater = .true.  !ALWAYS  .true.
 
 ! (Both SW and LW radiation option)
@@ -96,16 +96,16 @@
 !  made faster by setting overcast=.true.  otherwise, set the option
 !  overcast=.false. (-> hardwire with WRF module)
 
-   logical,parameter :: overcast = .true.  ! recommend true for CRM or LES
+   logical,parameter :: overcast = .true.  ! recommend true for CRM or LES 
 
 ! (SW radition option)
 ! For overcast (=true) option, this option (fast_overcast=.true.) skip the clear-sky
-! two-stream radiative transfer computation, and only compute cloudy ski option.
+! two-stream radiative transfer computation, and only compute cloudy ski option. 
 ! Fclear/Fcloud is estimated from pre-computed look-up table for the below cloud
 ! flux reduction due to CO2 and O2.  So, this option make SW radiation faster 1.5 time.
-! Difference in surface downwelling radiation betweeen true and false option is less than 1.W/m^2.
+! Difference in surface downwelling radiation betweeen true and false option is less than 1.W/m^2. 
 
-   logical,parameter :: fast_overcast = .true. ! recommend true
+   logical,parameter :: fast_overcast = .true. ! recommend true 
 
 ! (LW radiation option)
 !  if high = .true., transmission functions in the co2, o3, and the
@@ -116,7 +116,7 @@
 !  if high = .false., transmission functions in LW radiation are computed using the
 !  k-distribution method with linear pressure scaling for all spectral
 !  bands and gases.  cooling rates are not accurately calculated for
-!  pressures less than 10 mb. But, the computationally slightly cheap.
+!  pressures less than 10 mb. But, the computationally slightly cheap. 
 
    logical,parameter :: high = .false.  !recommend false for CRM
                                         !recommend true if you include storatosphere (<10mb)
@@ -126,7 +126,7 @@
 !   two minor co2 bands in the LW window region is included.
 !   if trace = .false., absorption in those minor bands is neglected.
 
-   logical,parameter :: trace = .true.  !recommend true
+   logical,parameter :: trace = .true.  !recommend true 
 
    real(Kind=fp_kind),    parameter ::   co2    = 336.77e-6  ! co2 concentration [ppv] (Y1850 = 285.43e-6)
    real(Kind=fp_kind),    parameter ::   n2o    = 0.32e-6    ! n2o concentration [ppv] (Y1850 = 0.28e-6)
@@ -143,20 +143,20 @@
 
 ! number of radiation bands
    integer, parameter :: ib_sw = 11  !number of shortwave band
-   integer, parameter :: ib_lw = 10  !number of longwave band
+   integer, parameter :: ib_lw = 10  !number of longwave band 
 
-! Threshold values
-!  - Do not change. These values are the lowest threshold, while avoiding numerical instability.
+! Threshold values 
+!  - Do not change. These values are the lowest threshold, while avoiding numerical instability. 
    real(Kind=fp_kind),    parameter ::   cosz_min = 0.0001 ! threshold of minimum cosizne of solar zenith angle for SW rad
    real(Kind=fp_kind),    parameter ::   fcld_min = 0.01   ! threshold of minimum cloud fraction for account clooud
-   real(Kind=fp_kind),    parameter ::   taux_min = 0.0001 ! threshold of minimum optical depth for accouting cloud (0.02)
-   real(Kind=fp_kind),    parameter ::   opt_min  = 1.e-6  ! threshold of optical properties to avoid numerical instability.
+   real(Kind=fp_kind),    parameter ::   taux_min = 0.0001 ! threshold of minimum optical depth for accouting cloud (0.02) 
+   real(Kind=fp_kind),    parameter ::   opt_min  = 1.e-6  ! threshold of optical properties to avoid numerical instability. 
 
    integer :: jloop
 contains
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
    subroutine goddardrad( rthraten, gsf, xlat,xlong               &
                    ,dz8w,t8w,rho_phy,sw_or_lw                     &
@@ -167,9 +167,9 @@ contains
                    ,center_lat                                    &
                    ,radfrq,degrad,taucldi,taucldc,warm_rain       &
                    ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg                 &
-                   ,ids,ide, jds,jde, kds,kde                     &
+                   ,ids,ide, jds,jde, kds,kde                     & 
                    ,ims,ime, jms,jme, kms,kme                     &
-                   ,its,ite, jts,jte, kts,kte                     &
+                   ,its,ite, jts,jte, kts,kte                     & 
 !                   ,cosz_urb2d,omg_urb2d                          & !optional urban
                    ,ERBE_out                                      &  !optional sdsu
                    ,tauaer3d_sw,ssaaer3d_sw,asyaer3d_sw           & ! jararias 2013/11
@@ -190,7 +190,7 @@ contains
     jds, &    ! start index for j in domain
     jde, &    ! end index for j in domain
     kds, &    ! start index for k in domain
-    kde, &    ! end index for k in domain
+    kde, &    ! end index for k in domain 
     ims, &    ! start index for i in memory
     ime, &    ! end index for i in memory
     jms, &    ! start index for j in memory
@@ -203,23 +203,23 @@ contains
     jte, &    ! end index for j in tile
     kts, &    ! start index for k in tile
     kte, &    ! end index for k in tile
-   julday     ! integer of julian date
+   julday     ! integer of julian date  
 
  logical,    intent(in) ::  &
    warm_rain  ! logics for warm_rain only or not
 
  real, intent(in)      ::  &
-   radfrq, &  ! time for calling radiation (min)
+   radfrq, &  ! time for calling radiation (min)                
    degrad, &  ! conversion factor for degrees to radians (pi/180.) (rad/deg)
    xtime,  &  ! time since simulation start (min)
    declin, &  ! solar declination angle (rad)
-   solcon, &  ! solar constant (W/m^2)
+   solcon, &  ! solar constant (W/m^2) 
       gmt, &  ! greenwich mean time hour of model start (hour)
        cp, &  ! heat capacity at constant pressure for dry air (J/kg/K)
         g     ! acceleration due to gravity (m/s^2)
 
  real, dimension( ims:ime, kms:kme, jms:jme ), intent(in) :: &
-       p3d, &  ! pressure (Pa)
+       p3d, &  ! pressure (Pa) 
      p8w3d, &  ! pressure at full levels (Pa)
       pi3d, &  ! exner function (-)
        t3d, &  ! temperature (K)
@@ -242,7 +242,7 @@ contains
      qs3d,   & ! snow mixing ratio (kg/kg)         (in)
      qg3d      ! graupel mixing ration (kg/kg)     (in)
 
- logical, optional, intent(in )  ::  f_qv,f_qc,f_qr,f_qi,f_qs,f_qg  !hydrometeor flags
+ logical, optional, intent(in )  ::  f_qv,f_qc,f_qr,f_qi,f_qs,f_qg  !hydrometeor flags 
 !
  real, dimension( ims:ime, kms:kme, jms:jme ), intent(inout)  :: &
   rthraten, &  ! theta tendency due to radiative heating (K/sec)
@@ -250,9 +250,9 @@ contains
    taucldc     ! liquid cloud optical thickness for visible braodband
 
  real, dimension( ims:ime, jms:jme ), intent(inout)  ::  &
-         gsf    ! (for SW) : net short wave flux at ground surface (W/m^2)
+         gsf    ! (for SW) : net short wave flux at ground surface (W/m^2) 
                 ! (for LW) : downward long wave flux at ground surface (W/m^2)
-!
+! 
 ! Extra 3D variables (last dimension 1-TOA LW down, 2-TOA LW up, 3-surface LW down, 4-surface LW up)
 !                                    5-TOA SW down, 6-TOA SW up, 7-surface SW down, 8-surface SW up)
 
@@ -300,9 +300,9 @@ contains
    icb    ! 700mb level indice
 
  real(Kind=fp_kind), dimension( its:ite, kts-1:kte+1 )  :: &
-   flx, & !flux fraction (-) or actual flux (W/m^2)
+   flx, & !flux fraction (-) or actual flux (W/m^2) 
   flxd, & !donwelling flux fraction [-] (for shortwave) , but actual flux [W/m2] (for longwave)
-  flxu    !upwelling flux fraction [-] (for shortwave) , but actual flux [W/m2] (for longwave)
+  flxu    !upwelling flux fraction [-] (for shortwave) , but actual flux [W/m2] (for longwave) 
 
 
  real(Kind=fp_kind), dimension( its:ite, kts-1:kte ) :: o3  !ozone profile
@@ -319,7 +319,7 @@ contains
 
  real(Kind=fp_kind), dimension( its:ite, kts-1:kte, 3 ) :: &  !1-ice cloud, 2-liquid cloud, 3-rain
       reff, &  !particle effective size (micron)
-       cwc     !hydrometer mixing ratio (kg/kg) or (g/g)
+       cwc     !hydrometer mixing ratio (kg/kg) or (g/g) 
 
  real(Kind=fp_kind), dimension( its: ite, kts-1:kte+1 ) :: &
      p8w2d, &  ! pressure in full level (mb)
@@ -354,7 +354,7 @@ contains
    real(Kind=fp_kind), dimension( np )    ::  p
 
   integer  ::  iprof !index for porfile
-  integer,parameter :: is_summer = 80 !summer start indice
+  integer,parameter :: is_summer = 80 !summer start indice 
   integer,parameter :: ie_summer = 265 !summer end indice
 !
    real(Kind=fp_kind)    :: fac,x
@@ -517,7 +517,7 @@ contains
         0.5746e-07,  0.5468e-07,  0.5227e-07,  0.5006e-07,  0.4789e-07, &
         0.4576e-07,  0.4402e-07,  0.4230e-07,  0.4062e-07,  0.3897e-07, &
         0.3793e-07,  0.3697e-07,  0.3602e-07,  0.3506e-07,  0.3413e-07, &
-        0.3326e-07,  0.3239e-07,  0.3153e-07,  0.3069e-07,  0.2987e-07/
+        0.3326e-07,  0.3239e-07,  0.3153e-07,  0.3069e-07,  0.2987e-07/ 
 
 !--------------------------------------------------------------------------------
 !   data set 4
@@ -617,7 +617,7 @@ contains
    endif
 
    j_loop: do j=jts,jte
-     jloop=j
+     jloop=j 
 !-----------------------------------------------------------------------------
 
       do k=1,np
@@ -639,7 +639,7 @@ contains
       enddo
 
 !
-! reverse vars
+! reverse vars 
 !
       do k=kts,kte+1
          do i=its,ite
@@ -683,7 +683,7 @@ contains
 !      endif
 
 !
-! intilize TOA value -> 0.
+! intilize TOA value -> 0. 
 !
       do i=its,ite
          tten2d(i,0)=0.
@@ -727,8 +727,8 @@ contains
 ! cloud ice mixing ratio (currently adding the snow.)
 !
       if ( present( f_qi ) .and. present( qi3d)  ) then ! ice
-         do k=kts,kte
-            do i=its,ite
+         do k=kts,kte          
+            do i=its,ite          
                nk=kme-1-k+kms
 	       if ( (f_qi) ) then
                   cwc(i,k,1)=max(0.,qi3d(i,nk,j))
@@ -752,12 +752,12 @@ contains
                if ( (f_qs) ) then
                   if ( cwc(i,k,1) > 0. ) then !ice exist
                     cwc(i,k,1)=cwc(i,k,1) + max(0.,qs3d(i,nk,j)) ! ice + snow
-                    reff(i,k,1) = 125. + (t2d(i,k)-243.16)*5.    ! ice + snow (use ice definition)
+                    reff(i,k,1) = 125. + (t2d(i,k)-243.16)*5.    ! ice + snow (use ice definition) 
                     reff(i,k,1) = min(125._fp_kind,max(25._fp_kind,reff(i,k,1)))
                   else
                     cwc(i,k,1)= max(0.,qs3d(i,nk,j))  ! snow only (define snow is large aggrefated ice)
                     reff(i,k,1) = 125.                ! snow only (use largest reff of ice)
-                  endif
+                  endif 
                   x=1.02*10000.*( p8w2d(i,k+1)-p8w2d(i,k) )
                   taucldi(i,nk,j) = x * cwc(i,k,1) * ( -6.59e-3 + 1.65/reff(i,k,1) ) ! output purpose
                else
@@ -814,12 +814,12 @@ contains
 !      end do
 
 !
-! filter min and max value of effective size
+! filter min and max value of effective size 
 !
    do k = kts-1, kte
       do i = its, ite
          reff(i,k,1) = max( min(reff(i,k,1),125._fp_kind) ,   25._fp_kind) !ice
-         reff(i,k,2) = max( min(reff(i,k,2), 20._fp_kind) ,    4._fp_kind) !liquid
+         reff(i,k,2) = max( min(reff(i,k,2), 20._fp_kind) ,    4._fp_kind) !liquid 
          reff(i,k,3) = max( min(reff(i,k,3), 60._fp_kind) , 1800._fp_kind) !rain (dummy not used)
       end do
    end do
@@ -852,14 +852,14 @@ contains
 ! ISCCP ISCCP ISCCP ISCCP ISCCP ISCCP ISCCP ISCCP ISCCP ISCCP ISCCP ISCCP
 ! ISCCP ISCCP ISCCP ISCCP ISCCP ISCCP ISCCP ISCCP ISCCP ISCCP ISCCP ISCCP
 
-     case('is')
+     case('is') 
 
 ! in case of isccp simulation, all we need is cloud optical depth. So return.
 
-! SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW
-! SW SW SW SW SW SW SW SW  Shortwave scheme SW SW SW SW SW SW SW SW SW
-! SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW
-
+! SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW 
+! SW SW SW SW SW SW SW SW  Shortwave scheme SW SW SW SW SW SW SW SW SW 
+! SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW SW 
+     
       case ('sw')
 
 !
@@ -985,10 +985,10 @@ contains
    end do
 
 
-      do k=kts,kte
+      do k=kts,kte          
          nk=kme-1-k+kms
          do i=its,ite
-             rthraten(i,k,j)=rthraten(i,k,j)+tten2d(i,nk)/pi3d(i,k,j)
+             rthraten(i,k,j)=rthraten(i,k,j)+tten2d(i,nk)/pi3d(i,k,j)  
          enddo
       enddo
 
@@ -996,10 +996,10 @@ contains
         if (cosz(i) .le. cosz_min) then
           gsf(i,j) = 0.
           if(present(ERBE_out)) then
-             ERBE_out(i,j,5) = 0.
-             ERBE_out(i,j,6) = 0.
-             ERBE_out(i,j,7) = 0.
-             ERBE_out(i,j,8) = 0.
+             ERBE_out(i,j,5) = 0.   
+             ERBE_out(i,j,6) = 0.  
+             ERBE_out(i,j,7) = 0.  
+             ERBE_out(i,j,8) = 0. 
           endif
         else
 !
@@ -1009,9 +1009,9 @@ contains
 
 !
 ! extra output for SDSU
-!
+!       
           if(present(ERBE_out)) then
-             ERBE_out(i,j,5) = flxd(i,1)     * solcon * cosz(i)  ! TOA SW downwelling flux [W/m2]
+             ERBE_out(i,j,5) = flxd(i,1)     * solcon * cosz(i)  ! TOA SW downwelling flux [W/m2] 
              ERBE_out(i,j,6) = flxu(i,1)     * solcon * cosz(i)  ! TOA SW upwelling flux   [W/m2]
              ERBE_out(i,j,7) = flxd(i,kte+1) * solcon * cosz(i)  ! surface SW downwelling flux [W/m2]
              ERBE_out(i,j,8) = flxu(i,kte+1) * solcon * cosz(i)  ! surface SW upwelling flux   [W/m2]
@@ -1019,9 +1019,9 @@ contains
         endif
       enddo
 
-! LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW
-! LW LW LW LW LW LW LW LW  Longwave scheme  LW LW LW LW LW LW LW LW LW
-! LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW
+! LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW 
+! LW LW LW LW LW LW LW LW  Longwave scheme  LW LW LW LW LW LW LW LW LW 
+! LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW LW 
 
   case ('lw')
 
@@ -1063,7 +1063,7 @@ contains
       fac = .01 * g / cp
    do k = kts, kte
       do i = its, ite
-         tten2d(i,k) = - fac * (flx(i,k) - flx(i,k+1))/(p8w2d(i,k)-p8w2d(i,k+1))
+         tten2d(i,k) = - fac * (flx(i,k) - flx(i,k+1))/(p8w2d(i,k)-p8w2d(i,k+1)) 
       end do
    end do
 
@@ -1083,9 +1083,9 @@ contains
 
 !
 ! extra output for SDSU
-!
+!       
           if(present(ERBE_out)) then
-             ERBE_out(i,j,1) = flxd(i,1)      ! TOA LW downwelling flux [W/m2]
+             ERBE_out(i,j,1) = flxd(i,1)      ! TOA LW downwelling flux [W/m2] 
              ERBE_out(i,j,2) = flxu(i,1)      ! TOA LW upwelling flux   [W/m2]
              ERBE_out(i,j,3) = flxd(i,kte+1)  ! surface LW downwelling flux   [W/m2]
              ERBE_out(i,j,4) = flxu(i,kte+1)  ! surface LW upwelling flux   [W/m2]
@@ -1102,12 +1102,12 @@ contains
 !
 !-----------------------------------------------------------------------
 !
-   enddo j_loop
+   enddo j_loop                                          
 
  end subroutine goddardrad
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
   subroutine swrad (m,np,pl,ta,wa,oa, cwc,reff,fcld,ict,icb,             &
                     taual,ssaal,asyal, cosz,rsuvbm,rsuvdf,rsirbm,rsirdf, &
@@ -1208,7 +1208,7 @@ contains
 !
 !   all-sky flux divergence (downward minus upward) (flx)     fraction   m*(np+1)
 !   clear-sky flux divergence (downward minus upward) (flc)   fraction   m*(np+1)
-!
+! 
 !   all-sky direct downward uv (0.175-0.4 micron)
 !                flux at the surface (fdiruv)      fraction   m
 !   all-sky diffuse downward uv flux at
@@ -3163,7 +3163,7 @@ contains
       enddo
 !-----compute flux reduction due to o2 following eq. (3.18)
 !     the constant 0.0633 is the fraction of insolation contained
-!     in the oxygen bands
+!     in the oxygen bands 
        do k= 2, np+1
         do i= 1, m
           x=so2(i,k)
@@ -3228,16 +3228,16 @@ contains
         call reduce_flux(m,np,swu,u1,du,nx2,swh,w1,dw,ny2,coa,df)
 
 ! compute layer sub df (also filter negative values)
-   do i=1,m
+   do i=1,m 
       do k = 2, np+1
-         df_sub(i,k) = max(df(i,k) - df(i,k-1), 0._fp_kind)  !df for each layer (remove negative df_sub)
+         df_sub(i,k) = max(df(i,k) - df(i,k-1), 0._fp_kind)  !df for each layer (remove negative df_sub) 
       enddo
    enddo
 
 ! compute clear-sky df
    do i=1,m
       do k = 2, np+1
-         df_clr(i,k) = df_clr(i,k-1)+df_sub(i,k)
+         df_clr(i,k) = df_clr(i,k-1)+df_sub(i,k)  
       enddo
    enddo
 
@@ -3265,7 +3265,7 @@ contains
 
 ! adjust df_sub for below cloud
        do i= 1,m
-         ntop=nctop(i)
+         ntop=nctop(i) 
          if(overcast .and. fast_overcast) then !compute cloud albedo
 !           cld_alb = sum(taux(i,ntop+1:np+1))/(6.7+sum(taux(i,ntop+1:np+1)))
            cld_alb = sum(taux(i,ntop+1:np))/(6.7+sum(taux(i,ntop+1:np)))
@@ -3287,7 +3287,7 @@ contains
 !update df for cloudy-sky
    do i=1,m
       do k = 2, np+1
-         df_cld(i,k) = df_cld(i,k-1)+df_sub(i,k)
+         df_cld(i,k) = df_cld(i,k-1)+df_sub(i,k) 
       enddo
    enddo
 
@@ -3298,7 +3298,7 @@ contains
          flx(i,k)  = max(flx(i,k)-df_cld(i,k) , 0._fp_kind)  !this max is for small cosz
          flxd(i,k) = max(flxd(i,k)-df_cld(i,k), 0._fp_kind)  !this max is for small cosz
          flxu(i,k) = flx(i,k)-flxd(i,k)
-      enddo
+      enddo 
     enddo
 
 !-----adjustment for the direct downward flux
@@ -3311,8 +3311,8 @@ contains
 
       end subroutine swrad
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine sw_uvpar (m,np,wh,oh,dp, &
                 cwp,taucld,reff,ict,icb,fcld,cosz, &
@@ -3584,7 +3584,7 @@ contains
 !     and asymmetry factor (eqs. 6.2-6.4)
 
           tausto(i,k)=max(taurs+tauoz+tauwv+taual(i,k,ib),opt_min)
-          ssatau(i,k)=max(ssaal(i,k,ib)*taual(i,k,ib)+taurs,opt_min)
+          ssatau(i,k)=max(ssaal(i,k,ib)*taual(i,k,ib)+taurs,opt_min) 
           asysto(i,k)=max(asyal(i,k,ib)*ssaal(i,k,ib)*taual(i,k,ib),opt_min)
 
        if (overcast .and. fast_overcast ) then ; else
@@ -3600,7 +3600,7 @@ contains
          call delta_eddington(tautob(i,k), ssatob(i,k), asytob(i,k), cosz(i) , &
                        rrt(i,k),ttt(i,k), tdt(i,k) )
 
-!
+!     
 !-----diffuse incident radiation is approximated by beam radiation with
 !     an incident angle of 53 degrees, eqs. (6.5) and (6.6)
 
@@ -3650,7 +3650,7 @@ contains
          call delta_eddington(tautob(i,k), ssatob(i,k), asytob(i,k), dsm(i) , &
                        rst(i,k),tst(i,k), dum(i,k) )
 
-        endif
+        endif 
 
            rr(i,k,2)=rrt(i,k)
            tt(i,k,2)=ttt(i,k)
@@ -3666,31 +3666,31 @@ contains
 
 !-----flux calculations
 
-      if (overcast) then   !cloud fraction 0 or 1 -> CRM
+      if (overcast) then   !cloud fraction 0 or 1 -> CRM 
 
        if( .not. fast_overcast ) then
 !-----for clear-sky fluxes only (This is needed for equation 6.18 flux redtion due to CO2 and O2 below cloud)
          ih1=1 ; im1=1 ; is1=1
-         ih2=1 ; im2=1 ; is2=1
+         ih2=1 ; im2=1 ; is2=1 
          call twostream_adding (m,np,ict,icb,ih1,ih2,im1,im2,is1,is2, &
-                      cc,rr,tt,td,rs,ts,fclr,dum1,falld,dum2,dum3)
+                      cc,rr,tt,td,rs,ts,fclr,dum1,falld,dum2,dum3) 
        endif
 
 !-----for cloudy-sky fluxes only
          ih1=2 ; im1=2 ; is1=2
-         ih2=2 ; im2=2 ; is2=2
+         ih2=2 ; im2=2 ; is2=2     
          call twostream_adding (m,np,ict,icb,ih1,ih2,im1,im2,is1,is2, &
-                      cc,rr,tt,td,rs,ts,dum1,fall,falld,fsdir,fsdif)
+                      cc,rr,tt,td,rs,ts,dum1,fall,falld,fsdir,fsdif) 
 
-      else  ! non overcast (cloud fraction 0.~1. GCM or RCM )
+      else  ! non overcast (cloud fraction 0.~1. GCM or RCM ) 
 
 !-----for clear- and all-sky fluxes the all-sky flux, fall is the summation inside the brackets of eq. (7.11)
          ih1=1 ; im1=1 ; is1=1
-         ih2=2 ; im2=2 ; is2=2
+         ih2=2 ; im2=2 ; is2=2   
          call twostream_adding (m,np,ict,icb,ih1,ih2,im1,im2,is1,is2, &
-                      cc,rr,tt,td,rs,ts,fclr,fall,falld,fsdir,fsdif)
+                      cc,rr,tt,td,rs,ts,fclr,fall,falld,fsdir,fsdif) 
 
-      endif  ! overcast
+      endif  ! overcast  
 
 
 !-----flux integration, eq. (6.1)
@@ -3700,7 +3700,7 @@ contains
           flx(i,k)=flx(i,k)+fall(i,k)*hk(ib)
           flxd(i,k)=flxd(i,k)+falld(i,k)*hk(ib)
 
-          if(overcast .and. fast_overcast) then ; else
+          if(overcast .and. fast_overcast) then ; else 
           flc(i,k)=flc(i,k)+fclr(i,k)*hk(ib)
           endif
 
@@ -3728,8 +3728,8 @@ contains
      return
       end subroutine sw_uvpar
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine sw_ir (m,np,wh,dp, &
                         cwp,taucld,reff,ict,icb,fcld,cosz, &
@@ -4027,7 +4027,7 @@ contains
            tauwv=xk(ik)*wh(i,k)
 
            tausto(i,k)=max(taurs+tauwv+taual(i,k,iv),opt_min)
-           ssatau(i,k)=max(ssaal(i,k,iv)*taual(i,k,iv)+taurs,opt_min) !add for stability
+           ssatau(i,k)=max(ssaal(i,k,iv)*taual(i,k,iv)+taurs,opt_min) !add for stability 
            asysto(i,k)=max(asyal(i,k,iv)*ssaal(i,k,iv)*taual(i,k,iv),opt_min)
 
        if (overcast .and. fast_overcast ) then
@@ -4073,7 +4073,7 @@ contains
                       /(ssatob(i,k)*tautob(i,k)),opt_min)
 !-----for diffuse incident radiation
            tautof(i,k)=tausto(i,k)+max(tauclf(i,k),opt_min)
-           ssatof(i,k)=max((ssatau(i,k)+ssacl(i,k)*tauclf(i,k))/tautof(i,k),opt_min)
+           ssatof(i,k)=max((ssatau(i,k)+ssacl(i,k)*tauclf(i,k))/tautof(i,k),opt_min) 
            ssatof(i,k)=min(ssatof(i,k),0.999999_fp_kind)
            asytof(i,k)=max((asysto(i,k)+asycl(i,k)*ssacl(i,k)*tauclf(i,k)) &
                       /(ssatof(i,k)*tautof(i,k)),opt_min)
@@ -4110,14 +4110,14 @@ contains
          ih1=1 ; im1=1 ; is1=1
          ih2=1 ; im2=1 ; is2=1
          call twostream_adding (m,np,ict,icb,ih1,ih2,im1,im2,is1,is2, &
-                      cc,rr,tt,td,rs,ts,fclr,dum1,falld,dum2,dum3)
+                      cc,rr,tt,td,rs,ts,fclr,dum1,falld,dum2,dum3) 
        endif
 
 !-----for cloudy-sky fluxes only
         ih1=2 ; im1=2 ; is1=2
         ih2=2 ; im2=2 ; is2=2
         call twostream_adding (m,np,ict,icb,ih1,ih2,im1,im2,is1,is2, &
-                      cc,rr,tt,td,rs,ts,dum1,fall,falld,fsdir,fsdif)
+                      cc,rr,tt,td,rs,ts,dum1,fall,falld,fsdir,fsdif) 
 
     else  ! NON overcast (GCM or RCM)
 
@@ -4127,9 +4127,9 @@ contains
          ih1=1 ; im1=1 ; is1=1
          ih2=2 ; im2=2 ; is2=2
          call twostream_adding (m,np,ict,icb,ih1,ih2,im1,im2,is1,is2, &
-                      cc,rr,tt,td,rs,ts,fclr,fall,falld,fsdir,fsdif)
+                      cc,rr,tt,td,rs,ts,fclr,fall,falld,fsdir,fsdif) 
 
-  endif  ! ovrercast
+  endif  ! ovrercast 
 
 
 !-----flux integration following eq. (6.1)
@@ -4137,7 +4137,7 @@ contains
         do i=1,m
           flx(i,k) = flx(i,k)+fall(i,k)*hk(ib,ik)
           flxd(i,k) = flxd(i,k)+falld(i,k)*hk(ib,ik)
-          if(overcast .and. fast_overcast) then
+          if(overcast .and. fast_overcast) then 
           else
             flc(i,k) = flc(i,k)+fclr(i,k)*hk(ib,ik)
           endif
@@ -4156,8 +4156,8 @@ contains
       return
       end subroutine sw_ir
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine cloud_scale (m,np,cosz,fcld,taucld,ict,icb, &
                            cc,tauclb,tauclf)
@@ -4428,8 +4428,8 @@ contains
       return
       end subroutine cloud_scale
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine delta_eddington(tau,ssc,g0,cza,rr,tt,td)
 
@@ -4476,7 +4476,7 @@ contains
 
 !---------------------------------------------------------------------
 
-                zth = cza
+                zth = cza 
 
 !  delta-eddington scaling of single scattering albedo,
 !  optical thickness, and asymmetry factor,
@@ -4560,8 +4560,8 @@ contains
                 tt = tt+td
       end subroutine delta_eddington
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
 
       subroutine twostream_adding (m,np,ict,icb,ih1,ih2,im1,im2,is1,is2, &
@@ -4869,9 +4869,9 @@ contains
 
 
       return
-      end subroutine twostream_adding
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+      end subroutine twostream_adding 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine reduce_flux (m,np,swc,u1,du,nu,swh,w1,dw,nw,tbl,df)
 !*****************************************************************
@@ -4914,8 +4914,8 @@ contains
       return
       end subroutine reduce_flux
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine o3_profile (np, pres, ozone, its, ite, kts, kte, p2d, o3)
       implicit none
@@ -4925,7 +4925,7 @@ contains
       real(Kind=fp_kind) pres(np),ozone(np)
       real(Kind=fp_kind) p(its:ite,kts:kte),o3(its:ite,kts:kte)
       real(Kind=fp_kind),intent(in) :: p2d(its:ite,kts:kte)
-!     statement function
+!     statement function 
       real(Kind=fp_kind) linear, x1, y1, x2, y2, x
       linear(x1, y1, x2, y2, x) =  &
             (y1 * (x2 - x) + y2 * (x - x1)) / (x2 - x1)
@@ -4977,8 +4977,8 @@ contains
 
       end subroutine o3_profile
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine lwrad (m,np,pl,ta,wa,oa,tb,ts,emiss, &
                         cwc,reff,fcld,ict,icb, &
@@ -5134,7 +5134,7 @@ contains
       real(Kind=fp_kind) cb(6,10),xkw(9),xke(9),aw(9),bw(9),pm(9),fkw(6,9),gkw(6,3)
       real(Kind=fp_kind) aib(3,10),awb(4,10),aiw(4,10),aww(4,10),aig(4,10),awg(4,10)
       integer ne(9),mw(9)
-      real(Kind=fp_kind) :: taucl(m,np,3)
+      real(Kind=fp_kind) :: taucl(m,np,3) 
 !-----parameters defining the size of the pre-computed tables for
 !     transmittance using table look-up.
 !c    "nx" is the number of intervals in pressure
@@ -9012,8 +9012,8 @@ contains
     return
   end subroutine lwrad
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine column (m,np,pa,dt,sabs0,sabs,spre,stem)
 !***********************************************************************
@@ -9060,8 +9060,8 @@ contains
        return
        end subroutine column
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine h2oexps(ib,m,np,dh2o,pa,dt,xkw,aw,bw,pm,mw,h2oexp)
 !**********************************************************************
@@ -9158,8 +9158,8 @@ contains
       return
       end subroutine h2oexps
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine conexps(ib,m,np,dcont,xke,conexp)
 !**********************************************************************
@@ -9204,8 +9204,8 @@ contains
       return
       end subroutine conexps
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine co2exps(m,np,dco2,pa,dt,co2exp)
 !**********************************************************************
@@ -9278,8 +9278,8 @@ contains
       return
       end subroutine co2exps
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine n2oexps(ib,m,np,dn2o,pa,dt,n2oexp)
 !**********************************************************************
@@ -9355,8 +9355,8 @@ contains
       return
       end subroutine n2oexps
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine ch4exps(ib,m,np,dch4,pa,dt,ch4exp)
 !**********************************************************************
@@ -9408,8 +9408,8 @@ contains
       return
       end subroutine ch4exps
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine comexps(ib,m,np,dcom,dt,comexp)
 !**********************************************************************
@@ -9454,8 +9454,8 @@ contains
       return
       end subroutine comexps
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine cfcexps(ib,m,np,a1,b1,fk1,a2,b2,fk2,dcfc,dt,cfcexp)
 !**********************************************************************
@@ -9501,8 +9501,8 @@ contains
       return
       end subroutine cfcexps
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine b10exps(m,np,dh2o,dcont,dco2,dn2o,pa,dt &
                 ,h2oexp,conexp,co2exp,n2oexp)
@@ -9595,8 +9595,8 @@ contains
       return
       end subroutine b10exps
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine tablup(k1,k2,m,np,nx,nh,sabs,spre,stem,w1,p1, &
                         dwe,dpe,coef1,coef2,coef3,tran)
@@ -9692,8 +9692,8 @@ contains
       return
       end subroutine tablup
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine h2okdis(ib,m,np,k,fkw,gkw,ne,h2oexp,conexp, &
                          th2o,tcon,tran)
@@ -9804,8 +9804,8 @@ contains
       return
       end subroutine h2okdis
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine co2kdis(m,np,k,co2exp,tco2,tran)
 !**********************************************************************
@@ -9868,8 +9868,8 @@ contains
       return
       end subroutine co2kdis
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine n2okdis(ib,m,np,k,n2oexp,tn2o,tran)
 !**********************************************************************
@@ -9924,8 +9924,8 @@ contains
       return
       end subroutine n2okdis
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine ch4kdis(ib,m,np,k,ch4exp,tch4,tran)
 !**********************************************************************
@@ -9978,8 +9978,8 @@ contains
       return
       end subroutine ch4kdis
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine comkdis(ib,m,np,k,comexp,tcom,tran)
 !**********************************************************************
@@ -10046,8 +10046,8 @@ contains
       return
       end subroutine comkdis
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine cfckdis(m,np,k,cfcexp,tcfc,tran)
 !**********************************************************************
@@ -10081,8 +10081,8 @@ contains
       return
       end subroutine cfckdis
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine b10kdis(m,np,k,h2oexp,conexp,co2exp,n2oexp &
                 ,th2o,tcon,tco2,tn2o,tran)
@@ -10170,8 +10170,8 @@ contains
       return
       end subroutine b10kdis
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
       subroutine cldovlp (m,np,k2,ict,icb,it,im,ib, &
                      cldhi,cldmd,cldlw,fcld,tcldlyr,fclr)
@@ -10295,11 +10295,11 @@ contains
       return
       end subroutine cldovlp
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 !GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
 
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
-!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
+!GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD GODDARD 
 
 end module module_ra_goddard
 

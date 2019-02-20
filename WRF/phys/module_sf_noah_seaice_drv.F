@@ -272,7 +272,7 @@ contains
 
           SELECT CASE ( SEAICE_SNOWDEPTH_OPT )
           CASE DEFAULT
-
+              
               WRITE(message,'("Namelist value for SEAICE_SNOWDEPTH_OPT not recognized: ",I6)') SEAICE_SNOWDEPTH_OPT
               CALL wrf_error_fatal(message)
 
@@ -280,10 +280,10 @@ contains
 
               ! Minimum and maximum bounds on snow depth are enforced in SFLX_SEAICE
 
-          CASE ( 1 )
+          CASE ( 1 ) 
 
               ! Snow depth on sea ice comes from a 2D array, SNOWSI, bounded by user-specified
-              ! minimum and maximum values.  No matter what anybody else says about snow
+              ! minimum and maximum values.  No matter what anybody else says about snow 
               ! accumulation and melt, we want the snow depth on sea ice to be specified
               ! as SNOWSI (bounded by SEAICE_SNOWDEPTH_MIN and SEAICE_SNOWDEPTH_MAX).
               SNOWONSI = MAX ( SEAICE_SNOWDEPTH_MIN , MIN ( SNOWSI(I,J) , SEAICE_SNOWDEPTH_MAX ) )
@@ -308,8 +308,8 @@ contains
                 Q2SAT = Q2SATI
                 DQSDT2 = Q2SATI * 6174. / (SFCTSNO**2)
              ENDIF
-             IF ( ( T1 .GT. 273. ) .AND. ( SNOWC(I,J) .GT. 0.0 ) ) THEN
-                ! If (SNOW > 0) can we have (SNOWC <= 0) ?  Perhaps not, so the check on
+             IF ( ( T1 .GT. 273. ) .AND. ( SNOWC(I,J) .GT. 0.0 ) ) THEN   
+                ! If (SNOW > 0) can we have (SNOWC <= 0) ?  Perhaps not, so the check on 
                 ! SNOWC here might be superfluous.
                 DQSDT2 = DQSDT2 * ( 1. - SNOWC(I,J) )
              ENDIF
@@ -372,10 +372,10 @@ contains
           !       SNEQV       --
           !       SNCOVR      --
           !       CH          -- but the result isn't used for anything.
-          !                      Might as well be intent in to SFLX_SEAICE and changed locally in
+          !                      Might as well be intent in to SFLX_SEAICE and changed locally in 
           !                      that routine?
-          !       RIBB        -- but the result isn't used for anything.
-          !                      Might as well be intent in to SFLX_SEAICE and changed locally in
+          !       RIBB        -- but the result isn't used for anything.  
+          !                      Might as well be intent in to SFLX_SEAICE and changed locally in 
           !                      that routine?
 
           ! INTENT(OUT) for SFLX_SEAICE.  Input value should not matter.

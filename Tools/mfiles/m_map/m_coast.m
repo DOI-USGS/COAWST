@@ -1,4 +1,4 @@
-function m_coast(varargin);
+function h=m_coast(varargin)
 % M_COAST Add a coastline to a given map.
 %         M_COAST draw a coastline as either filled patches (slow) or
 %         lines (fast) on a given projection. It uses a coastline database with
@@ -19,5 +19,12 @@ function m_coast(varargin);
 % This software is provided "as is" without warranty of any kind. But
 % it's mine, so you can't sell it.
 
-mu_coast('default',varargin{:},'tag','m_coast');
 
+% Set current projection to geographic
+Currentmap=m_coord('set');
+m_coord('geographic');
+
+
+h=mu_coast('default',varargin{:},'tag','m_coast');
+
+m_coord(Currentmap.name);

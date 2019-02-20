@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE close_inp (ng, model)
 !
-!svn $Id: close_io.F 882 2017-11-23 05:41:19Z arango $
+!svn $Id: close_io.F 900 2018-03-21 03:23:08Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -110,8 +110,8 @@
           IF ((CLM(i,ng)%Nfiles.gt.1).and.(CLM(i,ng)%ncid.ge.0)) THEN
             IF (model.eq.iADM) THEN
               DO j=1,CLM(i,ng)%Nfiles
-                IF ((CLM(i,ng)%time_min(i).le.tdays(ng)).and.             &
-     &            (tdays(ng).le.CLM(i,ng)%time_max(i))) THEN
+                IF ((CLM(i,ng)%time_min(j).le.tdays(ng)).and.             &
+     &            (tdays(ng).le.CLM(i,ng)%time_max(j))) THEN
                   Fcount=j
                   EXIT
                 END IF
@@ -174,7 +174,7 @@
 !  Write biological fluxes to standard out.
 !---------------------------------------------------------------------
 !
-
+      
       write(stdout,*) ' '
       write(stdout,*) ' '
       write(stdout,134) ' Cumulative biological fluxes'
@@ -204,10 +204,10 @@
           write(stdout,132) 'Det : ', (xi*bflx(i,iDet), i=iNO3,IDet)
           write(stdout,133) 'pred: ', (xi*bflx(i,itemp), i=iCop,iEup)
           write(stdout,*) ' '
- 131  format('BIOFLUX  ',7x,10a6)
- 132  format('BIOFLUX  ',a7,10f6.1)
- 133  format('BIOFLUX  ',a7,36x,3f6.1)
- 134  format('BIOFLUX  ',a)
+ 131  format('BIOFLUX  ',7x,10a6)      
+ 132  format('BIOFLUX  ',a7,10f6.1)      
+ 133  format('BIOFLUX  ',a7,36x,3f6.1)      
+ 134  format('BIOFLUX  ',a)      
 # endif
         END IF
       END DO

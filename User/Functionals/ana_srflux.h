@@ -1,8 +1,8 @@
       SUBROUTINE ana_srflux (ng, tile, model)
 !
-!! svn $Id: ana_srflux.h 830 2017-01-24 21:21:11Z arango $
+!! svn $Id: ana_srflux.h 927 2018-10-16 03:51:56Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -141,11 +141,11 @@
 !
 !  Get time clock day-of-year and hour.
 !
-      CALL caldate (tdays(ng), yd_r8=yday, h_r8=hour)
+      CALL caldate (tdays(ng), yd_dp=yday, h_dp=hour)
 !
 !  Estimate solar declination angle (radians).
 !
-      Dangle=23.44_r8*COS((172.0_r8-yday)*2.0_r8*pi/365.25_r8)
+      Dangle=23.44_dp*COS((172.0_dp-yday)*2.0_dp*pi/365.25_dp)
       Dangle=Dangle*deg2rad
 !
 !  Compute hour angle (radians).

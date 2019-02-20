@@ -2,11 +2,11 @@
 #define MODAL_AERO
   module conv_water
 
-   ! --------------------------------------------------------------------- !
+   ! --------------------------------------------------------------------- ! 
    ! Purpose:                                                              !
    ! Computes grid-box average liquid (and ice) from stratus and cumulus   !
    ! Just for the purposes of radiation.                                   !
-   !                                                                       !
+   !                                                                       ! 
    ! Method:                                                               !
    ! Extract information about deep+shallow liquid and cloud fraction from !
    ! the physics buffer.                                                   !
@@ -75,12 +75,12 @@
   !============================================================================ !
 
    subroutine conv_water_init()
-   ! --------------------------------------------------------------------- !
+   ! --------------------------------------------------------------------- ! 
    ! Purpose:                                                              !
    !   Initializes the pbuf indices required by conv_water
-   ! --------------------------------------------------------------------- !
+   ! --------------------------------------------------------------------- ! 
 #ifndef WRF_PORT
-   use phys_buffer,     only: pbuf_size_max, pbuf_fld, pbuf_old_tim_idx, pbuf_get_fld_idx
+   use phys_buffer,     only: pbuf_size_max, pbuf_fld, pbuf_old_tim_idx, pbuf_get_fld_idx 
 #endif
    implicit none
 #ifndef WRF_PORT
@@ -107,11 +107,11 @@
         ls_ice, totg_liq, totg_ice )
 #endif
 
-   ! --------------------------------------------------------------------- !
+   ! --------------------------------------------------------------------- ! 
    ! Purpose:                                                              !
    ! Computes grid-box average liquid (and ice) from stratus and cumulus   !
    ! Just for the purposes of radiation.                                   !
-   !                                                                       !
+   !                                                                       ! 
    ! Method:                                                               !
    ! Extract information about deep+shallow liquid and cloud fraction from !
    ! the physics buffer.                                                   !
@@ -122,14 +122,14 @@
    !                                                                       !
    !---------------------------------------------------------------------- !
 #ifndef WRF_PORT
-   use phys_buffer,     only: pbuf_size_max, pbuf_fld, pbuf_old_tim_idx, pbuf_get_fld_idx
+   use phys_buffer,     only: pbuf_size_max, pbuf_fld, pbuf_old_tim_idx, pbuf_get_fld_idx 
    use cam_history,     only: outfld
    use phys_control,    only: phys_getopts
    use phys_debug_util, only: phys_debug_col
 #else
    use module_cam_support, only: outfld
 #endif
-
+   
    implicit none
 
    ! ---------------------- !
@@ -143,8 +143,8 @@
    integer,  intent(in) :: conv_water_mode
    real(r8), intent(in) :: rei(pcols,pver)        ! Ice effective drop size (microns)
    real(r8), intent(in) :: pdel(pcols,pver)       ! Moist pressure difference across layer
-   real(r8), intent(in) :: ls_liq(pcols,pver)     ! Large-scale contributions to GBA cloud liq
-   real(r8), intent(in) :: ls_ice(pcols,pver)     ! Large-scale contributions to GBA cloud ice
+   real(r8), intent(in) :: ls_liq(pcols,pver)     ! Large-scale contributions to GBA cloud liq      
+   real(r8), intent(in) :: ls_ice(pcols,pver)     ! Large-scale contributions to GBA cloud ice 
 #ifdef WRF_PORT
    real(r8), intent(in) :: ast(pcols,pver)
    real(r8), intent(in) :: sh_icwmr(pcols,pver)
@@ -190,13 +190,13 @@
    real(r8) :: tot_liq(pcols,pver)                ! Total IC liquid
 
    integer  :: i,k,itim                           ! Lon, lev indices buff stuff.
-   real(r8) :: cu_icwmr                           ! Convective  water for this grid-box.
-   real(r8) :: ls_icwmr                           ! Large-scale water for this grid-box.
-   real(r8) :: tot_icwmr                          ! Large-scale water for this grid-box.
-   real(r8) :: ls_frac                            ! Large-scale cloud frac for this grid-box.
-   real(r8) :: tot0_frac, cu0_frac, dp0_frac, sh0_frac
-   real(r8) :: kabs, kabsi, kabsl, alpha, dp0, sh0, ic_limit, frac_limit
-   real(r8) :: wrk1
+   real(r8) :: cu_icwmr                           ! Convective  water for this grid-box.   
+   real(r8) :: ls_icwmr                           ! Large-scale water for this grid-box. 
+   real(r8) :: tot_icwmr                          ! Large-scale water for this grid-box.  
+   real(r8) :: ls_frac                            ! Large-scale cloud frac for this grid-box. 
+   real(r8) :: tot0_frac, cu0_frac, dp0_frac, sh0_frac 
+   real(r8) :: kabs, kabsi, kabsl, alpha, dp0, sh0, ic_limit, frac_limit  
+   real(r8) :: wrk1         
 
    ! --------- !
    ! Parameter !
@@ -206,36 +206,36 @@
 
  ! Get microphysics option
 
-   character(len=16) :: microp_scheme
-#ifndef WRF_PORT
+   character(len=16) :: microp_scheme 
+#ifndef WRF_PORT   
    call phys_getopts( microp_scheme_out = microp_scheme )
 #else
    microp_scheme = 'MG'
 #endif
 
  ! Get convective in-cloud water and ice/water temperature partitioning.
-#ifndef WRF_PORT
+#ifndef WRF_PORT   
    sh_icwmr => pbuf(icwmrsh_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,1)
    dp_icwmr => pbuf(icwmrdp_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,1)
    fice => pbuf(fice_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,1)
 
- ! Get convective in-cloud fraction
+ ! Get convective in-cloud fraction    
 
    sh_frac => pbuf(sh_frac_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,1)
    dp_frac => pbuf(dp_frac_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,1)
-   cu_frac => pbuf(concldql_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,1)
+   cu_frac => pbuf(concldql_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,1)  
 
    itim = pbuf_old_tim_idx()
-   ast => pbuf(ast_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,itim)
+   ast => pbuf(ast_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,itim) 
 
    itim = pbuf_old_tim_idx()
-   alst => pbuf(alst_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,itim)
+   alst => pbuf(alst_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,itim) 
    itim = pbuf_old_tim_idx()
-   aist => pbuf(aist_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,itim)
+   aist => pbuf(aist_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,itim) 
    itim = pbuf_old_tim_idx()
-   qlst => pbuf(qlst_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,itim)
+   qlst => pbuf(qlst_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,itim) 
    itim = pbuf_old_tim_idx()
-   qist => pbuf(qist_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,itim)
+   qist => pbuf(qist_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,itim) 
 #endif
 
    ! --------------------------------------------------------------- !
@@ -267,7 +267,7 @@
 
             cu0_frac = 0._r8
             cu_icwmr = 0._r8
-
+         
             ls_frac = ast(i,k)
             if( ls_frac < frac_limit ) then
                 ls_frac  = 0._r8
@@ -278,11 +278,11 @@
 
             tot0_frac = ls_frac
             tot_icwmr = ls_icwmr
-
+           
       else
 
           ! Select radiation constants (effective radii) for emissivity averaging.
-
+            
             if( microp_scheme .eq. 'MG' ) then
                 kabsi = 0.005_r8 + 1._r8/min(max(13._r8,rei(i,k)),130._r8)
             elseif( microp_scheme .eq. 'RK' ) then
@@ -291,26 +291,26 @@
             kabs  = kabsl * ( 1._r8 - wrk1 ) + kabsi * wrk1
             alpha = -1.66_r8*kabs*pdel(i,k)/gravit*1000.0_r8
 
-          ! Selecting cumulus in-cloud water.
+          ! Selecting cumulus in-cloud water.            
 
             select case (conv_water_mode) ! Type of average
             case (1) ! Area weighted arithmetic average
                cu_icwmr = ( sh0_frac * sh_icwmr(i,k) + dp0_frac*dp_icwmr(i,k))/max(frac_limit,cu0_frac)
             case (2)
                sh0 = exp(alpha*sh_icwmr(i,k))
-               dp0 = exp(alpha*dp_icwmr(i,k))
+               dp0 = exp(alpha*dp_icwmr(i,k))               
                cu_icwmr = log((sh0_frac*sh0+dp0_frac*dp0)/max(frac_limit,cu0_frac))
                cu_icwmr = cu_icwmr/alpha
             case default ! Area weighted 'arithmetic in emissivity' average.
 !               call endrun ('CONV_WATER_4_RAD: Unknown option for conv_water_in_rad - exiting')
             end select
 
-          ! Selecting total in-cloud water.
+          ! Selecting total in-cloud water. 
           ! Attribute large-scale/convective area fraction differently from default.
 
-            ls_frac   = ast(i,k)
+            ls_frac   = ast(i,k) 
             ls_icwmr  = (ls_liq(i,k) + ls_ice(i,k))/max(frac_limit,ls_frac) ! Convert to IC value.
-            tot0_frac = (ls_frac + cu0_frac)
+            tot0_frac = (ls_frac + cu0_frac) 
 
             select case (conv_water_mode) ! Type of average
             case (1) ! Area weighted 'arithmetic in emissivity' average
@@ -341,7 +341,7 @@
    end do
 
 !add pbuff calls for COSP
-#ifndef WRF_PORT
+#ifndef WRF_PORT   
    sh_cldliq  => pbuf(sh_cldliq1_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,1)
    sh_cldice  => pbuf(sh_cldice1_idx)%fld_ptr(1,1:pcols,1:pver,lchnk,1)
 #endif
@@ -349,11 +349,11 @@
    sh_cldice(:ncol,:pver)=sh_icwmr(:ncol,:pver)*fice(:ncol,:pver)*sh_frac(:ncol,:pver)
 
   ! Output convective IC WMRs
-
+   
    call outfld( 'ICLMRCU ', conv_liq  , pcols, lchnk )
    call outfld( 'ICIMRCU ', conv_ice  , pcols, lchnk )
    call outfld( 'ICWMRSH ', sh_icwmr  , pcols, lchnk )
-   call outfld( 'ICWMRDP ', dp_icwmr  , pcols, lchnk )
+   call outfld( 'ICWMRDP ', dp_icwmr  , pcols, lchnk ) 
    call outfld( 'ICLMRTOT', tot_liq   , pcols, lchnk )
    call outfld( 'ICIMRTOT', tot_ice   , pcols, lchnk )
    call outfld( 'SH_CLD  ', sh_frac   , pcols, lchnk )

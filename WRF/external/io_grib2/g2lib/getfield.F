@@ -4,7 +4,7 @@
      &                    idrslen,ibmap,bmap,fld,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    getfield
+! SUBPROGRAM:    getfield 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-26
 !
 ! ABSTRACT: This subroutine returns the Grid Definition, Product Definition,
@@ -25,23 +25,23 @@
 !     lcgrib   - Length (in bytes) of GRIB message array cgrib.
 !     ifldnum  - Specifies which field in the GRIB2 message to return.
 !
-!   OUTPUT ARGUMENT LIST:
-!     igds     - Contains information read from the appropriate GRIB Grid
+!   OUTPUT ARGUMENT LIST:      
+!     igds     - Contains information read from the appropriate GRIB Grid 
 !                Definition Section 3 for the field being returned.
 !                Must be dimensioned >= 5.
 !                igds(1)=Source of grid definition (see Code Table 3.0)
 !                igds(2)=Number of grid points in the defined grid.
-!                igds(3)=Number of octets needed for each
-!                            additional grid points definition.
+!                igds(3)=Number of octets needed for each 
+!                            additional grid points definition.  
 !                            Used to define number of
 !                            points in each row ( or column ) for
-!                            non-regular grids.
+!                            non-regular grids.  
 !                            = 0, if using regular grid.
-!                igds(4)=Interpretation of list for optional points
+!                igds(4)=Interpretation of list for optional points 
 !                            definition.  (Code Table 3.11)
 !                igds(5)=Grid Definition Template Number (Code Table 3.1)
 !     igdstmpl - Contains the data values for the specified Grid Definition
-!                Template ( NN=igds(5) ).  Each element of this integer
+!                Template ( NN=igds(5) ).  Each element of this integer 
 !                array contains an entry (in the order specified) of Grid
 !                Defintion Template 3.NN
 !                A safe dimension for this array can be obtained in advance
@@ -126,7 +126,7 @@
       integer,intent(out) :: ierr
       logical*1,intent(out) :: bmap(*)
       real,intent(out) :: fld(*),coordlist(*)
-
+      
       character(len=4),parameter :: grib='GRIB',c7777='7777'
       character(len=4) :: ctemp
       integer:: listsec0(2)
@@ -143,7 +143,7 @@
       numfld=0
 !
 !  Check for valid request number
-!
+!  
       if (ifldnum.le.0) then
         print *,'getfield: Request for field number must be positive.'
         ierr=3
@@ -166,7 +166,7 @@
         return
       endif
 !
-!  Unpack Section 0 - Indicator Section
+!  Unpack Section 0 - Indicator Section 
 !
       iofst=8*(istart+5)
       call g2lib_gbyte(cgrib,listsec0(1),iofst,8)     ! Discipline
@@ -180,14 +180,14 @@
       ipos=istart+lensec0
 !
 !  Currently handles only GRIB Edition 2.
-!
+!  
       if (listsec0(2).ne.2) then
         print *,'getfield: can only decode GRIB edition 2.'
         ierr=2
         return
       endif
 !
-!  Loop through the remaining sections keeping track of the
+!  Loop through the remaining sections keeping track of the 
 !  length of each.  Also keep the latest Grid Definition Section info.
 !  Unpack the requested field number.
 !
@@ -212,7 +212,7 @@
         iofst=iofst+8
         !print *,' lensec= ',lensec,'    secnum= ',isecnum
         !
-        !   If found Section 3, unpack the GDS info using the
+        !   If found Section 3, unpack the GDS info using the 
         !   appropriate template.  Save in case this is the latest
         !   grid before the requested field.
         !
@@ -316,7 +316,7 @@
         endif
 
         if (have3.and.have4.and.have5.and.have6.and.have7) return
-
+        
       enddo
 
 !
@@ -337,11 +337,11 @@
      &                   mapgridlen,ideflist,idefnum,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    unpack3
+! SUBPROGRAM:    unpack3 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-26
 !
 ! ABSTRACT: This subroutine unpacks Section 3 (Grid Definition Section)
-!   starting at octet 6 of that Section.
+!   starting at octet 6 of that Section.  
 !
 ! PROGRAM HISTORY LOG:
 ! 2000-05-26  Gilbert
@@ -353,24 +353,24 @@
 !     lcgrib   - Length (in bytes) of GRIB message array cgrib.
 !     iofst    - Bit offset of the beginning of Section 3.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     iofst    - Bit offset at the end of Section 3, returned.
-!     igds     - Contains information read from the appropriate GRIB Grid
+!     igds     - Contains information read from the appropriate GRIB Grid 
 !                Definition Section 3 for the field being returned.
 !                Must be dimensioned >= 5.
 !                igds(1)=Source of grid definition (see Code Table 3.0)
 !                igds(2)=Number of grid points in the defined grid.
-!                igds(3)=Number of octets needed for each
-!                            additional grid points definition.
+!                igds(3)=Number of octets needed for each 
+!                            additional grid points definition.  
 !                            Used to define number of
 !                            points in each row ( or column ) for
-!                            non-regular grids.
+!                            non-regular grids.  
 !                            = 0, if using regular grid.
-!                igds(4)=Interpretation of list for optional points
+!                igds(4)=Interpretation of list for optional points 
 !                            definition.  (Code Table 3.11)
 !                igds(5)=Grid Definition Template Number (Code Table 3.1)
 !     igdstmpl - Contains the data values for the specified Grid Definition
-!                Template ( NN=igds(5) ).  Each element of this integer
+!                Template ( NN=igds(5) ).  Each element of this integer 
 !                array contains an entry (in the order specified) of Grid
 !                Defintion Template 3.NN
 !     mapgridlen- Number of elements in igdstmpl().  i.e. number of entries
@@ -501,11 +501,11 @@
      &                   coordlist,numcoord,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    unpack4
+! SUBPROGRAM:    unpack4 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-26
 !
 ! ABSTRACT: This subroutine unpacks Section 4 (Product Definition Section)
-!   starting at octet 6 of that Section.
+!   starting at octet 6 of that Section.  
 !
 ! PROGRAM HISTORY LOG:
 ! 2000-05-26  Gilbert
@@ -517,7 +517,7 @@
 !     lcgrib   - Length (in bytes) of GRIB message array cgrib.
 !     iofst    - Bit offset of the beginning of Section 4.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     iofst    - Bit offset of the end of Section 4, returned.
 !     ipdsnum  - Product Definition Template Number ( see Code Table 4.0)
 !     ipdstmpl - Contains the data values for the specified Product Definition
@@ -633,11 +633,11 @@
      &                   mapdrslen,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    unpack5
+! SUBPROGRAM:    unpack5 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-26
 !
 ! ABSTRACT: This subroutine unpacks Section 5 (Data Representation Section)
-!   starting at octet 6 of that Section.
+!   starting at octet 6 of that Section.  
 !
 ! PROGRAM HISTORY LOG:
 ! 2000-05-26  Gilbert
@@ -649,7 +649,7 @@
 !     lcgrib   - Length (in bytes) of GRIB message array cgrib.
 !     iofst    - Bit offset of the beginning of Section 5.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     iofst    - Bit offset at the end of Section 5, returned.
 !     ndpts    - Number of data points unpacked and returned.
 !     idrsnum  - Data Representation Template Number ( see Code Table 5.0)
@@ -749,11 +749,11 @@ C      integer,allocatable :: mapdrs(:)
       subroutine unpack6(cgrib,lcgrib,iofst,ngpts,ibmap,bmap,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    unpack6
+! SUBPROGRAM:    unpack6 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-26
 !
 ! ABSTRACT: This subroutine unpacks Section 6 (Bit-Map Section)
-!   starting at octet 6 of that Section.
+!   starting at octet 6 of that Section.  
 !
 ! PROGRAM HISTORY LOG:
 ! 2000-05-26  Gilbert
@@ -765,7 +765,7 @@ C      integer,allocatable :: mapdrs(:)
 !     iofst    - Bit offset of the beginning of Section 6.
 !     ngpts    - Number of grid points specified in the bit-map
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     iofst    - Bit offset at the end of Section 6, returned.
 !     ibmap    - Bitmap indicator ( see Code Table 6.0 )
 !                0 = bitmap applies and is included in Section 6.
@@ -817,7 +817,7 @@ C      integer,allocatable :: mapdrs(:)
         print *,'unpack6: Predefined bitmap ',ibmap,' not recognized.'
         ierr=4
       endif
-
+      
       return    ! End of Section 6 processing
       end
 

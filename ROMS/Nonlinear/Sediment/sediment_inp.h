@@ -13,6 +13,7 @@
       USE mod_scalars
       USE mod_sediment
       USE mod_sedflocs
+      USE inp_decode_mod
 !
       implicit none
 !
@@ -27,8 +28,6 @@
       integer :: iTrcStr, iTrcEnd
       integer :: i, ifield, igrid, itracer, itrc, ng, nline, status
 
-      integer :: decode_line, load_i, load_l, load_lbc, load_r
-
       logical, dimension(Ngrids) :: Lbed
       logical, dimension(Ngrids) :: Lbottom
       logical, dimension(NCS,Ngrids) :: Lmud
@@ -38,11 +37,11 @@
       real(r8), dimension(NCS,Ngrids) :: Rmud
       real(r8), dimension(NNS,Ngrids) :: Rsand
 
-      real(r8), dimension(100) :: Rval
+      real(dp), dimension(nRval) :: Rval
 
       character (len=40 ) :: KeyWord
       character (len=256) :: line
-      character (len=256), dimension(200) :: Cval
+      character (len=256), dimension(nCval) :: Cval
 !
 !-----------------------------------------------------------------------
 !  Initialize.
@@ -143,7 +142,7 @@
 #endif
             CASE ('MUD_SD50')
               IF (.not.allocated(Sd50)) allocate (Sd50(NST,Ngrids))
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   Sd50(itrc,ng)=Rmud(itrc,ng)
@@ -151,7 +150,7 @@
               END DO
             CASE ('MUD_CSED')
               IF (.not.allocated(Csed)) allocate (Csed(NST,Ngrids))
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud )
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud )
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   Csed(itrc,ng)=Rmud(itrc,ng)
@@ -159,7 +158,7 @@
               END DO
             CASE ('MUD_SRHO')
               IF (.not.allocated(Srho)) allocate (Srho(NST,Ngrids))
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   Srho(itrc,ng)=Rmud(itrc,ng)
@@ -167,7 +166,7 @@
               END DO
             CASE ('MUD_WSED')
               IF (.not.allocated(Wsed)) allocate (Wsed(NST,Ngrids))
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   Wsed(itrc,ng)=Rmud(itrc,ng)
@@ -175,7 +174,7 @@
               END DO
             CASE ('MUD_ERATE')
               IF (.not.allocated(Erate)) allocate (Erate(NST,Ngrids))
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   Erate(itrc,ng)=Rmud(itrc,ng)
@@ -183,7 +182,7 @@
               END DO
             CASE ('MUD_TAU_CE')
               IF (.not.allocated(tau_ce)) allocate (tau_ce(NST,Ngrids))
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   tau_ce(itrc,ng)=Rmud(itrc,ng)
@@ -191,7 +190,7 @@
               END DO
             CASE ('MUD_TAU_CD')
               IF (.not.allocated(tau_cd)) allocate (tau_cd(NST,Ngrids))
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   tau_cd(itrc,ng)=Rmud(itrc,ng)
@@ -199,14 +198,14 @@
               END DO
             CASE ('MUD_POROS')
               IF (.not.allocated(poros)) allocate (poros(NST,Ngrids))
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   poros(itrc,ng)=Rmud(itrc,ng)
                 END DO
               END DO
             CASE ('MUD_TNU2')
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idsed(itrc)
@@ -214,7 +213,7 @@
                 END DO
               END DO
             CASE ('MUD_TNU4')
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idsed(itrc)
@@ -222,7 +221,7 @@
                 END DO
               END DO
             CASE ('ad_MUD_TNU2')
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idsed(itrc)
@@ -231,7 +230,7 @@
                 END DO
               END DO
             CASE ('ad_MUD_TNU4')
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idsed(itrc)
@@ -240,7 +239,7 @@
                 END DO
               END DO
             CASE ('MUD_Sponge')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idsed(itrc)
@@ -248,7 +247,7 @@
                 END DO
               END DO
             CASE ('MUD_AKT_BAK')
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idsed(itrc)
@@ -256,7 +255,7 @@
                 END DO
               END DO
             CASE ('MUD_AKT_fac')
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idsed(itrc)
@@ -265,7 +264,7 @@
                 END DO
               END DO
             CASE ('MUD_TNUDG')
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idsed(itrc)
@@ -276,7 +275,7 @@
               IF (.not.allocated(morph_fac)) THEN
                 allocate (morph_fac(NST,Ngrids))
               END IF
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   morph_fac(itrc,ng)=Rmud(itrc,ng)
@@ -310,7 +309,7 @@
               END DO
 #endif
             CASE ('MUD_Ltsrc', 'MUD_Ltracer')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idsed(itrc)
@@ -318,7 +317,7 @@
                 END DO
               END DO
             CASE ('MUD_Ltclm')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idsed(itrc)
@@ -326,7 +325,7 @@
                 END DO
               END DO
             CASE ('MUD_Tnudge')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idsed(itrc)
@@ -334,7 +333,7 @@
                 END DO
               END DO
             CASE ('Hout(idmud)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idTvar(idsed(itrc))
@@ -342,7 +341,7 @@
                 END DO
               END DO
             CASE ('Hout(iMfrac)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idfrac(itrc)
@@ -350,7 +349,7 @@
                 END DO
               END DO
             CASE ('Hout(iMmass)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idBmas(itrc)
@@ -368,7 +367,7 @@
                   END IF
                 END DO
               END DO
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idUbld(itrc)
@@ -385,7 +384,7 @@
                   END IF
                 END DO
               END DO
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idVbld(itrc)
@@ -394,7 +393,7 @@
               END DO
 #endif
             CASE ('Qout(idmud)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idTvar(idsed(itrc))
@@ -402,7 +401,7 @@
                 END DO
               END DO
             CASE ('Qout(iSmud)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idsurT(idsed(itrc))
@@ -410,7 +409,7 @@
                 END DO
               END DO
             CASE ('Qout(iMfrac)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idfrac(itrc)
@@ -418,16 +417,16 @@
                 END DO
               END DO
             CASE ('Qout(iMmass)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idBmas(itrc)
-                  Hout(i,ng)=Lmud(itrc,ng)
+                  Qout(i,ng)=Lmud(itrc,ng)
                 END DO
               END DO
 #ifdef BEDLOAD
             CASE ('Qout(iMUbld)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idUbld(itrc)
@@ -435,7 +434,7 @@
                 END DO
               END DO
             CASE ('Qout(iMVbld)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idVbld(itrc)
@@ -448,7 +447,7 @@
    (defined RP_AVERAGES && defined TL_IOMS) || \
    (defined TL_AVERAGES && defined TANGENT)
             CASE ('Aout(idmud)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idTvar(idsed(itrc))
@@ -456,7 +455,7 @@
                 END DO
               END DO
             CASE ('Aout(iMTTav)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idTTav(idsed(itrc))
@@ -464,7 +463,7 @@
                 END DO
               END DO
             CASE ('Aout(iMUTav)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idUTav(idsed(itrc))
@@ -472,7 +471,7 @@
                 END DO
               END DO
             CASE ('Aout(iMVTav)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idVTav(idsed(itrc))
@@ -480,7 +479,7 @@
                 END DO
               END DO
             CASE ('Aout(MHUTav)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=iHUTav(idsed(itrc))
@@ -488,7 +487,7 @@
                 END DO
               END DO
             CASE ('Aout(MHVTav)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=iHVTav(idsed(itrc))
@@ -497,7 +496,7 @@
               END DO
 # ifdef BEDLOAD
             CASE ('Aout(iMUbld)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idUbld(itrc)
@@ -505,7 +504,7 @@
                 END DO
               END DO
             CASE ('Aout(iMVbld)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   i=idVbld(itrc)
@@ -516,7 +515,7 @@
 #endif
 #ifdef DIAGNOSTICS_TS
             CASE ('Dout(MTrate)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO i=1,NCS
                   itrc=idsed(i)
@@ -524,7 +523,7 @@
                 END DO
               END DO
             CASE ('Dout(MThadv)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO i=1,NCS
                   itrc=idsed(i)
@@ -532,7 +531,7 @@
                 END DO
               END DO
             CASE ('Dout(MTxadv)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO i=1,NCS
                   itrc=idsed(i)
@@ -540,7 +539,7 @@
                 END DO
               END DO
             CASE ('Dout(MTyadv)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO i=1,NCS
                   itrc=idsed(i)
@@ -548,7 +547,7 @@
                 END DO
               END DO
             CASE ('Dout(MTvadv)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO i=1,NCS
                   itrc=idsed(i)
@@ -557,7 +556,7 @@
               END DO
 # if defined TS_DIF2 || defined TS_DIF4
             CASE ('Dout(MThdif)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO i=1,NCS
                   itrc=idsed(i)
@@ -565,7 +564,7 @@
                 END DO
               END DO
             CASE ('Dout(MTxdif)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO i=1,NCS
                   itrc=idsed(i)
@@ -573,7 +572,7 @@
                 END DO
               END DO
             CASE ('Dout(MTydif)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO i=1,NCS
                   itrc=idsed(i)
@@ -582,7 +581,7 @@
               END DO
 #  if defined MIX_GEO_TS || defined MIX_ISO_TS
             CASE ('Dout(MTsdif)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO i=1,NCS
                   itrc=idsed(i)
@@ -592,7 +591,7 @@
 #  endif
 # endif
             CASE ('Dout(MTvdif)')
-              Npts=load_l(Nval, Cval, NCS*Ngrids, Lmud)
+              Npts=load_l(Nval, Cval, NCS, Ngrids, Lmud)
               DO ng=1,Ngrids
                 DO i=1,NCS
                   itrc=idsed(i)
@@ -602,7 +601,7 @@
 #endif
             CASE ('SAND_SD50')
               IF (.not.allocated(Sd50)) allocate (Sd50(NST,Ngrids))
-              Npts=load_r(Nval, Rval, NNS*Ngrids, Rsand)
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=NCS+itrc
@@ -611,7 +610,7 @@
               END DO
             CASE ('SAND_CSED')
               IF (.not.allocated(Csed)) allocate (Csed(NST,Ngrids))
-              Npts=load_r(Nval, Rval, NNS*Ngrids, Rsand )
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand )
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=NCS+itrc
@@ -620,7 +619,7 @@
               END DO
             CASE ('SAND_SRHO')
               IF (.not.allocated(Srho)) allocate (Srho(NST,Ngrids))
-              Npts=load_r(Nval, Rval, NNS*Ngrids, Rsand)
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=NCS+itrc
@@ -629,7 +628,7 @@
               END DO
             CASE ('SAND_WSED')
               IF (.not.allocated(Wsed)) allocate (Wsed(NST,Ngrids))
-              Npts=load_r(Nval, Rval, NNS*Ngrids, Rsand)
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=NCS+itrc
@@ -638,7 +637,7 @@
               END DO
             CASE ('SAND_ERATE')
               IF (.not.allocated(Erate)) allocate (Erate(NST,Ngrids))
-              Npts=load_r(Nval, Rval, NNS*Ngrids, Rsand)
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=NCS+itrc
@@ -647,7 +646,7 @@
               END DO
             CASE ('SAND_TAU_CE')
               IF (.not.allocated(tau_ce)) allocate (tau_ce(NST,Ngrids))
-              Npts=load_r(Nval, Rval, NNS*Ngrids, Rsand)
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=NCS+itrc
@@ -656,7 +655,7 @@
               END DO
             CASE ('SAND_TAU_CD')
               IF (.not.allocated(tau_cd)) allocate (tau_cd(NST,Ngrids))
-              Npts=load_r(Nval, Rval, NNS*Ngrids, Rsand)
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=NCS+itrc
@@ -665,7 +664,7 @@
               END DO
             CASE ('SAND_POROS')
               IF (.not.allocated(poros)) allocate (poros(NST,Ngrids))
-              Npts=load_r(Nval, Rval, NNS*Ngrids, Rsand)
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=NCS+itrc
@@ -673,7 +672,7 @@
                 END DO
               END DO
             CASE ('SAND_TNU2')
-              Npts=load_r(Nval, Rval, NNS*Ngrids, Rsand)
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idsed(NCS+itrc)
@@ -681,7 +680,7 @@
                 END DO
               END DO
             CASE ('SAND_TNU4')
-              Npts=load_r(Nval, Rval, NNS*Ngrids, Rsand)
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idsed(NCS+itrc)
@@ -689,7 +688,7 @@
                 END DO
               END DO
             CASE ('ad_SAND_TNU2')
-              Npts=load_r(Nval, Rval, NNS*Ngrids, Rsand)
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idsed(NCS+itrc)
@@ -698,7 +697,7 @@
                 END DO
               END DO
             CASE ('ad_SAND_TNU4')
-              Npts=load_r(Nval, Rval, NNS*Ngrids, Rsand)
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idsed(NCS+itrc)
@@ -707,7 +706,7 @@
                 END DO
               END DO
             CASE ('SAND_Sponge')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idsed(NCS+itrc)
@@ -715,7 +714,7 @@
                 END DO
               END DO
             CASE ('SAND_AKT_BAK')
-              Npts=load_r(Nval, Rval, NNS*Ngrids, Rsand)
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idsed(NCS+itrc)
@@ -723,7 +722,7 @@
                 END DO
               END DO
             CASE ('SAND_AKT_fac')
-              Npts=load_r(Nval, Rval, NNS*Ngrids, Rsand)
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idsed(NCS+itrc)
@@ -732,7 +731,7 @@
                 END DO
               END DO
             CASE ('SAND_TNUDG')
-              Npts=load_r(Nval, Rval, NNS*Ngrids, Rsand)
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idsed(NCS+itrc)
@@ -743,7 +742,7 @@
               IF (.not.allocated(morph_fac)) THEN
                 allocate (morph_fac(NST,Ngrids))
               END IF
-              Npts=load_r(Nval, Rval, NNS*Ngrids, Rsand)
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=NCS+itrc
@@ -751,7 +750,7 @@
                 END DO
               END DO
             CASE ('SAND_Ltsrc', 'SAND_Ltracer')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idsed(NCS+itrc)
@@ -759,7 +758,7 @@
                 END DO
               END DO
             CASE ('SAND_Ltclm')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idsed(NCS+itrc)
@@ -767,7 +766,7 @@
                 END DO
               END DO
             CASE ('SAND_Tnudge')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idsed(NCS+itrc)
@@ -775,7 +774,7 @@
                 END DO
               END DO
             CASE ('Hout(idsand)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idTvar(idsed(NCS+itrc))
@@ -783,7 +782,7 @@
                 END DO
               END DO
             CASE ('Hout(iSfrac)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idfrac(NCS+itrc)
@@ -791,7 +790,7 @@
                 END DO
               END DO
             CASE ('Hout(iSmass)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idBmas(NCS+itrc)
@@ -809,7 +808,7 @@
                   END IF
                 END DO
               END DO
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idUbld(NCS+itrc)
@@ -826,16 +825,135 @@
                   END IF
                 END DO
               END DO
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idVbld(NCS+itrc)
                   Hout(i,ng)=Lsand(itrc,ng)
                 END DO
               END DO
+# ifdef BEDLOAD_VANDERA
+            CASE ('Hout(idsurs)')
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
+              DO ng=1,Ngrids
+                DO itrc=1,NNS
+                  i=idsurs
+                  Hout(i,ng)=Lsand(itrc,ng)
+                END DO
+              END DO
+            CASE ('Hout(idsrrw)')
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
+              DO ng=1,Ngrids
+                DO itrc=1,NNS
+                  i=idsrrw
+                  Hout(i,ng)=Lsand(itrc,ng)
+                END DO
+              END DO
+            CASE ('Hout(idsbtw)')
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
+              DO ng=1,Ngrids
+                DO itrc=1,NNS
+                  i=idsbtw
+                  Hout(i,ng)=Lsand(itrc,ng)
+                END DO
+              END DO
+            CASE ('Hout(idsksd)')
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
+              DO ng=1,Ngrids
+                DO itrc=1,NNS
+                  i=idsksd
+                  Hout(i,ng)=Lsand(itrc,ng)
+                END DO
+              END DO
+            CASE ('Hout(idszrw)')
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
+              DO ng=1,Ngrids
+                DO itrc=1,NNS
+                  i=idszrw
+                  Hout(i,ng)=Lsand(itrc,ng)
+                END DO
+              END DO
+            CASE ('Hout(idsusc)')
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
+              DO ng=1,Ngrids
+                DO itrc=1,NNS
+                  i=idsusc
+                  Hout(i,ng)=Lsand(itrc,ng)
+                END DO
+              END DO
+!            CASE ('THCK_WBL_INP')
+!              Npts=load_r(Nval, Rval, Ngrids, Rbed)
+!                DO ng=1,Ngrids
+!                  THCK_WBL_INP(ng)=Rbed(ng)
+!                END DO
+            CASE ('Hout(idstbl)')
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
+              DO ng=1,Ngrids
+                DO itrc=1,NNS
+                  i=idstbl
+                  Hout(i,ng)=Lsand(itrc,ng)
+                END DO
+              END DO
+            CASE ('Hout(idsubl)')
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
+              DO ng=1,Ngrids
+                DO itrc=1,NNS
+                  i=idsubl
+                  Hout(i,ng)=Lsand(itrc,ng)
+                END DO
+              END DO
+            CASE ('Hout(idspwc)')
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
+              DO ng=1,Ngrids
+                DO itrc=1,NNS
+                  i=idspwc
+                  Hout(i,ng)=Lsand(itrc,ng)
+                END DO
+              END DO
+            CASE ('Hout(idsfdw)')
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
+              DO ng=1,Ngrids
+                DO itrc=1,NNS
+                  i=idsfdw
+                  Hout(i,ng)=Lsand(itrc,ng)
+                END DO
+              END DO
+            CASE ('Hout(idsucr)')
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
+              DO ng=1,Ngrids
+                DO itrc=1,NNS
+                  i=idsucr
+                  Hout(i,ng)=Lsand(itrc,ng)
+                END DO
+              END DO
+            CASE ('Hout(idsutr)')
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
+              DO ng=1,Ngrids
+                DO itrc=1,NNS
+                  i=idsutr
+                  Hout(i,ng)=Lsand(itrc,ng)
+                END DO
+              END DO
+            CASE ('Hout(idstcr)')
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
+              DO ng=1,Ngrids
+                DO itrc=1,NNS
+                  i=idstcr
+                  Hout(i,ng)=Lsand(itrc,ng)
+                END DO
+              END DO
+            CASE ('Hout(idsttr)')
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
+              DO ng=1,Ngrids
+                DO itrc=1,NNS
+                  i=idsttr
+                  Hout(i,ng)=Lsand(itrc,ng)
+                END DO
+              END DO
+# endif
 #endif
             CASE ('Qout(idsand)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idTvar(idsed(NCS+itrc))
@@ -843,7 +961,7 @@
                 END DO
               END DO
             CASE ('Qout(iSsand)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idsurT(idsed(NCS+itrc))
@@ -851,7 +969,7 @@
                 END DO
               END DO
             CASE ('Qout(iSfrac)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idfrac(NCS+itrc)
@@ -859,7 +977,7 @@
                 END DO
               END DO
             CASE ('Qout(iSmass)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idBmas(NCS+itrc)
@@ -868,7 +986,7 @@
               END DO
 #ifdef BEDLOAD
             CASE ('Qout(iSUbld)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idUbld(NCS+itrc)
@@ -876,7 +994,7 @@
                 END DO
               END DO
             CASE ('Qout(iSVbld)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idVbld(NCS+itrc)
@@ -889,7 +1007,7 @@
    (defined RP_AVERAGES && defined TL_IOMS) || \
    (defined TL_AVERAGES && defined TANGENT)
             CASE ('Aout(idsand)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idTvar(idsed(NCS+itrc))
@@ -897,7 +1015,7 @@
                 END DO
               END DO
             CASE ('Aout(iSTTav)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idTTav(idsed(NCS+itrc))
@@ -905,7 +1023,7 @@
                 END DO
               END DO
             CASE ('Aout(iSUTav)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idUTav(idsed(NCS+itrc))
@@ -913,7 +1031,7 @@
                 END DO
               END DO
             CASE ('Aout(iSVTav)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idVTav(idsed(NCS+itrc))
@@ -921,7 +1039,7 @@
                 END DO
               END DO
             CASE ('Aout(SHUTav)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=iHUTav(idsed(NCS+itrc))
@@ -929,7 +1047,7 @@
                 END DO
               END DO
             CASE ('Aout(SHVTav)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=iHVTav(idsed(NCS+itrc))
@@ -938,7 +1056,7 @@
               END DO
 # ifdef BEDLOAD
             CASE ('Aout(iSUbld)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idUbld(NCS+itrc)
@@ -946,7 +1064,7 @@
                 END DO
               END DO
             CASE ('Aout(iSVbld)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO itrc=1,NNS
                   i=idVbld(NCS+itrc)
@@ -957,7 +1075,7 @@
 #endif
 #ifdef DIAGNOSTICS_TS
             CASE ('Dout(STrate)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO i=1,NNS
                   itrc=idsed(NCS+i)
@@ -965,7 +1083,7 @@
                 END DO
               END DO
             CASE ('Dout(SThadv)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO i=1,NNS
                   itrc=idsed(NCS+i)
@@ -973,7 +1091,7 @@
                 END DO
               END DO
             CASE ('Dout(STxadv)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO i=1,NNS
                   itrc=idsed(NCS+i)
@@ -981,7 +1099,7 @@
                 END DO
               END DO
             CASE ('Dout(STyadv)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO i=1,NNS
                   itrc=idsed(NCS+i)
@@ -989,7 +1107,7 @@
                 END DO
               END DO
             CASE ('Dout(STvadv)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO i=1,NNS
                   itrc=idsed(NCS+i)
@@ -998,7 +1116,7 @@
               END DO
 # if defined TS_DIF2 || defined TS_DIF4
             CASE ('Dout(SThdif)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO i=1,NNS
                   itrc=idsed(NCS+i)
@@ -1006,7 +1124,7 @@
                 END DO
               END DO
             CASE ('Dout(STxdif)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO i=1,NNS
                   itrc=idsed(NCS+i)
@@ -1014,7 +1132,7 @@
                 END DO
               END DO
             CASE ('Dout(STydif)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO i=1,NNS
                   itrc=idsed(NCS+i)
@@ -1023,7 +1141,7 @@
               END DO
 #  if defined MIX_GEO_TS || defined MIX_ISO_TS
             CASE ('Dout(STsdif)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO i=1,NNS
                   itrc=idsed(NCS+i)
@@ -1033,7 +1151,7 @@
 #  endif
 # endif
             CASE ('Dout(STvdif)')
-              Npts=load_l(Nval, Cval, NNS*Ngrids, Lsand)
+              Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
                 DO i=1,NNS
                   itrc=idsed(NCS+i)
@@ -1265,7 +1383,7 @@
             CASE ('F_ERO_NBFRAG')
               Npts=load_r(Nval, Rval, Ngrids, f_ero_nbfrag)
             CASE ('F_ERO_IV')
-              Npts=load_r(Nval, Rval, Ngrids, f_ero_iv)
+              Npts=load_i(Nval, Rval, Ngrids, f_ero_iv)
             CASE ('F_COLLFRAGPARAM')
               Npts=load_r(Nval, Rval, Ngrids, f_collfragparam)
             CASE ('F_CLIM')
@@ -1278,7 +1396,7 @@
               IF (.not.allocated(mud_frac_eq)) THEN
                 allocate (mud_frac_eq(NCS,Ngrids))
               ENDIF
-              Npts=load_r(Nval, Rval, NCS*Ngrids, Rmud)
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
                 DO itrc=1,NCS
                   mud_frac_eq(itrc,ng)=Rmud(itrc,ng)

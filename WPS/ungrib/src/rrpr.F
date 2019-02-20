@@ -20,7 +20,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, &
 !------------------------------------------------------------------------------
 ! Arguments:
 
-! HSTART:  Starting date of times to process
+! HSTART:  Starting date of times to process 
   character (LEN=19) :: hstart
 
 ! NTIMES:  Number of time periods to process
@@ -41,13 +41,13 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, &
 ! NEW_PLVL: Array of the additional pressure levels (Pa) to interpolate to
   real , dimension(maxlvl) :: new_plvl
 
-! TLVL: Array combining pressure levels (Pa) in PLVL and NEW_PLVL
+! TLVL: Array combining pressure levels (Pa) in PLVL and NEW_PLVL 
   real , dimension(maxlvl) :: tlvl
 
 ! ADD_LVLS: Should we add levels via interpolation?
   logical :: add_lvls
 
-! INTERP_TYPE: vertical Interpolation type
+! INTERP_TYPE: vertical Interpolation type 
 !  (1=log in pressure, anything else=linear in pressure)
   integer :: interp_type
 
@@ -83,7 +83,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, &
 ! DATELEN:  length of date strings to use for our output file names.
   integer :: datelen
 
-! Decide the length of date strings to use for output file names.
+! Decide the length of date strings to use for output file names.  
 ! DATELEN is 13 for hours, 16 for minutes, and 19 for seconds.
 
   if (mod(interval,3600) == 0) then
@@ -137,7 +137,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, &
 
 ! Read the file:
 
-     rdloop: do
+     rdloop: do 
         read (iunit, iostat=ierr) ifv
         if (ierr.ne.0) exit rdloop
         if ( ifv .eq. 5) then     ! WPS
@@ -179,7 +179,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, &
              read (iunit) map%startloc, map%lat1, map%lon1, map%dx, map%dy, &
                 map%lov, map%truelat1
           case default
-             call mprintf(.true.,ERROR, &
+             call mprintf(.true.,ERROR, &  
                 "Unrecognized map%%igrid: %i in RRPR 2",i1=map%igrid)
           end select
 
@@ -199,7 +199,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, &
            case (1)      ! Mercator
               read (iunit) map%lat1, map%lon1, map%dy, map%dx, map%truelat1
            case default
-             call mprintf(.true.,ERROR, &
+             call mprintf(.true.,ERROR, &  
                 "Unrecognized map%%igrid: %i in RRPR 3",i1=map%igrid)
            end select
         else
@@ -220,7 +220,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, &
      close(iunit)
      if (debug_level .gt. 100 ) call print_storage
 !
-! By now the file has been read completely.  Now, see if we need to fill in
+! By now the file has been read completely.  Now, see if we need to fill in 
 ! missing fields:
 !
 
@@ -231,7 +231,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, &
 ! Merge list of pressure levels in data with requested pressure levels
      if ( add_lvls ) then
        ! The merging code expects the user-defined pressure levels to be in
-       ! order from highest pressure to lowest pressure.
+       ! order from highest pressure to lowest pressure.  
        ! Sort the user-defined pressure levels accordingly
        new_plvl_to_sort = new_plvl
        ! Set array containing pressure levels to add to the default value set in read_namelist.F
@@ -412,7 +412,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, &
         enddo
 
 ! Vertically interpolate to fill in other moisture variables
-! It seems that ultimately this should be wrapped in a function and probably loop over
+! It seems that ultimately this should be wrapped in a function and probably loop over 
 ! all variables that can be vertically interpolated
 
 ! QC
@@ -695,7 +695,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, &
            deallocate(scr2d)
         endif
 !
-! If surface RH is missing, see if we can compute RH from Specific Humidity
+! If surface RH is missing, see if we can compute RH from Specific Humidity 
 ! or Dewpoint or Dewpoint depression:
 !
         if (.not. is_there (200100, 'RH')) then
@@ -726,7 +726,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, &
            call get_dims(200100, 'SNOWRUC')
            allocate(scr2d(map%nx,map%ny))
            call get_storage(200100, 'SNOWRUC', scr2d, map%nx, map%ny)
-           scr2d = scr2d * 1000.
+           scr2d = scr2d * 1000. 
            call put_storage(200100, 'SNOW',   scr2d, map%nx, map%ny)
            deallocate(scr2d)
         endif
@@ -758,14 +758,16 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, &
         if (index(map%source,'NCEP GFS') .ne. 0 ) then
           call mprintf(.true.,DEBUG, &
              "RRPR:   Adjusting GFS masked fields ")
-             call get_dims(200100, 'ST000010')
-             call fix_gfs_miss (map%nx, map%ny, 200100.)
+	     if ( is_there(200100, 'ST000010')) then
+               call get_dims(200100, 'ST000010')
+               call fix_gfs_miss (map%nx, map%ny, 200100.)
+	     endif
         endif
 
 ! Add residual soil moisture to SOILM* if initialized from the GSD RUC model or from NCEP RUC
       if (index(map%source,'NOAA GSD') .ne. 0 .or.    &
           index(map%source,'NCEP RUC Model') .ne. 0) then
-            if ( .not. is_there(200100, 'SOILM000') .and.&
+            if ( .not. is_there(200100, 'SOILM000') .and.& 
                        is_there(200100, 'SM000ruc') ) then
            call get_dims(200100, 'SM000ruc')
              print *,'Adjust RUC soil moisture'
@@ -802,7 +804,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, &
            deallocate(scr2d)
         endif
 
-! For NCEP RR (using the same ID as for RUC) native-level input,
+! For NCEP RR (using the same ID as for RUC) native-level input, 
 ! may need to move PSFC from level 1 to 2001.
 ! From TGS 8 Sept. 2011
         if ( index(map%source,'NCEP RUC Model') .ne. 0) then
@@ -829,8 +831,8 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, &
         endif
         endif
 
-! ECMWF snow depth in meters of water equivalent (Table 128). Convert to kg/m2
-!
+! ECMWF snow depth in meters of water equivalent (Table 128). Convert to kg/m2 
+! 
         if (is_there(200100, 'SNOW_EC')) then
            call get_dims(200100, 'SNOW_EC')
            allocate(scr2d(map%nx,map%ny))
@@ -880,7 +882,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, &
               call get_dims(200100, 'SNOW_DEN')
               allocate(tmp2d(map%nx,map%ny))
               call get_storage(200100, 'SNOW_DEN', tmp2d, map%nx, map%ny)
-              scr2d = scr2d / tmp2d
+              scr2d = scr2d / tmp2d 
               deallocate(tmp2d)
             else
               scr2d = scr2d * 0.004     ! otherwise, assume a density of 250 mm/m (i.e. 250:1 ratio).
@@ -905,7 +907,7 @@ subroutine rrpr(hstart, ntimes, interval, nlvl, maxlvl, plvl, &
 ! If we've got an ICEMASK field, re-flag it for output to met_em and real:
 !     Field  | GRIB In  |  Out
 !    -------------------------
-!    water   |    0     |  0
+!    water   |    0     |  0 
 !    land    |   -1     |  1
 !    ice     |    1     |  0
 
@@ -1009,11 +1011,11 @@ subroutine compute_t_vptmp(ix, jx, plvl)
   ENDIF
   call get_storage(nint(plvl), 'SPECHUMD',   Q, ix, jx)
 
-   t=vptmp * (p*1.e-5)**rovcp * (1./(1.+0.6078*Q))
+   t=vptmp * (p*1.e-5)**rovcp * (1./(1.+0.6078*Q))  
 
   call put_storage(nint(plvl), 'TT', t, ix, jx)
        if(nint(plvl).eq.1) then
-  call put_storage(200100, 'PSFC', p, ix, jx)
+  call put_storage(200100, 'PSFC', p, ix, jx) 
        endif
 
 end subroutine compute_t_vptmp
@@ -1070,7 +1072,7 @@ subroutine compute_rh_spechumd_upa(ix, jx, plvl)
   Q=MAX(1.E-10,Q)
 
   rh = 1.E2 * (p*q/(q*(1.-eps) + eps))/(svp1*exp(svp2*(t-svpt0)/(T-svp3)))
-
+  
   call put_storage(nint(plvl), 'RH', rh, ix, jx)
 
 end subroutine compute_rh_spechumd_upa
@@ -1194,8 +1196,8 @@ subroutine vntrp(plvl, maxlvl, k, k2, interp_type, name, ix, jx)
   real :: frc
   integer :: interp_type
 
-  write(*,'("Interpolating to fill in ", A, " at level ", F8.2, " hPa using levels ", F8.2," hPa and ", &
-            F8.2," hPa")') trim(name), plvl(k)/100.0,plvl(k-1)/100.0, plvl(k2)/100.0
+  write(*,'("Interpolating to fill in ", A, " at level ", F8.2, " hPa using levels ", F8.2," hPa and ",& 
+     & F8.2," hPa")') trim(name), plvl(k)/100.0,plvl(k-1)/100.0, plvl(k2)/100.0
   call mprintf(.true.,INFORM, &
     "RRPR: Interpolating to fill in %s at %i Pa using levels %i Pa and %i Pa",&
     s1=trim(name), i1=int(plvl(k)), i2=int(plvl(k-1)), i3=int(plvl(k2)))
@@ -1210,7 +1212,7 @@ subroutine vntrp(plvl, maxlvl, k, k2, interp_type, name, ix, jx)
   endif
 
   b = (1.-frc)*c + frc*a
-
+  
 !KWM  b = 0.5 * (a + c)
   call  put_storage(nint(plvl(k)), name, b, ix, jx)
 
@@ -1220,14 +1222,14 @@ end subroutine vntrp
 subroutine fix_gfs_miss (ix, jx, plvl)
 ! This routine replaces July 2017 GFS missing values with the WPS one.
 ! Earlier GFS files are unmodified.
-! As of 2017, NCEP changed 'ocean' values for masked fields (ST, SM, SNOWH, etc.)
-! from 0 to something other than missing. We will assume any large value
+! As of 2017, NCEP changed 'ocean' values for masked fields (ST, SM, SNOWH, etc.) 
+! from 0 to something other than missing. We will assume any large value 
 ! (greater than 10^^18) is a missing code.
 ! We reset it to the WPS missing value (as set in METGRID.TBL)
 ! Changes described in http://www.nws.noaa.gov/os/notification/scn17-67gfsupgradeaaa.htm
 ! plvl must always be 200100.
-! While, technically, any 3-d field could have a missing value in it we only deal with
-! the surface fields which are known to have missing values.
+! While, technically, any 3-d field could have a missing value in it we only deal with 
+! the surface fields which are known to have missing values. 
 !
   use storage_module
   implicit none
@@ -1269,7 +1271,7 @@ subroutine fix_gfs_miss (ix, jx, plvl)
       call put_storage(200100, flist(k), f, ix, jx)
     endif
   enddo
-! Snow fields have a different WPS missing value and must be adjusted
+! Snow fields have a different WPS missing value and must be adjusted 
 ! separately from the soil fields (unless we want to have an array of missing values,too).
   if (is_there(200100, 'SNOW' )) then
     call get_storage(200100, 'SNOW', f, ix, jx)
@@ -1316,7 +1318,7 @@ subroutine fix_gfs_rh (ix, jx, plvl)
       ! eis and ews in hPA, tt is in K
       eis = .01 * exp (9.550426 - (5723.265 / tt(i,j)) + (3.53068 * alog(tt(i,j))) &
          - (0.00728332 * tt(i,j)))
-      ! Bolton 1980 liquid saturation vapor pressure. For water saturation, most
+      ! Bolton 1980 liquid saturation vapor pressure. For water saturation, most 
       ! formulae are very similar from 0 to -20, so we don't need a more exact formula.
 
       ews = 6.112 * exp(17.67 * (tt(i,j)-273.15) / ((tt(i,j)-273.15)+243.5))
@@ -1395,5 +1397,5 @@ subroutine fix_ruc_soilm (ix, jx)
   deallocate(soilcat)
 
 end subroutine fix_ruc_soilm
-
+ 
 

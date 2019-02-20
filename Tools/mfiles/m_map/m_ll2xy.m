@@ -1,4 +1,4 @@
-function [X,Y]=m_ll2xy(varargin);
+function [X,Y,I]=m_ll2xy(varargin)
 % M_LL2XY Converts long,lat to X,Y coordinates using the current projection
 %         [X,Y]=m_ll2xy(LONGITUDE,LATITUDE);
 %
@@ -12,6 +12,8 @@ function [X,Y]=m_ll2xy(varargin);
 %         arrays. The interpolation can be disabled using the 'point'
 %         option (i.e. data is composed of discrete unrelated points).
 %
+%         [X,Y,I]=m_ll2xy(...) returns an index to tell you which
+%         points have been modified (I=1).
 
 % Rich Pawlowicz (rich@ocgy.ubc.ca) 2/Apr/1997
 %
@@ -19,19 +21,39 @@ function [X,Y]=m_ll2xy(varargin);
 % it's mine, so you can't sell it.
 
 % 6/Nov/00 - eliminate returned stuff if ';' neglected (thx to D Byrne)
+% 4/DEc/11 - isstr to ischar
+% 1/Nov/12 - added another geomagnetic coordinate system
 
-global MAP_PROJECTION 
+global MAP_PROJECTION MAP_COORDS
 
-if nargin==0 | isstr(varargin{1}),
+
+
+if nargin==0 || ischar(varargin{1})
   disp(' Usage');
   disp(' [X,Y]=m_ll2xy(LONGITUDES,LATITUDES <,''clip'',( ''on''|''off''|''patch'' | ''point'' ) >)');
 else
-   % Sneaky way of making default clipping on (sneaky 'cause only the 4th
-   % input parameter is checked for the clipping property)
-  [X,Y]=feval(MAP_PROJECTION.routine,'ll2xy',varargin{:},'clip','on');
-end;
+  if strcmp(MAP_COORDS.name,MAP_PROJECTION.coordsystem.name)
+     % Sneaky way of making default clipping on (sneaky 'cause only the 4th
+     % input parameter is checked for the clipping property)
+     [X,Y,I]=feval(MAP_PROJECTION.routine,'ll2xy',varargin{:},'clip','on');
+     
+  elseif strcmp(MAP_COORDS.name,'geographic')
+     [LONG,LAT]=mc_coords('geo2mag',varargin{1:2});
+     args={varargin{3:end},'clip','on'};
+     [X,Y,I]=feval(MAP_PROJECTION.routine,'ll2xy',LONG,LAT,args{:});
+     
+  elseif strcmp(MAP_COORDS.name,'IGRF2000-geomagnetic') || ...
+         strcmp(MAP_COORDS.name,'IGRF2011-geomagnetic')
+     [LONG,LAT]=mc_coords('mag2geo',varargin{1:2});
+     args={varargin{3:end},'clip','on'};
+     [X,Y,I]=feval(MAP_PROJECTION.routine,'ll2xy',LONG,LAT,args{:});
+     
+   else
+     error('m_ll2xy: Unrecognized coordinate system');   
+  end 
+end
 
-if nargout==0,
- clear X Y
-end;
+if nargout==0
+ clear X Y I
+end
 

@@ -35,12 +35,12 @@
           IF (exit_flag.ne.NoError) RETURN
         END IF
       END DO
-#endif
-#if defined VEG_STREAMING
+#endif 
+#if defined VEG_STREAMING 
 !
-!  Define wave dissipation due to vegetation
+!  Define wave dissipation due to vegetation 
 !
-        IF (Hout(idWdvg,ng)) THEN
+        IF (Hout(idWdvg,ng)) THEN 
           Vinfo( 1)=Vname(1,idWdvg)
           Vinfo( 2)=Vname(2,idWdvg)
           Vinfo( 3)=Vname(3,idWdvg)
@@ -54,13 +54,13 @@
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWdvg),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
-        END IF
-#endif
+        END IF 
+#endif 
 #ifdef MARSH_WAVE_THRUST
 !
-!  Store initial masking marsh
+!  Store initial masking marsh 
 !
-        IF (Hout(idTims,ng)) THEN
+        IF (Hout(idTims,ng)) THEN 
           Vinfo( 1)=Vname(1,idTims)
           Vinfo( 2)=Vname(2,idTims)
           Vinfo( 3)=Vname(3,idTims)
@@ -76,7 +76,7 @@
           IF (exit_flag.ne.NoError) RETURN
         END IF
 !
-        IF (Hout(idTmsk,ng)) THEN
+        IF (Hout(idTmsk,ng)) THEN 
           Vinfo( 1)=Vname(1,idTmsk)
           Vinfo( 2)=Vname(2,idTmsk)
           Vinfo( 3)=Vname(3,idTmsk)
@@ -94,7 +94,7 @@
 !
 !  Define maximum thrust due to waves.
 !
-        IF (Hout(idTmax,ng)) THEN
+        IF (Hout(idTmax,ng)) THEN 
           Vinfo( 1)=Vname(1,idTmax)
           Vinfo( 2)=Vname(2,idTmax)
           Vinfo( 3)=Vname(3,idTmax)
@@ -108,11 +108,11 @@
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmax),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
-        END IF
-!
+        END IF 
+!     
 !  Define Tonelli masking based thrust due to waves.
 !
-        IF (Hout(idTton,ng)) THEN
+        IF (Hout(idTton,ng)) THEN 
           Vinfo( 1)=Vname(1,idTton)
           Vinfo( 2)=Vname(2,idTton)
           Vinfo( 3)=Vname(3,idTton)
@@ -126,5 +126,5 @@
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTton),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
-        ENDIF
-#endif
+        ENDIF 
+#endif 

@@ -27,7 +27,12 @@ function [bndry_lon,bndry_lat] = m_plotbndry(name,varargin)
 %          given directory, allow output, allow various line 
 %          properties to be specified.
 % 6/Nov/00 - eliminate returned stuff if ';' neglected (thx to D Byrne)
+% 19/Mar/04 - .mat files not being created because of a bug found by James Connor.
 
+
+% Set current projection to geographic
+Currentmap=m_coord('set');
+m_coord('geographic');
 
 
 targetfile = [name,'2pts.mat']; %try to find binary file
@@ -114,12 +119,14 @@ else %Can't find binary file, load and process text file.
    fclose(fid);
    
    m_line(bndry_lon,bndry_lat,'tag','m_plotbndry',varargin{:});
-   nchar = length(targetpath);
+   nchar = length(targetfile);   % Bug fix thanks to James Connor
    matfile = [targetfile(1:(nchar-4)),'.mat'];
    save(matfile,'bndry_lat','bndry_lon');
    
 end %if
 
-if nargout==0,
+m_coord(Currentmap.name);
+
+if nargout==0
  clear bndry_lon bndry_lat
-end;
+end

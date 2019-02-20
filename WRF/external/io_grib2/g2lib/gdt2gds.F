@@ -32,7 +32,7 @@ C                igds(4)=Interpretation of list for optional points
 C                            definition.  (Code Table 3.11)
 C                igds(5)=Grid Definition Template Number (Code Table 3.1)
 C     igdstmpl() - Grid Definition Template values for GDT 3.igds(5)
-C     idefnum    - The number of entries in array ideflist.
+C     idefnum    - The number of entries in array ideflist.  
 C                  i.e. number of rows ( or columns )
 C                  for which optional grid points are defined.
 C     ideflist() - Optional integer array containing
@@ -53,7 +53,7 @@ C   LANGUAGE: INDICATE EXTENSIONS, COMPILER OPTIONS
 C   MACHINE:  IBM SP
 C
 C$$$
-!
+! 
         integer,intent(in) :: idefnum
         integer,intent(in) :: igds(*),igdstmpl(*),ideflist(*)
         integer,intent(out) :: kgds(*),igrid,iret
@@ -69,7 +69,7 @@ C$$$
            kgds(5)=igdstmpl(13)/1000      ! Long of 1st grid point
            kgds(6)=0                      ! resolution and component flags
            if (igdstmpl(1)==2 ) kgds(6)=64
-           if ( btest(igdstmpl(14),4).OR.btest(igdstmpl(14),5) )
+           if ( btest(igdstmpl(14),4).OR.btest(igdstmpl(14),5) ) 
      &         kgds(6)=kgds(6)+128
            if ( btest(igdstmpl(14),3) ) kgds(6)=kgds(6)+8
            kgds(7)=igdstmpl(15)/1000      ! Lat of last grid point
@@ -116,7 +116,7 @@ C$$$
            kgds(5)=igdstmpl(11)/1000      ! Long of 1st grid point
            kgds(6)=0                      ! resolution and component flags
            if (igdstmpl(1)==2 ) kgds(6)=64
-           if ( btest(igdstmpl(12),4).OR.btest(igdstmpl(12),5) )
+           if ( btest(igdstmpl(12),4).OR.btest(igdstmpl(12),5) ) 
      &         kgds(6)=kgds(6)+128
            if ( btest(igdstmpl(12),3) ) kgds(6)=kgds(6)+8
            kgds(7)=igdstmpl(14)/1000      ! Lat of last grid point
@@ -143,7 +143,7 @@ C$$$
            kgds(5)=igdstmpl(11)/1000      ! Long of 1st grid point
            kgds(6)=0                      ! resolution and component flags
            if (igdstmpl(1)==2 ) kgds(6)=64
-           if ( btest(igdstmpl(12),4).OR.btest(igdstmpl(12),5) )
+           if ( btest(igdstmpl(12),4).OR.btest(igdstmpl(12),5) ) 
      &         kgds(6)=kgds(6)+128
            if ( btest(igdstmpl(12),3) ) kgds(6)=kgds(6)+8
            kgds(7)=igdstmpl(14)/1000      ! Lon of orientation
@@ -170,7 +170,7 @@ C$$$
            kgds(5)=igdstmpl(13)/1000      ! Long of 1st grid point
            kgds(6)=0                      ! resolution and component flags
            if (igdstmpl(1)==2 ) kgds(6)=64
-           if ( btest(igdstmpl(14),4).OR.btest(igdstmpl(14),5) )
+           if ( btest(igdstmpl(14),4).OR.btest(igdstmpl(14),5) ) 
      &         kgds(6)=kgds(6)+128
            if ( btest(igdstmpl(14),3) ) kgds(6)=kgds(6)+8
            kgds(7)=igdstmpl(15)/1000      ! Lat of last grid point
@@ -197,7 +197,7 @@ C$$$
            kgds(5)=igdstmpl(11)/1000      ! Long of 1st grid point
            kgds(6)=0                      ! resolution and component flags
            if (igdstmpl(1)==2 ) kgds(6)=64
-           if ( btest(igdstmpl(12),4).OR.btest(igdstmpl(12),5) )
+           if ( btest(igdstmpl(12),4).OR.btest(igdstmpl(12),5) ) 
      &         kgds(6)=kgds(6)+128
            if ( btest(igdstmpl(12),3) ) kgds(6)=kgds(6)+8
            kgds(7)=igdstmpl(14)/1000      ! Lon of orientation

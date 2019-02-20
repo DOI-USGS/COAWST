@@ -26,7 +26,7 @@
         logical :: l_ADS
         logical :: l_COLLFRAG
         logical :: l_testcase
-        INTEGER  :: f_ero_iv
+        integer  :: f_ero_iv
         real(r8) :: f_dp0,f_alpha,f_beta,f_nb_frag
         real(r8) :: f_dmax,f_ater,f_clim
         real(r8) :: f_ero_frac,f_ero_nbfrag

@@ -94,15 +94,14 @@ GridsInLayer =  1
           Lm == 75            ! Number of I-direction INTERIOR RHO-points
           Mm == 70            ! Number of J-direction INTERIOR RHO-points
            N == 8             ! Number of vertical levels
-!         ND == 36            ! Number of wave directional bins
-          ND == 20            ! Number of wave directional bins
+          ND == 19            ! Number of wave directional bins
 
         Nbed =  1             ! Number of sediment bed layers
 
          NAT =  2             ! Number of active tracers (usually, 2)
          NPT =  0             ! Number of inactive passive tracers
-         NCS =  1             ! Number of cohesive (mud) sediment tracers
-         NNS =  0             ! Number of non-cohesive (sand) sediment tracers
+         NCS =  0             ! Number of cohesive (mud) sediment tracers
+         NNS =  1             ! Number of non-cohesive (sand) sediment tracers
 
 ! Domain decomposition parameters for serial, distributed-memory or
 ! shared-memory configurations used to determine tile horizontal range
@@ -147,7 +146,7 @@ GridsInLayer =  1
 !
 !                   1       2       3       4
 
-   LBC(isFsur) ==   Gra     Clo     Gra     Gra         ! free-surface
+   LBC(isFsur) ==   Gra     Clo     Gra     Cla         ! free-surface
    LBC(isUbar) ==   Gra     Clo     Gra     Red         ! 2D U-momentum
    LBC(isVbar) ==   Gra     Clo     Gra     Red         ! 2D V-momentum
    LBC(isUvel) ==   Gra     Clo     Gra     Red         ! 3D U-momentum
@@ -602,6 +601,7 @@ Hout(idWamp) == T       ! Hwave              wave height
 Hout(idWlen) == T       ! Lwave              wave length-mean
 Hout(idWlep) == T       ! Lwavep             wave length-peak
 Hout(idWdir) == T       ! Dwave              wave direction
+Hout(idWdip) == T       ! Dwavep             wave direction-peak
 Hout(idWptp) == T       ! Pwave_top          wave surface period
 Hout(idWpbt) == T       ! Pwave_bot          wave bottom period
 Hout(idWorb) == T       ! Uwave_rms          wave bottom orbital velocity
@@ -1270,13 +1270,13 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !  LBC(isV2Sd) 2D V-stokes,  [1:4, Ngrids] values are expected.
 !  LBC(isU3Sd) 3D U-stokes,  [1:4, Ngrids] values are expected.
 !  LBC(isV3Sd) 3D V-stokes,  [1:4, Ngrids] values are expected.
-
+!
 ! InWave boundary conditions
-
-   LBC(isAC3d) Wave action density, [1:4, Ngrids] values are expected.
-   LBC(isCT3d) Wave theta celerity, [1:4, Ngrids] values are expected.
-   LBC(isCX3d) Wave x-dir celerity, [1:4, Ngrids] values are expected.
-   LBC(isCY3d) Wave y-dir celerity, [1:4, Ngrids] values are expected.
+!
+!  LBC(isAC3d) Wave action density, [1:4, Ngrids] values are expected.
+!  LBC(isCT3d) Wave theta celerity, [1:4, Ngrids] values are expected.
+!  LBC(isCX3d) Wave x-dir celerity, [1:4, Ngrids] values are expected.
+!  LBC(isCY3d) Wave y-dir celerity, [1:4, Ngrids] values are expected.
 !
 ! Similarly, the adjoint-based algorithms (ADM, TLM, RPM) can have different
 ! lateral boundary conditions keywords:

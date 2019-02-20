@@ -2,9 +2,9 @@
       SUBROUTINE checkvars (ng, model, ncname, ncid, string, Nrec,      &
      &                      Nvar,tvarnam, get_var, have_var)
 !
-!svn $Id: checkvars.F 883 2017-12-05 22:24:46Z arango $
+!svn $Id: checkvars.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -44,10 +44,10 @@
 #if defined SEDIMENT || defined BBL_MODEL
       USE mod_sediment
 #endif
-#if defined VEGETATION
-      USE mod_vegetation
+#if defined VEGETATION 
+      USE mod_vegetation 
       USE mod_vegarr
-#endif
+#endif 
       USE mod_scalars
 !
       USE strings_mod, ONLY : FoundError
@@ -67,7 +67,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: IDmod, i, itrc, ivpr
+      integer :: IDmod, i, itrc, ivpr 
 !
       SourceFile=__FILE__
 !
@@ -172,8 +172,8 @@
         END DO
 #  endif
 # endif
-# ifdef VEGETATION
-#  ifdef ANA_VEGETATION
+# ifdef VEGETATION 
+#  ifdef ANA_VEGETATION 
         IF (nrrec(ng).ne.0) THEN
           DO ivpr=1,NVEGP
             get_var(idvprp(ivpr))=.TRUE.
@@ -183,7 +183,7 @@
         DO ivpr=1,NVEGP
           get_var(idvprp(ivpr))=.TRUE.
         END DO
-#  endif
+#  endif 
 # endif
 # ifdef SEDIMENT
 #  ifdef ANA_SEDIMENT
@@ -501,15 +501,15 @@
           END IF
         END DO
 
-# ifdef VEGETATION
-#  if defined VEG_DRAG || defined VEG_BIOMASS
-        DO ivpr=1,NVEGP
+# ifdef VEGETATION 
+#  if defined VEG_DRAG || defined VEG_BIOMASS 
+        DO ivpr=1,NVEGP 
           IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idvprp(ivpr)))) THEN
             have_var(idvprp(ivpr))=.TRUE.
-          END IF
-        END DO
-#  endif
-# endif
+          END IF 
+        END DO 
+#  endif  
+# endif 
 
 # ifdef SEDIMENT
         DO itrc=1,NST
@@ -851,9 +851,9 @@
 #  endif
 # endif
 
-# ifdef VEGETATION
-#  if defined VEG_DRAG || defined VEG_BIOMASS
-      DO ivpr=1,NVEGP
+# ifdef VEGETATION 
+#  if defined VEG_DRAG || defined VEG_BIOMASS 
+      DO ivpr=1,NVEGP 
         IF (.not.have_var(idvprp(ivpr)).and.                            &
      &      get_var(idvprp(ivpr))) THEN
           IF (Master) WRITE (stdout,10) string,                         &

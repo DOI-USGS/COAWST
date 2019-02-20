@@ -6,9 +6,9 @@
    (defined RP_AVERAGES && defined TL_IOMS) || \
    (defined TL_AVERAGES && defined TANGENT)
 !
-!svn $Id: vorticity.F 854 2017-07-18 23:28:45Z arango $
+!svn $Id: vorticity.F 905 2018-06-20 21:08:33Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !================================================== Hernan G. Arango ===
@@ -349,8 +349,8 @@
 !  (meter-1 second-1) at horizontal PSI-points and vertical RHO-points.
 !
         IF (k.gt.0) THEN
-          DO j=Jstr,Jend
-            DO i=Istr,Iend
+          DO j=Jstr,JendR
+            DO i=Istr,IendR
               cff=0.0625_r8*                                            &
      &            (pm(i-1,j-1)+pm(i-1,j)+pm(i,j-1)+pm(i,j))*            &
      &            (pn(i-1,j-1)+pn(i-1,j)+pn(i,j-1)+pn(i,j))
@@ -402,8 +402,8 @@
 !  Compute vertically-integrated relative vorticity (second-1) and
 !  potential vorticity (meter-1 second-1) at PSI-points.
 !
-      DO j=Jstr,Jend
-        DO i=Istr,Iend
+      DO j=Jstr,JendR
+        DO i=Istr,IendR
           cff=0.0625_r8*                                                &
      &        (pm(i-1,j-1)+pm(i-1,j)+pm(i,j-1)+pm(i,j))*                &
      &        (pn(i-1,j-1)+pn(i-1,j)+pn(i,j-1)+pn(i,j))

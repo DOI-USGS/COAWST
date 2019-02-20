@@ -1,11 +1,11 @@
-#if defined( DM_PARALLEL )
+#if defined( DM_PARALLEL ) 
       MODULE CMP_COMM
 
       implicit none
 
 ! MPI variables
       include 'mpif.h'
-
+ 
       integer Coupler_id /0/   ! this is Coupler's id, used to address
                                ! Coupler. This is a default value,
                                ! possibly to be redefined later
@@ -31,7 +31,7 @@
 !     are of this kind. No value other than 4 is anticipated as of now
 !       kind_REAL is type of real data to communicate. The corresponding
 !     MPI data type variable MPI_kind_REAL is assigned in CMP_INIT.
-!       kind_alt_REAL is alternative type of real data to communicate.
+!       kind_alt_REAL is alternative type of real data to communicate. 
 !     The corresponding MPI data type variable MPI_kind_alt_REAL is
 !     assigned in CMP_INIT. (It is used in subroutines CMP_alt_SEND
 !     and CMP_alt_RECV,)
@@ -47,7 +47,7 @@
 !
 !     This subroutine must be called by every Component right upon
 !     calling MPI_INIT. It assigns a value to the Component communicator
-!     COMM_local (which is a global variable in module CMP), to be
+!     COMM_local (which is a global variable in module CMP), to be 
 !     thereafter used by the Component in place of
 !     MPI_COMM_WORLD wherever it is used by the Component's
 !     standalone version. Besides, it stores the Component's id,
@@ -55,7 +55,7 @@
 !     by the Component in glob. variables. (The latter parameter affects
 !     the mode of communications; for its description, see CMP_SEND and
 !     CMP_RECV.) Finally, it starts handshaking with Coupler, receiving
-!     the unique (global, i.e. in MPI_COMM_WORLD) Coupler process
+!     the unique (global, i.e. in MPI_COMM_WORLD) Coupler process 
 !     rank Coupler_rank from Coupler
                                         ! ibuffer may include additional
                                         ! info to be received
@@ -140,7 +140,7 @@
       end if
 
 !        Start handshaking with Coupler (all processes):
-!        receive the unique (global, i.e. in MPI_COMM_WORLD) Coupler
+!        receive the unique (global, i.e. in MPI_COMM_WORLD) Coupler 
 !        process rank Coupler_rank from Coupler
 !
       tag=Coupler_id+23456
@@ -202,7 +202,7 @@
 
 !        If this process is the Component's master process,
 !        complete handshaking with Coupler:
-!        "register", i.e. send Component master process global rank
+!        "register", i.e. send Component master process global rank 
 !        to Coupler. Also, send the requested "flexibility level".
 !        (Sending Component's id (in ibuf(1)) is for double-check only.)
 !
@@ -264,7 +264,7 @@
       if (Coupler_id.lt.0) return    !   <- standalone mode
 
 !        Complete handshaking with Coupler:
-!        "register", i.e. send Component master process global rank
+!        "register", i.e. send Component master process global rank 
 !        to Coupler. Also, send the requested "flexibility level".
 !        (Sending Component's id (in ibuf(1)) is for double-check only.)
 !
@@ -344,9 +344,9 @@
 !           call CMP_DBG_CR(6,'CMP_SEND: entered')
 
       if (process_rank_local.ne.component_master_rank_local) then
-        if (FlexLev.eq.0) then
-!         With "flexibility level" FlexLev=0, only Component master
-!         process is supposed to call this subroutine.
+        if (FlexLev.eq.0) then                                           
+!         With "flexibility level" FlexLev=0, only Component master 
+!         process is supposed to call this subroutine.           
           write(message,                                                &
      &    '("*** CMP_SEND: process_rank_local=",i4,"  ***"/'            &
      &    //'"*** and component_master_rank_local=",i4," differ:  ***"/'&
@@ -354,10 +354,10 @@
      &    process_rank_local,component_master_rank_local
           call wrf_error_fatal(message)
         else if (FlexLev.eq.1) then
-!         With "flexibility level" FlexLev=1, any Component process is
+!         With "flexibility level" FlexLev=1, any Component process is 
 !         allowed to call this subroutine but only the Component
 !         master process can actually send data (so the
-!         others just make a dummy call), as the Coupler process only
+!         others just make a dummy call), as the Coupler process only 
 !         receives data from the Component master process.
           return
         else if (FlexLev.ne.2 .and. FlexLev.ne.3) then
@@ -366,9 +366,9 @@
      &    //'"*** STOPPED")') FlexLev
            call wrf_error_fatal(message)
         end if
-!         With "flexibility level" FlexLev=2 or FlexLev=3, any
+!         With "flexibility level" FlexLev=2 or FlexLev=3, any 
 !         Component process is allowed to actually send data.
-!         [In this case, the Coupler process (in CPL_RECV) receives
+!         [In this case, the Coupler process (in CPL_RECV) receives 
 !         from MPI_ANY_SOURCE rather than component_master_rank_global,
 !         and it is only identification by  tag  which enables Coupler
 !         to receive the data from the right source.]
@@ -403,7 +403,7 @@
 
       if (process_rank_local.ne.component_master_rank_local) then
         if (FlexLev.eq.0) then
-!         With "flexibility level" FlexLev=0, only Component master
+!         With "flexibility level" FlexLev=0, only Component master 
 !         process is supposed to call this subroutine.
           write(message,                                                &
      &      '("*** CMP_SEND: process_rank_local=",i4,"  ***"/'          &
@@ -412,10 +412,10 @@
      &    process_rank_local,component_master_rank_local
           call wrf_error_fatal(message)
         else if (FlexLev.eq.1) then
-!         With "flexibility level" FlexLev=1, any Component process is
+!         With "flexibility level" FlexLev=1, any Component process is 
 !         allowed to call this subroutine but only the Component
 !         master process can actually send data (so the
-!         others just make a dummy call), as the Coupler process only
+!         others just make a dummy call), as the Coupler process only 
 !         receives data from the Component master process.
           return
         else if (FlexLev.ne.2 .and. FlexLev.ne.3) then
@@ -424,9 +424,9 @@
      &    //'"*** STOPPED")') FlexLev
           call wrf_error_fatal(message)
         end if
-!         With "flexibility level" FlexLev=2 or FlexLev=3, any
+!         With "flexibility level" FlexLev=2 or FlexLev=3, any 
 !         Component process is allowed to actually send data.
-!         [In this case, the Coupler process (in CPL_RECV) receives
+!         [In this case, the Coupler process (in CPL_RECV) receives 
 !         from MPI_ANY_SOURCE rather than component_master_rank_global,
 !         and it is only identification by  tag  which enables Coupler
 !         to receive the data from the right source.]
@@ -451,7 +451,7 @@
       USE CMP_COMM
 
       implicit none
-
+ 
       integer N,MPI_DATATYPE
       integer F(1)
       character*255 :: message
@@ -464,7 +464,7 @@
 
       if (process_rank_local.ne.component_master_rank_local) then
         if (FlexLev.eq.0) then
-!         With "flexibility level" FlexLev=0, only Component master
+!         With "flexibility level" FlexLev=0, only Component master 
 !         process is supposed to call this subroutine.
           write(message,                                                &
      &    '("*** CMP_SEND: process_rank_local=",i4,"  ***"/ '           &
@@ -473,10 +473,10 @@
      &    process_rank_local,component_master_rank_local
           call wrf_error_fatal(message)
         else if (FlexLev.eq.1) then
-!         With "flexibility level" FlexLev=1, any Component process is
+!         With "flexibility level" FlexLev=1, any Component process is 
 !         allowed to call this subroutine but only the Component
 !         master process can actually send data (so the
-!         others just make a dummy call), as the Coupler process only
+!         others just make a dummy call), as the Coupler process only 
 !         receives data from the Component master process.
           return
         else if (FlexLev.ne.2 .and. FlexLev.ne.3) then
@@ -485,9 +485,9 @@
      &    //'"*** STOPPED")') FlexLev
           CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
         end if
-!         With "flexibility level" FlexLev=2 or FlexLev=3, any
+!         With "flexibility level" FlexLev=2 or FlexLev=3, any 
 !         Component process is allowed to actually send data.
-!         [In this case, the Coupler process (in CPL_RECV) receives
+!         [In this case, the Coupler process (in CPL_RECV) receives 
 !         from MPI_ANY_SOURCE rather than component_master_rank_global,
 !         and it is only identification by  tag  which enables Coupler
 !         to receive the data from the right source.]
@@ -523,7 +523,7 @@
 
       if (process_rank_local.ne.component_master_rank_local) then
         if (FlexLev.eq.0) then
-!         With "flexibility level" FlexLev=0, only Component master
+!         With "flexibility level" FlexLev=0, only Component master 
 !         process is supposed to call this subroutine.
           write(message,                                                &
           '("*** CMP_SEND: process_rank_local=",i4,"  ***"/ '           &
@@ -532,10 +532,10 @@
      &    process_rank_local,component_master_rank_local
           call wrf_error_fatal(message)
         else if (FlexLev.eq.1) then
-!         With "flexibility level" FlexLev=1, any Component process is
+!         With "flexibility level" FlexLev=1, any Component process is 
 !         allowed to call this subroutine but only the Component
 !         master process can actually send data (so the
-!         others just make a dummy call), as the Coupler process only
+!         others just make a dummy call), as the Coupler process only 
 !         receives data from the Component master process.
           return
         else if (FlexLev.ne.2 .and. FlexLev.ne.3) then
@@ -544,9 +544,9 @@
      &    //'"*** STOPPED")') FlexLev
           CALL MPI_ABORT(MPI_COMM_WORLD,2,ierr)
         end if
-!         With "flexibility level" FlexLev=2 or FlexLev=3, any
+!         With "flexibility level" FlexLev=2 or FlexLev=3, any 
 !         Component process is allowed to actually send data.
-!         [In this case, the Coupler process (in CPL_RECV) receives
+!         [In this case, the Coupler process (in CPL_RECV) receives 
 !         from MPI_ANY_SOURCE rather than component_master_rank_global,
 !         and it is only identification by  tag  which enables Coupler
 !         to receive the data from the right source.]
@@ -585,7 +585,7 @@
 
         if (FlexLev.eq.0) then
 
-!         With "flexibility level" FlexLev=0, only Component master
+!         With "flexibility level" FlexLev=0, only Component master 
 !         process is supposed to call this subroutine.
 
           write(message,                                                &
@@ -597,9 +597,9 @@
 
         else if (FlexLev.eq.1 .or. FlexLev.eq.2) then
 
-!         With "flexibility level" FlexLev=1 or FlexLev=2, any
-!         Component process is allowed to call this subroutine but
-!         only the Component master process is supposed to actually
+!         With "flexibility level" FlexLev=1 or FlexLev=2, any 
+!         Component process is allowed to call this subroutine but 
+!         only the Component master process is supposed to actually 
 !         receive data (so the others just make a dummy call), as
 !         the Coupler process only sends data to the Component master
 !         process.
@@ -611,13 +611,13 @@
 !         With "flexibility level" FlexLev=3, any Component process
 !         may actually receive data.
 !         [In this case, the Coupler process (in CPL_SEND) first
-!         receives the Component process global rank
+!         receives the Component process global rank 
 !         (process_rank_global) from this subroutine, the source being
-!         MPI_ANY_SOURCE, so it is only identification by  tag  which
+!         MPI_ANY_SOURCE, so it is only identification by  tag  which 
 !         enables Coupler to receive process_rank_global from the right
 !         source. Upon the receipt, the Coupler process (in CPL_SEND)
-!         sends the data to this Component process, rather than to
-!         the Component master process as is the case with lower
+!         sends the data to this Component process, rather than to 
+!         the Component master process as is the case with lower 
 !         "flexibility levels".]
 !         But in any case only one Component process may actually be
 !         engaged in a particular exchange of data with Coupler.
@@ -668,7 +668,7 @@
 
         if (FlexLev.eq.0) then
 
-!         With "flexibility level" FlexLev=0, only Component master
+!         With "flexibility level" FlexLev=0, only Component master 
 !         process is supposed to call this subroutine.
 
           write(message,                                                &
@@ -680,9 +680,9 @@
 
         else if (FlexLev.eq.1 .or. FlexLev.eq.2) then
 
-!         With "flexibility level" FlexLev=1 or FlexLev=2, any
-!         Component process is allowed to call this subroutine but
-!         only the Component master process is supposed to actually
+!         With "flexibility level" FlexLev=1 or FlexLev=2, any 
+!         Component process is allowed to call this subroutine but 
+!         only the Component master process is supposed to actually 
 !         receive data (so the others just make a dummy call), as
 !         the Coupler process only sends data to the Component master
 !         process.
@@ -694,13 +694,13 @@
 !         With "flexibility level" FlexLev=3, any Component process
 !         may actually receive data.
 !         [In this case, the Coupler process (in CPL_SEND) first
-!         receives the Component process global rank
+!         receives the Component process global rank 
 !         (process_rank_global) from this subroutine, the source being
-!         MPI_ANY_SOURCE, so it is only identification by  tag  which
+!         MPI_ANY_SOURCE, so it is only identification by  tag  which 
 !         enables Coupler to receive process_rank_global from the right
 !         source. Upon the receipt, the Coupler process (in CPL_SEND)
-!         sends the data to this Component process, rather than to
-!         the Component master process as is the case with lower
+!         sends the data to this Component process, rather than to 
+!         the Component master process as is the case with lower 
 !         "flexibility levels".]
 !         But in any case only one Component process may actually be
 !         engaged in a particular exchange of data with Coupler.
@@ -738,7 +738,7 @@
       USE CMP_COMM
 
       implicit none
-
+ 
       integer N,MPI_DATATYPE
       integer F(1)
       character*255 :: message
@@ -753,9 +753,9 @@
 
         if (FlexLev.eq.0) then
 
-!         With "flexibility level" FlexLev=0, only Component master
+!         With "flexibility level" FlexLev=0, only Component master 
 !         process is supposed to call this subroutine.
-
+           
           write(message,                                                &
      &    '("*** CMP_gnr_RECV: process_rank_local=",i4,"  ***"/ '       &
      &    //'"*** and component_master_rank_local=",i4," differ:  ***"/'&
@@ -765,9 +765,9 @@
 
         else if (FlexLev.eq.1 .or. FlexLev.eq.2) then
 
-!         With "flexibility level" FlexLev=1 or FlexLev=2, any
-!         Component process is allowed to call this subroutine but
-!         only the Component master process is supposed to actually
+!         With "flexibility level" FlexLev=1 or FlexLev=2, any 
+!         Component process is allowed to call this subroutine but 
+!         only the Component master process is supposed to actually 
 !         receive data (so the others just make a dummy call), as
 !         the Coupler process only sends data to the Component master
 !         process.
@@ -779,13 +779,13 @@
 !         With "flexibility level" FlexLev=3, any Component process
 !         may actually receive data.
 !         [In this case, the Coupler process (in CPL_SEND) first
-!         receives the Component process global rank
+!         receives the Component process global rank 
 !         (process_rank_global) from this subroutine, the source being
-!         MPI_ANY_SOURCE, so it is only identification by  tag  which
+!         MPI_ANY_SOURCE, so it is only identification by  tag  which 
 !         enables Coupler to receive process_rank_global from the right
 !         source. Upon the receipt, the Coupler process (in CPL_SEND)
-!         sends the data to this Component process, rather than to
-!         the Component master process as is the case with lower
+!         sends the data to this Component process, rather than to 
+!         the Component master process as is the case with lower 
 !         "flexibility levels".]
 !         But in any case only one Component process may actually be
 !         engaged in a particular exchange of data with Coupler.
@@ -838,7 +838,7 @@
          endif
       else if (FlexLev.eq.0) then
 
-!         With "flexibility level" FlexLev=0, only Component master
+!         With "flexibility level" FlexLev=0, only Component master 
 !         process is supposed to call this subroutine.
 
          write(message,                                                 &
@@ -894,7 +894,7 @@
       if (len_trim(s).eq.0) RETURN
 
       close(6)
-
+      
       open(6,file=trim(s),form='formatted',status='unknown')
 
       call wrf_debug(2,'CMP_STDOUT: unit 6 closed, reopened as '        &

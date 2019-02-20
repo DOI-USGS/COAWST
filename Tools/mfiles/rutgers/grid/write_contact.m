@@ -21,7 +21,7 @@ function write_contact(ncname, S, G, varargin)
 %                                                    default true)
 %
 
-% svn $Id: write_contact.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: write_contact.m 913 2018-07-02 22:16:58Z arango $
 %=========================================================================%
 %  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
@@ -48,6 +48,7 @@ FillValue = 1.0d+37;            % ROMS FillValue
 
 newline   = sprintf('\n');      % newline in global attributes
 
+AreaAvg=zeros([1 Ngrids]);
 for ng = 1:Ngrids
   AreaAvg(ng) = mean(mean((1./G(ng).pm) .* (1./G(ng).pn)));
 end  
@@ -71,7 +72,7 @@ if (Lcreate)
 % Define few global attributes.
 
   Gnames = [];
-  for n=1:Ngrids,
+  for n=1:Ngrids
     Gnames = [Gnames  blanks(1) newline S.grid(n).filename];
   end
   ncwriteatt(ncname, '/', 'grid_files', Gnames);
@@ -116,7 +117,7 @@ ncwrite(ncname, 'receiver_grid', int32([S.contact.receiver_grid]));
 
 % Update global type attribute.
 
-if (any(S.contact.hybrid))
+if (any([S.contact.hybrid]))
   hybrid_nesting = true;
   type = 'ROMS Hybrid Nesting Contact Regions Data';
   ncwriteatt(ncname, '/', 'type', type);
@@ -188,8 +189,6 @@ NendU = zeros([1 Ncontact]);
 
 NstrV = zeros([1 Ncontact]);
 NendV = zeros([1 Ncontact]);
-
-ic = 0;
 
 for cr=1:Ncontact
   NpointsR(cr) = length(S.contact(cr).point.Irg_rho);
@@ -376,7 +375,7 @@ ncwrite(ncname, 'Yrg', Yrg);
 
 Lweight = NaN([nLweights Ndatum]);
 
-for cr=1:Ncontact,
+for cr=1:Ncontact
   Lweight(1:nLweights, NstrR(cr):NendR(cr)) = S.Lweights(cr).H_rho;
   Lweight(1:nLweights, NstrU(cr):NendU(cr)) = S.Lweights(cr).H_u;
   Lweight(1:nLweights, NstrV(cr):NendV(cr)) = S.Lweights(cr).H_v;
@@ -461,7 +460,7 @@ for i=1:Ndatum
       xb = S.grid(rg).boundary(ib).Xuv;
       yb = S.grid(rg).boundary(ib).Yuv;
       ind = (abs(xb-Xrg(i)) < 4*eps & abs(yb-Yrg(i)) < 4*eps);
-      if (any(ind)),
+      if (any(ind))
         on_boundary(i) = ib;
         break;
       end
@@ -469,6 +468,6 @@ for i=1:Ndatum
   end
 end
 
-ncwrite(ncname, 'on_boundary', int32([on_boundary]));
+ncwrite(ncname, 'on_boundary', int32(on_boundary));
 
 return

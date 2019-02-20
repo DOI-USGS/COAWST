@@ -4,9 +4,9 @@
      &                       LBi, UBi, UBj, Istr, Iend, Jrec,           &
      &                       Finp, Fout, update)
 !
-!svn $Id: set_ngfldr.F 884 2017-12-06 01:59:26Z arango $
+!svn $Id: set_ngfldr.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -61,7 +61,7 @@
 
       integer :: Tindex, i, it1, it2, j
 
-      real(r8) :: fac, fac1, fac2
+      real(dp) :: SecScale, fac, fac1, fac2
 !
 !----------------------------------------------------------------------
 !  Set up requested field from data snapshots.
@@ -73,17 +73,15 @@
       Tindex=Iinfo(8,ifield,ng)
       update=.TRUE.
 !
-!  Set linear-interpolation factors.
+!  Set linear, time interpolation factors. Fractional seconds are
+!  rounded to the nearest milliseconds integer towards zero in the
+!  time interpolation weights.
 !
+      SecScale=1000.0_dp              ! seconds to milliseconds
       it1=3-Tindex
       it2=Tindex
-# if defined CRAY || defined SGI
-      fac2=ANINT(time(ng)-Tintrp(it2,ifield,ng))
-      fac1=ANINT(Tintrp(it1,ifield,ng)-time(ng))
-# else
-      fac1=ANINT(time(ng)-Tintrp(it2,ifield,ng),r8)
-      fac2=ANINT(Tintrp(it1,ifield,ng)-time(ng),r8)
-# endif
+      fac1=ANINT((time(ng)-Tintrp(it2,ifield,ng))*SecScale,dp)
+      fac2=ANINT((Tintrp(it1,ifield,ng)-time(ng))*SecScale,dp)
 !
 !  Load time-invariant data. Time interpolation is not necessary.
 !
@@ -96,10 +94,10 @@
 !
 !  Time-interpolate.
 !
-      ELSE IF (((fac1*fac2).ge.0.0_r8).and.(fac1+fac2).gt.0.0_r8) THEN
-        fac=1.0_r8/(fac1+fac2)
-        fac1=fac*fac1
-        fac2=fac*fac2
+      ELSE IF (((fac1*fac2).ge.0.0_dp).and.(fac1+fac2).gt.0.0_dp) THEN
+        fac=1.0_dp/(fac1+fac2)
+        fac1=fac*fac1                             ! nondimensional
+        fac2=fac*fac2                             ! nondimensional
         DO j=1,Jrec
           DO i=Istr,Iend
             Fout(i,j)=fac1*Finp(i,j,it1)+fac2*Finp(i,j,it2)
@@ -122,7 +120,8 @@
      &                      Finfo(3,ifield,ng), Finfo(4,ifield,ng),     &
      &                      Tintrp(it1,ifield,ng)*sec2day,              &
      &                      Tintrp(it2,ifield,ng)*sec2day,              &
-     &                      fac1*sec2day, fac2*sec2day
+     &                      fac1*sec2day/SecScale,                      &
+     &                      fac2*sec2day/SecScale
         END IF
   10    FORMAT (/,' SET_NGFLDR - current model time',                   &
      &          ' exceeds ending value for variable: ',a,               &

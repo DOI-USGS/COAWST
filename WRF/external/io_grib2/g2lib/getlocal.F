@@ -1,10 +1,10 @@
       subroutine getlocal(cgrib,lcgrib,localnum,csec2,lcsec2,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    getlocal
+! SUBPROGRAM:    getlocal 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-25
 !
-! ABSTRACT: This subroutine returns the contents of Section 2 ( Local
+! ABSTRACT: This subroutine returns the contents of Section 2 ( Local 
 !   Use Section ) from a GRIB2 message.  Since there can be multiple
 !   occurrences of Section 2 within a GRIB message, the calling routine
 !   indicates which occurrence is being requested with the localnum argument.
@@ -18,11 +18,11 @@
 !     lcgrib   - Length (in bytes) of GRIB message in array cgrib.
 !     localnum - The nth occurrence of Section 2 requested.
 !
-!   OUTPUT ARGUMENT LIST:
-!     csec2    - Character array containing information read from
+!   OUTPUT ARGUMENT LIST:      
+!     csec2    - Character array containing information read from 
 !                Section 2.
 !                The dimension of this array can be obtained in advance
-!                from argument maxlocal, which is returned from subroutine
+!                from argument maxlocal, which is returned from subroutine 
 !                gb_info.
 !     lcsec2   - Number of bytes of character array csec2 read from
 !                Section 2.
@@ -49,7 +49,7 @@
       integer,intent(in) :: lcgrib,localnum
       character(len=1),intent(out) :: csec2(*)
       integer,intent(out) :: lcsec2,ierr
-
+      
       character(len=4),parameter :: grib='GRIB',c7777='7777'
       character(len=4) :: ctemp
       integer :: listsec0(2)
@@ -59,7 +59,7 @@
       numlocal=0
 !
 !  Check for valid request number
-!
+!  
       if (localnum.le.0) then
         print *,'getlocal: Request for local section must be positive.'
         ierr=3
@@ -82,7 +82,7 @@
         return
       endif
 !
-!  Unpack Section 0 - Indicator Section
+!  Unpack Section 0 - Indicator Section 
 !
       iofst=8*(istart+5)
       call g2lib_gbyte(cgrib,listsec0(1),iofst,8)     ! Discipline
@@ -96,14 +96,14 @@
       ipos=istart+lensec0
 !
 !  Currently handles only GRIB Edition 2.
-!
+!  
       if (listsec0(2).ne.2) then
         print *,'getlocal: can only decode GRIB edition 2.'
         ierr=2
         return
       endif
 !
-!  Loop through the remaining sections keeping track of the
+!  Loop through the remaining sections keeping track of the 
 !  length of each.  Also check to see that if the current occurrence
 !  of Section 2 is the same as the one requested.
 !
@@ -144,7 +144,7 @@
           ierr=5
           return
         endif
-
+        
       enddo
 
 !

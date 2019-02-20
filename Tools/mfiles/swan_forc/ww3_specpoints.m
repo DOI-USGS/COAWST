@@ -34,11 +34,19 @@ for ct=1:spec_res:eta
             specpts(rr,2)=gy(1,ct)+offset;
             specpts(rr,3)=gx2(1,ct+spec_res)+offset;
             specpts(rr,4)=gy(1,ct+spec_res)+offset;
+            specpts(rr,5)=1-1;
+            specpts(rr,6)=ct-1;
+            specpts(rr,7)=1-1;
+            specpts(rr,8)=ct+spec_res-1;
         else
             specpts(rr,1)=gx2(1,ct)+offset;
             specpts(rr,2)=gy(1,ct)+offset;
             specpts(rr,3)=gx2(1,end)+offset;
             specpts(rr,4)=gy(1,end)+offset;
+            specpts(rr,5)=1-1;
+            specpts(rr,6)=ct-1;
+            specpts(rr,7)=1-1;
+            specpts(rr,8)=size(gy,2)-1;
         end
         rr=rr+1;
     end
@@ -51,11 +59,19 @@ for ct=1:spec_res:eta
             specpts(rr,2)=gy(end,ct)-offset;
             specpts(rr,3)=gx2(end,ct+spec_res)-offset;
             specpts(rr,4)=gy(end,ct+spec_res)-offset;
+            specpts(rr,5)=size(gx2,1)-1;
+            specpts(rr,6)=ct-1;
+            specpts(rr,7)=size(gx2,1)-1;
+            specpts(rr,8)=ct+spec_res-1;
         else
             specpts(rr,1)=gx2(end,ct)-offset;
             specpts(rr,2)=gy(end,ct)-offset;
             specpts(rr,3)=gx2(end,end)-offset;
             specpts(rr,4)=gy(end,end)-offset;
+            specpts(rr,5)=size(gx2,1)-1;
+            specpts(rr,6)=ct-1;
+            specpts(rr,7)=size(gx2,1)-1;
+            specpts(rr,8)=size(gy,2)-1;
         end
         rr=rr+1;
     end
@@ -68,11 +84,19 @@ for ct=1:spec_res:xi
             specpts(rr,2)=gy(ct,1)+offset;
             specpts(rr,3)=gx2(ct+spec_res,1);
             specpts(rr,4)=gy(ct+spec_res,1)+offset;
+            specpts(rr,5)=ct-1;
+            specpts(rr,6)=1-1;
+            specpts(rr,7)=ct+spec_res-1;
+            specpts(rr,8)=1-1;
         else
             specpts(rr,1)=gx2(ct,1);
             specpts(rr,2)=gy(ct,1)+offset;
             specpts(rr,3)=gx2(end,1)-offset;
             specpts(rr,4)=gy(end,1)+offset;
+            specpts(rr,5)=ct-1;
+            specpts(rr,6)=1-1;
+            specpts(rr,7)=size(gx2,1)-1;
+            specpts(rr,8)=1-1;
         end
         rr=rr+1;
     end
@@ -85,11 +109,19 @@ for ct=1:spec_res:xi
             specpts(rr,2)=gy(ct,end);
             specpts(rr,3)=gx2(ct+spec_res,end)-offset;
             specpts(rr,4)=gy(ct+spec_res,end);
+            specpts(rr,5)=ct-1;
+            specpts(rr,6)=size(gy,2)-1;
+            specpts(rr,7)=ct+spec_res-1;
+            specpts(rr,8)=size(gy,2)-1;
         else
             specpts(rr,1)=gx2(ct,end)-offset;
             specpts(rr,2)=gy(ct,end);
             specpts(rr,3)=gx2(end,end)-offset;
             specpts(rr,4)=gy(end,end);
+            specpts(rr,5)=ct-1;
+            specpts(rr,6)=size(gy,2)-1;
+            specpts(rr,7)=size(gx,2)-1;
+            specpts(rr,8)=size(gy,2)-1;
         end
         rr=rr+1;
     end

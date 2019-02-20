@@ -16,8 +16,8 @@ MODULE module_domain_type
 
    !  An entire domain.  This contains multiple meteorological fields by having
    !  arrays (such as "data_3d") of pointers for each field.  Also inside each
-   !  domain is a link to a couple of other domains, one is just the
-   !  "next" domain that is to be stored, the other is the next domain which
+   !  domain is a link to a couple of other domains, one is just the 
+   !  "next" domain that is to be stored, the other is the next domain which 
    !  happens to also be on the "same_level".
 
    TYPE streamrec
@@ -137,22 +137,22 @@ MODULE module_domain_type
       INTEGER                                             :: num_tiles        ! taken out of namelist 20000908
       INTEGER                                             :: num_tiles_x      ! taken out of namelist 20000908
       INTEGER                                             :: num_tiles_y      ! taken out of namelist 20000908
-      INTEGER                                             :: num_tiles_spec   ! place to store number of tiles computed from
+      INTEGER                                             :: num_tiles_spec   ! place to store number of tiles computed from 
                                                                               ! externally specified params
 
-      TYPE(domain_ptr) , DIMENSION( : ) , POINTER         :: parents
-      TYPE(domain_ptr) , DIMENSION( : ) , POINTER         :: nests
+      TYPE(domain_ptr) , DIMENSION( : ) , POINTER         :: parents                            
+      TYPE(domain_ptr) , DIMENSION( : ) , POINTER         :: nests                            
       TYPE(domain) , POINTER                              :: sibling ! overlapped domains at same lev
       LOGICAL                                             :: allocated        ! has alloc_space_field been called on this domain?
       TYPE(domain) , POINTER                              :: intermediate_grid
       LOGICAL                                             :: is_intermediate
-      INTEGER :: nids, nide, njds, njde  ! for intermediate domains, carry around the nest dimensions
+      INTEGER :: nids, nide, njds, njde  ! for intermediate domains, carry around the nest dimensions 
       INTEGER                                             :: num_parents, num_nests, num_siblings
       INTEGER      , DIMENSION( max_parents )             :: child_of_parent
       INTEGER      , DIMENSION( max_nests )               :: active
       LOGICAL                                             :: active_this_task
 
-      INTEGER      , DIMENSION(MAX_STREAMS)               :: nframes          ! frames per outfile for history
+      INTEGER      , DIMENSION(MAX_STREAMS)               :: nframes          ! frames per outfile for history 
                                                                               ! 1 is main history
 
       TYPE(domain) , POINTER                              :: next
@@ -203,10 +203,10 @@ MODULE module_domain_type
       Type(WRFU_Time)                                     :: this_emi_time, next_emi_time
       Type(WRFU_TimeInterval), DIMENSION(MAX_WRF_ALARMS)  :: io_intervals
       Type(WRFU_Alarm), POINTER :: alarms(:)
-! This awful hackery accounts for the fact that ESMF2.2.0 objects cannot tell
-! us if they have ever been created or not.  So, we have to keep track of this
-! ourselves to avoid destroying an object that has never been created!  Rip
-! this out once ESMF has useful introspection for creation...
+! This awful hackery accounts for the fact that ESMF2.2.0 objects cannot tell 
+! us if they have ever been created or not.  So, we have to keep track of this 
+! ourselves to avoid destroying an object that has never been created!  Rip 
+! this out once ESMF has useful introspection for creation...  
       LOGICAL :: domain_clock_created
       LOGICAL, POINTER :: alarms_created(:)
 

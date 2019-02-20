@@ -106,8 +106,8 @@ CONTAINS
    REAL, DIMENSION(num_force_layers), INTENT (IN) :: u_upstream_y_tend
    REAL, DIMENSION(num_force_layers), INTENT (IN) :: v_upstream_x_tend
    REAL, DIMENSION(num_force_layers), INTENT (IN) :: v_upstream_y_tend
-   REAL, DIMENSION(num_force_layers), INTENT (IN) :: th_t_tend
-   REAL, DIMENSION(num_force_layers), INTENT (IN) :: qv_t_tend
+   REAL, DIMENSION(num_force_layers), INTENT (IN) :: th_t_tend 
+   REAL, DIMENSION(num_force_layers), INTENT (IN) :: qv_t_tend  
    REAL, DIMENSION(num_force_layers), INTENT (IN) :: tau_x_tend
    REAL, DIMENSION(num_force_layers), INTENT (IN) :: tau_y_tend
 
@@ -148,13 +148,13 @@ CONTAINS
    REAL, DIMENSION(num_force_soil_layers), INTENT (INOUT) :: q_soil_forcing_tend
    REAL, DIMENSION(num_force_soil_layers), INTENT (INOUT) :: tau_soil
    REAL, DIMENSION(num_force_soil_layers), INTENT (IN   ) :: soil_depth_force
-   REAL, DIMENSION(num_soil_layers),       INTENT (IN   ) :: zs
+   REAL, DIMENSION(num_soil_layers),       INTENT (IN   ) :: zs        
 
    INTEGER,    INTENT(IN   )    ::     ids,ide, jds,jde, kds,kde, &
                                        ims,ime, jms,jme, kms,kme, &
                                        ips,ipe, jps,jpe, kps,kpe, &
                                        kts,kte
-
+   
 ! Local
    INTEGER                      :: i,j,k
    LOGICAL                      :: debug = .false.
@@ -181,7 +181,7 @@ CONTAINS
    REAL, DIMENSION(num_soil_layers) :: timescale_soil
 
    IF ( scm_force .EQ. 0 ) return
-
+ 
 ! NOTES
 ! z is kts:kte
 ! z_at_w is kms:kme
@@ -194,12 +194,12 @@ CONTAINS
         CALL wrf_error_fatal( message )
      endif
 
-     z_force = z_force + dt*z_force_tend
-     u_g = u_g + dt*u_g_tend
-     v_g = v_g + dt*v_g_tend
-     tau_x = tau_x + dt*tau_x_tend
-     tau_y = tau_y + dt*tau_y_tend
-     tau_largescale = tau_largescale + dt*tau_largescale_tend
+     z_force = z_force + dt*z_force_tend 
+     u_g = u_g + dt*u_g_tend 
+     v_g = v_g + dt*v_g_tend 
+     tau_x = tau_x + dt*tau_x_tend 
+     tau_y = tau_y + dt*tau_y_tend 
+     tau_largescale = tau_largescale + dt*tau_largescale_tend 
 
      if ( scm_th_adv .AND. th_upstream_x(1) > 0.) then
        th_upstream_x = th_upstream_x + dt*th_upstream_x_tend
@@ -264,7 +264,7 @@ CONTAINS
      adv_timescale_y = 0.0
      th_t_tend_interp =0.0
      qv_t_tend_interp =0.0
-
+ 
 ! now interpolate forcing to model vertical grid
 
 !    if ( debug ) print*,' z u_base v_base '
@@ -389,13 +389,13 @@ CONTAINS
 
     if ( scm_th_t_tend ) then
        do k = kms,kme-1
-          th_t_tend_interp(k) = interp_0(th_t_tend,z_force,z(ids,k,jds),num_force_layers)
+          th_t_tend_interp(k) = interp_0(th_t_tend,z_force,z(ids,k,jds),num_force_layers) 
        enddo
     endif
 
     if ( scm_qv_t_tend ) then
        do k = kms,kme-1
-          qv_t_tend_interp(k) = interp_0(qv_t_tend,z_force,z(ids,k,jds),num_force_layers)
+          qv_t_tend_interp(k) = interp_0(qv_t_tend,z_force,z(ids,k,jds),num_force_layers) 
           write(*,'(i3, f20.15)') k, qv_t_tend_interp(k)
        enddo
     endif
@@ -513,7 +513,7 @@ CONTAINS
                       0.5*(w_dudz(k) + w_dudz(k+1))                &
                       + u_ls_tend(k)
        vten(i,k,j)  = vten(i,k,j) + v_adv_tend(k) +                &
-                      0.5*(w_dvdz(k) + w_dvdz(k+1))                &
+                      0.5*(w_dvdz(k) + w_dvdz(k+1))                & 
                       + v_ls_tend(k)
     enddo
     enddo

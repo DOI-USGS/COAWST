@@ -1,11 +1,11 @@
       subroutine gf_unpack6(cgrib,lcgrib,iofst,ngpts,ibmap,bmap,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    gf_unpack6
+! SUBPROGRAM:    gf_unpack6 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-26
 !
 ! ABSTRACT: This subroutine unpacks Section 6 (Bit-Map Section)
-!   starting at octet 6 of that Section.
+!   starting at octet 6 of that Section.  
 !
 ! PROGRAM HISTORY LOG:
 ! 2000-05-26  Gilbert
@@ -20,14 +20,14 @@
 !     iofst    - Bit offset of the beginning of Section 6.
 !     ngpts    - Number of grid points specified in the bit-map
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     iofst    - Bit offset at the end of Section 6, returned.
 !     ibmap    - Bitmap indicator ( see Code Table 6.0 )
 !                0 = bitmap applies and is included in Section 6.
 !                1-253 = Predefined bitmap applies
 !                254 = Previously defined bitmap applies to this field
 !                255 = Bit map does not apply to this product.
-!     bmap()   - Pointer to a logical*1 array containing decoded bitmap.
+!     bmap()   - Pointer to a logical*1 array containing decoded bitmap. 
 !                ( if ibmap=0 )
 !     ierr     - Error return code.
 !                0 = no error
@@ -82,7 +82,7 @@
 !        print *,'gf_unpack6: Predefined bitmap ',ibmap,' not recognized.'
 !        ierr=4
       endif
-
+      
       return    ! End of Section 6 processing
       end
 

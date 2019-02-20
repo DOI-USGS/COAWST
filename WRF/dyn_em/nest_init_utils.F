@@ -1,4 +1,4 @@
-! careful adding any HYBRID_COORD stuff in here, adjust_tempqv has
+! careful adding any 1 stuff in here, adjust_tempqv has
 ! c3 and c4 to compute pressure with two reference pressures
 
 SUBROUTINE init_domain_constants_em ( parent , nest )
@@ -160,14 +160,14 @@ SUBROUTINE init_domain_vert_nesting ( parent, nest, use_baseparam_fr_nml )
           REAL, DIMENSION(kde_c), INTENT(IN   ) :: znw_c
           LOGICAL, INTENT(IN   ) :: use_baseparam_fr_nml
       END SUBROUTINE vert_cor_vertical_nesting_arbitrary
-
+      
    END INTERFACE
 
-
+   
    ! save the coarse grid values here
-
+   
    znw_c = nest%znw(1:parent%e_vert)
-
+   
    ! calculate the nest (fine) grid values here
    ! one of these calls goes to integer refinement in the vertical direction, and one goes to arbitrary refinement.  Eventually the call to integer refinement will be obsolete.
    if (nest%vert_refine_method .EQ. 1) then  !if you are in this subroutine there is vertical nesting- (i.e. nest%e_vert /= parent%e_vert to enter this subroutine)
@@ -238,7 +238,7 @@ END SUBROUTINE init_domain_vert_nesting
 
       nest%cfn  = (.5*nest%dnw(kde_n-1)+nest%dn(kde_n-1))/nest%dn(kde_n-1)
       nest%cfn1 = -.5*nest%dnw(kde_n-1)/nest%dn(kde_n-1)
-
+      
       ! the variables dzs and zs are kept from the parent domain.  These are the depths and thickness of the soil layers, which are not included in vertical nesting.
 
       END SUBROUTINE vert_cor_vertical_nesting_integer
@@ -807,11 +807,7 @@ SUBROUTINE adjust_tempqv ( mub, save_mub, c3, c4, znw, p_top, &
    DO j = jps , MIN(jpe, jde-1)
       DO k = kps , kpe-1
          DO i = ips , MIN(ipe, ide-1)
-#if  !( HYBRID_COORD==1 )
-            p_old(i,k,j) = 0.5*(znw(k+1)+znw(k))*save_mub(i,j) + p_top + pp(i,k,j)
-#elif ( HYBRID_COORD==1 )
             p_old(i,k,j) = c4(k) +         c3(k)*save_mub(i,j) + p_top + pp(i,k,j)
-#endif
             tc = (th(i,k,j)+300.)*(p_old(i,k,j)/1.e5)**(2./7.) - 273.15
             es = 610.78*exp(17.0809*tc/(234.175+tc))
             e = qv(i,k,j)*p_old(i,k,j)/(0.622+qv(i,k,j))
@@ -819,16 +815,11 @@ SUBROUTINE adjust_tempqv ( mub, save_mub, c3, c4, znw, p_top, &
          END DO
       END DO
    END DO
-
 ! p_new = full pressure after terrain blending; also compute temperature correction and convert RH back to QV
    DO j = jps , MIN(jpe, jde-1)
       DO k = kps , kpe-1
          DO i = ips , MIN(ipe, ide-1)
-#if  !( HYBRID_COORD==1 )
-            p_new(i,k,j) = 0.5*(znw(k+1)+znw(k))*mub(i,j) + p_top + pp(i,k,j)
-#elif ( HYBRID_COORD==1 )
             p_new(i,k,j) = c4(k) +         c3(k)*mub(i,j) + p_top + pp(i,k,j)
-#endif
 ! 2*(g/cp-6.5e-3)*R_dry/g = -191.86e-3
             dth1 = -191.86e-3*(th(i,k,j)+300.)/(p_new(i,k,j)+p_old(i,k,j))*(p_new(i,k,j)-p_old(i,k,j))
             dth = -191.86e-3*(th(i,k,j)+0.5*dth1+300.)/(p_new(i,k,j)+p_old(i,k,j))*(p_new(i,k,j)-p_old(i,k,j))

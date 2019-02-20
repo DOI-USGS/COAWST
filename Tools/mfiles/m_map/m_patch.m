@@ -1,4 +1,4 @@
-function h=m_patch(long,lat,C,varargin);
+function h=m_patch(long,lat,C,varargin)
 % M_PATCH Create patches on a map
 %    M_PATCH(LONG,LAT,C) is a drop-in replacement for PATCH that uses 
 %    longitude/latitude coordinates to draw a patch on the current map. 
@@ -20,15 +20,15 @@ function h=m_patch(long,lat,C,varargin);
 
 [m,n]=size(long);
 
-if m==1 & n>1,
+if m==1 && n>1
   h=mu_coast('vector',[long' lat';long(1) lat(1)],'patch',C,'tag','m_patch',varargin{:});
-elseif m>1 & n==1,
+elseif m>1 && n==1
   h=mu_coast('vector',[long lat;long(1) lat(1)],'patch',C,'tag','m_patch',varargin{:});
 else
   h=mu_coast('vector',[reshape([long;long(1,:);NaN+ones(1,n)],(m+2)*n,1),...
                      reshape([lat;lat(1,:);NaN+ones(1,n)],(m+2)*n,1)],'patch',C,'tag','m_patch',varargin{:});
-end;
+end
 
-if nargout==0,
+if nargout==0
  clear h
-end;
+end

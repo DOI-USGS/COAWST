@@ -64,7 +64,7 @@ contains
        badD = ieee_value(badD,ieee_quiet_nan)
        badI = -huge(badI)
 #else
-       badR = -huge(badR)
+       badR = -huge(badR) 
        badD = -huge(badD)
        badI = -huge(badI)
 #endif
@@ -75,7 +75,7 @@ contains
        badD = ieee_value(badD,ieee_signaling_nan)
        badI = -huge(badI)
 #else
-       badR = -huge(badR)
+       badR = -huge(badR) 
        badD = -huge(badD)
        badI = -huge(badI)
 #endif
@@ -137,7 +137,7 @@ contains
        return
     endif
     p => grid%head_statevars%next
-    DO WHILE ( ASSOCIATED( p ) )
+    DO WHILE ( ASSOCIATED( p ) ) 
        IF ( p%ProcOrient .NE. 'X' .AND. p%ProcOrient .NE. 'Y' ) THEN
           IF ( p%Ndim .EQ. 2 ) THEN
              IF (      p%MemoryOrder(1:1) .EQ. 'X' .AND.  p%MemoryOrder(2:2) .EQ.  'Y' ) THEN

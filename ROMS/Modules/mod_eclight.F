@@ -2,9 +2,9 @@
       MODULE mod_eclight
 #if defined BIOLOGY && (defined ECOSIM || defined SPECTRAL_LIGHT)
 !
-!svn $Id: mod_eclight.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: mod_eclight.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group       W. Paul Bissett   !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group       W. Paul Bissett   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -263,7 +263,7 @@
      &   9.6000e-04, 8.6000e-04, 8.0000e-04, 8.0000e-04, 7.8000e-04,    &
      &   7.3000e-04, 7.0000e-04, 7.0000e-04, 7.0000e-04, 7.0000e-04 /)
 
-# if defined SPECTRAL_LIGHT
+# if defined SPECTRAL_LIGHT 
 !ALA  ADD chlorophyll constants from gallegos: APHNORM * APHST675
       real(8), dimension(NBands) :: achlgal =                           &
      &(/ 2.8300e-02, 2.9200e-02, 3.0300e-02, 3.1300e-02, 3.1900e-02,    &
@@ -278,7 +278,7 @@
      &   8.8000e-03, 9.0000e-03, 9.0000e-03, 9.0000e-03, 9.2000e-03,    &
      &   1.0000e-02, 1.2200e-02, 1.5900e-02, 2.0100e-02, 2.2800e-02,    &
      &   2.2500e-02, 1.9100e-02, 1.3800e-02, 8.7000e-03, 5.1000e-03 /)
-# endif
+# endif     
 
 #endif
 

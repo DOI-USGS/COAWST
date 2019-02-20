@@ -175,7 +175,7 @@
 ! For calculating 10-m wind from lowest model level wind
       INTEGER :: ITER
       REAL :: windlmtmp,wind10tmp,wind10new,znotmtmp,znotttmp
-!zhang's doing
+!zhang's doing 
       REAL :: TSTART
 !zhang's doing ends
 #endif
@@ -256,7 +256,7 @@
 #endif
 
 ! z0base new
-
+ 
       REAL,DIMENSION(0:30) :: VZ0TBL_24
       VZ0TBL_24= (/0.,                                                 &
      &            1.00,  0.07,  0.07,  0.07,  0.07,  0.15,             &
@@ -264,7 +264,7 @@
      &            2.65,  1.09,  0.80,  0.001, 0.04,  0.05,             &
      &            0.01,  0.04,  0.06,  0.05,  0.03,  0.001,            &
      &            0.000, 0.000, 0.000, 0.000, 0.000, 0.000/)
-
+ 
 ! end z0base new
 !
 !----------------------------------------------------------------------
@@ -307,7 +307,7 @@
      &                             ,config_flags)
 !
         RESTRT=config_flags%restart
-        ANAL=config_flags%analysis
+        ANAL=config_flags%analysis                
         nestmove=RESTRT .and. .not. allowed_to_read
 
 #if ( HWRF == 1 )
@@ -391,7 +391,7 @@
       ENDIF
 #endif
 !
-!----------------------------------------------------------------------
+!---------------------------------------------------------------------- 
 !
       WRITE(message,196)IHRST,IDAT
       CALL wrf_message(trim(message))
@@ -605,7 +605,7 @@
             enddo
          endif
       endif
-
+         
       DO J=MYJS_P4,MYJE_P4
         grid%iheg(J)=MOD(J+1,2)
         grid%ihwg(J)=grid%iheg(J)-1
@@ -637,7 +637,7 @@
             ! or the leading edge will be filled with 3x3 areas with
             ! the same random number generator state.)
             random_seed=config_flags%random_seed + grid%ntsd
-
+            
             write(message,'(A,I0,A,I0)') 'Resetting random number for domain ',grid%id,' with seed ',random_seed
             call wrf_message(message)
             one=1
@@ -815,7 +815,7 @@
           grid%vz0(I,J)=0.
 
       ENDIF  ! endif for allowed to read
-!
+! 
         ENDDO
         ENDDO
 
@@ -897,7 +897,7 @@
          enddo
       endif
 
-!***
+!***  
 !***  INITIALIZE TURBULENT KINETIC ENERGY (TKE) TO A SMALL
 !***  VALUE (EPSQ2) ABOVE GROUND.  SET TKE TO ZERO IN THE
 !***  THE LOWEST MODEL LAYER.  IN THE LOWEST TWO ATMOSPHERIC
@@ -936,7 +936,7 @@
         ENDDO
       ENDIF
       ENDIF
-!***
+!***  
 !***  PAD ABOVE GROUND SPECIFIC HUMIDITY IF IT IS TOO SMALL.
 !***  INITIALIZE LATENT HEATING ACCUMULATION ARRAYS.
 !***
@@ -1077,10 +1077,10 @@
 !
 !***  n_iup_h HOLDS THE NUMBER OF MASS POINTS NEEDED IN EACH ROW
 !***  FOR UPSTREAM ADVECTION (FULL ROWS IN THE 3RD THROUGH 7TH
-!***  ROWS FROM THE SOUTH AND NORTH GLOBAL BOUNDARIES AND
+!***  ROWS FROM THE SOUTH AND NORTH GLOBAL BOUNDARIES AND 
 !***  FOUR POINTS ADJACENT TO THE WEST AND EAST GLOBAL BOUNDARIES
 !***  ON ALL OTHER INTERNAL ROWS).  SIMILARLY FOR n_iup_v.
-!***  BECAUSE OF HORIZONTAL OPERATIONS, THESE POINTS EXTEND OUTSIDE
+!***  BECAUSE OF HORIZONTAL OPERATIONS, THESE POINTS EXTEND OUTSIDE 
 !***  OF THE UPSTREAM REGION SOMEWHAT.
 !***  n_iup_adh HOLDS THE NUMBER OF MASS POINTS NEEDED IN EACH ROW
 !***  FOR THE COMPUTATION OF THE TENDENCIES THEMSELVES (adt, ADQ2M
@@ -1089,7 +1089,7 @@
 !***  n_iup_adv HOLDS THE NUMBER OF MASS POINTS NEEDED IN EACH ROW
 !***  FOR THE VELOCITY POINT TENDENCIES.
 !***  iup_h AND iup_v HOLD THE ACTUAL I VALUES USED IN EACH ROW.
-!***  LIKEWISE FOR iup_adh AND iup_adv.
+!***  LIKEWISE FOR iup_adh AND iup_adv. 
 !***  ALSO, SET upstrm FOR THOSE TASKS AROUND THE GLOBAL EDGE.
 !
       grid%upstrm=.FALSE.
@@ -1427,7 +1427,7 @@
 !***  lvl HOLDS THE HEIGHT (IN MODEL LAYERS) OF THE TOPOGRAPHY AT
 !***  EACH GRID POINT.
 !----------------------------------------------------------------------
-!
+!   
       DO J=JFS,JFE
       DO I=IFS,IFE
         grid%lvl(I,J)=LM-KTE
@@ -1437,7 +1437,7 @@
 !***  DETERMINE MODEL LAYER LIMITS FOR HIGH(3), MIDDLE(2),
 !***  AND LOW(1) CLOUDS.  ALSO FIND MODEL LAYER THAT IS JUST BELOW
 !***  (HEIGHT-WISE) 400 MB. (K400)
-!***
+!*** 
       K400=0
       PSUM=grid%pt
       SLPM=101325.
@@ -1469,7 +1469,7 @@
       DO K=KPS,KPE-1
         PHALF(K+1)=grid%aeta(K)*PDIF+grid%pt
       ENDDO
-
+      
 !
       PHALF(1)=0.
       PHALF(LM+1)=PSS
@@ -1612,7 +1612,7 @@
       END IF ! IF(allowed_to_read)THEN
 !
 !----------------------------------------------------------------------
-!***  INITIALIZE TAU-1 VALUES FOR ADAMS-BASHFORTH
+!***  INITIALIZE TAU-1 VALUES FOR ADAMS-BASHFORTH 
 !----------------------------------------------------------------------
 !
 #if ( HWRF == 1 )
@@ -1763,7 +1763,7 @@
         ENDDO
         ENDDO
 #if ( HWRF == 1 )
-      ENDIF    !zhang
+      ENDIF    !zhang 
 #endif
 
 #if ( HWRF == 1 )
@@ -2000,8 +2000,8 @@
           TL=grid%t(I,J,K)
           CWML=grid%cwm(I,J,K)
           RRI(I,K,J)=R_D*TL*(1.+P608*grid%q(I,J,K))/PLYR
-          ZINT(I,K+1,J)=ZINT(I,K,J)+TL/PLYR                             &
-                     *(grid%deta1(K)*grid%pdtop+grid%deta2(K)*grid%pdsl(I,J))*ROG        &
+          ZINT(I,K+1,J)=ZINT(I,K,J)+TL/PLYR                             & 
+                     *(grid%deta1(K)*grid%pdtop+grid%deta2(K)*grid%pdsl(I,J))*ROG        & 
                      *(grid%q(I,J,K)*P608-CWML+1.)
         ENDDO
 !
@@ -2053,7 +2053,7 @@
       ENDIF
 !
 !***  Always define the quantity grid%z0base
-
+                                                                                                                                              
 4041  format('Bounds: ip=',I0,',',I0,' jp=',I0,',',I0,' myi=',I0,',',I0,&
              ' myj=',I0,',',I0)
       write(message,4041) ips,ipe,jps,jpe,myis,myie,myjs,myje
@@ -2076,12 +2076,12 @@
 ! when allocating CAM radiation 4d arrays (ozmixm, aerosolc) these are not needed
       num_aerosolc=1
 
-! Set GMT, JULDAY, and JULYR outside of phy_init because it is no longer
-! called inside phy_init due to moving nest changes.  (When nests move
-! phy_init may not be called on a process if, for example, it is a moving
-! nest and if this part of the domain is not being initialized (not the
-! leading edge).)  Calling domain_setgmtetc() here will avoid this problem
-! when NMM moves to moving nests.
+! Set GMT, JULDAY, and JULYR outside of phy_init because it is no longer 
+! called inside phy_init due to moving nest changes.  (When nests move 
+! phy_init may not be called on a process if, for example, it is a moving 
+! nest and if this part of the domain is not being initialized (not the 
+! leading edge).)  Calling domain_setgmtetc() here will avoid this problem 
+! when NMM moves to moving nests.  
       CALL domain_setgmtetc( GRID, START_OF_SIMULATION )
 
       if(restrt) then
@@ -2094,7 +2094,7 @@
       endif
 
 ! Several arguments are RCONFIG entries in Registry.NMM. Registry no longer
-! includes these as dummy arguments or declares them.  Access them from
+! includes these as dummy arguments or declares them.  Access them from 
 ! GRID.  JM 20050819
 #ifndef WRF_NMM_NEST
     ! NOTE: we always get here for all NMM configurations because the
@@ -2135,7 +2135,7 @@
      &             ,STEPBL,STEPRA,STEPCU                                &
      &             ,grid%w0avg, RAINNC, RAINC, grid%raincv, RAINNCV               &
      &             ,SNOWNC, SNOWNCV, GRAUPELNC, GRAUPELNCV              &
-     &             ,z_at_q, grid%qnwfa2d                                &
+     &             ,z_at_q, rri, grid%qnwfa2d                           &
 !     &             ,scalar_trans(ims,kms,jms,1),num_scalar              &
      &             ,scalar_trans,num_scalar              &
      &             ,grid%re_cloud, grid%re_ice, grid%re_snow            & ! G. Thompson
@@ -2190,6 +2190,8 @@
      &                T2MVXY=grid%T2MVXY, T2MBXY=grid%T2MBXY, CHSTARXY=grid%CHSTARXY,    & ! Optional Noah-MP
      &                smoiseq=grid%smoiseq, smcwtdxy=grid%smcwtdxy, rechxy=grid%rechxy,   &
      &                deeprechxy=grid%deeprechxy,                                         &
+     &                iopt_crop=config_flags%opt_crop,                                                    &
+     &                gecros_state=grid%gecros_state,                                                        &   ! Optional gecros crop
      &                lakedepth2d=grid%lakedepth2d,  savedtke12d=grid%savedtke12d,  snowdp2d=grid%snowdp2d,   h2osno2d=grid%h2osno2d,               & !lake
      &                snl2d= grid%snl2d, t_grnd2d=grid%t_grnd2d, t_lake3d=grid%t_lake3d, lake_icefrac3d=grid%lake_icefrac3d,                        & !lake
      &                z_lake3d=grid%z_lake3d, dz_lake3d=grid%dz_lake3d, t_soisno3d=grid%t_soisno3d, h2osoi_ice3d=grid%h2osoi_ice3d,                 & !lake
@@ -2206,7 +2208,7 @@
      &                nssl_rho_qh=config_flags%nssl_rho_qh, nssl_rho_qhl=config_flags%nssl_rho_qhl,    &
      &                nssl_rho_qs=config_flags%nssl_rho_qs,                               &
      &                nssl_ipelec=config_flags%nssl_ipelec,                               &
-     &                nssl_isaund=config_flags%nssl_isaund,                               &
+     &                nssl_isaund=config_flags%nssl_isaund,                               & 
      &                MAXPATCH=1,ccn_conc=config_flags%ccn_conc, & ! CLM
      &                pin=grid%pin,ozmixm=grid%ozmixm &
      &                )
@@ -2298,26 +2300,26 @@
         DO K=KPS,KPE
         DO J=JFS,JFE
         DO I=IFS,IFE
-           moist(I,J,K,P_QV) = grid%q(I,J,K) / (1.-grid%q(I,J,K))
-        enddo
-        enddo
-        enddo
-
-! Also sum cloud water, ice, rain, snow, graupel into Ferrier cwm
-! array (if any hydrometeors found and non-zero from initialization
-! package).  Then, determine fractions ice and rain from species.
-
-        IF (.not. (MAXVAL(grid%cwm(ips:ipe,jps:jpe,:)).gt.0. .and. MAXVAL(grid%cwm(ips:ipe,jps:jpe,:)).lt.1.) ) then
+           moist(I,J,K,P_QV) = grid%q(I,J,K) / (1.-grid%q(I,J,K))                 
+        enddo      
+        enddo      
+        enddo      
+     
+! Also sum cloud water, ice, rain, snow, graupel into Ferrier cwm       
+! array (if any hydrometeors found and non-zero from initialization     
+! package).  Then, determine fractions ice and rain from species.       
+     
+        IF (.not. (MAXVAL(grid%cwm(ips:ipe,jps:jpe,:)).gt.0. .and. MAXVAL(grid%cwm(ips:ipe,jps:jpe,:)).lt.1.) ) then    
           do i_m = 2, num_moist
           if (i_m.ne.p_qv) &
      &       CALL wrf_message(' summing moist(:,:,:,i_m) into cwm array')
           DO K=KPS,KPE
           DO J=JFS,JFE
           DO I=IFS,IFE
-            IF ( (moist(I,J,K,i_m).gt.EPSQ) .and. (i_m.ne.p_qv) ) THEN
-               grid%cwm(I,J,K) = grid%cwm(I,J,K) + moist(I,J,K,i_m)
-            ENDIF
-          enddo
+            IF ( (moist(I,J,K,i_m).gt.EPSQ) .and. (i_m.ne.p_qv) ) THEN  
+               grid%cwm(I,J,K) = grid%cwm(I,J,K) + moist(I,J,K,i_m)               
+            ENDIF  
+          enddo    
           enddo
           enddo
           enddo

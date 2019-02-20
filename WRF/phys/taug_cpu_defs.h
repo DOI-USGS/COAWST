@@ -42,9 +42,9 @@
                                                       !    Dimensions: (ncol__,nlayers__)
       real  :: tauaa(ncol__, nlayers__, nbndlw__)
                                                       !    Dimensions: (ncol__,nlayers__,ngptlw__)
-
+     
       integer  :: nspad(nbndlw__)
       integer  :: nspbd(nbndlw__)
-      real  :: oneminusd
+      real  :: oneminusd 
 # undef ncol__
 #endif

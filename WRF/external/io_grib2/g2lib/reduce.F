@@ -1,5 +1,5 @@
       SUBROUTINE REDUCE(KFILDO,JMIN,JMAX,LBIT,NOV,LX,NDG,IBIT,JBIT,KBIT,
-     1                  NOVREF,IBXX2,IER)
+     1                  NOVREF,IBXX2,IER)            
 C
 C        NOVEMBER 2001   GLAHN   TDL   GRIB2
 C        MARCH    2002   GLAHN   COMMENT IER = 715
@@ -18,10 +18,10 @@ C            ROUTINE SO THAT KBIT COULD BE DETERMINED.  THIS
 C            FURNISHES A STARTING POINT FOR THE ITERATIONS IN REDUCE.
 C            HOWEVER, THE REFERENCE MUST BE CONSIDERED.
 C
-C        DATA SET USE
-C           KFILDO - UNIT NUMBER FOR OUTPUT (PRINT) FILE. (OUTPUT)
+C        DATA SET USE 
+C           KFILDO - UNIT NUMBER FOR OUTPUT (PRINT) FILE. (OUTPUT) 
 C
-C        VARIABLES IN CALL SEQUENCE
+C        VARIABLES IN CALL SEQUENCE 
 C              KFILDO = UNIT NUMBER FOR OUTPUT (PRINT) FILE.  (INPUT)
 C             JMIN(J) = THE MINIMUM OF EACH GROUP (J=1,LX).  IT IS
 C                       POSSIBLE AFTER SPLITTING THE GROUPS, JMIN( )
@@ -29,7 +29,7 @@ C                       WILL NOT BE THE MINIMUM OF THE NEW GROUP.
 C                       THIS DOESN'T MATTER; JMIN( ) IS REALLY THE
 C                       GROUP REFERENCE AND DOESN'T HAVE TO BE THE
 C                       SMALLEST VALUE.  (INPUT/OUTPUT)
-C             JMAX(J) = THE MAXIMUM OF EACH GROUP (J=1,LX).
+C             JMAX(J) = THE MAXIMUM OF EACH GROUP (J=1,LX). 
 C                       (INPUT/OUTPUT)
 C             LBIT(J) = THE NUMBER OF BITS NECESSARY TO PACK EACH GROUP
 C                       (J=1,LX).  (INPUT/OUTPUT)
@@ -70,7 +70,7 @@ C              IORIGB = THE ORIGINAL NUMBER OF BITS NECESSARY
 C                       FOR THE GROUP VALUES.  (INTERNAL)
 C        1         2         3         4         5         6         7 X
 C
-C        NON SYSTEM SUBROUTINES CALLED
+C        NON SYSTEM SUBROUTINES CALLED 
 C           NONE
 c
       CHARACTER*1 CFEED
@@ -147,13 +147,13 @@ C                 SET M = (NOV(L)-1)/(IBXX2(J)-1)+1
 C                 THE +M-1 IS NECESSARY.  FOR INSTANCE, 15 WILL FIT
 C                 INTO A BOX 4 BITS WIDE, BUT WON'T DIVIDE INTO
 C                 TWO BOXES 3 BITS WIDE EACH.
-C
+C      
                IF(NOVL.LT.IBXX2(J))THEN
                   GO TO 185
                ELSE
                   M=M+1
 C***                  WRITE(KFILDO,135)L,NOV(L),NOVL,M,J,IBXX2(J)
-C*** 135              FORMAT(/' AT 135--L,NOV(L),NOVL,M,J,IBXX2(J)',6I10)
+C*** 135              FORMAT(/' AT 135--L,NOV(L),NOVL,M,J,IBXX2(J)',6I10)               
                   GO TO 130
                ENDIF
 C
@@ -190,9 +190,9 @@ C    2              I10,' FOR GROUP MAXSIZE PLUS 1 ='I10
 C    3             /' *****************************************')
 C           WRITE(KFILDO,198) (NEWBOX(L),L=1,LX)
 C198        FORMAT(/' '20I6/(' '20I6))
-
+    
          ENDIF
-C
+C        
 C205     WRITE(KFILDO,209)KBIT,IORIGB
 C209     FORMAT(/' ORIGINAL BITS WITH KBIT OF',I5,' =',I10)
 C        WRITE(KFILDO,210)(N,N=2,10),(IBXX2(N),N=2,10),
@@ -232,7 +232,7 @@ C           THIS SHOULD NOT MATTER TO THE UNPACKER.
 C
          LXNKP=LX+NEWBOXTP
 C           LXNKP = THE NEW NUMBER OF BOXES
-C
+C  
          IF(LXNKP.GT.NDG)THEN
 C              DIMENSIONS NOT LARGE ENOUGH.  PROBABLY AN ERROR
 C              OF SOME SORT.  ABORT.
@@ -243,7 +243,7 @@ C    1              ' NOT LARGE ENOUGH FOR THE EXPANDED NUMBER OF',
 C    2              ' GROUPS =',I8,'.  ABORT REDUCE.')
             IER=715
             GO TO 410
-C              AN ABORT CAUSES THE CALLING PROGRAM TO REEXECUTE
+C              AN ABORT CAUSES THE CALLING PROGRAM TO REEXECUTE 
 C              WITHOUT CALLING REDUCE.
          ENDIF
 C
@@ -289,7 +289,7 @@ C              WRITE(KFILDO,2870)
 C2870          FORMAT(/' AN ERROR IN REDUCE ALGORITHM.  ABORT REDUCE.')
                IER=714
                GO TO 410
-C                 AN ABORT CAUSES THE CALLING PROGRAM TO REEXECUTE
+C                 AN ABORT CAUSES THE CALLING PROGRAM TO REEXECUTE 
 C                 WITHOUT CALLING REDUCE.
                ENDIF
 C
@@ -313,7 +313,7 @@ C***     1                          MOVMIN
 C*** 292           FORMAT(' AT 292 IN REDUCE--L,LXN,MOVE,LXNKP,',
 C***     1                'IBXX2(JJ),LEFT,NOV(L),MOVMIN'/8I12)
             ENDIF
-C
+C     
  300     CONTINUE
 C
          LX=LXNKP
@@ -340,4 +340,4 @@ C409  FORMAT(/' '20I6)
 C
  410  RETURN
       END
-
+      

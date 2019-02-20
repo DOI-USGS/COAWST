@@ -6,7 +6,7 @@
       integer,parameter:: NTYPE=9
       integer,parameter:: NGRID=22
       real(kind=kind_phys) B(NTYPE), SATPSI(NTYPE), SATKT(NTYPE),       &
-     &                     TSAT(NTYPE),                                 &
+     &                     TSAT(NTYPE),                                 & 
      &                     DFK(NGRID,NTYPE),                            &
      &                     KTK(NGRID,NTYPE),                            &
      &                     DFKT(NGRID,NTYPE)

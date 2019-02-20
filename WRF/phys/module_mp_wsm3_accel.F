@@ -25,7 +25,7 @@ MODULE module_mp_wsm3
    REAL, PARAMETER, PRIVATE :: lamdagmax = 6.e4   ! limited maximum value for slope parameter of graupel
    REAL, PARAMETER, PRIVATE :: dicon = 11.9       ! constant for the cloud-ice diamter
    REAL, PARAMETER, PRIVATE :: dimax = 500.e-6    ! limited maximum value for the cloud-ice diamter
-   REAL, PARAMETER, PRIVATE :: n0s = 2.e6         ! temperature dependent intercept parameter snow
+   REAL, PARAMETER, PRIVATE :: n0s = 2.e6         ! temperature dependent intercept parameter snow 
    REAL, PARAMETER, PRIVATE :: alpha = .12        ! .122 exponen factor for n0s
    REAL, PARAMETER, PRIVATE :: qcrmin = 1.e-9     ! minimun values for qr, qs, and qg
    REAL, SAVE ::                                      &
@@ -930,7 +930,7 @@ CONTAINS
             cpmcal, xlcal, lamdar, lamdas, diffus,                             &
             viscos, xka, venfac, conden, diffac,                               &
             x, y, z, a, b, c, d, e,                                            &
-            fallsum, fallsum_qsi, vt2i,vt2s,acrfac,                            &
+            fallsum, fallsum_qsi, vt2i,vt2s,acrfac,                            &      
             qdt, pvt, qik, delq, facq, qrsci, frzmlt,                          &
             snomlt, hold, holdrs, facqci, supcol, coeres,                      &
             supsat, dtcld, xmi, qciik, delqci, eacrs, satdt,                   &

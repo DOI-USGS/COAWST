@@ -32,7 +32,7 @@
       !      to set only 1st                        use 1
       !      to set only 2st                        use 2
       INTEGER , INTENT(IN)            :: tl_in
-
+ 
       ! true if the allocation is for an intermediate domain (for nesting); only certain fields allocated
       ! false otherwise (all allocated, modulo tl above)
       LOGICAL , INTENT(IN)            :: inter_domain_in, okay_to_alloc_in

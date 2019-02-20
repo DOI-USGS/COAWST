@@ -2,9 +2,9 @@
 #ifdef NONLINEAR
       SUBROUTINE set_data (ng, tile)
 !
-!svn $Id: set_data.F 858 2017-07-31 23:02:30Z arango $
+!svn $Id: set_data.F 900 2018-03-21 03:23:08Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -44,9 +44,9 @@
 !***********************************************************************
 !
       USE mod_param
-#if defined HYPOXIA_SRM || defined RED_TIDE
+# if defined HYPOXIA_SRM || defined RED_TIDE
       USE mod_biology
-#endif
+# endif
       USE mod_boundary
       USE mod_clima
       USE mod_forces
@@ -57,6 +57,10 @@
       USE mod_stepping
       USE mod_scalars
       USE mod_sources
+# if defined INWAVE_MODEL && defined INWAVE_SWAN_COUPLING
+      USE bndwavebc_mod
+# endif
+
 # if defined TRC_PSOURCE
       USE mod_trc_sources
 # endif
@@ -900,7 +904,13 @@
      &                     FORCES(ng)%Dwave,                            &
      &                     update)
 #   endif
-
+#   ifdef WAVES_DIRP
+      CALL set_2dfld_tile (ng, tile, iNLM, idWdip,                      &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     FORCES(ng)%DwavepG,                           &
+     &                     FORCES(ng)%Dwavep,                            &
+     &                     update)
+#   endif
 #   ifdef WAVES_HEIGHT
       CALL set_2dfld_tile (ng, tile, iNLM, idWamp,                      &
      &                     LBi, UBi, LBj, UBj,                          &
@@ -1181,7 +1191,9 @@
           END IF
         END IF
 # endif
-
+# if defined INWAVE_MODEL && defined INWAVE_SWAN_COUPLING
+        CALL bndwavebc (ng, tile)
+# endif
 # if defined WET_DRY
 !
 ! Ensure that water level on boundary cells is above bed elevation.
@@ -1846,7 +1858,7 @@
 !
 !  3D momentum.
 !
-      IF (.not.(RefinedGrid(ng).and.RefineScale(ng).gt.0)) THEN
+      IF (LprocessOBC(ng)) THEN
 #  ifdef ANA_M3OBC
         CALL ana_m3obc (ng, tile, iNLM)
 #  else

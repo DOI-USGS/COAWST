@@ -38,8 +38,8 @@ SUBROUTINE get_dims(MemoryOrder, Start, End, ndim, x_start, x_end, y_start, &
      MemoryOrderLcl(idx:idx) = MemoryOrder(idx:idx)
   enddo
   !
-  ! First, do the special boundary cases.  These do not seem to
-  !
+  ! First, do the special boundary cases.  These do not seem to 
+  !    
   if ((MemoryOrderLcl(1:3) .eq. 'XSZ') &
        .or. (MemoryOrderLcl(1:3) .eq. 'XEZ')) then
      x_start = Start(3)
@@ -72,7 +72,7 @@ SUBROUTINE get_dims(MemoryOrder, Start, End, ndim, x_start, x_end, y_start, &
      y_start = Start(1)
      y_end = End(1)
      ndim = 2
-  else if ((MemoryOrderLcl(1:1) .eq. 'C') .or. (MemoryOrderLcl(1:1) .eq. 'c')) then
+  else if ((MemoryOrderLcl(1:1) .eq. 'C') .or. (MemoryOrderLcl(1:1) .eq. 'c')) then 
      ! This is for "non-decomposed" fields
      x_start = Start(1)
      x_end = End(1)
@@ -113,7 +113,7 @@ SUBROUTINE geth_idts (ndate, odate, idts)
 
   IMPLICIT NONE
 
-  !  From 2 input mdates ('YYYY-MM-DD HH:MM:SS.ffff'),
+  !  From 2 input mdates ('YYYY-MM-DD HH:MM:SS.ffff'), 
   !  compute the time difference.
 
   !  on entry     -  ndate  -  the new hdate.
@@ -375,7 +375,7 @@ END SUBROUTINE geth_idts
 !*****************************************************************************
 
 SUBROUTINE get_vert_stag(VarName,Stagger,vert_stag)
-
+  
   character (LEN=*) :: VarName
   character (LEN=*) :: Stagger
   logical           :: vert_stag
@@ -391,16 +391,16 @@ end SUBROUTINE
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 FUNCTION ndfeb ( year ) RESULT (num_days)
-
+  
   ! Compute the number of days in February for the given year
-
+  
   IMPLICIT NONE
-
+  
   INTEGER :: year
   INTEGER :: num_days
-
+  
   num_days = 28 ! By default, February has 28 days ...
-  IF (MOD(year,4).eq.0) THEN
+  IF (MOD(year,4).eq.0) THEN  
      num_days = 29  ! But every four years, it has 29 days ...
      IF (MOD(year,100).eq.0) THEN
         num_days = 28  ! Except every 100 years, when it has 28 days ...
@@ -409,7 +409,7 @@ FUNCTION ndfeb ( year ) RESULT (num_days)
         END IF
      END IF
   END IF
-
+  
 END FUNCTION ndfeb
 
 !*****************************************************************************
@@ -464,7 +464,7 @@ SUBROUTINE get_dimvals(MemoryOrder,x,y,z,dims)
      dims(1) = x
      dims(2) = y
      dims(3) = z
-  else
+  else 
      do idx=1,len_trim(MemoryOrderLcl)
         char = MemoryOrderLcl(idx:idx)
         if ((char == 'X') .or. (char == 'x')) then
@@ -486,7 +486,7 @@ END SUBROUTINE get_dimvals
 !*****************************************************************************
 
 SUBROUTINE get_soil_layers(VarName,soil_layers)
-
+  
   character (LEN=*) :: VarName
   logical           :: soil_layers
 
@@ -521,7 +521,7 @@ SUBROUTINE Transpose_grib(MemoryOrder, di, FieldType, Field, &
   INTEGER                         :: col, row
   LOGICAL                         :: logicaltype
   CHARACTER (LEN=1000)            :: msg
-
+     
   if ((FieldType == WRF_REAL) .or. (FieldType == WRF_DOUBLE)) then
      do col=1,numcols
         do row=1,numrows
@@ -545,7 +545,7 @@ SUBROUTINE Transpose_grib(MemoryOrder, di, FieldType, Field, &
 !
 ! This following seciton is for the logical type.  This caused some problems
 !   on certain platforms.
-!
+! 
 !  else if (FieldType == WRF_LOGICAL) then
 !     do col=1,numcols
 !        do row=1,numrows
@@ -554,8 +554,8 @@ SUBROUTINE Transpose_grib(MemoryOrder, di, FieldType, Field, &
 !                TRANSFER(data((row-1)*numcols+col),logicaltype,1)
 !        enddo
 !     enddo
-
-
+  
+  
 end SUBROUTINE
 
 !*****************************************************************************
@@ -594,7 +594,7 @@ SUBROUTINE Transpose1D_grib(MemoryOrder, di, FieldType, Field, &
 !
 ! This following seciton is for the logical type.  This caused some problems
 !   on certain platforms.
-!
+! 
 !  else if (FieldType == WRF_LOGICAL) then
 !     do col=1,numcols
 !        do row=1,numrows
@@ -603,14 +603,14 @@ SUBROUTINE Transpose1D_grib(MemoryOrder, di, FieldType, Field, &
 !                TRANSFER(data((row-1)*numcols+col),logicaltype,1)
 !        enddo
 !     enddo
-
-
+  
+  
 end SUBROUTINE Transpose1D_grib
 
 !*****************************************************************************
 !
-! Takes a starting date (startTime) in WRF format (yyyy-mm-dd_hh:mm:ss),
-!   adds an input number of seconds to the time, and outputs a new date
+! Takes a starting date (startTime) in WRF format (yyyy-mm-dd_hh:mm:ss), 
+!   adds an input number of seconds to the time, and outputs a new date 
 !   (endTime) in WRF format.
 !
 !*****************************************************************************
@@ -626,10 +626,10 @@ subroutine advance_wrf_time(startTime, addsecs, endTime)
 
   read(startTime,'(I4.4,1X,I2.2,1X,I2.2,1X,I2.2,1X,I2.2,1X,I2.2)') &
        syear,smonth,sday,shour,smin,ssec
-
+  
   ssec = ssec + addsecs
 
-  do while (ssec .ge. 60)
+  do while (ssec .ge. 60) 
      smin = smin + 1
      ssec = ssec - 60
   enddo
@@ -672,7 +672,7 @@ subroutine advance_wrf_time(startTime, addsecs, endTime)
         syear = syear + 1
      endif
   enddo
-
+  
 
   write(endTime,'(I4.4,A,I2.2,A,I2.2,A,I2.2,A,I2.2,A,I2.2)') &
        syear,'-',smonth,'-',sday,'_',shour,':',smin,':',ssec

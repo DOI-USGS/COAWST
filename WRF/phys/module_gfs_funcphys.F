@@ -23,7 +23,7 @@ module module_gfs_funcphys
 !   subroutines are elemental; that is, they return a scalar if they
 !   are passed only scalars, but they return an array if they are passed
 !   an array.  These other functions and subroutines can be inlined, too.
-!
+!   
 ! Program History Log:
 !   1999-03-01  Mark Iredell
 !   1999-10-15  Mark Iredell  SI unit for pressure (Pascals)
@@ -1443,7 +1443,7 @@ contains
   function ftdp(pv)
 !$$$     Subprogram Documentation Block
 !
-! Subprogram: ftdp         Compute dewpoint temperature
+! Subprogram: ftdp         Compute dewpoint temperature 
 !   Author: N Phillips            w/NMC2X2   Date: 30 dec 82
 !
 ! Abstract: Compute dewpoint temperature from vapor pressure.

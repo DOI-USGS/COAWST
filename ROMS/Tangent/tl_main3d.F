@@ -2,9 +2,9 @@
 #if defined TANGENT && defined SOLVE3D
       SUBROUTINE tl_main3d (RunInterval)
 !
-!svn $Id: tl_main3d.F 889 2018-02-10 03:32:52Z arango $
+!svn $Id: tl_main3d.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -117,7 +117,7 @@
 !
 !  Imported variable declarations.
 !
-      real(r8), intent(in) :: RunInterval
+      real(dp), intent(in) :: RunInterval
 !
 !  Local variable declarations.
 !

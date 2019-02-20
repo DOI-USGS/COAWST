@@ -17,20 +17,20 @@ module process_domain_module
    ! Purpose:
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine process_domain(n, extra_row, extra_col)
-
+   
       use date_pack
       use gridinfo_module
       use interp_option_module
       use misc_definitions_module
       use module_debug
       use storage_module
-
+   
       implicit none
-
+   
       ! Arguments
       integer, intent(in) :: n
       logical, intent(in) :: extra_row, extra_col
-
+   
       ! Local variables
       integer :: istatus
       integer :: i, t, dyn_opt, &
@@ -68,22 +68,22 @@ module process_domain_module
       ! Compute number of times that we will process
       call geth_idts(end_date(n), start_date(n), idiff)
       call mprintf((idiff < 0),ERROR,'Ending date is earlier than starting date in namelist for domain %i.', i1=n)
-
+   
       n_times = idiff / interval_seconds
-
+   
       ! Check that the interval evenly divides the range of times to process
       call mprintf((mod(idiff, interval_seconds) /= 0),WARN, &
                    'In namelist, interval_seconds does not evenly divide '// &
                    '(end_date - start_date) for domain %i. Only %i time periods '// &
                    'will be processed.', i1=n, i2=n_times)
-
+   
       ! Initialize the storage module
       call mprintf(.true.,LOGFILE,'Initializing storage module')
       call storage_init()
-
-      !
+   
+      ! 
       ! Do time-independent processing
-      !
+      ! 
       call get_static_fields(n, dyn_opt, west_east_dim, south_north_dim, bottom_top_dim, map_proj, &
                     we_dom_s, we_dom_e, sn_dom_s, sn_dom_e, &
                     we_patch_s,      we_patch_e, &
@@ -108,7 +108,7 @@ module process_domain_module
          output_flags(i)    = ' '
          got_const_field(i) = .false.
       end do
-
+   
       ! This call is to process the constant met fields (SST or SEAICE, for example)
       ! That we process constant fields is indicated by the first argument
       call process_single_met_time(.true., temp_date, n, extra_row, extra_col, xlat, xlon, &
@@ -134,10 +134,10 @@ module process_domain_module
 
       allocate(td_output_flags(num_entries))
       allocate(got_this_field (num_entries))
-
+   
       ! Loop over all times to be processed for this domain
       do t=0,n_times
-
+   
          call geth_newdate(valid_date, trim(start_date(n)), t*interval_seconds)
          temp_date = ' '
 
@@ -148,10 +148,10 @@ module process_domain_module
          else
             write(temp_date,'(a19)') valid_date(1:10)//'_'//valid_date(12:19)
          end if
-
+   
          call mprintf(.true.,STDOUT, ' Processing %s', s1=trim(temp_date))
          call mprintf(.true.,LOGFILE, 'Preparing to process output time %s', s1=temp_date)
-
+   
          do i=1,num_entries
             td_output_flags(i) = output_flags(i)
             got_this_field(i)  = got_const_field(i)
@@ -162,7 +162,7 @@ module process_domain_module
          else
             process_bdy_width = 0
          end if
-
+   
          call process_single_met_time(.false., temp_date, n, extra_row, extra_col, xlat, xlon, &
                              xlat_u, xlon_u, xlat_v, xlon_v, landmask, &
                              title, dyn_opt, &
@@ -179,7 +179,7 @@ module process_domain_module
                              cen_lat, moad_cen_lat, cen_lon, stand_lon, truelat1, truelat2, &
                              pole_lat, pole_lon, parent_grid_ratio, sub_x, sub_y, &
                              corner_lats, corner_lons, td_output_flags, geogrid_flags, process_bdy_width)
-
+   
       end do  ! Loop over n_times
 
 
@@ -190,7 +190,7 @@ module process_domain_module
       deallocate(got_const_field)
 
       if (associated(geogrid_flags)) deallocate(geogrid_flags)
-
+   
       call storage_delete_all()
 
       istatus = mpas_mesh_free(mpas_source_mesh)
@@ -208,7 +208,7 @@ module process_domain_module
       istatus = remap_info_free(remap_info_m)
       istatus = remap_info_free(remap_info_u)
       istatus = remap_info_free(remap_info_v)
-
+   
    end subroutine process_domain
 
 
@@ -261,7 +261,7 @@ module process_domain_module
       real, dimension(16), intent(out) :: corner_lats, corner_lons
       character (len=128), intent(inout) :: title, mminlu
       character (len=128), dimension(:), pointer :: geogrid_flags
-
+    
       ! Local variables
       integer :: istatus, i, j, k, sp1, ep1, sp2, ep2, sp3, ep3, &
                  lh_mult, rh_mult, bh_mult, th_mult, subx, suby
@@ -275,7 +275,7 @@ module process_domain_module
       character (len=128), dimension(3) :: dimnames
       type (fg_input) :: field
       type (list) :: static_list, flag_list
-      type (list_item), dimension(:), pointer :: static_list_array
+      type (list_item), dimension(:), pointer :: static_list_array      
 
       call list_init(static_list)
 
@@ -286,8 +286,8 @@ module process_domain_module
       call mprintf(.true.,LOGFILE,'Opening static input file.')
       call input_init(n, istatus)
       call mprintf((istatus /= 0),ERROR, 'input_init(): Error opening input for domain %i.', i1=n)
-
-      ! Read global attributes from the static data input file
+   
+      ! Read global attributes from the static data input file 
       call mprintf(.true.,LOGFILE,'Reading static global attributes.')
       call read_global_attrs(title, datestr, grid_type, dyn_opt, west_east_dim,          &
                              south_north_dim, bottom_top_dim,                            &
@@ -307,12 +307,12 @@ module process_domain_module
          we_dom_e = west_east_dim   - 1
          sn_dom_e = south_north_dim - 1
       else if (grid_type(1:1) == 'E') then
-         we_dom_e = west_east_dim
+         we_dom_e = west_east_dim 
          sn_dom_e = south_north_dim
       end if
-
-      ! Given the full dimensions of this domain, find out the range of indices
-      !   that will be worked on by this processor. This information is given by
+     
+      ! Given the full dimensions of this domain, find out the range of indices 
+      !   that will be worked on by this processor. This information is given by 
       !   my_minx, my_miny, my_maxx, my_maxy
       call parallel_get_tile_dims(west_east_dim, south_north_dim)
 
@@ -386,11 +386,11 @@ module process_domain_module
                                  south_north_dim, real(west_east_dim)/2., &
                                  real(south_north_dim)/2.,cen_lat, cen_lon, &
                                  cen_lat, cen_lon)
-
+   
       ! Read static fields using the input module; we know that there are no more
       !   fields to be read when read_next_field() returns a non-zero status.
       istatus = 0
-      do while (istatus == 0)
+      do while (istatus == 0)  
         call read_next_field(sp1, ep1, sp2, ep2, sp3, ep3, cname, cunits, cdesc, &
                              memorder, stagger, dimnames, subx, suby, &
                              real_array, istatus)
@@ -398,15 +398,15 @@ module process_domain_module
 
           call mprintf(.true.,LOGFILE, 'Read in static field %s.',s1=cname)
           call list_insert(static_list, ckey=cname, cvalue=cname)
-
-          ! We will also keep copies in core of the lat/lon arrays, for use in
+   
+          ! We will also keep copies in core of the lat/lon arrays, for use in 
           !    interpolation of the met fields to the model grid.
           ! For now, we assume that the lat/lon arrays will have known field names
           if (index(cname, 'XLAT_M') /= 0 .and. &
               len_trim(cname) == len_trim('XLAT_M')) then
              allocate(xlat(we_mem_s:we_mem_e,sn_mem_s:sn_mem_e))
              xlat(we_patch_s:we_patch_e,sn_patch_s:sn_patch_e) = real_array(:,:,1)
-             call exchange_halo_r(xlat, &
+             call exchange_halo_r(xlat, & 
                                   we_mem_s, we_mem_e, sn_mem_s, sn_mem_e, 1, 1, &
                                   we_patch_s, we_patch_e, sn_patch_s, sn_patch_e, 1, 1)
 
@@ -414,7 +414,7 @@ module process_domain_module
                    len_trim(cname) == len_trim('XLONG_M')) then
              allocate(xlon(we_mem_s:we_mem_e,sn_mem_s:sn_mem_e))
              xlon(we_patch_s:we_patch_e,sn_patch_s:sn_patch_e) = real_array(:,:,1)
-             call exchange_halo_r(xlon, &
+             call exchange_halo_r(xlon, & 
                                   we_mem_s, we_mem_e, sn_mem_s, sn_mem_e, 1, 1, &
                                   we_patch_s, we_patch_e, sn_patch_s, sn_patch_e, 1, 1)
 
@@ -422,7 +422,7 @@ module process_domain_module
                    len_trim(cname) == len_trim('XLAT_U')) then
              allocate(xlat_u(we_mem_stag_s:we_mem_stag_e,sn_mem_s:sn_mem_e))
              xlat_u(we_patch_stag_s:we_patch_stag_e,sn_patch_s:sn_patch_e) = real_array(:,:,1)
-             call exchange_halo_r(xlat_u, &
+             call exchange_halo_r(xlat_u, & 
                                   we_mem_stag_s, we_mem_stag_e, sn_mem_s, sn_mem_e, 1, 1, &
                                   we_patch_stag_s, we_patch_stag_e, sn_patch_s, sn_patch_e, 1, 1)
 
@@ -430,7 +430,7 @@ module process_domain_module
                    len_trim(cname) == len_trim('XLONG_U')) then
              allocate(xlon_u(we_mem_stag_s:we_mem_stag_e,sn_mem_s:sn_mem_e))
              xlon_u(we_patch_stag_s:we_patch_stag_e,sn_patch_s:sn_patch_e) = real_array(:,:,1)
-             call exchange_halo_r(xlon_u, &
+             call exchange_halo_r(xlon_u, & 
                                   we_mem_stag_s, we_mem_stag_e, sn_mem_s, sn_mem_e, 1, 1, &
                                   we_patch_stag_s, we_patch_stag_e, sn_patch_s, sn_patch_e, 1, 1)
 
@@ -438,7 +438,7 @@ module process_domain_module
                    len_trim(cname) == len_trim('XLAT_V')) then
              allocate(xlat_v(we_mem_s:we_mem_e,sn_mem_stag_s:sn_mem_stag_e))
              xlat_v(we_patch_s:we_patch_e,sn_patch_stag_s:sn_patch_stag_e) = real_array(:,:,1)
-             call exchange_halo_r(xlat_v, &
+             call exchange_halo_r(xlat_v, & 
                                   we_mem_s, we_mem_e, sn_mem_stag_s, sn_mem_stag_e, 1, 1, &
                                   we_patch_s, we_patch_e, sn_patch_stag_s, sn_patch_stag_e, 1, 1)
 
@@ -446,7 +446,7 @@ module process_domain_module
                    len_trim(cname) == len_trim('XLONG_V')) then
              allocate(xlon_v(we_mem_s:we_mem_e,sn_mem_stag_s:sn_mem_stag_e))
              xlon_v(we_patch_s:we_patch_e,sn_patch_stag_s:sn_patch_stag_e) = real_array(:,:,1)
-             call exchange_halo_r(xlon_v, &
+             call exchange_halo_r(xlon_v, & 
                                   we_mem_s, we_mem_e, sn_mem_stag_s, sn_mem_stag_e, 1, 1, &
                                   we_patch_s, we_patch_e, sn_patch_stag_s, sn_patch_stag_e, 1, 1)
 
@@ -454,7 +454,7 @@ module process_domain_module
                    len_trim(cname) == len_trim('LANDMASK')) then
              allocate(landmask(we_mem_s:we_mem_e,sn_mem_s:sn_mem_e))
              landmask(we_patch_s:we_patch_e,sn_patch_s:sn_patch_e) = real_array(:,:,1)
-             call exchange_halo_r(landmask, &
+             call exchange_halo_r(landmask, & 
                                   we_mem_s, we_mem_e, sn_mem_s, sn_mem_e, 1, 1, &
                                   we_patch_s, we_patch_e, sn_patch_s, sn_patch_e, 1, 1)
 
@@ -472,7 +472,7 @@ module process_domain_module
              sn_patch_subgrid_s = (sn_patch_s                                    - 1)*suby                      + 1
              sn_patch_subgrid_e = (sn_patch_e + (1-th_mult)                         )*suby
           end if
-
+    
           ! Having read in a field, we write each level individually to the
           !   storage module; levels will be reassembled later on when they
           !   are written.
@@ -480,7 +480,7 @@ module process_domain_module
              field%header%sr_x=subx
              field%header%sr_y=suby
              field%header%version = 1
-             field%header%date = start_date(n)
+             field%header%date = start_date(n) 
              field%header%time_dependent = .false.
              field%header%mask_field = .false.
              field%header%constant_field = .false.
@@ -489,7 +489,7 @@ module process_domain_module
              field%header%field = cname
              field%header%units = cunits
              field%header%description = cdesc
-             field%header%vertical_coord = dimnames(3)
+             field%header%vertical_coord = dimnames(3) 
              field%header%vertical_level = k
              field%header%array_order = memorder
              field%header%is_wind_grid_rel = .true.
@@ -553,11 +553,11 @@ module process_domain_module
                                      (sn_mem_subgrid_e-sn_mem_subgrid_s)+1)
                 do j=1,(sn_mem_subgrid_e-sn_mem_subgrid_s)+1
                    do i=1,(we_mem_subgrid_e-we_mem_subgrid_s)+1
-                      call bitarray_set(field%valid_mask, i, j)
+                      call bitarray_set(field%valid_mask, i, j)     
                    end do
                 end do
 
-             else if (field%map%stagger == M  .or. &
+             else if (field%map%stagger == M  .or. & 
                  field%map%stagger == HH .or. &
                  field%map%stagger == VV) then
                 allocate(field%r_arr(we_mem_s:we_mem_e,&
@@ -571,7 +571,7 @@ module process_domain_module
                                      (sn_mem_e-sn_mem_s)+1)
                 do j=1,(sn_mem_e-sn_mem_s)+1
                    do i=1,(we_mem_e-we_mem_s)+1
-                      call bitarray_set(field%valid_mask, i, j)
+                      call bitarray_set(field%valid_mask, i, j)     
                    end do
                 end do
              else if (field%map%stagger == U) then
@@ -586,7 +586,7 @@ module process_domain_module
                                      (sn_mem_e-sn_mem_s)+1)
                 do j=1,(sn_mem_e-sn_mem_s)+1
                    do i=1,(we_mem_stag_e-we_mem_stag_s)+1
-                      call bitarray_set(field%valid_mask, i, j)
+                      call bitarray_set(field%valid_mask, i, j)     
                    end do
                 end do
              else if (field%map%stagger == V) then
@@ -601,7 +601,7 @@ module process_domain_module
                                      (sn_mem_stag_e-sn_mem_stag_s)+1)
                 do j=1,(sn_mem_stag_e-sn_mem_stag_s)+1
                    do i=1,(we_mem_e-we_mem_s)+1
-                      call bitarray_set(field%valid_mask, i, j)
+                      call bitarray_set(field%valid_mask, i, j)     
                    end do
                 end do
              else if (field%map%stagger == CORNER) then
@@ -616,18 +616,18 @@ module process_domain_module
                                      (sn_mem_stag_e-sn_mem_stag_s)+1)
                 do j=1,(sn_mem_stag_e-sn_mem_stag_s)+1
                    do i=1,(we_mem_stag_e-we_mem_stag_s)+1
-                      call bitarray_set(field%valid_mask, i, j)
+                      call bitarray_set(field%valid_mask, i, j)     
                    end do
                 end do
              end if
 
              nullify(field%modified_mask)
-
+     
              call storage_put_field(field)
-
+    
           end do
-
-        end if   ! if (istatus == 0)
+    
+        end if   ! if (istatus == 0) 
       end do  ! do while (istatus == 0)
 
       static_list_array => list_get_keys(static_list)
@@ -640,7 +640,7 @@ module process_domain_module
       end do
       deallocate(static_list_array)
       call list_destroy(static_list)
-
+    
       ! Done reading all static fields for this domain
       call input_close()
 
@@ -678,7 +678,7 @@ module process_domain_module
                              cen_lat, moad_cen_lat, cen_lon, stand_lon, truelat1, truelat2, &
                              pole_lat, pole_lon, parent_grid_ratio, sub_x, sub_y, &
                              corner_lats, corner_lons, output_flags, geogrid_flags, process_bdy_width)
-
+   
       use bitarray_module
       use gridinfo_module
       use interp_module
@@ -691,9 +691,9 @@ module process_domain_module
       use read_met_module
       use rotate_winds_module
       use storage_module
-
+   
       implicit none
-
+   
       ! Arguments
       logical, intent(in) :: do_const_processing
       integer, intent(in) :: n, dyn_opt, west_east_dim, south_north_dim, map_proj, &
@@ -721,7 +721,7 @@ module process_domain_module
 
 ! BUG: Move this constant to misc_definitions_module?
 integer, parameter :: BDR_WIDTH = 3
-
+   
       ! Local variables
       integer :: istatus, fg_idx, idx, idxt, i, j, bottom_top_dim, &
                  sm1, em1, sm2, em2, sm3, em3, &
@@ -748,7 +748,7 @@ integer, parameter :: BDR_WIDTH = 3
       nullify(real_array)
 
 
-      ! For this time, we need to process all first-guess filename roots. When we
+      ! For this time, we need to process all first-guess filename roots. When we 
       !   hit a root containing a '*', we assume we have hit the end of the list
       fg_idx = 1
       if (do_const_processing) then
@@ -757,7 +757,7 @@ integer, parameter :: BDR_WIDTH = 3
          input_name = fg_name(fg_idx)
       end if
       do while (input_name /= '*')
-
+   
          call mprintf(.true.,STDOUT, '    %s', s1=input_name)
          call mprintf(.true.,LOGFILE, 'Getting input fields from %s', s1=input_name)
 
@@ -786,7 +786,7 @@ integer, parameter :: BDR_WIDTH = 3
                                              we_mem_s, we_mem_e, we_mem_stag_s, we_mem_stag_e, &
                                              sn_mem_s, sn_mem_e, sn_mem_stag_s, sn_mem_stag_e )
          end if
-
+   
          fg_idx = fg_idx + 1
          if (do_const_processing) then
             input_name = constants_name(fg_idx)
@@ -798,18 +798,18 @@ integer, parameter :: BDR_WIDTH = 3
       !
       ! Rotate winds from earth-relative to grid-relative
       !
-
+   
       call storage_get_levels(u_field, u_levels)
       call storage_get_levels(v_field, v_levels)
-
-      if (associated(u_levels) .and. associated(v_levels)) then
+   
+      if (associated(u_levels) .and. associated(v_levels)) then 
          u_idx = 1
          do u_idx = 1, size(u_levels)
             u_field%header%vertical_level = u_levels(u_idx)
             call storage_get_field(u_field, istatus)
             v_field%header%vertical_level = v_levels(u_idx)
             call storage_get_field(v_field, istatus)
-
+  
             if (gridtype == 'C') then
                call met_to_map(u_field%r_arr, u_field%valid_mask, &
                                v_field%r_arr, v_field%valid_mask, &
@@ -836,8 +836,8 @@ integer, parameter :: BDR_WIDTH = 3
       if (do_const_processing) return
 
       !
-      ! Now that we have all degribbed fields, we build a 3-d pressure field, and fill in any
-      !   missing levels in the other 3-d fields
+      ! Now that we have all degribbed fields, we build a 3-d pressure field, and fill in any 
+      !   missing levels in the other 3-d fields 
       !
       call mprintf(.true.,LOGFILE,'Filling missing levels.')
       call fill_missing_levels(output_flags)
@@ -861,11 +861,11 @@ integer, parameter :: BDR_WIDTH = 3
             call mprintf(.true.,ERROR,'The mandatory field %s was not found in any input data.',s1=fieldname(i))
          end if
       end do
-
+       
       !
-      ! Before we begin to write fields, if debug_level is set high enough, we
+      ! Before we begin to write fields, if debug_level is set high enough, we 
       !    write a table of which fields are available at which levels to the
-      !    metgrid.log file, and then we check to see if any fields are not
+      !    metgrid.log file, and then we check to see if any fields are not 
       !    completely covered with data.
       !
       call storage_print_fields()
@@ -875,23 +875,23 @@ integer, parameter :: BDR_WIDTH = 3
       ! All of the processing is now done for this time period for this domain;
       !   now we simply output every field from the storage module.
       !
-
-      title = 'OUTPUT FROM METGRID V3.9.1'
-
+    
+      title = 'OUTPUT FROM METGRID V4.0.2' 
+   
       ! Initialize the output module for this domain and time
       call mprintf(.true.,LOGFILE,'Initializing output module.')
       output_date = temp_date
       if ( .not. nocolons ) then
          if (len_trim(temp_date) == 13) then
-            output_date(14:19) = ':00:00'
+            output_date(14:19) = ':00:00' 
          else if (len_trim(temp_date) == 16) then
-            output_date(17:19) = ':00'
+            output_date(17:19) = ':00' 
          end if
       else
          if (len_trim(temp_date) == 13) then
-            output_date(14:19) = '_00_00'
+            output_date(14:19) = '_00_00' 
          else if (len_trim(temp_date) == 16) then
-            output_date(17:19) = '_00'
+            output_date(17:19) = '_00' 
          end if
       endif
 
@@ -901,7 +901,7 @@ integer, parameter :: BDR_WIDTH = 3
                        we_patch_s,  we_patch_e,  sn_patch_s,  sn_patch_e, &
                        we_mem_s,    we_mem_e,    sn_mem_s,    sn_mem_e, &
                        extra_col, extra_row)
-
+   
       call get_bottom_top_dim(bottom_top_dim)
 
       ! Add in a flag to tell real that we have seven new msf fields
@@ -910,7 +910,7 @@ integer, parameter :: BDR_WIDTH = 3
       allocate(met_flags(nmet_flags))
       do i=1,num_entries
          met_flags(i) = output_flags(i)
-      end do
+      end do 
       if (gridtype == 'C') then
          met_flags(num_entries+1) = 'FLAG_MF_XY'
       else
@@ -940,12 +940,12 @@ integer, parameter :: BDR_WIDTH = 3
       end if
 
       if (associated(soil_levels)) then
-         num_metgrid_soil_levs = size(soil_levels)
+         num_metgrid_soil_levs = size(soil_levels) 
          deallocate(soil_levels)
       else
          num_metgrid_soil_levs = 0
       end if
-
+   
       ! First write out global attributes
       call mprintf(.true.,LOGFILE,'Writing global attributes to output.')
       call write_global_attrs(title, output_date, gridtype, dyn_opt, west_east_dim,          &
@@ -962,11 +962,11 @@ integer, parameter :: BDR_WIDTH = 3
                               met_flags, nmet_flags, process_bdy_width)
 
       deallocate(met_flags)
-
+    
       call reset_next_field()
 
       istatus = 0
-
+    
       ! Now loop over all output fields, writing each to the output module
       do while (istatus == 0)
          call get_next_output_field(cname, real_array, &
@@ -979,7 +979,7 @@ integer, parameter :: BDR_WIDTH = 3
             deallocate(real_array)
 
          end if
-
+   
       end do
 
       call mprintf(.true.,LOGFILE,'Closing output file.')
@@ -987,7 +987,7 @@ integer, parameter :: BDR_WIDTH = 3
 
       ! Free up memory used by met fields for this valid time
       call storage_delete_all_td()
-
+   
    end subroutine process_single_met_time
 
 
@@ -1069,12 +1069,12 @@ integer, parameter :: BDR_WIDTH = 3
 
          ! Process all fields and levels from the current file; read_next_met_field()
          !   will return a non-zero status when there are no more fields to be read.
-         do while (istatus == 0)
-
+         do while (istatus == 0) 
+   
             call read_next_met_field(fg_data, istatus)
-
+   
             if (istatus == 0) then
-
+   
                ! Find index into fieldname, interp_method, masked, and fill_missing
                !   of the current field
                idxt = num_entries + 1
@@ -1139,17 +1139,17 @@ integer, parameter :: BDR_WIDTH = 3
                   nullify(fg_data%slab)
                end if
 
-               call mprintf(.true.,LOGFILE,'Processing %s at level %f.',s1=fg_data%field,f1=fg_data%xlvl)
+               call mprintf(.true.,LOGFILE,'Processing %s at level %f.',s1=fg_data%field,f1=fg_data%xlvl)               
 
                call push_source_projection(fg_data%iproj, fg_data%xlonc, fg_data%truelat1, &
                                            fg_data%truelat2, fg_data%dx, fg_data%dy, fg_data%deltalat, &
                                            fg_data%deltalon, fg_data%starti, fg_data%startj, &
-                                           fg_data%startlat, fg_data%startlon,  &
-                                           fg_data%pole_lat, fg_data%pole_lon,        &
-                                           fg_data%centerlat, fg_data%centerlon,      &
-                                           real(fg_data%nx+1)/2., real(fg_data%ny+1)/2.,  &
+                                           fg_data%startlat, fg_data%startlon,  & 
+                                           fg_data%pole_lat, fg_data%pole_lon,        &  
+                                           fg_data%centerlat, fg_data%centerlon,      &  
+                                           real(fg_data%nx+1)/2., real(fg_data%ny+1)/2.,  &  
                                            earth_radius=fg_data%earth_radius*1000.)
-
+   
                ! Initialize fg_input structure to store the field
                field%header%version = 1
                field%header%date = fg_data%hdate//'        '
@@ -1160,7 +1160,7 @@ integer, parameter :: BDR_WIDTH = 3
                   field%header%time_dependent = .true.
                   field%header%constant_field = .false.
                end if
-               field%header%forecast_hour = fg_data%xfcst
+               field%header%forecast_hour = fg_data%xfcst 
                field%header%fg_source = 'FG'
                field%header%field = ' '
                field%header%field(1:9) = fg_data%field
@@ -1169,11 +1169,11 @@ integer, parameter :: BDR_WIDTH = 3
                field%header%description = ' '
                field%header%description(1:46) = fg_data%desc
                call get_z_dim_name(fg_data%field,field%header%vertical_coord)
-               field%header%vertical_level = nint(fg_data%xlvl)
+               field%header%vertical_level = nint(fg_data%xlvl) 
                field%header%sr_x = 1
                field%header%sr_y = 1
-               field%header%array_order = 'XY '
-               field%header%is_wind_grid_rel = fg_data%is_wind_grid_rel
+               field%header%array_order = 'XY ' 
+               field%header%is_wind_grid_rel = fg_data%is_wind_grid_rel 
                field%header%array_has_missing_values = .false.
                nullify(field%r_arr)
                nullify(field%valid_mask)
@@ -1189,15 +1189,15 @@ integer, parameter :: BDR_WIDTH = 3
                else
                   field%header%mask_field = .true.
                end if
-
+   
                !
                ! Before actually doing any interpolation to the model grid, we must check
-               !    whether we will be using the average_gcell interpolator that averages all
+               !    whether we will be using the average_gcell interpolator that averages all 
                !    source points in each model grid cell
                !
                do_gcell_interp = .false.
                if (index(interp_method(idx),'average_gcell') /= 0) then
-
+   
                   call get_gcell_threshold(interp_method(idx), threshold, istatus)
                   if (istatus == 0) then
                      if (fg_data%dx == 0. .and. fg_data%dy == 0. .and. &
@@ -1211,14 +1211,14 @@ integer, parameter :: BDR_WIDTH = 3
                      end if
                      if (gridtype == 'C') then
                         if (threshold*max(fg_data%dx,fg_data%dy)*111. <= max(dom_dx,dom_dy)/1000.) &
-                           do_gcell_interp = .true.
+                           do_gcell_interp = .true. 
                      else if (gridtype == 'E') then
                         if (threshold*max(fg_data%dx,fg_data%dy) <= max(dom_dx,dom_dy)) &
-                           do_gcell_interp = .true.
+                           do_gcell_interp = .true. 
                      end if
                   end if
                end if
-
+   
                ! Interpolate to U staggering
                if (output_stagger(idx) == U) then
 
@@ -1235,7 +1235,7 @@ integer, parameter :: BDR_WIDTH = 3
                      allocate(field%valid_mask)
                      call bitarray_create(field%valid_mask, we_mem_stag_e-we_mem_stag_s+1, sn_mem_e-sn_mem_s+1)
                   end if
-
+   
                   ! Save a copy of the fg_input structure for the U field so that we can find it later
                   if (is_u_field(idx)) call dup(field, u_field)
 
@@ -1268,7 +1268,7 @@ integer, parameter :: BDR_WIDTH = 3
                      allocate(field%valid_mask)
                      call bitarray_create(field%valid_mask, we_mem_e-we_mem_s+1, sn_mem_stag_e-sn_mem_stag_s+1)
                   end if
-
+   
                   ! Save a copy of the fg_input structure for the V field so that we can find it later
                   if (is_v_field(idx)) call dup(field, v_field)
 
@@ -1284,7 +1284,7 @@ integer, parameter :: BDR_WIDTH = 3
                   else
                      call mprintf(.true.,INFORM,' - already processed this field from constant file.')
                   end if
-
+          
                ! Interpolate to VV staggering
                else if (output_stagger(idx) == VV) then
 
@@ -1301,7 +1301,7 @@ integer, parameter :: BDR_WIDTH = 3
                      allocate(field%valid_mask)
                      call bitarray_create(field%valid_mask, we_mem_e-we_mem_s+1, sn_mem_e-sn_mem_s+1)
                   end if
-
+   
                   ! Save a copy of the fg_input structure for the U field so that we can find it later
                   if (is_u_field(idx)) call dup(field, u_field)
 
@@ -1348,7 +1348,7 @@ integer, parameter :: BDR_WIDTH = 3
                                      we_domain_s, we_domain_e, sn_domain_s, sn_domain_e, &
                                      halo_slab, 1-bdr_wdth, fg_data%nx+bdr_wdth, 1, fg_data%ny, bdr_wdth, do_gcell_interp, &
                                      field%modified_mask, process_bdy_width, landmask)
-
+   
                      else if (gridtype == 'E') then
                         call interp_met_field(input_name, fg_data%field, HH, M, &
                                      field, xlat, xlon, we_mem_s, we_mem_e, sn_mem_s, sn_mem_e, &
@@ -1365,7 +1365,7 @@ integer, parameter :: BDR_WIDTH = 3
                call bitarray_merge(field%valid_mask, field%modified_mask)
 
                deallocate(halo_slab)
-
+                            
                ! Store the interpolated field
                call storage_put_field(field)
 
@@ -1373,26 +1373,26 @@ integer, parameter :: BDR_WIDTH = 3
 
             end if
          end do
-
+   
          call read_met_close()
 
          call push_source_projection(fg_data%iproj, fg_data%xlonc, fg_data%truelat1, &
                                      fg_data%truelat2, fg_data%dx, fg_data%dy, fg_data%deltalat, &
                                      fg_data%deltalon, fg_data%starti, fg_data%startj, &
-                                     fg_data%startlat, fg_data%startlon,  &
-                                     fg_data%pole_lat, fg_data%pole_lon,        &
-                                     fg_data%centerlat, fg_data%centerlon,      &
-                                     real(fg_data%nx+1)/2., real(fg_data%ny+1)/2.,  &
+                                     fg_data%startlat, fg_data%startlon,  & 
+                                     fg_data%pole_lat, fg_data%pole_lon,        &  
+                                     fg_data%centerlat, fg_data%centerlon,      &  
+                                     real(fg_data%nx+1)/2., real(fg_data%ny+1)/2.,  &  
                                      earth_radius=fg_data%earth_radius*1000.)
-
+   
          !
          ! If necessary, rotate winds to earth-relative for this fg source
          !
-
+   
          call storage_get_levels(u_field, u_levels)
          call storage_get_levels(v_field, v_levels)
-
-         if (associated(u_levels) .and. associated(v_levels)) then
+   
+         if (associated(u_levels) .and. associated(v_levels)) then 
             u_idx = 1
             do u_idx = 1, size(u_levels)
                u_field%header%vertical_level = u_levels(u_idx)
@@ -1402,7 +1402,7 @@ integer, parameter :: BDR_WIDTH = 3
 
                if (associated(u_field%modified_mask) .and. &
                    associated(v_field%modified_mask)) then
-
+  
                   if (u_field%header%is_wind_grid_rel) then
                      if (gridtype == 'C') then
                         call map_to_met(u_field%r_arr, u_field%modified_mask, &
@@ -1437,7 +1437,7 @@ integer, parameter :: BDR_WIDTH = 3
          end if
 
          call pop_source_projection()
-
+      
       else
          if (do_const_processing) then
             call mprintf(.true.,WARN,'Couldn''t open file %s for input.',s1=input_name)
@@ -1619,7 +1619,7 @@ integer, parameter :: BDR_WIDTH = 3
       field_to_store%header%vertical_level = 0
       field_to_store%header%sr_x = 1
       field_to_store%header%sr_y = 1
-      field_to_store%header%array_order = 'XY '
+      field_to_store%header%array_order = 'XY ' 
       field_to_store%header%is_wind_grid_rel = .false.
       field_to_store%header%array_has_missing_values = .false.
       nullify(field_to_store%r_arr)
@@ -1634,7 +1634,7 @@ integer, parameter :: BDR_WIDTH = 3
 !???      end if
 
 
-      do while (scan_input_next_field(mpas_handle, mpas_field) == 0)
+      do while (scan_input_next_field(mpas_handle, mpas_field) == 0) 
 
          if (can_remap_field(mpas_field)) then
 
@@ -1663,9 +1663,9 @@ integer, parameter :: BDR_WIDTH = 3
                istat = scan_input_free_field(mpas_field)
                cycle
             end if
-
+    
             istat = scan_input_read_field(mpas_field, frame=1)
-
+ 
             field_to_store%map%stagger = mpas_output_stagger(mpas_field % name)
             if (field_to_store%map%stagger == M) then
                field_to_store%header%dim1(1) = we_mem_s
@@ -1935,13 +1935,13 @@ integer, parameter :: BDR_WIDTH = 3
 
                call storage_put_field(field_to_store)
             end if
-
+    
             istat = free_target_field(wrf_field)
          end if
 
          istat = scan_input_free_field(mpas_field)
       end do
-
+      
       if (scan_input_close(mpas_handle) /= 0) then
          call mprintf(.true.,ERROR, 'Error closing %s with scan_input_close', s1=mpas_filename)
       end if
@@ -2083,7 +2083,7 @@ integer, parameter :: BDR_WIDTH = 3
       call read_met_init(fg_prefix, is_constants, fg_date, istatus)
 
       do while (istatus == 0)
-
+   
          call read_next_met_field(fg_data, istatus)
 
          if (istatus == 0) then
@@ -2178,12 +2178,12 @@ integer, parameter :: BDR_WIDTH = 3
 
                   nullify(mask_field%valid_mask)
                   nullify(mask_field%modified_mask)
-
+     
                   call storage_put_field(mask_field)
 
                   exit
-
-               end if
+                
+               end if 
             end do
 
             if (associated(fg_data%slab)) deallocate(fg_data%slab)
@@ -2196,7 +2196,7 @@ integer, parameter :: BDR_WIDTH = 3
 
    end subroutine get_interp_masks
 
-
+   
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: interp_met_field
    !
@@ -2215,7 +2215,7 @@ integer, parameter :: BDR_WIDTH = 3
       use misc_definitions_module
       use storage_module
 
-      implicit none
+      implicit none 
 
       ! Arguments
       integer, intent(in) :: ifieldstagger, istagger, &
@@ -2253,7 +2253,7 @@ integer, parameter :: BDR_WIDTH = 3
       idxt = num_entries + 1
       do idx=1,num_entries
          if ((index(fieldname(idx), trim(short_fieldnm)) /= 0) .and. &
-             (len_trim(fieldname(idx)) == len_trim(short_fieldnm))) then
+             (len_trim(fieldname(idx)) == len_trim(short_fieldnm))) then 
             if (index(input_name,trim(from_input(idx))) /= 0 .or. &
                (from_input(idx) == '*' .and. idxt == num_entries + 1)) then
                idxt = idx
@@ -2272,12 +2272,12 @@ integer, parameter :: BDR_WIDTH = 3
       else
          process_width = process_bdy_width
         ! Add two extra rows/cols to accommodate staggered fields: one extra row/col for
-        !    averaging to mass points in real, and one beyond that for averaging during
-        !    wind rotation
+        !    averaging to mass points in real, and one beyond that for averaging during 
+        !    wind rotation 
         if (ifieldstagger /= M) process_width = process_width + 2
       end if
 
-      field%header%dim1(1) = sm1
+      field%header%dim1(1) = sm1 
       field%header%dim1(2) = em1
       field%header%dim2(1) = sm2
       field%header%dim2(2) = em2
@@ -2299,7 +2299,7 @@ integer, parameter :: BDR_WIDTH = 3
 
          call storage_get_field(mask_field, interp_mask_status)
 
-      end if
+      end if 
       if (interp_land_mask(idx) /= ' ') then
          mask_land_field%header%version = 1
          mask_land_field%header%forecast_hour = 0.
@@ -2309,7 +2309,7 @@ integer, parameter :: BDR_WIDTH = 3
 
          call storage_get_field(mask_land_field, interp_land_mask_status)
 
-      end if
+      end if 
       if (interp_water_mask(idx) /= ' ') then
          mask_water_field%header%version = 1
          mask_water_field%header%forecast_hour = 0.
@@ -2319,27 +2319,27 @@ integer, parameter :: BDR_WIDTH = 3
 
          call storage_get_field(mask_water_field, interp_water_mask_status)
 
-      end if
+      end if 
 
       interp_array => interp_array_from_string(interp_method(idx))
       interp_opts => interp_options_from_string(interp_method(idx))
 
-
+   
       !
       ! Interpolate using average_gcell interpolation method
       !
       if (do_gcell_interp) then
          !BPR BEGIN
          !If a lower priority source of the current field has already been read
-         !in, the results of that input are currently in field%r_arr
+         !in, the results of that input are currently in field%r_arr 
          !Pass COPY of field%r_arr into accum_continous because in accum_continuous
          !it will set the input variable to zero over points covered by the
          !current source and then determine the appropriate value to place at
-         !that point.  This will overwrite data already put in field%r_arr by
+         !that point.  This will overwrite data already put in field%r_arr by 
          !lower priority sources.
-         !This is problematic if the current source results in missing values
+         !This is problematic if the current source results in missing values 
          !over parts of the area covered by the current source where a lower
-         !priority source has already provided a value. In this case, if one
+         !priority source has already provided a value. In this case, if one 
          !passes in field%r_arr, it will overwrite the value provided by the
          !lower priority source with zero.
          r_arr_cur_source = field%r_arr
@@ -2408,7 +2408,7 @@ integer, parameter :: BDR_WIDTH = 3
                            temp = interp_to_latlon(xlat(i,j), xlon(i,j), istagger, interp_array, interp_opts, slab, &
                                                    minx, maxx, miny, maxy, bdr, missing_value(idx))
                         end if
-
+   
                         if (temp /= missing_value(idx)) then
                            field%r_arr(i,j) = temp
                            call bitarray_set(new_pts, i-sm1+1, j-sm2+1)
@@ -2425,7 +2425,7 @@ integer, parameter :: BDR_WIDTH = 3
                      field%r_arr(i,j) = fill_missing(idx)
 
                      ! Assume that if missing fill value is other than default, then user has asked
-                     !    to fill in any missing values, and we can consider this point to have
+                     !    to fill in any missing values, and we can consider this point to have 
                      !    received a valid value
                      if (fill_missing(idx) /= NAN) call bitarray_set(new_pts, i-sm1+1, j-sm2+1)
                   end if
@@ -2465,7 +2465,7 @@ integer, parameter :: BDR_WIDTH = 3
                      field%r_arr(i,j) = fill_missing(idx)
 
                      ! Assume that if missing fill value is other than default, then user has asked
-                     !    to fill in any missing values, and we can consider this point to have
+                     !    to fill in any missing values, and we can consider this point to have 
                      !    received a valid value
                      if (fill_missing(idx) /= NAN) call bitarray_set(new_pts, i-sm1+1, j-sm2+1)
                   end if
@@ -2474,7 +2474,7 @@ integer, parameter :: BDR_WIDTH = 3
 
             end do
          end do
-         call select_domain(orig_selected_proj)
+         call select_domain(orig_selected_proj) 
          deallocate(data_count)
 
       !
@@ -2509,7 +2509,7 @@ integer, parameter :: BDR_WIDTH = 3
                            temp = interp_to_latlon(xlat(i,j), xlon(i,j), istagger, interp_array, interp_opts, slab, &
                                                    minx, maxx, miny, maxy, bdr, missing_value(idx))
                         end if
-
+   
                      else if (landmask(i,j) == 1) then  ! LAND POINT
 
                         if (interp_water_mask_status == 0) then
@@ -2521,7 +2521,7 @@ integer, parameter :: BDR_WIDTH = 3
                            temp = interp_to_latlon(xlat(i,j), xlon(i,j), istagger, interp_array, interp_opts, slab, &
                                                    minx, maxx, miny, maxy, bdr, missing_value(idx))
                         end if
-
+   
                      end if
 
                   else if (landmask(i,j) /= masked(idx)) then
@@ -2570,14 +2570,14 @@ integer, parameter :: BDR_WIDTH = 3
                   field%r_arr(i,j) = fill_missing(idx)
 
                   ! Assume that if missing fill value is other than default, then user has asked
-                  !    to fill in any missing values, and we can consider this point to have
+                  !    to fill in any missing values, and we can consider this point to have 
                   !    received a valid value
                   if (fill_missing(idx) /= NAN) call bitarray_set(new_pts, i-sm1+1, j-sm2+1)
                end if
 
             end do
          end do
-         call select_domain(orig_selected_proj)
+         call select_domain(orig_selected_proj) 
       end if
 
       deallocate(interp_array)
@@ -2588,7 +2588,7 @@ integer, parameter :: BDR_WIDTH = 3
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: interp_to_latlon
-   !
+   ! 
    ! Purpose:
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    function interp_to_latlon(rlat, rlon, istagger, interp_method_list, interp_opt_list, slab, &
@@ -2612,13 +2612,13 @@ integer, parameter :: BDR_WIDTH = 3
 
       ! Return value
       real :: interp_to_latlon
-
+     
       ! Local variables
       real :: rx, ry
 
       interp_to_latlon = source_missing_value
-
-      call lltoxy(rlat, rlon, rx, ry, istagger)
+   
+      call lltoxy(rlat, rlon, rx, ry, istagger) 
       if (rx >= minx+bdr-0.5 .and. rx <= maxx-bdr+0.5) then
          if (present(mask_field) .and. present(mask_val) .and. present (mask_relational)) then
             interp_to_latlon = interp_sequence(rx, ry, 1, slab, minx, maxx, miny, maxy, 1, 1, source_missing_value, &
@@ -2631,15 +2631,15 @@ integer, parameter :: BDR_WIDTH = 3
                                                interp_method_list, interp_opt_list, 1)
          end if
       else
-         interp_to_latlon = source_missing_value
+         interp_to_latlon = source_missing_value 
       end if
 
       if (interp_to_latlon == source_missing_value) then
 
-         ! Try a lon in the range 0. to 360.; all lons in the xlon
+         ! Try a lon in the range 0. to 360.; all lons in the xlon 
          !    array should be in the range -180. to 180.
          if (rlon < 0.) then
-            call lltoxy(rlat, rlon+360., rx, ry, istagger)
+            call lltoxy(rlat, rlon+360., rx, ry, istagger) 
             if (rx >= minx+bdr-0.5 .and. rx <= maxx-bdr+0.5) then
                if (present(mask_field) .and. present(mask_val) .and. present(mask_relational)) then
                   interp_to_latlon = interp_sequence(rx, ry, 1, slab, minx, maxx, miny, maxy, &
@@ -2657,7 +2657,7 @@ integer, parameter :: BDR_WIDTH = 3
                                                      interp_method_list, interp_opt_list, 1)
                end if
             else
-               interp_to_latlon = source_missing_value
+               interp_to_latlon = source_missing_value 
             end if
 
          end if
@@ -2668,10 +2668,10 @@ integer, parameter :: BDR_WIDTH = 3
 
    end function interp_to_latlon
 
-
+  
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: get_bottom_top_dim
-   !
+   ! 
    ! Purpose:
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine get_bottom_top_dim(bottom_top_dim)
@@ -2691,45 +2691,45 @@ integer, parameter :: BDR_WIDTH = 3
       character (len=32) :: z_dim
       type (fg_input), pointer, dimension(:) :: headers
       type (list) :: temp_levels
-
+   
       !CWH Initialize local pointer variables
       nullify(field_levels)
       nullify(headers)
 
-      ! Initialize a list to store levels that are found for 3-d fields
+      ! Initialize a list to store levels that are found for 3-d fields 
       call list_init(temp_levels)
-
+   
       ! Get a list of all time-dependent fields (given by their headers) from
       !   the storage module
       call storage_get_td_headers(headers)
-
+   
       !
       ! Given headers of all fields, we first build a list of all possible levels
       !    for 3-d met fields (excluding sea-level, though).
       !
       do i=1,size(headers)
          call get_z_dim_name(headers(i)%header%field, z_dim)
-
+   
          ! We only want to consider 3-d met fields
          if (z_dim(1:18) == 'num_metgrid_levels') then
 
             ! Find out what levels the current field has
             call storage_get_levels(headers(i), field_levels)
             do j=1,size(field_levels)
-
+   
                ! If this level has not yet been encountered, add it to our list
                if (.not. list_search(temp_levels, ikey=field_levels(j), ivalue=field_levels(j))) then
                   if (field_levels(j) /= 201300) then
                      call list_insert(temp_levels, ikey=field_levels(j), ivalue=field_levels(j))
                   end if
                end if
-
+   
             end do
-
+   
             deallocate(field_levels)
 
          end if
-
+   
       end do
 
       bottom_top_dim = list_length(temp_levels)
@@ -2739,25 +2739,25 @@ integer, parameter :: BDR_WIDTH = 3
 
    end subroutine get_bottom_top_dim
 
-
+   
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: fill_missing_levels
    !
    ! Purpose:
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine fill_missing_levels(output_flags)
-
+   
       use interp_option_module
       use list_module
       use module_debug
       use module_mergesort
       use storage_module
-
+   
       implicit none
 
       ! Arguments
       character (len=128), dimension(:), intent(inout) :: output_flags
-
+   
       ! Local variables
       integer :: i, ii, j, ix, jx, k, lower, upper, temp, istatus
       integer, pointer, dimension(:) :: union_levels, field_levels
@@ -2767,7 +2767,7 @@ integer, parameter :: BDR_WIDTH = 3
       type (fg_input), pointer, dimension(:) :: headers, all_headers
       type (list) :: temp_levels
       type (list_item), pointer, dimension(:) :: keys
-
+   
       ! CWH Initialize local pointer variables
       nullify(union_levels)
       nullify(field_levels)
@@ -2776,39 +2776,39 @@ integer, parameter :: BDR_WIDTH = 3
       nullify(all_headers)
       nullify(keys)
 
-      ! Initialize a list to store levels that are found for 3-d fields
+      ! Initialize a list to store levels that are found for 3-d fields 
       call list_init(temp_levels)
-
+   
       ! Get a list of all fields (given by their headers) from the storage module
       call storage_get_td_headers(headers)
       call storage_get_all_headers(all_headers)
-
+   
       !
       ! Given headers of all fields, we first build a list of all possible levels
       !    for 3-d met fields (excluding sea-level, though).
       !
       do i=1,size(headers)
-
+   
          ! Find out what levels the current field has
          call storage_get_levels(headers(i), field_levels)
          do j=1,size(field_levels)
-
+   
             ! If this level has not yet been encountered, add it to our list
             if (.not. list_search(temp_levels, ikey=field_levels(j), ivalue=field_levels(j))) then
                if (field_levels(j) /= 201300) then
                   call list_insert(temp_levels, ikey=field_levels(j), ivalue=field_levels(j))
                end if
             end if
-
+   
          end do
-
+   
          deallocate(field_levels)
-
+   
       end do
-
+   
       if (list_length(temp_levels) > 0) then
-
-         !
+   
+         ! 
          ! With all possible levels stored in a list, get an array of levels, sorted
          !    in decreasing order
          !
@@ -2816,18 +2816,18 @@ integer, parameter :: BDR_WIDTH = 3
          allocate(union_levels(list_length(temp_levels)))
          do while (list_length(temp_levels) > 0)
             i = i + 1
-            call list_get_first_item(temp_levels, ikey=union_levels(i), ivalue=temp)
+            call list_get_first_item(temp_levels, ikey=union_levels(i), ivalue=temp)     
          end do
          call mergesort(union_levels, 1, size(union_levels))
-
+   
          allocate(r_union_levels(size(union_levels)))
          do i=1,size(union_levels)
             r_union_levels(i) = real(union_levels(i))
          end do
 
          !
-         ! With a sorted, complete list of levels, we need
-         !    to go back and fill in missing levels for each 3-d field
+         ! With a sorted, complete list of levels, we need 
+         !    to go back and fill in missing levels for each 3-d field 
          !
          do i=1,size(headers)
 
@@ -2836,7 +2836,7 @@ integer, parameter :: BDR_WIDTH = 3
             !    entry may tell us how to get values for the current field at the missing level
             !
             do ii=1,num_entries
-               if (fieldname(ii) == headers(i)%header%field) exit
+               if (fieldname(ii) == headers(i)%header%field) exit 
             end do
             if (ii <= num_entries) then
                call dup(headers(i),new_field)
@@ -2857,16 +2857,16 @@ integer, parameter :: BDR_WIDTH = 3
          ! Now we may need to vertically interpolate to missing values in 3-d fields
          !
          do i=1,size(headers)
-
+   
             call storage_get_levels(headers(i), field_levels)
-
+   
             ! If this isn't a 3-d array, nothing to do
             if (size(field_levels) > 1) then
 
                do k=1,size(field_levels)
                   call dup(headers(i),search_field)
                   search_field%header%vertical_level = field_levels(k)
-                  call storage_get_field(search_field,istatus)
+                  call storage_get_field(search_field,istatus) 
                   if (istatus == 0) then
                      JLOOP: do jx=search_field%header%dim2(1),search_field%header%dim2(2)
                         ILOOP: do ix=search_field%header%dim1(1),search_field%header%dim1(2)
@@ -2877,24 +2877,24 @@ integer, parameter :: BDR_WIDTH = 3
                               call dup(search_field, lower_field)
                               do lower=k-1,1,-1
                                  lower_field%header%vertical_level = field_levels(lower)
-                                 call storage_get_field(lower_field,istatus)
+                                 call storage_get_field(lower_field,istatus) 
                                  if (bitarray_test(lower_field%valid_mask, &
                                                    ix-search_field%header%dim1(1)+1, &
                                                    jx-search_field%header%dim2(1)+1)) &
-                                     exit
-
-                              end do
+                                     exit 
+                                
+                              end do                        
 
                               call dup(search_field, upper_field)
                               do upper=k+1,size(field_levels)
                                  upper_field%header%vertical_level = field_levels(upper)
-                                 call storage_get_field(upper_field,istatus)
+                                 call storage_get_field(upper_field,istatus) 
                                  if (bitarray_test(upper_field%valid_mask, &
                                                    ix-search_field%header%dim1(1)+1, &
                                                    jx-search_field%header%dim2(1)+1)) &
-                                     exit
-
-                              end do
+                                     exit 
+                                
+                              end do                        
                               if (upper <= size(field_levels) .and. lower >= 1) then
                                  search_field%r_arr(ix,jx) = real(abs(field_levels(upper)-field_levels(k))) &
                                                            / real(abs(field_levels(upper)-field_levels(lower))) &
@@ -2923,19 +2923,19 @@ integer, parameter :: BDR_WIDTH = 3
          end do
 
       end if
-
+   
       call list_destroy(temp_levels)
       deallocate(all_headers)
       deallocate(headers)
-
+   
    end subroutine fill_missing_levels
 
 
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    ! Name: create_derived_fields
    !
    ! Purpose:
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    subroutine create_derived_fields(arg_gridtype, hdate, xfcst, &
                                  we_mem_s, we_mem_e, sn_mem_s, sn_mem_e, &
                                  we_mem_stag_s, we_mem_stag_e, sn_mem_stag_s, sn_mem_stag_e, &
@@ -2951,10 +2951,10 @@ integer, parameter :: BDR_WIDTH = 3
       ! Arguments
       integer, intent(in) :: we_mem_s, we_mem_e, sn_mem_s, sn_mem_e, &
                              we_mem_stag_s, we_mem_stag_e, sn_mem_stag_s, sn_mem_stag_e
-      real, intent(in) :: xfcst
-      logical, dimension(:), intent(inout) :: created_this_field
-      character (len=1), intent(in) :: arg_gridtype
-      character (len=24), intent(in) :: hdate
+      real, intent(in) :: xfcst 
+      logical, dimension(:), intent(inout) :: created_this_field 
+      character (len=1), intent(in) :: arg_gridtype 
+      character (len=24), intent(in) :: hdate 
       character (len=128), dimension(:), intent(inout) :: output_flags
 
       ! Local variables
@@ -2967,7 +2967,7 @@ integer, parameter :: BDR_WIDTH = 3
       field%header%time_dependent = .true.
       field%header%mask_field = .false.
       field%header%constant_field = .false.
-      field%header%forecast_hour = xfcst
+      field%header%forecast_hour = xfcst 
       field%header%fg_source = 'Derived from FG'
       field%header%field = ' '
       field%header%units = ' '
@@ -2975,7 +2975,7 @@ integer, parameter :: BDR_WIDTH = 3
       field%header%vertical_level = 0
       field%header%sr_x = 1
       field%header%sr_y = 1
-      field%header%array_order = 'XY '
+      field%header%array_order = 'XY ' 
       field%header%is_wind_grid_rel = .true.
       field%header%array_has_missing_values = .false.
       nullify(field%r_arr)
@@ -3029,11 +3029,11 @@ integer, parameter :: BDR_WIDTH = 3
    end subroutine create_derived_fields
 
 
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    ! Name: fill_field
    !
    ! Purpose:
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    subroutine fill_field(field, idx, output_flags, all_level_list)
 
       use interp_option_module
@@ -3075,7 +3075,7 @@ integer, parameter :: BDR_WIDTH = 3
          ! First handle a specification for levels "all"
          !
          if (trim(keys(i)%ckey) == 'all') then
-
+          
             ! We only want to fill all levels if we haven't already filled "all" of them
             if (.not. filled_all_lev) then
 
@@ -3105,7 +3105,7 @@ integer, parameter :: BDR_WIDTH = 3
                         deallocate(all_list)
                      end if
                   end if
-
+         
                ! Else see if we are filling this level with a constant equal
                !   to the value of the level
                else if (trim(keys(i)%cvalue) == 'vertical_index') then
@@ -3125,7 +3125,7 @@ integer, parameter :: BDR_WIDTH = 3
                         deallocate(all_list)
                      end if
                   end if
-
+        
                ! Else, we assume that it is a field from which we are copying levels
                else
                   if (present(all_level_list)) then
@@ -3143,22 +3143,22 @@ integer, parameter :: BDR_WIDTH = 3
                                              asrcname=keys(i)%cvalue, rsrclevel=real(all_list(j)))
                         end do
                         deallocate(all_list)
-
+   
                      else
-
+   
                         ! If the field doesn't have any levels (or does not exist) then we have not
                         !   really filled all levels at this point.
                         filled_all_lev = .false.
                      end if
                   end if
-
+      
                end if
             end if
-
+                  
          !
          ! Handle individually specified levels
          !
-         else
+         else 
 
             read(keys(i)%ckey,*) rlevel
 
@@ -3173,7 +3173,7 @@ integer, parameter :: BDR_WIDTH = 3
                rsrclevel = real(isrclevel)
                call create_level(field, rlevel, idx, output_flags, &
                                  asrcname=asrcname, rsrclevel=rsrclevel)
-
+               
             end if
          end if
       end do
@@ -3183,11 +3183,11 @@ integer, parameter :: BDR_WIDTH = 3
    end subroutine fill_field
 
 
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    ! Name: create_level
    !
-   ! Purpose:
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   ! Purpose: 
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    subroutine create_level(field_template, rlevel, idx, output_flags, &
                            rfillconst, asrcname, rsrclevel)
 
@@ -3203,7 +3203,7 @@ integer, parameter :: BDR_WIDTH = 3
       character (len=128), dimension(:), intent(inout) :: output_flags
       real, intent(in), optional :: rfillconst, rsrclevel
       character (len=128), intent(in), optional :: asrcname
-
+       
       ! Local variables
       integer :: i, j, istatus
       integer :: sm1,em1,sm2,em2
@@ -3239,7 +3239,7 @@ integer, parameter :: BDR_WIDTH = 3
       if (istatus == 0) then
          call mprintf(.true.,INFORM,'%s at level %f already exists; leaving it alone.', &
                       s1=field_template%header%field, f1=rlevel)
-         return
+         return 
       end if
 
       sm1 = field_template%header%dim1(1)
@@ -3258,7 +3258,7 @@ integer, parameter :: BDR_WIDTH = 3
          allocate(field_template%modified_mask)
          call bitarray_create(field_template%valid_mask, em1-sm1+1, em2-sm2+1)
          call bitarray_create(field_template%modified_mask, em1-sm1+1, em2-sm2+1)
-
+ 
          field_template%r_arr = rfillconst
 
          do j=sm2,em2
@@ -3304,7 +3304,7 @@ integer, parameter :: BDR_WIDTH = 3
             allocate(field_template%modified_mask)
             call bitarray_create(field_template%valid_mask, em1-sm1+1, em2-sm2+1)
             call bitarray_create(field_template%modified_mask, em1-sm1+1, em2-sm2+1)
-
+ 
             field_template%r_arr = query_field%r_arr
 
             ! We should retain information about which points in the field are valid
@@ -3330,32 +3330,32 @@ integer, parameter :: BDR_WIDTH = 3
       end if
 
    end subroutine create_level
-
-
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   
+   
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    ! Name: accum_continuous
    !
    ! Purpose: Sum up all of the source data points whose nearest neighbor in the
    !   model grid is the specified model grid point.
    !
-   ! NOTE: When processing the source tile, those source points that are
-   !   closest to a different model grid point will be added to the totals for
+   ! NOTE: When processing the source tile, those source points that are 
+   !   closest to a different model grid point will be added to the totals for 
    !   such grid points; thus, an entire source tile will be processed at a time.
-   !   This routine really processes for all model grid points that are
+   !   This routine really processes for all model grid points that are 
    !   within a source tile, and not just for a single grid point.
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    subroutine accum_continuous(src_array, &
                                src_min_x, src_max_x, src_min_y, src_max_y, src_min_z, src_max_z, bdr_width, &
                                dst_array, n, &
                                start_i, end_i, start_j, end_j, start_k, end_k, &
                                istagger, &
                                new_pts, msgval, maskval, mask_relational, mask_array, sr_x, sr_y)
-
+   
       use bitarray_module
       use misc_definitions_module
-
+   
       implicit none
-
+   
       ! Arguments
       integer, intent(in) :: start_i, end_i, start_j, end_j, start_k, end_k, istagger, &
                              src_min_x, src_max_x, src_min_y, src_max_y, src_min_z, src_max_z, bdr_width
@@ -3366,7 +3366,7 @@ integer, parameter :: BDR_WIDTH = 3
       integer, intent(in), optional :: sr_x, sr_y
       type (bitarray), intent(inout) :: new_pts
       character(len=1), intent(in), optional :: mask_relational
-
+   
       ! Local variables
       integer :: i, j
       integer, pointer, dimension(:,:,:) :: where_maps_to
@@ -3376,14 +3376,14 @@ integer, parameter :: BDR_WIDTH = 3
       rsr_y = 1.0
       if (present(sr_x)) rsr_x = real(sr_x)
       if (present(sr_y)) rsr_y = real(sr_y)
-
+   
       allocate(where_maps_to(src_min_x:src_max_x,src_min_y:src_max_y,2))
       do i=src_min_x,src_max_x
          do j=src_min_y,src_max_y
-            where_maps_to(i,j,1) = NOT_PROCESSED
+            where_maps_to(i,j,1) = NOT_PROCESSED 
          end do
       end do
-
+   
       call process_continuous_block(src_array, where_maps_to, &
                                src_min_x, src_min_y, src_min_z, src_max_x, src_max_y, src_max_z, &
                                src_min_x+bdr_width, src_min_y, src_min_z, &
@@ -3391,21 +3391,21 @@ integer, parameter :: BDR_WIDTH = 3
                                dst_array, n, start_i, end_i, start_j, end_j, start_k, end_k, &
                                istagger, &
                                new_pts, rsr_x, rsr_y, msgval, maskval, mask_relational, mask_array)
-
+   
       deallocate(where_maps_to)
-
+   
    end subroutine accum_continuous
-
-
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-   ! Name: process_continuous_block
+   
+   
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
+   ! Name: process_continuous_block 
    !
-   ! Purpose: To recursively process a subarray of continuous data, adding the
-   !   points in a block to the sum for their nearest grid point. The nearest
-   !   neighbor may be estimated in some cases; for example, if the four corners
-   !   of a subarray all have the same nearest grid point, all elements in the
+   ! Purpose: To recursively process a subarray of continuous data, adding the 
+   !   points in a block to the sum for their nearest grid point. The nearest 
+   !   neighbor may be estimated in some cases; for example, if the four corners 
+   !   of a subarray all have the same nearest grid point, all elements in the 
    !   subarray are added to that grid point.
-   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+   !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 
    recursive subroutine process_continuous_block(tile_array, where_maps_to, &
                                    src_min_x, src_min_y, src_min_z, src_max_x, src_max_y, src_max_z, &
                                    min_i, min_j, min_k, max_i, max_j, max_k, &
@@ -3413,13 +3413,13 @@ integer, parameter :: BDR_WIDTH = 3
                                    start_x, end_x, start_y, end_y, start_z, end_z, &
                                    istagger, &
                                    new_pts, sr_x, sr_y, msgval, maskval, mask_relational, mask_array)
-
+   
       use bitarray_module
       use llxy_module
       use misc_definitions_module
-
+   
       implicit none
-
+   
       ! Arguments
       integer, intent(in) :: min_i, min_j, min_k, max_i, max_j, max_k, &
                              src_min_x, src_min_y, src_min_z, src_max_x, src_max_y, src_max_z, &
@@ -3431,12 +3431,12 @@ integer, parameter :: BDR_WIDTH = 3
       real, dimension(start_x:end_x,start_y:end_y,start_z:end_z), intent(inout) :: dst_array, n
       type (bitarray), intent(inout) :: new_pts
       character(len=1), intent(in), optional :: mask_relational
-
+   
       ! Local variables
       integer :: orig_selected_domain, x_dest, y_dest, i, j, k, center_i, center_j
       real :: lat_corner, lon_corner, rx, ry
-
-      ! Compute the model grid point that the corners of the rectangle to be
+   
+      ! Compute the model grid point that the corners of the rectangle to be 
       !   processed map to
       ! Lower-left corner
       if (where_maps_to(min_i,min_j,1) == NOT_PROCESSED) then
@@ -3456,7 +3456,7 @@ integer, parameter :: BDR_WIDTH = 3
             where_maps_to(min_i,min_j,1) = OUTSIDE_DOMAIN
          end if
       end if
-
+   
       ! Upper-left corner
       if (where_maps_to(min_i,max_j,1) == NOT_PROCESSED) then
          orig_selected_domain = iget_selected_domain()
@@ -3475,7 +3475,7 @@ integer, parameter :: BDR_WIDTH = 3
             where_maps_to(min_i,max_j,1) = OUTSIDE_DOMAIN
          end if
       end if
-
+   
       ! Upper-right corner
       if (where_maps_to(max_i,max_j,1) == NOT_PROCESSED) then
          orig_selected_domain = iget_selected_domain()
@@ -3494,7 +3494,7 @@ integer, parameter :: BDR_WIDTH = 3
             where_maps_to(max_i,max_j,1) = OUTSIDE_DOMAIN
          end if
       end if
-
+   
       ! Lower-right corner
       if (where_maps_to(max_i,min_j,1) == NOT_PROCESSED) then
          orig_selected_domain = iget_selected_domain()
@@ -3513,8 +3513,8 @@ integer, parameter :: BDR_WIDTH = 3
             where_maps_to(max_i,min_j,1) = OUTSIDE_DOMAIN
          end if
       end if
-
-      ! If all four corners map to same model grid point, accumulate the
+   
+      ! If all four corners map to same model grid point, accumulate the 
       !   entire rectangle
       if (where_maps_to(min_i,min_j,1) == where_maps_to(min_i,max_j,1) .and. &
           where_maps_to(min_i,min_j,1) == where_maps_to(max_i,max_j,1) .and. &
@@ -3522,14 +3522,14 @@ integer, parameter :: BDR_WIDTH = 3
           where_maps_to(min_i,min_j,2) == where_maps_to(min_i,max_j,2) .and. &
           where_maps_to(min_i,min_j,2) == where_maps_to(max_i,max_j,2) .and. &
           where_maps_to(min_i,min_j,2) == where_maps_to(max_i,min_j,2) .and. &
-          where_maps_to(min_i,min_j,1) /= OUTSIDE_DOMAIN) then
+          where_maps_to(min_i,min_j,1) /= OUTSIDE_DOMAIN) then 
          x_dest = where_maps_to(min_i,min_j,1)
          y_dest = where_maps_to(min_i,min_j,2)
-
-         ! If this grid point was already given a value from higher-priority source data,
+         
+         ! If this grid point was already given a value from higher-priority source data, 
          !   there is nothing to do.
 !         if (.not. bitarray_test(processed_pts, x_dest-start_x+1, y_dest-start_y+1)) then
-
+   
             ! If this grid point has never been given a value by this level of source data,
             !   initialize the point
             if (.not. bitarray_test(new_pts, x_dest-start_x+1, y_dest-start_y+1)) then
@@ -3537,7 +3537,7 @@ integer, parameter :: BDR_WIDTH = 3
                   dst_array(x_dest,y_dest,k) = 0.
                end do
             end if
-
+   
             ! Sum all the points whose nearest neighbor is this grid point
             if (present(mask_array) .and. present(mask_relational)) then
                do i=min_i,max_i
@@ -3546,15 +3546,15 @@ integer, parameter :: BDR_WIDTH = 3
                         ! Ignore masked/missing values in the source data
                         if (tile_array(i,j,k) /= msgval) then
                            if (mask_relational == ' ' .and. mask_array(i,j) /= maskval) then
-                              dst_array(x_dest,y_dest,k) = dst_array(x_dest,y_dest,k) + tile_array(i,j,k)
+                              dst_array(x_dest,y_dest,k) = dst_array(x_dest,y_dest,k) + tile_array(i,j,k) 
                               n(x_dest,y_dest,k) = n(x_dest,y_dest,k) + 1.0
                               call bitarray_set(new_pts, x_dest-start_x+1, y_dest-start_y+1)
                            else if (mask_relational == '<' .and. mask_array(i,j) >= maskval) then
-                              dst_array(x_dest,y_dest,k) = dst_array(x_dest,y_dest,k) + tile_array(i,j,k)
+                              dst_array(x_dest,y_dest,k) = dst_array(x_dest,y_dest,k) + tile_array(i,j,k) 
                               n(x_dest,y_dest,k) = n(x_dest,y_dest,k) + 1.0
                               call bitarray_set(new_pts, x_dest-start_x+1, y_dest-start_y+1)
                            else if (mask_relational == '>' .and. mask_array(i,j) <= maskval) then
-                              dst_array(x_dest,y_dest,k) = dst_array(x_dest,y_dest,k) + tile_array(i,j,k)
+                              dst_array(x_dest,y_dest,k) = dst_array(x_dest,y_dest,k) + tile_array(i,j,k) 
                               n(x_dest,y_dest,k) = n(x_dest,y_dest,k) + 1.0
                               call bitarray_set(new_pts, x_dest-start_x+1, y_dest-start_y+1)
                            end if
@@ -3569,7 +3569,7 @@ integer, parameter :: BDR_WIDTH = 3
                         ! Ignore masked/missing values in the source data
                         if ((tile_array(i,j,k) /= msgval) .and. &
                             (mask_array(i,j) /= maskval)) then
-                           dst_array(x_dest,y_dest,k) = dst_array(x_dest,y_dest,k) + tile_array(i,j,k)
+                           dst_array(x_dest,y_dest,k) = dst_array(x_dest,y_dest,k) + tile_array(i,j,k) 
                            n(x_dest,y_dest,k) = n(x_dest,y_dest,k) + 1.0
                            call bitarray_set(new_pts, x_dest-start_x+1, y_dest-start_y+1)
                         end if
@@ -3582,7 +3582,7 @@ integer, parameter :: BDR_WIDTH = 3
                      do k=min_k,max_k
                         ! Ignore masked/missing values in the source data
                         if ((tile_array(i,j,k) /= msgval)) then
-                           dst_array(x_dest,y_dest,k) = dst_array(x_dest,y_dest,k) + tile_array(i,j,k)
+                           dst_array(x_dest,y_dest,k) = dst_array(x_dest,y_dest,k) + tile_array(i,j,k) 
                            n(x_dest,y_dest,k) = n(x_dest,y_dest,k) + 1.0
                            call bitarray_set(new_pts, x_dest-start_x+1, y_dest-start_y+1)
                         end if
@@ -3590,25 +3590,25 @@ integer, parameter :: BDR_WIDTH = 3
                   end do
                end do
             end if
-
+   
 !         end if
-
+   
       ! Rectangle is a square of four points, and we can simply deal with each of the points
       else if (((max_i - min_i + 1) <= 2) .and. ((max_j - min_j + 1) <= 2)) then
          do i=min_i,max_i
             do j=min_j,max_j
                x_dest = where_maps_to(i,j,1)
                y_dest = where_maps_to(i,j,2)
-
-               if (x_dest /= OUTSIDE_DOMAIN) then
-
+     
+               if (x_dest /= OUTSIDE_DOMAIN) then 
+   
 !                  if (.not. bitarray_test(processed_pts, x_dest-start_x+1, y_dest-start_y+1)) then
                      if (.not. bitarray_test(new_pts, x_dest-start_x+1, y_dest-start_y+1)) then
                         do k=min_k,max_k
                            dst_array(x_dest,y_dest,k) = 0.
                         end do
                      end if
-
+                     
                      if (present(mask_array) .and. present(mask_relational)) then
                         do k=min_k,max_k
                            ! Ignore masked/missing values
@@ -3641,7 +3641,7 @@ integer, parameter :: BDR_WIDTH = 3
                      else
                         do k=min_k,max_k
                            ! Ignore masked/missing values
-                           if ((tile_array(i,j,k) /= msgval)) then
+                           if ((tile_array(i,j,k) /= msgval)) then 
                               dst_array(x_dest,y_dest,k) = dst_array(x_dest,y_dest,k) + tile_array(i,j,k)
                               n(x_dest,y_dest,k) = n(x_dest,y_dest,k) + 1.0
                               call bitarray_set(new_pts, x_dest-start_x+1, y_dest-start_y+1)
@@ -3649,17 +3649,17 @@ integer, parameter :: BDR_WIDTH = 3
                         end do
                      end if
 !                  end if
-
+     
                end if
             end do
          end do
-
+   
       ! Not all corners map to the same grid point, and the rectangle contains more than
       !   four points
       else
          center_i = (max_i + min_i)/2
          center_j = (max_j + min_j)/2
-
+   
          ! Recursively process lower-left rectangle
          call process_continuous_block(tile_array, where_maps_to, &
                     src_min_x, src_min_y, src_min_z, &
@@ -3669,8 +3669,8 @@ integer, parameter :: BDR_WIDTH = 3
                     dst_array, n, &
                     start_x, end_x, start_y, end_y, start_z, end_z, &
                     istagger, &
-                    new_pts, sr_x, sr_y, msgval, maskval, mask_relational, mask_array)
-
+                    new_pts, sr_x, sr_y, msgval, maskval, mask_relational, mask_array) 
+         
          if (center_i < max_i) then
             ! Recursively process lower-right rectangle
             call process_continuous_block(tile_array, where_maps_to, &
@@ -3682,9 +3682,9 @@ integer, parameter :: BDR_WIDTH = 3
                        start_x, end_x, start_y, &
                        end_y, start_z, end_z, &
                        istagger, &
-                       new_pts, sr_x, sr_y, msgval, maskval, mask_relational, mask_array)
+                       new_pts, sr_x, sr_y, msgval, maskval, mask_relational, mask_array) 
          end if
-
+   
          if (center_j < max_j) then
             ! Recursively process upper-left rectangle
             call process_continuous_block(tile_array, where_maps_to, &
@@ -3696,9 +3696,9 @@ integer, parameter :: BDR_WIDTH = 3
                        start_x, end_x, start_y, &
                        end_y, start_z, end_z, &
                        istagger, &
-                       new_pts, sr_x, sr_y, msgval, maskval, mask_relational, mask_array)
+                       new_pts, sr_x, sr_y, msgval, maskval, mask_relational, mask_array) 
          end if
-
+   
          if (center_i < max_i .and. center_j < max_j) then
             ! Recursively process upper-right rectangle
             call process_continuous_block(tile_array, where_maps_to, &
@@ -3710,10 +3710,10 @@ integer, parameter :: BDR_WIDTH = 3
                        start_x, end_x, start_y, &
                        end_y, start_z, end_z, &
                        istagger, &
-                       new_pts, sr_x, sr_y, msgval, maskval, mask_relational, mask_array)
+                       new_pts, sr_x, sr_y, msgval, maskval, mask_relational, mask_array) 
          end if
       end if
-
+   
    end subroutine process_continuous_block
 
 end module process_domain_module

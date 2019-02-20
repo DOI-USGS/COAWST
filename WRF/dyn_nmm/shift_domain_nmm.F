@@ -55,9 +55,9 @@ IF ( grid%active_this_task ) THEN
    grid%imask_nostag=0
 #if 1
    IF ( disp_x > 0 ) THEN
-      IF ( E_BDY ) THEN
+      IF ( E_BDY ) THEN 
          DO J=jps,min(jde-1,jpe)
-         DO I=ips,min(ide-1,ipe-2-mod(j+1,2))
+         DO I=ips,min(ide-1,ipe-2-mod(j+1,2)) 
             grid%imask_nostag(i,j) = 1
          END DO
          END DO
@@ -86,9 +86,9 @@ IF ( grid%active_this_task ) THEN
          END DO
       ENDIF
    ENDIF      !disp_y
-!
+!      
    ELSEIF ( disp_x < 0 ) THEN
-      IF ( W_BDY ) THEN
+      IF ( W_BDY ) THEN 
          DO J=jps,min(jde-1,jpe)
          DO I=ips+1,min(ide-1,ipe)
             grid%imask_nostag(i,j) = 1
@@ -119,11 +119,11 @@ IF ( grid%active_this_task ) THEN
          END DO
       ENDIF
    ENDIF      !disp_y
-!
+!      
    ELSE                            ! disp_x = 0
 !
    IF ( disp_y > 0 ) THEN
-      IF ( N_BDY ) THEN
+      IF ( N_BDY ) THEN 
          DO J=jps,min(jde-1,jpe-3)
          DO I=ips,min(ide-1,ipe)
             grid%imask_nostag(i,j) = 1

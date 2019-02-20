@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE read_PhyPar (model, inp, out, Lwrite)
 !
-!svn $Id: read_phypar.F 877 2017-11-15 04:04:42Z arango $
+!svn $Id: read_phypar.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -49,6 +49,8 @@
 #endif
       USE mod_strings
 !
+      USE inp_decode_mod
+!
       USE dateclock_mod, ONLY : ref_clock
       USE strings_mod,   ONLY : FoundError
 !
@@ -62,12 +64,13 @@
 !  Local variable declarations.
 !
       logical :: got_Ngrids, got_NestLayers
-      logical :: find_file, obc_data
+      logical :: obc_data
       logical :: Lvalue(1)
 #if defined SOLVE3D && defined SEDIMENT
       logical :: LreadNCS = .FALSE.
       logical :: LreadNNS = .FALSE.
 #endif
+      logical, allocatable :: Lswitch(:)
 #if defined SOLVE3D && defined T_PASSIVE
       logical, allocatable :: Linert(:,:)
 #endif
@@ -85,35 +88,33 @@
       logical, allocatable :: Ldiag(:)
 #endif
 
-      integer :: Lstr, Npts, Nval, i, itrc, ivar, k, ng, nl, status
+      integer :: Npts, Nval, i, itrc, ivar, k, lstr, ng, nl, status
       integer :: ifield, ifile, igrid, itracer, nline, max_Ffiles
       integer :: ibcfile, iclmfile
       integer :: Cdim, Clen, Rdim
       integer :: Ivalue(1)
-
-      integer :: decode_line, load_i, load_l, load_lbc, load_r
-      integer :: load_s1d, load_s2d
 
       integer, allocatable :: Nfiles(:)
       integer, allocatable :: Ncount(:,:)
       integer, allocatable :: NBCcount(:,:)
       integer, allocatable :: NCLMcount(:,:)
 
+      real(dp), allocatable :: Dtracer(:,:)
       real(r8), allocatable :: Rtracer(:,:)
       real(r8), allocatable :: tracer(:,:)
 #ifdef NESTING
       real(r8), allocatable :: RunTimeDay(:), RunTimeSec(:)
 #endif
+      real(dp) :: Dvalue(1)
       real(r8) :: Rvalue(1)
 
-      real(r8), dimension(200) :: Rval
+      real(dp), dimension(nRval) :: Rval
 
       character (len=1  ), parameter :: blank = ' '
-      character (len=19 ) :: ref_att
       character (len=40 ) :: KeyWord, text
       character (len=50 ) :: label
       character (len=256) :: fname, line
-      character (len=256), dimension(200) :: Cval
+      character (len=256), dimension(nCval) :: Cval
 !
 !-----------------------------------------------------------------------
 !  Initialize.
@@ -182,6 +183,9 @@
 #if defined FOUR_DVAR || defined VERIFICATION
               CALL allocate_fourdvar
 #endif
+              IF (.not.allocated(Lswitch)) THEN
+                allocate ( Lswitch(Ngrids) )
+              END IF
 #if defined SOLVE3D && (defined BBL_MODEL || defined SEDIMENT)
               IF (.not.allocated(Lbottom)) THEN
                 allocate ( Lbottom(MBOTP,Ngrids) )
@@ -277,18 +281,18 @@
               END DO
 #ifdef INWAVE_MODEL
             CASE ('ND')
-              Npts=load_i(Nval, Rval, 1, ND)  !mai
-!mai              DO ng=1,Ngrids
+              Npts=load_i(Nval, Rval, 1, ND)
+!             DO ng=1,Ngrids
                 IF (ND.lt.0) THEN
                   IF (Master) WRITE (out,300) 'ND', ng,                 &
      &              'must be greater than zero.'
                   exit_flag=5
                   RETURN
                 END IF
-!end              END DO
+!             END DO
 #endif
 #if defined ESTUARYBGC && defined SPECTRAL_LIGHT
-            CASE ('NBAND')
+            CASE ('NBAND') 
               Npts=load_i(Nval, Rval, 1, Ivalue)
               NBAND=Ivalue(1)
               IF (NBAND.le.0) THEN
@@ -424,6 +428,9 @@
                 RETURN
               END IF
 #endif
+              IF (.not.allocated(Dtracer)) THEN
+                allocate (Dtracer(NAT+NPT,Ngrids))
+              END IF
               IF (.not.allocated(Rtracer)) THEN
                 allocate (Rtracer(NAT+NPT,Ngrids))
               END IF
@@ -561,34 +568,34 @@
 # endif
 #endif
             CASE ('VolCons(west)')
-              Npts=load_l(Nval, Cval, Ngrids, VolCons(iwest,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              VolCons(iwest,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('VolCons(east)')
-              Npts=load_l(Nval, Cval, Ngrids, VolCons(ieast,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              VolCons(ieast,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('VolCons(south)')
-              Npts=load_l(Nval, Cval, Ngrids, VolCons(isouth,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              VolCons(isouth,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('VolCons(north)')
-              Npts=load_l(Nval, Cval, Ngrids, VolCons(inorth,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              VolCons(inorth,1:Ngrids)=Lswitch(1:Ngrids)
 #if defined ADJOINT || defined TANGENT || defined TL_IOMS
             CASE ('ad_VolCons(west)')
-              Npts=load_l(Nval, Cval, Ngrids, ad_VolCons(iwest,:))
-              DO ng=1,Ngrids
-                tl_VolCons(iwest,ng)=ad_VolCons(iwest,ng)
-              END DO
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              ad_VolCons(iwest,1:Ngrids)=Lswitch(1:Ngrids)
+              tl_VolCons(iwest,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('ad_VolCons(east)')
-              Npts=load_l(Nval, Cval, Ngrids, ad_VolCons(ieast,:))
-              DO ng=1,Ngrids
-                tl_VolCons(ieast,ng)=ad_VolCons(ieast,ng)
-              END DO
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              ad_VolCons(ieast,1:Ngrids)=Lswitch(1:Ngrids)
+              tl_VolCons(ieast,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('ad_VolCons(south)')
-              Npts=load_l(Nval, Cval, Ngrids, ad_VolCons(isouth,:))
-              DO ng=1,Ngrids
-                tl_VolCons(isouth,ng)=ad_VolCons(isouth,ng)
-              END DO
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              ad_VolCons(isouth,1:Ngrids)=Lswitch(1:Ngrids)
+              tl_VolCons(isouth,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('ad_VolCons(north)')
-              Npts=load_l(Nval, Cval, Ngrids, ad_VolCons(inorth,:))
-              DO ng=1,Ngrids
-                tl_VolCons(inorth,ng)=ad_VolCons(inorth,ng)
-              END DO
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              ad_VolCons(inorth,1:Ngrids)=Lswitch(1:Ngrids)
+              tl_VolCons(inorth,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
             CASE ('NTIMES')
               Npts=load_i(Nval, Rval, Ngrids, ntimes)
@@ -757,11 +764,11 @@
               nGST=Ivalue(1)
 #ifdef PROPAGATOR
             CASE ('Ritz_tol')
-              Npts=load_r(Nval, Rval, 1, Rvalue)
-              Ritz_tol=Rvalue(1)
+              Npts=load_r(Nval, Rval, 1, Dvalue)
+              Ritz_tol=Dvalue(1)
 #endif
             CASE ('TNU2')
-              Npts=load_r(Nval, Rval, (NAT+NPT)*Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, NAT+NPT, Ngrids, Rtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   nl_tnu2(itrc,ng)=Rtracer(itrc,ng)
@@ -774,7 +781,7 @@
 #endif
               END DO
             CASE ('TNU4')
-              Npts=load_r(Nval, Rval, (NAT+NPT)*Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, NAT+NPT, Ngrids, Rtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   nl_tnu4(itrc,ng)=Rtracer(itrc,ng)
@@ -787,7 +794,7 @@
 #endif
               END DO
             CASE ('ad_TNU2')
-              Npts=load_r(Nval, Rval, (NAT+NPT)*Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, NAT+NPT, Ngrids, Rtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   ad_tnu2(itrc,ng)=Rtracer(itrc,ng)
@@ -802,7 +809,7 @@
 #endif
               END DO
             CASE ('ad_TNU4')
-              Npts=load_r(Nval, Rval, (NAT+NPT)*Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, NAT+NPT, Ngrids, Rtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   ad_tnu4(itrc,ng)=Rtracer(itrc,ng)
@@ -834,7 +841,7 @@
               Npts=load_l(Nval, Cval, Ngrids, LuvSponge)
 #ifdef SOLVE3D
             CASE ('LtracerSponge')
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   LtracerSponge(itrc,ng)=Ltracer(itrc,ng)
@@ -848,7 +855,7 @@
               END DO
 #endif
             CASE ('AKT_BAK')
-              Npts=load_r(Nval, Rval, (NAT+NPT)*Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, NAT+NPT, Ngrids, Rtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   Akt_bak(itrc,ng)=Rtracer(itrc,ng)
@@ -861,14 +868,14 @@
 # endif
               END DO
             CASE ('AKT_LIMIT')
-              Npts=load_r(Nval, Rval, NAT*Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, NAT, Ngrids, Rtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   Akt_limit(itrc,ng)=Rtracer(itrc,ng)
                 END DO
               END DO
             CASE ('ad_AKT_fac')
-              Npts=load_r(Nval, Rval, (NAT+NPT)*Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, NAT+NPT, Ngrids, Rtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   ad_Akt_fac(itrc,ng)=Rtracer(itrc,ng)
@@ -997,25 +1004,25 @@
               Npts=load_r(Nval, Rval, 1, Rvalue)
               bvf_bak=Rvalue(1)
             CASE ('DSTART')
-              Npts=load_r(Nval, Rval, 1, Rvalue)
-              dstart=Rvalue(1)
+              Npts=load_r(Nval, Rval, 1, Dvalue)
+              dstart=Dvalue(1)
             CASE ('TIDE_START')
-              Npts=load_r(Nval, Rval, 1, Rvalue)
-              tide_start=Rvalue(1)
+              Npts=load_r(Nval, Rval, 1, Dvalue)
+              tide_start=Dvalue(1)
             CASE ('TIME_REF')
-              Npts=load_r(Nval, Rval, 1, Rvalue)
-              time_ref=Rvalue(1)
+              Npts=load_r(Nval, Rval, 1, Dvalue)
+              time_ref=Dvalue(1)
               CALL ref_clock (time_ref)
             CASE ('TNUDG')
-              Npts=load_r(Nval, Rval, (NAT+NPT)*Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, NAT+NPT, Ngrids, Dtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
-                  Tnudg(itrc,ng)=Rtracer(itrc,ng)
+                  Tnudg(itrc,ng)=Dtracer(itrc,ng)
                 END DO
 # ifdef T_PASSIVE
                 DO i=1,NPT
                   itrc=inert(i)
-                  Tnudg(itrc,ng)=Rtracer(NAT+i,ng)
+                  Tnudg(itrc,ng)=Dtracer(NAT+i,ng)
                 END DO
 # endif
               END DO
@@ -1054,7 +1061,7 @@
               Npts=load_l(Nval, Cval, Ngrids, LwSrc)
 #ifdef SOLVE3D
             CASE ('LtracerSrc')
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   LtracerSrc(itrc,ng)=Ltracer(itrc,ng)
@@ -1075,7 +1082,7 @@
             CASE ('Lm3CLM')
               Npts=load_l(Nval, Cval, Ngrids, Lm3CLM)
             CASE ('LtracerCLM')
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   LtracerCLM(itrc,ng)=Ltracer(itrc,ng)
@@ -1094,7 +1101,7 @@
             CASE ('LnudgeM3CLM')
               Npts=load_l(Nval, Cval, Ngrids, LnudgeM3CLM)
             CASE ('LnudgeTCLM')
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   LnudgeTCLM(itrc,ng)=Ltracer(itrc,ng)
@@ -1319,7 +1326,7 @@
             CASE ('SO_sdev(isVvel)')
               Npts=load_r(Nval, Rval, Ngrids, SO_sdev(isVvel,1))
             CASE ('SO_sdev(isTvar)')
-              Npts=load_r(Nval, Rval, MT*Ngrids, tracer)
+              Npts=load_r(Nval, Rval, MT, Ngrids, tracer)
               k=0
               DO ng=1,Ngrids
                 DO itrc=1,MT
@@ -1335,7 +1342,7 @@
               Npts=load_r(Nval, Rval, Ngrids, SO_sdev(isVstr,1))
 # ifdef SOLVE3D
             CASE ('SO_sdev(isTsur)')
-              Npts=load_r(Nval, Rval, MT*Ngrids, tracer)
+              Npts=load_r(Nval, Rval, MT, Ngrids, tracer)
               k=0
               DO ng=1,Ngrids
                 DO itrc=1,MT
@@ -1352,49 +1359,56 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idUvel,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idUvel,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idVvel)')
               IF (idVvel.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idVvel'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idVvel,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idVvel,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idWvel)')
               IF (idWvel.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idWvel'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWvel,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWvel,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idOvel)')
               IF (idOvel.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idOvel'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idOvel,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idOvel,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idUbar)')
               IF (idUbar.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idUbar'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idUbar,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idUbar,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idVbar)')
               IF (idVbar.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idVbar'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idVbar,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idVbar,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idFsur)')
               IF (idFsur.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idFsur'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idFsur,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idFsur,1:Ngrids)=Lswitch(1:Ngrids)
 #if defined SEDIMENT && defined SED_MORPH
             CASE ('Hout(idBath)')
               IF (idbath.eq.0) THEN
@@ -1402,7 +1416,8 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idBath,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idBath,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
             CASE ('Hout(idu2dE)')
               IF (idu2dE.eq.0) THEN
@@ -1410,35 +1425,39 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idu2dE,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idu2dE,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idv2dN)')
               IF (idv2dN.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idv2dN'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idv2dN,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idv2dN,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idu3dE)')
               IF (idu3dE.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idu3dE'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idu3dE,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idu3dE,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idv3dN)')
               IF (idv3dN.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idv3dN'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idv3dN,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idv3dN,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idTvar)')
               IF (MAXVAL(idTvar).eq.0) THEN
                 IF (Master) WRITE (out,280) 'idTvar'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   i=idTvar(itrc)
@@ -1451,56 +1470,64 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idpthR,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idpthR,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idpthU)')
               IF (idpthU.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idpthU'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idpthU,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idpthU,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idpthV)')
               IF (idpthV.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idpthV'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idpthV,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idpthV,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idpthW)')
               IF (idpthW.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idpthW'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idpthW,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idpthW,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idUsms)')
               IF (idUsms.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idUsms'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idUsms,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idUsms,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idVsms)')
               IF (idVsms.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idVsms'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idVsms,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idVsms,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idUbms)')
               IF (idUbms.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idUbms'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idUbms,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idUbms,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idVbms)')
               IF (idVbms.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idVbms'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idVbms,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idVbms,1:Ngrids)=Lswitch(1:Ngrids)
 #ifdef BBL_MODEL
             CASE ('Hout(idUbrs)')
               IF (idUbrs.eq.0) THEN
@@ -1508,77 +1535,88 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idUbrs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idUbrs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idVbrs)')
               IF (idVbrs.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idVbrs'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idVbrs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idVbrs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idUbws)')
               IF (idUbws.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idUbws'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idUbws,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idUbws,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idVbws)')
               IF (idVbws.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idVbws'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idVbws,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idVbws,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idUbcs)')
               IF (idUbcs.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idUbcs'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idUbcs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idUbcs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idVbcs)')
               IF (idVbcs.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idVbcs'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idVbcs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idVbcs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idUVwc)')
               IF (idUVwc.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idUVwc'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idUVwc,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idUVwc,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idUbot)')
               IF (idUbot.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idUbot'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idUbot,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idUbot,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idVbot)')
               IF (idVbot.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idVbot'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idVbot,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idVbot,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idUbur)')
               IF (idUbur.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idUbur'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idUbur,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idUbur,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idVbvr)')
               IF (idVbvr.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idVbvr'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idVbvr,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idVbvr,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #ifdef WEC_MELLOR
             CASE ('Hout(idW2xx)')
@@ -1587,56 +1625,64 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idW2xx,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idW2xx,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idW2xy)')
               IF (idW2xy.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idW2xy'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idW2xy,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idW2xy,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idW2yy)')
               IF (idW2yy.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idW2yy'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idW2yy,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idW2yy,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idW3xx)')
               IF (idW3xx.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idW3xx'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idW3xx,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idW3xx,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idW3xy)')
               IF (idW3xy.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idW3xy'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idW3xy,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idW3xy,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idW3yy)')
               IF (idW3yy.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idW3yy'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idW3yy,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idW3yy,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idW3zx)')
               IF (idW3zx.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idW3zx'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idW3zx,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idW3zx,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idW3zy)')
               IF (idW3zy.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idW3zy'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idW3zy,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idW3zy,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #ifdef WEC_VF
             CASE ('Hout(idWztw)')
@@ -1645,21 +1691,24 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWztw,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWztw,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idWqsp)')
               IF (idWqsp.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idWqsp'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWqsp,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWqsp,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idWbeh)')
               IF (idWbeh.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idWbeh'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWbeh,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWbeh,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #ifdef WEC
             CASE ('Hout(idU2rs)')
@@ -1668,70 +1717,80 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idU2rs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idU2rs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idV2rs)')
               IF (idV2rs.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idV2rs'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idV2rs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idV2rs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idU3rs)')
               IF (idU3rs.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idU3rs'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idU3rs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idU3rs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idV3rs)')
               IF (idV3rs.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idV3rs'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idV3rs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idV3rs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idU2Sd)')
               IF (idU2Sd.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idU2Sd'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idU2Sd,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idU2Sd,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idV2Sd)')
               IF (idV2Sd.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idV2Sd'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idV2Sd,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idV2Sd,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idU3Sd)')
               IF (idU3Sd.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idU3Sd'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idU3Sd,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idU3Sd,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idV3Sd)')
               IF (idV3Sd.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idV3Sd'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idV3Sd,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idV3Sd,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idW3Sd)')
               IF (idW3Sd.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idW3Sd'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idW3Sd,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idW3Sd,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idW3St)')
               IF (idW3St.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idW3St'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idW3St,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idW3St,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #ifdef WAVES_HEIGHT
             CASE ('Hout(idWamp)')
@@ -1740,7 +1799,8 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWamp,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWamp,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #ifdef WAVES_LENGTH
 
@@ -1750,7 +1810,8 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWlen,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWlen,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #ifdef WAVES_LENGTHP
             CASE ('Hout(idWlep)')
@@ -1759,7 +1820,8 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWlep,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWlep,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #ifdef WAVES_DIR
             CASE ('Hout(idWdir)')
@@ -1768,7 +1830,18 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWdir,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWdir,1:Ngrids)=Lswitch(1:Ngrids)
+#endif
+#ifdef WAVES_DIRP
+            CASE ('Hout(idWdip)')
+              IF (idWdip.eq.0) THEN
+                IF (Master) WRITE (out,280) 'idWdip'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWdip,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #ifdef WAVES_TOP_PERIOD
             CASE ('Hout(idWptp)')
@@ -1777,7 +1850,8 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWptp,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWptp,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #ifdef WAVES_BOT_PERIOD
             CASE ('Hout(idWpbt)')
@@ -1786,16 +1860,19 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWpbt,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWpbt,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
-#if defined BBL_MODEL || defined WAVES_OCEAN
+#if defined WAVES_OCEAN || defined BEDLOAD_SOULSBY || \
+    defined BEDLOAD_VANDERA || defined BBL_MODEL
             CASE ('Hout(idWorb)')
               IF (idWorb.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idWorb'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWorb,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWorb,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #if defined ROLLER_SVENDSEN
             CASE ('Hout(idWbrk)')
@@ -1804,7 +1881,8 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWbrk,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWbrk,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #if defined UV_KIRBY
             CASE ('Hout(idUwav)')
@@ -1813,14 +1891,16 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idUwav,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idUwav,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idVwav)')
               IF (idVwav.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idVwav'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idVwav,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idVwav,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
             CASE ('Hout(idWdif)')
@@ -1829,7 +1909,8 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWdif,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWdif,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
     defined WDISS_THORGUZA || defined WDISS_CHURTHOR || \
@@ -1840,14 +1921,16 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWdib,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWdib,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idWdiw)')
               IF (idWdiw.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idWdiw'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWdiw,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWdiw,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #if defined WEC_ROLLER
             CASE ('Hout(idWdis)')
@@ -1856,14 +1939,16 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWdis,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWdis,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idWrol)')
               IF (idWrol.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idWrol'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWrol,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWrol,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #if defined WAVES_DSPR
             CASE ('Hout(idWvds)')
@@ -1872,14 +1957,16 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWvds,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWvds,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idWvqp)')
               IF (idWvqp.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idWvqp'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idWvqp,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idWvqp,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #if defined INWAVE_MODEL
             CASE ('Hout(idACen)')
@@ -1888,35 +1975,40 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idACen,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idACen,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idACct)')
               IF (idACct.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idACct'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idACct,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idACct,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idACcx)')
               IF (idACcx.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idACcx'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idACcx,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idACcx,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idACcy)')
               IF (idACcy.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idACcy'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idACcy,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idACcy,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idACtp)')
               IF (idACtp.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idACtp'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idACtp,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idACtp,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #ifdef SOLVE3D
 # if defined RUNOFF
@@ -1926,7 +2018,8 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idRunoff,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idRunoff,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
   || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
@@ -1936,7 +2029,8 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idPair,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idPair,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM2OCN_FLUXES
             CASE ('Hout(idUair)')
@@ -1945,28 +2039,32 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idUair,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idUair,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idVair)')
               IF (idVair.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idVair'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idVair,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idVair,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idUairE)')
               IF (idUairE.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idUairE'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idUairE,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idUairE,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idVairN)')
               IF (idVairN.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idVairN'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idVairN,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idVairN,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 #endif
             CASE ('Hout(idTsur)')
@@ -1975,7 +2073,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   i=idTsur(itrc)
@@ -1988,108 +2086,123 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idLhea,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idLhea,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idShea)')
               IF (idShea.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idShea'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idShea,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idShea,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idLrad)')
               IF (idLrad.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idLrad'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idLrad,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idLrad,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idSrad)')
               IF (idSrad.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idSrad'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idSrad,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idSrad,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idEmPf)')
               IF (idEmPf.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idEmPf'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idEmPf,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idEmPf,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idevap)')
               IF (idevap.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idevap'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idevap,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idevap,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idrain)')
               IF (idrain.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idrain'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idrain,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idrain,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idDano)')
               IF (idDano.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idDano'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idDano,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idDano,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idVvis)')
               IF (idVvis.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idVvis'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idVvis,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idVvis,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idTdif)')
               IF (idTdif.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idTdif'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idTdif,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idTdif,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idSdif)')
               IF (idSdif.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idSdif'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idSdif,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idSdif,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idHsbl)')
               IF (idHsbl.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idHsbl'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idHsbl,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idHsbl,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idHbbl)')
               IF (idHbbl.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idHbbl'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idHbbl,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idHbbl,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idMtke)')
               IF (idMtke.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idMtke'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idMtke,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idMtke,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Hout(idMtls)')
               IF (idMtls.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idMtls'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout(idMtls,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Hout(idMtls,1:Ngrids)=Lswitch(1:Ngrids)
 #if defined SOLVE3D && defined T_PASSIVE
             CASE ('Hout(inert)')
-              Npts=load_l(Nval, Cval, NPT*Ngrids, Linert)
+              Npts=load_l(Nval, Cval, NPT, Ngrids, Linert)
               DO ng=1,Ngrids
                 DO i=1,NPT
                   itrc=idTvar(inert(i))
@@ -2433,33 +2546,45 @@
 # endif
 #endif
             CASE ('Qout(idUvel)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idUvel,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idUvel,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idVvel)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idVvel,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idVvel,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idWvel)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idWvel,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idWvel,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idOvel)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idOvel,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idOvel,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idUbar)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idUbar,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idUbar,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idVbar)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idVbar,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idVbar,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idFsur)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idFsur,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idFsur,1:Ngrids)=Lswitch(1:Ngrids)
 #if defined SEDIMENT && defined SED_MORPH
             CASE ('Qout(idBath)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idBath,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idBath,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
             CASE ('Qout(idu2dE)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idu2dE,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idu2dE,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idv2dN)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idv2dN,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idv2dN,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idu3dE)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idu3dE,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idu3dE,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idv3dN)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idv3dN,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idv3dN,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idTvar)')
-              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   i=idTvar(itrc)
@@ -2472,35 +2597,39 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idUsur,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idUsur,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idVsur)')
               IF (idUsur.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idVsur'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idVsur,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idVsur,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idUsuE)')
               IF (idUsuE.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idUsuE'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idUsuE,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idUsuE,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idVsuN)')
               IF (idVsuN.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idVsuN'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idVsuN,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idVsuN,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idsurT)')
               IF (MAXVAL(idsurT).eq.0) THEN
                 IF (Master) WRITE (out,280) 'idsurT'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   i=idsurT(itrc)
@@ -2508,111 +2637,158 @@
                 END DO
               END DO
             CASE ('Qout(idpthR)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idpthR,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idpthR,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idpthU)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idpthU,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idpthU,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idpthV)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idpthV,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idpthV,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idpthW)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idpthW,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idpthW,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idUsms)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idUsms,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idUsms,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idVsms)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idVsms,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idVsms,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idUbms)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idUbms,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idUbms,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idVbms)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idVbms,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idVbms,1:Ngrids)=Lswitch(1:Ngrids)
 #ifdef BBL_MODEL
             CASE ('Qout(idUbrs)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idUbrs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idUbrs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idVbrs)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idVbrs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idVbrs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idUbws)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idUbws,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idUbws,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idVbws)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idVbws,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idVbws,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idUbcs)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idUbcs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idUbcs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idVbcs)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idVbcs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idVbcs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idUbot)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idUbot,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idUbot,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idVbot)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idVbot,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idVbot,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idUbur)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idUbur,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idUbur,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idVbvr)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idVbvr,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idVbvr,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
             CASE ('Qout(idW2xx)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idW2xx,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idW2xx,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idW2xy)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idW2xy,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idW2xy,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idW2yy)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idW2yy,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idW2yy,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idU2rs)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idU2rs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idU2rs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idV2rs)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idV2rs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idV2rs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idU2Sd)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idU2Sd,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idU2Sd,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idV2Sd)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idV2Sd,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idV2Sd,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idW3xx)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idW3xx,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idW3xx,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idW3xy)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idW3xy,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idW3xy,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idW3yy)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idW3yy,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idW3yy,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idW3zx)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idW3zx,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idW3zx,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idW3zy)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idW3zy,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idW3zy,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idU3rs)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idU3rs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idU3rs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idV3rs)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idV3rs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idV3rs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idU3Sd)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idU3Sd,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idU3Sd,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idV3Sd)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idV3Sd,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idV3Sd,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idWamp)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idWamp,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idWamp,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idWlen)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idWlen,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idWlen,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idWdir)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idWdir,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idWdir,1:Ngrids)=Lswitch(1:Ngrids)
+            CASE ('Qout(idWdip)')
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idWdip,1:Ngrids)=Lswitch(1:Ngrids)
 #ifdef WAVES_TOP_PERIOD
             CASE ('Qout(idWptp)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idWptp,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idWptp,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #ifdef WAVES_BOT_PERIOD
             CASE ('Qout(idWpbt)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idWpbt,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idWpbt,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #if defined BBL_MODEL || defined WAVES_OCEAN
             CASE ('Qout(idWorb)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idWorb,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idWorb,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #if defined TKE_WAVEDISS || defined WAVES_OCEAN
             CASE ('Qout(idWdis)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idWdis,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idWdis,1:Ngrids)=Lswitch(1:Ngrids)
 #endif
 #ifdef SOLVE3D
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
             CASE ('Qout(idPair)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idPair,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idPair,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # if defined BULK_FLUXES || defined ECOSIM
             CASE ('Qout(idUair)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idUair,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idUair,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idVair)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idVair,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idVair,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 #endif
             CASE ('Qout(idTsur)')
-              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   i=idTsur(itrc)
@@ -2620,38 +2796,53 @@
                 END DO
               END DO
             CASE ('Qout(idLhea)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idLhea,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idLhea,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idShea)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idShea,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idShea,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idLrad)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idLrad,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idLrad,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idSrad)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idSrad,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idSrad,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idEmPf)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idEmPf,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idEmPf,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idevap)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idevap,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idevap,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idrain)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idrain,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idrain,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idDano)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idDano,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idDano,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idVvis)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idVvis,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idVvis,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idTdif)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idTdif,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idTdif,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idSdif)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idSdif,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idSdif,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idHsbl)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idHsbl,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idHsbl,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idHbbl)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idHbbl,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idHbbl,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idMtke)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idMtke,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idMtke,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idMtls)')
-              Npts=load_l(Nval, Cval, Ngrids, Qout(idMtls,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Qout(idMtls,1:Ngrids)=Lswitch(1:Ngrids)
 #if defined SOLVE3D && defined T_PASSIVE
             CASE ('Qout(inert)')
-              Npts=load_l(Nval, Cval, NPT*Ngrids, Linert)
+              Npts=load_l(Nval, Cval, NPT, Ngrids, Linert)
               DO ng=1,Ngrids
                 DO i=1,NPT
                   itrc=idTvar(inert(i))
@@ -2659,7 +2850,7 @@
                 END DO
               END DO
             CASE ('Qout(Snert)')
-              Npts=load_l(Nval, Cval, NPT*Ngrids, Linert)
+              Npts=load_l(Nval, Cval, NPT, Ngrids, Linert)
               DO ng=1,Ngrids
                 DO i=1,NPT
                   itrc=idsurT(inert(i))
@@ -2672,29 +2863,40 @@
    (defined RP_AVERAGES && defined TL_IOMS) || \
    (defined TL_AVERAGES && defined TANGENT)
             CASE ('Aout(idUvel)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idUvel,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idUvel,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idVvel)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idVvel,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idVvel,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idWvel)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWvel,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWvel,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idOvel)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idOvel,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idOvel,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idUbar)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idUbar,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idUbar,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idVbar)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idVbar,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idVbar,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idFsur)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idFsur,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idFsur,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idu2dE)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idu2dE,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idu2dE,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idv2dN)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idv2dN,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idv2dN,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idu3dE)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idu3dE,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idu3dE,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idv3dN)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idv3dN,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idv3dN,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idTvar)')
-              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   i=idTvar(itrc)
@@ -2702,177 +2904,241 @@
                 END DO
               END DO
             CASE ('Aout(idUsms)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idUsms,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idUsms,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idVsms)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idVsms,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idVsms,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idUbms)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idUbms,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idUbms,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idVbms)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idVbms,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idVbms,1:Ngrids)=Lswitch(1:Ngrids)
 # ifdef BBL_MODEL
             CASE ('Aout(idUbrs)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idUbrs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idUbrs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idVbrs)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idVbrs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idVbrs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idUbws)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idUbws,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idUbws,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idVbws)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idVbws,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idVbws,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idUbcs)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idUbcs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idUbcs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idVbcs)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idVbcs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idVbcs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idUVwc)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idUVwc,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idUVwc,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idUbot)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idUbot,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idUbot,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idVbot)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idVbot,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idVbot,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idUbur)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idUbur,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idUbur,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idVbvr)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idVbvr,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idVbvr,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef WEC_MELLOR
             CASE ('Aout(idW2xx)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idW2xx,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idW2xx,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idW2xy)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idW2xy,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idW2xy,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idW2yy)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idW2yy,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idW2yy,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef WEC
             CASE ('Aout(idU2rs)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idU2rs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idU2rs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idV2rs)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idV2rs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idV2rs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idU2Sd)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idU2Sd,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idU2Sd,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idV2Sd)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idV2Sd,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idV2Sd,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef WEC_MELLOR
 #  ifdef SOLVE3D
             CASE ('Aout(idW3xx)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idW3xx,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idW3xx,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idW3xy)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idW3xy,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idW3xy,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idW3yy)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idW3yy,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idW3yy,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idW3zx)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idW3zx,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idW3zx,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idW3zy)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idW3zy,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idW3zy,1:Ngrids)=Lswitch(1:Ngrids)
 #  endif
 # endif
 # ifdef WEC
 #  ifdef SOLVE3D
             CASE ('Aout(idU3rs)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idU3rs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idU3rs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idV3rs)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idV3rs,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idV3rs,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idU3Sd)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idU3Sd,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idU3Sd,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idV3Sd)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idV3Sd,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idV3Sd,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idW3Sd)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idW3Sd,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idW3Sd,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idW3St)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idW3St,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idW3St,1:Ngrids)=Lswitch(1:Ngrids)
 #  endif
             CASE ('Aout(idWztw)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWztw,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWztw,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idWqsp)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWqsp,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWqsp,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idWbeh)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWbeh,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWbeh,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef WAVES_HEIGHT
             CASE ('Aout(idWamp)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWamp,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWamp,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef WAVES_LENGTH
             CASE ('Aout(idWlen)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWlen,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWlen,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef WAVES_LENGTHP
             CASE ('Aout(idWlep)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWlep,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWlep,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef WAVES_DIR
             CASE ('Aout(idWdir)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWdir,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWdir,1:Ngrids)=Lswitch(1:Ngrids)
+# endif
+# ifdef WAVES_DIRP
+            CASE ('Aout(idWdip)')
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWdip,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef WAVES_TOP_PERIOD
             CASE ('Aout(idWptp)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWptp,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWptp,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef WAVES_BOT_PERIOD
             CASE ('Aout(idWpbt)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWpbt,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWpbt,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # if defined BBL_MODEL || defined WAVES_OCEAN
             CASE ('Aout(idWorb)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWorb,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWorb,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
             CASE ('Aout(idWdif)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWdif,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWdif,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
      defined WDISS_THORGUZA || defined WDISS_CHURTHOR
             CASE ('Aout(idWdib)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWdib,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWdib,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idWdiw)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWdiw,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWdiw,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef ROLLER_SVENDSEN
             CASE ('Aout(idWbrk)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWbrk,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWbrk,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef WEC_ROLLER
             CASE ('Aout(idWdis)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWdis,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWdis,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef ROLLER_RENIERS
             CASE ('Aout(idWrol)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWrol,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWrol,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef WAVES_DSPR
             CASE ('Aout(idWvds)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWvds,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWvds,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idWvqp)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idWvqp,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWvqp,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef UV_KIRBY
             CASE ('Aout(idUwav)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idUwav,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idUwav,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idVwav)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idVwav,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idVwav,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef SOLVE3D
 #  if defined RUNOFF
             CASE ('Aout(idRunoff)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idRunoff,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idRunoff,1:Ngrids)=Lswitch(1:Ngrids)
 #  endif
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
   || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
             CASE ('Aout(idPair)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idPair,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idPair,1:Ngrids)=Lswitch(1:Ngrids)
 #  endif
 #  if defined BULK_FLUXES || defined ECOSIM
             CASE ('Aout(idUair)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idUair,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idUair,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idVair)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idVair,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idVair,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idUairE)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idUairE,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idUairE,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idVairN)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idVairN,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idVairN,1:Ngrids)=Lswitch(1:Ngrids)
 #  endif
 # endif
             CASE ('Aout(idTsur)')
-              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   i=idTsur(itrc)
@@ -2880,57 +3146,73 @@
                 END DO
               END DO
             CASE ('Aout(idLhea)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idLhea,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idLhea,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idShea)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idShea,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idShea,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idLrad)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idLrad,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idLrad,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idSrad)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idSrad,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idSrad,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idevap)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idevap,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idevap,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idrain)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idrain,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idrain,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idDano)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idDano,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idDano,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idVvis)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idVvis,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idVvis,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idTdif)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idTdif,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idTdif,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idSdif)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idSdif,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idSdif,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idHsbl)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idHsbl,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idHsbl,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idHbbl)')
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idHbbl,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idHbbl,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(id2dRV)')
               IF (id2dRV.eq.0) THEN
                 IF (Master) WRITE (out,280) 'id2dRV'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(id2dRV,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(id2dRV,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(id3dRV)')
               IF (id3dRV.eq.0) THEN
                 IF (Master) WRITE (out,280) 'id3dRV'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(id3dRV,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(id3dRV,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(id2dPV)')
               IF (id2dPV.eq.0) THEN
                 IF (Master) WRITE (out,280) 'id2dPV'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(id2dPV,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(id2dPV,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(id3dPV)')
               IF (id3dPV.eq.0) THEN
                 IF (Master) WRITE (out,280) 'id3dPV'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(id3dPV,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(id3dPV,1:Ngrids)=Lswitch(1:Ngrids)
 # if defined AVERAGES  && defined AVERAGES_DETIDE && \
     (defined SSH_TIDES || defined UV_TIDES)
             CASE ('Aout(idFsuD)')
@@ -2939,21 +3221,24 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idFsuD,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idFsuD,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idu2dD)')
               IF (idu2dD.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idu2dD'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idu2dD,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idu2dD,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idv2dD)')
               IF (idv2dD.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idv2dD'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idv2dD,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idv2dD,1:Ngrids)=Lswitch(1:Ngrids)
 #  ifdef SOLVE3D
             CASE ('Aout(idu3dD)')
               IF (idu3dD.eq.0) THEN
@@ -2961,21 +3246,23 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idu3dD,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idu3dD,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idv3dD)')
               IF (idv3dD.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idv3dD'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idv3dD,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idv3dD,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idTrcD)')
               IF (MAXVAL(idTrcD).eq.0) THEN
                 IF (Master) WRITE (out,280) 'idTrcD'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   i=idTrcD(itrc)
@@ -2991,35 +3278,40 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idHUav,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idHUav,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idHVav)')
               IF (idHVav.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idHVav'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idHVav,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idHVav,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idUUav)')
               IF (idUUav.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idUUav'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idUUav,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idUUav,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idUVav)')
               IF (idUVav.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idUVav'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idUVav,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idUVav,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idVVav)')
               IF (idVVav.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idVVav'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idVVav,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idVVav,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
             CASE ('Aout(idU2av)')
               IF (idU2av.eq.0) THEN
@@ -3027,21 +3319,24 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idU2av,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idU2av,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idV2av)')
               IF (idV2av.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idV2av'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idV2av,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idV2av,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idZZav)')
               IF (idZZav.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idZZav'
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Aout(idZZav,:))
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idZZav,1:Ngrids)=Lswitch(1:Ngrids)
 # ifdef SOLVE3D
             CASE ('Aout(idTTav)')
               IF (MAXVAL(idTTav).eq.0) THEN
@@ -3049,7 +3344,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT+NPT
                   i=idTTav(itrc)
@@ -3062,7 +3357,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT+NPT
                   i=idUTav(itrc)
@@ -3075,7 +3370,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT+NPT
                   i=idVTav(itrc)
@@ -3088,7 +3383,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT+NPT
                   i=iHUTav(itrc)
@@ -3101,7 +3396,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT+NPT
                   i=iHVTav(itrc)
@@ -3111,7 +3406,7 @@
 # endif
 # if defined SOLVE3D && defined T_PASSIVE
             CASE ('Aout(inert)')
-              Npts=load_l(Nval, Cval, NPT*Ngrids, Linert)
+              Npts=load_l(Nval, Cval, NPT, Ngrids, Linert)
               DO ng=1,Ngrids
                 DO i=1,NPT
                   itrc=idTvar(inert(i))
@@ -3462,10 +3757,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2rate),ng)=Ldiag(ng)
-                Dout(idDv2d(M2rate),ng)=Ldiag(ng)
+                Dout(idDu2d(M2rate),ng)=Lswitch(ng)
+                Dout(idDv2d(M2rate),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M2pgrd)')
               IF (M2pgrd.le.0) THEN
@@ -3473,10 +3768,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2pgrd),ng)=Ldiag(ng)
-                Dout(idDv2d(M2pgrd),ng)=Ldiag(ng)
+                Dout(idDu2d(M2pgrd),ng)=Lswitch(ng)
+                Dout(idDv2d(M2pgrd),ng)=Lswitch(ng)
               END DO
 # ifdef UV_COR
             CASE ('Dout(M2fcor)')
@@ -3485,10 +3780,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2fcor),ng)=Ldiag(ng)
-                Dout(idDv2d(M2fcor),ng)=Ldiag(ng)
+                Dout(idDu2d(M2fcor),ng)=Lswitch(ng)
+                Dout(idDv2d(M2fcor),ng)=Lswitch(ng)
               END DO
 # endif
 # ifdef UV_ADV
@@ -3498,10 +3793,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2hadv),ng)=Ldiag(ng)
-                Dout(idDv2d(M2hadv),ng)=Ldiag(ng)
+                Dout(idDu2d(M2hadv),ng)=Lswitch(ng)
+                Dout(idDv2d(M2hadv),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M2xadv)')
               IF (M2xadv.le.0) THEN
@@ -3509,10 +3804,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2xadv),ng)=Ldiag(ng)
-                Dout(idDv2d(M2xadv),ng)=Ldiag(ng)
+                Dout(idDu2d(M2xadv),ng)=Lswitch(ng)
+                Dout(idDv2d(M2xadv),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M2yadv)')
               IF (M2yadv.le.0) THEN
@@ -3520,10 +3815,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2yadv),ng)=Ldiag(ng)
-                Dout(idDv2d(M2yadv),ng)=Ldiag(ng)
+                Dout(idDu2d(M2yadv),ng)=Lswitch(ng)
+                Dout(idDv2d(M2yadv),ng)=Lswitch(ng)
               END DO
 # endif
 # ifdef WEC_MELLOR
@@ -3533,10 +3828,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2hrad),ng)=Ldiag(ng)
-                Dout(idDv2d(M2hrad),ng)=Ldiag(ng)
+                Dout(idDu2d(M2hrad),ng)=Lswitch(ng)
+                Dout(idDv2d(M2hrad),ng)=Lswitch(ng)
               END DO
 # endif
 # ifdef WEC_VF
@@ -3546,10 +3841,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2hjvf),ng)=Ldiag(ng)
-                Dout(idDv2d(M2hjvf),ng)=Ldiag(ng)
+                Dout(idDu2d(M2hjvf),ng)=Lswitch(ng)
+                Dout(idDv2d(M2hjvf),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M2kvrf)')
               IF (M2kvrf.le.0) THEN
@@ -3557,10 +3852,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2kvrf),ng)=Ldiag(ng)
-                Dout(idDv2d(M2kvrf),ng)=Ldiag(ng)
+                Dout(idDu2d(M2kvrf),ng)=Lswitch(ng)
+                Dout(idDv2d(M2kvrf),ng)=Lswitch(ng)
               END DO
 #  ifdef UV_COR
             CASE ('Dout(M2fsco)')
@@ -3569,10 +3864,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2fsco),ng)=Ldiag(ng)
-                Dout(idDv2d(M2fsco),ng)=Ldiag(ng)
+                Dout(idDu2d(M2fsco),ng)=Lswitch(ng)
+                Dout(idDv2d(M2fsco),ng)=Lswitch(ng)
               END DO
 #  endif
 #  ifdef BOTTOM_STREAMING
@@ -3582,10 +3877,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2bstm),ng)=Ldiag(ng)
-                Dout(idDv2d(M2bstm),ng)=Ldiag(ng)
+                Dout(idDu2d(M2bstm),ng)=Lswitch(ng)
+                Dout(idDv2d(M2bstm),ng)=Lswitch(ng)
               END DO
 #  endif
 #  ifdef SURFACE_STREAMING
@@ -3595,10 +3890,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2sstm),ng)=Ldiag(ng)
-                Dout(idDv2d(M2sstm),ng)=Ldiag(ng)
+                Dout(idDu2d(M2sstm),ng)=Lswitch(ng)
+                Dout(idDv2d(M2sstm),ng)=Lswitch(ng)
               END DO
 #  endif
             CASE ('Dout(M2wrol)')
@@ -3607,10 +3902,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2wrol),ng)=Ldiag(ng)
-                Dout(idDv2d(M2wrol),ng)=Ldiag(ng)
+                Dout(idDu2d(M2wrol),ng)=Lswitch(ng)
+                Dout(idDv2d(M2wrol),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M2wbrk)')
               IF (M2wbrk.le.0) THEN
@@ -3618,10 +3913,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2wbrk),ng)=Ldiag(ng)
-                Dout(idDv2d(M2wbrk),ng)=Ldiag(ng)
+                Dout(idDu2d(M2wbrk),ng)=Lswitch(ng)
+                Dout(idDv2d(M2wbrk),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M2zeta)')
               IF (M2zeta.le.0) THEN
@@ -3629,10 +3924,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2zeta),ng)=Ldiag(ng)
-                Dout(idDv2d(M2zeta),ng)=Ldiag(ng)
+                Dout(idDu2d(M2zeta),ng)=Lswitch(ng)
+                Dout(idDv2d(M2zeta),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M2zetw)')
               IF (M2zetw.le.0) THEN
@@ -3640,10 +3935,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2zetw),ng)=Ldiag(ng)
-                Dout(idDv2d(M2zetw),ng)=Ldiag(ng)
+                Dout(idDu2d(M2zetw),ng)=Lswitch(ng)
+                Dout(idDv2d(M2zetw),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M2zqsp)')
               IF (M2zqsp.le.0) THEN
@@ -3651,10 +3946,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2zqsp),ng)=Ldiag(ng)
-                Dout(idDv2d(M2zqsp),ng)=Ldiag(ng)
+                Dout(idDu2d(M2zqsp),ng)=Lswitch(ng)
+                Dout(idDv2d(M2zqsp),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M2zbeh)')
               IF (M2zbeh.le.0) THEN
@@ -3662,10 +3957,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2zbeh),ng)=Ldiag(ng)
-                Dout(idDv2d(M2zbeh),ng)=Ldiag(ng)
+                Dout(idDu2d(M2zbeh),ng)=Lswitch(ng)
+                Dout(idDv2d(M2zbeh),ng)=Lswitch(ng)
               END DO
 # endif
 # if defined UV_VIS2 || defined UV_VIS4
@@ -3675,10 +3970,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2hvis),ng)=Ldiag(ng)
-                Dout(idDv2d(M2hvis),ng)=Ldiag(ng)
+                Dout(idDu2d(M2hvis),ng)=Lswitch(ng)
+                Dout(idDv2d(M2hvis),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M2xvis)')
               IF (M2xvis.le.0) THEN
@@ -3686,10 +3981,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2xvis),ng)=Ldiag(ng)
-                Dout(idDv2d(M2xvis),ng)=Ldiag(ng)
+                Dout(idDu2d(M2xvis),ng)=Lswitch(ng)
+                Dout(idDv2d(M2xvis),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M2yvis)')
               IF (M2yvis.le.0) THEN
@@ -3697,10 +3992,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2yvis),ng)=Ldiag(ng)
-                Dout(idDv2d(M2yvis),ng)=Ldiag(ng)
+                Dout(idDu2d(M2yvis),ng)=Lswitch(ng)
+                Dout(idDv2d(M2yvis),ng)=Lswitch(ng)
               END DO
 # endif
             CASE ('Dout(M2sstr)')
@@ -3709,10 +4004,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2sstr),ng)=Ldiag(ng)
-                Dout(idDv2d(M2sstr),ng)=Ldiag(ng)
+                Dout(idDu2d(M2sstr),ng)=Lswitch(ng)
+                Dout(idDv2d(M2sstr),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M2bstr)')
               IF (M2bstr.le.0) THEN
@@ -3720,10 +4015,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2bstr),ng)=Ldiag(ng)
-                Dout(idDv2d(M2bstr),ng)=Ldiag(ng)
+                Dout(idDu2d(M2bstr),ng)=Lswitch(ng)
+                Dout(idDv2d(M2bstr),ng)=Lswitch(ng)
               END DO
 # ifdef SOLVE3D
             CASE ('Dout(M3rate)')
@@ -3732,10 +4027,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3rate),ng)=Ldiag(ng)
-                Dout(idDv3d(M3rate),ng)=Ldiag(ng)
+                Dout(idDu3d(M3rate),ng)=Lswitch(ng)
+                Dout(idDv3d(M3rate),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M3pgrd)')
               IF (M3pgrd.le.0) THEN
@@ -3743,10 +4038,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3pgrd),ng)=Ldiag(ng)
-                Dout(idDv3d(M3pgrd),ng)=Ldiag(ng)
+                Dout(idDu3d(M3pgrd),ng)=Lswitch(ng)
+                Dout(idDv3d(M3pgrd),ng)=Lswitch(ng)
               END DO
 #  ifdef UV_COR
             CASE ('Dout(M3fcor)')
@@ -3755,10 +4050,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3fcor),ng)=Ldiag(ng)
-                Dout(idDv3d(M3fcor),ng)=Ldiag(ng)
+                Dout(idDu3d(M3fcor),ng)=Lswitch(ng)
+                Dout(idDv3d(M3fcor),ng)=Lswitch(ng)
               END DO
 #  endif
 #  ifdef UV_ADV
@@ -3768,10 +4063,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3hadv),ng)=Ldiag(ng)
-                Dout(idDv3d(M3hadv),ng)=Ldiag(ng)
+                Dout(idDu3d(M3hadv),ng)=Lswitch(ng)
+                Dout(idDv3d(M3hadv),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M3xadv)')
               IF (M3xadv.le.0) THEN
@@ -3779,10 +4074,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3xadv),ng)=Ldiag(ng)
-                Dout(idDv3d(M3xadv),ng)=Ldiag(ng)
+                Dout(idDu3d(M3xadv),ng)=Lswitch(ng)
+                Dout(idDv3d(M3xadv),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M3yadv)')
               IF (M3yadv.le.0) THEN
@@ -3790,10 +4085,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3yadv),ng)=Ldiag(ng)
-                Dout(idDv3d(M3yadv),ng)=Ldiag(ng)
+                Dout(idDu3d(M3yadv),ng)=Lswitch(ng)
+                Dout(idDv3d(M3yadv),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M3vadv)')
               IF (M3vadv.le.0) THEN
@@ -3801,10 +4096,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3vadv),ng)=Ldiag(ng)
-                Dout(idDv3d(M3vadv),ng)=Ldiag(ng)
+                Dout(idDu3d(M3vadv),ng)=Lswitch(ng)
+                Dout(idDv3d(M3vadv),ng)=Lswitch(ng)
               END DO
 #  endif
 #  ifdef WEC_MELLOR
@@ -3814,10 +4109,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3hrad),ng)=Ldiag(ng)
-                Dout(idDv3d(M3hrad),ng)=Ldiag(ng)
+                Dout(idDu3d(M3hrad),ng)=Lswitch(ng)
+                Dout(idDv3d(M3hrad),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M3vrad)')
               IF (M3vrad.le.0) THEN
@@ -3825,10 +4120,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3vrad),ng)=Ldiag(ng)
-                Dout(idDv3d(M3vrad),ng)=Ldiag(ng)
+                Dout(idDu3d(M3vrad),ng)=Lswitch(ng)
+                Dout(idDv3d(M3vrad),ng)=Lswitch(ng)
               END DO
 #  endif
 #  ifdef WEC_VF
@@ -3838,10 +4133,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3vjvf),ng)=Ldiag(ng)
-                Dout(idDv3d(M3vjvf),ng)=Ldiag(ng)
+                Dout(idDu3d(M3vjvf),ng)=Lswitch(ng)
+                Dout(idDv3d(M3vjvf),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M3hjvf)')
               IF (M3hjvf.le.0) THEN
@@ -3849,10 +4144,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3hjvf),ng)=Ldiag(ng)
-                Dout(idDv3d(M3hjvf),ng)=Ldiag(ng)
+                Dout(idDu3d(M3hjvf),ng)=Lswitch(ng)
+                Dout(idDv3d(M3hjvf),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M3kvrf)')
               IF (M3kvrf.le.0) THEN
@@ -3860,10 +4155,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3kvrf),ng)=Ldiag(ng)
-                Dout(idDv3d(M3kvrf),ng)=Ldiag(ng)
+                Dout(idDu3d(M3kvrf),ng)=Lswitch(ng)
+                Dout(idDv3d(M3kvrf),ng)=Lswitch(ng)
               END DO
 #   ifdef UV_COR
             CASE ('Dout(M3fsco)')
@@ -3872,10 +4167,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3fsco),ng)=Ldiag(ng)
-                Dout(idDv3d(M3fsco),ng)=Ldiag(ng)
+                Dout(idDu3d(M3fsco),ng)=Lswitch(ng)
+                Dout(idDv3d(M3fsco),ng)=Lswitch(ng)
               END DO
 #   endif
 #   ifdef BOTTOM_STREAMING
@@ -3885,10 +4180,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3bstm),ng)=Ldiag(ng)
-                Dout(idDv3d(M3bstm),ng)=Ldiag(ng)
+                Dout(idDu3d(M3bstm),ng)=Lswitch(ng)
+                Dout(idDv3d(M3bstm),ng)=Lswitch(ng)
               END DO
 #   endif
 #   ifdef SURFACE_STREAMING
@@ -3898,10 +4193,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3sstm),ng)=Ldiag(ng)
-                Dout(idDv3d(M3sstm),ng)=Ldiag(ng)
+                Dout(idDu3d(M3sstm),ng)=Lswitch(ng)
+                Dout(idDv3d(M3sstm),ng)=Lswitch(ng)
               END DO
 #   endif
             CASE ('Dout(M3wrol)')
@@ -3910,10 +4205,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3wrol),ng)=Ldiag(ng)
-                Dout(idDv3d(M3wrol),ng)=Ldiag(ng)
+                Dout(idDu3d(M3wrol),ng)=Lswitch(ng)
+                Dout(idDv3d(M3wrol),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M3wbrk)')
               IF (M3wbrk.le.0) THEN
@@ -3921,10 +4216,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3wbrk),ng)=Ldiag(ng)
-                Dout(idDv3d(M3wbrk),ng)=Ldiag(ng)
+                Dout(idDu3d(M3wbrk),ng)=Lswitch(ng)
+                Dout(idDv3d(M3wbrk),ng)=Lswitch(ng)
               END DO
 #  endif
 #  if defined UV_VIS2 || defined UV_VIS4
@@ -3934,10 +4229,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3hvis),ng)=Ldiag(ng)
-                Dout(idDv3d(M3hvis),ng)=Ldiag(ng)
+                Dout(idDu3d(M3hvis),ng)=Lswitch(ng)
+                Dout(idDv3d(M3hvis),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M3xvis)')
               IF (M3xvis.le.0) THEN
@@ -3945,10 +4240,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3xvis),ng)=Ldiag(ng)
-                Dout(idDv3d(M3xvis),ng)=Ldiag(ng)
+                Dout(idDu3d(M3xvis),ng)=Lswitch(ng)
+                Dout(idDv3d(M3xvis),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M3yvis)')
               IF (M3yvis.le.0) THEN
@@ -3956,10 +4251,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3yvis),ng)=Ldiag(ng)
-                Dout(idDv3d(M3yvis),ng)=Ldiag(ng)
+                Dout(idDu3d(M3yvis),ng)=Lswitch(ng)
+                Dout(idDv3d(M3yvis),ng)=Lswitch(ng)
               END DO
 #  endif
             CASE ('Dout(M3vvis)')
@@ -3968,10 +4263,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3vvis),ng)=Ldiag(ng)
-                Dout(idDv3d(M3vvis),ng)=Ldiag(ng)
+                Dout(idDu3d(M3vvis),ng)=Lswitch(ng)
+                Dout(idDv3d(M3vvis),ng)=Lswitch(ng)
               END DO
 #  if defined VEGETATION && defined VEG_DRAG
             CASE ('Dout(M3fveg)')
@@ -3980,10 +4275,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu3d(M3fveg),ng)=Ldiag(ng)
-                Dout(idDv3d(M3fveg),ng)=Ldiag(ng)
+                Dout(idDu3d(M3fveg),ng)=Lswitch(ng)
+                Dout(idDv3d(M3fveg),ng)=Lswitch(ng)
               END DO
             CASE ('Dout(M2fveg)')
               IF (M2fveg.le.0) THEN
@@ -3991,10 +4286,10 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, Ngrids, Ldiag)
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               DO ng=1,Ngrids
-                Dout(idDu2d(M2fveg),ng)=Ldiag(ng)
-                Dout(idDv2d(M2fveg),ng)=Ldiag(ng)
+                Dout(idDu2d(M2fveg),ng)=Lswitch(ng)
+                Dout(idDv2d(M2fveg),ng)=Lswitch(ng)
               END DO
 #  endif
 # endif
@@ -4006,7 +4301,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   Dout(idDtrc(itrc,iTrate),ng)=Ltracer(itrc,ng)
@@ -4024,7 +4319,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   Dout(idDtrc(itrc,iThadv),ng)=Ltracer(itrc,ng)
@@ -4042,7 +4337,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   Dout(idDtrc(itrc,iTxadv),ng)=Ltracer(itrc,ng)
@@ -4060,7 +4355,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   Dout(idDtrc(itrc,iTyadv),ng)=Ltracer(itrc,ng)
@@ -4078,7 +4373,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   Dout(idDtrc(itrc,iTvadv),ng)=Ltracer(itrc,ng)
@@ -4097,7 +4392,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   Dout(idDtrc(itrc,iThdif),ng)=Ltracer(itrc,ng)
@@ -4115,7 +4410,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   Dout(idDtrc(itrc,iTxdif),ng)=Ltracer(itrc,ng)
@@ -4133,7 +4428,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   Dout(idDtrc(itrc,iTydif),ng)=Ltracer(itrc,ng)
@@ -4152,7 +4447,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   Dout(idDtrc(itrc,iTsdif),ng)=Ltracer(itrc,ng)
@@ -4172,7 +4467,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, (NAT+NPT)*Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   Dout(idDtrc(itrc,iTvdif),ng)=Ltracer(itrc,ng)
@@ -4295,7 +4590,7 @@
             CASE ('NBCFILES')
               Npts=load_i(Nval, Rval, Ngrids, nBCfiles)
               DO ng=1,Ngrids
-                IF (nBCfiles(ng).le.0) THEN
+                IF (nBCfiles(ng).le.0) THEN 
                   IF (Master) WRITE (out,260) 'NBCFILES', nBCfiles(ng), &
      &                            'Must be equal or greater than one.'
                   exit_flag=4
@@ -4312,7 +4607,7 @@
               label='BRY - lateral open boundary conditions'
               Npts=load_s2d(Nval, Cval, Cdim, line, label, ibcfile,     &
      &                      igrid, Ngrids, nBCfiles, NBCcount,          &
-     &                      nBCfiles, BRY)
+     &                      max_Ffiles, BRY)
             CASE ('NCLMFILES')
               Npts=load_i(Nval, Rval, Ngrids, nCLMfiles)
               DO ng=1,Ngrids
@@ -4334,7 +4629,7 @@
               label='CLM - climatology fields'
               Npts=load_s2d(Nval, Cval, Cdim, line, label, iclmfile,    &
      &                      igrid, Ngrids, nCLMfiles, NCLMcount,        &
-     &                      nCLMfiles, CLM)
+     &                      max_Ffiles, CLM)
             CASE ('NUDNAME')
               label='NUD - nudging coefficients'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
@@ -4438,7 +4733,7 @@
 !
 !  Check if nesting parameters "NestLayers", "GridsInLayer", and
 !  "GridNumber" have been assigned.  The code below is necessary
-!  for compatability with old "ocean.in" input scripts.
+!  for compatability with old "roms.in" input scripts.
 !
 #ifndef NESTING
       IF (.not.got_NestLayers) THEN
@@ -4695,11 +4990,18 @@
 #endif
 #if defined IS4DVAR || defined W4DPSAS || defined W4DVAR
 !
-!  Insure that restart file is written only at the end.  In sequential
-!  data assimilation the restart file is used as the first guess for
-!  the next assimilation cycle.
+!  Ensure that restart file is written only at least at the end.  In
+!  sequential data assimilation the restart file can be used as the
+!  first guess for the next assimilation cycle.  Notice that we can
+!  also use the DAINAME file for such purpose. However, in lagged
+!  data assimilation windows, "nRST" can be set to a value less than
+!  "ntimes" (say, daily) and "LcycleRST" is set to false. So, there
+!  are several initialization record possibilities for the next
+!  assimilation cycle.
 !
-        nRST(ng)=ntimes(ng)
+        IF (nRST(ng).gt.ntimes(ng)) THEN
+          nRST(ng)=ntimes(ng)
+        END IF
 #endif
 #if defined STOCHASTIC_OPT && !defined STOCH_OPT_WHITE
 !
@@ -4826,14 +5128,17 @@
 !-----------------------------------------------------------------------
 !
       IF (Lwrite) THEN
+        lstr=INDEX(my_fflags, 'free')-2
+        IF (lstr.le.0) lstr=LEN_TRIM(my_fflags)
 #ifdef DISTRIBUTE
         WRITE (out,60) TRIM(title), TRIM(my_os), TRIM(my_cpu),          &
-     &                 TRIM(my_fort), TRIM(my_fc), TRIM(my_fflags),     &
+     &                 TRIM(my_fort), TRIM(my_fc), my_fflags(1:lstr),   &
+     &                 OCN_COMM_WORLD, numthreads,                      &
      &                 TRIM(Iname), TRIM(svn_url), TRIM(svn_rev),       &
      &                 TRIM(Rdir), TRIM(Hdir), TRIM(Hfile), TRIM(Adir)
 #else
         WRITE (out,60) TRIM(title), TRIM(my_os), TRIM(my_cpu),          &
-     &                 TRIM(my_fort), TRIM(my_fc), TRIM(my_fflags),     &
+     &                 TRIM(my_fort), TRIM(my_fc), my_fflags(1:lstr),   &
      &                 TRIM(svn_url), TRIM(svn_rev), TRIM(Rdir),        &
      &                 TRIM(Hdir), TRIM(Hfile), TRIM(Adir)
 #endif
@@ -5988,7 +6293,12 @@
 #ifdef WAVES_DIR
             IF (Hout(idWdir,ng)) WRITE (out,170) Hout(idWdir,ng),       &
      &         'Hout(idWdir)',                                          &
-     &         'Write out wave direction.'
+     &         'Write out mean wave direction.'
+#endif
+#ifdef WAVES_DIRP
+            IF (Hout(idWdip,ng)) WRITE (out,170) Hout(idWdip,ng),       &
+     &         'Hout(idWdip)',                                          &
+     &         'Write out peak wave direction.'
 #endif
 #ifdef WAVES_TOP_PERIOD
             IF (Hout(idWptp,ng)) WRITE (out,170) Hout(idWptp,ng),       &
@@ -6000,7 +6310,8 @@
      &         'Hout(idWpbt)',                                          &
      &         'Write out wave bottom period.'
 #endif
-#if defined BBL_MODEL || defined WAVES_OCEAN
+#if defined BBL_MODEL || defined WAVES_OCEAN || \
+    defined BEDLOAD_SOULSBY || defined BEDLOAD_VANDERA
             IF (Hout(idWorb,ng)) WRITE (out,170) Hout(idWorb,ng),       &
      &         'Hout(idWorb)',                                          &
      &         'Write out wave bottom orbital velocity.'
@@ -6616,7 +6927,12 @@
 #ifdef WAVES_DIR
             IF (Qout(idWdir,ng)) WRITE (out,170) Qout(idWdir,ng),       &
      &         'Qout(idWdir)',                                          &
-     &         'Write out wave direction.'
+     &         'Write out mean wave direction.'
+#endif
+#ifdef WAVES_DIRP
+            IF (Qout(idWdip,ng)) WRITE (out,170) Qout(idWdip,ng),       &
+     &         'Qout(idWdip)',                                          &
+     &         'Write out peak wave direction.'
 #endif
 #ifdef WAVES_TOP_PERIOD
             IF (Qout(idWptp,ng)) WRITE (out,170) Qout(idWptp,ng),       &
@@ -8017,7 +8333,8 @@
      &        /,1x,'CPU/hardware     : ',a,                             &
      &        /,1x,'Compiler system  : ',a,                             &
      &        /,1x,'Compiler command : ',a,                             &
-     &        /,1x,'Compiler flags   : ',a,/,                           &
+     &        /,1x,'Compiler flags   : ',a,                             &
+     &        /,1x,'MPI Communicator : ',i0,2x,'PET size = ',i0,/,      &
      &        /,1x,'Input Script  : ',a,/,                              &
      &        /,1x,'SVN Root URL  : ',a,                                &
      &        /,1x,'SVN Revision  : ',a,/,                              &
@@ -8039,19 +8356,19 @@
      &        /,1x,'Header file   : ',a,                                &
      &        /,1x,'Analytical Dir: ',a)
 #endif
-  70  FORMAT (/,' Resolution, Grid ',i2.2,': ',i4.4,'x',i4.4,'x',i3.3,  &
-     &        ',',2x,'Parallel Nodes: ',i3,',',2x,'Tiling: ',i3.3,      &
-     &        'x',i3.3)
-  80  FORMAT (/,' ROMS/TOMS: Wrong choice of domain ',i2.2,1x,          &
-     &        'partition or number of parallel threads.',               &
+  70  FORMAT (/,' Resolution, Grid ',i2.2,': ',i0,'x',i0,'x',i0,        &
+     &        ',',2x,'Parallel Nodes: ',i0,',',2x,'Tiling: ',i0,        &
+     &        'x',i0)
+  80  FORMAT (/,' ROMS/TOMS: Wrong choice of grid ',i2.2,1x,            &
+     &        'partition or number of parallel nodes.',                 &
      &        /,12x,'NtileI * NtileJ  must be equal to the number of ', &
      &        'parallel nodes.',                                        &
      &        /,12x,'Change -np value to mpirun or',                    &
      &        /,12x,'change domain partition in input script.')
-  90  FORMAT (/,' Resolution, Grid ',i2.2,': ',i4.4,'x',i4.4,'x',i3.3,  &
-     &        ',',2x,'Parallel Threads: ',i2,',',2x,'Tiling: ',i3.3,    &
-     &        'x',i3.3)
- 100  FORMAT (/,' ROMS/TOMS: Wrong choice of domain ',i3.3,1x,          &
+  90  FORMAT (/,' Resolution, Grid ',i2.2,': ',i0,'x',i0,'x',i0,        &
+     &        ',',2x,'Parallel Threads: ',i0,',',2x,'Tiling: ',i0,      &
+     &        'x',i0)
+ 100  FORMAT (/,' ROMS/TOMS: Wrong choice of grid ',i2.2,1x,            &
      &        'partition or number of parallel threads.',               &
      &        /,12x,'NtileI*NtileJ must be a positive multiple of the', &
      &        ' number of threads.',                                    &
@@ -8095,7 +8412,7 @@
      &        /,15x,'Grid ',i2.2,':',f14.1,' (sec)',2x,f14.2,' (days)', &
      &        /,15x,'Grid ',i2.2,':',f14.1,' (sec)',2x,f14.2,' (days)', &
      &        /,15x,'Adjust standard input parameter NTIMES in ',       &
-     &              '''ocean.in''.'/)
+     &              '''roms.in''.'/)
 
       RETURN
       END SUBROUTINE read_PhyPar

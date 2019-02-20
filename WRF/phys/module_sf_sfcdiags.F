@@ -54,7 +54,7 @@ CONTAINS
               ENDIF
           endif
           if(CHS2(I,J).lt.1.E-5) then
-             T2(I,J) = TSK(I,J)
+             T2(I,J) = TSK(I,J) 
           else
               IF ( UA_PHYS ) THEN
                   T2(I,J) = TSK(I,J) - CHS(I,J)/CHS2(I,J)*(TSK(I,J) - T3D(i,1,j))

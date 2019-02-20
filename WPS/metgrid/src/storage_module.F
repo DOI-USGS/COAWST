@@ -59,8 +59,8 @@ module storage_module
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: storage_put_field
    !
-   ! Purpose: Stores an fg_input type. Upon return, IT MUST NOT BE ASSUMED that
-   !      store_me contains valid data, since all such data may have been written
+   ! Purpose: Stores an fg_input type. Upon return, IT MUST NOT BE ASSUMED that 
+   !      store_me contains valid data, since all such data may have been written 
    !      to a Fortran unit
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine storage_put_field(store_me)
@@ -85,7 +85,7 @@ module storage_module
       ! We'll first see if there is already a list for this fieldname
       name_cursor => head
       do while (associated(name_cursor))
-         if (primary_cmp(name_cursor%fg_data, store_me) == EQUAL) exit
+         if (primary_cmp(name_cursor%fg_data, store_me) == EQUAL) exit 
          name_cursor => name_cursor%next
       end do
 
@@ -114,20 +114,20 @@ module storage_module
       data_cursor => name_cursor%fieldlist_head
       do while ( associated(data_cursor) )
          if ((secondary_cmp(store_me, data_cursor%fg_data) == LESS) .or. &
-             (secondary_cmp(store_me, data_cursor%fg_data) == EQUAL)) exit
+             (secondary_cmp(store_me, data_cursor%fg_data) == EQUAL)) exit 
          data_cursor => data_cursor%next
       end do
 
       if (associated(data_cursor)) then
-         if (secondary_cmp(store_me, data_cursor%fg_data) == EQUAL) then
+         if (secondary_cmp(store_me, data_cursor%fg_data) == EQUAL) then 
             if (data_cursor%filenumber > 0) then
 ! BUG: Might need to deal with freeing up a file
 call mprintf(.true.,WARN,'WE NEED TO FREE THE FILE ASSOCIATED WITH DATA_CURSOR')
 call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
             end if
-            data_cursor%fg_data%r_arr => store_me%r_arr
-            data_cursor%fg_data%valid_mask => store_me%valid_mask
-            data_cursor%fg_data%modified_mask => store_me%modified_mask
+            data_cursor%fg_data%r_arr => store_me%r_arr 
+            data_cursor%fg_data%valid_mask => store_me%valid_mask 
+            data_cursor%fg_data%modified_mask => store_me%modified_mask 
             return
          end if
       end if
@@ -153,7 +153,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
          memsize = memsize - size(evictnode%fg_data%r_arr)
          write(fname,'(i9.9,a2,i3.3)') evictnode%filenumber,'.p',my_proc_id
          open(funit,file=trim(fname),form='unformatted',status='unknown')
-         write(funit) evictnode%fg_data%r_arr
+         write(funit) evictnode%fg_data%r_arr  
          close(funit)
          deallocate(evictnode%fg_data%r_arr)
       end do
@@ -181,9 +181,9 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
          name_cursor%fieldlist_head => newnode
 
       ! Inserting somewhere in the middle of the list
-      else
-         newnode%prev => data_cursor%prev
-         newnode%next => data_cursor
+      else 
+         newnode%prev => data_cursor%prev 
+         newnode%next => data_cursor    
          data_cursor%prev%next => newnode
          data_cursor%prev => newnode
       end if
@@ -195,7 +195,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
    ! Name: storage_get_field
    !
    ! Purpose: Retrieves an fg_input type from storage; if the fg_input type whose
-   !    header matches the header of get_me does not exist, istatus = 1 upon
+   !    header matches the header of get_me does not exist, istatus = 1 upon 
    !    return; if the requested fg_input type is found, istatus = 0
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine storage_get_field(get_me, istatus)
@@ -224,11 +224,11 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
       ! We'll first see if there is already a list for this fieldname
       name_cursor => head
       do while (associated(name_cursor))
-         if (primary_cmp(name_cursor%fg_data, get_me) == EQUAL) exit
+         if (primary_cmp(name_cursor%fg_data, get_me) == EQUAL) exit 
          name_cursor => name_cursor%next
       end do
 
-      if (.not. associated(name_cursor)) return
+      if (.not. associated(name_cursor)) return 
 
       ! At this point, name_cursor points to a valid head node for fieldname
       data_cursor => name_cursor%fieldlist_head
@@ -236,10 +236,10 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
          if (secondary_cmp(get_me, data_cursor%fg_data) == EQUAL) then
             call dup(data_cursor%fg_data, get_me)
 
-            ! Before deciding whether we need to write an array to disk, first consider
+            ! Before deciding whether we need to write an array to disk, first consider 
             !   that reading the requested array will use memory
             if (data_cursor%filenumber > 0) then
-               memsize = memsize + data_cursor%field_shape(1)*data_cursor%field_shape(2)
+               memsize = memsize + data_cursor%field_shape(1)*data_cursor%field_shape(2) 
             end if
 
             ! If we exceed our memory limit, we need to evict
@@ -254,14 +254,14 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
                memsize = memsize - size(evictnode%fg_data%r_arr)
                write(fname,'(i9.9,a2,i3.3)') evictnode%filenumber,'.p',my_proc_id
                open(funit,file=trim(fname),form='unformatted',status='unknown')
-               write(funit) evictnode%fg_data%r_arr
+               write(funit) evictnode%fg_data%r_arr  
                close(funit)
                deallocate(evictnode%fg_data%r_arr)
             end do
 
             ! Get requested array
             if (data_cursor%filenumber > 0) then
-               data_cursor%last_used = global_time
+               data_cursor%last_used = global_time 
                global_time = global_time + 1
                call add_to_heap(data_cursor)
                write(fname,'(i9.9,a2,i3.3)') data_cursor%filenumber,'.p',my_proc_id
@@ -271,7 +271,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
                end do
                open(funit,file=trim(fname),form='unformatted',status='old')
                allocate(data_cursor%fg_data%r_arr(data_cursor%field_shape(1),data_cursor%field_shape(2)))
-               read(funit) data_cursor%fg_data%r_arr
+               read(funit) data_cursor%fg_data%r_arr 
                get_me%r_arr => data_cursor%fg_data%r_arr
                close(funit,status='delete')
                data_cursor%filenumber = 0
@@ -279,24 +279,24 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
                get_me%r_arr => data_cursor%fg_data%r_arr
 
                call remove_index(data_cursor%heap_index)
-               data_cursor%last_used = global_time
+               data_cursor%last_used = global_time 
                global_time = global_time + 1
                call add_to_heap(data_cursor)
             end if
 
             istatus = 0
-            return
+            return 
          end if
          data_cursor => data_cursor%next
       end do
 
-   end subroutine storage_get_field
+   end subroutine storage_get_field 
 
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: storage_query_field
    !
-   ! Purpose:
+   ! Purpose: 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine storage_query_field(get_me, istatus)
 
@@ -315,11 +315,11 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
       ! We'll first see if there is already a list for this fieldname
       name_cursor => head
       do while (associated(name_cursor))
-         if (primary_cmp(name_cursor%fg_data, get_me) == EQUAL) exit
+         if (primary_cmp(name_cursor%fg_data, get_me) == EQUAL) exit 
          name_cursor => name_cursor%next
       end do
 
-      if (.not. associated(name_cursor)) return
+      if (.not. associated(name_cursor)) return 
 
       ! At this point, name_cursor points to a valid head node for fieldname
       data_cursor => name_cursor%fieldlist_head
@@ -334,13 +334,13 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
          data_cursor => data_cursor%next
       end do
 
-   end subroutine storage_query_field
+   end subroutine storage_query_field 
 
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: get_next_output_fieldname
    !
-   ! Purpose:
+   ! Purpose: 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine get_next_output_fieldname(nest_num, field_name, ndims, &
                                         min_level, max_level, &
@@ -366,7 +366,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
       istatus = 1
 
       derived_from = ''
-
+ 
       if (.not. associated(next_output_field)) return
 
       min_level = 1
@@ -393,10 +393,10 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
 
          if (max_level > 1) ndims = 3
          if (ndims == 2) then
-            mem_order = 'XY '
+            mem_order = 'XY ' 
             dim_names(3) = ' '
          else
-            mem_order = 'XYZ'
+            mem_order = 'XYZ' 
             if (is_time_dependent(next_output_field%fg_data)) then
                dim_names(3) = ' '
                dim_names(3)(1:32) = next_output_field%fg_data%header%vertical_coord
@@ -423,20 +423,20 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
             dim_names(2) = 'j-dimension'
          end if
          units = get_units(next_output_field%fg_data)
-         description = get_description(next_output_field%fg_data)
+         description = get_description(next_output_field%fg_data) 
          call get_subgrid_dim_name(nest_num, field_name, dim_names(1:2), &
                                    sr_x, sr_y, istatus)
 
          next_output_field => next_output_field%next
       end if
 
-   end subroutine get_next_output_fieldname
+   end subroutine get_next_output_fieldname 
 
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: get_subgrid_dim_name
    !
-   ! Purpose:
+   ! Purpose: 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine get_subgrid_dim_name(nest_num, field_name, dimnames, &
                                    sub_x, sub_y, istatus)
@@ -472,7 +472,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: get_next_output_field
    !
-   ! Purpose:
+   ! Purpose: 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine get_next_output_field(field_name, r_array, &
                                     start_i, end_i, start_j, end_j, min_level, max_level, istatus)
@@ -493,7 +493,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
       type (fg_input) :: temp_field
 
       istatus = 1
-
+ 
       if (.not. associated(next_output_field)) return
 
       min_level = 1
@@ -532,7 +532,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
             call dup(data_cursor%fg_data, temp_field)
             call storage_get_field(temp_field, istatus)
             r_array(:,:,k) = temp_field%r_arr
-            k = k + 1
+            k = k + 1 
             data_cursor => data_cursor%next
          end do
 
@@ -566,7 +566,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
       ! We'll first see if there is a list for this fieldname
       name_cursor => head
       do while (associated(name_cursor))
-         if (primary_cmp(name_cursor%fg_data, delete_me) == EQUAL) exit
+         if (primary_cmp(name_cursor%fg_data, delete_me) == EQUAL) exit 
          name_cursor => name_cursor%next
       end do
 
@@ -598,8 +598,8 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
             ! Only item in the list
             if (.not. associated(data_cursor%next) .and. &
                 .not. associated(data_cursor%prev)) then
-               nullify(name_cursor%fieldlist_head)
-               nullify(name_cursor%fieldlist_tail)
+               nullify(name_cursor%fieldlist_head)          
+               nullify(name_cursor%fieldlist_tail)          
                deallocate(data_cursor)
 ! DO WE REMOVE THIS HEADER NODE AT THIS POINT?
                return
@@ -625,8 +625,8 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
                deallocate(data_cursor)
                return
 
-            end if
-
+            end if 
+           
          end if
          data_cursor => data_cursor%next
       end do
@@ -657,7 +657,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
          data_cursor => name_cursor%fieldlist_head
          do while ( associated(data_cursor) )
             if ( is_time_dependent(data_cursor%fg_data) ) then
-
+   
                if (data_cursor%filenumber > 0) then
                   do funit=10,100
                      inquire(unit=funit, opened=is_used)
@@ -676,25 +676,25 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
                if (associated(data_cursor%fg_data%modified_mask)) call bitarray_destroy(data_cursor%fg_data%modified_mask)
                nullify(data_cursor%fg_data%modified_mask)
 
-               ! We should handle individual cases, that way we can deal with a list
-               !   that has both time independent and time dependent nodes in it.
-
+               ! We should handle individual cases, that way we can deal with a list 
+               !   that has both time independent and time dependent nodes in it. 
+   
                ! Only item in the list
                if (.not. associated(data_cursor%next) .and. &
                    .not. associated(data_cursor%prev)) then
                   next_cursor => null()
-                  nullify(name_cursor%fieldlist_head)
-                  nullify(name_cursor%fieldlist_tail)
+                  nullify(name_cursor%fieldlist_head)          
+                  nullify(name_cursor%fieldlist_tail)          
                   deallocate(data_cursor)
 ! DO WE REMOVE THIS HEADER NODE AT THIS POINT?
-
+   
                ! Head of the list
                else if (.not. associated(data_cursor%prev)) then
                   name_cursor%fieldlist_head => data_cursor%next
                   next_cursor => data_cursor%next
                   nullify(data_cursor%next%prev)
                   deallocate(data_cursor)
-
+   
                ! Tail of the list
                else if (.not. associated(data_cursor%next)) then
 ! THIS CASE SHOULD PROBABLY NOT OCCUR
@@ -702,7 +702,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
                   next_cursor => null()
                   nullify(data_cursor%prev%next)
                   deallocate(data_cursor)
-
+   
                ! Middle of the list
                else
 ! THIS CASE SHOULD PROBABLY NOT OCCUR
@@ -710,9 +710,9 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
                   data_cursor%prev%next => data_cursor%next
                   data_cursor%next%prev => data_cursor%prev
                   deallocate(data_cursor)
-
-               end if
-
+   
+               end if 
+              
             end if
             data_cursor => next_cursor
          end do
@@ -726,10 +726,10 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: storage_get_levels
    !
-   ! Purpose: Returns a list of all levels for the field indicated in the_header.
+   ! Purpose: Returns a list of all levels for the field indicated in the_header. 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine storage_get_levels(the_header, list)
-
+      
       implicit none
 
       ! Arguments
@@ -744,14 +744,14 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
       if (associated(list)) deallocate(list)
       nullify(list)
 
-      ! We'll first see if there is a list for this header
+      ! We'll first see if there is a list for this header 
       name_cursor => head
       do while (associated(name_cursor))
-         if (primary_cmp(name_cursor%fg_data, the_header) == EQUAL) exit
+         if (primary_cmp(name_cursor%fg_data, the_header) == EQUAL) exit 
          name_cursor => name_cursor%next
       end do
 
-      if (.not. associated(name_cursor)) return
+      if (.not. associated(name_cursor)) return 
 
       n = 0
       ! At this point, name_cursor points to a valid head node for fieldname
@@ -762,7 +762,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
          data_cursor => data_cursor%next
       end do
 
-      if (n > 0) allocate(list(n))
+      if (n > 0) allocate(list(n)) 
 
       n = 1
       do while ( associated(data_cursor) )
@@ -777,7 +777,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: storage_delete_all
    !
-   ! Purpose: Deletes all data, both time-independent and time-dependent.
+   ! Purpose: Deletes all data, both time-independent and time-dependent. 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine storage_delete_all()
 
@@ -838,7 +838,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: storage_get_all_headers
    !
-   ! Purpose:
+   ! Purpose: 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine storage_get_all_headers(header_list)
 
@@ -859,7 +859,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
       do while (associated(name_cursor))
          if (associated(name_cursor%fieldlist_head)) then
             if (.not. is_mask_field(name_cursor%fieldlist_head%fg_data)) then
-               nheaders = nheaders + 1
+               nheaders = nheaders + 1 
             end if
          end if
          name_cursor => name_cursor%next
@@ -885,7 +885,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: storage_get_all_td_headers
    !
-   ! Purpose:
+   ! Purpose: 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine storage_get_td_headers(header_list)
 
@@ -907,7 +907,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
          if (associated(name_cursor%fieldlist_head)) then
             if (is_time_dependent(name_cursor%fieldlist_head%fg_data) .and. &
                 .not. is_mask_field(name_cursor%fieldlist_head%fg_data)) then
-               nheaders = nheaders + 1
+               nheaders = nheaders + 1 
             end if
          end if
          name_cursor => name_cursor%next
@@ -934,7 +934,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: storage_print_fields
    !
-   ! Purpose:
+   ! Purpose: 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine storage_print_fields()
 
@@ -961,7 +961,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
       call list_init(all_levs)
       call storage_get_td_headers(header_list)
       n_fields = size(header_list)
-
+      
       allocate(fieldname_list(n_fields))
 
       max_levels = 0
@@ -977,7 +977,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
          n_levels = size(ilevels)
          if (n_levels > max_levels) max_levels = n_levels
          if (associated(ilevels)) deallocate(ilevels)
-      end do
+      end do 
 
       max_levels = list_length(all_levs)
 
@@ -991,17 +991,17 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
          call storage_get_levels(header_list(i), ilevels)
          n_levels = size(ilevels)
          do j=1,n_levels
-            do k=1,lmax
+            do k=1,lmax 
                if (all_levels(k) == ilevels(j)) exit
-            end do
+            end do 
             if (k > lmax) then
                all_levels(k) = ilevels(j)
                lmax = lmax + 1
             end if
             field_has_level(i,k) = .true.
-         end do
+         end do 
          if (associated(ilevels)) deallocate(ilevels)
-      end do
+      end do 
 
       call mprintf(.true.,DEBUG,'        .',newline=.false.)
       do i=1,n_fields
@@ -1036,7 +1036,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: find_missing_values
    !
-   ! Purpose:
+   ! Purpose: 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine find_missing_values()
 
@@ -1090,7 +1090,7 @@ call mprintf(.true.,WARN,'PLEASE REPORT THIS BUG TO THE DEVELOPER!')
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: storage_print_headers
    !
-   ! Purpose:
+   ! Purpose: 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine storage_print_headers()
 

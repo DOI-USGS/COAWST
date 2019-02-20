@@ -5,9 +5,9 @@
    (defined POSTERIOR_EOFS    || defined POSTERIOR_ERROR_I || \
     defined POSTERIOR_ERROR_F)
 !
-!svn $Id: posterior.F 857 2017-07-29 04:05:27Z arango $
+!svn $Id: posterior.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -2117,7 +2117,8 @@
 
       integer, dimension(4) :: Vsize
 
-      real(r8) :: Fmin, Fmax, scale
+      real(dp) :: scale
+      real(r8) :: Fmin, Fmax
 
 # include "set_bounds.h"
 !
@@ -2149,7 +2150,7 @@
 !  Read in free-surface.
 !
       gtype=r2dvar
-      scale=1.0_r8
+      scale=1.0_dp
       CALL netcdf_inq_varid (ng, model, ncname, Vname(1,idFsur),        &
      &                       ncid, varid)
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
@@ -2181,7 +2182,7 @@
       IF (ANY(Lobc(:,isFsur,ng))) THEN
         ifield=idSbry(isFsur)
         gtype=r2dvar
-        scale=1.0_r8
+        scale=1.0_dp
         CALL netcdf_inq_varid (ng, model, ncname, Vname(1,ifield),      &
      &                         ncid, varid)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
@@ -2209,7 +2210,7 @@
 !  Read in 2D U-momentum component.
 !
       gtype=u2dvar
-      scale=1.0_r8
+      scale=1.0_dp
       CALL netcdf_inq_varid (ng, model, ncname, Vname(1,idUbar),        &
      &                       ncid, varid)
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
@@ -2237,7 +2238,7 @@
 !  Read in 2D V-momentum component.
 !
       gtype=v2dvar
-      scale=1.0_r8
+      scale=1.0_dp
       CALL netcdf_inq_varid (ng, model, ncname, Vname(1,idVbar),        &
      &                       ncid, varid)
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
@@ -2269,7 +2270,7 @@
       IF (ANY(Lobc(:,isUbar,ng))) THEN
         ifield=idSbry(isUbar)
         gtype=u2dvar
-        scale=1.0_r8
+        scale=1.0_dp
         CALL netcdf_inq_varid (ng, model, ncname, Vname(1,ifield),      &
      &                         ncid, varid)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
@@ -2297,7 +2298,7 @@
       IF (ANY(Lobc(:,isVbar,ng))) THEN
         ifield=idSbry(isVbar)
         gtype=u2dvar
-        scale=1.0_r8
+        scale=1.0_dp
         CALL netcdf_inq_varid (ng, model, ncname, Vname(1,ifield),      &
      &                         ncid, varid)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
@@ -2325,7 +2326,7 @@
 !  Read surface momentum stress.
 !
       gtype=u3dvar
-      scale=1.0_r8
+      scale=1.0_dp
       CALL netcdf_inq_varid (ng, model, ncname, Vname(1,idUsms),        &
      &                       ncid, varid)
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
@@ -2351,7 +2352,7 @@
       END IF
 
       gtype=v3dvar
-      scale=1.0_r8
+      scale=1.0_dp
       CALL netcdf_inq_varid (ng, model, ncname, Vname(1,idVsms),        &
      &                       ncid, varid)
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
@@ -2382,7 +2383,7 @@
 !  Read in 3D U-momentum component.
 !
       gtype=u3dvar
-      scale=1.0_r8
+      scale=1.0_dp
       CALL netcdf_inq_varid (ng, model, ncname, Vname(1,idUvel),        &
      &                       ncid, varid)
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
@@ -2414,7 +2415,7 @@
       IF (ANY(Lobc(:,isUvel,ng))) THEN
         ifield=idSbry(isUvel)
         gtype=u3dvar
-        scale=1.0_r8
+        scale=1.0_dp
         CALL netcdf_inq_varid (ng, model, ncname, Vname(1,ifield),      &
      &                         ncid, varid)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
@@ -2441,7 +2442,7 @@
 !  Read in 3D U-momentum component.
 !
       gtype=v3dvar
-      scale=1.0_r8
+      scale=1.0_dp
       CALL netcdf_inq_varid (ng, model, ncname, Vname(1,idVvel),        &
      &                       ncid, varid)
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
@@ -2473,7 +2474,7 @@
       IF (ANY(Lobc(:,isVvel,ng))) THEN
         ifield=idSbry(isVvel)
         gtype=u3dvar
-        scale=1.0_r8
+        scale=1.0_dp
         CALL netcdf_inq_varid (ng, model, ncname, Vname(1,ifield),      &
      &                         ncid, varid)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
@@ -2500,7 +2501,7 @@
 !  Read in tracers.
 !
       gtype=r3dvar
-      scale=1.0_r8
+      scale=1.0_dp
       DO it=1,NT(ng)
         CALL netcdf_inq_varid (ng, model, ncname, Vname(1,idTvar(it)),  &
      &                         ncid, varid)
@@ -2536,7 +2537,7 @@
         IF (ANY(Lobc(:,isTvar(it),ng))) THEN
           ifield=idSbry(isTvar(it))
           gtype=r3dvar
-          scale=1.0_r8
+          scale=1.0_dp
           CALL netcdf_inq_varid (ng, model, ncname, Vname(1,ifield),    &
      &                           ncid, varid)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
@@ -2565,7 +2566,7 @@
 !  Read in surface tracers flux.
 !
       gtype=r3dvar
-      scale=1.0_r8
+      scale=1.0_dp
       DO it=1,NT(ng)
         IF (Lstflux(it,ng)) THEN
           CALL netcdf_inq_varid (ng, model, ncname,                     &

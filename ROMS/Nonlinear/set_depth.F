@@ -2,9 +2,9 @@
       MODULE set_depth_mod
 #ifdef SOLVE3D
 !
-!svn $Id: set_depth.F 854 2017-07-18 23:28:45Z arango $
+!svn $Id: set_depth.F 889 2018-02-10 03:32:52Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -209,15 +209,15 @@
               hinv=1.0_r8/hwater
 
               hh2=(min(vert_h0,hwater))*hinv
-              IF (SCALARS(ng)%sc_w(k).gt.-vert_s0) THEN
-                C2_w=-hh2*(-SCALARS(ng)%sc_w(k))**(vert_n1)
+              IF (SCALARS(ng)%sc_w(k).gt.-vert_s0) THEN 
+                C2_w=-hh2*(-SCALARS(ng)%sc_w(k))**(vert_n1) 
                 C2_r=-hh2*(-SCALARS(ng)%sc_r(k))**(vert_n1)
-
+  
                 cff_w=hc(ng)*(SCALARS(ng)%sc_w(k)-C2_w)
                 cff1_w=C2_w
                 cff_r=hc(ng)*(SCALARS(ng)%sc_r(k)-C2_r)
                 cff1_r=C2_r
-
+  
                 z_w0=cff_w+cff1_w*hwater
                 z_w(i,j,k)=z_w0+Zt_avg1(i,j)*(1.0_r8+z_w0*hinv)
                 z_r0=cff_r+cff1_r*hwater

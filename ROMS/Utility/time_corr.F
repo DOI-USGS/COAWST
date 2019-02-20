@@ -4,9 +4,9 @@
 
       SUBROUTINE time_corr (ng, tile, model, INPncname)
 !
-!svn $Id: time_corr.F 857 2017-07-29 04:05:27Z arango $
+!svn $Id: time_corr.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -59,9 +59,11 @@
       integer :: Vsize(4)
       integer :: j, k, itrc
 
-      real(r8) :: Fmin, Fmax, scale
-      real(r8) :: inp_time(1)
-      real(r8) :: timeI, timeR, fac
+      real(r8) :: Fmin, Fmax
+
+      real(dp) :: scale
+      real(dp) :: inp_time(1)
+      real(dp) :: timeI, timeR, fac
 
 # include "set_bounds.h"
 !
@@ -112,7 +114,7 @@
 !  Compute the time convolutions for the model error corrections.
 !
       Iinp=1
-      scale=1.0_r8
+      scale=1.0_dp
 !
 !  Read all free-surface records into the "f_zetaS" array.
 !
@@ -331,8 +333,8 @@
 !  Write out time variable.
 !
         IF (find_string(var_name, n_var, Vname(1,idtime), INPvid)) THEN
-          CALL netcdf_get_fvar (ng, model, INPncname, Vname(1,idtime),  &
-     &                          inp_time,                               &
+          CALL netcdf_get_time (ng, model, INPncname, Vname(1,idtime),  &
+     &                          Rclock%DateNumber, inp_time,            &
      &                          ncid = INPncid,                         &
      &                          start = (/Irec/), total = (/1/))
           IF (FoundError(exit_flag, NoError, __LINE__,                  &

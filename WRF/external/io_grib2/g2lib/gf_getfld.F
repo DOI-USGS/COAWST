@@ -1,7 +1,7 @@
       subroutine gf_getfld(cgrib,lcgrib,ifldnum,unpack,expand,gfld,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    gf_getfld
+! SUBPROGRAM:    gf_getfld 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-26
 !
 ! ABSTRACT: This subroutine returns the Grid Definition, Product Definition,
@@ -9,7 +9,7 @@
 !   field.  All of the information returned is stored in a derived
 !   type variable, gfld.  Gfld is of type gribfield, which is defined
 !   in module grib_mod, so users of this routine will need to include
-!   the line "USE GRIB_MOD" in their calling routine.  Each component of the
+!   the line "USE GRIB_MOD" in their calling routine.  Each component of the 
 !   gribfield type is described in the OUTPUT ARGUMENT LIST section below.
 !
 !   Since there can be multiple data fields packed into a GRIB2
@@ -42,7 +42,7 @@
 !                This argument is ignored if unpack == 0 OR if the
 !                returned field does not contain a bit-map.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     gfld - derived type gribfield ( defined in module grib_mod )
 !            ( NOTE: See Remarks Section )
 !        gfld%version = GRIB edition number ( currently 2 )
@@ -51,7 +51,7 @@
 !                        Section ( Section 1 )
 !                        This element is actually a pointer to an array
 !                        that holds the data.
-!            gfld%idsect(1)  = Identification of originating Centre
+!            gfld%idsect(1)  = Identification of originating Centre 
 !                                    ( see Common Code Table C-1 )
 !                             7 - US National Weather Service
 !            gfld%idsect(2)  = Identification of originating Sub-centre
@@ -98,26 +98,26 @@
 !                      0 - Specified in Code table 3.1
 !                      1 - Predetermined grid Defined by originating centre
 !        gfld%ngrdpts = Number of grid points in the defined grid.
-!        gfld%numoct_opt = Number of octets needed for each
-!                          additional grid points definition.
+!        gfld%numoct_opt = Number of octets needed for each 
+!                          additional grid points definition.  
 !                          Used to define number of
 !                          points in each row ( or column ) for
-!                          non-regular grids.
+!                          non-regular grids.  
 !                          = 0, if using regular grid.
-!        gfld%interp_opt = Interpretation of list for optional points
+!        gfld%interp_opt = Interpretation of list for optional points 
 !                          definition.  (Code Table 3.11)
 !        gfld%igdtnum = Grid Definition Template Number (Code Table 3.1)
-!        gfld%igdtmpl() = Contains the data values for the specified Grid
-!                         Definition Template ( NN=gfld%igdtnum ).  Each
-!                         element of this integer array contains an entry (in
+!        gfld%igdtmpl() = Contains the data values for the specified Grid 
+!                         Definition Template ( NN=gfld%igdtnum ).  Each 
+!                         element of this integer array contains an entry (in 
 !                         the order specified) of Grid Defintion Template 3.NN
 !                         This element is actually a pointer to an array
 !                         that holds the data.
 !        gfld%igdtlen = Number of elements in gfld%igdtmpl().  i.e. number of
-!                       entries in Grid Defintion Template 3.NN
+!                       entries in Grid Defintion Template 3.NN  
 !                       ( NN=gfld%igdtnum ).
-!        gfld%list_opt() = (Used if gfld%numoct_opt .ne. 0)  This array
-!                          contains the number of grid points contained in
+!        gfld%list_opt() = (Used if gfld%numoct_opt .ne. 0)  This array 
+!                          contains the number of grid points contained in 
 !                          each row ( or column ).  (part of Section 3)
 !                          This element is actually a pointer to an array
 !                          that holds the data.  This pointer is nullified
@@ -127,16 +127,16 @@
 !                       for which optional grid points are defined.  This value
 !                       is set to zero, if gfld%numoct_opt=0.
 !        gfdl%ipdtnum = Product Definition Template Number (see Code Table 4.0)
-!        gfld%ipdtmpl() = Contains the data values for the specified Product
+!        gfld%ipdtmpl() = Contains the data values for the specified Product 
 !                         Definition Template ( N=gfdl%ipdtnum ).  Each element
-!                         of this integer array contains an entry (in the
+!                         of this integer array contains an entry (in the 
 !                         order specified) of Product Defintion Template 4.N.
 !                         This element is actually a pointer to an array
 !                         that holds the data.
 !        gfld%ipdtlen = Number of elements in gfld%ipdtmpl().  i.e. number of
-!                       entries in Product Defintion Template 4.N
+!                       entries in Product Defintion Template 4.N  
 !                       ( N=gfdl%ipdtnum ).
-!        gfld%coord_list() = Real array containing floating point values
+!        gfld%coord_list() = Real array containing floating point values 
 !                            intended to document the vertical discretisation
 !                            associated to model data on hybrid coordinate
 !                            vertical levels.  (part of Section 4)
@@ -144,20 +144,20 @@
 !                            that holds the data.
 !        gfld%num_coord = number of values in array gfld%coord_list().
 !        gfld%ndpts = Number of data points unpacked and returned.
-!        gfld%idrtnum = Data Representation Template Number
+!        gfld%idrtnum = Data Representation Template Number 
 !                       ( see Code Table 5.0)
-!        gfld%idrtmpl() = Contains the data values for the specified Data
-!                         Representation Template ( N=gfld%idrtnum ).  Each
-!                         element of this integer array contains an entry
-!                         (in the order specified) of Product Defintion
+!        gfld%idrtmpl() = Contains the data values for the specified Data 
+!                         Representation Template ( N=gfld%idrtnum ).  Each 
+!                         element of this integer array contains an entry 
+!                         (in the order specified) of Product Defintion 
 !                         Template 5.N.
 !                         This element is actually a pointer to an array
 !                         that holds the data.
-!        gfld%idrtlen = Number of elements in gfld%idrtmpl().  i.e. number
-!                       of entries in Data Representation Template 5.N
+!        gfld%idrtlen = Number of elements in gfld%idrtmpl().  i.e. number 
+!                       of entries in Data Representation Template 5.N 
 !                       ( N=gfld%idrtnum ).
 !        gfld%unpacked = logical value indicating whether the bitmap and
-!                        data values were unpacked.  If false,
+!                        data values were unpacked.  If false, 
 !                        gfld%bmap and gfld%fld pointers are nullified.
 !        gfld%expanded = Logical value indicating whether the data field
 !                         was expanded to the grid in the case where a
@@ -173,7 +173,7 @@
 !                     1-253 = Predefined bitmap applies
 !                     254 = Previously defined bitmap applies to this field
 !                     255 = Bit map does not apply to this product.
-!        gfld%bmap() = Logical*1 array containing decoded bitmap,
+!        gfld%bmap() = Logical*1 array containing decoded bitmap, 
 !                      if ibmap=0 or ibap=254.  Otherwise nullified.
 !                      This element is actually a pointer to an array
 !                      that holds the data.
@@ -224,7 +224,7 @@
 !
 !$$$
       use grib_mod
-
+    
       character(len=1),intent(in) :: cgrib(lcgrib)
       integer,intent(in) :: lcgrib,ifldnum
       logical,intent(in) :: unpack,expand
@@ -236,7 +236,7 @@
 !      integer,intent(out) :: ndpts,ibmap,idefnum,numcoord
 !      logical*1,intent(out) :: bmap(*)
 !      real,intent(out) :: fld(*),coordlist(*)
-
+      
       character(len=4),parameter :: grib='GRIB',c7777='7777'
       character(len=4) :: ctemp
       real,pointer,dimension(:) :: newfld
@@ -321,7 +321,7 @@
       nullify(gfld%coord_list,gfld%idrtmpl,gfld%bmap,gfld%fld)
 !
 !  Check for valid request number
-!
+!  
       if (ifldnum.le.0) then
         print *,'gf_getfld: Request for field number must be positive.'
         ierr=3
@@ -344,7 +344,7 @@
         return
       endif
 !
-!  Unpack Section 0 - Indicator Section
+!  Unpack Section 0 - Indicator Section 
 !
       iofst=8*(istart+5)
       call g2lib_gbyte(cgrib,listsec0(1),iofst,8)     ! Discipline
@@ -358,14 +358,14 @@
       ipos=istart+lensec0
 !
 !  Currently handles only GRIB Edition 2.
-!
+!  
       if (listsec0(2).ne.2) then
         print *,'gf_getfld: can only decode GRIB edition 2.'
         ierr=2
         return
       endif
 !
-!  Loop through the remaining sections keeping track of the
+!  Loop through the remaining sections keeping track of the 
 !  length of each.  Also keep the latest Grid Definition Section info.
 !  Unpack the requested field number.
 !
@@ -393,7 +393,7 @@
         !  Check to see if section number is valid
         !
         if ( (isecnum.lt.1).OR.(isecnum.gt.7) ) then
-          print *,'gf_getfld: Unrecognized Section Encountered=',isecnum
+          print *,'gf_getfld: Unrecognized Section Encountered=',isecnum     
           ierr=8
           return
         endif
@@ -424,7 +424,7 @@
           endif
         endif
         !
-        !   If found Section 3, unpack the GDS info using the
+        !   If found Section 3, unpack the GDS info using the 
         !   appropriate template.  Save in case this is the latest
         !   grid before the requested field.
         !
@@ -550,10 +550,10 @@
                   deallocate(gfld%fld);
                   gfld%fld=>newfld;
                   gfld%expanded=.true.
-               else
+               else 
                   gfld%expanded=.false.
                endif
-            else
+            else 
                gfld%expanded=.true.
             endif
           else
@@ -579,12 +579,12 @@
         if (unpack.and.have3.and.have4.and.have5.and.have6.and.have7)
      &      return
         !
-        !  If unpacking is not requested, return when sections
+        !  If unpacking is not requested, return when sections 
         !  3 through 6 have been processed
         !
         if ((.NOT.unpack).and.have3.and.have4.and.have5.and.have6)
      &      return
-
+        
       enddo
 
 !

@@ -67,7 +67,7 @@ CONTAINS
 !-- svp3        constant for saturation vapor pressure (K)
 !-- svpt0       constant for saturation vapor pressure (K)
 !-- ep1         constant for virtual temperature (R_v/R_d - 1) (dimensionless)
-!-- ep2         constant for specific humidity calculation
+!-- ep2         constant for specific humidity calculation 
 !               (R_d/R_v) (dimensionless)
 !-- karman      Von Karman constant
 !-- fCor        Coriolis parameter
@@ -93,7 +93,7 @@ CONTAINS
       INTEGER,  INTENT(IN )   ::        ids,ide, jds,jde, kds,kde, &
                                         ims,ime, jms,jme, kms,kme, &
                                         its,ite, jts,jte, kts,kte
-!
+!                                                               
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                 INTENT(IN   ) :: u3d, v3d, th3d, qv3d, p3d, pi3d, rho, z
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
@@ -113,7 +113,7 @@ CONTAINS
       REAL,     DIMENSION( ims:ime, jms:jme )           , &
                 INTENT(INOUT) :: wm_temf
 
-
+                                        
       REAL,     INTENT(IN   ) :: cp,g,rovcp,r,xlv
       REAL,     INTENT(IN   ) :: svp1,svp2,svp3,svpt0
       REAL,     INTENT(IN   ) :: ep1,ep2,karman
@@ -170,14 +170,14 @@ CONTAINS
                                         ims,ime, jms,jme, kms,kme, &
                                         its,ite, jts,jte, kts,kte, &
                                         j
-
+                                                               
       REAL,     DIMENSION( ims:ime ), INTENT(IN   ) ::             &
                                         u1d,v1d,qv1d,p1d,th1d,pi1d,rho,z,zsrf
       REAL,     INTENT(IN   ) ::        cp,g,rovcp,r,xlv
       REAL,     DIMENSION( ims:ime ), INTENT(IN   ) :: psfc,znt
       REAL,     DIMENSION( ims:ime ), INTENT(INOUT) ::             &
                                         chs,chs2,cqs2,cpm,ust
-      REAL,     DIMENSION( ims:ime ), INTENT(IN   ) :: mavail,xland
+      REAL,     DIMENSION( ims:ime ), INTENT(IN   ) :: mavail,xland 
       REAL,     DIMENSION( ims:ime ), INTENT(INOUT) ::             &
                                         hfx,qfx,lh
       REAL,     DIMENSION( ims:ime ), INTENT(IN   ) :: tsk
@@ -229,10 +229,10 @@ CONTAINS
 !!!!!!! ******
 ! WA Known outages:  None
 
-   do i = its,ite      ! Main loop
+   do i = its,ite      ! Main loop 
 
       ! Calculate surface saturated q and q in air at surface
-      e1=svp1*exp(svp2*(tsk(i)-svpt0)/(tsk(i)-svp3))
+      e1=svp1*exp(svp2*(tsk(i)-svpt0)/(tsk(i)-svp3))                       
       qsfc(i)=ep2*e1/((psfc(i)/1000.)-e1)
       qsfc_air(i) = qsfc(i) * mavail(i)
       thetav(i) = (tsk(i)/pi1d(i)) * (1. + 0.608*qsfc_air(i))  ! WA Assumes ql(env)=0, what if it isn't?
@@ -251,7 +251,7 @@ CONTAINS
       dvdz(i) = v1d(i) / (zt(i) * log10(zm(i)/znt(i)))
 
       ! WA doing this because te_temf may not be initialized,
-      ! would be better to do it in initialization routine but it's
+      ! would be better to do it in initialization routine but it's 
       ! not available in module_physics_init.
       if (te_temfx(i) < TEmin) te_temfx(i) = TEmin
 
@@ -332,7 +332,7 @@ CONTAINS
       ! WA TEST 11/7/13 back to wm = u* but with "whole" wind in u* above
       wm(i) = ust(i)
       ! Calculate mixed scaling velocity (Moeng & Sullivan 1994 JAS p.1021)
-      ! wm(i) = 0.5 * (1./5. * (wstr(i)**3. + 5. * ust(i)**3.)) ** (1./3.)
+      ! wm(i) = 0.5 * (1./5. * (wstr(i)**3. + 5. * ust(i)**3.)) ** (1./3.) 
 
       ! WA TEST 2/22/11 average with previous value to reduce instability
       wm(i) = (wm(i) + wm_temfx(i)) / 2.0
@@ -349,8 +349,8 @@ CONTAINS
       flhc(i) = rho(i) * cp * fth(i)/fth0 * wm(i) * leps(i) / PrT0 / log(zm(i)/z0t(i)) / zt(i)
       flqc(i)  = rho(i) * fth(i)/fth0 * wm(i) * leps(i) / PrT0 / log(zm(i)/z0t(i)) / zt(i) * mavail(i)
       exch_temfx(i)  = flqc(i) / mavail(i)
-      chs(i) = flqc(i) / rho(i) / mavail(i)
-      ! WA Must exchange coeffs be limited to avoid runaway in some
+      chs(i) = flqc(i) / rho(i) / mavail(i) 
+      ! WA Must exchange coeffs be limited to avoid runaway in some 
       ! (convective?) conditions?  Something like this is done in sfclay.
       ! Doing nothing for now.
 
@@ -377,7 +377,7 @@ CONTAINS
       ! Calculate qgh (saturated at first-level temp) and cpm
       e1=svp1*exp(svp2*((th1d(i)*pi1d(i))-svpt0)/((th1d(i)*pi1d(i))-svp3))
       qgh(i)=ep2*e1/((p1d(i)/1000.)-e1)
-      cpm(i)=cp*(1.+0.8*qv1d(i))
+      cpm(i)=cp*(1.+0.8*qv1d(i))                                   
 
    end do  ! Main loop
 
@@ -396,7 +396,7 @@ CONTAINS
    integer , intent(in)          ::  ids, ide, jds, jde, kds, kde,             &
                                      ims, ime, jms, jme, kms, kme,             &
                                      its, ite, jts, jte, kts, kte
-
+   
 ! Local variables
    integer :: i, j, itf, jtf
 !
@@ -416,6 +416,6 @@ CONTAINS
 
    END SUBROUTINE temfsfclayinit
 
-!-------------------------------------------------------------------
+!-------------------------------------------------------------------          
 
 END MODULE module_sf_temfsfclay

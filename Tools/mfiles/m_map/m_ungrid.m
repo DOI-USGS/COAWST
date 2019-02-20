@@ -1,4 +1,4 @@
-function m_ungrid(goptn);
+function m_ungrid(goptn)
 % M_UNGRID Removes a grid;
 %          M_UNGRID deletes a map grid, but leaves any plotted
 %          data.
@@ -13,28 +13,35 @@ function m_ungrid(goptn);
 % Rich Pawlowicz (rich@ocgy.ubc.ca) 4/Apr/97 
 %
 % 14/11/98 - Added possible option to remove other tagged items.
+% Nov/2017 - removed a loop around deletion.
+
 %
 % This software is provided "as is" without warranty of any kind. But
 % it's mine, so you can't sell it.
 
-if nargin==0,
-  mstr='m_grid_';
+if nargin==0
+    mstr='m_grid_';
 else
-  mstr=['m_' lower(goptn)];
-end;
+    mstr=['m_' lower(goptn)];
+    if strmatch('utm',lower(goptn)) & strncmp('m_utm_grid',get(gca,'tag'),5)
+         set(gca,'visible','off');
+         return
+    end
+end
+
 
 hh=get(gca,'children');
 
 things=get(hh,'tag');
+if length(hh)==1, things={things}; end
 
-for i=1:length(hh),
-  if ~isempty(things{i}) & strmatch(mstr,things{i}),
-   delete(hh(i));
- end;
-end;
+htags_del=strmatch(mstr,things);
+if ~isempty(htags_del)
+    delete(hh(htags_del));
+end
 
-if strmatch('m_grid',mstr),
+if strmatch('m_grid',mstr)
   set(gca,'visible','on');
-end;
+end
 
 

@@ -26,7 +26,7 @@ typedef struct {
   PDS_INPUT *pds;
   grid_desc_sec *gds;
   BMS_INPUT *bms;
-  BDS_HEAD_INPUT *bds_head;
+  BDS_HEAD_INPUT *bds_head;  
 } Elements;
 
 typedef struct {
@@ -96,7 +96,7 @@ int rg_get_indices(GribInfo *gribinfo, FindGrib *find_grib, int *indices);
 
 int rg_init_findgrib(FindGrib *findgrib);
 
-int rg_get_grib_header(GribInfo *gribinfo, int index, PDS_INPUT *pds,
+int rg_get_grib_header(GribInfo *gribinfo, int index, PDS_INPUT *pds, 
 		    grid_desc_sec *gds,BMS_INPUT *bms);
 
 int rg_num_elements(GribInfo *gribinfo);
@@ -121,7 +121,7 @@ int rg_get_tblversion(GribInfo *gribinfo, int index);
 
 float rg_get_point(GribInfo *gribinfo, int index, float column, float row);
 
-int rg_get_points(GribInfo *gribinfo, int index, PointData *pointdata,
+int rg_get_points(GribInfo *gribinfo, int index, PointData *pointdata, 
 		    int numpoints);
 
 int rg_get_offset(GribInfo *gribinfo, int index);
@@ -136,7 +136,7 @@ int rg_get_data_1d(GribInfo *gribinfo, int index, float *data);
 
 int rg_write_grib(PDS_INPUT *pds, grid_desc_sec *gds, char filename[],
 		  float **data);
-int rg_fwrite_grib(PDS_INPUT *pds, grid_desc_sec *gds, float **data,
+int rg_fwrite_grib(PDS_INPUT *pds, grid_desc_sec *gds, float **data, 
 		   FILE *fid);
 
 
@@ -147,7 +147,7 @@ int rg_fwrite_grib(PDS_INPUT *pds, grid_desc_sec *gds, float **data,
  * Note: As of 11/11/04, the functions listed above have already been reworked.
  */
 
-int rg_get_pressure_levels(GribInfo *gribinfo, int dates[], int centuries[],
+int rg_get_pressure_levels(GribInfo *gribinfo, int dates[], int centuries[], 
 			int parm_id[], int finallevels[],int min_pres,
 			int numparms);
 int rg_get_msl_indices(GribInfo *gribinfo, char dates[][STRINGSIZE],
@@ -155,7 +155,7 @@ int rg_get_msl_indices(GribInfo *gribinfo, char dates[][STRINGSIZE],
 		    int usHeight1[],int infactor[],int numparms,
 		    int grib_index[],int outfactor[]);
 int rg_get_grib(GribInfo *gribinfo, int index,int scale,
-	     float **grib_out,int *vect_comp_flag,
+	     float **grib_out,int *vect_comp_flag, 
 	     GRIB_PROJECTION_INFO_DEF *Proj, BDS_HEAD_INPUT *bds_head);
 int rg_get_dates(GribInfo *gribinfo,int usParm_id[],int usLevel_id[],
 	      int usHeight1[],int numparms,int dates[],int century[],

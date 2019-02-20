@@ -163,7 +163,7 @@
 !# ifdef MCT_INTERP_WV2AT
 !      TYPE T_AV2_W
 !        TYPE(AttrVect) :: wav2atm_AV2         ! AttrVect variables
-!        TYPE(AttrVect) :: atm2wav_AV2
+!        TYPE(AttrVect) :: atm2wav_AV2 
 !      END TYPE T_AV2_W
 !      TYPE (T_AV2_W), ALLOCATABLE :: AV2_W(:,:)
 
@@ -199,7 +199,7 @@
 # ifdef MOVE_NESTS
       TYPE T_AV2_R
         TYPE(AttrVect) :: crs2fin_AV2         ! AttrVect variables
-        TYPE(AttrVect) :: fin2crs_AV2
+        TYPE(AttrVect) :: fin2crs_AV2 
       END TYPE T_AV2_R
       TYPE (T_AV2_R), ALLOCATABLE :: AV2_RO(:,:)
       TYPE (T_AV2_R), ALLOCATABLE :: AV2_RW(:,:)
@@ -235,17 +235,17 @@
 !
 !  Imported variable definitions.
 !
-      TYPE(domain) , INTENT (IN) :: grid
+      TYPE(domain) , INTENT (IN) :: grid 
       integer, intent(in) :: ia
 
 !     include 'mpif.h'
 !
-!  Local variable declarations.
+!  Local variable declarations.  
 !
       integer :: MyError, MyRank
       integer :: npoints, gsmsize, nprocs, localsize
       integer :: j, jc, Isize, Jsize, count, Asize
-      integer :: i, is, ie, js, je, cid, cad, io, iw
+      integer :: i, is, ie, js, je, cid, cad, io, iw 
       integer :: nRows, nCols, num_sparse_elems
 
       integer, pointer :: start(:), length(:)
@@ -722,7 +722,7 @@
             CALL Router_init (OCNid, GlobalSegMap_G(ia)%GSMapWRF,       &
      &                        ATM_COMM_WORLD, Router_O(ia,io)%WRFtoROMS)
 #  ifdef MOVE_NESTS
-          END IF
+          END IF 
 #  endif
         END DO
       END DO
@@ -773,7 +773,7 @@
       TYPE(domain) , POINTER     :: grid
       TYPE(domain) , POINTER     :: grid_ptr
 !
-!  Local variable declarations.
+!  Local variable declarations.  
 !
       integer :: io, iw, ia, offset
       integer :: kid, num_ksteps
@@ -850,10 +850,10 @@
 !  Imported variable definitions.
 !
       integer, intent(in) :: num_steps
-      TYPE(domain) , POINTER     :: grid
+      TYPE(domain) , POINTER     :: grid 
       TYPE(domain) , POINTER     :: grid_ptr
 !
-!  Local variable declarations.
+!  Local variable declarations.  
 !
       integer :: io, ia
       integer :: kid, num_ksteps
@@ -1188,7 +1188,7 @@
 #  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
 !-----------------------------------------------------------------------
 !     MSLP       Surface atmospheric pressure (Pa).
-!     Use the hypsometric equation to reduce
+!     Use the hypsometric equation to reduce 
 !     surface pressure to mean sea level pressure.
 !
       ij=0
@@ -1216,12 +1216,12 @@
       DO j=js,je
         DO i=is,ie
 !
-!         Calculate 2-m pressure using hypsometric equation.
+!         Calculate 2-m pressure using hypsometric equation. 
 !         Assume temp at 2m = temp at 0m.
 !
           cff1 = grid%PSFC(i,j)/(exp((9.81*2.0)/(287.0*grid%T2(i,j))))
 !
-!         Compute specific humidity using the 2-m mixing ratio and
+!         Compute specific humidity using the 2-m mixing ratio and 
 !         2-m pressure.
 !
           rnum = grid%Q2(i,j)*cff1
@@ -1265,7 +1265,7 @@
 #  if defined BULK_FLUXES || defined ECOSIM
 !     U10        U-Wind speed at 10 m (m s-1).
 !     Rotate to earth lon lat.
-!
+!     
       ij=0
       DO j=js,je
         DO i=is,ie
@@ -1296,7 +1296,7 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_O(ia,io)%atm2ocn_AV, "V10",   &
-     &                           AA, Asize)
+     &                           AA, Asize) 
 #  endif
 #  ifdef CLOUDS
 !-----------------------------------------------------------------------
@@ -1437,7 +1437,7 @@
       USE module_domain
 !
       implicit none
-!     TYPE(domain) , INTENT (IN) :: grid
+!     TYPE(domain) , INTENT (IN) :: grid 
       TYPE(domain) , POINTER     :: grid            ! jcw check this
 #  ifdef MOVE_NESTS
       TYPE(domain) , POINTER     :: grid_ptr
@@ -1707,7 +1707,7 @@
       USE module_domain
 !
       implicit none
-      TYPE(domain) , INTENT (IN) :: grid
+      TYPE(domain) , INTENT (IN) :: grid 
       integer, intent(in) :: ia, io, aux4flag
 !
 !  Local variable declarations.
@@ -1892,7 +1892,7 @@
       USE module_domain
 !
       implicit none
-      TYPE(domain) , INTENT (IN) :: grid
+      TYPE(domain) , INTENT (IN) :: grid 
       integer, intent(in) :: ia, iw
 !
 !  Local variable declarations.

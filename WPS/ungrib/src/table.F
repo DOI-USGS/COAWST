@@ -5,7 +5,7 @@
 module Table
   implicit none
 
-! We have parameterized the maximum number of variables we expect to want to
+! We have parameterized the maximum number of variables we expect to want to 
 ! read:
   integer, parameter :: maxlines=100
 
@@ -20,7 +20,7 @@ module Table
   character (LEN=46), dimension(maxlines) :: Ddesc =  ' '
 
 ! Most of the fields are output, but some are not.  The names of the
-! fields we want to output are stored in NAMEOUT.  Initialize the
+! fields we want to output are stored in NAMEOUT.  Initialize the 
 ! NAMEOUT field to blanks:
   character (LEN=9) , dimension(maxlines) :: nameout = ' '
   character (LEN=25), dimension(maxlines) :: unitout = ' '
@@ -43,17 +43,17 @@ module Table
   integer, dimension(5,maxlines) :: g2code
 
 ! Array LEVEL1 holds the Level-1 values of the fields we want:
-! If the Vtable has a '*' for the Level-1 value, LEVEL1 has
+! If the Vtable has a '*' for the Level-1 value, LEVEL1 has 
 ! the value -99.
   integer, dimension(maxlines) :: level1
 
 ! Array LEVEL2 holds the Level-2 values of the fields we want.
-! If LEVEL2 is not needed for a particular field, it is set to
+! If LEVEL2 is not needed for a particular field, it is set to 
 ! -99.
   integer, dimension(maxlines) :: level2
 
 ! Array IPRTY holds the priority values of the fields:
-! Priorities are used with surface fields, when we have
+! Priorities are used with surface fields, when we have 
 ! encountered the situation where a field may be stored in two different
 ! ways in a file.  Ultimately, the field with the lower priority number
 ! (i.e., higher priority) is what is output.

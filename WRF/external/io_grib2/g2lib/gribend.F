@@ -1,7 +1,7 @@
       subroutine gribend(cgrib,lcgrib,lengrib,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    gribend
+! SUBPROGRAM:    gribend 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-02
 !
 ! ABSTRACT: This subroutine finalizes a GRIB message after all grids
@@ -20,19 +20,19 @@
 !     cgrib    - Character array to contain the GRIB2 message
 !     lcgrib   - Maximum length (bytes) of array cgrib.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     cgrib    - Character array to contain the GRIB2 message
 !     lengrib  - Length of the final GRIB2 message in octets (bytes)
 !     ierr     - Error return code.
 !                0 = no error
 !                1 = GRIB message was not initialized.  Need to call
 !                    routine gribcreate first.
-!                2 = GRIB message already complete.
+!                2 = GRIB message already complete.  
 !                3 = Sum of Section byte counts doesn't add to total byte count.
 !                4 = Previous Section was not 7.
 !
-! REMARKS: This routine is intended for use with routines "gribcreate",
-!          "addlocal", "addgrid", and "addfield" to create a complete
+! REMARKS: This routine is intended for use with routines "gribcreate", 
+!          "addlocal", "addgrid", and "addfield" to create a complete 
 !          GRIB2 message.
 !
 ! ATTRIBUTES:
@@ -44,11 +44,11 @@
       character(len=1),intent(inout) :: cgrib(lcgrib)
       integer,intent(in) :: lcgrib
       integer,intent(out) :: lengrib,ierr
-
+      
       character(len=4),parameter :: grib='GRIB',c7777='7777'
       character(len=4):: ctemp
       integer iofst,ibeg,lencurr,len
-
+ 
       ierr=0
 !
 !  Check to see if beginning of GRIB message exists
@@ -61,7 +61,7 @@
       endif
 !
 !  Get current length of GRIB message
-!
+!  
       call g2lib_gbyte(cgrib,lencurr,96,32)
 !
 !  Check to see if GRIB message is already complete
@@ -78,7 +78,7 @@
 !  find the last section number.
 !
       len=16    ! Length of Section 0
-      do
+      do 
       !    Get number and length of next section
         iofst=len*8
         call g2lib_gbyte(cgrib,ilen,iofst,32)

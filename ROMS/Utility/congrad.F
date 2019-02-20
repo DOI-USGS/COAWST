@@ -4,9 +4,9 @@
       SUBROUTINE congrad (ng, model, outLoop, innLoop, NinnLoop,        &
      &                    Lcgini)
 !
-!svn $Id: congrad.F 857 2017-07-29 04:05:27Z arango $
+!svn $Id: congrad.F 915 2018-07-14 00:06:14Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -1154,7 +1154,7 @@
 #  if defined SENSITIVITY_4DVAR || \
       defined TL_W4DPSAS        || defined TL_W4DVAR || \
       defined W4DPSAS           || defined W4DVAR
-      CALL mp_bcastf (ng, model, TLmodVal_S(:,:,outLoop))
+!!    CALL mp_bcastf (ng, model, TLmodVal_S(:,:,outLoop))   ! not needed
 #  endif
       CALL mp_bcasti (ng, model, info)
       CALL mp_bcastf (ng, model, cg_beta(:,outLoop))

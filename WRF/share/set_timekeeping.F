@@ -170,7 +170,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
             !   updated for nesting, they no longer bound the dfi
             !   time window, so, start_subtime and stop_subtime from
             !   from the grid structure won't work.  However, we can use
-            !   head_grid since the dfi time window is the same for all
+            !   head_grid since the dfi time window is the same for all 
             !   domains.
 
             run_length = head_grid%start_subtime - head_grid%stop_subtime
@@ -286,7 +286,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
       CALL WRFU_TimeIntervalSet( run_length, S=time_step, Sn=time_step_fract_num, Sd=time_step_fract_den, rc=rc)
       stopTime = startTime + run_length
    ELSE
-      IF ( grid%dfi_opt .EQ. DFI_DFL ) THEN
+      IF ( grid%dfi_opt .EQ. DFI_DFL ) THEN 
          IF ( grid%dfi_stage .EQ. DFI_FWD ) THEN
             CALL nl_get_dfi_fwdstop_year(grid%id,end_year)
             CALL nl_get_dfi_fwdstop_month(grid%id,end_month)
@@ -296,7 +296,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
             CALL nl_get_dfi_fwdstop_second(grid%id,end_second)
          END IF
 
-      ELSE IF ( grid%dfi_opt .EQ. DFI_DDFI ) THEN
+      ELSE IF ( grid%dfi_opt .EQ. DFI_DDFI ) THEN 
          IF ( grid%dfi_stage .EQ. DFI_FWD ) THEN
             CALL nl_get_dfi_fwdstop_year(grid%id,end_year)
             CALL nl_get_dfi_fwdstop_month(grid%id,end_month)
@@ -313,7 +313,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
             CALL nl_get_dfi_bckstop_second(grid%id,end_second)
          END IF
 
-      ELSE IF ( grid%dfi_opt .EQ. DFI_TDFI ) THEN
+      ELSE IF ( grid%dfi_opt .EQ. DFI_TDFI ) THEN 
          IF ( grid%dfi_stage .EQ. DFI_FWD ) THEN
             CALL nl_get_dfi_fwdstop_year(grid%id,end_year)
             CALL nl_get_dfi_fwdstop_month(grid%id,end_month)
@@ -390,8 +390,8 @@ SUBROUTINE Setup_Timekeeping ( grid )
    CALL domain_clockprint ( 150, grid, &
           'DEBUG setup_timekeeping():  clock after creation,' )
 
-   ! Set default value for SIMULATION_START_DATE.
-   ! This is overwritten later in input_wrf(), if needed.
+   ! Set default value for SIMULATION_START_DATE.  
+   ! This is overwritten later in input_wrf(), if needed.  
    IF ( grid%id .EQ. head_grid%id ) THEN
       CALL nl_set_simulation_start_year   ( 1 , start_year   )
       CALL nl_set_simulation_start_month  ( 1 , start_month  )
@@ -537,14 +537,14 @@ SUBROUTINE Setup_Timekeeping ( grid )
       end_time =  padding_interval
    ENDIF
    CALL domain_alarm_create( grid, AUXINPUT5_ALARM, interval, begin_time, end_time )
-!TBH:  Should be OK to remove the "#else" section and the code it contains
-!TBH:  because later code overwrites grid%alarms( AUXINPUT5_ALARM )...
-!TBH:  In fact, by setting namelist values for auxinput5 correctly, it ought
-!TBH:  to be possible to get rid of all "#if ( WRF_CHEM == 1 )" bits in this file...
+!TBH:  Should be OK to remove the "#else" section and the code it contains 
+!TBH:  because later code overwrites grid%alarms( AUXINPUT5_ALARM )...  
+!TBH:  In fact, by setting namelist values for auxinput5 correctly, it ought 
+!TBH:  to be possible to get rid of all "#if ( WRF_CHEM == 1 )" bits in this file...  
    CALL WRFU_AlarmEnable( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
    CALL WRFU_AlarmRingerOn( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
-! TBH:  NOTE:  Proper setting of namelist variables for auxinput5 ought to
-! TBH:         make this hard-coded bit unnecessary.
+! TBH:  NOTE:  Proper setting of namelist variables for auxinput5 ought to 
+! TBH:         make this hard-coded bit unnecessary.  
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 ! add for wrf_chem emiss input
    CALL WRFU_AlarmEnable( grid%alarms( AUXINPUT5_ALARM ), rc=rc )
@@ -554,7 +554,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
 #endif
 
 ! without this test, it's possible for the value of the WRF_ALARM_SECS_TIL_NEXT_RING
-! that is written as metadata to a restart file to be garbage for BOUNDARY_ALARM for
+! that is written as metadata to a restart file to be garbage for BOUNDARY_ALARM for 
 ! the nests.  Parallel NetCDF does a header check on all the metadata being written
 ! from multiple processors and if it differs, it throws up an error. This avoids that.
    IF ( grid%id .EQ. 1 ) THEN   ! only moad can have specified boundaries
@@ -576,7 +576,7 @@ SUBROUTINE Setup_Timekeeping ( grid )
 !
    vortex_interval = 0
 #ifdef MOVE_NESTS
-   CALL nl_get_vortex_interval ( grid%id , vortex_interval )
+   CALL nl_get_vortex_interval ( grid%id , vortex_interval ) 
 #endif
    CALL WRFU_TimeIntervalSet( interval, M=vortex_interval, rc=rc )
    CALL wrf_check_error( WRFU_SUCCESS, rc, &
@@ -606,8 +606,8 @@ SUBROUTINE Setup_Timekeeping ( grid )
 
    grid%time_set = .TRUE.
 
-   ! Initialize derived time quantities in grid state.
-   ! These are updated in domain_clockadvance().
+   ! Initialize derived time quantities in grid state.  
+   ! These are updated in domain_clockadvance().  
    CALL domain_clock_get( grid, minutesSinceSimulationStart=grid%xtime )
    CALL domain_clock_get( grid, currentDayOfYearReal=grid%julian )
    WRITE(wrf_err_message,*) 'setup_timekeeping:  set xtime to ',grid%xtime

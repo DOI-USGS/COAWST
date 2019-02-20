@@ -637,7 +637,7 @@ CONTAINS
          write(message,633) (grid%psfc_out(I,J)/100.,I=its,min(ite,IDE-1),iloopinc)
          CALL wrf_message(message)
        ENDDO
-
+       
        endif
 
   633   format(35(f5.0,1x))
@@ -2045,9 +2045,9 @@ CONTAINS
      grid%sbd0=sbd
      grid%wbd0=wbd
 
-#if ( HWRF == 1 )
+#if ( HWRF == 1 )     
     CALL EARTH_LATLON ( grid%HLAT,grid%HLON,grid%VLAT,grid%VLON,  & !output
-                        grid%DLMD,grid%DPHD,WBD,SBD,    & !inputs
+                        grid%DLMD,grid%DPHD,WBD,SBD,    & !inputs 
                         tph0d,tlm0d,             &
                         IDS,IDE,JDS,JDE,KDS,KDE, &
                         IMS,IME,JMS,JME,KMS,KME, &
@@ -2075,7 +2075,7 @@ CONTAINS
     !       points.
     !     lat1,lon1 -- the first point's latitude
     !     lat2,lon2 -- the second point's latitude
-    !     returns -- the distance in meters.
+    !     returns -- the distance in meters. 
     implicit none
     real, parameter :: Requator   = 6378137.0000
     real, parameter :: pi      = 3.141592653589793238
@@ -2098,7 +2098,7 @@ CONTAINS
          cos(rlat1)*cos(rlat2)*sin((rlon1-rlon2)/2)**2)))
   end function greatarc
 
-#if ( HWRF == 1 )
+#if ( HWRF == 1 )    
    SUBROUTINE make_coupler_fort65(grid,&
         NDLMD,NDPHD,NWBD,NSBD,&
         NIDE,NJDE,PIFE,PJFE,tph0d,tlm0d)
@@ -2245,7 +2245,7 @@ CONTAINS
         write(message,55) bad
         call wrf_error_fatal(message)
      endif
-
+     
      open(file='fort.65',unit=65,form='UNFORMATTED')
      WRITE(65)NHLAT(1:NIDE,1:NJDE)
      WRITE(65)NHLON(1:NIDE,1:NJDE)
@@ -2479,7 +2479,7 @@ CONTAINS
      &,                             IMS,IME,JMS,JME,KMS,KME             &
      &,                             ITS,ITE,JTS,JTE,KTS,KTE  )
 
-
+	
        IMPLICIT NONE
 
        real, allocatable:: dum2d(:,:),DUM2DB(:,:)
@@ -2500,7 +2500,7 @@ CONTAINS
        real :: zin(generic),pin(generic)
 
        character (len=255) :: message
-
+	
        logical :: DEFINED_PSFC(IMS:IME,JMS:JME), DEFINED_PSFCB(IMS:IME,JMS:JME)
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -2631,7 +2631,7 @@ CONTAINS
 !           ENDIF
 
           ENDIF
-       END DO
+       END DO	
 
 !!!!!!!!!!!!!!!!!!!!!! START HYDRO CHECK
 
@@ -2771,7 +2771,7 @@ CONTAINS
                write(message,*) 'z diff: ', BOT_INPUT_HGT, Z3D_IN(i,j,3)
                CALL wrf_message(message)
               ENDIF
-
+	
             ELSE
 
 !! Loop up to level 7 looking for a sufficiently thick layer
@@ -3261,7 +3261,7 @@ CONTAINS
            IF (TFIELD .and. K .eq. 1  .and. (desired_press - press_in(i,j,LMIN)) .gt. 3000.) then
             col_smooth=.TRUE.   ! due to large extrapolation distance
            ENDIF
-
+	
 
             IF ((desired_press - press_in(i,j,LMIN)).LT. 50.) THEN ! 0.5 mb
                data_out(i,j,k) = data_in(i,j,LMIN)
@@ -3959,7 +3959,7 @@ CONTAINS
 
           enddo
           endif
-
+	
 
           if (ITE .eq. IDE) then
 !  Eastern Boundary

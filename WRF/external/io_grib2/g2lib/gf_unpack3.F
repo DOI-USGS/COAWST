@@ -2,11 +2,11 @@
      &                   mapgridlen,ideflist,idefnum,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    gf_unpack3
+! SUBPROGRAM:    gf_unpack3 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-26
 !
 ! ABSTRACT: This subroutine unpacks Section 3 (Grid Definition Section)
-!   starting at octet 6 of that Section.
+!   starting at octet 6 of that Section.  
 !
 ! PROGRAM HISTORY LOG:
 ! 2000-05-26  Gilbert
@@ -21,25 +21,25 @@
 !     lcgrib   - Length (in bytes) of GRIB message array cgrib.
 !     iofst    - Bit offset of the beginning of Section 3.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     iofst    - Bit offset at the end of Section 3, returned.
-!     igds     - Contains information read from the appropriate GRIB Grid
+!     igds     - Contains information read from the appropriate GRIB Grid 
 !                Definition Section 3 for the field being returned.
 !                Must be dimensioned >= 5.
 !                igds(1)=Source of grid definition (see Code Table 3.0)
 !                igds(2)=Number of grid points in the defined grid.
-!                igds(3)=Number of octets needed for each
-!                            additional grid points definition.
+!                igds(3)=Number of octets needed for each 
+!                            additional grid points definition.  
 !                            Used to define number of
 !                            points in each row ( or column ) for
-!                            non-regular grids.
+!                            non-regular grids.  
 !                            = 0, if using regular grid.
-!                igds(4)=Interpretation of list for optional points
+!                igds(4)=Interpretation of list for optional points 
 !                            definition.  (Code Table 3.11)
 !                igds(5)=Grid Definition Template Number (Code Table 3.1)
-!     igdstmpl - Pointer to integer array containing the data values for
+!     igdstmpl - Pointer to integer array containing the data values for 
 !                the specified Grid Definition
-!                Template ( NN=igds(5) ).  Each element of this integer
+!                Template ( NN=igds(5) ).  Each element of this integer 
 !                array contains an entry (in the order specified) of Grid
 !                Defintion Template 3.NN
 !     mapgridlen- Number of elements in igdstmpl().  i.e. number of entries
@@ -184,6 +184,6 @@
          idefnum=0
          nullify(ideflist)
       endif
-
+      
       return    ! End of Section 3 processing
       end

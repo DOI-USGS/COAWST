@@ -4,10 +4,10 @@ MODULE module_bl_gfs
 
 CONTAINS
 
-!-------------------------------------------------------------------
+!-------------------------------------------------------------------          
    SUBROUTINE BL_GFS(U3D,V3D,TH3D,T3D,QV3D,QC3D,QI3D,P3D,PI3D,     &
                   RUBLTEN,RVBLTEN,RTHBLTEN,                        &
-                  RQVBLTEN,RQCBLTEN,RQIBLTEN,          	           &
+                  RQVBLTEN,RQCBLTEN,RQIBLTEN,          	           & 
                   CP,G,ROVCP,R,ROVG,P_QI,P_FIRST_SCALAR,           &
                   dz8w,z,PSFC,                                     &
                   UST,PBL,PSIM,PSIH,                               &
@@ -116,7 +116,7 @@ CONTAINS
                                         U10,                         &    !ADDED BY KWON FOR VARIABLE Ric
                                         V10,XLAND,                   &    !ADDED BY KWON FOR VARIABLE Ric
                                         ZNT                               !ADDED BY KWON FOR VARIABLE Ric
-      REAL,  DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(OUT) :: DKU3D,DKT3D
+      REAL,  DIMENSION(ims:ime, jms:jme, kms:kme), INTENT(OUT) :: DKU3D,DKT3D  
       REAL,    INTENT(IN) :: VAR_RIC,coef_ric_l,coef_ric_s                   !ADDED BY KWON
       REAL,  DIMENSION(ims:ime, jms:jme), INTENT(IN) ::                 &
                                         SCURX,                          &
@@ -140,11 +140,11 @@ CONTAINS
                                         EP1,                            &
                                         G,                              &
                                         KARMAN,                         &
-                                        R,                              &
+                                        R,                              & 
                                         ROVCP,                          &
-                                        ROVG
+                                        ROVG 
 
-      REAL,    DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) ::      &
+      REAL,    DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) ::      & 
                                         DZ8W,                           &
                                         P3D,                            &
                                         PI3D,                           &
@@ -155,7 +155,7 @@ CONTAINS
                                         TH3D,                           &
                                         U3D,                            &
                                         V3D,                            &
-                                        Z
+                                        Z   
 
 
       REAL,    DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(INOUT) ::   &
@@ -164,7 +164,7 @@ CONTAINS
                                         RQIBLTEN,                       &
                                         RQVBLTEN,                       &
                                         RUBLTEN,                        &
-                                        RVBLTEN
+                                        RVBLTEN                        
 
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(IN) ::               &
                                         BR,                             &
@@ -175,14 +175,14 @@ CONTAINS
                                         PSIH,                           &
                                         QFX,                            &
                                         TSK
-
-      REAL,    DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::            &
+ 
+      REAL,    DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::            & 
                                         PBL,                            &
                                         UST,                            &
                                         WSPD
 
       INTEGER, DIMENSION(ims:ime, jms:jme), INTENT(OUT) ::              &
-                                        KPBL2D
+                                        KPBL2D 
 
 
 !--------------------------- LOCAL VARS ------------------------------
@@ -205,7 +205,7 @@ CONTAINS
                                         V1
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte+1) ::       &
-                                        PHII,                           &
+                                        PHII,                           & 
                                         PRSI
 
       REAL     (kind=kind_phys), DIMENSION(its:ite, kts:kte, 3) ::      &
@@ -251,7 +251,7 @@ CONTAINS
       REAL :: UBOT, VBOT, UBOT1, VBOT1
 #endif
       INTEGER, DIMENSION( its:ite ) ::                                  &
-                                        KPBL
+                                        KPBL 
 
       INTEGER ::                                                        &
                                         I,                              &
@@ -262,7 +262,7 @@ CONTAINS
                                         KTEM,                           &
                                         KTEP,                           &
                                         KX,                             &
-                                        L,                              &
+                                        L,                              & 
                                         NTRAC
 
    IM=ITE-ITS+1
@@ -287,9 +287,9 @@ CONTAINS
         QSS(i)=QV3D(i,kts,j)               ! not used in moninp so set to qv3d for now
         HEAT(i)=HFX(i,j)/CPM*RRHOX
         EVAP(i)=QFX(i,j)*RRHOX
-        XLAND1(i) = 0.0
+        XLAND1(i) = 0.0        
 #if (HWRF==1)
-! Kwon FOR NEW SHALLOW CONVECTION
+! Kwon FOR NEW SHALLOW CONVECTION 
         HEAT2D(i,j)=HFX(i,j)/CPM*RRHOX
         EVAP2D(i,j)=QFX(i,j)*RRHOX
         XLAND1(i) = XLAND(I,J)
@@ -331,7 +331,7 @@ CONTAINS
       ENDDO
 
       DO k=kts,kte
-        DO i=its,ite
+        DO i=its,ite 
           DV(I,K) = 0.
           DU(I,K) = 0.
           TAU(I,K) = 0.
@@ -371,7 +371,7 @@ CONTAINS
       ENDDO
 
       DO k=kts,kte
-        DO i=its,ite
+        DO i=its,ite 
           PRSLK(I,K)=(PRSL(i,k)*.01)**ROVCP
         ENDDO
       ENDDO
@@ -379,7 +379,7 @@ CONTAINS
 
       DO k=kts+1,kte
         km=k-1
-        DO i=its,ite
+        DO i=its,ite 
           DEL(i,km)=PRSL(i,km)/ROVG*dz8w(i,km,j)/T3D(i,km,j)
           PRSI(i,k)=PRSI(i,km)-DEL(i,km)
           PHII(I,K)=(Z(i,k,j)-Z(i,kts,j))*G
@@ -387,7 +387,7 @@ CONTAINS
         ENDDO
       ENDDO
 
-      DO i=its,ite
+      DO i=its,ite 
         DEL(i,kte)=DEL(i,ktem)
         PRSI(i,ktep)=PRSI(i,kte)-DEL(i,ktem)
         PHII(I,KTEP)=PHII(I,KTE)+dz8w(i,kte,j)*G
@@ -396,7 +396,7 @@ CONTAINS
 
       IF (P_QI.ge.P_FIRST_SCALAR) THEN
         DO k=kts,kte
-          DO i=its,ite
+          DO i=its,ite 
             Q1(I,K,3) = QI3D(i,k,j)/(1.+QI3D(i,k,j))
           ENDDO
         ENDDO
@@ -434,8 +434,8 @@ CONTAINS
           dishx(i,k)=-dishx(i,k)/cpmikj
 !         IF(k==1)WRITE(0,*)'ADDITIONAL DISSIPATIVE HEATING',tau(i,k),dishx(i,k)
           tau(i,k)=tau(i,k)+dishx(i,k)
-         ENDDO
-       ENDDO
+         ENDDO 
+       ENDDO 
       ENDIF
 #endif
 
@@ -505,9 +505,9 @@ CONTAINS
                       ids, ide, jds, jde, kds, kde,                &
                       ims, ime, jms, jme, kms, kme,                &
                       its, ite, jts, jte, kts, kte                 )
-!-------------------------------------------------------------------
+!-------------------------------------------------------------------          
    IMPLICIT NONE
-!-------------------------------------------------------------------
+!-------------------------------------------------------------------          
    LOGICAL , INTENT(IN)          ::  allowed_to_read,restart
    INTEGER , INTENT(IN)          ::  ids, ide, jds, jde, kds, kde, &
                                      ims, ime, jms, jme, kms, kme, &
@@ -519,7 +519,7 @@ CONTAINS
                                                          RVBLTEN, &
                                                          RTHBLTEN, &
                                                          RQVBLTEN, &
-                                                         RQCBLTEN, &
+                                                         RQCBLTEN, & 
                                                          RQIBLTEN
    INTEGER :: i, j, k, itf, jtf, ktf
 
@@ -611,9 +611,9 @@ CONTAINS
 !    &                     DPHI(IM),      SPD1(IM),                     &
      &                     PRSI(IX,KM+1), DEL(IX,KM),                   &
      &                     PRSL(IX,KM),   PRSLK(IX,KM),                 &
-     &                     PHII(IX,KM+1), PHIL(IX,KM),                  &
+     &                     PHII(IX,KM+1), PHIL(IX,KM),                  & 
      &                     RCL(IM),       DUSFC(IM),                    &
-     &                     dvsfc(IM),     dtsfc(IM),                    &
+     &                     dvsfc(IM),     dtsfc(IM),                    & 
      &                     DQSFC(IM),     HPBL(IM),                     &
      &                     HGAMT(IM),     hgamq(IM), RBCR(IM)
 #if (HWRF==1)
@@ -628,7 +628,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
      &                     phim(IM),  rbdn(IM),    rbup(IM),            &
      &                     the1(IM),  stress(im),  beta(im),            &
      &                     the1v(IM), thekv(IM),   thermal(IM),         &
-     &                     thesv(IM), ustar(IM),   wscale(IM)
+     &                     thesv(IM), ustar(IM),   wscale(IM)            
 !    &                     thesv(IM), ustar(IM),   wscale(IM),  zl1(IM)
 !
       real(kind=kind_phys) RDZT(IM,KM-1),                               &
@@ -648,7 +648,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
      &                     dtodsu,  dw2,    dw2min, g,                  &
      &                     gamcrq,  gamcrt, gocp,   gor, gravi,         &
      &                     hol,     pfac,   prmax,  prmin, prinv,       &
-     &                     prnum,   qmin,   qtend,                      &
+     &                     prnum,   qmin,   qtend,                      & 
      &                     rbint,   rdt,    rdz,    rdzt1,              &
      &                     ri,      rimin,  rl2,    rlam,               &
      &                     rone,   rzero,  sfcfrac,                     &
@@ -673,7 +673,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
       PARAMETER(IUN=84)
 #if HWRF==1
       real*8 :: ran1           !zhang
-      real :: rr
+      real :: rr 
       logical,save :: pert_pbl_local !zhang
       integer,save :: ens_random_seed_local !zhang
       real,save :: ens_pblamp_local   !zhang
@@ -704,7 +704,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
      &         '   HGAMQ      WS   USTAR      CD      CH')
  608      FORMAT(1X,I5,9F8.2)
  609      FORMAT(1X,' K PR DKT DKU ',I5,3F8.2)
- 610      FORMAT(1X,' K PR DKT DKU ',I5,3F8.2,' L2 RI T2',              &
+ 610      FORMAT(1X,' K PR DKT DKU ',I5,3F8.2,' L2 RI T2',              & 
      &         ' SR2  ',2F8.2,2E10.2)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !     COMPUTE PRELIMINARY VARIABLES
@@ -729,7 +729,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
      do i=1,im
      RBCR(I) = 0.25
 #if (HWRF==1)
-     IF(var_ric.eq.1.) THEN
+     IF(var_ric.eq.1.) THEN             
       IF(xland1(i).eq.1)  RBCR(I) = coef_ric_l*(1.E-7*Ro(I))**(-0.18)
       IF(xland1(i).eq.2)  RBCR(I) = coef_ric_s*(1.E-7*Ro(I))**(-0.18)
 !      write(0,*) 'xland1 coef_ric_l coef_ric_s ',xland1(i),coef_ric_l,coef_ric_s
@@ -927,7 +927,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
 !zhang adding PBL perturtion
             if ( pert_pbl_local ) then
             rr=(2.0*ens_pblamp_local*ran1(ens_random_seed_local)-ens_pblamp_local)
-            print*, "zhang inside the loop", rr, ens_pblamp_local,ens_random_seed_local
+            print*, "zhang inside the loop", rr, ens_pblamp_local,ens_random_seed_local 
             HPBL(I) = HPBL(I)*(1.0+rr)
             endif
 #endif
@@ -989,7 +989,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
 
 
                DKU(i,k) = XKZO + WSCALE(I)*VK*ZI(I,K+1)                 &
-     &                         *ABS(ALPHA)* ZFAC**PFAC
+     &                         *ABS(ALPHA)* ZFAC**PFAC 
 ! if alpha = -1, the above provides the first guess for DKU, based on assumption alpha = +1
 ! 		(other values of alpha < 0 can also be applied)
 ! if alpha > 0, the above applies the alpha suppression factor and we are finished
@@ -1019,7 +1019,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
         if(alpha.lt.0)then      ! variable alpha test
 
 ! k-level of layer around 500 m
-            kLOC = INT(WSPM(i,2))
+            kLOC = INT(WSPM(i,2)) 
 !            print *,' kLOC ',kLOC,' KPBL ',KPBL(I)
 
 ! (3) only do  this IF KPBL(I) >= kLOC.  Otherwise, we are finished, with DKU as if alpha = +1
@@ -1029,7 +1029,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
             xDKU = DKU(i,kLOC)     ! Km at k-level
 
 ! (4) DKU check.
-! WSPM(i,1) is the KM cap for the 500-m level.
+! WSPM(i,1) is the KM cap for the 500-m level. 
 !  if DKU at 500-m level < WSPM(i,1), do not limit Km ANYWHERE.  Alpha = abs(alpha).  No need to recalc.
 !  if DKU at 500-m level > WSPM(i,1), then alpha = WSPM(i,1)/xDKU for entire column
             if(xDKU.ge.WSPM(i,1)) then ! ONLY if DKU at 500-m exceeds cap, otherwise already done
@@ -1054,7 +1054,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
      &                         *WSPM(i,4)* ZFAC**PFAC ! recalculated DKU using column alpha
 !               if(i.eq.25) print *,' I25 K ',k,' DKU AFTER ',dku(i,k)
 
-
+            
                DKT(i,k) = DKU(i,k)*PRINV
                DKO(i,k) = (DKU(i,k)-XKZO)*PRINV
                DKU(i,k) = MIN(DKU(i,k),DKMAX)
@@ -1285,7 +1285,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
 !
         do kk = 2, ntrac
           is = (kk-2) * km
-          do k = 1, km
+          do k = 1, km 
             do i = 1, im
               QTEND = (AT(I,K+is)-Q1(i,K,kk))*RDT
               RTG(i,K,kk) = RTG(i,K,kk) + QTEND
@@ -1415,7 +1415,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
       real(kind=kind_phys) CL(L,2:N), CM(L,N), CU(L,N-1),               &
      &                     RT(L,N*nt),                                  &
      &                     AU(L,N-1), AT(L,N*nt),                       &
-     &                     FKK(L,2:N-1)
+     &                     FKK(L,2:N-1)                  
 !-----------------------------------------------------------------------
       DO I=1,L
         FK(I)   = 1./CM(I,1)
@@ -1461,7 +1461,7 @@ real(kind=kind_phys) RO(IM),xland1(IM)
 !-----------------------------------------------------------------------
       RETURN
       END SUBROUTINE TRIDIT
-
+                                                                                 
 !-----------------------------------------------------------------------
 
       END MODULE module_bl_gfs

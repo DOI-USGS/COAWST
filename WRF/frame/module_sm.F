@@ -6,7 +6,7 @@ MODULE module_sm
 #ifdef _OPENMP
 
    !  There are a few functions in the OpenMP library,
-   !  and to use them easily, we need to define the
+   !  and to use them easily, we need to define the 
    !  return types of these functions.
 
    INTEGER , EXTERNAL :: omp_get_num_threads , &
@@ -14,7 +14,7 @@ MODULE module_sm
                          omp_get_thread_num  , &
                          omp_get_num_procs
 
-   LOGICAL , EXTERNAL :: omp_in_parallel
+   LOGICAL , EXTERNAL :: omp_in_parallel        
 #endif
 
 CONTAINS

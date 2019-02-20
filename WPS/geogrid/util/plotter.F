@@ -75,8 +75,8 @@ program plotter
    open(43,file='lat.dat',form='formatted')
    open(44,file='lon.dat',form='formatted')
 
-   do j=1,ny
-      do i=1,nx
+   do j=1,ny 
+      do i=1,nx 
          read(42,*) val
          read(43,*) xlat
          read(44,*) xlon
@@ -88,7 +88,7 @@ program plotter
    close(43)
    close(44)
 
-   call maplot()
+   call maplot() 
 
    call frame()
 
@@ -98,18 +98,18 @@ program plotter
    open(44,file='lon.dat',form='formatted')
    maxter = -1000.
    minter = 10000.
-   do j=1,ny
-      do i=1,nx
+   do j=1,ny 
+      do i=1,nx 
          read(42,*) val
-         if (val > maxter) maxter = val
-         if (val < minter) minter = val
+         if (val > maxter) maxter = val 
+         if (val < minter) minter = val 
       end do
    end do
 
    rewind(42)
 
-   do j=1,ny
-      do i=1,nx
+   do j=1,ny 
+      do i=1,nx 
          read(41,*) lu
          read(42,*) val
          read(43,*) xlat
@@ -130,7 +130,7 @@ program plotter
    close(43)
    close(44)
 
-   call maplot()
+   call maplot() 
 
    call gclwk(13)
 

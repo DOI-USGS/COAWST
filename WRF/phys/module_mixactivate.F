@@ -1,5 +1,5 @@
 !************************************************************************
-! This computer software was prepared by Battelle Memorial Institute,
+! This computer software was prepared by Battelle Memorial Institute, 
 ! hereinafter the Contractor, under Contract No. DE-AC05-76RL0 1830 with
 ! the Department of Energy (DOE). NEITHER THE GOVERNMENT NOR THE
 ! CONTRACTOR MAKES ANY WARRANTY, EXPRESS OR IMPLIED, OR ASSUMES ANY
@@ -146,7 +146,7 @@ CONTAINS
        do m=1,nsize_aer(n)
           ptr=ptr+1
           numptr_aer( m, n, p )=ptr
-
+        
         if(p.eq.ai_phase)then
          IF ( present( cn ) ) THEN
             chem(its:ite,kts:kte,jts:jte,ptr) = cn(its:ite,kts:kte,jts:jte)
@@ -845,12 +845,12 @@ OLD_CLOUD_MAIN_K_LOOP: do k=kts,kte
                       naerosol, vaerosol,  &
                       dlo_sect,dhi_sect, sigmag_aer,hygro_aer,                    &
                       fn,fs,fm,fluxn,fluxs,fluxm,flux_fullact(k), grid_id, ktau, i, j, k )
-
+                 
 ! rce-comment
 !    the activation-fraction fluxes (fluxn, fluxm) from subr activate assume that
 !       wbar << wmix, which is valid for global-model scale but not mesoscale
-!    for wrf-chem application, divide these by flux_fullact to get a
-!       "flux-weighted-average" activation fraction, then multiply by (ekd(k)*zs(k))
+!    for wrf-chem application, divide these by flux_fullact to get a 
+!       "flux-weighted-average" activation fraction, then multiply by (ekd(k)*zs(k)) 
 !       which is the local "turbulent vertical-mixing velocity"
                  if (k > kts) then
                     if (flux_fullact(k) > 1.0e-20) then
@@ -973,7 +973,7 @@ OLD_CLOUD_MAIN_K_LOOP: do k=kts,kte
 !     count_submix(nsubmix_bnd)=count_submix(nsubmix_bnd)+1
      dtmix=dtstep/nsubmix
      fac_srflx = -1.0/(zn(1)*nsubmix)
-
+     
      do k=kts,kte
         kp1=min(k+1,kde-1)
         km1=max(k-1,1)
@@ -1272,9 +1272,9 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
            do l=0,ncomp(n)
               if (icheck_colmass >= 100) &
                  write(*,'(3i3,1p,e10.2,2i4)') n, m, l, &
-                 colmass_worst(l,m,n), colmass_worst_ij(1:2,l,m,n)
+                 colmass_worst(l,m,n), colmass_worst_ij(1:2,l,m,n) 
               if (abs(colmass_worst(l,m,n)) > abs(colmass_maxworst_r)) then
-                 colmass_maxworst_r = colmass_worst(l,m,n)
+                 colmass_maxworst_r = colmass_worst(l,m,n) 
                  colmass_maxworst_i(1) = n
                  colmass_maxworst_i(2) = m
                  colmass_maxworst_i(3) = l
@@ -1549,9 +1549,9 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
 !   start calc. of modal or sectional activation properties (start of section 1)
 !
 !.......................................................................
-      idiag_dndy_neg = 1      ! set this to 0 to turn off
+      idiag_dndy_neg = 1      ! set this to 0 to turn off 
                               !     warnings about dn/dy < 0
-      idiag_fnsm_prob = 1     ! set this to 0 to turn off
+      idiag_fnsm_prob = 1     ! set this to 0 to turn off 
                               !     warnings about fn/fs/fm misbehavior
 
       iquasisect_option = 2
@@ -1577,7 +1577,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
             return
          end if
       end if
-
+      
       !BSINGH - ENDS
 
 
@@ -1716,7 +1716,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                gmsm(n)=2.*aten/(3.*gmrad(n))*sqrt(aten/(3.*hygro(nsize_aer(n),n)*gmrad(n)))
             endif
          enddo
-
+         
          ! Initialize maxsat at this cell and timestep for the
          ! sectional setup (the modal case is handled above)...
          call maxsat_init(maxd_atype, ntype_aer, &
@@ -1760,7 +1760,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
 ! rmean is mass mean radius for the bin; xmean = log(rmean)
 ! just use section midpoint if bin is empty
                 if ( bin_is_empty(m,n) ) then
-                   rmean(m,n) = sqrt(rlo(m,n)*rhi(m,n))
+                   rmean(m,n) = sqrt(rlo(m,n)*rhi(m,n)) 
                    ymean(m,n) = (rmean(m,n)/rhi(m,n))**3
                    goto 25000
                 end if
@@ -1770,7 +1770,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                 ymean(m,n) = (rmean(m,n)/rhi(m,n))**3
                 if ( bin_is_narrow(m,n) ) goto 25000
 
-! if rmean is extremely close to either rlo or rhi,
+! if rmean is extremely close to either rlo or rhi, 
 ! treat the bin as extremely narrow
                 if ((rhi(m,n)/rmean(m,n)) .le. 1.01) then
                    bin_is_narrow(m,n) = .true.
@@ -1785,11 +1785,11 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                    goto 25000
                 endif
 
-! if rmean is somewhat close to either rlo or rhi, then dn/dy will be
+! if rmean is somewhat close to either rlo or rhi, then dn/dy will be 
 !    negative near the upper or lower bin boundary
 ! in these cases, assume that all the particles are in a subset of the full bin,
 !    and adjust rlo or rhi so that rmean will be near the center of this subset
-! note that the bin is made narrower LOCALLY/TEMPORARILY,
+! note that the bin is made narrower LOCALLY/TEMPORARILY, 
 !    just for the purposes of the activation calculation
                 gammayy = (ymean(m,n)-ylo(m,n)) / (yhi(m,n)-ylo(m,n))
                 if (gammayy .lt. 0.34) then
@@ -1973,7 +1973,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                  smax = smax_prescribed
               else
                  !BSINGH -ENDS
-
+                 
                  call maxsat(zeta,eta,maxd_atype,ntype_aer, &
                       maxd_asize,(/1/),gmsm,gmlnsig,f1,smax)
               endif
@@ -2006,7 +2006,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
             endif
 
             dwnew = dw
-! 06-nov-2005 rce - "n" here should be "nw" (?)
+! 06-nov-2005 rce - "n" here should be "nw" (?) 
 !           if(fnew-fold.gt.dfmax.and.n.gt.1)then
             if(fnew-fold.gt.dfmax.and.nw.gt.1)then
 !              reduce updraft increment for greater accuracy in integration
@@ -2045,7 +2045,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                   xcut=xmincoeff-third*lnhygro(m,n)
 !                 ycut=(exp(xcut)/rhi(m,n))**3
 ! 07-jul-2006 rce - the above line gave a (rare) overflow when smax=1.0e-20
-! if (ycut > yhi), then actual value of ycut is unimportant,
+! if (ycut > yhi), then actual value of ycut is unimportant, 
 ! so do the following to avoid overflow
                   lnycut = 3.0 * ( xcut - log(rhi(m,n)) )
                   lnycut = min( lnycut, log(yhi(m,n)*1.0e5) )
@@ -2061,7 +2061,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                      fs(m,n)=1.
                      fm(m,n)=1.
                   elseif ( bin_is_narrow(m,n) ) then
-! 04-nov-2005 rce - for extremely narrow bins,
+! 04-nov-2005 rce - for extremely narrow bins, 
 ! do zero activation if xcut>xmean, 100% activation otherwise
                      if (ycut.gt.ymean(m,n)) then
                         fn(m,n)=0.
@@ -2118,9 +2118,9 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                         else
 ! 10-nov-2005 rce - these two checks assure that the mean size
 ! of the activated & interstitial particles will be between rlo & rhi
-                           dumaa = fn(m,n)*(yhi(m,n)/ymean(m,n))
+                           dumaa = fn(m,n)*(yhi(m,n)/ymean(m,n)) 
                            fm(m,n) = min( fm(m,n), dumaa )
-                           dumaa = 1.0 + (fn(m,n)-1.0)*(ylo(m,n)/ymean(m,n))
+                           dumaa = 1.0 + (fn(m,n)-1.0)*(ylo(m,n)/ymean(m,n)) 
                            fm(m,n) = min( fm(m,n), dumaa )
 ! 10-nov-2005 rce - now calculate fs and bound it by fn, fm
                            betayy = ylo(m,n)/yhi(m,n)
@@ -2384,7 +2384,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                  smax = smax_prescribed
               else
                  !BSINGH -ENDS
-
+                 
                  call maxsat(zeta,eta,maxd_atype,ntype_aer, &
                       maxd_asize,nsize_aer,sm,alnsign,f1,smax)
               endif
@@ -2409,7 +2409,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                   xcut=xmincoeff-third*lnhygro(m,n)
 !                 ycut=(exp(xcut)/rhi(m,n))**3
 ! 07-jul-2006 rce - the above line gave a (rare) overflow when smax=1.0e-20
-! if (ycut > yhi), then actual value of ycut is unimportant,
+! if (ycut > yhi), then actual value of ycut is unimportant, 
 ! so do the following to avoid overflow
                   lnycut = 3.0 * ( xcut - log(rhi(m,n)) )
                   lnycut = min( lnycut, log(yhi(m,n)*1.0e5) )
@@ -2426,7 +2426,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                      fs(m,n)=1.
                      fm(m,n)=1.
                   elseif ( bin_is_narrow(m,n) ) then
-! 04-nov-2005 rce - for extremely narrow bins,
+! 04-nov-2005 rce - for extremely narrow bins, 
 ! do zero activation if xcut>xmean, 100% activation otherwise
                      if (ycut.gt.ymean(m,n)) then
                         fn(m,n)=0.
@@ -2483,7 +2483,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                         else
 ! 10-nov-2005 rce - these two checks assure that the mean size
 ! of the activated & interstitial particles will be between rlo & rhi
-                           dumaa = fn(m,n)*(yhi(m,n)/ymean(m,n))
+                           dumaa = fn(m,n)*(yhi(m,n)/ymean(m,n)) 
                            fm(m,n) = min( fm(m,n), dumaa )
                            dumaa = 1.0 + (fn(m,n)-1.0)*(ylo(m,n)/ymean(m,n))
                            fm(m,n) = min( fm(m,n), dumaa )
@@ -2535,12 +2535,12 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
                flux_fullact = 0.0
             endif
 
-! 04-nov-2005 rce - moved the code for "wnuc.le.0" from here
+! 04-nov-2005 rce - moved the code for "wnuc.le.0" from here 
 ! to near the start the uniform undraft section
 
 !.......................................................................
 !
-!   end calc. of activation fractions/fluxes
+!   end calc. of activation fractions/fluxes 
 !   for (single) uniform updraft (end of section 3)
 !
 !.......................................................................
@@ -2801,7 +2801,7 @@ OLD_CLOUD_NSUBMIX_LOOP: do nsub=1,nsubmix
         erfc_num_recipes = erfc_dbl
 
         return
-        end function erfc_num_recipes
+        end function erfc_num_recipes     
 
 !-----------------------------------------------------------------------
     real function erf_alt( x )

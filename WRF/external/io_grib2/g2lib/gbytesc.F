@@ -62,7 +62,7 @@ c        get data from last byte
       enddo
 
       RETURN
-      END
+      END                                                                  
 
       SUBROUTINE G2LIB_SBYTES(OUT,IN,ISKIP,NBYTE,NSKIP,N)
 C          Store bytes - pack bits:  Put arbitrary size values into a
@@ -92,7 +92,7 @@ c     nbit is the last bit of the field to be filled
          ibit=mod(nbit,8)
          nbit = nbit + nbyte + nskip
 
-c        make byte aligned
+c        make byte aligned 
          if (ibit.ne.7) then
              tbit = min(bitcnt,ibit+1)
              imask = ishft(ones(tbit),7-ibit)

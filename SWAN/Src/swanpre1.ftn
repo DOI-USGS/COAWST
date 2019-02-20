@@ -6888,7 +6888,7 @@
 !                                                                  *
 #ifdef SWAN_MODEL
       SUBROUTINE RESTART_SWAN (AC2, SPCSIG, SPCDIR, KGRPNT,
-     &                         XCGRID, YCGRID, ng)
+     &                         XCGRID, YCGRID, CHTIME_M, ng)
 !                                                                  *
 !*******************************************************************
 !
@@ -6974,6 +6974,7 @@
       REAL    SPCSIG(MSC)                                                 30.82
       REAL    XCGRID(MXC,MYC),    YCGRID(MXC,MYC)                         30.82
       INTEGER, INTENT(IN) :: ng
+      CHARACTER*20 CHTIME_M
 
       CHARACTER RSTFN*(LENFNM)   ! to be moved to module
 !
@@ -7062,7 +7063,7 @@
 !      writing of heading is completed, write time if nonstationary
 !
       IF (NSTATM.EQ.1) THEN
-        WRITE (NREF, 202) CHTIME                                         40.00
+        WRITE (NREF, 202) CHTIME_M                                       40.00 jcw
  202    FORMAT (A18, T41, 'date and time')
       ENDIF
 !

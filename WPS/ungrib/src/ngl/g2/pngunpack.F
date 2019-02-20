@@ -5,7 +5,7 @@
 !   PRGMMR: Gilbert          ORG: W/NP11    DATE: 2000-06-21
 !
 ! ABSTRACT: This subroutine unpacks a data field that was packed into a
-!   PNG image format
+!   PNG image format 
 !   using info from the GRIB2 Data Representation Template 5.41 or 5.40010.
 !
 ! PROGRAM HISTORY LOG:

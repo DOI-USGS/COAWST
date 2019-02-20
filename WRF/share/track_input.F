@@ -68,15 +68,15 @@ have_input_file : &
                  IF ( istatus2 == 0 ) THEN                 ! Assume there were more lines in the file
                    WRITE(errmess, FMT='(A,I4,A)') 'Ignoring all track locations beyond #', &
                                                   grid%track_loc,'. Increase track_loc_in in namelist.input'
-                   CALL wrf_message(trim(errmess))
+                   CALL wrf_message(trim(errmess))   
                  ENDIF
                  EXIT
                ENDIF
              END DO  ! istatus2 == 0
-             CLOSE(iunit)
+             CLOSE(iunit) 
            ENDIF   ! istatus == 0
          ELSE have_input_file
-           CALL wrf_error_fatal('Error in track_input: could not find wrfinput_track.txt file.')
+           CALL wrf_error_fatal('Error in track_input: could not find wrfinput_track.txt file.')           
          ENDIF have_input_file
 
          write(errmess,*) 'track_input: total input locations = ',grid%track_loc

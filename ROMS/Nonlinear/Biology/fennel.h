@@ -1,8 +1,8 @@
       SUBROUTINE biology (ng,tile)
 !
-!svn $Id: fennel.h 864 2017-08-10 04:11:10Z arango $
+!svn $Id: fennel.h 927 2018-10-16 03:51:56Z arango $
 !***********************************************************************
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                               Katja Fennel   !
 !****************************************** Alexander F. Shchepetkin ***
@@ -109,8 +109,11 @@
      &                   nstp(ng), nnew(ng),                            &
 #ifdef MASKING
      &                   GRID(ng) % rmask,                              &
-# if defined WET_DRY && defined DIAGNOSTICS_BIO
+# ifdef WET_DRY
+     &                   GRID(ng) % rmask_wet,                          &
+#  ifdef DIAGNOSTICS_BIO
      &                   GRID(ng) % rmask_full,                         &
+#  endif
 # endif
 #endif
      &                   GRID(ng) % Hz,                                 &
@@ -149,8 +152,11 @@
      &                         nstp, nnew,                              &
 #ifdef MASKING
      &                         rmask,                                   &
-# if defined WET_DRY && defined DIAGNOSTICS_BIO
+# if defined WET_DRY
+     &                         rmask_wet,                               &
+#  if def DIAGNOSTICS_BIO
      &                         rmask_full,                              &
+#  endif
 # endif
 #endif
      &                         Hz, z_r, z_w, srflx,                     &
@@ -187,8 +193,11 @@
 #ifdef ASSUMED_SHAPE
 # ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:,LBj:)
-#  if defined WET_DRY && defined DIAGNOSTICS_BIO
+#  ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+#   ifdef DIAGNOSTICS_BIO
       real(r8), intent(in) :: rmask_full(LBi:,LBj:)
+#   endif
 #  endif
 # endif
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
@@ -215,8 +224,11 @@
 #else
 # ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
-#  if defined WET_DRY && defined DIAGNOSTICS_BIO
+#  ifdef WET_DRY
+      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
+#   ifdef DIAGNOSTICS_BIO
       real(r8), intent(in) :: rmask_full(LBi:UBi,LBj:UBj)
+#   endif
 #  endif
 # endif
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,UBk)
@@ -292,7 +304,7 @@
 
       real(r8) :: pmonth                         ! months since Jan 1951
       real(r8) :: pCO2air_secular
-      real(r8) :: yday
+      real(dp) :: yday
 
       real(r8), parameter :: pi2 = 6.2831853071796_r8
 
@@ -1020,8 +1032,8 @@
 !
 !  Add in CO2 gas exchange.
 !
-            CALL caldate (tdays(ng), yd_r8=yday)
-            pmonth=2003.0_r8-1951.0_r8+yday/365.0_r8
+            CALL caldate (tdays(ng), yd_dp=yday)
+            pmonth=2003.0_dp-1951.0_dp+yday/365.0_dp
 !!          pCO2air_secular=D0+D1*pmonth*12.0_r8+                       &
 !!   &                         D2*SIN(pi2*pmonth+D3)+                   &
 !!   &                         D4*SIN(pi2*pmonth+D5)+                   &
@@ -1305,6 +1317,12 @@
           DO k=1,N(ng)
             DO i=Istr,Iend
               cff=Bio(i,k,ibio)-Bio_old(i,k,ibio)
+#ifdef MASKING
+              cff=cff*rmask(i,j)
+# ifdef WET_DRY
+              cff=cff*rmask_wet(i,j)
+# endif
+#endif
               t(i,j,k,nnew,ibio)=t(i,j,k,nnew,ibio)+cff*Hz(i,j,k)
             END DO
           END DO

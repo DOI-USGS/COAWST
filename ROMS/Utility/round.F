@@ -1,8 +1,8 @@
       MODULE round_mod
 !
-!svn $Id: round.F 841 2017-04-19 21:42:22Z arango $
+!svn $Id: round.F 927 2018-10-16 03:51:56Z arango $
 !====================================================== H. D. Knoble ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -61,29 +61,37 @@
       CONTAINS
 !
 !***********************************************************************
-      DOUBLE PRECISION FUNCTION ROUND (X, CT) RESULT (Y)
+      FUNCTION ROUND (X, CT) RESULT (Y)
 !***********************************************************************
 !
 !  Imported variable declarations.
 !
-      real (r8), intent(in) :: X, CT
+      real (dp), intent(in) :: X, CT
+!
+!  Local variable declarations.
+!
+      real(dp) :: Y
 !
 !------------------------------------------------------------------------
 !  Compute tolerant round function.
 !------------------------------------------------------------------------
 !
-      Y=TFLOOR(X+0.5_r8,CT)
+      Y=TFLOOR(X+0.5_dp,CT)
 !
       RETURN
       END FUNCTION ROUND
 !
 !***********************************************************************
-      DOUBLE PRECISION FUNCTION TCEIL (X,CT) RESULT (Y)
+      FUNCTION TCEIL (X,CT) RESULT (Y)
 !***********************************************************************
 !
 !  Imported variable declarations.
 !
-      real (r8), intent(in) :: X, CT
+      real (dp), intent(in) :: X, CT
+!
+!  Local variable declarations.
+!
+      real(dp) :: Y
 !
 !------------------------------------------------------------------------
 !  Compute tolerant ceiling function.
@@ -95,16 +103,16 @@
       END FUNCTION TCEIL
 !
 !***********************************************************************
-      DOUBLE PRECISION FUNCTION TFLOOR (X, CT) RESULT (Y)
+      FUNCTION TFLOOR (X, CT) RESULT (Y)
 !***********************************************************************
 !
 !  Imported variable declarations.
 !
-      real (r8), intent(in) :: X, CT
+      real (dp), intent(in) :: X, CT
 !
 !  Local variable declarations.
 !
-      real (r8) :: Q, RMAX, EPS5
+      real (dp) :: EPS5, Q, RMAX, Y
 !
 !------------------------------------------------------------------------
 !  Compute tolerant floor function.
@@ -112,31 +120,35 @@
 !
 !  Hagerty FL5 function
 !
-      Q=1.0_r8
-      IF (X.lt.0.0_r8) Q=1.0_r8-CT
-      RMAX=Q/(2.0_r8-CT)
+      Q=1.0_dp
+      IF (X.lt.0.0_dp) Q=1.0_dp-CT
+      RMAX=Q/(2.0_dp-CT)
       EPS5=CT/Q
-      Y=UFLOOR(X+MAX(CT,MIN(RMAX,EPS5*ABS(1.0_r8+UFLOOR(X)))))
-      IF ((X.le.0.0_r8).or.(Y-X).lt.RMAX) RETURN
-      Y=Y-1.0_r8
+      Y=UFLOOR(X+MAX(CT,MIN(RMAX,EPS5*ABS(1.0_dp+UFLOOR(X)))))
+      IF ((X.le.0.0_dp).or.(Y-X).lt.RMAX) RETURN
+      Y=Y-1.0_dp
 !
       RETURN
       END FUNCTION TFLOOR
 !
 !***********************************************************************
-      DOUBLE PRECISION FUNCTION UFLOOR (X) RESULT (Y)
+      FUNCTION UFLOOR (X) RESULT (Y)
 !***********************************************************************
 !
 !  Imported variable declarations.
 !
-      real (r8), intent(in) :: X
+      real (dp), intent(in) :: X
+!
+!  Local variable declarations.
+!
+      real(dp) :: Y
 !
 !-----------------------------------------------------------------------
 !  Compute the largest integer algebraically less than or equal to X;
 !  that is, the unfuzzy Floor Function.
 !-----------------------------------------------------------------------
 !
-      Y=X-MOD(X,1.0_r8)-MOD(2.0_r8+SIGN(1.0_r8,X),3.0_r8)
+      Y=X-MOD(X,1.0_dp)-MOD(2.0_dp+SIGN(1.0_dp,X),3.0_dp)
 !
       RETURN
       END FUNCTION UFLOOR

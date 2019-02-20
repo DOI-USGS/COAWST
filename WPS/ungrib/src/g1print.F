@@ -3,7 +3,7 @@
 !  Usage: "g1print [-v] [-V] filename"
 !
 !  Originally from gribscan.
-!
+! 
 program g1print
   use module_grib
   interface
@@ -32,7 +32,10 @@ program g1print
   logical :: idb = .FALSE.
   integer :: year
   character(len=5) :: field
+  integer :: ec_rec_len
 
+  ec_rec_len = 0
+! ec_rec_len = 26214508
   flnm = ' '
   call parse_args(ierr, a1='v', l1=ivb, a2='V', l2=idb, hlast=flnm)
   if (ierr.ne.0) then
@@ -55,16 +58,16 @@ program g1print
      write(*,'(" rec GRIB GRIB  Lvl  Lvl  Lvl         Time      Fcst")')
      write(*,'(" Num Code name  Code one  two                   hour")')
      write(*,'(52("-"))')
-  endif
+  endif 
 
   irec = 0
-  call gribget(munit, ierr)
-  do while (ierr.eq.0)
+  call gribget(munit, ierr, ec_rec_len)
+  do while (ierr.eq.0) 
      irec = irec + 1
-     call gribheader(0,igherr)
+     call gribheader(0,igherr, ec_rec_len)
      if (igherr /= 0) then
         call deallogrib
-        call gribget(munit, ierr)
+        call gribget(munit, ierr, ec_rec_len)
         cycle
      endif
 
@@ -111,7 +114,7 @@ program g1print
 
      call deallogrib
 
-     call gribget(munit, ierr)
+     call gribget(munit, ierr, ec_rec_len)
   enddo
   if (ierr.eq.1) write(*,'(/,"***** End-Of-File on C unit ", I3,/)') munit
   call c_close( munit, 0, ierr)
@@ -209,7 +212,7 @@ contains
        c = c + 1
        ierr = 0
     endif
-
+        
   end subroutine checkiarg
   subroutine checkharg(c, a, h, ierr)
     integer :: c
@@ -233,7 +236,7 @@ contains
        c = c + 1
        ierr = 0
     endif
-
+        
   end subroutine checkharg
 
   subroutine checklarg(c, a, l, ierr)
@@ -250,7 +253,7 @@ contains
        c = c + 1
        ierr = 0
     endif
-
+        
   end subroutine checklarg
 
 end subroutine parse_args
@@ -305,7 +308,7 @@ end subroutine parse_args
        field = '     '
      endif
      return
-end subroutine fieldname
+end subroutine fieldname 
 !
      subroutine init_tables
     character(len=5) :: table2(255), table129(255), afwa(255), ecmwf(255), &
@@ -580,7 +583,7 @@ end subroutine init_tables
        'PERPW','DIRSW','PERSW','NSWRS','NLWRS','NSWRT','NLWRT','LWAVR','SWAVR',&
        'GRAD','BRTMP','LWRAD','SWRAD','LHTFL','SHTFL','BLYDP','U FLX','V FLX',&
        'WMIXE','IMG D',&
-! Table 130    LSM
+! Table 130    LSM 
 ! 128-143 not yet assigned
        '     ','     ','     ','     ','     ','   ','   ','     ','     ',&
        '     ','     ','     ','     ','     ','     ','     ','SOILW',&

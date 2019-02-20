@@ -2,9 +2,9 @@
 #ifdef SOLVE3D
       SUBROUTINE set_weights (ng)
 !
-!svn $Id: set_weights.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: set_weights.F 927 2018-10-16 03:51:56Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -30,11 +30,11 @@
       integer :: i, j, iter
 
 # ifdef POWER_LAW
-      real(r8) :: gamma, scale
+      real(dp) :: gamma, scale
 # elif defined COSINE2
-      real(r8) :: arg
+      real(dp) :: arg
 # endif
-      real(r8) :: cff1, cff2
+      real(dp) :: cff1, cff2
 
       real(r16) :: wsum, shift, cff
 !
@@ -46,8 +46,8 @@
 !
       nfast(ng)=0
       DO i=1,2*ndtfast(ng)
-        weight(1,i,ng)=0.0_r8
-        weight(2,i,ng)=0.0_r8
+        weight(1,i,ng)=0.0_dp
+        weight(2,i,ng)=0.0_dp
       END DO
 
 # ifdef POWER_LAW
@@ -67,31 +67,31 @@
 !  barotropic motions resolved by baroclinic time step. There parameters
 !  are set in "mod_scalars".
 !
-      scale=(Falpha+1.0_r8)*(Falpha+Fbeta+1.0_r8)/                      &
-     &      ((Falpha+2.0_r8)*(Falpha+Fbeta+2.0_r8)*REAL(ndtfast(ng),r8))
+      scale=(Falpha+1.0_dp)*(Falpha+Fbeta+1.0_dp)/                      &
+     &      ((Falpha+2.0_dp)*(Falpha+Fbeta+2.0_dp)*REAL(ndtfast(ng),dp))
 !
 !  Find center of gravity of the primary weighting shape function and
 !  iteratively adjust "scale" to place the  centroid exactly at
 !  "ndtfast".
 !
-      gamma=Fgamma*MAX(0.0_r8, 1.0_r8-10.0_r8/REAL(ndtfast(ng),r8))
+      gamma=Fgamma*MAX(0.0_dp, 1.0_dp-10.0_dp/REAL(ndtfast(ng),dp))
       DO iter=1,16
         nfast(ng)=0
         DO i=1,2*ndtfast(ng)
-          cff=scale*REAL(i,r8)
+          cff=scale*REAL(i,dp)
           weight(1,i,ng)=cff**Falpha-cff**(Falpha+Fbeta)-gamma*cff
-          IF (weight(1,i,ng).gt.0.0_r8) nfast(ng)=i
-          IF ((nfast(ng).gt.0).and.(weight(1,i,ng).lt.0.0_r8)) THEN
-            weight(1,i,ng)=0.0_r8
+          IF (weight(1,i,ng).gt.0.0_dp) nfast(ng)=i
+          IF ((nfast(ng).gt.0).and.(weight(1,i,ng).lt.0.0_dp)) THEN
+            weight(1,i,ng)=0.0_dp
           END IF
         END DO
         wsum=0.0_r16
         shift=0.0_r16
         DO i=1,nfast(ng)
           wsum=wsum+weight(1,i,ng)
-          shift=shift+weight(1,i,ng)*REAL(i,r8)
+          shift=shift+weight(1,i,ng)*REAL(i,dp)
         END DO
-        scale=scale*shift/(wsum*REAL(ndtfast(ng),r8))
+        scale=scale*shift/(wsum*REAL(ndtfast(ng),dp))
       END DO
 
 # elif defined COSINE2
@@ -100,13 +100,13 @@
 !  Cosine-squared shaped filter.
 !-----------------------------------------------------------------------
 !
-      cff=pi/REAL(ndtfast(ng),r8)
+      cff=pi/REAL(ndtfast(ng),dp)
       DO i=1,2*ndtfast(ng)
         arg=cff*float(i-ndtfast(ng))
-        IF ((2.0_r8*ABS(arg)).lt.pi) THEN
-!!        weight(1,i,ng)=1.0_r8                     ! flat
+        IF ((2.0_dp*ABS(arg)).lt.pi) THEN
+!!        weight(1,i,ng)=1.0_dp                     ! flat
 !!        weight(1,i,ng)=(COS(arg))**2
-          weight(1,i,ng)=0.0882_r8+(COS(arg))**2    ! hamming window
+          weight(1,i,ng)=0.0882_dp+(COS(arg))**2    ! hamming window
           nfast(ng)=i
         END IF
       END DO
@@ -133,10 +133,10 @@
         shift=0.0_r16
         DO i=1,nfast(ng)
           wsum=wsum+weight(1,i,ng)
-          shift=shift+REAL(i,r8)*weight(1,i,ng)
+          shift=shift+REAL(i,dp)*weight(1,i,ng)
         END DO
         shift=shift/wsum
-        cff=REAL(ndtfast(ng),r8)-shift
+        cff=REAL(ndtfast(ng),dp)-shift
 !
 !  Apply advection step using either whole, or fractional shifts.
 !  Notice that none of the four loops here is reversible.
@@ -146,7 +146,7 @@
           DO i=nfast(ng),2,-1
             weight(1,i,ng)=weight(1,i-1,ng)
           END DO
-          weight(1,1,ng)=0.0_r8
+          weight(1,1,ng)=0.0_dp
         ELSE IF (cff.gt.0.0_r16) THEN
           wsum=1.0_r16-cff
           DO i=nfast(ng),2,-1
@@ -158,7 +158,7 @@
           DO i=1,nfast(ng),+1
             weight(1,i,ng)=weight(1,i+1,ng)
           END DO
-          weight(1,nfast(ng)+1,ng)=0.0_r8
+          weight(1,nfast(ng)+1,ng)=0.0_dp
         ELSE IF (cff.lt.0.0_r16) THEN
           wsum=1.0_r16+cff
           DO i=1,nfast(ng)-1,+1
@@ -199,26 +199,26 @@
       IF (Master.and.LwrtInfo(ng)) THEN
         WRITE (stdout,10) ng, ndtfast(ng), nfast(ng)
         cff=0.0_r16
-        cff1=0.0_r8
-        cff2=0.0_r8
+        cff1=0.0_dp
+        cff2=0.0_dp
         wsum=0.0_r16
         shift=0.0_r16
         DO i=1,nfast(ng)
           cff=cff+weight(1,i,ng)
-          cff1=cff1+weight(1,i,ng)*REAL(i,r8)
-          cff2=cff2+weight(1,i,ng)*REAL(i*i,r8)
+          cff1=cff1+weight(1,i,ng)*REAL(i,dp)
+          cff2=cff2+weight(1,i,ng)*REAL(i*i,dp)
           wsum=wsum+weight(2,i,ng)
-          shift=shift+weight(2,i,ng)*(REAL(i,r8)-0.5_r8)
+          shift=shift+weight(2,i,ng)*(REAL(i,dp)-0.5_dp)
           WRITE (stdout,20) i, weight(1,i,ng), weight(2,i,ng), cff, wsum
         END DO
-        cff1=cff1/REAL(ndtfast(ng),r8)
-        cff2=cff2/(REAL(ndtfast(ng),r8)*REAL(ndtfast(ng),r8))
-        shift=shift/REAL(ndtfast(ng),r8)
+        cff1=cff1/REAL(ndtfast(ng),dp)
+        cff2=cff2/(REAL(ndtfast(ng),dp)*REAL(ndtfast(ng),dp))
+        shift=shift/REAL(ndtfast(ng),dp)
         WRITE (stdout,30) ndtfast(ng), nfast(ng),                       &
-     &                    REAL(nfast(ng),r8)/REAL(ndtfast(ng),r8)
+     &                    REAL(nfast(ng),dp)/REAL(ndtfast(ng),dp)
 # ifdef POWER_LAW
         WRITE (stdout,40) cff1, cff2, shift, cff, wsum, Fgamma, gamma
-        IF (cff2.lt.1.0001_r8) WRITE (stdout,50)
+        IF (cff2.lt.1.0001_dp) WRITE (stdout,50)
 # endif
       END IF
 !

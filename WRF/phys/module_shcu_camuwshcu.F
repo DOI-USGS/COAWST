@@ -33,7 +33,7 @@
      init_uwshcu,        &
      compute_uwshcu,     &
      compute_uwshcu_inv
-
+  
   integer , parameter :: r8 = selected_real_kind(12)    !  8 byte real
   real(r8), parameter :: unset_r8 = huge(1.0_r8)
   real(r8)            :: xlv                            !  Latent heat of vaporization
@@ -43,7 +43,7 @@
   real(r8)            :: zvir                           !  rh2o/rair - 1
   real(r8)            :: r                              !  Gas constant for dry air
   real(r8)            :: g                              !  Gravitational constant
-  real(r8)            :: ep2                            !  mol wgt water vapor / mol wgt dry air
+  real(r8)            :: ep2                            !  mol wgt water vapor / mol wgt dry air 
   real(r8)            :: p00                            !  Reference pressure for exner function
   real(r8)            :: rovcp                          !  R/cp
 
@@ -53,7 +53,7 @@
 !===============================================================================
 contains
 !===============================================================================
-
+  
   real(r8) function exnf(pressure)
            real(r8), intent(in)              :: pressure
            exnf = (pressure/p00)**rovcp
@@ -100,13 +100,13 @@ subroutine uwshcu_readnl(nlfile)
    ! Broadcast namelist variables
    call mpibcast(uwshcu_rpen,            1, mpir8,  0, mpicom)
 #endif
-
+   
    rpen=uwshcu_rpen
 #else
-   !Balwinder.Singh@pnnl.gov: rpen value has been obtained from previous incarnation
+   !Balwinder.Singh@pnnl.gov: rpen value has been obtained from previous incarnation 
    !of this module (see CESM101)
    rpen= 10.0_r8
-#endif
+#endif  
 
 end subroutine uwshcu_readnl
 
@@ -126,7 +126,7 @@ end subroutine uwshcu_readnl
 #endif
 !~add in zeroing of things like rliq that may come from ZM or may not
 
-    !------------------------------------------------------------- !
+    !------------------------------------------------------------- ! 
     ! Purpose:                                                     !
     ! Initialize key constants for the shallow convection package. !
     !------------------------------------------------------------- !
@@ -144,7 +144,7 @@ end subroutine uwshcu_readnl
     real(r8), intent(in) :: zvir_in    !  rh2o/rair - 1
     real(r8), intent(in) :: r_in       !  Gas constant for dry air
     real(r8), intent(in) :: g_in       !  Gravitational constant
-    real(r8), intent(in) :: ep2_in     !  mol wgt water vapor / mol wgt dry air
+    real(r8), intent(in) :: ep2_in     !  mol wgt water vapor / mol wgt dry air 
 
     character(len=*), parameter :: subname = 'init_uwshcu'
 #ifdef WRF_PORT
@@ -224,7 +224,7 @@ end subroutine uwshcu_readnl
     call addfld( 'qiten_Cu'       , 'kg/kg/s' , pver  , 'A' , 'qi tendency by convection'                           , phys_decomp )
 
     call addfld( 'cbmf_Cu'        , 'kg/m2/s' , 1     , 'A' , 'Cumulus base mass flux'                              , phys_decomp )
-    call addfld( 'ufrcinvbase_Cu' , 'fraction', 1     , 'A' , 'Cumulus fraction at PBL top'                         , phys_decomp )
+    call addfld( 'ufrcinvbase_Cu' , 'fraction', 1     , 'A' , 'Cumulus fraction at PBL top'                         , phys_decomp ) 
     call addfld( 'ufrclcl_Cu'     , 'fraction', 1     , 'A' , 'Cumulus fraction at LCL'                             , phys_decomp )
     call addfld( 'winvbase_Cu'    , 'm/s'     , 1     , 'A' , 'Cumulus vertical velocity at PBL top'                , phys_decomp )
     call addfld( 'wlcl_Cu'        , 'm/s'     , 1     , 'A' , 'Cumulus vertical velocity at LCL'                    , phys_decomp )
@@ -239,8 +239,8 @@ end subroutine uwshcu_readnl
     call addfld( 'emfkbup_Cu'     , 'kg/m2/s' , 1     , 'A' , 'Penetrative mass flux at kbup'                       , phys_decomp )
     call addfld( 'cin_Cu'         , 'J/kg'    , 1     , 'A' , 'CIN upto LFC'                                        , phys_decomp )
     call addfld( 'cinlcl_Cu'      , 'J/kg'    , 1     , 'A' , 'CIN upto LCL'                                        , phys_decomp )
-    call addfld( 'cbmflimit_Cu'   , 'kg/m2/s' , 1     , 'A' , 'cbmflimiter'                                         , phys_decomp )
-    call addfld( 'tkeavg_Cu'      , 'm2/s2'   , 1     , 'A' , 'Average tke within PBL for convection scheme'        , phys_decomp )
+    call addfld( 'cbmflimit_Cu'   , 'kg/m2/s' , 1     , 'A' , 'cbmflimiter'                                         , phys_decomp ) 
+    call addfld( 'tkeavg_Cu'      , 'm2/s2'   , 1     , 'A' , 'Average tke within PBL for convection scheme'        , phys_decomp ) 
     call addfld( 'zinv_Cu'        , 'm'       , 1     , 'A' , 'PBL top height'                                      , phys_decomp )
     call addfld( 'rcwp_Cu'        , 'kg/m2'   , 1     , 'A' , 'Cumulus LWP+IWP'                                     , phys_decomp )
     call addfld( 'rlwp_Cu'        , 'kg/m2'   , 1     , 'A' , 'Cumulus LWP'                                         , phys_decomp )
@@ -285,28 +285,28 @@ end subroutine uwshcu_readnl
     call addfld( 'bogbot_Cu'      , 'no'      , pver  , 'A' , 'Cloud buoyancy at the bottom interface'              , phys_decomp )
     call addfld( 'bogtop_Cu'      , 'no'      , pver  , 'A' , 'Cloud buoyancy at the top interface'                 , phys_decomp )
 
-    call addfld('exit_UWCu_Cu'    , 'no'      , 1     , 'A' , 'exit_UWCu'                                           , phys_decomp )
-    call addfld('exit_conden_Cu'  , 'no'      , 1     , 'A' , 'exit_conden'                                         , phys_decomp )
-    call addfld('exit_klclmkx_Cu' , 'no'      , 1     , 'A' , 'exit_klclmkx'                                        , phys_decomp )
-    call addfld('exit_klfcmkx_Cu' , 'no'      , 1     , 'A' , 'exit_klfcmkx'                                        , phys_decomp )
-    call addfld('exit_ufrc_Cu'    , 'no'      , 1     , 'A' , 'exit_ufrc'                                           , phys_decomp )
-    call addfld('exit_wtw_Cu'     , 'no'      , 1     , 'A' , 'exit_wtw'                                            , phys_decomp )
-    call addfld('exit_drycore_Cu' , 'no'      , 1     , 'A' , 'exit_drycore'                                        , phys_decomp )
-    call addfld('exit_wu_Cu'      , 'no'      , 1     , 'A' , 'exit_wu'                                             , phys_decomp )
-    call addfld('exit_cufilter_Cu', 'no'      , 1     , 'A' , 'exit_cufilter'                                       , phys_decomp )
-    call addfld('exit_kinv1_Cu'   , 'no'      , 1     , 'A' , 'exit_kinv1'                                          , phys_decomp )
-    call addfld('exit_rei_Cu'     , 'no'      , 1     , 'A' , 'exit_rei'                                            , phys_decomp )
+    call addfld('exit_UWCu_Cu'    , 'no'      , 1     , 'A' , 'exit_UWCu'                                           , phys_decomp ) 
+    call addfld('exit_conden_Cu'  , 'no'      , 1     , 'A' , 'exit_conden'                                         , phys_decomp ) 
+    call addfld('exit_klclmkx_Cu' , 'no'      , 1     , 'A' , 'exit_klclmkx'                                        , phys_decomp ) 
+    call addfld('exit_klfcmkx_Cu' , 'no'      , 1     , 'A' , 'exit_klfcmkx'                                        , phys_decomp ) 
+    call addfld('exit_ufrc_Cu'    , 'no'      , 1     , 'A' , 'exit_ufrc'                                           , phys_decomp ) 
+    call addfld('exit_wtw_Cu'     , 'no'      , 1     , 'A' , 'exit_wtw'                                            , phys_decomp ) 
+    call addfld('exit_drycore_Cu' , 'no'      , 1     , 'A' , 'exit_drycore'                                        , phys_decomp ) 
+    call addfld('exit_wu_Cu'      , 'no'      , 1     , 'A' , 'exit_wu'                                             , phys_decomp ) 
+    call addfld('exit_cufilter_Cu', 'no'      , 1     , 'A' , 'exit_cufilter'                                       , phys_decomp ) 
+    call addfld('exit_kinv1_Cu'   , 'no'      , 1     , 'A' , 'exit_kinv1'                                          , phys_decomp ) 
+    call addfld('exit_rei_Cu'     , 'no'      , 1     , 'A' , 'exit_rei'                                            , phys_decomp ) 
 
-    call addfld('limit_shcu_Cu'   , 'no'      , 1     , 'A' , 'limit_shcu'                                          , phys_decomp )
-    call addfld('limit_negcon_Cu' , 'no'      , 1     , 'A' , 'limit_negcon'                                        , phys_decomp )
-    call addfld('limit_ufrc_Cu'   , 'no'      , 1     , 'A' , 'limit_ufrc'                                          , phys_decomp )
-    call addfld('limit_ppen_Cu'   , 'no'      , 1     , 'A' , 'limit_ppen'                                          , phys_decomp )
-    call addfld('limit_emf_Cu'    , 'no'      , 1     , 'A' , 'limit_emf'                                           , phys_decomp )
-    call addfld('limit_cinlcl_Cu' , 'no'      , 1     , 'A' , 'limit_cinlcl'                                        , phys_decomp )
-    call addfld('limit_cin_Cu'    , 'no'      , 1     , 'A' , 'limit_cin'                                           , phys_decomp )
-    call addfld('limit_cbmf_Cu'   , 'no'      , 1     , 'A' , 'limit_cbmf'                                          , phys_decomp )
-    call addfld('limit_rei_Cu'    , 'no'      , 1     , 'A' , 'limit_rei'                                           , phys_decomp )
-    call addfld('ind_delcin_Cu'   , 'no'      , 1     , 'A' , 'ind_delcin'                                          , phys_decomp )
+    call addfld('limit_shcu_Cu'   , 'no'      , 1     , 'A' , 'limit_shcu'                                          , phys_decomp ) 
+    call addfld('limit_negcon_Cu' , 'no'      , 1     , 'A' , 'limit_negcon'                                        , phys_decomp ) 
+    call addfld('limit_ufrc_Cu'   , 'no'      , 1     , 'A' , 'limit_ufrc'                                          , phys_decomp ) 
+    call addfld('limit_ppen_Cu'   , 'no'      , 1     , 'A' , 'limit_ppen'                                          , phys_decomp ) 
+    call addfld('limit_emf_Cu'    , 'no'      , 1     , 'A' , 'limit_emf'                                           , phys_decomp ) 
+    call addfld('limit_cinlcl_Cu' , 'no'      , 1     , 'A' , 'limit_cinlcl'                                        , phys_decomp ) 
+    call addfld('limit_cin_Cu'    , 'no'      , 1     , 'A' , 'limit_cin'                                           , phys_decomp ) 
+    call addfld('limit_cbmf_Cu'   , 'no'      , 1     , 'A' , 'limit_cbmf'                                          , phys_decomp ) 
+    call addfld('limit_rei_Cu'    , 'no'      , 1     , 'A' , 'limit_rei'                                           , phys_decomp ) 
+    call addfld('ind_delcin_Cu'   , 'no'      , 1     , 'A' , 'ind_delcin'                                          , phys_decomp ) 
 
     if( kind .ne. r8 ) then
         write(iulog,*) subname//': ERROR -- real KIND does not match internal specification.'
@@ -331,7 +331,7 @@ end subroutine uwshcu_readnl
        call endrun(subname//': uwshcu_rpen must be set in the namelist')
     end if
 
-    if ( masterproc ) then
+    if ( masterproc ) then 
        write(iulog,*) subname//': tuning parameters: rpen=',rpen
 #ifdef WRF_PORT
        call wrf_debug(1,iulog)
@@ -358,27 +358,27 @@ end subroutine uwshcu_readnl
              enddo
           enddo
        enddo
-    end if
+    end if   
 #endif
 
   end subroutine init_uwshcu
 
-  subroutine compute_uwshcu_inv( mix      , mkx        , iend          , ncnst     , dt       ,  &
+  subroutine compute_uwshcu_inv( mix      , mkx        , iend          , ncnst     , dt       ,  & 
                                  ps0_inv  , zs0_inv    , p0_inv        , z0_inv    , dp0_inv  ,  &
                                  u0_inv   , v0_inv     , qv0_inv       , ql0_inv   , qi0_inv  ,  &
                                  t0_inv   , s0_inv     , tr0_inv       ,                         &
-                                 tke_inv  , cldfrct_inv, concldfrct_inv, pblh      , cush     ,  &
-                                 umf_inv  , slflx_inv  , qtflx_inv     ,                         &
+                                 tke_inv  , cldfrct_inv, concldfrct_inv, pblh      , cush     ,  & 
+                                 umf_inv  , slflx_inv  , qtflx_inv     ,                         & 
                                  flxprc1_inv, flxsnow1_inv,     				 &
                                  qvten_inv, qlten_inv  , qiten_inv     ,                         &
-                                 sten_inv , uten_inv   , vten_inv      , trten_inv ,             &
+                                 sten_inv , uten_inv   , vten_inv      , trten_inv ,             &  
                                  qrten_inv, qsten_inv  , precip        , snow      , evapc_inv,  &
-                                 cufrc_inv, qcu_inv    , qlu_inv       , qiu_inv   ,             &
+                                 cufrc_inv, qcu_inv    , qlu_inv       , qiu_inv   ,             &   
                                  cbmf     , qc_inv     , rliq          ,                         &
                                  cnt_inv  , cnb_inv    , qsat          , lchnk     , dpdry0_inv )
 
     implicit none
-    integer , intent(in)    :: lchnk
+    integer , intent(in)    :: lchnk     
     integer , intent(in)    :: mix
     integer , intent(in)    :: mkx
     integer , intent(in)    :: iend
@@ -470,8 +470,8 @@ end subroutine uwshcu_readnl
     real(r8)                :: qiu(mix,mkx)             !  Ice specific humidity within cumulus updraft at the layer mid-point [ kg/kg ]
     real(r8)                :: qc(mix,mkx)              !  Tendency of cumulus condensate detrained into the environment [ kg/kg/s ]
     real(r8)                :: cnt(mix)                 !  Cumulus top  interface index, cnt = kpen [ no ]
-    real(r8)                :: cnb(mix)                 !  Cumulus base interface index, cnb = krel - 1 [ no ]
-    integer                 :: k                        !  Vertical index for local fields [ no ]
+    real(r8)                :: cnb(mix)                 !  Cumulus base interface index, cnb = krel - 1 [ no ] 
+    integer                 :: k                        !  Vertical index for local fields [ no ] 
     integer                 :: k_inv                    !  Vertical index for incoming fields [ no ]
     integer                 :: m                        !  Tracer index [ no ]
 
@@ -494,7 +494,7 @@ end subroutine uwshcu_readnl
           tr0(:iend,k,m)   = tr0_inv(:iend,k_inv,m)
        enddo
     enddo
-
+    
     do k = 0, mkx
        k_inv               = mkx + 1 - k
        ps0(:iend,k)        = ps0_inv(:iend,k_inv)
@@ -504,12 +504,12 @@ end subroutine uwshcu_readnl
 
     call compute_uwshcu( mix  , mkx    , iend      , ncnst , dt   , &
                          ps0  , zs0    , p0        , z0    , dp0  , &
-                         u0   , v0     , qv0       , ql0   , qi0  , &
-                         t0   , s0     , tr0       ,                &
-                         tke  , cldfrct, concldfrct, pblh  , cush , &
-                         umf  , slflx  , qtflx     ,                &
+                         u0   , v0     , qv0       , ql0   , qi0  , & 
+                         t0   , s0     , tr0       ,                & 
+                         tke  , cldfrct, concldfrct, pblh  , cush , & 
+                         umf  , slflx  , qtflx     ,                &  
                          flxprc1  , flxsnow1  ,		            &
-                         qvten, qlten  , qiten     ,                &
+                         qvten, qlten  , qiten     ,                & 
                          sten , uten   , vten      , trten ,        &
                          qrten, qsten  , precip    , snow  , evapc, &
                          cufrc, qcu    , qlu       , qiu   ,        &
@@ -523,8 +523,8 @@ end subroutine uwshcu_readnl
 
     do k = 0, mkx
        k_inv                  = mkx + 1 - k
-       umf_inv(:iend,k_inv)   = umf(:iend,k)
-       slflx_inv(:iend,k_inv) = slflx(:iend,k)
+       umf_inv(:iend,k_inv)   = umf(:iend,k)       
+       slflx_inv(:iend,k_inv) = slflx(:iend,k)     
        qtflx_inv(:iend,k_inv) = qtflx(:iend,k)
        flxprc1_inv(:iend,k_inv) = flxprc1(:iend,k)     ! reversed for output to cam
        flxsnow1_inv(:iend,k_inv) = flxsnow1(:iend,k)   ! ""
@@ -532,22 +532,22 @@ end subroutine uwshcu_readnl
 
     do k = 1, mkx
        k_inv                         = mkx + 1 - k
-       qvten_inv(:iend,k_inv)        = qvten(:iend,k)
-       qlten_inv(:iend,k_inv)        = qlten(:iend,k)
-       qiten_inv(:iend,k_inv)        = qiten(:iend,k)
-       sten_inv(:iend,k_inv)         = sten(:iend,k)
-       uten_inv(:iend,k_inv)         = uten(:iend,k)
-       vten_inv(:iend,k_inv)         = vten(:iend,k)
-       qrten_inv(:iend,k_inv)        = qrten(:iend,k)
-       qsten_inv(:iend,k_inv)        = qsten(:iend,k)
+       qvten_inv(:iend,k_inv)        = qvten(:iend,k)   
+       qlten_inv(:iend,k_inv)        = qlten(:iend,k)   
+       qiten_inv(:iend,k_inv)        = qiten(:iend,k)   
+       sten_inv(:iend,k_inv)         = sten(:iend,k)    
+       uten_inv(:iend,k_inv)         = uten(:iend,k)    
+       vten_inv(:iend,k_inv)         = vten(:iend,k)    
+       qrten_inv(:iend,k_inv)        = qrten(:iend,k)   
+       qsten_inv(:iend,k_inv)        = qsten(:iend,k)   
        evapc_inv(:iend,k_inv)        = evapc(:iend,k)
-       cufrc_inv(:iend,k_inv)        = cufrc(:iend,k)
-       qcu_inv(:iend,k_inv)          = qcu(:iend,k)
-       qlu_inv(:iend,k_inv)          = qlu(:iend,k)
-       qiu_inv(:iend,k_inv)          = qiu(:iend,k)
-       qc_inv(:iend,k_inv)           = qc(:iend,k)
+       cufrc_inv(:iend,k_inv)        = cufrc(:iend,k)   
+       qcu_inv(:iend,k_inv)          = qcu(:iend,k)     
+       qlu_inv(:iend,k_inv)          = qlu(:iend,k)     
+       qiu_inv(:iend,k_inv)          = qiu(:iend,k)     
+       qc_inv(:iend,k_inv)           = qc(:iend,k)      
        do m = 1, ncnst
-          trten_inv(:iend,k_inv,m)   = trten(:iend,k,m)
+          trten_inv(:iend,k_inv,m)   = trten(:iend,k,m) 
        enddo
 
     enddo
@@ -558,10 +558,10 @@ end subroutine uwshcu_readnl
                              ps0_in   , zs0_in    , p0_in        , z0_in    , dp0_in    , &
                              u0_in    , v0_in     , qv0_in       , ql0_in   , qi0_in    , &
                              t0_in    , s0_in     , tr0_in       ,                        &
-                             tke_in   , cldfrct_in, concldfrct_in,  pblh_in , cush_inout, &
+                             tke_in   , cldfrct_in, concldfrct_in,  pblh_in , cush_inout, & 
                              umf_out  , slflx_out , qtflx_out    ,                        &
                              flxprc1_out  , flxsnow1_out  , 			 	  &
-                             qvten_out, qlten_out , qiten_out    ,                        &
+                             qvten_out, qlten_out , qiten_out    ,                        & 
                              sten_out , uten_out  , vten_out     , trten_out,             &
                              qrten_out, qsten_out , precip_out   , snow_out , evapc_out , &
                              cufrc_out, qcu_out   , qlu_out      , qiu_out  ,             &
@@ -569,7 +569,7 @@ end subroutine uwshcu_readnl
                              cnt_out  , cnb_out   , qsat         , lchnk    , dpdry0_in )
 
     ! ------------------------------------------------------------ !
-    !                                                              !
+    !                                                              !  
     !  University of Washington Shallow Convection Scheme          !
     !                                                              !
     !  Described in Park and Bretherton. 2008. J. Climate :        !
@@ -578,13 +578,13 @@ end subroutine uwshcu_readnl
     !  moist turbulent schemes and their impact on climate         !
     !  simulations with the Community Atmosphere Model'            !
     !                                                              !
-    !  Coded by Sungsu Park. Oct.2005.                             !
+    !  Coded by Sungsu Park. Oct.2005.                             ! 
     !                        May.2008.                             !
-    !  For questions, send an email to sungsup@ucar.edu or         !
+    !  For questions, send an email to sungsup@ucar.edu or         ! 
     !                                  sungsu@atmos.washington.edu !
     !                                                              !
     ! ------------------------------------------------------------ !
-#ifndef WRF_PORT
+#ifndef WRF_PORT 
     use cam_history,     only : outfld, addfld, phys_decomp
 #else
     use module_cam_support, only : outfld, addfld, phys_decomp
@@ -654,13 +654,13 @@ end subroutine uwshcu_readnl
     real(r8), intent(out)   :: qc_out(mix,mkx)                !  Tendency of detrained cumulus condensate into the environment [ kg/kg/s ]
     real(r8), intent(out)   :: rliq_out(mix)                  !  Vertical integral of qc_out [ m/s ]
     real(r8), intent(out)   :: cnt_out(mix)                   !  Cumulus top  interface index, cnt = kpen [ no ]
-    real(r8), intent(out)   :: cnb_out(mix)                   !  Cumulus base interface index, cnb = krel - 1 [ no ]
+    real(r8), intent(out)   :: cnb_out(mix)                   !  Cumulus base interface index, cnb = krel - 1 [ no ] 
 
     !
     ! Internal Output Variables
     !
 
-    integer , external      :: qsat
+    integer , external      :: qsat 
     real(r8)                   qtten_out(mix,mkx)             !  Tendency of qt [ kg/kg/s ]
     real(r8)                   slten_out(mix,mkx)             !  Tendency of sl [ J/kg/s ]
     real(r8)                   ufrc_out(mix,0:mkx)            !  Updraft fractional area at the interfaces [ fraction ]
@@ -669,8 +669,8 @@ end subroutine uwshcu_readnl
     real(r8)                   fer_out(mix,mkx)               !  Fractional lateral entrainment rate [ 1/Pa ]
     real(r8)                   fdr_out(mix,mkx)               !  Fractional lateral detrainment rate [ 1/Pa ]
     real(r8)                   cinh_out(mix)                  !  Convective INhibition upto LFC (CIN) [ J/kg ]
-    real(r8)                   trflx_out(mix,0:mkx,ncnst)     !  Updraft/pen.entrainment tracer flux [ #/m2/s, kg/kg/m2/s ]
-
+    real(r8)                   trflx_out(mix,0:mkx,ncnst)     !  Updraft/pen.entrainment tracer flux [ #/m2/s, kg/kg/m2/s ] 
+   
     ! -------------------------------------------- !
     ! One-dimensional variables at each grid point !
     ! -------------------------------------------- !
@@ -764,9 +764,9 @@ end subroutine uwshcu_readnl
     real(r8)    ni_emf_kbup
     real(r8)    qlten_det
     real(r8)    qiten_det
-    real(r8)    rliq                                          !  Vertical integral of qc [ m/s ]
+    real(r8)    rliq                                          !  Vertical integral of qc [ m/s ] 
     real(r8)    cnt                                           !  Cumulus top  interface index, cnt = kpen [ no ]
-    real(r8)    cnb                                           !  Cumulus base interface index, cnb = krel - 1 [ no ]
+    real(r8)    cnb                                           !  Cumulus base interface index, cnb = krel - 1 [ no ] 
     real(r8)    qtten(mkx)                                    !  Tendency of qt [ kg/kg/s ]
     real(r8)    slten(mkx)                                    !  Tendency of sl [ J/kg/s ]
     real(r8)    ufrc(0:mkx)                                   !  Updraft fractional area [ fraction ]
@@ -775,8 +775,8 @@ end subroutine uwshcu_readnl
     real(r8)    trflx_d(0:mkx)                                !  Adjustive downward flux of tracers to prevent negative tracers
     real(r8)    trflx_u(0:mkx)                                !  Adjustive upward   flux of tracers to prevent negative tracers
     real(r8)    trmin                                         !  Minimum concentration of tracers allowed
-    real(r8)    pdelx, dum
-
+    real(r8)    pdelx, dum 
+    
     !----- Variables used for the calculation of condensation sink associated with compensating subsidence
     !      In the current code, this 'sink' tendency is simply set to be zero.
 
@@ -789,7 +789,7 @@ end subroutine uwshcu_readnl
     real(r8)    thlten_sub, qtten_sub                         !  Tendency of conservative scalars by compensating subsidence/upwelling
     real(r8)    qlten_sub, qiten_sub                          !  Tendency of ql0, qi0             by compensating subsidence/upwelling
     real(r8)    nlten_sub, niten_sub                          !  Tendency of nl0, ni0             by compensating subsidence/upwelling
-    real(r8)    thl_prog, qt_prog                             !  Prognosed 'thl, qt' by compensating subsidence/upwelling
+    real(r8)    thl_prog, qt_prog                             !  Prognosed 'thl, qt' by compensating subsidence/upwelling 
 
     !----- Variables describing cumulus updraft
 
@@ -802,7 +802,7 @@ end subroutine uwshcu_readnl
     real(r8)    rei(mkx)                                      !  Updraft fractional mixing rate with the environment [ 1/Pa ]
     real(r8)    tru(0:mkx,ncnst)                              !  Updraft tracers [ #, kg/kg ]
 
-    !----- Variables describing conservative scalars of entraining downdrafts  at the
+    !----- Variables describing conservative scalars of entraining downdrafts  at the 
     !      entraining interfaces, i.e., 'kbup <= k < kpen-1'. At the other interfaces,
     !      belows are simply set to equal to those of updraft for simplicity - but it
     !      does not influence numerical calculation.
@@ -811,7 +811,7 @@ end subroutine uwshcu_readnl
     real(r8)    qtu_emf(0:mkx)                                !  Penetrative downdraft total water at entraining interfaces [ kg/kg ]
     real(r8)    uu_emf(0:mkx)                                 !  Penetrative downdraft zonal wind at entraining interfaces [ m/s ]
     real(r8)    vu_emf(0:mkx)                                 !  Penetrative downdraft meridional wind at entraining interfaces [ m/s ]
-    real(r8)    tru_emf(0:mkx,ncnst)                          !  Penetrative Downdraft tracers at entraining interfaces [ #, kg/kg ]
+    real(r8)    tru_emf(0:mkx,ncnst)                          !  Penetrative Downdraft tracers at entraining interfaces [ #, kg/kg ]    
 
     !----- Variables associated with evaporations of convective 'rain' and 'snow'
 
@@ -842,7 +842,7 @@ end subroutine uwshcu_readnl
     integer     klfc                                          !  LFC layer of cumulus source air
     integer     kbup                                          !  Top layer in which cloud buoyancy is positive at the top interface
     integer     kpen                                          !  Highest layer with positive updraft vertical velocity - top layer cumulus can reach
-    logical     id_exit
+    logical     id_exit   
     logical     forcedCu                                      !  If 'true', cumulus updraft cannot overcome the buoyancy barrier just above the PBL top.
     real(r8)    thlsrc, qtsrc, usrc, vsrc, thvlsrc            !  Updraft source air properties
     real(r8)    PGFc, uplus, vplus
@@ -850,11 +850,11 @@ end subroutine uwshcu_readnl
     real(r8)    plcl, plfc, prel, wrel
     real(r8)    frc_rasn
     real(r8)    ee2, ud2, wtw, wtwb, wtwh
-    real(r8)    xc, xc_2
+    real(r8)    xc, xc_2                                       
     real(r8)    cldhgt, scaleh, tscaleh, cridis, rle, rkm
     real(r8)    rkfre, sigmaw, epsvarw, tkeavg, dpsum, dpi, thvlmin
     real(r8)    thlxsat, qtxsat, thvxsat, x_cu, x_en, thv_x0, thv_x1
-    real(r8)    thj, qvj, qlj, qij, thvj, tj, thv0j, rho0j, rhos0j, qse
+    real(r8)    thj, qvj, qlj, qij, thvj, tj, thv0j, rho0j, rhos0j, qse 
     real(r8)    cin, cinlcl
     real(r8)    pe, dpe, exne, thvebot, thle, qte, ue, ve, thlue, qtue, wue
     real(r8)    mu, mumin0, mumin1, mumin2, mulcl, mulclstar
@@ -866,11 +866,11 @@ end subroutine uwshcu_readnl
     real(r8)    aquad, bquad, cquad, xc1, xc2, excessu, excess0, xsat, xs1, xs2
     real(r8)    bogbot, bogtop, delbog, drage, expfac, rbuoy, rdrag
     real(r8)    rcwp, rlwp, riwp, qcubelow, qlubelow, qiubelow
-    real(r8)    rainflx, snowflx
-    real(r8)    es(1)
-    real(r8)    qs(1)
+    real(r8)    rainflx, snowflx                     
+    real(r8)    es(1)                               
+    real(r8)    qs(1)                               
     real(r8)    gam(1)                                        !  (L/cp)*dqs/dT
-    real(r8)    qsat_arg
+    real(r8)    qsat_arg             
     real(r8)    xsrc, xmean, xtop, xbot, xflx(0:mkx)
     real(r8)    tmp1, tmp2
 
@@ -893,21 +893,21 @@ end subroutine uwshcu_readnl
     real(r8)  tkeavg_out(mix)                                 !  Average tke over the PBL [ m2/s2 ]
     real(r8)  cbmflimit_out(mix)                              !  Cloud base mass flux limiter [ kg/m2/s ]
     real(r8)  zinv_out(mix)                                   !  PBL top height [ m ]
-    real(r8)  rcwp_out(mix)                                   !  Layer mean Cumulus LWP+IWP [ kg/m2 ]
-    real(r8)  rlwp_out(mix)                                   !  Layer mean Cumulus LWP [ kg/m2 ]
-    real(r8)  riwp_out(mix)                                   !  Layer mean Cumulus IWP [ kg/m2 ]
+    real(r8)  rcwp_out(mix)                                   !  Layer mean Cumulus LWP+IWP [ kg/m2 ] 
+    real(r8)  rlwp_out(mix)                                   !  Layer mean Cumulus LWP [ kg/m2 ] 
+    real(r8)  riwp_out(mix)                                   !  Layer mean Cumulus IWP [ kg/m2 ] 
     real(r8)  wu_out(mix,0:mkx)                               !  Updraft vertical velocity ( defined from the release level to 'kpen-1' interface )
     real(r8)  qtu_out(mix,0:mkx)                              !  Updraft qt [ kg/kg ]
     real(r8)  thlu_out(mix,0:mkx)                             !  Updraft thl [ K ]
     real(r8)  thvu_out(mix,0:mkx)                             !  Updraft thv [ K ]
-    real(r8)  uu_out(mix,0:mkx)                               !  Updraft zonal wind [ m/s ]
+    real(r8)  uu_out(mix,0:mkx)                               !  Updraft zonal wind [ m/s ] 
     real(r8)  vu_out(mix,0:mkx)                               !  Updraft meridional wind [ m/s ]
-    real(r8)  qtu_emf_out(mix,0:mkx)                          !  Penetratively entrained qt [ kg/kg ]
+    real(r8)  qtu_emf_out(mix,0:mkx)                          !  Penetratively entrained qt [ kg/kg ]   
     real(r8)  thlu_emf_out(mix,0:mkx)                         !  Penetratively entrained thl [ K ]
     real(r8)  uu_emf_out(mix,0:mkx)                           !  Penetratively entrained u [ m/s ]
     real(r8)  vu_emf_out(mix,0:mkx)                           !  Penetratively entrained v [ m/s ]
     real(r8)  uemf_out(mix,0:mkx)                             !  Net upward mass flux including penetrative entrainment (umf+emf) [ kg/m2/s ]
-    real(r8)  tru_out(mix,0:mkx,ncnst)                        !  Updraft tracers [ #, kg/kg ]
+    real(r8)  tru_out(mix,0:mkx,ncnst)                        !  Updraft tracers [ #, kg/kg ]   
     real(r8)  tru_emf_out(mix,0:mkx,ncnst)                    !  Penetratively entrained tracers [ #, kg/kg ]
 
     real(r8)  wu_s(0:mkx)                                     !  Same as above but for implicit CIN
@@ -916,30 +916,30 @@ end subroutine uwshcu_readnl
     real(r8)  thvu_s(0:mkx)
     real(r8)  uu_s(0:mkx)
     real(r8)  vu_s(0:mkx)
-    real(r8)  qtu_emf_s(0:mkx)
-    real(r8)  thlu_emf_s(0:mkx)
-    real(r8)  uu_emf_s(0:mkx)
+    real(r8)  qtu_emf_s(0:mkx) 
+    real(r8)  thlu_emf_s(0:mkx)  
+    real(r8)  uu_emf_s(0:mkx)   
     real(r8)  vu_emf_s(0:mkx)
-    real(r8)  uemf_s(0:mkx)
+    real(r8)  uemf_s(0:mkx)   
     real(r8)  tru_s(0:mkx,ncnst)
-    real(r8)  tru_emf_s(0:mkx,ncnst)
+    real(r8)  tru_emf_s(0:mkx,ncnst)   
 
     real(r8)  dwten_out(mix,mkx)
     real(r8)  diten_out(mix,mkx)
-    real(r8)  flxrain_out(mix,0:mkx)
-    real(r8)  flxsnow_out(mix,0:mkx)
-    real(r8)  ntraprd_out(mix,mkx)
-    real(r8)  ntsnprd_out(mix,mkx)
+    real(r8)  flxrain_out(mix,0:mkx)  
+    real(r8)  flxsnow_out(mix,0:mkx)  
+    real(r8)  ntraprd_out(mix,mkx)    
+    real(r8)  ntsnprd_out(mix,mkx)    
 
     real(r8)  dwten_s(mkx)
     real(r8)  diten_s(mkx)
-    real(r8)  flxrain_s(0:mkx)
-    real(r8)  flxsnow_s(0:mkx)
-    real(r8)  ntraprd_s(mkx)
-    real(r8)  ntsnprd_s(mkx)
+    real(r8)  flxrain_s(0:mkx)  
+    real(r8)  flxsnow_s(0:mkx)  
+    real(r8)  ntraprd_s(mkx)    
+    real(r8)  ntsnprd_s(mkx)    
 
     real(r8)  excessu_arr_out(mix,mkx)
-    real(r8)  excessu_arr(mkx)
+    real(r8)  excessu_arr(mkx) 
     real(r8)  excessu_arr_s(mkx)
     real(r8)  excess0_arr_out(mix,mkx)
     real(r8)  excess0_arr(mkx)
@@ -953,7 +953,7 @@ end subroutine uwshcu_readnl
     real(r8)  bquad_arr_out(mix,mkx)
     real(r8)  bquad_arr(mkx)
     real(r8)  bquad_arr_s(mkx)
-    real(r8)  cquad_arr_out(mix,mkx)
+    real(r8)  cquad_arr_out(mix,mkx) 
     real(r8)  cquad_arr(mkx)
     real(r8)  cquad_arr_s(mkx)
     real(r8)  bogbot_arr_out(mix,mkx)
@@ -988,16 +988,16 @@ end subroutine uwshcu_readnl
 
     real(r8) :: ufrcinvbase_s, ufrclcl_s, winvbase_s, wlcl_s, plcl_s, pinv_s, plfc_s, &
                 qtsrc_s, thlsrc_s, thvlsrc_s, emfkbup_s, cinlcl_s, pbup_s, ppen_s, cbmflimit_s, &
-                tkeavg_s, zinv_s, rcwp_s, rlwp_s, riwp_s
-    real(r8) :: ufrcinvbase, winvbase, pinv, zinv, emfkbup, cbmflimit, rho0rel
+                tkeavg_s, zinv_s, rcwp_s, rlwp_s, riwp_s 
+    real(r8) :: ufrcinvbase, winvbase, pinv, zinv, emfkbup, cbmflimit, rho0rel  
 
     !----- Variables for implicit CIN computation
 
-    real(r8), dimension(mkx)         :: qv0_s  , ql0_s   , qi0_s   , s0_s    , u0_s    ,           &
+    real(r8), dimension(mkx)         :: qv0_s  , ql0_s   , qi0_s   , s0_s    , u0_s    ,           & 
                                         v0_s   , t0_s    , qt0_s   , thl0_s  , thvl0_s , qvten_s , &
                                         qlten_s, qiten_s , qrten_s , qsten_s , sten_s  , evapc_s , &
                                         uten_s , vten_s  , cufrc_s , qcu_s   , qlu_s   , qiu_s   , &
-                                        fer_s  , fdr_s   , qc_s    , qtten_s , slten_s
+                                        fer_s  , fdr_s   , qc_s    , qtten_s , slten_s 
     real(r8), dimension(0:mkx)       :: umf_s  , slflx_s , qtflx_s , ufrc_s  , uflx_s , vflx_s
     real(r8)                         :: cush_s , precip_s, snow_s  , cin_s   , rliq_s, cbmf_s, cnt_s, cnb_s
     real(r8)                         :: cin_i,cin_f,del_CIN,ke,alpha,thlj
@@ -1012,21 +1012,21 @@ end subroutine uwshcu_readnl
     real(r8), dimension(mkx)         :: qv0_o, ql0_o, qi0_o, t0_o, s0_o, u0_o, v0_o
     real(r8), dimension(mkx)         :: qt0_o    , thl0_o   , thvl0_o   ,                         &
                                         qvten_o  , qlten_o  , qiten_o   , qrten_o   , qsten_o ,   &
-                                        sten_o   , uten_o   , vten_o    , qcu_o     , qlu_o   ,   &
+                                        sten_o   , uten_o   , vten_o    , qcu_o     , qlu_o   ,   & 
                                         qiu_o    , cufrc_o  , evapc_o   ,                         &
                                         thv0bot_o, thv0top_o, thvl0bot_o, thvl0top_o,             &
                                         ssthl0_o , ssqt0_o  , ssu0_o    , ssv0_o    , qc_o    ,   &
-                                        qtten_o  , slten_o
-    real(r8), dimension(0:mkx)       :: umf_o    , slflx_o  , qtflx_o   , ufrc_o
+                                        qtten_o  , slten_o  
+    real(r8), dimension(0:mkx)       :: umf_o    , slflx_o  , qtflx_o   , ufrc_o 
     real(r8), dimension(mix)         :: cush_o   , precip_o , snow_o    , rliq_o, cbmf_o, cnt_o, cnb_o
     real(r8), dimension(0:mkx)       :: uflx_o   , vflx_o
     real(r8)                         :: tkeavg_o , thvlmin_o, qtsrc_o  , thvlsrc_o, thlsrc_o ,    &
                                         usrc_o   , vsrc_o   , plcl_o   , plfc_o   ,               &
-                                        thv0lcl_o, cinlcl_o
-    integer                          :: kinv_o   , klcl_o   , klfc_o
+                                        thv0lcl_o, cinlcl_o 
+    integer                          :: kinv_o   , klcl_o   , klfc_o  
 
     real(r8), dimension(mkx,ncnst)   :: tr0_o
-    real(r8), dimension(mkx,ncnst)   :: trten_o, sstr0_o
+    real(r8), dimension(mkx,ncnst)   :: trten_o, sstr0_o  
     real(r8), dimension(0:mkx,ncnst) :: trflx_o
     real(r8), dimension(ncnst)       :: trsrc_o
     integer                          :: ixnumliq, ixnumice
@@ -1052,7 +1052,7 @@ end subroutine uwshcu_readnl
     ! --------------------------------------------------------------- !
     ! Choice of 'explicit' ( 1 ) or 'implicit' ( 2 )  CIN.            !
     !                                                                 !
-    ! When choose 'CIN = cinlcl' above,  it is recommended not to use !
+    ! When choose 'CIN = cinlcl' above,  it is recommended not to use ! 
     ! implicit CIN, i.e., do 'NOT' choose simultaneously :            !
     !            [ 'use_CINcin=.false. & 'iter_cin=2' ]               !
     ! since 'cinlcl' will be always set to zero whenever LCL is below !
@@ -1073,7 +1073,7 @@ end subroutine uwshcu_readnl
     ! ---------------------------------------------------------------- !
 
     logical , parameter              :: use_self_detrain = .false.
-
+    
     ! --------------------------------------------------------- !
     ! Cumulus momentum flux : turn-on (.true.) or off (.false.) !
     ! --------------------------------------------------------- !
@@ -1108,35 +1108,35 @@ end subroutine uwshcu_readnl
     ! ----------------------- !
 
     parameter (rle = 0.1_r8)         !  For critical stopping distance for lateral entrainment [no unit]
-!   parameter (rkm = 16.0_r8)        !  Determine the amount of air that is involved in buoyancy-sorting [no unit]
+!   parameter (rkm = 16.0_r8)        !  Determine the amount of air that is involved in buoyancy-sorting [no unit] 
     parameter (rkm = 14.0_r8)        !  Determine the amount of air that is involved in buoyancy-sorting [no unit]
 
-    parameter (rkfre = 1.0_r8)       !  Vertical velocity variance as fraction of  tke.
+    parameter (rkfre = 1.0_r8)       !  Vertical velocity variance as fraction of  tke. 
     parameter (rmaxfrac = 0.10_r8)   !  Maximum allowable 'core' updraft fraction
     parameter (mumin1 = 0.906_r8)    !  Normalized CIN ('mu') corresponding to 'rmaxfrac' at the PBL top
                                      !  obtaind by inverting 'rmaxfrac = 0.5*erfc(mumin1)'.
-                                     !  [ rmaxfrac:mumin1 ] = [ 0.05:1.163, 0.075:1.018, 0.1:0.906, 0.15:0.733, 0.2:0.595, 0.25:0.477 ]
+                                     !  [ rmaxfrac:mumin1 ] = [ 0.05:1.163, 0.075:1.018, 0.1:0.906, 0.15:0.733, 0.2:0.595, 0.25:0.477 ] 
     parameter (rbuoy = 1.0_r8)       !  For nonhydrostatic pressure effects on updraft [no unit]
     parameter (rdrag = 1.0_r8)       !  Drag coefficient [no unit]
 
-    parameter (epsvarw = 5.e-4_r8)   !  Variance of w at PBL top by meso-scale component [m2/s2]
-    parameter (PGFc = 0.7_r8)        !  This is used for calculating vertical variations cumulus
+    parameter (epsvarw = 5.e-4_r8)   !  Variance of w at PBL top by meso-scale component [m2/s2]          
+    parameter (PGFc = 0.7_r8)        !  This is used for calculating vertical variations cumulus  
                                      !  'u' & 'v' by horizontal PGF during upward motion [no unit]
 
     ! ---------------------------------------- !
     ! Bulk microphysics controlling parameters !
-    ! --------------------------------------------------------------------------- !
+    ! --------------------------------------------------------------------------- ! 
     ! criqc    : Maximum condensate that can be hold by cumulus updraft [kg/kg]   !
     ! frc_rasn : Fraction of precipitable condensate in the expelled cloud water  !
     !            from cumulus updraft. The remaining fraction ('1-frc_rasn')  is  !
     !            'suspended condensate'.                                          !
-    !                0 : all expelled condensate is 'suspended condensate'        !
+    !                0 : all expelled condensate is 'suspended condensate'        ! 
     !                1 : all expelled condensate is 'precipitable condensate'     !
     ! kevp     : Evaporative efficiency                                           !
-    ! noevap_krelkpen : No evaporation from 'krel' to 'kpen' layers               !
-    ! --------------------------------------------------------------------------- !
+    ! noevap_krelkpen : No evaporation from 'krel' to 'kpen' layers               ! 
+    ! --------------------------------------------------------------------------- !    
 
-    parameter ( criqc    = 0.7e-3_r8 )
+    parameter ( criqc    = 0.7e-3_r8 ) 
     parameter ( frc_rasn = 1.0_r8    )
     parameter ( kevp     = 2.e-6_r8  )
     logical, parameter :: noevap_krelkpen = .false.
@@ -1192,7 +1192,7 @@ end subroutine uwshcu_readnl
 
     trten_out(:iend,:mkx,:ncnst) = 0.0_r8
     trflx_out(:iend,0:mkx,:ncnst)= 0.0_r8
-
+    
     ufrcinvbase_out(:iend)       = 0.0_r8
     ufrclcl_out(:iend)           = 0.0_r8
     winvbase_out(:iend)          = 0.0_r8
@@ -1230,7 +1230,7 @@ end subroutine uwshcu_readnl
 
     dwten_out(:iend,:mkx)        = 0.0_r8
     diten_out(:iend,:mkx)        = 0.0_r8
-    flxrain_out(:iend,0:mkx)     = 0.0_r8
+    flxrain_out(:iend,0:mkx)     = 0.0_r8  
     flxsnow_out(:iend,0:mkx)     = 0.0_r8
     ntraprd_out(:iend,mkx)       = 0.0_r8
     ntsnprd_out(:iend,mkx)       = 0.0_r8
@@ -1244,20 +1244,20 @@ end subroutine uwshcu_readnl
     bogbot_arr_out(:iend,:mkx)   = 0.0_r8
     bogtop_arr_out(:iend,:mkx)   = 0.0_r8
 
-    exit_UWCu(:iend)             = 0.0_r8
-    exit_conden(:iend)           = 0.0_r8
-    exit_klclmkx(:iend)          = 0.0_r8
-    exit_klfcmkx(:iend)          = 0.0_r8
-    exit_ufrc(:iend)             = 0.0_r8
-    exit_wtw(:iend)              = 0.0_r8
-    exit_drycore(:iend)          = 0.0_r8
-    exit_wu(:iend)               = 0.0_r8
-    exit_cufilter(:iend)         = 0.0_r8
-    exit_kinv1(:iend)            = 0.0_r8
-    exit_rei(:iend)              = 0.0_r8
+    exit_UWCu(:iend)             = 0.0_r8 
+    exit_conden(:iend)           = 0.0_r8 
+    exit_klclmkx(:iend)          = 0.0_r8 
+    exit_klfcmkx(:iend)          = 0.0_r8 
+    exit_ufrc(:iend)             = 0.0_r8 
+    exit_wtw(:iend)              = 0.0_r8 
+    exit_drycore(:iend)          = 0.0_r8 
+    exit_wu(:iend)               = 0.0_r8 
+    exit_cufilter(:iend)         = 0.0_r8 
+    exit_kinv1(:iend)            = 0.0_r8 
+    exit_rei(:iend)              = 0.0_r8 
 
-    limit_shcu(:iend)            = 0.0_r8
-    limit_negcon(:iend)          = 0.0_r8
+    limit_shcu(:iend)            = 0.0_r8 
+    limit_negcon(:iend)          = 0.0_r8 
     limit_ufrc(:iend)            = 0.0_r8
     limit_ppen(:iend)            = 0.0_r8
     limit_emf(:iend)             = 0.0_r8
@@ -1279,7 +1279,7 @@ end subroutine uwshcu_readnl
 
     call findsp( lchnk, iend, qv0_in, t0_in, p0_in, tw0_in, qw0_in )
 
-    do i = 1, iend
+    do i = 1, iend                                      
 
       id_exit = .false.
 
@@ -1310,12 +1310,12 @@ end subroutine uwshcu_readnl
       enddo
 
       ! --------------------------------------------------------- !
-      ! Compute other basic thermodynamic variables directly from !
+      ! Compute other basic thermodynamic variables directly from ! 
       ! the input variables at each grid point                    !
       ! --------------------------------------------------------- !
 
       !----- 1. Compute internal environmental variables
-
+      
       exn0(:mkx)   = (p0(:mkx)/p00)**rovcp
       exns0(0:mkx) = (ps0(0:mkx)/p00)**rovcp
       qt0(:mkx)    = (qv0(:mkx) + ql0(:mkx) + qi0(:mkx))
@@ -1325,14 +1325,14 @@ end subroutine uwshcu_readnl
       !----- 2. Compute slopes of environmental variables in each layer
       !         Dimension of ssthl0(:mkx) is implicit.
 
-      ssthl0       = slope(mkx,thl0,p0)
+      ssthl0       = slope(mkx,thl0,p0) 
       ssqt0        = slope(mkx,qt0 ,p0)
       ssu0         = slope(mkx,u0  ,p0)
       ssv0         = slope(mkx,v0  ,p0)
       do m = 1, ncnst
          sstr0(:mkx,m) = slope(mkx,tr0(:mkx,m),p0)
-      enddo
-
+      enddo     
+ 
       !----- 3. Compute "thv0" and "thvl0" at the top/bottom interfaces in each layer
       !         There are computed from the reconstructed thl, qt at the top/bottom.
 
@@ -1348,7 +1348,7 @@ end subroutine uwshcu_readnl
          end if
          thv0bot(k)  = thj*(1._r8 + zvir*qvj - qlj - qij)
          thvl0bot(k) = thl0bot*(1._r8 + zvir*qt0bot)
-
+          
          thl0top = thl0(k) + ssthl0(k)*(ps0(k) - p0(k))
          qt0top  =  qt0(k) + ssqt0(k) *(ps0(k) - p0(k))
          call conden(ps0(k),thl0top,qt0top,thj,qvj,qlj,qij,qse,id_check,qsat)
@@ -1356,7 +1356,7 @@ end subroutine uwshcu_readnl
              exit_conden(i) = 1._r8
              id_exit = .true.
              go to 333
-         end if
+         end if 
          thv0top(k)  = thj*(1._r8 + zvir*qvj - qlj - qij)
          thvl0top(k) = thl0top*(1._r8 + zvir*qt0top)
 
@@ -1383,12 +1383,12 @@ end subroutine uwshcu_readnl
       thv0top_o(:mkx)      = thv0top(:mkx)
       thvl0bot_o(:mkx)     = thvl0bot(:mkx)
       thvl0top_o(:mkx)     = thvl0top(:mkx)
-      ssu0_o(:mkx)         = ssu0(:mkx)
-      ssv0_o(:mkx)         = ssv0(:mkx)
+      ssu0_o(:mkx)         = ssu0(:mkx) 
+      ssv0_o(:mkx)         = ssv0(:mkx) 
       do m = 1, ncnst
          tr0_o(:mkx,m)     = tr0(:mkx,m)
          sstr0_o(:mkx,m)   = sstr0(:mkx,m)
-      enddo
+      enddo 
 
       ! ---------------------------------------------- !
       ! Initialize output variables at each grid point !
@@ -1428,8 +1428,8 @@ end subroutine uwshcu_readnl
       cnt                 = real(mkx, r8)
       cnb                 = 0.0_r8
       qtten(:mkx)         = 0.0_r8
-      slten(:mkx)         = 0.0_r8
-      ufrc(0:mkx)         = 0.0_r8
+      slten(:mkx)         = 0.0_r8   
+      ufrc(0:mkx)         = 0.0_r8  
 
       thlu(0:mkx)         = 0.0_r8
       qtu(0:mkx)          = 0.0_r8
@@ -1441,12 +1441,12 @@ end subroutine uwshcu_readnl
       qtu_emf(0:mkx)      = 0.0_r8
       uu_emf(0:mkx)       = 0.0_r8
       vu_emf(0:mkx)       = 0.0_r8
-
+      
       ufrcinvbase         = 0.0_r8
       ufrclcl             = 0.0_r8
       winvbase            = 0.0_r8
       wlcl                = 0.0_r8
-      emfkbup             = 0.0_r8
+      emfkbup             = 0.0_r8 
       cbmflimit           = 0.0_r8
       excessu_arr(:mkx)   = 0.0_r8
       excess0_arr(:mkx)   = 0.0_r8
@@ -1460,9 +1460,9 @@ end subroutine uwshcu_readnl
       uemf(0:mkx)         = 0.0_r8
       comsub(:mkx)        = 0.0_r8
       qlten_sink(:mkx)    = 0.0_r8
-      qiten_sink(:mkx)    = 0.0_r8
+      qiten_sink(:mkx)    = 0.0_r8 
       nlten_sink(:mkx)    = 0.0_r8
-      niten_sink(:mkx)    = 0.0_r8
+      niten_sink(:mkx)    = 0.0_r8 
 
       do m = 1, ncnst
          trflx(0:mkx,m)   = 0.0_r8
@@ -1471,11 +1471,11 @@ end subroutine uwshcu_readnl
          tru_emf(0:mkx,m) = 0.0_r8
       enddo
 
-    !-----------------------------------------------!
+    !-----------------------------------------------! 
     ! Below 'iter' loop is for implicit CIN closure !
     !-----------------------------------------------!
 
-    ! ----------------------------------------------------------------------------- !
+    ! ----------------------------------------------------------------------------- ! 
     ! It is important to note that this iterative cin loop is located at the outest !
     ! shell of the code. Thus, source air properties can also be changed during the !
     ! iterative cin calculation, because cumulus convection induces non-zero fluxes !
@@ -1484,15 +1484,15 @@ end subroutine uwshcu_readnl
 
     do iter = 1, iter_cin
 
-       ! ---------------------------------------------------------------------- !
-       ! Cumulus scale height                                                   !
+       ! ---------------------------------------------------------------------- ! 
+       ! Cumulus scale height                                                   ! 
        ! In contrast to the premitive code, cumulus scale height is iteratively !
        ! calculated at each time step, and at each iterative cin step.          !
        ! It is not clear whether I should locate below two lines within or  out !
        ! of the iterative cin loop.                                             !
        ! ---------------------------------------------------------------------- !
 
-       tscaleh = cush
+       tscaleh = cush                        
        cush    = -1._r8
 
        ! ----------------------------------------------------------------------- !
@@ -1515,17 +1515,17 @@ end subroutine uwshcu_readnl
        ! fication of 'kinv' for general case including SBCL, I imposed an offset !
        ! of 5 [m] in the below 'kinv' finding block.                             !
        ! ----------------------------------------------------------------------- !
-
-       do k = mkx - 1, 1, -1
+       
+       do k = mkx - 1, 1, -1 
           if( (pblh + 5._r8 - zs0(k))*(pblh + 5._r8 - zs0(k+1)) .lt. 0._r8 ) then
-               kinv = k + 1
+               kinv = k + 1 
                go to 15
-          endif
+          endif 
        end do
        kinv = 1
-15     continue
+15     continue    
 
-       if( kinv .le. 1 ) then
+       if( kinv .le. 1 ) then          
            exit_kinv1(i) = 1._r8
            id_exit = .true.
            go to 333
@@ -1544,20 +1544,20 @@ end subroutine uwshcu_readnl
        ! 'thvlmin' is a minimum 'thvl' within PBL obtained by comparing top &  base !
        ! interface values of 'thvl' in each layers within the PBL.                  !
        ! -------------------------------------------------------------------------- !
-
+       
        dpsum    = 0._r8
        tkeavg   = 0._r8
        thvlmin  = 1000._r8
-       do k = 0, kinv - 1   ! Here, 'k' is an interfacial layer index.
+       do k = 0, kinv - 1   ! Here, 'k' is an interfacial layer index.  
           if( k .eq. 0 ) then
               dpi = ps0(0) - p0(1)
-          elseif( k .eq. (kinv-1) ) then
+          elseif( k .eq. (kinv-1) ) then 
               dpi = p0(kinv-1) - ps0(kinv-1)
           else
               dpi = p0(k) - p0(k+1)
-          endif
-          dpsum  = dpsum  + dpi
-          tkeavg = tkeavg + dpi*tke(k)
+          endif 
+          dpsum  = dpsum  + dpi  
+          tkeavg = tkeavg + dpi*tke(k) 
           if( k .ne. 0 ) thvlmin = min(thvlmin,min(thvl0bot(k),thvl0top(k)))
        end do
        tkeavg  = tkeavg/dpsum
@@ -1570,18 +1570,18 @@ end subroutine uwshcu_readnl
        ! as the values just below the PBL top interface.                    !
        ! ------------------------------------------------------------------ !
 
-       qtsrc   = qt0(1)
-       thvlsrc = thvlmin
-       thlsrc  = thvlsrc / ( 1._r8 + zvir * qtsrc )
-       usrc    = u0(kinv-1) + ssu0(kinv-1) * ( ps0(kinv-1) - p0(kinv-1) )
-       vsrc    = v0(kinv-1) + ssv0(kinv-1) * ( ps0(kinv-1) - p0(kinv-1) )
+       qtsrc   = qt0(1)                     
+       thvlsrc = thvlmin 
+       thlsrc  = thvlsrc / ( 1._r8 + zvir * qtsrc )  
+       usrc    = u0(kinv-1) + ssu0(kinv-1) * ( ps0(kinv-1) - p0(kinv-1) )             
+       vsrc    = v0(kinv-1) + ssv0(kinv-1) * ( ps0(kinv-1) - p0(kinv-1) )             
        do m = 1, ncnst
           trsrc(m) = tr0(1,m)
-       enddo
+       enddo 
 
        ! ------------------------------------------------------------------ !
        ! Find LCL of the source air and a layer index containing LCL (klcl) !
-       ! When the LCL is exactly at the interface, 'klcl' is a layer index  !
+       ! When the LCL is exactly at the interface, 'klcl' is a layer index  ! 
        ! having 'plcl' as the lower interface similar to the 'kinv' case.   !
        ! In the previous code, I assumed that if LCL is located within the  !
        ! lowest model layer ( 1 ) or the top model layer ( mkx ), then  no  !
@@ -1599,14 +1599,14 @@ end subroutine uwshcu_readnl
           if( ps0(k) .lt. plcl ) then
               klcl = k
               go to 25
-          endif
+          endif           
        end do
        klcl = mkx
 25     continue
        klcl = max(1,klcl)
-
-       if( plcl .lt. 30000._r8 ) then
-     ! if( klcl .eq. mkx ) then
+     
+       if( plcl .lt. 30000._r8 ) then               
+     ! if( klcl .eq. mkx ) then          
            exit_klclmkx(i) = 1._r8
            id_exit = .true.
            go to 333
@@ -1633,7 +1633,7 @@ end subroutine uwshcu_readnl
        ! ------------------------------------------------------------------------ !
        ! Compute Convective Inhibition, 'cin' & 'cinlcl' [J/kg]=[m2/s2] TKE unit. !
        !                                                                          !
-       ! 'cin' (cinlcl) is computed from the PBL top interface to LFC (LCL) using !
+       ! 'cin' (cinlcl) is computed from the PBL top interface to LFC (LCL) using ! 
        ! piecewisely reconstructed environmental profiles, assuming environmental !
        ! buoyancy profile within each layer ( or from LCL to upper interface in   !
        ! each layer ) is simply a linear profile. For the purpose of cin (cinlcl) !
@@ -1667,7 +1667,7 @@ end subroutine uwshcu_readnl
             do k = kinv, mkx - 1
                if( k .lt. klcl ) then
                    thvubot = thvlsrc
-                   thvutop = thvlsrc
+                   thvutop = thvlsrc  
                    cin     = cin + single_cin(ps0(k-1),thv0bot(k),ps0(k),thv0top(k),thvubot,thvutop)
                elseif( k .eq. klcl ) then
                    !----- Bottom to LCL
@@ -1687,8 +1687,8 @@ end subroutine uwshcu_readnl
                    end if
                    thvutop = thj * ( 1._r8 + zvir*qvj - qlj - qij )
                    call getbuoy(plcl,thv0lcl,ps0(k),thv0top(k),thvubot,thvutop,plfc,cin)
-                   if( plfc .gt. 0._r8 ) then
-                       klfc = k
+                   if( plfc .gt. 0._r8 ) then 
+                       klfc = k 
                        go to 35
                    end if
                else
@@ -1701,19 +1701,19 @@ end subroutine uwshcu_readnl
                    end if
                    thvutop = thj * ( 1._r8 + zvir*qvj - qlj - qij )
                    call getbuoy(ps0(k-1),thv0bot(k),ps0(k),thv0top(k),thvubot,thvutop,plfc,cin)
-                   if( plfc .gt. 0._r8 ) then
+                   if( plfc .gt. 0._r8 ) then 
                        klfc = k
                        go to 35
-                   end if
+                   end if 
                endif
-            end do
+            end do        
 
        ! ----------------------------------------------------------------------- !
        ! Case 2. LCL height is lower than PBL interface ( 'pLCL > ps0(kinv-1)' ) !
        ! ----------------------------------------------------------------------- !
 
        else
-          cinlcl = 0._r8
+          cinlcl = 0._r8 
           do k = kinv, mkx - 1
              call conden(ps0(k-1),thlsrc,qtsrc,thj,qvj,qlj,qij,qse,id_check,qsat)
              if( id_check .eq. 1 ) then
@@ -1730,10 +1730,10 @@ end subroutine uwshcu_readnl
              end if
              thvutop = thj * ( 1._r8 + zvir*qvj - qlj - qij )
              call getbuoy(ps0(k-1),thv0bot(k),ps0(k),thv0top(k),thvubot,thvutop,plfc,cin)
-             if( plfc .gt. 0._r8 ) then
+             if( plfc .gt. 0._r8 ) then 
                  klfc = k
                  go to 35
-             end if
+             end if 
           end do
        endif  ! End of CIN case selection
 
@@ -1754,27 +1754,27 @@ end subroutine uwshcu_readnl
        ! be restored after calculating implicit CIN.                            !
        ! ---------------------------------------------------------------------- !
 
-       if( iter .eq. 1 ) then
+       if( iter .eq. 1 ) then 
            cin_i       = cin
            cinlcl_i    = cinlcl
-           ke          = rbuoy / ( rkfre * tkeavg + epsvarw )
-           kinv_o      = kinv
-           klcl_o      = klcl
-           klfc_o      = klfc
-           plcl_o      = plcl
-           plfc_o      = plfc
-           tkeavg_o    = tkeavg
+           ke          = rbuoy / ( rkfre * tkeavg + epsvarw ) 
+           kinv_o      = kinv     
+           klcl_o      = klcl     
+           klfc_o      = klfc    
+           plcl_o      = plcl    
+           plfc_o      = plfc     
+           tkeavg_o    = tkeavg   
            thvlmin_o   = thvlmin
-           qtsrc_o     = qtsrc
-           thvlsrc_o   = thvlsrc
+           qtsrc_o     = qtsrc    
+           thvlsrc_o   = thvlsrc  
            thlsrc_o    = thlsrc
-           usrc_o      = usrc
-           vsrc_o      = vsrc
-           thv0lcl_o   = thv0lcl
+           usrc_o      = usrc     
+           vsrc_o      = vsrc     
+           thv0lcl_o   = thv0lcl  
            do m = 1, ncnst
               trsrc_o(m) = trsrc(m)
            enddo
-       endif
+       endif   
 
      ! Modification : If I impose w = max(0.1_r8, w) up to the top interface of
      !                klfc, I should only use cinlfc.  That is, if I want to
@@ -1809,7 +1809,7 @@ end subroutine uwshcu_readnl
 
            if( del_CIN .gt. 0._r8 ) then
 
-               ! -------------------------------------------------------------- !
+               ! -------------------------------------------------------------- ! 
                ! Calculate implicit 'cin' and 'cinlcl'. Note that when we chose !
                ! to use 'implicit CIN = cin', choose 'cinlcl = cinlcl_i' below: !
                ! because iterative CIN only aims to obtain implicit CIN,  once  !
@@ -1819,13 +1819,13 @@ end subroutine uwshcu_readnl
                ! 'ufrclcl' after calculating 'winv' & 'ufrcinv'  at the PBL top !
                ! interface later, after calculating 'cbmf'.                     !
                ! -------------------------------------------------------------- !
-
-               alpha = compute_alpha( del_CIN, ke )
+         
+               alpha = compute_alpha( del_CIN, ke ) 
                cin   = cin_i + alpha * del_CIN
                if( use_CINcin ) then
-                   cinlcl = cinlcl_i
+                   cinlcl = cinlcl_i                 
                else
-                   cinlcl = cinlcl_i + alpha * del_cinlcl
+                   cinlcl = cinlcl_i + alpha * del_cinlcl   
                endif
 
                ! ----------------------------------------------------------------- !
@@ -1833,19 +1833,19 @@ end subroutine uwshcu_readnl
                ! to compute correct tendencies for (n+1) time step by implicit CIN !
                ! ----------------------------------------------------------------- !
 
-               kinv      = kinv_o
-               klcl      = klcl_o
-               klfc      = klfc_o
-               plcl      = plcl_o
-               plfc      = plfc_o
-               tkeavg    = tkeavg_o
+               kinv      = kinv_o     
+               klcl      = klcl_o     
+               klfc      = klfc_o    
+               plcl      = plcl_o    
+               plfc      = plfc_o     
+               tkeavg    = tkeavg_o   
                thvlmin   = thvlmin_o
-               qtsrc     = qtsrc_o
-               thvlsrc   = thvlsrc_o
+               qtsrc     = qtsrc_o    
+               thvlsrc   = thvlsrc_o  
                thlsrc    = thlsrc_o
-               usrc      = usrc_o
-               vsrc      = vsrc_o
-               thv0lcl   = thv0lcl_o
+               usrc      = usrc_o     
+               vsrc      = vsrc_o     
+               thv0lcl   = thv0lcl_o  
                do m = 1, ncnst
                   trsrc(m) = trsrc_o(m)
                enddo
@@ -1866,17 +1866,17 @@ end subroutine uwshcu_readnl
                thv0top(:mkx)        = thv0top_o(:mkx)
                thvl0bot(:mkx)       = thvl0bot_o(:mkx)
                thvl0top(:mkx)       = thvl0top_o(:mkx)
-               ssu0(:mkx)           = ssu0_o(:mkx)
-               ssv0(:mkx)           = ssv0_o(:mkx)
+               ssu0(:mkx)           = ssu0_o(:mkx) 
+               ssv0(:mkx)           = ssv0_o(:mkx) 
                do m = 1, ncnst
                   tr0(:mkx,m)   = tr0_o(:mkx,m)
                   sstr0(:mkx,m) = sstr0_o(:mkx,m)
                enddo
 
                ! ------------------------------------------------------ !
-               ! Initialize all fluxes, tendencies, and other variables !
+               ! Initialize all fluxes, tendencies, and other variables ! 
                ! in association with cumulus convection.                !
-               ! ------------------------------------------------------ !
+               ! ------------------------------------------------------ ! 
 
                umf(0:mkx)          = 0.0_r8
                emf(0:mkx)          = 0.0_r8
@@ -1924,7 +1924,7 @@ end subroutine uwshcu_readnl
                qtu_emf(0:mkx)      = 0.0_r8
                uu_emf(0:mkx)       = 0.0_r8
                vu_emf(0:mkx)       = 0.0_r8
-
+             
                do m = 1, ncnst
                   trflx(0:mkx,m)   = 0.0_r8
                   trten(:mkx,m)    = 0.0_r8
@@ -1935,13 +1935,13 @@ end subroutine uwshcu_readnl
                ! -------------------------------------------------- !
                ! Below are diagnostic output variables for detailed !
                ! analysis of cumulus scheme.                        !
-               ! -------------------------------------------------- !
+               ! -------------------------------------------------- ! 
 
                ufrcinvbase         = 0.0_r8
                ufrclcl             = 0.0_r8
                winvbase            = 0.0_r8
                wlcl                = 0.0_r8
-               emfkbup             = 0.0_r8
+               emfkbup             = 0.0_r8 
                cbmflimit           = 0.0_r8
                excessu_arr(:mkx)   = 0.0_r8
                excess0_arr(:mkx)   = 0.0_r8
@@ -1953,69 +1953,69 @@ end subroutine uwshcu_readnl
                bogtop_arr(:mkx)    = 0.0_r8
 
           else ! When 'del_CIN < 0', use explicit CIN instead of implicit CIN.
-
-               ! ----------------------------------------------------------- !
+           
+               ! ----------------------------------------------------------- ! 
                ! Identifier showing whether explicit or implicit CIN is used !
-               ! ----------------------------------------------------------- !
+               ! ----------------------------------------------------------- ! 
 
-               ind_delcin(i) = 1._r8
-
+               ind_delcin(i) = 1._r8             
+   
                ! --------------------------------------------------------- !
                ! Restore original output values of "iter_cin = 1" and exit !
                ! --------------------------------------------------------- !
 
                umf_out(i,0:mkx)         = umf_s(0:mkx)
                qvten_out(i,:mkx)        = qvten_s(:mkx)
-               qlten_out(i,:mkx)        = qlten_s(:mkx)
+               qlten_out(i,:mkx)        = qlten_s(:mkx)  
                qiten_out(i,:mkx)        = qiten_s(:mkx)
                sten_out(i,:mkx)         = sten_s(:mkx)
-               uten_out(i,:mkx)         = uten_s(:mkx)
+               uten_out(i,:mkx)         = uten_s(:mkx)  
                vten_out(i,:mkx)         = vten_s(:mkx)
                qrten_out(i,:mkx)        = qrten_s(:mkx)
-               qsten_out(i,:mkx)        = qsten_s(:mkx)
+               qsten_out(i,:mkx)        = qsten_s(:mkx)  
                precip_out(i)            = precip_s
                snow_out(i)              = snow_s
                evapc_out(i,:mkx)        = evapc_s(:mkx)
                cush_inout(i)            = cush_s
-               cufrc_out(i,:mkx)        = cufrc_s(:mkx)
-               slflx_out(i,0:mkx)       = slflx_s(0:mkx)
+               cufrc_out(i,:mkx)        = cufrc_s(:mkx)  
+               slflx_out(i,0:mkx)       = slflx_s(0:mkx)  
                qtflx_out(i,0:mkx)       = qtflx_s(0:mkx)
-               qcu_out(i,:mkx)          = qcu_s(:mkx)
-               qlu_out(i,:mkx)          = qlu_s(:mkx)
-               qiu_out(i,:mkx)          = qiu_s(:mkx)
+               qcu_out(i,:mkx)          = qcu_s(:mkx)    
+               qlu_out(i,:mkx)          = qlu_s(:mkx)  
+               qiu_out(i,:mkx)          = qiu_s(:mkx)  
                cbmf_out(i)              = cbmf_s
-               qc_out(i,:mkx)           = qc_s(:mkx)
+               qc_out(i,:mkx)           = qc_s(:mkx)  
                rliq_out(i)              = rliq_s
                cnt_out(i)               = cnt_s
                cnb_out(i)               = cnb_s
                do m = 1, ncnst
                   trten_out(i,:mkx,m)   = trten_s(:mkx,m)
-               enddo
-
-               ! ------------------------------------------------------------------------------ !
+               enddo  
+             
+               ! ------------------------------------------------------------------------------ ! 
                ! Below are diagnostic output variables for detailed analysis of cumulus scheme. !
                ! The order of vertical index is reversed for this internal diagnostic output.   !
-               ! ------------------------------------------------------------------------------ !
+               ! ------------------------------------------------------------------------------ !   
 
-               fer_out(i,mkx:1:-1)      = fer_s(:mkx)
-               fdr_out(i,mkx:1:-1)      = fdr_s(:mkx)
+               fer_out(i,mkx:1:-1)      = fer_s(:mkx)  
+               fdr_out(i,mkx:1:-1)      = fdr_s(:mkx)  
                cinh_out(i)              = cin_s
                cinlclh_out(i)           = cinlcl_s
                qtten_out(i,mkx:1:-1)    = qtten_s(:mkx)
                slten_out(i,mkx:1:-1)    = slten_s(:mkx)
                ufrc_out(i,mkx:0:-1)     = ufrc_s(0:mkx)
-               uflx_out(i,mkx:0:-1)     = uflx_s(0:mkx)
-               vflx_out(i,mkx:0:-1)     = vflx_s(0:mkx)
+               uflx_out(i,mkx:0:-1)     = uflx_s(0:mkx)  
+               vflx_out(i,mkx:0:-1)     = vflx_s(0:mkx)  
 
                ufrcinvbase_out(i)       = ufrcinvbase_s
-               ufrclcl_out(i)           = ufrclcl_s
+               ufrclcl_out(i)           = ufrclcl_s 
                winvbase_out(i)          = winvbase_s
                wlcl_out(i)              = wlcl_s
                plcl_out(i)              = plcl_s
-               pinv_out(i)              = pinv_s
-               plfc_out(i)              = plfc_s
+               pinv_out(i)              = pinv_s    
+               plfc_out(i)              = plfc_s    
                pbup_out(i)              = pbup_s
-               ppen_out(i)              = ppen_s
+               ppen_out(i)              = ppen_s    
                qtsrc_out(i)             = qtsrc_s
                thlsrc_out(i)            = thlsrc_s
                thvlsrc_out(i)           = thvlsrc_s
@@ -2056,7 +2056,7 @@ end subroutine uwshcu_readnl
                bogtop_arr_out(i,mkx:1:-1)   = bogtop_arr_s(:mkx)
 
                do m = 1, ncnst
-                  trflx_out(i,mkx:0:-1,m)   = trflx_s(0:mkx,m)
+                  trflx_out(i,mkx:0:-1,m)   = trflx_s(0:mkx,m)  
                   tru_out(i,mkx:0:-1,m)     = tru_s(0:mkx,m)
                   tru_emf_out(i,mkx:0:-1,m) = tru_emf_s(0:mkx,m)
                enddo
@@ -2066,7 +2066,7 @@ end subroutine uwshcu_readnl
 
           endif
 
-       endif
+       endif    
 
        ! ------------------------------------------------------------------ !
        ! Define a release level, 'prel' and release layer, 'krel'.          !
@@ -2090,12 +2090,12 @@ end subroutine uwshcu_readnl
        if( klcl .lt. kinv ) then
            krel    = kinv
            prel    = ps0(krel-1)
-           thv0rel = thv0bot(krel)
+           thv0rel = thv0bot(krel) 
        else
            krel    = klcl
-           prel    = plcl
+           prel    = plcl 
            thv0rel = thv0lcl
-       endif
+       endif  
 
        ! --------------------------------------------------------------------------- !
        ! Calculate cumulus base mass flux ('cbmf'), fractional area ('ufrcinv'), and !
@@ -2103,7 +2103,7 @@ end subroutine uwshcu_readnl
        ! Also, calculate updraft fractional area (ufrclcl) and vertical velocity  at !
        ! the LCL (wlcl). When LCL is below PBLH, cinlcl = 0 and 'ufrclcl = ufrcinv', !
        ! and 'wlcl = winv.                                                           !
-       ! Only updrafts strong enough to overcome CIN can rise over PBL top interface.!
+       ! Only updrafts strong enough to overcome CIN can rise over PBL top interface.! 
        ! Thus,  in order to calculate cumulus mass flux at PBL top interface, 'cbmf',!
        ! we need to know 'CIN' ( the strength of potential energy barrier ) and      !
        ! 'sigmaw' ( a standard deviation of updraft vertical velocity at the PBL top !
@@ -2116,7 +2116,7 @@ end subroutine uwshcu_readnl
        ! top - both 'cbmf' and 'ufrc' becomes large, but 'winv' becomes small. Thus, !
        ! all of the key variables associated with cumulus convection  at the PBL top !
        ! - 'cbmf', 'ufrc', 'winv' where 'cbmf = rho*ufrc*winv' - are a unique functi !
-       ! ons of 'mu', normalized CIN. Although these are uniquely determined by 'mu',!
+       ! ons of 'mu', normalized CIN. Although these are uniquely determined by 'mu',! 
        ! we usually impose two comstraints on 'cbmf' and 'ufrc': (1) because we will !
        ! simply assume that subsidence warming and drying of 'kinv-1' layer in assoc !
        ! iation with 'cbmf' at PBL top interface is confined only in 'kinv-1' layer, !
@@ -2135,7 +2135,7 @@ end subroutine uwshcu_readnl
        ! constraint is made by imposing another lower 'lower' limit on mu, 'mumin1'. !
        ! After that, also limit 'ufrclcl' to be smaller than 'rmaxfrac' by 'mumin2'. !
        ! --------------------------------------------------------------------------- !
-
+       
        ! --------------------------------------------------------------------------- !
        ! Calculate normalized CIN, 'mu' satisfying all the three constraints imposed !
        ! on 'cbmf'('mumin0'), 'ufrc' at the PBL top - 'ufrcinv' - ( by 'mumin1' from !
@@ -2143,14 +2143,14 @@ end subroutine uwshcu_readnl
        ! Note that 'cbmf' does not change between PBL top and LCL  because we assume !
        ! that buoyancy sorting does not occur when cumulus updraft is unsaturated.   !
        ! --------------------------------------------------------------------------- !
-
-       if( use_CINcin ) then
-           wcrit = sqrt( 2._r8 * cin * rbuoy )
+   
+       if( use_CINcin ) then       
+           wcrit = sqrt( 2._r8 * cin * rbuoy )      
        else
-           wcrit = sqrt( 2._r8 * cinlcl * rbuoy )
+           wcrit = sqrt( 2._r8 * cinlcl * rbuoy )   
        endif
        sigmaw = sqrt( rkfre * tkeavg + epsvarw )
-       mu = wcrit/sigmaw/1.4142_r8
+       mu = wcrit/sigmaw/1.4142_r8                  
        if( mu .ge. 3._r8 ) then
          ! write(iulog,*) 'mu >= 3'
            id_exit = .true.
@@ -2164,7 +2164,7 @@ end subroutine uwshcu_readnl
        if( cbmf .gt. cbmflimit ) mumin0 = sqrt(-log(2.5066_r8*cbmflimit/rho0inv/sigmaw))
        ! 2. 'ufrcinv' constraint
        mu = max(max(mu,mumin0),mumin1)
-       ! 3. 'ufrclcl' constraint
+       ! 3. 'ufrclcl' constraint      
        mulcl = sqrt(2._r8*cinlcl*rbuoy)/1.4142_r8/sigmaw
        mulclstar = sqrt(max(0._r8,2._r8*(exp(-mu**2)/2.5066_r8)**2*(1._r8/erfc(mu)**2-0.25_r8/rmaxfrac**2)))
        if( mulcl .gt. 1.e-8_r8 .and. mulcl .gt. mulclstar ) then
@@ -2182,13 +2182,13 @@ end subroutine uwshcu_readnl
        if( mu .eq. mumin0 ) limit_cbmf(i) = 1._r8
        if( mu .eq. mumin1 ) limit_ufrc(i) = 1._r8
 
-       ! ------------------------------------------------------------------- !
+       ! ------------------------------------------------------------------- !    
        ! Calculate final ['cbmf','ufrcinv','winv'] at the PBL top interface. !
        ! Note that final 'cbmf' here is obtained in such that 'ufrcinv' and  !
        ! 'ufrclcl' are smaller than ufrcmax with no instability.             !
        ! ------------------------------------------------------------------- !
 
-       cbmf = (rho0inv*sigmaw/2.5066_r8)*exp(-mu**2)
+       cbmf = (rho0inv*sigmaw/2.5066_r8)*exp(-mu**2)                       
        winv = sigmaw*(2._r8/2.5066_r8)*exp(-mu**2)/erfc(mu)
        ufrcinv = cbmf/winv/rho0inv
 
@@ -2214,7 +2214,7 @@ end subroutine uwshcu_readnl
        ufrclcl = cbmf/wlcl/rho0inv
        wrel = wlcl
        if( ufrclcl .le. 0.0001_r8 ) then
-         ! write(iulog,*) 'ufrclcl <= 0.0001'
+         ! write(iulog,*) 'ufrclcl <= 0.0001' 
            exit_ufrc(i) = 1._r8
            id_exit = .true.
            go to 333
@@ -2227,15 +2227,15 @@ end subroutine uwshcu_readnl
 
        ufrcinvbase        = ufrcinv
        winvbase           = winv
-       umf(kinv-1:krel-1) = cbmf
-       wu(kinv-1:krel-1)  = winv
+       umf(kinv-1:krel-1) = cbmf   
+       wu(kinv-1:krel-1)  = winv   
 
-       ! -------------------------------------------------------------------------- !
+       ! -------------------------------------------------------------------------- ! 
        ! Define updraft properties at the level where buoyancy sorting starts to be !
        ! happening, i.e., by definition, at 'prel' level within the release layer.  !
-       ! Because no lateral entrainment occurs upto 'prel', conservative scalars of !
-       ! cumulus updraft at release level is same as those of source air.  However, !
-       ! horizontal momentums of source air are modified by horizontal PGF forcings !
+       ! Because no lateral entrainment occurs upto 'prel', conservative scalars of ! 
+       ! cumulus updraft at release level is same as those of source air.  However, ! 
+       ! horizontal momentums of source air are modified by horizontal PGF forcings ! 
        ! from PBL top interface to 'prel'.  For this case, we should add additional !
        ! horizontal momentum from PBL top interface to 'prel' as will be done below !
        ! to 'usrc' and 'vsrc'. Note that below cumulus updraft properties - umf, wu,!
@@ -2260,7 +2260,7 @@ end subroutine uwshcu_readnl
            id_exit = .true.
            go to 333
        endif
-       thvu(krel-1) = thj * ( 1._r8 + zvir*qvj - qlj - qij )
+       thvu(krel-1) = thj * ( 1._r8 + zvir*qvj - qlj - qij )       
 
        uplus = 0._r8
        vplus = 0._r8
@@ -2276,7 +2276,7 @@ end subroutine uwshcu_readnl
            vplus = vplus + PGFc * ssv0(krel) * ( prel - ps0(krel-1) )
        end if
        uu(krel-1) = usrc + uplus
-       vu(krel-1) = vsrc + vplus
+       vu(krel-1) = vsrc + vplus      
 
        do m = 1, ncnst
           tru(krel-1,m)  = trsrc(m)
@@ -2301,17 +2301,17 @@ end subroutine uwshcu_readnl
           tre(m) = tr0(krel,m)  + sstr0(krel,m) * ( pe - p0(krel) )
        enddo
 
-       !-------------------------!
+       !-------------------------! 
        ! Buoyancy-Sorting Mixing !
        !-------------------------!------------------------------------------------ !
        !                                                                           !
-       !  In order to complete buoyancy-sorting mixing at layer mid-point, and so  !
+       !  In order to complete buoyancy-sorting mixing at layer mid-point, and so  ! 
        !  calculate 'updraft mass flux, updraft w velocity, conservative scalars'  !
-       !  at the upper interface of each layer, we need following 3 information.   !
+       !  at the upper interface of each layer, we need following 3 information.   ! 
        !                                                                           !
        !  1. Pressure where mixing occurs ('pe'), and temperature at 'pe' which is !
        !     necessary to calculate various thermodynamic coefficients at pe. This !
-       !     temperature is obtained by undiluted cumulus properties lifted to pe. !
+       !     temperature is obtained by undiluted cumulus properties lifted to pe. ! 
        !  2. Undiluted updraft properties at pe - conservative scalar and vertical !
        !     velocity -which are assumed to be the same as the properties at lower !
        !     interface only for calculation of fractional lateral entrainment  and !
@@ -2320,8 +2320,8 @@ end subroutine uwshcu_readnl
        !     calculated afterward after obtaining fer(k) & fdr(k).                 !
        !  3. Environmental properties at pe.                                       !
        ! ------------------------------------------------------------------------- !
-
-       ! ------------------------------------------------------------------------ !
+       
+       ! ------------------------------------------------------------------------ ! 
        ! Define cumulus scale height.                                             !
        ! Cumulus scale height is defined as the maximum height cumulus can reach. !
        ! In case of premitive code, cumulus scale height ('cush')  at the current !
@@ -2331,22 +2331,22 @@ end subroutine uwshcu_readnl
        ! only at two places during buoyancy-sorting process:                      !
        ! (1) Even negatively buoyancy mixtures with strong vertical velocity      !
        !     enough to rise up to 'rle*scaleh' (rle = 0.1) from pe are entrained  !
-       !     into cumulus updraft,                                                !
+       !     into cumulus updraft,                                                !  
        ! (2) The amount of mass that is involved in buoyancy-sorting mixing       !
        !      process at pe is rei(k) = rkm/scaleh/rho*g [Pa-1]                   !
        ! In terms of (1), I think critical stopping distance might be replaced by !
        ! layer thickness. In future, we will use rei(k) = (0.5*rkm/z0(k)/rho/g).  !
        ! In the premitive code,  'scaleh' was largely responsible for the jumping !
        ! variation of precipitation amount.                                       !
-       ! ------------------------------------------------------------------------ !
+       ! ------------------------------------------------------------------------ !   
 
        scaleh = tscaleh
-       if( tscaleh .lt. 0.0_r8 ) scaleh = 1000._r8
+       if( tscaleh .lt. 0.0_r8 ) scaleh = 1000._r8 
 
      ! Save time : Set iter_scaleh = 1. This will automatically use 'cush' from the previous time step
      !             at the first implicit iteration. At the second implicit iteration, it will use
      !             the updated 'cush' by the first implicit cin. So, this updating has an effect of
-     !             doing one iteration for cush calculation, which is good.
+     !             doing one iteration for cush calculation, which is good. 
      !             So, only this setting of 'iter_scaleh = 1' is sufficient-enough to save computation time.
      ! OK
 
@@ -2359,7 +2359,7 @@ end subroutine uwshcu_readnl
        ! both at the top and bottom interface of the layer. 'kpen' is the !
        ! layer upto which cumulus panetrates ,i.e., cumulus w at the base !
        ! interface is positive, but becomes negative at the top interface.!
-       ! Here, we initialize 'kbup' and 'kpen'. These initializations are !
+       ! Here, we initialize 'kbup' and 'kpen'. These initializations are !  
        ! not trivial but important, expecially   in calculating turbulent !
        ! fluxes without confliction among several physics as explained in !
        ! detail in the part of turbulent fluxes calculation later.   Note !
@@ -2369,13 +2369,13 @@ end subroutine uwshcu_readnl
        ! penetrative entrainment heat and moisture fluxes are  calculated !
        ! from the top interface of 'kbup' layer  to the base interface of !
        ! 'kpen' layer. Because of this, initialization of 'kbup' & 'kpen' !
-       ! influence the convection system when there are not updated.  The !
+       ! influence the convection system when there are not updated.  The !  
        ! below initialization of 'kbup = krel' assures  that  penetrative !
        ! entrainment fluxes always occur at interfaces above the PBL  top !
        ! interfaces (i.e., only at interfaces k >=kinv ), which seems  to !
        ! be attractable considering that the most correct fluxes  at  the !
        ! PBL top interface can be ontained from the 'fluxbelowinv'  using !
-       ! reconstructed PBL height.                                        !
+       ! reconstructed PBL height.                                        ! 
        ! The 'kbup = krel'(after going through the whole buoyancy sorting !
        ! proces during updraft motion) implies that cumulus updraft  from !
        ! the PBL top interface can not reach to the LFC,so that 'kbup' is !
@@ -2386,7 +2386,7 @@ end subroutine uwshcu_readnl
        ! not happen at any interfaces.  If cumulus updraft can rise above !
        ! the release layer but cannot fully overcome the buoyancy barrier !
        ! just above PBL top interface, penetratve entrainment   occurs at !
-       ! several above interfaces, including the top interface of release !
+       ! several above interfaces, including the top interface of release ! 
        ! layer. In the latter case, warming and drying tendencies will be !
        ! be initiated in 'krel' layer. Note current choice of 'kbup=krel' !
        ! is completely compatible with other flux physics without  double !
@@ -2399,11 +2399,11 @@ end subroutine uwshcu_readnl
        ! 'kbup = krel' choice since it is more compatible  with the other !
        ! parts of the code, expecially, when we chose ' use_emf=.false. ' !
        ! as explained in detail in turbulent flux calculation part.       !
-       ! ---------------------------------------------------------------- !
+       ! ---------------------------------------------------------------- ! 
 
        kbup    = krel
        kpen    = krel
-
+       
        ! ------------------------------------------------------------ !
        ! Since 'wtw' is continuously updated during vertical motion,  !
        ! I need below initialization command within this 'iter_scaleh'!
@@ -2442,23 +2442,23 @@ end subroutine uwshcu_readnl
        ! want, but a sample test indicated that about 3 - 5 iterations  produced !
        ! satisfactory converent solution. Finally, identify 'kbup' and 'kpen'.   !
        ! ----------------------------------------------------------------------- !
-
+       
        do k = krel, mkx - 1 ! Here, 'k' is a layer index.
 
           km1 = k - 1
 
           thlue = thlu(km1)
-          qtue  = qtu(km1)
+          qtue  = qtu(km1)    
           wue   = wu(km1)
-          wtwb  = wtw
+          wtwb  = wtw  
 
        do iter_xc = 1, niter_xc
-
+          
           wtw = wu(km1) * wu(km1)
 
           ! ---------------------------------------------------------------- !
           ! Calculate environmental and cumulus saturation 'excess' at 'pe'. !
-          ! Note that in order to calculate saturation excess, we should use !
+          ! Note that in order to calculate saturation excess, we should use ! 
           ! liquid water temperature instead of temperature  as the argument !
           ! of "qsat". But note normal argument of "qsat" is temperature.    !
           ! ---------------------------------------------------------------- !
@@ -2471,7 +2471,7 @@ end subroutine uwshcu_readnl
           end if
           thv0j    = thj * ( 1._r8 + zvir*qvj - qlj - qij )
           rho0j    = pe / ( r * thv0j * exne )
-          qsat_arg = thle*exne
+          qsat_arg = thle*exne     
           status   = qsat(qsat_arg,pe,es(1),qs(1),gam(1),1)
           excess0  = qte - qs(1)
 
@@ -2482,19 +2482,19 @@ end subroutine uwshcu_readnl
               go to 333
           end if
           ! ----------------------------------------------------------------- !
-          ! Detrain excessive condensate larger than 'criqc' from the cumulus !
+          ! Detrain excessive condensate larger than 'criqc' from the cumulus ! 
           ! updraft before performing buoyancy sorting. All I should to do is !
           ! to update 'thlue' &  'que' here. Below modification is completely !
           ! compatible with the other part of the code since 'thule' & 'qtue' !
           ! are used only for buoyancy sorting. I found that as long as I use !
           ! 'niter_xc >= 2',  detraining excessive condensate before buoyancy !
-          ! sorting has negligible influence on the buoyancy sorting results. !
+          ! sorting has negligible influence on the buoyancy sorting results. !   
           ! ----------------------------------------------------------------- !
           if( (qlj + qij) .gt. criqc ) then
                exql  = ( ( qlj + qij ) - criqc ) * qlj / ( qlj + qij )
                exqi  = ( ( qlj + qij ) - criqc ) * qij / ( qlj + qij )
                qtue  = qtue - exql - exqi
-               thlue = thlue + (xlv/cp/exne)*exql + (xls/cp/exne)*exqi
+               thlue = thlue + (xlv/cp/exne)*exql + (xls/cp/exne)*exqi 
           endif
           call conden(pe,thlue,qtue,thj,qvj,qlj,qij,qse,id_check,qsat)
           if( id_check .eq. 1 ) then
@@ -2511,7 +2511,7 @@ end subroutine uwshcu_readnl
           ! ------------------------------------------------------------------- !
           ! Calculate critical mixing fraction, 'xc'. Mixture with mixing ratio !
           ! smaller than 'xc' will be entrained into cumulus updraft.  Both the !
-          ! saturated updrafts with 'positive buoyancy' or 'negative buoyancy + !
+          ! saturated updrafts with 'positive buoyancy' or 'negative buoyancy + ! 
           ! strong vertical velocity enough to rise certain threshold distance' !
           ! are kept into the updraft in the below program. If the core updraft !
           ! is unsaturated, we can set 'xc = 0' and let the cumulus  convection !
@@ -2527,10 +2527,10 @@ end subroutine uwshcu_readnl
 
             cridis = rle*scaleh                 ! Original code
           ! cridis = 1._r8*(zs0(k) - zs0(k-1))  ! New code
-
+ 
           ! ---------------- !
           ! Buoyancy Sorting !
-          ! ---------------- !
+          ! ---------------- !                   
 
           ! ----------------------------------------------------------------- !
           ! Case 1 : When both cumulus and env. are unsaturated or saturated. !
@@ -2556,11 +2556,11 @@ end subroutine uwshcu_readnl
                   id_exit = .true.
                   go to 333
               end if
-              thvxsat = thj * ( 1._r8 + zvir * qvj - qlj - qij )
+              thvxsat = thj * ( 1._r8 + zvir * qvj - qlj - qij )               
               ! -------------------------------------------------- !
               ! kk=1 : Cumulus Segment, kk=2 : Environment Segment !
-              ! -------------------------------------------------- !
-              do kk = 1, 2
+              ! -------------------------------------------------- ! 
+              do kk = 1, 2 
                    if( kk .eq. 1 ) then
                        thv_x0 = thvj;
                        thv_x1 = ( 1._r8 - 1._r8/xsat ) * thvj + ( 1._r8/xsat ) * thvxsat;
@@ -2578,7 +2578,7 @@ end subroutine uwshcu_readnl
                        else
                              x_cu = xsat;
                        endif
-                   else
+                   else 
                        if( ( bquad**2-4._r8*aquad*cquad) .ge. 0._r8 ) then
                              call roots(aquad,bquad,cquad,xs1,xs2,status)
                              x_en = min(1._r8,max(0._r8,max(xsat,min(xs1,xs2))))
@@ -2602,7 +2602,7 @@ end subroutine uwshcu_readnl
           ! In order to prevent the onset of instability in association with cumulus !
           ! induced subsidence advection, cumulus mass flux at the top interface  in !
           ! any layer should be smaller than ( 90% of ) total mass within that layer.!
-          ! I imposed limits on 'rei(k)' as below,  in such that stability condition !
+          ! I imposed limits on 'rei(k)' as below,  in such that stability condition ! 
           ! is always satisfied.                                                     !
           ! Below limiter of 'rei(k)' becomes negative for some cases, causing error.!
           ! So, for the time being, I came back to the original limiter.             !
@@ -2616,7 +2616,7 @@ end subroutine uwshcu_readnl
           fdr(k) = rei(k) * ud2
 
           ! ------------------------------------------------------------------------------ !
-          ! Iteration Start due to 'maxufrc' constraint [ ****************************** ] !
+          ! Iteration Start due to 'maxufrc' constraint [ ****************************** ] ! 
           ! ------------------------------------------------------------------------------ !
 
           ! -------------------------------------------------------------------------- !
@@ -2627,7 +2627,7 @@ end subroutine uwshcu_readnl
           ! -------------------------------------------------------------------------- !
 
           umf(k) = umf(km1) * exp( dpe * ( fer(k) - fdr(k) ) )
-          emf(k) = 0._r8
+          emf(k) = 0._r8    
 
           ! --------------------------------------------------------- !
           ! Compute cumulus updraft properties at the top interface.  !
@@ -2645,14 +2645,14 @@ end subroutine uwshcu_readnl
           else
               thlu(k) = ( thle + ssthl0(k) / fer(k) - ssthl0(k) * dpe / 2._r8 ) -          &
                         ( thle + ssthl0(k) * dpe / 2._r8 - thlu(km1) + ssthl0(k) / fer(k) ) * exp(-fer(k) * dpe)
-              qtu(k)  = ( qte  +  ssqt0(k) / fer(k) -  ssqt0(k) * dpe / 2._r8 ) -          &
+              qtu(k)  = ( qte  +  ssqt0(k) / fer(k) -  ssqt0(k) * dpe / 2._r8 ) -          &  
                         ( qte  +  ssqt0(k) * dpe / 2._r8 -  qtu(km1) +  ssqt0(k) / fer(k) ) * exp(-fer(k) * dpe)
               uu(k) =   ( ue + ( 1._r8 - PGFc ) * ssu0(k) / fer(k) - ssu0(k) * dpe / 2._r8 ) - &
                         ( ue +     ssu0(k) * dpe / 2._r8 -   uu(km1) + ( 1._r8 - PGFc ) * ssu0(k) / fer(k) ) * exp(-fer(k) * dpe)
               vu(k) =   ( ve + ( 1._r8 - PGFc ) * ssv0(k) / fer(k) - ssv0(k) * dpe / 2._r8 ) - &
                         ( ve +     ssv0(k) * dpe / 2._r8 -   vu(km1) + ( 1._r8 - PGFc ) * ssv0(k) / fer(k) ) * exp(-fer(k) * dpe)
               do m = 1, ncnst
-                 tru(k,m)  = ( tre(m)  + sstr0(k,m) / fer(k) - sstr0(k,m) * dpe / 2._r8 ) - &
+                 tru(k,m)  = ( tre(m)  + sstr0(k,m) / fer(k) - sstr0(k,m) * dpe / 2._r8 ) - &  
                              ( tre(m)  + sstr0(k,m) * dpe / 2._r8 - tru(km1,m) + sstr0(k,m) / fer(k) ) * exp(-fer(k) * dpe)
               enddo
           end if
@@ -2666,7 +2666,7 @@ end subroutine uwshcu_readnl
           ! value, 'criqc', expels the surplus condensate from cumulus updraft !
           ! to the environment. A certain fraction ( e.g., 'frc_sus' ) of this !
           ! expelled condesnate will be in a form that can be suspended in the !
-          ! layer k where it was formed, while the other fraction, '1-frc_sus' !
+          ! layer k where it was formed, while the other fraction, '1-frc_sus' ! 
           ! will be in a form of precipitatble (e.g.,can potentially fall down !
           ! across the base interface of layer k ). In turn we should describe !
           ! subsequent falling of precipitable condensate ('1-frc_sus') across !
@@ -2691,16 +2691,16 @@ end subroutine uwshcu_readnl
                exql    = ( ( qlj + qij ) - criqc ) * qlj / ( qlj + qij )
                exqi    = ( ( qlj + qij ) - criqc ) * qij / ( qlj + qij )
                ! ---------------------------------------------------------------- !
-               ! It is very important to re-update 'qtu' and 'thlu'  at the upper !
+               ! It is very important to re-update 'qtu' and 'thlu'  at the upper ! 
                ! interface after expelling condensate from cumulus updraft at the !
                ! top interface of the layer. As mentioned above, this is a 'sink' !
                ! of cumulus qt (or equivalently, a 'source' of environmentasl qt),!
                ! not a regular convective'detrainment'.                           !
                ! ---------------------------------------------------------------- !
                qtu(k)  = qtu(k) - exql - exqi
-               thlu(k) = thlu(k) + (xlv/cp/exns0(k))*exql + (xls/cp/exns0(k))*exqi
+               thlu(k) = thlu(k) + (xlv/cp/exns0(k))*exql + (xls/cp/exns0(k))*exqi 
                ! ---------------------------------------------------------------- !
-               ! Expelled cloud condensate into the environment from the updraft. !
+               ! Expelled cloud condensate into the environment from the updraft. ! 
                ! After all the calculation later, 'dwten' and 'diten' will have a !
                ! unit of [ kg/kg/s ], because it is a tendency of qt. Restoration !
                ! of 'dwten' and 'diten' to this correct unit through  multiplying !
@@ -2708,27 +2708,27 @@ end subroutine uwshcu_readnl
                ! 'umf' using a 'rmaxfrac' constraint near the end of this updraft !
                ! buoyancy sorting loop.                                           !
                ! ---------------------------------------------------------------- !
-               dwten(k) = exql
+               dwten(k) = exql   
                diten(k) = exqi
           else
                dwten(k) = 0._r8
                diten(k) = 0._r8
           endif
-          ! ----------------------------------------------------------------- !
+          ! ----------------------------------------------------------------- ! 
           ! Update 'thvu(k)' after detraining condensate from cumulus updraft.!
-          ! ----------------------------------------------------------------- !
+          ! ----------------------------------------------------------------- ! 
           call conden(ps0(k),thlu(k),qtu(k),thj,qvj,qlj,qij,qse,id_check,qsat)
           if( id_check .eq. 1 ) then
               exit_conden(i) = 1._r8
               id_exit = .true.
               go to 333
-          end if
+          end if  
           thvu(k) = thj * ( 1._r8 + zvir * qvj - qlj - qij )
 
-          ! ----------------------------------------------------------- !
+          ! ----------------------------------------------------------- ! 
           ! Calculate updraft vertical velocity at the upper interface. !
           ! In order to calculate 'wtw' at the upper interface, we use  !
-          ! 'wtw' at the lower interface. Note  'wtw'  is continuously  !
+          ! 'wtw' at the lower interface. Note  'wtw'  is continuously  ! 
           ! updated as cumulus updraft rises.                           !
           ! ----------------------------------------------------------- !
 
@@ -2751,26 +2751,26 @@ end subroutine uwshcu_readnl
 
         ! if( k .le. klfc ) then
         !     wtw = max( 1.e-2_r8, wtw )
-        ! endif
-
+        ! endif 
+         
           ! -------------------------------------------------------------- !
           ! Repeat 'iter_xc' iteration loop until 'iter_xc = niter_xc'.    !
           ! Also treat the case even when wtw < 0 at the 'kpen' interface. !
-          ! -------------------------------------------------------------- !
-
-          if( wtw .gt. 0._r8 ) then
+          ! -------------------------------------------------------------- !  
+          
+          if( wtw .gt. 0._r8 ) then   
               thlue = 0.5_r8 * ( thlu(km1) + thlu(k) )
-              qtue  = 0.5_r8 * ( qtu(km1)  +  qtu(k) )
+              qtue  = 0.5_r8 * ( qtu(km1)  +  qtu(k) )         
               wue   = 0.5_r8 *   sqrt( max( wtwb + wtw, 0._r8 ) )
           else
               go to 111
-          endif
+          endif 
 
-       enddo ! End of 'iter_xc' loop
+       enddo ! End of 'iter_xc' loop  
 
    111 continue
 
-          ! --------------------------------------------------------------------------- !
+          ! --------------------------------------------------------------------------- ! 
           ! Add the contribution of self-detrainment  to vertical variations of cumulus !
           ! updraft mass flux. The reason why we are trying to include self-detrainment !
           ! is as follows.  In current scheme,  vertical variation of updraft mass flux !
@@ -2779,24 +2779,24 @@ end subroutine uwshcu_readnl
           ! at the base interface, while negative at the top interface. This means that !
           ! cumulus updraft cannot reach to the top interface of the layer. However,    !
           ! cumulus updraft mass flux at the top interface is not zero according to the !
-          ! vertical tendency equation of cumulus mass flux.   Ideally, cumulus updraft !
+          ! vertical tendency equation of cumulus mass flux.   Ideally, cumulus updraft ! 
           ! mass flux at the top interface should be zero for this case. In order to    !
-          ! assures that cumulus updraft mass flux goes to zero when cumulus updraft    !
+          ! assures that cumulus updraft mass flux goes to zero when cumulus updraft    ! 
           ! vertical velocity goes to zero, we are imposing self-detrainment term as    !
           ! below by considering layer-mean cloud buoyancy and cumulus updraft vertical !
           ! velocity square at the top interface. Use of auto-detrainment term will  be !
           ! determined by setting 'use_self_detrain=.true.' in the parameter sentence.  !
           ! --------------------------------------------------------------------------- !
-
+     
           if( use_self_detrain ) then
-              autodet = min( 0.5_r8*g*(bogbot+bogtop)/(max(wtw,0._r8)+1.e-4_r8), 0._r8 )
-              umf(k)  = umf(k) * exp( 0.637_r8*(dpe/rho0j/g) * autodet )
-          end if
+              autodet = min( 0.5_r8*g*(bogbot+bogtop)/(max(wtw,0._r8)+1.e-4_r8), 0._r8 ) 
+              umf(k)  = umf(k) * exp( 0.637_r8*(dpe/rho0j/g) * autodet )   
+          end if      
           if( umf(k) .eq. 0._r8 ) wtw = -1._r8
 
           ! -------------------------------------- !
           ! Below block is just a dignostic output !
-          ! -------------------------------------- !
+          ! -------------------------------------- ! 
 
           excessu_arr(k) = excessu
           excess0_arr(k) = excess0
@@ -2808,20 +2808,20 @@ end subroutine uwshcu_readnl
           bogtop_arr(k)  = bogtop
 
           ! ------------------------------------------------------------------- !
-          ! 'kbup' is the upper most layer in which cloud buoyancy  is positive !
+          ! 'kbup' is the upper most layer in which cloud buoyancy  is positive ! 
           ! both at the base and top interface.  'kpen' is the upper most layer !
           ! up to cumulus can reach. Usually, 'kpen' is located higher than the !
           ! 'kbup'. Note we initialized these by 'kbup = krel' & 'kpen = krel'. !
           ! As explained before, it is possible that only 'kpen' is updated,    !
           ! while 'kbup' keeps its initialization value. For this case, current !
-          ! scheme will simply turns-off penetrative entrainment fluxes and use !
+          ! scheme will simply turns-off penetrative entrainment fluxes and use ! 
           ! normal buoyancy-sorting fluxes for 'kbup <= k <= kpen-1' interfaces,!
           ! in order to describe shallow continental cumulus convection.        !
           ! ------------------------------------------------------------------- !
-
-        ! if( bogbot .gt. 0._r8 .and. bogtop .gt. 0._r8 ) then
-        ! if( bogtop .gt. 0._r8 ) then
-          if( bogtop .gt. 0._r8 .and. wtw .gt. 0._r8 ) then
+          
+        ! if( bogbot .gt. 0._r8 .and. bogtop .gt. 0._r8 ) then 
+        ! if( bogtop .gt. 0._r8 ) then          
+          if( bogtop .gt. 0._r8 .and. wtw .gt. 0._r8 ) then 
               kbup = k
           end if
 
@@ -2838,11 +2838,11 @@ end subroutine uwshcu_readnl
           endif
 
           ! ---------------------------------------------------------------------------- !
-          ! Iteration end due to 'rmaxfrac' constraint [ ***************************** ] !
+          ! Iteration end due to 'rmaxfrac' constraint [ ***************************** ] ! 
           ! ---------------------------------------------------------------------------- !
 
           ! ---------------------------------------------------------------------- !
-          ! Calculate updraft fractional area at the upper interface and set upper !
+          ! Calculate updraft fractional area at the upper interface and set upper ! 
           ! limit to 'ufrc' by 'rmaxfrac'. In order to keep the consistency  among !
           ! ['ufrc','umf','wu (or wtw)'], if ufrc is limited by 'rmaxfrac', either !
           ! 'umf' or 'wu' should be changed. Although both 'umf' and 'wu (wtw)' at !
@@ -2856,11 +2856,11 @@ end subroutine uwshcu_readnl
           ! 'rmaxfrac'. Thus, we don't need to go through interation loop again.If !
           ! If we update 'fer' however, we should go through above iteration loop. !
           ! ---------------------------------------------------------------------- !
-
+            
           rhos0j  = ps0(k) / ( r * 0.5_r8 * ( thv0bot(k+1) + thv0top(k) ) * exns0(k) )
           ufrc(k) = umf(k) / ( rhos0j * wu(k) )
           if( ufrc(k) .gt. rmaxfrac ) then
-              limit_ufrc(i) = 1._r8
+              limit_ufrc(i) = 1._r8 
               ufrc(k) = rmaxfrac
               umf(k)  = rmaxfrac * rhos0j * wu(k)
               fdr(k)  = fer(k) - log( umf(k) / umf(km1) ) / dpe
@@ -2869,7 +2869,7 @@ end subroutine uwshcu_readnl
           ! ------------------------------------------------------------ !
           ! Update environmental properties for at the mid-point of next !
           ! upper layer for use in buoyancy sorting.                     !
-          ! ------------------------------------------------------------ !
+          ! ------------------------------------------------------------ ! 
 
           pe      = p0(k+1)
           dpe     = dp0(k+1)
@@ -2878,13 +2878,13 @@ end subroutine uwshcu_readnl
           thle    = thl0(k+1)
           qte     = qt0(k+1)
           ue      = u0(k+1)
-          ve      = v0(k+1)
+          ve      = v0(k+1) 
           do m = 1, ncnst
              tre(m)  = tr0(k+1,m)
           enddo
 
        end do   ! End of cumulus updraft loop from the 'krel' layer to 'kpen' layer.
-
+       
        ! ------------------------------------------------------------------------------- !
        ! Up to this point, we finished all of buoyancy sorting processes from the 'krel' !
        ! layer to 'kpen' layer: at the top interface of individual layers, we calculated !
@@ -2900,7 +2900,7 @@ end subroutine uwshcu_readnl
        ! and 'wu(k)'). As mentioned before, special treatment is required when 'kbup' is !
        ! not updated and so 'kbup = krel'.                                               !
        ! ------------------------------------------------------------------------------- !
-
+       
        ! ------------------------------------------------------------------------------ !
        ! During the 'iter_scaleh' iteration loop, non-physical ( with non-zero values ) !
        ! values can remain in the variable arrays above (also 'including' in case of wu !
@@ -2908,14 +2908,14 @@ end subroutine uwshcu_readnl
        ! layer index identified from the 'iter_scaleh = 1' iteration loop is located at !
        ! above the kpen layer index identified from   'iter_scaleh = 3' iteration loop. !
        ! Thus, in the following calculations, we should only use the values in each     !
-       ! variables only up to finally identified 'kpen' layer & 'kpen' interface except !
+       ! variables only up to finally identified 'kpen' layer & 'kpen' interface except ! 
        ! 'wu' and 'ufrc' at the top interface of 'kpen' layer.    Note that in order to !
        ! prevent any problems due to these non-physical values, I re-initialized    the !
-       ! values of [ umf(kpen:mkx), emf(kpen:mkx), dwten(kpen+1:mkx), diten(kpen+1:mkx),!
+       ! values of [ umf(kpen:mkx), emf(kpen:mkx), dwten(kpen+1:mkx), diten(kpen+1:mkx),! 
        ! fer(kpen:mkx), fdr(kpen+1:mkx), ufrc(kpen:mkx) ] to be zero after 'iter_scaleh'!
        ! do loop.                                                                       !
        ! ------------------------------------------------------------------------------ !
-
+       
  45    continue
 
        ! ------------------------------------------------------------------------------ !
@@ -2924,8 +2924,8 @@ end subroutine uwshcu_readnl
        ! is zero or non-zero was already calculated above.                              !
        ! It seems that below qudarature solving formula is valid only when bogbot < 0.  !
        ! Below solving equation is clearly wrong ! I should revise this !               !
-       ! ------------------------------------------------------------------------------ !
-
+       ! ------------------------------------------------------------------------------ ! 
+            
        if( drage .eq. 0._r8 ) then
            aquad =  ( bogtop - bogbot ) / ( ps0(kpen) - ps0(kpen-1) )
            bquad =  2._r8 * bogbot
@@ -2934,7 +2934,7 @@ end subroutine uwshcu_readnl
            if( status .eq. 0 ) then
                if( xc1 .le. 0._r8 .and. xc2 .le. 0._r8 ) then
                    ppen = max( xc1, xc2 )
-                   ppen = min( 0._r8,max( -dp0(kpen), ppen ) )
+                   ppen = min( 0._r8,max( -dp0(kpen), ppen ) )  
                elseif( xc1 .gt. 0._r8 .and. xc2 .gt. 0._r8 ) then
                    ppen = -dp0(kpen)
                    write(iulog,*) 'Warning : UW-Cumulus penetrates upto kpen interface'
@@ -2943,7 +2943,7 @@ end subroutine uwshcu_readnl
 #endif
                else
                    ppen = min( xc1, xc2 )
-                   ppen = min( 0._r8,max( -dp0(kpen), ppen ) )
+                   ppen = min( 0._r8,max( -dp0(kpen), ppen ) )  
                endif
            else
                ppen = -dp0(kpen)
@@ -2951,8 +2951,8 @@ end subroutine uwshcu_readnl
 #ifdef WRF_PORT
                call wrf_message(iulog)
 #endif
-           endif
-       else
+           endif       
+       else 
            ppen = compute_ppen(wtwb,drage,bogbot,bogtop,rho0j,dp0(kpen))
        endif
        if( ppen .eq. -dp0(kpen) .or. ppen .eq. 0._r8 ) limit_ppen(i) = 1._r8
@@ -2962,7 +2962,7 @@ end subroutine uwshcu_readnl
        ! at the cumulus top. This is necessary for refined calculations of    !
        ! bulk cloud microphysics at the cumulus top. Note that ppen < 0._r8   !
        ! In the below, I explicitly calculate 'thlu_top' & 'qtu_top' by       !
-       ! using non-zero 'fer(kpen)'.                                          !
+       ! using non-zero 'fer(kpen)'.                                          !    
        ! -------------------------------------------------------------------- !
 
        if( fer(kpen)*(-ppen) .lt. 1.e-4_r8 ) then
@@ -2972,7 +2972,7 @@ end subroutine uwshcu_readnl
            thlu_top = ( thl0(kpen) + ssthl0(kpen) / fer(kpen) - ssthl0(kpen) * (-ppen) / 2._r8 ) - &
                       ( thl0(kpen) + ssthl0(kpen) * (-ppen) / 2._r8 - thlu(kpen-1) + ssthl0(kpen) / fer(kpen) ) * &
                         exp(-fer(kpen) * (-ppen))
-           qtu_top  = ( qt0(kpen)  +  ssqt0(kpen) / fer(kpen) -  ssqt0(kpen) * (-ppen) / 2._r8 ) - &
+           qtu_top  = ( qt0(kpen)  +  ssqt0(kpen) / fer(kpen) -  ssqt0(kpen) * (-ppen) / 2._r8 ) - &  
                       ( qt0(kpen)  +  ssqt0(kpen) * (-ppen) / 2._r8 -  qtu(kpen-1) +  ssqt0(kpen) / fer(kpen) ) * &
                         exp(-fer(kpen) * (-ppen))
        end if
@@ -2988,23 +2988,23 @@ end subroutine uwshcu_readnl
             dwten(kpen) = ( ( qlj + qij ) - criqc ) * qlj / ( qlj + qij )
             diten(kpen) = ( ( qlj + qij ) - criqc ) * qij / ( qlj + qij )
             qtu_top  = qtu_top - dwten(kpen) - diten(kpen)
-            thlu_top = thlu_top + (xlv/cp/exntop)*dwten(kpen) + (xls/cp/exntop)*diten(kpen)
+            thlu_top = thlu_top + (xlv/cp/exntop)*dwten(kpen) + (xls/cp/exntop)*diten(kpen) 
        else
             dwten(kpen) = 0._r8
             diten(kpen) = 0._r8
-       endif
-
+       endif      
+ 
        ! ----------------------------------------------------------------------- !
        ! Calculate cumulus scale height as the top height that cumulus can reach.!
        ! ----------------------------------------------------------------------- !
-
-       rhos0j = ps0(kpen-1)/(r*0.5_r8*(thv0bot(kpen)+thv0top(kpen-1))*exns0(kpen-1))
+       
+       rhos0j = ps0(kpen-1)/(r*0.5_r8*(thv0bot(kpen)+thv0top(kpen-1))*exns0(kpen-1))  
        cush   = zs0(kpen-1) - ppen/rhos0j/g
-       scaleh = cush
+       scaleh = cush 
 
-    end do   ! End of 'iter_scaleh' loop.
+    end do   ! End of 'iter_scaleh' loop.   
 
-       ! -------------------------------------------------------------------- !
+       ! -------------------------------------------------------------------- !   
        ! The 'forcedCu' is logical identifier saying whether cumulus updraft  !
        ! overcome the buoyancy barrier just above the PBL top. If it is true, !
        ! cumulus did not overcome the barrier -  this is a shallow convection !
@@ -3013,15 +3013,15 @@ end subroutine uwshcu_readnl
        ! moisture fluxes at the entraining interfaces, 'kbup <= k < kpen - 1' !
        ! will be set up in a different ways, as will be shown later.          !
        ! -------------------------------------------------------------------- !
-
-       if( kbup .eq. krel ) then
+ 
+       if( kbup .eq. krel ) then 
            forcedCu = .true.
            limit_shcu(i) = 1._r8
        else
            forcedCu = .false.
            limit_shcu(i) = 0._r8
-       endif
-
+       endif  
+       
        ! ------------------------------------------------------------------ !
        ! Filtering of unerasonable cumulus adjustment here.  This is a very !
        ! important process which should be done cautiously. Various ways of !
@@ -3030,9 +3030,9 @@ end subroutine uwshcu_readnl
        ! stage, the followings are all possible : 'kinv >= 2', 'klcl >= 1', !
        ! 'krel >= kinv', 'kbup >= krel', 'kpen >= krel'. I must design this !
        ! filtering very cautiously, in such that none of  realistic cumulus !
-       ! convection is arbitrarily turned-off. Potentially, I might turn-off!
+       ! convection is arbitrarily turned-off. Potentially, I might turn-off! 
        ! cumulus convection if layer-mean 'ql > 0' in the 'kinv-1' layer,in !
-       ! order to suppress cumulus convection growing, based at the Sc top. !
+       ! order to suppress cumulus convection growing, based at the Sc top. ! 
        ! This is one of potential future modifications. Note that ppen < 0. !
        ! ------------------------------------------------------------------ !
 
@@ -3048,7 +3048,7 @@ end subroutine uwshcu_readnl
        !     id_exit = .true.
        !     go to 333
        ! end if
-
+       
        ! ------------------------------------------------------------------------------ !
        ! Re-initializing some key variables above the 'kpen' layer in order to suppress !
        ! the influence of non-physical values above 'kpen', in association with the use !
@@ -3067,7 +3067,7 @@ end subroutine uwshcu_readnl
        diten(kpen+1:mkx) = 0._r8
        fer(kpen+1:mkx)   = 0._r8
        fdr(kpen+1:mkx)   = 0._r8
-
+       
        ! ------------------------------------------------------------------------ !
        ! Calculate downward penetrative entrainment mass flux, 'emf(k) < 0',  and !
        ! thermodynamic properties of penetratively entrained airs at   entraining !
@@ -3078,7 +3078,7 @@ end subroutine uwshcu_readnl
        ! of penetrative entrainment flux can be performed without  any conceptual !
        ! or logical problems, because we have already computed all  the variables !
        ! necessary for performing below penetrative entrainment block.            !
-       ! In the below 'do' loop, 'k' is an interface index at which non-zero 'emf'!
+       ! In the below 'do' loop, 'k' is an interface index at which non-zero 'emf'! 
        ! (penetrative entrainment mass flux) is calculated. Since cumulus updraft !
        ! is negatively buoyant in the layers between the top interface of 'kbup'  !
        ! layer (interface index, kbup) and the top interface of 'kpen' layer, the !
@@ -3099,12 +3099,12 @@ end subroutine uwshcu_readnl
        ! and we can simply use normal buoyancy-sorting involved turbulent  fluxes !
        ! by modifying 'penetrative entrainment fluxes' part below.                !
        ! ------------------------------------------------------------------------ !
-
+       
        ! -----------------------------------------------------------------------!
        ! Calculate entrainment mass flux and conservative scalars of entraining !
        ! free air at interfaces of 'kbup <= k < kpen - 1'                       !
        ! ---------------------------------------------------------------------- !
-
+ 
        do k = 0, mkx
           thlu_emf(k) = thlu(k)
           qtu_emf(k)  = qtu(k)
@@ -3116,21 +3116,21 @@ end subroutine uwshcu_readnl
        end do
 
        do k = kpen - 1, kbup, -1  ! Here, 'k' is an interface index at which
-                                  ! penetrative entrainment fluxes are calculated.
-
+                                  ! penetrative entrainment fluxes are calculated. 
+                                  
           rhos0j = ps0(k) / ( r * 0.5_r8 * ( thv0bot(k+1) + thv0top(k) ) * exns0(k) )
 
           if( k .eq. kpen - 1 ) then
 
-             ! ------------------------------------------------------------------------ !
+             ! ------------------------------------------------------------------------ ! 
              ! Note that 'ppen' has already been calculated in the above 'iter_scaleh'  !
              ! loop assuming zero lateral entrainmentin the layer 'kpen'.               !
-             ! ------------------------------------------------------------------------ !
-
+             ! ------------------------------------------------------------------------ !       
+             
              ! -------------------------------------------------------------------- !
              ! Calculate returning mass flux, emf ( < 0 )                           !
              ! Current penetrative entrainment rate with 'rpen~10' is too large and !
-             ! future refinement is necessary including the definition of 'thl','qt'!
+             ! future refinement is necessary including the definition of 'thl','qt'! 
              ! of penetratively entrained air.  Penetratively entrained airs across !
              ! the 'kpen-1' interface is assumed to have the properties of the base !
              ! interface of 'kpen' layer. Note that 'emf ~ - umf/ufrc = - w * rho'. !
@@ -3139,39 +3139,39 @@ end subroutine uwshcu_readnl
              ! the limit of emf, assuming 'emf' cannot exceed a net mass within the !
              ! layer above the interface. Similar to the case of warming and drying !
              ! due to cumulus updraft induced compensating subsidence,  penetrative !
-             ! entrainment induces compensating upwelling -     in order to prevent !
+             ! entrainment induces compensating upwelling -     in order to prevent !  
              ! numerical instability in association with compensating upwelling, we !
              ! should similarily limit the amount of penetrative entrainment at the !
              ! interface by the amount of masses within the layer just above the    !
              ! penetratively entraining interface.                                  !
              ! -------------------------------------------------------------------- !
-
+             
              if( ( umf(k)*ppen*rei(kpen)*rpen ) .lt. -0.1_r8*rhos0j )         limit_emf(i) = 1._r8
-             if( ( umf(k)*ppen*rei(kpen)*rpen ) .lt. -0.9_r8*dp0(kpen)/g/dt ) limit_emf(i) = 1._r8
+             if( ( umf(k)*ppen*rei(kpen)*rpen ) .lt. -0.9_r8*dp0(kpen)/g/dt ) limit_emf(i) = 1._r8             
 
              emf(k) = max( max( umf(k)*ppen*rei(kpen)*rpen, -0.1_r8*rhos0j), -0.9_r8*dp0(kpen)/g/dt)
              thlu_emf(k) = thl0(kpen) + ssthl0(kpen) * ( ps0(k) - p0(kpen) )
              qtu_emf(k)  = qt0(kpen)  + ssqt0(kpen)  * ( ps0(k) - p0(kpen) )
-             uu_emf(k)   = u0(kpen)   + ssu0(kpen)   * ( ps0(k) - p0(kpen) )
-             vu_emf(k)   = v0(kpen)   + ssv0(kpen)   * ( ps0(k) - p0(kpen) )
+             uu_emf(k)   = u0(kpen)   + ssu0(kpen)   * ( ps0(k) - p0(kpen) )     
+             vu_emf(k)   = v0(kpen)   + ssv0(kpen)   * ( ps0(k) - p0(kpen) )   
              do m = 1, ncnst
                 tru_emf(k,m)  = tr0(kpen,m)  + sstr0(kpen,m)  * ( ps0(k) - p0(kpen) )
              enddo
 
-          else ! if(k.lt.kpen-1).
-
+          else ! if(k.lt.kpen-1). 
+              
              ! --------------------------------------------------------------------------- !
              ! Note we are coming down from the higher interfaces to the lower interfaces. !
              ! Also note that 'emf < 0'. So, below operation is a summing not subtracting. !
-             ! In order to ensure numerical stability, I imposed a modified correct limit  !
+             ! In order to ensure numerical stability, I imposed a modified correct limit  ! 
              ! of '-0.9*dp0(k+1)/g/dt' on emf(k).                                          !
              ! --------------------------------------------------------------------------- !
 
              if( use_cumpenent ) then  ! Original Cumulative Penetrative Entrainment
 
                  if( ( emf(k+1)-umf(k)*dp0(k+1)*rei(k+1)*rpen ) .lt. -0.1_r8*rhos0j )        limit_emf(i) = 1
-                 if( ( emf(k+1)-umf(k)*dp0(k+1)*rei(k+1)*rpen ) .lt. -0.9_r8*dp0(k+1)/g/dt ) limit_emf(i) = 1
-                 emf(k) = max(max(emf(k+1)-umf(k)*dp0(k+1)*rei(k+1)*rpen, -0.1_r8*rhos0j), -0.9_r8*dp0(k+1)/g/dt )
+                 if( ( emf(k+1)-umf(k)*dp0(k+1)*rei(k+1)*rpen ) .lt. -0.9_r8*dp0(k+1)/g/dt ) limit_emf(i) = 1         
+                 emf(k) = max(max(emf(k+1)-umf(k)*dp0(k+1)*rei(k+1)*rpen, -0.1_r8*rhos0j), -0.9_r8*dp0(k+1)/g/dt )    
                  if( abs(emf(k)) .gt. abs(emf(k+1)) ) then
                      thlu_emf(k) = ( thlu_emf(k+1) * emf(k+1) + thl0(k+1) * ( emf(k) - emf(k+1) ) ) / emf(k)
                      qtu_emf(k)  = ( qtu_emf(k+1)  * emf(k+1) + qt0(k+1)  * ( emf(k) - emf(k+1) ) ) / emf(k)
@@ -3180,7 +3180,7 @@ end subroutine uwshcu_readnl
                      do m = 1, ncnst
                         tru_emf(k,m)  = ( tru_emf(k+1,m)  * emf(k+1) + tr0(k+1,m)  * ( emf(k) - emf(k+1) ) ) / emf(k)
                      enddo
-                 else
+                 else   
                      thlu_emf(k) = thl0(k+1)
                      qtu_emf(k)  =  qt0(k+1)
                      uu_emf(k)   =   u0(k+1)
@@ -3188,13 +3188,13 @@ end subroutine uwshcu_readnl
                      do m = 1, ncnst
                         tru_emf(k,m)  =  tr0(k+1,m)
                      enddo
-                 endif
-
+                 endif   
+                     
              else ! Alternative Non-Cumulative Penetrative Entrainment
 
                  if( ( -umf(k)*dp0(k+1)*rei(k+1)*rpen ) .lt. -0.1_r8*rhos0j )        limit_emf(i) = 1
-                 if( ( -umf(k)*dp0(k+1)*rei(k+1)*rpen ) .lt. -0.9_r8*dp0(k+1)/g/dt ) limit_emf(i) = 1
-                 emf(k) = max(max(-umf(k)*dp0(k+1)*rei(k+1)*rpen, -0.1_r8*rhos0j), -0.9_r8*dp0(k+1)/g/dt )
+                 if( ( -umf(k)*dp0(k+1)*rei(k+1)*rpen ) .lt. -0.9_r8*dp0(k+1)/g/dt ) limit_emf(i) = 1         
+                 emf(k) = max(max(-umf(k)*dp0(k+1)*rei(k+1)*rpen, -0.1_r8*rhos0j), -0.9_r8*dp0(k+1)/g/dt )    
                  thlu_emf(k) = thl0(k+1)
                  qtu_emf(k)  =  qt0(k+1)
                  uu_emf(k)   =   u0(k+1)
@@ -3216,7 +3216,7 @@ end subroutine uwshcu_readnl
           ! at the geometrically fixed height handle everything - a movement of material !
           ! surface is implicitly treated automatically. Note that in terms of turbulent !
           ! heat and moisture fluxes at model interfaces, both the cumulus updraft  mass !
-          ! flux and penetratively entraining mass flux play the same role -both of them !
+          ! flux and penetratively entraining mass flux play the same role -both of them ! 
           ! warms and dries the 'kbup' layer, cools and moistens the 'kpen' layer,   and !
           ! cools and moistens any intervening layers between 'kbup' and 'kpen' layers.  !
           ! It is important to note these identical roles on turbulent heat and moisture !
@@ -3226,17 +3226,17 @@ end subroutine uwshcu_readnl
           ! reduction of cloud fraction. In this sense, the 'kbup' interface has a  very !
           ! important meaning and role : across the 'kbup' interface, strong penetrative !
           ! entrainment occurs, thus any sharp gradient properties across that interface !
-          ! are easily diffused through strong mass exchange. Thus, an initialization of !
-          ! 'kbup' (and also 'kpen') should be done very cautiously as mentioned before. !
+          ! are easily diffused through strong mass exchange. Thus, an initialization of ! 
+          ! 'kbup' (and also 'kpen') should be done very cautiously as mentioned before. ! 
           ! In order to prevent this stron diffusion for the shallow cumulus convection  !
           ! based at the Sc top, it seems to be good to initialize 'kbup = krel', rather !
           ! that 'kbup = krel-1'.                                                        !
           ! ---------------------------------------------------------------------------- !
-
+          
        end do
 
        !------------------------------------------------------------------ !
-       !                                                                   !
+       !                                                                   ! 
        ! Compute turbulent heat, moisture, momentum flux at all interfaces !
        !                                                                   !
        !------------------------------------------------------------------ !
@@ -3258,9 +3258,9 @@ end subroutine uwshcu_readnl
        !     PBL top interface to the release level. If these layers don't !
        !     exist (e,g, when 'krel = kinv'), then  current routine do not !
        !     perform this routine automatically. So I don't need to modify !
-       !     anything.                                                     !
+       !     anything.                                                     ! 
        ! (3) " krel <= k <= kbup - 1 " : Buoyancy sorting fluxes           !
-       !     From laterally entraining-detraining buoyancy sorting plumes. !
+       !     From laterally entraining-detraining buoyancy sorting plumes. ! 
        ! (4) " kbup <= k < kpen-1 " : Penetrative entrainment fluxes       !
        !     From penetratively entraining plumes,                         !
        !                                                                   !
@@ -3274,12 +3274,12 @@ end subroutine uwshcu_readnl
        ! krel' if cumulus updraft just penetrated over the top of  release !
        ! layer ). If this happens, we should be very careful in organizing !
        ! the sequence of the 4 calculation routines above -  note that the !
-       ! routine located at the later has the higher priority.  Additional !
+       ! routine located at the later has the higher priority.  Additional ! 
        ! feature I must consider is that when 'kbup = kinv - 1' (this is a !
        ! combined situation of 'kbup=krel-1' & 'krel = kinv' when I  chose !
        ! 'kbup=krel-1' instead of current choice of 'kbup=krel'), a strong !
        ! penetrative entrainment fluxes exists at the PBL top interface, & !
-       ! all of these fluxes are concentrated (deposited) within the layer !
+       ! all of these fluxes are concentrated (deposited) within the layer ! 
        ! just below PBL top interface (i.e., 'kinv-1' layer). On the other !
        ! hand, in case of 'fluxbelowinv', only the compensating subsidence !
        ! effect is concentrated in the 'kinv-1' layer and 'pure' turbulent !
@@ -3295,27 +3295,27 @@ end subroutine uwshcu_readnl
        ! of unreasonable cumulus adjustment' just after 'iter_scaleh'. But !
        ! this seems not to be a good choice (although this choice was used !
        ! previous code ), since it might arbitrary damped-out  the shallow !
-       ! cumulus convection over the continent land, where shallow cumulus !
+       ! cumulus convection over the continent land, where shallow cumulus ! 
        ! convection tends to be negatively buoyant.                        !
-       ! ----------------------------------------------------------------- !
+       ! ----------------------------------------------------------------- !  
 
        ! --------------------------------------------------- !
        ! 1. PBL fluxes :  0 <= k <= kinv - 1                 !
-       !    All the information necessary to reconstruct PBL !
+       !    All the information necessary to reconstruct PBL ! 
        !    height are passed to 'fluxbelowinv'.             !
        ! --------------------------------------------------- !
 
        xsrc  = qtsrc
        xmean = qt0(kinv)
        xtop  = qt0(kinv+1) + ssqt0(kinv+1) * ( ps0(kinv)   - p0(kinv+1) )
-       xbot  = qt0(kinv-1) + ssqt0(kinv-1) * ( ps0(kinv-1) - p0(kinv-1) )
+       xbot  = qt0(kinv-1) + ssqt0(kinv-1) * ( ps0(kinv-1) - p0(kinv-1) )        
        call fluxbelowinv( cbmf, ps0(0:mkx), mkx, kinv, dt, xsrc, xmean, xtop, xbot, xflx )
        qtflx(0:kinv-1) = xflx(0:kinv-1)
 
        xsrc  = thlsrc
        xmean = thl0(kinv)
        xtop  = thl0(kinv+1) + ssthl0(kinv+1) * ( ps0(kinv)   - p0(kinv+1) )
-       xbot  = thl0(kinv-1) + ssthl0(kinv-1) * ( ps0(kinv-1) - p0(kinv-1) )
+       xbot  = thl0(kinv-1) + ssthl0(kinv-1) * ( ps0(kinv-1) - p0(kinv-1) )        
        call fluxbelowinv( cbmf, ps0(0:mkx), mkx, kinv, dt, xsrc, xmean, xtop, xbot, xflx )
        slflx(0:kinv-1) = cp * exns0(0:kinv-1) * xflx(0:kinv-1)
 
@@ -3337,7 +3337,7 @@ end subroutine uwshcu_readnl
           xsrc  = trsrc(m)
           xmean = tr0(kinv,m)
           xtop  = tr0(kinv+1,m) + sstr0(kinv+1,m) * ( ps0(kinv)   - p0(kinv+1) )
-          xbot  = tr0(kinv-1,m) + sstr0(kinv-1,m) * ( ps0(kinv-1) - p0(kinv-1) )
+          xbot  = tr0(kinv-1,m) + sstr0(kinv-1,m) * ( ps0(kinv-1) - p0(kinv-1) )        
           call fluxbelowinv( cbmf, ps0(0:mkx), mkx, kinv, dt, xsrc, xmean, xtop, xbot, xflx )
           trflx(0:kinv-1,m) = xflx(0:kinv-1)
        enddo
@@ -3348,31 +3348,31 @@ end subroutine uwshcu_readnl
        !    as in a desirable, expected way ( but I must check  if this !
        !    is the case ). The non-buoyancy sorting fluxes are computed !
        !    only when 'krel > kinv'.                                    !
-       ! -------------------------------------------------------------- !
+       ! -------------------------------------------------------------- !          
 
        uplus = 0._r8
        vplus = 0._r8
        do k = kinv, krel - 1
           kp1 = k + 1
-          qtflx(k) = cbmf * ( qtsrc  - (  qt0(kp1) +  ssqt0(kp1) * ( ps0(k) - p0(kp1) ) ) )
+          qtflx(k) = cbmf * ( qtsrc  - (  qt0(kp1) +  ssqt0(kp1) * ( ps0(k) - p0(kp1) ) ) )          
           slflx(k) = cbmf * ( thlsrc - ( thl0(kp1) + ssthl0(kp1) * ( ps0(k) - p0(kp1) ) ) ) * cp * exns0(k)
           uplus    = uplus + PGFc * ssu0(k) * ( ps0(k) - ps0(k-1) )
           vplus    = vplus + PGFc * ssv0(k) * ( ps0(k) - ps0(k-1) )
-          uflx(k)  = cbmf * ( usrc + uplus -  (  u0(kp1)  +   ssu0(kp1) * ( ps0(k) - p0(kp1) ) ) )
+          uflx(k)  = cbmf * ( usrc + uplus -  (  u0(kp1)  +   ssu0(kp1) * ( ps0(k) - p0(kp1) ) ) ) 
           vflx(k)  = cbmf * ( vsrc + vplus -  (  v0(kp1)  +   ssv0(kp1) * ( ps0(k) - p0(kp1) ) ) )
           do m = 1, ncnst
              trflx(k,m) = cbmf * ( trsrc(m)  - (  tr0(kp1,m) +  sstr0(kp1,m) * ( ps0(k) - p0(kp1) ) ) )
-          enddo
+          enddo          
        end do
 
        ! ------------------------------------------------------------------------ !
        ! 3. Buoyancy sorting fluxes : krel <= k <= kbup - 1                       !
-       !    In case that 'kbup = krel - 1 ' ( or even in case 'kbup = krel' ),    !
+       !    In case that 'kbup = krel - 1 ' ( or even in case 'kbup = krel' ),    ! 
        !    buoyancy sorting fluxes are not calculated, which is consistent,      !
-       !    desirable feature.                                                    !
+       !    desirable feature.                                                    !  
        ! ------------------------------------------------------------------------ !
 
-       do k = krel, kbup - 1
+       do k = krel, kbup - 1      
           kp1 = k + 1
           slflx(k) = cp * exns0(k) * umf(k) * ( thlu(k) - ( thl0(kp1) + ssthl0(kp1) * ( ps0(k) - p0(kp1) ) ) )
           qtflx(k) = umf(k) * ( qtu(k) - ( qt0(kp1) + ssqt0(kp1) * ( ps0(k) - p0(kp1) ) ) )
@@ -3391,7 +3391,7 @@ end subroutine uwshcu_readnl
        !    calculated later, flux at 'kinv - 1 ' will be that of penetrative flux.!
        !    However, turbulent flux calculated at 'kinv - 1' from penetrative entr.!
        !    is less attractable,  since more reasonable turbulent flux at 'kinv-1' !
-       !    should be obtained from 'fluxbelowinv', by considering  re-constructed !
+       !    should be obtained from 'fluxbelowinv', by considering  re-constructed ! 
        !    inversion base height. This conflicting problem can be solved if we can!
        !    initialize 'kbup = krel', instead of kbup = krel - 1. This choice seems!
        !    to be more reasonable since it is not conflicted with 'fluxbelowinv' in!
@@ -3431,25 +3431,25 @@ end subroutine uwshcu_readnl
        !       slflx(k) = cp * exns0(k) * umf(k) * ( thlu(k)     - ( thl0(kp1) + ssthl0(kp1) * ( ps0(k) - p0(kp1) ) ) ) + & !
        !                  cp * exns0(k) * emf(k) * ( thlu_emf(k) - (   thl0(k) +   ssthl0(k) * ( ps0(k) - p0(k) ) ) )       !
        !       qtflx(k) =                 umf(k) * (  qtu(k)     - (  qt0(kp1) +  ssqt0(kp1) * ( ps0(k) - p0(kp1) ) ) ) + & !
-       !                                  emf(k) * (  qtu_emf(k) - (    qt0(k) +    ssqt0(k) * ( ps0(k) - p0(k) ) ) )       !
+       !                                  emf(k) * (  qtu_emf(k) - (    qt0(k) +    ssqt0(k) * ( ps0(k) - p0(k) ) ) )       !                   
        !       uflx(k)  =                 umf(k) * (   uu(k)     - (   u0(kp1) +   ssu0(kp1) * ( ps0(k) - p0(kp1) ) ) ) + & !
-       !                                  emf(k) * (   uu_emf(k) - (     u0(k) +     ssu0(k) * ( ps0(k) - p0(k) ) ) )       !
+       !                                  emf(k) * (   uu_emf(k) - (     u0(k) +     ssu0(k) * ( ps0(k) - p0(k) ) ) )       !                      
        !       vflx(k)  =                 umf(k) * (   vu(k)     - (   v0(kp1) +   ssv0(kp1) * ( ps0(k) - p0(kp1) ) ) ) + & !
-       !                                  emf(k) * (   vu_emf(k) - (     v0(k) +     ssv0(k) * ( ps0(k) - p0(k) ) ) )       !
+       !                                  emf(k) * (   vu_emf(k) - (     v0(k) +     ssv0(k) * ( ps0(k) - p0(k) ) ) )       !                     
        !       do m = 1, ncnst                                                                                              !
-       !          trflx(k,m) = umf(k) * ( tru(k,m) - ( tr0(kp1,m) + sstr0(kp1,m) * ( ps0(k) - p0(kp1) ) ) ) + &             !
-       !                       emf(k) * ( tru_emf(k,m) - ( tr0(k,m) + sstr0(k,m) * ( ps0(k) - p0(k) ) ) )                   !
+       !          trflx(k,m) = umf(k) * ( tru(k,m) - ( tr0(kp1,m) + sstr0(kp1,m) * ( ps0(k) - p0(kp1) ) ) ) + &             ! 
+       !                       emf(k) * ( tru_emf(k,m) - ( tr0(k,m) + sstr0(k,m) * ( ps0(k) - p0(k) ) ) )                   ! 
        !       enddo                                                                                                        !
        ! ------------------------------------------------------------------------------------------------------------------ !
 
-       do k = kbup, kpen - 1
+       do k = kbup, kpen - 1      
           kp1 = k + 1
           slflx(k) = cp * exns0(k) * emf(k) * ( thlu_emf(k) - ( thl0(k) + ssthl0(k) * ( ps0(k) - p0(k) ) ) )
-          qtflx(k) =                 emf(k) * (  qtu_emf(k) - (  qt0(k) +  ssqt0(k) * ( ps0(k) - p0(k) ) ) )
-          uflx(k)  =                 emf(k) * (   uu_emf(k) - (   u0(k) +   ssu0(k) * ( ps0(k) - p0(k) ) ) )
+          qtflx(k) =                 emf(k) * (  qtu_emf(k) - (  qt0(k) +  ssqt0(k) * ( ps0(k) - p0(k) ) ) ) 
+          uflx(k)  =                 emf(k) * (   uu_emf(k) - (   u0(k) +   ssu0(k) * ( ps0(k) - p0(k) ) ) ) 
           vflx(k)  =                 emf(k) * (   vu_emf(k) - (   v0(k) +   ssv0(k) * ( ps0(k) - p0(k) ) ) )
           do m = 1, ncnst
-             trflx(k,m) = emf(k) * ( tru_emf(k,m) - ( tr0(k,m) + sstr0(k,m) * ( ps0(k) - p0(k) ) ) )
+             trflx(k,m) = emf(k) * ( tru_emf(k,m) - ( tr0(k,m) + sstr0(k,m) * ( ps0(k) - p0(k) ) ) ) 
           enddo
        end do
 
@@ -3460,15 +3460,15 @@ end subroutine uwshcu_readnl
        if( .not. use_momenflx ) then
            uflx(0:mkx) = 0._r8
            vflx(0:mkx) = 0._r8
-       endif
+       endif       
 
        ! -------------------------------------------------------- !
        ! Condensate tendency by compensating subsidence/upwelling !
        ! -------------------------------------------------------- !
-
+       
        uemf(0:mkx)         = 0._r8
        do k = 0, kinv - 2  ! Assume linear updraft mass flux within the PBL.
-          uemf(k) = cbmf * ( ps0(0) - ps0(k) ) / ( ps0(0) - ps0(kinv-1) )
+          uemf(k) = cbmf * ( ps0(0) - ps0(k) ) / ( ps0(0) - ps0(kinv-1) ) 
        end do
        uemf(kinv-1:krel-1) = cbmf
        uemf(krel:kbup-1)   = umf(krel:kbup-1)
@@ -3476,8 +3476,8 @@ end subroutine uwshcu_readnl
 
        comsub(1:mkx) = 0._r8
        do k = 1, kpen
-          comsub(k)  = 0.5_r8 * ( uemf(k) + uemf(k-1) )
-       end do
+          comsub(k)  = 0.5_r8 * ( uemf(k) + uemf(k-1) ) 
+       end do    
 
        do k = 1, kpen
           if( comsub(k) .ge. 0._r8 ) then
@@ -3524,24 +3524,24 @@ end subroutine uwshcu_readnl
         ! qiten_sink(k) = ( qij - qi0(k) ) / dt
           qlten_sink(k) = max( qlten_sub, - ql0(k) / dt ) ! For consistency with prognostic macrophysics scheme
           qiten_sink(k) = max( qiten_sub, - qi0(k) / dt ) ! For consistency with prognostic macrophysics scheme
-          nlten_sink(k) = max( nlten_sub, - tr0(k,ixnumliq) / dt )
+          nlten_sink(k) = max( nlten_sub, - tr0(k,ixnumliq) / dt ) 
           niten_sink(k) = max( niten_sub, - tr0(k,ixnumice) / dt )
        end do
 
        ! --------------------------------------------- !
        !                                               !
-       ! Calculate convective tendencies at each layer !
+       ! Calculate convective tendencies at each layer ! 
        !                                               !
        ! --------------------------------------------- !
-
+       
        ! ----------------- !
        ! Momentum tendency !
        ! ----------------- !
-
+       
        do k = 1, kpen
-          km1 = k - 1
+          km1 = k - 1 
           uten(k) = ( uflx(km1) - uflx(k) ) * g / dp0(k)
-          vten(k) = ( vflx(km1) - vflx(k) ) * g / dp0(k)
+          vten(k) = ( vflx(km1) - vflx(k) ) * g / dp0(k) 
           uf(k)   = u0(k) + uten(k) * dt
           vf(k)   = v0(k) + vten(k) * dt
         ! do m = 1, ncnst
@@ -3549,18 +3549,18 @@ end subroutine uwshcu_readnl
         !  ! Limit trten(k,m) such that negative value is not developed.
         !  ! This limitation does not conserve grid-mean tracers and future
         !  ! refinement is required for tracer-conserving treatment.
-        !    trten(k,m) = max(trten(k,m),-tr0(k,m)/dt)
+        !    trten(k,m) = max(trten(k,m),-tr0(k,m)/dt)              
         ! enddo
-       end do
+       end do        
 
        ! ----------------------------------------------------------------- !
-       ! Tendencies of thermodynamic variables.                            !
+       ! Tendencies of thermodynamic variables.                            ! 
        ! This part requires a careful treatment of bulk cloud microphysics.!
-       ! Relocations of 'precipitable condensates' either into the surface !
+       ! Relocations of 'precipitable condensates' either into the surface ! 
        ! or into the tendency of 'krel' layer will be performed just after !
-       ! finishing the below 'do-loop'.                                    !
+       ! finishing the below 'do-loop'.                                    !        
        ! ----------------------------------------------------------------- !
-
+       
        rliq    = 0._r8
        rainflx = 0._r8
        snowflx = 0._r8
@@ -3586,19 +3586,19 @@ end subroutine uwshcu_readnl
           !    process down to the desinated layer ( either release layer of surface ).    !
           ! ------------------------------------------------------------------------------ !
 
-          ! ------------------------------------------------------------------------- !
+          ! ------------------------------------------------------------------------- !     
           ! 'dwten(k)','diten(k)' : Production rate of condensate  within the layer k !
           !      [ kg/kg/s ]        by the expels of condensate from cumulus updraft. !
           ! It is important to note that in terms of moisture tendency equation, this !
           ! is a 'source' term of enviromental 'qt'.  More importantly,  these source !
           ! are already counted in the turbulent heat and moisture fluxes we computed !
-          ! until now, assuming all the expelled condensate remain in the layer where !
+          ! until now, assuming all the expelled condensate remain in the layer where ! 
           ! it was formed. Thus, in calculation of 'qtten' and 'slten' below, we MUST !
           ! NOT add or subtract these terms explicitly in order not to double or miss !
           ! count, unless some expelled condensates fall down out of the layer.  Note !
           ! this falling-down process ( i.e., precipitation process ) and  associated !
           ! 'qtten' and 'slten' and production of surface precipitation flux  will be !
-          ! treated later in 'zm_conv_evap' in 'convect_shallow_tend' subroutine.     !
+          ! treated later in 'zm_conv_evap' in 'convect_shallow_tend' subroutine.     ! 
           ! In below, we are converting expelled cloud condensate into correct unit.  !
           ! I found that below use of '0.5 * (umf(k-1) + umf(k))' causes conservation !
           ! errors at some columns in global simulation. So, I returned to originals. !
@@ -3606,32 +3606,32 @@ end subroutine uwshcu_readnl
           ! ------------------------------------------------------------------------- !
 
           dwten(k) = dwten(k) * 0.5_r8 * ( umf(k-1) + umf(k) ) * g / dp0(k) ! [ kg/kg/s ]
-          diten(k) = diten(k) * 0.5_r8 * ( umf(k-1) + umf(k) ) * g / dp0(k) ! [ kg/kg/s ]
+          diten(k) = diten(k) * 0.5_r8 * ( umf(k-1) + umf(k) ) * g / dp0(k) ! [ kg/kg/s ]  
 
           ! dwten(k) = dwten(k) * umf(k) * g / dp0(k) ! [ kg/kg/s ]
           ! diten(k) = diten(k) * umf(k) * g / dp0(k) ! [ kg/kg/s ]
 
           ! --------------------------------------------------------------------------- !
           ! 'qrten(k)','qsten(k)' : Production rate of rain and snow within the layer k !
-          !     [ kg/kg/s ]         by cumulus expels of condensates to the environment.!
+          !     [ kg/kg/s ]         by cumulus expels of condensates to the environment.!         
           ! This will be falled-out of the layer where it was formed and will be dumped !
           ! dumped into the release layer assuming that there is no evaporative cooling !
-          ! while precipitable condensate moves to the relaes level. This is reasonable !
+          ! while precipitable condensate moves to the relaes level. This is reasonable ! 
           ! assumtion if cumulus is purely vertical and so the path along which precita !
           ! ble condensate falls is fully saturared. This 're-allocation' process of    !
           ! precipitable condensate into the release layer is fully described in this   !
           ! convection scheme. After that, the dumped water into the release layer will !
-          ! falling down across the base of release layer ( or LCL, if  exact treatment !
+          ! falling down across the base of release layer ( or LCL, if  exact treatment ! 
           ! is required ) and will be allowed to be evaporated in layers below  release !
           ! layer, and finally non-zero surface precipitation flux will be calculated.  !
           ! This latter process will be separately treated 'zm_conv_evap' routine.      !
           ! --------------------------------------------------------------------------- !
 
           qrten(k) = frc_rasn * dwten(k)
-          qsten(k) = frc_rasn * diten(k)
-
-          ! ----------------------------------------------------------------------- !
-          ! 'rainflx','snowflx' : Cumulative rain and snow flux integrated from the !
+          qsten(k) = frc_rasn * diten(k) 
+ 
+          ! ----------------------------------------------------------------------- !         
+          ! 'rainflx','snowflx' : Cumulative rain and snow flux integrated from the ! 
           !     [ kg/m2/s ]       release leyer to the 'kpen' layer. Note that even !
           ! though wtw(kpen) < 0 (and umf(kpen) = 0) at the top interface of 'kpen' !
           ! layer, 'dwten(kpen)' and diten(kpen)  were calculated after calculating !
@@ -3648,7 +3648,7 @@ end subroutine uwshcu_readnl
           !  Note that 'slflx(k)' and 'qtflx(k)' we have calculated already included !
           !  all the contributions of (1) expels of condensate (dwten(k), diten(k)), !
           !  (2) mass detrainment ( delta * umf * ( qtu - qt ) ), & (3) compensating !
-          !  subsidence ( M * dqt / dz ). Thus 'slflx(k)' and 'qtflx(k)' we computed !
+          !  subsidence ( M * dqt / dz ). Thus 'slflx(k)' and 'qtflx(k)' we computed ! 
           !  is a hybrid turbulent flux containing one part of 'source' term - expel !
           !  of condensate. In order to calculate 'slten' and 'qtten', we should add !
           !  additional 'source' term, if any. If the expelled condensate falls down !
@@ -3656,11 +3656,11 @@ end subroutine uwshcu_readnl
           !  term.  Note also that we included frictional heating terms in the below !
           !  calculation of 'slten'.                                                 !
           ! ------------------------------------------------------------------------ !
-
+                   
           slten(k) = ( slflx(km1) - slflx(k) ) * g / dp0(k)
           if( k .eq. 1 ) then
               slten(k) = slten(k) - g / 4._r8 / dp0(k) * (                            &
-                                    uflx(k)*(uf(k+1) - uf(k) + u0(k+1) - u0(k)) +     &
+                                    uflx(k)*(uf(k+1) - uf(k) + u0(k+1) - u0(k)) +     & 
                                     vflx(k)*(vf(k+1) - vf(k) + v0(k+1) - v0(k)))
           elseif( k .ge. 2 .and. k .le. kpen-1 ) then
               slten(k) = slten(k) - g / 4._r8 / dp0(k) * (                            &
@@ -3682,7 +3682,7 @@ end subroutine uwshcu_readnl
           ! entrainment exists. Penetrative entrained air is assumed not to contain any  !
           ! condensate.                                                                  !
           ! ---------------------------------------------------------------------------- !
-
+  
           ! Compute in-cumulus condensate at the layer mid-point.
 
           if( k .lt. krel .or. k .gt. kpen ) then
@@ -3690,15 +3690,15 @@ end subroutine uwshcu_readnl
               qiu_mid = 0._r8
               qlj     = 0._r8
               qij     = 0._r8
-          elseif( k .eq. krel ) then
+          elseif( k .eq. krel ) then 
               call conden(prel,thlu(krel-1),qtu(krel-1),thj,qvj,qlj,qij,qse,id_check,qsat)
               if( id_check .eq. 1 ) then
                   exit_conden(i) = 1._r8
                   id_exit = .true.
                   go to 333
               endif
-              qlubelow = qlj
-              qiubelow = qij
+              qlubelow = qlj       
+              qiubelow = qij       
               call conden(ps0(k),thlu(k),qtu(k),thj,qvj,qlj,qij,qse,id_check,qsat)
               if( id_check .eq. 1 ) then
                   exit_conden(i) = 1._r8
@@ -3707,7 +3707,7 @@ end subroutine uwshcu_readnl
               end if
               qlu_mid = 0.5_r8 * ( qlubelow + qlj ) * ( prel - ps0(k) )/( ps0(k-1) - ps0(k) )
               qiu_mid = 0.5_r8 * ( qiubelow + qij ) * ( prel - ps0(k) )/( ps0(k-1) - ps0(k) )
-          elseif( k .eq. kpen ) then
+          elseif( k .eq. kpen ) then 
               call conden(ps0(k-1)+ppen,thlu_top,qtu_top,thj,qvj,qlj,qij,qse,id_check,qsat)
               if( id_check .eq. 1 ) then
                   exit_conden(i) = 1._r8
@@ -3728,8 +3728,8 @@ end subroutine uwshcu_readnl
               qlu_mid = 0.5_r8 * ( qlubelow + qlj )
               qiu_mid = 0.5_r8 * ( qiubelow + qij )
           endif
-          qlubelow = qlj
-          qiubelow = qij
+          qlubelow = qlj       
+          qiubelow = qij       
 
           ! 1. Sustained Precipitation
 
@@ -3738,13 +3738,13 @@ end subroutine uwshcu_readnl
 
           ! 2. Detrained Condensate
 
-          if( k .le. kbup ) then
+          if( k .le. kbup ) then 
               qc_l(k) = qc_l(k) + g * 0.5_r8 * ( umf(k-1) + umf(k) ) * fdr(k) * qlu_mid ! [ kg/kg/s ]
               qc_i(k) = qc_i(k) + g * 0.5_r8 * ( umf(k-1) + umf(k) ) * fdr(k) * qiu_mid ! [ kg/kg/s ]
-              qc_lm   =         - g * 0.5_r8 * ( umf(k-1) + umf(k) ) * fdr(k) * ql0(k)
+              qc_lm   =         - g * 0.5_r8 * ( umf(k-1) + umf(k) ) * fdr(k) * ql0(k)  
               qc_im   =         - g * 0.5_r8 * ( umf(k-1) + umf(k) ) * fdr(k) * qi0(k)
             ! Below 'nc_lm', 'nc_im' should be used only when frc_rasn = 1.
-              nc_lm   =         - g * 0.5_r8 * ( umf(k-1) + umf(k) ) * fdr(k) * tr0(k,ixnumliq)
+              nc_lm   =         - g * 0.5_r8 * ( umf(k-1) + umf(k) ) * fdr(k) * tr0(k,ixnumliq)  
               nc_im   =         - g * 0.5_r8 * ( umf(k-1) + umf(k) ) * fdr(k) * tr0(k,ixnumice)
           else
               qc_lm   = 0._r8
@@ -3753,7 +3753,7 @@ end subroutine uwshcu_readnl
               nc_im   = 0._r8
           endif
 
-          ! 3. Detached Updraft
+          ! 3. Detached Updraft 
 
           if( k .eq. kbup ) then
               qc_l(k) = qc_l(k) + g * umf(k) * qlj     / ( ps0(k-1) - ps0(k) ) ! [ kg/kg/s ]
@@ -3762,7 +3762,7 @@ end subroutine uwshcu_readnl
               qc_im   = qc_im   - g * umf(k) * qi0(k)  / ( ps0(k-1) - ps0(k) ) ! [ kg/kg/s ]
               nc_lm   = nc_lm   - g * umf(k) * tr0(k,ixnumliq)  / ( ps0(k-1) - ps0(k) ) ! [ kg/kg/s ]
               nc_im   = nc_im   - g * umf(k) * tr0(k,ixnumice)  / ( ps0(k-1) - ps0(k) ) ! [ kg/kg/s ]
-          endif
+          endif 
 
           ! 4. Cumulative Penetrative entrainment detrained in the 'kbup' layer
           !    Explicitly compute the properties detrained penetrative entrained airs in k = kbup layer.
@@ -3787,7 +3787,7 @@ end subroutine uwshcu_readnl
               qc_im   = qc_im   - g * emf(k) * ( qi_emf_kbup - qi0(k) ) / ( ps0(k-1) - ps0(k) ) ! [ kg/kg/s ]
               nc_lm   = nc_lm   - g * emf(k) * ( nl_emf_kbup - tr0(k,ixnumliq) ) / ( ps0(k-1) - ps0(k) ) ! [ kg/kg/s ]
               nc_im   = nc_im   - g * emf(k) * ( ni_emf_kbup - tr0(k,ixnumice) ) / ( ps0(k-1) - ps0(k) ) ! [ kg/kg/s ]
-          endif
+          endif 
 
           qlten_det   = qc_l(k) + qc_lm
           qiten_det   = qc_i(k) + qc_im
@@ -3796,15 +3796,15 @@ end subroutine uwshcu_readnl
           ! 'qlten(k)','qiten(k)','qvten(k)','sten(k)'                                        !
           ! Note that falling of precipitation will be treated later.                         !
           ! The prevension of negative 'qv,ql,qi' will be treated later in positive_moisture. !
-          ! --------------------------------------------------------------------------------- !
+          ! --------------------------------------------------------------------------------- ! 
 
           if( use_expconten ) then
               if( use_unicondet ) then
                   qc_l(k) = 0._r8
-                  qc_i(k) = 0._r8
+                  qc_i(k) = 0._r8 
                   qlten(k) = frc_rasn * dwten(k) + qlten_sink(k) + qlten_det
                   qiten(k) = frc_rasn * diten(k) + qiten_sink(k) + qiten_det
-              else
+              else 
                   qlten(k) = qc_l(k) + frc_rasn * dwten(k) + ( max( 0._r8, ql0(k) + ( qc_lm + qlten_sink(k) ) * dt ) - ql0(k) ) / dt
                   qiten(k) = qc_i(k) + frc_rasn * diten(k) + ( max( 0._r8, qi0(k) + ( qc_im + qiten_sink(k) ) * dt ) - qi0(k) ) / dt
                   trten(k,ixnumliq) = max( nc_lm + nlten_sink(k), - tr0(k,ixnumliq) / dt )
@@ -3813,8 +3813,8 @@ end subroutine uwshcu_readnl
           else
               if( use_unicondet ) then
                   qc_l(k) = 0._r8
-                  qc_i(k) = 0._r8
-              endif
+                  qc_i(k) = 0._r8 
+              endif                      
               qlten(k) = dwten(k) + ( qtten(k) - dwten(k) - diten(k) ) * ( ql0(k) / qt0(k) )
               qiten(k) = diten(k) + ( qtten(k) - dwten(k) - diten(k) ) * ( qi0(k) / qt0(k) )
           endif
@@ -3824,41 +3824,41 @@ end subroutine uwshcu_readnl
 
           ! -------------------------------------------------------------------------- !
           ! 'rliq' : Verticall-integrated 'suspended cloud condensate'                 !
-          !  [m/s]   This is so called 'reserved liquid water'  in other subroutines   !
+          !  [m/s]   This is so called 'reserved liquid water'  in other subroutines   ! 
           ! of CAM3, since the contribution of this term should not be included into   !
           ! the tendency of each layer or surface flux (precip)  within this cumulus   !
           ! scheme. The adding of this term to the layer tendency will be done inthe   !
           ! 'stratiform_tend', just after performing sediment process there.           !
-          ! The main problem of these rather going-back-and-forth and stupid-seeming   !
+          ! The main problem of these rather going-back-and-forth and stupid-seeming   ! 
           ! approach is that the sediment process of suspendened condensate will not   !
           ! be treated at all in the 'stratiform_tend'.                                !
           ! Note that 'precip' [m/s] is vertically-integrated total 'rain+snow' formed !
           ! from the cumulus updraft. Important : in the below, 1000 is rhoh2o ( water !
           ! density ) [ kg/m^3 ] used for unit conversion from [ kg/m^2/s ] to [ m/s ] !
           ! for use in stratiform.F90.                                                 !
-          ! -------------------------------------------------------------------------- !
+          ! -------------------------------------------------------------------------- ! 
 
-          qc(k)  =  qc_l(k) +  qc_i(k)
+          qc(k)  =  qc_l(k) +  qc_i(k)   
           rliq   =  rliq    + qc(k) * dp0(k) / g / 1000._r8    ! [ m/s ]
 
        end do
 
           precip  =  rainflx + snowflx                       ! [ kg/m2/s ]
-          snow    =  snowflx                                 ! [ kg/m2/s ]
+          snow    =  snowflx                                 ! [ kg/m2/s ] 
 
        ! ---------------------------------------------------------------- !
-       ! Now treats the 'evaporation' and 'melting' of rain ( qrten ) and !
+       ! Now treats the 'evaporation' and 'melting' of rain ( qrten ) and ! 
        ! snow ( qsten ) during falling process. Below algorithms are from !
        ! 'zm_conv_evap' but with some modification, which allows separate !
        ! treatment of 'rain' and 'snow' condensates. Note that I included !
        ! the evaporation dynamics into the convection scheme for complete !
-       ! development of cumulus scheme especially in association with the !
+       ! development of cumulus scheme especially in association with the ! 
        ! implicit CIN closure. In compatible with this internal treatment !
        ! of evaporation, I should modify 'convect_shallow',  in such that !
-       ! 'zm_conv_evap' is not performed when I choose UW PBL-Cu schemes. !
+       ! 'zm_conv_evap' is not performed when I choose UW PBL-Cu schemes. !                                          
        ! ---------------------------------------------------------------- !
 
-       evpint_rain    = 0._r8
+       evpint_rain    = 0._r8 
        evpint_snow    = 0._r8
        flxrain(0:mkx) = 0._r8
        flxsnow(0:mkx) = 0._r8
@@ -3866,15 +3866,15 @@ end subroutine uwshcu_readnl
        ntsnprd(:mkx)  = 0._r8
 
        do k = mkx, 1, -1  ! 'k' is a layer index : 'mkx'('1') is the top ('bottom') layer
-
+          
           ! ----------------------------------------------------------------------------- !
-          ! flxsntm [kg/m2/s] : Downward snow flux at the top of each layer after melting.!
+          ! flxsntm [kg/m2/s] : Downward snow flux at the top of each layer after melting.! 
           ! snowmlt [kg/kg/s] : Snow melting tendency.                                    !
           ! Below allows melting of snow when it goes down into the warm layer below.     !
           ! ----------------------------------------------------------------------------- !
 
           if( t0(k) .gt. 273.16_r8 ) then
-              snowmlt = max( 0._r8, flxsnow(k) * g / dp0(k) )
+              snowmlt = max( 0._r8, flxsnow(k) * g / dp0(k) ) 
           else
               snowmlt = 0._r8
           endif
@@ -3892,16 +3892,16 @@ end subroutine uwshcu_readnl
           !   3. Total evaporation cannot exceed the input total surface flux !
           ! ----------------------------------------------------------------- !
 
-          status = qsat(t0(k),p0(k),es(1),qs(1),gam(1), 1)
+          status = qsat(t0(k),p0(k),es(1),qs(1),gam(1), 1)          
           subsat = max( ( 1._r8 - qv0(k)/qs(1) ), 0._r8 )
           if( noevap_krelkpen ) then
               if( k .ge. krel ) subsat = 0._r8
           endif
 
-          evprain  = kevp * subsat * sqrt(flxrain(k)+snowmlt*dp0(k)/g)
+          evprain  = kevp * subsat * sqrt(flxrain(k)+snowmlt*dp0(k)/g) 
           evpsnow  = kevp * subsat * sqrt(max(flxsnow(k)-snowmlt*dp0(k)/g,0._r8))
 
-          evplimit = max( 0._r8, ( qw0_in(i,k) - qv0(k) ) / dt )
+          evplimit = max( 0._r8, ( qw0_in(i,k) - qv0(k) ) / dt ) 
 
           evplimit_rain = min( evplimit,      ( flxrain(k) + snowmlt * dp0(k) / g ) * g / dp0(k) )
           evplimit_rain = min( evplimit_rain, ( rainflx - evpint_rain ) * g / dp0(k) )
@@ -3929,11 +3929,11 @@ end subroutine uwshcu_readnl
 
           ! -------------------------------------------------------------- !
           ! Net 'rain' and 'snow' production rate in the layer [ kg/kg/s ] !
-          ! -------------------------------------------------------------- !
+          ! -------------------------------------------------------------- !         
 
           ntraprd(k) = qrten(k) - evprain + snowmlt
           ntsnprd(k) = qsten(k) - evpsnow - snowmlt
-
+         
           ! -------------------------------------------------------------------------------- !
           ! Downward fluxes of 'rain' and 'snow' fluxes at the base of the layer [ kg/m2/s ] !
           ! Note that layer index increases with height.                                     !
@@ -3943,7 +3943,7 @@ end subroutine uwshcu_readnl
           flxsnow(k-1) = flxsnow(k) + ntsnprd(k) * dp0(k) / g
           flxrain(k-1) = max( flxrain(k-1), 0._r8 )
           if( flxrain(k-1) .eq. 0._r8 ) ntraprd(k) = -flxrain(k) * g / dp0(k)
-          flxsnow(k-1) = max( flxsnow(k-1), 0._r8 )
+          flxsnow(k-1) = max( flxsnow(k-1), 0._r8 )         
           if( flxsnow(k-1) .eq. 0._r8 ) ntsnprd(k) = -flxsnow(k) * g / dp0(k)
 
           ! ---------------------------------- !
@@ -3973,18 +3973,18 @@ end subroutine uwshcu_readnl
           sten(k)  = sten(k) - xlv*evprain  - xls*evpsnow - (xls-xlv)*snowmlt
           slten(k) = sten(k) - xlv*qlten(k) - xls*qiten(k)
 
-        !  slten(k) = slten(k) + xlv * ntraprd(k) + xls * ntsnprd(k)
+        !  slten(k) = slten(k) + xlv * ntraprd(k) + xls * ntsnprd(k)         
         !  sten(k)  = slten(k) + xlv * qlten(k)   + xls * qiten(k)
 
        end do
 
        ! ------------------------------------------------------------- !
        ! Calculate final surface flux of precipitation, rain, and snow !
-       ! Convert unit to [m/s] for use in 'check_energy_chng'.         !
+       ! Convert unit to [m/s] for use in 'check_energy_chng'.         !  
        ! ------------------------------------------------------------- !
 
        precip  = ( flxrain(0) + flxsnow(0) ) / 1000._r8
-       snow    =   flxsnow(0) / 1000._r8
+       snow    =   flxsnow(0) / 1000._r8       
 
        ! --------------------------------------------------------------------------- !
        ! Until now, all the calculations are done completely in this shallow cumulus !
@@ -4003,20 +4003,20 @@ end subroutine uwshcu_readnl
        ! after performing sediment process there. Simply speaking, in 'tphysbc' just !
        ! after 'convect_shallow_tend', we will dump 'rliq' into surface as a  'rain' !
        ! in order to satisfy energy and moisture conservation, and  in the following !
-       ! 'stratiform_tend', we will restore it back to 'qlten(k)' ( 'ice' will go to !
+       ! 'stratiform_tend', we will restore it back to 'qlten(k)' ( 'ice' will go to !  
        ! 'water' there) from surface precipitation. This is a funny but conceptually !
        ! entertaining procedure. One concern I have for this complex process is that !
        ! output-writed stratiform precipitation amount will be underestimated due to !
        ! arbitrary subtracting of 'rliq' in stratiform_tend, where                   !
-       ! ' prec_str = prec_sed + prec_pcw - rliq' and 'rliq' is not real but fake.   !
+       ! ' prec_str = prec_sed + prec_pcw - rliq' and 'rliq' is not real but fake.   ! 
        ! However, as shown in 'srfxfer.F90', large scale precipitation amount (PRECL)!
        ! that is writed-output is corrected written since in 'srfxfer.F90',  PRECL = !
        ! 'prec_sed + prec_pcw', without including 'rliq'. So current code is correct.!
-       ! Note also in 'srfxfer.F90', convective precipitation amount is 'PRECC =     !
+       ! Note also in 'srfxfer.F90', convective precipitation amount is 'PRECC =     ! 
        ! prec_zmc(i) + prec_cmf(i)' which is also correct.                           !
        ! --------------------------------------------------------------------------- !
 
-       do k = 1, kpen
+       do k = 1, kpen       
           qtten(k) = qtten(k) - qc(k)
           qlten(k) = qlten(k) - qc_l(k)
           qiten(k) = qiten(k) - qc_i(k)
@@ -4026,7 +4026,7 @@ end subroutine uwshcu_readnl
           ! 'check_energy_chng' & 'stratiform_tend' without an explicit conversion !
           ! algorithm, I should consider explicitly the energy conversions between !
           ! 'ice' and 'liquid' - i.e., I should convert 'ice' to 'liquid'  and the !
-          ! necessary energy for this conversion should be subtracted from 'sten'. !
+          ! necessary energy for this conversion should be subtracted from 'sten'. ! 
           ! Without this conversion here, energy conservation error come out. Note !
           ! that there should be no change of 'qvten(k)'.                          !
           ! ---------------------------------------------------------------------- !
@@ -4036,7 +4036,7 @@ end subroutine uwshcu_readnl
        ! --------------------------------------------------------------- !
        ! Prevent the onset-of negative condensate at the next time step  !
        ! Potentially, this block can be moved just in front of the above !
-       ! block.                                                          !
+       ! block.                                                          ! 
        ! --------------------------------------------------------------- !
 
        ! Modification : I should check whether this 'positive_moisture_single' routine is
@@ -4068,12 +4068,12 @@ end subroutine uwshcu_readnl
              if( m .eq. numptr_amode(mm) ) then
                  trmin = 1.e-5_r8
                  goto 55
-             endif
+             endif              
           enddo
        55 continue
-#endif
+#endif 
           trflx_d(0:mkx) = 0._r8
-          trflx_u(0:mkx) = 0._r8
+          trflx_u(0:mkx) = 0._r8           
           do k = 1, mkx-1
              if( cnst_get_type_byind(m) .eq. 'wet' ) then
                  pdelx = dp0(k)
@@ -4092,8 +4092,8 @@ end subroutine uwshcu_readnl
              endif
              km1 = k - 1
              dum = ( tr0(k,m) - trmin ) * pdelx / g / dt + trflx(km1,m) - trflx(k,m) + &
-                                                           trflx_d(km1) - trflx_d(k) - trflx_u(k)
-             trflx_u(km1) = max( 0._r8, -dum )
+                                                           trflx_d(km1) - trflx_d(k) - trflx_u(k) 
+             trflx_u(km1) = max( 0._r8, -dum ) 
           enddo
           do k = 1, mkx
              if( cnst_get_type_byind(m) .eq. 'wet' ) then
@@ -4102,9 +4102,9 @@ end subroutine uwshcu_readnl
                  pdelx = dpdry0(k)
              endif
              km1 = k - 1
-           ! Check : I should re-check whether '_u', '_d' are correctly ordered in
+           ! Check : I should re-check whether '_u', '_d' are correctly ordered in 
            !         the below tendency computation.
-             trten(k,m) = ( trflx(km1,m) - trflx(k,m) + &
+             trten(k,m) = ( trflx(km1,m) - trflx(k,m) + & 
                             trflx_d(km1) - trflx_d(k) + &
                             trflx_u(km1) - trflx_u(k) ) * g / pdelx
           enddo
@@ -4116,11 +4116,11 @@ end subroutine uwshcu_readnl
        ! ---------------------------------------------------------------- !
        ! Cumpute default diagnostic outputs                               !
        ! Note that since 'qtu(krel-1:kpen-1)' & 'thlu(krel-1:kpen-1)' has !
-       ! been adjusted after detraining cloud condensate into environment !
+       ! been adjusted after detraining cloud condensate into environment ! 
        ! during cumulus updraft motion,  below calculations will  exactly !
        ! reproduce in-cloud properties as shown in the output analysis.   !
-       ! ---------------------------------------------------------------- !
-
+       ! ---------------------------------------------------------------- ! 
+ 
        call conden(prel,thlu(krel-1),qtu(krel-1),thj,qvj,qlj,qij,qse,id_check,qsat)
        if( id_check .eq. 1 ) then
            exit_conden(i) = 1._r8
@@ -4128,8 +4128,8 @@ end subroutine uwshcu_readnl
            go to 333
        end if
        qcubelow = qlj + qij
-       qlubelow = qlj
-       qiubelow = qij
+       qlubelow = qlj       
+       qiubelow = qij       
        rcwp     = 0._r8
        rlwp     = 0._r8
        riwp     = 0._r8
@@ -4137,14 +4137,14 @@ end subroutine uwshcu_readnl
        ! --------------------------------------------------------------------- !
        ! In the below calculations, I explicitly considered cloud base ( LCL ) !
        ! and cloud top height ( ps0(kpen-1) + ppen )                           !
-       ! ----------------------------------------------------------------------!
+       ! ----------------------------------------------------------------------! 
        do k = krel, kpen ! This is a layer index
-          ! ------------------------------------------------------------------ !
+          ! ------------------------------------------------------------------ ! 
           ! Calculate cumulus condensate at the upper interface of each layer. !
           ! Note 'ppen < 0' and at 'k=kpen' layer, I used 'thlu_top'&'qtu_top' !
           ! which explicitly considered zero or non-zero 'fer(kpen)'.          !
-          ! ------------------------------------------------------------------ !
-          if( k .eq. kpen ) then
+          ! ------------------------------------------------------------------ ! 
+          if( k .eq. kpen ) then 
               call conden(ps0(k-1)+ppen,thlu_top,qtu_top,thj,qvj,qlj,qij,qse,id_check,qsat)
           else
               call conden(ps0(k),thlu(k),qtu(k),thj,qvj,qlj,qij,qse,id_check,qsat)
@@ -4170,12 +4170,12 @@ end subroutine uwshcu_readnl
               cufrc(k) = ( ufrclcl + ufrc(k) )*( prel - ps0(k) )/( ps0(k-1) - ps0(k) )
           else if( k .eq. kpen ) then
               cufrc(k) = ( ufrc(k-1) + 0._r8 )*( -ppen )        /( ps0(k-1) - ps0(k) )
-              if( (qlj + qij) .gt. criqc ) then
+              if( (qlj + qij) .gt. criqc ) then           
                    qcu(k) = 0.5_r8 * ( qcubelow + criqc )
                    qlu(k) = 0.5_r8 * ( qlubelow + criqc * qlj / ( qlj + qij ) )
                    qiu(k) = 0.5_r8 * ( qiubelow + criqc * qij / ( qlj + qij ) )
               endif
-          endif
+          endif  
           rcwp = rcwp + ( qlu(k) + qiu(k) ) * ( ps0(k-1) - ps0(k) ) / g * cufrc(k)
           rlwp = rlwp +   qlu(k)            * ( ps0(k-1) - ps0(k) ) / g * cufrc(k)
           riwp = riwp +   qiu(k)            * ( ps0(k-1) - ps0(k) ) / g * cufrc(k)
@@ -4183,22 +4183,22 @@ end subroutine uwshcu_readnl
           qlubelow = qlj
           qiubelow = qij
        end do
-       ! ------------------------------------ !
+       ! ------------------------------------ !      
        ! Cloud top and base interface indices !
        ! ------------------------------------ !
        cnt = real( kpen, r8 )
        cnb = real( krel - 1, r8 )
 
        ! ------------------------------------------------------------------------- !
-       ! End of formal calculation. Below blocks are for implicit CIN calculations !
+       ! End of formal calculation. Below blocks are for implicit CIN calculations ! 
        ! with re-initialization and save variables at iter_cin = 1._r8             !
        ! ------------------------------------------------------------------------- !
-
+       
        ! --------------------------------------------------------------- !
        ! Adjust the original input profiles for implicit CIN calculation !
        ! --------------------------------------------------------------- !
 
-       if( iter .ne. iter_cin ) then
+       if( iter .ne. iter_cin ) then 
 
           ! ------------------------------------------------------------------- !
           ! Save the output from "iter_cin = 1"                                 !
@@ -4209,9 +4209,9 @@ end subroutine uwshcu_readnl
           qv0_s(:mkx)           = qv0(:mkx) + qvten(:mkx) * dt
           ql0_s(:mkx)           = ql0(:mkx) + qlten(:mkx) * dt
           qi0_s(:mkx)           = qi0(:mkx) + qiten(:mkx) * dt
-          s0_s(:mkx)            = s0(:mkx)  +  sten(:mkx) * dt
+          s0_s(:mkx)            = s0(:mkx)  +  sten(:mkx) * dt 
           u0_s(:mkx)            = u0(:mkx)  +  uten(:mkx) * dt
-          v0_s(:mkx)            = v0(:mkx)  +  vten(:mkx) * dt
+          v0_s(:mkx)            = v0(:mkx)  +  vten(:mkx) * dt 
           qt0_s(:mkx)           = qv0_s(:mkx) + ql0_s(:mkx) + qi0_s(:mkx)
           t0_s(:mkx)            = t0(:mkx)  +  sten(:mkx) * dt / cp
           do m = 1, ncnst
@@ -4220,25 +4220,25 @@ end subroutine uwshcu_readnl
 
           umf_s(0:mkx)          = umf(0:mkx)
           qvten_s(:mkx)         = qvten(:mkx)
-          qlten_s(:mkx)         = qlten(:mkx)
+          qlten_s(:mkx)         = qlten(:mkx)  
           qiten_s(:mkx)         = qiten(:mkx)
           sten_s(:mkx)          = sten(:mkx)
-          uten_s(:mkx)          = uten(:mkx)
+          uten_s(:mkx)          = uten(:mkx)  
           vten_s(:mkx)          = vten(:mkx)
           qrten_s(:mkx)         = qrten(:mkx)
-          qsten_s(:mkx)         = qsten(:mkx)
+          qsten_s(:mkx)         = qsten(:mkx)  
           precip_s              = precip
           snow_s                = snow
           evapc_s(:mkx)         = evapc(:mkx)
           cush_s                = cush
-          cufrc_s(:mkx)         = cufrc(:mkx)
-          slflx_s(0:mkx)        = slflx(0:mkx)
-          qtflx_s(0:mkx)        = qtflx(0:mkx)
-          qcu_s(:mkx)           = qcu(:mkx)
-          qlu_s(:mkx)           = qlu(:mkx)
-          qiu_s(:mkx)           = qiu(:mkx)
-          fer_s(:mkx)           = fer(:mkx)
-          fdr_s(:mkx)           = fdr(:mkx)
+          cufrc_s(:mkx)         = cufrc(:mkx)  
+          slflx_s(0:mkx)        = slflx(0:mkx)  
+          qtflx_s(0:mkx)        = qtflx(0:mkx)  
+          qcu_s(:mkx)           = qcu(:mkx)  
+          qlu_s(:mkx)           = qlu(:mkx)  
+          qiu_s(:mkx)           = qiu(:mkx)  
+          fer_s(:mkx)           = fer(:mkx)  
+          fdr_s(:mkx)           = fdr(:mkx)  
           cin_s                 = cin
           cinlcl_s              = cinlcl
           cbmf_s                = cbmf
@@ -4248,20 +4248,20 @@ end subroutine uwshcu_readnl
           cnb_s                 = cnb
           qtten_s(:mkx)         = qtten(:mkx)
           slten_s(:mkx)         = slten(:mkx)
-          ufrc_s(0:mkx)         = ufrc(0:mkx)
+          ufrc_s(0:mkx)         = ufrc(0:mkx) 
 
-          uflx_s(0:mkx)         = uflx(0:mkx)
-          vflx_s(0:mkx)         = vflx(0:mkx)
-
+          uflx_s(0:mkx)         = uflx(0:mkx)  
+          vflx_s(0:mkx)         = vflx(0:mkx)  
+           
           ufrcinvbase_s         = ufrcinvbase
-          ufrclcl_s             = ufrclcl
+          ufrclcl_s             = ufrclcl 
           winvbase_s            = winvbase
           wlcl_s                = wlcl
           plcl_s                = plcl
           pinv_s                = ps0(kinv-1)
-          plfc_s                = plfc
+          plfc_s                = plfc        
           pbup_s                = ps0(kbup)
-          ppen_s                = ps0(kpen-1) + ppen
+          ppen_s                = ps0(kpen-1) + ppen        
           qtsrc_s               = qtsrc
           thlsrc_s              = thlsrc
           thvlsrc_s             = thvlsrc
@@ -4308,18 +4308,18 @@ end subroutine uwshcu_readnl
              tru_emf_s(0:mkx,m) = tru_emf(0:mkx,m)
           enddo
 
-          ! ----------------------------------------------------------------------------- !
-          ! Recalculate environmental variables for new cin calculation at "iter_cin = 2" !
+          ! ----------------------------------------------------------------------------- ! 
+          ! Recalculate environmental variables for new cin calculation at "iter_cin = 2" ! 
           ! using the updated state variables. Perform only for variables necessary  for  !
           ! the new cin calculation.                                                      !
           ! ----------------------------------------------------------------------------- !
-
+          
           qv0(:mkx)   = qv0_s(:mkx)
           ql0(:mkx)   = ql0_s(:mkx)
           qi0(:mkx)   = qi0_s(:mkx)
           s0(:mkx)    = s0_s(:mkx)
           t0(:mkx)    = t0_s(:mkx)
-
+      
           qt0(:mkx)   = (qv0(:mkx) + ql0(:mkx) + qi0(:mkx))
           thl0(:mkx)  = (t0(:mkx) - xlv*ql0(:mkx)/cp - xls*qi0(:mkx)/cp)/exn0(:mkx)
           thvl0(:mkx) = (1._r8 + zvir*qt0(:mkx))*thl0(:mkx)
@@ -4344,7 +4344,7 @@ end subroutine uwshcu_readnl
              end if
              thv0bot(k)  = thj * ( 1._r8 + zvir*qvj - qlj - qij )
              thvl0bot(k) = thl0bot * ( 1._r8 + zvir*qt0bot )
-
+          
              thl0top = thl0(k) + ssthl0(k) * ( ps0(k) - p0(k) )
              qt0top  =  qt0(k) + ssqt0(k)  * ( ps0(k) - p0(k) )
              call conden(ps0(k),thl0top,qt0top,thj,qvj,qlj,qij,qse,id_check,qsat)
@@ -4358,9 +4358,9 @@ end subroutine uwshcu_readnl
 
           end do
 
-       endif               ! End of 'if(iter .ne. iter_cin)' if sentence.
+       endif               ! End of 'if(iter .ne. iter_cin)' if sentence. 
 
-     end do                ! End of implicit CIN loop (cin_iter)
+     end do                ! End of implicit CIN loop (cin_iter)      
 
      ! ----------------------- !
      ! Update Output Variables !
@@ -4369,7 +4369,7 @@ end subroutine uwshcu_readnl
      umf_out(i,0:mkx)             = umf(0:mkx)
      slflx_out(i,0:mkx)           = slflx(0:mkx)
      qtflx_out(i,0:mkx)           = qtflx(0:mkx)
-!the indices are not reversed, these variables go into compute_mcshallow_inv, this is why they are called "flxprc1" and "flxsnow1".
+!the indices are not reversed, these variables go into compute_mcshallow_inv, this is why they are called "flxprc1" and "flxsnow1". 
      flxprc1_out(i,0:mkx)         = flxrain(0:mkx) + flxsnow(0:mkx)
      flxsnow1_out(i,0:mkx)        = flxsnow(0:mkx)
      qvten_out(i,:mkx)            = qvten(:mkx)
@@ -4397,31 +4397,31 @@ end subroutine uwshcu_readnl
      do m = 1, ncnst
         trten_out(i,:mkx,m)       = trten(:mkx,m)
      enddo
-
+  
      ! ------------------------------------------------- !
      ! Below are specific diagnostic output for detailed !
      ! analysis of cumulus scheme                        !
      ! ------------------------------------------------- !
 
-     fer_out(i,mkx:1:-1)          = fer(:mkx)
-     fdr_out(i,mkx:1:-1)          = fdr(:mkx)
+     fer_out(i,mkx:1:-1)          = fer(:mkx)  
+     fdr_out(i,mkx:1:-1)          = fdr(:mkx)  
      cinh_out(i)                  = cin
      cinlclh_out(i)               = cinlcl
      qtten_out(i,mkx:1:-1)        = qtten(:mkx)
      slten_out(i,mkx:1:-1)        = slten(:mkx)
      ufrc_out(i,mkx:0:-1)         = ufrc(0:mkx)
-     uflx_out(i,mkx:0:-1)         = uflx(0:mkx)
-     vflx_out(i,mkx:0:-1)         = vflx(0:mkx)
-
+     uflx_out(i,mkx:0:-1)         = uflx(0:mkx)  
+     vflx_out(i,mkx:0:-1)         = vflx(0:mkx)  
+     
      ufrcinvbase_out(i)           = ufrcinvbase
-     ufrclcl_out(i)               = ufrclcl
+     ufrclcl_out(i)               = ufrclcl 
      winvbase_out(i)              = winvbase
      wlcl_out(i)                  = wlcl
      plcl_out(i)                  = plcl
      pinv_out(i)                  = ps0(kinv-1)
-     plfc_out(i)                  = plfc
-     pbup_out(i)                  = ps0(kbup)
-     ppen_out(i)                  = ps0(kpen-1) + ppen
+     plfc_out(i)                  = plfc    
+     pbup_out(i)                  = ps0(kbup)        
+     ppen_out(i)                  = ps0(kpen-1) + ppen            
      qtsrc_out(i)                 = qtsrc
      thlsrc_out(i)                = thlsrc
      thvlsrc_out(i)               = thvlsrc
@@ -4462,7 +4462,7 @@ end subroutine uwshcu_readnl
      bogtop_arr_out(i,mkx:1:-1)   = bogtop_arr(:mkx)
 
      do m = 1, ncnst
-        trflx_out(i,mkx:0:-1,m)   = trflx(0:mkx,m)
+        trflx_out(i,mkx:0:-1,m)   = trflx(0:mkx,m)  
         tru_out(i,mkx:0:-1,m)     = tru(0:mkx,m)
         tru_emf_out(i,mkx:0:-1,m) = tru_emf(0:mkx,m)
      enddo
@@ -4474,8 +4474,8 @@ end subroutine uwshcu_readnl
      ! --------------------------------------------------------------------- !
      ! Initialize output variables when cumulus convection was not performed.!
      ! --------------------------------------------------------------------- !
-
-     umf_out(i,0:mkx)             = 0._r8
+     
+     umf_out(i,0:mkx)             = 0._r8   
      slflx_out(i,0:mkx)           = 0._r8
      qtflx_out(i,0:mkx)           = 0._r8
      qvten_out(i,:mkx)            = 0._r8
@@ -4494,73 +4494,73 @@ end subroutine uwshcu_readnl
      qlu_out(i,:mkx)              = 0._r8
      qiu_out(i,:mkx)              = 0._r8
      cush_inout(i)                = -1._r8
-     cbmf_out(i)                  = 0._r8
+     cbmf_out(i)                  = 0._r8   
      rliq_out(i)                  = 0._r8
      qc_out(i,:mkx)               = 0._r8
      cnt_out(i)                   = 1._r8
      cnb_out(i)                   = real(mkx, r8)
 
-     fer_out(i,mkx:1:-1)          = 0._r8
-     fdr_out(i,mkx:1:-1)          = 0._r8
-     cinh_out(i)                  = -1._r8
-     cinlclh_out(i)               = -1._r8
+     fer_out(i,mkx:1:-1)          = 0._r8  
+     fdr_out(i,mkx:1:-1)          = 0._r8  
+     cinh_out(i)                  = -1._r8 
+     cinlclh_out(i)               = -1._r8 
      qtten_out(i,mkx:1:-1)        = 0._r8
      slten_out(i,mkx:1:-1)        = 0._r8
      ufrc_out(i,mkx:0:-1)         = 0._r8
-     uflx_out(i,mkx:0:-1)         = 0._r8
-     vflx_out(i,mkx:0:-1)         = 0._r8
+     uflx_out(i,mkx:0:-1)         = 0._r8  
+     vflx_out(i,mkx:0:-1)         = 0._r8  
 
-     ufrcinvbase_out(i)           = 0._r8
-     ufrclcl_out(i)               = 0._r8
-     winvbase_out(i)              = 0._r8
-     wlcl_out(i)                  = 0._r8
-     plcl_out(i)                  = 0._r8
-     pinv_out(i)                  = 0._r8
-     plfc_out(i)                  = 0._r8
-     pbup_out(i)                  = 0._r8
-     ppen_out(i)                  = 0._r8
-     qtsrc_out(i)                 = 0._r8
-     thlsrc_out(i)                = 0._r8
-     thvlsrc_out(i)               = 0._r8
+     ufrcinvbase_out(i)           = 0._r8 
+     ufrclcl_out(i)               = 0._r8 
+     winvbase_out(i)              = 0._r8    
+     wlcl_out(i)                  = 0._r8    
+     plcl_out(i)                  = 0._r8    
+     pinv_out(i)                  = 0._r8     
+     plfc_out(i)                  = 0._r8     
+     pbup_out(i)                  = 0._r8    
+     ppen_out(i)                  = 0._r8    
+     qtsrc_out(i)                 = 0._r8    
+     thlsrc_out(i)                = 0._r8    
+     thvlsrc_out(i)               = 0._r8    
      emfkbup_out(i)               = 0._r8
-     cbmflimit_out(i)             = 0._r8
-     tkeavg_out(i)                = 0._r8
-     zinv_out(i)                  = 0._r8
-     rcwp_out(i)                  = 0._r8
-     rlwp_out(i)                  = 0._r8
-     riwp_out(i)                  = 0._r8
+     cbmflimit_out(i)             = 0._r8    
+     tkeavg_out(i)                = 0._r8    
+     zinv_out(i)                  = 0._r8    
+     rcwp_out(i)                  = 0._r8    
+     rlwp_out(i)                  = 0._r8    
+     riwp_out(i)                  = 0._r8    
 
-     wu_out(i,mkx:0:-1)           = 0._r8
-     qtu_out(i,mkx:0:-1)          = 0._r8
-     thlu_out(i,mkx:0:-1)         = 0._r8
-     thvu_out(i,mkx:0:-1)         = 0._r8
-     uu_out(i,mkx:0:-1)           = 0._r8
-     vu_out(i,mkx:0:-1)           = 0._r8
-     qtu_emf_out(i,mkx:0:-1)      = 0._r8
-     thlu_emf_out(i,mkx:0:-1)     = 0._r8
-     uu_emf_out(i,mkx:0:-1)       = 0._r8
-     vu_emf_out(i,mkx:0:-1)       = 0._r8
-     uemf_out(i,mkx:0:-1)         = 0._r8
+     wu_out(i,mkx:0:-1)           = 0._r8    
+     qtu_out(i,mkx:0:-1)          = 0._r8        
+     thlu_out(i,mkx:0:-1)         = 0._r8         
+     thvu_out(i,mkx:0:-1)         = 0._r8         
+     uu_out(i,mkx:0:-1)           = 0._r8        
+     vu_out(i,mkx:0:-1)           = 0._r8        
+     qtu_emf_out(i,mkx:0:-1)      = 0._r8         
+     thlu_emf_out(i,mkx:0:-1)     = 0._r8         
+     uu_emf_out(i,mkx:0:-1)       = 0._r8          
+     vu_emf_out(i,mkx:0:-1)       = 0._r8    
+     uemf_out(i,mkx:0:-1)         = 0._r8    
+   
+     dwten_out(i,mkx:1:-1)        = 0._r8    
+     diten_out(i,mkx:1:-1)        = 0._r8    
+     flxrain_out(i,mkx:0:-1)      = 0._r8     
+     flxsnow_out(i,mkx:0:-1)      = 0._r8    
+     ntraprd_out(i,mkx:1:-1)      = 0._r8    
+     ntsnprd_out(i,mkx:1:-1)      = 0._r8    
 
-     dwten_out(i,mkx:1:-1)        = 0._r8
-     diten_out(i,mkx:1:-1)        = 0._r8
-     flxrain_out(i,mkx:0:-1)      = 0._r8
-     flxsnow_out(i,mkx:0:-1)      = 0._r8
-     ntraprd_out(i,mkx:1:-1)      = 0._r8
-     ntsnprd_out(i,mkx:1:-1)      = 0._r8
-
-     excessu_arr_out(i,mkx:1:-1)  = 0._r8
-     excess0_arr_out(i,mkx:1:-1)  = 0._r8
-     xc_arr_out(i,mkx:1:-1)       = 0._r8
-     aquad_arr_out(i,mkx:1:-1)    = 0._r8
-     bquad_arr_out(i,mkx:1:-1)    = 0._r8
-     cquad_arr_out(i,mkx:1:-1)    = 0._r8
-     bogbot_arr_out(i,mkx:1:-1)   = 0._r8
-     bogtop_arr_out(i,mkx:1:-1)   = 0._r8
+     excessu_arr_out(i,mkx:1:-1)  = 0._r8    
+     excess0_arr_out(i,mkx:1:-1)  = 0._r8    
+     xc_arr_out(i,mkx:1:-1)       = 0._r8    
+     aquad_arr_out(i,mkx:1:-1)    = 0._r8    
+     bquad_arr_out(i,mkx:1:-1)    = 0._r8    
+     cquad_arr_out(i,mkx:1:-1)    = 0._r8    
+     bogbot_arr_out(i,mkx:1:-1)   = 0._r8    
+     bogtop_arr_out(i,mkx:1:-1)   = 0._r8    
 
      do m = 1, ncnst
         trten_out(i,:mkx,m)       = 0._r8
-        trflx_out(i,mkx:0:-1,m)   = 0._r8
+        trflx_out(i,mkx:0:-1,m)   = 0._r8  
         tru_out(i,mkx:0:-1,m)     = 0._r8
         tru_emf_out(i,mkx:0:-1,m) = 0._r8
      enddo
@@ -4573,42 +4573,42 @@ end subroutine uwshcu_readnl
      ! Writing main diagnostic output variables !
      ! ---------------------------------------- !
 
-     call outfld( 'qtflx_Cu'        , qtflx_out(:,mkx:0:-1),    mix,    lchnk )
-     call outfld( 'slflx_Cu'        , slflx_out(:,mkx:0:-1),    mix,    lchnk )
-     call outfld( 'uflx_Cu'         , uflx_out,                 mix,    lchnk )
-     call outfld( 'vflx_Cu'         , vflx_out,                 mix,    lchnk )
+     call outfld( 'qtflx_Cu'        , qtflx_out(:,mkx:0:-1),    mix,    lchnk ) 
+     call outfld( 'slflx_Cu'        , slflx_out(:,mkx:0:-1),    mix,    lchnk ) 
+     call outfld( 'uflx_Cu'         , uflx_out,                 mix,    lchnk ) 
+     call outfld( 'vflx_Cu'         , vflx_out,                 mix,    lchnk ) 
 
-     call outfld( 'qtten_Cu'        , qtten_out,                mix,    lchnk )
-     call outfld( 'slten_Cu'        , slten_out,                mix,    lchnk )
-     call outfld( 'uten_Cu'         , uten_out(:,mkx:1:-1),     mix,    lchnk )
-     call outfld( 'vten_Cu'         , vten_out(:,mkx:1:-1),     mix,    lchnk )
-     call outfld( 'qvten_Cu'        , qvten_out(:,mkx:1:-1),    mix,    lchnk )
+     call outfld( 'qtten_Cu'        , qtten_out,                mix,    lchnk ) 
+     call outfld( 'slten_Cu'        , slten_out,                mix,    lchnk ) 
+     call outfld( 'uten_Cu'         , uten_out(:,mkx:1:-1),     mix,    lchnk ) 
+     call outfld( 'vten_Cu'         , vten_out(:,mkx:1:-1),     mix,    lchnk ) 
+     call outfld( 'qvten_Cu'        , qvten_out(:,mkx:1:-1),    mix,    lchnk ) 
      call outfld( 'qlten_Cu'        , qlten_out(:,mkx:1:-1),    mix,    lchnk )
-     call outfld( 'qiten_Cu'        , qiten_out(:,mkx:1:-1),    mix,    lchnk )
+     call outfld( 'qiten_Cu'        , qiten_out(:,mkx:1:-1),    mix,    lchnk )   
 
-     call outfld( 'cbmf_Cu'         , cbmf_out,                 mix,    lchnk )
-     call outfld( 'ufrcinvbase_Cu'  , ufrcinvbase_out,          mix,    lchnk )
-     call outfld( 'ufrclcl_Cu'      , ufrclcl_out,              mix,    lchnk )
-     call outfld( 'winvbase_Cu'     , winvbase_out,             mix,    lchnk )
-     call outfld( 'wlcl_Cu'         , wlcl_out,                 mix,    lchnk )
-     call outfld( 'plcl_Cu'         , plcl_out,                 mix,    lchnk )
-     call outfld( 'pinv_Cu'         , pinv_out,                 mix,    lchnk )
-     call outfld( 'plfc_Cu'         , plfc_out,                 mix,    lchnk )
-     call outfld( 'pbup_Cu'         , pbup_out,                 mix,    lchnk )
-     call outfld( 'ppen_Cu'         , ppen_out,                 mix,    lchnk )
-     call outfld( 'qtsrc_Cu'        , qtsrc_out,                mix,    lchnk )
-     call outfld( 'thlsrc_Cu'       , thlsrc_out,               mix,    lchnk )
-     call outfld( 'thvlsrc_Cu'      , thvlsrc_out,              mix,    lchnk )
+     call outfld( 'cbmf_Cu'         , cbmf_out,                 mix,    lchnk ) 
+     call outfld( 'ufrcinvbase_Cu'  , ufrcinvbase_out,          mix,    lchnk ) 
+     call outfld( 'ufrclcl_Cu'      , ufrclcl_out,              mix,    lchnk ) 
+     call outfld( 'winvbase_Cu'     , winvbase_out,             mix,    lchnk ) 
+     call outfld( 'wlcl_Cu'         , wlcl_out,                 mix,    lchnk ) 
+     call outfld( 'plcl_Cu'         , plcl_out,                 mix,    lchnk ) 
+     call outfld( 'pinv_Cu'         , pinv_out,                 mix,    lchnk ) 
+     call outfld( 'plfc_Cu'         , plfc_out,                 mix,    lchnk ) 
+     call outfld( 'pbup_Cu'         , pbup_out,                 mix,    lchnk ) 
+     call outfld( 'ppen_Cu'         , ppen_out,                 mix,    lchnk ) 
+     call outfld( 'qtsrc_Cu'        , qtsrc_out,                mix,    lchnk ) 
+     call outfld( 'thlsrc_Cu'       , thlsrc_out,               mix,    lchnk ) 
+     call outfld( 'thvlsrc_Cu'      , thvlsrc_out,              mix,    lchnk ) 
      call outfld( 'emfkbup_Cu'      , emfkbup_out,              mix,    lchnk )
-     call outfld( 'cin_Cu'          , cinh_out,                 mix,    lchnk )
-     call outfld( 'cinlcl_Cu'       , cinlclh_out,              mix,    lchnk )
-     call outfld( 'cbmflimit_Cu'    , cbmflimit_out,            mix,    lchnk )
+     call outfld( 'cin_Cu'          , cinh_out,                 mix,    lchnk )  
+     call outfld( 'cinlcl_Cu'       , cinlclh_out,              mix,    lchnk ) 
+     call outfld( 'cbmflimit_Cu'    , cbmflimit_out,            mix,    lchnk ) 
      call outfld( 'tkeavg_Cu'       , tkeavg_out,               mix,    lchnk )
-     call outfld( 'zinv_Cu'         , zinv_out,                 mix,    lchnk )
+     call outfld( 'zinv_Cu'         , zinv_out,                 mix,    lchnk )  
      call outfld( 'rcwp_Cu'         , rcwp_out,                 mix,    lchnk )
      call outfld( 'rlwp_Cu'         , rlwp_out,                 mix,    lchnk )
      call outfld( 'riwp_Cu'         , riwp_out,                 mix,    lchnk )
-     call outfld( 'tophgt_Cu'       , cush_inout,               mix,    lchnk )
+     call outfld( 'tophgt_Cu'       , cush_inout,               mix,    lchnk )   
 
      call outfld( 'wu_Cu'           , wu_out,                   mix,    lchnk )
      call outfld( 'ufrc_Cu'         , ufrc_out,                 mix,    lchnk )
@@ -4626,9 +4626,9 @@ end subroutine uwshcu_readnl
      call outfld( 'qcu_Cu'          , qcu_out(:,mkx:1:-1),      mix,    lchnk )
      call outfld( 'qlu_Cu'          , qlu_out(:,mkx:1:-1),      mix,    lchnk )
      call outfld( 'qiu_Cu'          , qiu_out(:,mkx:1:-1),      mix,    lchnk )
-     call outfld( 'cufrc_Cu'        , cufrc_out(:,mkx:1:-1),    mix,    lchnk )
-     call outfld( 'fer_Cu'          , fer_out,                  mix,    lchnk )
-     call outfld( 'fdr_Cu'          , fdr_out,                  mix,    lchnk )
+     call outfld( 'cufrc_Cu'        , cufrc_out(:,mkx:1:-1),    mix,    lchnk )  
+     call outfld( 'fer_Cu'          , fer_out,                  mix,    lchnk )  
+     call outfld( 'fdr_Cu'          , fdr_out,                  mix,    lchnk )  
 
      call outfld( 'dwten_Cu'        , dwten_out,                mix,    lchnk )
      call outfld( 'diten_Cu'        , diten_out,                mix,    lchnk )
@@ -4648,35 +4648,35 @@ end subroutine uwshcu_readnl
      call outfld( 'bogbot_Cu'       , bogbot_arr_out,           mix,    lchnk )
      call outfld( 'bogtop_Cu'       , bogtop_arr_out,           mix,    lchnk )
 
-     call outfld( 'exit_UWCu_Cu'    , exit_UWCu,                mix,    lchnk )
-     call outfld( 'exit_conden_Cu'  , exit_conden,              mix,    lchnk )
-     call outfld( 'exit_klclmkx_Cu' , exit_klclmkx,             mix,    lchnk )
-     call outfld( 'exit_klfcmkx_Cu' , exit_klfcmkx,             mix,    lchnk )
-     call outfld( 'exit_ufrc_Cu'    , exit_ufrc,                mix,    lchnk )
-     call outfld( 'exit_wtw_Cu'     , exit_wtw,                 mix,    lchnk )
-     call outfld( 'exit_drycore_Cu' , exit_drycore,             mix,    lchnk )
-     call outfld( 'exit_wu_Cu'      , exit_wu,                  mix,    lchnk )
-     call outfld( 'exit_cufilter_Cu', exit_cufilter,            mix,    lchnk )
-     call outfld( 'exit_kinv1_Cu'   , exit_kinv1,               mix,    lchnk )
-     call outfld( 'exit_rei_Cu'     , exit_rei,                 mix,    lchnk )
+     call outfld( 'exit_UWCu_Cu'    , exit_UWCu,                mix,    lchnk ) 
+     call outfld( 'exit_conden_Cu'  , exit_conden,              mix,    lchnk ) 
+     call outfld( 'exit_klclmkx_Cu' , exit_klclmkx,             mix,    lchnk ) 
+     call outfld( 'exit_klfcmkx_Cu' , exit_klfcmkx,             mix,    lchnk ) 
+     call outfld( 'exit_ufrc_Cu'    , exit_ufrc,                mix,    lchnk ) 
+     call outfld( 'exit_wtw_Cu'     , exit_wtw,                 mix,    lchnk ) 
+     call outfld( 'exit_drycore_Cu' , exit_drycore,             mix,    lchnk ) 
+     call outfld( 'exit_wu_Cu'      , exit_wu,                  mix,    lchnk ) 
+     call outfld( 'exit_cufilter_Cu', exit_cufilter,            mix,    lchnk ) 
+     call outfld( 'exit_kinv1_Cu'   , exit_kinv1,               mix,    lchnk ) 
+     call outfld( 'exit_rei_Cu'     , exit_rei,                 mix,    lchnk ) 
 
-     call outfld( 'limit_shcu_Cu'   , limit_shcu,               mix,    lchnk )
-     call outfld( 'limit_negcon_Cu' , limit_negcon,             mix,    lchnk )
-     call outfld( 'limit_ufrc_Cu'   , limit_ufrc,               mix,    lchnk )
-     call outfld( 'limit_ppen_Cu'   , limit_ppen,               mix,    lchnk )
-     call outfld( 'limit_emf_Cu'    , limit_emf,                mix,    lchnk )
-     call outfld( 'limit_cinlcl_Cu' , limit_cinlcl,             mix,    lchnk )
-     call outfld( 'limit_cin_Cu'    , limit_cin,                mix,    lchnk )
-     call outfld( 'limit_cbmf_Cu'   , limit_cbmf,               mix,    lchnk )
-     call outfld( 'limit_rei_Cu'    , limit_rei,                mix,    lchnk )
-     call outfld( 'ind_delcin_Cu'   , ind_delcin,               mix,    lchnk )
+     call outfld( 'limit_shcu_Cu'   , limit_shcu,               mix,    lchnk ) 
+     call outfld( 'limit_negcon_Cu' , limit_negcon,             mix,    lchnk ) 
+     call outfld( 'limit_ufrc_Cu'   , limit_ufrc,               mix,    lchnk ) 
+     call outfld( 'limit_ppen_Cu'   , limit_ppen,               mix,    lchnk ) 
+     call outfld( 'limit_emf_Cu'    , limit_emf,                mix,    lchnk ) 
+     call outfld( 'limit_cinlcl_Cu' , limit_cinlcl,             mix,    lchnk ) 
+     call outfld( 'limit_cin_Cu'    , limit_cin,                mix,    lchnk ) 
+     call outfld( 'limit_cbmf_Cu'   , limit_cbmf,               mix,    lchnk ) 
+     call outfld( 'limit_rei_Cu'    , limit_rei,                mix,    lchnk ) 
+     call outfld( 'ind_delcin_Cu'   , ind_delcin,               mix,    lchnk ) 
 
     return
 
   end subroutine compute_uwshcu
 
   ! ------------------------------ !
-  !                                !
+  !                                ! 
   ! Beginning of subroutine blocks !
   !                                !
   ! ------------------------------ !
@@ -4696,17 +4696,17 @@ end subroutine uwshcu_readnl
     if( thvubot .gt. thv0bot .and. thvutop .gt. thv0top ) then
         plfc = pbot
         return
-    elseif( thvubot .le. thv0bot .and. thvutop .le. thv0top ) then
+    elseif( thvubot .le. thv0bot .and. thvutop .le. thv0top ) then 
         cin  = cin - ( (thvubot/thv0bot - 1._r8) + (thvutop/thv0top - 1._r8)) * (pbot - ptop) /        &
                      ( pbot/(r*thv0bot*exnf(pbot)) + ptop/(r*thv0top*exnf(ptop)) )
-    elseif( thvubot .gt. thv0bot .and. thvutop .le. thv0top ) then
+    elseif( thvubot .gt. thv0bot .and. thvutop .le. thv0top ) then 
         frc  = ( thvutop/thv0top - 1._r8 ) / ( (thvutop/thv0top - 1._r8) - (thvubot/thv0bot - 1._r8) )
         cin  = cin - ( thvutop/thv0top - 1._r8 ) * ( (ptop + frc*(pbot - ptop)) - ptop ) /             &
                      ( pbot/(r*thv0bot*exnf(pbot)) + ptop/(r*thv0top*exnf(ptop)) )
-    else
+    else            
         frc  = ( thvubot/thv0bot - 1._r8 ) / ( (thvubot/thv0bot - 1._r8) - (thvutop/thv0top - 1._r8) )
         plfc = pbot - frc * ( pbot - ptop )
-        cin  = cin - ( thvubot/thv0bot - 1._r8)*(pbot - plfc)/                                         &
+        cin  = cin - ( thvubot/thv0bot - 1._r8)*(pbot - plfc)/                                         & 
                      ( pbot/(r*thv0bot*exnf(pbot)) + ptop/(r*thv0top * exnf(ptop)))
     endif
 
@@ -4715,16 +4715,16 @@ end subroutine uwshcu_readnl
 
   function single_cin(pbot,thv0bot,ptop,thv0top,thvubot,thvutop)
   ! ------------------------------------------------------- !
-  ! Function to calculate a single layer CIN by summing all !
+  ! Function to calculate a single layer CIN by summing all ! 
   ! positive and negative CIN.                              !
-  ! ------------------------------------------------------- !
+  ! ------------------------------------------------------- ! 
     real(r8) :: single_cin
-    real(r8)    pbot,thv0bot,ptop,thv0top,thvubot,thvutop
+    real(r8)    pbot,thv0bot,ptop,thv0top,thvubot,thvutop 
 
     single_cin = ( (1._r8 - thvubot/thv0bot) + (1._r8 - thvutop/thv0top)) * ( pbot - ptop ) / &
                  ( pbot/(r*thv0bot*exnf(pbot)) + ptop/(r*thv0top*exnf(ptop)) )
     return
-  end function single_cin
+  end function single_cin   
 
 
   subroutine conden(p,thl,qt,th,qv,ql,qi,rvls,id_check,qsat)
@@ -4753,9 +4753,9 @@ end subroutine uwshcu_readnl
     tc   = thl*exnf(p)
   ! Modification : In order to be compatible with the dlf treatment in stratiform.F90,
   !                we may use ( 268.15, 238.15 ) with 30K ramping instead of 20 K,
-  !                in computing ice fraction below.
+  !                in computing ice fraction below. 
   !                Note that 'cldwat_fice' uses ( 243.15, 263.15 ) with 20K ramping for stratus.
-    nu   = max(min((268._r8 - tc)/20._r8,1.0_r8),0.0_r8)  ! Fraction of ice in the condensate.
+    nu   = max(min((268._r8 - tc)/20._r8,1.0_r8),0.0_r8)  ! Fraction of ice in the condensate. 
     leff = (1._r8 - nu)*xlv + nu*xls                      ! This is an estimate that hopefully speeds convergence
 
     ! --------------------------------------------------------------------------- !
@@ -4768,14 +4768,14 @@ end subroutine uwshcu_readnl
     status = qsat(temps,p,es(1),qs(1),gam(1), 1)
     rvls   = qs(1)
 
-    if( qs(1) .ge. qt ) then
+    if( qs(1) .ge. qt ) then  
         id_check = 0
         qv = qt
         qc = 0._r8
         ql = 0._r8
         qi = 0._r8
         th = tc/exnf(p)
-    else
+    else 
         do iteration = 1, 10
            temps  = temps + ( (tc-temps)*cp/leff + qt - rvls )/( cp/leff + ep2*leff*rvls/r/temps/temps )
            status = qsat(temps,p,es(1),qs(1),gam(1),1)
@@ -4821,8 +4821,8 @@ end subroutine uwshcu_readnl
     else
         if( b .eq. 0._r8 ) then                        ! Form a*x**2 + c = 0
             if( a*c .gt. 0._r8 ) then                  ! Failure: x**2 = -c/a < 0
-                status = 2
-            else                                       ! x**2 = -c/a
+                status = 2  
+            else                                       ! x**2 = -c/a 
                 r1 = sqrt(-c/a)
             endif
             r2 = -r1
@@ -4839,7 +4839,7 @@ end subroutine uwshcu_readnl
 
     return
   end subroutine roots
-
+  
   function slope(mkx,field,p0)
   ! ------------------------------------------------------------------ !
   ! Function performing profile reconstruction of conservative scalars !
@@ -4852,7 +4852,7 @@ end subroutine uwshcu_readnl
     integer,  intent(in) :: mkx
     real(r8), intent(in) :: field(mkx)
     real(r8), intent(in) :: p0(mkx)
-
+    
     real(r8)             :: below
     real(r8)             :: above
     integer              :: k
@@ -4862,7 +4862,7 @@ end subroutine uwshcu_readnl
        above = ( field(k) - field(k-1) ) / ( p0(k) - p0(k-1) )
        if( above .gt. 0._r8 ) then
            slope(k-1) = max(0._r8,min(above,below))
-       else
+       else 
            slope(k-1) = min(0._r8,max(above,below))
        end if
        below = above
@@ -4875,14 +4875,14 @@ end subroutine uwshcu_readnl
   function qsinvert(qt,thl,psfc,qsat)
   ! ----------------------------------------------------------------- !
   ! Function calculating saturation pressure ps (or pLCL) from qt and !
-  ! thl ( liquid potential temperature,  NOT liquid virtual potential !
+  ! thl ( liquid potential temperature,  NOT liquid virtual potential ! 
   ! temperature) by inverting Bolton formula. I should check later if !
   ! current use of 'leff' instead of 'xlv' here is reasonable or not. !
   ! ----------------------------------------------------------------- !
-    real(r8)          :: qsinvert
+    real(r8)          :: qsinvert    
     real(r8)             qt, thl, psfc
     real(r8)             ps, Pis, Ts, err, dlnqsdT, dTdPis
-    real(r8)             dPisdps, dlnqsdps, derrdps, dps
+    real(r8)             dPisdps, dlnqsdps, derrdps, dps 
     real(r8)             Ti, rhi, TLCL, PiLCL, psmin, dpsmax
     integer              i
     integer, external :: qsat
@@ -4901,9 +4901,9 @@ end subroutine uwshcu_readnl
 
     Ti       =  thl*(psfc/p00)**rovcp
     status   =  qsat(Ti,psfc,es(1),qs(1),gam(1),1)
-    rhi      =  qt/qs(1)
+    rhi      =  qt/qs(1)      
     if( rhi .le. 0.01_r8 ) then
-        write(iulog,*) 'Source air is too dry and pLCL is set to psmin in uwshcu.F90'
+        write(iulog,*) 'Source air is too dry and pLCL is set to psmin in uwshcu.F90' 
 #ifdef WRF_PORT
         call wrf_message(iulog)
 #endif
@@ -4919,29 +4919,29 @@ end subroutine uwshcu_readnl
        Ts       =  thl*Pis
        status   =  qsat(Ts,ps,es(1),qs(1),gam(1),1)
        err      =  qt - qs(1)
-       nu       =  max(min((268._r8 - Ts)/20._r8,1.0_r8),0.0_r8)
-       leff     =  (1._r8 - nu)*xlv + nu*xls
+       nu       =  max(min((268._r8 - Ts)/20._r8,1.0_r8),0.0_r8)        
+       leff     =  (1._r8 - nu)*xlv + nu*xls                   
        dlnqsdT  =  gam(1)*(cp/leff)/qs(1)
        dTdPis   =  thl
-       dPisdps  =  rovcp*Pis/ps
+       dPisdps  =  rovcp*Pis/ps 
        dlnqsdps = -1._r8/(ps - (1._r8 - ep2)*es(1))
        derrdps  = -qs(1)*(dlnqsdT * dTdPis * dPisdps + dlnqsdps)
        dps      = -err/derrdps
        ps       =  ps + dps
        if( ps .lt. 0._r8 ) then
-           write(iulog,*) 'pLCL iteration is negative and set to psmin in uwshcu.F90', qt, thl, psfc
+           write(iulog,*) 'pLCL iteration is negative and set to psmin in uwshcu.F90', qt, thl, psfc 
 #ifdef WRF_PORT
            call wrf_message(iulog)
 #endif
            qsinvert = psmin
-           return
+           return    
        end if
        if( abs(dps) .le. dpsmax ) then
            qsinvert = ps
            return
        end if
     end do
-    write(iulog,*) 'pLCL does not converge and is set to psmin in uwshcu.F90', qt, thl, psfc
+    write(iulog,*) 'pLCL does not converge and is set to psmin in uwshcu.F90', qt, thl, psfc 
 #ifdef WRF_PORT
            call wrf_message(iulog)
 #endif
@@ -4952,7 +4952,7 @@ end subroutine uwshcu_readnl
   real(r8) function compute_alpha(del_CIN,ke)
   ! ------------------------------------------------ !
   ! Subroutine to compute proportionality factor for !
-  ! implicit CIN calculation.                        !
+  ! implicit CIN calculation.                        !   
   ! ------------------------------------------------ !
     real(r8) :: del_CIN, ke
     real(r8) :: x0, x1
@@ -4972,9 +4972,9 @@ end subroutine uwshcu_readnl
 
   real(r8) function compute_mumin2(mulcl,rmaxfrac,mulow)
   ! --------------------------------------------------------- !
-  ! Subroutine to compute critical 'mu' (normalized CIN) such !
+  ! Subroutine to compute critical 'mu' (normalized CIN) such ! 
   ! that updraft fraction at the LCL is equal to 'rmaxfrac'.  !
-  ! --------------------------------------------------------- !
+  ! --------------------------------------------------------- !  
     real(r8) :: mulcl, rmaxfrac, mulow
     real(r8) :: x0, x1, ex, ef, exf, f, fs
     integer  :: iteration
@@ -4984,13 +4984,13 @@ end subroutine uwshcu_readnl
        ex = exp(-x0**2)
        ef = erfc(x0)
        ! if(x0.ge.3._r8) then
-       !    compute_mumin2 = 3._r8
+       !    compute_mumin2 = 3._r8 
        !    goto 20
-       ! endif
+       ! endif 
        exf = ex/ef
        f  = 0.5_r8*exf**2 - 0.5_r8*(ex/2._r8/rmaxfrac)**2 - (mulcl*2.5066_r8/2._r8)**2
        fs = (2._r8*exf**2)*(exf/sqrt(3.141592_r8)-x0) + (0.5_r8*x0*ex**2)/(rmaxfrac**2)
-       x1 = x0 - f/fs
+       x1 = x0 - f/fs     
        x0 = x1
     end do
     compute_mumin2 = x0
@@ -5004,8 +5004,8 @@ end subroutine uwshcu_readnl
   ! Subroutine to compute critical 'ppen[Pa]<0' ( pressure dis. !
   ! from 'ps0(kpen-1)' to the cumulus top where cumulus updraft !
   ! vertical velocity is exactly zero ) by considering exact    !
-  ! non-zero fer(kpen).                                         !
-  ! ----------------------------------------------------------- !
+  ! non-zero fer(kpen).                                         !  
+  ! ----------------------------------------------------------- !  
     real(r8) :: wtwb, D, bogbot, bogtop, rho0j, dpen
     real(r8) :: x0, x1, f, fs, SB, s00
     integer  :: iteration
@@ -5018,14 +5018,14 @@ end subroutine uwshcu_readnl
 
     if( D*dpen .lt. 1.e-8 ) then
         if( s00 .ge. 0._r8 ) then
-            x0 = dpen
+            x0 = dpen       
         else
             x0 = max(0._r8,min(dpen,-0.5_r8*wtwb/s00))
         endif
     else
         if( s00 .ge. 0._r8 ) then
             x0 = dpen
-        else
+        else 
             x0 = 0._r8
         endif
         do iteration = 1, 5
@@ -5038,20 +5038,20 @@ end subroutine uwshcu_readnl
            else
            	fs = min(fs,-1.e-10_r8)
            endif
-           x1 = x0 - f/fs
+           x1 = x0 - f/fs     
            x0 = x1
       end do
 
-    endif
+    endif    
 
     compute_ppen = -max(0._r8,min(dpen,x0))
 
   end function compute_ppen
 
-  subroutine fluxbelowinv(cbmf,ps0,mkx,kinv,dt,xsrc,xmean,xtopin,xbotin,xflx)
+  subroutine fluxbelowinv(cbmf,ps0,mkx,kinv,dt,xsrc,xmean,xtopin,xbotin,xflx)   
   ! ------------------------------------------------------------------------- !
   ! Subroutine to calculate turbulent fluxes at and below 'kinv-1' interfaces.!
-  ! Check in the main program such that input 'cbmf' should not be zero.      !
+  ! Check in the main program such that input 'cbmf' should not be zero.      !  
   ! If the reconstructed inversion height does not go down below the 'kinv-1' !
   ! interface, then turbulent flux at 'kinv-1' interface  is simply a product !
   ! of 'cmbf' and 'qtsrc-xbot' where 'xbot' is the value at the top interface !
@@ -5064,17 +5064,17 @@ end subroutine uwshcu_readnl
   ! and next provisional time step. Also impose a limiter to enforce outliers !
   ! of thermodynamic variables in 'kinv' layer  to come back to normal values !
   ! at the next step.                                                         !
-  ! ------------------------------------------------------------------------- !
-    integer,  intent(in)                     :: mkx, kinv
+  ! ------------------------------------------------------------------------- !            
+    integer,  intent(in)                     :: mkx, kinv 
     real(r8), intent(in)                     :: cbmf, dt, xsrc, xmean, xtopin, xbotin
     real(r8), intent(in),  dimension(0:mkx)  :: ps0
-    real(r8), intent(out), dimension(0:mkx)  :: xflx
+    real(r8), intent(out), dimension(0:mkx)  :: xflx  
     integer k
     real(r8) rcbmf, rpeff, dp, rr, pinv_eff, xtop, xbot, pinv, xtop_ori, xbot_ori
 
     xflx(0:mkx) = 0._r8
-    dp = ps0(kinv-1) - ps0(kinv)
-#ifndef WRF_PORT
+    dp = ps0(kinv-1) - ps0(kinv) 
+#ifndef WRF_PORT    
     if( abs(xbotin-xtopin) .le. 1.e-13_r8 ) then
         xbot = xbotin - 1.e-13_r8
         xtop = xtopin + 1.e-13_r8
@@ -5091,21 +5091,21 @@ end subroutine uwshcu_readnl
     ! -------------------------------------- !
     xtop_ori = xtop
     xbot_ori = xbot
-    rcbmf = ( cbmf * g * dt ) / dp                  ! Can be larger than 1 : 'OK'
+    rcbmf = ( cbmf * g * dt ) / dp                  ! Can be larger than 1 : 'OK'      
 #ifndef WRF_PORT
-    rpeff = ( xmean - xtop ) / ( xbot - xtop )
+    rpeff = ( xmean - xtop ) / ( xbot - xtop ) 
 #else
-    rpeff = ( xmean - xtop ) / max(1.e-13_r8, (xbot - xtop) )
+    rpeff = ( xmean - xtop ) / max(1.e-13_r8, (xbot - xtop) ) 
     rpeff = abs(rpeff)
 #endif
-    rpeff = min( max(0._r8,rpeff), 1._r8 )          ! As of this, 0<= rpeff <= 1
+    rpeff = min( max(0._r8,rpeff), 1._r8 )          ! As of this, 0<= rpeff <= 1   
     if( rpeff .eq. 0._r8 .or. rpeff .eq. 1._r8 ) then
         xbot = xmean
         xtop = xmean
     endif
-    ! Below two commented-out lines are the old code replacing the above 'if' block.
+    ! Below two commented-out lines are the old code replacing the above 'if' block.   
     ! if(rpeff.eq.1) xbot = xmean
-    ! if(rpeff.eq.0) xtop = xmean
+    ! if(rpeff.eq.0) xtop = xmean    
     rr       = rpeff / rcbmf
     pinv     = ps0(kinv-1) - rpeff * dp             ! "pinv" before detraining mass
     pinv_eff = ps0(kinv-1) + ( rcbmf - rpeff ) * dp ! Effective "pinv" after detraining mass
@@ -5142,7 +5142,7 @@ end subroutine uwshcu_readnl
     real(r8), intent(inout)  :: qv(mkx), ql(mkx), qi(mkx), s(mkx)
     real(r8), intent(inout)  :: qvten(mkx), qlten(mkx), qiten(mkx), sten(mkx)
     integer   k
-    real(r8)  dql, dqi, dqv, sum, aa, dum
+    real(r8)  dql, dqi, dqv, sum, aa, dum 
 
     do k = mkx, 1, -1        ! From the top to the 1st (lowest) layer from the surface
        dql = max(0._r8,1._r8*qlmin-ql(k))
@@ -5158,7 +5158,7 @@ end subroutine uwshcu_readnl
        dqv      = max(0._r8,1._r8*qvmin-qv(k))
        qvten(k) = qvten(k) + dqv/dt
        qv(k)    = qv(k)   + dqv
-       if( k .ne. 1 ) then
+       if( k .ne. 1 ) then 
            qv(k-1)    = qv(k-1)    - dqv*dp(k)/dp(k-1)
            qvten(k-1) = qvten(k-1) - dqv*dp(k)/dp(k-1)/dt
        endif
@@ -5166,9 +5166,9 @@ end subroutine uwshcu_readnl
        ql(k) = max(ql(k),qlmin)
        qi(k) = max(qi(k),qimin)
     end do
-    ! Extra moisture used to satisfy 'qv(i,1)=qvmin' is proportionally
+    ! Extra moisture used to satisfy 'qv(i,1)=qvmin' is proportionally 
     ! extracted from all the layers that has 'qv > 2*qvmin'. This fully
-    ! preserves column moisture.
+    ! preserves column moisture. 
     if( dqv .gt. 1.e-20_r8 ) then
         sum = 0._r8
         do k = 1, mkx
@@ -5182,41 +5182,41 @@ end subroutine uwshcu_readnl
                    qv(k)    = qv(k) - dum
                    qvten(k) = qvten(k) - dum/dt
                endif
-            enddo
-        else
+            enddo 
+        else 
             write(iulog,*) 'Full positive_moisture is impossible in uwshcu'
 #ifdef WRF_PORT
             call wrf_message(iulog)
 #endif
         endif
-    endif
+    endif 
 
     return
   end subroutine positive_moisture_single
 
   subroutine findsp (lchnk, ncol, q, t, p, tsp, qsp)
 
-  !-----------------------------------------------------------------------
-  !
-  ! Purpose:
+  !----------------------------------------------------------------------- 
+  ! 
+  ! Purpose: 
   !     find the wet bulb temperature for a given t and q
   !     in a longitude height section
-  !     wet bulb temp is the temperature and spec humidity that is
+  !     wet bulb temp is the temperature and spec humidity that is 
   !     just saturated and has the same enthalpy
   !     if q > qs(t) then tsp > t and qsp = qs(tsp) < q
   !     if q < qs(t) then tsp < t and qsp = qs(tsp) > q
   !
-  ! Method:
+  ! Method: 
   ! a Newton method is used
   ! first guess uses an algorithm provided by John Petch from the UKMO
   ! we exclude points where the physical situation is unrealistic
   ! e.g. where the temperature is outside the range of validity for the
   !      saturation vapor pressure, or where the water vapor pressure
-  !      exceeds the ambient pressure, or the saturation specific humidity is
+  !      exceeds the ambient pressure, or the saturation specific humidity is 
   !      unrealistic
-  !
+  ! 
   ! Author: P. Rasch
-  !
+  ! 
   !-----------------------------------------------------------------------
 
   use wv_saturation, only: estblf, hlatv, tmin, hlatf, rgasv, pcf, &
@@ -5261,7 +5261,7 @@ end subroutine uwshcu_readnl
    real(r8) tterm                ! work var.
    real(r8) qs                   ! spec. hum. of water vapor
    real(r8) tc                   ! crit temp of transition to ice
-   real(r8) tt0
+   real(r8) tt0 
 
 ! work variables
    real(r8) t1, q1, dt, dq
@@ -5272,7 +5272,7 @@ end subroutine uwshcu_readnl
    real(r8) denom
    real(r8) dttol
    real(r8) dqtol
-   integer doit(pcols)
+   integer doit(pcols) 
    real(r8) enin(pcols), enout(pcols)
    real(r8) tlim(pcols)
 
@@ -5285,7 +5285,7 @@ end subroutine uwshcu_readnl
    dqm = 0._r8    ! needed for iter=0 blowup with f90 -ei
    dttol = 1.e-4_r8 ! the relative temp error tolerance required to quit the iteration
    dqtol = 1.e-4_r8 ! the relative moisture error tolerance required to quit the iteration
-   tt0 = 273.15_r8  ! Freezing temperature
+   tt0 = 273.15_r8  ! Freezing temperature 
 !  tmin = 173.16 ! the coldest temperature we can deal with
 !
 ! max number of times to iterate the calculation
@@ -5513,14 +5513,14 @@ end subroutine uwshcu_readnl
             endif
          end do
       endif
-
+      
    end do                    ! level loop (k=1,pver)
 
    return
    end subroutine findsp
 
   ! ------------------------ !
-  !                          !
+  !                          ! 
   ! End of subroutine blocks !
   !                          !
   ! ------------------------ !

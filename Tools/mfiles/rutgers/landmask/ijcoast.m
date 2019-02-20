@@ -1,4 +1,4 @@
-function [C]=ijcoast(ncfile, coast_file);
+function [C]=ijcoast(ncfile, coast_file)
 
 %
 % IJCOAST:  Converts coastline (lon,lat) to fractional coordinates
@@ -25,14 +25,14 @@ function [C]=ijcoast(ncfile, coast_file);
 %                  C.Jcst    => Coastline J-grid coordinates, (0:M)
 %
 
-% svn $Id: ijcoast.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: ijcoast.m 916 2018-07-14 01:28:47Z arango $
 %=========================================================================%
 %  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
 
-EXTRACT=0;
+EXTRACT=false;
 method='linear';
 
 %-------------------------------------------------------------------------
@@ -40,7 +40,7 @@ method='linear';
 %-------------------------------------------------------------------------
 
 got_coast=false;
-if (nargin < 2),
+if (nargin < 2)
   S=nc_vnames(ncfile);
   vnames={S.Variables.Name};
   got_Clon=any(strcmp(vnames,'lon_coast'));
@@ -49,9 +49,9 @@ if (nargin < 2),
 end
 
 C.grid=ncfile;
-if (~got_coast),
+if (~got_coast)
   C.coast=coast_file;
-end,
+end
 C.indices='ijcoast.mat';
 
 %--------------------------------------------------------------------------
@@ -62,27 +62,25 @@ rlon=nc_read(ncfile,'lon_rho');
 rlat=nc_read(ncfile,'lat_rho');
 
 [Lp,Mp]=size(rlon);
-L=Lp-1;
-M=Mp-1;
 
 %--------------------------------------------------------------------------
 % Read in coastline data.
 %--------------------------------------------------------------------------
 
-if (got_coast),
+if (got_coast)
   Clon=nc_read(ncfile,'lon_coast');
   Clat=nc_read(ncfile,'lat_coast');
 else
   load(coast_file);
   Clon=lon;
   Clat=lat;
-end,
+end
 
 %--------------------------------------------------------------------------
 % Extract need coasline data.
 %--------------------------------------------------------------------------
 
-if (EXTRACT),
+if (EXTRACT)
 
   dx=5*abs(mean(mean(gradient(rlon))));
   dy=5*abs(mean(mean(gradient(rlat))));
@@ -95,15 +93,15 @@ if (EXTRACT),
   ind=find(Clon > C.Rlon | Clon < C.Llon | Clat > C.Tlat | Clat < C.Blat);
   clon=Clon;
   clat=Clat;
-  if (~isempty(ind)),
+  if (~isempty(ind))
     clon(ind)=[];
     clat(ind)=[];
-  end,
+  end
 
   C.lon=[NaN; clon; NaN];
   C.lat=[NaN; clat; NaN];
 
-else,
+else
 
   clon=Clon;
   clat=Clat;
@@ -111,7 +109,7 @@ else,
   C.lon=clon;
   C.lat=clat;
 
-end,
+end
 
 clear Clon Clat clon clat
 
@@ -121,15 +119,12 @@ clear Clon Clat clon clat
 % errors from triangulation.
 %--------------------------------------------------------------------------
 
-disp(['Converting coastline (lon,lat) to (I,J) grid indices.']);
+disp('Converting coastline (lon,lat) to (I,J) grid indices.');
 
 [y,x]=meshgrid(1:Mp,1:Lp);
 
-LonAvg=mean(rlon(:));
-LatAvg=mean(rlat(:));
-
-C.Icst=griddata(rlon-LonAvg,rlat-LatAvg,x,C.lon-LonAvg,C.lat-LatAvg,method);
-C.Jcst=griddata(rlon-LonAvg,rlat-LatAvg,y,C.lon-LonAvg,C.lat-LatAvg,method);
+C.Icst=griddata(rlon,rlat,x,C.lon,C.lat,method);
+C.Jcst=griddata(rlon,rlat,y,C.lon,C.lat,method);
 
 %  Substrat one to have indices in the range (0:L,0:M).
 

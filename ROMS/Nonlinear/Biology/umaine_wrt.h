@@ -184,7 +184,7 @@
       CALL netcdf_put_fvar (ng, model, ncname, 'Qmin',                  &
      &                      Qmin(ng), (/0/), (/0/),                     &
      &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (exit_flag.ne.NoError) RETURN	
 
       CALL netcdf_put_fvar (ng, model, ncname, 'lambdano3_s1',          &
      &                      lambdano3_s1(ng), (/0/), (/0/),             &
@@ -199,7 +199,7 @@
       CALL netcdf_put_fvar (ng, model, ncname, 'lambdano3_s3',          &
      &                      lambdano3_s3(ng), (/0/), (/0/),             &
      &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (exit_flag.ne.NoError) RETURN	
 
       CALL netcdf_put_fvar (ng, model, ncname, 'thetaNmax_s1',          &
      &                      thetaNmax_s1(ng), (/0/), (/0/),             &
@@ -265,11 +265,11 @@
      &                      bgamma7(ng), (/0/), (/0/),                  &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
-
+      	
       CALL netcdf_put_fvar (ng, model, ncname, 'bgamma11',              &
      &                      bgamma11(ng), (/0/), (/0/),                 &
      &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (exit_flag.ne.NoError) RETURN	
 
       CALL netcdf_put_fvar (ng, model, ncname, 'bgamma13',              &
      &                      bgamma13(ng), (/0/), (/0/),                 &
@@ -279,7 +279,7 @@
       CALL netcdf_put_fvar (ng, model, ncname, 'mtos1',                &
      &                      mtos1(ng), (/0/), (/0/),                   &
      &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (exit_flag.ne.NoError) RETURN	
 
       CALL netcdf_put_fvar (ng, model, ncname, 'mtos2',                &
      &                      mtos2(ng), (/0/), (/0/),                   &
@@ -464,7 +464,7 @@
       CALL netcdf_put_fvar (ng, model, ncname, 'RtUVLDIC',              &
      &                      RtUVLDIC(ng), (/0/), (/0/),                 &
      &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (exit_flag.ne.NoError) RETURN 	
 
       CALL netcdf_put_fvar (ng, model, ncname, 'RtUVSDIC',              &
      &                      RtUVSDIC(ng), (/0/), (/0/),                 &
@@ -474,7 +474,7 @@
       CALL netcdf_put_fvar (ng, model, ncname, 'colorFR1',              &
      &                      colorFR1(ng), (/0/), (/0/),                 &
      &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (exit_flag.ne.NoError) RETURN	
 
       CALL netcdf_put_fvar (ng, model, ncname, 'colorFR2',              &
      &                      colorFR2(ng), (/0/), (/0/),                 &

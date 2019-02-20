@@ -19,26 +19,26 @@ contains
 
 !--------------------------------------------------------------
 !       INDICES CONVENTION
-!--------------------------------------------------------------
+!--------------------------------------------------------------       
 !       kms:kme define the range for full-level indices
 !       kts:kte define the range for half-level indices
-!
+!       
 !       kms=1 is the first full level at surface
 !       kts=1 is the first half level at surface
-!
+!       
 !       kme is the last full level at toa
 !       kte is the last half level at toa
-!
+!       
 !       There is one more full level than half levels.
 !       Therefore, kme=kte+1. I checked it in one of my
 !       simulations:
-!
+!       
 !         namelist.input:
-!              s_vert=1  e_vert=28
+!              s_vert=1  e_vert=28        
 !         code:
 !              kms= 1    kts= 1
 !              kms=28    kte=27
-!
+!       
 !       In the vertical dimension there is no tiling for
 !       parallelization as in the horizontal dimensions.
 !       For i-dim and j-dim, the t-indices define the
@@ -46,16 +46,16 @@ contains
 !--------------------------------------------------------------
 !
 !  namelist options:
-!    aer_aod550_opt = [1,2] :
-!        1 = input constant value for AOD at 550 nm from namelist.
-!            In this case, the value is read from aer_aod550_val;
-!        2 = input value from auxiliary input 15. It is a time-varying 2D grid in netcdf wrf-compatible
+!    aer_aod550_opt = [1,2] : 
+!        1 = input constant value for AOD at 550 nm from namelist. 
+!            In this case, the value is read from aer_aod550_val; 
+!        2 = input value from auxiliary input 15. It is a time-varying 2D grid in netcdf wrf-compatible 
 !            format. The default operation is aer_aod550_opt=1 and aer_aod550_val=0.12
-!    aer_angexp_opt = [1,2,3] :
-!        1 = input constant value for Angstrom exponent from namelist. In this case, the value is read
-!            from aer_angexp_val;
-!        2 = input value from auxiliary input 15, as in aer_aod550_opt;
-!        3 = Angstrom exponent value estimated from the aerosol type defined in aer_type, and modulated
+!    aer_angexp_opt = [1,2,3] : 
+!        1 = input constant value for Angstrom exponent from namelist. In this case, the value is read 
+!            from aer_angexp_val; 
+!        2 = input value from auxiliary input 15, as in aer_aod550_opt; 
+!        3 = Angstrom exponent value estimated from the aerosol type defined in aer_type, and modulated 
 !            with the RH in WRF. Default operation is aer_angexp_opt = 1, and aer_angexp_val=1.3.
 !    aer_ssa_opt and aer_asy_opt are similar to aer_angexp_opt.
 !
@@ -70,7 +70,7 @@ subroutine calc_aerosol_goddard_sw(ht,dz8w,p,t3d,qv3d,aer_type,                 
                                    tauaer, ssaaer, asyaer                                     )
 
     USE module_wrf_error , ONLY : wrf_err_message
-
+    
     implicit none
 
     ! constants
@@ -124,7 +124,7 @@ subroutine calc_aerosol_goddard_sw(ht,dz8w,p,t3d,qv3d,aer_type,                 
              end do
           end do
 
-       case(2)
+       case(2) 
           if (.not.(present(aod5502d))) then
              write(wrf_err_message,*) 'Expected gridded total AOD@550 nm, but it is not in the radiation driver'
              call wrf_error_fatal(wrf_err_message)
@@ -390,7 +390,7 @@ subroutine calc_aerosol_rrtmg_sw(ht,dz8w,p,t3d,qv3d,aer_type,                   
                                  tauaer, ssaaer, asyaer, aod5503d                           )
 
     USE module_wrf_error , ONLY : wrf_err_message
-
+    
     implicit none
 
     ! constants
@@ -446,7 +446,7 @@ subroutine calc_aerosol_rrtmg_sw(ht,dz8w,p,t3d,qv3d,aer_type,                   
              end do
           end do
 
-       case(2)
+       case(2) 
           if (.not.(present(aod5502d))) then
              write(wrf_err_message,*) 'Expected gridded total AOD@550 nm, but it is not in the radiation driver'
              call wrf_error_fatal(wrf_err_message)
@@ -759,7 +759,7 @@ subroutine calc_spectral_aod_goddard_sw(ims,ime,jms,jme,kms,kme,  &
                                         rh,aer_type,aod550,       &
                                         tauaer                    )
    implicit none
-
+   
    ! constants
    integer, parameter :: N_AER_TYPES=3
    integer, parameter :: N_RH=8
@@ -843,7 +843,7 @@ subroutine calc_spectral_ssa_goddard_sw(ims,ime,jms,jme,kms,kme,  &
                                         rh,aer_type,              &
                                         ssaaer                    )
    implicit none
-
+   
    ! constants
    integer, parameter :: N_AER_TYPES=3
    integer, parameter :: N_RH=8
@@ -927,7 +927,7 @@ subroutine calc_spectral_asy_goddard_sw(ims,ime,jms,jme,kms,kme,  &
                                         rh,aer_type,              &
                                         asyaer                    )
    implicit none
-
+   
    ! constants
    integer, parameter :: N_AER_TYPES=3
    integer, parameter :: N_RH=8
@@ -1013,7 +1013,7 @@ subroutine calc_spectral_aod_rrtmg_sw(ims,ime,jms,jme,kms,kme,          &
                                       aod550_3d, tauaer3d)               ! trude
 
    implicit none
-
+   
    ! constants
    integer, parameter :: N_AER_TYPES=3
    integer, parameter :: N_RH=8
@@ -1029,8 +1029,8 @@ subroutine calc_spectral_aod_rrtmg_sw(ims,ime,jms,jme,kms,kme,          &
    real, dimension(ims:ime, jms:jme, 1:N_BANDS), intent(inout) :: tauaer ! Total spectral aerosol optical depth at surface
 
    ! ++ Trude
-   real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(in) :: aod550_3d ! 3D  AOD at 550 nm
-   real, dimension(ims:ime, kms:kme, jms:jme, 1:N_BANDS), optional, intent(inout) :: tauaer3d !
+   real, dimension(ims:ime, kms:kme, jms:jme), optional, intent(in) :: aod550_3d ! 3D  AOD at 550 nm 
+   real, dimension(ims:ime, kms:kme, jms:jme, 1:N_BANDS), optional, intent(inout) :: tauaer3d ! 
    ! -- Trude
 
    ! local variables
@@ -1158,7 +1158,7 @@ subroutine calc_spectral_ssa_rrtmg_sw(ims,ime,jms,jme,kms,kme,  &
                                       rh,aer_type,              &
                                       ssaaer                    )
    implicit none
-
+   
    ! constants
    integer, parameter :: N_AER_TYPES=3
    integer, parameter :: N_RH=8
@@ -1266,7 +1266,7 @@ subroutine calc_spectral_asy_rrtmg_sw(ims,ime,jms,jme,kms,kme,  &
                                       rh,aer_type,              &
                                       asyaer                    )
    implicit none
-
+   
    ! constants
    integer, parameter :: N_AER_TYPES=3
    integer, parameter :: N_RH=8
@@ -1375,9 +1375,9 @@ subroutine aod_profiler(ht,dz8w,taod550,n_bands,   &
                         aod550                     &
                                                    )
    use module_wrf_error , only : wrf_err_message
-
+   
    implicit none
-
+   
    ! constants
    real, parameter :: scale_height=2500. ! meters
 
@@ -1417,7 +1417,7 @@ subroutine aod_profiler(ht,dz8w,taod550,n_bands,   &
             do k=kts,kte
                aod550(i,k,j,nb)=aod_scale*dz8w(i,k,j)*exp(-z2d(i,k)/scale_height)
             end do
-         end do
+         end do 
       end do ! nb-loop
    end do ! j-loop
 end subroutine aod_profiler
@@ -1427,7 +1427,7 @@ subroutine calc_relative_humidity(p,t3d,qv3d,                 &
                                   its,ite,jts,jte,kts,kte,    &
                                   rh                          )
    implicit none
-
+   
    ! I/O variables
    integer, intent(in) :: ims,ime,jms,jme,kms,kme,its,ite,jts,jte,kts,kte
    ! Naming convention: 8~at => p8w reads as "p-at-w" (w=full levels)

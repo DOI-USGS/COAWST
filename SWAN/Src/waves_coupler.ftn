@@ -471,6 +471,16 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
+      to_add=':DIREP'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+
+      to_add=':DIRNP'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
       to_add=':WLEN'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
@@ -736,6 +746,8 @@
       real(m8), pointer :: avdata(:)
       real(m8), pointer :: DIRE(:)
       real(m8), pointer :: DIRN(:)
+      real(m8), pointer :: DIREP(:)
+      real(m8), pointer :: DIRNP(:)
       character (len=40) :: code
 !
 !-----------------------------------------------------------------------
@@ -755,9 +767,13 @@
       allocate ( avdata(gsmsize),stat=ierr )
       allocate ( DIRE(gsmsize),stat=ierr )
       allocate ( DIRN(gsmsize),stat=ierr )
+      allocate ( DIREP(gsmsize),stat=ierr )
+      allocate ( DIRNP(gsmsize),stat=ierr )
       avdata=0.0_m8
       DIRE=0.0_m8
       DIRN=0.0_m8
+      DIREP=0.0_m8
+      DIRNP=0.0_m8
 !
 !  Ask for points in this tile.
 !
@@ -803,6 +819,15 @@
      &                             "DIRE",DIRE)
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "DIRN",DIRN)
+      ELSE IF (IVTYPE.eq.14) THEN
+        DO IP=1,gsmsize
+          DIREP(IP)=1.0*SIN(avdata(IP)*PI/180.0)
+          DIRNP(IP)=1.0*COS(avdata(IP)*PI/180.0)
+        END DO
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "DIREP",DIREP)
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "DIRNP",DIRNP)
       ELSE IF (IVTYPE.eq.17) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "WLEN",avdata)
@@ -855,7 +880,7 @@
           END IF
 # endif
       END IF
-      deallocate (avdata, points, DIRE, DIRN)
+      deallocate (avdata, points, DIRE, DIRN, DIREP, DIRNP)
 !
       RETURN
       END SUBROUTINE WAV2OCN_COUPLING

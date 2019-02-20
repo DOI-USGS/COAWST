@@ -111,7 +111,7 @@ contains
                                                     "HANIS     ", &
                                                     "HSLOP     ", &
                                                     "HANGL     ", &
-                                                    "HZMAX     ", &
+                                                    "HZMAX     ", & 
                                                     "HGT_M     " /)
 
 
@@ -259,11 +259,11 @@ contains
        if(.not. associated(tr%loh))    call readfail(tr,input_fname,'loh')
        if(.not. associated(tr%lnd))    call readfail(tr,input_fname,'lnd')
        if(.not. associated(tr%avc))    call readfail(tr,input_fname,'avc')
-
+       
     else
        CALL wrf_error_fatal('NEST_TERRAIN wrong input_type')
     end if input_types
-
+    
 
     tr%input_type=input_type
     tr%io_form=io_form
@@ -277,7 +277,7 @@ contains
     character*256 :: message
     character*3 :: what
     character(len=128) :: input_fname
-
+    
 3123 format('Did not find "',A,'" in file "',A,'".')
     write(message,3123) trim(what),trim(input_fname)
     call wrf_error_fatal(message)

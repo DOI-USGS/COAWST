@@ -50,6 +50,8 @@
 #   ifdef UV_KIRBY
      &                   GRID(ng) % Hz,                                 &
      &                   GRID(ng) % z_r,                                &
+     &                   OCEAN(ng) % uwave,                             &
+     &                   OCEAN(ng) % vwave,                             &
 #   endif
      &                   OCEAN(ng) % u,                                 &
      &                   OCEAN(ng) % v,                                 &
@@ -76,6 +78,7 @@
 #  ifdef SOLVE3D
 #   ifdef UV_KIRBY
      &                         Hz, z_r,                                 &
+     &                         uwave, vwave,                            &
 #   endif
      &                         u, v,                                    &
 #  else
@@ -104,6 +107,8 @@
 #    ifdef UV_KIRBY
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
+      real(r8), intent(out) :: uwave(LBi:,LBj:)
+      real(r8), intent(out) :: vwave(LBi:,LBj:)
 #    endif
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
@@ -120,6 +125,8 @@
 #    ifdef UV_KIRBY
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
+      real(r8), intent(out) :: uwave(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: vwave(LBi:UBi,LBj:UBj)
 #    endif
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
@@ -152,7 +159,7 @@
         DO i=Istr,Iend
 
 ! For the different directional components when there are currents the Tr
-! is different and therefore also the kwc and the currents affecting the
+! is different and therefore also the kwc and the currents affecting the 
 ! waves. Here I am assuming that this difference is very small.
 ! We can change this is the future.
 
@@ -195,6 +202,8 @@
           END DO
           u_rho(i,j)=cff2_u/cff3_u
           v_rho(i,j)=cff2_v/cff3_v
+          uwave(i,j)=u_rho(i,j)
+          vwave(i,j)=v_rho(i,j)
 #   else
           u_rho(i,j)=0.5_r8*(u(i,j,N(ng),nnew)+u(i+1,j,N(ng),nnew))
           v_rho(i,j)=0.5_r8*(v(i,j,N(ng),nnew)+v(i,j+1,N(ng),nnew))

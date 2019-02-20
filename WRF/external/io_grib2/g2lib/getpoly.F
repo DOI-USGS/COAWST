@@ -1,7 +1,7 @@
       subroutine getpoly(csec3,lcsec3,jj,kk,mm)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    getpoly
+! SUBPROGRAM:    getpoly 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2002-12-11
 !
 ! ABSTRACT: This subroutine returns the J, K, and M pentagonal resolution
@@ -16,7 +16,7 @@
 !     csec3    - Character array that contains the packed GRIB2 GDS
 !    lcsec3    - Length (in octets) of section 3
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !         JJ   = J - pentagonal resolution parameter
 !         KK   = K - pentagonal resolution parameter
 !         MM   = M - pentagonal resolution parameter
@@ -30,11 +30,11 @@
 !
 !$$$
 !      use grib_mod
-
+    
       character(len=1),intent(in) :: csec3(*)
       integer,intent(in) :: lcsec3
       integer,intent(out) :: jj,kk,mm
-
+      
       integer,pointer,dimension(:) :: igdstmpl,list_opt
       integer :: igds(5)
       integer iofst,igdtlen,num_opt,jerr

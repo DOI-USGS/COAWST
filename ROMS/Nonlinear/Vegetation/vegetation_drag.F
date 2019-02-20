@@ -16,7 +16,7 @@
 !                                                                      !
 !  This routine computes the vegetation (posture-dependent) drag       !
 !  for rhs3d.F                                                         !
-!                                                                      !
+!                                                                      !  
 !  References:                                                         !
 !                                                                      !
 !  Luhar M., and H. M. Nepf (2011), Flow-induced reconfiguration of    !
@@ -54,7 +54,7 @@
       CALL vegetation_drag_tile  (ng, tile,                             &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        IminS, ImaxS, JminS, JmaxS,               &
-     &                        nrhs(ng),                                 &
+     &                        nrhs(ng),                                 & 
      &                        GRID(ng) % Hz,                            &
      &                        OCEAN(ng) % u,                            &
      &                        OCEAN(ng) % v,                            &
@@ -65,9 +65,9 @@
      &                        VEG(ng) % ru_loc_veg,                     &
      &                        VEG(ng) % rv_loc_veg,                     &
      &                        VEG(ng) % ru_veg,                         &
-     &                        VEG(ng) % rv_veg,                         &
+     &                        VEG(ng) % rv_veg,                         & 
      &                        VEG(ng) % step2d_uveg,                    &
-     &                        VEG(ng) % step2d_vveg,                    &
+     &                        VEG(ng) % step2d_vveg,                    & 
      &                        VEG(ng) % Lveg)
 
 # ifdef PROFILE
@@ -80,7 +80,7 @@
       SUBROUTINE vegetation_drag_tile  (ng, tile,                       &
      &                              LBi, UBi, LBj, UBj,                 &
      &                              IminS, ImaxS, JminS, JmaxS,         &
-     &                              nrhs,                               &
+     &                              nrhs,                               & 
      &                              Hz,                                 &
      &                              u, v,                               &
      &                              plant,                              &
@@ -141,7 +141,7 @@
 !  Local variable declarations.
 !
       integer :: i, j, k, iveg
-!
+! 
       real(r8), parameter :: one_third  = 1.0_r8/3.0_r8
       real(r8), parameter :: one_twelfth  = 1.0_r8/12.0_r8
       real(r8), parameter :: Inival  = 0.0_r8
@@ -182,7 +182,7 @@
 ! Flexible vegetation
 !
 ! Second moment of area
-!
+! 
               sma=(plant(i,j,iveg,pdiam)*                               &
      &             plant(i,j,iveg,pthck)**3.0_r8)*(one_twelfth)
 !
@@ -233,7 +233,7 @@
               Lveg_loc=MIN(1.0_r8-cff1,1.0_r8)
 !
 ! Prepare drag term (at rho points)
-!
+!       
               wrk(i,j)=0.5_r8*cd_veg(iveg,ng)*plant(i,j,iveg,pdiam)*    &
      &                 plant(i,j,iveg,pdens)*Hz(i,j,k)*Lveg_loc
 !

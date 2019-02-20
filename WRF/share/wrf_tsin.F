@@ -27,13 +27,13 @@ SUBROUTINE wrf_tsin ( grid , ierr )
 
        grid%ntsloc = 0
        grid%have_calculated_tslocs = .FALSE.
-
+   
        IF ( grid%max_ts_locs <= 0 ) RETURN
-
+   
        IF ( wrf_dm_on_monitor() ) THEN
 
           CALL wrf_tsin_exist ( exists )
-
+   
           IF (exists) THEN
 
              iunit = get_unused_unit()
@@ -43,14 +43,14 @@ SUBROUTINE wrf_tsin ( grid , ierr )
 
              ! Input time series locations
              OPEN(UNIT=iunit, FILE='tslist', FORM='formatted', STATUS='old', IOSTAT=istatus)
-
+   
              IF (istatus == 0) THEN
-
+   
                 ! Ignore first three lines, which constitute a header
                 READ(UNIT=iunit, FMT='(1X)')
                 READ(UNIT=iunit, FMT='(1X)')
                 READ(UNIT=iunit, FMT='(1X)')
-
+   
                 ! Read in time series locations
                 istatus = 0
                 DO WHILE (istatus == 0)
@@ -72,13 +72,13 @@ SUBROUTINE wrf_tsin ( grid , ierr )
                       EXIT
                    END IF
                 END DO
-
+      
                 CLOSE(iunit)
-
+   
              END IF
 
           END IF  ! tslist file exists
-
+   
        END IF
 
 #ifdef DM_PARALLEL
@@ -104,7 +104,7 @@ INTEGER FUNCTION get_unused_unit()
     IMPLICIT NONE
 
     INTEGER, PARAMETER :: min_unit_number = 30
-    INTEGER, PARAMETER :: max_unit_number = 99
+    INTEGER, PARAMETER :: max_unit_number = 99 
 
     LOGICAL :: opened
 
@@ -116,5 +116,5 @@ INTEGER FUNCTION get_unused_unit()
     get_unused_unit = -1
 
     RETURN
-
+    
 END FUNCTION get_unused_unit

@@ -1,8 +1,8 @@
 !  4DVar assimilation input parameters.
 !
-!svn $Id: s4dvar.in 885 2017-12-27 23:18:30Z arango $
+!svn $Id: s4dvar.in 889 2018-02-10 03:32:52Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -391,42 +391,42 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 ! Input model, initial conditions, boundary conditions, and surface forcing
 ! standard deviation file names, [1:Ngrids].
 
-       STDnameM == ocean_std_m.nc
-       STDnameI == ocean_std_i.nc
-       STDnameB == ocean_std_b.nc
-       STDnameF == ocean_std_f.nc
+       STDnameM == roms_std_m.nc
+       STDnameI == roms_std_i.nc
+       STDnameB == roms_std_b.nc
+       STDnameF == roms_std_f.nc
 
 ! Input/output model, initial conditions, boundary conditions, and surface
 ! forcing error covariance normalization factors file name, [1:Ngrids].
 
-       NRMnameM == ocean_nrm_m.nc
-       NRMnameI == ocean_nrm_i.nc
-       NRMnameB == ocean_nrm_b.nc
-       NRMnameF == ocean_nrm_f.nc
+       NRMnameM == roms_nrm_m.nc
+       NRMnameI == roms_nrm_i.nc
+       NRMnameB == roms_nrm_b.nc
+       NRMnameF == roms_nrm_f.nc
 
 ! Input/output observation file name, [1:Ngrids].
 
-        OBSname == ocean_obs.nc
+        OBSname == roms_obs.nc
 
 ! Input/output Hessian eigenvectors file name, [1:Ngrids].
 
-        HSSname == ocean_hss.nc
+        HSSname == roms_hss.nc
 
 ! Input/output Lanczos vectors file name, [1:Ngrids].
 
-        LCZname == ocean_lcz.nc
+        LCZname == roms_lcz.nc
 
 ! output time-evolved Lanczos vectors file name, [1:Ngrids].
 
-        LZEname == ocean_lze.nc
+        LZEname == roms_lze.nc
 
 ! Output model data at observation locations file name, [1:Ngrids].
 
-        MODname == ocean_mod.nc
+        MODname == roms_mod.nc
 
 ! Output posterior error covariance matrix file name, [1:Ngrids].
 
-        ERRname == ocean_err.nc
+        ERRname == roms_err.nc
 
 !
 !  GLOSSARY:

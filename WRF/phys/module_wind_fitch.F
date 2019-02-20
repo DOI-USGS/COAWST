@@ -17,7 +17,7 @@ MODULE module_wind_fitch
 !
 ! History of changes:
 !
-! WRFV3.5.1:
+! WRFV3.5.1: 
 ! WRFV3.6:   Modified by Pedro A. Jimenez to include:
 !             - Initialize the wind turbines in this module.
 !             - Introduce z_at_walls to avoid instabilities due to neglecting
@@ -37,7 +37,7 @@ MODULE module_wind_fitch
 ! Fitch, A. C. et al. 2013: Parameterization of Wind Farms in Climate Models.
 !    Journal of Climate, doi:http://dx.doi.org/10.1175/JCLI-D-12-00376.1
 ! Jimenez, P.A., J. Navarro, A.M. Palomares and J. Dudhia:  Mesoscale modeling of offshore wind turbines
-!    wakes at the wind farm resolving scale: a composite-based analysis with the WRF model over Horns Rev.
+!    wakes at the wind farm resolving scale: a composite-based analysis with the WRF model over Horns Rev. 
 !    Wind Energy, (In Press.).
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -51,8 +51,8 @@ MODULE module_wind_fitch
 
   IMPLICIT NONE
 
-  INTEGER, PARAMETER :: MAXVALS  = 100
-  INTEGER, PARAMETER :: MAXVALS2 = 100
+  INTEGER, PARAMETER :: MAXVALS  = 100   
+  INTEGER, PARAMETER :: MAXVALS2 = 100     
 !
   INTEGER           :: nt
   INTEGER, DIMENSION(:), ALLOCATABLE :: NKIND
@@ -72,11 +72,11 @@ CONTAINS
        &,ids,ide,jds,jde,kds,kde                 &
        &,ims,ime,jms,jme,kms,kme                 &
        &,its,ite,jts,jte,kts,kte                 &
-       &)
+       &)  
 !
 !
 !
-  INTEGER, INTENT(IN) :: id,windfarm_opt
+  INTEGER, INTENT(IN) :: id,windfarm_opt 
   INTEGER, INTENT(IN) :: its,ite,jts,jte,kts,kte
   INTEGER, INTENT(IN) :: ims,ime,jms,jme,kms,kme
   INTEGER, INTENT(IN) :: ids,ide,jds,jde,kds,kde
@@ -108,7 +108,7 @@ CONTAINS
     wfdensity = 1.0/(dx*dx)   !  per turbine, so numerator is 1
     power=0.
 
-    DO kt = 1,nt
+    DO kt = 1,nt  
       IF ( windfarm_opt .eq. 1 ) THEN
 !
 ! vertical layers cut by turbine blades
@@ -154,10 +154,10 @@ CONTAINS
           ! find vertical levels (half levels) within the hub height
           DO k=kts,ktf
             IF(.NOT. kfound) THEN
-              z2 = zheightl + 0.5*dz(i,k,j)
+              z2 = zheightl + 0.5*dz(i,k,j) 
 !
               IF(hubheight(kt) .GE. z2 ) THEN
-                kbot=k
+                kbot=k 
               ELSE
                 ktop=k
                 kfound = .TRUE.
@@ -238,7 +238,7 @@ CONTAINS
   END SUBROUTINE dragforce
 
 ! This subroutine calculates area of turbine between two vertical levels
-! Input variables :
+! Input variables : 
 !            z1 = distance between k level and lower blade tip
 !            z2 = distance between k+1 level and lower blade tip
 !            wfdensity = wind farm density in m^-2
@@ -253,7 +253,7 @@ CONTAINS
   REAL r,zc1,zc2
 
   r=tdiameter/2.              !r = turbine radius
-  z1=r-z1                   !distance of kth level from turbine center
+  z1=r-z1                   !distance of kth level from turbine center 
   z2=r-z2                   !distance of k+1 th level from turbine center
   zc1=abs(z1)
   zc2=abs(z2)
@@ -268,7 +268,7 @@ CONTAINS
      tarea=zc2*sqrt(r*r-zc2*zc2)+r*r*asin(zc2/r)+ &
      zc1*sqrt(r*r-zc1*zc1)+r*r*asin(zc1/r)
   ENDIF
-  tarea=tarea*wfdensity      !turbine area * wind farm density
+  tarea=tarea*wfdensity      !turbine area * wind farm density 
 
   END SUBROUTINE turbine_area
 
@@ -293,7 +293,7 @@ CONTAINS
       DO k=1,maxvals2
             IF(.NOT. vfound) THEN
               IF(turbws(nkind,k).GT.speed) THEN
-                nu=k
+                nu=k 
                 nb=k-1
                 vfound=.true.
               ENDIF
@@ -324,7 +324,7 @@ CONTAINS
                                      *(speed-turbws(nkind,nb))
   ENDIF
 !
-  ! tke coefficient calculation
+  ! tke coefficient calculation 
 
   tkecof=thrcof-powcof
   IF(tkecof .LT. 0.) tkecof=0.
@@ -342,7 +342,7 @@ CONTAINS
    TYPE (grid_config_rec_type) :: config_flags
    TYPE (PROJ_INFO) :: ts_proj
    logical :: windfarm_initialized
-!
+! 
    CHARACTER*256 num,input,message_wind
    real lat,lon,ts_rx,ts_ry
    REAL :: known_lat, known_lon
@@ -363,7 +363,7 @@ CONTAINS
 ! ... PAJ: Counts the turbines ...
 !
        nt=0
- 10    read(70,*,end=100)
+ 10    read(70,*,end=100) 
        nt=nt+1
        goto 10
 !
@@ -517,11 +517,11 @@ CONTAINS
         CALL wrf_dm_bcast_real(npower,nt)
         CALL wrf_dm_bcast_real(cutin,nt)
         CALL wrf_dm_bcast_real(cutout,nt)
-        CALL wrf_dm_bcast_integer(nkind,nt)
-        CALL wrf_dm_bcast_real(turbws,maxvals*maxvals2)
-        CALL wrf_dm_bcast_real(turbtc,maxvals*maxvals2)
-        CALL wrf_dm_bcast_real(turbpw,maxvals*maxvals2)
+        CALL wrf_dm_bcast_integer(nkind,nt) 
+        CALL wrf_dm_bcast_real(turbws,maxvals*maxvals2) 
+        CALL wrf_dm_bcast_real(turbtc,maxvals*maxvals2) 
+        CALL wrf_dm_bcast_real(turbpw,maxvals*maxvals2) 
 
   END SUBROUTINE init_module_wind_fitch
-
+  
 END MODULE module_wind_fitch

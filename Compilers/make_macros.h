@@ -1,7 +1,7 @@
 /*
-** svn $Id: make_macros.h 830 2017-01-24 21:21:11Z arango $
+** svn $Id: make_macros.h 889 2018-02-10 03:32:52Z arango $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2018 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2019 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -92,7 +92,7 @@
   USE_ROMS := on
 #else
   USE_ROMS :=
-#endif
+#endif 
 
 /*
 ** Process WRF Atmospheric model.

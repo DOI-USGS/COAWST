@@ -342,7 +342,8 @@
             cff=0.5_r8*max(0.0_r8,min(2.0_r8,2.0_r8*rt*rkar,betar))*    &
      &                                grad_x(i)*kax(i)
 #  ifdef MASKING
-            cff=cff*rmask(i+1,j)
+            ii=MIN(i+1,Lm(ng)+1)
+            cff=cff*rmask(ii,j)
 #  endif
             sw_xi=AC(i,j,d,3)-cff
           END IF
@@ -412,7 +413,8 @@
             cff=0.5*max(0.0_r8,min(2.0_r8,2.0_r8*ru*rkau,betau))*       &
      &                            grad_y(j)*kay(j)
 #  ifdef MASKING
-            cff=cff*rmask(i,j+1)
+            jj=MIN(j+1,Mm(ng)+1)
+            cff=cff*rmask(i,jj)
 #  endif
             sw_eta=AC(i,j,d,3)-cff
           END IF
@@ -446,7 +448,7 @@
             FD(i,1)=AC(i,j,1   ,3)-                                     &
      &              AC(i,j,ND  ,3)
 # else
-!!IN THIS POINT IT DOESNT MATTER THE BOUNDARY CONDITION,
+!!IN THIS POINT IT DOESNT MATTER THE BOUNDARY CONDITION, 
 !!WE JUST PUT IT AS IF IT WAS A NO GRADIENT
 !!THE WALL BOUNDARY CONDITION WILL BE STABLISHED LATER
           FD(i,0)=0.0_r8

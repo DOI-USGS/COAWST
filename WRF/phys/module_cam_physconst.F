@@ -19,7 +19,7 @@ module physconst
                             shr_const_avogad, shr_const_boltz,  shr_const_cpfw,   &
                             shr_const_rwv,    shr_const_zvir,   shr_const_pi,     &
                             shr_const_rearth, shr_const_sday,   shr_const_cday,   &
-                            shr_const_spval
+                            shr_const_spval         
    implicit none
    private
    public  :: physconst_readnl
@@ -37,7 +37,7 @@ module physconst
    real(r8), public, parameter :: pstd        = shr_const_pstd       ! Standard pressure (Pascals)
    real(r8), public, parameter :: r_universal = shr_const_rgas       ! Universal gas constant (J/K/kmol)
    real(r8), public, parameter :: rhoh2o      = shr_const_rhofw      ! Density of liquid water (STP)
-   real(r8), public, parameter :: spval       = shr_const_spval      !special value
+   real(r8), public, parameter :: spval       = shr_const_spval      !special value 
    real(r8), public, parameter :: stebol      = shr_const_stebol     ! Stefan-Boltzmann's constant (W/m^2/K^4)
 
    real(r8), public, parameter :: c0          = 2.99792458e8_r8      ! Speed of light in a vacuum (m/s)
@@ -73,14 +73,14 @@ module physconst
    real(r8), public           :: omega        = 2.0_R8*shr_const_pi/shr_const_sday! earth rot ~ rad/sec
    real(r8), public           :: rh2o         = shr_const_rgas/shr_const_mwwv     ! Water vapor gas constant ~ J/K/kg
    real(r8), public           :: rair         = shr_const_rdair   ! Dry air gas constant     ~ J/K/kg
-   real(r8), public           :: epsilo       = shr_const_mwwv/shr_const_mwdair   ! ratio of h2o to dry air molecular weights
+   real(r8), public           :: epsilo       = shr_const_mwwv/shr_const_mwdair   ! ratio of h2o to dry air molecular weights 
    real(r8), public           :: zvir         = (shr_const_rwv/shr_const_rdair)-1.0_R8 ! (rh2o/rair) - 1
    real(r8), public           :: cpvir        = (shr_const_cpwv/shr_const_cpdair)-1.0_R8 ! CPWV/CPDAIR - 1.0
    real(r8), public           :: rhodair      = shr_const_pstd/(shr_const_rdair*shr_const_tkfrz)
    real(r8), public           :: cappa        = (shr_const_rgas/shr_const_mwdair)/shr_const_cpdair  ! R/Cp
-   real(r8), public           :: ez           ! Coriolis expansion coeff -> omega/sqrt(0.375)
+   real(r8), public           :: ez           ! Coriolis expansion coeff -> omega/sqrt(0.375)   
    real(r8), public           :: Cpd_on_Cpv   = shr_const_cpdair/shr_const_cpwv
-
+                         
 !================================================================================================
 contains
 !================================================================================================
@@ -94,7 +94,7 @@ contains
       use spmd_utils,      only: masterproc
       use abortutils,      only: endrun
       use cam_logfile,     only: iulog
-#endif
+#endif   
       character(len=*), intent(in) :: nlfile  ! filepath for file containing namelist input
 #ifndef WRF_PORT
       ! Local variables
@@ -133,35 +133,35 @@ contains
 #endif
 
 
-
-      newg     =  gravit .ne. shr_const_g
+      
+      newg     =  gravit .ne. shr_const_g 
       newsday  =  sday   .ne. shr_const_sday
       newmwh2o =  mwh2o  .ne. shr_const_mwwv
       newcpwv  =  cpwv   .ne. shr_const_cpwv
       newmwdry =  mwdry  .ne. shr_const_mwdair
       newrearth=  rearth .ne. shr_const_rearth
       newtmelt =  tmelt  .ne. shr_const_tkfrz
-
-
-
+      
+      
+      
       if (newg .or. newsday .or. newmwh2o .or. newcpwv .or. newmwdry .or. newrearth .or. newtmelt) then
          if (masterproc) then
             write(iulog,*)'****************************************************************************'
 #ifdef WRF_PORT
             call wrf_message(iulog)
-#endif
+#endif 
             write(iulog,*)'***    New Physical Constant Values set via namelist                     ***'
 #ifdef WRF_PORT
             call wrf_message(iulog)
-#endif
+#endif 
             write(iulog,*)'***                                                                      ***'
 #ifdef WRF_PORT
             call wrf_message(iulog)
-#endif
+#endif 
             write(iulog,*)'***    Physical Constant    Old Value                  New Value         ***'
 #ifdef WRF_PORT
             call wrf_message(iulog)
-#endif
+#endif 
             if (newg)       write(iulog,*)'***       GRAVITY   ',shr_const_g,gravit,'***'
             if (newsday)    write(iulog,*)'***       SDAY      ',shr_const_sday,sday,'***'
             if (newmwh2o)   write(iulog,*)'***       MWH20     ',shr_const_mwwv,mwh2o,'***'
@@ -172,28 +172,28 @@ contains
             write(iulog,*)'****************************************************************************'
 #ifdef WRF_PORT
             call wrf_message(iulog)
-#endif
+#endif 
          end if
-         rga         = 1._r8/gravit
+         rga         = 1._r8/gravit 
          ra          = 1._r8/rearth
          omega       = 2.0_R8*pi/sday
          cpvir       = cpwv/cpair - 1._r8
-         epsilo      = mwh2o/mwdry
-
+         epsilo      = mwh2o/mwdry      
+         
          !  rair and rh2o have to be defined before any of the variables that use them
-
+         
          rair        = r_universal/mwdry
-         rh2o        = r_universal/mwh2o
-
-         cappa       = rair/cpair
+         rh2o        = r_universal/mwh2o  
+         
+         cappa       = rair/cpair       
          rhodair     = pstd/(rair*tmelt)
          zvir        =  (rh2o/rair)-1.0_R8
          ez          = omega / sqrt(0.375_r8)
          Cpd_on_Cpv  = cpair/cpwv
-
-      else
+         
+      else	
          ez          = omega / sqrt(0.375_r8)
       end if
-#endif
+#endif     
     end subroutine physconst_readnl
   end module physconst

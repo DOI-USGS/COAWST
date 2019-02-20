@@ -8,39 +8,39 @@ module input_module
 #endif
    use parallel_module
    use queue_module
-
+ 
    type (queue) :: unit_desc
-
+ 
    ! WRF I/O API related variables
    integer :: handle
-
+ 
    integer :: num_calls
-
+ 
    character (len=1) :: internal_gridtype
-
+ 
    contains
-
-
+ 
+ 
    subroutine input_init(nest_number, istatus)
-
+ 
       implicit none
-
+  
       ! Arguments
       integer, intent(in) :: nest_number
       integer, intent(out) :: istatus
-
+  
 #include "wrf_io_flags.h"
 #include "wrf_status_codes.h"
-
+  
       ! Local variables
       integer :: i
       integer :: comm_1, comm_2
       character (len=MAX_FILENAME_LEN) :: input_fname
-
+  
       istatus = 0
-
+  
       if (my_proc_id == IO_NODE .or. do_tiled_input) then
-
+  
 #ifdef IO_BINARY
          if (io_form_input == BINARY) call ext_int_ioinit('sysdep info', istatus)
 #endif
@@ -51,7 +51,7 @@ module input_module
          if (io_form_input == GRIB1) call ext_gr1_ioinit('sysdep info', istatus)
 #endif
          call mprintf((istatus /= 0),ERROR,'Error in ext_pkg_ioinit')
-
+     
          comm_1 = 1
          comm_2 = 1
          input_fname = ' '
@@ -85,7 +85,7 @@ module input_module
             write(input_fname(len_trim(input_fname)+1:len_trim(input_fname)+5), '(a1,i4.4)') &
                             '_', my_proc_id
          end if
-
+     
          istatus = 0
 #ifdef IO_BINARY
          if (io_form_input == BINARY) &
@@ -100,24 +100,24 @@ module input_module
             call ext_gr1_open_for_read(trim(input_fname), comm_1, comm_2, 'sysdep info', handle, istatus)
 #endif
          call mprintf((istatus /= 0),ERROR,'Couldn''t open file %s for input.',s1=input_fname)
-
+     
          call q_init(unit_desc)
-
+  
       end if ! (my_proc_id == IO_NODE .or. do_tiled_input)
-
+  
       num_calls = 0
-
+ 
    end subroutine input_init
-
-
+ 
+ 
    subroutine read_next_field(start_patch_i, end_patch_i, &
                               start_patch_j, end_patch_j, &
                               start_patch_k, end_patch_k, &
                               cname, cunits, cdesc, memorder, stagger, &
                               dimnames, sr_x, sr_y, real_array, istatus)
-
+ 
       implicit none
-
+  
       ! Arguments
       integer, intent(out) :: start_patch_i, end_patch_i, &
                               start_patch_j, end_patch_j, &
@@ -127,10 +127,10 @@ module input_module
       character (len=*), intent(out) :: cname, memorder, stagger, cunits, cdesc
       character (len=128), dimension(3), intent(inout) :: dimnames
       integer, intent(inout) :: istatus
-
+  
 #include "wrf_io_flags.h"
 #include "wrf_status_codes.h"
-
+  
       ! Local variables
       integer :: ndim, wrftype
       integer :: sm1, em1, sm2, em2, sm3, em3, sp1, ep1, sp2, ep2, sp3, ep3
@@ -138,9 +138,9 @@ module input_module
       real, pointer, dimension(:,:,:) :: real_domain
       character (len=20) :: datestr
       type (q_data) :: qd
-
+  
       if (my_proc_id == IO_NODE .or. do_tiled_input) then
-
+  
          if (num_calls == 0) then
 #ifdef IO_BINARY
             if (io_form_input == BINARY) call ext_int_get_next_time(handle, datestr, istatus)
@@ -152,25 +152,25 @@ module input_module
             if (io_form_input == GRIB1) call ext_gr1_get_next_time(handle, datestr, istatus)
 #endif
          end if
-
+     
          num_calls = num_calls + 1
-
+   
 #ifdef IO_BINARY
-         if (io_form_input == BINARY) call ext_int_get_next_var(handle, cname, istatus)
+         if (io_form_input == BINARY) call ext_int_get_next_var(handle, cname, istatus) 
 #endif
 #ifdef IO_NETCDF
-         if (io_form_input == NETCDF) call ext_ncd_get_next_var(handle, cname, istatus)
+         if (io_form_input == NETCDF) call ext_ncd_get_next_var(handle, cname, istatus) 
 #endif
 #ifdef IO_GRIB1
-         if (io_form_input == GRIB1) call ext_gr1_get_next_var(handle, cname, istatus)
+         if (io_form_input == GRIB1) call ext_gr1_get_next_var(handle, cname, istatus) 
 #endif
       end if
-
+  
       if (nprocs > 1 .and. .not. do_tiled_input) call parallel_bcast_int(istatus)
       if (istatus /= 0) return
-
+  
       if (my_proc_id == IO_NODE .or. do_tiled_input) then
-
+  
          istatus = 0
 #ifdef IO_BINARY
          if (io_form_input == BINARY) then
@@ -195,25 +195,25 @@ module input_module
                                             trim(cname), temp(2), 1, temp(3), istatus)
          end if
 #endif
-
+     
          call mprintf((istatus /= 0),ERROR,'In read_next_field(), problems with ext_pkg_get_var_info()')
 
-         start_patch_i = domain_start(1)
-         start_patch_j = domain_start(2)
+         start_patch_i = domain_start(1) 
+         start_patch_j = domain_start(2) 
          end_patch_i = domain_end(1)
          end_patch_j = domain_end(2)
          if (ndim == 3) then
-            start_patch_k = domain_start(3)
-            end_patch_k = domain_end(3)
+            start_patch_k = domain_start(3) 
+            end_patch_k = domain_end(3) 
          else
             domain_start(3) = 1
             domain_end(3) = 1
             start_patch_k = 1
             end_patch_k = 1
          end if
-
+     
          nullify(real_domain)
-
+     
          allocate(real_domain(start_patch_i:end_patch_i, start_patch_j:end_patch_j, start_patch_k:end_patch_k))
 #ifdef IO_BINARY
          if (io_form_input == BINARY) then
@@ -239,7 +239,7 @@ module input_module
                           domain_start, domain_end, istatus)
          end if
 #endif
-
+     
          call mprintf((istatus /= 0),ERROR,'In read_next_field(), got error code %i.', i1=istatus)
 
          if (io_form_input == BINARY) then
@@ -255,7 +255,7 @@ module input_module
             stagger = ' '
             sr_x = temp(1)
             sr_y = temp(2)
-
+        
 #ifdef IO_NETCDF
             if (io_form_input == NETCDF) then
                call ext_ncd_get_var_ti_char(handle, 'units', cname, cunits, istatus)
@@ -271,7 +271,7 @@ module input_module
             end if
 #endif
          end if
-
+  
       end if ! (my_proc_id == IO_NODE .or. do_tiled_input)
 
       if (nprocs > 1 .and. .not. do_tiled_input) then
@@ -287,14 +287,14 @@ module input_module
          call parallel_bcast_int(domain_end(3))
          call parallel_bcast_int(sr_x)
          call parallel_bcast_int(sr_y)
-
+   
          sp1 = my_minx
          ep1 = my_maxx - 1
          sp2 = my_miny
          ep2 = my_maxy - 1
          sp3 = domain_start(3)
          ep3 = domain_end(3)
-
+   
          if (internal_gridtype == 'C') then
             if (my_x /= nproc_x - 1 .or. stagger == 'U' .or. stagger == 'CORNER' .or. sr_x > 1) then
                ep1 = ep1 + 1
@@ -306,7 +306,7 @@ module input_module
             ep1 = ep1 + 1
             ep2 = ep2 + 1
          end if
-
+   
          if (sr_x > 1) then
             sp1 = (sp1-1)*sr_x+1
             ep1 =  ep1   *sr_x
@@ -322,14 +322,14 @@ module input_module
          em2 = ep2
          sm3 = sp3
          em3 = ep3
-
+   
          start_patch_i = sp1
          end_patch_i   = ep1
          start_patch_j = sp2
          end_patch_j   = ep2
          start_patch_k = sp3
          end_patch_k   = ep3
-
+   
          allocate(real_array(sm1:em1,sm2:em2,sm3:em3))
          if (my_proc_id /= IO_NODE) then
             allocate(real_domain(1,1,1))
@@ -350,13 +350,13 @@ module input_module
          deallocate(real_domain)
 
       else
-
+  
          real_array => real_domain
 
       end if
-
+ 
    end subroutine read_next_field
-
+ 
    subroutine read_global_attrs(title, start_date, grid_type, dyn_opt,                                &
                                 west_east_dim, south_north_dim, bottom_top_dim,                       &
                                 we_patch_s, we_patch_e, we_patch_s_stag, we_patch_e_stag,             &
@@ -366,9 +366,9 @@ module input_module
                                 i_parent_end, j_parent_end, dx, dy, cen_lat, moad_cen_lat, cen_lon,   &
                                 stand_lon, truelat1, truelat2, pole_lat, pole_lon, parent_grid_ratio, &
                                 corner_lats, corner_lons, sr_x, sr_y)
-
+ 
       implicit none
-
+  
       ! Arguments
       integer, intent(out) :: dyn_opt, west_east_dim, south_north_dim, bottom_top_dim, map_proj,   &
                  is_water, is_lake, we_patch_s, we_patch_e, we_patch_s_stag, we_patch_e_stag,      &
@@ -379,29 +379,29 @@ module input_module
                  pole_lat, pole_lon
       real, dimension(16), intent(out) :: corner_lats, corner_lons
       character (len=128), intent(out) :: title, start_date, grid_type, mminlu
-
+  
       ! Local variables
       integer :: istatus, i
       real :: wps_version
       character (len=128) :: cunits, cdesc, cstagger
       integer, dimension(3) :: sr
       type (q_data) :: qd
-
+  
       if (my_proc_id == IO_NODE .or. do_tiled_input) then
-
+  
 #ifdef IO_BINARY
          if (io_form_input == BINARY) then
             istatus = 0
-            do while (istatus == 0)
+            do while (istatus == 0) 
                cunits = ' '
                cdesc = ' '
                cstagger = ' '
                sr = 0
                call ext_int_get_var_ti_char(handle, 'units', 'VAR', cunits, istatus)
-
+         
                if (istatus == 0) then
                   call ext_int_get_var_ti_char(handle, 'description', 'VAR', cdesc, istatus)
-
+          
                   if (istatus == 0) then
                      call ext_int_get_var_ti_char(handle, 'stagger', 'VAR', cstagger, istatus)
 
@@ -410,14 +410,14 @@ module input_module
 
                         if (istatus == 0) then
                         call ext_int_get_var_ti_integer(handle, 'sr_y', 'VAR', sr(2), 1, sr(3), istatus)
-
+         
                              qd%units = cunits
                              qd%description = cdesc
                              qd%stagger = cstagger
                              qd%sr_x = sr(1)
                              qd%sr_y = sr(2)
                              call q_insert(unit_desc, qd)
-
+ 
                         end if
                     end if
                   end if
@@ -425,9 +425,15 @@ module input_module
             end do
          end if
 #endif
-
+     
          call ext_get_dom_ti_char          ('TITLE', title)
-         if (index(title,'GEOGRID V3.9.1') /= 0) then
+         if (index(title,'GEOGRID V4.0.2') /= 0) then
+            wps_version = 4.02
+         else if (index(title,'GEOGRID V4.0.2') /= 0) then
+            wps_version = 4.01
+         else if (index(title,'GEOGRID V4.0') /= 0) then
+            wps_version = 4.0
+         else if (index(title,'GEOGRID V3.9.1') /= 0) then
             wps_version = 3.91
          else if (index(title,'GEOGRID V3.9.0.1') /= 0) then
             wps_version = 3.901
@@ -522,12 +528,12 @@ module input_module
          call ext_get_dom_ti_integer_scalar('parent_grid_ratio', parent_grid_ratio)
          call ext_get_dom_ti_integer_scalar('sr_x', sr_x)
          call ext_get_dom_ti_integer_scalar('sr_y', sr_y)
-
+   
       end if
 
-
+  
       if (nprocs > 1 .and. .not. do_tiled_input) then
-
+  
          call parallel_bcast_char(title, len(title))
          call parallel_bcast_char(start_date, len(start_date))
          call parallel_bcast_char(grid_type, len(grid_type))
@@ -597,9 +603,9 @@ module input_module
          call parallel_bcast_int(j_parent_end)
          call parallel_bcast_int(parent_grid_ratio)
       end if
-
+  
       internal_gridtype = grid_type
-
+ 
    end subroutine read_global_attrs
 
 
@@ -824,14 +830,14 @@ module input_module
 
    end subroutine ext_get_dom_ti_char
 
-
+ 
    subroutine input_close()
-
+ 
       implicit none
-
+  
       ! Local variables
       integer :: istatus
-
+  
       istatus = 0
       if (my_proc_id == IO_NODE .or. do_tiled_input) then
 #ifdef IO_BINARY
@@ -853,9 +859,9 @@ module input_module
          end if
 #endif
       end if
-
+ 
       call q_destroy(unit_desc)
-
+ 
    end subroutine input_close
-
+ 
 end module input_module

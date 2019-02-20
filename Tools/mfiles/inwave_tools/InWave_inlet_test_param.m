@@ -83,8 +83,8 @@ if (make_InWave_ini)
 % Bindirs_centers = [5:10:355];  % center angles of the directional bins, 
 %                                  size Nbins. Directions coming from.
 
-  Nbins= 20;                     % number of computational directional bins
-  Bindirs_centers = [-95:10:95]; % center angles of the directional bins,
+  Nbins= 19;                     % number of computational directional bins
+  Bindirs_centers = [-90:10:90]; % center angles of the directional bins,
 %                                  size Nbins. Directions coming from.
   TA= 8.3;                       % representative absolute wave period (sec)
 

@@ -17,7 +17,7 @@ module gridinfo
                        ! 0 = lat/lon
                        ! 3 = Lambert Conformal
                        ! 5 = Polar Stereographic grid.
-                       ! 6 = Cassini grid.
+                       ! 6 = Cassini grid.   
      integer :: nx     ! Number of points in the X direction.
      integer :: ny     ! Number of points in the Y direction.
      real :: truelat1  ! First true latitude (for Polar Stereo. and Lam. Conf.)
@@ -26,11 +26,11 @@ module gridinfo
      character (len=8) :: startloc  ! "CENTER  " or "SWCORNER"
      real :: lat1      ! Starting latitude
      real :: lon1      ! Starting longitude
-     real :: lat0      ! central latitude
-     real :: lon0      ! central longitude
+     real :: lat0      ! central latitude  
+     real :: lon0      ! central longitude  
      real :: dx        ! grid-spacing in the X direction (km or degrees)
      real :: dy        ! grid-spacing in the Y direction (km or degrees)
-                       !
+                       ! 
 		       ! The following are WPS extensions (intermediate format version 5)
      logical :: grid_wind     ! Winds are grid_relative (true) or earth-realtive(false)
      real :: r_earth          ! Radius of a spherical earth

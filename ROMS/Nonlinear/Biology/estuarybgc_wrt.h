@@ -216,7 +216,7 @@
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
 #endif
-#ifdef SAV_BIOMASS
+#ifdef SAV_BIOMASS 
       CALL netcdf_put_ivar (ng, model, ncname, 'GMODopt',               &
      &                      GMODopt(ng), (/0/), (/0/),                  &
      &                      ncid = ncid)
@@ -321,5 +321,5 @@
      &                      KM(ng), (/0/), (/0/),                       &
      &                      ncid = ncid)
       IF (exit_flag.ne.NoError) RETURN
-#endif
+#endif 
  

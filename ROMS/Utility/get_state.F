@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE get_state (ng, model, msg, ncname, IniRec, Tindex)
 !
-!svn $Id: get_state.F 885 2017-12-27 23:18:30Z arango $
+!svn $Id: get_state.F 930 2018-11-14 16:58:13Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -48,15 +48,15 @@
       USE mod_scalars
 #if defined ESTUARYBGC && defined SAV_BIOMASS
       USE mod_biology
-#endif
+#endif 
 #if defined SEDIMENT || defined BBL_MODEL
       USE mod_sedbed
       USE mod_sediment
 #endif
-#if defined VEGETATION
+#if defined VEGETATION 
       USE mod_vegarr
       USE mod_vegetation
-#endif
+#endif 
 #if defined ICE_MODEL || defined CICE_MODEL
       USE mod_ice
 #endif
@@ -116,11 +116,12 @@
       integer :: Nrec, mySize, ncINPid, nvatts, nvdim, status, varid
       integer :: Vsize(4), start(4), total(4)
 
-      real(r8), parameter :: Fscl = 1.0_r8
+      real(dp), parameter :: Fscl = 1.0_r8
 
-      real(r8) :: Fmax, Fmin, INPtime, Tmax, scale, time_scale
+      real(dp) :: INPtime, Tmax, scale, time_scale
+      real(r8) :: Fmax, Fmin
 
-      real(r8), allocatable :: TimeVar(:)
+      real(dp), allocatable :: TimeVar(:)
 
       character (len=6 ) :: string
       character (len=15) :: Tstring, attnam, tvarnam
@@ -284,7 +285,8 @@
 !
       mySize=var_Dsize(1)
       IF (.not.allocated(TimeVar)) allocate (TimeVar(mySize))
-      CALL netcdf_get_fvar (ng, IDmod, ncname, TRIM(tvarnam), TimeVar,  &
+      CALL netcdf_get_time (ng, IDmod, ncname, TRIM(tvarnam),           &
+     &                      Rclock%DateNumber, TimeVar,                 &
      &                      ncid = ncINPid)
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
@@ -320,13 +322,13 @@
 !
 !  Set input time scale by looking at the "units" attribute.
 !
-      time_scale=0.0_r8
+      time_scale=0.0_dp
       DO i=1,nvatts
         IF (TRIM(var_Aname(i)).eq.'units') THEN
           IF (INDEX(TRIM(var_Achar(i)),'day').ne.0) THEN
             time_scale=day2sec
           ELSE IF (INDEX(TRIM(var_Achar(i)),'second').ne.0) THEN
-            time_scale=1.0_r8
+            time_scale=1.0_dp
           END IF
         END IF
       END DO
@@ -2078,7 +2080,7 @@
 !
 !  Read in AGB and BGB values
 !
-        foundit=find_string(var_name, n_var, TRIM(Vname(1,idsagb)),     &
+        foundit=find_string(var_name, n_var, TRIM(Vname(1,idsagb)),     & 
      &                        varid)
         gtype=var_flag(varid)*r2dvar
         status=nf_fread2d(ng, IDmod, ncname, ncINPid,                   &
@@ -2091,7 +2093,7 @@
      &                 OCEAN(ng)%AGB)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
      &                 __FILE__)) THEN
-          IF (Master) THEN
+          IF (Master) THEN 
             WRITE (stdout,60) string, TRIM(Vname(1,idsagb )),           &
      &                        InpRec, TRIM(ncname)
           END IF
@@ -2099,14 +2101,14 @@
           ioerror=status
           RETURN
         ELSE
-          IF (Master) THEN
-            WRITE (stdout,70) TRIM(Vname(2,idsagb)), Fmin, Fmax
+          IF (Master) THEN 
+            WRITE (stdout,70) TRIM(Vname(2,idsagb)), Fmin, Fmax 
           END IF
         END IF
 !
-! BGB
-!
-        foundit=find_string(var_name, n_var, TRIM(Vname(1,idsbgb)),     &
+! BGB 
+!  
+        foundit=find_string(var_name, n_var, TRIM(Vname(1,idsbgb)),     & 
      &                        varid)
         gtype=var_flag(varid)*r2dvar
         status=nf_fread2d(ng, IDmod, ncname, ncINPid,                   &
@@ -2119,7 +2121,7 @@
      &               OCEAN(ng)%BGB)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
      &                 __FILE__)) THEN
-          IF (Master) THEN
+          IF (Master) THEN 
             WRITE (stdout,60) string, TRIM(Vname(1,idsbgb )),           &
      &                        InpRec, TRIM(ncname)
           END IF
@@ -2127,14 +2129,14 @@
           ioerror=status
           RETURN
         ELSE
-          IF (Master) THEN
-            WRITE (stdout,70) TRIM(Vname(2,idsbgb)), Fmin, Fmax
+          IF (Master) THEN 
+            WRITE (stdout,70) TRIM(Vname(2,idsbgb)), Fmin, Fmax 
           END IF
         END IF
 !
 ! DINsed
-!
-        foundit=find_string(var_name, n_var, TRIM(Vname(1,iddins)),     &
+!  
+        foundit=find_string(var_name, n_var, TRIM(Vname(1,iddins)),     & 
      &                        varid)
         gtype=var_flag(varid)*r3dvar
         status=nf_fread3d(ng, IDmod, ncname, ncINPid,                   &
@@ -2147,7 +2149,7 @@
      &               OCEAN(ng)%DINsed)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
      &                 __FILE__)) THEN
-          IF (Master) THEN
+          IF (Master) THEN 
             WRITE (stdout,60) string, TRIM(Vname(1,iddins )),           &
      &                        InpRec, TRIM(ncname)
           END IF
@@ -2155,17 +2157,17 @@
           ioerror=status
           RETURN
         ELSE
-          IF (Master) THEN
-            WRITE (stdout,70) TRIM(Vname(2,iddins)), Fmin, Fmax
+          IF (Master) THEN 
+            WRITE (stdout,70) TRIM(Vname(2,iddins)), Fmin, Fmax 
           END IF
         END IF
 !
-#  endif
+#  endif 
 !
-#  ifdef VEGETATION
+#  ifdef VEGETATION 
 #   if defined VEG_DRAG || defined VEG_BIOMASS
 !
-!  Read in plant properties for each vegetation type
+!  Read in plant properties for each vegetation type 
 !
         DO i=1,NVEGP
           IF (get_var(idvprp(i))) THEN
@@ -2196,13 +2198,13 @@
               END IF
             END IF
           END IF
-        END DO
-#   endif
+        END DO 
+#   endif 
 #   ifdef MARSH_WAVE_THRUST
 !
-!  Read in masking for determining marsh interface
+!  Read in masking for determining marsh interface 
 !
-        foundit=find_string(var_name, n_var, TRIM(Vname(1,idTims)),     &
+        foundit=find_string(var_name, n_var, TRIM(Vname(1,idTims)),     & 
      &                        varid)
         gtype=var_flag(varid)*r2dvar
         status=nf_fread2d(ng, IDmod, ncname, ncINPid,                   &
@@ -2215,7 +2217,7 @@
      &                 VEG(ng) % marsh_mask)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
      &                         __FILE__)) THEN
-          IF (Master) THEN
+          IF (Master) THEN 
             WRITE (stdout,60) string, TRIM(Vname(1,idTims )),           &
      &                        InpRec, TRIM(ncname)
           END IF
@@ -2223,15 +2225,15 @@
           ioerror=status
           RETURN
         ELSE
-          IF (Master) THEN
-            WRITE (stdout,70) TRIM(Vname(2,idTims)), Fmin, Fmax
+          IF (Master) THEN 
+            WRITE (stdout,70) TRIM(Vname(2,idTims)), Fmin, Fmax 
           END IF
         END IF
 !
-#   endif
-#  endif
+#   endif 
+#  endif 
 #  if defined BEST_NPZ && defined BERING_10K
-
+    
 !  Read in benthic initial conditions.
         DO itrc=1,1 !,NBeT(ng)
           IF (get_var(idBvar(itrc))) THEN
@@ -3364,6 +3366,7 @@
 # endif
       END IF NLM_STATE
 #endif
+
 #if defined TANGENT || defined TL_IOMS
 !
 !-----------------------------------------------------------------------
@@ -3650,7 +3653,7 @@
      &                        varid)
           IF (foundit) THEN
             gtype=var_flag(varid)*u3dvar
-            scale=1.0_r8
+            scale=1.0_dp
             status=nf_fread3d(ng, IDmod, ncname, ncINPid,               &
      &                        Vname(1,idUsms), varid,                   &
      &                        InpRec, gtype, Vsize,                     &
@@ -3695,7 +3698,7 @@
      &                        varid)
           IF (foundit) THEN
             gtype=var_flag(varid)*v3dvar
-            scale=1.0_r8
+            scale=1.0_dp
             status=nf_fread3d(ng, IDmod, ncname, ncINPid,               &
      &                        Vname(1,idVsms), varid,                   &
      &                        InpRec, gtype, Vsize,                     &
@@ -4012,7 +4015,7 @@
      &                          TRIM(Vname(1,idTsur(itrc))), varid)
             IF (foundit) THEN
               gtype=var_flag(varid)*r3dvar
-              scale=1.0_r8
+              scale=1.0_dp
               status=nf_fread3d(ng, IDmod, ncname, ncINPid,             &
      &                          Vname(1,idTsur(itrc)), varid,           &
      &                          InpRec, gtype, Vsize,                   &
@@ -4607,7 +4610,7 @@
      &                        varid)
           IF (foundit) THEN
             gtype=var_flag(varid)*u3dvar
-            scale=1.0_r8
+            scale=1.0_dp
             status=nf_fread3d(ng, IDmod, ncname, ncINPid,               &
      &                        Vname(1,idUsms), varid,                   &
      &                        InpRec, gtype, Vsize,                     &
@@ -4652,7 +4655,7 @@
      &                        varid)
           IF (foundit) THEN
             gtype=var_flag(varid)*v3dvar
-            scale=1.0_r8
+            scale=1.0_dp
             status=nf_fread3d(ng, IDmod, ncname, ncINPid,               &
      &                        Vname(1,idVsms), varid,                   &
      &                        InpRec, gtype, Vsize,                     &
@@ -4967,7 +4970,7 @@
      &                          TRIM(Vname(1,idTsur(itrc))), varid)
             IF (foundit) THEN
               gtype=var_flag(varid)*r3dvar
-              scale=1.0_r8
+              scale=1.0_dp
               status=nf_fread3d(ng, IDmod, ncname, ncINPid,             &
      &                          Vname(1,idTsur(itrc)), varid,           &
      &                          InpRec, gtype, Vsize,                   &
@@ -6437,7 +6440,7 @@
      &                        varid)
           IF (foundit) THEN
             gtype=var_flag(varid)*u2dvar
-            scale=1.0_r8/rho0                   ! N/m2 (Pa) to m2/s2
+            scale=1.0_dp/rho0                   ! N/m2 (Pa) to m2/s2
             status=nf_fread2d(ng, IDmod, ncname, ncINPid,               &
      &                        Vname(1,idUsms), varid,                   &
      &                        InpRec, gtype, Vsize,                     &
@@ -6488,7 +6491,7 @@
      &                        varid)
           IF (foundit) THEN
             gtype=var_flag(varid)*v2dvar
-            scale=1.0_r8/rho0                   ! N/m2 (Pa) to m2/s2
+            scale=1.0_dp/rho0                   ! N/m2 (Pa) to m2/s2
             status=nf_fread2d(ng, IDmod, ncname, ncINPid,               &
      &                        Vname(1,idVsms), varid,                   &
      &                        InpRec, gtype, Vsize,                     &
@@ -6544,9 +6547,9 @@
             IF (foundit) THEN
               gtype=var_flag(varid)*r2dvar
               IF (itrc.eq.itemp) THEN
-                scale=1.0_r8/(rho0*Cp)        ! W/m2 to Celsius m/s
+                scale=1.0_dp/(rho0*Cp)        ! W/m2 to Celsius m/s
               ELSE
-                scale=1.0_r8
+                scale=1.0_dp
               END IF
               status=nf_fread2d(ng, IDmod, ncname, ncINPid,             &
      &                          Vname(1,idTsur(itrc)), varid,           &
@@ -6610,8 +6613,8 @@
 !
 !  Read in next impulse forcing time to process.
 !
-        CALL netcdf_get_fvar (ng, IDmod, ncname, TRIM(tvarnam),         &
-     &                        FrcTime(ng:),                             &
+        CALL netcdf_get_time (ng, IDmod, ncname, TRIM(tvarnam),         &
+     &                        Rclock%DateNumber, FrcTime(ng:),          &
      &                        ncid = ncINPid,                           &
      &                        start = (/InpRec/),                       &
      &                        total = (/1/))
@@ -7170,7 +7173,7 @@
      &                        varid)
           IF (foundit) THEN
             gtype=var_flag(varid)*u3dvar
-            scale=1.0_r8
+            scale=1.0_dp
             status=nf_fread3d(ng, IDmod, ncname, ncINPid,               &
      &                        Vname(1,idUsms), varid,                   &
      &                        InpRec, gtype, Vsize,                     &
@@ -7215,7 +7218,7 @@
      &                        varid)
           IF (foundit) THEN
             gtype=var_flag(varid)*v3dvar
-            scale=1.0_r8
+            scale=1.0_dp
             status=nf_fread3d(ng, IDmod, ncname, ncINPid,               &
      &                        Vname(1,idVsms), varid,                   &
      &                        InpRec, gtype, Vsize,                     &
@@ -7264,7 +7267,7 @@
      &                          TRIM(Vname(1,idTsur(itrc))), varid)
             IF (foundit) THEN
               gtype=var_flag(varid)*r3dvar
-              scale=1.0_r8
+              scale=1.0_dp
               status=nf_fread3d(ng, IDmod, ncname, ncINPid,             &
      &                          Vname(1,idTsur(itrc)), varid,           &
      &                          InpRec, gtype, Vsize,                   &
@@ -7321,8 +7324,8 @@
 !
 !  Read in next impulse forcing time to process.
 !
-        CALL netcdf_get_fvar (ng, IDmod, ncname, TRIM(tvarnam),         &
-     &                        ForceTime(ng:),                           &
+        CALL netcdf_get_time (ng, IDmod, ncname, TRIM(tvarnam),         &
+     &                        Rclock%DateNumber, ForceTime(ng:),        &
      &                        ncid = ncINPid,                           &
      &                        start = (/InpRec/),                       &
      &                        total = (/1/))

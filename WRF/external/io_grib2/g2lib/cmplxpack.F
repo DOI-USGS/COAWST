@@ -8,7 +8,7 @@
 !   packing algorithm as defined in the GRIB2 documention.  It
 !   supports GRIB2 complex packing templates with or without
 !   spatial differences (i.e. DRTs 5.2 and 5.3).
-!   It also fills in GRIB2 Data Representation Template 5.2 or 5.3
+!   It also fills in GRIB2 Data Representation Template 5.2 or 5.3 
 !   with the appropriate values.
 !
 ! PROGRAM HISTORY LOG:
@@ -36,7 +36,7 @@
 !                    .
 !                    .
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST: 
 !     idrstmpl - Contains the array of values for Data Representation
 !                Template 5.3
 !                (1) = Reference value - set by compack routine.
@@ -61,7 +61,7 @@
       integer,intent(inout) :: idrstmpl(*)
       integer,intent(out) :: lcpack
 
-
+      
 
       if ( idrstmpl(7) .eq. 0 ) then       ! No internal missing values
          call compack(fld,ndpts,idrsnum,idrstmpl,cpack,lcpack)

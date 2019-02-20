@@ -1,4 +1,4 @@
-function [X,Y,vals,labI]=mp_azim(optn,varargin);
+function [X,Y,vals,labI]=mp_azim(optn,varargin)
 % MP_AZIM Azimuthal projections
 %           This function should not be used directly; instead it is
 %           is accessed by various high-level functions named M_*.
@@ -35,9 +35,9 @@ name={'Stereographic','Orthographic ','Azimuthal Equal-area','Azimuthal Equidist
 pi180=pi/180;
 
 
-switch optn,
+switch optn
 
-  case 'name',
+  case 'name'
      X=name;
 
   case {'usage','set'}
@@ -48,7 +48,7 @@ switch optn,
               '     <,''rec<tbox>'', ( ''on'' | ''off'' | ''circle'' )>',...
 	      '     <,''rot<angle>'', degrees CCW>'});
 
-  case 'get',
+  case 'get'
 
      X=char([' Projection: ' MAP_PROJECTION.name '  (function: ' MAP_PROJECTION.routine ')'],...
             [' center longitude: ' num2str(MAP_VAR_LIST.ulong) ],...
@@ -57,7 +57,7 @@ switch optn,
             [' Rectangular border: ' MAP_VAR_LIST.rectbox ],...
 	    [' Rotation angle: ' num2str(MAP_VAR_LIST.rotang) ]);
 
-  case 'initialize',
+  case 'initialize'
 
     MAP_VAR_LIST=[];
     MAP_PROJECTION.name=varargin{1};
@@ -67,24 +67,24 @@ switch optn,
     MAP_VAR_LIST.uradius=90;
     MAP_VAR_LIST.rotang=0;
     k=2;
-    while k<length(varargin),
-      switch varargin{k}(1:3),
-         case 'lon',
-           MAP_VAR_LIST.ulong=varargin{k+1};
-         case 'lat',
-           MAP_VAR_LIST.ulat=varargin{k+1};
+    while k<length(varargin)
+      switch varargin{k}(1:3)
+         case 'lon'
+           MAP_VAR_LIST.ulong=varargin{k+1}(:)';
+         case 'lat'
+           MAP_VAR_LIST.ulat=varargin{k+1}(:)';
          case {'rad','alt'}
            MAP_VAR_LIST.uradius=varargin{k+1};
-         case 'rec',
+         case 'rec'
            MAP_VAR_LIST.rectbox=varargin{k+1};
-	 case 'rot',
+	 case 'rot'
 	   MAP_VAR_LIST.rotang=varargin{k+1};
          otherwise
            disp(['Unknown option: ' varargin{k}]);
-       end;
+      end
       k=k+2;    
-     end;
-    if strcmp(MAP_VAR_LIST.rectbox,'off'), MAP_VAR_LIST.rectbox='circle'; end;
+    end
+    if strcmp(MAP_VAR_LIST.rectbox,'off'), MAP_VAR_LIST.rectbox='circle'; end
 
     MAP_VAR_LIST.rlong=MAP_VAR_LIST.ulong*pi180;
     MAP_VAR_LIST.rlat=MAP_VAR_LIST.ulat*pi180;
@@ -95,16 +95,16 @@ switch optn,
     % This is a fudge factor that can probably be changed if we increase the number of points
     % in grid lines...
 
-    if length(MAP_VAR_LIST.uradius)==1,
-      if strcmp(MAP_PROJECTION.name,name{2}) & abs(MAP_VAR_LIST.uradius-90)<.2;
+    if length(MAP_VAR_LIST.uradius)==1
+      if strcmp(MAP_PROJECTION.name,name{2}) && abs(MAP_VAR_LIST.uradius-90)<.2
         MAP_VAR_LIST.radius=89.8;
       elseif strcmp(MAP_PROJECTION.name,name{5})
         MAP_VAR_LIST.radius=min(80,MAP_VAR_LIST.uradius);
       elseif strcmp(MAP_PROJECTION.name,name{6})
-        MAP_VAR_LIST.radius=acos(1/(1+MAP_VAR_LIST.uradius))/pi180*.995; % uradius is the height fraction here
+        MAP_VAR_LIST.radius=acos(1/(1+MAP_VAR_LIST.uradius))/pi180*.98; % uradius is the height fraction here
       else
         MAP_VAR_LIST.radius=MAP_VAR_LIST.uradius;
-      end;
+      end
       rradius=MAP_VAR_LIST.radius*pi180;
     else
       % do some sperical trig
@@ -114,46 +114,47 @@ switch optn,
                  (cos(MAP_VAR_LIST.rlat)*sin(edge(2))-sin(MAP_VAR_LIST.rlat)*cos(edge(2))*cos(edge(1)))^2);
       rradius=atan2(sinc,cosc);
       MAP_VAR_LIST.radius=rradius/pi180;
-    end;
+    end
     MAP_VAR_LIST.cosradius=cos(rradius);  
  
-    switch MAP_PROJECTION.name,
-      case name(1),
+    switch MAP_PROJECTION.name
+      case name(1)
         MAP_VAR_LIST.rhomax=2*tan(rradius/2);
-      case name(2),
+      case name(2)
         MAP_VAR_LIST.rhomax=sin(rradius);
-      case name(3),
+      case name(3)
         MAP_VAR_LIST.rhomax=2*sin(rradius/2);
-      case name(4),
+      case name(4)
         MAP_VAR_LIST.rhomax=rradius;
-      case name(5),
+      case name(5)
         MAP_VAR_LIST.rhomax=tan(rradius);
-      case name(6),
+      case name(6)
         MAP_VAR_LIST.rhomax=sin(rradius)/(1+(1-cos(rradius))/MAP_VAR_LIST.uradius);
-    end;  
+    end
 
-    if strcmp(MAP_VAR_LIST.rectbox,'on'),
-      if length(MAP_VAR_LIST.uradius)==1,
+    if strcmp(MAP_VAR_LIST.rectbox,'on')
+      if length(MAP_VAR_LIST.uradius)==1
         MAP_VAR_LIST.xlims=[-1 1]/sqrt(2)*MAP_VAR_LIST.rhomax;
         MAP_VAR_LIST.ylims=[-1 1]/sqrt(2)*MAP_VAR_LIST.rhomax;        
       else
         [X,Y]=mp_azim('ll2xy',MAP_VAR_LIST.uradius(1),MAP_VAR_LIST.uradius(2),'clip','off');
         MAP_VAR_LIST.xlims=[-abs(X) abs(X)];
         MAP_VAR_LIST.ylims=[-abs(Y) abs(Y)];
-      end;
+      end
     else
       MAP_VAR_LIST.xlims=[-MAP_VAR_LIST.rhomax MAP_VAR_LIST.rhomax];
       MAP_VAR_LIST.ylims=[-MAP_VAR_LIST.rhomax MAP_VAR_LIST.rhomax];
-    end;
+    end
 
     mu_util('lllimits');
  
     
 
-  case 'll2xy',
+  case 'll2xy'
 
     long=varargin{1}*pi180-MAP_VAR_LIST.rlong;
     lat=varargin{2}*pi180;
+    vals=zeros(size(long));
 
     pi180=pi/180;     
     cosc     =sin(MAP_VAR_LIST.rlat)*sin(lat)+cos(MAP_VAR_LIST.rlat)*(cos(lat).*cos(long));
@@ -161,22 +162,22 @@ switch optn,
     cosAzsinc=cos(MAP_VAR_LIST.rlat)*sin(lat)-sin(MAP_VAR_LIST.rlat)*(cos(lat).*cos(long));
     sinc=sqrt(sinAzsinc.^2+cosAzsinc.^2);
   
-    switch MAP_PROJECTION.name,
-      case name(1),
+    switch MAP_PROJECTION.name
+      case name(1)
         cosc(cosc==-1)=-1+eps;
         rho=2*sinc./(1+cosc);  % = 2*tan(c/2)
-      case name(2),
+      case name(2)
         rho=sinc;   % = sinc
-      case name(3),
+      case name(3)
         cosc(cosc==-1)=-1+eps;
         rho=sqrt(2)*sinc./sqrt(1+cosc);   % = 2*sin(c/2)
-      case name(4),
+      case name(4)
         rho=atan2(sinc,cosc); % = c
-      case name(5),
+      case name(5)
         rho=sinc./cosc; % = tan(c)
-      case name(6),
+      case name(6)
         rho=sinc./(1+(1-cosc)/MAP_VAR_LIST.uradius); % 
-     end;
+    end
 
     sinc(sinc==0)=eps;
     Az=(sinAzsinc+sqrt(-1)*cosAzsinc)./sinc;
@@ -189,22 +190,25 @@ switch optn,
     
     % Also, we clip on rho even if we later clip on X/Y because in some projections (e.g. the 
     % orthographic) the X/Y locations wrap back. 
-    if ~strcmp(varargin{4},'off'),
+    if ~strcmp(varargin{4},'off')
+        vals = vals | cosc<=MAP_VAR_LIST.cosradius+eps*10;
         [rho,Az]=mu_util('clip',varargin{4},rho,MAP_VAR_LIST.rhomax,cosc<MAP_VAR_LIST.cosradius,Az);
         Az=Az./abs(Az);
-    end;
+    end
 
      X=rho.*real(Az*exp(i*pi180*MAP_VAR_LIST.rotang));
      Y=rho.*imag(Az*exp(i*pi180*MAP_VAR_LIST.rotang));
 
-    if strcmp(MAP_VAR_LIST.rectbox,'on')  & ~strcmp(varargin{4},'off'),
+    if strcmp(MAP_VAR_LIST.rectbox,'on')  && ~strcmp(varargin{4},'off')
+        vals= vals | X<=MAP_VAR_LIST.xlims(1)+eps*10 | X>=MAP_VAR_LIST.xlims(2)-eps*10 | ...
+                     Y<=MAP_VAR_LIST.ylims(1)+eps*10 | Y>=MAP_VAR_LIST.ylims(2)-eps*10;
         [X,Y]=mu_util('clip',varargin{4},X,MAP_VAR_LIST.xlims(1),X<MAP_VAR_LIST.xlims(1) | isnan(X),Y);
         [X,Y]=mu_util('clip',varargin{4},X,MAP_VAR_LIST.xlims(2),X>MAP_VAR_LIST.xlims(2) | isnan(X),Y);
         [Y,X]=mu_util('clip',varargin{4},Y,MAP_VAR_LIST.ylims(1),Y<MAP_VAR_LIST.ylims(1) | isnan(Y),X);
         [Y,X]=mu_util('clip',varargin{4},Y,MAP_VAR_LIST.ylims(2),Y>MAP_VAR_LIST.ylims(2) | isnan(Y),X);
-    end;
+    end
 
-  case 'xy2ll',
+  case 'xy2ll'
 
 
     rho=sqrt(varargin{1}.^2+varargin{2}.^2);
@@ -215,20 +219,20 @@ switch optn,
     ir=rho==0;  % To prevent /0 warnings when rho is 0
     rho(ir)=eps;
 
-    switch MAP_PROJECTION.name,
-      case name(1),
+    switch MAP_PROJECTION.name
+      case name(1)
         c=2*atan(rho/2);
-      case name(2),
+      case name(2)
         c=asin(rho);
-      case name(3),
+      case name(3)
         c=2*asin(rho/2);
-      case name(4),
+      case name(4)
         c=rho;
-      case name(5),
+      case name(5)
         c=atan(rho);
-      case name(6),
+      case name(6)
         c=asin((MAP_VAR_LIST.uradius+1)./sqrt(1+(MAP_VAR_LIST.uradius./rho).^2)) - atan(rho/MAP_VAR_LIST.uradius);
-    end;
+    end
     c(ir)=eps; % we offset this slightly so that the correct limit is achieved in the
                % division below:
 
@@ -245,32 +249,37 @@ switch optn,
 %          cos(MAP_VAR_LIST.rlat)*cos(c).*rho - sin(MAP_VAR_LIST.rlat)*varargin{2}.*sin(c) ) )/pi180; 
 %     end;
 
-    Y=(asin(cos(c)*sin(MAP_VAR_LIST.rlat) + ...
-            cos(MAP_VAR_LIST.rlat)*sin(c).*V2./rho))/pi180;
+   % Can be problem if the argument is slightly larger than 1 - then the asin
+   % returns a complex number.
+   arg=cos(c)*sin(MAP_VAR_LIST.rlat) + ...
+            cos(MAP_VAR_LIST.rlat)*sin(c).*V2./rho;
+    arg=min(max(arg,-1),1);
+    
+    Y=(asin(arg))/pi180;
 
-    switch MAP_VAR_LIST.ulat,
-      case 90,
+    switch MAP_VAR_LIST.ulat
+      case 90
         X=(MAP_VAR_LIST.rlong+atan2(V1,-V2))/pi180;
-      case -90,
+      case -90
         X=(MAP_VAR_LIST.rlong+atan2(V1,V2))/pi180;
       otherwise
         X=(MAP_VAR_LIST.rlong+atan2( V1.*sin(c), ...
           cos(MAP_VAR_LIST.rlat)*cos(c).*rho - sin(MAP_VAR_LIST.rlat)*V2.*sin(c) ) )/pi180; 
-     end;
+    end
 
-  case 'xgrid',
+  case 'xgrid'
    
-    [X,Y,vals,labI]=mu_util('xgrid',MAP_VAR_LIST.longs,MAP_VAR_LIST.lats,varargin{1},31,varargin{2});
+    [X,Y,vals,labI]=mu_util('xgrid',MAP_VAR_LIST.longs,MAP_VAR_LIST.lats,varargin{1},31,varargin{2:3});
 
-  case 'ygrid',
+  case 'ygrid'
 
-    [X,Y,vals,labI]=mu_util('ygrid',MAP_VAR_LIST.lats,MAP_VAR_LIST.longs,varargin{1},91,varargin{2});
+    [X,Y,vals,labI]=mu_util('ygrid',MAP_VAR_LIST.lats,MAP_VAR_LIST.longs,varargin{1},91,varargin{2:3});
 
-  case 'box',
+  case 'box'
 
      [X,Y]=mu_util('box',31);
 
-end;
+end
 
 
 

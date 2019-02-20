@@ -12,7 +12,7 @@ include 'mpif.h'
    integer, parameter :: IO_NODE = 0
 
    integer, parameter :: HALO_WIDTH = 3
-
+ 
    integer, pointer, dimension(:,:) :: processors, &
                                        proc_minx, proc_maxx, &
                                        proc_miny, proc_maxy
@@ -22,24 +22,24 @@ include 'mpif.h'
               my_x, my_y, &
               my_minx, my_miny, my_maxx, my_maxy, &
               comm
-
+ 
 
    contains
-
+ 
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: parallel_start
    !
    ! Purpose: For MPI, the purpose of this routine is to basically set up
    !   a communicator for a rectangular mesh, and determine how many processors
-   !   in the x and y directions there will be.
+   !   in the x and y directions there will be. 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine parallel_start()
-
+ 
       implicit none
-
+  
       ! Arguments
-
+  
       ! Local variables
 #ifdef _MPI
       integer :: mpi_rank, mpi_size
@@ -48,7 +48,7 @@ include 'mpif.h'
       integer :: rectangle, myleft, myright, mytop, mybottom
       integer :: mini, m, n
       logical, dimension(2) :: periods
-
+  
       ! Find out our rank and the total number of processors
       call MPI_Init(mpi_ierr)
       call MPI_Comm_rank(MPI_COMM_WORLD, mpi_rank, mpi_ierr)
@@ -75,7 +75,7 @@ include 'mpif.h'
       end do
 
       ! Calculate which patch current processor will work on
-      my_x = mod(mpi_rank,nproc_x)
+      my_x = mod(mpi_rank,nproc_x) 
       my_y = mpi_rank / nproc_x
 
 #else
@@ -87,44 +87,44 @@ include 'mpif.h'
       nproc_x = 1
       nproc_y = 1
 #endif
-
+  
       nullify(processors)
       nullify(proc_minx)
       nullify(proc_maxx)
       nullify(proc_miny)
       nullify(proc_maxy)
-
-   end subroutine parallel_start
-
-
+  
+   end subroutine parallel_start 
+ 
+ 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: parallel_get_tile_dims
    !
    ! Purpose: To compute the starting and ending indices of the patch that the
-   !   calling processor is to work on. When there are multiple processors,
-   !   appropriate data structures describing the range of indices being
+   !   calling processor is to work on. When there are multiple processors, 
+   !   appropriate data structures describing the range of indices being 
    !   worked on by other processors are also allocated and filled
    !   (processors, proc_minx, proc_maxx, proc_miny, proc_maxy).
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine parallel_get_tile_dims(idim, jdim)
-
+ 
       implicit none
-
+  
       ! Arguments
       integer, intent(in) :: idim, jdim
-
+  
       ! Local variables
 #ifdef _MPI
       integer :: i, j, ix, iy, px, py
       integer, dimension(2) :: buffer
       integer :: mpi_ierr
       integer, dimension(MPI_STATUS_SIZE) :: mpi_stat
-
+  
       !
       ! Determine starting and ending grid points in x and y direction that we will work on
       !
       ! NOTE:
-      ! For now, copy code from RSL_LITE's module_dm.F until build mechanism to link
+      ! For now, copy code from RSL_LITE's module_dm.F until build mechanism to link 
       ! WRF and WPS code is worked out more.
       ! Eventually, it would probably be best to use module_dm code without copying
       !
@@ -148,7 +148,7 @@ include 'mpif.h'
          end if
       end do
 
-      ! Create space to hold information about which other processors are
+      ! Create space to hold information about which other processors are 
       !   working on which parts of the domain
       allocate(processors(0:nproc_x-1, 0:nproc_y-1))
       allocate(proc_minx(0:nproc_x-1, 0:nproc_y-1))
@@ -174,7 +174,7 @@ include 'mpif.h'
             call parallel_bcast_int(processors(ix,iy), IO_NODE)
          end do
       end do
-
+     
       proc_minx(my_x, my_y) = my_minx
       proc_maxx(my_x, my_y) = my_maxx
       proc_miny(my_x, my_y) = my_miny
@@ -188,14 +188,14 @@ include 'mpif.h'
             call parallel_bcast_int(proc_maxy(ix,iy), processors(ix,iy))
          end do
       end do
-
+  
 #else
       allocate(processors(0:nproc_x-1, 0:nproc_y-1))
       allocate(proc_minx(0:nproc_x-1, 0:nproc_y-1))
       allocate(proc_miny(0:nproc_x-1, 0:nproc_y-1))
       allocate(proc_maxx(0:nproc_x-1, 0:nproc_y-1))
       allocate(proc_maxy(0:nproc_x-1, 0:nproc_y-1))
-
+  
       processors(0,0) = IO_NODE
       proc_minx(0,0) = 1
       proc_miny(0,0) = 1
@@ -205,9 +205,9 @@ include 'mpif.h'
       my_maxx = idim
       my_miny = 1
       my_maxy = jdim
-
+  
 #endif
-
+ 
    end subroutine parallel_get_tile_dims
 
 
@@ -244,10 +244,10 @@ include 'mpif.h'
       if ( i-ids < a ) then
          px = (i-ids) / ( (idim / npx) + 1 )
       else if ( i-ids < b ) then
-         px = ( a / ( (idim / npx) + 1 ) ) + (i-a-ids) / ( ( b - a ) / ( npx - rem ) )
-      else
+         px = ( a / ( (idim / npx) + 1 ) ) + (i-a-ids) / ( ( b - a ) / ( npx - rem ) ) 
+      else 
          px = ( a / ( (idim / npx) + 1 ) ) + (b-a-ids) / ( ( b - a ) / ( npx - rem ) ) + &
-                                             (i-b-ids) / ( ( idim / npx ) + 1 )
+                                             (i-b-ids) / ( ( idim / npx ) + 1 ) 
       end if
 
       j = max(j,jds)
@@ -265,26 +265,26 @@ include 'mpif.h'
       end if
 
    end subroutine task_for_point
-
-
+ 
+ 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: gather_whole_field_i
    !
-   ! Purpose:
+   ! Purpose: 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine gather_whole_field_i(patch_array, ms1, me1, ms2, me2, ms3, me3, &
                                  ps1, pe1, ps2, pe2, ps3, pe3, &
                                  domain_array, ds1, de1, ds2, de2, ds3, de3)
-
+ 
       implicit none
-
+  
       ! Arguments
       integer, intent(in) :: ps1, pe1, ps2, pe2, ps3, pe3, &
                              ms1, me1, ms2, me2, ms3, me3, &
                              ds1, de1, ds2, de2, ds3, de3
       integer, dimension(ms1:me1,ms2:me2,ms3:me3), intent(in) :: patch_array
       integer, dimension(ds1:de1,ds2:de2,ds3:de3), intent(inout) :: domain_array
-
+  
       ! Local variables
 #ifdef _MPI
       integer :: i, ii, j, jj, kk
@@ -293,7 +293,7 @@ include 'mpif.h'
       integer, dimension(MPI_STATUS_SIZE) :: mpi_stat
 
       if (my_proc_id == IO_NODE) then
-
+  
          do j=0,nproc_y-1
             do i=0,nproc_x-1
                if (processors(i,j) /= IO_NODE) then
@@ -310,9 +310,9 @@ include 'mpif.h'
                end if
             end do
          end do
-
+  
       else
-
+  
          jdims(1) = ps2
          jdims(2) = pe2
          call MPI_Send(jdims, 2, MPI_INTEGER, 0, my_proc_id, comm, mpi_ierr)
@@ -325,37 +325,37 @@ include 'mpif.h'
          end do
      end if
 #endif
-
+ 
    end subroutine gather_whole_field_i
-
-
+ 
+ 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: gather_whole_field_r
    !
-   ! Purpose:
+   ! Purpose: 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine gather_whole_field_r(patch_array, ms1, me1, ms2, me2, ms3, me3, &
                                  ps1, pe1, ps2, pe2, ps3, pe3, &
                                  domain_array, ds1, de1, ds2, de2, ds3, de3)
-
+ 
       implicit none
-
+  
       ! Arguments
       integer, intent(in) :: ps1, pe1, ps2, pe2, ps3, pe3, &
                              ms1, me1, ms2, me2, ms3, me3, &
                              ds1, de1, ds2, de2, ds3, de3
       real, dimension(ms1:me1,ms2:me2,ms3:me3), intent(in) :: patch_array
       real, dimension(ds1:de1,ds2:de2,ds3:de3), intent(inout) :: domain_array
-
+  
       ! Local variables
 #ifdef _MPI
       integer :: i, ii, j, jj, kk
       integer, dimension(2) :: idims, jdims
       integer :: mpi_ierr
       integer, dimension(MPI_STATUS_SIZE) :: mpi_stat
-
+  
       if (my_proc_id == IO_NODE) then
-
+  
          do j=0,nproc_y-1
             do i=0,nproc_x-1
                if (processors(i,j) /= IO_NODE) then
@@ -372,9 +372,9 @@ include 'mpif.h'
                end if
             end do
          end do
-
+  
       else
-
+  
          jdims(1) = ps2
          jdims(2) = pe2
          call MPI_Send(jdims, 2, MPI_INTEGER, 0, my_proc_id, comm, mpi_ierr)
@@ -387,37 +387,37 @@ include 'mpif.h'
          end do
       end if
 #endif
-
+ 
    end subroutine gather_whole_field_r
-
-
+ 
+ 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: scatter_whole_field_i
    !
-   ! Purpose:
+   ! Purpose: 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine scatter_whole_field_i(patch_array, ms1, me1, ms2, me2, ms3, me3, &
                                  ps1, pe1, ps2, pe2, ps3, pe3, &
                                  domain_array, ds1, de1, ds2, de2, ds3, de3)
-
+ 
       implicit none
-
+  
       ! Arguments
       integer, intent(in) :: ps1, pe1, ps2, pe2, ps3, pe3, &
                              ms1, me1, ms2, me2, ms3, me3, &
                              ds1, de1, ds2, de2, ds3, de3
       integer, dimension(ms1:me1,ms2:me2,ms3:me3), intent(inout) :: patch_array
       integer, dimension(ds1:de1,ds2:de2,ds3:de3), intent(in) :: domain_array
-
+  
       ! Local variables
 #ifdef _MPI
       integer :: i, ii, j, jj, kk
       integer, dimension(2) :: idims, jdims
       integer :: mpi_ierr
       integer, dimension(MPI_STATUS_SIZE) :: mpi_stat
-
+  
       if (my_proc_id == IO_NODE) then
-
+  
          do j=0,nproc_y-1
             do i=0,nproc_x-1
                if (processors(i,j) /= IO_NODE) then
@@ -434,9 +434,9 @@ include 'mpif.h'
                end if
             end do
          end do
-
+  
       else
-
+  
          jdims(1) = ps2
          jdims(2) = pe2
          call MPI_Send(jdims, 2, MPI_INTEGER, 0, my_proc_id, comm, mpi_ierr)
@@ -450,37 +450,37 @@ include 'mpif.h'
          end do
      end if
 #endif
-
+ 
    end subroutine scatter_whole_field_i
-
-
+ 
+ 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: scatter_whole_field_r
    !
-   ! Purpose:
+   ! Purpose: 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine scatter_whole_field_r(patch_array, ms1, me1, ms2, me2, ms3, me3, &
                                  ps1, pe1, ps2, pe2, ps3, pe3, &
                                  domain_array, ds1, de1, ds2, de2, ds3, de3)
-
+ 
       implicit none
-
+  
       ! Arguments
       integer, intent(in) :: ps1, pe1, ps2, pe2, ps3, pe3, &
                              ms1, me1, ms2, me2, ms3, me3, &
                              ds1, de1, ds2, de2, ds3, de3
       real, dimension(ms1:me1,ms2:me2,ms3:me3), intent(inout) :: patch_array
       real, dimension(ds1:de1,ds2:de2,ds3:de3), intent(in) :: domain_array
-
+  
       ! Local variables
 #ifdef _MPI
       integer :: i, ii, j, jj, kk
       integer, dimension(2) :: idims, jdims
       integer :: mpi_ierr
       integer, dimension(MPI_STATUS_SIZE) :: mpi_stat
-
+  
       if (my_proc_id == IO_NODE) then
-
+  
          do j=0,nproc_y-1
             do i=0,nproc_x-1
                if (processors(i,j) /= IO_NODE) then
@@ -497,9 +497,9 @@ include 'mpif.h'
                end if
             end do
          end do
-
+  
       else
-
+  
          jdims(1) = ps2
          jdims(2) = pe2
          call MPI_Send(jdims, 2, MPI_INTEGER, 0, my_proc_id, comm, mpi_ierr)
@@ -513,19 +513,19 @@ include 'mpif.h'
          end do
      end if
 #endif
-
+ 
    end subroutine scatter_whole_field_r
 
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: exchange_halo_r
    !
-   ! Purpose:
+   ! Purpose: 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine exchange_halo_r(patch_array, &
                               ms1, me1, ms2, me2, ms3, me3, &
                               ps1, pe1, ps2, pe2, ps3, pe3)
-
+ 
       implicit none
 
       ! Arguments
@@ -699,19 +699,19 @@ include 'mpif.h'
          end do
       end if
 #endif
-
+  
    end subroutine exchange_halo_r
 
 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: exchange_halo_i
    !
-   ! Purpose:
+   ! Purpose: 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine exchange_halo_i(patch_array, &
                               ms1, me1, ms2, me2, ms3, me3, &
                               ps1, pe1, ps2, pe2, ps3, pe3)
-
+ 
       implicit none
 
       ! Arguments
@@ -885,138 +885,138 @@ include 'mpif.h'
          end do
       end if
 #endif
-
+  
    end subroutine exchange_halo_i
-
-
+ 
+ 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: parallel_bcast_logical
    !
    ! Purpose:
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine parallel_bcast_logical(lval)
-
+ 
       implicit none
-
+  
       ! Argument
       logical, intent(inout) :: lval
-
+  
       ! Local variables
 #ifdef _MPI
       integer :: mpi_ierr
-
+  
       call MPI_Bcast(lval, 1, MPI_LOGICAL, IO_NODE, comm, mpi_ierr)
 #endif
-
+ 
    end subroutine parallel_bcast_logical
-
-
+ 
+ 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: parallel_bcast_int
    !
    ! Purpose:
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine parallel_bcast_int(ival, from_whom)
-
+ 
       implicit none
-
+  
       ! Argument
       integer, intent(inout) :: ival
       integer, intent(in), optional :: from_whom
-
+  
       ! Local variables
 #ifdef _MPI
       integer :: mpi_ierr
-
+  
       if (present(from_whom)) then
          call MPI_Bcast(ival, 1, MPI_INTEGER, from_whom, comm, mpi_ierr)
       else
          call MPI_Bcast(ival, 1, MPI_INTEGER, IO_NODE, comm, mpi_ierr)
       end if
 #endif
-
+ 
    end subroutine parallel_bcast_int
-
-
+ 
+ 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: parallel_bcast_real
    !
    ! Purpose:
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine parallel_bcast_real(rval, from_whom)
-
+ 
       implicit none
-
+  
       ! Argument
       real, intent(inout) :: rval
       integer, intent(in), optional :: from_whom
-
+  
       ! Local variables
 #ifdef _MPI
       integer :: mpi_ierr
-
+  
       if (present(from_whom)) then
          call MPI_Bcast(rval, 1, MPI_REAL, from_whom, comm, mpi_ierr)
       else
          call MPI_Bcast(rval, 1, MPI_REAL, IO_NODE, comm, mpi_ierr)
       end if
 #endif
-
+ 
    end subroutine parallel_bcast_real
-
-
+ 
+ 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: parallel_bcast_char
    !
    ! Purpose:
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine parallel_bcast_char(cval, n, from_whom)
-
+ 
       implicit none
-
+  
       ! Argument
       integer, intent(in) :: n
       character (len=n), intent(inout) :: cval
       integer, intent(in), optional :: from_whom
-
+  
       ! Local variables
 #ifdef _MPI
       integer :: mpi_ierr
-
+  
       if (present(from_whom)) then
          call MPI_Bcast(cval, n, MPI_CHARACTER, from_whom, comm, mpi_ierr)
       else
          call MPI_Bcast(cval, n, MPI_CHARACTER, IO_NODE, comm, mpi_ierr)
       end if
 #endif
-
+ 
    end subroutine parallel_bcast_char
-
-
+ 
+ 
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    ! Name: parallel_finish
    !
    ! Purpose: Free up, deallocate, and for MPI, finalize.
    !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
    subroutine parallel_finish()
-
+ 
       implicit none
-
+  
       ! Arguments
-
+  
       ! Local variables
 #ifdef _MPI
       integer :: mpi_ierr
-
+  
       call MPI_Finalize(mpi_ierr)
 #endif
-
+ 
       if (associated(processors)) deallocate(processors)
       if (associated(proc_minx)) deallocate(proc_minx)
       if (associated(proc_maxx)) deallocate(proc_maxx)
       if (associated(proc_miny)) deallocate(proc_miny)
       if (associated(proc_maxy)) deallocate(proc_maxy)
-
+ 
    end subroutine parallel_finish
 
 
@@ -1041,5 +1041,5 @@ include 'mpif.h'
       stop
 
    end subroutine parallel_abort
-
+ 
 end module parallel_module

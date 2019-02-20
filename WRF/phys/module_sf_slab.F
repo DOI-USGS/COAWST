@@ -28,21 +28,21 @@ CONTAINS
 !----------------------------------------------------------------
     IMPLICIT NONE
 !----------------------------------------------------------------
-!
-!     SUBROUTINE SLAB CALCULATES THE GROUND TEMPERATURE TENDENCY
-!     ACCORDING TO THE RESIDUAL OF THE SURFACE ENERGY BUDGET
-!     (BLACKADAR, 1978B).
-!
-!     CHANGES:
-!          FOR SOIL SUB-TIMESTEPS UPDATE SURFACE HFX AND QFX AS TG
-!          CHANGES TO PREVENT POSSIBLE INSTABILITY FOR LONG MODEL
-!          STEPS (DT > ~200 SEC).
-!
-!          PUT SNOW COVER CHECK ON SOIL SUB-TIMESTEPS
-!
-!          MAKE UPPER LIMIT ON SOIL SUB-STEP LENGTH MORE CONSERVATIVE
-!
-!----------------------------------------------------------------
+!                                                                        
+!     SUBROUTINE SLAB CALCULATES THE GROUND TEMPERATURE TENDENCY 
+!     ACCORDING TO THE RESIDUAL OF THE SURFACE ENERGY BUDGET           
+!     (BLACKADAR, 1978B).                                              
+!                                                                      
+!     CHANGES:                                                         
+!          FOR SOIL SUB-TIMESTEPS UPDATE SURFACE HFX AND QFX AS TG     
+!          CHANGES TO PREVENT POSSIBLE INSTABILITY FOR LONG MODEL      
+!          STEPS (DT > ~200 SEC).                                      
+!                                                                      
+!          PUT SNOW COVER CHECK ON SOIL SUB-TIMESTEPS                  
+!                                                                      
+!          MAKE UPPER LIMIT ON SOIL SUB-STEP LENGTH MORE CONSERVATIVE  
+!                                                                      
+!----------------------------------------------------------------          
 !-- T3D         temperature (K)
 !-- QV3D        3D water vapor mixing ratio (Kg/Kg)
 !-- P3D         3D pressure (Pa)
@@ -55,7 +55,7 @@ CONTAINS
 !-- QFX         upward moisture flux at the surface (kg/m^2/s)
 !-- LH          latent heat flux at the surface (W/m^2)
 !-- TSK         surface temperature (K)
-!-- GSW         downward short wave flux at ground surface (W/m^2)
+!-- GSW         downward short wave flux at ground surface (W/m^2)      
 !-- GLW         downward long wave flux at ground surface (W/m^2)
 !-- CAPG        heat capacity for soil (J/K/m^3)
 !-- THC         thermal inertia (Cal/cm/K/s^0.5)
@@ -71,7 +71,7 @@ CONTAINS
 !-- SVP3        constant for saturation vapor pressure (K)
 !-- SVPT0       constant for saturation vapor pressure (K)
 !-- EP1         constant for virtual temperature (R_v/R_d - 1) (dimensionless)
-!-- EP2         constant for specific humidity calculation
+!-- EP2         constant for specific humidity calculation 
 !               (R_d/R_v) (dimensionless)
 !-- KARMAN      Von Karman constant
 !-- EOMEG       angular velocity of earth's rotation (rad/s)
@@ -205,25 +205,25 @@ CONTAINS
 !----------------------------------------------------------------
     IMPLICIT NONE
 !----------------------------------------------------------------
-!
-!     SUBROUTINE SLAB CALCULATES THE GROUND TEMPERATURE TENDENCY
-!     ACCORDING TO THE RESIDUAL OF THE SURFACE ENERGY BUDGET
-!     (BLACKADAR, 1978B).
-!
-!     CHANGES:
-!          FOR SOIL SUB-TIMESTEPS UPDATE SURFACE HFX AND QFX AS TG
-!          CHANGES TO PREVENT POSSIBLE INSTABILITY FOR LONG MODEL
-!          STEPS (DT > ~200 SEC).
-!
-!          PUT SNOW COVER CHECK ON SOIL SUB-TIMESTEPS
-!
-!          MAKE UPPER LIMIT ON SOIL SUB-STEP LENGTH MORE CONSERVATIVE
-!
-!----------------------------------------------------------------
+!                                                                        
+!     SUBROUTINE SLAB CALCULATES THE GROUND TEMPERATURE TENDENCY 
+!     ACCORDING TO THE RESIDUAL OF THE SURFACE ENERGY BUDGET           
+!     (BLACKADAR, 1978B).                                              
+!                                                                      
+!     CHANGES:                                                         
+!          FOR SOIL SUB-TIMESTEPS UPDATE SURFACE HFX AND QFX AS TG     
+!          CHANGES TO PREVENT POSSIBLE INSTABILITY FOR LONG MODEL      
+!          STEPS (DT > ~200 SEC).                                      
+!                                                                      
+!          PUT SNOW COVER CHECK ON SOIL SUB-TIMESTEPS                  
+!                                                                      
+!          MAKE UPPER LIMIT ON SOIL SUB-STEP LENGTH MORE CONSERVATIVE  
+!                                                                      
+!----------------------------------------------------------------          
 
    INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &
                                     ims,ime, jms,jme, kms,kme,  &
-                                    its,ite, jts,jte, kts,kte,J
+                                    its,ite, jts,jte, kts,kte,J 
 
    INTEGER , INTENT(IN)      ::     num_soil_layers
    LOGICAL,  INTENT(IN   )   ::     radiation
@@ -280,7 +280,7 @@ CONTAINS
    REAL,    DIMENSION( its:ite )          ::                    &
                                                            THX, &
                                                             QX, &
-                                                          SCR3
+                                                          SCR3 
 
    REAL,    DIMENSION( its:ite )          ::            DTHGDT, &
                                                            TG0, &
@@ -300,13 +300,13 @@ CONTAINS
    INTEGER :: I,K,NSOIL,ITSOIL,L,NK,RADSWTCH
    REAL    :: PS,PS1,XLDCOL,TSKX,RNSOIL,RHOG1,RHOG2,RHOG3,LAMDAG
    REAL    :: THG,ESG,QSG,HFXT,QFXT,CS,CSW,LAMG(4),THCON,PL
-
-!----------------------------------------------------------------------
-!-----DETERMINE IF ANY POINTS IN COLUMN ARE LAND (RATHER THAN OCEAN)
-!       POINTS.  IF NOT, SKIP DOWN TO THE PRINT STATEMENTS SINCE OCEAN
-!       SURFACE TEMPERATURES ARE NOT ALLOWED TO CHANGE.
-!
-! from sfcrad
+ 
+!----------------------------------------------------------------------          
+!-----DETERMINE IF ANY POINTS IN COLUMN ARE LAND (RATHER THAN OCEAN)             
+!       POINTS.  IF NOT, SKIP DOWN TO THE PRINT STATEMENTS SINCE OCEAN           
+!       SURFACE TEMPERATURES ARE NOT ALLOWED TO CHANGE.                          
+!                                                                                
+! from sfcrad   
 !----------------------------------------------------------------------
    DATA CSW/4.183E6/
    DATA LAMG/1.407E-8, -1.455E-5, 6.290E-3, 0.16857/
@@ -347,46 +347,46 @@ CONTAINS
             CAPG(I)=5.9114E7*THC(I)
          ENDIF
       ENDDO
-!
-      XLDCOL=2.0
+!        
+      XLDCOL=2.0                                                                 
       DO 10 I=its,ite
-        XLDCOL=AMIN1(XLDCOL,XLAND(I))
-   10 CONTINUE
-!
-      IF(XLDCOL.GT.1.5)GOTO 90
-!
-!
-!-----CONVERT SLAB TEMPERATURE TO POTENTIAL TEMPERATURE AND
-!     SET XLD1(I) = 0. FOR OCEAN POINTS:
-!
-!
+        XLDCOL=AMIN1(XLDCOL,XLAND(I))                                          
+   10 CONTINUE                                                                   
+!                                                                                
+      IF(XLDCOL.GT.1.5)GOTO 90                                                   
+!                                                                                
+!                                                                                
+!-----CONVERT SLAB TEMPERATURE TO POTENTIAL TEMPERATURE AND                      
+!     SET XLD1(I) = 0. FOR OCEAN POINTS:                                         
+!                                                                                
+!                                                                                
       DO 20 I=its,ite
-        IF((XLAND(I)-1.5).GE.0)THEN
-          XLD1(I)=0.
-        ELSE
-          XLD1(I)=1.
-        ENDIF
-   20 CONTINUE
-!
-!-----CONVERT 'TSK(THETAG)' TO 'TG' FOR 'IUP' CALCULATION ....
-!       IF WE ARE USING THE BLACKADAR MULTI-LEVEL (HIGH-RESOLUTION)
-!       PBL MODEL
-!
+        IF((XLAND(I)-1.5).GE.0)THEN                                            
+          XLD1(I)=0.                                                             
+        ELSE                                                                     
+          XLD1(I)=1.                                                             
+        ENDIF                                                                    
+   20 CONTINUE                                                                   
+!                                                                                
+!-----CONVERT 'TSK(THETAG)' TO 'TG' FOR 'IUP' CALCULATION ....                   
+!       IF WE ARE USING THE BLACKADAR MULTI-LEVEL (HIGH-RESOLUTION)              
+!       PBL MODEL                                                                
+!                                                                                
       DO 50 I=its,ite
-        IF(XLD1(I).LT.0.5)GOTO 50
+        IF(XLD1(I).LT.0.5)GOTO 50                                                
 
 ! PS cmb
         PS=PSFC(I)
 
 ! TSK is Temperature at gound sfc
-!       TG0(I)=TSK(I)*(PS*0.01)**ROVCP
+!       TG0(I)=TSK(I)*(PS*0.01)**ROVCP                                         
         TG0(I)=TSK(I)
-   50 CONTINUE
-!
-!-----COMPUTE THE SURFACE ENERGY BUDGET:
-!
-!     IF(ISOIL.EQ.1)NSOIL=1
-      IF(num_soil_layers .gt. 1)NSOIL=1
+   50 CONTINUE                                                                   
+!                                                                                
+!-----COMPUTE THE SURFACE ENERGY BUDGET:                                         
+!                                                                                
+!     IF(ISOIL.EQ.1)NSOIL=1                                                      
+      IF(num_soil_layers .gt. 1)NSOIL=1                                                      
 
 
       IF (radiation) then
@@ -399,10 +399,10 @@ CONTAINS
         IF(XLD1(I).LT.0.5)GOTO 70
 !        OLTG(I)=TSK(I)*(100./PSFC(I))**ROVCP
         OLTG(I)=TSK(I)*(P1000mb*0.001/PSFC(I))**ROVCP
-        UPFLUX(I)=RADSWTCH*STBOLT*TG0(I)**4
-        XINET(I)=EMISS(I)*(GLW(I)-UPFLUX(I))
-        RNET(I)=GSW(I)+XINET(I)
-        HM(I)=1.18*EOMEG*(TG0(I)-TMN(I))
+        UPFLUX(I)=RADSWTCH*STBOLT*TG0(I)**4                            
+        XINET(I)=EMISS(I)*(GLW(I)-UPFLUX(I))    
+        RNET(I)=GSW(I)+XINET(I)                                                
+        HM(I)=1.18*EOMEG*(TG0(I)-TMN(I))                                       
 !       MOISTURE FLUX CALCULATED HERE (OVERWRITES SFC LAYER VALUE FOR LAND)
                 ESG=SVP1*EXP(SVP2*(TG0(I)-SVPT0)/(TG0(I)-SVP3))
                 QSG=EP2*ESG/(PSFC(I)-ESG)
@@ -410,95 +410,95 @@ CONTAINS
                 HFX(I)=FLHC(I)*(THG-THX(I))
                 QFX(I)=FLQC(I)*(QSG-QX(I))
                 LH(I)=QFX(I)*XLV
-        QS(I)=HFX(I)+QFX(I)*XLV
-!       IF(ISOIL.EQ.0)THEN
-        IF(num_soil_layers .EQ. 1)THEN
-          DTHGDT(I)=(RNET(I)-QS(I))/CAPG(I)-HM(I)
+        QS(I)=HFX(I)+QFX(I)*XLV                                
+!       IF(ISOIL.EQ.0)THEN                                                       
+        IF(num_soil_layers .EQ. 1)THEN                                                       
+          DTHGDT(I)=(RNET(I)-QS(I))/CAPG(I)-HM(I)                              
         ELSE
-          DTHGDT(I)=0.
-        ENDIF
-   70 CONTINUE
-!     IF(ISOIL.EQ.1)THEN
-      IF(num_soil_layers .gt. 1)THEN
-        NSOIL=1+IFIX(SOILFAC*4*DIFSL/DZS(1)*DELTSM/DZS(1))
-        RNSOIL=1./FLOAT(NSOIL)
-!
-!     SOIL SUB-TIMESTEP
-!
-        DO ITSOIL=1,NSOIL
+          DTHGDT(I)=0.                                                           
+        ENDIF                                                                    
+   70 CONTINUE                                                                   
+!     IF(ISOIL.EQ.1)THEN                                                         
+      IF(num_soil_layers .gt. 1)THEN                                                         
+        NSOIL=1+IFIX(SOILFAC*4*DIFSL/DZS(1)*DELTSM/DZS(1))   
+        RNSOIL=1./FLOAT(NSOIL)                                                   
+!                                                                                
+!     SOIL SUB-TIMESTEP                                                          
+!                                                                                
+        DO ITSOIL=1,NSOIL                                                        
           DO I=its,ite
              DO L=1,num_soil_layers-1
-              IF(XLD1(I).LT.0.5)GOTO 75
-              IF(L.EQ.1.AND.ITSOIL.GT.1)THEN
-!                PS1=(PSFC(I)*0.01)**ROVCP
-                PS1=(PSFCPA(I)/P1000mb)**ROVCP
+              IF(XLD1(I).LT.0.5)GOTO 75                                          
+              IF(L.EQ.1.AND.ITSOIL.GT.1)THEN                                     
+!                PS1=(PSFC(I)*0.01)**ROVCP    
+                PS1=(PSFCPA(I)/P1000mb)**ROVCP    
 
 ! for rk scheme A and B are the same
                 PS=PSFC(I)
-                THG=TSLB2D(I,1)/PS1
-                ESG=SVP1*EXP(SVP2*(TSLB2D(I,1)-SVPT0)/(TSLB2D(I,1) &
-                    -SVP3))
-                QSG=EP2*ESG/(PS-ESG)
-!     UPDATE FLUXES FOR NEW GROUND TEMPERATURE
-                HFXT=FLHC(I)*(THG-THX(I))
+                THG=TSLB2D(I,1)/PS1                                              
+                ESG=SVP1*EXP(SVP2*(TSLB2D(I,1)-SVPT0)/(TSLB2D(I,1) & 
+                    -SVP3))                                                      
+                QSG=EP2*ESG/(PS-ESG)                                             
+!     UPDATE FLUXES FOR NEW GROUND TEMPERATURE                                   
+                HFXT=FLHC(I)*(THG-THX(I))                                     
                 QFXT=FLQC(I)*(QSG-QX(I))
-                QS(I)=HFXT+QFXT*XLV
-!     SUM HFX AND QFX OVER SOIL TIMESTEPS
-                HFX(I)=HFX(I)+HFXT
-                QFX(I)=QFX(I)+QFXT
-              ENDIF
-              FLUX(I,1)=RNET(I)-QS(I)
-              FLUX(I,L+1)=-DIFSL*CAPG(I)*(TSLB2D(I,L+1)-TSLB2D(I,L))/( &
-                          ZS(L+1)-ZS(L))
-              DTSDT(I)=-(FLUX(I,L+1)-FLUX(I,L))/(DZS(L)*CAPG(I))
-              TSLB2D(I,L)=TSLB2D(I,L)+DTSDT(I)*DELTSM*RNSOIL
-              IF(IFSNOW.EQ.1.AND.L.EQ.1)THEN
-                IF((SNOWC(I).GT.0..AND.TSLB2D(I,1).GT.273.16))THEN
-                  TSLB2D(I,1)=273.16
-                ENDIF
-              ENDIF
-              IF(L.EQ.1)DTHGDT(I)=DTHGDT(I)+RNSOIL*DTSDT(I)
-              IF(ITSOIL.EQ.NSOIL.AND.L.EQ.1)THEN
-!     AVERAGE HFX AND QFX OVER SOIL TIMESTEPS FOR OUTPUT TO PBL
-                HFX(I)=HFX(I)*RNSOIL
-                QFX(I)=QFX(I)*RNSOIL
+                QS(I)=HFXT+QFXT*XLV                                
+!     SUM HFX AND QFX OVER SOIL TIMESTEPS                                        
+                HFX(I)=HFX(I)+HFXT                                           
+                QFX(I)=QFX(I)+QFXT                                           
+              ENDIF                                                              
+              FLUX(I,1)=RNET(I)-QS(I)                                            
+              FLUX(I,L+1)=-DIFSL*CAPG(I)*(TSLB2D(I,L+1)-TSLB2D(I,L))/( & 
+                          ZS(L+1)-ZS(L))                                         
+              DTSDT(I)=-(FLUX(I,L+1)-FLUX(I,L))/(DZS(L)*CAPG(I))               
+              TSLB2D(I,L)=TSLB2D(I,L)+DTSDT(I)*DELTSM*RNSOIL                     
+              IF(IFSNOW.EQ.1.AND.L.EQ.1)THEN                              
+                IF((SNOWC(I).GT.0..AND.TSLB2D(I,1).GT.273.16))THEN             
+                  TSLB2D(I,1)=273.16                                             
+                ENDIF                                                            
+              ENDIF                                                              
+              IF(L.EQ.1)DTHGDT(I)=DTHGDT(I)+RNSOIL*DTSDT(I)                      
+              IF(ITSOIL.EQ.NSOIL.AND.L.EQ.1)THEN                                 
+!     AVERAGE HFX AND QFX OVER SOIL TIMESTEPS FOR OUTPUT TO PBL                  
+                HFX(I)=HFX(I)*RNSOIL                                         
+                QFX(I)=QFX(I)*RNSOIL                                         
                 LH(I)=QFX(I)*XLV
-              ENDIF
-   75         CONTINUE
-            ENDDO
-          ENDDO
-        ENDDO
-      ENDIF
-!
+              ENDIF                                                              
+   75         CONTINUE                                                           
+            ENDDO                                                                
+          ENDDO                                                                  
+        ENDDO                                                                    
+      ENDIF                                                                      
+!                                                                                
       DO 80 I=its,ite
-        IF(XLD1(I).LT.0.5) GOTO 80
-        TSKX=TG0(I)+DELTSM*DTHGDT(I)
+        IF(XLD1(I).LT.0.5) GOTO 80                                                
+        TSKX=TG0(I)+DELTSM*DTHGDT(I)                                             
 
 ! TSK is temperature
-!       TSK(I)=TSKX*(100./PS1)**ROVCP
+!       TSK(I)=TSKX*(100./PS1)**ROVCP                                          
         TSK(I)=TSKX
-   80 CONTINUE
+   80 CONTINUE                                                                   
 
-!
-!-----MODIFY THE THE GROUND TEMPERATURE IF THE SNOW COVER EFFECTS ARE
-!     CONSIDERED: LIMIT THE GROUND TEMPERATURE UNDER 0 C.
-!
-      IF(IFSNOW.EQ.0)GOTO 90
+!                                                                                
+!-----MODIFY THE THE GROUND TEMPERATURE IF THE SNOW COVER EFFECTS ARE            
+!     CONSIDERED: LIMIT THE GROUND TEMPERATURE UNDER 0 C.                        
+!                                                                                
+      IF(IFSNOW.EQ.0)GOTO 90                                              
       DO 85 I=its,ite
-        IF(XLD1(I).LT.0.5)GOTO 85
-!       PS1=(PSFC(I)*0.01)**ROVCP
-!       TSCVN(I)=TSK(I)*PS1
+        IF(XLD1(I).LT.0.5)GOTO 85                                                
+!       PS1=(PSFC(I)*0.01)**ROVCP             
+!       TSCVN(I)=TSK(I)*PS1                                            
         TSCVN(I)=TSK(I)
-        IF((SNOWC(I).GT.0..AND.TSCVN(I).GT.273.16))THEN
-          TSCVN(I)=273.16
-        ELSE
-          TSCVN(I)=TSCVN(I)
-        ENDIF
-!       TSK(I)=TSCVN(I)/PS1
+        IF((SNOWC(I).GT.0..AND.TSCVN(I).GT.273.16))THEN                        
+          TSCVN(I)=273.16                                                        
+        ELSE                                                                     
+          TSCVN(I)=TSCVN(I)                                                      
+        ENDIF                                                                    
+!       TSK(I)=TSCVN(I)/PS1                                                    
         TSK(I)=TSCVN(I)
-   85 CONTINUE
-!
-   90 CONTINUE
+   85 CONTINUE                                                                   
+!                                                                                
+   90 CONTINUE                                                                   
       DO I=its,ite
 ! QSFC and CHKLOWQ needed by Eta PBL
 ! WA added check for flqc = 0 to accomodate TEMF (and others?)
@@ -509,8 +509,8 @@ CONTAINS
         end if
         CHKLOWQ(I)=MAVAIL(I)
       ENDDO
-!
-  140 CONTINUE
+!                                                                                
+  140 CONTINUE                                                                   
 
    END SUBROUTINE SLAB1D
 
@@ -531,7 +531,7 @@ CONTAINS
                                      its,ite, jts,jte, kts,kte
 
    INTEGER, INTENT(IN   )    ::      num_soil_layers
-!
+!   
    REAL,     DIMENSION( ims:ime , 1:num_soil_layers , jms:jme ), INTENT(INOUT) :: TSLB
 
    REAL,     DIMENSION(1:num_soil_layers), INTENT(IN)  ::  ZS,DZS
@@ -546,11 +546,11 @@ CONTAINS
    CHARACTER*1024 message
 
 !----------------------------------------------------------------
-
+ 
    itf=min0(ite,ide-1)
    jtf=min0(jte,jde-1)
 
    END SUBROUTINE slabinit
-!-------------------------------------------------------------------
+!-------------------------------------------------------------------          
 
 END MODULE module_sf_slab

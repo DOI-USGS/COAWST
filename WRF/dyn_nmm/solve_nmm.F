@@ -87,7 +87,7 @@
 !-----------------------------------------------------------------------
 !
       INTEGER :: IDS,IDE,JDS,JDE,KDS,KDE                                &
-     &          ,IMS,IME,JMS,JME,KMS,KME                                &
+     &          ,IMS,IME,JMS,JME,KMS,KME                                & 
      &          ,IPS,IPE,JPS,JPE,KPS,KPE                                &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE
 !
@@ -135,6 +135,7 @@
 !
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: TTEN,QTEN
       REAL,ALLOCATABLE,DIMENSION(:,:,:) :: RTHRATEN,RTHBLTEN,RQVBLTEN
+      REAL,ALLOCATABLE,DIMENSION(:,:)   :: HPBL_HOLD
 !
 !-----------------------------------------------------------------------
 !
@@ -152,9 +153,9 @@
 #if ( HWRF == 1 )
      &,            sst_tim,flux_tim,hifreq_tim,wav_tim,cplstep_tim      &
 #endif
-     &,            diag_tim,adjppt_tim,tornado_tim
+     &,            diag_tim,adjppt_tim,tornado_tim                      
 
-! Flag for producing diagnostic fields (e.g., radar reflectivity)
+! Flag for producing diagnostic fields (e.g., radar reflectivity) 
       LOGICAL                        :: diag_flag
 
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -176,7 +177,7 @@
 !
 !#ifdef DEREF_KLUDGE
 !! SEE http://www.mmm.ucar.edu/wrf/WG2/topics/deref_kludge.htm
-!      INTEGER :: SM31,EM31,SM32,EM32,SM33,EM33
+!      INTEGER :: SM31,EM31,SM32,EM32,SM33,EM33 
 !      INTEGER :: SM31X,EM31X,SM32X,EM32X,SM33X,EM33X
 !      INTEGER :: SM31Y,EM31Y,SM32Y,EM32Y,SM33Y,EM33Y
 !#endif
@@ -186,7 +187,7 @@
 !-----------------------------------------------------------------------
 !
       LOGICAL :: EULER
-      INTEGER :: IDTADT
+      INTEGER :: IDTADT 
       INTEGER :: IDTADC
       INTEGER :: KS                                                        ! species index in 4d tracer array
 !
@@ -394,6 +395,7 @@
       ALLOCATE(RTHBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(RQVBLTEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
       ALLOCATE(RTHRATEN(IMS:IME,KMS:KME,JMS:JME),STAT=ISTAT)
+      ALLOCATE(HPBL_HOLD(IMS:IME,JMS:JME),STAT=ISTAT)
 !
         IF(CONFIG_FLAGS%CU_PHYSICS==GDSCHEME.OR.                        &
      &  CONFIG_FLAGS%CU_PHYSICS==TIEDTKESCHEME.OR.                      &
@@ -409,7 +411,7 @@
         ENDDO
       ENDIF
 !
-      GRID%SIGMA=1
+      GRID%SIGMA=1 
 
       IF (config_flags%non_hydrostatic) THEN
         grid%hydro=.FALSE.
@@ -612,7 +614,7 @@
          if(nrand==0) nrand=grid%ncnvc
          if(nrand==0) nrand=1
          IDT=MOD(grid%NTSD,nrand)
-
+ 
          IF(IDT.EQ.0 .OR. grid%NTSD .EQ. 0)THEN
             call start_timing
             call wrf_message('Update random numbers...')
@@ -901,7 +903,7 @@
      &         ,grid%t,grid%u,grid%v,grid%pdslo,grid%told,grid%uold,grid%vold                              &
      &         ,grid%petdt,grid%upstrm                                            &
      &         ,grid%few,grid%fns,grid%fne,grid%fse                                         &
-     &         ,grid%adt,grid%adu,grid%adv                                             &
+     &         ,grid%adt,grid%adu,grid%adv                                             & 
      &         ,grid%n_iup_h,grid%n_iup_v                                         &
      &         ,grid%n_iup_adh,grid%n_iup_adv                                     &
      &         ,grid%iup_h,grid%iup_v,grid%iup_adh,grid%iup_adv                             &
@@ -1256,8 +1258,8 @@
      &                  ,1,1                                            &
      &                  ,IDS,IDF,JDS,JDF,KDS,KDE                        &
      &                  ,IMS,IME,JMS,JME,KMS,KME                        &
-     &                  ,ITS,ITE,JTS,JTE,KTS,KTE)
-
+     &                  ,ITS,ITE,JTS,JTE,KTS,KTE)                              
+     
           CALL VAD2_SCAL(grid%ntsd,GRID%DT,GRID%IDTAD,grid%dx_nmm,grid%dy_nmm          &
      &                  ,grid%aeta1,grid%aeta2,grid%deta1,grid%deta2,grid%pdsl,grid%pdtop             &
      &                  ,grid%hbm2                                           &
@@ -1290,15 +1292,15 @@
           DO I=MYIS,MYIE
             grid%q(I,J,K)=MOIST(I,J,K,P_QV)/(1.+MOIST(I,J,K,P_QV))
           ENDDO
-          ENDDO
-          ENDDO
+          ENDDO   
+          ENDDO   
 !
         ENDIF vad2_micro_check
 !
         vad2_tim=vad2_tim+now_time()-btimx
 !
       ENDIF
-!
+!    
 !-----------------------------------------------------------------------
 !***  HORIZONTAL ADVECTION OF grid%q, TKE, AND CLOUD WATER
 !-----------------------------------------------------------------------
@@ -1359,7 +1361,7 @@
 !***  UPDATE MOIST ARRAY.
 !***  REMEMBER THAT MOIST IS ONLY USED WITH THE PHYSICS AND THUS
 !***  THE P_QV SLOT (=2) IS MIXING RATIO, NOT SPECIFIC HUMIDITY.
-!***  ALTHOUGH MOIST IS ONLY USED FOR PHYSICS IN OPERATIONS, IT IS
+!***  ALTHOUGH MOIST IS ONLY USED FOR PHYSICS IN OPERATIONS, IT IS 
 !***  UPDATED HERE FROM grid%q EVERY ADVECTION TIMESTEP FOR NON-OPERATIONAL
 !***  CONFIGURATIONS WHERE IT MAY BE USED OUTSIDE OF THE PHYSICS.
 !
@@ -1374,7 +1376,7 @@
           CALL HAD2_SCAL(                                              &
 #if defined(DM_PARALLEL)
      &                   GRID%DOMDESC,                                 &
-#endif
+#endif        
      &                   grid%ntsd,GRID%DT,GRID%IDTAD,grid%dx_nmm,grid%dy_nmm         &
      &                  ,grid%aeta1,grid%aeta2,grid%deta1,grid%deta2,grid%pdsl,grid%pdtop            &
      &                  ,grid%hbm2,grid%hbm3                                     &
@@ -1387,7 +1389,7 @@
      &                  ,IDS,IDF,JDS,JDF,KDS,KDE                       &
      &                  ,IMS,IME,JMS,JME,KMS,KME                       &
      &                  ,ITS,ITE,JTS,JTE,KTS,KTE)
-!
+!        
           CALL HAD2_SCAL(                                              &
 #if defined(DM_PARALLEL)
      &                   GRID%DOMDESC,                                 &
@@ -1420,15 +1422,15 @@
      &                  ,NUM_SCALAR,2                                  &
      &                  ,IDS,IDF,JDS,JDF,KDS,KDE                       &
      &                  ,IMS,IME,JMS,JME,KMS,KME                       &
-     &                  ,ITS,ITE,JTS,JTE,KTS,KTE)
-!
-          DO K=KTS,KTE
+     &                  ,ITS,ITE,JTS,JTE,KTS,KTE)                             
+!    
+          DO K=KTS,KTE 
           DO J=MYJS,MYJE
           DO I=MYIS,MYIE
-            grid%q(I,J,K)=MOIST(I,J,K,P_QV)/(1.+MOIST(I,J,K,P_QV))
+            grid%q(I,J,K)=MOIST(I,J,K,P_QV)/(1.+MOIST(I,J,K,P_QV))           
           ENDDO
-          ENDDO
-          ENDDO
+          ENDDO    
+          ENDDO   
 !
 !-----------------------------------------------------------------------
         ENDIF had2_micro_check
@@ -1446,7 +1448,7 @@
 !***  RADIATION
 !----------------------------------------------------------------------
 !
-!***  When allocating CAM radiation 4d arrays (ozmixm, aerosolc),
+!***  When allocating CAM radiation 4d arrays (ozmixm, aerosolc), 
 !***  the following two scalars are not needed.
 !
       NUM_AEROSOLC=1
@@ -1501,7 +1503,7 @@
      &                ,OZMIXM,grid%PIN,grid%LEVSIZ                     &
 
      &                ,GRID,CONFIG_FLAGS                               &
-     &                ,RTHRATEN                                        &
+     &                ,RTHRATEN                                        &  
      &                ,grid%re_cloud,grid%re_ice,grid%re_snow          &  ! G. Thompson
      &                ,grid%has_reqc,grid%has_reqi,grid%has_reqs       &  ! G. Thompson
      &                ,grid%SWUPT,grid%SWUPTC,grid%SWDNT,grid%SWDNTC   &
@@ -1593,7 +1595,7 @@
       ENDIF
 #endif
 !----------------------------------------------------------------------
-!***  TURBULENT PROCESSES
+!***  TURBULENT PROCESSES 
 !----------------------------------------------------------------------
 !
       turbl_time: IF(MOD(grid%ntsd,GRID%NPHS)==0)THEN
@@ -1643,11 +1645,11 @@
      &            ,grid%rswout,grid%rswtoa,grid%rlwtoa                                &
      &            ,grid%aswin,grid%aswout,grid%aswtoa,grid%alwin,grid%alwout,grid%alwtoa             &
 #if (NMM_CORE==1)
-     &            ,grid%uz0h,grid%vz0h,grid%dudt,grid%dvdt,grid%ugwdsfc,grid%vgwdsfc,grid%sfenth          &
+     &            ,grid%uz0h,grid%vz0h,grid%dudt,grid%dvdt,grid%ugwdsfc,grid%vgwdsfc,grid%sfenth          & 
 #else
-     &            ,grid%uz0h,grid%vz0h,grid%dudt,grid%dvdt                                 &
+     &            ,grid%uz0h,grid%vz0h,grid%dudt,grid%dvdt                                 & 
 #endif
-     &            ,RTHBLTEN,RQVBLTEN                                   &
+     &            ,RTHBLTEN,RQVBLTEN                                   & 
      &            ,GRID%PCPFLG,grid%ddata                                   &
      &            ,grid%hstdv,grid%hcnvx,grid%hasyw,grid%hasys,grid%hasysw,grid%hasynw,grid%hlenw,grid%hlens   & ! GWD
      &            ,grid%hlensw,grid%hlennw,grid%hangl,grid%hanis,grid%hslop,grid%hzmax,grid%crot,grid%srot     & ! GWD
@@ -1663,6 +1665,7 @@
      &            ,grid%zsig1,grid%rchno                               &
      &            ,grid%charn,grid%msang                               &
      &            ,grid%DUBLDT,grid%DVBLDT,grid%DTHBLDT,grid%DQVBLDT   &!wang added PBL tendency output
+     &            ,hpbl_hold                                           & !used by new KSAS
      &            ,IDS,IDF,JDS,JDF,KDS,KDE                             &
      &            ,IMS,IME,JMS,JME,KMS,KME                             &
      &            ,IPS,IPE,JPS,JPE,KPS,KPE                             &
@@ -1778,7 +1781,7 @@
 !
         ICLTEND=-1
         btimx=now_time()
-!
+! 
         call check_grid(grid,config_flags,'before CLTEND', &
             ids,ide,jds,jde,kds,kde, &
             ims,ime,jms,jme,kms,kme, &
@@ -1789,6 +1792,12 @@
      &             ,ITS,ITE,JTS,JTE,KTS,KTE)
 !
         cltend_tim=cltend_tim+now_time()-btimx
+#if ( HWRF == 1 )
+     ELSE
+        btimx=now_time()
+        call sustained_wind(grid,config_flags,ips,ipe,jps,jpe,.false.)
+        diag_tim=diag_tim+now_time()-btimx
+#endif
      ENDIF turbl_time
 !
 !----------------------------------------------------------------------
@@ -1798,9 +1807,10 @@
       IF(MOD(grid%ntsd,GRID%NCNVC)==0.AND.                              &
      &   (CONFIG_FLAGS%CU_PHYSICS.eq.KFETASCHEME .or.                     &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME .or.                       &
+     &   CONFIG_FLAGS%CU_PHYSICS.eq.KSASSCHEME .or.                       &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.NSASSCHEME .or.                       &
      &   CONFIG_FLAGS%CU_PHYSICS.eq.SCALESASSCHEME .or.                   &
-     &   CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN                       !
+     &   CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN                       ! 
 !
 #ifdef NMM_FIND_LOAD_IMBALANCE
       call blockf(loadimbal_tim,'after cltend')
@@ -1825,7 +1835,7 @@
         btimx=now_time()
 !
 !***  GET TENDENCIES FOR GD SCHEME.
-!
+!    
         IF(CONFIG_FLAGS%CU_PHYSICS==GDSCHEME.OR.                        &
      &  CONFIG_FLAGS%CU_PHYSICS==TIEDTKESCHEME.OR.                      &
      &  CONFIG_FLAGS%CU_PHYSICS==KFETASCHEME)THEN
@@ -1874,11 +1884,11 @@
      &             ,grid%prec,grid%acprec,grid%cuprec,grid%cuppt,grid%cprate                    &
      &             ,grid%sm,grid%hbm2,grid%pblh,grid%lpbl,grid%cnvbot,grid%cnvtop                         &
      &             ,grid%htop,grid%hbot,grid%htopd,grid%hbotd,grid%htops,grid%hbots                  &
-     &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                          &
-#if (NMM_CORE==1)
+     &             ,RTHBLTEN,RQVBLTEN,RTHRATEN                          & 
+#if (NMM_CORE==1)                  
      &             ,grid%twbs,grid%qwbs                                &
-     &             ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random &
-     &             ,grid%DTHCUDT,grid%DQVCUDT,grid%DQRCUDT,grid%DQCCUDT&! wang, output CU tendency
+     &             ,grid%DUCUDT, grid%DVCUDT, GRID%MOMMIX, grid%random & 
+     &             ,grid%DTHCUDT,grid%DQVCUDT,grid%DQRCUDT,grid%DQCCUDT&! wang, output CU tendency 
      &             ,grid%DQICUDT,grid%DQSCUDT                          &
 #endif
      &             ,grid%hpbl2d,grid%evap2d,grid%heat2d                &
@@ -1887,6 +1897,7 @@
      &             ,grid%sigmu, grid%sigmu1                            & !wang
      &             ,grid%avcnvc,grid%acutim,grid%ihe,grid%ihw          &
      &             ,GRID,CONFIG_FLAGS                                  &
+     &             ,hpbl_hold                                          & !used by new KSAS
      &             ,IDS,IDF,JDS,JDF,KDS,KDE                            &
      &             ,IMS,IME,JMS,JME,KMS,KME                            &
      &             ,IPS,IPE,JPS,JPE,KPS,KPE                            &
@@ -1912,9 +1923,10 @@
 !emc_2010_bugfix_h50
         IF(MOD(grid%ntsd, GRID%NCNVC).eq.0.and.                 &
      &    (CONFIG_FLAGS%CU_PHYSICS.eq.OSASSCHEME.or.            &
+     &     CONFIG_FLAGS%CU_PHYSICS.eq.KSASSCHEME.or.            &
      &     CONFIG_FLAGS%CU_PHYSICS.eq.NSASSCHEME.or.            &
      &     CONFIG_FLAGS%CU_PHYSICS.eq.SCALESASSCHEME.or.        &
-     &     CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN
+     &     CONFIG_FLAGS%CU_PHYSICS.eq.SASSCHEME))THEN 
 !emc_2010_bugfix_h50
 !
 #ifdef NMM_FIND_LOAD_IMBALANCE
@@ -1936,7 +1948,7 @@
       call blockf(loadimbal_tim,'after halo SAS A & B')
 #endif
 !
-!***  INTERPOLATE WINDS FROM H POINTS BACK TO V POINTS AFTER SAS
+!***  INTERPOLATE WINDS FROM H POINTS BACK TO V POINTS AFTER SAS 
 !
         btimx=now_time()
 
@@ -1949,7 +1961,7 @@
         uv_htov_tim=uv_htov_tim+now_time()-btimx
 !emc_2010_bugfix_h50
 
-     ENDIF ! for SAS only
+     ENDIF ! for SAS only 
 !#endif
 #endif
 !--------------------------------------------------------------------------------
@@ -1980,7 +1992,7 @@
      &               ,GRID,CONFIG_FLAGS                                &
      &               ,grid%re_cloud,grid%re_ice,grid%re_snow           &  ! G. Thompson
      &               ,grid%has_reqc,grid%has_reqi,grid%has_reqs        &  ! G. Thompson
-     &               ,diag_flag                                        &
+     &               ,diag_flag                                        &  
      &               ,IDS,IDF,JDS,JDF,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE)
@@ -2013,7 +2025,7 @@
 !----------------------------------------------------------------------
 !***  CALCULATE TEMP TENDENCIES AND RESTORE ORIGINAL TEMPS
 !----------------------------------------------------------------------
-!
+!      
         ICLTEND=0
         btimx=now_time()
 !
@@ -2355,7 +2367,7 @@
      &          ,IDS,IDF,JDS,JDF,KDS,KDE                               &
      &          ,IMS,IME,JMS,JME,KMS,KME                               &
      &          ,ITS,ITE,JTS,JTE,KTS,KTE )
-
+ 
 !
       bocov_tim=bocov_tim+now_time()-btimx
 !
@@ -2662,7 +2674,7 @@
 ! Coupling insertion:->
         btimx=now_time()
         call ATM_SENDFLUXES
-        CALL atm_sendwindp
+        CALL atm_sendwindp  
         flux_tim=flux_tim+now_time()-btimx
 !<-:Coupling insertion
 !
@@ -2720,7 +2732,7 @@
 #endif
 !
 !-------------------  END OF HIGH FREQUENCY OUTPUT MODULE  ----------------------------
-
+ 
 
       solve_tim=solve_tim+now_time()-ttim
       Return
@@ -3460,7 +3472,7 @@
       REAL(KIND=DOUBLE) :: F_MEAN,POINTS,RMS,ST_DEV,SUMFK,SUMF2K
       REAL,DIMENSION(KTS:KTE) :: FMAX,FMAX_0,FMIN,FMIN_0
       REAL(KIND=DOUBLE),DIMENSION(KTS:KTE) :: SUMF,SUMF_0,SUMF2,SUMF2_0
-
+ 
       CHARACTER(LEN=256) :: message
 !----------------------------------------------------------------------
 !

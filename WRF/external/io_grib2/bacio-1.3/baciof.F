@@ -375,7 +375,7 @@ C - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 C  UNBUFFERED I/O
       IF(BAOPTS(1).NE.1) THEN
         IF(IB.GE.0) THEN
-
+           
           IRET=BACIO(BACIO_READ,IB,JB,SIZE,NB,KA,FD(LU),CFN,A)
         ELSE
           IRET=BACIO(BACIO_READ+BACIO_NOSEEK,ZERO,JB,SIZE,NB,KA,

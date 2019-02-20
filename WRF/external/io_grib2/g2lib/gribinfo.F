@@ -2,15 +2,15 @@
      &                    numlocal,numfields,maxvals,ierr)
 !$$$  SUBPROGRAM DOCUMENTATION BLOCK
 !                .      .    .                                       .
-! SUBPROGRAM:    gribinfo
+! SUBPROGRAM:    gribinfo 
 !   PRGMMR: Gilbert         ORG: W/NP11    DATE: 2000-05-25
 !
 ! ABSTRACT: This subroutine searches through a GRIB2 message and
 !   returns the number of Local Use Sections and number of gridded
-!   fields found in the message.  It also performs various checks
+!   fields found in the message.  It also performs various checks 
 !   to see if the message is a valid GRIB2 message.
-!   Last, a list of safe array dimensions is returned for use in
-!   allocating return arrays from routines getlocal, gettemplates, and
+!   Last, a list of safe array dimensions is returned for use in 
+!   allocating return arrays from routines getlocal, gettemplates, and 
 !   getfields.  (See maxvals and REMARKS)
 !
 ! PROGRAM HISTORY LOG:
@@ -22,7 +22,7 @@
 !     cgrib    - Character array that contains the GRIB2 message
 !     lcgrib   - Length (in bytes) of GRIB message in array cgrib.
 !
-!   OUTPUT ARGUMENT LIST:
+!   OUTPUT ARGUMENT LIST:      
 !     listsec0 - Contains information decoded from GRIB Indicator Section 0.
 !                Must be dimensioned >= 2.
 !                listsec0(1)=Discipline-GRIB Master Table Number
@@ -34,7 +34,7 @@
 !                listsec1(1)=Id of orginating centre (Common Code Table C-1)
 !                listsec1(2)=Id of orginating sub-centre (local table)
 !                listsec1(3)=GRIB Master Tables Version Number (Code Table 1.0)
-!                listsec1(4)=GRIB Local Tables Version Number
+!                listsec1(4)=GRIB Local Tables Version Number 
 !                listsec1(5)=Significance of Reference Time (Code Table 1.1)
 !                listsec1(6)=Reference Time - Year (4 digits)
 !                listsec1(7)=Reference Time - Month
@@ -44,19 +44,19 @@
 !                listsec1(11)=Reference Time - Second
 !                listsec1(12)=Production status of data (Code Table 1.2)
 !                listsec1(13)=Type of processed data (Code Table 1.3)
-!     numlocal - The number of Local Use Sections ( Section 2 ) found in
+!     numlocal - The number of Local Use Sections ( Section 2 ) found in 
 !                the GRIB message.
 !     numfields- The number of gridded fieldse found in the GRIB message.
 !     maxvals()- The maximum number of elements that could be returned
 !                in various arrays from this GRIB2 message. (see REMARKS)
 !                maxvals(1)=max length of local section 2 (for getlocal)
-!                maxvals(2)=max length of GDS Template (for gettemplates
+!                maxvals(2)=max length of GDS Template (for gettemplates 
 !                                                       and getfield)
 !                maxvals(3)=max length of GDS Optional list (for getfield)
-!                maxvals(4)=max length of PDS Template (for gettemplates
+!                maxvals(4)=max length of PDS Template (for gettemplates 
 !                                                       and getfield)
 !                maxvals(5)=max length of PDS Optional list (for getfield)
-!                maxvals(6)=max length of DRS Template (for gettemplates
+!                maxvals(6)=max length of DRS Template (for gettemplates 
 !                                                       and getfield)
 !                maxvals(7)=max number of gridpoints (for getfield)
 !     ierr     - Error return code.
@@ -67,15 +67,15 @@
 !                4 = End string "7777" found, but not where expected.
 !                5 = End string "7777" not found at end of message.
 !
-! REMARKS: Array maxvals contains the maximum possible
+! REMARKS: Array maxvals contains the maximum possible 
 !          number of values that will be returned in argument arrays
-!          for routines getlocal, gettemplates, and getfields.
-!          Users can use this info to determine if their arrays are
+!          for routines getlocal, gettemplates, and getfields.  
+!          Users can use this info to determine if their arrays are 
 !          dimensioned large enough for the data that may be returned
 !          from the above routines, or to dynamically allocate arrays
 !          with a reasonable size.
 !          NOTE that the actual number of values in these arrays is returned
-!          from the routines and will likely be less than the values
+!          from the routines and will likely be less than the values 
 !          calculated by this routine.
 !
 ! ATTRIBUTES:
@@ -88,12 +88,12 @@
       integer,intent(in) :: lcgrib
       integer,intent(out) :: listsec0(3),listsec1(13),maxvals(7)
       integer,intent(out) :: numlocal,numfields,ierr
-
+      
       character(len=4),parameter :: grib='GRIB',c7777='7777'
       character(len=4) :: ctemp
       integer,parameter :: zero=0,one=1
       integer,parameter :: mapsec1len=13
-      integer,parameter ::
+      integer,parameter :: 
      &        mapsec1(mapsec1len)=(/ 2,2,1,1,1,2,1,1,1,1,1,1,1 /)
       integer iofst,ibeg,istart
 
@@ -124,7 +124,7 @@
         return
       endif
 !
-!  Unpack Section 0 - Indicator Section
+!  Unpack Section 0 - Indicator Section 
 !
       iofst=8*(istart+5)
       call g2lib_gbyte(cgrib,listsec0(1),iofst,8)     ! Discipline
@@ -139,7 +139,7 @@
       ipos=istart+lensec0
 !
 !  Currently handles only GRIB Edition 2.
-!
+!  
       if (listsec0(2).ne.2) then
         print *,'gribinfo: can only decode GRIB edition 2.'
         ierr=2
@@ -169,7 +169,7 @@
       enddo
       ipos=ipos+lensec1
 !
-!  Loop through the remaining sections keeping track of the
+!  Loop through the remaining sections keeping track of the 
 !  length of each.  Also count the number of times Section 2
 !  and Section 4 appear.
 !
@@ -227,7 +227,7 @@
            lenposs=lensec-11
            if ( lenposs.gt.maxdrstmpl ) maxdrstmpl=lenposs
         endif
-
+        
       enddo
 
       maxvals(1)=maxsec2len

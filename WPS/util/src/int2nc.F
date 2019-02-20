@@ -13,7 +13,7 @@ program int2nc
    integer :: istatus, dim, i, varid, ablevel, proj, nproj
    real :: fcst, slat, slon, dlat, dlon, nlat, dxn, dyn
    real :: xloncen, tlat1, tlat2, radius, si, sj
-   logical :: windrot
+   logical :: windrot 
    character (len=132) field, name, cablevel, date, source, units, desc, flnm, nfile
    real, allocatable, dimension(:,:) :: data
    integer :: ncid
@@ -79,7 +79,7 @@ program int2nc
            CHECKDIMS : DO
              if(dval(i) == 0) then
                dval(i) = tmp_dims(dim)
-               call check(nf_def_dim(ncid,dname(i),dval(i),i))
+               call check(nf_def_dim(ncid,dname(i),dval(i),i)) 
                EXIT CHECKDIMS
              else
                if (dval(i) == tmp_dims(dim) ) then

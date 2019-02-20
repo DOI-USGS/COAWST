@@ -65,7 +65,7 @@
 CONTAINS
 !
 !----------------------------------------------------------------------
-      SUBROUTINE QNSESFC(ITIMESTEP,HT,DZ                                &
+      SUBROUTINE QNSESFC(ITIMESTEP,HT,DZ                                & 
      &                 ,PMID,PINT,TH,T,QV,QC,U,V,Q2                    &
      &                 ,TSK,QSFC,THZ0,QZ0,UZ0,VZ0                      &
      &                 ,LOWLYR,XLAND                                   &
@@ -98,12 +98,12 @@ CONTAINS
      &                                                     ,PMID,PINT  &
      &                                                     ,Q2,QC,QV   &
      &                                                     ,T,TH       &
-     &                                                     ,U,V
+     &                                                     ,U,V   
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: PSHLTR,Q10,QSHLTR &
      &                                              ,TH10,TSHLTR,T02   &
      &                                              ,U10,V10,TH02,Q02
-      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: FLX_LH,HFX,QFX
+      REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: FLX_LH,HFX,QFX 
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(INOUT) :: AKHS,AKMS       &
      &                                                ,PBLH,QSFC
@@ -115,9 +115,9 @@ CONTAINS
 !
       REAL,DIMENSION(IMS:IME,JMS:JME),INTENT(OUT) :: CHS,CHS2,CQS2     &
      &                                              ,CPM,CT,FLHC,FLQC  &
-     &                                              ,QGH
+     &                                              ,QGH 
 
-     INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX  ! JP
+     INTEGER,  OPTIONAL,  INTENT(IN )   ::     SCM_FORCE_FLUX  ! JP 
 
 !----------------------------------------------------------------------
 !***
@@ -300,7 +300,7 @@ CONTAINS
      &               ,IDS,IDE,JDS,JDE,KDS,KDE                          &
      &               ,IMS,IME,JMS,JME,KMS,KME                          &
      &               ,ITS,ITE,JTS,JTE,KTS,KTE,i,j,ZHK(LMH+1)           &
-     &               ,SCM_FORCE_FLUX)
+     &               ,SCM_FORCE_FLUX) 
 !
 
 !***  REMOVE SUPERATURATION AT 2M AND 10M
@@ -337,7 +337,7 @@ CONTAINS
 !----------------------------------------------------------------------
       ENDDO setup_integration
 !----------------------------------------------------------------------
-
+ 
       END SUBROUTINE QNSESFC
 !XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 !----------------------------------------------------------------------
@@ -374,7 +374,7 @@ CONTAINS
       REAL,INTENT(OUT) :: CHS,CHS2,CPM,CQS2,CT,FLHC,FLQC,    &
      &                   PSHLTR,Q02,Q10,QGH,RIB,RLMO,TH02,TH10,U10,V10
 !
-      REAL,INTENT(INOUT) :: FLX_LH,HFX,QFX
+      REAL,INTENT(INOUT) :: FLX_LH,HFX,QFX  
 !
       REAL,INTENT(INOUT) :: AKHS,AKMS,QZ0,THZ0,USTAR,UZ0,VZ0,Z0,QS,TZ0
 
@@ -425,7 +425,7 @@ CONTAINS
 !
 !----------------------------------------------------------------------
 !
-      IF(SEAMASK>0.5)THEN
+      IF(SEAMASK>0.5)THEN 
 !
 !----------------------------------------------------------------------
         DO ITR=1,ITRMX
@@ -461,7 +461,7 @@ CONTAINS
                 THZ0=((WGHTT*THLOW+THS)/(WGHTT+1.)+THZ0)*0.5
                 QZ0=((WGHTQ*QLOW+QS)/(WGHTQ+1.)+QZ0)*0.5
               ELSE
-                THZ0=(WGHTT*THLOW+THS)/(WGHTT+1.)
+                THZ0=(WGHTT*THLOW+THS)/(WGHTT+1.)            
                 QZ0=(WGHTQ*QLOW+QS)/(WGHTQ+1.)
               ENDIF
 !
@@ -508,7 +508,7 @@ CONTAINS
           B=(ELOCP/TEM-1.-P608)*THM
 !
           DTHV=((THELOW-THZ0)*((QLOW+QZ0+CWMLOW)*(0.5*P608)+1.)        &
-     &        +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B)
+     &        +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B) 
 !
           DU2=MAX((ULOW-UZ0)**2+(VLOW-VZ0)**2,EPSU2)
           RIB=BTGX*DTHV*ZSL/DU2
@@ -609,7 +609,7 @@ CONTAINS
 !
 !----------------------------------------------------------------------
 !
-      ELSE
+      ELSE  
 !
 !----------------------------------------------------------------------
         IF(NTSD==1)THEN
@@ -622,7 +622,7 @@ CONTAINS
 !
         ZT=ZU*ZTFC
         THZ0=THS
-!       RLOW=PLOW/(R_D*TLOW)
+!       RLOW=PLOW/(R_D*TLOW)          
 !
         ZQ=ZT
         QZ0=QS
@@ -634,7 +634,7 @@ CONTAINS
         B=(ELOCP/TEM-1.-P608)*THM
 !
         DTHV=((THELOW-THZ0)*((QLOW+QZ0+CWMLOW)*(0.5*P608)+1.)          &
-     &        +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B)
+     &        +(QLOW-QZ0+CWMLOW)*A+CWMLOW*B) 
 !
         DU2=MAX((ULOW-UZ0)**2+(VLOW-VZ0)**2,EPSU2)
         RIB=BTGX*DTHV*ZSL/DU2
@@ -655,7 +655,7 @@ CONTAINS
 !----------------------------------------------------------------------
 !
 !mp   Topo modification of ZILFC term
-!
+!	
           TOPOTERM=TOPOFAC*ZSFC**2.
           TOPOTERM=MAX(TOPOTERM,3.0)
 !
@@ -971,8 +971,8 @@ CONTAINS
      !  print*,'RLOW=',RLOW
      !  print*,'********'
      ! END IF
-      IF ( PRESENT(SCM_FORCE_FLUX) ) THEN
-         IF (SCM_FORCE_FLUX.EQ.0) THEN
+      IF ( PRESENT(SCM_FORCE_FLUX) ) THEN              
+         IF (SCM_FORCE_FLUX.EQ.0) THEN              
            HFX=-RLOW*CP*HSFLX
            QFX=-RLOW*HLFLX*WETM
          ENDIF
@@ -987,7 +987,7 @@ CONTAINS
       CPM=CP*(1.+0.8*QLOW)
 !
 !***  DO NOT COMPUTE QS OVER LAND POINTS HERE SINCE IT IS
-!***  A PROGNOSTIC VARIABLE THERE.  IT IS OKAY TO USE IT
+!***  A PROGNOSTIC VARIABLE THERE.  IT IS OKAY TO USE IT 
 !***  AS A DIAGNOSTIC OVER WATER SINCE IT WILL CAUSE NO
 !***  INTERFERENCE BEFORE BEING RECOMPUTED IN MYJPBL.
 !
@@ -1155,7 +1155,7 @@ CONTAINS
 !***  PAULSON 1970 FUNCTIONS
 !----------------------------------------------------------------------
           X=SQRT(SQRT(1.-16.*ZETA1))
-
+ 
           PSIM1(K)=-2.*LOG((X+1.)/2.)-LOG((X*X+1.)/2.)+2.*ATAN(X)-PIHF
           PSIH1(K)=-2.*LOG((X*X+1.)/2.)
 !
@@ -1210,7 +1210,7 @@ CONTAINS
 !----------------------------------------------------------------------
 !
           X=SQRT(SQRT(1.-16.*ZETA2))
-
+ 
           PSIM2(K)=-2.*LOG((X+1.)/2.)-LOG((X*X+1.)/2.)+2.*ATAN(X)-PIHF
           PSIH2(K)=-2.*LOG((X*X+1.)/2.)
 !

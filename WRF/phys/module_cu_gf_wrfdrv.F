@@ -54,7 +54,7 @@ CONTAINS
 #if ( WRF_DFI_RADAR == 1 )
                  ! Optional CAP suppress option
               ,do_capsuppress,cap_suppress_loc                  &
-#endif
+#endif                                 
                                                                 )
 !-------------------------------------------------------------
    IMPLICIT NONE
@@ -67,12 +67,12 @@ CONTAINS
       real, parameter :: aodccn=0.1
 !-------------------------------------------------------------
    INTEGER,      INTENT(IN   ) ::                               &
-                                  ids,ide, jds,jde, kds,kde,    &
-                                  ims,ime, jms,jme, kms,kme,    &
+                                  ids,ide, jds,jde, kds,kde,    & 
+                                  ims,ime, jms,jme, kms,kme,    & 
                                   its,ite, jts,jte, kts,kte
    LOGICAL periodic_x,periodic_y
    integer, intent (in   )              :: ichoice
-
+  
    INTEGER,      INTENT(IN   ) :: ishallow_g3
 
    REAL,  DIMENSION( ims:ime , kms:kme , jms:jme )         ,    &
@@ -153,7 +153,7 @@ CONTAINS
 
 #if ( WRF_DFI_RADAR == 1 )
 !
-!  option of cap suppress:
+!  option of cap suppress: 
 !        do_capsuppress = 1   do
 !        do_capsuppress = other   don't
 !
@@ -256,7 +256,7 @@ CONTAINS
    itf=MIN(ite,ide-1)
    ktf=MIN(kte,kde-1)
    jtf=MIN(jte,jde-1)
-!
+!                                                                      
      DO J = jts,jte
      DO I= its,ite
      do k=kts,kte
@@ -270,7 +270,7 @@ CONTAINS
      enddo
      enddo
 
-     DO 100 J = jts,jtf
+     DO 100 J = jts,jtf  
 
      DO I= its,itf
 ! Stochastic
@@ -534,7 +534,7 @@ CONTAINS
               ,rand_vmas     & ! for stochastics vertmass, if temporal and spatial patterns exist
               ,rand_clos     & ! for stochastics closures, if temporal and spatial patterns exist
               ,0             & ! flag to what you want perturbed
-                               ! 1 = momentum transport
+                               ! 1 = momentum transport 
                                ! 2 = normalized vertical mass flux profile
                                ! 3 = closures
                                ! more is possible, talk to developer or
@@ -619,7 +619,7 @@ CONTAINS
               ,rand_vmas     & ! for stochastics vertmass, if temporal and spatial patterns exist
               ,rand_clos     & ! for stochastics closures, if temporal and spatial patterns exist
               ,0             & ! flag to what you want perturbed
-                               ! 1 = momentum transport
+                               ! 1 = momentum transport 
                                ! 2 = normalized vertical mass flux profile
                                ! 3 = closures
                                ! more is possible, talk to developer or

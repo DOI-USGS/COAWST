@@ -11,9 +11,9 @@ CONTAINS
                      CP,ROVCP,R,XLV,PSFC,CHS,CHS2,CQS2, CPM,    &
                      DT, SMOIS,num_soil_layers,ISLTYP,ZNT,      &
 #if (HWRF==1)
-                     MZNT,                                      &
+                     MZNT,                                      & 
 #endif
-                     UST,PSIM,PSIH,                             &
+                     UST,PSIM,PSIH,                             &   
                      XLAND,HFX,QFX,TAUX,TAUY,LH,GSW,GLW,TSK,FLHC,FLQC,    & ! gopal's doing for Ocean coupling
                      QGH,QSFC,U10,V10,                          &
                      ICOEF_SF,IWAVECPL,LCURR_SF,CHARN,MSANG,SCURX, SCURY,&
@@ -96,7 +96,7 @@ CONTAINS
       INTEGER, INTENT(IN) ::            ICOEF_SF
       INTEGER, INTENT(IN) ::            IWAVECPL
       LOGICAL, INTENT(IN) ::            LCURR_SF
-      logical,intent(in)  :: pert_Cd
+      logical,intent(in)  :: pert_Cd 
       integer,intent(in)  :: ens_random_seed
       real,intent(in)     :: ens_Cdamp
 
@@ -105,13 +105,13 @@ CONTAINS
                                         EP1,                            &
                                         EP2,                            &
                                         KARMAN,                         &
-                                        R,                              &
+                                        R,                              & 
                                         ROVCP,                          &
                                         DT,                             &
                                         SFENTH,                         &
-                                        XLV
+                                        XLV 
 
-      REAL,    DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) ::      &
+      REAL,    DIMENSION(ims:ime, kms:kme, jms:jme), INTENT(IN) ::      & 
                                         P3D,                            &
                                         QV3D,                           &
                                         T3D,                            &
@@ -124,13 +124,13 @@ CONTAINS
                                         PSFC,                           &
                                         GLW,                            &
                                         GSW,                            &
-                                        XLAND
+                                        XLAND                           
       REAL,    DIMENSION(ims:ime, jms:jme), INTENT(IN) ::               &
                                         CHARN,                          &
                                         MSANG,                          &
                                         SCURX,                          &
                                         SCURY
-      REAL,    DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::            &
+      REAL,    DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::            & 
                                         TSK,                            &
                                         BR,                             &
                                         ZKMAX,                          &
@@ -159,9 +159,9 @@ CONTAINS
                                         TAUX,                           & ! gopal's doing for Ocean coupling
                                         TAUY
 
-      REAL, DIMENSION(ims:ime, jms:jme), INTENT(OUT) ::                 &
+      REAL, DIMENSION(ims:ime, jms:jme), INTENT(INOUT) ::               &
                                         U10,                            &
-                                        V10
+                                        V10                            
 
 !--------------------------- LOCAL VARS ------------------------------
 
@@ -210,17 +210,17 @@ CONTAINS
                                         U10M,                           &
                                         USTAR,                          &
                                         V1,                             &
-                                        V10M,                           &
+                                        V10M,                           & 
                                         WIND,                           &
                                         Z0RL,                           &
-                                        Z1
+                                        Z1                              
 
       REAL,    DIMENSION(kms:kme, ims:ime) ::                           &
                                         rpc,                            &
                                         tpc,                            &
                                         upc,                            &
                                         vpc
-
+    
      REAL,    DIMENSION(ims:ime) ::                                     &
                                         pspc,                           &
                                         pkmax,                          &
@@ -299,9 +299,9 @@ CONTAINS
          smcmax=maxsmc(isltyp(i,j))
          wetc(i)=(smc-smcdry)/(smcmax-smcdry)
          wetc(i)=amin1(1.,amax1(wetc(i),0.))
-         endif
+         endif  
 !       convert from Pa to cgs...
-        pspc(i)=PSFC(i,j)*10.
+        pspc(i)=PSFC(i,j)*10.   
         pkmax(i)=P3D(i,kts,j)*10.
         PS(i)=PSFC(i,j)*.001
         Q1(I) = QV3D(i,kts,j)
@@ -419,7 +419,7 @@ CONTAINS
 !       update skin temp only when using GFDL slab...
 
         IF(NTSFLG==1)    then
-        tsk(i,j) = tstrc(i)      ! gopal's doing
+        tsk(i,j) = tstrc(i)      ! gopal's doing 
 !bugfix 4
 !       bob's doing patch tsk with neigboring values... are grid boundaries
         if(j.eq.jde) then
@@ -429,7 +429,7 @@ CONTAINS
         if(j.eq.jds) then
          tsk(i,j) = tsk(i,j+1)
          endif
-
+   
         if(i.eq.ide) tsk(i,j) = tsk(i-1,j)
         if(i.eq.ids) tsk(i,j) = tsk(i+1,j)
         endif
@@ -461,10 +461,10 @@ CONTAINS
         taux  (i,j)= fxmx(i)/10.    ! gopal's doing for Ocean coupling
         tauy  (i,j)= fxmy(i)/10.    ! gopal's doing for Ocean coupling
         fm(i)         = karman/sqrt(cdm(i))
-        fh(i)         = karman*xxfh(i)
+        fh(i)         = karman*xxfh(i)            
         PSIM(i,j)=GZ1OZ0(i,j)-FM(i)
         PSIH(i,j)=GZ1OZ0(i,j)-FH(i)
-        fh2(i)         = karman*xxfh2(i)
+        fh2(i)         = karman*xxfh2(i)            
         ch(i)      = karman*karman/(fm(i) * fh(i))
         cm(i)      = cdm(i)
         Cd_out(i,j) = cm(i)
@@ -541,7 +541,7 @@ CONTAINS
 !           cpcgs  = 1.00464e7
 !       convert from ergs/gram/K to J/kg/K  cpmks=1004
 !           hfx   (i,j)=-0.001*cpcgs*fxh(i)
-            hfx   (i,j)=       -10.*CP*fxh(i)    ! Bob: hfx   (i,j)=  -10.*CP*fxh(i)
+            hfx   (i,j)=       -10.*CP*fxh(i)    ! Bob: hfx   (i,j)=  -10.*CP*fxh(i) 
             HFX(I,J)=AMAX1(HFX(I,J),-250.)
           ENDIF
 !         QFX(I,J)=FLQC(I,J)*(QSFC(I,J)-Q1(I))
@@ -564,9 +564,9 @@ CONTAINS
     endif
 
    ENDDO            ! FOR THE J LOOP I PRESUME
-!      if(100.ge.its.and.100.le.ite.and.100.ge.jts.and.100.le.jte) then
+!      if(100.ge.its.and.100.le.ite.and.100.ge.jts.and.100.le.jte) then 
 !       write(0,*) 'output vars of sf_gfdl at i,j=100'
-!       write(0,*) 'TSK',TSK(100,100)
+!       write(0,*) 'TSK',TSK(100,100)                  
 !       write(0,*) 'PSFC',PSFC(100,100)
 !       write(0,*) 'GLW',GLW(100,100)
 !       write(0,*) 'GSW',GSW(100,100)
@@ -592,7 +592,7 @@ CONTAINS
 !       write(0,*) 'WSPD',WSPD(100,100)
 !       write(0,*) 'U10',U10(100,100)
 !       write(0,*) 'V10',V10(100,100)
-!      endif
+!      endif 
 
 
    END SUBROUTINE SF_GFDL
@@ -607,13 +607,13 @@ CONTAINS
                           ids,ide, jds,jde, kds,kde,                      &
                           ims,ime, jms,jme, kms,kme,                      &
                           its,ite, jts,jte, kts,kte                       )
-
+  
 !------------------------------------------------------------------------
 !
-!     MFLUX2 computes surface fluxes of momentum, heat,and moisture
-!     using monin-obukhov. the roughness length "z0" is prescribed
+!     MFLUX2 computes surface fluxes of momentum, heat,and moisture 
+!     using monin-obukhov. the roughness length "z0" is prescribed 
 !     over land and over ocean "z0" is computed using charnocks formula.
-!     the universal functions (from similarity theory approach) are
+!     the universal functions (from similarity theory approach) are 
 !     those of hicks. This is Bob's doing.
 !
 !------------------------------------------------------------------------
@@ -621,7 +621,7 @@ CONTAINS
       USE module_sf_exchcoef
       IMPLICIT NONE
 !     use allocate_mod
-!     use module_TLDATA , ONLY : tab,table,cp,g,rgas,og
+!     use module_TLDATA , ONLY : tab,table,cp,g,rgas,og 
 
 !     include 'RESOLUTION.h'
 !     include 'PARAMETERS.h'
@@ -651,7 +651,7 @@ CONTAINS
       integer,intent(in)  :: icoef_sf
       integer,intent(in)  :: iwavecpl
       logical,intent(in)  :: lcurr_sf
-      logical,intent(in)  :: pert_Cd
+      logical,intent(in)  :: pert_Cd 
       integer,intent(in)  :: ens_random_seed
       real,intent(in)     :: ens_Cdamp
 
@@ -707,7 +707,7 @@ CONTAINS
       real, dimension(1   :ime) :: estsop
       real, dimension(1   :ime) :: fmz1
       real, dimension(1   :ime) :: fmz10
-      real, dimension(1   :ime) :: fmz2
+      real, dimension(1   :ime) :: fmz2 
       real, dimension(1   :ime) :: fmzo1
       real, dimension(1   :ime) :: foft
       real, dimension(1   :ime) :: foftm
@@ -721,7 +721,7 @@ CONTAINS
       real, dimension(1   :ime) :: rstso
       real, dimension(1   :ime) :: rstsop
       real, dimension(1   :ime) :: sf10
-      real, dimension(1   :ime) :: sf2
+      real, dimension(1   :ime) :: sf2 
       real, dimension(1   :ime) :: sfm
       real, dimension(1   :ime) :: sfzo
       real, dimension(1   :ime) :: sgzm
@@ -742,7 +742,7 @@ CONTAINS
       real, dimension(1   :ime) :: tss
       real, dimension(1   :ime) :: ucom
       real, dimension(1   :ime) :: uf10
-      real, dimension(1   :ime) :: uf2
+      real, dimension(1   :ime) :: uf2 
       real, dimension(1   :ime) :: ufh
       real, dimension(1   :ime) :: ufm
       real, dimension(1   :ime) :: ufzo
@@ -760,7 +760,7 @@ CONTAINS
       real, dimension(1   :ime) :: xxfm
       real, dimension(1   :ime) :: xxsh
       real, dimension(1   :ime) :: z10
-      real, dimension(1   :ime) :: z2
+      real, dimension(1   :ime) :: z2 
       real, dimension(1   :ime) :: zeta
       real, dimension(1   :ime) :: zkmax
 
@@ -776,7 +776,7 @@ CONTAINS
 
       real :: ux13, yo, y,xo,x,ux21,ugzzo,ux11,ux12,uzetao,xnum,alll
       real :: ux1,ugz,x10,uzo,uq,ux2,ux3,xtan,xden,y10,uzet1o,ugz10
-      real :: szet2, zal2,ugz2
+      real :: szet2, zal2,ugz2 
       real :: rovcp,boycon,cmo2,psps1,zog,enrca,rca,cmo1,amask,en,ca,a,c
       real :: sgz,zal10,szet10,fmz,szo,sq,fmzo,rzeta1,zal1g,szetao,rzeta2,zal2g
       real :: hcap,xks,pith,teps,diffot,delten,alevp,psps2,alfus,nstep
@@ -790,8 +790,8 @@ CONTAINS
 !-----------------------------------------------------------------------
 !     internal variables
 !-----------------------------------------------------------------------
-
-      real, dimension (223) :: tab
+ 
+      real, dimension (223) :: tab 
       real, dimension (223) :: table
       real, dimension (101) :: tab11
       real, dimension (41) :: table4
@@ -813,7 +813,7 @@ CONTAINS
 
       data amask/ -98.0/
 !-----------------------------------------------------------------------
-!     tables used to obtain the vapor pressures or saturated vapor
+!     tables used to obtain the vapor pressures or saturated vapor 
 !     pressure
 !-----------------------------------------------------------------------
 
@@ -869,7 +869,7 @@ CONTAINS
       data table3/.7520e+03,.7980e+03,.8470e+03,.8980e+03,.9520e+03,      &
      &.1008e+04,.1067e+04,.1129e+04,.1194e+04,.1263e+04,.1334e+04,        &
      &.1409e+04,.1488e+04,.1569e+04,.1656e+04,.1745e+04,.1840e+04,        &
-     &.1937e+04,.2041e+04,.2147e+04,.2259e+04,.2375e+04,.2497e+04,        &
+     &.1937e+04,.2041e+04,.2147e+04,.2259e+04,.2375e+04,.2497e+04,        & 
      &.2624e+04,.2756e+04,.2893e+04,.3036e+04,.3186e+04,.3340e+04,        &
      &.3502e+04,.3670e+04,.3843e+04,.4025e+04,.4213e+04,.4408e+04,        &
      &.4611e+04,.4821e+04,.5035e+04,.5270e+04,.5500e+04,.5740e+04,        &
@@ -914,7 +914,7 @@ CONTAINS
 !     routine = 'mflux2'
 !
 !------------------------------------------------------------------------
-!     set water availability constant "ecof" and land mask "land".
+!     set water availability constant "ecof" and land mask "land".  
 !     limit minimum wind speed to 100 cm/s
 !------------------------------------------------------------------------
       j = IFIX(tjloc(its))
@@ -989,11 +989,12 @@ CONTAINS
           !windmks=wind(i)*.01
           windmks=wind10p(i)*.01
           if ( iwavecpl .eq. 1 ) then
-            if (  ntstep == 0 ) then
-              call  znot_m_v1(windmks,znotm)
-              zoc(i)  = -100.*znotm
+            call znot_wind10m(windmks,znott,znotm,icoef_sf)
+            !Check if Charnock parameter ratio is received in a proper range.
+            if ( alpha(i) .ge. 0.2 .and. alpha(i) .le. 5. ) then
+              znotm = znotm*alpha(i)
             endif
-            call  znot_t_v2(windmks,znott)
+            zoc(i)  = -100.*znotm
             zot(i) =  -100* znott
           else
 !            if ( icoef_sf .EQ. 1) then
@@ -1007,7 +1008,6 @@ CONTAINS
 !              call  znot_t_v2(windmks,znott)
 !            endif
             call znot_wind10m(windmks,znott,znotm,icoef_sf)
-
             zoc(i)  = -100.*znotm
             zot(i) =  -100* znott
           endif
@@ -1028,13 +1028,13 @@ CONTAINS
       enddo
 
 !------------------------------------------------------------------------
-!     define constants:
-!     a and c = constants used in evaluating universal function for
-!               stable case
-!     ca      = karmen constant
-!     cm01    = constant part of vertical integral of universal
-!               function; stable case ( 0.5 < zeta < or = 10.0)
-!     cm02    = constant part of vertical integral of universal
+!     define constants: 
+!     a and c = constants used in evaluating universal function for 
+!               stable case 
+!     ca      = karmen constant 
+!     cm01    = constant part of vertical integral of universal 
+!               function; stable case ( 0.5 < zeta < or = 10.0) 
+!     cm02    = constant part of vertical integral of universal 
 !               function; stable case ( zeta > 10.0)
 !------------------------------------------------------------------------
 
@@ -1080,14 +1080,14 @@ CONTAINS
           if(psps1 .EQ. 0.0)then
            psps1 = .1
           endif
-        rstso(i) = 0.622*estso(i)/psps1
+        rstso(i) = 0.622*estso(i)/psps1                       
         vrts (i) = 1. + boycon*ecof(i)*rstso(i)
       enddo
 
 !------------------------------------------------------------------------
 !     check if consideration of virtual temperature changes stability.
-!     if so, set "dthetav" to near neutral value (1.0e-4). also check
-!     for very small lapse rates; if ABS(tempa1) <1.0e-4 then
+!     if so, set "dthetav" to near neutral value (1.0e-4). also check 
+!     for very small lapse rates; if ABS(tempa1) <1.0e-4 then 
 !     tempa1=1.0e-4
 !------------------------------------------------------------------------
 
@@ -1116,13 +1116,13 @@ CONTAINS
 !       write(0,*)'rib,zeta,vrtkx,vrts(ite) ',  rib(ite),zeta(ite),  &
 !                     vrtkx(ite),vrts(ite)
 !------------------------------------------------------------------------
-!     begin looping through points on line, solving wegsteins iteration
+!     begin looping through points on line, solving wegsteins iteration 
 !     for zeta at each point, and using hicks functions
 !------------------------------------------------------------------------
 
 !------------------------------------------------------------------------
-!     set initial guess of zeta=non - dimensional height "szeta" for
-!     stable points
+!     set initial guess of zeta=non - dimensional height "szeta" for 
+!     stable points 
 !------------------------------------------------------------------------
 
       rca   = 1./ca
@@ -1201,7 +1201,7 @@ CONTAINS
             fhzo1(i) = (c*szetho + cmo2)*rca
             sfzo (i) = c*szetho
           endif
-
+ 
 !------------------------------------------------------------------------
 !      compute universal function at 10 meters for diagnostic purposes
 !------------------------------------------------------------------------
@@ -1225,14 +1225,14 @@ CONTAINS
             if (szet2  .LE. 0.5) then
               fmz2 (i) = (zal2  + a*szet2 )*rca
             else if (szet2  .GT. 0.5 .AND. szet2  .LE. 2.) then
-              rzeta2   = 1./szet2
+              rzeta2   = 1./szet2 
               fmz2 (i) = (8.*zal2  + 4.25*rzeta2 - &
                                           0.5*rzeta2*rzeta2 + cmo1)*rca
             else if (szet2  .GT. 2.) then
               fmz2 (i) = (c*szet2  + cmo2)*rca
             endif
             sf2 (i) = fmz2 (i) - fmzo1(i)
-
+  
 !!!!      endif
           sfm(i) = fmz1(i) - fmzo1(i)
           sfh(i) = fmz1(i) - fhzo1(i)
@@ -1273,7 +1273,7 @@ CONTAINS
 !------------------------------------------------------------------------
 !     update "zo" for ocean points.  "zo"cannot be updated within the
 !     wegsteins iteration as the scheme (for the near neutral case)
-!     can become unstable
+!     can become unstable 
 !------------------------------------------------------------------------
 
 130   continue
@@ -1294,10 +1294,10 @@ CONTAINS
         cons_p000001    =    .000001
         cons_7          =         7.
         vis             =     1.4E-1
-
+ 
         ustar    = sqrt( -szo / zog)
         restar = -ustar * szo    / vis
-        restar = max(restar,cons_p000001)
+        restar = max(restar,cons_p000001) 
 !  Rat taken from Zeng,  Zhao and Dickinson 1997
         rat    = 2.67 * restar ** .25 - 2.57
         rat    = min(rat   ,cons_7)                      !constant
@@ -1306,7 +1306,7 @@ CONTAINS
          else
          zot(istb(i)) = zoc(istb(i))
         endif
-
+        
 !      in hwrf thermal znot is loaded back into the zoc array for next step
              zoc(istb(i)) = szo
       enddo
@@ -1332,7 +1332,7 @@ CONTAINS
            endif
 !     the above correction done by GFDL in centi-kts!!!-change back
          wind10(istb(i)) = wind10(istb(i)) / 1.944
-        enddo
+        enddo   
 !!!   endif
 !!!   if (ngd .EQ. nNEST-1 .AND. llwe .EQ. 1 ) then
 !!!     do i = 1,ip
@@ -1342,7 +1342,7 @@ CONTAINS
 !!!    wind10c(istb(i),j)=wind10c(istb(i),j)+wind10c(istb(i),j)*cor1
 !!!  *                   - cor2
 !!!        endif
-!!!     enddo
+!!!     enddo   
 !!!   endif
 
 !------------------------------------------------------------------------
@@ -1431,7 +1431,7 @@ CONTAINS
           ugz2    = ALOG(z2   (iutb(i))/ABS(zoc(iutb(i))))
           uzet1o  = ABS(z2 (iutb(i)))/zkmax(iutb(i))*uzeta(i)
           uzetao  = ABS(zoc(iutb(i)))/zkmax(iutb(i))*uzeta(i)
-          ux11    = 1. - 16.*uzet1o
+          ux11    = 1. - 16.*uzet1o   
           ux12    = 1. - 16.*uzetao
           y       = SQRT(ux11)
           yo      = SQRT(ux12)
@@ -1449,7 +1449,7 @@ CONTAINS
             uzetam(i) = uzeta(i)
             if(uq .EQ. 1) then
              call wrf_message('NCO ERROR DIVIDE BY ZERO IN MFLUX2 (UNSTABLE CASE)')
-             write(message,*)'uq is 1 ',ux2,ugz,ugzm(i),uzeta(i),uzetam(i)
+             write(message,*)'uq is 1 ',ux2,ugz,ugzm(i),uzeta(i),uzetam(i) 
              call wrf_message(message)
             endif
             uzeta (i) = (ugz - uzeta(i)*uq)/(1.0 - uq)
@@ -1483,7 +1483,7 @@ CONTAINS
 !------------------------------------------------------------------------
 !     update "zo" for ocean points.  zo cannot be updated within the
 !     wegsteins iteration as the scheme (for the near neutral case)
-!     can become unstable.
+!     can become unstable. 
 !------------------------------------------------------------------------
 
       do i = 1,iq
@@ -1493,8 +1493,8 @@ CONTAINS
          if(wndm.lt.15.0) then
          ckg=0.0185*og
          else
-!!          ckg=(0.000308*wndm+0.00925)*og                      <
-!!          ckg=(0.000616*wndm)*og                              <
+!!          ckg=(0.000308*wndm+0.00925)*og                      <  
+!!          ckg=(0.000616*wndm)*og                              <  
             ckg=(4*0.000308*wndm)*og
             ckg=(sfenth*(4*0.000308*wndm) + (1.-sfenth)*0.0185 )*og
          endif
@@ -1532,18 +1532,18 @@ CONTAINS
            endif
  !     the above correction done by GFDL in centi-kts!!!-change back
           wind10(iutb(i)) = wind10(iutb(i)) / 1.944
-        enddo
-!!!   endif
+        enddo   
+!!!   endif 
 !!!   if (ngd .EQ. nNEST-1) then
-!!!     do i = 1,iq
+!!!     do i = 1,iq            
 !!!       wind10c(iutb(i),j) = uf10(i)*wind(iutb(i))/ufm(i)
 !!!       wind10c(iutb(i),j) = wind10c(iutb(i),j) * 1.944
 !!!        if(wind10c(iutb(i),j) .GT. 6000.0) then
 !!!      wind10c(iutb(i),j)=wind10c(iutb(i),j)+wind10c(iutb(i),j)*cor1
 !!!  *                    - cor2
 !!!        endif
-!!!     enddo
-!!!   endif
+!!!     enddo   
+!!!   endif 
 
       do i = 1,iq
         xxfm(iutb(i)) = ufm(i)
@@ -1568,7 +1568,7 @@ CONTAINS
       enddo
 
 !     do land sfc temperature prediction if ntsflg=1
-!     ntsflg = 1                                    ! gopal's doing
+!     ntsflg = 1                                    ! gopal's doing  
 
       if (ntsflg .EQ. 0) go to 370
       alll = 600.
@@ -1578,7 +1578,7 @@ CONTAINS
       alfus = alll/2.39e-8
       teps  = 0.1
 !     slwdc... in units of cal/min ????
-!     slwa...  in units of ergs/sec/cm*2
+!     slwa...  in units of ergs/sec/cm*2  
 !     1 erg=2.39e-8 cal
 !------------------------------------------------------------------------
 !     pack land and sea ice points
@@ -1647,7 +1647,7 @@ CONTAINS
              if(psps2 .EQ. 0.0)then
                psps2 = .1
              endif
-          rstsop(i) = 0.622*estsop(i)/psps2
+          rstsop(i) = 0.622*estsop(i)/psps2                  
           rdiff (i) = amin1(0.0,(rkmaxp(i) - rstsop(i)))
 !!!       if (nstep .EQ. -99 .AND. ngd .GT. 1 .OR. &
 !!!          nstep .EQ. -99 .AND. ngd .EQ. 1) then
@@ -1669,9 +1669,9 @@ CONTAINS
           frac(i) = ABS((foft(i) - tsp(i))/tsp(i))
 
 !------------------------------------------------------------------------
-!      check for convergence of all points use wegstein iteration
+!      check for convergence of all points use wegstein iteration     
 !------------------------------------------------------------------------
-
+ 
           if (frac(i) .GE. teps) then
             qf   (i) = (foft(i) - foftm(i))/(tsp(i) - tsm(i))
             tsm  (i) = tsp(i)
@@ -1720,16 +1720,14 @@ CONTAINS
       do i = its,ite
 !!!
         if ( iwavecpl .eq. 1 .and. zoc(i) .le. 0.0 ) then
-          windmks = wind(i) * 0.01
-          ustar = windmks / xxfm(i)
+          windmks = wind10(i) * 0.01
+          call znot_wind10m(windmks,znott,znotm,icoef_sf)
           !Check if Charnock parameter ratio is received in a proper range.
           if ( alpha(i) .ge. 0.2 .and. alpha(i) .le. 5. ) then
-            call  znot_m_v1(windmks,znotm)
             znotm = znotm*alpha(i)
-          else
-            call  znot_m_v1(windmks,znotm)
           endif
           zoc(i)  = -100.*znotm
+          zot(i) =  -100* znott
         endif
 !!!!
         fxh(i) = bq1(i)*(theta(i) - tsg(i))
@@ -1765,7 +1763,7 @@ CONTAINS
                         ims,ime, jms,jme, kms,kme,                      &
                         its,ite, jts,jte, kts,kte                     )
 
-   IMPLICIT NONE
+   IMPLICIT NONE 
 
 ! Arguments
    INTEGER,  INTENT(IN   )   ::     ids,ide, jds,jde, kds,kde,  &
@@ -1777,12 +1775,12 @@ CONTAINS
    REAL,    DIMENSION( num_soil_layers), INTENT(IN) :: DZS
 
    REAL,    DIMENSION( ims:ime, num_soil_layers, jms:jme )    , &
-            INTENT(INOUT)    ::                          SMOIS, &
+            INTENT(INOUT)    ::                          SMOIS, & 
                                                          TSLB      !STEMP
 
    REAL,    DIMENSION( ims:ime, jms:jme )                     , &
-            INTENT(INOUT)    ::                           SNOW, &
-                                                         SNOWC, &
+            INTENT(INOUT)    ::                           SNOW, & 
+                                                         SNOWC, & 
                                                         CANWAT, &
                                                         SMSTAV, &
                                                         SMSTOT, &

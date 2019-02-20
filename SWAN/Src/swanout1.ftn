@@ -935,9 +935,9 @@
       DATA IENT /0/
       CALL STRACE (IENT, 'SWOUTP')
 
-      Numcouple=13
-#if defined VEGETATION && defined VEG_SWAN_COUPLING 
       Numcouple=14
+#if defined VEGETATION && defined VEG_SWAN_COUPLING 
+      Numcouple=15
 #endif 
       ALLOCATE (Cpltype(Numcouple))
       Cpltype(1)=54                      ! DISBOT  SWOEXD
@@ -949,12 +949,13 @@
       Cpltype(7)=10                      ! HSIGN   SWOEXA
       Cpltype(8)=12                      ! RTP     SWOEXA
       Cpltype(9)=13                      ! DIR     SWOEXA
-      Cpltype(10)=17                     ! WLEN    SWOEXA
-      Cpltype(11)=71                     ! WLENP   SWOEXA
-      Cpltype(12)=16                     ! WDSPR   SWOEXA
-      Cpltype(13)=58                     ! WQP     SWOEXA
+      Cpltype(10)=14                     ! PDI     SWOEXA
+      Cpltype(11)=17                     ! WLEN    SWOEXA
+      Cpltype(12)=71                     ! WLENP   SWOEXA
+      Cpltype(13)=16                     ! WDSPR   SWOEXA
+      Cpltype(14)=58                     ! WQP     SWOEXA
 #if defined VEGETATION && defined VEG_SWAN_COUPLING 
-      Cpltype(14)=57                     ! DISVEG  SWOEXD         
+      Cpltype(15)=57                     ! DISVEG  SWOEXD         
 #endif 
 !
       ALLOCATE (OQI(4))

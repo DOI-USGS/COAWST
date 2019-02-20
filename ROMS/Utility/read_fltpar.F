@@ -2,9 +2,9 @@
 #ifdef FLOATS
       SUBROUTINE read_FltPar (model, inp, out, Lwrite)
 !
-!svn $Id: read_fltpar.F 875 2017-11-03 01:10:02Z arango $
+!svn $Id: read_fltpar.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -20,6 +20,8 @@
       USE mod_ncparam
       USE mod_scalars
 !
+      USE inp_decode_mod
+!
       USE strings_mod, ONLY : FoundError
 !
       implicit none
@@ -31,8 +33,6 @@
 !
 !  Local variable declarations.
 !
-      logical :: find_file
-
       integer :: Npts, Nval
       integer :: i, j, igrid, mc, nc, ng, status
 
@@ -40,11 +40,9 @@
 
       integer, allocatable :: Fcoor(:,:), Fcount(:,:), Ftype(:,:)
 
-      integer :: decode_line, load_i, load_l, load_r
-
       real(r8) :: xfloat, yfloat, zfloat
 
-      real(r8), dimension(100) :: Rval
+      real(dp), dimension(nRval) :: Rval
 
       real(r8), allocatable :: Ft0(:,:), Fx0(:,:), Fy0(:,:), Fz0(:,:)
       real(r8), allocatable :: Fdt(:,:), Fdx(:,:), Fdy(:,:), Fdz(:,:)
@@ -54,7 +52,7 @@
       character (len=35 ) :: frmt
       character (len=40 ) :: KeyWord
       character (len=256) :: fname, line
-      character (len=256), dimension(200) :: Cval
+      character (len=256), dimension(nCval) :: Cval
 !
 !-----------------------------------------------------------------------
 !  Read in initial float locations.
@@ -92,36 +90,47 @@
               IF (Ngrids.gt.1) Npts=MAXVAL(Nfloats)+1
               IF (.not.allocated(Fcoor)) THEN
                 allocate ( Fcoor (Npts,Ngrids) )
+                Dmem(1)=Dmem(1)+REAL(Npts*Ngrids,r8)
               END IF
               IF (.not.allocated(Fcount)) THEN
                 allocate ( Fcount(Npts,Ngrids) )
+                Dmem(1)=Dmem(1)+REAL(Npts*Ngrids,r8)
               END IF
               IF (.not.allocated(Ftype)) THEN
                 allocate ( Ftype (Npts,Ngrids) )
+                Dmem(1)=Dmem(1)+REAL(Npts*Ngrids,r8)
               END IF
               IF (.not.allocated(Ft0)) THEN
                 allocate ( Ft0(Npts,Ngrids) )
+                Dmem(1)=Dmem(1)+REAL(Npts*Ngrids,r8)
               END IF
               IF (.not.allocated(Fx0)) THEN
                 allocate ( Fx0(Npts,Ngrids) )
+                Dmem(1)=Dmem(1)+REAL(Npts*Ngrids,r8)
               END IF
               IF (.not.allocated(Fy0)) THEN
                 allocate ( Fy0(Npts,Ngrids) )
+                Dmem(1)=Dmem(1)+REAL(Npts*Ngrids,r8)
               END IF
               IF (.not.allocated(Fz0)) THEN
                 allocate ( Fz0(Npts,Ngrids) )
+                Dmem(1)=Dmem(1)+REAL(Npts*Ngrids,r8)
               END IF
               IF (.not.allocated(Fdt)) THEN
                 allocate ( Fdt(Npts,Ngrids) )
+                Dmem(1)=Dmem(1)+REAL(Npts*Ngrids,r8)
               END IF
               IF (.not.allocated(Fdx)) THEN
                 allocate ( Fdx(Npts,Ngrids) )
+                Dmem(1)=Dmem(1)+REAL(Npts*Ngrids,r8)
               END IF
               IF (.not.allocated(Fdy)) THEN
                 allocate ( Fdy(Npts,Ngrids) )
+                Dmem(1)=Dmem(1)+REAL(Npts*Ngrids,r8)
               END IF
               IF (.not.allocated(Fdz)) THEN
                 allocate ( Fdz(Npts,Ngrids) )
+                Dmem(1)=Dmem(1)+REAL(Npts*Ngrids,r8)
               END IF
               CALL allocate_floats (.TRUE.) ! allocate DRIFTER structure
               ncount(1:Ngrids)=0

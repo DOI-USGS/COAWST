@@ -10,7 +10,7 @@ CONTAINS
  real    z_out
 
  integer kp, k, im, ip
- logical interp, increasing_z
+ logical interp, increasing_z 
  real    height, w1, w2
  logical debug
  parameter ( debug = .false. )

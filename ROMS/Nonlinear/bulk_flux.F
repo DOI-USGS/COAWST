@@ -2,9 +2,9 @@
       MODULE bulk_flux_mod
 #if defined BULK_FLUXES && !defined CCSM_FLUXES
 !
-!svn $Id: bulk_flux.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: bulk_flux.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -935,6 +935,10 @@
 # else
             ZoW(i)=charn(i)*Wstar(i)*Wstar(i)/g+                        &
      &             0.11_r8*VisAir(i)/(Wstar(i)+eps)
+# endif
+# if defined DRAGLIM_DAVIS
+            ZoW(i)=MAX(ZoW(i),1.27E-7_r8) ! Davis et al. (2008)
+            ZoW(i)=MIN(ZoW(i),2.85E-3_r8)
 # endif
             Rr(i)=ZoW(i)*Wstar(i)/VisAir(i)
 !

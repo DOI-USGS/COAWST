@@ -261,7 +261,7 @@
  INTEGER, INTENT(IN   )    ::       ips,ipe, jps,jpe, kps,kpe
 
 ! Primary inputs and outpus
- REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) :: total_flashrate
+ REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(IN   ) :: total_flashrate   
  REAL,    DIMENSION( ims:ime,          jms:jme ), INTENT(  OUT) :: ic_flashrate, cg_flashrate
 
 ! Local variables

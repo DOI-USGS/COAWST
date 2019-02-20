@@ -143,6 +143,7 @@
       real(r8) :: crk, crx, cry, kh
       real(r8), parameter :: kwc_max = 10.0_r8
       real(r8), parameter :: kwc_min = 0.015_r8
+      real(r8), parameter :: eps = 1.0e-10_r8
 
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
@@ -158,9 +159,9 @@
           DO i=Istr,Iend+1
             alfa_wave=(1.5_r8*pi-wd(d))-angler(i,j)
             cff1=kwc(i-1,j,d)*h_tot(i-1,j)
-            cff2=kwc(i,j,d)*h_tot(i,j)
-            crk=0.5_r8*(sqrt(g/kwc(i-1,j,d)*tanh(cff1))+                &
-     &                  sqrt(g/kwc(i  ,j,d)*tanh(cff2)))
+            cff2=kwc(i  ,j,d)*h_tot(i  ,j)
+            crk=0.5_r8*(sqrt(MAX(g/kwc(i-1,j,d)*tanh(cff1),eps))+       &
+     &                  sqrt(MAX(g/kwc(i  ,j,d)*tanh(cff2),eps)))
             cff1=0.5_r8*(u_rho(i-1,j)+u_rho(i,j))
             cff=crk*cos(alfa_wave)+cff1
             cff1=MAX(cff,0.0_r8)
@@ -173,9 +174,9 @@
           DO i=Istr,Iend
             alfa_wave=(1.5_r8*pi-wd(d))-angler(i,j)
             cff1=kwc(i,j-1,d)*h_tot(i,j-1)
-            cff2=kwc(i,j  ,d)*h_tot(i,j)
-            crk=0.5_r8*(sqrt(g/kwc(i,j-1,d)*tanh(cff1))+                &
-     &                  sqrt(g/kwc(i,j  ,d)*tanh(cff2)))
+            cff2=kwc(i,j  ,d)*h_tot(i,j  )
+            crk=0.5_r8*(sqrt(MAX(g/kwc(i,j-1,d)*tanh(cff1),eps))+       &
+     &                  sqrt(MAX(g/kwc(i,j  ,d)*tanh(cff2),eps)))
             cff1=0.5_r8*(v_rho(i,j-1)+v_rho(i,j))
             cff=crk*sin(alfa_wave)+cff1
             cff1=MAX(cff,0.0_r8)

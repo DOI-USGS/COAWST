@@ -7,11 +7,11 @@
       MODULE sed_bedload_mod
 
 #if defined NONLINEAR && defined SEDIMENT && \
-   (defined BEDLOAD_SOULSBY || defined BEDLOAD_MPM)
+   (defined BEDLOAD_SOULSBY || defined BEDLOAD_MPM) 
 !
-!svn $Id: sed_bedload.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: sed_bedload.F 889 2018-02-10 03:32:52Z arango $
 !==================================================== John C. Warner ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -320,7 +320,7 @@
       real(r8) :: sedslope_wet, sedslope_dry, slopefac_wet, slopefac_dry
 # endif
 # ifdef BEDLOAD
-      real(r8) :: bedld, bedld_mass, dzdx, dzdy
+      real(r8) :: bedld, bedld_mass, dzdx, dzdy, dzdxdy
       real(r8) :: a_slopex, a_slopey, sed_angle
       real(r8) :: smgd, smgdr, osmgd, Umag
       real(r8) :: rhs_bed, Ua, Ra, phi, Clim
@@ -484,7 +484,7 @@
             cff3=0.5_r8*(1.0_r8+SIGN(1.0_r8,                            &
      &                   theta_max/                                     &
      &          (max(tau_ce(ised,ng),bed(i,j,1,ibtcr))*osmgd)-1.0_r8))
-
+	
 #   else
 ! Only sediment class critical stresses needs to be exceeded
             cff3=0.5_r8*(1.0_r8+SIGN(1.0_r8,                            &
@@ -747,7 +747,8 @@
      &              (cff2*FX_r(i  ,j)+                                  &
      &               cff1*0.5_r8*(FX_r(i-1,j)+FX_r(i,j)))
 #  ifdef SLOPE_KIRWAN
-            cff1=30.0_r8
+!           cff1=30.0_r8
+            cff1=10.0_r8
             dzdx=(h(i,j)-h(i-1  ,j))/om_u(i,j)
             a_slopex=(MAX(0.0_r8,abs(dzdx)-0.05_r8)                     &
      &               *SIGN(1.0_r8,dzdx)*cff1)                           &
@@ -776,7 +777,8 @@
      &              (cff2*FE_r(i  ,j)+                                  &
      &               cff1*0.5_r8*(FE_r(i,j-1)+FE_r(i,j)))
 #  ifdef SLOPE_KIRWAN
-            cff1=30.0_r8
+!           cff1=30.0_r8
+            cff1=10.0_r8
             dzdy=(h(i,j)-h(i  ,j-1))/on_v(i,j)
             a_slopey=(MAX(0.0_r8,abs(dzdy)-0.05_r8)                     &
      &               *SIGN(1.0_r8,dzdy)*cff1)                           &
@@ -803,8 +805,11 @@
         sedslope_dry=1.0_r8
 !
 !       slopefac are the scale factors for sediment movement.
-        slopefac_wet=1.0_r8
-        slopefac_dry=0.5_r8
+!
+        cff2=Srho(ised,ng)*(1.0_r8-bed(i,j,1,iporo))
+        slopefac_dry=cff2*0.001_r8  !  kirwan 10 bedcoeff .2, still too much eros
+        slopefac_wet=cff2*0.001_r8  !  
+!
 #   ifdef SED_MORPH
         slopefac_wet=slopefac_wet*morph_fac(ised,ng)
         slopefac_dry=slopefac_dry*morph_fac(ised,ng)
@@ -812,9 +817,14 @@
         DO j=Jstr,Jend
           DO i=Istr,Iend+1
             dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
+            dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)
+            dzdxdy=sqrt(dzdx**2.0_r8+dzdy**2.0_r8)
 ! for the wet part
             cff=ABS(dzdx)-sedslope_wet
-            cff=0.5_r8+SIGN(0.5_r8,cff)
+            cff=(0.5_r8+SIGN(0.5_r8,cff))
+!*ABS(dzdx)/(dzdxdy+eps)
+            cff=0.5_r8*cff*(ABS(dzdxdy)-sedslope_wet)*1.0_r8/          &
+     &          (pm(i,j)*pn(i,j))
             cff2=cff*slopefac_wet*SIGN(1.0_r8,dzdx)
 #  ifdef MASKING
             cff2=cff2*umask(i,j)
@@ -825,7 +835,10 @@
             FX(i,j)=FX(i,j)+cff2
 ! for the dry part
             cff=ABS(dzdx)-sedslope_dry
-            cff=0.5_r8+SIGN(0.5_r8,cff)
+            cff=(0.5_r8+SIGN(0.5_r8,cff))
+!*ABS(dzdx)/(dzdxdy+eps)
+            cff=0.5_r8*cff*(ABS(dzdxdy)-sedslope_dry)*1.0_r8/           &
+     &          (pm(i,j)*pn(i,j))
             cff2=cff*slopefac_dry*SIGN(1.0_r8,dzdx)
 #  ifdef MASKING
             cff2=cff2*umask(i,j)
@@ -836,14 +849,36 @@
 #   endif
 #  endif
             FX(i,j)=FX(i,j)+cff2
+!
+!  For the lateral shear.
+!
+            cff1=0.5_r8*(vbar(i-1,j,1)+vbar(i-1,j+1,1))
+            cff2=0.5_r8*(vbar(i,j,1)+vbar(i,j+1,1))
+            cff=(cff2-cff1)*0.5_r8*(pm(i-1,j)+pm(i,j))
+!           cff2=MAX(ABS(cff)-0.25_r8,0.0_r8)
+            cff2=MAX(ABS(cff)-0.01_r8,0.0_r8)
+!           cff2=cff2*SIGN(1.0_r8,cff)*100.0_r8
+            cff2=cff2*SIGN(1.0_r8,dzdx)*10.0_r8
+#  ifdef MASKING
+            cff2=cff2*umask(i,j)
+#   ifdef WET_DRY
+            cff2=cff2*(1.0_r8-umask_wet(i,j))
+#   endif
+#  endif
+!            FX(i,j)=FX(i,j)+cff2
           END DO
         END DO
         DO j=Jstr,Jend+1
           DO i=Istr,Iend
             dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)
+            dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
+            dzdxdy=sqrt(dzdx**2.0_r8+dzdy**2.0_r8)
 ! for the wet part
             cff=ABS(dzdy)-sedslope_wet
-            cff=0.5_r8+SIGN(0.5_r8,cff)
+            cff=(0.5_r8+SIGN(0.5_r8,cff))
+!*ABS(dzdy)/(dzdxdy+eps)
+            cff=0.5_r8*cff*(ABS(dzdxdy)-sedslope_wet)*1.0_r8/           &
+     &          (pm(i,j)*pn(i,j))
             cff2=cff*slopefac_wet*SIGN(1.0_r8,dzdy)
 #  ifdef MASKING
             cff2=cff2*vmask(i,j)
@@ -854,7 +889,10 @@
             FE(i,j)=FE(i,j)+cff2
 ! for the dry part
             cff=ABS(dzdy)-sedslope_dry
-            cff=0.5_r8+SIGN(0.5_r8,cff)
+            cff=(0.5_r8+SIGN(0.5_r8,cff))
+!*ABS(dzdy)/(dzdxdy+eps)
+            cff=0.5_r8*cff*(ABS(dzdxdy)-sedslope_wet)*1.0_r8/           &
+     &          (pm(i,j)*pn(i,j))
             cff2=cff*slopefac_dry*SIGN(1.0_r8,dzdy)
 #  ifdef MASKING
             cff2=cff2*vmask(i,j)
@@ -868,60 +906,6 @@
           END DO
         END DO
 #  endif
-
-#  ifdef SED_DUNEFACE
-!- make this be at the wet/dry interface
-!
-!  Sed duneface to impose wave thurst at duneface.
-!
-        fac1=2.5_r8/g**2
-        DO j=Jstr,Jend
-          DO i=Istr,Iend+1
-            fac2=1.0_r8/MAX(2.0_r8,Pwave_bot(i,j))
-            dz=(h(i,j)-h(i-1,j))/om_u(i,j)
-            cff1=ubar(i,j,nstp)*ubar(i,j,nstp) !-2.0_r8*g*dz
-            cff2=Srho(ised,ng)*(1.0_r8-bed(i,j,1,iporo))
-            cff3=fac1*fac2*cff1*cff1*cff2*on_u(i,j)*dt(ng)
-            cff3=cff3*SIGN(1.0_r8,dz)
-#  ifdef MASKING
-            cff3=cff3*umask(i,j)
-#   ifdef WET_DRY
-!           cff3=cff3*rmask_wet(i-1,j)*(1.0_r8-rmask_wet(i,j))+         &
-!    &           cff3*rmask_wet(i,j)*(1.0_r8-rmask_wet(i-1,j))
-            cff3=cff3*                                                  &
-          (umask_wet(i-1,j)*umask_wet(i,j)*(1.0_r8-umask_wet(i+1,j)))+  &
-     &           cff3*                                                  &
-          ((1.0_r8-umask_wet(i-1,j))*umask_wet(i,j)*umask_wet(i+1,j))
-
-#   endif
-#  endif
-            FX(i,j)=FX(i,j)+cff3
-          END DO
-        END DO
-        DO j=Jstr,Jend+1
-          DO i=Istr,Iend
-            fac2=1.0_r8/MAX(2.0_r8,Pwave_bot(i,j))
-            dz=(h(i,j)-h(i,j-1))/on_v(i,j)
-            cff1=vbar(i,j,nstp)*vbar(i,j,nstp)
-            cff2=Srho(ised,ng)*(1.0_r8-bed(i,j,1,iporo))
-            cff3=fac1*fac2*cff1*cff1*cff2*om_v(i,j)*dt(ng)
-            cff3=cff3*SIGN(1.0_r8,dz)
-#   ifdef MASKING
-            cff3=cff3*vmask(i,j)
-#    ifdef WET_DRY
-!            cff3=cff3*rmask_wet(i,j-1)*(1.0_r8-rmask_wet(i,j))+         &
-!     &           cff3*rmask_wet(i,j)*(1.0_r8-rmask_wet(i,j-1))
-            cff3=cff3*                                                  &
-          (vmask_wet(i,j-1)*vmask_wet(i,j)*(1.0_r8-vmask_wet(i,j+1)))+  &
-     &           cff3*                                                  &
-          ((1.0_r8-vmask_wet(i,j-1))*vmask_wet(i,j)*umask_wet(i,j+1))
-#    endif
-#   endif
-            FE(i,j)=FE(i,j)+cff3
-          END DO
-        END DO
-#  endif
-
 !
 ! Limit fluxes to prevent bottom from breaking thru water surface.
 !
@@ -1029,7 +1013,7 @@
         END DO
       END DO
 !
-!  Need to update bed mass for the non-cohesive sediment types, becasue
+!  Need to update bed mass for the non-cohesive sediment types, becasue 
 !  they did not partake in the bedload transport.
 !
       DO ised=1,NCS

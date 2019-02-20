@@ -1,9 +1,9 @@
 /*
 ** Include file "globaldef.h"
 **
-** svn $Id: globaldefs.h 876 2017-11-13 23:24:37Z arango $
+** svn $Id: globaldefs.h 927 2018-10-16 03:51:56Z arango $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2018 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
+** Copyright (c) 2002-2019 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -83,11 +83,20 @@
 #define RHO_SURF
 
 /*
-** Turn ON/OFF double precision for real type variables and
-** associated intrinsic functions.
+** Turn ON/OFF double precision arithmetic in numerical kernel (default)
+** and floating-point type variables and associated intrinsic functions.
 */
 
-#define DOUBLE_PRECISION
+#ifdef SINGLE_PRECISION
+# ifdef OUT_DOUBLE
+#   undef OUT_DOUBLE
+# endif
+# ifndef RST_SINGLE
+#   define RST_SINGLE
+# endif
+#else
+# define DOUBLE_PRECISION
+#endif
 
 /*
 ** Turn ON masking when wetting and drying is activated.
@@ -692,6 +701,7 @@
 #if defined BBL_MODEL   || defined WEC || \
     defined WAVES_OCEAN
 # define WAVES_DIR
+# define WAVES_DIRP
 #endif
 
 #if  defined BBL_MODEL   && \

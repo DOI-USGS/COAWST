@@ -25,9 +25,9 @@ CONTAINS
                    ,aer_ra_feedback                               &
                    ,f_qv,f_qc,f_qr,f_qi,f_qs,f_qg,f_qndrop        &
                    ,coszen                                        & ! PAJ
-                   ,ids,ide, jds,jde, kds,kde                     &
+                   ,ids,ide, jds,jde, kds,kde                     & 
                    ,ims,ime, jms,jme, kms,kme                     &
-                   ,its,ite, jts,jte, kts,kte                     )
+                   ,its,ite, jts,jte, kts,kte                     ) 
 !------------------------------------------------------------------
    IMPLICIT NONE
 !------------------------------------------------------------------
@@ -38,10 +38,10 @@ CONTAINS
                                        its,ite, jts,jte, kts,kte
    LOGICAL,    INTENT(IN   ) ::        warm_rain
 
-   INTEGER,    INTENT(IN  )  ::                           JULDAY
+   INTEGER,    INTENT(IN  )  ::                           JULDAY  
 
    REAL, INTENT(IN    )      ::        SOLCON
-! PAJ: degrad and radfqr removed:
+! PAJ: degrad and radfqr removed:      
 !  REAL, INTENT(IN    )      ::        RADFRQ,DEGRAD,             &
 ! PAJ: declin and xtime removed.                 XTIME,DECLIN,SOLCON
 !
@@ -89,7 +89,7 @@ CONTAINS
    INTEGER,    INTENT(IN  ), OPTIONAL   ::       aer_ra_feedback
 
    REAL, DIMENSION( ims:ime, kms:kme, jms:jme ),                  &
-         OPTIONAL,                                                &
+         OPTIONAL,                                                &           
          INTENT(IN    ) ::                                        &
                                                             QV3D, &
                                                             QC3D, &
@@ -104,11 +104,11 @@ CONTAINS
                                                         F_QNDROP
 !
 ! ... PAJ ...
-!
+! 
    REAL, DIMENSION( ims:ime, jms:jme), INTENT(IN) :: COSZEN
 
 ! LOCAL VARS
-
+ 
    REAL, DIMENSION( its:ite ) ::                                  &
                                                               ts, &
                                                             cosz, &
@@ -122,7 +122,7 @@ CONTAINS
 
    INTEGER, DIMENSION( its:ite ) ::                               &
                                                              ict, &
-                                                             icb
+                                                             icb   
 
    REAL, DIMENSION( its:ite, kts-1:kte, 2 ) ::            taucld
 
@@ -137,8 +137,8 @@ CONTAINS
                                                            asyal
 
    REAL, DIMENSION( its:ite, kts-1:kte, 2 ) ::                    &
-                                                            reff, &
-                                                             cwc
+                                                            reff, &    
+                                                             cwc    
    REAL, DIMENSION( its: ite, kts-1:kte+1 ) ::                    &
                                                            P8W2D
    REAL, DIMENSION( its: ite, kts-1:kte ) ::                      &
@@ -335,7 +335,7 @@ CONTAINS
         0.5746E-07,  0.5468E-07,  0.5227E-07,  0.5006E-07,  0.4789E-07, &
         0.4576E-07,  0.4402E-07,  0.4230E-07,  0.4062E-07,  0.3897E-07, &
         0.3793E-07,  0.3697E-07,  0.3602E-07,  0.3506E-07,  0.3413E-07, &
-        0.3326E-07,  0.3239E-07,  0.3153E-07,  0.3069E-07,  0.2987E-07/
+        0.3326E-07,  0.3239E-07,  0.3153E-07,  0.3069E-07,  0.2987E-07/ 
 
 !--------------------------------------------------------------------------------
 !   data set 4
@@ -399,8 +399,8 @@ CONTAINS
    cldwater = .true.
    overcast = .false.
 
-   mix=ite-its+1
-   mkx=kte-kts+1
+   mix=ite-its+1 
+   mkx=kte-kts+1 
 
    is_summer=80
    ie_summer=265
@@ -459,8 +459,8 @@ CONTAINS
 
    j_loop: DO J=jts,jte
 
-      DO K=kts,kte
-      DO I=its,ite
+      DO K=kts,kte          
+      DO I=its,ite          
          cwc(i,k,1) = 0.
          cwc(i,k,2) = 0.
       ENDDO
@@ -470,7 +470,7 @@ CONTAINS
          p(k)=pres(k,iprof)
       ENDDO
 
-! reverse vars
+! reverse vars 
 !
       DO K=kts,kte+1
       DO I=its,ite
@@ -546,8 +546,8 @@ CONTAINS
 !
       IF ( PRESENT( F_QI ) .AND. PRESENT( qi3d)  ) THEN
 	 IF ( (F_QI) ) THEN
-            DO K=kts,kte
-            DO I=its,ite
+            DO K=kts,kte          
+            DO I=its,ite          
                NK=kme-1-K+kms
                cwc(I,K,1)=QI3D(I,NK,J)
                cwc(I,K,1)=max(0.,cwc(I,K,1))
@@ -640,20 +640,20 @@ CONTAINS
         if(tauaer300(i,k+1,j).gt.thresh .and. tauaer999(i,k+1,j).gt.thresh .and. &
            tauaer400(i,k+1,j).gt.thresh .and. tauaer600(i,k+1,j).gt.thresh) then
 ! avoid negative ang that makes taual explode and crashes wrf
-           if(tauaer300(i,k+1,j).gt.tauaer999(i,k+1,j)) then
+           if(tauaer300(i,k+1,j).gt.tauaer999(i,k+1,j)) then 
             ang=log(tauaer300(i,k+1,j)/tauaer999(i,k+1,j))/log(999./300.)
  !       write(6,*)i,k,ang,tauaer300(i,k+1,j),tauaer999(i,k+1,j)
             taual(i,kte-k,ib)=tauaer400(i,k+1,j)*(0.4/midbands(ib))**ang ! notice reserved variable
  !       write(6,10001)i,k,ang,tauaer300(i,k+1,j),tauaer999(i,k+1,j),midbands(ib),taual(i,k,ib)
  !10001      format(i3,i3,5f12.6)
 ! use ang exponent for closer wavelenghts
-           else
+           else 
             if(midbands(ib) .lt. 0.5) then
              ang=log(tauaer300(i,k+1,j)/tauaer400(i,k+1,j))/log(400./300.)
              taual(i,kte-k,ib)=tauaer400(i,k+1,j)*(0.4/midbands(ib))**ang ! notice reserved variable
             else
              ang=log(tauaer600(i,k+1,j)/tauaer999(i,k+1,j))/log(999./600.)
-             taual(i,kte-k,ib)=tauaer600(i,k+1,j)*(0.6/midbands(ib))**ang ! notice reserved variable
+             taual(i,kte-k,ib)=tauaer600(i,k+1,j)*(0.6/midbands(ib))**ang ! notice reserved variable   
             endif
            endif
 
@@ -766,7 +766,7 @@ CONTAINS
         rsirbm(i) = ALB(i,j)
         rsirdf(i) = ALB(i,j)
       end do
-
+                                  
       call sorad (mix,1,1,mkx+1,p8w2D,t2D,sh2D,o3,                 &
                   overcast,cldwater,cwc,taucld,reff,fcld2D,ict,icb,&
                   taual,ssaal,asyal,                               &
@@ -782,7 +782,7 @@ CONTAINS
          if(present(taucldi)) taucldi(i,nk,j)=taucld(i,k,1)
       enddo
       enddo
-
+ 
       do k = kts, kte+1
         do i = its, ite
           if (cosz(i) .lt. thresh) then
@@ -824,7 +824,7 @@ CONTAINS
         endif
       end do
 
-      DO K=kts,kte
+      DO K=kts,kte          
          NK=kme-1-K+kms
          DO I=its,ite
 ! FIX FROM GODDARD FOR NEGATIVE VALUES
@@ -833,7 +833,7 @@ CONTAINS
          ENDDO
       ENDDO
 !
-   ENDDO j_loop
+   ENDDO j_loop                                          
 
    END SUBROUTINE GSFCSWRAD
 
@@ -851,7 +851,7 @@ CONTAINS
 !
 !  New feature of this version is:
 !   (1) An option is added for scaling the cloud optical thickness. If
-!       the fractional cloud cover, fcld, in an atmospheric model is alway
+!       the fractional cloud cover, fcld, in an atmospheric model is alway 
 !       either 1 or 0 (i.e. partly cloudy sky is not allowed), it does
 !       not require the scaling of cloud optical thickness, and the
 !       option "overcast" can be set to .true.  Computation is faster
@@ -868,7 +868,7 @@ CONTAINS
 !   (3) A maximum-random cloud overlapping approximation is applied.
 !
 !*********************************************************************
-!
+!  
 ! This routine computes solar fluxes due to the absoption by water
 !  vapor, ozone, co2, o2, clouds, and aerosols and due to the
 !  scattering by clouds, aerosols, and gases.
@@ -882,9 +882,9 @@ CONTAINS
 !  In a global climate model, m and ndim correspond to the numbers of
 !  grid boxes in the zonal and meridional directions, respectively.
 !
-! Ice and liquid cloud particles are allowed to co-exist in a layer.
+! Ice and liquid cloud particles are allowed to co-exist in a layer. 
 !
-! There is an option of providing either cloud ice/water mixing ratio
+! There is an option of providing either cloud ice/water mixing ratio 
 !  (cwc) or thickness (taucld).  If the former is provided, set
 !  cldwater=.true., and taucld will be computed from cwc and reff as a
 !  function of spectra band. Otherwise, set cldwater=.false., and
@@ -910,7 +910,7 @@ CONTAINS
 ! Aerosol optical thickness, single-scattering albaedo, and asymmtry
 !  factor can be specified as functions of height and spectral band.
 !
-!----- Input parameters:
+!----- Input parameters:                           
 !                                                   units      size
 !  number of soundings in zonal direction (m)       n/d        1
 !  number of soundings in meridional direction (n)  n/d        1
@@ -996,7 +996,7 @@ CONTAINS
 !    (3) the pressure levels ict and icb correspond approximately
 !        to 400 and 700 mb.
 !    (4) if overcast='true', the clear-sky flux, flc, is not computed.
-!
+!        
 !**************************************************************************
       implicit none
 !**************************************************************************
@@ -1010,7 +1010,7 @@ CONTAINS
              fcld(m,ndim,np)
       real taual(m,ndim,np,11),ssaal(m,ndim,np,11),asyal(m,ndim,np,11)
       real cosz(m,ndim),rsuvbm(m,ndim),rsuvdf(m,ndim), &
-             rsirbm(m,ndim),rsirdf(m,ndim)
+             rsirbm(m,ndim),rsirdf(m,ndim)           
       logical overcast,cldwater
 
 !-----output parameters
@@ -1022,48 +1022,48 @@ CONTAINS
       real fdirir (m,ndim),fdifir (m,ndim)
 
 !-----temporary array
-
+ 
       integer i,j,k
       real cwp(m,n,np,2)
       real dp(m,n,np),wh(m,n,np),oh(m,n,np),scal(m,n,np)
       real swh(m,n,np+1),so2(m,n,np+1),df(m,n,np+1)
       real sdf(m,n),sclr(m,n),csm(m,n),x
-
-      do j= 1, n
-       do i= 1, m
+ 
+      do j= 1, n 
+       do i= 1, m 
           if (pl(i,j,1) .eq. 0.0) then
               pl(i,j,1)=1.0e-4
           endif
        enddo
       enddo
 
-      do j= 1, n
-       do i= 1, m
+      do j= 1, n 
+       do i= 1, m 
 
-         swh(i,j,1)=0.
-         so2(i,j,1)=0.
+         swh(i,j,1)=0. 
+         so2(i,j,1)=0. 
 
 !-----csm is the effective secant of the solar zenith angle
-!     see equation (12) of Lacis and Hansen (1974, JAS)
-
+!     see equation (12) of Lacis and Hansen (1974, JAS)    
+ 
          csm(i,j)=35./sqrt(1224.*cosz(i,j)*cosz(i,j)+1.)
 
-       enddo
+       enddo 
       enddo
 
       do k= 1, np
        do j= 1, n
          do i= 1, m
 
-!-----compute layer thickness and pressure-scaling function.
+!-----compute layer thickness and pressure-scaling function. 
 !     indices for the surface level and surface layer
 !     are np+1 and np, respectively.
-
+ 
           dp(i,j,k)=pl(i,j,k+1)-pl(i,j,k)
           scal(i,j,k)=dp(i,j,k)*(.5*(pl(i,j,k)+pl(i,j,k+1))/300.)**.8
-
+ 
 !-----compute scaled water vapor amount, unit is g/cm**2
-!     note: the sign prior to the constant 0.00135 was incorrectly
+!     note: the sign prior to the constant 0.00135 was incorrectly 
 !           set to negative in the previous version
 
           wh(i,j,k)=1.02*wa(i,j,k)*scal(i,j,k)* &
@@ -1072,7 +1072,7 @@ CONTAINS
 
 !-----compute ozone amount, unit is (cm-atm)stp
 !     the number 466.7 is a conversion factor from g/cm**2 to (cm-atm)stp
-
+ 
           oh(i,j,k)=1.02*oa(i,j,k)*dp(i,j,k)*466.7 +1.e-11
 
 !-----compute layer cloud water amount (gm/m**2)
@@ -1135,7 +1135,7 @@ CONTAINS
            df(i,j,k)=df(i,j,k)+0.0287*(1.-exp(-0.00027*sqrt(x)))
          enddo
         enddo
-       enddo
+       enddo          
 
 !-----compute scaled co2 amounts. unit is (cm-atm)stp.
 
@@ -1207,7 +1207,7 @@ CONTAINS
        enddo
       enddo
 
-      end subroutine sorad
+      end subroutine sorad 
 
 !************************************************************************
 
@@ -1219,7 +1219,7 @@ CONTAINS
 !************************************************************************
 !  compute solar fluxes in the uv+par region. the spectrum is
 !  grouped into 8 bands:
-!
+!  
 !              Band     Micrometer
 !
 !       UV-C    1.     .175 - .225
@@ -1230,9 +1230,9 @@ CONTAINS
 !       UV-B    4.     .280 - .295
 !               5.     .295 - .310
 !               6.     .310 - .320
-!
+!      
 !       UV-A    7.     .320 - .400
-!
+!      
 !       PAR     8.     .400 - .700
 !
 !----- Input parameters:                            units      size
@@ -1279,7 +1279,7 @@ CONTAINS
 !  scaled cloud optical thickness                   n/d      m*n*np
 !       for beam radiation (tauclb)
 !  scaled cloud optical thickness                   n/d      m*n*np
-!       for diffuse radiation  (tauclf)
+!       for diffuse radiation  (tauclf)     
 !
 !----- output (updated) parameters:
 !
@@ -1368,9 +1368,9 @@ CONTAINS
 
 !-----initialize fdiruv, fdifuv, surface reflectances and transmittances.
 !     cc is the maximum cloud cover in each of the three cloud groups.
-
+            
       do j= 1, n
-       do i= 1, m
+       do i= 1, m                    
          fdiruv(i,j)=0.0
          fdifuv(i,j)=0.0
          rr(i,j,np+1,1)=rsuvbm(i,j)
@@ -1484,7 +1484,7 @@ CONTAINS
 
           taurs=ry(ib)*dp(i,j,k)
           tauoz=xk(ib)*oh(i,j,k)
-
+ 
 !-----compute clear-sky optical thickness, single scattering albedo,
 !     and asymmetry factor
 
@@ -1599,7 +1599,7 @@ CONTAINS
  300  continue
 
 !-----flux calculations
-
+ 
         call cldflx (m,n,np,ict,icb,overcast,cc,rr,tt,td,rs,ts, &
                      fclr,fall,fallu,falld,fsdir,fsdif)
 
@@ -1685,7 +1685,7 @@ CONTAINS
 !  cloud amount (fcld)                            fraction   m*ndim*np
 !  aerosol optical thickness (taual)                n/d      m*ndim*np*11
 !  aerosol single-scattering albedo (ssaal)         n/d      m*ndim*np*11
-!  aerosol asymmetry factor (asyal)                 n/d      m*ndim*np*11
+!  aerosol asymmetry factor (asyal)                 n/d      m*ndim*np*11 
 !  cosecant of the solar zenith angle (csm)         n/d      m*n
 !  near ir surface albedo for beam                fraction   m*ndim
 !        radiation (rsirbm)
@@ -1697,7 +1697,7 @@ CONTAINS
 !  scaled cloud optical thickness                   n/d      m*n*np
 !          for beam radiation (tauclb)
 !  scaled cloud optical thickness                   n/d      m*n*np
-!          for diffuse radiation  (tauclf)
+!          for diffuse radiation  (tauclf)     
 !
 !----- output (updated) parameters:
 !
@@ -1758,7 +1758,7 @@ CONTAINS
 
       data xk/  &
         0.0010, 0.0133, 0.0422, 0.1334, 0.4217, &
-        1.334,  5.623,  31.62,  177.8,  1000.0/
+        1.334,  5.623,  31.62,  177.8,  1000.0/  
 
 !-----water vapor k-distribution function,
 !     the sum of hk is 0.52926. unit: fraction
@@ -1951,14 +1951,14 @@ CONTAINS
             do i= 1, m
 
              tauwv=xk(ik)*wh(i,j,k)
-
+ 
 !-----compute clear-sky optical thickness, single scattering albedo,
 !     and asymmetry factor.
-
+ 
              tausto=tauwv+taual(i,j,k,iv)+1.0e-8
              ssatau=ssaal(i,j,k,iv)*taual(i,j,k,iv)
              asysto=asyal(i,j,k,iv)*ssaal(i,j,k,iv)*taual(i,j,k,iv)
-
+ 
 !-----compute reflectance and transmittance for cloudless layers
 
              tauto=tausto
@@ -2051,7 +2051,7 @@ CONTAINS
                ts(i,j,k,1)=ts1t(i,j)
             enddo
            enddo
-
+ 
            do j=1,n
             do i=1,m
                rr(i,j,k,2)=rr2t(i,j)
@@ -2111,8 +2111,8 @@ CONTAINS
 
   200 continue
   100 continue
-
-      end subroutine solir
+ 
+      end subroutine solir 
 
 !********************************************************************
 
@@ -2176,7 +2176,7 @@ CONTAINS
 !-----pre-computed table
 
       integer   nm,nt,na
-      parameter (nm=11,nt=9,na=11)
+      parameter (nm=11,nt=9,na=11) 
       real  dm,dt,da,t1,caib(nm,nt,na),caif(nt,na)
       parameter (dm=0.1,dt=0.30103,da=0.1,t1=-0.9031)
 
@@ -2286,7 +2286,7 @@ CONTAINS
        .000,0.092,0.185,0.278,0.374,0.470,0.570,0.671,0.777,0.886,1.000, &
        .000,0.081,0.162,0.246,0.333,0.424,0.521,0.625,0.738,0.862,1.000, &
        .000,0.063,0.128,0.196,0.270,0.349,0.438,0.540,0.661,0.809,1.000, &
-       .000,0.046,0.094,0.146,0.202,0.264,0.337,0.426,0.542,0.710,1.000/
+       .000,0.046,0.094,0.146,0.202,0.264,0.337,0.426,0.542,0.710,1.000/ 
       data ((caib(11,i,j),j=1,11),i=1,9)/ &
        .000,0.101,0.202,0.302,0.402,0.502,0.602,0.702,0.802,0.901,1.000, &
        .000,0.102,0.202,0.303,0.404,0.504,0.604,0.703,0.802,0.902,1.000, &
@@ -2347,7 +2347,7 @@ CONTAINS
 !-----scale the cloud optical thickness.
 !     taucld(i,j,k,1) is the optical thickness for ice particles, and
 !     taucld(i,j,k,2) is the optical thickness for liquid particles.
-
+      
       do j=1,n
        do i=1,m
 
@@ -2378,15 +2378,15 @@ CONTAINS
            fm=cosz(i,j)/dm
            ft=(log10(taux)-t1)/dt
            fa=fa/da
-
+ 
            im=int(fm+1.5)
            it=int(ft+1.5)
            ia=int(fa+1.5)
-
+  
            im=max(im,2)
            it=max(it,2)
            ia=max(ia,2)
-
+     
            im=min(im,nm-1)
            it=min(it,nt-1)
            ia=min(ia,na-1)
@@ -2398,10 +2398,10 @@ CONTAINS
 !-----scale cloud optical thickness for beam radiation.
 !     the scaling factor, xai, is a function of the solar zenith
 !     angle, optical thickness, and cloud cover.
-
+ 
            xai=    (-caib(im-1,it,ia)*(1.-fm)+ &
             caib(im+1,it,ia)*(1.+fm))*fm*.5+caib(im,it,ia)*(1.-fm*fm)
-
+         
            xai=xai+(-caib(im,it-1,ia)*(1.-ft)+ &
             caib(im,it+1,ia)*(1.+ft))*ft*.5+caib(im,it,ia)*(1.-ft*ft)
 
@@ -2410,7 +2410,7 @@ CONTAINS
 
            xai= xai-2.*caib(im,it,ia)
            xai=max(xai,0.0)
-
+     
            tauclb(i,j,k) = taux*xai
 
 !-----scale cloud optical thickness for diffuse radiation.
@@ -2425,7 +2425,7 @@ CONTAINS
 
            xai= xai-caif(it,ia)
            xai=max(xai,0.0)
-
+     
            tauclf(i,j,k) = taux*xai
 
          endif
@@ -2479,11 +2479,11 @@ CONTAINS
 
       real zth,ff,xx,taup,sscp,gp,gm1,gm2,gm3,akk,alf1,alf2, &
            all,bll,st7,st8,cll,dll,fll,ell,st1,st2,st3,st4
-
+ 
 !---------------------------------------------------------------------
 
                 zth = one / csm
-
+ 
 !  delta-eddington scaling of single scattering albedo,
 !  optical thickness, and asymmetry factor,
 !  K & H eqs(27-29)
@@ -2493,19 +2493,19 @@ CONTAINS
                 taup= tau*xx
                 sscp= ssc*(one-ff)/xx
                 gp  = g0/(one+g0)
-
+ 
 !  gamma1, gamma2, and gamma3. see table 2 and eq(26) K & H
 !  ssc and gp are the d-s single scattering
 !  albedo and asymmetry factor.
 
-                xx  =  three*gp
+                xx  =  three*gp 
                 gm1 =  (seven - sscp*(four+xx))*fourth
                 gm2 = -(one   - sscp*(four-xx))*fourth
-
+ 
 !  akk is k as defined in eq(25) of K & H
-
+ 
                 akk = sqrt((gm1+gm2)*(gm1-gm2))
-
+ 
                 xx  = akk * zth
                 st7 = one - xx
                 st8 = one + xx
@@ -2520,42 +2520,42 @@ CONTAINS
                 endif
 
 !  extinction of the direct beam transmission
-
+ 
                 td  = exp(-taup/zth)
 
 !  alf1 and alf2 are alpha1 and alpha2 from eqs (23) & (24) of K & H
-
+ 
                 gm3  = (two - zth*three*gp)*fourth
                 xx   = gm1 - gm2
                 alf1 = gm1 - gm3 * xx
                 alf2 = gm2 + gm3 * xx
-
+ 
 !  all is last term in eq(21) of K & H
 !  bll is last term in eq(22) of K & H
-
+ 
                 xx  = akk * two
                 all = (gm3 - alf2 * zth    )*xx*td
                 bll = (one - gm3 + alf1*zth)*xx
-
+ 
                 xx  = akk * gm3
                 cll = (alf2 + xx) * st7
                 dll = (alf2 - xx) * st8
-
+ 
                 xx  = akk * (one-gm3)
                 fll = (alf1 + xx) * st8
                 ell = (alf1 - xx) * st7
-
+  
                 st2 = exp(-akk*taup)
                 st4 = st2 * st2
-
+ 
                 st1 =  sscp / ((akk+gm1 + (akk-gm1)*st4) * st3)
-
+ 
 !  rr is r-hat of eq(21) of K & H
 !  tt is diffuse part of t-hat of eq(22) of K & H
-
+ 
                 rr =   ( cll-dll*st4    -all*st2)*st1
                 tt = - ((fll-ell*st4)*td-bll*st2)*st1
-
+ 
                 rr = max(rr,zero)
                 tt = max(tt,zero)
 
@@ -2622,7 +2622,7 @@ CONTAINS
 !  compute upward and downward fluxes using a two-stream adding method
 !  following equations (3)-(5) of Chou (1992, JAS).
 !
-!  clouds are grouped into high, middle, and low clouds which are
+!  clouds are grouped into high, middle, and low clouds which are 
 !  assumed randomly overlapped. It involves eight sets of calculations.
 !  In each set of calculations, each atmospheric layer is homogeneous,
 !  either totally filled with clouds or without clouds.
@@ -2771,7 +2771,7 @@ CONTAINS
 !     rxa is the composite reflectance illuminated from above
 !         by diffuse radiation
 !     rra and rxa are computed from eqs. (4a) and (3a) of Chou
-
+ 
 !-----for the low clouds
 
       do 20 is=itm,2
@@ -2822,7 +2822,7 @@ CONTAINS
 
       do 100 ih=itm,2
 
-!-----clear portion
+!-----clear portion 
 
          if(ih.eq.1) then
            do j=1,n
@@ -2861,7 +2861,7 @@ CONTAINS
 
            do j=1,n
             do i=1,m
-              cm(i,j)=ch(i,j)*cc(i,j,2)
+              cm(i,j)=ch(i,j)*cc(i,j,2) 
             enddo
            enddo
 
@@ -2875,7 +2875,7 @@ CONTAINS
 
            do j=1,n
             do i=1,m
-             ct(i,j)=cm(i,j)*(1.0-cc(i,j,3))
+             ct(i,j)=cm(i,j)*(1.0-cc(i,j,3)) 
             enddo
            enddo
 
@@ -2922,7 +2922,7 @@ CONTAINS
        enddo
 
 !-----compute fluxes following eq (5) of Chou (1992)
-
+ 
 !     fdndir is the direct  downward flux
 !     fdndif is the diffuse downward flux
 !     fupdif is the diffuse upward flux
@@ -2998,72 +2998,72 @@ CONTAINS
 
 !-----temporary array
 
-      integer i,j,k,ic,iw
+      integer i,j,k,ic,iw 
       real xx,clog,wlog,dc,dw,x1,x2,y2
 
 !********************************************************************
 !-----include co2 look-up table
 
-      data ((cah(i,j),i=1,22),j= 1, 5)/ &
-       0.9923, 0.9922, 0.9921, 0.9920, 0.9916, 0.9910, 0.9899, 0.9882, &
-       0.9856, 0.9818, 0.9761, 0.9678, 0.9558, 0.9395, 0.9188, 0.8945, &
-       0.8675, 0.8376, 0.8029, 0.7621, 0.7154, 0.6647, 0.9876, 0.9876, &
-       0.9875, 0.9873, 0.9870, 0.9864, 0.9854, 0.9837, 0.9811, 0.9773, &
-       0.9718, 0.9636, 0.9518, 0.9358, 0.9153, 0.8913, 0.8647, 0.8350, &
-       0.8005, 0.7599, 0.7133, 0.6627, 0.9808, 0.9807, 0.9806, 0.9805, &
-       0.9802, 0.9796, 0.9786, 0.9769, 0.9744, 0.9707, 0.9653, 0.9573, &
-       0.9459, 0.9302, 0.9102, 0.8866, 0.8604, 0.8311, 0.7969, 0.7565, &
-       0.7101, 0.6596, 0.9708, 0.9708, 0.9707, 0.9705, 0.9702, 0.9697, &
-       0.9687, 0.9671, 0.9647, 0.9612, 0.9560, 0.9483, 0.9372, 0.9221, &
-       0.9027, 0.8798, 0.8542, 0.8253, 0.7916, 0.7515, 0.7054, 0.6551, &
-       0.9568, 0.9568, 0.9567, 0.9565, 0.9562, 0.9557, 0.9548, 0.9533, &
-       0.9510, 0.9477, 0.9428, 0.9355, 0.9250, 0.9106, 0.8921, 0.8700, &
-       0.8452, 0.8171, 0.7839, 0.7443, 0.6986, 0.6486/
-
-      data ((cah(i,j),i=1,22),j= 6,10)/  &
-       0.9377, 0.9377, 0.9376, 0.9375, 0.9372, 0.9367, 0.9359, 0.9345, &
-       0.9324, 0.9294, 0.9248, 0.9181, 0.9083, 0.8948, 0.8774, 0.8565, &
-       0.8328, 0.8055, 0.7731, 0.7342, 0.6890, 0.6395, 0.9126, 0.9126, &
-       0.9125, 0.9124, 0.9121, 0.9117, 0.9110, 0.9098, 0.9079, 0.9052, &
-       0.9012, 0.8951, 0.8862, 0.8739, 0.8579, 0.8385, 0.8161, 0.7900, &
-       0.7585, 0.7205, 0.6760, 0.6270, 0.8809, 0.8809, 0.8808, 0.8807, &
-       0.8805, 0.8802, 0.8796, 0.8786, 0.8770, 0.8747, 0.8712, 0.8659, &
-       0.8582, 0.8473, 0.8329, 0.8153, 0.7945, 0.7697, 0.7394, 0.7024, &
-       0.6588, 0.6105, 0.8427, 0.8427, 0.8427, 0.8426, 0.8424, 0.8422, &
-       0.8417, 0.8409, 0.8397, 0.8378, 0.8350, 0.8306, 0.8241, 0.8148, &
-       0.8023, 0.7866, 0.7676, 0.7444, 0.7154, 0.6796, 0.6370, 0.5897, &
-       0.7990, 0.7990, 0.7990, 0.7989, 0.7988, 0.7987, 0.7983, 0.7978, &
-       0.7969, 0.7955, 0.7933, 0.7899, 0.7846, 0.7769, 0.7664, 0.7528, &
-       0.7357, 0.7141, 0.6866, 0.6520, 0.6108, 0.5646/
-
-      data ((cah(i,j),i=1,22),j=11,15)/  &
-       0.7515, 0.7515, 0.7515, 0.7515, 0.7514, 0.7513, 0.7511, 0.7507, &
-       0.7501, 0.7491, 0.7476, 0.7450, 0.7409, 0.7347, 0.7261, 0.7144, &
-       0.6992, 0.6793, 0.6533, 0.6203, 0.5805, 0.5357, 0.7020, 0.7020, &
-       0.7020, 0.7019, 0.7019, 0.7018, 0.7017, 0.7015, 0.7011, 0.7005, &
-       0.6993, 0.6974, 0.6943, 0.6894, 0.6823, 0.6723, 0.6588, 0.6406, &
-       0.6161, 0.5847, 0.5466, 0.5034, 0.6518, 0.6518, 0.6518, 0.6518, &
-       0.6518, 0.6517, 0.6517, 0.6515, 0.6513, 0.6508, 0.6500, 0.6485, &
-       0.6459, 0.6419, 0.6359, 0.6273, 0.6151, 0.5983, 0.5755, 0.5458, &
-       0.5095, 0.4681, 0.6017, 0.6017, 0.6017, 0.6017, 0.6016, 0.6016, &
-       0.6016, 0.6015, 0.6013, 0.6009, 0.6002, 0.5989, 0.5967, 0.5932, &
-       0.5879, 0.5801, 0.5691, 0.5535, 0.5322, 0.5043, 0.4700, 0.4308, &
-       0.5518, 0.5518, 0.5518, 0.5518, 0.5518, 0.5518, 0.5517, 0.5516, &
-       0.5514, 0.5511, 0.5505, 0.5493, 0.5473, 0.5441, 0.5393, 0.5322, &
-       0.5220, 0.5076, 0.4878, 0.4617, 0.4297, 0.3929/
-
-      data ((cah(i,j),i=1,22),j=16,19)/ &
-       0.5031, 0.5031, 0.5031, 0.5031, 0.5031, 0.5030, 0.5030, 0.5029, &
-       0.5028, 0.5025, 0.5019, 0.5008, 0.4990, 0.4960, 0.4916, 0.4850, &
-       0.4757, 0.4624, 0.4441, 0.4201, 0.3904, 0.3564, 0.4565, 0.4565, &
-       0.4565, 0.4564, 0.4564, 0.4564, 0.4564, 0.4563, 0.4562, 0.4559, &
-       0.4553, 0.4544, 0.4527, 0.4500, 0.4460, 0.4400, 0.4315, 0.4194, &
-       0.4028, 0.3809, 0.3538, 0.3227, 0.4122, 0.4122, 0.4122, 0.4122, &
-       0.4122, 0.4122, 0.4122, 0.4121, 0.4120, 0.4117, 0.4112, 0.4104, &
-       0.4089, 0.4065, 0.4029, 0.3976, 0.3900, 0.3792, 0.3643, 0.3447, &
-       0.3203, 0.2923, 0.3696, 0.3696, 0.3696, 0.3696, 0.3696, 0.3696, &
-       0.3695, 0.3695, 0.3694, 0.3691, 0.3687, 0.3680, 0.3667, 0.3647, &
-       0.3615, 0.3570, 0.3504, 0.3409, 0.3279, 0.3106, 0.2892, 0.2642/
+      data ((cah(i,j),i=1,22),j= 1, 5)/ &                                     
+       0.9923, 0.9922, 0.9921, 0.9920, 0.9916, 0.9910, 0.9899, 0.9882, &      
+       0.9856, 0.9818, 0.9761, 0.9678, 0.9558, 0.9395, 0.9188, 0.8945, &      
+       0.8675, 0.8376, 0.8029, 0.7621, 0.7154, 0.6647, 0.9876, 0.9876, &      
+       0.9875, 0.9873, 0.9870, 0.9864, 0.9854, 0.9837, 0.9811, 0.9773, &      
+       0.9718, 0.9636, 0.9518, 0.9358, 0.9153, 0.8913, 0.8647, 0.8350, &      
+       0.8005, 0.7599, 0.7133, 0.6627, 0.9808, 0.9807, 0.9806, 0.9805, &      
+       0.9802, 0.9796, 0.9786, 0.9769, 0.9744, 0.9707, 0.9653, 0.9573, &      
+       0.9459, 0.9302, 0.9102, 0.8866, 0.8604, 0.8311, 0.7969, 0.7565, &      
+       0.7101, 0.6596, 0.9708, 0.9708, 0.9707, 0.9705, 0.9702, 0.9697, &      
+       0.9687, 0.9671, 0.9647, 0.9612, 0.9560, 0.9483, 0.9372, 0.9221, &      
+       0.9027, 0.8798, 0.8542, 0.8253, 0.7916, 0.7515, 0.7054, 0.6551, &      
+       0.9568, 0.9568, 0.9567, 0.9565, 0.9562, 0.9557, 0.9548, 0.9533, &      
+       0.9510, 0.9477, 0.9428, 0.9355, 0.9250, 0.9106, 0.8921, 0.8700, &      
+       0.8452, 0.8171, 0.7839, 0.7443, 0.6986, 0.6486/                        
+ 
+      data ((cah(i,j),i=1,22),j= 6,10)/  &                                    
+       0.9377, 0.9377, 0.9376, 0.9375, 0.9372, 0.9367, 0.9359, 0.9345, &      
+       0.9324, 0.9294, 0.9248, 0.9181, 0.9083, 0.8948, 0.8774, 0.8565, &      
+       0.8328, 0.8055, 0.7731, 0.7342, 0.6890, 0.6395, 0.9126, 0.9126, &      
+       0.9125, 0.9124, 0.9121, 0.9117, 0.9110, 0.9098, 0.9079, 0.9052, &      
+       0.9012, 0.8951, 0.8862, 0.8739, 0.8579, 0.8385, 0.8161, 0.7900, &      
+       0.7585, 0.7205, 0.6760, 0.6270, 0.8809, 0.8809, 0.8808, 0.8807, &      
+       0.8805, 0.8802, 0.8796, 0.8786, 0.8770, 0.8747, 0.8712, 0.8659, &      
+       0.8582, 0.8473, 0.8329, 0.8153, 0.7945, 0.7697, 0.7394, 0.7024, &      
+       0.6588, 0.6105, 0.8427, 0.8427, 0.8427, 0.8426, 0.8424, 0.8422, &      
+       0.8417, 0.8409, 0.8397, 0.8378, 0.8350, 0.8306, 0.8241, 0.8148, &      
+       0.8023, 0.7866, 0.7676, 0.7444, 0.7154, 0.6796, 0.6370, 0.5897, &      
+       0.7990, 0.7990, 0.7990, 0.7989, 0.7988, 0.7987, 0.7983, 0.7978, &      
+       0.7969, 0.7955, 0.7933, 0.7899, 0.7846, 0.7769, 0.7664, 0.7528, &      
+       0.7357, 0.7141, 0.6866, 0.6520, 0.6108, 0.5646/                        
+ 
+      data ((cah(i,j),i=1,22),j=11,15)/  &                                    
+       0.7515, 0.7515, 0.7515, 0.7515, 0.7514, 0.7513, 0.7511, 0.7507, &      
+       0.7501, 0.7491, 0.7476, 0.7450, 0.7409, 0.7347, 0.7261, 0.7144, &      
+       0.6992, 0.6793, 0.6533, 0.6203, 0.5805, 0.5357, 0.7020, 0.7020, &      
+       0.7020, 0.7019, 0.7019, 0.7018, 0.7017, 0.7015, 0.7011, 0.7005, &      
+       0.6993, 0.6974, 0.6943, 0.6894, 0.6823, 0.6723, 0.6588, 0.6406, &      
+       0.6161, 0.5847, 0.5466, 0.5034, 0.6518, 0.6518, 0.6518, 0.6518, &      
+       0.6518, 0.6517, 0.6517, 0.6515, 0.6513, 0.6508, 0.6500, 0.6485, &      
+       0.6459, 0.6419, 0.6359, 0.6273, 0.6151, 0.5983, 0.5755, 0.5458, &      
+       0.5095, 0.4681, 0.6017, 0.6017, 0.6017, 0.6017, 0.6016, 0.6016, &      
+       0.6016, 0.6015, 0.6013, 0.6009, 0.6002, 0.5989, 0.5967, 0.5932, &      
+       0.5879, 0.5801, 0.5691, 0.5535, 0.5322, 0.5043, 0.4700, 0.4308, &      
+       0.5518, 0.5518, 0.5518, 0.5518, 0.5518, 0.5518, 0.5517, 0.5516, &      
+       0.5514, 0.5511, 0.5505, 0.5493, 0.5473, 0.5441, 0.5393, 0.5322, &      
+       0.5220, 0.5076, 0.4878, 0.4617, 0.4297, 0.3929/                        
+ 
+      data ((cah(i,j),i=1,22),j=16,19)/ &                                     
+       0.5031, 0.5031, 0.5031, 0.5031, 0.5031, 0.5030, 0.5030, 0.5029, &      
+       0.5028, 0.5025, 0.5019, 0.5008, 0.4990, 0.4960, 0.4916, 0.4850, &      
+       0.4757, 0.4624, 0.4441, 0.4201, 0.3904, 0.3564, 0.4565, 0.4565, &      
+       0.4565, 0.4564, 0.4564, 0.4564, 0.4564, 0.4563, 0.4562, 0.4559, &      
+       0.4553, 0.4544, 0.4527, 0.4500, 0.4460, 0.4400, 0.4315, 0.4194, &      
+       0.4028, 0.3809, 0.3538, 0.3227, 0.4122, 0.4122, 0.4122, 0.4122, &      
+       0.4122, 0.4122, 0.4122, 0.4121, 0.4120, 0.4117, 0.4112, 0.4104, &      
+       0.4089, 0.4065, 0.4029, 0.3976, 0.3900, 0.3792, 0.3643, 0.3447, &      
+       0.3203, 0.2923, 0.3696, 0.3696, 0.3696, 0.3696, 0.3696, 0.3696, &      
+       0.3695, 0.3695, 0.3694, 0.3691, 0.3687, 0.3680, 0.3667, 0.3647, &      
+       0.3615, 0.3570, 0.3504, 0.3409, 0.3279, 0.3106, 0.2892, 0.2642/        
 
 !********************************************************************
 !-----table look-up for the reduction of clear-sky solar
@@ -3081,17 +3081,17 @@ CONTAINS
           if(ic.lt.2)ic=2
           if(iw.lt.2)iw=2
           if(ic.gt.22)ic=22
-          if(iw.gt.19)iw=19
+          if(iw.gt.19)iw=19     
           dc=clog-float(ic-2)*.3+3.
-          dw=wlog-float(iw-2)*.3+4.
+          dw=wlog-float(iw-2)*.3+4.   
           x1=cah(1,iw-1)+(cah(1,iw)-cah(1,iw-1))*xx*dw
           x2=cah(ic-1,iw-1)+(cah(ic-1,iw)-cah(ic-1,iw-1))*xx*dw
           y2=x2+(cah(ic,iw-1)-cah(ic-1,iw-1))*xx*dc
           if (x1.lt.y2) x1=y2
           df(i,j,k)=df(i,j,k)+0.0343*(x1-y2)
-        enddo
-       enddo
-      enddo
+        enddo     
+       enddo      
+      enddo      
 
       end subroutine flxco2
 
@@ -3107,9 +3107,9 @@ CONTAINS
       integer i,k,ko,kk
       real pres(np),ozone(np)
       real p(its:ite,kts:kte),o3(its:ite,kts:kte)
-
-!     Statement function
-
+ 
+!     Statement function 
+ 
       real Linear, x1, y1, x2, y2, x
       Linear(x1, y1, x2, y2, x) =  &
             (y1 * (x2 - x) + y2 * (x - x1)) / (x2 - x1)
@@ -3158,7 +3158,7 @@ CONTAINS
         ENDIF
 !       print*,'O3=',i,k,ko,O3(i,k),p(i,k),ko,pres(ko),pres(ko-1)
       end do
-
+      
       end subroutine o3prof
 
 !-----------------------------------------

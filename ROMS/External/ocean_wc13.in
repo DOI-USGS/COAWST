@@ -1,9 +1,9 @@
 !
 !  ROMS/TOMS Standard Input parameters.
 !
-!svn $Id: ocean_wc13.in 1727 2017-07-29 03:09:50Z arango $
+!svn $Id: ocean_wc13.in 1739 2017-11-15 04:00:35Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -881,7 +881,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! except the last one.
 
      NCLMFILES == 1                         ! number of climate files
-     CLMNAME == ocean_clm.nc
+     CLMNAME == roms_clm.nc
 
      NBCFILES == 1                          ! number of boundary files
      BRYNAME == ../Data/wc13_ecco_bry.nc

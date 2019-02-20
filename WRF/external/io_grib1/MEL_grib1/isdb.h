@@ -6,7 +6,7 @@
 #endif /* _NET_NEONS */
 
 /* max value from rand; HW/OS dependent */
-#define MAX_RAND 2147483647.  	/* SUN */
+#define MAX_RAND 2147483647.  	/* SUN */		
 /* #define MAX_RAND 32767.	*/		/* HP, Solaris */
 
 /* Vers 4.2.1 was installed 10/01/97 on Kelvin */
@@ -18,7 +18,7 @@
 #define BYTE_BIT_CNT  8		/* count of bits per byte */
 #define WORD_BIT_CNT  sizeof(long)*BYTE_BIT_CNT /* count of bits per word */
 #define WORD_BYTE_CNT 4		/* count of bytes per word */
-
+ 
 #define	OPN_RD    1		/* open database for read only */
 #define	OPN_WR_RD 2		/* open database for write+read */
 
@@ -26,8 +26,8 @@
 
 #define ISDB_MODE   0666 	/* mode for image files placed into db */
 #define LOCK_MODE   0200 	/* mode for locking files while writing */
-#define INGEST_OWN "dba"   	/* owner of image files before loaded in db */
-#define INGEST_MODE 0644 	/* mode for ingest files before loaded in db */
+#define INGEST_OWN "dba"   	/* owner of image files before loaded in db */ 
+#define INGEST_MODE 0644 	/* mode for ingest files before loaded in db */ 
 
 
 #define CLNDR_HOUR   0		/* calendar time, units = hours */
@@ -55,7 +55,7 @@ typedef struct {		/* info from table as_band */
 
 typedef struct {		/* info from tables grid_reg_geom/as_reg_im */
     char   prjn_name[21];	/* projection name */
-    char   stor_dsc[21];	/* (+x in +y)/(+x in -y)/(-y in +x)/etc */
+    char   stor_dsc[21];	/* (+x in +y)/(+x in -y)/(-y in +x)/etc */ 
     long   nx;			/* count of columns */
     long   ny;			/* count of rows */
     double lat;			/* lat of origin in degrees */
@@ -80,7 +80,7 @@ typedef struct {		/* info from tables grid_reg_geom/as_reg_im */
 } REG_GEOM;
 
 typedef struct {		/* info from table as_sat_im */
-    long   bgn_lin_num;		/* beginning line number in orbit or pass */
+    long   bgn_lin_num;		/* beginning line number in orbit or pass */ 
     long   bgn_smp_num;		/* beginning sample number in scan line */
     long   lin_int;		/* lin interval relative to sensor scan mode */
     long   smp_int;		/* smp interval relative to sensor scan mode */
@@ -90,9 +90,9 @@ typedef struct {		/* info from table as_sat_im */
 } SAT_GEOM;
 
 typedef struct {		/* info from table grid_spct_geom */
-    char   stor_dsc[21];	/* (+x in +y)/(+x in -y)/(-y in +x)/etc */
-    char   trnc_type[21];	/* spectral truncation type (triangular/etc) */
-    long   coef_cnt;		/* count of complex coefficients used */
+    char   stor_dsc[21];	/* (+x in +y)/(+x in -y)/(-y in +x)/etc */ 
+    char   trnc_type[21];	/* spectral truncation type (triangular/etc) */ 
+    long   coef_cnt;		/* count of complex coefficients used */ 
     long   max_lat_wav_num;	/* max latitudinal wavenumber (M in GRIB) */
     long   max_lon_wav_num_1;	/* max longitudinal wavenumber 1 (J in GRIB) */
     long   max_lon_wav_num_2;	/* max longitudinal wavenumber 2 (K in GRIB) */

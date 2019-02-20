@@ -8,7 +8,7 @@
 !                                                                             !
 ! Argument list:                                                              !
 !    Input: DEBUG_LEVEL:  0 = no prints, bigger numbers = more prints         !
-!
+!              
 ! Externals:                                                                  !
 !    Module TABLE                                                             !
 !    Subroutine ABORT                                                         !
@@ -55,7 +55,7 @@ subroutine parse_table(debug_level,vtable_columns)
   character(LEN=255) :: string = ' '
   integer :: ierr
   integer :: istart, ibar, i, j, ipcount
-  integer :: jstart, jbar, jmax, tot_bars
+  integer :: jstart, jbar, jmax, tot_bars 
   integer :: vtable_columns
   integer :: nstart, maxtmp
   logical :: lexist
@@ -125,19 +125,19 @@ subroutine parse_table(debug_level,vtable_columns)
         call mprintf ((ierr /= 0),ERROR,"Read error 3 in PARSE_TABLE.")
         enddo
         string(1:1) = ' '
-
+        
      elseif (string(1:1).ne.'-') then
         ! This is a line of values to interpret and parse.
         maxvar = maxvar + 1 ! increment the variable count
 
         ! --- Determine Grib1 or Grib2
-        ! If there are seven fields this is a Grib1 Vtable,
+        ! If there are seven fields this is a Grib1 Vtable, 
         ! if there are eleven fields this is a Grib2 Vtable.
         jstart = 1
         jmax=jstart
         tot_bars=0
 
-        do j = 1, vtable_columns
+        do j = 1, vtable_columns 
         ! The fields are delimited by '|'
            jbar = index(string(jstart:255),'|') + jstart - 2
            jstart = jbar + 2
@@ -157,7 +157,7 @@ subroutine parse_table(debug_level,vtable_columns)
 
         istart = 1
         ! There are seven fields (Grib1) or eleven fields (Grib2) to each line.
-  PLOOP : do i = 1, vtable_columns
+  PLOOP : do i = 1, vtable_columns 
         ! The fields are delimited by '|'
 
            ibar = index(string(istart:255),'|') + istart - 2
@@ -276,7 +276,7 @@ subroutine parse_table(debug_level,vtable_columns)
               endif
 
            elseif (i.eq.8) then
-           ! The eighth field is the Grib2 Product Discipline (see the
+           ! The eighth field is the Grib2 Product Discipline (see the 
            ! Product Definition Template, Table 4.2).
 
               !cycle RDLOOP
@@ -405,7 +405,7 @@ subroutine parse_table(debug_level,vtable_columns)
      endif
 !995  continue
   enddo RDLOOP
-! Now we have finished reading the file.
+! Now we have finished reading the file.  
   close(10)
 
 ! Now remove duplicates from the NAMEOUT array.  Duplicates may arise
@@ -473,12 +473,12 @@ subroutine parse_table(debug_level,vtable_columns)
              call mprintf(.true.,DEBUG,'%s ',s1=tmp9(4:9),newline=.false.)
 	   enddo
 	   call mprintf(.true.,DEBUG,' ',newline=.true.)
-        else
+        else 
            write(*,'(4I6, 3x,A10)')&
              gcode(i), lcode(i), level1(i), level2(i), namvar(i)
         endif
      enddo
      write(*,'(//)')
   endif
-
+        
 end subroutine parse_table

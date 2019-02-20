@@ -3,7 +3,7 @@ MODULE module_get_file_names
 !  This module is used by the ndown program.  We can have multiple output
 !  files generated from the wrf program.  To remove the  what-are-the-
 !  files-to-input-to-ndown task from the user, we use a couple of UNIX
-!  commands.  These are activated from either the "system" command or
+!  commands.  These are activated from either the "system" command or 
 !  the "exec" command.  Neither is part of the Fortran standard.
 
    INTEGER :: number_of_eligible_files
@@ -26,7 +26,7 @@ CONTAINS
 !     USE module_dm
 
       IMPLICIT NONE
-
+     
       CHARACTER (LEN=*) , INTENT(IN) :: root
       INTEGER , INTENT(IN) :: id
 
@@ -49,20 +49,20 @@ CONTAINS
       monitor_only_code : IF ( wrf_dm_on_monitor() ) THEN
 
          loslen = LEN ( command )
-         CALL all_spaces ( command , loslen )
+         CALL all_spaces ( command , loslen ) 
          WRITE ( command , FMT='("ls -1 ",A,"*d",I2.2,"* > .foo")' ) TRIM ( root ) , id
-
-         !  We stuck all of the matching files in the ".foo" file.  Now we place the
+         
+         !  We stuck all of the matching files in the ".foo" file.  Now we place the 
          !  number of the those file (i.e. how many there are) in ".foo1".  Also, if we
          !  do get inside one of these CPP ifdefs, then we set our access flag to true.
 
 #ifdef NONSTANDARD_SYSTEM_SUBR
-         CALL SYSTEM ( TRIM ( command ) )
+         CALL SYSTEM ( TRIM ( command ) ) 
          CALL SYSTEM ( '( cat .foo | wc -l > .foo1 )' )
          unix_access_ok = .TRUE.
 #endif
 #ifdef NONSTANDARD_SYSTEM_FUNC
-         ierr = SYSTEM ( TRIM ( command ) )
+         ierr = SYSTEM ( TRIM ( command ) ) 
          ierr =  SYSTEM ( '( cat .foo | wc -l > .foo1 )' )
          unix_access_ok = .TRUE.
 #endif
@@ -163,7 +163,7 @@ print *,TRIM(eligible_file_name(loop))
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-   SUBROUTINE all_spaces ( command , length_of_char )
+   SUBROUTINE all_spaces ( command , length_of_char ) 
 
       IMPLICIT NONE
 
@@ -180,7 +180,7 @@ print *,TRIM(eligible_file_name(loop))
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
    SUBROUTINE init_module_get_file_names
-
+   
       IMPLICIT NONE
       eligible_file_name = '                                                  ' // &
                            '                                                  ' // &

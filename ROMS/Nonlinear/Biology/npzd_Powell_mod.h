@@ -1,7 +1,7 @@
 !
-!svn $Id: npzd_Powell_mod.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: npzd_Powell_mod.h 921 2018-09-06 18:27:34Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -31,9 +31,9 @@
 !  wDet      Detrital sinking rate, [m/day].                           !
 !  wPhy      Phytoplankton sinking rate, [m/day].                      !
 !  ZooEED    Zooplankton excretion efficiency to Detritus pool,        !
-!              [nondimensional].                                       !
+!              {nondimensional].                                       !
 !  ZooEEN    Zooplankton excretion efficiency to Nitrogen pool,        !
-!              [nondimensional].                                       !
+!              {nondimensional].                                       !
 !  ZooGR     Zooplankton grazing rate, [1/day].                        !
 !  ZooMRD    Zooplankton mortality rate to Detritus pool, [1/day].     !
 !  ZooMRN    Zooplankton mortality rate to Nitrogen pool, [1/day].     !
@@ -122,93 +122,141 @@
 !
       IF (.not.allocated(BioIter)) THEN
         allocate ( BioIter(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(AttPhy)) THEN
         allocate ( AttPhy(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(AttSW)) THEN
         allocate ( AttSW(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(DetRR)) THEN
         allocate ( DetRR(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(K_NO3)) THEN
         allocate ( K_NO3(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(Ivlev)) THEN
         allocate ( Ivlev(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(PARfrac)) THEN
         allocate ( PARfrac(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
 #ifdef TANGENT
       IF (.not.allocated(tl_PARfrac)) THEN
         allocate ( tl_PARfrac(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 #endif
+
 #ifdef ADJOINT
       IF (.not.allocated(ad_PARfrac)) THEN
         allocate ( ad_PARfrac(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 #endif
+
       IF (.not.allocated(PhyIS)) THEN
         allocate ( PhyIS(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(PhyMRD)) THEN
         allocate ( PhyMRD(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(PhyMRN)) THEN
         allocate ( PhyMRN(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(Vm_NO3)) THEN
         allocate ( Vm_NO3(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(wDet)) THEN
         allocate ( wDet(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
 #ifdef TANGENT
       IF (.not.allocated(tl_wDet)) THEN
         allocate ( tl_wDet(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 #endif
+
 #ifdef ADJOINT
       IF (.not.allocated(ad_wDet)) THEN
         allocate ( ad_wDet(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 #endif
+
       IF (.not.allocated(wPhy)) THEN
         allocate ( wPhy(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
 #ifdef TANGENT
       IF (.not.allocated(tl_wPhy)) THEN
         allocate ( tl_wPhy(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 #endif
+
 #ifdef ADJOINT
       IF (.not.allocated(ad_wPhy)) THEN
         allocate ( ad_wPhy(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 #endif
+
       IF (.not.allocated(ZooEED)) THEN
         allocate ( ZooEED(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(ZooEEN)) THEN
         allocate ( ZooEEN(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(ZooGR)) THEN
         allocate ( ZooGR(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(ZooMRD)) THEN
         allocate ( ZooMRD(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
       IF (.not.allocated(ZooMRN)) THEN
         allocate ( ZooMRN(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 !
 !  Allocate biological tracer vector.
 !
       IF (.not.allocated(idbio)) THEN
         allocate ( idbio(NBT) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 !
 !-----------------------------------------------------------------------

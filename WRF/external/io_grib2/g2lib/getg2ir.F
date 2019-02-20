@@ -47,7 +47,7 @@ C                  (=0 IF NO GRIB MESSAGES ARE FOUND)
 C     NMESS        LAST GRIB MESSAGE IN FILE SUCCESSFULLY PROCESSED
 C     IRET         INTEGER RETURN CODE
 C                    0      ALL OK
-C                    1      NOT ENOUGH MEMORY AVAILABLE TO HOLD FULL INDEX
+C                    1      NOT ENOUGH MEMORY AVAILABLE TO HOLD FULL INDEX 
 C                           BUFFER
 C                    2      NOT ENOUGH MEMORY TO ALLOCATE INITIAL INDEX BUFFER
 C

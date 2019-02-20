@@ -1,4 +1,4 @@
-function [cs,h]=m_contour(long,lat,data,varargin);
+function [cs,h]=m_contour(long,lat,data,varargin)
 %  M_CONTOUR Draws contour lines on a map
 %    M_CONTOUR(LONG,LAT,DATA,...) draw contours on a map. Behavior
 %    is the same as for CONTOUR except that LONG and LAT vectors or
@@ -22,14 +22,14 @@ global MAP_PROJECTION
 
 % Have to have initialized a map first
 
-if isempty(MAP_PROJECTION),
+if isempty(MAP_PROJECTION)
   disp('No Map Projection initialized - call M_PROJ first!');
   return;
-end;
+end
 
-if min(size(long))==1 & min(size(lat))==1,
+if min(size(long))==1 && min(size(lat))==1
  [long,lat]=meshgrid(long,lat);
-end;
+end
 
 [X,Y]=m_ll2xy(long,lat,'clip','on');
 
@@ -39,16 +39,16 @@ data(i)=NaN;
                  % And then recompute positions without clipping. THis
                  % is necessary otherwise contouring fails (X/Y with NaN
                  % is a no-no. 
-if any(i(:)), [X,Y]=m_ll2xy(long,lat,'clip','off'); end;  
+if any(i(:)), [X,Y]=m_ll2xy(long,lat,'clip','off'); end 
 
-if any(~i(:)),
+if any(~i(:))
  [cs,h]=contour(X,Y,data,varargin{:});
  set(h,'tag','m_contour');
 else
   cs=[];h=[];
-end;
+end
 
-if nargout==0,
+if nargout==0
  clear cs h
-end;
+end
 

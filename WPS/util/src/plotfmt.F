@@ -5,7 +5,7 @@ program plotfmt
   implicit none
 !
 ! Utility program to plot up files created by pregrid / SI / ungrib.
-! Uses NCAR graphics routines.  If you don't have NCAR Graphics, you're
+! Uses NCAR graphics routines.  If you don't have NCAR Graphics, you're 
 ! out of luck.
 !
    INTEGER :: istatus
@@ -134,7 +134,7 @@ subroutine plt2d(tcr2d, iz, jz, llflag, &
   real, allocatable,dimension(:,:)  :: scr2d
   logical :: is_used, lexist
   namelist /plotfmt/ ix, jx, ioff, joff
-
+  
 ! This version allows the plotting of subsets of a lat/lon grid (i.e. NCEP GFS).
 ! ix,jx are the dimensions of the subset. ioff,joff are the offsets from 1,1
 
@@ -174,7 +174,7 @@ subroutine plt2d(tcr2d, iz, jz, llflag, &
     joff = 0
   endif
 ! compute upper left point for the map   (works for NCEP GFS and godas)
-  pl1 = lat1 + (joff*dy)
+  pl1 = lat1 + (joff*dy)  
   pl2 = lon1 + (ioff*dx)
 
   allocate (scr2d(ix,jx))
@@ -214,7 +214,7 @@ subroutine plt2d(tcr2d, iz, jz, llflag, &
      rota = truelat2
      iproj=3
 ! This never used to be a problem, but currently we seem to need
-! truelat1 (in plat) differ from truelat2 (in rota) for the
+! truelat1 (in plat) differ from truelat2 (in rota) for the 
 ! NCAR-Graphics map routines to work.  Maybe it's just a compiler
 ! thing.  So if the truelats are the same, we add an epsilon:
      if (abs(plat - rota) < 1.E-8) then
@@ -352,7 +352,7 @@ subroutine fmtxyll(x, y, xlat, xlon, project, glat1, glon1, gclon,&
 
      xlat = glat1 + gdy*(y-1.)
      xlon = glon1 + gdx*(x-1.)
-
+     
   elseif (project == "ME") then
 
      gt = grrth * cos(gtrue1*degran)

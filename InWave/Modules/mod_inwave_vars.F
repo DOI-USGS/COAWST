@@ -266,7 +266,7 @@
           WAVEP(ng) % ct(i,j,ND+1)=IniVal
         END DO
       END DO
-
+ 
       IF (allocated(ac_ini)) deallocate(ac_ini)
       IF (allocated(cx_ini)) deallocate(cx_ini)
       IF (allocated(cy_ini)) deallocate(cy_ini)

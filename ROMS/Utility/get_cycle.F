@@ -4,9 +4,9 @@
      &                      Tid, Lcycle, clength, Tindex,               &
      &                      Tstr, Tend, Tmin, Tmax, Tscale)
 !
-!svn $Id: get_cycle.F 885 2017-12-27 23:18:30Z arango $
+!svn $Id: get_cycle.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -80,9 +80,9 @@
 
       integer, intent(out) :: Tindex, Tid
 
-      real(r8), intent(in) :: smday
+      real(dp), intent(in) :: smday
 
-      real(r8), intent(out) :: Tmax, Tmin, Tend, Tscale, Tstr, clength
+      real(dp), intent(out) :: Tmax, Tmin, Tend, Tscale, Tstr, clength
 
       character (len=*), intent(in) :: ncname
       character (len=*), intent(in) :: TvarName
@@ -94,8 +94,8 @@
 
       integer :: i, nvatt, nvdim
 
-      real(r8) :: mday, tstart
-      real(r8) :: Tval(ntime)
+      real(dp) :: mday, tstart
+      real(dp) :: Tval(ntime)
 
       character (len=40) :: tunits
 !
@@ -166,8 +166,8 @@
 !
 !  Read in time variable values.
 !
-      CALL netcdf_get_fvar (ng, model, ncname, TvarName,                &
-     &                      Tval,                                       &
+      CALL netcdf_get_time (ng, model, ncname, TvarName,                &
+     &                      Rclock%DateNumber, Tval,                    &
      &                      ncid = ncid,                                &
      &                      start = (/1/),                              &
      &                      total = (/ntime/),                          &

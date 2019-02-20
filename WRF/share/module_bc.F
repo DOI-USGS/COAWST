@@ -1,13 +1,3 @@
-#if ( HYBRID_COORD==1 )
-#define mu_2(...) (c1(k)*XXPC2XX(__VA_ARGS__))
-#define XXPC2XX(...) mu_2(__VA_ARGS__)
-
-#define mub(...) (c1(k)*XXPCBXX(__VA_ARGS__)+c2(k))
-#define XXPCBXX(...) mub(__VA_ARGS__)
-
-#define mu(...) (c1(k)*XXPCXX(__VA_ARGS__)+c2(k))
-#define XXPCXX(...) mu(__VA_ARGS__)
-#endif
 
 !WRF:MODEL_LAYER:BOUNDARY
 !
@@ -191,7 +181,7 @@ CONTAINS
                         (config_flags%h_mom_adv_order+1)/2, &
                         (config_flags%h_sca_adv_order+1)/2 )
 
-       IF( bzone < bzone_min) THEN
+       IF( bzone < bzone_min) THEN  
 
          error = 2
          WRITE ( wrf_err_message , * ) ' boundary zone not large enough '
@@ -214,7 +204,7 @@ CONTAINS
                                  ids,ide, jds,jde,   & ! domain dims
                                  ims,ime, jms,jme,   & ! memory dims
                                  ips,ipe, jps,jpe,   & ! patch  dims
-                                 its,ite, jts,jte   )
+                                 its,ite, jts,jte   )      
 
 !  This subroutine sets the data in the boundary region, by direct
 !  assignment if possible, for periodic and symmetric (wall)
@@ -274,7 +264,7 @@ CONTAINS
       config_flags%periodic_x,  &
       config_flags%periodic_y
       end if
-
+      
       IF ( variable == 'd' ) then  !JDM
          istag = 0
          jstag = 0
@@ -445,7 +435,7 @@ CONTAINS
 !  Set the starting and ending loop indexes in the 'i' direction, so that
 !  halo cells on the edge of the domain are also updated.  Begin with a default
 !  start and end index for inner tiles, and then modify if the tile is on the
-!  edge of the domain.
+!  edge of the domain.  
 
         istart = MAX(ids, its-1)
         iend = MIN(ite+1, ide+istag)
@@ -505,7 +495,7 @@ CONTAINS
                 !DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
                 DO i = istart, iend
                   dat(i,jds-j) = - dat(i,jds+j)
-                ENDDO
+                ENDDO              
               ENDDO
 
             ELSE
@@ -514,7 +504,7 @@ CONTAINS
                 !DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
                 DO i = istart, iend
                   dat(i,jds-j) = dat(i,jds+j)
-                ENDDO
+                ENDDO              
               ENDDO
 
             END IF
@@ -534,7 +524,7 @@ CONTAINS
               !DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
               DO i = istart, iend
                 dat(i,jde+j-1) = dat(i,jde-j)
-              ENDDO
+              ENDDO                               
             ENDDO
 
           ELSE
@@ -545,7 +535,7 @@ CONTAINS
                 !DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
                 DO i = istart, iend
                   dat(i,jde+j) = - dat(i,jde-j)    ! bugfix: changed jds on rhs to jde , JM 20020410
-                ENDDO
+                ENDDO                               
               ENDDO
 
             ELSE
@@ -554,7 +544,7 @@ CONTAINS
                 !DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
                 DO i = istart, iend
                   dat(i,jde+j) = dat(i,jde-j)
-                ENDDO
+                ENDDO                               
               ENDDO
 
             END IF
@@ -595,7 +585,7 @@ CONTAINS
               dat(i,jde  ) = dat(i,jde-1)
               dat(i,jde+1) = dat(i,jde-1)
               dat(i,jde+2) = dat(i,jde-1)
-            ENDDO
+            ENDDO                               
 
           ELSE
 
@@ -604,12 +594,12 @@ CONTAINS
               dat(i,jde+1) = dat(i,jde)
               dat(i,jde+2) = dat(i,jde)
               dat(i,jde+3) = dat(i,jde)
-            ENDDO
+            ENDDO                               
 
           ENDIF
 
         END IF open_ye
-
+      
 !  end open b.c in Y copy into boundary zone addition.  WCS, 19 March 2000
 
       END IF periodicity_y
@@ -745,7 +735,7 @@ CONTAINS
       config_flags%periodic_x,  &
       config_flags%periodic_y
       end if
-
+      
 
 
 !  periodic conditions.
@@ -976,7 +966,7 @@ CONTAINS
             DO k = kts, k_end
             DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
               dat(i,k,jds-j) = dat(i,k,jds+j-1)
-            ENDDO
+            ENDDO                               
             ENDDO
             ENDDO
 
@@ -988,7 +978,7 @@ CONTAINS
               DO k = kts, k_end
               DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
                 dat(i,k,jds-j) = - dat(i,k,jds+j)
-              ENDDO
+              ENDDO              
               ENDDO
               ENDDO
 
@@ -998,7 +988,7 @@ CONTAINS
               DO k = kts, k_end
               DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
                 dat(i,k,jds-j) = dat(i,k,jds+j)
-              ENDDO
+              ENDDO              
               ENDDO
               ENDDO
 
@@ -1019,7 +1009,7 @@ CONTAINS
             DO k = kts, k_end
             DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
               dat(i,k,jde+j-1) = dat(i,k,jde-j)
-            ENDDO
+            ENDDO                               
             ENDDO
             ENDDO
 
@@ -1031,7 +1021,7 @@ CONTAINS
               DO k = kts, k_end
               DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
                 dat(i,k,jde+j) = - dat(i,k,jde-j)
-              ENDDO
+              ENDDO                               
               ENDDO
               ENDDO
 
@@ -1041,7 +1031,7 @@ CONTAINS
               DO k = kts, k_end
               DO i = MAX(ids,its-1), MIN(ite+1,ide+istag)
                 dat(i,k,jde+j) = dat(i,k,jde-j)
-              ENDDO
+              ENDDO                               
               ENDDO
               ENDDO
 
@@ -1050,7 +1040,7 @@ CONTAINS
           ENDIF
 
         END IF symmetry_ye
-
+      
 !  set open b.c in Y copy into boundary zone here.  WCS, 19 March 2000
 
         open_ys: IF( ( config_flags%open_ys   .or. &
@@ -1084,7 +1074,7 @@ CONTAINS
               dat(i,k,jde  ) = dat(i,k,jde-1)
               dat(i,k,jde+1) = dat(i,k,jde-1)
               dat(i,k,jde+2) = dat(i,k,jde-1)
-            ENDDO
+            ENDDO                               
             ENDDO
 
           ELSE
@@ -1094,7 +1084,7 @@ CONTAINS
               dat(i,k,jde+1) = dat(i,k,jde)
               dat(i,k,jde+2) = dat(i,k,jde)
               dat(i,k,jde+3) = dat(i,k,jde)
-            ENDDO
+            ENDDO                               
             ENDDO
 
           ENDIF
@@ -1277,7 +1267,7 @@ CONTAINS
                                 )
 
 !  This subroutine adds the tendencies in the boundary relaxation region, for specified
-!  boundary conditions.
+!  boundary conditions.  
 !  spec_bdy_width is only used to dimension the boundary arrays.
 !  relax_zone is the inner edge of the boundary relaxation zone treated here.
 !  spec_zone is the width of the outer specified b.c.s that are not changed here.
@@ -1590,13 +1580,13 @@ CONTAINS
     ENDIF
 
    END SUBROUTINE spec_bdytend
-
+   
 !------------------------------------------------------------------------
 ! KRS 9/13/2012: New subroutine spec_bdytend_perturb.
-! Reads in field_tend_perturb from dyn_em/module_bc_em.F
+! Reads in field_tend_perturb from dyn_em/module_bc_em.F  
 ! field_tend_perturb=r*_tendf_stoch if perturb_bdy=1
 ! field_tend_perturb=User provided pattern if perturb_bdy=2
-! User can fill array in this subroutine.
+! User can fill array in this subroutine.   
 ! Adds perturbations to boundaries. Outputs field_tend (e.g. ru_tend).
 ! mu_2, mub, and msf* passed into subrountine couple variables.
 !------------------------------------------------------------------------
@@ -1633,7 +1623,7 @@ CONTAINS
       REAL,  DIMENSION( ims:ime ,                 jms:jme ), INTENT(IN   )   :: mub
       REAL,  DIMENSION( ims:ime ,                 jms:jme ), INTENT(IN   )   :: msf
       REAL,  DIMENSION(           kms:kme                 ), INTENT(IN   )   :: c1, c2
-
+   
       TYPE( grid_config_rec_type ) config_flags
 
       CHARACTER  :: variable
@@ -1675,17 +1665,17 @@ CONTAINS
             IF (variable == 't') THEN
               field_tend(i,k,j) = field_tend(i,k,j) + &
                                   field_tend_perturb(i,min(k,kme_stoch),j) * &
-                                  (mu_2(i,j)+mub(i,j))
+                                  ((c1(k)*mu_2(i,j))+(c1(k)*mub(i,j)+c2(k)))
             ENDIF
             IF (variable == 'u') THEN
               field_tend(i,k,j) = field_tend(i,k,j) + &
                                   field_tend_perturb(i,min(k,kme_stoch),j) * &
-                                  0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
+                                  0.5*((c1(k)*mu_2(i,j))+(c1(k)*mu_2(i-1,j)) + (c1(k)*mub(i,j)+c2(k))+(c1(k)*mub(i-1,j)+c2(k))) / msf(i,j)
             ENDIF
             IF (variable == 'v') THEN
               field_tend(i,k,j) = field_tend(i,k,j) + &
                                   field_tend_perturb(i,min(k,kme_stoch),j) * &
-                                  0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
+                                  0.5*((c1(k)*mu_2(i,j))+(c1(k)*mu_2(i,j-1)) + (c1(k)*mub(i,j)+c2(k))+(c1(k)*mub(i,j-1)+c2(k))) / msf(i,j)
             ENDIF
             ENDDO
           ENDDO
@@ -1703,17 +1693,17 @@ CONTAINS
             DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
             IF (variable == 't') THEN
               field_tend(i,k,j) = field_tend(i,k,j) + &
-                                  field_tend_perturb(i,min(k,kme_stoch),j) * (mu_2(i,j)+mub(i,j))
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * ((c1(k)*mu_2(i,j))+(c1(k)*mub(i,j)+c2(k)))
             ENDIF
             IF (variable == 'u') THEN
               field_tend(i,k,j) = field_tend(i,k,j) + &
-                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*((c1(k)*mu_2(i,j))+(c1(k)*mu_2(i-1,j)) + (c1(k)*mub(i,j)+c2(k))+(c1(k)*mub(i-1,j)+c2(k))) / msf(i,j)
             ENDIF
             IF (variable == 'v') THEN
               field_tend(i,k,j) = field_tend(i,k,j) + &
-                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*((c1(k)*mu_2(i,j))+(c1(k)*mu_2(i,j-1)) + (c1(k)*mub(i,j)+c2(k))+(c1(k)*mub(i,j-1)+c2(k))) / msf(i,j)
             ENDIF
-	    ENDDO
+     ENDDO
           ENDDO
         ENDDO
       ENDIF
@@ -1727,15 +1717,15 @@ CONTAINS
             DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
             IF (variable == 't') THEN
               field_tend(i,k,j) = field_tend(i,k,j) + &
-                                  field_tend_perturb(i,min(k,kme_stoch),j) * (mu_2(i,j)+mub(i,j))
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * ((c1(k)*mu_2(i,j))+(c1(k)*mub(i,j)+c2(k)))
             ENDIF
             IF (variable == 'u') THEN
               field_tend(i,k,j) = field_tend(i,k,j) + &
-                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*((c1(k)*mu_2(i,j))+(c1(k)*mu_2(i-1,j)) + (c1(k)*mub(i,j)+c2(k))+(c1(k)*mub(i-1,j)+c2(k))) / msf(i,j)
             ENDIF
             IF (variable == 'v') THEN
               field_tend(i,k,j) = field_tend(i,k,j) + &
-                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*((c1(k)*mu_2(i,j))+(c1(k)*mu_2(i,j-1)) + (c1(k)*mub(i,j)+c2(k))+(c1(k)*mub(i,j-1)+c2(k))) / msf(i,j)
             ENDIF
             ENDDO
           ENDDO
@@ -1750,15 +1740,15 @@ CONTAINS
             DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
             IF (variable == 't') THEN
               field_tend(i,k,j) = field_tend(i,k,j) + &
-                                  field_tend_perturb(i,min(k,kme_stoch),j) * (mu_2(i,j)+mub(i,j))
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * ((c1(k)*mu_2(i,j))+(c1(k)*mub(i,j)+c2(k)))
             ENDIF
             IF (variable == 'u') THEN
               field_tend(i,k,j) = field_tend(i,k,j) + &
-                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*(mu_2(i,j)+mu_2(i-1,j) + mub(i,j)+mub(i-1,j)) / msf(i,j)
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*((c1(k)*mu_2(i,j))+(c1(k)*mu_2(i-1,j)) + (c1(k)*mub(i,j)+c2(k))+(c1(k)*mub(i-1,j)+c2(k))) / msf(i,j)
             ENDIF
             IF (variable == 'v') THEN
               field_tend(i,k,j) = field_tend(i,k,j) + &
-                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*(mu_2(i,j)+mu_2(i,j-1) + mub(i,j)+mub(i,j-1)) / msf(i,j)
+                                  field_tend_perturb(i,min(k,kme_stoch),j) * 0.5*((c1(k)*mu_2(i,j))+(c1(k)*mu_2(i,j-1)) + (c1(k)*mub(i,j)+c2(k))+(c1(k)*mub(i,j-1)+c2(k))) / msf(i,j)
             ENDIF
             ENDDO
           ENDDO
@@ -2197,7 +2187,7 @@ CONTAINS
               bfield = field_bdy_ys(i, k, b_dist+1) &
                    + dtbc * field_bdy_tend_ys(i, k, b_dist+1)
               if(msfcouple)xmsf = msf(i,j)
-              if(mucouple)xmu = mu(i,j)
+              if(mucouple)xmu = (c1(k)*mu(i,j)+c2(k))
               field(i,k,j) = xmsf*bfield/xmu
             ENDDO
           ENDDO
@@ -2215,7 +2205,7 @@ CONTAINS
               bfield = field_bdy_ye(i, k, b_dist+1) &
                    + dtbc * field_bdy_tend_ye(i, k, b_dist+1)
               if(msfcouple)xmsf = msf(i,j)
-              if(mucouple)xmu = mu(i,j)
+              if(mucouple)xmu = (c1(k)*mu(i,j)+c2(k))
               field(i,k,j) = xmsf*bfield/xmu
             ENDDO
           ENDDO
@@ -2232,7 +2222,7 @@ CONTAINS
               bfield = field_bdy_xs(j, k, b_dist+1) &
                    + dtbc * field_bdy_tend_xs(j, k, b_dist+1)
               if(msfcouple)xmsf = msf(i,j)
-              if(mucouple)xmu = mu(i,j)
+              if(mucouple)xmu = (c1(k)*mu(i,j)+c2(k))
               field(i,k,j) = xmsf*bfield/xmu
             ENDDO
           ENDDO
@@ -2248,7 +2238,7 @@ CONTAINS
               bfield = field_bdy_xe(j, k, b_dist+1) &
                    + dtbc * field_bdy_tend_xe(j, k, b_dist+1)
               if(msfcouple)xmsf = msf(i,j)
-              if(mucouple)xmu = mu(i,j)
+              if(mucouple)xmu = (c1(k)*mu(i,j)+c2(k))
               field(i,k,j) = xmsf*bfield/xmu
             ENDDO
           ENDDO
@@ -2563,7 +2553,7 @@ CONTAINS
             ENDDO
           ENDDO
         ENDDO
-      ENDIF
+      ENDIF   
       IF (jbe - jtf .lt. spec_zone) THEN
 ! Y-end boundary
         DO j = max(jts,jbe-spec_zone+1), jtf
@@ -2638,7 +2628,7 @@ CONTAINS
  !  for the lateral boundary arrays.
 
     USE module_state_description
-
+    
     IMPLICIT NONE
 
     INTEGER , INTENT(IN) :: ids, ide, jds, jde, kds, kde
@@ -2823,7 +2813,7 @@ CONTAINS
        END DO
        END DO
     END IF
-
+    
  END SUBROUTINE stuff_bdy_new
 
  SUBROUTINE stuff_bdytend_new ( data3dnew , data3dold , time_diff , &
@@ -2838,7 +2828,7 @@ CONTAINS
  !  for the lateral boundary arrays.
 
     USE module_state_description
-
+    
     IMPLICIT NONE
 
     INTEGER , INTENT(IN) :: ids, ide, jds, jde, kds, kde
@@ -3035,7 +3025,7 @@ CONTAINS
        END DO
     END IF
 #endif
-
+    
  END SUBROUTINE stuff_bdytend_new
 
 !--- old versions for use with modules that use the old bdy data structures ---
@@ -3050,7 +3040,7 @@ CONTAINS
  !  for the lateral boundary arrays.
 
     USE module_state_description
-
+    
     IMPLICIT NONE
 
     INTEGER , INTENT(IN) :: ids, ide, jds, jde, kds, kde
@@ -3234,7 +3224,7 @@ CONTAINS
        END DO
        END DO
     END IF
-
+    
  END SUBROUTINE stuff_bdy_old
 
  SUBROUTINE stuff_bdytend_old ( data3dnew , data3dold , time_diff , space_bdy , char_stagger , &
@@ -3247,7 +3237,7 @@ CONTAINS
  !  for the lateral boundary arrays.
 
     USE module_state_description
-
+    
     IMPLICIT NONE
 
     INTEGER , INTENT(IN) :: ids, ide, jds, jde, kds, kde
@@ -3451,7 +3441,7 @@ CONTAINS
        END DO
        END DO
     END IF
-
+    
  END SUBROUTINE stuff_bdytend_old
 
  SUBROUTINE stuff_bdy_ijk ( data3d , space_bdy_xs, space_bdy_xe, &
@@ -3465,7 +3455,7 @@ CONTAINS
  !  for the lateral boundary arrays.
 
     USE module_state_description
-
+    
     IMPLICIT NONE
 
     INTEGER , INTENT(IN) :: ids, ide, jds, jde, kds, kde
@@ -3649,14 +3639,14 @@ CONTAINS
           jj = jde - j
           space_bdy_ye(i,k,jj) = data3d(i,j,k)
 !        if (K .eq. 54 .and. I .eq. 369) then
-!	write(0,*) 'N bound i,k,jj,P_YEB,data3d,space_bdy: ', i,k,jj,P_YEB,data3d(I,j,k),space_bdy(i,k,jj,P_YEB,1)
-!	endif
+! write(0,*) 'N bound i,k,jj,P_YEB,data3d,space_bdy: ', i,k,jj,P_YEB,data3d(I,j,k),space_bdy(i,k,jj,P_YEB,1)
+! endif
 
        END DO
        END DO
        END DO
     END IF
-
+    
  END SUBROUTINE stuff_bdy_ijk
 
  SUBROUTINE stuff_bdytend_ijk ( data3dnew , data3dold , time_diff , &
@@ -3671,7 +3661,7 @@ CONTAINS
  !  for the lateral boundary arrays.
 
     USE module_state_description
-
+    
     IMPLICIT NONE
 
     INTEGER , INTENT(IN) :: ids, ide, jds, jde, kds, kde
@@ -3856,14 +3846,750 @@ CONTAINS
           jj = jde - j
           space_bdy_ye(i,k,jj) = ( data3dnew(i,j,k) - data3dold(i,j,k) ) / time_diff
 !        if (K .eq. 54 .and. I .eq. 369) then
-!	write(0,*) 'N bound i,k,jj,data3dnew,data3dold: ', i,k,jj,data3dnew(I,j,k),data3dold(i,j,k)
-!	endif
+! write(0,*) 'N bound i,k,jj,data3dnew,data3dold: ', i,k,jj,data3dnew(I,j,k),data3dold(i,j,k)
+! endif
+       END DO
+       END DO
+       END DO
+    END IF
+    
+ END SUBROUTINE stuff_bdytend_ijk
+
+#if ( WRFPLUS == 1 )
+!------------------------------------------------------------------------
+
+   SUBROUTINE couple_bdy ( field,      &
+                           variable_in, config_flags, & 
+                           spec_zone,  &
+                           mu, msf,    &
+                           ids,ide, jds,jde, kds,kde,  & ! domain dims
+                           ims,ime, jms,jme, kms,kme,  & ! memory dims
+                           ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                           its,ite, jts,jte, kts,kte )
+
+!  This subroutine adds the tendencies in the boundary specified region.
+!  spec_zone is the width of the outer specified b.c.s that are set here.
+!  (JD August 2000)
+
+      IMPLICIT NONE
+
+      INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+      INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
+      INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
+      INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+      INTEGER,      INTENT(IN   )    :: spec_zone
+      CHARACTER,    INTENT(IN   )    :: variable_in
+      REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: mu
+      REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: msf
+      REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: field
+      TYPE( grid_config_rec_type ) config_flags
+
+      CHARACTER  :: variable
+      INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf
+      INTEGER    :: b_dist, b_limit
+      LOGICAL    :: periodic_x
+
+      periodic_x = config_flags%periodic_x
+
+      variable = variable_in
+
+      IF (variable == 'U') variable = 'u'
+      IF (variable == 'V') variable = 'v'
+      IF (variable == 'T') variable = 't'
+      IF (variable == 'H') variable = 'h'
+      IF (variable == 'W') variable = 'w'
+
+      ibs = ids
+      ibe = ide-1
+      itf = min(ite,ide-1)
+      jbs = jds
+      jbe = jde-1
+      jtf = min(jte,jde-1)
+      ktf = kde-1
+      IF (variable == 'u') ibe = ide
+      IF (variable == 'u') itf = min(ite,ide)
+      IF (variable == 'v') jbe = jde
+      IF (variable == 'v') jtf = min(jte,jde)
+      IF (variable == 'h') ktf = kte
+      IF (variable == 'w') ktf = kte
+
+      IF (jts - jbs .lt. spec_zone) THEN
+! Y-start boundary
+        DO j = jts, min(jtf,jbs+spec_zone-1)
+          b_dist = j - jbs
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              if (variable == 't' .or. variable == 'h') then 
+                 field(i,k,j) = field(i,k,j)*mu(i,j)
+              else 
+                 field(i,k,j) = field(i,k,j)*mu(i,j)/msf(i,j)
+              end if
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+      IF (jbe - jtf .lt. spec_zone) THEN 
+! Y-end boundary 
+        DO j = max(jts,jbe-spec_zone+1), jtf 
+          b_dist = jbe - j 
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf 
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              if (variable == 't' .or. variable == 'h') then 
+                 field(i,k,j) = field(i,k,j)*mu(i,j)
+              else 
+                 field(i,k,j) = field(i,k,j)*mu(i,j)/msf(i,j)
+              end if
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+
+    IF(.NOT.periodic_x)THEN
+      IF (its - ibs .lt. spec_zone) THEN
+! X-start boundary
+        DO i = its, min(itf,ibs+spec_zone-1)
+          b_dist = i - ibs
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              if (variable == 't' .or. variable == 'h') then 
+                 field(i,k,j) = field(i,k,j)*mu(i,j)
+              else 
+                 field(i,k,j) = field(i,k,j)*mu(i,j)/msf(i,j)
+              end if
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+
+      IF (ibe - itf .lt. spec_zone) THEN
+! X-end boundary
+        DO i = max(its,ibe-spec_zone+1), itf
+          b_dist = ibe - i
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              if (variable == 't' .or. variable == 'h') then 
+                 field(i,k,j) = field(i,k,j)*mu(i,j)
+              else 
+                 field(i,k,j) = field(i,k,j)*mu(i,j)/msf(i,j)
+              end if
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+    ENDIF
+
+   END SUBROUTINE couple_bdy
+
+!------------------------------------------------------------------------
+
+   SUBROUTINE uncouple_bdy ( field,      &
+                             variable_in, config_flags, & 
+                             spec_zone,  &
+                             mu, msf,    &
+                             ids,ide, jds,jde, kds,kde,  & ! domain dims
+                             ims,ime, jms,jme, kms,kme,  & ! memory dims
+                             ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
+                             its,ite, jts,jte, kts,kte )
+
+!  This subroutine adds the tendencies in the boundary specified region.
+!  spec_zone is the width of the outer specified b.c.s that are set here.
+!  (JD August 2000)
+
+      IMPLICIT NONE
+
+      INTEGER,      INTENT(IN   )    :: ids,ide, jds,jde, kds,kde
+      INTEGER,      INTENT(IN   )    :: ims,ime, jms,jme, kms,kme
+      INTEGER,      INTENT(IN   )    :: ips,ipe, jps,jpe, kps,kpe
+      INTEGER,      INTENT(IN   )    :: its,ite, jts,jte, kts,kte
+      INTEGER,      INTENT(IN   )    :: spec_zone
+      CHARACTER,    INTENT(IN   )    :: variable_in
+      REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: mu
+      REAL, DIMENSION( ims:ime , jms:jme ),    INTENT(IN   ) :: msf
+      REAL, DIMENSION( ims:ime , kms:kme , jms:jme ), INTENT(INOUT) :: field
+      TYPE( grid_config_rec_type ) config_flags
+
+      CHARACTER  :: variable
+      INTEGER    :: i, j, k, ibs, ibe, jbs, jbe, itf, jtf, ktf
+      INTEGER    :: b_dist, b_limit
+      LOGICAL    :: periodic_x
+
+      periodic_x = config_flags%periodic_x
+
+      variable = variable_in
+
+      IF (variable == 'U') variable = 'u'
+      IF (variable == 'V') variable = 'v'
+      IF (variable == 'T') variable = 't'
+      IF (variable == 'H') variable = 'h'
+      IF (variable == 'W') variable = 'w'
+
+      ibs = ids
+      ibe = ide-1
+      itf = min(ite,ide-1)
+      jbs = jds
+      jbe = jde-1
+      jtf = min(jte,jde-1)
+      ktf = kde-1
+      IF (variable == 'u') ibe = ide
+      IF (variable == 'u') itf = min(ite,ide)
+      IF (variable == 'v') jbe = jde
+      IF (variable == 'v') jtf = min(jte,jde)
+      IF (variable == 'h') ktf = kte
+      IF (variable == 'w') ktf = kte
+
+      IF (jts - jbs .lt. spec_zone) THEN
+! Y-start boundary
+        DO j = jts, min(jtf,jbs+spec_zone-1)
+          b_dist = j - jbs
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              if (variable == 't' .or. variable == 'h') then 
+                 field(i,k,j) = field(i,k,j)/mu(i,j)
+              else 
+                 field(i,k,j) = field(i,k,j)/mu(i,j)*msf(i,j)
+              end if
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+      IF (jbe - jtf .lt. spec_zone) THEN 
+! Y-end boundary 
+        DO j = max(jts,jbe-spec_zone+1), jtf 
+          b_dist = jbe - j 
+          b_limit = b_dist
+          IF(periodic_x)b_limit = 0
+          DO k = kts, ktf 
+            DO i = max(its,b_limit+ibs), min(itf,ibe-b_limit)
+              if (variable == 't' .or. variable == 'h') then 
+                 field(i,k,j) = field(i,k,j)/mu(i,j)
+              else 
+                 field(i,k,j) = field(i,k,j)/mu(i,j)*msf(i,j)
+              end if
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+
+    IF(.NOT.periodic_x)THEN
+      IF (its - ibs .lt. spec_zone) THEN
+! X-start boundary
+        DO i = its, min(itf,ibs+spec_zone-1)
+          b_dist = i - ibs
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              if (variable == 't' .or. variable == 'h') then 
+                 field(i,k,j) = field(i,k,j)/mu(i,j)
+              else 
+                 field(i,k,j) = field(i,k,j)/mu(i,j)*msf(i,j)
+              end if
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+
+      IF (ibe - itf .lt. spec_zone) THEN
+! X-end boundary
+        DO i = max(its,ibe-spec_zone+1), itf
+          b_dist = ibe - i
+          DO k = kts, ktf
+            DO j = max(jts,b_dist+jbs+1), min(jtf,jbe-b_dist-1)
+              if (variable == 't' .or. variable == 'h') then 
+                 field(i,k,j) = field(i,k,j)/mu(i,j)
+              else 
+                 field(i,k,j) = field(i,k,j)/mu(i,j)*msf(i,j)
+              end if
+            ENDDO
+          ENDDO
+        ENDDO
+      ENDIF 
+    ENDIF
+
+   END SUBROUTINE uncouple_bdy
+
+!---------------------------------------
+ SUBROUTINE bdy_fields_halo (data3du, data3dv, data3dt, data3dph, data3dmu, &
+                             data3dm, dir, xy, spec_bdy_width,              &
+                             u_bxs,  u_bxe,  u_bys,  u_bye,                 &
+                             v_bxs,  v_bxe,  v_bys,  v_bye,                 &
+                             t_bxs,  t_bxe,  t_bys,  t_bye,                 &
+                             ph_bxs, ph_bxe, ph_bys, ph_bye,                &
+                             mu_bxs, mu_bxe, mu_bys, mu_bye,                &
+                             moist_bxs, moist_bxe, moist_bys, moist_bye,    &
+                             ids, ide, jds, jde, kds, kde ,                 &
+                             ims, ime, jms, jme, kms, kme ,                 &
+                             its, ite, jts, jte, kts, kte )
+
+    USE module_state_description
+       
+    IMPLICIT NONE
+
+    INTEGER , INTENT(IN) :: ids, ide, jds, jde, kds, kde
+    INTEGER , INTENT(IN) :: ims, ime, jms, jme, kms, kme
+    INTEGER , INTENT(IN) :: its, ite, jts, jte, kts, kte
+    INTEGER , INTENT(IN) :: spec_bdy_width
+    INTEGER , INTENT(IN) :: dir ! 0----pack ; 1----unpack
+    INTEGER , INTENT(IN) :: xy  ! 0----X ; 1----Y
+    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT) :: data3du , data3dv, data3dt, &
+                                                                 data3dph, data3dm
+    REAL , DIMENSION(ims:ime,jms:jme) , INTENT(INOUT) :: data3dmu
+    REAL , DIMENSION(jms:jme,kds:kde,spec_bdy_width) , INTENT(INOUT) :: u_bxs, u_bxe, v_bxs, v_bxe, &
+                                                                        t_bxs, t_bxe, ph_bxs, ph_bxe, &
+                                                                        moist_bxs, moist_bxe
+    REAL , DIMENSION(jms:jme,1:1,spec_bdy_width) , INTENT(INOUT) :: mu_bxs, mu_bxe
+    REAL , DIMENSION(ims:ime,kds:kde,spec_bdy_width) , INTENT(INOUT) :: u_bys, u_bye, v_bys, v_bye, &
+                                                                        t_bys, t_bye, ph_bys, ph_bye, &
+                                                                        moist_bys, moist_bye
+    REAL , DIMENSION(ims:ime,1:1,spec_bdy_width) , INTENT(INOUT) :: mu_bys, mu_bye
+
+   CALL bdy_fields_pack ( data3du, u_bxs, u_bxe, u_bys, u_bye,        &
+                                    'U' , dir, xy, spec_bdy_width,    &
+                                    ids, ide, jds, jde, kds, kde,     &
+                                    ims, ime, jms, jme, kms, kme,     &
+                                    its, ite, jts, jte, kts, kte      )
+
+   CALL bdy_fields_pack ( data3dv, v_bxs, v_bxe, v_bys, v_bye,        &
+                                    'V' , dir, xy, spec_bdy_width,    &
+                                    ids, ide, jds, jde, kds, kde,     &
+                                    ims, ime, jms, jme, kms, kme,     &
+                                    its, ite, jts, jte, kts, kte      )
+
+   CALL bdy_fields_pack ( data3dt , t_bxs, t_bxe, t_bys, t_bye,       &
+                                    'T' , dir, xy, spec_bdy_width,    &
+                                    ids, ide, jds, jde, kds, kde,     &
+                                    ims, ime, jms, jme, kms, kme,     &
+                                    its, ite, jts, jte, kts, kte      )
+   
+   CALL bdy_fields_pack ( data3dph , ph_bxs, ph_bxe, ph_bys, ph_bye,  &
+                                    'W' , dir, xy, spec_bdy_width,    &
+                                    ids, ide, jds, jde, kds, kde,     &
+                                    ims, ime, jms, jme, kms, kme,     &
+                                    its, ite, jts, jte, kts, kte      )
+
+   CALL bdy_fields_pack ( data3dmu , mu_bxs, mu_bxe, mu_bys, mu_bye,  &
+                                    'M' , dir, xy, spec_bdy_width  ,  &
+                                    ids, ide, jds, jde, 1  , 1  ,     &
+                                    ims, ime, jms, jme, 1  , 1  ,     &
+                                    its, ite, jts, jte, 1  , 1        )
+
+   CALL bdy_fields_pack ( data3dm , moist_bxs, moist_bxe, moist_bys, moist_bye,       &
+                                    'T' , dir, xy, spec_bdy_width,    &
+                                    ids, ide, jds, jde, kds, kde,     &
+                                    ims, ime, jms, jme, kms, kme,     &
+                                    its, ite, jts, jte, kts, kte      )
+
+
+ END SUBROUTINE bdy_fields_halo
+
+ SUBROUTINE bdy_fields_pack ( data3d , space_bdy_xs, space_bdy_xe, space_bdy_ys, space_bdy_ye, &
+                             char_stagger , dir , xy ,&
+                             spec_bdy_width , &         
+                             ids, ide, jds, jde, kds, kde , &
+                             ims, ime, jms, jme, kms, kme , &
+                             its, ite, jts, jte, kts, kte )
+                          
+!-------------------------------------------------------------------------
+!  Calculate the first guess at the end of the time window
+!  Author: Xin Zhang, 10/7/2010
+!-------------------------------------------------------------------------
+      
+    IMPLICIT NONE
+      
+    INTEGER , INTENT(IN) :: ids, ide, jds, jde, kds, kde
+    INTEGER , INTENT(IN) :: ims, ime, jms, jme, kms, kme
+    INTEGER , INTENT(IN) :: its, ite, jts, jte, kts, kte
+    INTEGER , INTENT(IN) :: spec_bdy_width
+    REAL , DIMENSION(ims:ime,kms:kme,jms:jme) , INTENT(INOUT) :: data3d
+    REAL , DIMENSION(jms:jme,kds:kde,spec_bdy_width) , INTENT(INOUT) :: space_bdy_xs, space_bdy_xe
+    REAL , DIMENSION(ims:ime,kds:kde,spec_bdy_width) , INTENT(INOUT) :: space_bdy_ys, space_bdy_ye
+    CHARACTER (LEN=1) , INTENT(IN) :: char_stagger
+    INTEGER , INTENT(IN) :: dir ! 0----pack ; 1----unpack
+    INTEGER , INTENT(IN) :: xy  ! 0----X ; 1----Y
+      
+    INTEGER :: i , ii , j , jj , k
+         
+    !  There are four lateral boundary locations that are stored.
+         
+IF (dir == 0 ) THEN  ! ----Pack
+   IF ( xy == 0 ) THEN  ! ----X 
+
+    !  X start boundary
+      
+    IF ( char_stagger .EQ. 'W' ) THEN
+       DO j = jms, jme
+       DO k = kds , kde
+       DO i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
+          data3d(i,k,j) = space_bdy_xs(j,k,i)
+          space_bdy_xs(j,k,i) = 0.0
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'M' ) THEN
+       DO j = jms, jme
+       DO k = kds , kde
+       DO i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
+          data3d(i,k,j) = space_bdy_xs(j,k,i)
+          space_bdy_xs(j,k,i) = 0.0
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'V' ) THEN
+       DO j = jms, jme
+       DO k = kds , kde - 1
+       DO i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
+          data3d(i,k,j) = space_bdy_xs(j,k,i)
+          space_bdy_xs(j,k,i) = 0.0
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO j = jms, jme
+       DO k = kds , kde - 1
+       DO i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
+          data3d(i,k,j) = space_bdy_xs(j,k,i)
+          space_bdy_xs(j,k,i) = 0.0
        END DO
        END DO
        END DO
     END IF
 
- END SUBROUTINE stuff_bdytend_ijk
+    !  X end boundary
+
+    IF      ( char_stagger .EQ. 'U' ) THEN
+       DO j = jms, jme
+       DO k = kds , kde - 1
+       DO i = MIN(ide,ite) , MAX(ide - spec_bdy_width + 1,its) , -1
+          ii = ide - i + 1
+          data3d(i,k,j) = space_bdy_xe(j,k,ii)
+          space_bdy_xe(j,k,ii) = 0.0
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'V' ) THEN
+       DO j = jms, jme
+       DO k = kds , kde - 1
+       DO i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
+          ii = ide - i
+          data3d(i,k,j) = space_bdy_xe(j,k,ii)
+          space_bdy_xe(j,k,ii) = 0.0
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'W' ) THEN
+       DO j = jms, jme
+       DO k = kds , kde
+       DO i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
+          ii = ide - i
+          data3d(i,k,j) = space_bdy_xe(j,k,ii)
+          space_bdy_xe(j,k,ii) = 0.0
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'M' ) THEN
+       DO j = jms, jme
+       DO k = kds , kde
+       DO i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
+          ii = ide - i
+          data3d(i,k,j) = space_bdy_xe(j,k,ii)
+          space_bdy_xe(j,k,ii) = 0.0
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO j = jms, jme
+       DO k = kds , kde - 1
+       DO i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
+          ii = ide - i
+          data3d(i,k,j) = space_bdy_xe(j,k,ii)
+          space_bdy_xe(j,k,ii) = 0.0
+       END DO
+       END DO
+       END DO
+    END IF
+    
+ELSE    !    Y 
+    !  Y start boundary
+    
+    IF ( char_stagger .EQ. 'W' ) THEN
+       DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO k = kds , kde
+       DO i = ims, ime
+          data3d(i,k,j) = space_bdy_ys(i,k,j)
+          space_bdy_ys(i,k,j) = 0.0
+       END DO
+       END DO
+       END DO 
+    ELSE IF ( char_stagger .EQ. 'M' ) THEN
+       DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO k = kds , kde
+       DO i = ims, ime
+          data3d(i,k,j) = space_bdy_ys(i,k,j)
+          space_bdy_ys(i,k,j) = 0.0
+       END DO
+       END DO
+       END DO 
+    ELSE IF ( char_stagger .EQ. 'U' ) THEN
+       DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO k = kds , kde - 1
+       DO i = ims, ime
+          data3d(i,k,j) = space_bdy_ys(i,k,j)
+          space_bdy_ys(i,k,j) = 0.0
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO k = kds , kde - 1
+       DO i = ims, ime
+          data3d(i,k,j) = space_bdy_ys(i,k,j)
+          space_bdy_ys(i,k,j) = 0.0
+       END DO
+       END DO
+       END DO
+    END IF
+
+    !  Y end boundary
+
+    IF      ( char_stagger .EQ. 'V' ) THEN
+       DO j = MIN(jde,jte) , MAX(jde - spec_bdy_width + 1,jts) , -1
+       DO k = kds , kde - 1
+       DO i = ims, ime
+          jj = jde - j + 1
+          data3d(i,k,j) = space_bdy_ye(i,k,jj)
+          space_bdy_ye(i,k,jj) = 0.0
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'U' ) THEN
+       DO j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
+       DO k = kds , kde - 1
+       DO i = ims, ime
+          jj = jde - j
+          data3d(i,k,j) = space_bdy_ye(i,k,jj)
+          space_bdy_ye(i,k,jj) = 0.0
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'W' ) THEN
+       DO j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
+       DO k = kds , kde
+       DO i = ims, ime
+          jj = jde - j
+          data3d(i,k,j) = space_bdy_ye(i,k,jj)
+          space_bdy_ye(i,k,jj) = 0.0
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'M' ) THEN
+       DO j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
+       DO k = kds , kde
+       DO i = ims, ime
+          jj = jde - j
+          data3d(i,k,j) = space_bdy_ye(i,k,jj)
+          space_bdy_ye(i,k,jj) = 0.0
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
+       DO k = kds , kde - 1
+       DO i = ims, ime
+          jj = jde - j
+          data3d(i,k,j) = space_bdy_ye(i,k,jj)
+          space_bdy_ye(i,k,jj) = 0.0
+       END DO
+       END DO
+       END DO
+    END IF
+
+   END IF
+END IF
+
+IF ( dir == 1 ) THEN  ! ---- Unpack
+   IF ( xy == 0 ) THEN !----- X
+
+    !  X start boundary
+      
+    IF ( char_stagger .EQ. 'W' ) THEN
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO k = kds , kde
+       DO i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
+          space_bdy_xs(j,k,i) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'M' ) THEN
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO k = kds , kde
+       DO i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
+          space_bdy_xs(j,k,i) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'V' ) THEN
+       DO j = MAX(jds,jts) , MIN(jde,jte)
+       DO k = kds , kde - 1
+       DO i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
+          space_bdy_xs(j,k,i) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO k = kds , kde - 1
+       DO i = MAX(ids,its) , MIN(ids + spec_bdy_width - 1,ite)
+          space_bdy_xs(j,k,i) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO
+    END IF
+
+    !  X end boundary
+
+    IF      ( char_stagger .EQ. 'U' ) THEN
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO k = kds , kde - 1
+       DO i = MIN(ide,ite) , MAX(ide - spec_bdy_width + 1,its) , -1
+          ii = ide - i + 1
+          space_bdy_xe(j,k,ii) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'V' ) THEN
+       DO j = MAX(jds,jts) , MIN(jde,jte)
+       DO k = kds , kde - 1
+       DO i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
+          ii = ide - i
+          space_bdy_xe(j,k,ii) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'W' ) THEN
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO k = kds , kde
+       DO i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
+          ii = ide - i
+          space_bdy_xe(j,k,ii) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'M' ) THEN
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO k = kds , kde
+       DO i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
+          ii = ide - i
+          space_bdy_xe(j,k,ii) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO j = MAX(jds,jts) , MIN(jde-1,jte)
+       DO k = kds , kde - 1
+       DO i = MIN(ide - 1,ite) , MAX(ide - spec_bdy_width,its) , -1
+          ii = ide - i
+          space_bdy_xe(j,k,ii) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO
+    END IF
+    
+ELSE   !  Y  
+    !  Y start boundary
+    
+    IF ( char_stagger .EQ. 'W' ) THEN
+       DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO k = kds , kde
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          space_bdy_ys(i,k,j) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO 
+    ELSE IF ( char_stagger .EQ. 'M' ) THEN
+       DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO k = kds , kde
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          space_bdy_ys(i,k,j) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO 
+    ELSE IF ( char_stagger .EQ. 'U' ) THEN
+       DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO k = kds , kde - 1
+       DO i = MAX(ids,its) , MIN(ide,ite)
+          space_bdy_ys(i,k,j) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO j = MAX(jds,jts) , MIN(jds + spec_bdy_width - 1,jte)
+       DO k = kds , kde - 1
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          space_bdy_ys(i,k,j) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO
+    END IF
+
+    !  Y end boundary
+
+    IF      ( char_stagger .EQ. 'V' ) THEN
+       DO j = MIN(jde,jte) , MAX(jde - spec_bdy_width + 1,jts) , -1
+       DO k = kds , kde - 1
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          jj = jde - j + 1
+          space_bdy_ye(i,k,jj) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'U' ) THEN
+       DO j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
+       DO k = kds , kde - 1
+       DO i = MAX(ids,its) , MIN(ide,ite)
+          jj = jde - j
+          space_bdy_ye(i,k,jj) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'W' ) THEN
+       DO j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
+       DO k = kds , kde
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          jj = jde - j
+          space_bdy_ye(i,k,jj) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO
+    ELSE IF ( char_stagger .EQ. 'M' ) THEN
+       DO j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
+       DO k = kds , kde
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          jj = jde - j
+          space_bdy_ye(i,k,jj) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO
+    ELSE
+       DO j = MIN(jde-1,jte) , MAX(jde - spec_bdy_width,jts) , -1
+       DO k = kds , kde - 1
+       DO i = MAX(ids,its) , MIN(ide-1,ite)
+          jj = jde - j
+          space_bdy_ye(i,k,jj) = data3d(i,k,j)
+       END DO
+       END DO
+       END DO
+    END IF
+
+   END IF
+END IF
+
+ END SUBROUTINE bdy_fields_pack
+!----------------------------------------
+#endif
 
 END MODULE module_bc
 

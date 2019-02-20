@@ -22,8 +22,8 @@ contains
 !
    integer, intent(in)   ::                       ids, ide, jds, jde, kds, kde, &
                                                   ims, ime, jms, jme, kms, kme, &
-                                       its, ite, jts, jte, kts, kte, itimestep
-!
+                                       its, ite, jts, jte, kts, kte, itimestep        
+!   
    real, intent(in)      ::         cp, rovcp, xlv, julian_in, karman, p1000mb
 !
    real, dimension( ims:ime, kms:kme, jms:jme )                               , &
@@ -37,7 +37,7 @@ contains
             intent(in)   ::                                               psfc, &
                                                                          xland, &
                                                                           flhc, &
-                                                                          flqc
+                                                                          flqc 
 !
    real, dimension( ims:ime, jms:jme )                                        , &
             intent(inout)::                                                cpm, &
@@ -50,7 +50,7 @@ contains
                                                                            qfx, &
                                                                             lh, &
                                                                            tsk,&
-                                                                        chklowq
+                                                                        chklowq           
 ! local vars
 
    integer, parameter    ::                                       n_max = 1200
@@ -74,7 +74,7 @@ contains
 !-----open scmflx_bdy and read the julian_s, julian_e, fc_int
 !
    open(unit=11, file='scmflx_bdy', form='formatted', status='old')
-   print*,'scmflx_bdy'
+   print*,'scmflx_bdy' 
    read(11,*) julian_s, julian_e, fc_int
 !
      end_of_file = .false.
@@ -84,7 +84,7 @@ contains
        fc_julian(n)=julian_s+(n-1)*fc_int/86400.
        n=n+1
        go to 110
- 100   end_of_file = .true.
+ 100   end_of_file = .true.  
  110   continue
      enddo
      nt=n-1
@@ -92,7 +92,7 @@ contains
 !
 !-----linear interpolation of the fluxes for each time step
 !
-   do n=1,nt
+   do n=1,nt 
      if (julian_in.ge.fc_julian(n) .and. julian_in.lt.fc_julian(n+1)) then
        qfx_interp= fc_qfx(n)                                                      &
                 +(fc_qfx(n+1)-fc_qfx(n))*(julian_in-fc_julian(n))/(fc_int/86400.)
@@ -116,7 +116,7 @@ contains
        dz8w1d(i,j)=dz8w(i,1,j)
        za(i,j)=0.5*dz8w1d(i,j)
      enddo
-   enddo
+   enddo 
 
    do j=jts, jte
      do i=its, ite
@@ -143,7 +143,7 @@ contains
      enddo
    enddo
 !
-
+   
    if (itimestep .eq. 1) then
      psih=0.0
      psim=0.0
@@ -151,7 +151,7 @@ contains
    endif
      chklowq=1.0 !JP
 
-
+   
    do j=jts,jte
      do i=its,ite
        gz1oz0(i,j)=alog(za(i,j)/znt(i,j))
@@ -163,7 +163,7 @@ contains
        tsk(i,j)=t2d(i,j)-dtdiff
      enddo
    enddo
-
+   
    end subroutine scmflux
 !-------------------------------------------------------------------
 end module module_sf_scmflux

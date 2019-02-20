@@ -97,7 +97,7 @@ contains
 !-- rqvshten    computed q_v tendency due to shallow convection scheme
 !-------------------------------------------------------------------------------
 !
-! local
+! local 
 !
 !-- icps        cps index, =1 for deep convection
 !-- pi2di       2d exner function at interface level (dimensionless)
@@ -225,19 +225,19 @@ contains
 !-------------------------------------------------------------------------------
 !
 !
-!   this scheme applies an eddy-diffusion approach within the shallow convective
-!   layer defined by the moist static energy profile and is coupled to the
+!   this scheme applies an eddy-diffusion approach within the shallow convective 
+!   layer defined by the moist static energy profile and is coupled to the 
 !   ysu pbl properties. this scheme names after the grims
 !   shallow convection scheme since it was developed/evaluated in grims.
 !
 !   coded by song-you hong (yonsei university; ysu) and
-!   implemented into wrf by jihyeon jang, hyeyum hailey shin, junhong lee (ysu),
+!   implemented into wrf by jihyeon jang, hyeyum hailey shin, junhong lee (ysu), 
 !       and wei wang (ncar) winter 2012
 !
 ! references:
 !   hong et al. (2013, manuscript in preparation)
-!   hong et al. (2013, asia-pacific j. atmos. sci.) the global/regional
-!       integrated model system (grims)
+!   hong et al. (2013, asia-pacific j. atmos. sci.) the global/regional 
+!       integrated model system (grims) 
 !
 !-------------------------------------------------------------------------------
 !
@@ -255,7 +255,7 @@ contains
              intent(in   ) ::                                            prsi
 !
    real,     dimension( its:ite, kts:kte+1 )                                 , &
-             intent(in   ) ::                                           prsik
+             intent(in   ) ::                                           prsik 
 !
    real,     dimension( its:ite, kts:kte )                                   , &
              intent(in   ) ::                                         delprsi, &
@@ -281,7 +281,7 @@ contains
 !
    real,parameter    ::  pfac = 3.
 !
-!  maximum and minimum diffusivity
+!  maximum and minimum diffusivity 
 !
    real,parameter    ::  xkzmax = 50., xkzmin = 0.001
 !
@@ -362,13 +362,13 @@ contains
 !
    if(n2.eq.0) return
 !
-!  prepare the variables
+!  prepare the variables 
 !
    do k = kts,levshc
      do i = 1,n2
        if(lshc(index2(i))) then
          ik = (k-1)*n2+i
-         pik = prsl(index2(i),k)
+         pik = prsl(index2(i),k) 
          q2(ik) = q(index2(i),k)
          t2(ik) = t(index2(i),k)
          delprsi2(ik) = delprsi(index2(i),k)
@@ -377,7 +377,7 @@ contains
          prsik2(ik)= prsik(index2(i),k)
          prslk2(ik)= prslk(index2(i),k)
          z(i,k) = zl(index2(i),k)
-         qeso2(ik) = fpvs_pa(t2(ik))
+         qeso2(ik) = fpvs_pa(t2(ik)) 
          qeso2(ik) = eps * qeso2(ik) / (pik + epsm1 * qeso2(ik))
          qeso2(ik) = max(qeso2(ik),1.E-8)
          heo(i,k)  = g * z(i,k) + cp* t2(ik) + xlv * q2(ik)
@@ -558,7 +558,7 @@ contains
    call scv_tri_diagonal_grims(n2,n2,kt,al(ik1),ad(ik1),au(ik1),               &
                                 q2(ik1),t2(ik1),au(ik1),q2(ik1),t2(ik1))
 !
-!  feedback to large-scale variables
+!  feedback to large-scale variables  
 !
    do k = k1,k2
      do i = 1,n2
@@ -578,41 +578,41 @@ contains
    subroutine scv_tri_diagonal_grims(lons2,l,n,cl,cm,cu,r1,r2,au,a1,a2)
 !-------------------------------------------------------------------------------
 !
-! subprogram:  scv_tri_diagonal
-!
-! abstract: this routine solves multiple tridiagonal matrix problems
-!   with 2 right-hand-side and solution vectors for every matrix.
-!   the solutions are found by eliminating off-diagonal coefficients,
-!   marching first foreward then backward along the matrix diagonal.
-!   the computations are vectorized around the number of matrices.
-!   no checks are made for zeroes on the diagonal or singularity.
-!
-! program history log:
-!   1991-05-07  iredell
+! subprogram:  scv_tri_diagonal    
+!                                                                               
+! abstract: this routine solves multiple tridiagonal matrix problems            
+!   with 2 right-hand-side and solution vectors for every matrix.               
+!   the solutions are found by eliminating off-diagonal coefficients,           
+!   marching first foreward then backward along the matrix diagonal.            
+!   the computations are vectorized around the number of matrices.              
+!   no checks are made for zeroes on the diagonal or singularity.               
+!                                                                               
+! program history log:                                                          
+!   1991-05-07  iredell                                                           
 !   2009-03-01  jung-eun kim         fortran 90 and modules
-!
-! usage:    call scv_tri_diagonal(l,n,cl,cm,cu,r1,r2,au,a1,a2)
-!
-!   input argument list:
-!     l        - integer number of tridiagonal matrices
-!     n        - integer order of the matrices
-!     cl       - real (l,2:n) lower diagonal matrix elements
-!     cm       - real (l,n) main diagonal matrix elements
-!     cu       - real (l,n-1) upper diagonal matrix elements
-!                (may be equivalent to au if no longer needed)
-!     r1       - real (l,n) 1st right-hand-side vector elements
-!                (may be equivalent to a1 if no longer needed)
-!     r2       - real (l,n) 2nd right-hand-side vector elements
-!                (may be equivalent to a2 if no longer needed)
-!
-!   output argument list:
-!     au       - real (l,n-1) work array
-!     a1       - real (l,n) 1st solution vector elements
-!     a2       - real (l,n) 2nd solution vector elements
-!
-! remarks: this routine can be easily modified to solve a different
-!   number of right-hand-sides and solutions per matrix besides 2.
-!
+!                                                                               
+! usage:    call scv_tri_diagonal(l,n,cl,cm,cu,r1,r2,au,a1,a2)      
+!                                                                               
+!   input argument list:                                                        
+!     l        - integer number of tridiagonal matrices                         
+!     n        - integer order of the matrices                                  
+!     cl       - real (l,2:n) lower diagonal matrix elements                    
+!     cm       - real (l,n) main diagonal matrix elements                       
+!     cu       - real (l,n-1) upper diagonal matrix elements                    
+!                (may be equivalent to au if no longer needed)                  
+!     r1       - real (l,n) 1st right-hand-side vector elements                 
+!                (may be equivalent to a1 if no longer needed)                  
+!     r2       - real (l,n) 2nd right-hand-side vector elements                 
+!                (may be equivalent to a2 if no longer needed)                  
+!                                                                               
+!   output argument list:                                                       
+!     au       - real (l,n-1) work array                                        
+!     a1       - real (l,n) 1st solution vector elements                        
+!     a2       - real (l,n) 2nd solution vector elements                        
+!                                                                               
+! remarks: this routine can be easily modified to solve a different             
+!   number of right-hand-sides and solutions per matrix besides 2.              
+!                                                                               
 !-------------------------------------------------------------------------------
    implicit none
    integer              ::  lons2,l,n,i,k
@@ -621,34 +621,34 @@ contains
                             au(l,n-1),a1(l,n),a2(l,n)
 !-------------------------------------------------------------------------------
    do i = 1,lons2
-     fk = 1./cm(i,1)
-     au(i,1)= fk*cu(i,1)
-     a1(i,1)= fk*r1(i,1)
-     a2(i,1)= fk*r2(i,1)
-   enddo
+     fk = 1./cm(i,1)                                                           
+     au(i,1)= fk*cu(i,1)                                                      
+     a1(i,1)= fk*r1(i,1)                                                      
+     a2(i,1)= fk*r2(i,1)                                                      
+   enddo                                                                     
 !
-   do k = 2,n-1
+   do k = 2,n-1                                                                
      do i = 1,lons2
-       fk = 1./(cm(i,k)-cl(i,k)*au(i,k-1))
-       au(i,k) = fk*cu(i,k)
-       a1(i,k) = fk*(r1(i,k)-cl(i,k)*a1(i,k-1))
-       a2(i,k) = fk*(r2(i,k)-cl(i,k)*a2(i,k-1))
-     enddo
-   enddo
+       fk = 1./(cm(i,k)-cl(i,k)*au(i,k-1))                                     
+       au(i,k) = fk*cu(i,k)                                                    
+       a1(i,k) = fk*(r1(i,k)-cl(i,k)*a1(i,k-1))                                
+       a2(i,k) = fk*(r2(i,k)-cl(i,k)*a2(i,k-1))                                
+     enddo                                                                   
+   enddo                                                                     
 !
    do i = 1,lons2
-     fk = 1./(cm(i,n)-cl(i,n)*au(i,n-1))
-     a1(i,n) = fk*(r1(i,n)-cl(i,n)*a1(i,n-1))
-     a2(i,n) = fk*(r2(i,n)-cl(i,n)*a2(i,n-1))
-   enddo
-   do k = n-1,1,-1
+     fk = 1./(cm(i,n)-cl(i,n)*au(i,n-1))                                       
+     a1(i,n) = fk*(r1(i,n)-cl(i,n)*a1(i,n-1))                                  
+     a2(i,n) = fk*(r2(i,n)-cl(i,n)*a2(i,n-1))                                  
+   enddo                                                                     
+   do k = n-1,1,-1                                                             
      do i = 1,lons2
-       a1(i,k) = a1(i,k)-au(i,k)*a1(i,k+1)
-       a2(i,k) = a2(i,k)-au(i,k)*a2(i,k+1)
-     enddo
-   enddo
+       a1(i,k) = a1(i,k)-au(i,k)*a1(i,k+1)                                     
+       a2(i,k) = a2(i,k)-au(i,k)*a2(i,k+1)                                     
+     enddo                                                                   
+   enddo                                                                     
 !
-   return
+   return                                                                    
    end subroutine scv_tri_diagonal_grims
 !-------------------------------------------------------------------------------
 !
@@ -663,7 +663,7 @@ contains
 !
 ! subprogram: phys_moist_adiabat_pa
 !
-! abstract:
+! abstract: 
 ! - compute moist adiabatic cloud soundings
 ! - atmospheric columns of temperature and specific humidity
 !   are examined by this routine for conditional instability.
@@ -746,14 +746,14 @@ contains
 !-------------------------------------------------------------------------------
 !
 !  compute parameters
-!
+!   
    eps=rd/rv
    epsm1=rd/rv-1.
    ftv=rv/rd-1.
 !
 !  determine warmest potential wet-bulb temperature between k1 and k2.
 !  compute its lifting condensation level.
-!
+!  
    do i = 1,ilev
      slkma(i)=0.
      thema(i)=0.
@@ -780,7 +780,7 @@ contains
 !
 !  set cloud temperatures and humidities wherever the parcel lifted up
 !  the moist adiabat is buoyant with respect to the environment.
-!
+!  
    do i = 1,ilev
      klcl(i)=klev+1
      kbot(i)=klev+1
@@ -1191,7 +1191,7 @@ contains
    pv=psatb*(tr**xa)*exp(xb*(1.-tr))
    pd=p-pv
    qma=eps*pv/(pd+eps*pv)
-!
+!  
    return
    end function
 !-------------------------------------------------------------------------------

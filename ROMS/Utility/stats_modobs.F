@@ -2,9 +2,9 @@
 #if (defined FOUR_DVAR || defined VERIFICATION) && defined OBSERVATIONS
       SUBROUTINE stats_modobs (ng)
 !
-!svn $Id: stats_modobs.F 880 2017-11-15 22:04:38Z arango $
+!svn $Id: stats_modobs.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -74,11 +74,12 @@
       real(r8), dimension(Ndatum(ng)) :: mod_value
       real(r8), dimension(Ndatum(ng)) :: obs_depths
       real(r8), dimension(Ndatum(ng)) :: obs_scale
+      real(dp), dimension(Ndatum(ng)) :: obs_time
       real(r8), dimension(Ndatum(ng)) :: obs_value
       real(r8), dimension(Ndatum(ng)) :: obs_Xgrid
       real(r8), dimension(Ndatum(ng)) :: obs_Ygrid
       real(r8), dimension(Ndatum(ng)) :: obs_work
-      real(r8), dimension(Nsurvey(ng)) :: survey
+      real(dp), dimension(Nsurvey(ng)) :: survey
 
       character (len=11), dimension(NobsVar(ng)) :: text, svar_name
 
@@ -119,8 +120,8 @@
 !
 !  Read in and write out survey time.
 !
-      CALL netcdf_get_fvar (ng, iNLM, OBS(ng)%name, Vname(1,idOday),    &
-     &                      survey,                                     &
+      CALL netcdf_get_time (ng, iNLM, OBS(ng)%name, Vname(1,idOday),    &
+     &                      Rclock%DateNumber, survey,                  &
      &                      ncid = OBS(ng)%ncid,                        &
      &                      start = (/1/), total = (/Nsurvey(ng)/))
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
@@ -164,15 +165,15 @@
 !
 !  Read in and write out observation time.
 !
-      CALL netcdf_get_fvar (ng, iNLM, OBS(ng)%name, Vname(1,idObsT),    &
-     &                      obs_work,                                   &
+      CALL netcdf_get_time (ng, iNLM, OBS(ng)%name, Vname(1,idObsT),    &
+     &                      Rclock%DateNumber, obs_time,                &
      &                      ncid = OBS(ng)%ncid,                        &
      &                      start = (/1/), total = (/Ndatum(ng)/))
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
 
       CALL netcdf_put_fvar (ng, iNLM, DAV(ng)%name, Vname(1,idObsT),    &
-     &                      obs_work, (/1/), (/Ndatum(ng)/),            &
+     &                      obs_time, (/1/), (/Ndatum(ng)/),            &
      &                      ncid = DAV(ng)%ncid)
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN

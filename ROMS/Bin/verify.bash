@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# svn $Id: verify.bash 830 2017-01-24 21:21:11Z arango $
+# svn $Id: verify.bash 889 2018-02-10 03:32:52Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2018 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2019 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::: David Robertson :::
@@ -23,16 +23,16 @@
 #    [-j [N]]     Compile in parallel using N CPUs (optional)           :::
 #                   omit argument for all available CPUs                :::
 #    [-cleanup]   Remove all traces that comparison tests were run      :::
-#    -in          ROMS/TOMS input script (ocean.in)                     :::
-#    <src_dir1>   ROMS/TOMS source directory 1                          :::
-#    <src_dir2>   ROMS/TOMS source directory 2, used when comparing     :::
+#    -in          ROMS input script (roms.in)                           :::
+#    <src_dir1>   ROMS source directory 1                               :::
+#    <src_dir2>   ROMS source directory 2, used when comparing          :::
 #                   two different versions of the code (optional)       :::
 #                                                                       :::
 #    The -j and -noclean options are passed directly to a template      :::
 #    build script "build_tpl.sh", which is created from the application :::
-#    "build.sh" script.  The default ROMS build command is:             :::
+#    "build_roms.sh" script.  The default ROMS build command is:        :::
 #                                                                       :::
-#    ./build_tpl.sh -j 4                                                :::
+#    ./build_tlp.sh -j 4                                                :::
 #                                                                       :::
 #    If "src_dir1" and "src_dir2" does not start with a / then it is    :::
 #    appended to the string "${MY_ROOT_DIR}/" for insertion in the      :::
@@ -41,12 +41,12 @@
 #                                                                       :::
 # Examples:                                                             :::
 #                                                                       :::
-# (1) verify.bash -in ocean_upwelling.in branches/arango nesting        :::
+# (1) verify.bash -in roms_upwelling.in branches/arango nesting         :::
 #                                                                       :::
 #                 It will compile, run and compare all configurations   :::
 #                   of branches/arango and nesting                      :::
 #                                                                       :::
-# (2) verify.bash -nobuild -in ocean_upwelling.in                       :::
+# (2) verify.bash -nobuild -in roms_upwelling.in                        :::
 #                 /Users/arango/ocean/repository/trunk                  :::
 #                                                                       :::
 #                 This run and compare all configuration of trunk       :::
@@ -212,7 +212,7 @@ do
       echo "              omit argument for all avaliable CPUs"
       echo "-cleanup    Remove all traces that comparison tests"
       echo "              were run"
-      echo "-in infile  Set the ocean.in file to infile"
+      echo "-in infile  Set the roms.in file to infile"
       echo ""
       exit 1
       ;;
@@ -246,7 +246,7 @@ if [[ $cnt == 0 || $cnt > 2 ]]; then
 fi
 
 if [[ $infile == "" ]]; then
-  echo "You must specify the ocean.in file with the -in flag"
+  echo "You must specify the roms.in file with the -in flag"
   exit 1
 fi
 
@@ -264,7 +264,7 @@ fi
 
 # Copy build script for manipulation
 
-cp -p build.sh build_tpl.sh
+cp -p build_roms.sh build_tpl.sh
 
 # These lines determine what MY_CPP_FLAGS are already set in the build script
 

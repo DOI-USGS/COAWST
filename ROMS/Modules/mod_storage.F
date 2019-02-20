@@ -3,9 +3,9 @@
 
 #if defined PROPAGATOR
 !
-!svn $Id: mod_storage.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: mod_storage.F 921 2018-09-06 18:27:34Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -253,43 +253,59 @@
 
       DO ng=1,Ngrids
         allocate ( STORAGE(ng) % Bvec(Mstr(ng):Mend(ng),NCV) )
+        Dmem(ng)=Dmem(ng)+REAL((Mend(ng)-Mstr(ng))*NCV,r8)
 
         allocate ( STORAGE(ng) % Rvector(Mstr(ng):Mend(ng),NEV+1) )
+        Dmem(ng)=Dmem(ng)+REAL((Mend(ng)-Mstr(ng))*(NEV+1),r8)
 
         allocate ( STORAGE(ng) % SworkD(LworkD(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(LworkD(ng),r8)
 
         allocate ( STORAGE(ng) % resid(Mstr(ng):Mend(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(Mend(ng)-Mstr(ng),r8)
 
 # ifdef STOCHASTIC_OPT
         allocate ( STORAGE(ng) % ad_Work(MAXVAL(Mstate)) )
+        Dmem(ng)=Dmem(ng)+REAL(MAXVAL(Mstate),r8)
 # endif
 
 # if defined STOCHASTIC_OPT && defined HESSIAN_SO
         allocate ( STORAGE(ng) % my_state(Nstr(ng):Nend(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(Nend(ng)-Nstr(ng),r8)
 # endif
+
 # ifdef SO_SEMI
         allocate ( STORAGE(ng) % so_state(Mstr(ng):Mend(ng),Nsemi(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL((Mend(ng)-Mstr(ng))*Nsemi(ng),r8)
 # endif
       END DO
 !
 !  Allocate other arrays.
 !
       allocate ( select(NCV,Ngrids) )
+      Dmem(ng)=Dmem(ng)+REAL(NCV*Ngrids,r8)
 
       allocate ( norm(NEV+1,Ngrids) )
+      Dmem(ng)=Dmem(ng)+REAL((NEV+1)*Ngrids,r8)
 
       allocate ( RvalueR(NEV+1,Ngrids) )
+      Dmem(ng)=Dmem(ng)+REAL((NEV+1)*Ngrids,r8)
 
       allocate ( RvalueI(NEV+1,Ngrids) )
+      Dmem(ng)=Dmem(ng)+REAL((NEV+1)*Ngrids,r8)
 
       allocate ( SworkEV(3*NCV,Ngrids) )
+      Dmem(ng)=Dmem(ng)+3.0_r8*REAL(NCV,r8)
 
       allocate ( SworkL(LworkL,Ngrids) )
+      Dmem(ng)=Dmem(ng)+REAL(LworkL*Ngrids,r8)
 
       allocate ( SworkR(MAXVAL(Mstate)) )
+      Dmem(ng)=Dmem(ng)+REAL(MAXVAL(Mstate),r8)
 
 # ifdef DISTRIBUTE
       allocate ( Swork(MAXVAL(Mstate)) )
+      Dmem(ng)=Dmem(ng)+REAL(MAXVAL(Mstate),r8)
 # endif
 !
 !-----------------------------------------------------------------------

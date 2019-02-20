@@ -20,14 +20,14 @@ CONTAINS
                                                                    )
 
 !  This module calculates the cloud water (fog) deposition onto the
-!  surface due to turbulent exchange and gravitational settling using
+!  surface due to turbulent exchange and gravitational settling using 
 !  simple Fog Deposition EStimation (FogDES) scheme.
 
 ! References:
 !
 !  Katata, G., Nagai, H., Wrzesinsky, T., Klemm, O., Eugster, W.,
-!    Burkard, R. (2008), Development of a land surface model
-!    including cloud water deposition on vegetation, Journal of
+!    Burkard, R. (2008), Development of a land surface model 
+!    including cloud water deposition on vegetation, Journal of 
 !    Applied Meteorology and Climatology, 47, 2129-2146.
 !  Katata, G., Kajino, M., Hiraki, T., Aikawa, M., Kobayashi, T.,
 !    Nagai, H. (2011), A method for simple and accurate estimation
@@ -203,7 +203,7 @@ CONTAINS
            spcfct= 1.0
            vegh  = 20.0
          END SELECT lu_select
-
+ 
 !   simple linear functions for deposition velocity (vdfg)
 !   for large leaf area density LAD (ftmp1) and small LAD (ftmp2).
 
@@ -220,7 +220,7 @@ CONTAINS
           ! *-- No settling --
           vdfg(i,j) = 0.0
        ELSE IF (grav_settling .eq. 1 ) THEN
-          !JOE-use the same gravitation settling as in the free atmosphere
+          !JOE-use the same gravitation settling as in the free atmosphere 
           !(taken from the MYNN PBL, Duynkerke (1991))
           IF ((qc_curr(i,kts,j)/(1.+qc_curr(i,kts,j))) > qcgmin) THEN
              vdfg(i,j)=gno*(qc_curr(i,kts,j)/(1.+qc_curr(i,kts,j)))**gpw2
@@ -229,7 +229,7 @@ CONTAINS
           ENDIF
        ENDIF
 
-!   vdfg can advect moisture through the lowest half-sigma layer depth
+!   vdfg can advect moisture through the lowest half-sigma layer depth 
 !   in one time-step.
        vdfg(i,j)=MIN( 0.5*dz8w(i,kts,j)/dtbl, vdfg(i,j) )
 

@@ -5,9 +5,9 @@
    (defined RP_AVERAGES && defined TL_IOMS) || \
    (defined TL_AVERAGES && defined TANGENT)
 !
-!svn $Id: mod_average.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: mod_average.F 921 2018-09-06 18:27:34Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -180,7 +180,7 @@
           real(r8), pointer :: avgbt(:,:,:,:)
 #   endif
 #   ifdef ICE_BIO
-#     ifdef CLIM_ICE_1D
+#     ifdef CLIM_ICE_1D   
           real(r8), pointer :: avgit(:,:,:)
 #     elif defined BERING_10K
           real(r8), pointer :: avgIPhL(:,:)
@@ -248,7 +248,7 @@
           real(r8), pointer :: avgbus(:,:)
           real(r8), pointer :: avgbvs(:,:)
 
-# ifdef BBL
+# ifdef BBL_MODEL
           real(r8), pointer :: avgUbrs(:,:)
           real(r8), pointer :: avgVbrs(:,:)
           real(r8), pointer :: avgUbws(:,:)
@@ -333,6 +333,9 @@
 # endif
 # ifdef WAVES_DIR
           real(r8), pointer :: avgWdir(:,:)
+# endif
+# ifdef WAVES_DIRP
+          real(r8), pointer :: avgWdip(:,:)
 # endif
 # ifdef WAVES_TOP_PERIOD
           real(r8), pointer :: avgWptp(:,:)
@@ -449,147 +452,191 @@
 !
       integer, intent(in) :: ng, LBi, UBi, LBj, UBj
 !
+!  Local variable declarations.
+!
+      real(r8) :: size2d
+!
 !-----------------------------------------------------------------------
 !  Allocate module variables.
 !-----------------------------------------------------------------------
 !
       IF (ng.eq.1 ) allocate ( AVERAGE(Ngrids) )
 !
+!  Set horizontal array size.
+!
+      size2d=REAL((UBi-LBi)*(UBj-LBj),r8)
+!
 !  Time-averaged state variables.
 !
       IF (Aout(idFsur,ng)) THEN
         allocate ( AVERAGE(ng) % avgzeta(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 
       IF (Aout(idUbar,ng)) THEN
         allocate ( AVERAGE(ng) % avgu2d(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idVbar,ng)) THEN
         allocate ( AVERAGE(ng) % avgv2d(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 
       IF (Aout(idu2dE,ng)) THEN
         allocate ( AVERAGE(ng) % avgu2dE(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idv2dN,ng)) THEN
         allocate ( AVERAGE(ng) % avgv2dN(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 
 # ifdef SOLVE3D
 
 #  ifdef BEST_NPZ
 #   ifdef STATIONARY
-      allocate ( AVERAGE(ng) % avgst(LBi:UBi,LBj:UBj,N(ng),NTS(ng)) )
+        allocate (AVERAGE(ng) % avgst(LBi:UBi,LBj:UBj,N(ng),NTS(ng)))
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NTS(ng),r8)*size2d
 #   endif
 #   ifdef STATIONARY2
-      allocate ( AVERAGE(ng) % avgst2(LBi:UBi,LBj:UBj,NTS2(ng)) )
+        allocate ( AVERAGE(ng) % avgst2(LBi:UBi,LBj:UBj,NTS2(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(NTS2(ng),r8)*size2d
 #   endif
 #   ifdef PROD3
-      allocate ( AVERAGE(ng) % avgpt3(LBi:UBi,LBj:UBj,N(ng),NPT3(ng)) )
+        allocate ( AVERAGE(ng) % avgpt3(LBi:UBi,LBj:UBj,N(ng),NPT3(ng)))
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NPT3(ng),r8)*size2d
 #   endif
 #   ifdef PROD2
-      allocate ( AVERAGE(ng) % avgpt2(LBi:UBi,LBj:UBj,NPT2(ng)) )
+        allocate ( AVERAGE(ng) % avgpt2(LBi:UBi,LBj:UBj,NPT2(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(NPT2(ng),r8)*size2d
 #   endif
 #   ifdef BENTHIC
-       allocate ( AVERAGE(ng) % avgbt(LBi:UBi,LBj:UBj,NBL(ng),NBeT(ng)) )
+        allocate (AVERAGE(ng)%avgbt(LBi:UBi,LBj:UBj,NBL(ng),NBeT(ng)))
+        Dmem(ng)=Dmem(ng)+REAL(NBL(ng)*NBet(ng),r8)*size2d
 #   endif
 #   ifdef ICE_BIO
 #    ifdef CLIM_ICE_1D
         allocate ( AVERAGE(ng) % avgit(LBi:UBi,LBj:UBj,NIceT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(NIceT(ng),r8)*size2d
 #    elif defined BERING_10K
       IF (Aout(idIceNO3,ng)) THEN
         allocate ( AVERAGE(ng) % avgINO3(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idIcePhL,ng)) THEN
         allocate ( AVERAGE(ng) % avgIPhL(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idIceNH4,ng)) THEN
         allocate ( AVERAGE(ng) % avgINH4(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idIceLog,ng)) THEN
         allocate ( AVERAGE(ng) % avgILog(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 #    endif
 #   endif
 
 #   ifdef BIOFLUX
         allocate ( AVERAGE(ng) % avgbflx(NAT+NBT,NAT+NBT) )
+        Dmem(ng)=Dmem(ng)+REAL((NAT+NBT)*(NAT+NBT),r8)
 #   endif
 #  endif
 
 #  ifdef BIO_GOANPZ
         allocate ( AVERAGE(ng) % avgst(LBi:UBi,LBj:UBj,N(ng),NTS(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NTS(ng),r8)*size2d
 #  endif
       IF (Aout(idUvel,ng)) THEN
         allocate ( AVERAGE(ng) % avgu3d(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
       IF (Aout(idVvel,ng)) THEN
         allocate ( AVERAGE(ng) % avgv3d(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
 
       IF (Aout(idu3dE,ng)) THEN
         allocate ( AVERAGE(ng) % avgu3dE(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
       IF (Aout(idv3dN,ng)) THEN
         allocate ( AVERAGE(ng) % avgv3dN(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
 
       IF (Aout(idOvel,ng)) THEN
         allocate ( AVERAGE(ng) % avgw3d(LBi:UBi,LBj:UBj,0:N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
       END IF
       IF (Aout(idWvel,ng)) THEN
         allocate ( AVERAGE(ng) % avgwvel(LBi:UBi,LBj:UBj,0:N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
       END IF
 
       IF (Aout(idDano,ng)) THEN
         allocate ( AVERAGE(ng) % avgrho(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
       IF (ANY(Aout(idTvar(:),ng))) THEN
         allocate ( AVERAGE(ng) % avgt(LBi:UBi,LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*size2d
       END IF
 
 #  ifdef NEMURO_SED1
       IF (Aout(idPONsed,ng)) THEN
         allocate ( AVERAGE(ng) % avgPONsed(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idOPALsed,ng)) THEN
         allocate ( AVERAGE(ng) % avgOPALsed(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idDENITsed,ng)) THEN
         allocate ( AVERAGE(ng) % avgDENITsed(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idPONbur,ng)) THEN
         allocate ( AVERAGE(ng) % avgPONbur(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idOPALbur,ng)) THEN
         allocate ( AVERAGE(ng) % avgOPALbur(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 #  endif
 #  ifdef PRIMARY_PROD
       IF (Aout(idNPP,ng)) THEN
         allocate ( AVERAGE(ng) % avgNPP(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 #  endif
 
 #  if defined LMD_MIXING || defined MY25_MIXING || defined GLS_MIXING
       IF (Aout(idVvis,ng)) THEN
         allocate ( AVERAGE(ng) % avgAKv(LBi:UBi,LBj:UBj,0:N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
       END IF
       IF (Aout(idTdif,ng)) THEN
         allocate ( AVERAGE(ng) % avgAKt(LBi:UBi,LBj:UBj,0:N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
       END IF
       IF (Aout(idSdif,ng)) THEN
         allocate ( AVERAGE(ng) % avgAKs(LBi:UBi,LBj:UBj,0:N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
       END IF
 #  endif
 #  ifdef LMD_SKPP
       IF (Aout(idHsbl,ng)) THEN
         allocate ( AVERAGE(ng) % avghsbl(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 #  endif
 #  ifdef LMD_BKPP
       IF (Aout(idHbbl,ng)) THEN
         allocate ( AVERAGE(ng) % avghbbl(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 #  endif
 # endif
@@ -600,16 +647,20 @@
 !
       IF (Aout(idUfx1,ng)) THEN
         allocate ( AVERAGE(ng) % avgDU_avg1(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idUfx2,ng)) THEN
         allocate ( AVERAGE(ng) % avgDU_avg2(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 
       IF (Aout(idVfx1,ng)) THEN
         allocate ( AVERAGE(ng) % avgDV_avg1(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idVfx2,ng)) THEN
         allocate ( AVERAGE(ng) % avgDV_avg2(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
 !
@@ -617,52 +668,67 @@
 !
       IF (Aout(idUsms,ng)) THEN
         allocate ( AVERAGE(ng) % avgsus(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idVsms,ng)) THEN
         allocate ( AVERAGE(ng) % avgsvs(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 
       IF (Aout(idUbms,ng)) THEN
         allocate ( AVERAGE(ng) % avgbus(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idVbms,ng)) THEN
         allocate ( AVERAGE(ng) % avgbvs(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 
-# ifdef BBL
+# ifdef BBL_MODEL
       IF (Aout(idUbrs,ng)) THEN
         allocate ( AVERAGE(ng) % avgUbrs(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idVbrs,ng)) THEN
         allocate ( AVERAGE(ng) % avgVbrs(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idUbws,ng)) THEN
         allocate ( AVERAGE(ng) % avgUbws(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idVbws,ng)) THEN
         allocate ( AVERAGE(ng) % avgVbws(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idUbcs,ng)) THEN
         allocate ( AVERAGE(ng) % avgUbcs(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idVbcs,ng)) THEN
         allocate ( AVERAGE(ng) % avgVbcs(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idUVwc,ng)) THEN
         allocate ( AVERAGE(ng) % avgUVwc(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 
       IF (Aout(idUbot,ng)) THEN
         allocate ( AVERAGE(ng) % avgUbot(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idVbot,ng)) THEN
         allocate ( AVERAGE(ng) % avgVbot(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idUbur,ng)) THEN
         allocate ( AVERAGE(ng) % avgUbur(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idVbvr,ng)) THEN
         allocate ( AVERAGE(ng) % avgVbvr(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
 
@@ -670,58 +736,73 @@
 #  if defined RUNOFF
       IF (Aout(idRunoff,ng)) THEN
         allocate ( AVERAGE(ng) % avgRunoff(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 #  endif
 #  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
       IF (Aout(idPair,ng)) THEN
         allocate ( AVERAGE(ng) % avgPair(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 #  endif
 #  if defined BULK_FLUXES || defined ECOSIM
       IF (Aout(idUair,ng)) THEN
         allocate ( AVERAGE(ng) % avgUwind(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idVair,ng)) THEN
         allocate ( AVERAGE(ng) % avgVwind(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 
       IF (Aout(idUairE,ng)) THEN
         allocate ( AVERAGE(ng) % avgUwindE(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idVairN,ng)) THEN
         allocate ( AVERAGE(ng) % avgVwindN(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 #  endif
       IF (Aout(idTsur(itemp),ng)) THEN
         allocate ( AVERAGE(ng) % avgstf(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idTsur(isalt),ng)) THEN
         allocate ( AVERAGE(ng) % avgswf(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 #  ifdef SHORTWAVE
       IF (Aout(idSrad,ng)) THEN
         allocate ( AVERAGE(ng) % avgsrf(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 #  endif
 # if defined BULK_FLUXES || defined AIR_OCEAN
       IF (Aout(idLhea,ng)) THEN
         allocate ( AVERAGE(ng) % avglhf(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idLrad,ng)) THEN
         allocate ( AVERAGE(ng) % avglrf(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idShea,ng)) THEN
         allocate ( AVERAGE(ng) % avgshf(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idSSSf,ng)) THEN
         allocate ( AVERAGE(ng) % avgsssflx(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 #   ifdef EMINUSP
       IF (Aout(idevap,ng)) THEN
         allocate ( AVERAGE(ng) % avgevap(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idrain,ng)) THEN
         allocate ( AVERAGE(ng) % avgrain(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 #   endif
 #  endif
@@ -733,72 +814,94 @@
 !
       IF (Aout(idU2Sd,ng)) THEN
         allocate ( AVERAGE(ng) % avgu2Sd(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idV2Sd,ng)) THEN
         allocate ( AVERAGE(ng) % avgv2Sd(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
+
       IF (Aout(idU2rs,ng)) THEN
         allocate ( AVERAGE(ng) % avgu2rs(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idV2rs,ng)) THEN
         allocate ( AVERAGE(ng) % avgv2rs(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 
       IF (Aout(idWztw,ng)) THEN
         allocate ( AVERAGE(ng) % avgWztw(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idWqsp,ng)) THEN
         allocate ( AVERAGE(ng) % avgWqsp(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idWbeh,ng)) THEN
         allocate ( AVERAGE(ng) % avgWbeh(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 
 #  ifdef WEC_MELLOR
       IF (Aout(idW2xx,ng)) THEN
         allocate ( AVERAGE(ng) % avgSxx2d(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idW2xy,ng)) THEN
         allocate ( AVERAGE(ng) % avgSxy2d(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idW2yy,ng)) THEN
         allocate ( AVERAGE(ng) % avgSyy2d(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 #  endif
 #  ifdef SOLVE3D
       IF (Aout(idU3Sd,ng)) THEN
         allocate ( AVERAGE(ng) % avgu3Sd(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
       IF (Aout(idV3Sd,ng)) THEN
         allocate ( AVERAGE(ng) % avgv3Sd(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
       IF (Aout(idW3Sd,ng)) THEN
         allocate ( AVERAGE(ng) % avgW3Sd(LBi:UBi,LBj:UBj,0:N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
       END IF
       IF (Aout(idW3St,ng)) THEN
         allocate ( AVERAGE(ng) % avgW3St(LBi:UBi,LBj:UBj,0:N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
       END IF
       IF (Aout(idU3rs,ng)) THEN
         allocate ( AVERAGE(ng) % avgu3rs(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
       IF (Aout(idV3rs,ng)) THEN
         allocate ( AVERAGE(ng) % avgv3rs(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
 #   ifdef WEC_MELLOR
       IF (Aout(idW3xx,ng)) THEN
         allocate ( AVERAGE(ng) % avgSxx3d(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
       IF (Aout(idW3xy,ng)) THEN
         allocate ( AVERAGE(ng) % avgSxy3d(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
       IF (Aout(idW3yy,ng)) THEN
         allocate ( AVERAGE(ng) % avgSyy3d(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
       IF (Aout(idW3zx,ng)) THEN
         allocate ( AVERAGE(ng) % avgSzx3d(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
       IF (Aout(idW3zy,ng)) THEN
         allocate ( AVERAGE(ng) % avgSzy3d(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
 #   endif
 #  endif
@@ -806,155 +909,202 @@
 # ifdef WAVES_HEIGHT
       IF (Aout(idWamp,ng)) THEN
         allocate ( AVERAGE(ng) % avgWamp(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
 # ifdef WAVES_LENGTH
       IF (Aout(idWlen,ng)) THEN
         allocate ( AVERAGE(ng) % avgWlen(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
 # ifdef WAVES_LENGTHP
       IF (Aout(idWlep,ng)) THEN
         allocate ( AVERAGE(ng) % avgWlep(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
 # ifdef WAVES_DIR
       IF (Aout(idWdir,ng)) THEN
         allocate ( AVERAGE(ng) % avgWdir(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+# endif
+# ifdef WAVES_DIRP
+      IF (Aout(idWdip,ng)) THEN
+        allocate ( AVERAGE(ng) % avgWdip(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
 # ifdef WAVES_TOP_PERIOD
       IF (Aout(idWptp,ng)) THEN
         allocate ( AVERAGE(ng) % avgWptp(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
 # ifdef WAVES_BOT_PERIOD
       IF (Aout(idWpbt,ng)) THEN
         allocate ( AVERAGE(ng) % avgWpbt(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
 # ifdef BBL_MODEL
       IF (Aout(idWorb,ng)) THEN
         allocate ( AVERAGE(ng) % avgWorb(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
 # if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
       IF (Aout(idWdif,ng)) THEN
         allocate ( AVERAGE(ng) % avgWdif(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
 # if defined WAVES_OCEAN || defined TKE_WAVEDISS || \
     defined WDISS_THORGUZA || defined WDISS_CHURTHOR
       IF (Aout(idWdib,ng)) THEN
         allocate ( AVERAGE(ng) % avgWdib(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idWdiw,ng)) THEN
         allocate ( AVERAGE(ng) % avgWdiw(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
 # ifdef ROLLER_SVENDSEN
       IF (Aout(idWbrk,ng)) THEN
         allocate ( AVERAGE(ng) % avgWbrk(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
 # ifdef WEC_ROLLER
       IF (Aout(idWdis,ng)) THEN
         allocate ( AVERAGE(ng) % avgWdis(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idWrol,ng)) THEN
         allocate ( AVERAGE(ng) % avgWrol(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
 # ifdef UV_KIRBY
       IF (Aout(idUwav,ng)) THEN
         allocate ( AVERAGE(ng) % avgUwav(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idVwav,ng)) THEN
         allocate ( AVERAGE(ng) % avgVwav(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
 # ifdef ICE_MODEL
       IF (Aout(idUice,ng)) THEN
         allocate ( AVERAGE(ng) % avguice(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idVice,ng)) THEN
         allocate ( AVERAGE(ng) % avgvice(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 
       IF (Aout(idUiceE,ng)) THEN
         allocate ( AVERAGE(ng) % avguiceE(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idViceN,ng)) THEN
         allocate ( AVERAGE(ng) % avgviceN(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 
       IF (Aout(idAice,ng)) THEN
         allocate ( AVERAGE(ng) % avgaice(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idHice,ng)) THEN
         allocate ( AVERAGE(ng) % avghice(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idTice,ng)) THEN
         allocate ( AVERAGE(ng) % avgtice(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idTimid,ng)) THEN
         allocate ( AVERAGE(ng) % avgtimid(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idHsno,ng)) THEN
         allocate ( AVERAGE(ng) % avghsno(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 #  ifdef MELT_PONDS
       IF (Aout(idApond,ng)) THEN
         allocate ( AVERAGE(ng) % avgapond(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idHpond,ng)) THEN
         allocate ( AVERAGE(ng) % avghpond(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 #  endif
       IF (Aout(idIomflx,ng)) THEN
         allocate ( AVERAGE(ng) % avgiomflx(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idAgeice,ng)) THEN
         allocate ( AVERAGE(ng) % avgageice(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idSig11,ng)) THEN
         allocate ( AVERAGE(ng) % avgsig11(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idSig12,ng)) THEN
         allocate ( AVERAGE(ng) % avgsig12(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idSig22,ng)) THEN
         allocate ( AVERAGE(ng) % avgsig22(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idT0mk,ng)) THEN
         allocate ( AVERAGE(ng) % avgT0mk(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idS0mk,ng)) THEN
         allocate ( AVERAGE(ng) % avgS0mk(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idWfr,ng)) THEN
         allocate ( AVERAGE(ng) % avgWfr(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idWai,ng)) THEN
         allocate ( AVERAGE(ng) % avgWai(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idWao,ng)) THEN
         allocate ( AVERAGE(ng) % avgWao(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idWio,ng)) THEN
         allocate ( AVERAGE(ng) % avgWio(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idWro,ng)) THEN
         allocate ( AVERAGE(ng) % avgWro(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idWdiv,ng)) THEN
         allocate ( AVERAGE(ng) % avgWdiv(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idTauiw,ng)) THEN
         allocate ( AVERAGE(ng) % avgutau_iw(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idChuiw,ng)) THEN
         allocate ( AVERAGE(ng) % avgchu_iw(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
 !
@@ -962,47 +1112,60 @@
 !
       IF (Aout(idZZav,ng)) THEN
         allocate ( AVERAGE(ng) % avgU2(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idU2av,ng)) THEN
         allocate ( AVERAGE(ng) % avgV2(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(idV2av,ng)) THEN
         allocate ( AVERAGE(ng) % avgZZ(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 
 # ifdef SOLVE3D
       IF (Aout(idUUav,ng)) THEN
         allocate ( AVERAGE(ng) % avgUU(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
       IF (Aout(idVVav,ng)) THEN
         allocate ( AVERAGE(ng) % avgVV(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
       IF (Aout(idUVav,ng)) THEN
         allocate ( AVERAGE(ng) % avgUV(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
 
       IF (Aout(idHUav,ng)) THEN
         allocate ( AVERAGE(ng) % avgHuon(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
       IF (Aout(idHVav,ng)) THEN
         allocate ( AVERAGE(ng) % avgHvom(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
 
       IF (ANY(Aout(idTTav(:),ng))) THEN
         allocate ( AVERAGE(ng) % avgTT(LBi:UBi,LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*size2d
       END IF
       IF (ANY(Aout(idUTav(:),ng))) THEN
         allocate ( AVERAGE(ng) % avgUT(LBi:UBi,LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*size2d
       END IF
       IF (ANY(Aout(idVTav(:),ng))) THEN
         allocate ( AVERAGE(ng) % avgVT(LBi:UBi,LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*size2d
       END IF
 
       IF (ANY(Aout(iHUTav(:),ng))) THEN
         allocate ( AVERAGE(ng)% avgHuonT(LBi:UBi,LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*size2d
       END IF
       IF (ANY(Aout(iHVTav(:),ng))) THEN
         allocate ( AVERAGE(ng)% avgHvomT(LBi:UBi,LBj:UBj,N(ng),NT(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng),r8)*size2d
       END IF
 # endif
 !
@@ -1010,16 +1173,20 @@
 !
       IF (Aout(id2dPV,ng)) THEN
         allocate ( AVERAGE(ng) % avgpvor2d(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
       IF (Aout(id2dRV,ng)) THEN
         allocate ( AVERAGE(ng) % avgrvor2d(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
       END IF
 # ifdef SOLVE3D
       IF (Aout(id3dPV,ng)) THEN
         allocate ( AVERAGE(ng) % avgpvor3d(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
       IF (Aout(id3dRV,ng)) THEN
         allocate ( AVERAGE(ng) % avgrvor3d(LBi:UBi,LBj:UBj,N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng),r8)*size2d
       END IF
 # endif
 
@@ -1379,46 +1546,46 @@
         END DO
       END IF
 
-# ifdef BBL
+# ifdef BBL_MODEL
       IF (Aout(idUbrs,ng)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
-            AVERAGE(ng) % avgbrs(i,j) = IniVal
+            AVERAGE(ng) % avgUbrs(i,j) = IniVal
           END DO
         END DO
       END IF
       IF (Aout(idVbrs,ng)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
-            AVERAGE(ng) % avgbrs(i,j) = IniVal
+            AVERAGE(ng) % avgVbrs(i,j) = IniVal
           END DO
         END DO
       END IF
       IF (Aout(idUbws,ng)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
-            AVERAGE(ng) % avgbws(i,j) = IniVal
+            AVERAGE(ng) % avgUbws(i,j) = IniVal
           END DO
         END DO
       END IF
       IF (Aout(idVbws,ng)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
-            AVERAGE(ng) % avgbws(i,j) = IniVal
+            AVERAGE(ng) % avgVbws(i,j) = IniVal
           END DO
         END DO
       END IF
       IF (Aout(idUbcs,ng)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
-            AVERAGE(ng) % avgbcs(i,j) = IniVal
+            AVERAGE(ng) % avgUbcs(i,j) = IniVal
           END DO
         END DO
       END IF
       IF (Aout(idVbcs,ng)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
-            AVERAGE(ng) % avgbcs(i,j) = IniVal
+            AVERAGE(ng) % avgVbcs(i,j) = IniVal
           END DO
         END DO
       END IF
@@ -1805,6 +1972,15 @@
         END DO
       END IF
 # endif
+# ifdef WAVES_DIRP
+      IF (Aout(idWdip,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgWdip(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+# endif
 # ifdef WAVES_TOP_PERIOD
       IF (Aout(idWptp,ng)) THEN
         DO j=Jmin,Jmax
@@ -2097,7 +2273,7 @@
             AVERAGE(ng) % avgit(i,j,itrc) = IniVal
           END DO
         END DO
-#  elif defined BERING_10K
+#  elif defined BERING_10K       
       IF (Aout(idIceNO3,ng)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax

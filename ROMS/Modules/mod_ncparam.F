@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_ncparam
 !
-!svn $Id: mod_ncparam.F 884 2017-12-06 01:59:26Z arango $
+!svn $Id: mod_ncparam.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -392,10 +392,11 @@
         integer  :: idWamp        ! wave amplitude
         integer  :: idWbeh        ! WEC Bernoulli head
         integer  :: idWbrk        ! percent wave breaking
-        integer  :: idWdif        ! wave dissipation from bottom friction
+        integer  :: idWdif        ! wave dissipation from bottom friction 
         integer  :: idWdib        ! wave dissipation from surface breaking
         integer  :: idWdiw        ! wave dissipation from white capping
-        integer  :: idWdir        ! wave direction
+        integer  :: idWdir        ! mean wave direction
+        integer  :: idWdip        ! peak wave direction
         integer  :: idWdis        ! wave roller dissipation
         integer  :: idWlen        ! mean wave length
         integer  :: idWlep        ! peak wave length
@@ -614,12 +615,11 @@
 
         integer, allocatable :: Iinfo(:,:,:)
 
-        real(r8), allocatable :: Finfo(:,:,:)
-        real(r8), allocatable :: Fpoint(:,:,:)
-        real(r8), allocatable :: Fscale(:,:)
-        real(r8), allocatable :: Tintrp(:,:,:)
-
-        real(r8), allocatable :: Vtime(:,:,:)
+        real(dp), allocatable :: Finfo(:,:,:)
+        real(dp), allocatable :: Fpoint(:,:,:)
+        real(dp), allocatable :: Fscale(:,:)
+        real(dp), allocatable :: Tintrp(:,:,:)
+        real(dp), allocatable :: Vtime(:,:,:)
 
         character (len=5  ) :: version = '3.7  '
         character (len=40 ) :: varnam(MV)
@@ -629,14 +629,6 @@
         character (len=120) :: history
 
         character (len=256), allocatable :: Cinfo(:,:)
-!
-!  Source code root directory, cpp header file and directory, and
-!  analytical expression directory.
-!
-        character (len=256) :: Rdir
-        character (len=256) :: Hdir
-        character (len=256) :: Hfile
-        character (len=256) :: Adir
 !
 !  Analyical header file logical and names.
 !
@@ -669,120 +661,381 @@
 !                                                                      !
 !=======================================================================
 !
+      USE mod_param
+!
+!  Local variable declarations.
+!
+      integer :: ng
+!
 !-----------------------------------------------------------------------
 !  Allocate variables.
 !-----------------------------------------------------------------------
 !
-      allocate ( Nxyp(Ngrids) )
-      allocate ( Nxyr(Ngrids) )
-      allocate ( Nxyu(Ngrids) )
-      allocate ( Nxyv(Ngrids) )
+      IF (.not.allocated(Nxyp)) THEN
+        allocate ( Nxyp(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(Nxyr)) THEN
+        allocate ( Nxyr(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(Nxyu)) THEN
+        allocate ( Nxyu(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(Nxyv)) THEN
+        allocate ( Nxyv(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
 
-      allocate ( NwaterR(Ngrids) )
-      allocate ( NwaterU(Ngrids) )
-      allocate ( NwaterV(Ngrids) )
+      IF (.not.allocated(NwaterR)) THEN
+        allocate ( NwaterR(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(NwaterU)) THEN
+        allocate ( NwaterU(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(NwaterV)) THEN
+        allocate ( NwaterV(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
 
-      allocate ( rILB(Ngrids) )
-      allocate ( rIUB(Ngrids) )
-      allocate ( rJLB(Ngrids) )
-      allocate ( rJUB(Ngrids) )
+      IF (.not.allocated(rILB)) THEN
+        allocate ( rILB(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(rIUB)) THEN
+        allocate ( rIUB(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(rJLB)) THEN
+        allocate ( rJLB(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(rJUB)) THEN
+        allocate ( rJUB(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
 
-      allocate ( rXmin(Ngrids) )
-      allocate ( rXmax(Ngrids) )
-      allocate ( rYmin(Ngrids) )
-      allocate ( rYmax(Ngrids) )
+      IF (.not.allocated(rXmin)) THEN
+        allocate ( rXmin(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(rXmax)) THEN
+        allocate ( rXmax(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(rYmin)) THEN
+        allocate ( rYmin(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(rYmax)) THEN
+        allocate ( rYmax(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
 
-      allocate ( uILB(Ngrids) )
-      allocate ( uIUB(Ngrids) )
-      allocate ( uJLB(Ngrids) )
-      allocate ( uJUB(Ngrids) )
+      IF (.not.allocated(uILB)) THEN
+        allocate ( uILB(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(uIUB)) THEN
+        allocate ( uIUB(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(uJLB)) THEN
+        allocate ( uJLB(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(uJUB)) THEN
+        allocate ( uJUB(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
 
-      allocate ( uXmin(Ngrids) )
-      allocate ( uXmax(Ngrids) )
-      allocate ( uYmin(Ngrids) )
-      allocate ( uYmax(Ngrids) )
+      IF (.not.allocated(uXmin)) THEN
+        allocate ( uXmin(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(uXmax)) THEN
+        allocate ( uXmax(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(uYmin)) THEN
+        allocate ( uYmin(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(uYmax)) THEN
+        allocate ( uYmax(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
 
-      allocate ( vILB(Ngrids) )
-      allocate ( vIUB(Ngrids) )
-      allocate ( vJLB(Ngrids) )
-      allocate ( vJUB(Ngrids) )
+      IF (.not.allocated(vILB)) THEN
+        allocate ( vILB(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(vIUB)) THEN
+        allocate ( vIUB(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(vJLB)) THEN
+        allocate ( vJLB(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(vJUB)) THEN
+        allocate ( vJUB(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
 
-      allocate ( vXmin(Ngrids) )
-      allocate ( vXmax(Ngrids) )
-      allocate ( vYmin(Ngrids) )
-      allocate ( vYmax(Ngrids) )
+      IF (.not.allocated(vXmin)) THEN
+        allocate ( vXmin(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(vXmax)) THEN
+        allocate ( vXmax(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(vYmin)) THEN
+        allocate ( vYmin(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(vYmax)) THEN
+        allocate ( vYmax(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
 
-      allocate ( Aout(NV,Ngrids) )
-      allocate ( Aout2(NV,Ngrids) )
-      allocate ( Dout(NV,Ngrids) )
-      allocate ( Hout(NV,Ngrids) )
-      allocate ( Hout2(NV,Ngrids) )
-      allocate ( Qout(NV,Ngrids) )
-      allocate ( Sout(NV,Ngrids) )
+      IF (.not.allocated(Aout)) THEN
+        allocate ( Aout(NV,Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(NV*Ngrids,r8)
+      END IF
+      IF (.not.allocated(Aout2)) THEN
+        allocate ( Aout2(NV,Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(NV*Ngrids,r8)
+      END IF
+      IF (.not.allocated(Dout)) THEN
+        allocate ( Dout(NV,Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(NV*Ngrids,r8)
+      END IF
+      IF (.not.allocated(Hout)) THEN
+        allocate ( Hout(NV,Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(NV*Ngrids,r8)
+      END IF
+      IF (.not.allocated(Hout2)) THEN
+        allocate ( Hout2(NV,Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(NV*Ngrids,r8)
+      END IF
+      IF (.not.allocated(Qout)) THEN
+        allocate ( Qout(NV,Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(NV*Ngrids,r8)
+      END IF
+      IF (.not.allocated(Sout)) THEN
+        allocate ( Sout(NV,Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(NV*Ngrids,r8)
+      END IF
 
-      allocate ( idRtrc(MT) )
-      allocate ( idsurT(MT) )
-      allocate ( idTads(MT) )
-      allocate ( idTbot(MT) )
-      allocate ( idTbry(4,MT) )
-      allocate ( idTclm(MT) )
-      allocate ( idTnud(MT) )
-      allocate ( idTsur(MT) )
-      allocate ( idTtlf(MT) )
+      IF (.not.allocated(idRtrc)) THEN
+        allocate ( idRtrc(MT) )
+        Dmem(1)=Dmem(1)+REAL(MT,r8)
+      END IF
+      IF (.not.allocated(idsurT)) THEN
+        allocate ( idsurT(MT) )
+        Dmem(1)=Dmem(1)+REAL(MT,r8)
+      END IF
+      IF (.not.allocated(idTads)) THEN
+        allocate ( idTads(MT) )
+        Dmem(1)=Dmem(1)+REAL(MT,r8)
+      END IF
+      IF (.not.allocated(idTbot)) THEN
+        allocate ( idTbot(MT) )
+        Dmem(1)=Dmem(1)+REAL(MT,r8)
+      END IF
+      IF (.not.allocated(idTbry)) THEN
+        allocate ( idTbry(4,MT) )
+        Dmem(1)=Dmem(1)+4.0_r8*REAL(MT,r8)
+      END IF
+      IF (.not.allocated(idTclm)) THEN
+        allocate ( idTclm(MT) )
+        Dmem(1)=Dmem(1)+REAL(MT,r8)
+      END IF
+      IF (.not.allocated(idTnud)) THEN
+        allocate ( idTnud(MT) )
+        Dmem(1)=Dmem(1)+REAL(MT,r8)
+      END IF
+      IF (.not.allocated(idTsur)) THEN
+        allocate ( idTsur(MT) )
+        Dmem(1)=Dmem(1)+REAL(MT,r8)
+      END IF
+      IF (.not.allocated(idTtlf)) THEN
+        allocate ( idTtlf(MT) )
+        Dmem(1)=Dmem(1)+REAL(MT,r8)
+      END IF
 
-      allocate ( iHUTav(MT) )
-      allocate ( iHVTav(MT) )
-      allocate ( idTTav(MT) )
-      allocate ( idUTav(MT) )
-      allocate ( idVTav(MT) )
+      IF (.not.allocated(iHUTav)) THEN
+        allocate ( iHUTav(MT) )
+        Dmem(1)=Dmem(1)+REAL(MT,r8)
+      END IF
+      IF (.not.allocated(iHVTav)) THEN
+        allocate ( iHVTav(MT) )
+        Dmem(1)=Dmem(1)+REAL(MT,r8)
+      END IF
+      IF (.not.allocated(idTTav)) THEN
+        allocate ( idTTav(MT) )
+        Dmem(1)=Dmem(1)+REAL(MT,r8)
+      END IF
+      IF (.not.allocated(idUTav)) THEN
+        allocate ( idUTav(MT) )
+        Dmem(1)=Dmem(1)+REAL(MT,r8)
+      END IF
+      IF (.not.allocated(idVTav)) THEN
+        allocate ( idVTav(MT) )
+        Dmem(1)=Dmem(1)+REAL(MT,r8)
+      END IF
 
 #ifdef DIAGNOSTICS
-      allocate ( idDtrc(MT,NDT) )
-      allocate ( idDu2d(NDM2d) )
-      allocate ( idDv2d(NDM2d) )
-      allocate ( idDu3d(NDM3d) )
-      allocate ( idDv3d(NDM3d) )
+      IF (.not.allocated(idDtrc)) THEN
+        allocate ( idDtrc(MT,NDT) )
+        Dmem(1)=Dmem(1)+REAL(MT*NDT,r8)
+      END IF
+      IF (.not.allocated(idDu2d)) THEN
+        allocate ( idDu2d(NDM2d) )
+        Dmem(1)=Dmem(1)+REAL(NDM2d,r8)
+      END IF
+      IF (.not.allocated(idDv2d)) THEN
+        allocate ( idDv2d(NDM2d) )
+        Dmem(1)=Dmem(1)+REAL(NDM2d,r8)
+      END IF
+      IF (.not.allocated(idDu3d)) THEN
+        allocate ( idDu3d(NDM3d) )
+        Dmem(1)=Dmem(1)+REAL(NDM3d,r8)
+      END IF
+      IF (.not.allocated(idDv3d)) THEN
+        allocate ( idDv3d(NDM3d) )
+        Dmem(1)=Dmem(1)+REAL(NDM3d,r8)
+      END IF
 #endif
 
-      allocate ( isTsur(MT) )
-      allocate ( isTvar(MT) )
-      allocate ( idBvar(nLBCvar) )
-      allocate ( idSvar(MAXVAL(NSV)+1) )
-      allocate ( idSbry(MAXVAL(NSV)+1) )
+      IF (.not.allocated(isTsur)) THEN
+        allocate ( isTsur(MT) )
+        Dmem(1)=Dmem(1)+REAL(MT,r8)
+      END IF
+      IF (.not.allocated(isTvar)) THEN
+        allocate ( isTvar(MT) )
+        Dmem(1)=Dmem(1)+REAL(MT,r8)
+      END IF
+      IF (.not.allocated(idBvar)) THEN
+        allocate ( idBvar(nLBCvar) )
+        Dmem(1)=Dmem(1)+REAL(nLBCvar,r8)
+      END IF
+      IF (.not.allocated(idSvar)) THEN
+        allocate ( idSvar(MAXVAL(NSV)+1) )
+        Dmem(1)=Dmem(1)+REAL(MAXVAL(NSV)+1,r8)
+      END IF
+      IF (.not.allocated(idSbry)) THEN
+        allocate ( idSbry(MAXVAL(NSV)+1) )
+        Dmem(1)=Dmem(1)+REAL(MAXVAL(NSV)+1,r8)
+      END IF
 
-      allocate ( ncBRYid(NV,Ngrids) )
-      allocate ( ncCLMid(NV,Ngrids) )
-      allocate ( ncFRCid(NV,Ngrids) )
+      IF (.not.allocated(ncBRYid)) THEN
+        allocate ( ncBRYid(NV,Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(NV*Ngrids,r8)
+      END IF
+      IF (.not.allocated(ncCLMid)) THEN
+        allocate ( ncCLMid(NV,Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(NV*Ngrids,r8)
+      END IF
+      IF (.not.allocated(ncFRCid)) THEN
+        allocate ( ncFRCid(NV,Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(NV*Ngrids,r8)
+      END IF
 
-      allocate ( idefADJ(Ngrids) )
-      allocate ( idefAVG(Ngrids) )
-      allocate ( idefAVG2(Ngrids) )
-      allocate ( idefDIA(Ngrids) )
-      allocate ( idefHIS(Ngrids) )
-      allocate ( idefHIS2(Ngrids) )
-      allocate ( idefQCK(Ngrids) )
-      allocate ( idefTLM(Ngrids) )
+      IF (.not.allocated(idefADJ)) THEN
+        allocate ( idefADJ(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(idefAVG)) THEN
+        allocate ( idefAVG(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(idefAVG2)) THEN
+        allocate ( idefAVG2(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(idefDIA)) THEN
+        allocate ( idefDIA(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(idefHIS)) THEN
+        allocate ( idefHIS(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(idefHIS2)) THEN
+        allocate ( idefHIS2(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(idefQCK)) THEN
+        allocate ( idefQCK(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(idefTLM)) THEN
+        allocate ( idefTLM(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
 
-      allocate ( idTvar(MT) )
-      allocate ( idTrcD(NAT) )
-      allocate ( idTrcH(NAT) )
+      IF (.not.allocated(idTvar)) THEN
+        allocate ( idTvar(MT) )
+        Dmem(1)=Dmem(1)+REAL(MT,r8)
+      END IF
+      IF (.not.allocated(idTrcD)) THEN
+        allocate ( idTrcD(NAT) )
+        Dmem(1)=Dmem(1)+REAL(NAT,r8)
+      END IF
+      IF (.not.allocated(idTrcH)) THEN
+        allocate ( idTrcH(NAT) )
+        Dmem(1)=Dmem(1)+REAL(NAT,r8)
+      END IF
 
-      allocate ( Linfo(6,NV,Ngrids) )
+      IF (.not.allocated(Linfo)) THEN
+        allocate ( Linfo(6,NV,Ngrids) )
+        Dmem(1)=Dmem(1)+6.0_r8*REAL(NV*Ngrids,r8)
+      END IF
 
-      allocate ( Iinfo(10,NV,Ngrids) )
+      IF (.not.allocated(Iinfo)) THEN
+        allocate ( Iinfo(10,NV,Ngrids) )
+        Dmem(1)=Dmem(1)+10.0_r8*REAL(NV*Ngrids,r8)
+      END IF
 
-      allocate ( Finfo(10,NV,Ngrids) )
-      allocate ( Fpoint(2,NV,Ngrids) )
-      allocate ( Fscale(NV,Ngrids) )
-      allocate ( Tintrp(2,NV,Ngrids) )
+      IF (.not.allocated(Finfo)) THEN
+        allocate ( Finfo(10,NV,Ngrids) )
+        Dmem(1)=Dmem(1)+10.0_r8*REAL(NV*Ngrids,r8)
+      END IF
+      IF (.not.allocated(Fpoint)) THEN
+        allocate ( Fpoint(2,NV,Ngrids) )
+        Dmem(1)=Dmem(1)+2.0_r8*REAL(NV*Ngrids,r8)
+      END IF
+      IF (.not.allocated(Fscale)) THEN
+        allocate ( Fscale(NV,Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(NV*Ngrids,r8)
+      END IF
+      IF (.not.allocated(Tintrp)) THEN
+        allocate ( Tintrp(2,NV,Ngrids) )
+        Dmem(1)=Dmem(1)+2.0_r8*REAL(NV*Ngrids,r8)
+      END IF
 
 #if defined SSH_TIDES || defined UV_TIDES
-      allocate ( Vtime(MAX(2,MTC),NV,Ngrids) )
+      IF (.not.allocated(Vtime)) THEN
+        allocate ( Vtime(MAX(2,MTC),NV,Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(MAX(2,MTC)*NV*Ngrids,r8)
+      END IF
 #else
-      allocate ( Vtime(2,NV,Ngrids) )
+      IF (.not.allocated(Vtime)) THEN
+        allocate ( Vtime(2,NV,Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(NV*Ngrids,r8)
+      END IF
 #endif
 
-      allocate ( Cinfo(NV,Ngrids) )
+      IF (.not.allocated(Cinfo)) THEN
+        allocate ( Cinfo(NV,Ngrids) )
+        Dmem(1)=Dmem(1)+0.125_r8*256.0_r8*REAL(NV*Ngrids,r8)
+      END IF
 
       RETURN
       END SUBROUTINE allocate_ncparam
@@ -791,8 +1044,8 @@
 !
 !=======================================================================
 !                                                                      !
-!  This routine allocates and initializes all variables in module      !
-!  "mod_ncparam" for all nested grids.                                 !
+!  This routine initializes all variables in module "mod_ncparam" for  !
+!  all nested grids.                                                   !
 !                                                                      !
 !=======================================================================
 !
@@ -806,8 +1059,8 @@
       USE mod_sediment
 #endif
 #if defined VEGETATION
-      USE mod_vegetation
-#endif
+      USE mod_vegetation 
+#endif 
 !
 !  Local variable declarations.
 !
@@ -1020,31 +1273,15 @@
           Fscale(i,ng)=1.0_r8
           Fpoint(1,i,ng)=0.0_r8
           Fpoint(2,i,ng)=0.0_r8
-          Tintrp(1,i,ng)=0.0_r8
-          Tintrp(2,i,ng)=0.0_r8
-          Vtime(1,i,ng)=0.0_r8
-          Vtime(2,i,ng)=0.0_r8
+          Tintrp(1,i,ng)=0.0_dp
+          Tintrp(2,i,ng)=0.0_dp
+          Vtime(1,i,ng)=0.0_dp
+          Vtime(2,i,ng)=0.0_dp
           ncBRYid(i,ng)=-1
           ncCLMid(i,ng)=-1
           ncFRCid(i,ng)=-1
         END DO
       END DO
-!
-!  Set source code root directory, cpp header file and directory, and
-!  analytical expression directory.
-!
-#ifdef ROOT_DIR
-      Rdir=ROOT_DIR
-#endif
-#ifdef HEADER_DIR
-      Hdir=HEADER_DIR
-#endif
-#ifdef ROMS_HEADER
-      Hfile=HEADER
-#endif
-#ifdef ANALYTICAL_DIR
-      Adir=ANALYTICAL_DIR
-#endif
 !
 !-----------------------------------------------------------------------
 !  Define names of variables for Input/Output NetCDF files.
@@ -1370,6 +1607,8 @@
               idWdis=varid
             CASE ('idWdir')
               idWdir=varid
+            CASE ('idWdip')
+              idWdip=varid
             CASE ('idWdiw')
               idWdiw=varid
             CASE ('idWztw')
@@ -2192,7 +2431,7 @@
 #if defined SEDIMENT || defined BBL_MODEL
 #  include <sediment_var.h>
 #endif
-#if defined VEGETATION
+#if defined VEGETATION 
 #  include <vegetation_var.h>
 #endif
 
@@ -3121,6 +3360,7 @@
 !  Save last variable ID counter used.
 !
       last_varid=varid
+      Dmem(1)=Dmem(1)+REAL(varid,r8)
 !
   50  FORMAT (/,' MOD_NCPARAM - Unable to open variable information',   &
      &        ' file: ',/,15x,a,/,15x,'Default file is located in',     &

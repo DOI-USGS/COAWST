@@ -385,8 +385,8 @@
 !
 #ifdef NESTING
 !
-!       Numspec is the number of boundary points for each grid that is
-!       a child. This value is not necessary for ng=1, but it is
+!       Numspec is the number of boundary points for each grid that is 
+!       a child. This value is not necessary for ng=1, but it is 
 !       filled anyway.
 !
         Numspec(ng)=MXCGL*2+MYCGL*2-4
@@ -617,7 +617,7 @@
 
 # ifdef NESTING
 !
-!     AC2_parent is the action density array filled for each grid that is
+!     AC2_parent is the action density array filled for each grid that is 
 !     a parent.
 !
       IF ((first.eq.0).and.(ng.lt.Ngrids)) THEN
@@ -720,7 +720,7 @@
             ENDIF
 !
             IF ((NSTATC.EQ.1).AND.(IT.EQ.0)) THEN
-!  For a non-statioary run, call to init some bottom properties
+!  For a non-statioary run, call to init some bottom properties 
 !  during the first call to swan_run.
 !
               ALLOCATE(CGO(MSC,MICMAX))
@@ -767,7 +767,7 @@
 
 !TIMG            CALL SWTSTA(9)                                                    40.23
 !
-!  Prevent call to output for a stationary run during
+!  Prevent call to output for a stationary run during 
 !  first call to swan_run.
 !
             do_output=1
@@ -800,13 +800,13 @@
 !
 ! Call to write restart file
 !
-            nsrst=INT(dtswanrst(ng)/DT)
-            IF (nsrst.gt.0) THEN
-              IF (MOD(IT_in, nsrst).eq.0) THEN
-                CALL RESTART_SWAN (AC2, SPCSIG, SPCDIR, KGRPNT,         &
-     &                             XCGRID, YCGRID, ng)
-              END IF
-            END IF
+!            nsrst=INT(dtswanrst(ng)/DT)
+!            IF (nsrst.gt.0) THEN
+!              IF (MOD(IT_in, nsrst).eq.0) THEN
+!                CALL RESTART_SWAN (AC2, SPCSIG, SPCDIR, KGRPNT,         &
+!     &                             XCGRID, YCGRID, ng)
+!              END IF
+!            END IF
 !
 !           --- update time
 !
@@ -822,6 +822,73 @@
       RETURN
       END SUBROUTINE SWAN_RUN
 
+
+
+!***********************************************************************
+!                                                                      *
+      SUBROUTINE SWAN_RST (IT_in, ng)
+!                                                                      *
+!***********************************************************************
+!
+      USE TIMECOMM
+      USE OCPCOMM2
+      USE OCPCOMM4
+      USE SWCOMM1
+      USE SWCOMM2
+      USE SWCOMM3
+      USE SWCOMM4
+      USE OUTP_DATA
+      USE M_GENARR
+      USE M_PARALL
+      USE M_PARALL2
+      USE M_COUPLING
+      USE SWPOINT_MOD, ONLY: INIT_POINTERS
+# ifdef NESTING
+      USE M_SREFINED
+# endif
+      USE swan_iounits
+!
+      IMPLICIT NONE
+!
+      INTEGER,  intent(in) :: IT_in, ng
+
+      INTEGER   IOSTAT, IT0, IT, SAVITE, ILEN
+      INTEGER   nWAV_steps, nsrst
+      REAL*8 TIMCOMDT
+      CHARACTER*18 DTTIWR
+      CHARACTER*20 CHTIME_M
+!
+      Gridnum=ng
+!
+!  Create list of pointers for each ng instance.
+!
+      CALL INIT_POINTERS(ng)
+!
+!  Modules M_GENARR
+!
+      KGRPNT=>M_GENARR_MOD(ng)%KGRPNT_G
+      KGRBND=>M_GENARR_MOD(ng)%KGRBND_G
+      XYTST=> M_GENARR_MOD(ng)%XYTST_G
+      AC2=>   M_GENARR_MOD(ng)%AC2_G
+      XCGRID=>M_GENARR_MOD(ng)%XCGRID_G
+      YCGRID=>M_GENARR_MOD(ng)%YCGRID_G
+      SPCSIG=>M_GENARR_MOD(ng)%SPCSIG_G
+      SPCDIR=>M_GENARR_MOD(ng)%SPCDIR_G
+!
+! Call to write restart file
+!
+      TIMCOMDT=TIMCO-DT
+      nsrst=INT(dtswanrst(ng)/DT)
+      CHTIME_M = DTTIWR(ITMOPT, TIMCOMDT)
+      IF (nsrst.gt.0) THEN
+        IF (MOD(IT_in, nsrst).eq.0) THEN
+          CALL RESTART_SWAN (AC2, SPCSIG, SPCDIR, KGRPNT,               &
+     &                       XCGRID, YCGRID, CHTIME_M, ng)
+        END IF
+      END IF
+
+      RETURN
+      END SUBROUTINE SWAN_RST
 
 # ifdef COAWST_COUPLING
 !***********************************************************************
@@ -842,16 +909,16 @@
       USE M_PARALL2
       USE SWPOINT_MOD, ONLY: INIT_POINTERS
       USE SWPOINT_MOD, ONLY: INIT_COUPLING_POINTERS
-# ifdef NESTING
+#  ifdef NESTING
       USE M_SREFINED
-# endif
+#  endif
 !
       IMPLICIT NONE
 !
       INTEGER,  intent(in) :: first
       INTEGER   io, iw, ia, offset, run_couple
 
-# ifdef ROMS_COUPLING
+#  ifdef ROMS_COUPLING
 !
 !     Send data to ocn model.
       DO iw=1,NUM_SGRIDS
@@ -888,8 +955,8 @@
         END DO
       END DO
   50  CONTINUE
-# endif
-# ifdef WRF_COUPLING
+#  endif
+#  ifdef WRF_COUPLING
 !
 !     Call to get data from atm model.
       DO iw=1,NUM_SGRIDS
@@ -926,7 +993,7 @@
         END DO
       END DO
   45  CONTINUE
-# endif
+#  endif
 
       RETURN
       END SUBROUTINE SWAN_CPL
@@ -3778,7 +3845,7 @@
       OVEXCV(IVTYPE) = -9.
 !
 #if defined SWAN_MODEL
-      IVTYPE = 76
+      IVTYPE = 76                                                   
       OVKEYW(IVTYPE) = 'DIRBOT'                                           !PSD 09/21/2011
       OVSNAM(IVTYPE) = 'DirBot'
       OVLNAM(IVTYPE) = 'Average bottom wave direction'

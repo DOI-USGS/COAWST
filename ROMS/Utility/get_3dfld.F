@@ -8,9 +8,9 @@
 # endif
      &                      Fout)
 !
-!svn $Id: get_3dfld.F 884 2017-12-06 01:59:26Z arango $
+!svn $Id: get_3dfld.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -82,9 +82,11 @@
       integer :: i, job, lend, lstr, lvar, status
       integer :: Vsize(4)
 
-      real(r8) :: Clength, Fmax, Fmin, Tdelta, Tend
-      real(r8) :: Tmax, Tmin, Tmono, Tscale, Tstr
-      real(r8) :: Fval, Tsec, Tval
+      real(r8) :: Fmax, Fmin, Fval
+
+      real(dp) :: Clength,  Tdelta, Tend
+      real(dp) :: Tmax, Tmin, Tmono, Tscale, Tstr
+      real(dp) :: Tsec, Tval
 
       character (len=22)  :: t_code
 !
@@ -188,8 +190,8 @@
 !  Read in time coordinate and scale it to day units.
 !
           IF (Tid.ge.0) THEN
-            CALL netcdf_get_fvar (ng, model, ncfile, Tname(ifield),     &
-     &                            Tval,                                 &
+            CALL netcdf_get_time (ng, model, ncfile, Tname(ifield),     &
+     &                            Rclock%DateNumber, Tval,              &
      &                            ncid = ncid,                          &
      &                            start = (/Trec/),                     &
      &                            total = (/1/))

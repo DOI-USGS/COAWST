@@ -59,7 +59,7 @@ CONTAINS
 !-- svp3        constant for saturation vapor pressure (K)
 !-- svpt0       constant for saturation vapor pressure (K)
 !-- ep1         constant for virtual temperature (R_v/R_d - 1) (dimensionless)
-!-- ep2         constant for specific humidity calculation
+!-- ep2         constant for specific humidity calculation 
 !               (R_d/R_v) (dimensionless)
 !-- karman      Von Karman constant
 !-- fCor        Coriolis parameter
@@ -85,7 +85,7 @@ CONTAINS
       INTEGER,  INTENT(IN )   ::        ids,ide, jds,jde, kds,kde, &
                                         ims,ime, jms,jme, kms,kme, &
                                         its,ite, jts,jte, kts,kte
-!
+!                                                               
       REAL,     DIMENSION( ims:ime, kms:kme, jms:jme )           , &
                 INTENT(IN   ) :: u3d, v3d, th3d, qv3d, p3d, pi3d, rho, z
       REAL,     DIMENSION( ims:ime, jms:jme )                    , &
@@ -98,7 +98,7 @@ CONTAINS
                 INTENT(OUT  ) :: u10, v10, th2, t2, q2
       REAL,     DIMENSION( ims:ime, jms:jme )           , &
                 INTENT(  OUT) :: exch_temf
-
+                                        
       REAL,     INTENT(INOUT) :: hfx_force, lh_force, tsk_force
       REAL,     INTENT(IN   ) :: hfx_force_tend, lh_force_tend, tsk_force_tend
       REAL,     INTENT(IN   ) :: dt
@@ -176,14 +176,14 @@ CONTAINS
                                         ims,ime, jms,jme, kms,kme, &
                                         its,ite, jts,jte, kts,kte, &
                                         j
-
+                                                               
       REAL,     DIMENSION( ims:ime ), INTENT(IN   ) ::             &
                                         u1d,v1d,qv1d,p1d,th1d,pi1d,rho,z,zsrf
       REAL,     INTENT(IN   ) ::        cp,g,rovcp,r,xlv
       REAL,     DIMENSION( ims:ime ), INTENT(IN   ) :: psfc,znt
       REAL,     DIMENSION( ims:ime ), INTENT(INOUT) ::             &
                                         chs,chs2,cqs2,cpm,ust
-      REAL,     DIMENSION( ims:ime ), INTENT(IN   ) :: mavail,xland
+      REAL,     DIMENSION( ims:ime ), INTENT(IN   ) :: mavail,xland 
       REAL,     DIMENSION( ims:ime ), INTENT(INOUT) ::             &
                                         hfx,qfx,lh
       REAL,     DIMENSION( ims:ime ), INTENT(INOUT) :: tsk
@@ -234,7 +234,7 @@ CONTAINS
 !!!!!!! ******
 ! WA Known outages:  None
 
-   do i = its,ite      ! Main loop
+   do i = its,ite      ! Main loop 
 
       ! WA 1/6/10 This routine just populates HFX, QFX, and TSK
       ! with the suitable converted forcing values.
@@ -256,12 +256,12 @@ CONTAINS
    END SUBROUTINE idealscmsfclay1d
 
 !====================================================================
-   SUBROUTINE idealscmsfclayinit( allowed_to_read )
+   SUBROUTINE idealscmsfclayinit( allowed_to_read )         
 
    LOGICAL , INTENT(IN)      ::      allowed_to_read
 
    END SUBROUTINE idealscmsfclayinit
 
-!-------------------------------------------------------------------
+!-------------------------------------------------------------------          
 
 END MODULE module_sf_idealscmsfclay

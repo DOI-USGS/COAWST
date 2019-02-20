@@ -2,9 +2,9 @@
       MODULE mod_diags
 #ifdef DIAGNOSTICS
 !
-!svn $Id: mod_diags.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: mod_diags.F 921 2018-09-06 18:27:34Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -98,45 +98,91 @@
 !
       integer, intent(in) :: ng, LBi, UBi, LBj, UBj
 !
+!  Local variable declarations.
+!
+      real(r8) :: size2d
+!
 !-----------------------------------------------------------------------
 !  Allocate module variables.
 !-----------------------------------------------------------------------
 !
       IF (ng.eq.1 ) allocate ( DIAGS(Ngrids) )
 !
+!  Set horizontal array size.
+!
+      size2d=REAL((UBi-LBi)*(UBj-LBj),r8)
+!
+!  Diagnostic arrays.
+!
 # if defined DIAGNOSTICS_BIO && defined BIO_FENNEL
       IF (NDbio2d.gt.0) THEN
         allocate ( DIAGS(ng) % DiaBio2d(LBi:UBi,LBj:UBj,NDbio2d) )
+        Dmem(ng)=Dmem(ng)+REAL(NDbio2d,r8)*size2d
       END IF
       IF (NDbio3d.gt.0) THEN
         allocate ( DIAGS(ng) % DiaBio3d(LBi:UBi,LBj:UBj,N(ng),NDbio3d) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NDbio3d,r8)*size2d
       END IF
 # endif
 
 # ifdef DIAGNOSTICS_TS
       allocate ( DIAGS(ng) % DiaTrc(LBi:UBi,LBj:UBj,N(ng),NT(ng),NDT) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng)*NDT,r8)*size2d
+
       allocate ( DIAGS(ng) % DiaTwrk(LBi:UBi,LBj:UBj,N(ng),NT(ng),NDT) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)*NT(ng)*NDT,r8)*size2d
 # endif
 
 # ifdef DIAGNOSTICS_UV
       allocate ( DIAGS(ng) % DiaU2d(LBi:UBi,LBj:UBj,NDM2d) )
+      Dmem(ng)=Dmem(ng)+REAL(NDM2d,r8)*size2d
+
       allocate ( DIAGS(ng) % DiaV2d(LBi:UBi,LBj:UBj,NDM2d) )
+      Dmem(ng)=Dmem(ng)+REAL(NDM2d,r8)*size2d
+
       allocate ( DIAGS(ng) % DiaU2wrk(LBi:UBi,LBj:UBj,NDM2d) )
+      Dmem(ng)=Dmem(ng)+REAL(NDM2d,r8)*size2d
+
       allocate ( DIAGS(ng) % DiaV2wrk(LBi:UBi,LBj:UBj,NDM2d) )
+      Dmem(ng)=Dmem(ng)+REAL(NDM2d,r8)*size2d
+
       allocate ( DIAGS(ng) % DiaRUbar(LBi:UBi,LBj:UBj,2,NDM2d-1) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(NDM2d-1,r8)*size2d
+
       allocate ( DIAGS(ng) % DiaRVbar(LBi:UBi,LBj:UBj,2,NDM2d-1) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(NDM2d-1,r8)*size2d
 
 #  ifdef SOLVE3D
       allocate ( DIAGS(ng) % DiaU2int(LBi:UBi,LBj:UBj,NDM2d) )
+      Dmem(ng)=Dmem(ng)+REAL(NDM2d,r8)*size2d
+
       allocate ( DIAGS(ng) % DiaV2int(LBi:UBi,LBj:UBj,NDM2d) )
+      Dmem(ng)=Dmem(ng)+REAL(NDM2d,r8)*size2d
+
       allocate ( DIAGS(ng) % DiaRUfrc(LBi:UBi,LBj:UBj,3,NDM2d-1) )
+      Dmem(ng)=Dmem(ng)+3.0_r8*REAL(NDM2d-1,r8)*size2d
+
       allocate ( DIAGS(ng) % DiaRVfrc(LBi:UBi,LBj:UBj,3,NDM2d-1) )
+      Dmem(ng)=Dmem(ng)+3.0_r8*REAL(NDM2d-1,r8)*size2d
+
       allocate ( DIAGS(ng) % DiaU3d(LBi:UBi,LBj:UBj,N(ng),NDM3d) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)*NDM3d,r8)*size2d
+
       allocate ( DIAGS(ng) % DiaV3d(LBi:UBi,LBj:UBj,N(ng),NDM3d) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)*NDM3d,r8)*size2d
+
       allocate ( DIAGS(ng) % DiaU3wrk(LBi:UBi,LBj:UBj,N(ng),NDM3d) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)*NDM3d,r8)*size2d
+
       allocate ( DIAGS(ng) % DiaV3wrk(LBi:UBi,LBj:UBj,N(ng),NDM3d) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)*NDM3d,r8)*size2d
+
       allocate ( DIAGS(ng) % DiaRU(LBi:UBi,LBj:UBj,N(ng),2,NDrhs) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)*NDrhs,r8)*size2d
+
       allocate ( DIAGS(ng) % DiaRV(LBi:UBi,LBj:UBj,N(ng),2,NDrhs) )
+      Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)*NDrhs,r8)*size2d
+
 #  endif
 
 # endif

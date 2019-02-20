@@ -1,13 +1,3 @@
-#if ( HYBRID_COORD==1 )
-#  define mut(...) (c1(k)*XXPCTXX(__VA_ARGS__)+c2(k))
-#  define XXPCTXX(...) mut(__VA_ARGS__)
-
-#  define muts(...) (c1(k)*XXPCTSXX(__VA_ARGS__)+c2(k))
-#  define XXPCTSXX(...) muts(__VA_ARGS__)
-
-#  define mu_old(...) (c1(k)*XXPCOLDXX(__VA_ARGS__)+c2(k))
-#  define XXPCOLDXX(...) mu_old(__VA_ARGS__)
-#endif
 
 !WRF:MODEL_LAYER:BOUNDARY
 !
@@ -98,9 +88,9 @@ CONTAINS
 
               MU_OLD(i,j) = MUTS(i,j) - dt*MU_TEND(i,j)
 
-              field(i,k,j) = field(i,k,j)*mu_old(i,j)/muts(i,j) + &
-                   dt*field_tend(i,k,j)/muts(i,j) +               &
-                   ph_save(i,k,j)*(mu_old(i,j)/muts(i,j) - 1.)
+              field(i,k,j) = field(i,k,j)*(c1(k)*mu_old(i,j)+c2(k))/(c1(k)*muts(i,j)+c2(k)) + &
+                   dt*field_tend(i,k,j)/(c1(k)*muts(i,j)+c2(k)) +               &
+                   ph_save(i,k,j)*((c1(k)*mu_old(i,j)+c2(k))/(c1(k)*muts(i,j)+c2(k)) - 1.)
 
             ENDDO
           ENDDO
@@ -117,9 +107,9 @@ CONTAINS
 
               MU_OLD(i,j) = MUTS(i,j) - dt*MU_TEND(i,j)
 
-              field(i,k,j) = field(i,k,j)*mu_old(i,j)/muts(i,j) + &
-                   dt*field_tend(i,k,j)/muts(i,j) +               &
-                   ph_save(i,k,j)*(mu_old(i,j)/muts(i,j) - 1.)
+              field(i,k,j) = field(i,k,j)*(c1(k)*mu_old(i,j)+c2(k))/(c1(k)*muts(i,j)+c2(k)) + &
+                   dt*field_tend(i,k,j)/(c1(k)*muts(i,j)+c2(k)) +               &
+                   ph_save(i,k,j)*((c1(k)*mu_old(i,j)+c2(k))/(c1(k)*muts(i,j)+c2(k)) - 1.)
 
             ENDDO
           ENDDO
@@ -136,9 +126,9 @@ CONTAINS
 
               MU_OLD(i,j) = MUTS(i,j) - dt*MU_TEND(i,j)
 
-              field(i,k,j) = field(i,k,j)*mu_old(i,j)/muts(i,j) + &
-                   dt*field_tend(i,k,j)/muts(i,j) +               &
-                   ph_save(i,k,j)*(mu_old(i,j)/muts(i,j) - 1.)
+              field(i,k,j) = field(i,k,j)*(c1(k)*mu_old(i,j)+c2(k))/(c1(k)*muts(i,j)+c2(k)) + &
+                   dt*field_tend(i,k,j)/(c1(k)*muts(i,j)+c2(k)) +               &
+                   ph_save(i,k,j)*((c1(k)*mu_old(i,j)+c2(k))/(c1(k)*muts(i,j)+c2(k)) - 1.)
 
             ENDDO
           ENDDO
@@ -154,9 +144,9 @@ CONTAINS
 
               MU_OLD(i,j) = MUTS(i,j) - dt*MU_TEND(i,j)
 
-              field(i,k,j) = field(i,k,j)*mu_old(i,j)/muts(i,j) + &
-                   dt*field_tend(i,k,j)/muts(i,j) +               &
-                   ph_save(i,k,j)*(mu_old(i,j)/muts(i,j) - 1.)
+              field(i,k,j) = field(i,k,j)*(c1(k)*mu_old(i,j)+c2(k))/(c1(k)*muts(i,j)+c2(k)) + &
+                   dt*field_tend(i,k,j)/(c1(k)*muts(i,j)+c2(k)) +               &
+                   ph_save(i,k,j)*((c1(k)*mu_old(i,j)+c2(k))/(c1(k)*muts(i,j)+c2(k)) - 1.)
 
             ENDDO
           ENDDO
@@ -550,12 +540,12 @@ CONTAINS
 
    SUBROUTINE spec_bdy_dry_perturb ( config_flags,                                   &
                                      ru_tend, rv_tend, t_tend,mu_2, mub, c1, c2,     &
-      			             msfu, msfv, msft,                               &
+                    msfu, msfv, msft,                               &
                                      field_u_tend_perturb,field_v_tend_perturb,field_t_tend_perturb, &
-				     spec_bdy_width, spec_zone,  &
+      spec_bdy_width, spec_zone,  &
                                      kme_stoch,                  & ! stoch dims
                                      ids,ide, jds,jde, kds,kde,  & ! domain dims
-				     ims,ime, jms,jme, kms,kme,  & ! memory dims
+      ims,ime, jms,jme, kms,kme,  & ! memory dims
                                      ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                      its, ite, jts, jte, kts, kte)
    IMPLICIT NONE
@@ -630,7 +620,7 @@ CONTAINS
                                      spec_bdy_width, spec_zone,  &
                                      kme_stoch,                  & ! stoch  dims
                                      ids,ide, jds,jde, kds,kde,  & ! domain dims
-				     ims,ime, jms,jme, kms,kme,  & ! memory dims
+      ims,ime, jms,jme, kms,kme,  & ! memory dims
                                      ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                      its, ite, jts, jte, kts, kte)
    IMPLICIT NONE
@@ -660,7 +650,7 @@ CONTAINS
                                           ips,ipe, jps,jpe, kps,kpe,  & ! patch  dims
                                           its,ite, jts,jte, kts,kte )
 
-   END SUBROUTINE spec_bdy_chem_perturb
+   END SUBROUTINE spec_bdy_chem_perturb   
 
 
 
@@ -1230,7 +1220,7 @@ CONTAINS
                                                                 msftx,      &
                                                                 msfty
      REAL , DIMENSION( kms:kme ) , INTENT(IN   ) ::  znw
-
+  
      LOGICAL, INTENT(IN   ) :: fill_w_flag
 
 
@@ -1307,35 +1297,35 @@ CONTAINS
   SUBROUTINE lbc_fcx_gcx ( fcx , gcx , spec_bdy_width , &
                            spec_zone , relax_zone , dt , spec_exp , &
                            specified , nested )
-
+  
      IMPLICIT NONE
-
+  
      INTEGER , INTENT(IN) :: spec_bdy_width , spec_zone , relax_zone
      REAL , INTENT(IN) :: dt , spec_exp
      LOGICAL , INTENT(IN) :: specified , nested
      REAL , DIMENSION(spec_bdy_width) :: fcx , gcx
-
+  
      ! Local variables.
-
+  
      INTEGER :: loop
      REAL :: spongeweight
-
+  
      IF (specified) THEN
-
+       
        ! Arrays for specified boundary conditions
-
+       
        DO loop = spec_zone + 1, spec_zone + relax_zone
          fcx(loop) = 0.1 / dt * (spec_zone + relax_zone - loop) / (relax_zone - 1)
          gcx(loop) = 1.0 / dt / 50. * (spec_zone + relax_zone - loop) / (relax_zone - 1)
          spongeweight=exp(-(loop-(spec_zone + 1))*spec_exp)
          fcx(loop) = fcx(loop)*spongeweight
          gcx(loop) = gcx(loop)*spongeweight
-       ENDDO
-
+       ENDDO   
+       
      ELSE IF (nested) THEN
-
+       
        ! Arrays for specified boundary conditions
-
+       
        DO loop = spec_zone + 1, spec_zone + relax_zone
          fcx(loop) = 0.1 / dt * (spec_zone + relax_zone - loop) / (relax_zone - 1)
          gcx(loop) = 1.0 / dt / 50. * (spec_zone + relax_zone - loop) / (relax_zone - 1)
@@ -1345,9 +1335,9 @@ CONTAINS
 !        fcx(loop) = 0.
 !        gcx(loop) = 0.
        ENDDO
-
+       
      ENDIF
-
+  
   END SUBROUTINE lbc_fcx_gcx
 
 !------------------------------------------------------------------------
@@ -1747,11 +1737,11 @@ CONTAINS
       DO j = jts , jte
          DO k = kts , kte
             DO i = its , ite
-               rfield(i,k,j) = field(i,k,j) * mut(i,j)
+               rfield(i,k,j) = field(i,k,j) * (c1(k)*mut(i,j)+c2(k))
             END DO
          END DO
       END DO
 
    END SUBROUTINE mass_weight
-
+  
 END MODULE module_bc_em

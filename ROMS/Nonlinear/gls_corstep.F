@@ -2,9 +2,9 @@
       MODULE gls_corstep_mod
 #if defined NONLINEAR && defined GLS_MIXING && defined SOLVE3D
 !
-!svn $Id: gls_corstep.F 830 2017-01-24 21:21:11Z arango $
+!svn $Id: gls_corstep.F 889 2018-02-10 03:32:52Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                   Alexander F. Shchepetkin   !
 !==================================================== John C. Warner ===
@@ -58,7 +58,7 @@
 # include "tile.h"
 !
 # if defined VEGETATION && defined VEG_TURB
-!
+! 
 !-----------------------------------------------------------------------
 !  Add the effect of vegetation on the turbulence model.
 !-----------------------------------------------------------------------
@@ -91,7 +91,7 @@
 # ifdef WEC_VF
      &                       OCEAN(ng) % W_stokes,                      &
 # endif
-# if defined VEGETATION && defined VEG_TURB
+# if defined VEGETATION && defined VEG_TURB 
      &                       VEG(ng) % tke_veg,                         &
      &                       VEG(ng) % gls_veg,                         &
 # endif
@@ -809,11 +809,11 @@
 
 # if defined VEGETATION && defined VEG_TURB
 !
-!  Add the effect of vegetation on tke and gls
-!
+!  Add the effect of vegetation on tke and gls 
+!          
             tke(i,j,k,nnew)=tke(i,j,k,nnew)+dt(ng)*tke_veg(i,j,k)
             gls(i,j,k,nnew)=gls(i,j,k,nnew)+dt(ng)*gls_veg(i,j,k)
-# endif
+# endif 
 !
 !  Compute dissipation of turbulent energy (m3/s3).
 !
@@ -948,10 +948,12 @@
      &                           FCK(i,k+1)*tke(i,j,k+1,nnew))
           END DO
           tke(i,j,1,nnew)=tke(i,j,1,nnew)-cff*tke_fluxb(i)
+          tke(i,j,1,nnew)=MAX(tke(i,j,1,nnew),gls_Kmin(ng))
         END DO
         DO k=2,N(ng)-1
           DO i=Istr,Iend
             tke(i,j,k,nnew)=tke(i,j,k,nnew)-CF(i,k)*tke(i,j,k-1,nnew)
+            tke(i,j,k,nnew)=MAX(tke(i,j,k,nnew),gls_Kmin(ng))
           END DO
         END DO
 !

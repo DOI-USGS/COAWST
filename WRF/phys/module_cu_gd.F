@@ -32,14 +32,14 @@ CONTAINS
    IMPLICIT NONE
 !-------------------------------------------------------------
    INTEGER,      INTENT(IN   ) ::                               &
-                                  ids,ide, jds,jde, kds,kde,    &
-                                  ims,ime, jms,jme, kms,kme,    &
+                                  ids,ide, jds,jde, kds,kde,    & 
+                                  ims,ime, jms,jme, kms,kme,    & 
                                   its,ite, jts,jte, kts,kte
    LOGICAL periodic_x,periodic_y
 
    integer, intent (in   )              ::                      &
                        ensdim,maxiens,maxens,maxens2,maxens3
-
+  
    INTEGER,      INTENT(IN   ) :: ITIMESTEP
    LOGICAL,      INTENT(IN   ) :: warm_rain
 
@@ -199,8 +199,8 @@ CONTAINS
    itf=MIN(ite,ide-1)
    ktf=MIN(kte,kde-1)
    jtf=MIN(jte,jde-1)
-!
-     DO 100 J = jts,jtf
+!                                                                      
+     DO 100 J = jts,jtf  
      DO I= its,itf
         cuten(i)=0.
         iact_old_gr(i,j)=0
@@ -345,7 +345,7 @@ CONTAINS
               ENDIF
             ENDIF
 
-!......     QSTEN STORES GRAUPEL TENDENCY IF IT EXISTS, OTHERISE SNOW (V2)
+!......     QSTEN STORES GRAUPEL TENDENCY IF IT EXISTS, OTHERISE SNOW (V2)     
 
             IF(PRESENT(RQICUTEN).AND.PRESENT(RQCCUTEN))THEN
               IF (F_QI) THEN
@@ -408,7 +408,7 @@ CONTAINS
      integer, intent (in   )              ::                           &
         j,ensdim,maxiens,maxens,maxens2,maxens3,ichoice,iens
   !
-  !
+  ! 
   !
      real,    dimension (ims:ime,jms:jme,1:ensdim)                     &
         ,intent (inout)                   ::                           &
@@ -455,7 +455,7 @@ CONTAINS
         ,intent (in   )                   ::                           &
         Z1,PSUR,AAEQ,direction,mconv
 
-
+       
        real                                                            &
         ,intent (in   )                   ::                           &
         dtime,tcrit,xl,cp,rv,g
@@ -582,7 +582,7 @@ CONTAINS
        cap_max_increment,closure_n
      integer,    dimension (its:ite) ::                                &
        kzdown,KDET,K22,KB,JMIN,kstabi,kstabm,K22x,                     &   !-lxz
-       KBCONx,KBx,KTOPx,ierr,ierr2,ierr3,KBMAX
+       KBCONx,KBx,KTOPx,ierr,ierr2,ierr3,KBMAX 
 
      integer                              ::                           &
        nall,iedt,nens,nens3,ki,I,K,KK,iresult
@@ -646,7 +646,7 @@ CONTAINS
 !
       depth_min=500.
 !
-!--- maximum depth (mb) of capping
+!--- maximum depth (mb) of capping 
 !--- inversion (larger cap = no convection)
 !
       cap_maxs=75.
@@ -1135,7 +1135,7 @@ CONTAINS
       enddo
 
 !     mbdt=mbdt_ens(nens)
-!     do i=its,itf
+!     do i=its,itf 
 !     xaa0_ens(i,nens)=0.
 !     enddo
       do k=kts,ktf
@@ -1248,7 +1248,7 @@ CONTAINS
 !          ims,ime, jms,jme, kms,kme, &
 !          its,ite, jts,jte, kts,kte)
       do 200 nens=1,maxens
-      do i=its,itf
+      do i=its,itf 
          if(ierr(i).eq.0)then
            xaa0_ens(i,nens)=xaa0(i)
            nall=(iens-1)*maxens3*maxens*maxens2 &
@@ -1260,7 +1260,7 @@ CONTAINS
                  if(nens3.eq.7)then
 !--- b=0
                  pr_ens(i,j,nall+nens3)=pr_ens(i,j,nall+nens3)+ &
-                                    pwo(i,k)
+                                    pwo(i,k) 
 !                                  +edto(i)*pwdo(i,k)
 !--- b=beta
                  else if(nens3.eq.8)then
@@ -1336,7 +1336,7 @@ CONTAINS
            dellaq_ens(i,k,iedt)=dellaq(i,k)
            dellaqc_ens(i,k,iedt)=dellaqc(i,k)
            pwo_ens(i,k,iedt)=pwo(i,k)+edt(i)*pwdo(i,k)
-        else
+        else 
            dellat_ens(i,k,iedt)=0.
            dellaq_ens(i,k,iedt)=0.
            dellaqc_ens(i,k,iedt)=0.
@@ -1421,7 +1421,7 @@ CONTAINS
   ! hcd = moist static energy in downdraft
   ! edt = epsilon
   ! zd normalized downdraft mass flux
-  ! z = heights of model levels
+  ! z = heights of model levels 
   ! ierr error value, maybe modified in this routine
   !
      real,    dimension (its:ite,kts:kte)                              &
@@ -1620,15 +1620,15 @@ CONTAINS
   ! he_cup = moist static energy on model cloud levels
   ! hes_cup = saturation moist static energy on model cloud levels
   ! dby = buoancy term
-  ! cdd= detrainment function
-  ! z_cup = heights of model cloud levels
+  ! cdd= detrainment function 
+  ! z_cup = heights of model cloud levels 
   ! entr = entrainment rate
   ! zd   = downdraft normalized mass flux
   !
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (in   )                   ::                           &
         he,he_cup,hes_cup,z_cup,cdd,zd
-  ! entr= entrainment rate
+  ! entr= entrainment rate 
      real                                                              &
         ,intent (in   )                   ::                           &
         entr
@@ -1708,7 +1708,7 @@ CONTAINS
                                   ids,ide, jds,jde, kds,kde,           &
                                   ims,ime, jms,jme, kms,kme,           &
                                   its,ite, jts,jte, kts,kte
-  ! cdd= detrainment function
+  ! cdd= detrainment function 
   ! q = environmental q on model levels
   ! q_cup = environmental q on model cloud levels
   ! qes_cup = saturation q on model cloud levels
@@ -1722,11 +1722,11 @@ CONTAINS
   ! qrch = saturation q in cloud
   ! pwd = evaporate at that level
   ! pwev = total normalized integrated evaoprate (I2)
-  ! entr= entrainment rate
+  ! entr= entrainment rate 
   !
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (in   )                   ::                           &
-        zd,t_cup,hes_cup,hcd,qes_cup,q_cup,z_cup,cdd,gamma_cup,q,he
+        zd,t_cup,hes_cup,hcd,qes_cup,q_cup,z_cup,cdd,gamma_cup,q,he 
      real                                                              &
         ,intent (in   )                   ::                           &
         entr,xl
@@ -1847,16 +1847,16 @@ CONTAINS
   ! jmin = downdraft originating level
   ! kdet = level above ground where downdraft start detraining
   ! itest = flag to whether to calculate cdd
-
+  
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (in   )                   ::                           &
         z_cup
      real,    dimension (its:ite)                                      &
         ,intent (in   )                   ::                           &
-        z1
+        z1 
      real                                                              &
         ,intent (in   )                   ::                           &
-        entr
+        entr 
      integer, dimension (its:ite)                                      &
         ,intent (in   )                   ::                           &
         jmin,kdet
@@ -2367,7 +2367,7 @@ CONTAINS
   ! hes         = environmental saturation moist static energy
   ! psur        = surface pressure
   ! z1          = terrain elevation
-  !
+  ! 
   !
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (in   )                   ::                           &
@@ -2513,7 +2513,7 @@ CONTAINS
   ! gamma_cup   = gamma on cloud levels
   ! psur        = surface pressure
   ! z1          = terrain elevation
-  !
+  ! 
   !
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (in   )                   ::                           &
@@ -2725,7 +2725,7 @@ CONTAINS
                 xff_ens3(1)=(AA1(I)-AA0(I))/dtime
                 xff_ens3(2)=.9*xff_ens3(1)
                 xff_ens3(3)=1.1*xff_ens3(1)
-!
+!   
 !--- more original Arakawa-Schubert (climatologic value of aa0)
 !
 !
@@ -2751,7 +2751,7 @@ CONTAINS
                 xff_ens3(10)=AA1(I)/(60.*20.)
                 xff_ens3(11)=AA1(I)/(60.*30.)
                 xff_ens3(12)=AA1(I)/(60.*40.)
-!
+!  
 !--- more original Arakawa-Schubert (climatologic value of aa0)
 !
                 xff_ens3(13)=max(0.,(AA1(I)-aclim1)/dtime)
@@ -3097,9 +3097,9 @@ CONTAINS
         ids,ide, jds,jde, kds,kde,           &
         ims,ime, jms,jme, kms,kme,           &
         its,ite, jts,jte, kts,kte
-  !
-  !
-  !
+  ! 
+  ! 
+  ! 
   ! ierr error value, maybe modified in this routine
   !
      real,    dimension (its:ite,kts:kte)                              &
@@ -3178,9 +3178,9 @@ CONTAINS
         ids,ide, jds,jde, kds,kde,           &
         ims,ime, jms,jme, kms,kme,           &
         its,ite, jts,jte, kts,kte
-  !
-  !
-  !
+  ! 
+  ! 
+  ! 
   ! ierr error value, maybe modified in this routine
   !
      real,    dimension (its:ite,kts:kte)                              &
@@ -3215,7 +3215,7 @@ CONTAINS
      itf=MIN(ite,ide-1)
 !
 !
-
+    
 !
 !--- DETERMINE THE LEVEL OF CONVECTIVE CLOUD BASE  - KBCON
 !
@@ -3498,7 +3498,7 @@ CONTAINS
      real,    dimension (ims:ime,jms:jme)                              &
         ,intent (inout)                   ::                           &
                APR_GR,APR_W,APR_MC,APR_ST,APR_AS,APR_CAPMA,            &
-               APR_CAPME,APR_CAPMI
+               APR_CAPME,APR_CAPMI 
 
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (out  )                   ::                           &
@@ -3722,7 +3722,7 @@ CONTAINS
                      outdfd1(i,k)=outdfd1(i,k)/ensdim
                      outefd1(i,k)=outefd1(i,k)/ensdim
                   end if !ierr
-               end do !i
+               end do !i 
             end do !k
          end if !iens .eq. 1
       end if !l_flux
@@ -3753,7 +3753,7 @@ CONTAINS
   ! t_cup = temperature (Kelvin) on model cloud levels
   ! dby = buoancy term
   ! zu= normalized updraft mass flux
-  ! z = heights of model levels
+  ! z = heights of model levels 
   ! ierr error value, maybe modified in this routine
   !
      real,    dimension (its:ite,kts:kte)                              &
@@ -3831,14 +3831,14 @@ CONTAINS
   ! he_cup = moist static energy on model cloud levels
   ! hes_cup = saturation moist static energy on model cloud levels
   ! dby = buoancy term
-  ! cd= detrainment function
-  ! z_cup = heights of model cloud levels
+  ! cd= detrainment function 
+  ! z_cup = heights of model cloud levels 
   ! entr = entrainment rate
   !
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (in   )                   ::                           &
         he,he_cup,hes_cup,z_cup,cd
-  ! entr= entrainment rate
+  ! entr= entrainment rate 
      real                                                              &
         ,intent (in   )                   ::                           &
         entr
@@ -3927,12 +3927,12 @@ CONTAINS
                                   ids,ide, jds,jde, kds,kde,           &
                                   ims,ime, jms,jme, kms,kme,           &
                                   its,ite, jts,jte, kts,kte
-  ! cd= detrainment function
+  ! cd= detrainment function 
   ! q = environmental q on model levels
   ! qe_cup = environmental q on model cloud levels
   ! qes_cup = saturation q on model cloud levels
   ! dby = buoancy term
-  ! cd= detrainment function
+  ! cd= detrainment function 
   ! zu = normalized updraft mass flux
   ! gamma_cup = gamma on model cloud levels
   ! mentr_rate = entrainment rate
@@ -3940,7 +3940,7 @@ CONTAINS
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (in   )                   ::                           &
         q,zu,gamma_cup,qe_cup,dby,qes_cup,z_cup,cd
-  ! entr= entrainment rate
+  ! entr= entrainment rate 
      real                                                              &
         ,intent (in   )                   ::                           &
         mentr_rate,xl
@@ -4078,11 +4078,11 @@ CONTAINS
          ids,ide, jds,jde, kds,kde,                                    &
          ims,ime, jms,jme, kms,kme,                                    &
          its,ite, jts,jte, kts,kte
-  ! cd= detrainment function
+  ! cd= detrainment function 
      real,    dimension (its:ite,kts:kte)                              &
         ,intent (in   )                   ::                           &
          z_cup,cd
-  ! entr= entrainment rate
+  ! entr= entrainment rate 
      real                                                              &
         ,intent (in   )                   ::                           &
          entr
@@ -4151,7 +4151,7 @@ CONTAINS
                         ids, ide, jds, jde, kds, kde,               &
                         ims, ime, jms, jme, kms, kme,               &
                         its, ite, jts, jte, kts, kte               )
-!--------------------------------------------------------------------
+!--------------------------------------------------------------------   
    IMPLICIT NONE
 !--------------------------------------------------------------------
    LOGICAL , INTENT(IN)           ::  restart,allowed_to_read
@@ -4165,7 +4165,7 @@ CONTAINS
                                                           RTHCUTEN, &
                                                           RQVCUTEN, &
                                                           RQCCUTEN, &
-                                                          RQICUTEN
+                                                          RQICUTEN   
 
    REAL,     DIMENSION( ims:ime , kms:kme , jms:jme ) , INTENT(OUT) ::       &
                                                           RTHFTEN,  &
@@ -4177,11 +4177,11 @@ CONTAINS
                                 MASS_FLUX
 
    INTEGER :: i, j, k, itf, jtf, ktf
-
+ 
    jtf=min0(jte,jde-1)
    ktf=min0(kte,kde-1)
    itf=min0(ite,ide-1)
-
+ 
    IF(.not.restart)THEN
      DO j=jts,jtf
      DO k=kts,ktf
@@ -4519,10 +4519,10 @@ CONTAINS
          outt(i,k)=outt(i,k)*qmemf
          outqc(i,k)=outqc(i,k)*qmemf
       enddo
-      pret(i)=pret(i)*qmemf
+      pret(i)=pret(i)*qmemf 
       enddo
 !
-! check whether routine produces negative q's. This can happen, since
+! check whether routine produces negative q's. This can happen, since 
 ! tendencies are calculated based on forced q's. This should have no
 ! influence on conservation properties, it scales linear through all
 ! tendencies
@@ -4551,7 +4551,7 @@ CONTAINS
          outt(i,k)=outt(i,k)*qmemf
          outqc(i,k)=outqc(i,k)*qmemf
       enddo
-      pret(i)=pret(i)*qmemf
+      pret(i)=pret(i)*qmemf 
       enddo
 
    END SUBROUTINE neg_check

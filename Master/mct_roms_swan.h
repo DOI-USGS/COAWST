@@ -1,7 +1,7 @@
 /*
 ** svn $Id: mct_roms_swan.h 830 2017-01-24 21:21:11Z arango $
 ***************************************************** John C. Warner ***
-** Copyright (c) 2002-2018 The ROMS/TOMS Group      Hernan G. Arango  **
+** Copyright (c) 2002-2019 The ROMS/TOMS Group      Hernan G. Arango  **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -32,7 +32,7 @@
 #endif
 #if defined VEGETATION && defined VEG_SWAN_COUPLING
       USE mod_vegetation
-      USE mod_vegarr
+      USE mod_vegarr 
 #endif
 !
 !  Imported variable definitions.
@@ -344,6 +344,16 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
+      to_add=':DIREP'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+
+      to_add=':DIRNP'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
       to_add=':WLEN'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
@@ -428,7 +438,7 @@
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-#if defined VEGETATION && defined VEG_SWAN_COUPLING
+#if defined VEGETATION && defined VEG_SWAN_COUPLING 
 !
       to_add=':VEGDENS'
       cad=LEN_TRIM(to_add)
@@ -586,7 +596,7 @@
 #endif
 #if defined VEGETATION && defined VEG_SWAN_COUPLING
       USE mod_vegetation
-      USE mod_vegarr
+      USE mod_vegarr 
 #endif
 !
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
@@ -610,7 +620,7 @@
       integer :: gtype, i, id, ifield, ij, j, k, status
 #if defined VEGETATION && defined VEG_SWAN_COUPLING
       integer :: iveg
-#endif
+#endif	
 
       real(r8), parameter ::  Lwave_min = 1.0_r8
       real(r8), parameter ::  Lwave_max = 500.0_r8
@@ -866,7 +876,7 @@
 # else
 !         Specify this to be Madsen 0.05 minimum.
           A(ij)=MAX(0.05_r8, SEDBED(ng)%bottom(i,j,izNik)*30.0_r8)
-# endif
+# endif 
 #else
 !               This value will be replaced by the value entered in the
 !               SWAN INPUT file. See SWAN/Src/waves_coupler.F.
@@ -876,7 +886,7 @@
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "ZO",       &
      &                           A, Asize)
-#if defined VEGETATION && defined VEG_SWAN_COUPLING
+#if defined VEGETATION && defined VEG_SWAN_COUPLING 
 !
 !  Equivalent Plant density.
 !
@@ -965,7 +975,8 @@
 !                                                                      !
 !  Fields imported from SWAN model:                                    !
 !                                                                      !
-!     * Wave direction (degrees), [radians]                            !
+!     * Mean wave direction (degrees), [radians]                       !
+!     * Peak wave direction (degrees), [radians]                       !
 !     * Significant wave height (m), [m]                               !
 !     * Average wave length (m), [m]                                   !
 !     * Surface wave relative peak period (s), [s]                     !
@@ -1369,7 +1380,7 @@
       END IF
 #endif
 !
-!  Wave direction (radians).
+!  Mean wave direction (radians).
 !
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DIRE",     &
      &                           A, Asize)
@@ -1396,7 +1407,38 @@
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif
       IF (Myrank.eq.MyMaster) THEN
-        write(stdout,40) 'SWANtoROMS Min/Max DIR     (deg):   ',        &
+        write(stdout,40) 'SWANtoROMS Min/Max DIR     (rad):   ',        &
+     &                    range(1),range(2)
+      END IF
+!
+!  Peak wave direction (radians).
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DIREP",    &
+     &                           A, Asize)
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DIRNP",    &
+     &                           A1, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=ATAN2(A(ij),A1(ij))
+          IF (cff.lt.0.0_r8) cff=cff+2.0_r8*pi
+          IF (iw.eq.1) THEN
+            FORCES(ng)%Dwavep(i,j)=cff
+          ELSE
+            FORCES(ng)%Dwavep(i,j)=FORCES(ng)%Dwavep(i,j)+cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max DIRP    (rad):   ',        &
      &                    range(1),range(2)
       END IF
 !
@@ -1494,7 +1536,7 @@
 #ifdef WAVES_DSPR
 !
 !  wave directional spreading
-!
+!  
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WDSPR",    &
      &                           A, Asize)
       range(1)= Large
@@ -1523,7 +1565,7 @@
       END IF
 !
 !  wave spectrum peakedness
-!
+!  
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WQP",      &
      &                           A, Asize)
       range(1)= Large
@@ -1550,7 +1592,7 @@
         write(stdout,40) 'SWANtoROMS Min/Max WQP     (-):     ',        &
      &                    range(1),range(2)
       END IF
-#endif
+#endif 
 !
 #if defined WAVES_OCEAN && defined WEC_VF && \
     defined BOTTOM_STREAMING && defined VEGETATION &&  \
@@ -1568,10 +1610,10 @@
         DO i=IstrR,IendR
           ij=ij+1
           cff=MAX(0.0_r8,A(ij)*ramp)*fac
-          IF (iw.eq.1) THEN
+          IF (iw.eq.1) THEN 
             VEG(ng)%Dissip_veg(i,j)=cff
           ELSE
-            VEG(ng)%Dissip_veg(i,j)=VEG(ng)%Dissip_veg(i,j)+            &
+            VEG(ng)%Dissip_veg(i,j)=VEG(ng)%Dissip_veg(i,j)+            &    
      &                              cff
           END IF
           range(1)=MIN(range(1),cff)
@@ -1621,6 +1663,9 @@
      &                        FORCES(ng)%Dwave)
       CALL exchange_r2d_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
+     &                        FORCES(ng)%Dwavep)
+      CALL exchange_r2d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Lwave)
 # ifdef WAVES_LENGTHP
       CALL exchange_r2d_tile (ng, tile,                                 &
@@ -1667,11 +1712,12 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    FORCES(ng)%Uwave_rms)
 # endif
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    FORCES(ng)%Dwave, FORCES(ng)%Lwave)
+     &                    FORCES(ng)%Dwave, FORCES(ng)%Dwavep,          &
+     &                    FORCES(ng)%Lwave)
 # ifdef WAVES_LENGTHP
       CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &

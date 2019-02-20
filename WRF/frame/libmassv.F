@@ -1,5 +1,5 @@
 ! IBM libmassv compatibility library
-!
+! 
 
 #ifndef NATIVE_MASSV
       subroutine vdiv(z,x,y,n)
@@ -283,7 +283,7 @@
 !        real*8 function expm1(%val(x))
 !          real*8 x
 !        end function expm1
-!      end interface
+!      end interface 
 !      do 10 j=1,n
 !      y(j)=expm1(x(j))
 !   10 continue

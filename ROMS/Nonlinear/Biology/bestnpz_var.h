@@ -75,7 +75,7 @@
                 idIceBvar(iIceLog)=varid
               CASE ('idIceLogvar(iIceLog)')
                 idIceLogvar(iIceLog)=varid
-# elif defined BERING_10K
+# elif defined BERING_10K 
               CASE ('idIcePhL')
                 idIcePhL=varid
 
@@ -87,10 +87,10 @@
                 idIcePhLbc(isouth)=varid
               CASE ('idIcePhLbc(inorth)')
                 idIcePhLbc(inorth)=varid
-
+               
               CASE ('idIceNO3')
                 idIceNO3=varid
-
+               
               CASE ('idIceNO3bc(iwest)')
                 idIceNO3bc(iwest)=varid
               CASE ('idIceNO3bc(ieast)')
@@ -99,10 +99,10 @@
                 idIceNO3bc(isouth)=varid
               CASE ('idIceNO3bc(inorth)')
                 idIceNO3bc(inorth)=varid
-
+               
               CASE ('idIceNH4')
                 idIceNH4=varid
-
+               
               CASE ('idIceNH4bc(iwest)')
                 idIceNH4bc(iwest)=varid
               CASE ('idIceNH4bc(ieast)')

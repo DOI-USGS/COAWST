@@ -147,7 +147,7 @@ contains
     assert(nf_def_dim(fid,'i',ide-ids+1,dimi))
     assert(nf_def_dim(fid,'j',jde-jds+1,dimj))
     assert(nf_def_dim(fid,'k',kde-kds+1,dimk))
-
+    
     jk=(/ dimj,dimk /)
     ik=(/ dimi,dimk /)
 
@@ -275,7 +275,7 @@ contains
     if(ni<=0) call wrf_error_fatal('ni<=0')
     if(nj<=0) call wrf_error_fatal('nj<=0')
     if(nk<=0) call wrf_error_fatal('nk<=0')
-
+    
     if(monitor) then
        call bdy_recv()
     else
@@ -298,7 +298,7 @@ contains
       ! East boundary:
       call bdy_send_one(ipe>=ide-1,j1,j2,idum1,idum2,idum3,idum4,rdum, &
            bxe, jms,jme,kms,kme, nreceive,2)
-
+      
       ! South boundary:
       call bdy_send_one(jps==1,i1,i2,idum1,idum2,idum3,idum4,rdum, &
            bys, ims,ime,kms,kme, nreceive,2)
@@ -401,7 +401,7 @@ contains
          kindex(1)=-99
          values(1)=-99.
       endif
-
+      
       call mpi_comm_size(local_communicator,csize,ierr)
       call mpi_comm_rank(local_communicator,crank,ierr)
 9     format('I am rank ',I0,' of ',I0,' processes in communicator ',I0)
@@ -537,7 +537,7 @@ contains
     if(ni<=0) call wrf_error_fatal('ni<=0')
     if(nj<=0) call wrf_error_fatal('nj<=0')
     if(nk<=0) call wrf_error_fatal('nk<=0')
-
+    
     if(monitor) then
        call bdy_recv()
     else
@@ -560,7 +560,7 @@ contains
       ! East boundary:
       call bdy_send_one(ipe>=ide-1,j1,j2,idum1,idum2,idum3,idum4,rdum, &
            bxe, jms,jme,kms,kme, nreceive,2)
-
+      
       ! South boundary:
       call bdy_send_one(jps==1,i1,i2,idum1,idum2,idum3,idum4,rdum, &
            bys, ims,ime,kms,kme, nreceive,2)
@@ -663,7 +663,7 @@ contains
          kindex(1)=-99
          values(1)=-99.
       endif
-
+      
       call mpi_comm_size(local_communicator,csize,ierr)
       call mpi_comm_rank(local_communicator,crank,ierr)
 9     format('I am rank ',I0,' of ',I0,' processes in communicator ',I0)

@@ -3,9 +3,9 @@
 ! and their number concentrations (and aerosol concentrations).
 ! To use the FULL version of SBM, please do the following.
 ! Set DX_BOUND to some value larger than the first inner nest, but smaller than the outer domain in meters
-! Set the aerosol concentration with the variables FCCNR_MAR, and FCCNR_CON, FCCNR_MIX.
+! Set the aerosol concentration with the variables FCCNR_MAR, and FCCNR_CON, FCCNR_MIX.  
 ! Each of the aerosol distributions are set with ACCN (concentration of ccn particles at 1% saturation), and
-! BCCN (the "k" coefficient; for example: FCCNR(KR)=1.5*ACCN*BCCN*S_KR**BCCN).
+! BCCN (the "k" coefficient; for example: FCCNR(KR)=1.5*ACCN*BCCN*S_KR**BCCN). 
 ! Questions: contact barry.h.lynn@gmail.com (Barry Lynn)
 
 !
@@ -45,7 +45,7 @@ USE module_mp_radar
 
 !     100
 !     REAL,PRIVATE,PARAMETER :: F_AMOUNT=0.1
-!     TEN
+!     TEN 
 !     REAL,PRIVATE,PARAMETER :: F_AMOUNT=0.01
 !     ONE
       REAL, PRIVATE,PARAMETER :: PI_MORR = 3.1415926535897932384626434
@@ -58,7 +58,7 @@ USE module_mp_radar
       REAL,PRIVATE,PARAMETER :: I3POINT=1
       INTEGER,PRIVATE,PARAMETER :: ICCN = 1
        DOUBLE PRECISION, PRIVATE, PARAMETER ::  SCAL=1.d0
-       INTEGER, PRIVATE,PARAMETER :: ICEPROCS=1,BULKNUC=0
+       INTEGER, PRIVATE,PARAMETER :: ICEPROCS=1,BULKNUC=0 
        INTEGER, PRIVATE,PARAMETER :: ICETURB=0,LIQTURB=0
 !      INTEGER, PRIVATE,PARAMETER :: RAIN_INIT=1,GRAUPEL_INIT=1
 !      INTEGER, PRIVATE,PARAMETER :: ICE_INIT=0,SNOW_INIT=1
@@ -71,14 +71,14 @@ USE module_mp_radar
      &        ,KRMINL_GL=1,KRMAXL_GL=24                                &
      &        ,KRMING_GL=1,KRMAXG_GL=33                                &
      &        ,KRDROP=18,KRBREAK=17,KRICE=18                           &
-     &        ,NKR=33,JMAX=33,NRG=2,JBREAK = 18
+     &        ,NKR=33,JMAX=33,NRG=2,JBREAK = 18 
        REAL dt_coll
 !      REAL, PRIVATE,PARAMETER ::C1_MEY=0.0033,C2_MEY=0.              &
        REAL, PRIVATE,PARAMETER ::C1_MEY=0.00033,C2_MEY=0.              &
 ! New CONTINENTAL
 !      REAL, PRIVATE,PARAMETER ::C1_MEY=0.0033,C2_MEY=0.              &
-     &        ,an0_freez=10.,COL=0.23105
-       REAL, PRIVATE,PARAMETER :: p1=1000000.0,p2=750000.0,p3=500000.0
+     &        ,an0_freez=10.,COL=0.23105                                
+       REAL, PRIVATE,PARAMETER :: p1=1000000.0,p2=750000.0,p3=500000.0                     
 !      INTEGER, PRIVATE,PARAMETER :: NCOND=3
 !      INTEGER, PRIVATE,PARAMETER :: NCOND=6
        INTEGER, PRIVATE :: NCOND
@@ -91,9 +91,9 @@ USE module_mp_radar
        REAL, PRIVATE, PARAMETER :: ALCR_G = 3.0
 !      REAL, PRIVATE, PARAMETER :: ALCR_G = 1.0
        INTEGER,PRIVATE,PARAMETER :: icempl=1
-       REAL, PRIVATE, PARAMETER :: COEFREFLL=1.E6*36.E6*COL/3.1453/3.1453
+       REAL, PRIVATE, PARAMETER :: COEFREFLL=1.E6*36.E6*COL/3.1453/3.1453 
        REAL, PRIVATE, PARAMETER :: COEFREFLI=1.E9*36.E3*COL/3.1453/3.1453/5.
-       REAL, PRIVATE, PARAMETER :: COEFREF00=1.E9*36.E3*COL/3.1453/3.1453
+       REAL, PRIVATE, PARAMETER :: COEFREF00=1.E9*36.E3*COL/3.1453/3.1453       
        REAL, PRIVATE,DIMENSION(NKR) ::COLREFLL,COLREFLI,COLREFLS,COLREFLG,COLREFLH
 
 
@@ -101,7 +101,7 @@ USE module_mp_radar
 ! YWLL_750MB(nkr,nkr) - input array of kernels for pressure 750mb
 ! YWLL_500MB(nkr,nkr) - input array of kernels for pressure 500mb
        REAL, PRIVATE, SAVE :: &
-! CRYSTALS
+! CRYSTALS 
      &YWLI(NKR,NKR,ICEMAX) &
 ! MIXTURES
      &,YWIL(NKR,NKR,ICEMAX),YWII(NKR,NKR,ICEMAX,ICEMAX) &
@@ -129,7 +129,7 @@ USE module_mp_radar
      &  XL,RLEC,XX,XCCN,XS,RSEC &
      & ,XG,RGEC,XH,RHEC,RO1BL,RO3BL,RO4BL,RO5BL &
      & ,ROCCN,RCCN,DROPRADII
-
+  
       REAL, PRIVATE,SAVE ::  FCCNR_MAR(NKR),FCCNR_CON(NKR)
       REAL, PRIVATE,SAVE ::  FCCNR_MIX(NKR)
       REAL, PRIVATE,SAVE ::  FCCNR(NKR)
@@ -175,7 +175,7 @@ USE module_mp_radar
      &   BRKWEIGHT(JBREAK),PKIJ(JBREAK,JBREAK,JBREAK), &
      &   QKJ(JBREAK,JBREAK),ECOALMASSM(NKR,NKR)
 
-
+ 
 
 
 
@@ -222,7 +222,7 @@ USE module_mp_radar
           INTENT(IN   ) ::                                   &
                                                           U, &
                                                           V, &
-                                                          W
+                                                          W   
 !                                                        pi
   REAL    ,DIMENSION(ims:ime,kms:kme,jms:jme,n_chem),INTENT(INOUT)   :: chem_new
   REAL, DIMENSION( ims:ime , kms:kme , jms:jme ),                 &
@@ -267,7 +267,7 @@ USE module_mp_radar
                                                               qip_effr,&
                                                               qid_effr,&
                                                               height,  &
-                                                              tempc
+                                                              tempc    
 !                                                             effr, &
 !                                                            qtirad, &
 !                                                             qtotrad
@@ -304,12 +304,12 @@ USE module_mp_radar
 !     REAL,   DIMENSION(ITLO:ITHI,5) :: QMAX
       REAL,   DIMENSION(ITLO:ITHI,22):: QTOT
 
-!     SOME VARS WILL BE USED FOR DATA ASSIMILATION (DON'T NEED THEM NOW).
-!     THEY ARE TREATED AS LOCAL VARS, BUT WILL BECOME STATE VARS IN THE
+!     SOME VARS WILL BE USED FOR DATA ASSIMILATION (DON'T NEED THEM NOW). 
+!     THEY ARE TREATED AS LOCAL VARS, BUT WILL BECOME STATE VARS IN THE 
 !     FUTURE. SO, WE DECLARED THEM AS MEMORY SIZES FOR THE FUTURE USE
 
-!     TLATGS_PHY,TRAIN_PHY,APREC,PREC,ACPREC,SR are not directly related
-!     the microphysics scheme. Instead, they will be used by Eta precip
+!     TLATGS_PHY,TRAIN_PHY,APREC,PREC,ACPREC,SR are not directly related 
+!     the microphysics scheme. Instead, they will be used by Eta precip 
 !     assimilation.
 
       REAL,  DIMENSION( ims:ime, kms:kme, jms:jme ) ::                  &
@@ -368,7 +368,7 @@ USE module_mp_radar
      & ES2NPLSX,ES2NPLSY,EW1NPLSX,EW1NPLSY,UX,VX, &
      & DEL2INPLSX,DEL2INPLSY,DZZ(KTE)
        INTEGER KRR,I_START,I_END,J_START,J_END
-
+   
        REAL DTFREEZ_XYZ(ITE,KTE,JTE),DSUPICE_XYZ(ITE,KTE,JTE)
 
        REAL DXHUCM,DYHUCM
@@ -396,7 +396,7 @@ USE module_mp_radar
       REAL, DIMENSION(kts:kte)::                            &
                       qv1d, qr1d, nr1d, qs1d, ns1d, qg1d, ng1d, t1d, p1d
       REAL, DIMENSION(kts:kte):: dBZ
-
+      
 
        real nzero,son,nzero_less
        parameter (son=2.E7)
@@ -508,7 +508,7 @@ USE module_mp_radar
         chem_new(I,K,J,KR)=chem_new(I,K,J,KR)*RHOCGS(I,K,J)/COL/XI(KRR,1)/XI(KRR,1)/3.0
 !         if (i.eq.230.and.j.eq.146.and.k.eq.13)then
       END DO
-! Plates
+! Plates 
       KRR=0
       DO KR=p_ff3i01,p_ff3i33
         KRR=KRR+1
@@ -669,12 +669,12 @@ USE module_mp_radar
        EW1N=QV_OLD(I,K,J)*pcgs(I,K,J)/(0.622+0.378*QV_OLD(I,K,J))
        SUPICE(K)=EW1N/ES2N-1.
        IF(SUPICE(K).GT.0.5) SUPICE(K)=.5
-
+ 
       END DO
       DO k = kts,kte
        IF(T_OLD(I,K,J).GE.238.15.AND.T_OLD(I,K,J).LT.274.15) THEN
-       if (k.lt.kte)then
-        w_stag=50.*(w(i,k,j)+w(i,k+1,j))
+       if (k.lt.kte)then       
+        w_stag=50.*(w(i,k,j)+w(i,k+1,j)) 
        else
         w_stag=100*w(i,k,j)
        end if
@@ -684,7 +684,7 @@ USE module_mp_radar
              ELSE
               UX=U(I,K,J)*100.
               VX=V(I,K,J)*100.
-             END IF
+             END IF  
              IF(K.EQ.1) DERIVT_Z=(T_OLD(I,K+1,J)-T_OLD(I,K,J))/DZZ(K)
              IF(K.EQ.KTE) DERIVT_Z=(T_OLD(I,K,J)-T_OLD(I,K-1,J))/DZZ(K)
              IF(K.GT.1.AND.K.LT.KTE) DERIVT_Z= &
@@ -771,7 +771,7 @@ USE module_mp_radar
             ELSE
              UX=U(I,K,J)*100.
              VX=V(I,K,J)*100.
-            END IF
+            END IF  
             DSUPICE_XYZ(I,K,J)=(UX*DERIVS_X+VX*DERIVS_Y+ &
       &                        w_stag*DERIVS_Z)*DTCOND
           ELSE
@@ -780,7 +780,7 @@ USE module_mp_radar
          END DO
          END DO
          END DO
-
+     
 
       do j = jts,jte
       do k = kts,kte
@@ -821,7 +821,7 @@ USE module_mp_radar
           FF2R(KRR,2)=chem_new(I,K,J,KR)
 !i,j,k =          230         146          13
           if (ff2r(krr,2).lt.0)ff2r(krr,2)=0
-
+          
          END DO
 
 ! DENDRITES!
@@ -870,8 +870,8 @@ USE module_mp_radar
      &     T_NEW(I,K,J),DT,rhocgs(I,K,J),COL,ICEMAX,NKR)
          END IF
         ENDIF
-!       IF (T_OLD(I,K,J).GT.223)THEN
-        IF (T_OLD(I,K,J).GT.213)THEN
+!       IF (T_OLD(I,K,J).GT.223)THEN     
+        IF (T_OLD(I,K,J).GT.213)THEN     
          TT=T_OLD(I,K,J)
          QQ=QV_OLD(I,K,J)
  !        IF (QQ.LE.0)print*,'QQ < 0'
@@ -991,9 +991,9 @@ USE module_mp_radar
               END DO
              END IF
             END IF
-
+ 
           END IF
-!
+!  
           DO KR=1,NKR
             FF1R(KR)=FF1IN(KR)
             DO ICE=1,ICEMAX
@@ -1032,13 +1032,13 @@ USE module_mp_radar
            IF(FMAX5.GT.1.E-4)ISYM5=1
           END IF
 ! Avoid Diffusional Growth
-!         IF (T_OLD(I,K,J).GE.237)THEN
+!         IF (T_OLD(I,K,J).GE.237)THEN     
 ! Same temperature range as above.
           IF (T_OLD(I,K,J).GT.233)THEN
           IF(ISYM1.EQ.1.AND.((TT-273.15).GT.-0.187.OR. &
      &     (ISYM2.EQ.0.AND. &
      &     ISYM3.EQ.0.AND.ISYM4.EQ.0.AND.ISYM5.EQ.0)))THEN
-           IF (T_OLD(I,K,J).GT.233)THEN
+           IF (T_OLD(I,K,J).GT.233)THEN     
            CALL ONECOND1(TT,QQ,PP,rhocgs(I,K,J) &
      &      ,VR1,pcgs(I,K,J) &
      &      ,DEL1IN,DEL2IN,DIV1,DIV2 &
@@ -1049,7 +1049,7 @@ USE module_mp_radar
            END IF
           ELSE IF(ISYM1.EQ.0.AND.(TT-273.15).LE.-0.187.AND. &
      &     (ISYM2.EQ.1.OR.ISYM3.EQ.1.OR.ISYM4.EQ.1.OR.ISYM5.EQ.1))THEN
-           IF (T_OLD(I,K,J).GT.233)THEN
+           IF (T_OLD(I,K,J).GT.233)THEN     
            CALL ONECOND2(TT,QQ,PP,rhocgs(I,K,J) &
      &      ,VR2,VR3,VR4,VR5,pcgs(I,K,J) &
      &      ,DEL1IN,DEL2IN,DIV1,DIV2 &
@@ -1126,7 +1126,7 @@ USE module_mp_radar
 !           write(6,901)krr,xl(krr),ro1bl(krr),RADXXO(krr,1),geo_cs
 !         end if
 
-        END DO
+        END DO   
 ! He wants per meter, so we multiply by 100 above
 ! CCN
         KRR=0
@@ -1172,12 +1172,12 @@ USE module_mp_radar
      &         (1.0 - (1.0 - exp(-xi2*(chi_e - chi0)))/xi2/(chi_e - chi0))
           f2 = (1.0 - xi3)* &
      &         (1.0 - exp(-xi4*(chi_e - chi0)))
-          if(chi_e.le.chi0) then
+          if(chi_e.le.chi0) then 
              ft = 0
-          else
+          else 
            ft = (1.0 - xi5)*f1 + xi5*f2
           end if
-          else
+          else 
           ft=0.
           end if
           ft=0.
@@ -1210,12 +1210,12 @@ USE module_mp_radar
      &         (1.0 - (1.0 - exp(-xi2*(chi_e - chi0)))/xi2/(chi_e - chi0))
           f2 = (1.0 - xi3)* &
      &         (1.0 - exp(-xi4*(chi_e - chi0)))
-          if(chi_e.le.chi0) then
+          if(chi_e.le.chi0) then 
              ft = 0
-          else
+          else 
            ft = (1.0 - xi5)*f1 + xi5*f2
           end if
-          else
+          else 
           ft=0.
           end if
           ft=0.
@@ -1247,9 +1247,9 @@ USE module_mp_radar
      &         (1.0 - (1.0 - exp(-xi2*(chi_e - chi0)))/xi2/(chi_e - chi0))
           f2 = (1.0 - xi3)* &
      &         (1.0 - exp(-xi4*(chi_e - chi0)))
-          if(chi_e.le.chi0) then
+          if(chi_e.le.chi0) then 
              ft = 0
-          else
+          else 
            ft = (1.0 - xi5)*f1 + xi5*f2
           end if
           else
@@ -1295,12 +1295,12 @@ USE module_mp_radar
      &         (1.0 - (1.0 - exp(-xi2*(chi_e - chi0)))/xi2/(chi_e - chi0))
           f2 = (1.0 - xi3)* &
      &         (1.0 - exp(-xi4*(chi_e - chi0)))
-          if(chi_e.le.chi0) then
+          if(chi_e.le.chi0) then 
              ft = 0
-          else
+          else 
            ft = (1.0 - xi5)*f1 + xi5*f2
           end if
-          else
+          else 
            ft=0.
           end if
           ft=0.
@@ -1343,9 +1343,9 @@ USE module_mp_radar
      &         (1.0 - (1.0 - exp(-xi2*(chi_e - chi0)))/xi2/(chi_e - chi0))
           f2 = (1.0 - xi3)* &
      &         (1.0 - exp(-xi4*(chi_e - chi0)))
-          if(chi_e.le.chi0) then
+          if(chi_e.le.chi0) then 
              ft = 0
-          else
+          else 
            ft = (1.0 - xi5)*f1 + xi5*f2
           end if
           else
@@ -1518,8 +1518,8 @@ USE module_mp_radar
       end do
       end do
       end if
-      end do
-      end do
+      end do 
+      end do 
 
       gmax=0
       qmax=0
@@ -1907,7 +1907,7 @@ USE module_mp_radar
       END DO
       END DO
       END IF
-
+     
 !     print*,'here 9'
       RETURN
   END SUBROUTINE SBM
@@ -1919,7 +1919,7 @@ USE module_mp_radar
       REAL TFALL,DTFALL,VFALL(KTE),DWFLUX(KTE)
       REAL DT
       INTEGER IFALL,N,NSUB
-      REAL, DIMENSION( kts:kte,nkr ) :: chem_new
+      REAL, DIMENSION( kts:kte,nkr ) :: chem_new 
       REAL,  DIMENSION(kts:kte) :: rhocgs,pcgs,zcgs
       REAL VR1(NKR)
 
@@ -1930,8 +1930,8 @@ USE module_mp_radar
 ! Q(1) etc are defined. The formula for FLUX(1) uses Q(1) etc which
 ! is actually half a grid level above it. This is what is meant by
 ! an upstream method. Upstream in this case is above because the
-! velocity is downwards.
-! USE UPSTREAM METHOD (VFALL IS POSITIVE)
+! velocity is downwards.      
+! USE UPSTREAM METHOD (VFALL IS POSITIVE)                 
 !        print*,'pcgs(i,k,j) = ',pcgs(100,10,1)
 !        print*,'pcgs(i,k,j) = ',pcgs(100,1,1)
 !      read(5,*)
@@ -1942,9 +1942,9 @@ USE module_mp_radar
        IFALL=0
        DO k = kts,kte
           IF(chem_new(K,KR).GE.1.E-10)IFALL=1
-       END DO
+       END DO 
        IF (IFALL.EQ.1)THEN
-        TFALL=1.E10
+        TFALL=1.E10                
         DO K=kts,kte
          VFALL(K) = VR1(KR)*SQRT(1.E6/PCGS(K))
 !        if (krr.eq.20.or.krr.eq.33)then
@@ -1956,32 +1956,32 @@ USE module_mp_radar
 !        read(5,*)
 !        end if
 !        end if
-         TFALL=AMIN1(TFALL,ZCGS(K)/(VFALL(K)+1.E-20))
+         TFALL=AMIN1(TFALL,ZCGS(K)/(VFALL(K)+1.E-20))    
 !        print*,'tfall = ',i,k,tfall
 !        if (krr.eq.5.or.krr.eq.10.or.krr.eq.20.or.krr.eq.33)read(5,*)
-        END DO
+        END DO                                                 
         IF(TFALL.GE.1.E10) call wrf_error_fatal("fatal error in module_mp_full_sbm (TFALL.GE.1.E10), model stop")
-        NSUB=(INT(2.0*DT/TFALL)+1)
-        DTFALL=DT/NSUB
+        NSUB=(INT(2.0*DT/TFALL)+1)                           
+        DTFALL=DT/NSUB                                      
 
-        DO N=1,NSUB
-          DO K=KTS,KTE-1
+        DO N=1,NSUB                                    
+          DO K=KTS,KTE-1                               
            DWFLUX(K)=-(RHOCGS(K)*VFALL(K)*chem_new(k,kr)- &
      &     RHOCGS(K+1)* &
      &     VFALL(K+1)*chem_new(K+1,KR))/(RHOCGS(K)*(ZCGS(K+1)- &
-     &      ZCGS(K)))
-          END DO
+     &      ZCGS(K)))    
+          END DO    
 ! NO Z ABOVE TOP, SO USE THE SAME DELTAZ
-          DWFLUX(KTE)=-(RHOCGS(KTE)*VFALL(KTE)* &
-     &       chem_new(kte,kr))/(RHOCGS(KTE)*(ZCGS(KTE)-ZCGS(KTE-1)))
-          DO K=kts,kte
+          DWFLUX(KTE)=-(RHOCGS(KTE)*VFALL(KTE)* & 
+     &       chem_new(kte,kr))/(RHOCGS(KTE)*(ZCGS(KTE)-ZCGS(KTE-1)))         
+          DO K=kts,kte                                         
            chem_new(k,kr)=chem_new(k,kr)+DWFLUX(K)*DTFALL
-          END DO
-        END DO
+          END DO  
+        END DO  
        END IF
-      END DO
-      RETURN
-      END SUBROUTINE FALFLUXHUCM
+      END DO  
+      RETURN                                                                  
+      END SUBROUTINE FALFLUXHUCM                                                                    
       SUBROUTINE FULL_HUCMINIT(DT)
       IMPLICIT NONE
       INTEGER IKERN_0,IKERN_Z,L0_REAL,L0_INTEGER,INEWMEY,INEST
@@ -1989,15 +1989,15 @@ USE module_mp_radar
       REAL DT
       INTEGER :: hujisbm_unit1
       LOGICAL, PARAMETER :: PRINT_diag=.FALSE.
-      LOGICAL :: opened
+      LOGICAL :: opened 
       LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
       CHARACTER*80 errmess
       REAL PI
       double precision ax
       data pi/3.141592654/
 ! dtime - timestep of integration (calculated in main program) :
-! ax - coefficient used for masses calculation
-! ima(i,j) - k-category number, c(i,j) - courant number
+! ax - coefficient used for masses calculation 
+! ima(i,j) - k-category number, c(i,j) - courant number 
 
         REAL C1(NKR,NKR)
 ! DON'T NEED ALL THESE VARIABLES: STILL NEED EDITING
@@ -2009,15 +2009,15 @@ USE module_mp_radar
      & XF1N,XF1,WC1N,RF1N,WNUC,RNUC,WC5,RF5, &
      & WC4,RF4,WC3,RF3,WC1,RF1,SMAX
        REAL TWIIN(ICEMAX)
-       REAL RO_SOLUTE
+       REAL RO_SOLUTE      
        REAL A_FALL,B_FALL
        real graupel_fall(nkr)
        data graupel_fall/0.36840E-01,0.57471E-01,0.88417E-01,0.13999E+00,&
      &  0.22841E+00,0.36104E+00,0.56734E+00, 0.88417E+00, 0.13999E+01,&
      &  0.22104E+01, 0.35367E+01, 0.54524E+01, 0.81049E+01,0.12526E+02,&
-     &  0.19157E+02, 0.27262E+02, 0.34627E+02, 0.39776E+02,0.45690E+02,&
+     &  0.19157E+02, 0.27262E+02, 0.34627E+02, 0.39776E+02,0.45690E+02,& 
      &  0.52485E+02, 0.60289E+02, 0.69254E+02, 0.10000E+03, 0.15429E+03,&
-     &  0.18561E+03, 0.22329E+03, 0.26863E+03,  0.32316E+03,0.38877E+03,&
+     &  0.18561E+03, 0.22329E+03, 0.26863E+03,  0.32316E+03,0.38877E+03,& 
      &  0.46770E+03, 0.56266E+03, 0.67690E+03,  0.81432E+03/
 
        INTEGER  KZ_MIN,KZ_MAX
@@ -2042,7 +2042,7 @@ USE module_mp_radar
 
         call wrf_message(" FULL SBM: INITIALIZING HUCM ")
         call wrf_message(" FULL SBM: ****** HUCM ******* ")
-!        PRINT*, 'INITIALIZING HUCM'
+!        PRINT*, 'INITIALIZING HUCM'  
 !	print *, ' ****** HUCM *******'
 
 ! INPUT :
@@ -2051,7 +2051,7 @@ USE module_mp_radar
 !
 !--- Read in various lookup tables
 !
-!        print*,'wrf_dm_on_monitor() =',wrf_dm_on_monitor()
+!        print*,'wrf_dm_on_monitor() =',wrf_dm_on_monitor() 
         IF ( wrf_dm_on_monitor() ) THEN
           DO i = 31,99
             INQUIRE ( i , OPENED = opened )
@@ -2110,7 +2110,7 @@ USE module_mp_radar
         IF ( wrf_dm_on_monitor() ) THEN
           OPEN(UNIT=hujisbm_unit1,FILE="masses.asc",                  &
      &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
-	READ(hujisbm_unit1,900) XL,XI,XS,XG,XH
+	READ(hujisbm_unit1,900) XL,XI,XS,XG,XH          
 	CLOSE(hujisbm_unit1)
 !	print *, ' ***** file2: succesfull *******'
         call wrf_message(" FULL SBM: ****** file2: succesfull  ******* ")
@@ -2142,7 +2142,7 @@ USE module_mp_radar
         IF ( wrf_dm_on_monitor() ) THEN
           OPEN(UNIT=hujisbm_unit1,FILE="termvels.asc",                  &
      &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
-	READ(hujisbm_unit1,900) VR1,VR2,VR3,VR4,VR5
+	READ(hujisbm_unit1,900) VR1,VR2,VR3,VR4,VR5     
 	CLOSE(hujisbm_unit1)
 !	print *, ' ***** file3: succesfull *******'
         call wrf_message(" FULL SBM: ****** file3: succesfull  ******* ")
@@ -2163,12 +2163,12 @@ USE module_mp_radar
           B_FALL=1
           A_FALL=0
          end if
-
+  
 !        VR4(KR)=A_FALL*VR4(KR)+B_FALL*VR5(KR)
 !        print*,'vr4,vr5,graupel_fall=',vr3(kr),vr5(kr),graupel_fall(kr)
 !        VR4(KR)=graupel_fall(kr)
         END DO
-
+ 
 ! CONSTANTS :
         IF ( wrf_dm_on_monitor() ) THEN
           DO i = 31,99
@@ -2307,7 +2307,7 @@ USE module_mp_radar
         ENDIF
 !
         IF ( wrf_dm_on_monitor() ) THEN
-          OPEN(UNIT=hujisbm_unit1,FILE="bulkdens.asc_s_0_03_0_9",         &
+          OPEN(UNIT=hujisbm_unit1,FILE="bulkdens.asc_s_0_03_0_9",         & 
      &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
 	READ(hujisbm_unit1,900) RO1BL,RO2BL,RO3BL,RO4BL,RO5BL
 	CLOSE(hujisbm_unit1)
@@ -2339,7 +2339,7 @@ USE module_mp_radar
         ENDIF
 !
         IF ( wrf_dm_on_monitor() ) THEN
-          OPEN(UNIT=hujisbm_unit1,FILE="bulkradii.asc_s_0_03_0_9",         &
+          OPEN(UNIT=hujisbm_unit1,FILE="bulkradii.asc_s_0_03_0_9",         & 
      &        FORM="FORMATTED",STATUS="OLD",ERR=2070)
 	READ(hujisbm_unit1,*) RADXXO
 	CLOSE(hujisbm_unit1)
@@ -2366,11 +2366,11 @@ USE module_mp_radar
            xi3_mg(i)=xi(i,3)*1.e3
         enddo
 ! calculation of c(i,j) and ima(i,j) :
-! ima(i,j) - k-category number, c(i,j) - courant number
+! ima(i,j) - k-category number, c(i,j) - courant number 
 !       print*, 'calling courant_bott'
         call courant_bott
 !       print*, 'called courant_bott'
-
+ 
 
 	DEG01=1./3.
 
@@ -2384,7 +2384,7 @@ USE module_mp_radar
 !------------------------------------------------------------------
 ! THIS TEXT FROM TWOINITM.F_203
 !------------------------------------------------------------------
-! TEMPERATURA IN SURFACE LAYER EQUAL 15 Celsius(288.15 K)
+! TEMPERATURA IN SURFACE LAYER EQUAL 15 Celsius(288.15 K)  
         A=3.3E-05/288.15
         B=2.*4.3/(22.9+35.5)
         B=B*(4./3.)*3.14*RO_SOLUTE
@@ -2398,7 +2398,7 @@ USE module_mp_radar
         ENDDO
 	DO KR=1,NKR
 !          print*,'ROCCN0 = ',ROCCN0
-!          print*, 'X0CCN = ',X0CCN
+!          print*, 'X0CCN = ',X0CCN 
 !          print*, 'DEG01 = ',DEG01
 	   ROCCN(KR)=ROCCN0
 	   X0=X0CCN*2.**(KR-1)
@@ -2407,7 +2407,7 @@ USE module_mp_radar
 	   RCCN(KR)=R0
 !          print*,'RCCN(KR)= ', KR,RCCN(KR)
            RCCNKR_CM=R0
-! CCN SPECTRUM
+! CCN SPECTRUM 
 
            S_KR=A2/RCCNKR_CM**1.5
            ACCN=ACCN_CON
@@ -2436,8 +2436,8 @@ USE module_mp_radar
 !RCCN(KR)=           21  1.2499960E-05
 !RCCN(KR)=           33  1.9999935E-04
         RADCCN_MAX=RCCN(NKR)
-        RADCCN_MIN=0.005E-4
-        RADCCN_MIN1=0.02E-4
+        RADCCN_MIN=0.005E-4         
+        RADCCN_MIN1=0.02E-4         
 !       print*,'ALOG(RADCCN_MIN) = ',ALOG(RADCCN_MIN)
 !       print*,'ALOG(RCCN(1) = ',ALOG(RCCN(1))
 !       print*,'ALOG(RADCCN_MAX) = ',ALOG(RADCCN_MAX)
@@ -2465,8 +2465,8 @@ USE module_mp_radar
         END DO
 ! CALCULATION OF FINAL CONTINENTAL
         RADCCN_MAX=0.6E-4
-        RADCCN_MIN=0.005E-4
-        RADCCN_MIN1=0.02E-4
+        RADCCN_MIN=0.005E-4         
+        RADCCN_MIN1=0.02E-4         
 !       KR_MIN=(ALOG(RADCCN_MIN)-ALOG(RCCN(1)))/(3.*ALOG(2.))+1.
 !       KR_MIN1=(ALOG(RADCCN_MIN1)-ALOG(RCCN(1)))/(3.*ALOG(2.))+1.
         KR_MIN=1.+ 3*(ALOG(RADCCN_MIN)- ALOG(R0CCN))/ALOG(2.)
@@ -2508,7 +2508,7 @@ USE module_mp_radar
   123	FORMAT(3E12.4,3I4)
   200	FORMAT(6E13.5)
   201   FORMAT(6D13.5)
-  300	FORMAT(8E14.6)
+  300	FORMAT(8E14.6) 
   301   FORMAT(3X,F8.3,3X,E13.5)
   302   FORMAT(5E13.5)
 !       if (IFREST)THEN
@@ -2565,7 +2565,7 @@ USE module_mp_radar
       IMPLICIT NONE
       INTEGER :: hujisbm_unit1
       LOGICAL, PARAMETER :: PRINT_diag=.FALSE.
-      LOGICAL :: opened
+      LOGICAL :: opened 
       LOGICAL , EXTERNAL      :: wrf_dm_on_monitor
       CHARACTER*80 errmess
 !.....INPUT VARIABLES
@@ -2815,9 +2815,9 @@ USE module_mp_radar
       Q = 0.5 * (RKL + RGR)
 
       qmin = 250e-4
-      qmax = 400e-4
+      qmax = 400e-4        
       if (q.lt.qmin) then
-         e = max(ecoalOchs(Dgr,Dkl),ecoalBeard(Dgr,Dkl))
+         e = max(ecoalOchs(Dgr,Dkl),ecoalBeard(Dgr,Dkl)) 
       elseif (q.ge.qmin.and.q.lt.qmax) then
          x = (q - qmin) / (qmax - qmin)
          e = sin(pi/2.0*x)**2 * ecoalLowList(Dgr,Dkl) &
@@ -3021,28 +3021,28 @@ USE module_mp_radar
       END FUNCTION VTBEARD
 
 
-
-!--------------------------------------------------
-!     Function f. Coalescence-Efficiency
+      
+!-------------------------------------------------- 
+!     Function f. Coalescence-Efficiency 
 !     Eq. (7) of Beard and Ochs (1995)
-!--------------------------------------------------
-
-      REAL FUNCTION ecoalBeard(D_l,D_s)
-
-      IMPLICIT NONE
+!--------------------------------------------------      
+ 
+      REAL FUNCTION ecoalBeard(D_l,D_s) 
+       
+      IMPLICIT NONE 
 !     REAL ecoalBeard
 !     REAL ECOALMASS
       REAL            D_l,D_s
       REAL            R_s,R_l
       REAL            rcoeff
       REAL epsf
-      PARAMETER (epsf  = 1.e-30)
+      PARAMETER (epsf  = 1.e-30) 
 
       INTEGER its
       COMPLEX acoeff(4),x
 
       R_s = 0.5 * D_s
-      R_l = 0.5 * D_l
+      R_l = 0.5 * D_l      
 
       rcoeff = 5.07 - log(R_s*1e4) - log(R_l*1e4/200.0)
 
@@ -3057,10 +3057,10 @@ USE module_mp_radar
 
       EcoalBeard = REAL(x)
 
-      RETURN
-      END FUNCTION ecoalBeard
+      RETURN 
+      END FUNCTION ecoalBeard 
 
-!--------------------------------------------------
+!--------------------------------------------------       
 
       SUBROUTINE laguer(a,m,x,its)
       INTEGER m,its,MAXIT,MR,MT
@@ -3129,7 +3129,7 @@ USE module_mp_radar
 
 
 !================================================================
-! BARRY
+! BARRY     
 !     print*,'dlnr in courant_bott = ',dlnr
       xl_mg(0)=xl_mg(1)/2
 ! BARRY
@@ -3176,14 +3176,14 @@ USE module_mp_radar
       data pi/3.141592654/
 ! dtime - timestep of integration (calculated in main program) :
 ! dlnr - logarithmic grid distance
-! ima(i,j) - k-category number, c(i,j) - courant number
-! cw*(i,j) (in cm**3) - multiply help kernel with constant
+! ima(i,j) - k-category number, c(i,j) - courant number 
+! cw*(i,j) (in cm**3) - multiply help kernel with constant 
 ! timestep(dt) and logarithmic grid distance(dlnr) :
         REAL DTIME
 ! logarithmic grid distance(dlnr) :
 !       dlnr=dlog(2.d0)/(3.d0*scal)
 ! scal is micro.prm file parameter(scal=1.d0 for x(k+1)=x(k)*2)
-! calculation of cw*(i,j) (in cm**3) - multiply help kernel
+! calculation of cw*(i,j) (in cm**3) - multiply help kernel 
 ! with constant timestep(dtime) and logarithmic grid distance(dlnr) :
 !     print*,'dlnr in kernal = ',dlnr,dtime
         DO I=1,NKR
@@ -3237,7 +3237,7 @@ USE module_mp_radar
               CWLI_1(I,J)=DTIME*DLNR*YWLI(I,J,1)
               CWLI_2(I,J)=DTIME*DLNR*YWLI(I,J,2)
               CWLI_3(I,J)=DTIME*DLNR*YWLI(I,J,3)
-
+              
               CWIL_1(I,J)=DTIME*DLNR*YWIL(I,J,1)
               CWIL_2(I,J)=DTIME*DLNR*YWIL(I,J,2)
               CWIL_3(I,J)=DTIME*DLNR*YWIL(I,J,3)
@@ -3339,14 +3339,14 @@ USE module_mp_radar
       data pi/3.141592654/
 ! dtime - timestep of integration (calculated in main program) :
 ! dlnr - logarithmic grid distance
-! ima(i,j) - k-category number, c(i,j) - courant number
-! cw*(i,j) (in cm**3) - multiply help kernel with constant
+! ima(i,j) - k-category number, c(i,j) - courant number 
+! cw*(i,j) (in cm**3) - multiply help kernel with constant 
 ! timestep(dt) and logarithmic grid distance(dlnr) :
         REAL DTIME
 ! logarithmic grid distance(dlnr) :
 !       dlnr=dlog(2.d0)/(3.d0*scal)
 ! scal is micro.prm file parameter(scal=1.d0 for x(k+1)=x(k)*2)
-! calculation of cw*(i,j) (in cm**3) - multiply help kernel
+! calculation of cw*(i,j) (in cm**3) - multiply help kernel 
 ! with constant timestep(dtime) and logarithmic grid distance(dlnr) :
 !     print*,'dlnr in kernal = ',dlnr,dtime
         DO I=1,NKR
@@ -3400,7 +3400,7 @@ USE module_mp_radar
 !             CWLI_1(I,J)=DTIME*DLNR*YWLI(I,J,1)
 !             CWLI_2(I,J)=DTIME*DLNR*YWLI(I,J,2)
 !             CWLI_3(I,J)=DTIME*DLNR*YWLI(I,J,3)
-
+              
 !             CWIL_1(I,J)=DTIME*DLNR*YWIL(I,J,1)
 !             CWIL_2(I,J)=DTIME*DLNR*YWIL(I,J,2)
 !             CWIL_3(I,J)=DTIME*DLNR*YWIL(I,J,3)
@@ -3510,7 +3510,7 @@ USE module_mp_radar
              DO I=1,K0_LL
                 CTURB_LL(I,J)=1.0D0
              ENDDO
-          ENDDO
+          ENDDO 
 	  CTURB_LL(1,1)=4.50D0
 	  CTURB_LL(1,2)=4.50D0
 	  CTURB_LL(1,3)=3.00D0
@@ -3595,16 +3595,16 @@ USE module_mp_radar
           DO I=KRMIN_LL,KRMAX_LL
              X_KERN=RADXXO(I,1)*1.0D4
              IF(X_KERN.LT.RL_LL(1)) X_KERN=RL_LL(1)
-             IF(X_KERN.GT.RL_LL(K0_LL)) X_KERN=RL_LL(K0_LL)
+             IF(X_KERN.GT.RL_LL(K0_LL)) X_KERN=RL_LL(K0_LL) 
              DO J=KRMIN_LL,KRMAX_LL
                 Y_KERN=RADXXO(J,1)*1.0D4
                 IF(Y_KERN.LT.RL_LL(1)) Y_KERN=RL_LL(1)
                 IF(Y_KERN.GT.RL_LL(K0_LL)) Y_KERN=RL_LL(K0_LL)
                 CTURBLL(I,J)=F(X_KERN,Y_KERN,RL_LL,RL_LL,CTURB_LL &
-     &                      ,K0_LL,K0_LL)
+     &                      ,K0_LL,K0_LL)	                         
              ENDDO
           ENDDO
-          RL_GL(1) = RADXXO(1,1)*1.E4
+          RL_GL(1) = RADXXO(1,1)*1.E4 
           RL_GL(2) = 8.0D0
           RL_GL(3) = 10.0D0
 	  RL_GL(4) = 16.0D0
@@ -3621,11 +3621,11 @@ USE module_mp_radar
 	  RL_GL(15)=300.0D0
 	  RL_GL(16)=RADXXO(24,1)*1.0D4
 ! TURBULENCE GRAUPEL BULK RADII IN MKM
-          RG_GL(1) = RADXXO(1,6)*1.0D4
-          RG_GL(2) = 30.0D0
-          RG_GL(3) = 60.0D0
-          RG_GL(4) = 100.0D0
-          RG_GL(5) = 200.0D0
+          RG_GL(1) = RADXXO(1,6)*1.0D4 
+          RG_GL(2) = 30.0D0  
+          RG_GL(3) = 60.0D0 
+          RG_GL(4) = 100.0D0 
+          RG_GL(5) = 200.0D0 
 	  RG_GL(6) = 300.0D0
 	  RG_GL(7) = 400.0D0
 	  RG_GL(8) = 500.0D0
@@ -3646,7 +3646,7 @@ USE module_mp_radar
              DO J=1,K0L_GL
                 CTURB_GL(I,J)=1.0D0
              ENDDO
-          ENDDO
+          ENDDO 
           IF(IEPS_400.EQ.1) THEN
 	    CTURB_GL(1,1)=0.0D0
 	    CTURB_GL(1,2)=0.0D0
@@ -3663,7 +3663,7 @@ USE module_mp_radar
 	    CTURB_GL(1,13)=1.0D0
 	    CTURB_GL(1,14)=1.0D0
 	    CTURB_GL(1,15)=1.0D0
-
+	
 	    CTURB_GL(2,1)=1.0D0
 	    CTURB_GL(2,2)=1.4D0
 	    CTURB_GL(2,3)=1.8D0
@@ -3681,19 +3681,19 @@ USE module_mp_radar
 
 	    CTURB_GL(3,1)=7.5D0
 	    CTURB_GL(3,2)=7.5D0
-	    CTURB_GL(3,3)=4.5D0
-	    CTURB_GL(3,4)=4.5D0
-	    CTURB_GL(3,5)=4.65D0
-	    CTURB_GL(3,6)=4.65D0
-	    CTURB_GL(3,7)=4.5D0
-	    CTURB_GL(3,8)=4.5D0
-	    CTURB_GL(3,9)=4.0D0
-	    CTURB_GL(3,10)=3.0D0
-	    CTURB_GL(3,11)=2.0D0
-	    CTURB_GL(3,12)=1.5D0
-	    CTURB_GL(3,13)=1.3D0
-	    CTURB_GL(3,14)=1.0D0
-
+	    CTURB_GL(3,3)=4.5D0	
+	    CTURB_GL(3,4)=4.5D0	
+	    CTURB_GL(3,5)=4.65D0	
+	    CTURB_GL(3,6)=4.65D0	
+	    CTURB_GL(3,7)=4.5D0	
+	    CTURB_GL(3,8)=4.5D0	
+	    CTURB_GL(3,9)=4.0D0	
+	    CTURB_GL(3,10)=3.0D0	
+	    CTURB_GL(3,11)=2.0D0	
+	    CTURB_GL(3,12)=1.5D0	
+	    CTURB_GL(3,13)=1.3D0	
+	    CTURB_GL(3,14)=1.0D0	
+    
 	    CTURB_GL(4,1)=5.5D0
 	    CTURB_GL(4,2)=5.5D0
 	    CTURB_GL(4,3)=4.5D0
@@ -3708,22 +3708,22 @@ USE module_mp_radar
 	    CTURB_GL(4,12)=1.5D0
 	    CTURB_GL(4,13)=1.35D0
 	    CTURB_GL(4,14)=1.0D0
-
+	 
 	    CTURB_GL(5,1)=4.5D0
 	    CTURB_GL(5,2)=4.5D0
-	    CTURB_GL(5,3)=3.3D0
-	    CTURB_GL(5,4)=3.3D0
-	    CTURB_GL(5,5)=3.3D0
-	    CTURB_GL(5,6)=3.4D0
-	    CTURB_GL(5,7)=3.8D0
-	    CTURB_GL(5,8)=3.8D0
-	    CTURB_GL(5,9)=3.8D0
+	    CTURB_GL(5,3)=3.3D0	
+	    CTURB_GL(5,4)=3.3D0	
+	    CTURB_GL(5,5)=3.3D0	
+	    CTURB_GL(5,6)=3.4D0	
+	    CTURB_GL(5,7)=3.8D0	
+	    CTURB_GL(5,8)=3.8D0	
+	    CTURB_GL(5,9)=3.8D0	
 	    CTURB_GL(5,10)=3.6D0
-	    CTURB_GL(5,11)=2.5D0
-	    CTURB_GL(5,12)=2.0D0
-	    CTURB_GL(5,13)=1.4D0
-	    CTURB_GL(5,14)=1.0D0
-
+	    CTURB_GL(5,11)=2.5D0	
+	    CTURB_GL(5,12)=2.0D0	
+	    CTURB_GL(5,13)=1.4D0	
+	    CTURB_GL(5,14)=1.0D0	
+			 		
 	    CTURB_GL(6,1)=4.0D0
 	    CTURB_GL(6,2)=4.0D0
 	    CTURB_GL(6,3)=2.8D0
@@ -3825,7 +3825,7 @@ USE module_mp_radar
 	    CTURB_GL(12,9)=2.1D0
 	    CTURB_GL(12,10)=2.1D0
 	    CTURB_GL(12,11)=1.9D0
-	    CTURB_GL(12,12)=1.8D0
+	    CTURB_GL(12,12)=1.8D0 
 	    CTURB_GL(12,13)=1.3D0
 	    CTURB_GL(12,14)=1.1D0
 
@@ -3944,20 +3944,20 @@ USE module_mp_radar
 	    CTURB_GL(4,1) =7.50D0
 	    CTURB_GL(4,2) =7.50D0
 	    CTURB_GL(4,3) =7.50D0
-	    CTURB_GL(4,4) =7.65D0
-	    CTURB_GL(4,5) =7.65D0
-	    CTURB_GL(4,6) =8.00D0
-	    CTURB_GL(4,7) =8.00D0
-	    CTURB_GL(4,8) =7.50D0
-	    CTURB_GL(4,9) =6.50D0
-	    CTURB_GL(4,10)=6.00D0
-	    CTURB_GL(4,11)=5.00D0
-	    CTURB_GL(4,12)=4.50D0
-	    CTURB_GL(4,13)=4.00D0
-	    CTURB_GL(4,14)=2.00D0
-	    CTURB_GL(4,15)=1.30D0
-	    CTURB_GL(4,16)=1.00D0
-
+	    CTURB_GL(4,4) =7.65D0	
+	    CTURB_GL(4,5) =7.65D0	
+	    CTURB_GL(4,6) =8.00D0	
+	    CTURB_GL(4,7) =8.00D0	
+	    CTURB_GL(4,8) =7.50D0	
+	    CTURB_GL(4,9) =6.50D0	
+	    CTURB_GL(4,10)=6.00D0	
+	    CTURB_GL(4,11)=5.00D0	
+	    CTURB_GL(4,12)=4.50D0	
+	    CTURB_GL(4,13)=4.00D0	
+	    CTURB_GL(4,14)=2.00D0	
+	    CTURB_GL(4,15)=1.30D0	
+	    CTURB_GL(4,16)=1.00D0	
+    
 	    CTURB_GL(5,1) =5.50D0
 	    CTURB_GL(5,2) =5.50D0
 	    CTURB_GL(5,3) =5.50D0
@@ -3974,24 +3974,24 @@ USE module_mp_radar
 	    CTURB_GL(5,14)=2.00D0
 	    CTURB_GL(5,15)=1.35D0
 	    CTURB_GL(5,16)=1.00D0
-
+	 
 	    CTURB_GL(6,1) =4.50D0
 	    CTURB_GL(6,2) =4.50D0
 	    CTURB_GL(6,3) =4.50D0
-	    CTURB_GL(6,4) =4.75D0
-	    CTURB_GL(6,5) =4.75D0
-	    CTURB_GL(6,6) =5.00D0
-	    CTURB_GL(6,7) =5.25D0
-	    CTURB_GL(6,8) =5.25D0
-	    CTURB_GL(6,9) =5.00D0
-	    CTURB_GL(6,10)=4.75D0
-	    CTURB_GL(6,11)=4.50D0
-	    CTURB_GL(6,12)=4.00D0
-	    CTURB_GL(6,13)=3.75D0
-	    CTURB_GL(6,14)=2.00D0
-	    CTURB_GL(6,15)=1.40D0
-	    CTURB_GL(6,16)=1.00D0
-
+	    CTURB_GL(6,4) =4.75D0	
+	    CTURB_GL(6,5) =4.75D0	
+	    CTURB_GL(6,6) =5.00D0	
+	    CTURB_GL(6,7) =5.25D0	
+	    CTURB_GL(6,8) =5.25D0	
+	    CTURB_GL(6,9) =5.00D0	
+	    CTURB_GL(6,10)=4.75D0	
+	    CTURB_GL(6,11)=4.50D0	
+	    CTURB_GL(6,12)=4.00D0	
+	    CTURB_GL(6,13)=3.75D0	
+	    CTURB_GL(6,14)=2.00D0	
+	    CTURB_GL(6,15)=1.40D0	
+	    CTURB_GL(6,16)=1.00D0	
+			 		
 	    CTURB_GL(7,1) =4.00D0
 	    CTURB_GL(7,2) =4.00D0
 	    CTURB_GL(7,3) =4.00D0
@@ -4042,7 +4042,7 @@ USE module_mp_radar
 	    CTURB_GL(9,14)=2.00D0
 	    CTURB_GL(9,15)=1.30D0
 	    CTURB_GL(9,16)=1.10D0
-
+	    
 	    CTURB_GL(10,1) =3.00D0
 	    CTURB_GL(10,2) =3.00D0
 	    CTURB_GL(10,3) =3.00D0
@@ -4167,7 +4167,7 @@ USE module_mp_radar
                DO J=1,K0L_GL
                   CTURB_GL(I,J)=CTURB_GL(I,J)*1.7D0
                ENDDO
-            ENDDO
+            ENDDO 
           ENDIF
           DO J=1,K0L_GL
              DO I=1,K0G_GL
@@ -4179,16 +4179,16 @@ USE module_mp_radar
                 CTURBGL(I,J)=1.
              ENDDO
           ENDDO
-          DO I=KRMING_GL,KRMAXG_GL
+          DO I=KRMING_GL,KRMAXG_GL                   
              X_KERN=RADXXO(I,6)*1.0D4
              IF(X_KERN.LT.RG_GL(1)) X_KERN=RG_GL(1)
-             IF(X_KERN.GT.RG_GL(K0G_GL)) X_KERN=RG_GL(K0G_GL)
+             IF(X_KERN.GT.RG_GL(K0G_GL)) X_KERN=RG_GL(K0G_GL) 
              DO J=KRMINL_GL,KRMAXL_GL
                 Y_KERN=RADXXO(J,1)*1.0D4
                 IF(Y_KERN.LT.RL_GL(1)) Y_KERN=RL_GL(1)
                 IF(Y_KERN.GT.RL_GL(K0L_GL)) Y_KERN=RL_GL(K0L_GL)
                 CTURBGL(I,J)=F(X_KERN,Y_KERN,RG_GL,RL_GL,CTURB_GL &
-     &                      ,K0G_GL,K0L_GL)
+     &                      ,K0G_GL,K0L_GL)	      
              ENDDO
           ENDDO
           IF(IEPS_800.EQ.1) THEN
@@ -4210,7 +4210,7 @@ USE module_mp_radar
                 IF(I.LE.14.AND.J.EQ.8) CTURBGL(I,J)=1.0D0
                 IF(I.GT.14.AND.J.LE.8) CTURBGL(I,J)=1.2D0
 	     ENDDO
-          ENDDO
+          ENDDO                       
 	RETURN
 	END SUBROUTINE TURBCOEF
 !===================================================================
@@ -4228,7 +4228,7 @@ USE module_mp_radar
 
         do k=2,k0
            if(x.le.x0(k).and.x.ge.x0(k-1)) then
-             ir=k
+             ir=k     
            elseif(x.gt.x0(k0)) then
              ir=k0+1
            elseif(x.lt.x0(1)) then
@@ -4245,32 +4245,32 @@ USE module_mp_radar
             ec=(1.d0-p)*(1.d0-q)*table(ir-1,iq-1)+ &
      &              p*(1.d0-q)*table(ir,iq-1)+ &
      &              q*(1.d0-p)*table(ir-1,iq)+ &
-     &                   p*q*table(ir,iq)
+     &                   p*q*table(ir,iq)    
           else
             q =(y-y0(iq-1))/(y0(iq)-y0(iq-1))
-            ec=(1.d0-q)*table(1,iq-1)+q*table(1,iq)
+            ec=(1.d0-q)*table(1,iq-1)+q*table(1,iq)    
           endif
         else
           q =(y-y0(iq-1))/(y0(iq)-y0(iq-1))
           ek=(1.d0-q)*table(k0,iq-1)+q*table(k0,iq)
-          ec=min(ek,1.d0)
+          ec=min(ek,1.d0) 
         endif
         f=ec
         return
         end function f
 ! function f
+                                                                            
 
-
-
+                                                                            
 
 !======================================================================
         SUBROUTINE FREEZ(FF1,XL,FF2,XI,FF3,XS,FF4,XG,FF5,XH &
-     &,TIN,DT,RO,COL,AFREEZMY,BFREEZMY,BFREEZMAX,KRFREEZ,ICEMAX,NKR)
-      IMPLICIT NONE
+     &,TIN,DT,RO,COL,AFREEZMY,BFREEZMY,BFREEZMAX,KRFREEZ,ICEMAX,NKR)       
+      IMPLICIT NONE 
       INTEGER KR,ICE,ICE_TYPE
       REAL COL,AFREEZMY,BFREEZMY,BFREEZMAX
       INTEGER KRFREEZ,ICEMAX,NKR
-      REAL DT,RO,YKK,PF,PF_1,DEL_T,TT_DROP,ARG_1,YK2,DF1,BF,ARG_M, &
+      REAL DT,RO,YKK,PF,PF_1,DEL_T,TT_DROP,ARG_1,YK2,DF1,BF,ARG_M, & 
      & TT_DROP_AFTER_FREEZ,CFREEZ,SUM_ICE,TIN,TTIN,AF,FF_MAX,F1_MAX, &
      & F2_MAX,F3_MAX,F4_MAX,F5_MAX
 
@@ -4329,7 +4329,7 @@ USE module_mp_radar
 	 ENDDO
 !
 !************************** NEW TEMPERATURE *************************
-!
+!	
 	ARG_1	=333.*SUM_ICE/RO
       	TT_DROP_AFTER_FREEZ=TTIN+ARG_1
 	TIN	=TT_DROP_AFTER_FREEZ
@@ -4338,8 +4338,8 @@ USE module_mp_radar
 !
 	ENDIF
 !
-   	RETURN
-      	END SUBROUTINE FREEZ
+   	RETURN                                                           
+      	END SUBROUTINE FREEZ                                                             
 
         SUBROUTINE ORIG_MELT(FF1,XL,FF2,XI,FF3,XS,FF4,XG,FF5,XH &
      &                           ,TIN,DT,RO,COL,ICEMAX,NKR)
@@ -4391,13 +4391,13 @@ USE module_mp_radar
 	  ENDDO
 ! CYCLE BY KR
 ! NEW TEMPERATURE :
-	  ARG_1=333.*SUM_ICE/RO
+	  ARG_1=333.*SUM_ICE/RO	
 	  TIN=TIN-ARG_1
 ! END OF MELTING
 ! IN CASE DEL_T.GE.0.AND.FF_MAX.NE.0
 	ENDIF
-   	RETURN
-      	END SUBROUTINE ORIG_MELT
+   	RETURN                                                           
+      	END SUBROUTINE ORIG_MELT                                                             
 !===========================
        SUBROUTINE J_W_MELT(FF1,XL,FF2,XI,FF3,XS,FF4,XG,FF5,XH &
      &                           ,TIN,DT,RO,COL,ICEMAX,NKR)
@@ -4507,15 +4507,15 @@ USE module_mp_radar
 ! END OF MELTING
 
 	ENDIF
-   	RETURN
-      	END SUBROUTINE J_W_MELT
+   	RETURN                                                           
+      	END SUBROUTINE J_W_MELT                                                             
 !===================================================================
       SUBROUTINE JERNUCL01(PSI1,PSI2,FCCNR &
      &                    ,X1,X2,DTT,DQQ,ROR,PP,DSUP1,DSUP2 &
      &  ,COL,AA1_MY, BB1_MY, AA2_MY, BB2_MY &
      &  ,C1_MEY,C2_MEY,SUP2_OLD,DSUPICEXZ &
      &  ,RCCN,DROPRADII,NKR,ICEMAX,ICEPROCS)
-      IMPLICIT NONE
+      IMPLICIT NONE 
 !
       INTEGER ICEMAX,NKR
       INTEGER ICEPROCS
@@ -4530,12 +4530,12 @@ USE module_mp_radar
      & DELTAF,DELMASSL,FMASS,HELEK1,DEL2NN,FF1BN, &
      & HELEK2,TPCC,PP,ADDF,DSUP2N,FACT,EW1N,ES2N,ES1N,FNEW, &
      & C1,SUP1N,SUP2N,QPN,TPN,TPC,SUP1,SUP2,DEL1N,DEL2N,AL1,AL2, &
-     & TEMP1,TEMP2,TEMP3,A1,B1,A2,B2
+     & TEMP1,TEMP2,TEMP3,A1,B1,A2,B2 
 !
 
 !********************************************************************
 
-! NEW MEYERS IN JERNUCL01 SUBROUTINE
+! NEW MEYERS IN JERNUCL01 SUBROUTINE 
 
 
 
@@ -4545,7 +4545,7 @@ USE module_mp_radar
 
       REAL PSI1(NKR),X1(NKR),DROPCONCN(NKR) &
      &     ,PSI2(NKR,ICEMAX),X2(NKR,ICEMAX)
-
+      
 
       DATA A1,B1,A2,B2/-0.639,0.1296,-2.8,0.262/
       DATA TEMP1,TEMP2,TEMP3/-5.,-2.,-20./
@@ -4588,7 +4588,7 @@ USE module_mp_radar
       END SUBROUTINE JERNUCL01
 
 ! SUBROUTINE JERNUCL01
-!======================================================================
+!======================================================================      
       SUBROUTINE WATER_NUCL (PSI1,FCCNR,X1,TT,SUP1 &
      &,COL,RCCN,DROPRADII,NKR,ICEMAX)
       IMPLICIT NONE
@@ -4693,7 +4693,7 @@ USE module_mp_radar
           ENDDO
           IF(ICE_CON.GT.HELEK1)THEN
 !           CONTINUE
-          ELSE
+          ELSE 
            DELTAF=DELTACD*FACT
            DO KR=1,NRGI-1
              DX=3.*X2(KR,ICE)*COL
@@ -4764,7 +4764,7 @@ USE module_mp_radar
         CCNCONC_BFNUCL=CCNCONC_BFNUCL*COL
 
         IF(CCNCONC_BFNUCL.EQ.0.) THEN
-           RETURN
+           RETURN    
         ELSE
            CALL BOUNDARY(IMIN,IMAX,FCCNR,NKR)
            CALL CRITICAL (AKOE,BKOE,TT,RCRITI,SUP1,DEG01)
@@ -4870,14 +4870,14 @@ USE module_mp_radar
         REAL RO_SOLUTE
         PARAMETER (RO_SOLUTE=2.16)
 
-
+         
 
         AKOE=3.3E-05/TT
         BKOE=2.*4.3/(22.9+35.5)
 ! new change 21.07.02                                         (begin)
-        BKOE=BKOE*(4./3.)*3.141593*RO_SOLUTE
+        BKOE=BKOE*(4./3.)*3.141593*RO_SOLUTE                  
 ! new change 21.07.02                                           (end)
-
+        
 
 ! table of critical aerosol radii
 
@@ -4896,7 +4896,7 @@ USE module_mp_radar
         RCRITI=(AKOE/3.)*(4./BKOE/SUP1/SUP1)**DEG01
         RETURN
         END  SUBROUTINE CRITICAL
-
+            
         SUBROUTINE CCNIMIN(IMIN,IMAX,RCRITI,NCRITI,RCCN,CCNCONC,COL, &
      &       FCCNR,NKR)
 ! FOR    IMIN=1
@@ -4913,7 +4913,7 @@ USE module_mp_radar
 !                                            ii=imin,...,imax
 ! determination of ncriti   - number bin in which is located rcriti
 ! calculation of ccnconc(ncriti)=fccnr(ncriti)*dln1/(dln1+dln2),
-! where,
+! where,    
 ! dln1=Ln(rcriti)-Ln(rccn_min)
 ! dln2=Ln(rccn(1)-Ln(rcriti)
 ! calculation of new value of fccnr(ncriti)
@@ -4922,8 +4922,8 @@ USE module_mp_radar
           IF(RCRITI.LE.RCCN_MIN) THEN
             NCRITI=1
             DO II=NCRITI+1,IMAX
-               CCNCONC(II)=COL*FCCNR(II)
-               FCCNR(II)=0.
+               CCNCONC(II)=COL*FCCNR(II)     
+               FCCNR(II)=0.                  
             ENDDO
             GOTO 42
           ENDIF
@@ -4942,7 +4942,7 @@ USE module_mp_radar
           ENDIF
 ! in case IMIN.EQ.1
 42       CONTINUE
-
+     
          RETURN
          END SUBROUTINE CCNIMIN
         SUBROUTINE CCNLOOP(IMIN,IMAX,RCRITI,NCRITI,RCCN,CCNCONC,COL, &
@@ -4965,7 +4965,7 @@ USE module_mp_radar
      &    THEN
 ! this line eliminates bug you found (when IMIN=IMAX)
             NCRITI=IMIN
-
+            
             DO II=NCRITI+1,IMAX
                CCNCONC(II)=COL*FCCNR(II)
                FCCNR(II)=0.
@@ -4979,12 +4979,12 @@ USE module_mp_radar
           ENDIF
 ! in case IMIN.GT.1
         ENDIF
-
+        
 ! END of part of interest. so in case
 !RCRITI.LT.RCCN(IMIN).AND.RCRITI.GT.RCCN(IMIN-1)
 !we go to 42 and avoid the next loop
 
-
+      
 
          DO I=IMIN,IMAX-1
            IF(RCRITI.EQ.RCCN(I)) THEN
@@ -5010,7 +5010,7 @@ USE module_mp_radar
              GOTO 42
 ! in case RCRITI.GT.RCCN(I).AND.RCRITI.LT.RCCN(I+1)
            END IF
-
+      
 
          ENDDO
 ! cycle by I, I=IMIN,...,IMAX-1
@@ -5026,7 +5026,7 @@ USE module_mp_radar
        REAL RCCN(NKR)
         REAL  R03,SUPCRITI,RACT(NKR),XKOE
         REAL AKOE,BKOE,AKOE23,RACTMAX
-! Spectrum of activated drops                                 (begin)
+! Spectrum of activated drops                                 (begin) 
         DO I=IMIN,IMAX
 
 ! critical water supersaturations appropriating CCN radii
@@ -5155,7 +5155,7 @@ USE module_mp_radar
       INTEGER I_ABERGERON,I_BERGERON, &
      & KR,ICE,ITIME,KCOND,NR,NRM, &
      & KLIMIT, &
-     & KM,KLIMITL
+     & KM,KLIMITL  
       REAL AL1,AL2,D,GAM,POD, &
      & RV_MY,CF_MY,D_MYIN,AL1_MY,AL2_MY,ALC,DT0LREF,DTLREF, &
      & A1_MYN, BB1_MYN, A2_MYN, BB2_MYN,DT,DTT,XRAD, &
@@ -5169,7 +5169,7 @@ USE module_mp_radar
      & PI,QI,DEL1N0,DEL2N0,D1N0,D2N0,DTNEWL,DTNEWL1,D1N,D2N, &
      & DEL_R1,DT0L0,DT0I0, &
      & DTNEWL0, &
-     & DTNEWL2
+     & DTNEWL2 
        REAL DT_WATER_COND,DT_WATER_EVAP
 
        INTEGER K
@@ -5189,18 +5189,18 @@ USE module_mp_radar
 
        DOUBLE PRECISION DELMASSL1
 
-! DROPLETS
-
+! DROPLETS 
+                                                                       
         REAL R1(NKR) &
      &           ,RLEC(NKR),RO1BL(NKR) &
      &           ,FI1(NKR),FF1(NKR),PSI1(NKR) &
      &           ,B11_MY(NKR),B12_MY(NKR)
 
-! WORK ARRAYS
+! WORK ARRAYS 
 
 ! NEW ALGORITHM OF MIXED PHASE FOR EVAPORATION
 
-
+       
 	REAL DTIMEO(NKR),DTIMEL(NKR) &
      &           ,TIMESTEPD(NKR)
 
@@ -5212,8 +5212,8 @@ USE module_mp_radar
 	OPER3(AR1,AR2)=AR1*AR2/(0.622+0.378*AR1)
 
         DATA AL1 /2500./, AL2 /2834./, D /0.211/ &
-     &      ,GAM /1.E-4/, POD /10./
-
+     &      ,GAM /1.E-4/, POD /10./ 
+           
 	DATA RV_MY,CF_MY,D_MYIN,AL1_MY,AL2_MY &
      &      /461.5,0.24E-1,0.211E-4,2.5E6,2.834E6/
 
@@ -5221,18 +5221,18 @@ USE module_mp_radar
      &      /2.53,5.42,3.41E1,6.13/
 
 	DATA TPC1, TPC2, TPC3, TPC4, TPC5 &
-     &      /-4.0,-8.1,-12.7,-17.8,-22.4/
+     &      /-4.0,-8.1,-12.7,-17.8,-22.4/ 
 
 
-        DATA EPSDEL, EPSDEL2 /0.1E-03,0.1E-03/
-
+        DATA EPSDEL, EPSDEL2 /0.1E-03,0.1E-03/  
+    
 	DATA DT0L, DT0I /1.E20,1.E20/
 
 ! CONTROL OF DROP SPECTRUM IN SUBROUTINE ONECOND
 
 
 ! CONTROL OF TIMESTEP ITERATIONS IN MIXED PHASE: EVAPORATION
-
+        
         I_ABERGERON=0
         I_BERGERON=0
         COL3=3.0*COL
@@ -5268,7 +5268,7 @@ USE module_mp_radar
            SUPINTW(KR)=0.
            DSUPINTW(KR)=0.
         ENDDO
-! OLD TREATMENT OF "T" & "Q"
+! OLD TREATMENT OF "T" & "Q" 
 !DEL12RD=DEL12R**DEL_BBR
 ! BARRY
 !       EW1PN=AA1_MY*(100.+DEL1IN*100.)*DEL12RD/100.
@@ -5307,20 +5307,20 @@ USE module_mp_radar
 ! CALL JERTIMESC WATER - 1 (ONLY WATER)
 
               CALL JERTIMESC(FI1,R1,SFN11,SFN12 &
-     &                      ,B11_MY,B12_MY,RLEC,B8L,1,COL,NKR)
+     &                      ,B11_MY,B12_MY,RLEC,B8L,1,COL,NKR)        
 
 
 	      SFNL=SFN11+SFN12
-	      SFNI=0.
+	      SFNI=0.       
 
-! SOME CONSTANTS
+! SOME CONSTANTS 
 	      B5L=BB1_MY/TPS/TPS
 	      B5I=BB2_MY/TPS/TPS
-              B7L=B5L*B6
+              B7L=B5L*B6                                                     
               B7I=B5I*B6
-	      DOPL=1.+DEL1S
-	      DOPI=1.+DEL2S
-              RW=(OPER2(QPS)+B5L*AL1)*DOPL*SFNL
+	      DOPL=1.+DEL1S                                                     
+	      DOPI=1.+DEL2S                                                     
+              RW=(OPER2(QPS)+B5L*AL1)*DOPL*SFNL                                                 
               RI=(OPER2(QPS)+B5L*AL2)*DOPL*SFNI
 	      QW=B7L*DOPL
 	      PW=(OPER2(QPS)+B5I*AL1)*DOPI*SFNL
@@ -5335,7 +5335,7 @@ USE module_mp_radar
 
 	      IF(DEL1.GT.0) KCOND=11
 
-! PROCESS'S TYPE
+! PROCESS'S TYPE 
 
 	      IF(KCOND.EQ.11) THEN
 ! NEW TIME STEP IN CONDENSATION (ONLY WATER) (BEGIN)
@@ -5354,7 +5354,7 @@ USE module_mp_radar
 ! NEW TIME STEP (ONLY WATER: CONDENSATION)
 
 
-	        IF((TIMENEW+DTNEWL).GT.DT.AND.ITIME.LT.(NKR-1))  &
+	        IF((TIMENEW+DTNEWL).GT.DT.AND.ITIME.LT.(NKR-1))  & 
      &          DTNEWL=DT-TIMENEW
                 IF(ITIME.EQ.(NKR-1)) DTNEWL=DT-TIMENEW
 
@@ -5364,7 +5364,7 @@ USE module_mp_radar
 
 	        DTT=DTNEWL
 
-! SOLVING FOR SUPERSATURATION
+! SOLVING FOR SUPERSATURATION 
 
 ! CALL JERSUPSAT - 2 (NEW TIMESTEP - ONLY WATER)
 
@@ -5375,10 +5375,10 @@ USE module_mp_radar
 
 ! END OF "NEW SUPERSATURATION"
 
-! DROPLETS
+! DROPLETS 
 
-! DROPLET DISTRIBUTION FUNCTION
-
+! DROPLET DISTRIBUTION FUNCTION 
+                                                         
 ! CALL JERDFUN WATER - 1 (ONLY WATER: CONDENSATION)
 	          CALL JERDFUN(R1,B11_MY,B12_MY &
      &                        ,FI1,PSI1,D1N &
@@ -5393,7 +5393,7 @@ USE module_mp_radar
 
 	      ELSE
 
-! EVAPORATION - ONLY WATER
+! EVAPORATION - ONLY WATER 
 
 ! IN CASE : KCOND.NE.11
                IF (DEL1N.EQ.0)THEN
@@ -5446,7 +5446,7 @@ USE module_mp_radar
 
 	        DTT=DTNEWL
 
-! SOLVING FOR SUPERSATURATION
+! SOLVING FOR SUPERSATURATION 
 
 
 ! CALL JERSUPSAT - 3 (ONLY_WATER: EVAPORATION)
@@ -5457,18 +5457,18 @@ USE module_mp_radar
 ! END OF "NEW SUPERSATURATION"
 
 
-! DROPLETS
+! DROPLETS 
 
 
 ! DROPLET DISTRIBUTION FUNCTION (ONLY_WATER: EVAPORATION)
-
+                                                         
 ! CALL JERDFUN WATER - 2 (ONLY_WATER: EVAPORATION)
-
+             
  	          CALL JERDFUN(R1,B11_MY,B12_MY &
      &                        ,FI1,PSI1,D1N &
      &                        ,1,1,COL,NKR,TPN)
 
-! IN CASE : ISYML.NE.0 (ENDING OF
+! IN CASE : ISYML.NE.0 (ENDING OF 
 ! "DROPLET DISTRIBUTION FUNCTION" (ONLY WATER: EVAPORATION)
 
 !        ENDIF
@@ -5478,7 +5478,7 @@ USE module_mp_radar
                 call wrf_error_fatal("fatal error in module_mp_full_sbm (DEL1.LT.0.AND.DEL1N.GT.0), model stop")
 	        ENDIF
 
-! END OF "PROCESS'S TYPE"
+! END OF "PROCESS'S TYPE" 
 
 ! IN CASE : KCOND.NE.11 (ONLY WATER: EVAPORATION)
 
@@ -5487,12 +5487,12 @@ USE module_mp_radar
 ! IN CASES : KCOND.EQ.11 OR KCOND.NE.11 (BOTH CONDENSATION AND
 ! EVAPORATION : ONLY WATER)
 
-! CONCENTRATION & MASS (ONLY WATER)
+! CONCENTRATION & MASS (ONLY WATER) 
 
       RMASSLBB=0.
       RMASSLAA=0.
 
-! BEFORE JERNEWF (ONLY WATER)
+! BEFORE JERNEWF (ONLY WATER) 
 
               DO K=1,NKR
                  FI1_K=FI1(K)
@@ -5542,7 +5542,7 @@ USE module_mp_radar
                 DB11_MY=B11_MY(KR)
                 DSUPINTW(KR)=DSUPINTW(KR)+DB11_MY*DD1N
               ENDDO
-! REPEATE TIME STEP (ONLY WATER: CONDENSATION OR EVAPORATION)
+! REPEATE TIME STEP (ONLY WATER: CONDENSATION OR EVAPORATION) 
 	      IF(TIMENEW.LT.DT) GOTO 56
 57            CONTINUE
               CALL JERDFUN_NEW(R1,DSUPINTW &
@@ -5610,7 +5610,7 @@ USE module_mp_radar
 
 
        RETURN
-!      END
+!      END 
 
   END SUBROUTINE ONECOND1
 !==================================================================
@@ -5623,9 +5623,9 @@ USE module_mp_radar
      &                    ,IND,ITYPE,COL,NKR,TPN)
        IMPLICIT NONE
 
-! CRYSTALS
+! CRYSTALS 
        REAL COL,DEL2N
-
+                                                                       
       INTEGER IND,ITYPE,KR,ICE,ITYP,NRM,NR,NKR,IDROP
        REAL &
      &       R2(NKR,IND),R2N(NKR,IND) &
@@ -5660,7 +5660,7 @@ USE module_mp_radar
 	NR=NKR
 	NRM=NKR-1
 
-! NEW DISTRIBUTION FUNCTION
+! NEW DISTRIBUTION FUNCTION 
 
 	  DO 8 ICE=1,IND
 	       IF(ITYP.EQ.ICE) THEN
@@ -5677,16 +5677,16 @@ USE module_mp_radar
 	          ENDDO
 	        ENDIF
     8	  CONTINUE
-! CRYSTAL DISTRIBUTION FUNCTION
-
+! CRYSTAL DISTRIBUTION FUNCTION 
+                                                          
 	  DO ICE=1,IND
 
-! ICE_TYPE
+! ICE_TYPE 
 	     IF(ITYP.EQ.ICE) THEN
 !       Q2=20.*ITYPE+ICE
                DO 5 KR=1,NKR
 	            R2R(KR)=DR2(KR,ICE)
-	            R2NR(KR)=DR2N(KR,ICE)
+	            R2NR(KR)=DR2N(KR,ICE)               
     5         continue
 ! Andrei's new change 1.12.09                                 (start)
 !            IDROP=1
@@ -5701,17 +5701,17 @@ USE module_mp_radar
 
 
 !              CALL JERNEWF(NR,NRM,R2R,FI2R,PSI2R,R2NR,COL,NKR)
-	       DO KR=1,NKR
+	       DO KR=1,NKR                              
 	          PSI2(KR,ICE)=PSI2R(KR)
 	       ENDDO
 
 
-! END OF "ICE_TYPE"
+! END OF "ICE_TYPE" 
 
 	     ENDIF
 
-! END OF "CRYSTAL DISTRIBUTION FUNCTION"
-
+! END OF "CRYSTAL DISTRIBUTION FUNCTION" 
+                                                          
 	  ENDDO
 
 ! END OF "NEW DISTRIBUTION FUNCTION"
@@ -5725,9 +5725,9 @@ USE module_mp_radar
      &                    ,IND,ITYPE,COL,NKR,TPN)
        IMPLICIT NONE
 
-! CRYSTALS
+! CRYSTALS 
        REAL COL,DEL2N
-
+                                                                       
       INTEGER IND,ITYPE,KR,ICE,ITYP,NRM,NR,KK,NKR,IDROP
        REAL &
      &       R2(NKR,IND),R2N(NKR,IND) &
@@ -5754,11 +5754,11 @@ USE module_mp_radar
 	NR=NKR
 	NRM=NKR-1
 
-! NEW DISTRIBUTION FUNCTION
+! NEW DISTRIBUTION FUNCTION 
 
-! CRYSTAL DISTRIBUTION FUNCTION
+! CRYSTAL DISTRIBUTION FUNCTION 
 	  DO ICE=1,IND
-! ICE_TYPE
+! ICE_TYPE 
 	     IF(ITYP.EQ.ICE) THEN
                DO 5 KR=1,NKR
 	            R2R(KR)=DR2(KR,ICE)
@@ -5780,16 +5780,16 @@ USE module_mp_radar
 
 
 !              CALL JERNEWF(NR,NRM,R2R,FI2R,PSI2R,R2NR,COL,NKR)
-	       DO KR=1,NKR
+	       DO KR=1,NKR                              
 	          PSI2(KR,ICE)=PSI2R(KR)
 	       ENDDO
 
-! END OF "ICE_TYPE"
+! END OF "ICE_TYPE" 
 
 	     ENDIF
 
-! END OF "CRYSTAL DISTRIBUTION FUNCTION"
-
+! END OF "CRYSTAL DISTRIBUTION FUNCTION" 
+                                                          
 	  ENDDO
 
 ! END OF "NEW DISTRIBUTION FUNCTION"
@@ -5804,30 +5804,30 @@ USE module_mp_radar
 
         SUBROUTINE JERNEWF &
        (NRX,NRM,RR,FI_OLD,PSI,RN,COL,NKR, &
-! Andrei's new change 1.12.09                                 (start)
+! Andrei's new change 1.12.09                                 (start)           
         IDROP,TPN)
-! Andrei's new change 1.12.09                                   (end)
-
+! Andrei's new change 1.12.09                                   (end)	
+ 
         IMPLICIT NONE
-
+	
 ! Andrei's new change 1.12.09                                 (start)
 
         INTEGER &
 	KRDROP_REMAP_MIN,KRDROP_REMAP_MAX,IDROP,KMAX
         INTEGER NRX
-
+	
         DOUBLE PRECISION &
 	COEFF_REMAP,TPN
-
-        DOUBLE PRECISION &
+	
+        DOUBLE PRECISION & 
         CDROP(NRX),DELTA_CDROP(NRX)
+		
+! Andrei's new change 1.12.09                                   (end)                      	
 
-! Andrei's new change 1.12.09                                   (end)
-
-        INTEGER  &
+        INTEGER  & 
         I,K,KM,NRXP,IM,IP,IFIN,IIN,ISYM,NKR
-
-        REAL &
+ 
+        REAL & 
         COL
 
         DOUBLE PRECISION &
@@ -5842,34 +5842,34 @@ USE module_mp_radar
 
         INTEGER NRM
 
-        DOUBLE PRECISION &
+        DOUBLE PRECISION & 
         RR(NRX),FI(NRX),PSI(NRX),RN(NRX) &
        ,RRS(NKR+1),RNS(NKR+1),PSIN(NKR+1),FIN(NKR+1)
 
-        DOUBLE PRECISION &
+        DOUBLE PRECISION & 
         FI_OLD(NRX)
-! ANDREI                                                      (start)
+! ANDREI                                                      (start) 
 ! new change 7.02.06                                          (start)
-        DOUBLE PRECISION &
+        DOUBLE PRECISION & 
         PSI_IM,PSI_I,PSI_IP
-! ANDREI                                                        (end)
+! ANDREI                                                        (end) 
 ! new change 7.02.06                                            (end)
 
-! Andrei's new change 1.12.09                                 (start)
+! Andrei's new change 1.12.09                                 (start)           
 
        IF(TPN.LT.273.15-7.0D0) IDROP=0
 ! LEAVE REMAPPING ON
 !      IDROP=0
-
+ 
 ! VALUES FOR SOME REMAPING VARIABLES
 
         KRDROP_REMAP_MIN=8
-	KRDROP_REMAP_MAX=13
-
-        COEFF_REMAP=1.0D0/150.0D0
-
-! Andrei's new change 1.12.09                                   (end)
-
+	KRDROP_REMAP_MAX=13 
+	
+        COEFF_REMAP=1.0D0/150.0D0 
+	       	
+! Andrei's new change 1.12.09                                   (end)                      
+	
 ! INITIAL VALUES FOR SOME VARIABLES
 
 	NRXP=NRX+1
@@ -5877,29 +5877,29 @@ USE module_mp_radar
 	DO K=1,NRX
 	   FI(K)=FI_OLD(K)
         ENDDO
-
+ 
 	DO K=1,NRX
 	   PSI(K)=0.0D0
         ENDDO
-! ANDREI                                                      (start)
+! ANDREI                                                      (start) 
 ! new change 7.02.06                                          (start)
 
 	IF(RN(NRX).NE.RR(NRX)) THEN
 
 ! Kovetz-Olund method                                         (start)
 
-! ANDREI                                                        (end)
+! ANDREI                                                        (end) 
 ! new change 7.02.06                                            (end)
 
 	  ISYM=1
 
 	  IF(RN(1).LT.RR(1)) ISYM=-1
 
-! CALCULATION OF DISTRIBUTION FUNCTION
+! CALCULATION OF DISTRIBUTION FUNCTION 
 
 	  IF(ISYM.GT.0) THEN
-
-! CONDENSATION
+	
+! CONDENSATION 
 
 	    RNS(NRXP)=1024.0D0*RR(NRX)
 	    RRS(NRXP)=1024.0D0*RR(NRX)
@@ -5915,7 +5915,7 @@ USE module_mp_radar
 	       FIN(K)=3.0D0*FI(K)*RR(K)*COL
 	    ENDDO
 
-! NUMBER OF NEW RADII POSITION IN REGULAR GRID
+! NUMBER OF NEW RADII POSITION IN REGULAR GRID 
 
 ! RNK - new first bin mass(after condensation)
 
@@ -5932,11 +5932,11 @@ USE module_mp_radar
 
 	    CONCL=0.0D0
             DMASS=0.0D0
-
+                        
             DO 6 I=IIN,IFIN
 
                  IP=I+1
-
+                                                                                
                  IM=MAX(1,I-1)
 
 	         R1=RRS(IM)
@@ -5949,7 +5949,7 @@ USE module_mp_radar
 	         FNEW=0.0D0
 
 	         DO 7 K=1,I
-
+                 
 	              FIK=FIN(K)
 
 	              IF(FIK.NE.0.0D0) THEN
@@ -5976,7 +5976,7 @@ USE module_mp_radar
                         FNEW=FNEW+FIK*GMAT
 ! in case FIK.NE.0.0D0
 	              ENDIF
-
+                 
    7	         CONTINUE
 
 	         CONCL=CONCL+FNEW
@@ -5986,12 +5986,12 @@ USE module_mp_radar
 ! PSIN(I)) - new concentration of hydrometeors after condensation
 
     	         PSIN(I)=FNEW
-
+                        	
    6        CONTINUE
 
 ! NEW VALUES OF DISTRIBUTION FUNCTION
-
-! PSI(K) - new size distribution function of hydrometeors after
+ 
+! PSI(K) - new size distribution function of hydrometeors after 
 !          condensation, K=1,...,NRX=NKR
 
 	    DO K=1,NRX
@@ -5999,7 +5999,7 @@ USE module_mp_radar
 	    ENDDO
 
 ! IN CASE: ISYM.GT.0 (CONDENSATION)
-
+	
           ELSE
 
 ! IN CASE: ISYM.LE.0 (EVAPORATION)
@@ -6050,13 +6050,13 @@ USE module_mp_radar
 ! PSIN(I) - new concentration of hydrometeors after evaporation
 
     	       PSIN(I)=FNEW
-
+	
             ENDDO
 ! cycle by I
 
 ! NEW VALUES OF DISTRIBUTION FUNCTION                         (start)
 
-! PSI(K), 1/g/cm^3 - new size distribution function of hydrometeors
+! PSI(K), 1/g/cm^3 - new size distribution function of hydrometeors 
 !                    after evaporation, K=1,...,NRX
 	    DO K=2,NRXP
 	       KM=K-1
@@ -6071,12 +6071,12 @@ USE module_mp_radar
 ! IN CASE: ISYM.LE.0 (EVAPORATION)
 
 	  ENDIF
-
+	
 ! Andrei's new change 1.12.09                                 (start)
           IF(I3POINT.NE.0.AND.ISYM.GT.0) THEN
 ! DIFFERENCE
 !         IF(I3POINT.NE.0) THEN
-! Andrei's new change 1.12.09                                   (end)
+! Andrei's new change 1.12.09                                   (end)                      
 
 	    DO K=1,NKR
 	       RRS(K)=RR(K)
@@ -6085,25 +6085,25 @@ USE module_mp_radar
             RRS(NKR+1)=RRS(NKR)*1024.0D0
 
 	    DO I=1,NKR
-
+ 
                PSI(I)=PSI(I)*RR(I)
 
 ! PSI(I) - concenration hydrometeors after KO divided on COL*3.0D0
 ! RN(I), g - new masses after condensation or evaporation
 
-               IF(RN(I).LT.0.0D0) THEN
+               IF(RN(I).LT.0.0D0) THEN 
                  RN(I)=1.0D-50
 	         FI(I)=0.0D0
                ENDIF
 
             ENDDO
-
+ 
 	    DO K=1,NKR
 
                IF(FI(K).NE.0.0D0) THEN
 
                  IF(RRS(2).LT.RN(K)) THEN
-
+ 
                    I=2
 
                    DO  WHILE &
@@ -6111,7 +6111,7 @@ USE module_mp_radar
                       .AND.I.LT.NKR)
                        I=I+1
 	           ENDDO
-! ANDREI                                                      (start)
+! ANDREI                                                      (start) 
 ! new change 7.02.06                                          (start)
                    IF(I.LT.NKR-2) THEN
 ! new change 7.02.06                                            (end)
@@ -6121,13 +6121,13 @@ USE module_mp_radar
                      RRTMP=RRS(I)
                      RRP=RRS(I+1)
                      RRM=RRS(I-1)
-
+ 
                      RNTMP2=RN(K+1)
 
                      RRTMP2=RRS(I+1)
                      RRP2=RRS(I+2)
                      RRM2=RRS(I)
-
+ 
                      GN1=(RRP-RNTMP)*(RRTMP-RNTMP)/(RRP-RRM)/ &
                        (RRTMP-RRM)
 
@@ -6136,23 +6136,23 @@ USE module_mp_radar
 
                      GN2=(RRP-RNTMP)*(RNTMP-RRM)/(RRP-RRTMP)/ &
                        (RRTMP-RRM)
-
+ 
 	             GMAT=(RRP-RNTMP)/(RRP-RRTMP)
-! ANDREI                                                      (start)
+! ANDREI                                                      (start) 
 ! new change 7.02.06                                          (start)
                      GN3=(RRTMP-RNTMP)*(RRM-RNTMP)/(RRP-RRM)/ &
                                                  (RRP-RRTMP)
 	             GMAT2=(RNTMP-RRTMP)/(RRP-RRTMP)
 
                      PSI_IM=PSI(I-1)+GN1*FI(K)*RR(K)
-! Andrei's new change 1.12.09                                 (start)
+! Andrei's new change 1.12.09                                 (start)           
 !                    PSI_I=PSI(I)+(GN1P+GN2-GMAT)*FI(K+1)*RR(K+1)
 
                      PSI_I=PSI(I)+GN1P*FI(K+1)*RR(K+1)+&
 	                         (GN2-GMAT)*FI(K)*RR(K)
-! Andrei's new change 1.12.09                                   (end)
+! Andrei's new change 1.12.09                                   (end)           
                      PSI_IP=PSI(I+1)+(GN3-GMAT2)*FI(K)*RR(K)
-
+                    
                      IF(PSI_IM.GT.0.0D0) THEN
 
                        IF(PSI_IP.GT.0.0D0) THEN
@@ -6171,7 +6171,7 @@ USE module_mp_radar
 
 ! in case smoothing criteria
 
-                           ENDIF
+                           ENDIF 
 ! in case I.GT.2
                          ENDIF
 
@@ -6191,7 +6191,7 @@ USE module_mp_radar
 ! in case RRS(2).LT.RN(K)
 
                  ENDIF
-
+ 
 ! in case FI(K).NE.0.0D0
 
                ENDIF
@@ -6220,24 +6220,24 @@ USE module_mp_radar
 	    DO K=1,NKR
 	       PSI(K)=PSI(K)/RR(K)
             ENDDO
-
-! new change 8.02.06                                            (end)
+	  
+! new change 8.02.06                                            (end)	       
 ! ANDREI                                                        (end)
 
-! 3 point method                                                (end)
-
-! in case I3POINT.NE.0.AND.ISYM.GT.0
-
+! 3 point method                                                (end)	       
+								     	       
+! in case I3POINT.NE.0.AND.ISYM.GT.0						     		 
+								     		    
 	  ENDIF
 
-! Andrei's new change 1.12.09                                 (start)
+! Andrei's new change 1.12.09                                 (start)           
 
           IF(IDROP.NE.0.AND.ISYM.GT.0) THEN
-
+	  
 	    DO K=KRDROP_REMAP_MIN,KRDROP_REMAP_MAX
 	       CDROP(K)=3.0D0*COL*PSI(K)*RR(K)
 	    ENDDO
-
+								     		 
 ! KMAX - right boundary of drop sdf spectrum
 !(KRDROP_REMAP_MIN =< KMAX =< KRDROP_REMAP_MAX)
 
@@ -6247,7 +6247,7 @@ USE module_mp_radar
             ENDDO
 
  2011       CONTINUE
-
+ 
 ! Andrei start
 !           DO K=KMAX-1,1,-1
 ! Andre end
@@ -6262,17 +6262,17 @@ USE module_mp_radar
 	         ENDIF
 	       ENDIF
             ENDDO
-
+	    
 	    DO K=KRDROP_REMAP_MIN,KMAX
 	       PSI(K)=CDROP(K)/(3.0D0*COL*RR(K))
 	    ENDDO
-
+	    
 ! in case IDROP.NE.0.AND.ISYM.GT.0
-
+		      
 	  ENDIF
-
-! Andrei's new change 1.12.09                                   (end)
-! ANDREI                                                      (start)
+	    	  
+! Andrei's new change 1.12.09                                   (end)           
+! ANDREI                                                      (start) 
 ! new change 8.02.06                                          (start)
 
 ! in case RN(NRX).NE.RR(NRX)
@@ -6287,10 +6287,10 @@ USE module_mp_radar
 
         ENDIF
 
-! new change 8.02.06                                            (end)
-! ANDREI
+! new change 8.02.06                                            (end)           
+! ANDREI                                            
 
-        RETURN
+        RETURN 
 
 ! SUBROUTINE JERNEWF
         END SUBROUTINE JERNEWF
@@ -6328,7 +6328,7 @@ USE module_mp_radar
         RV_MY=461.5E4
 	NRM=NKR-1
 
-! RHS FOR "MAXWELL" EQUATION
+! RHS FOR "MAXWELL" EQUATION 
 
 	D_MY=D_MYIN*(PZERO/PP)*(TP/TZERO)**1.94
 	RVT=RV_MY*TP
@@ -6359,7 +6359,7 @@ USE module_mp_radar
 	     DETL=FK1(KR,ICE)+FD1(KR,ICE)
 	     B11_MY(KR,ICE)=R11_MY(KR,ICE)/DETL
 !BARRY     B12_MY(KR,ICE)=R12_MY(KR,ICE)/DETL
-           B12_MY(KR,ICE)=0
+           B12_MY(KR,ICE)=0                       
     1	CONTINUE
 
 	RETURN
@@ -6393,8 +6393,8 @@ USE module_mp_radar
       REAL REINOLDS_NUMBER,RESHM,ROR
       PARAMETER (TZERO=273.150,PZERO=1.013E6)
       DATA AL1/2500.,2833./
-        DEG01=1./3.
-        DEG03=1./3.
+        DEG01=1./3.     
+        DEG03=1./3.     
 	CONST=12.566372
         AL1_MY(1)=2.5E10
         AL1_MY(2)=2.834E10
@@ -6417,7 +6417,7 @@ USE module_mp_radar
 ! Constants used for calculation of Reinolds number
         A=2.*(3./4./3.141593)**DEG01
         B=A/COEFF_VISCOUS
-
+        
         RVT=RV_MY*TP
         ESAT1(IN)=A1_MY(IN)*EXP(-BB1_MY(IN)/TP)
         DO ICE=1,ID
@@ -6433,24 +6433,24 @@ USE module_mp_radar
                 VENTPL=0.78+0.308*RESHM
               ENDIF
 ! new change 20.04.02                                           (end)
-              CONSTL=CONST*RIEC(KR,ICE)
+              CONSTL=CONST*RIEC(KR,ICE)                         
               CONSTLI(ICE)=CONSTL
 !             VR1K=0.
 !             VR1KL(KR,ICE)=VR1K
 ! new change 20.04.02                                         (begin)
-!             VENTPL=1.
-!             VENTRL(KR,ICE)=VENTPL
+!             VENTPL=1.                                       
+!             VENTRL(KR,ICE)=VENTPL                           
 ! new change 20.04.02                                           (end)
-              FACTPL=1.
-              FACTRL(KR,ICE)=FACTPL
-              FD1(KR,ICE)=RVT/D_MY/ESAT1(IN)/FACTPL
+              FACTPL=1.                                         
+              FACTRL(KR,ICE)=FACTPL                             
+              FD1(KR,ICE)=RVT/D_MY/ESAT1(IN)/FACTPL             
               FK1(KR,ICE)=(AL1_MY(IN)/RVT-1.)*AL1_MY(IN)/CF_MY/TP
               R1_MY1(KR,ICE)=VENTPL*CONSTL
 !             R1_MY2(KR,ICE)=VENTPL*CONSTL*0.
 !             R1_MY3(KR,ICE)=VENTPL*CONSTL*0.
               R11_MY(KR,ICE)=R1_MY1(KR,ICE)
 !BARRY        R12_MY(KR,ICE)=R1_MY2(KR,ICE)-R1_MY3(KR,ICE)
-! growth rate
+! growth rate 
               DETL=FK1(KR,ICE)+FD1(KR,ICE)
               B11_MY(KR,ICE)=R11_MY(KR,ICE)/DETL
 !BARRY        B12_MY(KR,ICE)=R12_MY(KR,ICE)/DETL
@@ -6471,7 +6471,7 @@ USE module_mp_radar
      &                      ,RW,PW,RI,PI,QW,QI &
      &                      ,DT,DEL1INT,DEL2INT,DT0L,DT0I)
       IMPLICIT NONE
-
+   
       INTEGER ITYPE
       REAL DEL1,DEL2,RW,PW,RI,PI,QW,QI, &
      &  DT,DEL1INT,DEL2INT,DT0L,DT0I,DTLIN,DTIIN
@@ -6482,8 +6482,8 @@ USE module_mp_radar
      &  DBLDEL1N,DBLDEL2N
       DOUBLE PRECISION DEL1N,DEL2N
 
-        DOUBLE PRECISION DEL1N_2P,DEL1INT_2P,DEL2N_2P,DEL2INT_2P
-        DOUBLE PRECISION EXPP_2P,EXPM_2P,ARGEXP
+        DOUBLE PRECISION DEL1N_2P,DEL1INT_2P,DEL2N_2P,DEL2INT_2P 
+        DOUBLE PRECISION EXPP_2P,EXPM_2P,ARGEXP     
 ! BARRY
       DOUBLE PRECISION RW_DP,PW_DP,PI_DP,RI_DP,X_DP,ALFA_DP
 !    * ,ALFAPX_DP
@@ -6503,7 +6503,7 @@ USE module_mp_radar
       DETER=RW*PI-PW*RI
 !     DETER_MIN=1.0D-20
 ! Andrei's new change 9.03.10                                 (end)
-! SOLUTION
+! SOLUTION  
 !IF(DETER.EQ.0)  THEN
        IF(RW.EQ.0.AND.RI.EQ.0) THEN
 ! NO CLOUD: WITHOUT WATER & ICE
@@ -6511,7 +6511,7 @@ USE module_mp_radar
 	    DEL2N_2P=DEL2
 	    DEL1INT_2P=DEL1*DT
 	    DEL2INT_2P=DEL2*DT
-! IN CASE: RW.NE.0 OR RI.NE.0 (WATER OR ICE)
+! IN CASE: RW.NE.0 OR RI.NE.0 (WATER OR ICE) 
        ELSE IF(RW.NE.0.AND.RI*1.E5.LT.RW) THEN
 ! ONLY WATER
               ARGEXP=-RW*DT
@@ -6523,7 +6523,7 @@ USE module_mp_radar
      &       (DEL2N_2P-PW*DEL1N_2P/RW)*DT+PW*DEL1INT_2P/RW
 	ELSE IF(RI.NE.0.AND.RW*1.E5.LT.RI) THEN
 ! IN CASE: RW.EQ.0
-! ONLY ICE
+! ONLY ICE 
               ARGEXP=-PI*DT
 
 	      DEL2N_2P=DEL2*DEXP(ARGEXP)+QI*(1.-DEXP(ARGEXP))
@@ -6536,11 +6536,11 @@ USE module_mp_radar
 ! IN CASE: DETER.EQ.0
         ELSE
 ! IN CASE: DETER.NE.0
-! COMPLETE SOLUTION
+! COMPLETE SOLUTION 
 !  ALFA=SQRT((RW-PI)*(RW-PI)+4.*PW*RI)
 !  X=RW+PI
 !  ALFAPX=.5*(ALFA+X)
-! BARRY
+! BARRY 
           RW_DP=RW
           RI_DP=RI
           PI_DP=PI
@@ -6553,13 +6553,13 @@ USE module_mp_radar
           IF (PW.LE.0) call wrf_error_fatal("fatal error in module_mp_full_sbm (PW.LE.0), model stop")
           IF (RI.LE.0) call wrf_error_fatal("fatal error in module_mp_full_sbm (RI.LE.0), model stop")
           IF (PI.LE.0) call wrf_error_fatal("fatal error in module_mp_full_sbm (PI.LE.0), model stop")
-          ALFA_DP=SQRT((RW_DP-PI_DP)*(RW_DP-PI_DP)+4.*PW_DP*RI_DP)
+          ALFA_DP=SQRT((RW_DP-PI_DP)*(RW_DP-PI_DP)+4.*PW_DP*RI_DP) 
 	  X_DP=RW_DP+PI_DP
 	  ALFAPX=.5*(ALFA_DP+X_DP)
-          IF (ALFAPX.LE.0) call wrf_error_fatal("fatal error in module_mp_full_sbm (ALFAPX.LE.0), model stop")
+          IF (ALFAPX.LE.0) call wrf_error_fatal("fatal error in module_mp_full_sbm (ALFAPX.LE.0), model stop") 
 	  ALFAMX=.5*(ALFA_DP-X_DP)
 !
-!
+! 
           ARGEXP=-ALFAPX*DT
 ! Andrei 11/04/10
 	  EXPP_2P=DEXP(ARGEXP)
@@ -6578,7 +6578,7 @@ USE module_mp_radar
                 EXP2=EXPM_2P-1.0D0
               ENDIF
 !
-! DROPLETS
+! DROPLETS 
 	  R10=RW*DEL1+RI*DEL2
 	  R11=R10-ALFAPX*DEL1
 	  R21=R10+ALFAMX*DEL1
@@ -6596,7 +6596,7 @@ USE module_mp_radar
 	  R1RES=0.
 	  IF(R11.NE.0) R1RES=R21/R11
 	  IF(R1RES.GT.0) DTLIN=ALOG(R1RES)/ALFA_DP
-! ICE
+! ICE 
 	  R30=PW*DEL1+PI*DEL2
 	  R31=R30-ALFAPX*DEL2
 	  R41=R30+ALFAMX*DEL2
@@ -6620,7 +6620,7 @@ USE module_mp_radar
  100    CONTINUE
         DEL1N=DEL1N_2P
         DEL2N=DEL2N_2P
-
+       
 ! BARRY
         DEL1INT=DEL1INT_2P
         DEL2INT=DEL2INT_2P
@@ -6632,7 +6632,7 @@ USE module_mp_radar
 	END SUBROUTINE JERSUPSAT
 !==========================================================================
         SUBROUTINE JERTIMESC(FI1,X1,SFN11,SFN12 &
-     &                      ,B11_MY,B12_MY,RIEC,CF,ID,COL,NKR)
+     &                      ,B11_MY,B12_MY,RIEC,CF,ID,COL,NKR)        
       IMPLICIT NONE
        INTEGER NRM,KR,ICE,ID,NKR
       REAL B12,B11,FUN,DELM,FK,CF,SFN12S,SFN11S
@@ -6641,34 +6641,34 @@ USE module_mp_radar
      &,RIEC(NKR,ID),SFN11,SFN12
 
 	NRM=NKR-1
-	DO 1 ICE=1,ID
-             SFN11S=0.
+	DO 1 ICE=1,ID  
+             SFN11S=0.                              
              SFN12S=0.
-	     SFN11=CF*SFN11S
+	     SFN11=CF*SFN11S	
 	     SFN12=CF*SFN12S
              DO KR=1,NRM
 ! VALUE OF DISTRIBUTION FUNCTION
 	        FK=FI1(KR,ICE)
-! DELTA-M
+! DELTA-M 
 	        DELM=X1(KR,ICE)*3.*COL
-! INTEGRAL'S EXPRESSION
+! INTEGRAL'S EXPRESSION 
 	        FUN=FK*DELM
 ! VALUES OF INTEGRALS
 	        B11=B11_MY(KR,ICE)
         	B12=B12_MY(KR,ICE)
-                SFN11S=SFN11S+FUN*B11
+                SFN11S=SFN11S+FUN*B11                               
                 SFN12S=SFN12S+FUN*B12
 	     ENDDO
-! CORRECTION
+! CORRECTION 
 	     SFN11=CF*SFN11S
              SFN12=CF*SFN12S
     1   CONTINUE
-! END
+! END 
 	RETURN
 	END SUBROUTINE JERTIMESC
 !
         SUBROUTINE JERTIMESC_ICE(FI1,X1,SFN11,SFN12 &
-     &                      ,B11_MY,B12_MY,RIEC,CF,ID,COL,NKR)
+     &                      ,B11_MY,B12_MY,RIEC,CF,ID,COL,NKR)        
       IMPLICIT NONE
        INTEGER NRM,KR,ICE,ID,NKR
       REAL B12,B11,FUN,DELM,FK,CF,SFN12S,SFN11S
@@ -6677,29 +6677,29 @@ USE module_mp_radar
      &,RIEC(NKR,ID),SFN11(ID),SFN12(ID)
 
 	NRM=NKR-1
-	DO 1 ICE=1,ID
-             SFN11S=0.
+	DO 1 ICE=1,ID  
+             SFN11S=0.                              
              SFN12S=0.
-	     SFN11(ICE)=CF*SFN11S
+	     SFN11(ICE)=CF*SFN11S	
 	     SFN12(ICE)=CF*SFN12S
              DO KR=1,NRM
 ! VALUE OF DISTRIBUTION FUNCTION
 	        FK=FI1(KR,ICE)
-! DELTA-M
+! DELTA-M 
 	        DELM=X1(KR,ICE)*3.*COL
-! INTEGRAL'S EXPRESSION
+! INTEGRAL'S EXPRESSION 
 	        FUN=FK*DELM
 ! VALUES OF INTEGRALS
 	        B11=B11_MY(KR,ICE)
         	B12=B12_MY(KR,ICE)
-                SFN11S=SFN11S+FUN*B11
+                SFN11S=SFN11S+FUN*B11                               
                 SFN12S=SFN12S+FUN*B12
 	     ENDDO
-! CORRECTION
+! CORRECTION 
 	     SFN11(ICE)=CF*SFN11S
              SFN12(ICE)=CF*SFN12S
     1   CONTINUE
-! END
+! END 
 	RETURN
 	END SUBROUTINE JERTIMESC_ICE
 
@@ -6748,7 +6748,7 @@ USE module_mp_radar
      & DTNEWI2_2,DTNEWI1,DEL_R2,DEL_R4,DEL_R5,SFN41,SFN42, &
      & SNF51,DTNEWI2_3,DTNEWI2,DTNEWI_1,DTNEWI_2, &
      & DTNEWL0,DTNEWG1,DTNEWH1,DTNEWI_3, &
-     & DTNEWL2,SFN51,SFNII2,DEL_R3,DTNEWI
+     & DTNEWL2,SFN51,SFNII2,DEL_R3,DTNEWI  
        REAL DT_WATER_COND,DT_WATER_EVAP,DT_ICE_COND,DT_ICE_EVAP, &
      &  DT_MIX_COND,DT_MIX_EVAP,DT_MIX_BERGERON,DT_MIX_ANTIBERGERON
 
@@ -6765,7 +6765,7 @@ USE module_mp_radar
      &                  ,ES1N,ES2N,EW1N,ARGEXP &
      &                  ,TT,QQ,PP &
      &                  ,DEL1N,DEL2N,DIV1,DIV2 &
-     &                  ,OPER2,OPER3,AR1,AR2
+     &                  ,OPER2,OPER3,AR1,AR2  
 
        DOUBLE PRECISION DELTAQ1,DELMASSI1,DELMASSL1
 
@@ -6780,7 +6780,7 @@ USE module_mp_radar
 
 
 ! CRYSTALS
-
+                                                                       
 	REAL R2(NKR,ICEMAX) &
      &           ,RIEC(NKR,ICEMAX) &
      &           ,RO2BL(NKR,ICEMAX) &
@@ -6788,33 +6788,33 @@ USE module_mp_radar
      &           ,FF2(NKR,ICEMAX) &
      &           ,B21_MY(NKR,ICEMAX),B22_MY(NKR,ICEMAX)
 
-! SNOW
+! SNOW                                                                          
         REAL R3(NKR) &
      &           ,RSEC(NKR),RO3BL(NKR) &
      &           ,FI3(NKR),FF3(NKR),PSI3(NKR) &
      &           ,B31_MY(NKR),B32_MY(NKR)
 
-! GRAUPELS
-
+! GRAUPELS 
+                                                                       
         REAL R4(NKR) &
      &           ,RGEC(NKR),RO4BL(NKR) &
      &           ,FI4(NKR),FF4(NKR),PSI4(NKR) &
-     &           ,B41_MY(NKR),B42_MY(NKR)
+     &           ,B41_MY(NKR),B42_MY(NKR)  
 
-! HAIL
+! HAIL                                                                          
         REAL R5(NKR) &
      &           ,RHEC(NKR),RO5BL(NKR) &
      &           ,FI5(NKR),FF5(NKR),PSI5(NKR) &
-     &           ,B51_MY(NKR),B52_MY(NKR)
+     &           ,B51_MY(NKR),B52_MY(NKR)  
 
-! CCN
+! CCN                                                                       
 
-! WORK ARRAYS
+! WORK ARRAYS 
 
 ! NEW ALGORITHM OF MIXED PHASE FOR EVAPORATION
 
-	REAL DTIMEG(NKR),DTIMEH(NKR)
-
+	REAL DTIMEG(NKR),DTIMEH(NKR) 
+       
 	REAL DEL2D(ICEMAX),DTIMEO(NKR),DTIMEL(NKR) &
 
 ! NEW ALGORITHM (NO TYPE OF ICE)
@@ -6831,8 +6831,8 @@ USE module_mp_radar
 	OPER3(AR1,AR2)=AR1*AR2/(0.622+0.378*AR1)
 
         DATA AL1 /2500./, AL2 /2834./, D /0.211/ &
-     &      ,GAM /1.E-4/, POD /10./
-
+     &      ,GAM /1.E-4/, POD /10./ 
+           
 	DATA RV_MY,CF_MY,D_MYIN,AL1_MY,AL2_MY &
      &      /461.5,0.24E-1,0.211E-4,2.5E6,2.834E6/
 
@@ -6840,23 +6840,23 @@ USE module_mp_radar
      &      /2.53,5.42,3.41E1,6.13/
 
 	DATA TPC1, TPC2, TPC3, TPC4, TPC5 &
-     &      /-4.0,-8.1,-12.7,-17.8,-22.4/
+     &      /-4.0,-8.1,-12.7,-17.8,-22.4/ 
 
 
         DATA EPSDEL/0.1E-03/
-
+    
 	DATA DT0L, DT0I /1.E20,1.E20/
 
 ! CONTROL OF DROP SPECTRUM IN SUBROUTINE ONECOND
 
 
 ! CONTROL OF TIMESTEP ITERATIONS IN MIXED PHASE: EVAPORATION
-
+        
         I_MIXCOND=0
         I_MIXEVAP=0
         I_ABERGERON=0
         I_BERGERON=0
-! SOME CONSTANTS
+! SOME CONSTANTS 
         COL3=3.0*COL
         ICM=ICEMAX
         ITIME=0
@@ -6896,7 +6896,7 @@ USE module_mp_radar
         QPN=QQ
 
 
-! TYPE OF ICE IN DIFFUSIONAL GROWTH
+! TYPE OF ICE IN DIFFUSIONAL GROWTH 
 
 	      DO ICE=1,ICEMAX
 	         SFNI1(ICE)=0.
@@ -6904,7 +6904,7 @@ USE module_mp_radar
 	         DEL2D(ICE)=0.
 	      ENDDO
 
-! TIME SPLITTING
+! TIME SPLITTING 
 
 	      TIMENEW=0.
 	      ITIME=0
@@ -6932,10 +6932,10 @@ USE module_mp_radar
                     FI2(KR,ICE)=PSI2(KR,ICE)
                  ENDDO
               ENDDO
-! TIME-STEP GROWTH RATE:
+! TIME-STEP GROWTH RATE: 
 ! ONLY ICE (CONDENSATION OR EVAPORATION)
               CALL JERRATE(R2,TPS,PP,ROR,VR2,PSINGLE &
-     &                    ,RIEC,RO2BL,B21_MY,B22_MY,3,2,ICEMAX,NKR)
+     &                    ,RIEC,RO2BL,B21_MY,B22_MY,3,2,ICEMAX,NKR)   
               CALL JERRATE(R3,TPS,PP,ROR,VR3,PSINGLE &
      &                    ,RSEC,RO3BL,B31_MY,B32_MY,1,2,ICEMAX,NKR)
               CALL JERRATE(R4,TPS,PP,ROR,VR4,PSINGLE &
@@ -6948,28 +6948,28 @@ USE module_mp_radar
 
 ! CALL JERTIMESC CRYSTAL - 1 (ONLY ICE)
               CALL JERTIMESC_ICE  &
-     &       (FI2,R2,SFNI1,SFNI2,B21_MY,B22_MY,RIEC,B8I,ICM,COL,NKR)
+     &       (FI2,R2,SFNI1,SFNI2,B21_MY,B22_MY,RIEC,B8I,ICM,COL,NKR) 
               CALL JERTIMESC &
-     &       (FI3,R3,SFN31,SFN32,B31_MY,B32_MY,RSEC,B8I,1,COL,NKR)
+     &       (FI3,R3,SFN31,SFN32,B31_MY,B32_MY,RSEC,B8I,1,COL,NKR)  
               CALL JERTIMESC &
-     &       (FI4,R4,SFN41,SFN42,B41_MY,B42_MY,RGEC,B8I,1,COL,NKR)
+     &       (FI4,R4,SFN41,SFN42,B41_MY,B42_MY,RGEC,B8I,1,COL,NKR) 
               CALL JERTIMESC &
      &       (FI5,R5,SFN51,SFN52,B51_MY,B52_MY,RHEC,B8I,1,COL,NKR)
 	      SFNII1=SFNI1(1)+SFNI1(2)+SFNI1(3)
 	      SFNII2=SFNI2(1)+SFNI2(2)+SFNI2(3)
-	      SFN21=SFNII1+SFN31+SFN41+SFN51
-	      SFN22=SFNII2+SFN32+SFN42+SFN52
+	      SFN21=SFNII1+SFN31+SFN41+SFN51        
+	      SFN22=SFNII2+SFN32+SFN42+SFN52 
 	      SFNL=0.
-	      SFNI=SFN21+SFN22
-! SOME CONSTANTS
+	      SFNI=SFN21+SFN22       
+! SOME CONSTANTS 
 	      B5L=BB1_MY/TPS/TPS
 	      B5I=BB2_MY/TPS/TPS
-              B7L=B5L*B6
+              B7L=B5L*B6                                                     
               B7I=B5I*B6
-	      DOPL=1.+DEL1S
-	      DOPI=1.+DEL2S
-	      OPERQ=OPER2(QPS)
-              RW=(OPERQ+B5L*AL1)*DOPL*SFNL
+	      DOPL=1.+DEL1S                                                     
+	      DOPI=1.+DEL2S                                                     
+	      OPERQ=OPER2(QPS)  
+              RW=(OPERQ+B5L*AL1)*DOPL*SFNL                                      
               QW=B7L*DOPL
               PW=(OPERQ+B5I*AL1)*DOPI*SFNL
               RI=(OPERQ+B5L*AL2)*DOPL*SFNI
@@ -6978,13 +6978,13 @@ USE module_mp_radar
 	      KCOND=20
 	      IF(DEL2.GT.0) KCOND=21
 
-! PROCESS'S TYPE (ONLY ICE)
+! PROCESS'S TYPE (ONLY ICE) 
 
 	      IF(KCOND.EQ.21)  THEN
 
 ! ONLY_ICE: CONDENSATION
 
-
+	      
                 DT0I=1.E20
 	        DTNEWI1=DTCOND
 	        DTNEWL=DTNEWI1
@@ -7000,7 +7000,7 @@ USE module_mp_radar
 	        TIMESTEPD(ITIME)=DTNEWL
 	        TIMENEW=TIMENEW+DTNEWL
 	        DTT=DTNEWL
-! SOLVING FOR SUPERSATURATION (ONLY ICE: CONDENSATION)
+! SOLVING FOR SUPERSATURATION (ONLY ICE: CONDENSATION) 
 
 ! CALL JERSUPSAT - 4 (ONLY ICE: CONDENSATION)
 
@@ -7011,12 +7011,12 @@ USE module_mp_radar
 ! END OF "NEW SUPERSATURATION" (ONLY ICE: CONDENSATION)
 
 
-! CRYSTALS (ONLY ICE: CONDENSATION)
+! CRYSTALS (ONLY ICE: CONDENSATION) 
 
 	        IF(ISYM2.NE.0) THEN
 
-! CRYSTAL DTRIBUTION FUNCTION (ONLY ICE: CONDENSATION)
-
+! CRYSTAL DTRIBUTION FUNCTION (ONLY ICE: CONDENSATION) 
+ 
 ! CALL JERDFUN CRYSTAL - 1 (ONLY ICE: CONDENSATION)
 
 ! NEW ALGORITHM (NO TYPE ICE)
@@ -7034,11 +7034,11 @@ USE module_mp_radar
 ! IN CASE : ISYM2.NE.0
 
 	        ENDIF
-! SNOW
+! SNOW 
 	        IF(ISYM3.NE.0) THEN
 
-! SNOW DTRIBUTION FUNCTION (ONLY ICE: CONDENSATION)
-
+! SNOW DTRIBUTION FUNCTION (ONLY ICE: CONDENSATION) 
+                                                         
 
 ! CALL JERDFUN SNOW - 1 (ONLY ICE: CONDENSATION)
                   CALL JERDFUN(R3,B31_MY,B32_MY &
@@ -7062,13 +7062,13 @@ USE module_mp_radar
 
 
 
-! HAIL (ONLY ICE: CONDENSATION)
+! HAIL (ONLY ICE: CONDENSATION) 
 
 	        IF(ISYM5.NE.0) THEN
 
-! HAIL DTRIBUTION FUNCTION (ONLY ICE: CONDENSATION)
-
-! CALL JERDFUN HAIL - 1 (ONLY ICE: CONDENSATION)
+! HAIL DTRIBUTION FUNCTION (ONLY ICE: CONDENSATION) 
+                                                         
+! CALL JERDFUN HAIL - 1 (ONLY ICE: CONDENSATION) 
 	          CALL JERDFUN(R5,B51_MY,B52_MY &
      &                        ,FI5,PSI5,D2N &
      &                        ,1,5,COL,NKR,TPN)
@@ -7083,11 +7083,11 @@ USE module_mp_radar
 
 	      ELSE
 
-! IN CASE KCOND.NE.21
+! IN CASE KCOND.NE.21 
 
-! ONLY ICE: EVAPORATION
+! ONLY ICE: EVAPORATION  
 
-! NEW TREATMENT OF TIME STEP (ONLY ICE: EVAPORATION)
+! NEW TREATMENT OF TIME STEP (ONLY ICE: EVAPORATION) 
 
 	        DT0I=1.E20
                 IF (DEL2N.EQ.0)THEN
@@ -7121,18 +7121,18 @@ USE module_mp_radar
 	        TIMENEW=TIMENEW+DTNEWL
 	        TIMESTEPD(ITIME)=DTNEWL
 	        DTT=DTNEWL
-! SOLVING FOR SUPERSATURATION (ONLY_ICE: EVAPORATION)
+! SOLVING FOR SUPERSATURATION (ONLY_ICE: EVAPORATION) 
 	        CALL JERSUPSAT(DEL1,DEL2,DEL1N,DEL2N &
      &                        ,RW,PW,RI,PI,QW,QI &
      &                        ,DTT,D1N,D2N,DT0L0,DT0I0)
-! END OF "NEW SUPERSATURATION" (ONLY_ICE: EVAPORATION)
+! END OF "NEW SUPERSATURATION" (ONLY_ICE: EVAPORATION) 
 
 ! CRYSTALS
 	        IF(ISYM2.NE.0) THEN
 
-! CRYSTAL DISTRIBUTION FUNCTION
+! CRYSTAL DISTRIBUTION FUNCTION 
 
-! NEW ALGORITHM (NO TYPE ICE)
+! NEW ALGORITHM (NO TYPE ICE) 
 
 	          CALL JERDFUN(R2,B21_MY,B22_MY &
      &                         ,FI2,PSI2,D2N &
@@ -7146,11 +7146,11 @@ USE module_mp_radar
      &                         ,FI2,PSI2,D2N &
      &                         ,ICM,3,COL,NKR,TPN)
 	        ENDIF
-! SNOW
+! SNOW 
 	        IF(ISYM3.NE.0) THEN
 
-! SNOW DISTRIBUTION FUNCTION (ONLY_ICE: EVAPORATION)
-
+! SNOW DISTRIBUTION FUNCTION (ONLY_ICE: EVAPORATION) 
+                                                         
 
 ! CALL JERDFUN - SNOW - 2 (ONLY_ICE: EVAPORATION)
 
@@ -7166,12 +7166,12 @@ USE module_mp_radar
 
 	        ENDIF
 
-! GRAUPELS (ONLY_ICE: EVAPORATION)
+! GRAUPELS (ONLY_ICE: EVAPORATION) 
 
 	        IF(ISYM4.NE.0) THEN
 
-! GRAUPEL DISTRIBUTION FUNCTION (ONLY_ICE: EVAPORATION)
-
+! GRAUPEL DISTRIBUTION FUNCTION (ONLY_ICE: EVAPORATION) 
+                                                         
 	          CALL JERDFUN(R4,B41_MY,B42_MY &
      &                        ,FI4,PSI4,D2N &
      &                        ,1,4,COL,NKR,TPN)
@@ -7179,12 +7179,12 @@ USE module_mp_radar
 
 	        ENDIF
 
-! HAIL (ONLY_ICE: EVAPORATION)
+! HAIL (ONLY_ICE: EVAPORATION) 
 
 	        IF(ISYM5.NE.0) THEN
 
-! HAIL DISTRIBUTION FUNCTION (ONLY_ICE: EVAPORATION)
-
+! HAIL DISTRIBUTION FUNCTION (ONLY_ICE: EVAPORATION) 
+                                                         
 	          CALL JERDFUN(R5,B51_MY,B52_MY &
      &                        ,FI5,PSI5,D2N &
      &                        ,1,5,COL,NKR,TPN)
@@ -7198,12 +7198,12 @@ USE module_mp_radar
 	        ENDIF
 
 ! IN CASE : KCOND.NE.21
-
+ 
 	      ENDIF
 
 ! IN CASES : KCOND = 21 OR KCOND.NE.21
 
-! END OF "PROCESS'S TYPE"
+! END OF "PROCESS'S TYPE" 
 !
 ! MASSES
               RMASSIBB=0.0
@@ -7284,8 +7284,8 @@ USE module_mp_radar
                DIV2=EW1N/ES2N
               END IF
 
-!  END OF TIME SPLITTING
-! (ONLY ICE: CONDENSATION OR EVAPORATION)
+!  END OF TIME SPLITTING 
+! (ONLY ICE: CONDENSATION OR EVAPORATION) 
 	      IF(TIMENEW.LT.DT) GOTO 46
         TT=TPN
         QQ=QPN
@@ -7302,7 +7302,7 @@ USE module_mp_radar
 ! GO TO "CONDENSATION AND VAPORATION"
 
 
-        RETURN
+        RETURN                                          
         END SUBROUTINE ONECOND2
 !==================================================================
 
@@ -7324,22 +7324,22 @@ USE module_mp_radar
      &           ,ISYM1,ISYM2,ISYM3,ISYM4,ISYM5
        INTEGER KLIMITL,KLIMITG,KLIMITH,KLIMITI_1, &
      &  KLIMITI_2,KLIMITI_3
-       INTEGER I_MIXCOND,I_MIXEVAP,I_ABERGERON,I_BERGERON
+       INTEGER I_MIXCOND,I_MIXEVAP,I_ABERGERON,I_BERGERON  
        REAL ROR,VR1(NKR),VR2(NKR,ICEMAX),VR3(NKR),VR4(NKR) &
      &           ,VR5(NKR),PSINGLE &
      &           ,AA1_MY,BB1_MY,AA2_MY,BB2_MY &
      &           ,C1_MEY,C2_MEY &
      &           ,COL,DTCOND
 
-! DROPLETS
-
+! DROPLETS 
+                                                                       
         REAL R1(NKR)&
      &           ,RLEC(NKR),RO1BL(NKR) &
      &           ,FI1(NKR),FF1(NKR),PSI1(NKR) &
      &           ,B11_MY(NKR),B12_MY(NKR)
 
 ! CRYSTALS
-
+                                                                       
 	REAL R2(NKR,ICEMAX) &
      &           ,RIEC(NKR,ICEMAX) &
      &           ,RO2BL(NKR,ICEMAX) &
@@ -7348,22 +7348,22 @@ USE module_mp_radar
      &           ,B21_MY(NKR,ICEMAX),B22_MY(NKR,ICEMAX) &
      &           ,RATE2(NKR,ICEMAX),DEL_R2M(NKR,ICEMAX)
 
-! SNOW
+! SNOW                                                                          
         REAL R3(NKR) &
      &           ,RSEC(NKR),RO3BL(NKR) &
      &           ,FI3(NKR),FF3(NKR),PSI3(NKR) &
      &           ,B31_MY(NKR),B32_MY(NKR) &
-     &           ,DEL_R3M(NKR)
+     &           ,DEL_R3M(NKR)  
 
-! GRAUPELS
-
+! GRAUPELS 
+                                                                       
         REAL R4(NKR),R4N(NKR) &
      &           ,RGEC(NKR),RO4BL(NKR) &
      &           ,FI4(NKR),FF4(NKR),PSI4(NKR) &
      &           ,B41_MY(NKR),B42_MY(NKR) &
      &           ,DEL_R4M(NKR)
 
-! HAIL
+! HAIL                                                                          
         REAL R5(NKR),R5N(NKR) &
      &           ,RHEC(NKR),RO5BL(NKR) &
      &           ,FI5(NKR),FF5(NKR),PSI5(NKR) &
@@ -7410,7 +7410,7 @@ USE module_mp_radar
        DATA EPSDEL, EPSDEL2 /0.1E-03,0.1E-03/
        OPER2(AR1)=0.622/(0.622+0.378*AR1)/AR1
        OPER3(AR1,AR2)=AR1*AR2/(0.622+0.378*AR1)
-
+      
 ! BELOW
 !
         DT_WATER_COND=0.4
@@ -7527,7 +7527,7 @@ USE module_mp_radar
               IF(DEL1.LT.0.AND.DEL2.LT.0) KCOND=30
               IF(DEL1.GT.0.AND.DEL2.GT.0) KCOND=31
               IF(DEL1.LT.0.AND.DEL2.GT.0) KCOND=32
-              IF(KCOND.EQ.50) THEN
+              IF(KCOND.EQ.50) THEN 
                 I_ABERGERON=I_ABERGERON+1
                 IF(DT0L.EQ.0) THEN
                   DTNEWL=DT
@@ -7571,9 +7571,9 @@ USE module_mp_radar
                 DTNEWI2_1=ABS(R2(ITIME,1)/ &
      &         (B21_MY(ITIME,1)*DEL2N-B22_MY(ITIME,1)))
                 DTNEWI2_2=ABS(R2(ITIME,2)/ &
-     &         (B21_MY(ITIME,2)*DEL2N-B22_MY(ITIME,2)))
+     &         (B21_MY(ITIME,2)*DEL2N-B22_MY(ITIME,2))) 
                 DTNEWI2_3=ABS(R2(ITIME,3)/ &
-     &         (B21_MY(ITIME,3)*DEL2N-B22_MY(ITIME,3)))
+     &         (B21_MY(ITIME,3)*DEL2N-B22_MY(ITIME,3)))  
                 DTNEWI2=AMIN1(DTNEWI2_1,DTNEWI2_2,DTNEWI2_3)
 
                 DTNEWI3=ABS(R3(ITIME)/(B31_MY(ITIME)*DEL2N- &
@@ -7713,7 +7713,7 @@ USE module_mp_radar
                 DTNEWL2=AMIN1(DTNEWL1,DTNEWI1)
                 DTNEWL=DTNEWL2
                 IF(DTNEWL.LT.DT_MIX_EVAP) &
-     &          DTNEWL=AMIN1(DT_MIX_EVAP,TIMEREV)
+     &          DTNEWL=AMIN1(DT_MIX_EVAP,TIMEREV)  
                 IF(ITIME.GE.NKR) THEN
                 call wrf_error_fatal("fatal error in module_mp_full_sbm (ITIME.GE.NKR), model stop")
                 ENDIF
@@ -7780,34 +7780,34 @@ USE module_mp_radar
 ! BERGERON MIXED PHASE (END)
 ! IN CASE : KCOND = 32
               ENDIF
-! SOLVING FOR SUPERSATURATION
+! SOLVING FOR SUPERSATURATION 
 ! CALL JERSUPSAT - 7 (MIXED_PHASE)
-
+         
 	      CALL JERSUPSAT(DEL1,DEL2,DEL1N,DEL2N &
      &                      ,RW,PW,RI,PI,QW,QI &
      &                      ,DTT,D1N,D2N,DT0L,DT0I)
-! END OF "NEW SUPERSATURATION"
+! END OF "NEW SUPERSATURATION" 
 
-! DROPLETS
+! DROPLETS 
 	      IF(ISYM1.NE.0) THEN
 
-! DROPLET DISTRIBUTION FUNCTION
+! DROPLET DISTRIBUTION FUNCTION 
 
-
+                                                         
 ! CALL JERDFUN - 3
 	        CALL JERDFUN(R1,B11_MY,B12_MY &
      &                      ,FI1,PSI1,D1N &
      &                      ,1,1,COL,NKR,TPN)
-! END OF "DROPLET DISTRIBUTION FUNCTION"
-
+! END OF "DROPLET DISTRIBUTION FUNCTION" 
+ 
 ! IN CASE ISYM1.NE.0
 
- 	      ENDIF
-! CRYSTALS
+ 	      ENDIF                     
+! CRYSTALS 
 	      IF(ISYM2.NE.0) THEN
 
-! CRYSTAL DISTRIBUTION FUNCTION
-
+! CRYSTAL DISTRIBUTION FUNCTION 
+ 
 	        CALL JERDFUN(R2,B21_MY,B22_MY &
      &                      ,FI2,PSI2,D2N &
      &                      ,ICEMAX,1,COL,NKR,TPN)
@@ -7822,11 +7822,11 @@ USE module_mp_radar
 ! IN CASE ISYM2.NE.0
 
 	      ENDIF
-! SNOW
+! SNOW 
 	      IF(ISYM3.NE.0) THEN
 
-! SNOW DISTRIBUTION FUNCTION
-
+! SNOW DISTRIBUTION FUNCTION 
+                                                         
 
 ! CALL JERDFUN - SNOW - 3
 
@@ -7839,23 +7839,23 @@ USE module_mp_radar
 
   	      ENDIF
 
-! GRAUPELS
+! GRAUPELS 
 
 	      IF(ISYM4.NE.0) THEN
 
 ! GRAUPEL DISTRIBUTION FUNCTION
-
+                                                         
 	        CALL JERDFUN(R4,B41_MY,B42_MY &
      &                      ,FI4,PSI4,D2N &
      &                      ,1,4,COL,NKR,TPN)
 ! IN CASE ISYM4.NE.0
 
 	      ENDIF
-! HAIL
+! HAIL 
 	      IF(ISYM5.NE.0) THEN
 
-! HAIL DISTRIBUTION FUNCTION
-
+! HAIL DISTRIBUTION FUNCTION 
+                                                         
 	        CALL JERDFUN(R5,B51_MY,B52_MY &
      &                      ,FI5,PSI5,D2N &
      &                      ,1,5,COL,NKR,TPN)
@@ -7984,7 +7984,7 @@ USE module_mp_radar
         ENDDO
 
 
-        RETURN
+        RETURN                                          
         END SUBROUTINE ONECOND3
 
         SUBROUTINE COAL_BOTT_NEW(FF1R,FF2R,FF3R, &
@@ -8006,8 +8006,8 @@ USE module_mp_radar
        parameter (tt_no_coll=273.16)
 
 
-
-
+       
+   
 ! SHARED
        INTEGER I,J,IT,NDIV
        REAL RHO
@@ -8063,7 +8063,7 @@ USE module_mp_radar
          g2_3(KR)=g2(KR,3)
          if(kr.gt.(nkr-jbreak).and.g1(kr).gt.1.e-17)icol_drop_brk=1
 !        icol_drop_brk=0
-         IF (IBREAKUP.NE.1)icol_drop_brk=0
+         IF (IBREAKUP.NE.1)icol_drop_brk=0 
          if(g1(kr).gt.1.e-10)icol_drop=1
          if (tt.le.tt_no_coll)then
          if(g2_1(kr).gt.1.e-10)icol_column=1
@@ -8073,7 +8073,7 @@ USE module_mp_radar
          if(g4(kr).gt.1.e-10)icol_graupel=1
          if(g5(kr).gt.1.e-10)icol_hail=1
          end if
-13     CONTINUE
+13     CONTINUE 
 ! calculation of initial hydromteors content in g/cm**3 :
       cont_init_drop=0.
       cont_init_ice=0.
@@ -8092,7 +8092,7 @@ USE module_mp_radar
 ! droplets - droplets and droplets - ice :
 ! water-water = water
 
-      if (icol_drop.eq.1)then
+      if (icol_drop.eq.1)then 
 ! break-up
 
        call coll_xxx (G1,CWLL,XL_MG,CHUCM,IMA,NKR)
@@ -8134,7 +8134,7 @@ USE module_mp_radar
        end if
        end if
       end if
-       if (icol_snow.eq.1)then
+       if (icol_snow.eq.1)then 
          call coll_xyz (g1,g3,g4,cwls,xl_mg,xs_mg, &
      &                chucm,ima,prdkrn1,nkr,0)
          if(alwc.lt.alcr) then
@@ -8154,7 +8154,7 @@ USE module_mp_radar
 ! graupel - water = graupel (t < tcrit ; xg_mg > xl_mg)
 ! water - graupel = hail (t ge tcrit ; xl_mg ge xg_mg)
 ! graupel - water = hail (t ge tcrit ; xg_mg > xl_mg)
-       if (icol_graupel.eq.1)then
+       if (icol_graupel.eq.1)then 
 ! water-graupel
 ! included kp_bound = 25
          call coll_xyyz_h (g1,g4,g5,cwlg,xl_mg,xg_mg, &
@@ -8293,7 +8293,7 @@ USE module_mp_radar
 ! interactions between columns and plates :
 ! columns - plates = snow (xi1_mg ge xi2_mg)                (kxyz=12)
 ! plates - columns = snow (xi2_mg > xi1_mg)                 (kxyz=13)
-        if(icol_plate.eq.1) then
+        if(icol_plate.eq.1) then     
          call coll_xyz (g2_1,g2_2,g3,cwii_1_2,xi1_mg,xi2_mg, &
      &                 chucm,ima,prdkrn,nkr,0)
          call coll_xyz (g2_2,g2_1,g3,cwii_2_1,xi2_mg,xi1_mg, &
@@ -8317,7 +8317,7 @@ USE module_mp_radar
      &                 chucm,ima,prdkrn,nkr,0)
          call coll_xyx (g3,g2_1,cwsi_1,xs_mg,xi1_mg, &
      &                 chucm,ima,prdkrn,nkr,1)
-        endif
+        endif          
 ! in case icolxz_column.ne.0
        endif
 ! interactions between columns and other particles (end)
@@ -8416,7 +8416,7 @@ USE module_mp_radar
        endif
 
 61    continue
-! recalculation of density function f1,f2,f3,f4,f5 in 1/(g*cm**3) :
+! recalculation of density function f1,f2,f3,f4,f5 in 1/(g*cm**3) :  
         DO 15 KR=1,NKR
          FF1R(KR)=G1(KR)/(3.*XL(KR)*XL(KR)*1.E3)
          FF2R(KR,1)=G2(KR,1)/(3*xi(KR,1)*XI(KR,1)*1.e3)
@@ -8425,7 +8425,7 @@ USE module_mp_radar
          FF3R(KR)=G3(KR)/(3.*xs(kr)*xs(kr)*1.e3)
          FF4R(KR)=G4(KR)/(3.*xg(kr)*xg(kr)*1.e3)
          FF5R(KR)=G5(KR)/(3.*xh(kr)*xh(kr)*1.e3)
-15     CONTINUE
+15     CONTINUE 
       tt=t_new
       RETURN
       END SUBROUTINE COAL_BOTT_NEW
@@ -8448,12 +8448,12 @@ USE module_mp_radar
                if(p_z.eq.p3) cwll(kr1,kr2)=cwll_3
                if(p_z.lt.p1.and.p_z.gt.p2) &
      &         cwll(kr1,kr2)=cwll_2+ &
-     &         (cwll_1-cwll_2)*(p_z-p2)/(p1-p2)
+     &         (cwll_1-cwll_2)*(p_z-p2)/(p1-p2) 
                if(p_z.lt.p2.and.p_z.gt.p3) &
      &         cwll(kr1,kr2)=cwll_3+ &
      &         (cwll_2-cwll_3)*(p_z-p3)/(p2-p3)
                if(p_z.lt.p3) cwll(kr1,kr2)=cwll_3
-12            CONTINUE
+12            CONTINUE 
       RETURN
       END SUBROUTINE  MISC1
 
@@ -8508,7 +8508,7 @@ USE module_mp_radar
               if(gk.gt.gmin) then
                 x1=dlog(g(kp)/gk+1.d-15)
                if (x1.eq.0)then
-                flux=0
+                flux=0  
                else
                 flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
                 flux=min(flux,gsk)
@@ -8530,7 +8530,7 @@ USE module_mp_radar
         dimension g(nkr),ckxx(nkr,nkr),x(0:nkr)
         dimension chucm(nkr,nkr)
         double precision ima(nkr,nkr)
-! this is character values containes adresses of temporary files
+! this is character values containes adresses of temporary files      
         gmin=1.d-60
 !       gmin=1.d-15
 ! lower and upper integration limit ix0,ix1
@@ -8577,7 +8577,7 @@ USE module_mp_radar
               if(gk.gt.gmin) then
                 x1=dlog(g(kp)/gk+1.d-15)
                if (x1.eq.0)then
-                flux=0
+                flux=0  
                else
                 flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
                 flux=min(flux,gsk)
@@ -8593,7 +8593,7 @@ USE module_mp_radar
         end do
  2020   continue
         return
-        end subroutine coll_xxx_prd
+        end subroutine coll_xxx_prd 
       subroutine modkrn(TT,QQ,PP,PRDKRN,TTCOAL)
       implicit none
       real epsf,tc,ttt1,ttt,factor,qs2,qq1,dele,f,factor_t
@@ -8608,7 +8608,7 @@ USE module_mp_radar
         IF (QQ.LE.0)QQ=1.E-12
         epsf    =.5
         tc      =tt-273.15
-        factor=1  !mchen add
+        factor=1  !mchen add 
         if(tc.le.0) then
 ! in case tc.le.0
           ttt1  =temp(at,bt,ct,dt,tc)
@@ -8622,7 +8622,7 @@ USE module_mp_radar
             if(factor.lt.epsf) factor=epsf
             if(factor.gt.1.) factor=1.
 ! in case : tc.ge.-6.
-          endif
+          endif                        
           factor_t=factor
           if(tc.ge.-12.5.and.tc.lt.-6.) factor_t=0.5
           if(tc.ge.-17.0.and.tc.lt.-12.5) factor_t=1.
@@ -8643,8 +8643,8 @@ USE module_mp_radar
           prdkrn=1.d0
       end if
       RETURN
-      END SUBROUTINE modkrn
-
+      END SUBROUTINE modkrn 
+           
 
 
         subroutine coll_xxy(gx,gy,ckxx,x,chucm,ima,prdkrn,nkr)
@@ -8696,7 +8696,7 @@ USE module_mp_radar
 ! new changes 13.01.01 (end)
 ! BARRY
                if (x1.eq.0)then
-                flux=0
+                flux=0  
                else
                 flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
                 flux=min(flux,gsk)
@@ -8749,7 +8749,7 @@ USE module_mp_radar
            jmin=i
            if(jmin.eq.(nkr-1)) goto 2020
            if(i.lt.ix0) jmin=ix0-indc
-	   do j=jmin+indc,ix1
+	   do j=jmin+indc,ix1         
               k=ima(i,j)
               kp=k+1
               x0=ckxy(j,i)*gy(i)*gx(j)*prdkrn
@@ -8774,7 +8774,7 @@ USE module_mp_radar
 !               flux=min(flux,gsk)
 ! BARRY
                if (x1.eq.0)then
-                flux=0
+                flux=0  
                else
                 flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
                 flux=min(flux,gsk)
@@ -8853,7 +8853,7 @@ USE module_mp_radar
                 gx(j)=0.d0
                 gx(k)=gx(k)+gsi
               endif
-              flux=0.d0
+              flux=0.d0            
 ! BARRY
               if(gk.gt.gmin) then
                 x1=dlog(gx(kp)/gk+1.d-15)
@@ -8864,7 +8864,7 @@ USE module_mp_radar
 !               flux=min(flux,gsk)
 ! BARRY
                if (x1.eq.0)then
-                flux=0
+                flux=0  
                else
                 flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
                 flux=min(flux,gsk)
@@ -8952,7 +8952,7 @@ USE module_mp_radar
 !               flux=min(flux,gsk)
 ! BARRY
                if (x1.eq.0)then
-                flux=0
+                flux=0  
                else
                 flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
                 flux=min(flux,gsk)
@@ -9041,7 +9041,7 @@ USE module_mp_radar
 !               flux=min(flux,gsk)
 ! BARRY
                if (x1.eq.0)then
-                flux=0
+                flux=0  
                else
                 flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
                 flux=min(flux,gsk)
@@ -9098,7 +9098,7 @@ USE module_mp_radar
            jmin=i
            if(jmin.eq.(nkr-1)) goto 2020
            if(i.lt.ix0) jmin=ix0-indc
-	   do j=jmin+indc,ix1
+	   do j=jmin+indc,ix1         
               k=ima(i,j)
               kp=k+1
               x0=ckxy(j,i)*gy(i)*gx(j)*prdkrn
@@ -9118,7 +9118,7 @@ USE module_mp_radar
                 x1=dlog(gz(kp)/gk+1.d-15)
 ! BARRY
                if (x1.eq.0)then
-                flux=0
+                flux=0  
                else
                 flux=gsk/x1*(dexp(0.5*x1)-dexp(x1*(0.5-chucm(i,j))))
                 flux=min(flux,gsk)
@@ -9359,7 +9359,7 @@ USE module_mp_radar
 !     DO J=1,JMAX
 !      IF (HLP(J).LT.0.OR.LTHAN) THEN
 !        WRITE (*,'(1X,A,E10.4)')
-!    F        'COLL_BREAKUP: WARNING! G(J) < 0, MIN = '
+!    F        'COLL_BREAKUP: WARNING! G(J) < 0, MIN = ' 
 !        IF(HLP(J).LT.0.OR.LTHAN)WRITE(6,*)
 !    F      'J,G(J)  = ',J,HLP(J),GT_MG(J)
 !        LTHAN=.TRUE.  C     ENDIF
@@ -9378,20 +9378,20 @@ USE module_mp_radar
      &       RADXX,MASSXX,HYDROSUM, &
      &       NKR)
       IMPLICIT NONE
-
+     
       INTEGER NKR,NKRI,KRBEG,KREND,IP,IPCNT
       REAL NZERO,LAMBDAHYD,MASSMM5,RHOX,HYDROMASS,COL
       REAL RADXX(NKR),MASSXX(NKR)
       REAL TERM1,TERM2A,TERM2B,TERM2C
-      REAL FCONC(NKR),HYDROSUM
-      DOUBLE PRECISION D1,D2,D3,D4,D5,D6,D7A,D7B
+      REAL FCONC(NKR),HYDROSUM 
+      DOUBLE PRECISION D1,D2,D3,D4,D5,D6,D7A,D7B 
       DOUBLE PRECISION VAR1,VAR2,VAR3,VAR4,VAR5,VAR6
 !     HYDROMASS IN kg/kg
-!     VAR1=NZERO
-!     VAR2=RHOX
+!     VAR1=NZERO           
+!     VAR2=RHOX            
 !     VAR3=MASSXX(1,IHYDR)
 !     VAR4=RADXX(1,IHYDR)
-!     VAR5=MASSMM5
+!     VAR5=MASSMM5       
 !     VAR6=(6.*VAR1/VAR2)*VAR3/(8.*VAR4**3)*(1./VAR5)
 !     var6 =sqrt(sqrt(var6))
 !     print*,'radxx(1) = ',RADXX(1)
@@ -9424,14 +9424,14 @@ USE module_mp_radar
         D7B= -D5*D4*(D2**3+3.*D2**2+6.*D2+6)
        END IF
        HYDROMASS= D6*(D7A-D7B)
-       HYDROSUM=HYDROSUM+HYDROMASS
+       HYDROSUM=HYDROSUM+HYDROMASS   
        FCONC(NKRI)=HYDROMASS*RHOX/(COL  &
      &          *MASSXX(NKRI)*MASSXX(NKRI)*3)
         IF (HYDROMASS .LT.0)THEN
         call wrf_error_fatal("fatal error in module_mp_full_sbm (HYDROMASS.LT.0), model stop")
         END IF
       END DO
-!     print*, 'massmm5,hydrosum  =',massmm5,hydrosum
+!     print*, 'massmm5,hydrosum  =',massmm5,hydrosum  
       IF (HYDROSUM.LT.MASSMM5)THEN
        D1=LAMBDAHYD*2.*RADXX(NKR)
        D2=LAMBDAHYD*2.*RADXX(NKR-1)
@@ -9446,12 +9446,12 @@ USE module_mp_radar
      &          *MASSXX(NKR)*MASSXX(NKR)*3)
        HYDROSUM=HYDROSUM+(MASSMM5-HYDROSUM)
       END IF
-!     print*, 'massmm5,hydrosum adj  =',massmm5,hydrosum
+!     print*, 'massmm5,hydrosum adj  =',massmm5,hydrosum  
       RETURN
       END SUBROUTINE BOUNDNUM
 ! NEW (OLD) MELTING CODE
 !====================================================================
-! Version of 23.08.04
+! Version of 23.08.04 
 
 SUBROUTINE MELTING &
 
@@ -9501,7 +9501,7 @@ PARAMETER(ISHEDDING_ON=1, IVT_ADJUST=1, IPRINTING=0, &
 ! control in main program & others subroutines
 
 
-! new change 29.10.08                                         (start)
+! new change 29.10.08                                         (start)           
 
 
 ! new change 29.10.08                                           (end)
@@ -9530,7 +9530,7 @@ DIMENSION FF2_SI(NKR,ICEMAX),XI_SI(NKR,ICEMAX),V2_SI(NKR,ICEMAX), &
 
 DIMENSION FF3_SI(NKR),XS_SI(NKR),V3_SI(NKR), &
           VTS_SI(NKR), RHO_S_SI(NKR)
-
+	  
 DIMENSION FF4_SI(NKR),XG_SI(NKR),V4_SI(NKR), &
           VTG_SI(NKR), RHO_G_SI(NKR)
 
@@ -9720,7 +9720,7 @@ TS = SURFACE_TEMP(ee, TIN, XLS*D_V/(FK_a*RV), 1.D0, XLS, RV)
 if(TS > 273.15D0) TS = 273.15D0
 
 ! new changes 23.08.04                                          (end)
-
+      
 !=============================================================
 !       CRYSTALS
 !=============================================================
@@ -9850,7 +9850,7 @@ if(FLIQFR_I(IK,I) > 0.D0) then
 
     if(FLIQFR_I(IK,I) > 1.D0) call wrf_error_fatal("fatal error in module_mp_full_sbm (FLIQFR_I > 1), model stop 114")
 
-! HEAT_EVAP = Joules of latent heat absorbed (released)
+! HEAT_EVAP = Joules of latent heat absorbed (released) 
 ! by FMASS_EVAP, kg
 ! of water evaporating (condensation)
 ! Q_EVAP = the gain of vapour mixing ratio (kg/kg) from evaporation
@@ -9865,9 +9865,9 @@ if(FLIQFR_I(IK,I) > 0.D0) then
 
 !      PRINT*, 'CRYSTAL'
 
-!      PRINT*, 'I_MELT'
-!      PRINT*,  I_MELT
-
+!      PRINT*, 'I_MELT' 
+!      PRINT*,  I_MELT 
+      
 !      PRINT*, 'IJK,KX,KZ,IK'
 !      PRINT*,  IJK,KX,KZ,IK_MELT
 
@@ -9877,7 +9877,7 @@ if(FLIQFR_I(IK,I) > 0.D0) then
 ! in case HEAT_EVAP.LT.0.D0
 
     ENDIF
-
+    
 ! new changes 24.08.04                                          (end)
 
     FMASS_EVAP = HEAT_EVAP/XLV
@@ -10050,7 +10050,7 @@ AR_p = 0.3D0 + 0.7D0 * FLIQFR_S(IK)
 
 ! new change 26.07.04                                         (start)
 
-! the rest of the HUCM seems to assume that snow is spherical
+! the rest of the HUCM seems to assume that snow is spherical 
 !(see JERRATE)
 ! AR_p = 1.
 
@@ -10080,11 +10080,11 @@ DMELT = DT * ( 4.D0*PI*CAP*fv/XLF) * &
 (FK_a*(TIN - 273.15D0) + (D_V*XLV/RV) * &
 (ee/TIN - es_zero/273.15D0))
 
-! new change 24.08.04                                         (start)
+! new change 24.08.04                                         (start) 
 
 if(TS < 273.15D0 .and. FLIQFR_S(IK) <= 0.D0) DMELT = 0.D0
 
-! new change 24.08.04                                           (end)
+! new change 24.08.04                                           (end) 
 
 call fmass_limits(DMELT, FICEMASS, fm_w, XS_SI(IK))
 
@@ -10121,19 +10121,19 @@ if(FLIQFR_S(IK) > 0.D0) then
 ! new change 24.08.04                                         (start)
 
     IF(HEAT_EVAP.LT.0.D0) THEN
-
+      
 !      PRINT*, 'HEAT_EVAP < 0'
 
 !      PRINT*, 'SNOW'
 
 !      PRINT*, 'IJK,KX,KZ,IK'
 !      PRINT*,  IJK,KX,KZ,IK_MELT
-
+ 
 !      HEAT_EVAP=0.D0
 
 
     ENDIF
-
+    
 ! new change 24.08.04                                           (end)
 
     FMASS_EVAP = HEAT_EVAP/XLV
@@ -10430,14 +10430,14 @@ if(FLIQFR_G(IK) > 0.D0) then
 ! new changes 24.08.04                                        (start)
 
     IF(HEAT_EVAP.LT.0.D0) THEN
-
+      
 !      PRINT*, 'HEAT_EVAP < 0'
 
 !      PRINT*, 'GRAUPEL'
 
 !      PRINT*, 'IJK,KX,KZ,IK'
 !      PRINT*,  IJK,KX,KZ,IK_MELT
-
+ 
 !      HEAT_EVAP=0.D0
 
 
@@ -10472,7 +10472,7 @@ else
     sub_fac = sub_fac + RV* TIN/((100.D0*GGESI(TS)) * D_V)
 
     DSUB = -DT*4.D0*PI*CAP*fv*(ee/(100.D0*GGESI(TS)) - 1.D0)/sub_fac
-
+    
 ! new change 24.08.04                                           (end)
 
     if(DSUB >  XG_SI(IK)) then
@@ -10664,11 +10664,11 @@ endif
 if(ivt_G_H_interpol.ne.0) then
 
   vt=VTH_SI(IK)+FLIQFR_H(IK)*(VTL_SI(IK) - VTH_SI(IK))
-
+  
 endif
 
 ! new changes 3.02.08                                         (end)
-
+  
 ! new changes 23.01.08                                        (end)
 
 V5_SI(IK) = vt
@@ -10757,14 +10757,14 @@ if(FLIQFR_H(IK) > 0.D0) then
 ! new changes 24.08.04                                        (start)
 
     IF(HEAT_EVAP.LT.0.D0) THEN
-
+      
 !      PRINT*, 'HEAT_EVAP < 0'
 
 !      PRINT*, 'GRAUPEL'
 
 !      PRINT*, 'IJK,KX,KZ,IK'
 !      PRINT*,  IJK,KX,KZ,IK_MELT
-
+ 
 !      HEAT_EVAP=0.D0
 
 
@@ -10866,7 +10866,7 @@ IF(FLIQFR_H(IK) > FLIQFRAC_LIM) then
     Q_ICE_MELTED = FICEMASS *FF5_SI(IK)*XH_SI(IK)*3.D0*COL/rhoa_SI
 
     TIN = TIN - XLF/CP*Q_ICE_MELTED
-
+    
 
 ! in case ITEMP_ADJUST == 1
 
@@ -10927,7 +10927,7 @@ else
     V4 = V4_SI
     V5 = V5_SI
   endif
-
+  
   FF1 = FF1_SI
   FF2 = FF2_SI
   FF3 = FF3_SI
@@ -10966,7 +10966,7 @@ PARAMETER(COL=0.23105D0)
 
 ! control in main program & others subroutines
 
-! new change 29.10.08                                         (start)
+! new change 29.10.08                                         (start)           
 
 
 ! new change 29.10.08                                           (end)
@@ -11079,7 +11079,7 @@ endif
 VT_LOW_DENSITY_SOAKING = vtx
 
 RETURN
-END FUNCTION VT_LOW_DENSITY_SOAKING
+END FUNCTION VT_LOW_DENSITY_SOAKING 
 
 ! end of vt_low_density_soaking function
 !====================================================================
@@ -11140,7 +11140,7 @@ FUNCTION HAIL_VENTILATION_COEF (fnrex, fnumber, KR)
 
 implicit double precision (a-h,o-z)
 
-! new change 29.10.08                                         (start)
+! new change 29.10.08                                         (start)           
 
 
 ! new change 29.10.08                                           (end)
@@ -11299,7 +11299,7 @@ end function SNOW_VENTILATION_COEF
 FUNCTION SURFACE_TEMP(eex, tempK, factor_vap, fvofh, XLS, RV)
 
 ! new change 24.08.04                                           (end)
-
+ 
 implicit double precision (a-h,o-z)
 
 intrinsic  DEXP, DABS
@@ -11586,7 +11586,7 @@ if(fnre_shed >= 5000.D0.and.fnre_shed <= 2.5D4) then
 ! new change 21.06.04                                         (start)
 
   vt_eqm = 1.5D-5* fnre_shed/(2.D0*a_eqm)
-
+  
 ! new change 21.06.04                                           (end)
 
   vt_eqm = vt_eqm* ((1.20D0/rhoax)**0.5D0)
@@ -11858,7 +11858,7 @@ PARAMETER (COL=0.23105D0)
 
 ! control in main program & others subroutines
 
-! new change 29.10.08                                         (start)
+! new change 29.10.08                                         (start)           
 
 
 ! new change 29.10.08                                           (end)
@@ -11910,7 +11910,7 @@ implicit double precision (a-h,o-z)
 
 INTRINSIC DABS
 
-! new change 29.10.08                                         (start)
+! new change 29.10.08                                         (start)           
 
 
 ! new change 29.10.08                                           (end)
@@ -11949,13 +11949,13 @@ end subroutine fmass_limits
      & ,FL2_OLD,FL2_NEW&
      & ,IND,ITYPE)
 ! new change 29.09.10                                          (end)
-       implicit none
+       implicit none     
 !       implicit double precision (a-h,o-z)
        REAL DEL2N
 
       INTEGER IND,ITYPE,KR,ICE,ITYP,NRM,NR,IDROP
       INTEGER NRX,I_3POINT,ICE_TYPE
-
+     
 
 ! include file
 
@@ -11991,12 +11991,12 @@ end subroutine fmass_limits
              DO KR=1,NKR
 
 	        R2R(KR)=R2(KR,ICE_TYPE)
-	        R2NR(KR)=R2N(KR,ICE_TYPE)
+	        R2NR(KR)=R2N(KR,ICE_TYPE)               
                 FI2R(KR)=FI2(KR,ICE_TYPE)
                 PSI2R(KR)=FI2R(KR)
                 FL2R_OLD(KR)=FL2_OLD(KR,ICE_TYPE)
                 FL2R_NEW(KR)=FL2R_OLD(KR)
-
+                
              ENDDO
 
 
@@ -12007,7 +12007,7 @@ end subroutine fmass_limits
 ! new change 12.06.06                                           (end)
              CALL JERNEWF_MELT(NRX,R2R,R2NR,FI2R,PSI2R,FL2R_OLD,FL2R_NEW,I_3POINT)
 
-	     DO KR=1,NKR
+	     DO KR=1,NKR                              
 	        PSI2(KR,ICE_TYPE)=PSI2R(KR)
                 FL2_NEW(KR,ICE_TYPE)=FL2R_NEW(KR)
 	     ENDDO
@@ -12025,7 +12025,7 @@ end subroutine fmass_limits
 
 ! new size distribution functions                               (end)
 
- 128    FORMAT(1X,I2,2D13.5)
+ 128    FORMAT(1X,I2,2D13.5) 
 
 	RETURN
 	END SUBROUTINE JERDFUN_MELT
@@ -12034,21 +12034,21 @@ end subroutine fmass_limits
         SUBROUTINE JERNEWF_MELT &
 ! new change 27.10.08                                         (start)
        (NRX,RR,RN,FI,PSI,FL_OLD,FL_NEW,I3POINT)
-
+ 
         IMPLICIT NONE
 
-        INTEGER &
+        INTEGER & 
         KR
 
 
-        INTEGER &
+        INTEGER & 
         I,K,NRXP,I3POINT
 
 ! new change 10.06.06                                         (start)
-        INTEGER &
+        INTEGER & 
         ISIGN_DIFFUSIONAL_GROWTH
 ! new change 10.06.06                                           (end)
-
+ 
         DOUBLE PRECISION &
 	AOLDCON,ANEWCON,AOLDMASS,ANEWMASS
 
@@ -12056,35 +12056,35 @@ end subroutine fmass_limits
         RNTMP,RRTMP,RRP,RRM,RNTMP2,RRTMP2,RRP2,RRM2, &
         GN1,GN2,GN3,GN1P,GMAT,GMAT2
 
-        INTEGER &
+        INTEGER & 
         NRX
 
-        DOUBLE PRECISION &
+        DOUBLE PRECISION & 
         RR(NRX),FI(NRX),PSI(NRX),RN(NRX) &
 ! new change 12.06.06                                         (start)
        ,RRS(NRX+1),PSINEW(NRX+1)
 ! new change 12.06.06                                           (end)
 
-        DOUBLE PRECISION &
+        DOUBLE PRECISION & 
         FL_OLD(NRX),FL_NEW(NRX)
 
-        DOUBLE PRECISION &
+        DOUBLE PRECISION & 
 ! new change 12.06.06                                         (start)
         DROPMASS(NRX+1)
 ! new change 12.06.06                                           (end)
 
-        DOUBLE PRECISION &
+        DOUBLE PRECISION & 
         PSI_IM,PSI_I,PSI_IP
 
 ! INITIAL VALUES FOR SOME VARIABLES
-
+ 
 	NRXP=NRX+1
 
         DO I=1,NRX
 
 ! RN(I), g - new masses after condensation or evaporation
 
-           IF(RN(I).LT.0.0D0) THEN
+           IF(RN(I).LT.0.0D0) THEN 
              RN(I)=1.0D-50
 	     FI(I)=0.0D0
            ENDIF
@@ -12099,7 +12099,7 @@ end subroutine fmass_limits
 	   RRS(K)=RR(K)
            DROPMASS(K)=0.0D0
 	ENDDO
-
+	
         RRS(NRXP)=RRS(NRX)*1024.0D0
 ! new change 12.06.06                                         (start)
         PSINEW(NRXP)=0.0D0
@@ -12108,7 +12108,7 @@ end subroutine fmass_limits
 ! new change 7.05.07                                         (start)
         DROPMASS(NRXP)=0.0D0
 ! new change 7.05.07                                           (end)
-
+ 
 ! new change 10.06.06                                         (start)
 
         ISIGN_DIFFUSIONAL_GROWTH=0
@@ -12121,7 +12121,7 @@ end subroutine fmass_limits
         ENDDO
 
  2000   CONTINUE
-
+       
         IF(ISIGN_DIFFUSIONAL_GROWTH.NE.0) THEN
 
 ! new change 10.06.06                                           (end)
@@ -12198,35 +12198,35 @@ end subroutine fmass_limits
 ! new change 19.03.08                                           (end)
              ENDIF
           ENDDO
-
+               
 ! Kovetz-Olund method                                           (end)
 
-! calculation both new total drop concentrations(after KO) and new
+! calculation both new total drop concentrations(after KO) and new 
 ! total drop masses (after KO)
 
 	  AOLDCON=0.0D0
 	  ANEWCON=0.0D0
 	  AOLDMASS=0.0D0
 	  ANEWMASS=0.0D0
-
+	
 	  DO K=1,NRX
 	     AOLDCON=AOLDCON+FI(K)*RR(K)
 	     ANEWCON=ANEWCON+PSI(K)
 	     AOLDMASS=AOLDMASS+FI(K)*RR(K)*RN(K)
 	     ANEWMASS=ANEWMASS+PSI(K)*RR(K)
 	  ENDDO
-
-! new change 29.04.08                                         (start)
+	  
+! new change 29.04.08                                         (start)                     
 !          IF(I3POINT.NE.0) THEN
           IF(I3POINT.NE.0) GOTO 2001
 ! new change 29.04.08                                           (end)
-
+ 
 	    DO K=1,NRX
 
                IF(FI(K).NE.0.0D0) THEN
 
                  IF(RRS(2).LT.RN(K)) THEN
-
+ 
                    I=2
 
                    DO  WHILE &
@@ -12242,13 +12242,13 @@ end subroutine fmass_limits
                      RRTMP=RRS(I)
                      RRP=RRS(I+1)
                      RRM=RRS(I-1)
-
+ 
                      RNTMP2=RN(K+1)
 
                      RRTMP2=RRS(I+1)
                      RRP2=RRS(I+2)
                      RRM2=RRS(I)
-
+ 
                      GN1=(RRP-RNTMP)*(RRTMP-RNTMP)/(RRP-RRM)/ &
                          (RRTMP-RRM)
 
@@ -12257,7 +12257,7 @@ end subroutine fmass_limits
 
                      GN2=(RRP-RNTMP)*(RNTMP-RRM)/(RRP-RRTMP)/ &
                          (RRTMP-RRM)
-
+ 
 	             GMAT=(RRP-RNTMP)/(RRP-RRTMP)
 
                      GN3=(RRTMP-RNTMP)*(RRM-RNTMP)/(RRP-RRM)/ &
@@ -12267,7 +12267,7 @@ end subroutine fmass_limits
                      PSI_IM=PSI(I-1)+GN1*FI(K)*RR(K)
                      PSI_I=PSI(I)+(GN1P+GN2-GMAT)*FI(K+1)*RR(K+1)
                      PSI_IP=PSI(I+1)+(GN3-GMAT2)*FI(K)*RR(K)
-
+                    
                      IF(PSI_IM.GT.0.0D0) THEN
 
                        IF(PSI_IP.GT.0.0D0) THEN
@@ -12285,7 +12285,7 @@ end subroutine fmass_limits
 
                              PSI(I+1)=PSI_IP
 ! in case smoothing criteria
-                           ENDIF
+                           ENDIF 
 ! in case I.GT.2
                          ENDIF
 
@@ -12302,7 +12302,7 @@ end subroutine fmass_limits
 ! in case RRS(2).LT.RN(K)
 
                  ENDIF
-
+ 
 ! in case FI(K).NE.0.0D0
 
                ENDIF
@@ -12325,7 +12325,7 @@ end subroutine fmass_limits
 
 ! 3 point method                                                (end)
 
-! new change 29.04.08                                         (start)
+! new change 29.04.08                                         (start)                     
 
 ! in case I3POINT.NE.0
 
@@ -12371,11 +12371,11 @@ end subroutine fmass_limits
   305   FORMAT(1X,I2,2X,5D13.5)
   306   FORMAT(1X,I2,2X,6D13.5)
 
-        RETURN
+        RETURN 
         END SUBROUTINE JERNEWF_MELT
 
 ! SUBROUTINE JERNEWF_MELT
-! Version of 10.02.08
+! Version of 10.02.08 
 
 ! new changes 10.02.08                                       (start)
 
@@ -12409,7 +12409,7 @@ PARAMETER(COL=0.23105D0, CP=1004.7D0, RV=461.51D0, RD=287.039D0, &
           AR_LIM=2.D0, GRAV=9.8D0, RHO_ICE=920.D0, &
           RHO_WATER=1000.D0, FLIQFRAC_LIM=0.9D0, &
           PETIT_PARAMETRE=1.D-10)
-
+	  
 ! new changes 12.02.08                                       (start)
 PARAMETER(ISHEDDING_ON=1, IVT_ADJUST=1, IPRINTING=0, &
           ITEMP_ADJUST=1, IEVAP_ADJUST=1, ISUBLIME_ADJUST=1)
@@ -12431,7 +12431,7 @@ DIMENSION FF4(NKR),XG(NKR),V4(NKR), &
 DIMENSION FF5(NKR),XH(NKR),V5(NKR), &
           VTH(NKR),FLIQFR_H(NKR),RHO_H(NKR)
 
-DIMENSION FF1_SI(NKR), XL_SI(NKR), &
+DIMENSION FF1_SI(NKR), XL_SI(NKR), & 
           VTL_SI(NKR)
 
 DIMENSION FF4_SI(NKR),XG_SI(NKR),V4_SI(NKR), &
@@ -12439,7 +12439,7 @@ DIMENSION FF4_SI(NKR),XG_SI(NKR),V4_SI(NKR), &
 
 DIMENSION FF5_SI(NKR),XH_SI(NKR),V5_SI(NKR), &
           VTH_SI(NKR), RHO_H_SI(NKR)
-
+	  
 INTRINSIC SUM
 
 
@@ -12450,7 +12450,7 @@ ENDIF
 if(SUM(FF4) <= 0.D0.and.SUM(FF5) <= 0.D0) then
 
   return
-
+  
 endif
 
 !=============================================================
@@ -12679,7 +12679,7 @@ endif
 if(ivt_G_H_interpol.ne.0) then
 
   vt=VTG_SI(IK)+FLIQFR_G(IK)*(VTL_SI(IK) - VTG_SI(IK))
-
+  
 endif
 
 ! new changes 3.02.08                                          (end)
@@ -12719,7 +12719,7 @@ if(FLIQFR_G(IK) <= FLIQFRAC_LIM) then
    (fnre,rhoi,RHO_CRIT,XG_SI,FF4_SI,FLIQFR_G,XL_SI,FF1_SI,IK)
 
   endif
-
+  
 ! in case FLIQFR_G(IK) <= FLIQFRAC_LIM
 
 endif
@@ -12854,9 +12854,9 @@ endif
 if(ivt_G_H_interpol.ne.0) then
 
   vt=VTH_SI(IK)+FLIQFR_H(IK)*(VTL_SI(IK) - VTH_SI(IK))
-
+  
 endif
-
+  
 ! new changes 3.02.08                                          (end)
 
 V5_SI(IK) = vt
@@ -12896,7 +12896,7 @@ if(FLIQFR_H(IK) <= FLIQFRAC_LIM) then
 ! in case ISHEDDING_ON.eq.1
 
   endif
-
+  
 ! in case FLIQFR_H(IK) <= FLIQFRAC_LIM
 
 endif
@@ -12922,7 +12922,7 @@ if(ihucm_flag == 1) then
   FF1 = 1.D-9*FF1_SI
   FF4 = 1.D-9*FF4_SI
   FF5 = 1.D-9*FF5_SI
-
+  
 ! in case ihucm_flag == 1
 
 else
@@ -12937,7 +12937,7 @@ else
   FF1 = FF1_SI
   FF4 = FF4_SI
   FF5 = FF5_SI
-
+  
 ! in case ihucm_flag.NE.1
 
 endif
@@ -12972,8 +12972,8 @@ PARAMETER(PI=3.141592654D0, RHO_ICE=920D0, RHO_WATER=1000.D0, &
 
 ! new change 27.08.04                                         (start)
 
-IPRINTING=0, &
-!IPRINTING=1, &
+IPRINTING=0, & 
+!IPRINTING=1, & 
 
 COL=0.23105D0, FMAX_DROP_MASS_FRACTION=0.5D0)
 
@@ -13150,12 +13150,12 @@ if(V_w > V_soakable) then
       FFX(INK)=fmass_X (INK)/(XX(INK)*XX(INK)*3.D0*COL)
 
       if(FFX(INEW) > 0.D0) then
-
+      
         FLIQFR_X(INEW)= &
         1.D0-fmass_ice (INEW)/(XX(INEW)*FFX(INEW)*XX(INEW)*3.D0*COL)
-
+	
 ! new change 9.12.07                                          (start)
-        if(DABS(FLIQFR_X(INEW)) < 1.0D-3) FLIQFR_X(INEW)= 0.0D0
+        if(DABS(FLIQFR_X(INEW)) < 1.0D-3) FLIQFR_X(INEW)= 0.0D0 
 ! new change 9.12.07                                            (end)
 
       else
@@ -13170,7 +13170,7 @@ if(V_w > V_soakable) then
                          fmass_ice(INEW+1)/ &
                         (XX(INEW+1)*FFX(INEW+1)*XX(INEW+1)*3.D0*COL)
 ! new change 9.12.07                                          (start)
-        if(DABS(FLIQFR_X(INEW+1)) < 1.0D-3) FLIQFR_X(INEW+1)= 0.0D0
+        if(DABS(FLIQFR_X(INEW+1)) < 1.0D-3) FLIQFR_X(INEW+1)= 0.0D0 
 ! new change 9.12.07                                            (end)
 
       else
@@ -13184,7 +13184,7 @@ if(V_w > V_soakable) then
         FLIQFR_X(INK)=1.D0 - fmass_ice(INK)/ &
                             (XX(INK)*FFX(INK)*XX(INK)*3.D0*COL)
 ! new change 9.12.07                                          (start)
-        if(DABS(FLIQFR_X(INK)) < 1.0D-3) FLIQFR_X(INK)= 0.0D0
+        if(DABS(FLIQFR_X(INK)) < 1.0D-3) FLIQFR_X(INK)= 0.0D0 
 ! new change 9.12.07                                            (end)
 
       else
@@ -13202,25 +13202,25 @@ if(V_w > V_soakable) then
 !      if(FLIQFR_X(INEW) < 0.D0.or.FLIQFR_X(INEW) > 1.D0) stop 8003
 
       if(FLIQFR_X(INEW) < 0.D0.or.FLIQFR_X(INEW) > 1.D0) THEN
-
+      
       !  PRINT*, 'IJK,KX,KZ,INK,INEW'
       !  PRINT*,  IJK,KX,KZ,INK,INEW
-!
+!	
 !        PRINT*,   'FLIQFR_X(INEW)'
 !        PRINT 106, FLIQFR_X(INEW)
-!
+!	
 !        PRINT*,   'XX(INEW),FFX(INEW),fmass_ice(INEW)'
 !        PRINT 106, XX(INEW),FFX(INEW),fmass_ice(INEW)
-!
+!	
 !	PRINT*, &
 !       'STOP 8003: FLIQFR_X(INEW) < 0.D0.or.FLIQFR_X(INEW) > 1.D0'
-
+       
           call wrf_error_fatal("fatal error in module_mp_full_sbm , model stop 8003")
-
+	
       endif
-
+	
 ! new change 9.12.07                                            (end)
-
+ 
       if(FLIQFR_X(INEW+1) < 0.D0.or.FLIQFR_X(INEW+1) > 1.D0) call wrf_error_fatal("fatal error in module_mp_full_sbm , model stop 8004")
       if(FLIQFR_X(INK) < 0.D0.or.FLIQFR_X(INK) > 1.D0) call wrf_error_fatal("fatal error in module_mp_full_sbm , model stop 8005")
 
@@ -13269,20 +13269,20 @@ if(V_w > V_soakable) then
 
 ! new change 21.06.04                                          (start)
 
-   !   print*, &
+   !   print*, & 
 
  !'STOP: drop_mass is too large compared to total mass of particle'
 
  !     print*,   'INEW >= INK'
 
  !     print*,   'INEW,INK'
- !     print*,    INEW,INK
+ !     print*,    INEW,INK 
 
- !     print*,   'drop_mass,fm_i+fm_w'
+ !     print*,   'drop_mass,fm_i+fm_w' 
  !     print 106, drop_mass,fm_i+fm_w
 
        call wrf_error_fatal("fatal error in module_mp_full_sbm , model stop 9089")
-
+      
 ! new change 21.06.04                                            (end)
 
 ! in case INEW >= INK

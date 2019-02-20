@@ -2,9 +2,9 @@
 #if defined ADJOINT && defined IMPULSE
       SUBROUTINE wrt_impulse (ng, tile, model, INPncname)
 !
-!svn $Id: wrt_impulse.F 857 2017-07-29 04:05:27Z arango $
+!svn $Id: wrt_impulse.F 927 2018-10-16 03:51:56Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -62,8 +62,10 @@
       integer :: i, gtype, status, varid
       integer :: ibuffer(2), Vsize(4)
 
-      real(r8) :: Fmin, Fmax, scale
-      real(r8) :: inp_time(1)
+      real(r8) :: Fmin, Fmax, wscale
+
+      real(dp) :: rscale
+      real(dp) :: inp_time(1)
 
 # include "set_bounds.h"
 !
@@ -120,7 +122,8 @@
 !
       Iinp=1
       Iout=0
-      scale=1.0_r8
+      rscale=1.0_dp
+      wscale=1.0_r8
 
       DO Irec=Nrec-1,1,-1
         Iout=Iout+1
@@ -128,8 +131,8 @@
 !  Process time.
 !
         IF (find_string(var_name, n_var, Vname(1,idtime), INPvid)) THEN
-          CALL netcdf_get_fvar (ng, model, INPncname, Vname(1,idtime),  &
-     &                          inp_time,                               &
+          CALL netcdf_get_time (ng, model, INPncname, Vname(1,idtime),  &
+     &                          Rclock%DateNumber, inp_time,            &
      &                          ncid = INPncid,                         &
      &                          start = (/Irec/), total = (/1/))
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
@@ -156,7 +159,7 @@
      &                      Vname(1,idZtlf), INPvid,                    &
      &                      Irec, MyType, Vsize,                        &
      &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, Fmin, Fmax,                          &
+     &                      rscale, Fmin, Fmax,                         &
 # ifdef MASKING
      &                      GRID(ng) % rmask,                           &
 # endif
@@ -176,7 +179,7 @@
           status=nf_fwrite2d(ng, model, TLF(ng)%ncid,                   &
      &                       TLF(ng)%Vid(idZtlf),                       &
      &                       Iout, MyType,                              &
-     &                       LBi, UBi, LBj, UBj, scale,                 &
+     &                       LBi, UBi, LBj, UBj, wscale,                &
 # ifdef MASKING
      &                       GRID(ng) % rmask,                          &
 # endif
@@ -209,7 +212,7 @@
      &                      Vname(1,idUbtf), INPvid,                    &
      &                      Irec, MyType, Vsize,                        &
      &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, Fmin, Fmax,                          &
+     &                      rscale, Fmin, Fmax,                         &
 #  ifdef MASKING
      &                      GRID(ng) % umask_full,                      &
 #  endif
@@ -229,7 +232,7 @@
           status=nf_fwrite2d(ng, model, TLF(ng)%ncid,                   &
      &                       TLF(ng)%Vid(idUbtf),                       &
      &                       Iout, MyType,                              &
-     &                       LBi, UBi, LBj, UBj, scale,                 &
+     &                       LBi, UBi, LBj, UBj, wscale,                &
 #  ifdef MASKING
      &                       GRID(ng) % umask_full,                     &
 #  endif
@@ -260,7 +263,7 @@
      &                      Vname(1,idVbtf), INPvid,                    &
      &                      Irec, MyType, Vsize,                        &
      &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, Fmin, Fmax,                          &
+     &                      rscale, Fmin, Fmax,                         &
 #  ifdef MASKING
      &                      GRID(ng) % vmask_full,                      &
 #  endif
@@ -280,7 +283,7 @@
           status=nf_fwrite2d(ng, model, TLF(ng)%ncid,                   &
      &                       TLF(ng)%Vid(idVbtf),                       &
      &                       Iout, MyType,                              &
-     &                       LBi, UBi, LBj, UBj, scale,                 &
+     &                       LBi, UBi, LBj, UBj, wscale,                &
 #  ifdef MASKING
      &                       GRID(ng) % vmask_full,                     &
 #  endif
@@ -313,7 +316,7 @@
      &                      Vname(1,idUtlf), INPvid,                    &
      &                      Irec, MyType, Vsize,                        &
      &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
-     &                      scale, Fmin, Fmax,                          &
+     &                      rscale, Fmin, Fmax,                         &
 #  ifdef MASKING
      &                      GRID(ng) % umask_full,                      &
 #  endif
@@ -332,7 +335,7 @@
           status=nf_fwrite3d(ng, model, TLF(ng)%ncid,                   &
      &                       TLF(ng)%Vid(idUtlf),                       &
      &                       Iout, MyType,                              &
-     &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
+     &                       LBi, UBi, LBj, UBj, 1, N(ng), wscale,      &
 #  ifdef MASKING
      &                       GRID(ng) % umask_full,                     &
 #  endif
@@ -363,7 +366,7 @@
      &                      Vname(1,idVtlf), INPvid,                    &
      &                      Irec, MyType, Vsize,                        &
      &                      LBi, UBi, LBj, UBj, 1, N(ng),               &
-     &                      scale, Fmin, Fmax,                          &
+     &                      rscale, Fmin, Fmax,                         &
 #  ifdef MASKING
      &                      GRID(ng) % vmask_full,                      &
 #  endif
@@ -382,7 +385,7 @@
           status=nf_fwrite3d(ng, model, TLF(ng)%ncid,                   &
      &                       TLF(ng)%Vid(idVtlf),                       &
      &                       Iout, MyType,                              &
-     &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
+     &                       LBi, UBi, LBj, UBj, 1, N(ng), wscale,      &
 #  ifdef MASKING
      &                       GRID(ng) % vmask_full,                     &
 #  endif
@@ -415,7 +418,7 @@
      &                        Vname(1,idTtlf(i)), INPvid,               &
      &                        Irec, MyType, Vsize,                      &
      &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
-     &                        scale, Fmin, Fmax,                        &
+     &                        rscale, Fmin, Fmax,                       &
 #  ifdef MASKING
      &                        GRID(ng) % rmask,                         &
 #  endif
@@ -433,7 +436,7 @@
 !
             status=nf_fwrite3d(ng, model, TLF(ng)%ncid, TLF(ng)%Tid(i), &
      &                         Iout, MyType,                            &
-     &                         LBi, UBi, LBj, UBj, 1, N(ng), scale,     &
+     &                         LBi, UBi, LBj, UBj, 1, N(ng), wscale,    &
 #  ifdef MASKING
      &                         GRID(ng) % rmask,                        &
 #  endif

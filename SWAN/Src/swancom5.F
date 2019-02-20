@@ -199,18 +199,18 @@
 !
       IF (KSPHER.GT.0) THEN
         DO IC = 1, ICMAX
-          IF(KCGRD(IC).EQ.1)CYCLE ! point is not valid, so cyle
+          IF(KCGRD(IC).EQ.1)CYCLE ! point is not valid, so cyle 
 !         The above check was added Dec 6 2011
 
-!         Explanation: For PROPSL=1, we are using BSBT, so we don't need
-!                      COSLAT(4) or COSLAT(5) and in fact if we try to
+!         Explanation: For PROPSL=1, we are using BSBT, so we don't need 
+!                      COSLAT(4) or COSLAT(5) and in fact if we try to 
 !                      calculate these variables, we could get index out
-!                      of range. The underlying problem is that ICMAX
+!                      of range. The underlying problem is that ICMAX 
 !                      for PROPSL=1 was changed from 3 to 5, but 4 and 5
 !                      are not necessarily valid points.
 
 !                      Another way to fix this would be to have loop go
-!                      from 1 to 3 instead of 1 to ICMAX in cases of
+!                      from 1 to 3 instead of 1 to ICMAX in cases of 
 !                      PROPSL=1. (outcome should be the same)
           COSLAT(IC) =
      &    COS(DEGRAD*(YCGRID(IXCGRD(IC),IYCGRD(IC))+YOFFS))               33.09

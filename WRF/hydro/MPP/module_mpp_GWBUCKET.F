@@ -2,20 +2,20 @@
 !  Author(s)/Contact(s):
 !  Abstract:
 !  History Log:
-!
+! 
 !  Usage:
 !  Parameters: <Specify typical arguments passed>
 !  Input Files:
 !        <list file names and briefly describe the data they include>
 !  Output Files:
 !        <list file names and briefly describe the information they include>
-!
+! 
 !  Condition codes:
 !        <list exit condition or error codes returned >
 !        If appropriate, descriptive troubleshooting instructions or
 !        likely causes for failures could be mentioned here with the
 !        appropriate error code
-!
+! 
 !  User controllable options: <if applicable>
 
 !   This is used as a coupler with the WRF model.
@@ -25,7 +25,7 @@ MODULE MODULE_mpp_GWBUCKET
                  mpp_land_bcast_real, sum_real8,  mpp_land_sync
   implicit none
 
-
+  
 
   include "mpif.h"
 
@@ -43,24 +43,24 @@ MODULE MODULE_mpp_GWBUCKET
      maxSizeInd = 0
   end subroutine gwbucket_ini
 
-
+ 
   subroutine collectSizeInd(numbasns)
      implicit none
      integer, intent(in) :: numbasns
-     integer :: i, ierr, tag, rcv
+     integer :: i, ierr, tag, rcv 
 
       call mpp_land_sync()
 
      if(gw_ini .ne. 99) call gwbucket_ini()
 
      if(my_id .ne. IO_id) then
-          tag = 66
+          tag = 66 
           call mpi_send(numbasns,1,MPI_INTEGER, IO_id,     &
                 tag,MPI_COMM_WORLD,ierr)
      else
           do i = 0, numprocs - 1
               if(i .eq. IO_id) then
-                 sizeInd(i+1) = numbasns
+                 sizeInd(i+1) = numbasns 
               else
                  tag = 66
                  call mpi_recv(rcv,1,&
@@ -84,8 +84,8 @@ MODULE MODULE_mpp_GWBUCKET
      integer, allocatable,dimension(:) :: ibuff
 
      if(gw_ini .ne. 99) then
-        stop "FATAL ERROR: mpp_GWBUCKET not initialized."
-     endif
+        stop "FATAL ERROR: mpp_GWBUCKET not initialized."        
+     endif 
 
      if(my_id .eq. IO_id) then
          outV = 0.0
@@ -108,7 +108,7 @@ MODULE MODULE_mpp_GWBUCKET
       else
 
           do k = 1, numbasns
-              outV(ind(k)) = inV(k)
+              outV(ind(k)) = inV(k)  
           end do
 
           do i = 0, numprocs - 1
@@ -120,11 +120,11 @@ MODULE MODULE_mpp_GWBUCKET
                   tag2 = 63
                   call mpi_recv(ibuff(1:sizeInd(i+1)),sizeInd(i+1),&
                       MPI_INTEGER,i,tag2,MPI_COMM_WORLD,mpp_status,ierr)
-
+   
                   do k = 1, sizeInd(i+1)
-                     outV(ibuff(k)) = vbuff(k)
+                     outV(ibuff(k)) = vbuff(k) 
                   end do
-               endif
+               endif 
              end if
            end do
       end if
@@ -141,11 +141,11 @@ MODULE MODULE_mpp_GWBUCKET
       integer, dimension(:) :: outV
       integer, allocatable,dimension(:) :: vbuff
       integer, allocatable,dimension(:) :: ibuff
-
+ 
       if(gw_ini .ne. 99) then
-         stop "FATAL ERROR: mpp_GWBUCKET not initialized."
-      endif
-
+         stop "FATAL ERROR: mpp_GWBUCKET not initialized."        
+      endif 
+ 
       if(my_id .eq. IO_id) then
           outV = 0.0
           allocate(vbuff(maxSizeInd))
@@ -154,7 +154,7 @@ MODULE MODULE_mpp_GWBUCKET
           allocate(vbuff(1))
           allocate(ibuff(1))
       endif
-
+ 
       if(my_id .ne. IO_id) then
          if(numbasns .gt. 0) then
            tag = 62
@@ -165,11 +165,11 @@ MODULE MODULE_mpp_GWBUCKET
                  tag2,MPI_COMM_WORLD,ierr)
          endif
        else
-
+ 
            do k = 1, numbasns
-               outV(ind(k)) = inV(k)
+               outV(ind(k)) = inV(k)  
            end do
-
+ 
            do i = 0, numprocs - 1
              if(i .ne. IO_id) then
                 if(sizeInd(i+1) .gt. 0) then
@@ -179,11 +179,11 @@ MODULE MODULE_mpp_GWBUCKET
                    tag2 = 63
                    call mpi_recv(ibuff(1:sizeInd(i+1)),sizeInd(i+1),&
                        MPI_INTEGER,i,tag2,MPI_COMM_WORLD,mpp_status,ierr)
-
+    
                    do k = 1, sizeInd(i+1)
-                      outV(ibuff(k)) = vbuff(k)
+                      outV(ibuff(k)) = vbuff(k) 
                    end do
-                endif
+                endif 
               end if
             end do
        end if
@@ -221,14 +221,14 @@ MODULE MODULE_mpp_GWBUCKET
 
        vbuff = 0
        do k = 1, nsize
-          vbuff(ind(k)) = vinout(k)
+          vbuff(ind(k)) = vinout(k) 
        end do
        call sum_real8(vbuff,gsize)
        do k = 1, nsize
-          vinout(k) = vbuff(ind(k))
+          vinout(k) = vbuff(ind(k)) 
        end do
     end subroutine gw_sum_real
-
+  
 
 
 end MODULE MODULE_mpp_GWBUCKET
