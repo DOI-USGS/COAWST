@@ -1,0 +1,20 @@
+#! /bin/csh -f
+
+#Change to your own paths!
+setenv SYSTEM_USERDIR /center/w/kate/CICE
+
+setenv SRCDIR $HOME/cice5.1
+
+setenv CBLD   $SRCDIR/bld
+setenv EXEDIR $SYSTEM_USERDIR/Bering
+#setenv EXEDIR $SYSTEM_USERDIR/Arctic
+setenv OBJDIR $EXEDIR/compile
+
+cd $OBJDIR
+pwd
+
+# Clean compile directory
+make -f $CBLD/Makefile clean  || exit 2
+
+cd $EXEDIR
+

@@ -1,0 +1,128 @@
+!svn $Id: memory.txt 923 2018-09-26 21:20:30Z arango $
+!========================================================= Hernan G. Arango ===
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                                !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+
+
+ROMS Dynamic, Automatic, and Static Memory Requirements:
+=======================================================
+
+Currently, ROMS uses primarily dynamic and automatic memory which is
+allocated at running time. It uses small static memory allocation at
+compile time.
+
+The dynamical memory is that associated with the ocean state arrays, and it
+is allocated at runtime, and it is persistent until the ROMS termination of
+the execution.
+
+The automatic arrays appear in subroutines and functions for temporary
+local computations. They are created on entry to the subroutine for
+intermediate computations and disappear on exit. The automatic arrays
+(meaning non-static) are either allocated on heap or stack memory. If
+using the 'ifort' compiler, the option -heap-arrays directs the compiler
+to put automatic arrays on the heap instead of the stack. However, it may
+affect performance by slowing down the computations. If using stack memory,
+the application needs to have enough to avoid weird segmentation faults
+during execution. In Linux operating systems, unlimited stack memory is
+possible by setting:
+
+ 'ulimit -s unlimited'             in your .bashrc
+ 'limit stacksize unlimited'       in your .cshrc, .tcshrc
+
+The static arrays are allocated at compilation time and the memory reserved
+can be neither increased or decreased. Only a few static arrays are used in
+ROMS and mainly needed for I/O processing in the mod_netcdf routines.
+
+In serial and shared-memory (OpenMP) applications, the dynamical memory
+associated with the ocean state is for full, global variables. Contrarily,
+in distributed-memory (MPI) applications, the dynamical memory related
+to the ocean state is for the smaller tiled arrays with global indices.
+The tiling in only done in the horizontal I- and J-dimensions and not in
+the vertical dimension.
+
+Mostly all the ocean state arrays are dereferenced pointers and are
+allocated after processing ROMS standard input parameters. Recall that
+arrays represent a continuous linear sequence of memory. The pointer
+indicates the beginning of the state variable in the memory block.
+
+ROMS now computes an estimate of the dynamical and automatic memory needed
+to run an application. The automatic memory is difficult to estimate since
+it is volatile. The information below provides the maximum automatic memory
+required by few routines:
+
+bulk_flux        48   arrays dimensioned (IminS:ImaxS)
+                  7   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+
+gls_corstep       5   arrays dimensioned (IminS:ImaxS)
+                  7   arrays dimensioned (IminS:ImaxS,0:N)
+                  9   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+                  2   arrays dimensioned (IminS:ImaxS,JminS,JmaxS,0:N)
+
+gls_prestep       3   arrays dimensioned (IminS:ImaxS,N)
+                  8   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+                  1   arrays dimensioned (IminS:ImaxS,JminS,JmaxS,N)
+
+my25_corstep      7   arrays dimensioned (IminS:ImaxS,0:N)
+                  8   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+                  2   arrays dimensioned (IminS:ImaxS,JminS,JmaxS,0:N)
+
+my25_prestep      3   arrays dimensioned (IminS:ImaxS,N)
+                  8   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+                  1   arrays dimensioned (IminS:ImaxS,JminS,JmaxS,N)
+
+nf_fread3d        1   arrays dimensioned (2+(Lm(ng)+2)*(Mm(ng)+2)*(N+1))
+nf_fread4d        1   arrays dimensioned (2+(Lm(ng)+2)*(Mm(ng)+2)*(N+1))
+
+nf_fwrite3d       1   arrays dimensioned (2+(Lm(ng)+2)*(Mm(ng)+2)*(N+1))
+nf_fwrite4d       1   arrays dimensioned (2+(Lm(ng)+2)*(Mm(ng)+2)*(N+1))
+
+pre_step3d        3   arrays dimensioned (IminS:ImaxS,0:N)
+                  4   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+                  1   arrays dimensioned (IminS:ImaxS,JminS,JmaxS,0:N)
+
+rhs3d             3   arrays dimensioned (IminS:ImaxS,0:N)
+                 15   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+
+step2d           38   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+
+ad_step2d        44   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+
+tl_step2d        44   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+
+step3d_t          4   arrays dimensioned (IminS:ImaxS,0:N)
+                  7   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+                  5   arrays dimensioned (IminS:ImaxS,JminS,JmaxS,N)
+                  1   arrays dimensioned (IminS:ImaxS,JminS,JmaxS,N,NT)
+
+ad_step3d_t       9   arrays dimensioned (IminS:ImaxS,0:N)
+                  8   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+                 10   arrays dimensioned (IminS:ImaxS,JminS,JmaxS,N)
+                  2   arrays dimensioned (IminS:ImaxS,JminS,JmaxS,N,NT)
+
+tl_step3d_t       9   arrays dimensioned (IminS:ImaxS,0:N)
+                  8   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+                 10   arrays dimensioned (IminS:ImaxS,JminS,JmaxS,N)
+                  2   arrays dimensioned (IminS:ImaxS,JminS,JmaxS,N,NT)
+
+step3d_uv        22   arrays dimensioned (IminS:ImaxS,0:N)
+
+t3dmix2_geo.h    14   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+
+t3dmix2_iso.h    14   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+
+t3dmix2_iso.h    14   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+                  1   arrays dimensioned (IminS:ImaxS,JminS,JmaxS,N)
+
+t3dmix4_iso.h    14   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+                  1   arrays dimensioned (IminS:ImaxS,JminS,JmaxS,N)
+
+uv3dmix2_geo     32   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+
+uv3dmix4_geo     32   arrays dimensioned (IminS:ImaxS,JminS,JmaxS)
+                  2   arrays dimensioned (IminS:ImaxS,JminS,JmaxS,N)
+
+The automatic arrays used in distributed-memory are accounted separately,
+and its maximum buffer size is stored in BmemMax(ng). That is, there is a
+value for each nested grid and parallel tile.
