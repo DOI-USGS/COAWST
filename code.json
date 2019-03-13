@@ -16,7 +16,7 @@
       ]
     },
     "homepageURL": "https://code.usgs.gov/coawstmodel/COAWST",
-    "downloadURL": "https://code.usgs.gov/coawstmodel/COAWST/archive/master.zip",
+    "downloadURL": "https://code.usgs.gov/coawstmodel/COAWST/-/archive/master/COAWST-master.zip",
     "disclaimerURL": "https://code.usgs.gov/coawstmodel/COAWST/blob/master/DISCLAIMER.md",
     "repositoryURL": "https://code.usgs.gov/coawstmodel/COAWST/COAWST.git",
     "vcs": "git",
@@ -29,7 +29,7 @@
       "Wave dynamics",
       "Atmosphere dynamics",
       "Sediment transport",
-      "Numerical modeling", 
+      "Numerical modeling"
     ],
 
     "languages": [
@@ -37,7 +37,7 @@
       "C",
       "C++",
       "MATLAB",
-      "Shell", 
+      "Shell"
     ],
 
     "contact": {

@@ -13,6 +13,6 @@ into the project you can [fork this repository][2] and
 
 
 
-[1]: https://github.com/usgs/COAWST/issues
-[2]: https://help.github.com/articles/fork-a-repo/
-[3]: https://help.github.com/articles/about-pull-requests/
+[1]: https://code.usgs.gov/coawstmodel/COAWST/issues
+[2]: https://code.usgs.gov/coawstmodel/COAWST/forks/new
+[3]: https://code.usgs.gov/coawstmodel/COAWST/merge_requests/new
