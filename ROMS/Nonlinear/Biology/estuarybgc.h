@@ -78,10 +78,9 @@
       USE mod_ncparam
       USE mod_ocean
       USE mod_stepping
-#if defined SAV_BIOMASS && defined VEG_BIOMASS
-      USE mod_vegetation 
-      USE mod_vegarr                            
-#endif
+#if defined VEGETATION && defined VEG_BIOMASS
+      USE mod_vegarr
+#endif 
 !
 !  Imported variable declarations.
 !
@@ -115,6 +114,9 @@
      &                   GRID(ng) % rmask_io,                           &
 # endif
 #endif
+#if defined WET_DRY
+     &                   GRID(ng) % rmask_wet,                          &
+#endif
      &                   GRID(ng) % Hz,                                 &
      &                   GRID(ng) % z_r,                                &
      &                   GRID(ng) % z_w,                                &
@@ -145,13 +147,11 @@
 #ifdef SAV_BIOMASS
      &                   OCEAN(ng) % DINwcr,                            &
      &                   OCEAN(ng) % DINsed,                            &
-     &                   OCEAN(ng) % DOwcr,                             &
-!     &                   OCEAN(ng) % CO2wcr,                            &     
      &                   OCEAN(ng) % DINwcr_sav,                        &
-!     &                   OCEAN(ng) % LDeNwcr,                           &
-!     &                   OCEAN(ng) % LDeCwcr,                           &
+     &                   OCEAN(ng) % DOwcr,                             &
      &                   OCEAN(ng) % AGB,                               &
      &                   OCEAN(ng) % BGB,                               &
+     &                   OCEAN(ng) % EPB,                               &
      &                   OCEAN(ng) % PP,                                &
      &                   OCEAN(ng) % AGM,                               &
      &                   OCEAN(ng) % AGAR,                              &
@@ -161,9 +161,9 @@
      &                   OCEAN(ng) % BGAG,                              &
      &                   OCEAN(ng) % BGR,                               &
      &                   OCEAN(ng) % BGM,                               &
-#endif
-#if defined SAV_BIOMASS && defined VEG_BIOMASS
+# if defined VEGETATION && defined VEG_BIOMASS
      &                   VEG(ng) % plant,                               &
+# endif
 #endif
      &                   OCEAN(ng) % t)
 #ifdef PROFILE
@@ -183,6 +183,9 @@
 # if defined WET_DRY && defined DIAGNOSTICS_BIO
      &                         rmask_io,                                &
 # endif
+#endif
+#if defined WET_DRY 
+     &                         rmask_wet,                               &
 #endif
      &                         Hz, z_r, z_w, srflx,                     &
 #if defined CARBON || defined OXYGEN
@@ -205,13 +208,11 @@
 #ifdef SAV_BIOMASS
      &                         DINwcr,                                  &
      &                         DINsed,                                  &
-     &                         DOwcr,                                   &
-!     &                         CO2wcr,                                  &
      &                         DINwcr_sav,                              &
-!     &                         LDeNwcr,                                 &        
-!     &                         LDeCwcr,                                 &  
+     &                         DOwcr,                                   &
      &                         AGB,                                     &
      &                         BGB,                                     &
+     &                         EPB,                                     &
      &                         PP,                                      &
      &                         AGM,                                     &
      &                         AGAR,                                    &
@@ -221,19 +222,33 @@
      &                         BGAG,                                    &
      &                         BGR,                                     &
      &                         BGM,                                     &
-#endif
-#if defined SAV_BIOMASS && defined VEG_BIOMASS
+# if defined VEGETATION && defined VEG_BIOMASS
      &                         plant,                                   &
+# endif 
 #endif
      &                         t)
 !-----------------------------------------------------------------------
 !
       USE mod_param
       USE mod_biology
+      USE dateclock_mod,  ONLY : caldate
+!
+# ifdef DISTRIBUTE
+      USE mp_exchange_mod, ONLY : mp_exchange2d, mp_exchange3d
+      USE mp_exchange_mod, ONLY : mp_exchange4d
+# endif
+#if defined SPECTRAL_LIGHT || defined SAV_BIOMASS
+      USE bc_2d_mod, ONLY : bc_r2d_tile
+      USE bc_3d_mod, ONLY : bc_r3d_tile
+#endif
 #ifdef SPECTRAL_LIGHT
       USE mod_sediment
       USE mod_eclight
 #endif
+#if defined VEGETATION && defined VEG_BIOMASS
+      USE mod_vegetation 
+      USE mod_vegarr
+#endif 
       USE mod_ncparam
       USE mod_scalars
 !
@@ -250,6 +265,9 @@
 #  if defined WET_DRY && defined DIAGNOSTICS_BIO
       real(r8), intent(in) :: rmask_io(LBi:,LBj:)
 #  endif
+# endif
+# if defined WET_DRY 
+      real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
 # endif
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
@@ -281,22 +299,23 @@
 # ifdef SAV_BIOMASS
       real(r8), intent(out) :: DINwcr(LBi:,LBj:,:)
       real(r8), intent(out) :: DINsed(LBi:,LBj:,:)
-      real(r8), intent(out) :: DOwcr(LBi:,LBj:,:)
-      real(r8), intent(out) :: DINwcr_sav(LBi:,LBj:,:)
+      real(r8), intent(out) :: DINwcr_sav(LBi:,LBj:)
+      real(r8), intent(out) :: DOwcr(LBi:,LBj:)
       real(r8), intent(out) :: AGB(LBi:,LBj:)
       real(r8), intent(out) :: BGB(LBi:,LBj:)
-      real(r8), intent(out) :: PP(LBi:,LBj:,:)
-      real(r8), intent(out) :: AGM(LBi:,LBj:,:)
-      real(r8), intent(out) :: AGAR(LBi:,LBj:,:)
-      real(r8), intent(out) :: AGBR(LBi:,LBj:,:)
-      real(r8), intent(out) :: SEARS(LBi:,LBj:,:)
-      real(r8), intent(out) :: AGBG(LBi:,LBj:,:)
-      real(r8), intent(out) :: BGAG(LBi:,LBj:,:)
-      real(r8), intent(out) :: BGR(LBi:,LBj:,:)
-      real(r8), intent(out) :: BGM(LBi:,LBj:,:)
-# endif
-# if defined SAV_BIOMASS && defined VEG_BIOMASS
+      real(r8), intent(out) :: EPB(LBi:,LBj:)
+      real(r8), intent(out) :: PP(LBi:,LBj:)
+      real(r8), intent(out) :: AGM(LBi:,LBj:)
+      real(r8), intent(out) :: AGAR(LBi:,LBj:)
+      real(r8), intent(out) :: AGBR(LBi:,LBj:)
+      real(r8), intent(out) :: SEARS(LBi:,LBj:)
+      real(r8), intent(out) :: AGBG(LBi:,LBj:)
+      real(r8), intent(out) :: BGAG(LBi:,LBj:)
+      real(r8), intent(out) :: BGR(LBi:,LBj:)
+      real(r8), intent(out) :: BGM(LBi:,LBj:)
+#  if defined VEGETATION && defined VEG_BIOMASS
       real(r8), intent(inout) :: plant(LBi:,LBj:,:,:)
+#  endif
 # endif
       real(r8), intent(inout) :: t(LBi:,LBj:,:,:,:)
 #else
@@ -305,6 +324,9 @@
 #  if defined WET_DRY && defined DIAGNOSTICS_BIO
       real(r8), intent(in) :: rmask_io(LBi:UBi,LBj:UBj)
 #  endif
+# endif
+# if defined WET_DRY 
+      real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
 # endif
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,UBk)
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,UBk)
@@ -336,23 +358,24 @@
 # ifdef SAV_BIOMASS
       real(r8), intent(out) :: DINwcr(LBi:UBi,LBj:UBj,UBk)
       real(r8), intent(out) :: DINsed(LBi:UBi,LBj:UBj,UBk)
-      real(r8), intent(out) :: DOwcr(LBi:UBi,LBj:UBj,UBk)
-      real(r8), intent(out) :: DINwcr_sav(LBi:UBi,LBj:UBj,UBk)
+      real(r8), intent(out) :: DINwcr_sav(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: DOwcr(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: AGB(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: BGB(LBi:UBi,LBj:UBj)
-      real(r8), intent(out) :: PP(LBi:UBi,LBj:UBj,UBk)
-      real(r8), intent(out) :: AGM(LBi:UBi,LBj:UBj,UBk)
-      real(r8), intent(out) :: AGAR(LBi:UBi,LBj:UBj,UBk)
-      real(r8), intent(out) :: AGBR(LLBi:UBi,LBj:UBj,UBk)
-      real(r8), intent(out) :: SEARS(LBi:UBi,LBj:UBj,UBk)
-      real(r8), intent(out) :: AGBG(LBi:UBi,LBj:UBj,UBk)
-      real(r8), intent(out) :: BGAG(LBi:UBi,LBj:UBj,UBk)
-      real(r8), intent(out) :: BGR(LBi:UBi,LBj:UBj,UBk)
-      real(r8), intent(out) :: BGM(LBi:UBi,LBj:UBj,UBk)
-# endif
-# if defined SAV_BIOMASS && defined VEG_BIOMASS
+      real(r8), intent(out) :: EPB(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: PP(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: AGM(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: AGAR(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: AGBR(LLBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: SEARS(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: AGBG(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: BGAG(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: BGR(LBi:UBi,LBj:UBj)
+      real(r8), intent(out) :: BGM(LBi:UBi,LBj:UBj)
+# if defined VEGETATION && defined VEG_BIOMASS
       real(r8), intent(inout) :: plant(LBi:UBi,LBj:UBj,NVEG,NVEGP)
 # endif
+#endif
       real(r8), intent(inout) :: t(LBi:UBi,LBj:UBj,UBk,3,UBt)
 #endif
 !
@@ -430,7 +453,7 @@
       real(r8) :: Epp, L_NH4, L_NO3, LTOT, Vp
       real(r8) :: Chl2C, dtdays, t_PPmax, inhNH4
 !
-      real(r8) :: cff, cff1, cff2, cff3, cff4, cff5
+      real(r8) :: cff, cff1, cff2, cff3, cff4, cff5, cff_weight
       real(r8) :: fac1, fac2, fac3
       real(r8) :: cffL, cffR, cu, dltL, dltR
 !
@@ -459,9 +482,9 @@
 #endif
 ! Local SAV variables
 #ifdef SAV_BIOMASS 
-      real(r8), dimension(LBi:UBi,LBj:UBj,UBk) :: CO2wcr
-      real(r8), dimension(LBi:UBi,LBj:UBj,UBk) :: LDeCwcr
-      real(r8), dimension(LBi:UBi,LBj:UBj,UBk) :: LDeNwcr
+      real(r8), dimension(LBi:UBi,LBj:UBj) :: CO2wcr
+      real(r8), dimension(LBi:UBi,LBj:UBj) :: LDeCwcr
+      real(r8), dimension(LBi:UBi,LBj:UBj) :: LDeNwcr
       real(r8) :: cff1_sav
 #endif 
       real(r8), dimension(Nsink) :: Wbio
@@ -1352,9 +1375,8 @@
 !
 !  Add in CO2 gas exchange.
 !
-            CALL caldate (r_date, tdays(ng), year, yday, month, iday,   &
-     &                    hour)
-            pmonth=2003.0_r8-1951.0_r8+yday/365.0_r8
+	    CALL caldate (tdays(ng), yd_dp=yday)
+            pmonth=2003.0_dp-1951.0_dp+yday/365.0_dp
 !!          pCO2air_secular=D0+D1*pmonth*12.0_r8+                       &
 !!   &                         D2*SIN(pi2*pmonth+D3)+                   &
 !!   &                         D4*SIN(pi2*pmonth+D5)+                   &
@@ -1575,58 +1597,59 @@
 !  Need sediment biogechemical equations to get DINsed and DINwcr
 !
 !
-! Remember you know that you are in iterative and J loop 
-!
+! Remember you know that you are in iterative J loop 
 !
 ! Calculation of DINwcr for SAV MODEL 
-!
+!   
             DO k=1,N(ng)
               DO i=Istr,Iend
                 DINwcr(i,j,k)=Bio(i,k,iNH4_)+Bio(i,k,iNO3_)
               END DO
             END DO
             DO k = 1,N(ng) 
-              CALL SAV_BIOMASS (ng, Istr, Iend, LBi, UBi,                 &
-     &                     pmonth, t(:,j,1,nstp,itemp),                   &
-     &                     PARout(:,j,k), DINwcr(:,j,k), DINsed(:,j,k),   &
-     &                     DINwcr_sav(:,j,k), DOwcr(:,j,k),               &
-     &                     CO2wcr(:,j,k), LDeCwcr(:,j,k), LDeNwcr(:,j,k), &
-     &                     AGB(:,j),BGB(:,j), PP(:,j,k), AGM(:,j,k),      &
-     &                     AGAR(:,j,k), AGBR(:,j,k), SEARS(:,j,k),        &
-     &                     AGBG(:,j,k), BGAG(:,j,k), BGR(:,j,k),          &
-     &                     BGM(:,j,k)) 
+              CALL SAV_BIOMASS_SUB (ng, Istr, Iend, LBi, UBi,           &
+     &                   pmonth, t(:,j,1,nstp,itemp),                   &
+     &                   PARout(:,j,k), DINwcr(:,j,k),                  &
+#ifdef WET_DRY
+     &                   rmask_wet(:,j),                                &
+#endif 
+#if defined VEGETATION && defined VEG_BIOMASS
+     &                   plant(:,j,1,pdens), plant(:,j,1,phght),        & 
+     &                   plant(:,j,1,pdiam),                            & 
+#endif 
+     &                   DINsed(:,j,k), DINwcr_sav(:,j), DOwcr(:,j),    &
+     &                   CO2wcr(:,j), LDeCwcr(:,j), LDeNwcr(:,j),       &
+     &                   AGB(:,j), BGB(:,j), EPB(:,j),                  &
+     &                   PP(:,j), AGM(:,j), AGAR(:,j),                  &
+     &                   AGBR(:,j), SEARS(:,j), AGBG(:,j),              &
+     &                   BGAG(:,j), BGR(:,j), BGM(:,j))
             END DO
 !
 !  Only getting the SAV model to work for the bottomost vertical layer
-!  Also multiplied SAV computed quantities with bottom cell thickness
+!  Also divided SAV computed quantities with bottom cell thickness
 !
             DO i=Istr,Iend
-              cff1_sav=DINwcr_sav(i,j,1)*Hz(i,j,1)
-               
-              IF (DINwcr_sav(i,j,1).gt.0) THEN 
+              cff1_sav=DINwcr_sav(i,j)/Hz(i,j,1)               
+              IF (DINwcr_sav(i,j).gt.0.0_r8) THEN 
                 Bio(i,1,iNH4_)=Bio(i,1,iNH4_)+cff1_sav
               ELSE
-                Bio(i,1,iNO3_)=Bio(i,1,iNO3_)+cff1_sav*0.5_r8 
-                Bio(i,1,iNH4_)=Bio(i,1,iNH4_)+cff1_sav*0.5_r8
+                cff_weight=1.0_r8/(Bio(i,1,iNO3_)+Bio(i,1,iNH4_)+eps)
+                Bio(i,1,iNO3_)=Bio(i,1,iNO3_)*                          &
+     &                            (1.0_r8+cff1_sav*cff_weight) 
+!
+                Bio(i,1,iNH4_)=Bio(i,1,iNH4_)*                          &
+     &                            (1.0_r8+cff1_sav*cff_weight)
               END IF 
-              Bio(i,1,iLDeN)=Bio(i,1,iLDeN)+LDeNwcr(i,j,1)*Hz(i,j,1)
+              Bio(i,1,iLDeN)=Bio(i,1,iLDeN)+LDeNwcr(i,j)/Hz(i,j,1)
 #  ifdef OXYGEN
-              Bio(i,1,iOxyg)=Bio(i,1,iOxyg)+DOwcr(i,j,1)*Hz(i,j,1)
+              Bio(i,1,iOxyg)=Bio(i,1,iOxyg)+DOwcr(i,j)/Hz(i,j,1)
 #  endif	
 #  ifdef CARBON
-              Bio(i,1,iTIC_)=Bio(i,1,iTIC_)+CO2wcr(i,j,1)*Hz(i,j,1)
-              Bio(i,1,iLDeC)=Bio(i,1,iLDeC)+LDeCwcr(i,j,1)*Hz(i,j,1)
+              Bio(i,1,iTIC_)=Bio(i,1,iTIC_)+CO2wcr(i,j)/Hz(i,j,1)
+              Bio(i,1,iLDeC)=Bio(i,1,iLDeC)+LDeCwcr(i,j)/Hz(i,j,1)
 #  endif
-            END DO 
-!
-#  ifdef VEG_BIOMASS  
-            DO k=1,NVEG
-              DO i=Istr,Iend
-                plant(i,j,iveg,pagbm)=AGB(i,j)
-                plant(i,j,iveg,pbgbm)=BGB(i,j)
-              END DO 
-            END DO 
-#  endif 
+            END DO
+!#  endif 
 # endif
 !----------------------------------------------------------------------	
             IF ((ibio.eq.iPhyt).or.                                     &
@@ -1698,15 +1721,85 @@
           DO k=1,N(ng)
             DO i=Istr,Iend
               cff=Bio(i,k,ibio)-Bio_old(i,k,ibio)
+#ifdef WET_DRY
+              cff=cff*rmask_wet(i,j)
+#endif 
               t(i,j,k,nnew,ibio)=t(i,j,k,nnew,ibio)+cff*Hz(i,j,k)
-#ifdef TS_MPDATA
-              t(i,j,k,3,indx)=t(i,j,k,nnew,indx)*Hz_inv(i,k)
-#endif
             END DO
           END DO
         END DO
       END DO J_LOOP
-
+      
+#ifdef SPECTRAL_LIGHT
+!
+!---------------------------------------------------------------------
+!  Apply periodic or gradient boundary conditions for output
+!  purposes only.
+!---------------------------------------------------------------------
+!
+      CALL bc_r3d_tile (ng, tile,                                       &
+   &                  LBi, UBi, LBj, UBj, 1, N(ng),                     &
+   &                  PARout)
+      CALL bc_r3d_tile (ng, tile,                                       &
+   &                  LBi, UBi, LBj, UBj, 1, NBAND,                     &
+   &                  PARs)
+      CALL bc_r3d_tile (ng, tile,                                       &
+   &                  LBi, UBi, LBj, UBj, 1, NBAND,                     & 
+   &                  SpKd)
+#endif 
+#ifdef SAV_BIOMASS
+!
+!---------------------------------------------------------------------
+!  Apply periodic or gradient boundary conditions for output
+!  purposes only.
+!---------------------------------------------------------------------
+!
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, AGB)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, BGB)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, EPB)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, DINwcr_sav)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, DOwcr)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, PP)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, AGM)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, AGAR)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, AGBR)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, SEARS)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, AGBG)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, BGAG)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, BGR)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, BGM)
+      CALL bc_r3d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
+     &                  DINwcr)
+      CALL bc_r3d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj, 1, N(ng),                   &
+     &                  DINsed)
+!
+# if defined VEGETATION && defined VEG_BIOMASS
+!
+      DO i=1,NVEGP
+        CALL bc_r3d_tile(ng, tile,                                      &
+     &                       LBi, UBi, LBj, UBj, 1, NVEG,               &
+     &                       VEG(ng) % plant(:,:,:,i))
+      END DO
+!
+# endif
+#endif
+! 
       RETURN
       END SUBROUTINE biology_tile
 !
@@ -2510,4 +2603,4 @@
       END SUBROUTINE pCO2_water
 # endif
 #endif
- 
+ 
