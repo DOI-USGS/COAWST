@@ -1,0 +1,28 @@
+#include "cppdefs.h"
+      MODULE mod_sedflocs
+
+/*
+** svn $Id: mod_sedflocs.F 429 2009-12-20 17:30:26Z arango $
+*************************************************** Hernan G. Arango ***
+** Copyright (c) 2002-2010 The ROMS/TOMS Group                        **
+**   Licensed under a MIT/X style license                             **
+**   See License_ROMS.txt                                             **
+************************************************************************
+**                                                                    **
+** This module declares  Sediment Floc Model Kernel Structure         **
+** containing several variables describing flocculation interaction   **
+** properties.                                                        **
+**                                                                    **
+** Note that the  *.h file is located in ROMS/Nonlinear/Sediment and  **
+** it is included within <...> to allow the user customize it in the  **
+** project directory, while keeping the distributed file intact       **
+** (check build scripts for details).                                 **
+**                                                                    **
+************************************************************************
+*/
+
+#if defined SEDIMENT
+# include <sedflocs_mod.h>
+#endif
+
+      END MODULE mod_sedflocs

@@ -1,0 +1,88 @@
+!  Vegetation Model Parameters.
+!
+!svn $Id$
+!========================================================= Hernan G. Arango ===
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                                !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  Comments will be ignored  during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!==============================================================================
+!
+! NOTICE: Input parameter units are specified within brackets and default
+! ******  values are specified within braces.
+!
+    NVEG   == 1
+
+    CD_VEG == 1.0d0
+
+    E_VEG == 1.0d9
+
+    VEG_MASSDENS  == 700.0d0
+
+    VEGHMIXCOEF == 0.1d0
+
+! Logical switches (TRUE/FALSE) to activate writing of vegetation fields
+! into HISTORY output file: [1:NVEG,Ngrids].
+
+Hout(ipdens)   == T       ! Plant_density      Density of the plant for each vegetation
+Hout(iphght)   == T       ! Plant_height       Height of the plant for each vegetation
+Hout(ipdiam)   == T       ! Plant_diameter     Diameter of the plant for each vegetation
+Hout(ipthck)   == T       ! Plant_thickness    Thickness of the plant for each vegetation
+Hout(ipagbm)   == F       ! Plant_agb          Above ground plant biomass
+Hout(ipbgbm)   == F       ! Plant_bgb          Below ground plant biomass
+Hout(idWdvg)   == T       ! Dissip_veg         Wave dissipation due to vegetation
+Hout(idTims)   == T       ! marsh_mask         masking for getting thrust due to waves
+Hout(idTmsk)   == T       ! mask_thrust        masking for getting thrust due to waves
+Hout(idTmax)   == T       ! Thrust_max         maxmimum thrust due to waves
+Hout(idTton)   == T       ! Thrust_tonelli     Tonelli masking based thrust due to waves
+
+!
+!  GLOSSARY:
+!  =========
+!
+!------------------------------------------------------------------------------
+!
+!  NVEG           Number of vegetation types 
+!
+!  SHOOT_DENS     Shoot density for each vegetation type
+!
+!  SHOOT_HGHT     Shoot height for each vegetation type
+!
+!  SHOOT_DIA      Shoot diameter for each vegetation type
+!
+!  SHOOT_THCK     Shoot thicknes for each vegetation types
+!
+!  CD_VEG         Drag coefficient for each vegetation type
+!
+!  E_VEG          Young's Modulus  for each vegetation type
+!
+!  VEG_MASSDENS   Mass density for each vegetation type
+!
+!  VEGHMIXCOEF    Additional horizontal viscosity coefficient at the edge of a vegetation patch

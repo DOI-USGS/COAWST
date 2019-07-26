@@ -1,0 +1,1204 @@
+!
+!  Export/Import Coupling Variables
+!
+!svn $Id: coupling_esmf.dat 919 2018-08-21 22:25:53Z arango $
+!========================================================= Hernan G. Arango ===
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                                !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+!                                                                             !
+!  This file contains all ROMS/TOMS Import/Export metadata used for coupling  !
+!  to other Earth System Model (ESM). The following information is needed for !
+!  imported/exported field.                                                   !
+!                                                                             !
+!       Cinfo( 1)     Field short name (string)                               !
+!       Cinfo( 2)     Field standard name (string)                            !
+!       Cinfo( 3)     Field long descriptive name (string)                    !
+!       Cinfo( 4)     Field source variable name (string)                     !
+!       Cinfo( 5)     Field source units (string)                             !
+!       Cinfo( 6)     Field source grid-cell location (string):               !
+!                       'Center'        => cell center                        !
+!                       'Corner'        => cell corners                       !
+!                       'U'             => right and left  cell faces         !
+!                       'V'             => upper and lower cell faces         !
+!       Cinfo( 7)     Field destination name (string)                         !
+!       Cinfo( 8)     Field destination units (string)                        !
+!       Cinfo( 9)     Field destination grid-cell location (string):          !
+!                       'Center'        => cell center                        !
+!                       'Corner'        => cell corners                       !
+!                       'U'             => right and left  cell faces         !
+!                       'V'             => upper and lower cell faces         !
+!       Cinfo(10)     DATA Model file variable name (only NetCDF files)       !
+!       Cinfo(11)     Field interpolation method from source to destination:  !
+!                       'bilinear'      => bilinear                           !
+!                       'patch'         => high-order patch recovery          !
+!                       'conservative1' => first-order conservative           !
+!                       'conservative2' => second-order conservative          !
+!                       'nearest'       => nearest neighbor interpolation     !
+!       extrapolate   Field regridding with extrapolation support (logical):  !
+!                       .FALSE.         => none, normal regridding            !
+!                       .TRUE.          => 2 step extrapolation regridding    !
+!       connected     Field connected to coupler (logical):                   !
+!                       .FALSE.         => derived from exchanged field       !
+!                       .TRUE.          => interpolated (regridded, exchanged)!
+!       add_offset    Value added to imported data (real)                     !
+!       scale         Scale to convert imported data to model units (real)    !
+!                                                                             !
+!  The ESM imported fields are processed as:                                  !
+!                                                                             !
+!       field (destination_units) = field (source_units) * scale + add_offset !
+!                                                                             !
+!  Field grid-cell location diagrams:                                         !
+!                                                                             !
+!     Arakawa B-grid    Arakawa C-grid                                        !
+!                                                                             !
+!     q --------- q     q --- v --- q                                         !
+!     |           |     |           |                                         !
+!     |     c     |     u     c     u                                         !
+!     |           |     |           |                                         !
+!     q --------- q     q --- v --- q                                         !
+!                                                                             !
+!  Enclose Cinfo variables with single quotes so this file can be read with   !
+!  a free format statement.                                                   !
+!                                                                             !
+!  Notice that all export fields are kept in their original form.  The        !
+!  imported component does the proper scaling, physical units conversion,     !
+!  and other manipulations. It is done to avoid applying such transformations !
+!  twice.                                                                     !
+!                                                                             !
+!==============================================================================
+!
+!------------------------------------------------------------------------------
+!  ROMS Import.
+!------------------------------------------------------------------------------
+!
+!  ROMS Import fields from Atmosphere Model.
+
+'Pair'
+  'inst_pres_height_lowest'                        ! standard name
+  'near surface air pressure'
+  'psfc', 'RegCM'                                  ! source variable, RegCM
+  'mb'                                             ! source units
+  'Center'                                         ! source grid-cell
+  'Pair', 'ROMS'                                   ! destination variable, ROMS
+  'mb'                                             ! destination units
+  'Center'                                         ! destination grid-cell
+  'Pair'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'Tair'
+  'inst_temp_height_lowest'                        ! standard name
+  'near surface air temperature'
+  'tsfc', 'RegCM'                                  ! source variable, RegCM
+  'K'                                              ! source units
+  'Center'                                         ! source grid-cell
+  'Tair', 'ROMS'                                   ! destination variable, ROMS
+  'Celsius'                                        ! destination units
+  'Center'                                         ! destination grid-cell
+  'Tair'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  -273.15d0                                        ! importing add offset
+  1.0d0                                            ! importing scale
+
+'Qair'
+  'inst_rela_humid_height_lowest'                  ! standard name
+  'near surface relative humidity'
+  'qsfc', 'RegCM'                                  ! source variable, RegCM
+  'percentage'                                     ! source units
+  'Center'                                         ! source grid-cell
+  'Hair', 'ROMS'                                   ! destination variable, ROMS
+  'percentage'                                     ! destination units
+  'Center'                                         ! destination grid-cell
+  'Qair'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'Hair'
+  'inst_spec_humid_height_lowest'                  ! standard name
+  'near surface specific humidity'
+  'qsfc', 'RegCM'                                  ! source variable, RegCM
+  'kg kg-1'                                        ! source units
+  'Center'                                         ! source grid-cell
+  'Hair', 'ROMS'                                   ! destination variable, ROMS
+  'kg kg-1'                                        ! destination units
+  'Center'                                         ! destination grid-cell
+  'Hair'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'LWrad'
+  'surface_net_longwave_flux'                      ! standard name
+  'surface net longwave radiation flux'
+  'lwrd', 'RegCM'                                  ! source variable, RegCM
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'lwrad', 'ROMS'                                  ! destination variable, ROMS
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'lwrad'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'dLWrad'
+  'surface_downward_longwave_flux'                 ! standard name
+  'surface downward longwave radiation flux'
+  'dlwr', 'RegCM'                                  ! source variable, RegCM
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'lwrad_down', 'ROMS'                             ! destination variable, ROMS
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'lwrad_down'                                     ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'SWrad'
+  'surface_net_shortwave_flux'                     ! standard name
+  'surface net shortwave radiation flux'
+  'swrd', 'RegCM'                                  ! source variable, RegCM
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'swrad', 'ROMS'                                  ! destination variable, ROMS
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'swrad'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'SWrad_daily'
+  'daily_surface_net_shortwave_flux'               ! standard name
+  'daily-averaged surface net shortwave radiation flux'
+  'swrad_daily', 'ATM'                             ! source variable, ATM
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'swrad', 'ROMS'                                  ! destination variable, ROMS
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'swrad_daily'                                    ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'shflux'
+  'surface_net_heat_flux'                          ! standard name
+  'surface net heat flux'
+  'shflux', 'ATM'                                  ! source variable, ATM
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'shflux', 'ROMS'                                 ! destination variable, ROMS
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'shflux'                                         ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'cloud'
+  'cloud_fraction'                                 ! standard name
+  'cloud fraction'
+  'cloud', 'RegCM'                                 ! source variable, ATM
+  'nondimensional'                                 ! source units
+  'Center'                                         ! source grid-cell
+  'cloud', 'ROMS'                                  ! destination variable, CICE
+  'nondimensional'                                 ! destination units
+  'Center'                                         ! destination grid-cell
+  'cloud'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'rain'
+  'precipitation_flux'                             ! standard name
+  'precipitation flux'
+  'prec', 'RegCM'                                  ! source variable, ATM
+  'kg m-2 s-1'                                     ! source units
+  'Center'                                         ! source grid-cell
+  'rain', 'ROMS'                                   ! destination variable, CICE
+  'kg m-2 s-1'                                     ! destination units
+  'Center'                                         ! destination grid-cell
+  'rain'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'Uwind'                                            ! short name
+  'inst_zonal_wind_height_lowest'                  ! standard name
+  'near surface zonal wind component'
+  'wndu', 'RegCM'                                  ! source variable, ATM
+  'm s-1'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'Uair', 'ROMS'                                   ! destination variable, CICE
+  'm s-1'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'Uwind'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'Vwind'                                            ! short name
+  'inst_merid_wind_height_lowest'                  ! standard name
+  'near surface meridional wind component'
+  'wndv', 'RegCM'                                  ! source variable, ATM
+  'm s-1'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'Vwind', 'ROMS'                                  ! destination variable, CICE
+  'm s-1'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'Vwind'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'sustr'                                            ! short name
+  'surface_zonal_wind_stress'                      ! standard name
+  'surface zonal wind stress component'
+  'sustr', 'RegCM'                                 ! source variable, ATM
+  'N m-2'                                          ! source units
+  'U'                                              ! source grid-cell
+  'sustr', 'ROMS'                                  ! destination variable, CICE
+  'N m-2'                                          ! destination units
+  'U'                                              ! destination grid-cell
+  'sustr'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'svstr'                                            ! short name
+  'surface_meridional_wind_stress'                 ! standard name
+  'surface meridional wind stress component'
+  'svstr', 'RegCM'                                 ! source variable, ATM
+  'N m-2'                                          ! source units
+  'V'                                              ! source grid-cell
+  'svstr', 'ROMS'                                  ! destination variable, CICE
+  'N m-2'                                          ! destination units
+  'V'                                              ! destination grid-cell
+  'svstr'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+!  ROMS Export fields to Atmosphere Model.
+
+'SST'
+  'sea_surface_temperature'                        ! standard name
+  'sea surface temperature'
+  'sst', 'RegCM'                                   ! source variable, ATM
+  'K'                                              ! source units
+  'Center'                                         ! source grid-cell
+  't(:,:,N,itemp)', 'ROMS'                         ! destination variable, CICE
+  'C'                                              ! destination units
+  'Center'                                         ! destination grid-cell
+  'SST'                                            ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  273.15d0                                         ! importing add offset
+  1.0d0                                            ! importing scale
+
+!
+!------------------------------------------------------------------------------
+!  Seaice model coupling: CICE
+!------------------------------------------------------------------------------
+!
+!  IMPORT fields to CICE from atmosphere model. Users need to modify ATM source
+!  metadata accordingly.
+!
+
+'zlvl'                                             ! short name
+  'inst_height_lowest'                             ! standard name
+  'atmspheric height lowest level'
+  'zlvl', 'ATM'                                    ! source variable, ATM
+  'm'                                              ! source units
+  'Center'                                         ! source grid-cell
+  'zlvl', 'CICE'                                   ! destination variable, CICE
+  'm'                                              ! destination units
+  'Center'                                         ! destination grid-cell
+  'zlvl'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .FALSE.                                          ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'rhoa'
+  'air_density_height_lowest'                      ! standard name
+  'near surface air density'
+  'rhoa', 'ATM'                                    ! source variable, ATM
+  'kg m-3'                                         ! source units
+  'Center'                                         ! source grid-cell
+  'rhoa', 'CICE'                                   ! destination variable, CICE
+  'kg m-3'                                         ! destination units
+  'Center'                                         ! destination grid-cell
+  'rhoa'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .FALSE.                                          ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'Pair'
+  'inst_pres_height_lowest'                        ! standard name
+  'near surface air pressure'
+  'Pair', 'ATM'                                    ! source variable, ATM
+  'N m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'Pair', 'CICE'                                   ! destination variable, CICE
+  'N m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'Pair'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'Tair'
+  'inst_temp_height_lowest'                        ! standard name
+  'near surface air temperature'
+  'Tair', 'ATM'                                    ! source variable, ATM
+  'K'                                              ! source units
+  'Center'                                         ! source grid-cell
+  'Tair', 'CICE'                                   ! destination variable, CICE
+  'Celsius'                                        ! destination units
+  'Center'                                         ! destination grid-cell
+  'Tair'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  -273.15d0                                        ! importing add offset
+  1.0d0                                            ! importing scale
+
+'potT'
+  'inst_ptemp_height_lowest'                       ! standard name
+  'near surface air potential temperature'
+  'potT', 'ATM'                                    ! source variable, ATM
+  'K'                                              ! source units
+  'Center'                                         ! source grid-cell
+  'potT', 'CICE'                                   ! destination variable, CICE
+  'Celsius'                                        ! destination units
+  'Center'                                         ! destination grid-cell
+  'potT'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .FALSE.                                          ! connected to coupler
+  -273.15d0                                        ! importing add offset
+  1.0d0                                            ! importing scale
+
+'Hair'
+  'inst_spec_humid_height_lowest'                  ! standard name
+  'near surface air specific humidity'
+  'qsfc', 'ATM'                                    ! source variable, ATM
+  'kg kg-1'                                        ! source units
+  'Center'                                         ! source grid-cell
+  'Qa', 'CICE'                                     ! destination variable, CICE
+  'kg kg-1'                                        ! destination units
+  'Center'                                         ! destination grid-cell
+  'Hair'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'flw'
+  'mean_down_lw_flx'                               ! standard name
+  'downwelling longwave flux, coupling interval average'
+  'flw', 'ATM'                                     ! source variable, ATM
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'flw', 'CICE'                                    ! destination variable, CICE
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'flw'                                            ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'swvdr'
+  'mean_down_sw_vis_dir_flx'                       ! standard name
+  'visible direct downward shortwave flux, coupling interval average'
+  'swvdr', 'ATM'                                   ! source variable, ATM
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'swvdr', 'CICE'                                  ! destination variable, CICE
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'swvdr'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'swvdf'
+  'mean_down_sw_vis_dif_flx'                       ! standard name
+  'visible diffusive downward shortwave flux, coupling interval average'
+  'swvdf', 'ATM'                                   ! source variable, ATM
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'swvdf', 'CICE'                                  ! destination variable, CICE
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'swvdf'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'swidr'
+  'mean_down_sw_ir_dir_flx'                        ! standard name
+  'infrared direct downward shortwave flux, coupling interval average'
+  'swidr', 'ATM'                                   ! source variable, ATM
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'swidr', 'CICE'                                  ! destination variable, CICE
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'swidr'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'swidf'
+  'mean_down_sw_ir_dif_flx'                        ! standard name
+  'infrared diffusive downward shortwave flux, coupling interval average'
+  'swidf', 'ATM'                                   ! source variable, ATM
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'swidf', 'CICE'                                  ! destination variable, CICE
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'swidf'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'uatm'                                             ! short name
+  'inst_zonal_wind_height_lowest'                  ! standard name
+  'near surface zonal wind component'
+  'uatm', 'ATM'                                    ! source variable, ATM
+  'm s-1'                                          ! source units
+  'U'                                              ! source grid-cell
+  'uatm', 'CICE'                                   ! destination variable, CICE
+  'm s-1'                                          ! destination units
+  'Corner'                                         ! destination grid-cell
+  'Uwind'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'vatm'                                             ! short name
+  'inst_merid_wind_height_lowest'                  ! standard name
+  'near surface meridional wind component'
+  'vatm', 'ATM'                                    ! source variable, ATM
+  'm s-1'                                          ! source units
+  'V'                                              ! source grid-cell
+  'vatm', 'CICE'                                   ! destination variable, CICE
+  'm s-1'                                          ! destination units
+  'Corner'                                         ! destination grid-cell
+  'Vwind'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'strax'                                            ! short name
+  'mean_zonal_moment_flx'                          ! standard name
+  'zonal wind stress component, coupling interval average'
+  'strax', 'ATM'                                   ! source variable, ATM
+  'N m-2'                                          ! source units
+  'U'                                              ! source grid-cell
+  'strax', 'CICE'                                  ! destination variable, CICE
+  'N m-2'                                          ! destination units
+  'Corner'                                         ! destination grid-cell
+  'sustr'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .FALSE.                                          ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'stray'                                            ! short name
+  'mean_zonal_moment_flx'                          ! standard name
+  'meridional wind stress component, coupling interval average'
+  'stray', 'ATM'                                   ! source variable, ATM
+  'N m-2'                                          ! source units
+  'V'                                              ! source grid-cell
+  'stray', 'CICE'                                  ! destination variable, CICE
+  'N m-2'                                          ! destination units
+  'Corner'                                         ! destination grid-cell
+  'svstr'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .FALSE.                                          ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'frain'
+  'mean_prec_rate'                                 ! standard name
+  'liquid precipitation rate, coupling interval average'
+  'frain', 'ATM'                                   ! source variable, ATM
+  'kg m-2 s-1'                                     ! source units
+  'Center'                                         ! source grid-cell
+  'frain', 'CICE'                                  ! destination variable, CICE
+  'kg m-2 s-1'                                     ! destination units
+  'Center'                                         ! destination grid-cell
+  'rain'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'fsnow'
+  'mean_fprec_rate'                                ! standard name
+  'frozen/snow precipitation rate, coupling interval average'
+  'fsnow', 'ATM'                                   ! source variable, ATM
+  'kg m-2 s-1'                                     ! source units
+  'Center'                                         ! source grid-cell
+  'fsnow', 'CICE'                                  ! destination variable, CICE
+  'kg m-2 s-1'                                     ! destination units
+  'Center'                                         ! destination grid-cell
+  'snow'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'faero_atm'
+  'mean_aerosol_deposition_rate'                   ! standard name
+  'aerosol deposition rate, coupling interval average'
+  'faero_atm', 'ATM'                               ! source variable, ATM
+  'kg m-2 s-1'                                     ! source units
+  'Center'                                         ! source grid-cell
+  'faero_atm', 'CICE'                              ! destination variable, CICE
+  'kg m-2 s-1'                                     ! destination units
+  'Center'                                         ! destination grid-cell
+  'faero_atm'                                      ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .FALSE.                                          ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+!
+!  IMPORT fields to CICE from ocean model ROMS.
+!
+
+'ssh'                                              ! short name
+  'sea_level'                                      ! standard name
+  'sea surface height'
+  'zeta(:,:,kstp(ng))', 'ROMS'                     ! source variable, ATM
+  'm'                                              ! source units
+  'Center'                                         ! source grid-cell
+  'sl', 'CICE'                                     ! destination variable, CICE
+  'm'                                              ! destination units
+  'Center'                                         ! destination grid-cell
+  'SSH'                                            ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'ss_tltx'                                          ! short name
+  'sss_x'                                          ! standard name
+  'sea surface slope, x-direction'
+  'zeta(:,:,kstp(ng))', 'ROMS'                     ! source variable, ATM
+  'm'                                              ! source units
+  'Center'                                         ! source grid-cell
+  'ss_tltx', 'CICE'                                ! destination variable, CICE
+  'm m-1'                                          ! destination units
+  'Corner'                                         ! destination grid-cell
+  'ss_tltx'                                        ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .FALSE.                                          ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'ss_tlty'                                          ! short name
+  'sss_y'                                          ! standard name
+  'sea surface slope, y-direction'
+  'zeta(:,:,kstp(ng))', 'ROMS'                     ! source variable, ATM
+  'm'                                              ! source units
+  'Center'                                         ! source grid-cell
+  'ss_tlty', 'CICE'                                ! destination variable, CICE
+  'm m-1'                                          ! destination units
+  'Corner'                                         ! destination grid-cell
+  'ss_tlty'                                        ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .FALSE.                                          ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'hmix'                                             ! short name
+  'mixed_layer_depth'                              ! standard name
+  'mixed layer depth'
+  'hsbl', 'ROMS'                                   ! source variable, ROMS
+  'm'                                              ! source units
+  'Center'                                         ! source grid-cell
+  'hmix', 'CICE'                                   ! destination variable, CICE
+  'm'                                              ! destination units
+  'Center'                                         ! destination grid-cell
+  'hbl'                                            ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .FALSE.                                          ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'frzmlt'                                           ! short name
+  'frz_mlt_potential'                              ! standard name
+  'freezing/melting potential'
+  'frzmlt', 'ROMS'                                 ! source variable, ROMS
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'frzmlt', 'CICE'                                 ! destination variable, CICE
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'frzmlt'                                         ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .FALSE.                                          ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'Tf'                                               ! short name
+  'freezing_temperature'                           ! standard name
+  'freezing temperature'
+  'Tf', 'ROMS'                                     ! source variable, ROMS
+  'Celsius'                                        ! source units
+  'Center'                                         ! source grid-cell
+  'Tf', 'CICE'                                     ! destination variable, CICE
+  'Celsius'                                        ! destination units
+  'Center'                                         ! destination grid-cell
+  'Tf'                                             ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .FALSE.                                          ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'SST'                                              ! short name
+  'sea_surface_temperature'                        ! standard name
+  'sea surface temperature'
+  't(:,:,N(ng),nstp(ng),itemp)', 'ROMS'            ! source variable, ROMS
+  'Celsius'                                        ! source units
+  'Center'                                         ! source grid-cell
+  'sst', 'CICE'                                    ! destination variable, CICE
+  'Celsius'                                        ! destination units
+  'Center'                                         ! destination grid-cell
+  'SST'                                            ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'SSS'                                              ! short name
+  's_surf'                                         ! standard name
+  'sea surface salinity'
+  't(:,:,N(ng),nstp(ng),isalt)', 'ROMS'            ! source variable, ROMS
+  'nondimensional'                                 ! source units
+  'Center'                                         ! source grid-cell
+  'sss', 'CICE'                                    ! destination variable, CICE
+  'nondimensional'                                 ! destination units
+  'Center'                                         ! destination grid-cell
+  'SSS'                                            ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'Usur'                                             ! short name
+  'ocn_current_zonal'                              ! standard name
+  'zonal surface ocean curent'
+  'u(:,:,N(ng),nstp(ng))', 'ROMS'                  ! source variable, ROMS
+  'm s-1'                                          ! source units
+  'U'                                              ! source grid-cell
+  'uocn', 'CICE'                                   ! destination variable, CICE
+  'm s-1'                                          ! destination units
+  'Corner'                                         ! destination grid-cell
+  'Usur'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'Vsur'                                             ! short name
+  'ocn_current_merid'                              ! standard name
+  'meridional surface ocean curent'
+  'v(:,:,N(ng),nstp(ng))', 'ROMS'                  ! source variable, ROMS
+  'm s-1'                                          ! source units
+  'V'                                              ! source grid-cell
+  'vocn', 'CICE'                                   ! destination variable, CICE
+  'm s-1'                                          ! destination units
+  'Corner'                                         ! destination grid-cell
+  'Vsur'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+!
+!  EXPORT fields from CICE to atmosphere model. Users need to modify ATM
+!  destination metadata accordingly.
+!
+
+'ifrac'                                            ! short name
+  'ice_fraction'                                   ! standard name
+  'fractional ice area'
+  'aice', 'CICE'                                   ! source variable, CICE
+  'nondimensional'                                 ! source units
+  'Center'                                         ! source grid-cell
+  'ifrac', 'ATM'                                   ! destination variable, ATM
+  'nondimensional'                                 ! destination units
+  'Center'                                         ! destination grid-cell
+  'ifrac'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'vice'                                             ! short name
+  'mean_ice_volume'                                ! standard name
+  'ice volume per unit area'
+  'vice', 'CICE'                                   ! source variable, CICE
+  'm'                                              ! source units
+  'Center'                                         ! source grid-cell
+  'vice', 'ATM'                                    ! destination variable, ATM
+  'm'                                              ! destination units
+  'Center'                                         ! destination grid-cell
+  'vice'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'vsno'                                             ! short name
+  'mean_snow_volume'                               ! standard name
+  'snow volume per unit area'
+  'vsno', 'CICE'                                   ! source variable, CICE
+  'm'                                              ! source units
+  'Center'                                         ! source grid-cell
+  'vsno', 'ATM'                                    ! destination variable, ATM
+  'm'                                              ! destination units
+  'Center'                                         ! destination grid-cell
+  'vsno'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'sit'                                              ! short name
+  'sea_ice_temperature'                            ! standard name
+  'surface ice/snow temperature'
+  'trcr', 'CICE'                                   ! source variable, CICE
+  'K'                                              ! source units
+  'Center'                                         ! source grid-cell
+  'sit', 'ATM'                                     ! destination variable, ATM
+  'K'                                              ! destination units
+  'Center'                                         ! destination grid-cell
+  'sit'                                            ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'alvdr'                                            ! short name
+  'inst_ice_vis_dir_albedo'                        ! standard name
+  'fractional visible band direct albedo'
+  'alvdr', 'CICE'                                  ! source variable, CICE
+  'nondimensional'                                 ! source units
+  'Center'                                         ! source grid-cell
+  'alvdr', 'ATM'                                   ! destination variable, ATM
+  'nondimensional'                                 ! destination units
+  'Center'                                         ! destination grid-cell
+  'alvdr'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'alvdf'                                            ! short name
+  'inst_ice_vis_dif_albedo'                        ! standard name
+  'fractional visible band diffusive albedo'
+  'alvdf', 'CICE'                                  ! source variable, CICE
+  'nondimensional'                                 ! source units
+  'Center'                                         ! source grid-cell
+  'alvdf', 'ATM'                                   ! destination variable, ATM
+  'nondimensional'                                 ! destination units
+  'Center'                                         ! destination grid-cell
+  'alvdf'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'alidr'                                            ! short name
+  'inst_ice_ir_dir_albedo'                         ! standard name
+  'fractional near-infrared band direct albedo'
+  'alidr', 'CICE'                                  ! source variable, CICE
+  'nondimensional'                                 ! source units
+  'Center'                                         ! source grid-cell
+  'alidr', 'ATM'                                   ! destination variable, ATM
+  'nondimensional'                                 ! destination units
+  'Center'                                         ! destination grid-cell
+  'alidr'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'alidf'                                            ! short name
+  'inst_ice_ir_dif_albedo'                         ! standard name
+  'fractional near-infrared band diffusive albedo'
+  'alidf', 'CICE'                                  ! source variable, CICE
+  'nondimensional'                                 ! source units
+  'Center'                                         ! source grid-cell
+  'alidf', 'ATM'                                   ! destination variable, ATM
+  'nondimensional'                                 ! destination units
+  'Center'                                         ! destination grid-cell
+  'alidf'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'strairxT'                                         ! short name
+  'stress_on_air_ice_zonal'                        ! standard name
+  'zonal stress on ice by air'
+  'strairxT', 'CICE'                               ! source variable, CICE
+  'N m-2'                                          ! source units
+  'Corner'                                         ! source grid-cell
+  'strairxT', 'ATM'                                ! destination variable, ATM
+  'N m-2'                                          ! destination units
+  'U'                                              ! destination grid-cell
+  'strairxT'                                       ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'strairyT'                                         ! short name
+  'stress_on_air_ice_merid'                        ! standard name
+  'meridional stress on ice by air'
+  'strairyT', 'CICE'                               ! source variable, CICE
+  'N m-2'                                          ! source units
+  'Corner'                                         ! source grid-cell
+  'strairyT', 'ATM'                                ! destination variable, ATM
+  'N m-2'                                          ! destination units
+  'V'                                              ! destination grid-cell
+  'strairyT'                                       ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'fsens'                                            ! short name
+  'mean_sensi_heat_flx_atm_into_ice'               ! standard name
+  'ice sensible heat flux'
+  'fsens', 'CICE'                                  ! source variable, CICE
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'fsens', 'ATM'                                   ! destination variable, ATM
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'fsens'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'flat'                                             ! short name
+  'mean_laten_heat_flx_atm_into_ice'               ! standard name
+  'ice latent heat flux'
+  'flat', 'CICE'                                   ! source variable, CICE
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'flat', 'ATM'                                    ! destination variable, ATM
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'flat'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'evap'                                             ! short name
+  'mean_evap_rate_atm_into_ice'                    ! standard name
+  'evaporative water flux, coupling interval average'
+  'evap', 'CICE'                                   ! source variable, CICE
+  'kg m-2 s-1'                                     ! source units
+  'Center'                                         ! source grid-cell
+  'evap', 'ATM'                                    ! destination variable, ATM
+  'kg m-2 s-1'                                     ! destination units
+  'Center'                                         ! destination grid-cell
+  'evaporation'                                    ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'flwout'                                           ! short name
+  'mean_up_lw_flx_ice'                             ! standard name
+  'outgoing upward longwave radiation, coupling interval average'
+  'flwout', 'CICE'                                 ! source variable, CICE
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'flwout', 'ATM'                                  ! destination variable, ATM
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'flwout'                                         ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+!
+!  EXPORT fields from CICE to ROMS.
+!
+
+'fhocn'                                            ! short name
+  'net_heat_flx_to_ocean'                          ! standard name
+  'net heat flux to ocean'
+  'fhocn', 'CICE'                                  ! source variable, CICE
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'fhocn', 'ROMS'                                  ! destination variable, ROMS
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'fhocn'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'fresh'                                            ! short name
+  'fresh_water_flx_to_ocean'                       ! standard name
+  'fresh water flux to ocean'
+  'fresh', 'CICE'                                  ! source variable, CICE
+  'kg m-2 s-1'                                     ! source units
+  'Center'                                         ! source grid-cell
+  'fresh', 'ROMS'                                  ! destination variable, ROMS
+  'kg m-2 s-1'                                     ! destination units
+  'Center'                                         ! destination grid-cell
+  'fresh'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'fpond'                                            ! short name
+  'fresh_water_flx_to_ponds'                       ! standard name
+  'fresh water flux to ice ponds'
+  'fpond', 'CICE'                                  ! source variable, CICE
+  'kg m-2 s-1'                                     ! source units
+  'Center'                                         ! source grid-cell
+  'fpond', 'ROMS'                                  ! destination variable, ROMS
+  'kg m-2 s-1'                                     ! destination units
+  'Center'                                         ! destination grid-cell
+  'fpond'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .FALSE.                                          ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'fsalt'                                            ! short name
+  'salt_flx_to_ocean'                              ! standard name
+  'salt flux to ocean'
+  'fsalt', 'CICE'                                  ! source variable, CICE
+  'kg m-2 s-1'                                     ! source units
+  'Center'                                         ! source grid-cell
+  'fsalt', 'ROMS'                                  ! destination variable, ROMS
+  'kg m-2 s-1'                                     ! destination units
+  'Center'                                         ! destination grid-cell
+  'fsalt'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'strocnxT'                                         ! short name
+  'stress_on_ocn_ice_zonal'                        ! standard name
+  'zonal stress on ice by ocean'
+  'strocnxT', 'CICE'                               ! source variable, CICE
+  'N m-2'                                          ! source units
+  'Corner'                                         ! source grid-cell
+  'strocnxT', 'ROMS'                               ! destination variable, OCN
+  'N m-2'                                          ! destination units
+  'U'                                              ! destination grid-cell
+  'strocnxT'                                       ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'strocnyT'                                         ! short name
+  'stress_on_ocn_ice_merid'                        ! standard name
+  'meridional stress on ice by ocean'
+  'strocnyT', 'CICE'                               ! source variable, CICE
+  'N m-2'                                          ! source units
+  'Corner'                                         ! source grid-cell
+  'strocnyT', 'ROMS'                               ! destination variable, ROMS
+  'N m-2'                                          ! destination units
+  'V'                                              ! destination grid-cell
+  'strocnyT'                                       ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'fswthru'                                          ! short name
+  'sw_pen_to_ocean'                                ! standard name
+  'shortwave flux penetrating through ice to ocean'
+  'fswthru', 'CICE'                                ! source variable, CICE
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'fswthru', 'ROMS'                                ! destination variable, ROMS
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'fswthru'                                        ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'fswthruvdr'                                       ! short name
+  'net_sw_vis_dir_flx'                             ! standard name
+  'visible, direct band net shortwave penetrating through ice to ocean'
+  'fswthruvdr', 'CICE'                             ! source variable, CICE
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'fswthruvdr', 'ROMS'                             ! destination variable, ROMS
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'fswthruvdr'                                     ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'fswthruvdf'                                       ! short name
+  'net_sw_vis_dif_flx'                             ! standard name
+  'visible, diffusive band net shortwave penetrating through ice to ocean'
+  'fswthruvdf', 'CICE'                             ! source variable, CICE
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'fswthruvdf', 'ROMS'                             ! destination variable, ROMS
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'fswthruvdf'                                     ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'fswthruidr'                                       ! short name
+  'net_sw_ir_dir_flx'                              ! standard name
+  'infrared, direct band net shortwave penetrating through ice to ocean'
+  'fswthruidr', 'CICE'                             ! source variable, CICE
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'fswthruidr', 'ROMS'                             ! destination variable, ROMS
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'fswthruidr'                                     ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'fswthruidf'                                       ! short name
+  'net_sw_ir_dif_flx'                              ! standard name
+  'infrared, diffusive band net shortwave penetrating through ice to ocean'
+  'fswthruidf', 'CICE'                             ! source variable, CICE
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'fswthruidf', 'ROMS'                             ! destination variable, ROMS
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'fswthruidf'                                     ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  .FALSE.                                          ! extrapolation support
+  .TRUE.                                           ! connected to coupler
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale

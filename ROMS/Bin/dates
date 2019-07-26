@@ -1,0 +1,358 @@
+#!/usr/bin/env perl
+#
+# svn $Id: dates 906 2018-06-21 03:29:09Z arango $
+#######################################################################
+# Copyright (c) 2002-2019 The ROMS/TOMS Group                         #
+#   Licensed under a MIT/X style license           Hernan G. Arango   #
+#   See License_ROMS.txt                           David Robertson    #
+#######################################################################
+#                                                                     #
+#  This script converts DATES to day NUMBER in C.E. and back          #
+#                                                                     #
+#  This script was adapted from Chris F. A. Johnson's date functions: #
+#                                                                     #
+#           http://cfajohnson.com/shell/date-functions/               #
+#                                                                     #
+#  with adjustments to match the output of MATLAB's "datenum" and     #
+#  "datestr" functions.                                               #
+#                                                                     #
+#  Functions:                                                         #
+#                                                                     #
+#    datenum    Converts Proleptic Gregorian Calendar date to serial  #
+#               date number. It is similar to Matlab's "datenum". If  #
+#               date argument is omitted, today's date is used.       #
+#                                                                     #
+#    daysdiff   Calculates the number of days between two dates.      #
+#                                                                     #
+#    numdate    Converts serial date number to date string. It is     #
+#               the inverse of "datenum" and similar to Matlab's      #
+#               "datestr".                                            #
+#                                                                     #
+#    yday       Computes day-of-the-year given a date. If the date    #
+#               argument is omitted, today's date is used.            #
+#                                                                     #
+#  Here, date is specified as:                                        #
+#                                                                     #
+#               YYYY-MM-DD                                            #
+#               YYYYMMDD                                              #
+#                                                                     #
+#  Usage:                                                             #
+#                                                                     #
+#           dates [command] [date | daynumber] [date]                 #
+#                                                                     #
+#  where                                                              #
+#                                                                     #
+#           [command]   datenum, numdate, daysdiff, or jday           #
+#                                                                     #
+#  Examples:                                                          #
+#                                                                     #
+#           dates datenum                                             #
+#           dates datenum 2001-05-03                                  #
+#           dates datenum 20010503                                    #
+#                                                                     #
+#           dates numdate 730974                                      #
+#                                                                     #
+#           dates daysdiff 2001-05-03 2018-02-15                      #
+#           dates daysdiff 20010503 20180215                          #
+#                                                                     #
+#           dates yday                                                #
+#           dates yday 2001-05-03                                     #
+#           dates yday 20010503                                       #
+#                                                                     #
+#  Warning:  You may need to install the 'Switch' module for perl.    #
+#                                                                     #
+#######################################################################
+
+use Switch;
+use strict;
+
+my %functions = (
+  datenum  => \&datenum,
+  numdate  => \&numdate,
+  daysdiff => \&daysdiff,
+  yday     => \&yday
+);
+
+my $function; my $data; my $d1; my $d2;
+my $n_args = $#ARGV + 1;
+switch ($n_args){
+  case 1  { ($function) = @ARGV;         }
+  case 2  { ($function,$data) = @ARGV;   }
+  case 3  { ($function,$d1,$d2) = @ARGV; }
+  else    { die "Too many Arguments\n";  }
+}
+
+if( exists $functions{$function} ){
+  switch (@ARGV){
+    case 1  { print $functions{$function}->();        }
+    case 2  { print $functions{$function}->($data);   }
+    case 3  { print $functions{$function}->($d1,$d2); }
+  }
+}
+else{
+  die "There is no function called $function available\n";
+}
+
+#######################################################################
+#                                                                     #
+#  Subroutines that do all the work                                   #
+#                                                                     #
+#######################################################################
+
+sub datenum{ # Convert DATE to serial day NUMBER in C.E.
+             # USAGE: datenum([DATE])
+             # If DATE is omitted today's date is used
+
+  # NOTE: If you uncomment #j2g marked sections it will return -1 if
+  # you request dates 1752-09-03 through 1752-09-13 and subtract 11
+  # days from any date after 1752-09-31 because those dates were
+  # swallowed by the Julian to Gregorian changeover. This may be
+  # enabled in the future but is currently disable to more closely
+  # match MATLAB's datenum which does not error on such dates, nor
+  # does it omit the dates in numbering.
+
+  # j2g
+  # my $j2g_skip_start = 640152; my $j2g_skip_end = 640162; my $j2g_skip = 11;
+  # j2g
+
+  my $_y; my $_m; my $_d; my $junk; my $base=-306; my $ymd; my $_ld; my $_dn;
+
+  if( $_[0] == '' ){
+    ($_y,$_m,$_d) = (localtime)[5,4,3];
+    $_y += 1900;                  # $_y is originally years since 1900
+    $_m  = sprintf("%02d",$_m+1); # Zero pad month
+    $_d  = sprintf("%02d",$_d);   # Zero pad day
+    $ymd = "${_y}${_m}${_d}";     # Assemble YYYYMMDD
+  }
+  elsif( is_date($_[0]) ){
+    ($ymd) = @_;
+    # extract YYYYMMDD from passed argument
+    $ymd =~ s/^(\d{4})-?([0-1][0-9])-?([0-3][0-9]).*$/$1$2$3/gi;
+    $_y  = substr $ymd, 0, 4; # OFFSET=0, LENGTH=4
+    $_m  = substr $ymd, 4, 2; # OFFSET=4, LENGTH=2
+    $_d  = substr $ymd, 6, 2; # could also be OFFSET=-2 (remove length)
+  }
+  else{
+    return -1; # Given DATE is invalid
+  }
+  # In the calculations, below int() truncates decimals
+  $_m  = 12 * $_y + $_m - 3;                        # Calculate months from March
+  $_y  = int( $_m / 12 );                           # Adjust year if necessary
+  $_ld = int($_y/4) - int($_y/100) + int($_y/400);  # Number of leap days
+  # Final datenum calculation
+  $_dn = int((734 * $_m + 15) / 24) -  2 * $_y + $_ld + $_d + $base + 366 ;
+
+  if( $_dn < 1 ){
+    return -1;  # Invalid date
+  }
+
+  # j2g
+  # if( $_dn >= $j2g_skip_start && $_dn <= $j2g_skip_end ){
+  #   return -1; # Date swollowed by Julian to Gregorian changeover
+  # }
+  # if( $_dn > $j2g_skip_end ){
+  #   $_dn = $_dn - $j2g_skip;
+  # }
+  # j2g
+
+  return $_dn;
+}
+
+sub numdate{ # Convert serial day NUMBER in C.E. to DATE
+             # USAGE: numdate(DAYNUM)
+
+  # j2g
+  # my $_j2gstart=640152; my $_j2gskip = 11;
+  # j2g
+
+  my $_day; my $_mnth; my $_yr; my $_cent; my $base=-306;
+  my ($_dnum)=@_; my $_d400y=146097; my $numdate;
+
+  # Make sure just an integer was passed and it's not zero
+  if( !($_dnum =~ /^\s*\d+\s*$/) || ($_dnum == 0)) {
+    return -1;
+  }
+
+  # j2g
+  # if( $_dnum >= $_j2gstart ){
+  #   $_dnum += $_j2gskip;
+  # }
+  # j2g
+
+  # In the calculations below, int() truncates decimals
+  $_day  = $_dnum - $base - 366;
+  $_cent = int( (4 * $_day - 1) / $_d400y );
+  $_day  = $_day + $_cent - int($_cent / 4);
+  $_yr   = int( (4 * $_day - 1) / 1461 );
+  $_day  = $_day - int( (1461 * $_yr) / 4 );
+  $_mnth = int( (10 * $_day - 5) / 306 );
+  $_day  = $_day - int( (306 * $_mnth + 5) / 10 );
+  $_mnth = $_mnth + 2;
+  $_yr   = $_yr + int( $_mnth / 12 );
+  $_mnth = $_mnth % 12 + 1;
+
+  # Format the output to return (YYYY-MM-DD)
+  return sprintf('%d-%02d-%02d', $_yr, $_mnth, $_day);
+}
+
+sub yday{ # Return day of the year for given date
+          # USAGE: yday([DATE])
+          # If DATE is omitted today's date is used
+
+  my $_y; my $_m; my $_d; my $ymd; my $_yday;
+  my @m1yday = qw( 0 0 31 59 90 120 151 181 212 243 273 304 334 );
+
+  if( $_[0] == '' ){
+    ($_y,$_m,$_d) = (localtime)[5,4,3];
+    $_y += 1900;                  # $_y is originally years since 1900
+    $_m  = sprintf("%02d",$_m+1); # Zero pad month
+    $_d  = sprintf("%02d",$_d);   # Zero pad day
+    $ymd = "${_y}${_m}${_d}";     # Assemble YYYYMMDD
+  }
+  elsif( is_date($_[0]) ){
+    ($ymd) = @_;
+    $ymd =~ s/^(\d{4})-?([0-1][0-9])-?([0-3][0-9]).*$/$1$2$3/gi;
+    $_y  = substr $ymd, 0, 4; # OFFSET=0, LENGTH=4
+    $_m  = substr $ymd, 4, 2; # OFFSET=4, LENGTH=2
+    $_d  = substr $ymd, 6, 2; # could also be OFFSET=-2 (remove length)
+  }
+  else{
+    return -1; # Invalid date
+  }
+
+  # Take month start day and add days
+  $_yday = $m1yday[$_m] + $_d;
+  if( $_m > 2 && is_leap_year($_y) ){
+    ++$_yday;  # Add one from March 1st on in leap years
+  }
+
+  return $_yday;
+}
+
+sub daysdiff{ # Calculate number of days between two dates
+              # USAGE: daysdiff([DATE1],[DATE2])
+
+  my ($_d1,$_d2) = @_;
+  my $_dd; my $_dn1; my $_dn2;
+
+  $_dn1 = datenum($_d1); # Get day 1 NUMBER in C.E.
+  $_dn2 = datenum($_d2); # Get day 2 NUMBER in C.E.
+  $_dd  = $_dn2 - $_dn1; # Calculate difference
+
+  return $_dd;
+}
+
+sub is_leap_year{ # Return 1 if YEAR (or current year) is a leap year
+                  # USAGE: is_leap_year([YEAR])
+
+  my $year =  shift;
+  my $gregorian = 1752; # Adoption year for Gregorian calendar
+  if(!$year){
+    $year = 1900 + (localtime)[5]; # localtime gives years since 1900
+  }
+
+  # Calculation is more complicated in gregorian calendar with addition
+  # of 100/400 rule for leap years.
+  if($year > $gregorian){
+    # If $year is not evenly divisible by 4, it is
+    #     not a leap year; therefore, we return the
+    #     value 0 and do no further calculations in
+    #     this subroutine. ("$year % 4" provides the
+    #     remainder when $year is divided by 4.
+    #     If there is a remainder then $year is
+    #     not evenly divisible by 4.)
+
+    return 0 if $year % 4;
+
+    # At this point, we know $year is evenly divisible
+    #     by 4. Therefore, if it is not evenly
+    #     divisible by 100, it is a leap year --
+    #     we return the value 1 and do no further
+    #     calculations in this subroutine.
+
+    return 1 if $year % 100;
+
+    # At this point, we know $year is evenly divisible
+    #     by 4 and also evenly divisible by 100. Therefore,
+    #     if it is not also evenly divisible by 400, it is
+    #     not leap year -- we return the value 0 and do no
+    #     further calculations in this subroutine.
+
+    return 0 if $year % 400;
+
+    # Now we know $year is evenly divisible by 4, evenly
+    #     divisible by 100, and evenly divisible by 400.
+    #     We return the value 1 because it is a leap year.
+
+    return 1;
+  }
+  else{
+    # Before 1752 any year not evenly divisible by 4 is
+    #     NOT a leap year
+
+    return 0 if $year % 4;
+
+    # Since $year is evenly divisible by 4 it is a leap year
+
+    return 1;
+  }
+}
+
+sub days_in_month{ # Return number of days in given month
+                   # USAGE: days_in_month([MONTHNUM][,YEAR])
+                   # If YEAR is omitted current year is used
+
+  my ( $monthnum, $year ) = @_;
+  $monthnum += 0; # remove leading zero if there is one
+  if(!$year){
+    $year = 1900 + (localtime)[5]; # localtime gives years since 1900
+  }
+  switch ($monthnum){
+    case [4,6,9,11]            { return 30 } # Apr Jun Sep Nov
+    case [1,3,5,7,8,10,12]     { return 31 } # Jan Mar May Jul Aug Oct Dec
+    case 2                     {             # Feb
+      if( is_leap_year($year) ){
+        return 29;
+      }
+      else{
+        return 28;
+      }
+    }
+    else                       { return 0  } # Invalid month
+  }
+}
+
+sub is_date{ # Return 1 if argument is a valid date
+             # USAGE: is_date(DATE)
+
+  # j2g
+  # my $jgmonth = 175209;
+  # j2g
+
+  my $date; my $_y; my $_m; my $_d; my $ym; my $dim;
+
+  ($date) = @_;
+  # extract YYYYMMDD from passed argument
+  $date =~ s/^(\d{4})-?([0-1][0-9])-?([0-3][0-9]).*$/$1$2$3/gi;
+  if( $date =~ m/^\d{4}[0-1][0-9][0-3][0-9]$/ ){
+    $_y  = substr $date, 0, 4; # OFFSET=0, LENGTH=4
+    $_m  = substr $date, 4, 2; # OFFSET=4, LENGTH=2
+    $_d  = substr $date, 6, 2; # could also be OFFSET=-2 (remove length)
+    $dim = days_in_month($_m,$_y);
+  }
+
+  # j2g
+  # MATLAB does not remove the days for Julian to Gregorian changeover
+  # so this is commented out
+  # $ym = "${_y}${_m}";
+  # if( $ym == $jgmonth && $_d > 2 && $_d < 14 ){
+  #   return 0;
+  # }
+  # j2g
+
+  if( $_m < 1 || $_m > 12 || $_d < 1  || $_d > $dim){
+    return 0;
+  }
+  return 1;
+}
+

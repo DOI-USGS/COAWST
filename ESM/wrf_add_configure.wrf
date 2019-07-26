@@ -1,0 +1,35 @@
+
+#  Custom CPP Macros for renaming ESMF/esmf to MYESMF/myesmf to avoid
+#  conflict with newer versions of the ESMF/NUOPC libraries
+
+SED_TNS = sed -e "/\!.*'/s/'//g" -e "s/ESMF/MYESMF/g" -e "s/esmf/myesmf/g"
+SED_BLK = sed -e '/^[[:blank:]]*$$/d'
+
+module_domain.o :
+	$(RM) $@
+	$(SED_TNS) $*.F > $*.b
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.b > $*.bb
+	$(SED_FTN) $*.bb | $(CPP) $(TRADFLAG) > $*.bbb
+	$(SED_BLK) $*.bbb > $*.f90
+	$(RM) $*.b $*.bb $*.bbb
+	$(FC) -c $(PROMOTION) $(FCSUFFIX) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $*.f90
+
+output_wrf.o :
+	$(RM) $@
+	$(SED_TNS) $*.F > $*.b
+	$(SED_FTN) $*.b > $*.bb
+	$(CPP) -I$(WRF_SRC_ROOT_DIR)/inc $(CPPFLAGS) $(OMPCPP) $*.bb  > $*.bbb
+	$(SED_BLK) $*.bbb > $*.f90
+	$(RM) $*.b $*.bb $*.bbb
+	@ if echo $(ARCHFLAGS) | $(FGREP) 'DVAR4D'; then \
+            echo COMPILING $*.F for 4DVAR ; \
+            $(WRF_SRC_ROOT_DIR)/var/build/da_name_space.pl $*.f90 > $*.f90.tmp ; \
+            mv $*.f90.tmp $*.f90 ; \
+          fi
+	if $(FGREP) '!$$OMP' $*.f90 ; then \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITH OMP ; fi ; \
+          $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $(OMP) $*.f90 ; \
+        else \
+          if [ -n "$(OMP)" ] ; then echo COMPILING $*.F WITHOUT OMP ; fi ; \
+          $(FC) -c $(PROMOTION) $(FCNOOPT) $(FCBASEOPTS) $(MODULE_DIRS) $(FCSUFFIX) $*.f90 ; \
+        fi

@@ -1,0 +1,134 @@
+!
+! Multiple model coupling parameters.
+!
+!==============================================================================
+!  Copyright (c) 2005 ROMS/TOMS Group, version 3.0                          ===
+!========================================================= Hernan G. Arango ===
+!                                                                             !
+! Input parameters can be entered in ANY order, provided that the parameter   !
+! KEYWORD (usually, upper case) is typed correctly followed by "="  or "=="   !
+! symbols. Any comment lines are allowed and must begin with an exclamation   !
+! mark (!) in column one.  Comments may  appear to the right of a parameter   !
+! specification to improve documentation.  All comments will ignored during   !
+! reading.  Blank lines are also allowed and ignored. Continuation lines in   !
+! a parameter specification are allowed and must be preceded by a backslash   !
+! (\).  In some instances, more than one value is required for a parameter.   !
+! If fewer values are provided, the  last value  is assigned for the entire   !
+! parameter array.  The multiplication symbol (*),  without blank spaces in   !
+! between, is allowed for a parameter specification.  For example, in a two   !
+! grids nested application:                                                   !
+!                                                                             !
+!    AKT_BAK == 2*1.0d-6  2*5.0d-6              ! m2/s                        !
+!                                                                             !
+! indicates that the first two entries of array AKT_BAK,  in fortran column-  !
+! major order, will have the same value of "1.0d-6" for grid 1,  whereas the  !
+! next two entries will have the same value of "5.0d-6" for grid 2.           !
+!                                                                             !
+! In multiple levels of nesting and/or multiple connected domains  step-ups,  !
+! "Ngrids" entries are expected for some of these parameters.  In such case,  !
+! the order of the entries for a parameter is extremely important.  It  must  !
+! follow the same order (1:Ngrids) as in the state variable declaration. The  !
+! USER may follow the above guidelines for specifying his/her values.  These  !
+! parameters are marked by "==" plural symbol after the KEYWORD.              !
+!                                                                             !
+!==============================================================================
+!
+! Number of parallel nodes assigned to each model in the coupled system.
+! Their sum must be equal to the total number of processors.
+
+  NnodesATM =  0                     ! atmospheric model
+  NnodesWAV =  1                     ! wave model
+  NnodesOCN =  1                     ! ocean model
+
+! Time interval (seconds) between coupling of models.
+
+  TI_ATM2WAV =   0.0d0               ! atmosphere to wave coupling interval
+  TI_ATM2OCN =   0.0d0               ! atmosphere to ocean coupling interval
+  TI_WAV2ATM =   0.0d0               ! wave to atmosphere coupling interval
+  TI_WAV2OCN =   5.0d0               ! wave to ocean coupling interval
+  TI_OCN2WAV =   5.0d0               ! ocean to wave coupling interval
+  TI_OCN2ATM =   0.0d0               ! ocean to atmosphere coupling interval
+
+! Enter names of Atm, Wav, and Ocn input files.
+! The Wav program needs multiple input files, one for each grid.
+
+   ATM_name = atmos.in               ! atmospheric model, not used yet
+   WAV_name = Projects/Rip_current/swan_rip_current.in    ! wave model
+   OCN_name = Projects/Rip_current/ocean_rip_current.in   ! ocean model
+
+! Sparse matrix interpolation weights files. You have 2 options:
+! Enter "1" for option 1, or "2" for option 2, and then list the 
+! weight file(s) for that option.
+
+   SCRIP_WEIGHT_OPTION = 1
+!
+! Option 1: IF you set "SCRIP_WEIGHT_OPTION = 1", then enter name 
+!           of the single netcdf file containing all the exchange
+!           weights. This file is created using the code in
+!           Lib/SCRIP_COAWST/scrip_coawst[.exe]
+
+   SCRIP_COAWST_NAME = Projects/Rip_current/scrip_weights_rip_current.nc
+
+! Option 2: THIS OPTION WILL BE REMOVED IN FUTURE VERSIONS.
+!           IF you set "SCRIP_WEIGHT_OPTION = 2", then enter 
+!           the names of the separate files. The file names
+!           must be provided in a specific order. For example: 
+! W2ONAME == wav1 to ocn1
+!            wav1 to ocn2
+!            wav1 to ocn3 ....for all the ocean models.
+!            wav2 to ocn1
+!            wav2 to ocn2
+!            wav2 to ocn3 ....for all the ocean models.
+
+   W2ONAME == swan2roms_weights.nc
+   W2ANAME == wav2atm_weights.nc
+   A2ONAME == atm2ocn_weights.nc
+   A2WNAME == atm2wav_weights.nc
+   O2ANAME == ocn2atm_weights.nc
+   O2WNAME == roms2swan_weights.nc
+
+!
+!  GLOSSARY:
+!  =========
+!
+!------------------------------------------------------------------------------
+! Number of parallel nodes assigned to each model in the coupled system.
+!------------------------------------------------------------------------------
+!
+! NnodesATM     Number of processes allocated to the atmospheric model.
+! NnodesWAV     Number of processes allocated to the wave model.
+! NnodesOCN     Number of processes allocated to the ocean model.
+!
+!------------------------------------------------------------------------------
+! Time interval between coupling of models.
+!------------------------------------------------------------------------------
+!
+! It is assumed that the time interval is an integer multiple of the
+! individual coupled models in the system.
+!
+! TI_ATM2WAV   Atmosphere to wave coupling interval (seconds)
+! TI_ATM2OCN   Atmosphere to ocean coupling interval(seconds)
+! TI_WAV2ATM   Wave to atmosphere coupling interval (seconds)
+! TI_WAV2OCN   Wave to ocean coupling interval      (seconds)
+! TI_OCN2WAV   Ocean to wave coupling interval      (seconds)
+! TI_OCN2ATM   Ocean to atmosphere coupling interval(seconds)
+!
+!------------------------------------------------------------------------------
+! Coupled models standard input file names.
+!------------------------------------------------------------------------------
+!
+! ATM_name     Atmospheric model standand input.
+! WAV_name     Wave model standard input.
+! OCN_name     Ocean model standard input.
+!
+!------------------------------------------------------------------------------
+! Sparse matrix interpolation weights files.
+!------------------------------------------------------------------------------
+!
+! W2ONAME      Wave to ocean netcdf sparse matrix grid files.
+! W2ANAME      Wave to atmosphere netcdf sparse matrix grid files.
+! A2ONAME      Atmosphere to ocean netcdf sparse matrix grid files.
+! A2WNAME      Atmosphere to wave netcdf sparse matrix grid files.
+! O2ANAME      Ocean to atmosphere netcdf sparse matrix grid files.
+! O2WNAME      Ocean to wave netcdf sparse matrix grid files.
+!

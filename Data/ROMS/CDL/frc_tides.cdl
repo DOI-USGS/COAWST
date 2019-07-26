@@ -1,0 +1,42 @@
+netcdf frc_tides {
+
+dimensions:
+	xi_rho = 111 ;
+	eta_rho = 241 ;
+	xi_u = 110 ;
+	eta_u = 241 ;
+	xi_v = 111 ;
+	eta_v = 240 ;
+	tide_period = 7 ;
+
+variables:
+	double tide_period(tide_period) ;
+		tide_period:long_name = "tide angular period" ;
+		tide_period:units = "hours" ;
+	double tide_Ephase(tide_period, eta_rho, xi_rho) ;
+		tide_Ephase:long_name = "tidal elevation phase angle" ;
+		tide_Ephase:units = "degrees, time of maximum elevation with respect chosen time origin" ;
+	double tide_Eamp(tide_period, eta_rho, xi_rho) ;
+		tide_Eamp:long_name = "tidal elevation amplitude" ;
+		tide_Eamp:units = "meter" ;
+	double tide_Cphase(tide_period, eta_rho, xi_rho) ;
+		tide_Cphase:long_name = "tidal current phase angle" ;
+		tide_Cphase:units = "degrees, time of maximum velocity with respect chosen time origin" ;
+	double tide_Cangle(tide_period, eta_rho, xi_rho) ;
+		tide_Cangle:long_name = "tidal current inclination angle" ;
+		tide_Cangle:units = "degrees between semi-major axis and East" ;
+	double tide_Cmin(tide_period, eta_rho, xi_rho) ;
+		tide_Cmin:long_name = "minimum tidal current, ellipse semi-minor axis" ;
+		tide_Cmin:units = "meter second-1" ;
+	double tide_Cmax(tide_period, eta_rho, xi_rho) ;
+		tide_Cmax:long_name = "maximum tidal current, ellipse semi-major axis" ;
+		tide_Cmax:units = "meter second-1" ;
+
+// global attributes:
+		:type = "ROMS FORCING file" ;
+                :title = "NJB Tidal Forcing from ADCIRC" ;
+                :grd_file = "njb1_grid_a.nc" ;
+                :components = "O1, K1, N2, M2, S2', M4, M6" ;
+		:history = "FORCING file, 1.0, Thursday - July 12, 2001 - 10:55:42.8034 AM" ;
+
+}

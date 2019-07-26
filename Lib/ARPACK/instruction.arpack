@@ -1,0 +1,25 @@
+Instructions:
+=============
+
+If you have retrieved arpack96.tar.Z and patch.tar.Z then issue the following command
+        zcat arpack96.tar.Z | tar -xvf -
+        zcat patch.tar.Z | tar -xvf - 
+which will create a directory named ARPACK. Change to the
+ARPACK directory and read the file README for further instruction.
+
+If you have retrieved arpack96.tar.gz and patch.tar.gz then issue the following command
+        zcat arpack96.tar.gz | tar -xvf -
+        zcat patch.tar.gz    | tar -xvf -
+which will create a directory named ARPACK. Change to the
+ARPACK directory and read the file README for further instruction.
+Note that for the command above to work the "zcat" command must be
+the Gnu version of the command which is sometimes called "gzcat",
+consult your local support staff if this is a problem.
+
+If zcat is not available on your system.  Use 'uncompress' or 'gunzip' 
+and 'tar -xvf' commands to unbundle ARPACK.  For example,
+
+        uncompress arpack96.tar.Z
+        tar -xvf arpack96.tar
+        uncompress patch.tar.Z
+        tar -xvf patch.tar

@@ -1,0 +1,242 @@
+!   PROJECT  'name'  'nr'
+!            'title1'
+!            'title2'
+!            'title3'
+!
+!   SET  [level]  [nor]  [depmin]  [maxmes]                                 &
+!        [maxerr]  [grav]  [rho] [cdcap] [inrhog]                           &
+!        [hsrerr]  CARTesian|NAUTical  [pwtail]                             &
+!        [froudmax]  [printf]  [prtest]
+!
+!   MODE  / STATIONARY \  / TWODimensional
+!         \ DYNAMIC    /  \ ONEDimensional
+!
+!   COORDinates  /  -> CARTesian          \   REPeating
+!                \ SPHErical      CCM|QC  /
+!
+!   CGRID  / REGular [xpc] [ypc] [alpc] [xlenc] [ylenc] [mxc] [myc] \
+!         <  CURVilinear [mxc] [myc]  (EXC [xexc] [yexc])            >      &
+!          \ UNSTRUCtured                                           /
+!
+!          / CIRcle               \
+!          \ SECtor [dir1] [dir2] /  [mdc]  [flow]  [fhig]  [msc]
+!
+!   INPgrid                                                                 &
+!      BOTtom | WLEV | CUR | VX | VY | FRic | WInd | WX | WY | NPLAnts      &
+!
+!      | REG [xpinp] [ypinp] [alpinp]  [mxinp] [myinp]  [dxinp] [dyinp] |
+!      |                                                                |
+!     <  CURVilinear [stagrx] [stagry] [mxinp] [myinp]                   >  &
+!      |                                                                |
+!      | UNSTRUCtured                                                   |
+!
+!      (EXCeption  [excval])                                                &
+!
+!      (NONSTATionary [tbeginp] [deltinp] SEC|MIN|HR|DAY [tendinp])
+!
+!                          | -> ADCirc
+!   READgrid UNSTRUCtured <  TRIAngle \
+!                          | EASYmesh / 'fname'
+!
+!   READinp    BOTtom|WLevel|CURrent|FRiction|WInd|COORdinates|NPLAnts      &
+!        [fac]  / 'fname1'        \
+!               \ SERIES 'fname2' /  [idla] [nhedf] ([nhedt]) (nhedvec])    &
+!        FREE | FORMAT 'form' | [idfm] | UNFORMATTED
+!
+!   WIND  [vel] [dir]
+!
+!                       |  JONswap  [gamma]  |
+!   BOUNd SHAPespec     |  PM                |
+!                      <   GAUSs  [sigfr]     >  PEAK|MEAN   DSPR  POWer|DEGRees
+!                       |  BIN               |
+!
+!              / -> SIDE  N|NW|W|SW|S|SE|E|NE | [k]  CCW|CLOCKWise       \
+!   BOUNdspec <                                                           > &
+!              \    SEGment  / -> XY  < [x]  [y] >            \          /
+!                            \    IJ  < [i]  [j] > | < [k] >  /
+!
+!            /  UNIForm   /  PAR  [hs] [per] [dir] [dd]
+!           <             \  FILE  'fname'  [seq]
+!            \  VARiable  /  PAR  < [len] [hs] [per] [dir] [dd] >
+!                         \  FILE < [len] 'fname' [seq] >
+!
+!   BOUNdnest1  NEST 'fname'  CLOSed|OPEN
+!
+!   BOUNdnest2  WAMNest 'fname' / UNFormatted  CRAY|WKstat  \
+!                               \ FREE                      /   [xgc] [ygc]
+!
+!   BOUNdnest3  WWIII 'fname'  CLOSed|OPEN  [xgc] [ygc]
+!
+!             | -> DEFault
+!             |
+!   INITial  <   ZERO
+!             |
+!             |  PAR  [hs] [per] [dir] [dd]
+!             |
+!             |            | -> MULTiple |
+!             |  HOTStart <               >  'fname'
+!             |            |    SINGle   |
+!
+!   GEN1  [cf10] [cf20] [cf30] [cf40] [edmlpm] [cdrag] [umin]
+!
+!   GEN2  [cf10] [cf20] [cf30] [cf40] [cf50] [cf60] [edmlpm] [cdrag] [umin]
+!
+!         | JANSSEN  [cds1] [delta]     |
+!         |                             |
+!         | -> KOMEN [cds2] [stpm]      |
+!   GEN3 <                               >    (AGROW [a])
+!         | YAN                         |
+!         |                             |
+!         | WESTHuysen                  |
+!
+!
+!         | -> KOMen   [cds2] [stpm] [powst] [delta] [powk]
+!         |
+!         |   JANSsen  [cds1]  [delta] [pwtail]
+!         |
+!         |   LHIG     [cflhig]
+!         |
+!   WCAP <    BJ       [bjstp] [bjalf]
+!         |
+!         |   KBJ      [bjstp] [bjalf] [kconv]
+!         |
+!         |   AB       [cds2] [br] [p0] [powst] [powk]
+!
+!   QUADrupl [iquad] [lambda] [cnl4] [csh1] [csh2] [csh3]
+!
+!                             | CNL4 < [cnl4] >               |
+!   MDIA LAMbda < [lambda] > <                                 >
+!                             | CNL4_12 < [cnl4_1] [cnl4_2] > |
+!
+!        | -> CON [alpha] [gamma]                                      |
+!        |                                                             |
+!        |    VAR [alpha] [gammin] [gammax] [gamneg] [coeff1] [coeff2] |
+!   BRE <                                                               > &
+!        |    RUE [alpha] [a] [b]                                      |
+!        |                                                             |
+!        |    TG  [alpha] [gamma] [pown]                               |
+!
+!     ( FREQDep [power] [fmin] [fmax] )
+!
+!
+!              |             | -> CONstant [cfjon]
+!              | -> JONswap <
+!              |             |    VARiable [cfj1] [cfj2] [dsp1] [dsp2]
+!   FRICtion  <
+!              |    COLLins [cfw] [cfc]
+!              |
+!              |    MADsen  [kn]
+!
+!   TRIad   [trfac] [cutfr] [urcrit] [urslim]
+!
+!   VEGEtation  < [height] [diamtr] [nstems] [drag] >
+!
+!   LIMiter [ursell] [qb]
+!
+!               | -> TRANSm [trcoef]                        |
+!   OBSTacle   <                                            |
+!               |       | -> GODA [hgt] [alpha] [beta]       >              &
+!               |  DAM <                                    |
+!                       |    DANGremond [hgt] [slope] [Bk]  |
+!
+!                          | -> RSPEC        |
+!        ( REFLec [reflc] <                   > )                           &
+!                          |    RDIFF [pown] |
+!
+!               LINe < [xp] [yp] >
+!
+!   SETUP  [supcor]
+!
+!   DIFFRac  [idiffr] [smpar] [smnum] [cgmod]
+!
+!   OFF WINDGrowth | QUADrupl | WCAPping | BREaking | REFrac | FSHift | BNDCHK
+!
+!   PROP   /  BSBT
+!          \  GSE  [waveage] SEC|MIN|HR|DAY
+!
+!             | -> ACCUR [drel] [dhoval] [dtoval] [npnts]               |
+!   NUMeric (<                                                           >  &
+!             |    STOPC [dabs] [drel] [curvat] [npnts] [dtabs] [curvt] |
+!
+!                    | -> STAT  [mxitst] [alfa] |
+!                   <                            >  [limiter]   )           &
+!                    | NONSTat  [mxitns]        |
+!
+!           ( DIRimpl [cdd] [cdlim]  WNUMber                    )           &
+!
+!           ( REFRLim [frlim] [power]                           )           &
+!
+!              | -> SIGIMpl [css] [eps2] [outp] [niter]
+!           ( <                                                 )           &
+!              |    SIGEXpl [css] [cfl]
+!
+!           ( SETUP [eps2] [outp] [niter]                       )
+!
+!   FRAME   'sname'  [xpfr] [ypfr] [alpfr] [xlenfr] [ylenfr] [mxfr] [myfr]
+!
+!   GROUP   'sname'  SUBGRID [ix1] [ix2] [iy1] [iy2]
+!
+!   CURVE   'sname'  [xp1] [yp1]   < [int]  [xp]  [yp] >
+!
+!   RAY     'rname'  [xp1] [yp1] [xq1] [yq1]                                &
+!                    <  [int]  [xp]  [yp]  [xq]  [yq]  >
+!
+!   ISOLINE 'sname'  'rname'  DEPTH|BOTTOM  [dep]
+!
+!   POINTS  'sname'  < [xp]  [yp]  >     |    FILE 'fname'
+!
+!                    | [xpn] [ypn] [alpn] [xlenn] [ylenn] [mxn] [myn]
+!   NGRID  'sname'  <
+!                    | UNSTRUCtured / -> TRIAngle \
+!                                   \    EASYmesh / 'fname'
+!
+!              |...|
+!   QUANTity  <     >   'short'  'long'  [lexp]  [hexp]  [excv]             &
+!              |...|
+!
+!             [power]   [ref]   [fswell]    [fmin]  [fmax]                  &
+!
+!             / -> PROBLEMcoord \
+!             \ FRAME           /
+!
+!   OUTPut OPTIons  'comment'  (TABle [field])  (BLOck  [ndec]  [len])      &
+!                              (SPEC  [ndec])
+!
+!   BLOCK   'sname'  HEADER | NOHEADER  'fname' (LAY-OUT [idla])            &
+!          <  HSIGN|HSWELL|DIR|PDIR|TDIR|TM01|RTM01|RTP|TM02|FSPR|DSPR|VEL| &
+!             FRCOEF|WIND|DISSIP|QB|TRANSP|FORCE|UBOT|URMS|WLEN|STEEPNESS|  &
+!             DHSIGN|DRTM01|LEAK|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|DEPTH|  &
+!             TMBOT|QP|BFI|NPLANT|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP| &
+!             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS >       &
+!             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC|MIN|HR|DAY)
+!
+!   TABLE   'sname'  HEADER | NOHEADER | INDEXED 'fname'                    &
+!          <  HSIGN|HSWELL|DIR|PDIR|TDIR|TM01|RTM01|RTP|TM02|FSPR|DSPR|VEL| &
+!             FRCOEF|WIND|DISSIP|QB|TRANSP|FORCE|UBOT|URMS|WLEN|STEEPNESS|  &
+!             DHSIGN|DRTM01|LEAK|TIME|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|   &
+!             DEPTH|TMBOT|QP|BFI|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP|  &
+!             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS >       &
+!             ([unit]) (OUTPUT [tbegtbl] [delttbl] SEC|MIN|HR|DAY)
+!
+!   SPECout 'sname'  SPEC1D|SPEC2D  ABS|REL   'fname'                       &
+!                    (OUTput [tbeg] [delt] SEC|MIN|HR|DAY)
+!
+!   NESTout 'sname'  'fname'                                                &
+!                    (OUTput [tbeg] [delt] SEC|MIN|HR|DAY)
+!
+!                                 / -> IJ < [i] [j] > | < [k] >  \
+!   TEST [itest] [itrace] POINTS <                                >         &
+!                                 \    XY < [x] [y] >            /
+!
+!                         PAR 'fname'  S1D 'fname'  S2D 'fname'
+!
+!              |  STATionary  [time]                      |
+!   COMPute ( <                                            > )
+!              |                    | -> Sec  |           |
+!              |  ([tbegc] [deltc] <     MIn   > [tendc]) |
+!                                   |    HR   |
+!                                   |    DAy  |
+!
+!   HOTFile 'fname'
+!
+!   STOP

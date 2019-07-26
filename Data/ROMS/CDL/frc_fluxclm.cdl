@@ -1,0 +1,72 @@
+netcdf frc_fluxclm {
+
+dimensions:
+	xi_rho = 386 ;
+	xi_u = 385 ;
+	xi_v = 386 ;
+	eta_rho = 130 ;
+	eta_u = 130 ;
+	eta_v = 129 ;
+	srf_time = 12 ;
+	sst_time = 12 ;
+	shf_time = 12 ;
+	swf_time = 12 ;
+	sss_time = 12 ;
+
+variables:
+	float srf_time(srf_time) ;
+		srf_time:long_name = "solar shortwave radiation time" ;
+		srf_time:units = "day" ;
+		srf_time:cycle_length = 365.25 ;
+	float sst_time(sst_time) ;
+		sst_time:long_name = "sea surface temperature" ;
+		sst_time:units = "day" ;
+		sst_time:cycle_length = 365.25 ;
+	float shf_time(shf_time) ;
+		shf_time:long_name = "surface heat flux time" ;
+		shf_time:units = "day" ;
+		shf_time:cycle_length = 365.25 ;
+	float swf_time(swf_time) ;
+		swf_time:long_name = "surface freshwater flux time" ;
+		swf_time:units = "day" ;
+		swf_time:cycle_length = 365.25 ;
+	float sss_time(sss_time) ;
+		sss_time:long_name = "sea surface salinity" ;
+		sss_time:units = "day" ;
+		sss_time:cycle_length = 365.25 ;
+	float swrad(srf_time, eta_rho, xi_rho) ;
+		swrad:long_name = "solar shortwave radiation" ;
+		swrad:units = "Watts meter-2" ;
+		swrad:positive_value = "downward flux, heating" ;
+		swrad:negative_value = "upward flux, cooling" ;
+		swrad:time = "srf_time" ;
+	float SST(sst_time, eta_rho, xi_rho) ;
+		SST:long_name = "sea surface temperature" ;
+		SST:units = "Celsius" ;
+		SST:time = "sst_time" ;
+	float dQdSST(sst_time, eta_rho, xi_rho) ;
+		dQdSST:long_name = "surface net heat flux sensitivity to SST" ;
+		dQdSST:units = "Watts meter-2 Celsius-1" ;
+		dQdSST:time = "sst_time" ;
+	float shflux(shf_time, eta_rho, xi_rho) ;
+		shflux:long_name = "surface net heat flux" ;
+		shflux:units = "Watts meter-2" ;
+		shflux:positive_value = "downward flux, heating" ;
+		shflux:negative_value = "upward flux, cooling" ;
+		shflux:time = "shf_time" ;
+	float swflux(swf_time, eta_rho, xi_rho) ;
+		swflux:long_name = "surface freshwater flux (E-P)" ;
+		swflux:units = "centimeter day-1" ;
+		swflux:positive_value = "net evaporation" ;
+		swflux:negative_value = "net precipitation" ;
+		swflux:time = "swf_time" ;
+	float SSS(sss_time, eta_rho, xi_rho) ;
+		SSS:long_name = "sea surface salinity" ;
+		SSS:time = "sss_time" ;
+
+// global attributes:
+		:type = "ROMS FORCING file" ;
+		:title = "NENA COADS Monthly Climatology" ;
+		:grd_file = "roms_nena_grid_3.nc" ;
+
+}

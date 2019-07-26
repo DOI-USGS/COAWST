@@ -1,0 +1,106 @@
+ROMS/TOMS Metadata
+==================
+
+This directory contains several CDL files showing ROMS input NetCDF
+files structure. There is a lot of software out there to generate
+such input files. It is very difficult to write generic programs
+because it depends on the application. However, there is a very easy
+way to generate these files using the CDL and the NetCDF "ncgen"
+program.
+
+The ROMS metadata design is very rich and extensive. See "varinfo.dat"
+for a list of all the variables names, units, attributes, associated time
+variables, and scale factors. This is an user friendly file and variable
+parameters can be changed very easily. As a matter of fact, some users like
+to change the long-name attribute to a language other than English to
+facilitate automatic labeling during plotting. However, for portability
+I recommend to use the provided field variable name.
+
+Currently, you can find the following CDL scripts:
+
+    grd_spherical.cdl        Spherical grid NetCDF file
+
+    ini_hydro.cdl            Initial conditions NetCDF file (hydrodynamics)
+    ini_fennel.cdl           Initial conditions NetCDF file (hydrodynamics and biology)
+    ini_ecosim.cdl           Initial conditions NetCDF file (hydrodynamics and bio-optics)
+    ini_sed.cdl              Initial conditions NetCDF file (hydrodynamics and sediment)
+
+    clm_ts.cdl               Temperature-Salinity climatology NetCDF file
+
+    frc_uvstress.cdl         Forcing NetCDF file (surface momentum stresses)
+    frc_fluxclm.cdl          Forcing NetCDF file (climatological heat fluxes variables)
+    frc_bulk.cdl             Forcing NetCDF file (atmospheric variable for bulk fluxes)
+
+    frc_rivers.cdl           Forcing NetCDF file (River point/sources)
+    frc_tides.cdl            Forcing NetCDF file (tidal elevation and currents)
+
+    bry_limit.cdl            Boundary NetCDF file (various time dimensions)
+    bry_unlimit.cdl          Boundary NetCDF file (unlimited time dimensions)
+
+    adsend.cdf               Adjoint sensitivity functional
+
+    s4dvar_obs.cdl           4D-Var observations
+
+    s4dvar_std_m.cdl         4D-Var model error covariance standard deviation
+    s4dvar_std_i.cdl         4D-Var initial conditions error covariance standard deviation
+    s4dvar_std_b.cdl         4D-Var open boundaries error covariance standard deviation
+    s4dvar_std_f.cdl         4D-Var surface forcing error covariance standard deviation
+
+
+Currently, there are two vertical, terrain-following coordinates
+transformation in ROMS.  You need to choose the appropriate
+"standard_name" attribute:
+
+(1) Original transformation: "ocean_s_coordinate_g1"
+
+        double s_rho(s_rho) ;
+                s_rho:long_name = "S-coordinate at RHO-points" ;
+                s_rho:valid_min = -1. ;
+                s_rho:valid_max = 0. ;
+                s_rho:positive = "up" ;
+                s_rho:standard_name = "ocean_s_coordinate_g1" ;
+                s_rho:formula_terms = "s: s_rho C: Cs_r eta: zeta depth: h depth_c: hc" ;
+
+        double s_w(s_w) ;
+                s_w:long_name = "S-coordinate at W-points" ;
+                s_w:valid_min = -1. ;
+                s_w:valid_max = 0. ;
+                s_w:positive = "up" ;
+                s_w:standard_name = "ocean_s_coordinate_g1" ;
+                s_w:formula_terms = "s: s_w C: Cs_w eta: zeta depth: h depth_c: hc" ;
+
+(2) New transformation: "ocean_s_coordinate_g2"
+
+        double s_rho(s_rho) ;
+                s_rho:long_name = "S-coordinate at RHO-points" ;
+                s_rho:valid_min = -1. ;
+                s_rho:valid_max = 0. ;
+                s_rho:positive = "up" ;
+                s_rho:standard_name = "ocean_s_coordinate_g2" ;
+                s_rho:formula_terms = "s: s_rho C: Cs_r eta: zeta depth: h depth_c: hc" ;
+
+        double s_w(s_w) ;
+                s_w:long_name = "S-coordinate at W-points" ;
+                s_w:valid_min = -1. ;
+                s_w:valid_max = 0. ;
+                s_w:positive = "up" ;
+                s_w:standard_name = "ocean_s_coordinate_g2" ;
+                s_w:formula_terms = "s: s_w C: Cs_w eta: zeta depth: h depth_c: hc" ;
+
+Notice that the nondimentional, fractional, stretched vertical coordinate
+is the same excet to the value of the attribute "standard_name".
+
+You can easily edit any of these files to change NetCDF file name, change
+dimensions, add and remove variables, and add and modify global attibutes.
+A NetCDF file can be created by typing:
+
+    ncgen -b my_file.cdl
+
+Then, you can use any program to write your data into the created NetCDF
+file. I usually use the MeXCDF interface of Matlab to write the processed
+data with just a single command line.
+
+Notice that ROMS now allows for multiple forcing NetCDF files. See
+input script.
+
+

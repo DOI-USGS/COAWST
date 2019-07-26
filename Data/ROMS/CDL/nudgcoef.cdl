@@ -1,0 +1,44 @@
+netcdf espresso_nudgcoef {
+dimensions:
+	xi_rho = 130 ;
+	eta_rho = 82 ;
+	s_rho = 36 ;
+variables:
+	int spherical ;
+		spherical:long_name = "grid type logical switch" ;
+		spherical:flag_values = 0, 1 ;
+		spherical:flag_meanings = "Cartesian spherical" ;
+	double lon_rho(eta_rho, xi_rho) ;
+		lon_rho:long_name = "longitude of RHO-points" ;
+		lon_rho:units = "degree_east" ;
+		lon_rho:standard_name = "longitude" ;
+	double lat_rho(eta_rho, xi_rho) ;
+		lat_rho:long_name = "latitude of RHO-points" ;
+		lat_rho:units = "degree_north" ;
+		lat_rho:standard_name = "latitude" ;
+	double M2_NudgeCoef(eta_rho, xi_rho) ;
+		M2_NudgeCoef:long_name = "2D momentum inverse nudging coefficients" ;
+		M2_NudgeCoef:units = "day-1" ;
+		M2_NudgeCoef:coordinates = "xi_rho eta_rho " ;
+	double M3_NudgeCoef(s_rho, eta_rho, xi_rho) ;
+		M3_NudgeCoef:long_name = "3D momentum inverse nudging coefficients" ;
+		M3_NudgeCoef:units = "day-1" ;
+		M3_NudgeCoef:coordinates = "xi_rho eta_rho s_rho " ;
+	double temp_NudgeCoef(s_rho, eta_rho, xi_rho) ;
+		temp_NudgeCoef:long_name = "temp inverse nudging coefficients" ;
+		temp_NudgeCoef:units = "day-1" ;
+		temp_NudgeCoef:coordinates = "xi_rho eta_rho s_rho " ;
+	double salt_NudgeCoef(s_rho, eta_rho, xi_rho) ;
+		salt_NudgeCoef:long_name = "salt inverse nudging coefficients" ;
+		salt_NudgeCoef:units = "day-1" ;
+		salt_NudgeCoef:coordinates = "xi_rho eta_rho s_rho " ;
+	double tracer_NudgeCoef(s_rho, eta_rho, xi_rho) ;
+		tracer_NudgeCoef:long_name = "generic tracer inverse nudging coefficients" ;
+		tracer_NudgeCoef:units = "day-1" ;
+		tracer_NudgeCoef:coordinates = "xi_rho eta_rho s_rho " ;
+
+// global attributes:
+		:type = "Nudging Coeffcients file" ;
+		:title = "North Atlantic Damee #4, 0.75 Resolution" ;
+		:history = "Nudging coefficient file created from d_nudgcoef.m: Wednesday - March 5, 2014 - 5:6:0.24549 PM" ;
+}
