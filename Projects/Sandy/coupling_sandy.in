@@ -72,7 +72,7 @@
 
 !  SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_moving.nc
    SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_static.nc
-!  SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_nowavenest.nc
+!  SCRIP_COAWST_NAME = Projects/Sandy/WW3/scrip_sandy_nowavenest.nc
 
 ! Option 2: THIS OPTION WILL BE REMOVED IN FUTURE VERSIONS.
 !           IF you set "SCRIP_WEIGHT_OPTION = 2", then enter 

@@ -44,11 +44,11 @@ CARTESIAN(2)=0,
 !    -the name(s) of the WW3 grid file(s) for x- y- coords and bathy.
 !    -the size of the WW3 grids (full number of grid center points). 
 !
-WW3_XCOORD(1)='../../Projects/Sandy/ww3_sandy_xcoord.dat',
-WW3_YCOORD(1)='../../Projects/Sandy/ww3_sandy_ycoord.dat',
-WW3_BATH(1)='../../Projects/Sandy/ww3_sandy_bathy.bot',
-WW3_NUMX(1)=84,
-WW3_NUMY(1)=64,
+WW3_XCOORD(1)='../../Projects/Sandy/WW3/ww3_sandy_xcoord.dat',
+WW3_YCOORD(1)='../../Projects/Sandy/WW3/ww3_sandy_ycoord.dat',
+WW3_BATH(1)='../../Projects/Sandy/WW3/ww3_sandy_bathy.bot',
+WW3_NUMX(1)=87,
+WW3_NUMY(1)=65,
 
 ! 6) Enter the name of the WRF input grid(s). If the grid is a 
 !    moving child nest then enter that grid name as 'moving'.

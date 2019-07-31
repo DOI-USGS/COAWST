@@ -1526,7 +1526,7 @@
       IF ( IAPROC .EQ. NAPOUT ) WRITE (NDSO,932) DTME21
 !/OASIS      TIME00 = TIME0
 !/OASIS      TIMEEND = TIMEN
-!/COAWWWWST      TIMEEND = TIMEN
+!/COAWST      TIMEEND = TIMEN
 !
       DTTST  = DSEC21 ( TIME0 , TIMEN )
       IF ( DTTST .LE. 0. ) GOTO 2003
@@ -1817,6 +1817,7 @@
 !/OASIS            IF ( (DTOUT(7).NE.0) .AND.                               &
 !/OASIS                 (MOD(ID_OASIS_TIME/DTOUT(7),1.0) .LT. 1.E-7 ) .AND. &
 !/OASIS                 (DSEC21 (TIME, TIMEEND) .GT. 0.0)) DTTST=0.
+!/COAWST         ELSE
 !/COAWST         IF (DSEC21 (TIME, TIMEEND) .GT. 0.0) DTTST=0.
           END IF
 !

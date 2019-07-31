@@ -984,7 +984,9 @@
 
 !/DEBUGRUN        WRITE(740+IAPROC,*) 'W3WAVE, step 6.4.2 before W3UCUR'
 !/DEBUGRUN        FLUSH(740+IAPROC)
+#if !defined WAVES_OCEAN
             CALL W3UCUR ( FLFRST )
+#endif
 !/DEBUGRUN        WRITE(740+IAPROC,*) 'W3WAVE, step 6.4.1 after W3UCUR'
 !/DEBUGRUN        FLUSH(740+IAPROC)
 
