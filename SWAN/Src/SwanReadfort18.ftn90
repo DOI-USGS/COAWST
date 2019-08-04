@@ -11,7 +11,7 @@ subroutine SwanReadfort18
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -69,7 +69,7 @@ subroutine SwanReadfort18
 !PUN    integer                 :: iostat   ! I/O status in call FOR
 !PUN    integer                 :: istat    ! indicate status of allocation
 !PUN    integer                 :: j        ! loop counter
-!PUN    character(80)           :: msgfil   ! name of message-passing file including path
+!PUN    character(lenfnm)       :: msgfil   ! name of message-passing file including path
 !PUN    integer                 :: ndsd     ! unit reference number of file
 !PUN    logical                 :: stpnow   ! indicate whether program must be terminated or not
 !PUN!

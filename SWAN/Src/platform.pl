@@ -216,6 +216,7 @@ elsif ($os =~ /Linux/i) {
     print OUTFILE "##############################################################################\n";
     print OUTFILE "F90_SER = ifort\n";
     print OUTFILE "F90_OMP = ifort\n";
+    print OUTFILE "# if appropriate, use mpiifort of Intel instead\n";
     print OUTFILE "F90_MPI = mpif90\n";
 #    if ($cpu =~ /i686/i) {
 #      print OUTFILE "FLAGS_OPT = -O2 -xN -mp1\n";
@@ -682,6 +683,7 @@ elsif ($os =~ /Darwin/i) {
     print OUTFILE "##############################################################################\n";
     print OUTFILE "F90_SER = ifort\n";
     print OUTFILE "F90_OMP = ifort\n";
+    print OUTFILE "# if appropriate, use mpiifort of Intel instead\n";
     print OUTFILE "F90_MPI = mpif90\n";
     print OUTFILE "FLAGS_OPT = -O2\n";
     print OUTFILE "FLAGS_MSC = -W0 -assume byterecl -traceback -diag-disable 8290 -diag-disable 8291 -diag-disable 8293\n";

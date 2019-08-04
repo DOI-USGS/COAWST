@@ -27,7 +27,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -185,7 +185,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -307,7 +307,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -410,7 +410,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -569,7 +569,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -725,8 +725,11 @@
 !  (73) [  'TURB']
 !  (74) [  'DISM']
 !  (75) [ 'DISSL']
+!  (76) ['DISICE']
+!  (77) [  'AICE']
+!  (78) [  'HICE']
 #ifdef SWAN_MODEL
-!  (76) ['DIRBOT']
+!  (79) ['DIRBOT']
 #endif
 ! OVSNAM(NMOVAR)   short name of output quantity
 !  ( 1) [    'Xp']
@@ -799,8 +802,11 @@
 !  (73) [  'Turb']
 !  (74) [  'Smud']
 !  (75) ['Sswell']
+!  (76) [  'Sice']
+!  (77) ['  aice']
+!  (78) ['  hice']
 #ifdef SWAN_MODEL
-!  (76) ['Dirbot']
+!  (79) ['Dirbot']
 #endif
 ! OVLNAM(NMOVAR)   long name of output quantity
 !  ( 1) [                        'X user coordinate']
@@ -873,8 +879,11 @@
 !  (73) [                      'Turbulent viscosity']
 !  (74) [                    'Fluid mud dissipation']
 !  (75) [                        'Swell dissipation']
+!  (76) [                      'Sea ice dissipation']
+!  (77) [             'ice concentration (fraction)']
+!  (78) [                            'ice thickness']
 #ifdef SWAN_MODEL
-!  (76) [            'Average bottom wave direction']
+!  (79) [            'Average bottom wave direction']
 #endif
 ! OVUNIT(NMOVAR)   unit of of output quantity
 !  ( 1) [CALCULAT] =UL
@@ -947,8 +956,11 @@
 !  (73) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (74) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (75) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (76) [  'm2/s'] changes to 'W/m2' if INRHOG=1
+!  (77) [     ' ']
+!  (78) [     'm']
 #ifdef SWAN_MODEL
-!  (76) [CALCULAT] =UDI
+!  (79) [CALCULAT] =UDI
 #endif
 ! SNAME [        ] name of output point set
 ! UAP   [  'W/m2'] unit of dissipation
@@ -1078,8 +1090,11 @@
 !  (73)  [  1]   Turb
 !  (74)  [  1]   Smud
 !  (75)  [  1]   Sswell
+!  (76)  [  1]   Sice
+!  (77)  [  1]   aice
+!  (78)  [  1]   hice
 #ifdef SWAN_MODEL
-!  (76)  [  2]   DirBot
+!  (79)  [  2]   DirBot
 #endif
 ! OVEXCV(NMOVAR)   exception value for output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1150,8 +1165,11 @@
 !  (73)  [   -99.] Turb
 !  (74)  [    -9.] Smud
 !  (75)  [    -9.] Sswell
+!  (76)  [    -9.] Sice
+!  (77)  [    -9.] aice
+!  (78)  [    -9.] hice
 #ifdef SWAN_MODEL
-!  (76)  [  -999.] DirBot
+!  (79)  [  -999.] DirBot
 #endif
 ! OVLEXP(NMOVAR)   lower expected limit of output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1222,8 +1240,11 @@
 !  (73)  [     0.] Turb
 !  (74)  [     0.] Smud
 !  (75)  [     0.] Sswell
+!  (76)  [     0.] Sice
+!  (77)  [     0.] aice
+!  (78)  [     0.] hice
 #ifdef SWAN_MODEL
-!  (76)  [     0.] DirBot
+!  (79)  [     0.] DirBot
 #endif
 ! OVLLIM(NMOVAR)   lower limit of validity of output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1294,8 +1315,11 @@
 !  (73)  [     0.] Turb
 !  (74)  [     0.] Smud
 !  (75)  [     0.] Sswell
+!  (76)  [     0.] Sice
+!  (77)  [     0.] aice
+!  (78)  [     0.] hice
 #ifdef SWAN_MODEL
-!  (76)  [     0.] DirBot
+!  (79)  [     0.] DirBot
 #endif
 ! OVHEXP(NMOVAR)   upper expected limit of output quantity
 !  ( 1)  [  1.E10] Xp
@@ -1366,8 +1390,11 @@
 !  (73)  [   100.] Turb
 !  (74)  [    0.1] Smud
 !  (75)  [    0.1] Sswell
+!  (76)  [    0.1] Sice
+!  (77)  [    1.0] aice
+!  (78)  [    10.] hice
 #ifdef SWAN_MODEL
-!  (76)  [   360.] DirBot
+!  (79)  [   360.] DirBot
 #endif
 ! OVULIM(NMOVAR)   upper limit of validity
 !  ( 1)  [  1.E10] Xp
@@ -1438,8 +1465,11 @@
 !  (73)  [    10.] Turb
 !  (74)  [  1000.] Smud
 !  (75)  [  1000.] Sswell
+!  (76)  [  1000.] Sice
+!  (77)  [    1.0] aice
+!  (78)  [   100.] hice
 #ifdef SWAN_MODEL
-!  (76)  [   360.] DirBot
+!  (79)  [   360.] DirBot
 #endif
 ! SINCQ  [       ] sin of ALCQ
 ! SINPQ  [       ] sin of ALPQ
@@ -1499,7 +1529,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1521,11 +1551,13 @@
 !
 !     40.41: Marcel Zijlema
 !     41.13: Nico Booij
+!     41.75: Erick Rogers
 !
 !  1. Updates
 !
 !     40.41, Oct. 04: taken from the include file SWCOMM2.INC
 !     41.13, Jul. 10: NWAMN unused, replaced by LWDATE (length of WAM date)
+!     41.75, Jan. 19: adding sea ice
 !
 !  2. Purpose
 !
@@ -1547,10 +1579,10 @@
 !
 !  6. Parameter variables
 !
-!     NUMGRD [  13]  maximum number of grids
+!     NUMGRD [  15]  maximum number of input grids
 !
       INTEGER NUMGRD
-      PARAMETER (NUMGRD = 13)
+      PARAMETER (NUMGRD = 15)
 !
 !  7. Local variables
 !
@@ -1570,6 +1602,8 @@
 ! grid(11): number of plants per square meter
 ! grid(12): turbulent viscosity
 ! grid(13): fluid mud layer
+! grid(14): ice concentration (fraction)
+! grid(15): ice thickness (m)
 !
 ! ALPG(NUMGRD)  [    0.] direction of the x-axis w.r.t. user coordinates
 ! CCURV         [ FALSE] correction curvilinear grid
@@ -1579,7 +1613,6 @@
 ! COSWC         [CALCUL] =COS(-ALPG(5)),
 !                        cos of angle of wind input grid w.r.t. user coordinates
 ! CVLEFT        [      ] the (curv.lin.) comput. grid is left/right-oriented
-
 ! DXG(NUMGRD)   [    0.] mesh size of input grid in x-direction
 ! DYG(NUMGRD)   [    0.] mesh size of input grid in y-direction
 ! DYNDEP        [   FAL] is True if depth varies with time
@@ -1622,6 +1655,8 @@
 ! VARTUR        [   FAL] turbulent viscosity is/is not variable over space
 ! VARWI         [   FAL] wind velocity is/is not variable over space
 ! VARWLV        [   FAL] water level is/is not variable over space
+! VARAICE       [   FAL] ice concentration (fraction) is/is not variable over space
+! VARHICE       [   FAL] ice thickness is/is not variable over space
 ! XPG(NUMGRD)   [    0.] x of origin
 ! XOFFS         [    0.] offset value in x
 !                        (from user coord. system to internal coord. system)
@@ -1723,6 +1758,7 @@
       LOGICAL VARNPL,      VARTUR,      VARMUD
       LOGICAL CCURV                                                       41.53
 #endif
+      LOGICAL VARAICE,     VARHICE
 !
 !     *** variables for input files ***
 !
@@ -1816,7 +1852,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1837,10 +1873,12 @@
 !  0. Authors
 !
 !     40.41: Marcel Zijlema
+!     41.75: Erick Rogers
 !
 !  1. Updates
 !
 !     40.41, Oct. 04: taken from the include file SWCOMM3.INC
+!     41.75, Jan. 19: adding sea ice
 !
 !  2. Purpose
 !
@@ -1864,7 +1902,7 @@
 !
 !     MBOT   [  10] dimension of array PBOT
 !     MDIFFR [  10] dimension of array PDIFFR                             40.21
-!     MDISP  [   7] dimension for dissipation arrays                      40.59 40.35 40.67
+!     MDISP  [   8] dimension for dissipation arrays                      41.75 40.59 40.35 40.67
 !     MGENR  [   1] dimension for generation arrays                       40.85
 !     MICMAX [  13] max. number of points in comput. stencil
 !     MMUD   [  10] dimension of array PMUD
@@ -1880,10 +1918,12 @@
 !     MTRIAD [  10] dimension of array PTRIAD
 !     MWCAP  [  15] dimension of array PWCAP
 !     MWIND  [  40] dimension of array PWIND
+!     MIC4M2 [   8] dimension of array PIC4M2
 !
       INTEGER             MBOT,        MNUMS,       MQUAD
       INTEGER             MSETUP,      MSHAPE,      MSPPAR,      MSURF
       INTEGER             MTRIAD,      MWCAP,       MWIND,       MTURBV
+      INTEGER             MIC4M2                                          41.75
       INTEGER             MICMAX
       INTEGER             MDIFFR                                          40.21
       INTEGER             MMUD
@@ -1892,7 +1932,7 @@
 !
       PARAMETER           (MBOT   = 10)
       PARAMETER           (MDIFFR = 10)                                   40.21
-      PARAMETER           (MDISP  =  7)                                   40.59 40.35 40.67
+      PARAMETER           (MDISP  =  8)                                   41.75 40.59 40.35 40.67
       PARAMETER           (MGENR  =  1)                                   40.85
       PARAMETER           (MREDS  =  2)                                   40.85
       PARAMETER           (MTRNP  =  3)                                   40.85
@@ -1908,6 +1948,7 @@
       PARAMETER           (MWCAP  = 15)
       PARAMETER           (MWIND  = 40)
       PARAMETER           (MTURBV =  5)                                   40.35
+      PARAMETER           (MIC4M2 =  8)                                   41.75
 !
 !  7. Local variables
 !
@@ -1942,6 +1983,8 @@
 !              set by command TABLE/BLOCK
 ! JDSXT  [  1] turbulent dissipation within array COMPDA
 !              set by command TABLE/BLOCK
+! JDSXI  [  1] dissipation by sea ice within array COMPDA
+!              set by command TABLE/BLOCK
 ! JDSXW  [  1] whitecapping dissipation within array COMPDA
 !              set by command TABLE/BLOCK
 ! JDTM   [ 20] wave period correction within array COMPDA
@@ -1972,6 +2015,10 @@
 ! JMUDL1 [   ] old fluid mud layer within array COMPDA
 ! JMUDL2 [   ] new fluid mud layer within array COMPDA
 ! JMUDL3 [   ] last read fluid mud layer within array COMPDA
+! JAICE2 [   ] new ice fraction within array COMPDA
+! JAICE3 [   ] last read ice fraction within array COMPDA
+! JHICE2 [   ] new ice thickness within array COMPDA
+! JHICE3 [   ] last read ice thickness within array COMPDA
 ! JNPLA2 [   ] new number of plants / m2 within array COMPDA
 ! JNPLA3 [   ] last read number of plants / m2 within array COMPDA
 ! JTURB2 [   ] new turbulent viscosity within array COMPDA                40.35
@@ -1988,6 +2035,7 @@
 ! JPVEGT [  9] within array SWTSDA, vegetation dissipation
 ! JPTURB [ 10] within array SWTSDA, turbulent dissipation
 ! JPMUD  [ 11] within array SWTSDA, fluid mud dissipation
+! JPICE  [ 13] within array SWTSDA, dissipation by sea ice
 ! JPWBRK [  5] within array SWTSDA, surf breaking
 ! JPWCAP [  3] within array SWTSDA, white capping
 ! JPWNDD [  2] within array SWTSDA, wind input term (implicit part)
@@ -2053,6 +2101,7 @@
 !              =MCMVAR+1, for command TABLE/BLOCK DISM (add JDSXM)
 !              =MCMVAR+1, for command TABLE/BLOCK DISV (add JDSXV)
 !              =MCMVAR+1, for command TABLE/BLOCK DISTU (add JDSXT)
+!              =MCMVAR+1, for command TABLE/BLOCK DISIC (add JDSXI)
 !              =MCMVAR+1, for command TABLE/BLOCK DISSL (add JDSXL)
 !              =MCMVAR+1, for command TABLE/BLOCK GENE (add JGENR)
 !              =MCMVAR+1, for command TABLE/BLOCK GENW (add JGSXW)
@@ -2105,6 +2154,8 @@
       INTEGER             MCMVAR,                   MTSVAR,      JURSEL
       INTEGER             JBOTLV,      MSWMATR,     MLSWMAT
       INTEGER             JPSWEL
+      INTEGER             JAICE2,      JAICE3,      JHICE2,      JHICE3   41.75
+      INTEGER             JPICE,       JDSXI                              41.75
 !
 !     *** location and dimensions of computational grid ***
 !
@@ -2262,10 +2313,13 @@
 ! USCAP  [99999.] maximum ustar
 ! WLEV   [    0.] water level
 !                 =level; set by command SET [level] ...
+! ICEWIND [   0.] factor controlling wind input through ice cover
+!                 ; set by command SET [ICEWIND] ...
 !
       REAL CASTD,       CDCAP,       USCAP
       REAL DEGRAD,      DNORTH,      GRAV,        PI
       REAL PI2,         PWTAIL(10),  RHO,         WLEV
+      REAL ICEWIND
 !
 !     *** information related to the numerical scheme ***
 !
@@ -2323,10 +2377,18 @@
 !                 =1; for command GEN1 ...,
 !                 =2; for command GEN2 ...,
 !                 =3; for command GEN3 ...,
-!CTGA 111003:  Full ice implementation.  Parameter read in swanpre1.ftn
 ! IICE   [      ] indicates how ice is to be handled within the model
-!                 =1; for undefined command
-!                 =2; for command CICE ADCICE ...
+!                 =0; for no representation of sea ice (default)
+!                 =1; activated with keyword "CICE" in "INPUT" file.
+!                     Vestigial code: not in public release.
+!                 =2; activated with keyword "ADCICE" in "INPUT" file.
+!                     Vestigial code: not in public release.
+!                 =3; activated with keyword "IC4M2" in "INPUT" file.
+!                     Active code: dissipation by sea ice using method IC4M2
+!CTGA 111003:  Full ice implementation.  Parameter read in swanpre1.ftn
+!CTGA! IICE   [      ] indicates how ice is to be handled within the model
+!CTGA!                 =1; for undefined command
+!CTGA!                 =2; for command CICE ADCICE ...
 ! IINC   [     0] not used
 ! IMUD   [     0] indicates fluid mud dissipation term:
 !                 =0; no dissipation due to fluid mud
@@ -2451,6 +2513,20 @@
 !  ( 3)  [0.0027] =viscm; set by command MUD ... [viscm] ...
 !  ( 4)  [  RHOW] =rhow; set by command MUD ... [rhow] ...
 !  ( 5)  [1.3E-6] =viscw; set by command MUD ... [viscw] ...
+! PIC4M2(MIC4M2)  coefficients for the dissipation by sea ice using simple
+!                 polynomial with integer powers. (Sice method=IC4M2)
+!                 ki= C0*f^0 + C1*f^1 ... C5*f^5 + C6*f^6
+!                 The first coefficient is reserved for ice concentration
+!                   but it used only if the user elects to treat ice concentration
+!                   as constant and uniform.
+!  ( 1)  [    0.] = ice concentration (as fraction between 0 and 1)
+!  ( 2)  [    0.] = coefficient C0, for f^0 term
+!  ( 3)  [    0.] = coefficient C1, for f^1 term
+!  ( 4)  [    0.] = coefficient C2, for f^2 term
+!  ( 5)  [    0.] = coefficient C3, for f^3 term
+!  ( 6)  [    0.] = coefficient C4, for f^4 term
+!  ( 7)  [    0.] = coefficient C5, for f^5 term
+!  ( 8)  [    0.] = coefficient C6, for f^6 term
 ! PNUMS(MNUMS)    numerical coefficients
 !                 accuracy criterion:
 !  ( 1)  [  0.02] relative error in Hs and Tm01
@@ -2736,7 +2812,7 @@
       INTEGER             IFRSRF                                          41.06
       INTEGER             IDISRF                                          41.47
 !CTGA 111003:  Full ice implementation.  Parameter read in swanpre1.ftn
-      INTEGER             IICE
+      INTEGER             IICE                                            41.75/CTGA
       REAL                DEPMIN,      PBOT(MBOT),  PNUMS(MNUMS)
       REAL                PSETUP(MSETUP),           PSHAPE(MSHAPE)
       REAL                PSURF(MSURF),             PTRIAD(MTRIAD)
@@ -2751,6 +2827,7 @@
       REAL                PDIFFR(MDIFFR)                                  40.21
       REAL                PMUD(MMUD)                                      40.59
       REAL                PTURBV(MTURBV)                                  40.35
+      REAL                PIC4M2(MIC4M2)                                  41.75
 !CTGA 111003:  Full ice implementation.  Parameter read in swanpre1.ftn
       REAL                WBICETH
       LOGICAL             ACUPDA
@@ -2815,7 +2892,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2969,7 +3046,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

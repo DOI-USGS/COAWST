@@ -71,7 +71,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -205,7 +205,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -332,7 +332,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -431,7 +431,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -585,7 +585,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -760,7 +760,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -928,7 +928,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1065,7 +1065,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1136,7 +1136,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1371,7 +1371,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1717,7 +1717,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1905,7 +1905,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2120,7 +2120,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2272,7 +2272,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2394,7 +2394,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2610,7 +2610,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2809,7 +2809,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3026,7 +3026,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3280,7 +3280,7 @@
 !
 !***********************************************************************
 !                                                                      *
-      SUBROUTINE SWTRCF (WLEV2 , CHS   ,                                  40.31 40.00
+      SUBROUTINE SWTRCF (DEP2  , WLEV2 , CHS   ,                          41.71 40.31 40.00
      &                   LINK  , OBREDF,                                  40.03
      &                   AC2   , REFLSO, KGRPNT, XCGRID,                  40.41 40.09
      &                   YCGRID, CAX,    CAY,    RDX,    RDY,    ANYBIN,  40.09
@@ -3312,7 +3312,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3346,6 +3346,7 @@
 !     40.66: Marcel Zijlema
 !     40.80: Marcel Zijlema
 !     41.65: Marcel Zijlema
+!     41.71: Gerbrant van Vledder
 !
 !  1. Updates
 !
@@ -3373,6 +3374,7 @@
 !     40.66, Mar. 07: extension with d'Angremond and Van der Meer transmission
 !     40.80, Mar. 08: extension to unstructured grids
 !     41.65, Jun. 16: extension frequency and direction dependent tranmission coefficients
+!     41.71, Dec. 18: extension freeboard dependent transmission and reflection
 !
 !  2. Purpose
 !
@@ -3414,6 +3416,7 @@
 !     CAX      input     Propagation velocity                             40.09
 !     CAY      input     Propagation velocity                             40.09
 !     CHS      input     Hs in all computational grid points
+!     DEP2     input     Water depth in grid points                       41.71
 !     KCGRD    input     Grid address of points of computational stencil
 !     LINK     input     indicates whether link in stencil                40.03
 !                        crosses an obstacle                              40.03
@@ -3426,7 +3429,7 @@
 !
       INTEGER  KGRPNT(MXC,MYC)
       INTEGER  LINK(2)                                                    40.03
-      REAL     CHS(MCGRD), OBREDF(MDC,MSC,2), WLEV2(MCGRD)                30.70
+      REAL     CHS(MCGRD), OBREDF(MDC,MSC,2), WLEV2(MCGRD), DEP2(MCGRD)   41.71 30.70
       REAL     :: AC2(MDC,MSC,MCGRD)                                      40.09 40.22
 !     Changed ICMAX to MICMAX, since MICMAX doesn't vary over gridpoint   40.22
       REAL     :: CAX(MDC,MSC,MICMAX), CAY(MDC,MSC,MICMAX)                40.09 40.22
@@ -3498,6 +3501,7 @@
       INTEGER    ID, IENT, ILINK, ITRAS, IS, JP, ICGRD, LREFL,
      &           NUMCOR, NMPO, ISIGM
       INTEGER    LREFDIFF, LRFRD                                          40.31
+      INTEGER    LFREE, LQUAY                                             41.71
       REAL       ALOW, BUPL, FVH, HGT, HSIN, OBET, OBHKT,
      &           SLOPE, BK, L0P, XI0P, BVH, EMAX, ETD, TP,                40.66
      &           FAC1, FAC2,
@@ -3505,6 +3509,7 @@
      &           X1, X2, X3, X4, Y1, Y2, Y3, Y4, WATHIG
       REAL       TRCF(MSC,MDC)                                            41.65
       REAL       FD1, FD2, FD3, FD4                                       40.31 40.28
+      REAL       GAMR, GAMT, FBR, FBT                                     41.71
       REAL       SQRTREF                                                  40.09
       LOGICAL    XONOBST                                                  40.14
       LOGICAL :: REFLTST                                                  40.13
@@ -3568,19 +3573,51 @@
            IF (.NOT.ASSOCIATED(COBST%NEXTOBST)) EXIT                      40.31
            COBST => COBST%NEXTOBST                                        40.31
         END DO                                                            40.31
+!       in case of freeboard dependent transmission/reflection            41.71
+        LFREE = COBST%FBTYP1                                              41.71
+        LQUAY = COBST%FBTYP2                                              41.71
+        IF ( LFREE.EQ.1 ) THEN                                            41.71
+           HGT  = COBST%FBCOEF(1)                                         41.71
+           GAMT = COBST%FBCOEF(2)                                         41.71
+           GAMR = COBST%FBCOEF(3)                                         41.71
+!          compute relative freeboard                                     41.71
+           WATHIG = HGT - WLEV2(KCGRD(1)) - WLEV                          41.71
+           FVH    = WATHIG/HSIN                                           41.71
+!          compute freeboard dependent transmission/reflection factors    41.71
+!          NOTE: these factors only to be applied to constant coeffs      41.71
+           FBT = 0.5 * ( 1. - TANH(2.*FVH/GAMT) )                         41.71
+           FBR = 0.5 * ( 1. + TANH(2.*FVH/GAMR) )                         41.71
+           IF (TESTFL) WRITE (PRTEST, 18) IXCGRD(1)+MXF-2,                41.71
+     &                                    IYCGRD(1)+MYF-2,                41.71
+     &                                    ILINK, HGT, FVH, FBT, FBR       41.71
+  18       FORMAT (' test FREEB  ', 2X, 3I5, ' dam level=', F6.2,         41.71
+     &             ' FVH=', F6.2, ' FBT=', F6.2, ' FBR=', F6.2)           41.71
+           IF ( LQUAY.EQ.1 ) THEN                                         41.71
+              IF ( DEP2(KCGRD(ILINK+1)).LT.DEP2(KCGRD(1)) ) THEN          41.71
+                 FBT = 99999.                                             41.71
+                 FBR = 0.                                                 41.71
+              ENDIF
+              IF (TESTFL .AND. ITEST.GE.140) WRITE(PRTEST, 19)            41.71
+     &           ILINK,DEP2(KCGRD(ILINK+1)),DEP2(KCGRD(1)),FBT,FBR        41.71
+  19          FORMAT (8X, I3, 4E12.4)                                     41.71
+           ENDIF                                                          41.71
+        ELSE
+           FBT = 1.
+           FBR = 1.
+        ENDIF
         ITRAS  = COBST%TRTYPE                                             40.31
         IF (ITRAS .EQ. 0) THEN
 !       constant transmission coefficient
 !         User defined transmission coefficient concerns ratio of         40.09
 !         wave heights, so                                                40.09
-          OBHKT   = COBST%TRCOEF(1)                                       40.31
+          OBHKT = MIN(1.,FBT * COBST%TRCOEF(1))                           41.71 40.31
           TRCF(1,1) = OBHKT * OBHKT                                       40.09
         ELSE IF (ITRAS .EQ. 1) THEN
 !       transmission coefficient according to Goda and Seelig
           HGT    =  COBST%TRCOEF(1)                                       40.31
           OGAM   =  COBST%TRCOEF(2)                                       40.31
           OBET   =  COBST%TRCOEF(3)                                       40.31
-!         level of dam above the water surface (freeboard):
+!         level of dam above the water surface (freeboard)
           WATHIG =  HGT - WLEV2(KCGRD(1)) - WLEV                          40.14 30.70
 !
 !         *** Here the transmission coeff. is that of Goda and Seelig ***
@@ -3609,7 +3646,7 @@
           SLOPE = COBST%TRCOEF(2)
           BK    = COBST%TRCOEF(3)
 !
-!         level of dam above the water surface:
+!         level of dam above the water surface
           WATHIG =  HGT - WLEV2(KCGRD(1)) - WLEV
 !
 !         compute peak frequency of incoming wave
@@ -3720,7 +3757,7 @@
         LREFL = COBST%RFTYP1                                              40.13
         IF ( LREFL.GT.0. ) THEN                                           40.31
 !         Reflections are activated                                       40.09
-          SQRTREF  = COBST%RFCOEF(1)                                      40.31
+          SQRTREF  = FBR * COBST%RFCOEF(1)                                41.71 40.31
           REFLCOEF = SQRTREF * SQRTREF                                    40.09
           LREFDIFF = COBST%RFTYP2                                         40.31
           POWN     = COBST%RFCOEF(2)                                      40.31
@@ -3838,7 +3875,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4186,7 +4223,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4618,7 +4655,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5020,7 +5057,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5145,7 +5182,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5243,7 +5280,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5343,7 +5380,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5531,7 +5568,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5837,7 +5874,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5973,7 +6010,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6089,7 +6126,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6258,7 +6295,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6421,7 +6458,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6444,12 +6481,14 @@
 !TIMG!     40.23: Marcel Zijlema
 !TIMG!     40.30: Marcel Zijlema
 !TIMG!     40.41: Marcel Zijlema
+!TIMG!     41.75: Erick Rogers
 !TIMG!
 !TIMG!  1. Updates
 !TIMG!
 !TIMG!     40.23, Aug. 02: New subroutine
 !TIMG!     40.30, Jan. 03: introduction distributed-memory approach using MPI
 !TIMG!     40.41, Oct. 04: common blocks replaced by modules, include files removed
+!TIMG!     41.75, Jan. 19: adding sea ice
 !TIMG!
 !TIMG!  2. Purpose
 !TIMG!
@@ -6468,7 +6507,7 @@
 !TIMG!     TABLE :     array for computing aggregate cpu- and wallclock-times
 !TIMG!
 !TIMG      INTEGER          :: IENT, J, K, IDEBUG, MYPRC
-!TIMG      DOUBLE PRECISION :: TABLE(30,2)
+!TIMG      DOUBLE PRECISION :: TABLE(31,2)
 !TIMG      PARAMETER (IDEBUG=0)
 !TIMG!
 !TIMG!  7. Common blocks used
@@ -6629,6 +6668,10 @@
 !TIMG!
 !TIMG            TABLE(30,J) = TABLE(30,J) + DCUMTM(143,J)
 !TIMG
+!TIMG!           --- sea ice:
+!TIMG!
+!TIMG            TABLE(31,J) = TABLE(31,J) + DCUMTM(144,J)
+!TIMG
 !TIMG         END DO
 !TIMG!
 !TIMG!        --- add up times for some basic blocks
@@ -6683,6 +6726,10 @@
 !TIMG!
 !TIMG            TABLE(8,J) = TABLE(8,J) + TABLE(30,J)
 !TIMG!
+!TIMG!                * sea ice
+!TIMG!
+!TIMG            TABLE(8,J) = TABLE(8,J) + TABLE(31,J)
+!TIMG!
 !TIMG!           --- other computing:
 !TIMG!
 !TIMG            TABLE(13,J) = TABLE(13,J) + TABLE( 3,J)
@@ -6735,6 +6782,7 @@
 !TIMG         WRITE(PRINTF,115) MYPRC,'fluid mud:'       ,(TABLE(28,j),j=1,2)
 !TIMG         WRITE(PRINTF,115) MYPRC,'vegetation:'      ,(TABLE(29,j),j=1,2)
 !TIMG         WRITE(PRINTF,115) MYPRC,'turbulence:'      ,(TABLE(30,j),j=1,2)
+!TIMG         WRITE(PRINTF,115) MYPRC,'sea ice:'         ,(TABLE(31,j),j=1,2)
 !TIMG         WRITE(PRINTF,115) MYPRC,'wave breaking:'   ,(TABLE(21,j),j=1,2)
 !TIMG         WRITE(PRINTF,115) MYPRC,'quadruplets:'     ,(TABLE(22,j),j=1,2)
 !TIMG         WRITE(PRINTF,115) MYPRC,'triads:'          ,(TABLE(23,j),j=1,2)
@@ -6786,7 +6834,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6888,7 +6936,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6980,7 +7028,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7062,7 +7110,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7177,7 +7225,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7292,7 +7340,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -7433,7 +7481,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

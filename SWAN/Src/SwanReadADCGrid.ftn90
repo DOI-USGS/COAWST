@@ -13,7 +13,7 @@ subroutine SwanReadADCGrid
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -56,7 +56,7 @@ subroutine SwanReadADCGrid
 !
 !   Modules used
 !
-!PUN    use ocpcomm2
+    use ocpcomm2
     use ocpcomm4
     use m_genarr
     use SwanGriddata
@@ -67,7 +67,7 @@ subroutine SwanReadADCGrid
 !
 !   Local variables
 !
-    character(80)           :: grdfil   ! name of grid file including path
+    character(lenfnm)       :: grdfil   ! name of grid file including path
     integer, save           :: ient = 0 ! number of entries in this subroutine
     integer                 :: idum     ! dummy integer
     integer                 :: ii       ! auxiliary integer

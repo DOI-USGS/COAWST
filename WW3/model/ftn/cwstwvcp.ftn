@@ -175,9 +175,6 @@
           run_couple=1
 !         IF ((first.eq.1).and.(iics(iw).eq.0)) run_couple=0
           IF (MOD(first, nWAV2OCN(1,1)).ne.0) run_couple=0
-
-          write(*,*) 'in coawst cpl ', first, run_couple
-
           IF (run_couple.eq.1) THEN
             CALL WAV2OCN_COUPLING (iw, io)
           ELSE

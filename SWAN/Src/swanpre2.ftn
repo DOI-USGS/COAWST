@@ -41,7 +41,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -222,7 +222,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1375,7 +1375,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1406,6 +1406,7 @@
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     41.62: Andre van der Westhuysen
+!     41.75: Erick Rogers
 !
 !  1. Updates
 !
@@ -1432,6 +1433,7 @@
 !     40.31, Nov. 03: removing POOL construction and HPGL funcationality
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     41.62, Nov. 15: included input fields for wave partitioning
+!     41.75, Jan. 19: adding sea ice
 !
 !  2. Purpose
 !
@@ -1503,7 +1505,7 @@
 !             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP/         &
 #endif
 !             GENE/GENW/REDI/REDQ/REDT/PROPA/PROPX/PROPT/PROPS/RADS|LWAVP/   &
-!             DISTUR/TURB/DISSWELL/                                          &
+!             DISTUR/TURB/DISSWELL/AICE/DISICE/                              &
 !             PTHSIGN/PTRTP/PTWLEN/PTDIR/PTDSPR/PTWFRAC/PTSTEEPNESS>         &
 !             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC/MIN/HR/DAY)
 !   --------------------------------------------------------------------------
@@ -1744,8 +1746,13 @@
                    JDSXL  = MCMVAR                                        40.88
                    ALOCMP = .TRUE.                                        40.88
                 ENDIF                                                     40.88
+                IF (IVTYPE.EQ.76 .AND. JDSXI.LE.1) THEN                   41.75
+                   MCMVAR = MCMVAR+1                                      41.75
+                   JDSXI  = MCMVAR                                        41.75
+                   ALOCMP = .TRUE.                                        41.75
+                ENDIF                                                     41.75
 #ifdef SWAN_MODEL
-                IF (IVTYPE.EQ.76 .AND. JDBOT.LE.1) THEN                   !PSD 09/21/2011
+                IF (IVTYPE.EQ.79 .AND. JDBOT.LE.1) THEN                   !PSD 09/21/2011
                    MCMVAR = MCMVAR+1                                      !PSD 09/21/2011
                    JDBOT = MCMVAR                                         !PSD 09/21/2011
                    ALOCMP = .TRUE.                                        !PSD 09/21/2011
@@ -1848,7 +1855,7 @@
 !             TMBOT/QP/BFI/WATLEV/BOTLEV/TPS/DISBOT/DISSURF/DISWCAP/         &
 #endif
 !             GENE/GENW/REDI/REDQ/REDT/PROPA/PROPX/PROPT/PROPS/RADS|LWAVP/   &
-!             DISTUR/TURB/DISSWELL                                           &
+!             DISTUR/TURB/DISSWELL/AICE/DISICE/                              &
 !             PTHSIGN/PTRTP/PTWLEN/PTDIR/PTDSPR/PTWFRAC/PTSTEEPNESS>         &
 !             ([unit]) (OUTPUT [tbegtbl] [delttbl] SEC/MIN/HR/DAY)
 !   --------------------------------------------------------------------------
@@ -2057,8 +2064,13 @@
                JDSXL  = MCMVAR                                            40.88
                ALOCMP = .TRUE.                                            40.88
             ENDIF                                                         40.88
+            IF (IVTYPE.EQ.76 .AND. JDSXI.LE.1) THEN                       41.75
+               MCMVAR = MCMVAR+1                                          41.75
+               JDSXI  = MCMVAR                                            41.75
+               ALOCMP = .TRUE.                                            41.75
+            ENDIF                                                         41.75
 #ifdef SWAN_MODEL
-            IF (IVTYPE.EQ.76 .AND. JDBOT.LE.1) THEN                       !PSD 09/21/2011
+            IF (IVTYPE.EQ.79 .AND. JDBOT.LE.1) THEN                       !PSD 09/21/2011
                MCMVAR = MCMVAR+1                                          !PSD 09/21/2011
                JDBOT  = MCMVAR                                            !PSD 09/21/2011
                ALOCMP = .TRUE.                                            !PSD 09/21/2011
@@ -2373,7 +2385,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2547,7 +2559,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2672,7 +2684,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2808,7 +2820,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4145,7 +4157,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4650,7 +4662,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5275,7 +5287,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5811,7 +5823,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6216,7 +6228,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6385,7 +6397,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6413,6 +6425,7 @@
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.80: Marcel Zijlema
+!     41.75: Erick Rogers
 !
 !  1. Updates
 !
@@ -6429,6 +6442,7 @@
 !     40.31, Dec. 03: removing POOL-mechanism
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.80, Jun. 07: extension to unstructured grids
+!     41.75, Jan. 19: adding sea ice
 !
 !  2. PURPOSE
 !
@@ -6464,6 +6478,8 @@
 !
       INTEGER LXYTST, MPTST                                               40.80 30.82
       INTEGER XYTST(LXYTST)                                               40.80 30.82
+      INTEGER ICHECK1,ICHECK2 ! for checking that                         41.75
+                              ! hardwired # quantities is correct         41.75
 !
 !  5. SUBROUTINES CALLING
 !
@@ -6720,11 +6736,14 @@
            ENDDO                                                          40.80
         ENDIF                                                             40.80
  106    FORMAT (2(1X,F12.2))
-        IF(IWCAP.NE.8)THEN                                                40.88
-        WRITE (IFPAR, 132) 11                                             40.32 40.55 40.00
+! NB: If list of variables is expanded, the following hardwired integers
+!   must be increased:
+        IF(IWCAP.NE.8)THEN                                                41.75 40.88
+          ICHECK1=12
         ELSE
-        WRITE (IFPAR, 132) 12
+          ICHECK1=13
         ENDIF
+        WRITE (IFPAR, 132) ICHECK1                                        41.75 40.32 40.55 40.00
  132    FORMAT ('QUANT', /, I6, T41, 'number of quantities in table')     40.00
         WRITE (IFPAR, 102) OVSNAM(10), OVLNAM(10)                         40.00
         WRITE (IFPAR, 102) OVUNIT(10), 'unit'                             40.00
@@ -6733,38 +6752,55 @@
         WRITE (IFPAR, 102) OVSNAM(28), OVLNAM(28)                         40.41 40.00
         WRITE (IFPAR, 102) OVUNIT(28), 'unit'                             40.41 40.00
         WRITE (IFPAR, 104) OVEXCV(28), 'exception value'                  40.41 40.00
+        ICHECK2=3
         WRITE (IFPAR, 102) 'Swind',  'wind source term (of var. dens.)'   40.00
         WRITE (IFPAR, 102) 'm2/s',   'unit'                               40.00
         WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    40.00
+        ICHECK2=ICHECK2+1
         WRITE (IFPAR, 102) 'Swcap',  'whitecapping dissipation'           40.00
         WRITE (IFPAR, 102) 'm2/s',   'unit'                               40.00
         WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    40.00
         IF(IWCAP.EQ.8)THEN                                                40.88
+        ICHECK2=ICHECK2+1
         WRITE (IFPAR, 102) 'Sswell', 'swell dissipation'                  40.88
         WRITE (IFPAR, 102) 'm2/s',   'unit'                               40.88
         WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    40.88
         ENDIF                                                             40.88
+        ICHECK2=ICHECK2+1
         WRITE (IFPAR, 102) 'Sfric',  'bottom friction dissipation'        40.00
         WRITE (IFPAR, 102) 'm2/s',   'unit'                               40.00
         WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    40.00
+        ICHECK2=ICHECK2+1
         WRITE (IFPAR, 102) 'Svege',  'vegetation dissipation'             40.55
         WRITE (IFPAR, 102) 'm2/s',   'unit'                               40.55
         WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    40.55
+        ICHECK2=ICHECK2+1
         WRITE (IFPAR, 102) 'Sturb',  'turbulent dissipation'              40.35
         WRITE (IFPAR, 102) 'm2/s',   'unit'                               40.35
         WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    40.35
+        ICHECK2=ICHECK2+1
         WRITE (IFPAR, 102) 'Smud',  'fluid mud dissipation'               40.59
         WRITE (IFPAR, 102) 'm2/s',   'unit'                               40.59
         WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    40.59
+        ICHECK2=ICHECK2+1
+        WRITE (IFPAR, 102) 'Sice',   'dissipation by sea ice'             41.75
+        WRITE (IFPAR, 102) 'm2/s',   'unit'                               41.75
+        WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    41.75
+        ICHECK2=ICHECK2+1
         WRITE (IFPAR, 102) 'Ssurf',  'surf breaking dissipation'          40.00
         WRITE (IFPAR, 102) 'm2/s',   'unit'                               40.00
         WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    40.00
+        ICHECK2=ICHECK2+1
         WRITE (IFPAR, 102) 'Snl3',   'total absolute 3-wave interaction'  40.13
         WRITE (IFPAR, 102) 'm2/s',   'unit'                               40.13
         WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    40.00
+        ICHECK2=ICHECK2+1
         WRITE (IFPAR, 102) 'Snl4',   'total absolute 4-wave interaction'  40.13
         WRITE (IFPAR, 102) 'm2/s',   'unit'                               40.13
         WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    40.00
+        IF ( ICHECK1.NE.ICHECK2 ) THEN                                    41.75
+           CALL MSGERR (3,'Internal error: mismatch in # quantities')
+        ENDIF
       ENDIF
 !
 !     open output file for source terms if requested
@@ -6822,46 +6858,66 @@
           WRITE (IFS1D, 214) SPCSIG(IS)/PI2                               40.00
  214      FORMAT (F10.4)                                                  40.00
  220    CONTINUE                                                          40.00
-        IF(IWCAP.NE.8)THEN                                                40.88
-        WRITE (IFS1D, 132) 10                                             40.55
+! NB: If list of variables is expanded, the following hardwired integers
+!   must be increased:
+        IF(IWCAP.NE.8)THEN                                                41.75 40.88
+          ICHECK1=11
         ELSE
-        WRITE (IFS1D, 132) 11
+          ICHECK1=12
         ENDIF
+        WRITE (IFS1D, 132) ICHECK1                                        41.75 40.55
         WRITE (IFS1D, 102) 'VaDens', 'variance densities'                 40.00
         WRITE (IFS1D, 102) 'm2/Hz',  'unit'                               40.00
         WRITE (IFS1D, 104) 0.,       'exception value'                    40.00
+        ICHECK2=2
         WRITE (IFS1D, 102) 'Swind',  'wind source term'                   40.00
         WRITE (IFS1D, 102) 'm2',     'unit'                               40.00
         WRITE (IFS1D, 104) OVEXCV(7),'exception value'                    40.00
+        ICHECK2=ICHECK2+1
         WRITE (IFS1D, 102) 'Swcap',  'whitecapping dissipation'           40.00
         WRITE (IFS1D, 102) 'm2',     'unit'                               40.00
         WRITE (IFS1D, 104) OVEXCV(7),'exception value'                    40.00
         IF(IWCAP.EQ.8) THEN
+        ICHECK2=ICHECK2+1
         WRITE (IFS1D, 102) 'Sswell', 'swell dissipation'                  40.88
         WRITE (IFS1D, 102) 'm2',     'unit'                               40.88
         WRITE (IFS1D, 104) OVEXCV(7),'exception value'                    40.88
         ENDIF
+        ICHECK2=ICHECK2+1
         WRITE (IFS1D, 102) 'Sfric',  'bottom friction dissipation'        40.00
         WRITE (IFS1D, 102) 'm2',     'unit'                               40.00
         WRITE (IFS1D, 104) OVEXCV(7),'exception value'                    40.00
+        ICHECK2=ICHECK2+1
         WRITE (IFS1D, 102) 'Svege',  'vegetation dissipation'             40.55
         WRITE (IFS1D, 102) 'm2',     'unit'                               40.55
         WRITE (IFS1D, 104) OVEXCV(7),'exception value'                    40.55
+        ICHECK2=ICHECK2+1
         WRITE (IFS1D, 102) 'Sturb',  'turbulent dissipation'              40.35
         WRITE (IFS1D, 102) 'm2',     'unit'                               40.35
         WRITE (IFS1D, 104) OVEXCV(7),'exception value'                    40.35
+        ICHECK2=ICHECK2+1
         WRITE (IFS1D, 102) 'Smud',  'fluid mud dissipation'               40.59
         WRITE (IFS1D, 102) 'm2',     'unit'                               40.59
         WRITE (IFS1D, 104) OVEXCV(7),'exception value'                    40.59
+        ICHECK2=ICHECK2+1
+        WRITE (IFS1D, 102) 'Sice',   'dissipation by sea ice'             41.75
+        WRITE (IFS1D, 102) 'm2',     'unit'                               41.75
+        WRITE (IFS1D, 104) OVEXCV(7),'exception value'                    41.75
+        ICHECK2=ICHECK2+1
         WRITE (IFS1D, 102) 'Ssurf',  'surf breaking dissipation'          40.00
         WRITE (IFS1D, 102) 'm2',     'unit'                               40.00
         WRITE (IFS1D, 104) OVEXCV(7),'exception value'                    40.00
+        ICHECK2=ICHECK2+1
         WRITE (IFS1D, 102) 'Snl3',   'triad interactions'                 40.00
         WRITE (IFS1D, 102) 'm2',     'unit'                               40.00
         WRITE (IFS1D, 104) OVEXCV(7),'exception value'                    40.00
+        ICHECK2=ICHECK2+1
         WRITE (IFS1D, 102) 'Snl4',   'quadruplet interactions'            40.00
         WRITE (IFS1D, 102) 'm2',     'unit'                               40.00
         WRITE (IFS1D, 104) OVEXCV(7),'exception value'                    40.00
+        IF ( ICHECK1.NE.ICHECK2 ) THEN                                    41.75
+           CALL MSGERR (3,'Internal error: mismatch in # quantities')
+        ENDIF
       ENDIF
 !     2D source terms
       CALL INKEYW ('STA', ' ')                                            40.00
@@ -6924,46 +6980,66 @@
           WRITE (IFS2D, 324) SPCDIR(ID,1)*180./PI                         30.82
  324      FORMAT (F10.4)                                                  40.00
  330    CONTINUE                                                          40.00
-        IF(IWCAP.NE.8)THEN                                                40.88
-        WRITE (IFS2D, 132) 10                                             40.55
+! NB: If list of variables is expanded, the following hardwired integers
+!   must be increased:
+        IF(IWCAP.NE.8)THEN                                                41.75 40.88
+          ICHECK1=11
         ELSE
-        WRITE (IFS2D, 132) 11
+          ICHECK1=12
         ENDIF
+        WRITE (IFS2D, 132) ICHECK1                                        41.75 40.55
         WRITE (IFS2D, 102) 'VaDens', 'variance densities'                 40.00
         WRITE (IFS2D, 102) 'm2/Hz/degr', 'unit'                           40.00
         WRITE (IFS2D, 104) 0.,       'exception value'                    40.00
+        ICHECK2=2
         WRITE (IFS2D, 102) 'Swind',  'wind source term'                   40.00
         WRITE (IFS2D, 102) 'm2/degr','unit'                               40.00
         WRITE (IFS2D, 104) OVEXCV(7),'exception value'                    40.00
+        ICHECK2=ICHECK2+1
         WRITE (IFS2D, 102) 'Swcap',  'whitecapping dissipation'           40.00
         WRITE (IFS2D, 102) 'm2/degr','unit'                               40.00
         WRITE (IFS2D, 104) OVEXCV(7),'exception value'                    40.00
         IF(IWCAP.EQ.8) THEN
+        ICHECK2=ICHECK2+1
         WRITE (IFS2D, 102) 'Sswell', 'swell dissipation'                  40.88
         WRITE (IFS2D, 102) 'm2/degr','unit'                               40.88
         WRITE (IFS2D, 104) OVEXCV(7),'exception value'                    40.88
         ENDIF
+        ICHECK2=ICHECK2+1
         WRITE (IFS2D, 102) 'Sfric',  'bottom friction dissipation'        40.00
         WRITE (IFS2D, 102) 'm2/degr','unit'                               40.00
         WRITE (IFS2D, 104) OVEXCV(7),'exception value'                    40.00
+        ICHECK2=ICHECK2+1
         WRITE (IFS2D, 102) 'Svege',  'vegetation dissipation'             40.55
         WRITE (IFS2D, 102) 'm2/degr','unit'                               40.55
         WRITE (IFS2D, 104) OVEXCV(7),'exception value'                    40.55
+        ICHECK2=ICHECK2+1
         WRITE (IFS2D, 102) 'Sturb',  'turbulent dissipation'              40.35
         WRITE (IFS2D, 102) 'm2/degr','unit'                               40.35
         WRITE (IFS2D, 104) OVEXCV(7),'exception value'                    40.35
+        ICHECK2=ICHECK2+1
         WRITE (IFS2D, 102) 'Smud',  'fluid mud dissipation'               40.59
         WRITE (IFS2D, 102) 'm2/degr','unit'                               40.59
         WRITE (IFS2D, 104) OVEXCV(7),'exception value'                    40.59
+        ICHECK2=ICHECK2+1
+        WRITE (IFS2D, 102) 'Sice',  'dissipation by sea ice'              41.75
+        WRITE (IFS2D, 102) 'm2/degr','unit'                               41.75
+        WRITE (IFS2D, 104) OVEXCV(7),'exception value'                    41.75
+        ICHECK2=ICHECK2+1
         WRITE (IFS2D, 102) 'Ssurf',  'surf breaking dissipation'          40.00
         WRITE (IFS2D, 102) 'm2/degr','unit'                               40.00
         WRITE (IFS2D, 104) OVEXCV(7),'exception value'                    40.00
+        ICHECK2=ICHECK2+1
         WRITE (IFS2D, 102) 'Snl3',   'triad interactions'                 40.00
         WRITE (IFS2D, 102) 'm2/degr','unit'                               40.00
         WRITE (IFS2D, 104) OVEXCV(7),'exception value'                    40.00
+        ICHECK2=ICHECK2+1
         WRITE (IFS2D, 102) 'Snl4',   'quadruplet interactions'            40.00
         WRITE (IFS2D, 102) 'm2/degr','unit'                               40.00
         WRITE (IFS2D, 104) OVEXCV(7),'exception value'                    40.00
+        IF ( ICHECK1.NE.ICHECK2 ) THEN                                    41.75
+           CALL MSGERR (3,'Internal error: mismatch in # quantities')
+        ENDIF
       ENDIF
       RETURN
 !     end of subroutine RETSTP

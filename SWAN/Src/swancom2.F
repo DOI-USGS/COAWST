@@ -14,6 +14,7 @@
 !     SVEG    (Dissipation due to vegetation)                             40.55
 !     STURBV  (dissipation due to turbulent viscosity)                    40.35
 !     SMUD    (Fluid mud-induced wave dissipation)                        40.59
+!     SICE    (dissipation by sea ice)                                    41.75
 !     FRABRE  (Fraction of breaking waves)                                30.77
 !     SSURF   (Wave breaking: five formulations)
 !     SWCAP   (White capping: seven formulations)                         40.53
@@ -50,7 +51,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -578,7 +579,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -889,7 +890,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1036,7 +1037,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1099,7 +1100,11 @@
       INTEGER :: IDCMIN(1:MSC), IDCMAX(1:MSC)
       INTEGER :: ISSTOP
 !
-!  5. Local variables
+!  5. Parameter variables
+!
+!     ---
+!
+!  6. Local variables
 !
 !     ID          counter in directional space
 !     IENT        number of entries
@@ -1112,6 +1117,36 @@
 
       REAL    :: KD
       REAL    :: SMUDWD
+!
+!  7. Common blocks used
+!
+!     ---
+!
+!  8. Subroutines used
+!
+!     ---
+!
+!  9. Subroutines calling
+!
+!     ---
+!
+! 10. Error messages
+!
+!     ---
+!
+! 11. Remarks
+!
+!     In the calculation SMUD = 2*DMW*CGMUD :
+!     This is a conversion from spatial dissipation rate of amplitude to
+!     temporal dissipation rate of energy (linear exponential in both cases).
+!     A consistent Cg (CGMUD) must be used for propagation. Otherwise, the
+!     answer will be wrong. If it is necessary to use the standard, non-muddy
+!     Cg for propagation, then this routine (SMUD) should use SMUD = 2*DMW*CG
+!     where CG is the standard, non-muddy Cg.
+!
+! 12. Structure
+!
+!     ---
 !
 ! 13. Source text
 !
@@ -1148,6 +1183,207 @@
 !
 !****************************************************************
 !
+      SUBROUTINE SICE ( IMATDA  , IDCMIN  , IDCMAX  , ISSTOP  ,
+     &                  DISSC1  , PLICE   , AICELOC ,
+     &                  SPCSIG  , CG      )
+!
+!****************************************************************
+!
+      USE SWCOMM3
+      USE SWCOMM4
+      USE OCPCOMM4
+!
+      IMPLICIT NONE
+!
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering                              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2019  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. Authors
+!
+!     Erick Rogers, NRLSSC
+!
+!  1. Updates
+!
+!     41.75, Jan 2019: New subroutine
+!
+!  2. Purpose
+!
+!     Add dissipation by sea ice
+!
+!  3. Method
+!
+!     Compute sink term accounting for dissipation. We start with a
+!       polynomial parameterization loosely following
+!       Meylan et al. (2012) and Collins and Rogers (2017)
+!
+!     Sice method=IC4M2, ki= C0*f^0 + C1*f^1 ... C5*f^5 + C6*f^6
+!
+!  4. Argument variables
+!
+!     IDCMIN      frequency dependent lower bound in directional index space
+!     IDCMAX      frequency dependent upper bound in directional index space
+!     IMATDA      coefficients of diagonal of matrix
+!     ISSTOP      maximum counter of wave component in frequency
+!                 space that is propagated
+!     DISSC1      dissipation coefficient
+!     PLICE       array containing the ice source term for test-output
+!     CG          group velocity without currents, but includes depth effects
+!                 (We use lower case "o" to avoid confusion with "zero")
+!     SPCSIG      Relative frequencies in computational domain in sigma-space
+!
+      REAL             :: IMATDA(1:MDC,1:MSC)
+      REAL             :: DISSC1(1:MDC,1:MSC,1:MDISP)
+      REAL             :: PLICE(MDC,MSC,NPTST)
+      REAL, INTENT(IN) :: AICELOC
+      REAL, INTENT(IN) :: SPCSIG(MSC)
+      REAL, INTENT(IN) :: CG(MSC,MICMAX) ! or just CG(:,:) ! "CGo" in calling routine
+
+      INTEGER, INTENT(IN) :: ISSTOP, IDCMIN(1:MSC), IDCMAX(1:MSC)
+!
+!  5. Parameter variables
+!
+!     ---
+!
+!  6. Local variables
+!
+!     ID          counter in directional space
+!     IENT        number of entries
+!     IS          counter in frequency space
+!     SICEWD      source term containing wave dissipation by sea ice
+!                 "WD" denotes "frequency-direction"
+!     AICELOC     local ice fraction
+!     HICELOC     local ice thickness (omitted in this version)
+!     KI          spatial dissipation rate of amplitude (exponential)
+!
+      INTEGER :: IENT
+      INTEGER :: ID, IDDUM, IS
+
+      REAL    :: KI(MSC)
+      REAL    :: SICEWD
+      REAL    :: C0,C1,C2,C3,C4,C5,C6
+      REAL    :: FREQ
+!
+!  7. Common blocks used
+!
+!     Modules SWCOMM3 SWCOMM4 OCPCOMM4 are used.
+!     Includes:
+!        SWCOMM3: PI2, IICE, PIC4M2
+!        SWCOMM4: TESTFL
+!        OCPCOMM4: ITEST
+!
+!  8. Subroutines used
+!
+!     ---
+!
+!  9. Subroutines calling
+!
+!     ---
+!
+! 10. Error messages
+!
+!     ---
+!
+! 11. Remarks
+!
+!     In the calculation SICE = 2*KI*CG :
+!     This is a conversion from spatial dissipation rate of amplitude to
+!     temporal dissipation rate of energy (exponential in both cases).
+!
+!     On implemenation of sea ice (i/o, IC4M2 source term, ....) :
+!       Work on the SWAN code thus far has been funded by NRL Core.
+!       It is part of a collaboration with U. Washington (UW).
+!       UW partners are Nirnimesh Kumar and Jim Thomson, funded
+!         separately by NSF.
+!       NSF Project is "CODA", "Coastal Ocean Dynamics in the Arctic"
+!
+! 12. Structure
+!
+!     ---
+!
+! 13. Source text
+!
+      SAVE IENT
+      DATA IENT/0/
+      IF (LTRACE) CALL STRACE (IENT,'SICE')
+!
+      IF ( IICE.EQ.3 ) THEN
+!     Rename variables, for more readable code
+         C0 = PIC4M2(2)
+         C1 = PIC4M2(3)
+         C2 = PIC4M2(4)
+         C3 = PIC4M2(5)
+         C4 = PIC4M2(6)
+         C5 = PIC4M2(7)
+         C6 = PIC4M2(8)
+      ELSE
+         CALL MSGERR (3,'invalid IICE option')
+      ENDIF
+
+      if_ice: IF ( AICELOC.GT.0. ) THEN
+
+         ki_calc: DO IS = 1, ISSTOP
+!
+            FREQ = SPCSIG(IS) / PI2
+
+            IF ( IICE.EQ.3 ) THEN
+!...for Sice method=IC4M2, ki= C0*f^0 + C1*f^1 ... C5*f^5 + C6*f^6
+               KI(IS) = C0 + C1*FREQ    + C2*FREQ**2 + C3*FREQ**3
+     &                     + C4*FREQ**4 + C5*FREQ**5 + C6*FREQ**6
+            ELSE
+               CALL MSGERR (3,'invalid IICE option')
+            ENDIF
+
+         ENDDO ki_calc
+
+         ki_use: DO IS = 1, ISSTOP
+            SICEWD = 2. * KI(IS) * CG(IS,1) * AICELOC
+
+            DO IDDUM = IDCMIN(IS), IDCMAX(IS)
+               ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
+
+!     *** store the results in the array IMATDA             ***
+!     *** if testfl store results in array for isoline plot ***
+
+               IMATDA(ID,IS) = IMATDA(ID,IS) + SICEWD
+               IF (TESTFL) PLICE(ID,IS,IPTST) = -1.* SICEWD
+               DISSC1(ID,IS,8) = DISSC1(ID,IS,8) + SICEWD
+!
+            ENDDO
+         ENDDO ki_use
+      ENDIF if_ice
+
+      RETURN
+      END SUBROUTINE SICE
+!
+!****************************************************************
+!
       SUBROUTINE FRABRE ( HM, ETOT, QBLOC, KTETA )                        41.47 30.77
 !
 !****************************************************************
@@ -1169,7 +1405,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1369,7 +1605,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1695,12 +1931,11 @@
             IF ( BB.LT.1D0 ) THEN
                WS = 75D-2*DBLE(PSURF(4))*DBLE(PSURF(1))**3*DBLE(SMEBRK)*
      &              BB**(0.5*(PSURF(5)+1))/DBLE(SQRT(PI))
-               SbrD = 5D-1*DBLE(3.+PSURF(5))*WS
             ELSE
                WS = 75D-2*DBLE(PSURF(4))*DBLE(PSURF(1))**3*DBLE(SMEBRK)/
      &              DBLE(SQRT(PI))
-               SbrD = WS
             ENDIF
+            SbrD   = 5D-1*DBLE(3.+PSURF(5))*WS
             SURFA0 = SbrD - WS
             SURFA1 = SbrD
          ELSE
@@ -1790,7 +2025,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2237,7 +2472,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2457,7 +2692,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2821,7 +3056,7 @@
      &                   PLWBRK        ,PLNL4S        ,
      &                   PLNL4D        ,PLTRI         ,
      &                   PLVEGT        ,PLTURB        ,                   40.35 40.55
-     &                   PLMUD         ,                                  40.59
+     &                   PLMUD         ,PLICE         ,                   41.75 40.59
      &                   PLSWEL        ,                                  40.88
      &                   AC2           ,SPCSIG        ,                   40.00
      &                   DEP2          ,XYTST         ,
@@ -2834,6 +3069,8 @@
       USE SWCOMM3                                                         40.41
       USE SWCOMM4                                                         40.41
       USE OCPCOMM4                                                        40.41
+
+      IMPLICIT NONE
 !
 !
 !   --|-----------------------------------------------------------|--
@@ -2847,7 +3084,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2865,11 +3102,17 @@
 !     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 !
 !
+!     0. AUTHORS
+!
+!        40.41: Marcel Zijlema
+!        41.75: Erick Rogers
+!
 !     1. UPDATE
 !
 !        40.00, Sep. 98: subroutine modified for new spectral file def.
 !        40.00, Apr. 99: factor 2*PI added in 1d spectra
 !        40.41, Oct. 04: common blocks replaced by modules, include files removed
+!        41.75, Jan. 19: adding sea ice
 !
 !     2. PURPOSE
 !
@@ -2894,9 +3137,10 @@
 !        PLWCAP   2D    SWCAP
 !        PLBTFR   2D    SWBOT
 !        PLMUD    2D    SMUDWD
+!        PLICE    2D    SICEWD
 !        PLVEGT   2D    SVEGET
-!        PLTURB   2D    STURBV
-!        PLWBRK   2D    SWSURF
+!        PLTURB   2D    CVISC
+!        PLWBRK   2D    SURFA0/SURFA1
 !        PLNL4    2D    SWNL
 !        PLTRI    2D    STRI
 !
@@ -2912,6 +3156,15 @@
 !
 !     8. REMARKS
 !
+!        IMPLICIT NONE statement has been added (41.75)
+!
+!        There is a check against WCAP, to make behavior different if WCAP=8.
+!        Note that WCAP will be 0 at the first iteration. In case of a model that
+!        prints test output after a single iteration, e.g. for use in simplistic code
+!        tests, the header indicating # quantities will be one higher than the actual
+!        # quantities (SSWELL will be missing). This does not affect normal
+!        model operation, since we generally do not use single iteration for
+!        cases of stationary compute.
 !
 !     9. STRUCTURE
 !
@@ -2935,6 +3188,8 @@
 !     10. SOURCE
 !
       INTEGER     IS    ,ID
+      INTEGER     IENT  ,INDX  ,LOOP                                      41.75
+      REAL        SWND  ,SIG2AC                                           41.75
 !
 !     SIGACT      product of sigma and action density, i.e. energy density
 !     WCAP        integral of whitecapping dissipation
@@ -2943,6 +3198,7 @@
      &            VEGT  ,                                                 40.55
      &            TRBV  ,                                                 40.35
      &            DMUD  ,                                                 40.59
+     &            DICE  ,                                                 41.75
      &            NL4S  ,NL4D  ,TRIA  ,ENERGY,ENRSIG
       REAL        SWEL                                                    40.88
 !
@@ -2956,6 +3212,7 @@
      &            PLWCAP(MDC,MSC,NPTST)       ,
      &            PLBTFR(MDC,MSC,NPTST)       ,
      &            PLMUD (MDC,MSC,NPTST)       ,                           40.59
+     &            PLICE (MDC,MSC,NPTST)       ,                           41.75
      &            PLVEGT(MDC,MSC,NPTST)       ,                           40.55
      &            PLTURB(MDC,MSC,NPTST)       ,                           40.35
      &            PLWBRK(MDC,MSC,NPTST)       ,
@@ -2992,6 +3249,7 @@
           VEGT = 0.
           TRBV = 0.
           DMUD = 0.
+          DICE = 0.                                                       41.75
           WBRK = 0.
           SWEL = 0.
           NL4  = 0.
@@ -3017,6 +3275,7 @@
               VEGT = VEGT + PLVEGT(ID,IS,IPTST) * SIG2AC                  40.55
               TRBV = TRBV + PLTURB(ID,IS,IPTST) * SIG2AC                  40.35
               DMUD = DMUD + PLMUD (ID,IS,IPTST) * SIG2AC                  40.59
+              DICE = DICE + PLICE (ID,IS,IPTST) * SIG2AC                  41.75
               WBRK = WBRK + PLWBRK(ID,IS,IPTST) * SIG2AC
               SWEL = SWEL + PLSWEL(ID,IS,IPTST) * SIG2AC                  40.88
 !
@@ -3043,31 +3302,33 @@
             VEGT   = VEGT   * FRINTF * DDIR                               40.55
             TRBV   = TRBV   * FRINTF * DDIR                               40.35
             DMUD   = DMUD   * FRINTF * DDIR                               40.59
+            DICE   = DICE   * FRINTF * DDIR                               41.75
             WBRK   = WBRK   * FRINTF * DDIR
             SWEL   = SWEL   * FRINTF * DDIR                               40.88
             TRIA   = TRIA   * FRINTF * DDIR
             NL4    = NL4    * FRINTF * DDIR
 !
-            IF(IWCAP.NE.8)THEN
+            IF(IWCAP.NE.8)THEN ! See Remarks.
             WRITE (IFPAR, 70) 4.*SQRT(ENERGY), PI2*ENERGY/ENRSIG,
-     &               SWND, WCAP, BTFR, VEGT, TRBV, DMUD, WBRK, TRIA, NL4  40.59 40.35 40.55 40.00
-  70        FORMAT(11(1X,E12.4))
+     &               SWND, WCAP, BTFR, VEGT, TRBV, DMUD, DICE,
+     &               WBRK, TRIA, NL4                                      41.75 40.59 40.35 40.55 40.00
+  70        FORMAT(12(1X,E12.4))
             ELSE
             WRITE (IFPAR, 71) 4.*SQRT(ENERGY), PI2*ENERGY/ENRSIG,
-     &               SWND, WCAP, SWEL, BTFR, VEGT, TRBV, DMUD, WBRK,
-     &               TRIA, NL4
-  71        FORMAT(12(1X,E12.4))
+     &               SWND, WCAP, SWEL, BTFR, VEGT, TRBV, DMUD, DICE,
+     &               WBRK, TRIA, NL4
+  71        FORMAT(13(1X,E12.4))
             ENDIF
           ELSE
-            IF(IWCAP.NE.8)THEN
+            IF(IWCAP.NE.8)THEN ! See Remarks.
             WRITE (IFPAR, 70) OVEXCV(10), OVEXCV(28), OVEXCV(7),          40.41
      &          OVEXCV(7), OVEXCV(7),                                     40.35 40.55
-     &          OVEXCV(7),                                                40.59
-     &          OVEXCV(7), OVEXCV(7), OVEXCV(7), OVEXCV(7), OVEXCV(7)     40.00
+     &          OVEXCV(7), OVEXCV(7),                                     40.59
+     &          OVEXCV(7), OVEXCV(7), OVEXCV(7), OVEXCV(7), OVEXCV(7)     41.75 40.00
             ELSE
             WRITE (IFPAR, 71) OVEXCV(10), OVEXCV(28), OVEXCV(7),
      &          OVEXCV(7), OVEXCV(7),
-     &          OVEXCV(7), OVEXCV(7),
+     &          OVEXCV(7), OVEXCV(7), OVEXCV(7),
      &          OVEXCV(7), OVEXCV(7), OVEXCV(7), OVEXCV(7), OVEXCV(7)
             ENDIF
           ENDIF
@@ -3090,6 +3351,7 @@
               VEGT = 0.
               TRBV = 0.
               DMUD = 0.
+              DICE = 0.                                                   41.75
               WBRK = 0.
               SWEL = 0.
               NL4S = 0.
@@ -3111,6 +3373,7 @@
                 VEGT = VEGT + PLVEGT(ID,IS,IPTST) * SIGACT                40.55
                 TRBV = TRBV + PLTURB(ID,IS,IPTST) * SIGACT                40.35
                 DMUD = DMUD + PLMUD (ID,IS,IPTST) * SIGACT                40.59
+                DICE = DICE + PLICE (ID,IS,IPTST) * SIGACT                41.75
                 WBRK = WBRK + PLWBRK(ID,IS,IPTST) * SIGACT                40.00
                 SWEL = SWEL + PLSWEL(ID,IS,IPTST) * SIGACT                40.88
 !
@@ -3137,13 +3400,13 @@
               IF(IWCAP.NE.8)THEN
               WRITE (IFS1D,170) ENERGY*FAC, SWND*FAC, WCAP*FAC,           40.00
      &                          BTFR*FAC, VEGT*FAC, TRBV*FAC, DMUD*FAC,   40.59 40.35 40.55 40.00
-     &                          WBRK*FAC, TRIA*FAC, NL4*FAC               40.00
- 170          FORMAT(10(1X,E12.4))                                        40.00
+     &                          DICE*FAC, WBRK*FAC, TRIA*FAC, NL4*FAC     41.75 40.00
+ 170          FORMAT(11(1X,E12.4))                                        40.00
               ELSE
               WRITE (IFS1D,171) ENERGY*FAC, SWND*FAC, WCAP*FAC,SWEL*FAC,
      &                          BTFR*FAC, VEGT*FAC, TRBV*FAC, DMUD*FAC,
-     &                          WBRK*FAC, TRIA*FAC, NL4*FAC
- 171          FORMAT(11(1X,E12.4))
+     &                          DICE*FAC, WBRK*FAC, TRIA*FAC, NL4*FAC
+ 171          FORMAT(12(1X,E12.4))
               ENDIF
  160        CONTINUE
           ENDIF
@@ -3167,6 +3430,7 @@
                 PLVEGT(ID,IS,IPTST) = PLVEGT(ID,IS,IPTST) * SIGACT        40.55
                 PLTURB(ID,IS,IPTST) = PLTURB(ID,IS,IPTST) * SIGACT        40.35
                 PLMUD (ID,IS,IPTST) = PLMUD (ID,IS,IPTST) * SIGACT        40.59
+                PLICE (ID,IS,IPTST) = PLICE (ID,IS,IPTST) * SIGACT        41.75
                 PLWBRK(ID,IS,IPTST) = PLWBRK(ID,IS,IPTST) * SIGACT
                 PLSWEL(ID,IS,IPTST) = PLSWEL(ID,IS,IPTST) * SIGACT
                 PLNL4S(ID,IS,IPTST) = PLNL4S(ID,IS,IPTST) * SPCSIG(IS)
@@ -3184,6 +3448,7 @@
             CALL WRSPEC (IFS2D, PLVEGT(1,1,IPTST))                        40.55
             CALL WRSPEC (IFS2D, PLTURB(1,1,IPTST))                        40.35
             CALL WRSPEC (IFS2D, PLMUD (1,1,IPTST))                        40.59
+            CALL WRSPEC (IFS2D, PLICE (1,1,IPTST))                        41.75
             CALL WRSPEC (IFS2D, PLWBRK(1,1,IPTST))
             CALL WRSPEC (IFS2D, PLTRI (1,1,IPTST))
             CALL WRSPEC (IFS2D, PLNL4S(1,1,IPTST))
@@ -3201,6 +3466,7 @@
             PLVEGT(ID,IS,IPTST) = 0.
             PLTURB(ID,IS,IPTST) = 0.
             PLMUD (ID,IS,IPTST) = 0.
+            PLICE (ID,IS,IPTST) = 0.                                      41.75
             PLWBRK(ID,IS,IPTST) = 0.
             PLSWEL(ID,IS,IPTST) = 0.
             PLTRI (ID,IS,IPTST) = 0.
