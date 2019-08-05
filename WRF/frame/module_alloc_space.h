@@ -53,6 +53,8 @@
       INTEGER ierr
 
       INTEGER                              :: loop
+      INTEGER(KIND=8)                      :: nba ! number of bytes allocated per variable
+      CHARACTER(LEN=256)                   :: message_string
 
    ! Local data
 
@@ -147,6 +149,6 @@
 
       CALL nl_get_spec_bdy_width( 1, spec_bdy_width )
 
-# include <allocs.inc>
+# include "allocs.inc"
 
    END SUBROUTINE ROUTINENAME
