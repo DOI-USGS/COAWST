@@ -33,6 +33,7 @@ module da_radiance1
    use da_tools, only : da_residual_new, da_eof_decomposition
    use da_tools_serial, only : da_free_unit, da_get_unit
    use da_tracing, only : da_trace_entry, da_trace_exit, da_trace_int_sort
+   use da_wrf_interfaces, only : wrf_dm_bcast_integer
 
 #if defined(RTTOV) || defined(CRTM)
    use da_control, only : rtminit_sensor,write_profile,num_procs,tovs_min_transfer
@@ -60,6 +61,8 @@ module da_radiance1
       real               ::   smois, tslb, snowh, elevation,soiltyp,vegtyp,vegfra
       real               ::   clw
       integer            ::   isflg
+      integer            ::   cloudflag
+
 !      real,    pointer   ::   tb_xb(:)
       real, pointer             :: tb_ob(:)
       real, pointer             :: tb_inv(:)
@@ -89,6 +92,7 @@ module da_radiance1
       real   ,  pointer  ::  ciw(:)   ! kg/kg
       real   ,  pointer  ::  rain(:)  ! kg/m2/s
       real   ,  pointer  ::  sp(:)    ! kg/m2/s
+     integer ,  pointer  ::  cloudflag(:)
    end type con_cld_vars_type
 
    type aux_vars_type
@@ -176,6 +180,7 @@ module da_radiance1
       real,    pointer   :: solidp(:)     ! solid precipitation rate in kg/m2/s
       real,    pointer   :: clw(:)        ! cloud liquid water (kg/kg)
       real,    pointer   :: ciw(:)        ! cloud ice water    (kg/kg)
+      integer, pointer   :: cloudflag(:)  ! cloud flag
 
    end type rad_data_type
 
@@ -233,6 +238,7 @@ contains
 #include "da_qc_atms.inc"
 #include "da_qc_seviri.inc"
 #include "da_qc_amsr2.inc"
+#include "da_qc_ahi.inc"
 #include "da_qc_goesimg.inc"
 #include "da_write_iv_rad_ascii.inc"
 #include "da_write_oa_rad_ascii.inc"
