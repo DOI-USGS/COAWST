@@ -1705,7 +1705,11 @@
          IX     = MAPSF(i,1)
          IY     = MAPSF(i,2)
          IP=(IY-1)*NX+IX
-         WLV(i)=RCV_BUF(IP)
+         IF (io.eq.1) THEN
+           WLV(i)=RCV_BUF(IP)
+         ELSE
+           WLV(i)=WLV(i)+RCV_BUF(IP)
+         END IF
        END DO
 !
 !  Depth-integrated u-velocity........................................
@@ -1742,7 +1746,11 @@
          IX     = MAPSF(i,1)
          IY     = MAPSF(i,2)
          IP=(IY-1)*NX+IX
-         CX(i)=RCV_BUF(IP)
+         IF (io.eq.1) THEN
+           CX(i)=RCV_BUF(IP)
+         ELSE
+           CX(i)=CX(i)+RCV_BUF(IP)
+         END IF
        END DO
 !
 !  Depth-integrated v-velocity........................................
@@ -1779,7 +1787,11 @@
          IX     = MAPSF(i,1)
          IY     = MAPSF(i,2)
          IP=(IY-1)*NX+IX
-         CY(i)=RCV_BUF(IP)
+         IF (io.eq.1) THEN
+           CY(i)=RCV_BUF(IP)
+         ELSE
+           CY(i)=CY(i)+RCV_BUF(IP)
+         END IF
        END DO
 !
 !  Bottom roughness...................................................
@@ -1921,14 +1933,14 @@
       CALL MCT_waitr (AttrVect_G(iw)%atm2wav_AV,                        &
      &                Router_A(iw,ia)%SWANtoWRF)
 # endif
-        IF (MyRank.EQ.0) THEN
-          WRITE (SCREEN,35)'== WW3 grid ',iw,' recv data from WRF grid' &
+      IF (MyRank.EQ.0) THEN
+        WRITE (SCREEN,35)'== WW3 grid ',iw,' recv data from WRF grid'   &
      &                     ,ia
-        END IF
-        IF (MyError.ne.0) THEN
-          WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError
-          CALL FINALIZE_WAV_COUPLING(iw)
-        END IF
+      END IF
+      IF (MyError.ne.0) THEN
+        WRITE (*,*) 'coupling fail swancplr, MyStatus= ', MyError
+        CALL FINALIZE_WAV_COUPLING(iw)
+      END IF
 !
 ! Compute local non-halo data size.
 !
@@ -1943,88 +1955,101 @@
 !
 !  U-wind.
 !
-        CALL AttrVect_exportRAttr(AttrVect_G(iw)%atm2wav_AV,"U10",      &
-     &                            avdata,gsmsize)
-        range(1)= Large
-        range(2)=-Large
-        SND_BUF=0.0
-        IP=0
-        DO i=start,start+length-1
-          IP=IP+1
-          range(1)=MIN(range(1),REAL(avdata(IP)))
-          range(2)=MAX(range(2),REAL(avdata(IP)))
-          SND_BUF(i)=REAL(avdata(IP))
-        END DO
-        CALL MPI_ALLREDUCE(range(1), cffmin, 1, MPI_REAL,               &
-                           MPI_SUM, WAV_COMM_WORLD, MyError)
-        CALL MPI_ALLREDUCE(range(2), cffmax, 1, MPI_REAL,               &
-                           MPI_SUM, WAV_COMM_WORLD, MyError)
-        IF (MyRank.eq.0) THEN
-          write(SCREEN,40) 'WRFtoWW3 Min/Max U10     (ms-1):     ',     &
+      CALL AttrVect_exportRAttr(AttrVect_G(iw)%atm2wav_AV,"U10",       &
+     &                          avdata,gsmsize)
+      range(1)= Large
+      range(2)=-Large
+      SND_BUF=0.0
+      IP=0
+      DO i=start,start+length-1
+        IP=IP+1
+        range(1)=MIN(range(1),REAL(avdata(IP)))
+        range(2)=MAX(range(2),REAL(avdata(IP)))
+        SND_BUF(i)=REAL(avdata(IP))
+      END DO
+      CALL MPI_ALLREDUCE(range(1), cffmin, 1, MPI_REAL,                 &
+                         MPI_SUM, WAV_COMM_WORLD, MyError)
+      CALL MPI_ALLREDUCE(range(2), cffmax, 1, MPI_REAL,                 &
+                         MPI_SUM, WAV_COMM_WORLD, MyError)
+      IF (MyRank.eq.0) THEN
+        write(SCREEN,40) 'WRFtoWW3 Min/Max U10     (ms-1):     ',       &
      &                      cffmin, cffmax
-        END IF
+      END IF
 !
 !  now scatter data to all nodes.
 !
-        CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                   &
-     &                     MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
+      CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                     &
+     &                   MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
 !
 !  Scatter to array WND_U10 as temporary for now.
 !
-        DO i=1,grdsize
+      DO i=1,grdsize
+        IF (ia.eq.1) THEN
           WND_U10(i)=RCV_BUF(i)
-        END DO
-!       DO i=1,NSEA
-!         IX     = MAPSF(i,1)
-!         IY     = MAPSF(i,2)
-!         IP=(IY-1)*NX+IX
-!         WND_SPD(i)=RCV_BUF(IP)
-!       END DO
+        ELSE
+          WND_U10(i)=WND_U10(i)+RCV_BUF(i)
+        END IF
+      END DO
+!     DO i=1,NSEA
+!       IX     = MAPSF(i,1)
+!       IY     = MAPSF(i,2)
+!       IP=(IY-1)*NX+IX
+!       WND_SPD(i)=RCV_BUF(IP)
+!     END DO
 !
 !  V-wind.
 !
-        CALL AttrVect_exportRAttr(AttrVect_G(iw)%atm2wav_AV,"V10",      &
-     &                            avdata,gsmsize)
-        range(1)= Large
-        range(2)=-Large
-        SND_BUF=0.0
-        IP=0
-        DO i=start,start+length-1
-          IP=IP+1
-          range(1)=MIN(range(1),REAL(avdata(IP)))
-          range(2)=MAX(range(2),REAL(avdata(IP)))
-          SND_BUF(i)=REAL(avdata(IP))
-        END DO
-        CALL MPI_ALLREDUCE(range(1), cffmin, 1, MPI_REAL,               &
-                           MPI_SUM, WAV_COMM_WORLD, MyError)
-        CALL MPI_ALLREDUCE(range(2), cffmax, 1, MPI_REAL,               &
-                           MPI_SUM, WAV_COMM_WORLD, MyError)
-        IF (MyRank.eq.0) THEN
-          write(SCREEN,40) 'WRFtoWW3 Min/Max V10     (ms-1):     ',     &
-     &                      cffmin, cffmax
-        END IF
+      CALL AttrVect_exportRAttr(AttrVect_G(iw)%atm2wav_AV,"V10",        &
+     &                          avdata,gsmsize)
+      range(1)= Large
+      range(2)=-Large
+      SND_BUF=0.0
+      IP=0
+      DO i=start,start+length-1
+        IP=IP+1
+        range(1)=MIN(range(1),REAL(avdata(IP)))
+        range(2)=MAX(range(2),REAL(avdata(IP)))
+       SND_BUF(i)=REAL(avdata(IP))
+      END DO
+      CALL MPI_ALLREDUCE(range(1), cffmin, 1, MPI_REAL,                 &
+                         MPI_SUM, WAV_COMM_WORLD, MyError)
+      CALL MPI_ALLREDUCE(range(2), cffmax, 1, MPI_REAL,                 &
+                         MPI_SUM, WAV_COMM_WORLD, MyError)
+      IF (MyRank.eq.0) THEN
+        write(SCREEN,40) 'WRFtoWW3 Min/Max V10     (ms-1):     ',       &
+     &                    cffmin, cffmax
+      END IF
 !
 !  now scatter data to all nodes.
 !
-        CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                   &
-     &                     MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
+      CALL MPI_ALLREDUCE(SND_BUF, RCV_BUF, grdsize,                     &
+     &                   MPI_REAL, MPI_SUM, WAV_COMM_WORLD, MyError)
 !
 !  Scatter to array WND_V10 as temporary for now.
 !
-        DO i=1,grdsize
+      DO i=1,grdsize
+        IF (ia.eq.1) THEN
           WND_V10(i)=RCV_BUF(i)
-        END DO
+        ELSE
+          WND_V10(i)=WND_V10(i)+RCV_BUF(i)
+        END IF
+      END DO
 !
 !  Now we need to combine wnd speed and dir and scatter.
 !
-       DO i=1,NSEA
-         IX     = MAPSF(i,1)
-         IY     = MAPSF(i,2)
-         IP=(IY-1)*NX+IX
-         UA(i)=SQRT(WND_U10(IP)**2+WND_V10(IP)**2+0.000001)
-         UD(i)=ATAN2(WND_V10(IP),WND_U10(IP))
-       END DO
- 40    FORMAT (a36,1x,2(1pe14.6))
+      DO i=1,NSEA
+        IX     = MAPSF(i,1)
+        IY     = MAPSF(i,2)
+        IP=(IY-1)*NX+IX
+        IF (ia.eq.1) THEN
+          UA(i)=SQRT(WND_U10(IP)**2+WND_V10(IP)**2+0.000001)
+          UD(i)=ATAN2(WND_V10(IP),WND_U10(IP))
+        ELSE
+          UA(i)=UA(i)+SQRT(WND_U10(IP)**2+WND_V10(IP)**2+0.000001)
+          UD(i)=UD(i)+ATAN2(WND_V10(IP),WND_U10(IP))
+        END IF
+      END DO
+ 40     FORMAT (a36,1x,2(1pe14.6))
 # endif
 !
       deallocate (avdata)
