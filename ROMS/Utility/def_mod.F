@@ -61,7 +61,7 @@
 # endif
       integer :: i, j, lstr, nvatt, nvdim, status, varid, vindex
       integer :: OBSncid
-      integer :: Vsize(4), vardim(3)
+      integer :: vardim(3)
 # ifdef DISTRIBUTE
       integer :: ibuffer(2)
 # endif
@@ -271,6 +271,8 @@
             string=uppercase('w4dpsas')
 # elif defined W4DPSAS_SENSITIVITY
             string=uppercase('w4dpsas_sensitivity')
+# elif defined W4DPSAS_FCT_SENSITIVITY
+            string=uppercase('w4dpsas_fct_sensitivity')
 # elif defined W4DVAR
             string=uppercase('w4dvar')
 # elif defined W4DVAR_SENSITIVITY
@@ -520,8 +522,9 @@
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
 # endif
-# if defined IS4DVAR_SENSITIVITY || defined W4DPSAS_SENSITIVITY || \
-     defined W4DVAR_SENSITIVITY
+# if defined IS4DVAR_SENSITIVITY     || defined W4DPSAS_SENSITIVITY || \
+     defined W4DPSAS_FCT_SENSITIVITY || defined W4DVAR_SENSITIVITY  || \
+     defined ARRAY_MODES
 !
 !  Observations impact/sensitivity outer loop beeing processed.
 !
@@ -927,8 +930,8 @@
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
 # endif
-# if defined TL_W4DPSAS          || defined W4DPSAS || \
-     defined W4DPSAS_SENSITIVITY
+# if defined TL_W4DPSAS || defined W4DPSAS_FCT_SENSITIVITY || \
+     defined W4DPSAS    || defined W4DPSAS_SENSITIVITY
 !
 !  Define NLM initial and final data penalty function.
 !
@@ -1709,8 +1712,8 @@
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
 # endif
-# if defined W4DVAR_SENSITIVITY  || defined W4DPSAS_SENSITIVITY || \
-     defined IS4DVAR_SENSITIVITY
+# if defined IS4DVAR_SENSITIVITY     || defined W4DPSAS_SENSITIVITY || \
+     defined W4DPSAS_FCT_SENSITIVITY || W4DVAR_SENSITIVITY
 #  ifdef OBS_IMPACT
 !
 !  Define total observations impact.
@@ -1752,9 +1755,9 @@
      &                 __FILE__)) RETURN
 #  endif
 # endif
-# if defined OBS_IMPACT_SPLIT     && \
-     (defined W4DVAR_SENSITIVITY  || defined W4DPSAS_SENSITIVITY || \
-      defined IS4DVAR_SENSITIVITY)
+# if defined OBS_IMPACT_SPLIT         && \
+     (defined IS4DVAR_SENSITIVITY     || defined W4DPSAS_SENSITIVITY ||\
+      defined W4DPSAS_FCT_SENSITIVITY || defined W4DVAR_SENSITIVITY)
 !
 !  Define observation impact due to initial condition increments.
 !

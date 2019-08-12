@@ -80,9 +80,10 @@
 !                                                                      !
 !  Surface heat fluxes, Atmosphere-Ocean bulk parameterization.        !
 !                                                                      !
-!  lhflx        Kinematic net latent heat flux (degC m/s).             !
-!  lrflx        Kinematic net longwave radiation (degC m/s).           !
-!  shflx        Kinematic net sensible heat flux (degC m/s).           !
+!  lhflx        Kinematic latent heat flux (degC m/s).                 !
+!  lrflx        Kinematic longwave radiation (degC m/s).               !
+!  snhflx       Kinematic surface net heat flux (degC m/s).            !
+!  shflx        Kinematic sensible heat flux (degC m/s).               !
 !                                                                      !
 !  Surface air humidity.                                               !
 !                                                                      !
@@ -446,6 +447,7 @@
           real(r8), pointer :: lhflx(:,:)
           real(r8), pointer :: lrflx(:,:)
           real(r8), pointer :: shflx(:,:)
+          real(r8), pointer :: snhflx(:,:)
 # endif
 
 # if defined BULK_FLUXES || defined ATM2OCN_FLUXES
@@ -658,7 +660,7 @@
 !
 !  Set horizontal array size.
 !
-      size2d=REAL((UBi-LBi)*(UBj-LBj),r8)
+      size2d=REAL((UBi-LBi+1)*(UBj-LBj+1),r8)
 !
 !  Nonlinear model state
 !
@@ -783,17 +785,20 @@
      BULK_FLUXES2D || defined NL_BULK_FLUXES
       allocate ( FORCES(ng) % sustrG(LBi:UBi,LBj:UBj,2) )
       Dmem(ng)=Dmem(ng)+2.0_r8*size2d
+
       allocate ( FORCES(ng) % svstrG(LBi:UBi,LBj:UBj,2) )
       Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 # ifdef ADJUST_WSTRESS
       allocate ( FORCES(ng) % ustr(LBi:UBi,LBj:UBj,Nfrec(ng),2) )
       Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nfrec(ng),r8)*size2d
+
       allocate ( FORCES(ng) % vstr(LBi:UBi,LBj:UBj,Nfrec(ng),2) )
       Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nfrec(ng),r8)*size2d
 # endif
       allocate ( FORCES(ng) % bustr(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( FORCES(ng) % bvstr(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
 #endif
@@ -1066,6 +1071,8 @@
       Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % shflx(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % snhflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
 # endif
 
 # if defined BULK_FLUXES || defined ATM2OCN_FLUXES
@@ -1077,10 +1084,10 @@
 #  endif
 #  ifndef ANA_RAIN
       allocate ( FORCES(ng) % rainG(LBi:UBi,LBj:UBj,2) )
-      Dmem(ng)=Dmem(ng)+2.0+r8*size2d
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #  ifdef SNOWFALL
       allocate ( FORCES(ng) % snowG(LBi:UBi,LBj:UBj,2) )
-      Dmem(ng)=Dmem(ng)+2.0+r8*size2d
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #  endif
 #  endif
 #  ifdef EMINUSP
@@ -1093,7 +1100,7 @@
       allocate ( FORCES(ng) % runoff(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % runoffG(LBi:UBi,LBj:UBj,2) )
-      Dmem(ng)=Dmem(ng)+2.0+r8*size2d
+      Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 #  endif
 # endif
 
@@ -1719,6 +1726,7 @@
             FORCES(ng) % lhflx(i,j) = IniVal
             FORCES(ng) % lrflx(i,j) = IniVal
             FORCES(ng) % shflx(i,j) = IniVal
+            FORCES(ng) % snhflx(i,j) = IniVal
 # endif
 # if defined BULK_FLUXES || defined ATM2OCN_FLUXES
             FORCES(ng) % rain(i,j) = IniVal

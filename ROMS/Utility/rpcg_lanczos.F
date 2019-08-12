@@ -131,8 +131,8 @@
 !
         MINIMIZE : IF (innLoop.eq.0) THEN
 
-# if defined W4DPSAS             || defined TL_W4DPSAS || \
-     defined W4DPSAS_SENSITIVITY
+# if defined TL_W4DPSAS || defined W4DPSAS_FCT_SENSITIVITY || \
+     defined W4DPSAS    || defined W4DPSAS_SENSITIVITY
 !
           DO iobs=1,Ndatum(ng)
             BCKmodVal(iobs)=NLmodVal(iobs)
@@ -177,8 +177,8 @@
 !
 !  Selime code:  r=b.
 !
-# if defined W4DPSAS             || defined TL_W4DPSAS || \
-     defined W4DPSAS_SENSITIVITY
+# if defined TL_W4DPSAS || defined W4DPSAS_FCT_SENSITIVITY || \
+     defined W4DPSAS    || defined W4DPSAS_SENSITIVITY
               pgrad(iobs)=ObsScale(iobs)*                               &
      &                    (ObsVal(iobs)-BCKmodVal(iobs))
 # else

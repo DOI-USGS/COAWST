@@ -512,7 +512,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, ic
+      integer :: Nstr, i, ic
       integer :: Nval
 !
 !-----------------------------------------------------------------------
@@ -528,10 +528,13 @@
           ic=ic+1
           Vout(i)=INT(Vinp(i))
         END DO
-        DO i=Ninp+1,Nout
-          ic=ic+1
-          Vout(i)=INT(Vinp(Ninp))
-        END DO
+        IF (Nout.gt.Ninp) THEN
+          Nstr=Ninp+1
+          DO i=Nstr,Nout
+            ic=ic+1
+            Vout(i)=INT(Vinp(Ninp))
+          END DO
+        END IF
       ELSE
         DO i=1,Nout
           ic=ic+1
@@ -572,7 +575,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, ic
+      integer :: Nstr, i, ic
       integer :: Nout, Nval
 !
       integer, dimension(Iout*Jout) :: Vwrk
@@ -591,10 +594,13 @@
           ic=ic+1
           Vwrk(i)=INT(Vinp(i))
         END DO
-        DO i=Ninp+1,Nout
-          ic=ic+1
-          Vwrk(i)=INT(Vinp(Ninp))
-        END DO
+        IF (Nout.gt.Ninp) THEN
+          Nstr=Ninp+1
+          DO i=Nstr,Nout
+            ic=ic+1
+            Vwrk(i)=INT(Vinp(Ninp))
+          END DO
+        END IF
       ELSE
         DO i=1,Nout
           ic=ic+1
@@ -638,7 +644,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, ic
+      integer :: Nstr, i, ic
       integer :: Nout, Nval
 !
       integer, dimension(Iout*Jout*Kout) :: Vwrk
@@ -657,10 +663,13 @@
           ic=ic+1
           Vwrk(i)=INT(Vinp(i))
         END DO
-        DO i=Ninp+1,Nout
-          ic=ic+1
-          Vwrk(i)=INT(Vinp(Ninp))
-        END DO
+        IF (Nout.gt.Ninp) THEN
+          Nstr=Ninp+1
+          DO i=Nstr,Nout
+            ic=ic+1
+            Vwrk(i)=INT(Vinp(Ninp))
+          END DO
+        END IF
       ELSE
         DO i=1,Nout
           ic=ic+1
@@ -751,7 +760,7 @@
 !
       logical :: LastValue
 
-      integer :: i, ic
+      integer :: Nstr, i, ic
       integer :: Nval
 !
 !-----------------------------------------------------------------------
@@ -774,10 +783,13 @@
           END IF
           LastValue=Vout(i)
         END DO
-        DO i=Ninp+1,Nout
-          ic=ic+1
-          Vout(i)=LastValue
-        END DO
+        IF (Nout.gt.Ninp) THEN
+          Nstr=Ninp+1
+          DO i=Nstr,Nout
+            ic=ic+1
+            Vout(i)=LastValue
+          END DO
+        END IF
       ELSE
         DO i=1,Nout
           ic=ic+1
@@ -827,7 +839,7 @@
 !
       logical, dimension(Iout*Jout) :: Vwrk
 !
-      integer :: i, ic
+      integer :: Nstr, i, ic
       integer :: Nout, Nval
 !
 !-----------------------------------------------------------------------
@@ -851,10 +863,13 @@
           END IF
           LastValue=Vwrk(i)
         END DO
-        DO i=Ninp+1,Nout
-          ic=ic+1
-          Vwrk(i)=LastValue
-        END DO
+        IF (Nout.gt.Ninp) THEN
+          Nstr=Ninp+1
+          DO i=Nstr,Nout
+            ic=ic+1
+            Vwrk(i)=LastValue
+          END DO
+        END IF
       ELSE
         DO i=1,Nout
           ic=ic+1
@@ -907,7 +922,7 @@
 !
       logical, dimension(Iout*Jout*Kout) :: Vwrk
 !
-      integer :: i, ic
+      integer :: Nstr, i, ic
       integer :: Nout, Nval
 !
 !-----------------------------------------------------------------------
@@ -931,10 +946,13 @@
           END IF
           LastValue=Vwrk(i)
         END DO
-        DO i=Ninp+1,Nout
-          ic=ic+1
-          Vwrk(i)=LastValue
-        END DO
+        IF (Nout.gt.Ninp) THEN
+          Nstr=Ninp+1
+          DO i=Nstr,Nout
+            ic=ic+1
+            Vwrk(i)=LastValue
+          END DO
+        END IF
       ELSE
         DO i=1,Nout
           ic=ic+1
@@ -1026,7 +1044,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, ic
+      integer :: Nstr, i, ic
       integer :: Nval
 !
 !-----------------------------------------------------------------------
@@ -1042,10 +1060,13 @@
           ic=ic+1
           Vout(i)=Vinp(i)
         END DO
-        DO i=Ninp+1,Nout
-          ic=ic+1
-          Vout(i)=Vinp(Ninp)
-        END DO
+        IF (Nout.gt.Ninp) THEN
+          Nstr=Ninp+1
+          DO i=Nstr,Nout
+            ic=ic+1
+            Vout(i)=Vinp(Ninp)
+          END DO
+        END IF
       ELSE
         DO i=1,Nout
           ic=ic+1
@@ -1087,7 +1108,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, ic
+      integer :: Nstr, i, ic
       integer :: Nout, Nval
 !
       real(dp), dimension(Iout*Jout) :: Vwrk
@@ -1106,10 +1127,13 @@
           ic=ic+1
           Vwrk(i)=Vinp(i)
         END DO
-        DO i=Ninp+1,Nout
-          ic=ic+1
-          Vwrk(i)=Vinp(Ninp)
-        END DO
+        IF (Nout.gt.Ninp) THEN
+          Nstr=Ninp+1
+          DO i=Nstr,Nout
+            ic=ic+1
+            Vwrk(i)=Vinp(Ninp)
+          END DO
+        END IF
       ELSE
         DO i=1,Nout
           ic=ic+1
@@ -1154,7 +1178,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, ic
+      integer :: Nstr, i, ic
       integer :: Nout, Nval
 !
       real(dp), dimension(Iout*Jout*Kout) :: Vwrk
@@ -1173,10 +1197,13 @@
           ic=ic+1
           Vwrk(i)=Vinp(i)
         END DO
-        DO i=Ninp+1,Nout
-          ic=ic+1
-          Vwrk(i)=Vinp(Ninp)
-        END DO
+        IF (Nout.gt.Ninp) THEN
+          Nstr=Ninp+1
+          DO i=Nstr,Nout
+            ic=ic+1
+            Vwrk(i)=Vinp(Ninp)
+          END DO
+        END IF
       ELSE
         DO i=1,Nout
           ic=ic+1
@@ -1266,7 +1293,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, ic
+      integer :: Nstr, i, ic
       integer :: Nval
 !
 !-----------------------------------------------------------------------
@@ -1286,14 +1313,17 @@
           Vout(i)=Vinp(i)
 #endif
         END DO
-        DO i=Ninp+1,Nout
-          ic=ic+1
+        IF (Nout.gt.Ninp) THEN
+          Nstr=Ninp+1
+          DO i=Nstr,Nout
+            ic=ic+1
 #ifdef SINGLE_PRECISION
-          Vout(i)=REAL(Vinp(Ninp),r8)
+            Vout(i)=REAL(Vinp(Ninp),r8)
 #else
-          Vout(i)=Vinp(Ninp)
+            Vout(i)=Vinp(Ninp)
 #endif
-        END DO
+          END DO
+        END IF
       ELSE
         DO i=1,Nout
           ic=ic+1
@@ -1339,7 +1369,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, ic
+      integer :: Nstr, i, ic
       integer :: Nout, Nval
 !
       real(r8), dimension(Iout*Jout) :: Vwrk
@@ -1362,14 +1392,17 @@
           Vwrk(i)=Vinp(i)
 #endif
         END DO
-        DO i=Ninp+1,Nout
-          ic=ic+1
+        IF (Nout.gt.Ninp) THEN
+          Nstr=Ninp+1
+          DO i=Nstr,Nout
+            ic=ic+1
 #ifdef SINGLE_PRECISION
-          Vwrk(i)=REAL(Vinp(Ninp),r8)
+            Vwrk(i)=REAL(Vinp(Ninp),r8)
 #else
-          Vwrk(i)=Vinp(Ninp)
+            Vwrk(i)=Vinp(Ninp)
 #endif
-        END DO
+          END DO
+        END IF
       ELSE
         DO i=1,Nout
           ic=ic+1
@@ -1418,7 +1451,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, ic
+      integer :: Nstr, i, ic
       integer :: Nout, Nval
 !
       real(r8), dimension(Iout*Jout*Kout) :: Vwrk
@@ -1441,14 +1474,17 @@
           Vwrk(i)=Vinp(i)
 #endif
         END DO
-        DO i=Ninp+1,Nout
-          ic=ic+1
+        IF (Nout.gt.Ninp) THEN
+          Nstr=Ninp+1
+          DO i=Nstr,Nout
+            ic=ic+1
 #ifdef SINGLE_PRECISION
-          Vwrk(i)=REAL(Vinp(Ninp),r8)
+            Vwrk(i)=REAL(Vinp(Ninp),r8)
 #else
-          Vwrk(i)=Vinp(Ninp)
+            Vwrk(i)=Vinp(Ninp)
 #endif
-        END DO
+          END DO
+        END IF
       ELSE
         DO i=1,Nout
           ic=ic+1

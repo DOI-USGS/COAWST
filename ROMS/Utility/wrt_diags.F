@@ -29,6 +29,9 @@
       USE nf_fwrite2d_mod, ONLY : nf_fwrite2d
 # ifdef SOLVE3D
       USE nf_fwrite3d_mod, ONLY : nf_fwrite3d
+#  ifdef ECOSIM
+      USE nf_fwrite4d_mod, ONLY : nf_fwrite4d
+#  endif
 # endif
       USE strings_mod,     ONLY : FoundError
 !
@@ -228,7 +231,8 @@
         END DO
       END DO
 # endif
-# if defined DIAGNOSTICS_BIO
+# ifdef DIAGNOSTICS_BIO
+#  if defined BIO_FENNEL || defined HYPOXIA_SRM
 !
 !  Write out 2D biological diagnostic fields.
 !
@@ -247,9 +251,9 @@
      &                       DIA(ng)%Vid(ifield),                       &
      &                       DIA(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, scale,                 &
-#  ifdef MASKING
+#   ifdef MASKING
      &                       GRID(ng) % rmask,                          &
-#  endif
+#   endif
      &                       DIAGS(ng) % DiaBio2d(:,:,ivar),            &
      &                       SetFillVal = .FALSE.)
           IF (FoundError(status, nf90_noerr, __LINE__,                  &
@@ -263,6 +267,8 @@
           END IF
         END IF
       END DO
+#  endif
+#  if defined BIO_FENNEL
 !
 !  Write out 3D biological diagnostic fields.
 !
@@ -275,9 +281,9 @@
      &                       DIA(ng)%Vid(ifield),                       &
      &                       DIA(ng)%Rindex, gtype,                     &
      &                       LBi, UBi, LBj, UBj, 1, N(ng), scale,       &
-#  ifdef MASKING
+#   ifdef MASKING
      &                       GRID(ng) % rmask,                          &
-#  endif
+#   endif
      &                       DIAGS(ng) % DiaBio3d(:,:,:,ivar),          &
      &                       SetFillVal = .FALSE.)
           IF (FoundError(status, nf90_noerr, __LINE__,                  &
@@ -291,6 +297,67 @@
           END IF
         END IF
       END DO
+#  elif defined ECOSIM
+!
+!  Write out 3D biological diagnostic fields.
+!
+      dtBIO=dt(ng)*sec2day/REAL(BioIter(ng),r8)
+      DO ivar=1,NDbio3d
+        ifield=iDbio3(ivar)
+        IF (Dout(ifield,ng)) THEN
+          scale=1.0_r8                               ! micromole m-2 s-1
+          gtype=gfactor*l3dvar
+          status=nf_fwrite3d(ng, iNLM, DIA(ng)%ncid,                    &
+     &                       DIA(ng)%Vid(ifield),                       &
+     &                       DIA(ng)%Rindex, gtype,                     &
+     &                       LBi, UBi, LBj, UBj, 1, NDbands, scale,     &
+#   ifdef MASKING
+     &                       GRID(ng) % rmask,                          &
+#   endif
+     &                       DIAGS(ng) % DiaBio3d(:,:,:,ivar),          &
+     &                       SetFillVal = .FALSE.)
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
+            IF (Master) THEN
+              WRITE (stdout,10) TRIM(Vname(1,ifield)), DIA(ng)%Rindex
+            END IF
+            exit_flag=3
+            ioerror=status
+            RETURN
+          END IF
+        END IF
+      END DO
+!
+!  Write out 4D biological diagnostic fields.
+!
+      dtBIO=dt(ng)*sec2day/REAL(BioIter(ng),r8)
+      DO ivar=1,NDbio4d
+        ifield=iDbio4(ivar)
+        IF (Dout(ifield,ng)) THEN
+            scale=1.0_r8                 ! micromole m-2 s-1 or m-1
+          gtype=gfactor*l4dvar
+          status=nf_fwrite4d(ng, iNLM, DIA(ng)%ncid,                    &
+     &                       DIA(ng)%Vid(ifield),                       &
+     &                       DIA(ng)%Rindex, gtype,                     &
+     &                       LBi, UBi, LBj, UBj, 1, N(ng), 1, NDbands,  &
+     &                       scale,                                     &
+#   ifdef MASKING
+     &                       GRID(ng) % rmask,                          &
+#   endif
+     &                       DIAGS(ng) % DiaBio4d(:,:,:,:,ivar),        &
+     &                       SetFillVal = .FALSE.)
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
+            IF (Master) THEN
+              WRITE (stdout,10) TRIM(Vname(1,ifield)), DIA(ng)%Rindex
+            END IF
+            exit_flag=3
+            ioerror=status
+            RETURN
+          END IF
+        END IF
+      END DO
+#  endif
 # endif
 !
 !  Synchronize time-average NetCDF file to disk to allow other processes

@@ -13,6 +13,7 @@
 !                                                                      !
 !  DiaBio2d  Diagnostics for 2D biological terms.                      !
 !  DiaBio3d  Diagnostics for 3D biological terms.                      !
+!  DiaBio4d  Diagnostics for 4D bio-optical terms.                     !
 !  DiaTrc    Diagnostics for tracer terms.                             !
 !  DiaU2d    Diagnostics for 2D U-momentum terms.                      !
 !  DiaV2d    Diagnostics for 2D V-momentum terms.                      !
@@ -45,9 +46,14 @@
 
         TYPE T_DIAGS
 
-# if defined DIAGNOSTICS_BIO && defined BIO_FENNEL
+# ifdef DIAGNOSTICS_BIO
+#  if defined BIO_FENNEL
           real(r8), pointer :: DiaBio2d(:,:,:)
           real(r8), pointer :: DiaBio3d(:,:,:,:)
+#  elif defined ECOSIM
+          real(r8), pointer :: DiaBio3d(:,:,:,:)
+          real(r8), pointer :: DiaBio4d(:,:,:,:,:)
+#  endif
 # endif
 
 # ifdef DIAGNOSTICS_TS
@@ -110,11 +116,12 @@
 !
 !  Set horizontal array size.
 !
-      size2d=REAL((UBi-LBi)*(UBj-LBj),r8)
+      size2d=REAL((UBi-LBi+1)*(UBj-LBj+1),r8)
 !
 !  Diagnostic arrays.
 !
-# if defined DIAGNOSTICS_BIO && defined BIO_FENNEL
+# ifdef DIAGNOSTICS_BIO
+#  if defined BIO_FENNEL
       IF (NDbio2d.gt.0) THEN
         allocate ( DIAGS(ng) % DiaBio2d(LBi:UBi,LBj:UBj,NDbio2d) )
         Dmem(ng)=Dmem(ng)+REAL(NDbio2d,r8)*size2d
@@ -123,6 +130,18 @@
         allocate ( DIAGS(ng) % DiaBio3d(LBi:UBi,LBj:UBj,N(ng),NDbio3d) )
         Dmem(ng)=Dmem(ng)+REAL(N(ng)*NDbio3d,r8)*size2d
       END IF
+#  elif defined ECOSIM
+      IF (NDbio3d.gt.0) THEN
+        allocate ( DIAGS(ng) % DiaBio3d(LBi:UBi,LBj:UBj,                &
+     &                                  NDbands,NDbio3d) )
+        Dmem(ng)=Dmem(ng)+REAL(NDbands*NDbio3d,r8)*size2d
+      END IF
+      IF (NDbio4d.gt.0) THEN
+        allocate ( DIAGS(ng) % DiaBio4d(LBi:UBi,LBj:UBj,N(ng),          &
+     &                                  NDbands,NDbio4d) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)*NDbands*NDbio4d,r8)*size2d
+      END IF
+#  endif
 # endif
 
 # ifdef DIAGNOSTICS_TS
@@ -213,7 +232,7 @@
       integer :: Imin, Imax, Jmin, Jmax
       integer :: i, idiag, j
 # ifdef SOLVE3D
-      integer :: itrc, k
+      integer :: itrc, iband, k
 # endif
 
       real(r8), parameter :: IniVal = 0.0_r8
@@ -255,7 +274,8 @@
 !-----------------------------------------------------------------------
 !
       DO j=Jmin,Jmax
-# if defined DIAGNOSTICS_BIO && defined BIO_FENNEL
+# ifdef DIAGNOSTICS_BIO
+#  if defined BIO_FENNEL
         IF (NDbio2d.gt.0) THEN
           DO idiag=1,NDbio2d
             DO i=Imin,Imax
@@ -272,6 +292,28 @@
             END DO
           END DO
         END IF
+#  elif defined ECOSIM
+        IF (NDbio3d.gt.0) THEN
+          DO idiag=1,NDbio3d
+            DO k=1,NDbands
+              DO i=Imin,Imax
+                DIAGS(ng) % DiaBio3d(i,j,k,idiag) = IniVal
+              END DO
+            END DO
+          END DO
+        END IF
+        IF (NDbio4d.gt.0) THEN
+          DO idiag=1,NDbio4d
+            DO iband=1,NDbands
+              DO k=1,N(ng)
+                DO i=Imin,Imax
+                  DIAGS(ng) % DiaBio4d(i,j,k,iband,idiag) = IniVal
+                END DO
+              END DO
+            END DO
+          END DO
+        END IF
+#  endif
 # endif
 # ifdef DIAGNOSTICS_TS
         DO idiag=1,NDT

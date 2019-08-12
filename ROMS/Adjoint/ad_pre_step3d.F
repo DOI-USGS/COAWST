@@ -1272,7 +1272,7 @@
 !  Apply mass point sources (volume vertical influx), if any.
 !  (Notice the j-loop is pipelined above).
 !
-          IF (LwSrc(ng).and.ANY(LtracerSrc(:,ng))) THEN
+          IF (LwSrc(ng)) THEN
             DO is=1,Nsrc(ng)
               Isrc=SOURCES(ng)%Isrc(is)
               Jsrc=SOURCES(ng)%Jsrc(is)
@@ -1873,29 +1873,40 @@
 !  Apply tracers point sources to the horizontal advection terms,
 !  if any.
 !
-          IF (LuvSrc(ng).and.ANY(LtracerSrc(:,ng))) THEN
+          IF (LuvSrc(ng)) THEN
             DO is=1,Nsrc(ng)
               Isrc=SOURCES(ng)%Isrc(is)
               Jsrc=SOURCES(ng)%Jsrc(is)
-              IF (LtracerSrc(itrc,ng).and.                              &
-     &            ((Istr.le.Isrc).and.(Isrc.le.Iend+1)).and.            &
+              IF (((Istr.le.Isrc).and.(Isrc.le.Iend+1)).and.            &
      &            ((Jstr.le.Jsrc).and.(Jsrc.le.Jend+1))) THEN
                 IF (INT(SOURCES(ng)%Dsrc(is)).eq.0) THEN
-!>                tl_FX(Isrc,Jsrc)=tl_Huon(Isrc,Jsrc,k)*                &
-!>   &                             SOURCES(ng)%Tsrc(is,k,itrc)
+                  IF (LtracerSrc(itrc,ng)) THEN
+!>                  tl_FX(Isrc,Jsrc)=tl_Huon(Isrc,Jsrc,k)*              &
+!>   &                               SOURCES(ng)%Tsrc(is,k,itrc)
 !>
-                  ad_Huon(Isrc,Jsrc,k)=ad_Huon(Isrc,Jsrc,k)+            &
-     &                                 SOURCES(ng)%Tsrc(is,k,itrc)*     &
-     &                                 ad_FX(Isrc,Jsrc)
-                  ad_FX(Isrc,Jsrc)=0.0_r8
+                    ad_Huon(Isrc,Jsrc,k)=ad_Huon(Isrc,Jsrc,k)+          &
+     &                                   SOURCES(ng)%Tsrc(is,k,itrc)*   &
+     &                                   ad_FX(Isrc,Jsrc)
+                    ad_FX(Isrc,Jsrc)=0.0_r8
+                  ELSE
+!>                  tl_FX(Isrc,Jsrc)=0.0_r8
+!>
+                    ad_FX(Isrc,Jsrc)=0.0_r8
+                  END IF
                 ELSE
-!>                tl_FE(Isrc,Jsrc)=tl_Hvom(Isrc,Jsrc,k)*                &
-!>   &                             SOURCES(ng)%Tsrc(is,k,itrc)
+                  IF (LtracerSrc(itrc,ng)) THEN
+!>                  tl_FE(Isrc,Jsrc)=tl_Hvom(Isrc,Jsrc,k)*              &
+!>   &                               SOURCES(ng)%Tsrc(is,k,itrc)
 !>
-                  ad_Hvom(Isrc,Jsrc,k)=ad_Hvom(Isrc,Jsrc,k)+            &
-     &                                 SOURCES(ng)%Tsrc(is,k,itrc)*     &
-     &                                 ad_FE(Isrc,Jsrc)
-                  ad_FE(Isrc,Jsrc)=0.0_r8
+                    ad_Hvom(Isrc,Jsrc,k)=ad_Hvom(Isrc,Jsrc,k)+          &
+     &                                   SOURCES(ng)%Tsrc(is,k,itrc)*   &
+     &                                   ad_FE(Isrc,Jsrc)
+                    ad_FE(Isrc,Jsrc)=0.0_r8
+                  ELSE
+!>                  tl_FE(Isrc,Jsrc)=0.0_r8
+!>
+                    ad_FE(Isrc,Jsrc)=0.0_r8
+                  END IF
                 END IF
               END IF
             END DO

@@ -4,7 +4,7 @@
      &                   Nx, Ny, Finp, Amin, Amax,                      &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   Xout, Yout, Fout)
+     &                   MyXout, Xout, Yout, Fout)
 !
 !svn $Id: regrid.F 889 2018-02-10 03:32:52Z arango $
 !================================================== Hernan G. Arango ===
@@ -14,7 +14,13 @@
 !=======================================================================
 !                                                                      !
 !  This routine interpolates gridded data, Finp, to model locations    !
-!  Xout and Yout.                                                      !
+!  Xout and Yout.  Input data are allow to have longitudes ranging     !
+!  from [-180 180] or [0 360].  Usually, the ROMS application have     !
+!  longitudes in the range [-180 180].                                 !
+!                                                                      !
+!  The Imin, Imax, Jmin, and Jmax indices are the global values of     !
+!  application domain in serial I/O. However, in parallel I/O they     !
+!  are the tiled values.                                               !
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
@@ -39,6 +45,7 @@
 !     Imax       Fout ending   data I-index (integer)                  !
 !     Jmin       Fout starting data J-index (integer)                  !
 !     Jmax       Fout ending   data J-index (integer)                  !
+!     MyXout     Work X-locations (longitude) for regridding (real)    !
 !     Xout       X-locations (longitude) to interpolate (real)         !
 !     Yout       Y-locations (latitude)  to interpolate (real)         !
 !                                                                      !
@@ -73,6 +80,8 @@
 !
       real(r8), intent(inout) :: Finp(Nx,Ny)
 
+      real(r8), intent(inout) :: MyXout(LBi:UBi,LBj:UBj)
+
       real(r8), intent(in) :: Xout(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Yout(LBi:UBi,LBj:UBj)
 
@@ -83,7 +92,7 @@
 !
 !  Local variable declarations
 !
-      logical :: rectangular
+      logical :: EastLon, rectangular
       integer :: i, j
       integer :: Istr, Iend, Jstr, Jend
 #ifdef DISTRIBUTE
@@ -92,6 +101,7 @@
       real(r8), parameter :: IJspv = 0.0_r8
 
       real(r8) :: my_min, my_max, Xmin, Xmax, Ymin, Ymax
+      real(r8) :: MyLonMin, MyLonMax
 
       real(r8), dimension(Nx,Ny) :: angle
       real(r8), dimension(Nx,Ny) :: Xinp
@@ -130,17 +140,53 @@
       Iout=0.0_r8
       Jout=0.0_r8
 !
+!  Copy longitude coordinate Xout to MyXout. If the longitude of the
+!  data is from a global grid [0-360] or in degrees_east, convert Xout
+!  to east longitudes (MyXout) to facilitate regridding. In such case,
+!  positive multiples of 360 map to 360 and negative multiples of 360
+!  map to zero using the MODULO intrinsic Fortran function.
+!
+      IF ((Xmin.ge.0.0_r8).and.(Xmax.gt.0.0_r8).and.                    &
+     &    ((Xmax-Xmin).gt.315.0_r8)) THEN
+        EastLon=.TRUE.
+        MyLonMin=MODULO(LonMin(ng), 360.0_r8)
+        IF ((MyLonMin.eq.0.0_r8).and.                                   &
+     &          (LonMin(ng).gt.0.0_r8)) MyLonMin=360.0_r8
+        MyLonMax=MODULO(LonMax(ng), 360.0_r8)
+        IF ((MyLonMax.eq.0.0_r8).and.                                   &
+     &          (LonMax(ng).gt.0.0_r8)) MyLonMax=360.0_r8
+      ELSE
+        EastLon=.FALSE.
+        MyLonMin=LonMin(ng)
+        MyLonMax=LonMax(ng)
+      END IF
+      IF (EastLon) THEN
+        DO j=LBj,UBj
+          DO i=LBi,UBi
+            MyXout(i,j)=MODULO(Xout(i,j), 360.0_r8)   ! range [0 360]
+            IF ((MyXout(i,j).eq.0.0_r8).and.                            &
+     &          (Xout(i,j).gt.0.0_r8)) MyXout(i,j)=360.0_r8
+          END DO
+        END DO
+      ELSE
+        DO j=LBj,UBj
+          DO i=LBi,UBi
+            MyXout(i,j)=Xout(i,j)                     ! range [-180 180]
+          END DO
+        END DO
+      END IF
+!
 !-----------------------------------------------------------------------
 !  Check if gridded data contains model grid.
 !-----------------------------------------------------------------------
 !
-      IF ((LonMin(ng).lt.Xmin).or.                                      &
-     &    (LonMax(ng).gt.Xmax).or.                                      &
+      IF ((MyLonMin  .lt.Xmin).or.                                      &
+     &    (MyLonMax  .gt.Xmax).or.                                      &
      &    (LatMin(ng).lt.Ymin).or.                                      &
      &    (LatMax(ng).gt.Ymax)) THEN
         IF (Master) THEN
           WRITE (stdout,10) Xmin, Xmax, Ymin, Ymax,                     &
-     &                      LonMin(ng), LonMax(ng),                     &
+     &                      MyLonMin  , MyLonMax,                       &
      &                      LatMin(ng), LatMax(ng)
  10       FORMAT (/, ' REGRID - input gridded data does not contain',   &
      &               ' model grid:', /,                                 &
@@ -193,7 +239,7 @@
      &               angle, Xinp, Yinp,                                 &
      &               LBi, UBi, LBj, UBj,                                &
      &               Istr, Iend, Jstr, Jend,                            &
-     &               Xout, Yout,                                        &
+     &               MyXout, Yout,                                      &
      &               Iout, Jout,                                        &
      &               IJspv, rectangular)
 
@@ -202,14 +248,14 @@
      &                  Xinp, Yinp, Finp,                               &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  Istr, Iend, Jstr, Jend,                         &
-     &                  Iout, Jout, Xout, Yout,                         &
+     &                  Iout, Jout, MyXout, Yout,                       &
      &                  Fout, my_min, my_max)
       ELSE IF (iflag.eq.cubic) THEN
         CALL cinterp2d (ng, 1, Nx, 1, Ny,                               &
      &                  Xinp, Yinp, Finp,                               &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  Istr, Iend, Jstr, Jend,                         &
-     &                  Iout, Jout, Xout, Yout,                         &
+     &                  Iout, Jout, MyXout, Yout,                       &
      &                  Fout, my_min, my_max)
       END IF
 !

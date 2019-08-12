@@ -895,14 +895,14 @@
                 DO itrc=1,NDbio2d
                   i=iDbio2(itrc)
                   IF (Dout(i,ng)) WRITE (out,130)                         &
-     &                Dout(i,ng), 'Hout(iDbio2)',                         &
+     &                Dout(i,ng), 'Dout(iDbio2)',                         &
      &                'Write out diagnostics for', TRIM(Vname(1,i))
                 END DO
               END IF
               DO itrc=1,NDbio3d
                 i=iDbio3(itrc)
                 IF (Dout(i,ng)) WRITE (out,130)                           &
-     &              Dout(i,ng), 'Hout(iDbio3)',                           &
+     &              Dout(i,ng), 'Dout(iDbio3)',                           &
      &              'Write out diagnostics for', TRIM(Vname(1,i))
               END DO
             END IF

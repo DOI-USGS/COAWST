@@ -42,12 +42,12 @@
       USE mod_stepping
 !
       USE nf_fwrite2d_mod, ONLY : nf_fwrite2d
-#if defined PERFECT_RESTART || defined SOLVE3D
+# if defined PERFECT_RESTART || defined SOLVE3D
       USE nf_fwrite3d_mod, ONLY : nf_fwrite3d
-#endif
-#if defined PERFECT_RESTART && defined SOLVE3D
+# endif
+# if defined PERFECT_RESTART && defined SOLVE3D
       USE nf_fwrite4d_mod, ONLY : nf_fwrite4d
-#endif
+# endif
       USE strings_mod,     ONLY : FoundError
 #ifdef INWAVE_MODEL
       USE mod_inwave_params
@@ -64,9 +64,9 @@
 !
       integer :: LBi, UBi, LBj, UBj
       integer :: Fcount, gfactor, gtype, i, itrc, status, varid
-#if defined PERFECT_RESTART || defined SOLVE3D
+# if defined PERFECT_RESTART || defined SOLVE3D
       integer :: ntmp(1)
-#endif
+# endif
       real(r8) :: scale
 !
       LBi=LBOUND(GRID(ng)%h,DIM=1)

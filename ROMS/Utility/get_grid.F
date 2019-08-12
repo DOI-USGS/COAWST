@@ -46,7 +46,9 @@
 # if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
      defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
      defined SO_SEMI
+#  ifndef OBS_SPACE
       logical :: GotScope(6)
+#  endif
 # endif
       integer :: tile, LBi, UBi, LBj, UBj
       integer :: cr, gtype, i, status, vindex
@@ -1660,6 +1662,7 @@
 # if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
      defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
      defined SO_SEMI
+#  ifndef OBS_SPACE
 !
 !  Read in adjoint sensitivity spatial scope masking at RHO-points.
 !
@@ -1670,9 +1673,9 @@
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
-#  ifdef MASKING
+#   ifdef MASKING
      &                        GRID(ng) % rmask,                         &
-#  endif
+#   endif
      &                        GRID(ng) % Rscope)
             IF (FoundError(status, nf90_noerr, __LINE__,                &
      &                     __FILE__)) THEN
@@ -1692,13 +1695,13 @@
      &                                LBi, UBi, LBj, UBj,               &
      &                                GRID(ng) % Rscope)
             END IF
-#  ifdef DISTRIBUTE
+#   ifdef DISTRIBUTE
             CALL mp_exchange2d (ng, tile, model, 1,                     &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          NghostPoints,                           &
      &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          GRID(ng) % Rscope)
-#  endif
+#   endif
 !
 !  Read in adjoint sensitivity spatial scope masking at U-points.
 !
@@ -1709,9 +1712,9 @@
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
-#  ifdef MASKING
+#   ifdef MASKING
      &                        GRID(ng) % umask,                         &
-#  endif
+#   endif
      &                        GRID(ng) % Uscope)
             IF (FoundError(status, nf90_noerr, __LINE__,                &
      &                     __FILE__)) THEN
@@ -1731,13 +1734,13 @@
      &                                LBi, UBi, LBj, UBj,               &
      &                                GRID(ng) % Uscope)
             END IF
-#  ifdef DISTRIBUTE
+#   ifdef DISTRIBUTE
             CALL mp_exchange2d (ng, tile, model, 1,                     &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          NghostPoints,                           &
      &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          GRID(ng) % Uscope)
-#  endif
+#   endif
 !
 !  Read in adjoint sensitivity spatial scope masking at V-points.
 !
@@ -1748,9 +1751,9 @@
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
-#  ifdef MASKING
+#   ifdef MASKING
      &                        GRID(ng) % vmask,                         &
-#  endif
+#   endif
      &                        GRID(ng) % Vscope)
             IF (FoundError(status, nf90_noerr, __LINE__,                &
      &                     __FILE__)) THEN
@@ -1770,12 +1773,13 @@
      &                                LBi, UBi, LBj, UBj,               &
      &                                GRID(ng) % Vscope)
             END IF
-#  ifdef DISTRIBUTE
+#   ifdef DISTRIBUTE
             CALL mp_exchange2d (ng, tile, model, 1,                     &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          NghostPoints,                           &
      &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          GRID(ng) % Vscope)
+#   endif
 #  endif
 # endif
         END SELECT
@@ -1954,6 +1958,7 @@
 # if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
      defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
      defined SO_SEMI
+#  ifndef OBS_SPACE
 !
 !-----------------------------------------------------------------------
 !  Inquire adjoint sensitivity forcing file. Read scope arrays again.
@@ -2031,9 +2036,9 @@
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
-#  ifdef MASKING
+#   ifdef MASKING
      &                        GRID(ng) % rmask,                         &
-#  endif
+#   endif
      &                        GRID(ng) % Rscope)
             IF (FoundError(status, nf90_noerr, __LINE__,                &
      &                     __FILE__)) THEN
@@ -2052,13 +2057,13 @@
      &                                LBi, UBi, LBj, UBj,               &
      &                                GRID(ng) % Rscope)
             END IF
-#  ifdef DISTRIBUTE
+#   ifdef DISTRIBUTE
             CALL mp_exchange2d (ng, tile, model, 1,                     &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          NghostPoints,                           &
      &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          GRID(ng) % Rscope)
-#  endif
+#   endif
 !
 !  Read in adjoint sensitivity spatial scope masking at U-points.
 !
@@ -2069,9 +2074,9 @@
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
-#  ifdef MASKING
+#   ifdef MASKING
      &                        GRID(ng) % umask,                         &
-#  endif
+#   endif
      &                        GRID(ng) % Uscope)
             IF (FoundError(status, nf90_noerr, __LINE__,                &
      &                     __FILE__)) THEN
@@ -2090,13 +2095,13 @@
      &                                LBi, UBi, LBj, UBj,               &
      &                                GRID(ng) % Uscope)
             END IF
-#  ifdef DISTRIBUTE
+#   ifdef DISTRIBUTE
             CALL mp_exchange2d (ng, tile, model, 1,                     &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          NghostPoints,                           &
      &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          GRID(ng) % Uscope)
-#  endif
+#   endif
 !
 !  Read in adjoint sensitivity spatial scope masking at V-points.
 !
@@ -2107,9 +2112,9 @@
      &                        0, gtype, Vsize,                          &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        Fscl, Fmin, Fmax,                         &
-#  ifdef MASKING
+#   ifdef MASKING
      &                        GRID(ng) % vmask,                         &
-#  endif
+#   endif
      &                        GRID(ng) % Vscope)
             IF (FoundError(status, nf90_noerr, __LINE__,                &
      &                     __FILE__)) THEN
@@ -2128,13 +2133,13 @@
      &                                LBi, UBi, LBj, UBj,               &
      &                                GRID(ng) % Vscope)
             END IF
-#  ifdef DISTRIBUTE
+#   ifdef DISTRIBUTE
             CALL mp_exchange2d (ng, tile, model, 1,                     &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          NghostPoints,                           &
      &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          GRID(ng) % Vscope)
-#  endif
+#   endif
         END SELECT
       END DO
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
@@ -2142,6 +2147,7 @@
         IF (Master) WRITE (stdout,40) TRIM(var_name(i)), TRIM(ncname)
         RETURN
       END IF
+#  endif
 # endif
 !
   10  FORMAT (/,' GET_GRID - unable to open grid NetCDF file: ',a)

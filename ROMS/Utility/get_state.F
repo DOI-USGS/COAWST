@@ -6889,9 +6889,9 @@
       END IF FRC_STATE
 #endif
 
-#if (defined W4DPSAS || defined TL_W4DPSAS || \
-     defined W4DPSAS_SENSITIVITY)          && \
-    (defined ADJUST_BOUNDARY || defined ADJUST_WSTRESS ||\
+#if (defined TL_W4DPSAS      || defined W4DPSAS_FCT_SENSITIVITY || \
+     defined W4DPSAS         || defined W4DPSAS_SENSITIVITY)    && \
+    (defined ADJUST_BOUNDARY || defined ADJUST_WSTRESS          || \
      defined ADJUST_STFLUX)
 !
 !-----------------------------------------------------------------------

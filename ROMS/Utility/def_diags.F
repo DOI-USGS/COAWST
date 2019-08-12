@@ -47,14 +47,16 @@
 
       integer, parameter :: Natt = 25
 
-      integer :: i, ifield, itrc, ivar, j, nvd3, nvd4
+      integer :: i, ifield, itrc, ivar, j, nvd3, nvd4, nvd5
       integer :: recdim, status
 # if defined WRITE_WATER && defined MASKING
       integer :: xy_pdim, xyz_pdim
 # endif
-      integer :: DimIDs(32), t2dgrd(3), u2dgrd(3), v2dgrd(3)
-      integer :: Vsize(4)
-
+      integer :: DimIDs(nDimID)
+      integer :: t2dgrd(3), u2dgrd(3), v2dgrd(3)
+# if defined ECOSIM && defined DIAGNOSTICS_BIO
+      integer :: l3dgrd(4), l4dgrd(5)
+# endif
       integer :: def_dim
 
 # ifdef SOLVE3D
@@ -66,6 +68,7 @@
 
       real(r8) :: Aval(6)
 
+      character (len= 13) :: Prefix
       character (len=120) :: Vinfo(Natt)
       character (len=256) :: ncname
 !
@@ -236,6 +239,11 @@
      &                 __FILE__)) RETURN
 #  endif
 #  ifdef ECOSIM
+        status=def_dim(ng, iNLM, DIA(ng)%ncid, ncname, 'Nbands',        &
+     &                 NDbands, DimIDs(33))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+
         status=def_dim(ng, iNLM, DIA(ng)%ncid, ncname, 'Nphy',          &
      &                 Nphy, DimIDs(25))
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
@@ -283,9 +291,11 @@
 #if defined WRITE_WATER && defined MASKING
         nvd3=2
         nvd4=2
+        nvd5=2
 #else
         nvd3=3
         nvd4=4
+        nvd5=5
 #endif
 !
 !  Define dimension vectors for staggered tracer type variables.
@@ -377,6 +387,21 @@
         b3dgrd(4)=DimIDs(12)
 #   endif
 #  endif
+#  if defined ECOSIM && defined DIAGNOSTICS_BIO
+!
+!  Define dimension vector for spectral light type variables.
+!
+        l3dgrd(1)=DimIDs( 1)
+        l3dgrd(2)=DimIDs( 5)
+        l3dgrd(3)=DimIDs(33)
+        l3dgrd(4)=DimIDs(12)
+!
+        l4dgrd(1)=DimIDs( 1)
+        l4dgrd(2)=DimIDs( 5)
+        l4dgrd(3)=DimIDs( 9)
+        l4dgrd(4)=DimIDs(33)
+        l4dgrd(5)=DimIDs(12)
+#  endif
 # endif
 !
 !  Initialize unlimited time record dimension.
@@ -393,6 +418,10 @@
         DO i=1,6
           Aval(i)=0.0_r8
         END DO
+!
+!  Set long name prefix string.
+!
+        Prefix='time-averaged'
 !
 !-----------------------------------------------------------------------
 !  Define time-recordless information variables.
@@ -427,7 +456,7 @@
           ifield=idDu2d(ivar)
           IF (Dout(ifield,ng)) THEN
             Vinfo( 1)=Vname(1,ifield)
-            Vinfo( 2)=Vname(2,ifield)
+            WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,ifield))
             Vinfo( 3)=Vname(3,ifield)
             Vinfo(14)=Vname(4,ifield)
             Vinfo(16)=Vname(1,idtime)
@@ -444,7 +473,7 @@
           ifield=idDv2d(ivar)
           IF (Dout(ifield,ng)) THEN
             Vinfo( 1)=Vname(1,ifield)
-            Vinfo( 2)=Vname(2,ifield)
+            WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,ifield))
             Vinfo( 3)=Vname(3,ifield)
             Vinfo(14)=Vname(4,ifield)
             Vinfo(16)=Vname(1,idtime)
@@ -468,7 +497,7 @@
           ifield=idDu3d(ivar)
           IF (Dout(ifield,ng)) THEN
             Vinfo( 1)=Vname(1,ifield)
-            Vinfo( 2)=Vname(2,ifield)
+            WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,ifield))
             Vinfo( 3)=Vname(3,ifield)
             Vinfo(14)=Vname(4,ifield)
             Vinfo(16)=Vname(1,idtime)
@@ -485,7 +514,7 @@
           ifield=idDv3d(ivar)
           IF (Dout(ifield,ng)) THEN
             Vinfo( 1)=Vname(1,ifield)
-            Vinfo( 2)=Vname(2,ifield)
+            WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,ifield))
             Vinfo( 3)=Vname(3,ifield)
             Vinfo(14)=Vname(4,ifield)
             Vinfo(16)=Vname(1,idtime)
@@ -511,7 +540,7 @@
             ifield=idDtrc(itrc,ivar)
             IF (Dout(ifield,ng)) THEN
               Vinfo( 1)=Vname(1,ifield)
-              Vinfo( 2)=Vname(2,ifield)
+              WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,ifield))
               Vinfo( 3)=Vname(3,ifield)
               Vinfo(14)=Vname(4,ifield)
               Vinfo(16)=Vname(1,idtime)
@@ -539,8 +568,7 @@
           ifield=iDbio2(ivar)
           IF (Dout(ifield,ng)) THEN
             Vinfo( 1)=Vname(1,ifield)
-            WRITE (Vinfo( 2),'(a,1x,a)') 'averaged',                    &
-     &                                   TRIM(Vname(2,ifield))
+            WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,ifield))
             Vinfo( 3)=Vname(3,ifield)
             Vinfo(14)=Vname(4,ifield)
             Vinfo(16)=Vname(1,idtime)
@@ -564,8 +592,7 @@
           ifield=iDbio3(ivar)
           IF (Dout(ifield,ng)) THEN
             Vinfo( 1)=Vname(1,ifield)
-            WRITE (Vinfo( 2),'(a,1x,a)') 'averaged',                    &
-     &                                   TRIM(Vname(2,ifield))
+            WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,ifield))
             Vinfo( 3)=Vname(3,ifield)
             Vinfo(14)=Vname(4,ifield)
             Vinfo(16)=Vname(1,idtime)
@@ -576,6 +603,51 @@
             Aval(5)=REAL(r3dvar,r8)
             status=def_var(ng, iNLM, DIA(ng)%ncid, DIA(ng)%Vid(ifield), &
      &                     NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
+          END IF
+        END DO
+#  elif defined ECOSIM
+!
+!  Define 3D biological diagnostic fields.
+!
+        DO ivar=1,NDbio3d
+          ifield=iDbio3(ivar)
+          IF (Dout(ifield,ng)) THEN
+            Vinfo( 1)=Vname(1,ifield)
+            WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,ifield))
+            Vinfo( 3)=Vname(3,ifield)
+            Vinfo(14)=Vname(4,ifield)
+            Vinfo(16)=Vname(1,idtime)
+#   if defined WRITE_WATER && defined MASKING
+            Vinfo(20)='mask_rho'
+#   endif
+            Vinfo(22)='coordinates'
+            Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
+            status=def_var(ng, iNLM, DIA(ng)%ncid, DIA(ng)%Vid(ifield), &
+     &                     NF_FOUT, nvd4, l3dgrd, Aval, Vinfo, ncname)
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
+          END IF
+        END DO
+!
+!  Define 4D biological diagnostic fields.
+!
+        DO ivar=1,NDbio4d
+          ifield=iDbio4(ivar)
+          IF (Dout(ifield,ng)) THEN
+            Vinfo( 1)=Vname(1,ifield)
+            WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,ifield))
+            Vinfo( 3)=Vname(3,ifield)
+            Vinfo(14)=Vname(4,ifield)
+            Vinfo(16)=Vname(1,idtime)
+#   if defined WRITE_WATER && defined MASKING
+            Vinfo(20)='mask_rho'
+#   endif
+            Vinfo(22)='coordinates'
+            Aval(5)=REAL(Iinfo(1,ifield,ng),r8)
+            status=def_var(ng, iNLM, DIA(ng)%ncid, DIA(ng)%Vid(ifield), &
+     &                     NF_FOUT, nvd5, l4dgrd, Aval, Vinfo, ncname)
             IF (FoundError(exit_flag, NoError, __LINE__,                &
      &                     __FILE__)) RETURN
           END IF
@@ -700,6 +772,21 @@
               DIA(ng)%Vid(ifield)=var_id(i)
             END IF
           END DO
+#  elif defined ECOSIM
+          DO ivar=1,NDbio3d
+            ifield=iDbio3(ivar)
+            IF (TRIM(var_name(i)).eq.TRIM(Vname(1,ifield))) THEN
+              got_var(ifield)=.TRUE.
+              DIA(ng)%Vid(ifield)=var_id(i)
+            END IF
+          END DO
+          DO ivar=1,NDbio4d
+            ifield=iDbio4(ivar)
+            IF (TRIM(var_name(i)).eq.TRIM(Vname(1,ifield))) THEN
+              got_var(ifield)=.TRUE.
+              DIA(ng)%Vid(ifield)=var_id(i)
+            END IF
+          END DO
 #  endif
 # endif
         END DO
@@ -776,6 +863,25 @@
 #  if defined BIO_FENNEL
         DO ivar=1,NDbio3d
           ifield=iDbio3(ivar)
+          IF (.not.got_var(ifield).and.Dout(ifield,ng)) THEN
+            IF (Master) WRITE (stdout,60) TRIM(Vname(1,ifield)),        &
+     &                                    TRIM(ncname)
+            exit_flag=3
+            RETURN
+          END IF
+        END DO
+#  elif defined ECOSIM
+        DO ivar=1,NDbio3d
+          ifield=iDbio3(ivar)
+          IF (.not.got_var(ifield).and.Dout(ifield,ng)) THEN
+            IF (Master) WRITE (stdout,60) TRIM(Vname(1,ifield)),        &
+     &                                    TRIM(ncname)
+            exit_flag=3
+            RETURN
+          END IF
+        END DO
+        DO ivar=1,NDbio4d
+          ifield=iDbio4(ivar)
           IF (.not.got_var(ifield).and.Dout(ifield,ng)) THEN
             IF (Master) WRITE (stdout,60) TRIM(Vname(1,ifield)),        &
      &                                    TRIM(ncname)

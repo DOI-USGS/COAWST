@@ -169,7 +169,7 @@
       real(r8), parameter :: eps = 1.0E-8_r8
 
       real(r8) :: Ampl, Hdd, cff, cff1, cff2, cff3, cffL, cffR
-      real(r8) :: deltaL, deltaR, dh, dP, limtr, rr
+      real(r8) :: deltaL, deltaR, dh, delP, limtr, rr
 #ifdef ATM_PRESS
       real(r8) :: OneAtm, fac
 #endif
@@ -405,11 +405,11 @@
           DO k=N(ng),1,-1
             DO i=IstrU,Iend
               dh=z_w(i,j,k-1)-z_w(i-1,j,k-1)
-              dP=P(i-1,j,k-1)-P(i,j,k-1)
+              delP=P(i-1,j,k-1)-P(i,j,k-1)
               rr=0.5_r8*dh*(r(i,j,k-1)+r(i-1,j,k-1)-                    &
      &                      cff2*dh*(d(i,j,k-1)-d(i-1,j,k-1)))
-              limtr=2.0_r8*dP*rr
-              rr=rr*rr+dP*dP
+              limtr=2.0_r8*delP*rr
+              rr=rr*rr+delP*delP
               IF (limtr.gt.eps*rr) THEN
                 limtr=limtr/rr
               ELSE
@@ -445,11 +445,11 @@
           DO k=N(ng),1,-1
             DO i=Istr,Iend
               dh=z_w(i,j,k-1)-z_w(i,j-1,k-1)
-              dP=P(i,j-1,k-1)-P(i,j,k-1)
+              delP=P(i,j-1,k-1)-P(i,j,k-1)
               rr=0.5_r8*dh*(r(i,j,k-1)+r(i,j-1,k-1)-                    &
      &                      cff2*dh*(d(i,j,k-1)-d(i,j-1,k-1)))
-              limtr=2.0_r8*dP*rr
-              rr=rr*rr+dP*dP
+              limtr=2.0_r8*delP*rr
+              rr=rr*rr+delP*delP
               IF (limtr.gt.eps*rr) THEN
                 limtr=limtr/rr
               ELSE

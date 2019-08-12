@@ -441,7 +441,11 @@
 !
         DO ng=1,Ngrids
 #  ifdef SENSITIVITY_4DVAR
+#    ifdef W4DPSAS_FCT_SENSITIVITY
+          IF (.not.LsenPSAS(ng).and.LsenFCT(ng)) THEN
+#    else
           IF (.not.LsenPSAS(ng)) THEN
+#    endif
 #  endif
 !$OMP MASTER
             HalfDT=0.5_r8*dt(ng)
@@ -842,8 +846,9 @@
         END DO
 # endif
 
-# if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
-     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR
+# if (defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+      defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR)  && \
+     !defined OBS_SPACE
 !
 !-----------------------------------------------------------------------
 !  Add appropriate forcing terms to the adjoint model. The form of the

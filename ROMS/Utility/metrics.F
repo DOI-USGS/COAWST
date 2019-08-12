@@ -1305,7 +1305,7 @@
                 Text='South bry Hconvolution, NHstepsB, DTsizeHB ='
               ELSE IF (ibry.eq.ieast) THEN
                 Text='East  bry Hconvolution, NHstepsB, DTsizeHB ='
-              ELSE IF (ibry.eq.isouth) THEN
+              ELSE IF (ibry.eq.inorth) THEN
                 Text='North bry Hconvolution, NHstepsB, DTsizeHB ='
               END IF
               IF (HdecayB(is,ibry,ng).gt.0.0_r8) THEN
@@ -1327,7 +1327,7 @@
                 Text='South bry Vconvolution, NVstepsB, DTsizeVB ='
               ELSE IF (ibry.eq.ieast) THEN
                 Text='East  bry Vconvolution, NVstepsB, DTsizeVB ='
-              ELSE IF (ibry.eq.isouth) THEN
+              ELSE IF (ibry.eq.inorth) THEN
                 Text='North bry Vconvolution, NVstepsB, DTsizeVB ='
               END IF
               IF (VdecayB(is,ibry,ng).gt.0.0_r8) THEN

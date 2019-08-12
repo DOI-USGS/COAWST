@@ -1,6 +1,6 @@
       SUBROUTINE ana_dqdsst (ng, tile, model)
 !
-!! svn $Id: ana_dqdsst.h 889 2018-02-10 03:32:52Z arango $
+!! svn $Id: ana_dqdsst.h 937 2019-01-28 06:13:04Z arango $
 !!======================================================================
 !! Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
@@ -90,10 +90,10 @@
 !-----------------------------------------------------------------------
 !
 #ifdef MY_APPLICATION
-      fac=1.0_r8/(day2sec*30.0_r8)           ! 30 day relaxation scale 1/s/decC
+      fac=day2sec/30.0_r8            ! 30 day relaxation scale 1/s/decC
       DO j=JstrT,JendT
         DO i=IstrT,IendT
-          dqdt(i,j)=-fac*Hz(i,j,N(ng))
+          dqdt(i,j)=fac*Hz(i,j,N(ng))
         END DO
       END DO
 #else

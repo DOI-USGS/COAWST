@@ -51,7 +51,7 @@
 # if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
       integer :: frecdim
 # endif
-      integer :: DimIDs(32), Vsize(4)
+      integer :: DimIDs(nDimID)
 # ifdef ADJUST_BOUNDARY
       integer :: t2dobc(4)
 #  ifdef SOLVE3D
@@ -347,7 +347,7 @@
 !  in addition to initialization time.
 !-----------------------------------------------------------------------
 
-#  ifdef ADJUST_BOUNDARY
+#  if defined ADJUST_BOUNDARY && !defined W4DPSAS_FCT_SENSITIVITY
 !
 !  Define free-surface open boundaries.
 !

@@ -262,6 +262,22 @@
      &                        broadcast = .FALSE.)   ! Master use only
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
+# ifdef RPCG
+        CALL netcdf_get_fvar (ng, iTLM, LCZ(ng)%name, 'Hbk',            &
+     &                        Hbk)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+
+        CALL netcdf_get_fvar (ng, iTLM, LCZ(ng)%name, 'Jb0',            &
+     &                        Jb0)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+
+        CALL netcdf_get_fvar (ng, iTLM, LCZ(ng)%name, 'vcglwk',         &
+     &                        vcglwk)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+# endif
       END DO
 #endif
 
@@ -1475,13 +1491,40 @@
 !$OMP END PARALLEL
         END DO
 !
+# ifdef RPCG
+        AD_INNER_LOOP : DO my_inner=Ninner,0,-1
+# else
         AD_INNER_LOOP : DO my_inner=Ninner,1,-1
+# endif
           inner=my_inner
+# ifdef RPCG
+!
+!  Retrieve NLmodVal when inner=0 for use as BCKmodVal.
+!
+          IF (inner.eq.0) THEN
+             DO ng=1,Ngrids
+              CALL netcdf_get_fvar (ng, iTLM, DAV(ng)%name,             &
+     &                              'NLmodel_value', NLmodVal)
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &            __FILE__)) RETURN
+            END DO
+          END IF
+          IF (inner.ne.Ninner) THEN
+            Linner=.TRUE.
+          ELSE
+            Linner=.FALSE.
+          END IF
+# endif
 
           IF (Master) THEN
             WRITE (stdout,60) 'Adjoint of', uppercase('w4dpsas'),       &
      &                        outer, inner
           END IF
+# ifdef RPCG
+!
+          INNER_COMPUTE : IF (Linner) THEN
+!
+# else
 !
 !  Call adjoint conjugate gradient algorithm.
 !
@@ -1491,6 +1534,7 @@
             IF (FoundError(exit_flag, NoError, __LINE__,                &
      &                     __FILE__)) RETURN
           END DO
+# endif
 !
 !  Initialize the adjoint model from rest.
 !
@@ -1650,8 +1694,17 @@
             wrtNLmod(ng)=.FALSE.
             wrtTLmod(ng)=.FALSE.
           END DO
+# ifdef RPCG
+          END IF INNER_COMPUTE
+!
+          DO ng=1,Ngrids
+            CALL ad_rpcg_lanczos (ng, iRPM, outer, inner, Ninner,       &
+     &                            Lcgini)
+          END DO
+# endif
 
         END DO AD_INNER_LOOP
+# ifndef RPCG
 !
 !  Call adjoint conjugate gradient algorithm.
 !
@@ -1660,6 +1713,7 @@
         DO ng=1,Ngrids
           CALL ad_congrad (ng, iTLM, outer, inner, Ninner, Lcgini)
         END DO
+# endif
 
 #endif /* !OBS_IMPACT */
 

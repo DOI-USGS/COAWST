@@ -105,6 +105,9 @@
       real(r8) :: bry_pgr, bry_cor, bry_str
       real(r8) :: cff, cff1, cff2, cff3, dt2d
       real(r8) :: obc_in, obc_out, tau
+# if defined ATM_PRESS && defined PRESS_COMPENSATE
+      real(r8) :: OneAtm, fac
+# endif
 
       real(r8) :: tl_Ce, tl_Cx, tl_Zx
       real(r8) :: tl_bry_pgr, tl_bry_cor, tl_bry_str, tl_bry_val
@@ -128,6 +131,10 @@
         know=kstp
         dt2d=dtfast(ng)
       END IF
+# if defined ATM_PRESS && defined PRESS_COMPENSATE
+      OneAtm=1013.25_r8                  ! 1 atm = 1013.25 mb
+      fac=100.0_r8/(g*rho0)
+# endif
 !
 !-----------------------------------------------------------------------
 !  Lateral boundary conditions at the western edge.
@@ -318,6 +325,40 @@
 # ifdef TL_IOMS
      &              0.5_r8*Cx
 # endif
+# if defined ATM_PRESS && defined PRESS_COMPENSATE
+!>            ubar(Istr,j,kout)=bry_val-                                &
+!>   &                          Cx*(0.5_r8*                             &
+!>   &                              (zeta(Istr-1,j,know)+               &
+!>   &                               zeta(Istr  ,j,know)+               &
+!>   &                               fac*(FORCES(ng)%Pair(Istr-1,j)+    &
+!>   &                                    FORCES(ng)%Pair(Istr  ,j)-    &
+!>   &                                    2.0_r8*OneAtm))-              &
+!>   &                              BOUNDARY(ng)%zeta_west(j))
+!>
+              tl_ubar(Istr,j,kout)=tl_bry_val-                          &
+     &                             tl_Cx*                               &
+     &                             (0.5_r8*                             &
+     &                              (zeta(Istr-1,j,know)+               &
+     &                               zeta(Istr  ,j,know)+               &
+     &                               fac*(FORCES(ng)%Pair(Istr-1,j)+    &
+     &                                    FORCES(ng)%Pair(Istr  ,j)-    &
+     &                                    2.0_r8*OneAtm))-              &
+     &                              BOUNDARY(ng)%zeta_west(j))-         &
+     &                             Cx*                                  &
+     &                             (0.5_r8*                             &
+     &                              (tl_zeta(Istr-1,j,know)+            &
+     &                               tl_zeta(Istr  ,j,know)))+          &
+#  ifdef TL_IOMS
+     &                             Cx*                                  &
+     &                             (0.5_r8*                             &
+     &                              (zeta(Istr-1,j,know)+               &
+     &                               zeta(Istr  ,j,know)+               &
+     &                               fac*(FORCES(ng)%Pair(Istr-1,j)+    &
+     &                                    FORCES(ng)%Pair(Istr  ,j)-    &
+     &                                    2.0_r8*OneAtm))-              &
+     &                              BOUNDARY(ng)%zeta_west(j))
+#  endif
+# else
 !>            ubar(Istr,j,kout)=bry_val-                                &
 !>   &                          Cx*(0.5_r8*(zeta(Istr-1,j,know)+        &
 !>   &                                      zeta(Istr  ,j,know))-       &
@@ -332,11 +373,12 @@
      &                             (0.5_r8*(tl_zeta(Istr-1,j,know)+     &
      &                                      tl_zeta(Istr  ,j,know))-    &
      &                              BOUNDARY(ng)%tl_zeta_west(j))+      &
-# ifdef TL_IOMS
+#  ifdef TL_IOMS
      &                             Cx*                                  &
      &                             (0.5_r8*(zeta(Istr-1,j,know)+        &
      &                                      zeta(Istr  ,j,know))-       &
      &                              BOUNDARY(ng)%zeta_west(j))
+#  endif
 # endif
 # ifdef MASKING
 !>            ubar(Istr,j,kout)=ubar(Istr,j,kout)*                      &
@@ -859,6 +901,39 @@
 # ifdef TL_IOMS
      &              0.5_r8*Cx
 # endif
+# if defined ATM_PRESS && defined PRESS_COMPENSATE
+!>            ubar(Iend+1,j,kout)=bry_val+                              &
+!>   &                            Cx*(0.5_r8*                           &
+!>   &                                (zeta(Iend  ,j,know)+             &
+!>   &                                 zeta(Iend+1,j,know)+             &
+!>   &                                 fac*(FORCES(ng)%Pair(Iend  ,j)+  &
+!>   &                                      FORCES(ng)%Pair(Iend+1,j)-  &
+!>   &                                      2.0_r8*OneAtm))-            &
+!>   &                                BOUNDARY(ng)%zeta_east(j))
+!>
+              tl_ubar(Iend+1,j,kout)=tl_bry_val+                        &
+     &                               tl_Cx*                             &
+     &                               (0.5_r8*                           &
+     &                                (zeta(Iend  ,j,know)+             &
+     &                                 zeta(Iend+1,j,know)+             &
+     &                                 fac*(FORCES(ng)%Pair(Iend  ,j)+  &
+     &                                      FORCES(ng)%Pair(Iend+1,j)-  &
+     &                                      2.0_r8*OneAtm))-            &
+     &                                BOUNDARY(ng)%zeta_east(j))+       &
+     &                               Cx*                                &
+     &                               (0.5_r8*(tl_zeta(Iend  ,j,know)+   &
+     &                                        tl_zeta(Iend+1,j,know)))- &
+#  ifdef TL_IOMS
+     &                               Cx*                                &
+     &                               (0.5_r8*                           &
+     &                                (zeta(Iend  ,j,know)+             &
+     &                                 zeta(Iend+1,j,know)+             &
+     &                                 fac*(FORCES(ng)%Pair(Iend  ,j)+  &
+     &                                      FORCES(ng)%Pair(Iend+1,j)-  &
+     &                                      2.0_r8*OneAtm))-            &
+     &                                BOUNDARY(ng)%zeta_east(j))
+#  endif
+# else
 !>            ubar(Iend+1,j,kout)=bry_val+                              &
 !>   &                            Cx*(0.5_r8*(zeta(Iend  ,j,know)+      &
 !>   &                                        zeta(Iend+1,j,know))-     &
@@ -873,11 +948,12 @@
      &                               (0.5_r8*(tl_zeta(Iend  ,j,know)+   &
      &                                        tl_zeta(Iend+1,j,know))-  &
      &                                BOUNDARY(ng)%tl_zeta_east(j))-    &
-# ifdef TL_IOMS
+#  ifdef TL_IOMS
      &                               Cx*                                &
      &                               (0.5_r8*(zeta(Iend  ,j,know)+      &
      &                                        zeta(Iend+1,j,know))-     &
      &                                BOUNDARY(ng)%zeta_east(j))
+#  endif
 # endif
 # ifdef MASKING
 !>   &        ubar(Iend+1,j,kout)=ubar(Iend+1,j,kout)*                  &

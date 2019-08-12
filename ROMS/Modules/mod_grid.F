@@ -46,6 +46,7 @@
 !  lonr       Longitude (degrees_east) at RHO-points.                  !
 !  lonu       Longitude (degrees_east) at U-points.                    !
 !  lonv       Longitude (degrees_east) at V-points.                    !
+!  MyLon      Longitude work array for regridding.                     !
 !  omm        RHO-grid area (meters2).                                 !
 !  om_p       PSI-grid spacing (meters) in the XI-direction.           !
 !  om_r       RHO-grid spacing (meters) in the XI-direction.           !
@@ -181,6 +182,7 @@
           real(r8), pointer :: lonr(:,:)
           real(r8), pointer :: lonu(:,:)
           real(r8), pointer :: lonv(:,:)
+          real(r8), pointer :: MyLon(:,:)
           real(r8), pointer :: omn(:,:)
           real(r8), pointer :: om_p(:,:)
           real(r8), pointer :: om_r(:,:)
@@ -356,7 +358,7 @@
 !
 !  Set horizontal array size.
 !
-      size2d=REAL((UBi-LBi)*(UBj-LBj),r8)
+      size2d=REAL((UBi-LBi+1)*(UBj-LBj+1),r8)
 !
 !  Nonlinear model state.
 !
@@ -422,6 +424,9 @@
       Dmem(ng)=Dmem(ng)+size2d
 
       allocate ( GRID(ng) % lonv(LBi:UBi,LBj:UBj))
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % Mylon(LBi:UBi,LBj:UBj))
       Dmem(ng)=Dmem(ng)+size2d
 
       allocate ( GRID(ng) % omn(LBi:UBi,LBj:UBj) )
@@ -834,6 +839,7 @@
             GRID(ng) % lonr(i,j) = IniMetricVal
             GRID(ng) % lonu(i,j) = IniMetricVal
             GRID(ng) % lonv(i,j) = IniMetricVal
+            GRID(ng) % MyLon(i,j) = IniMetricVal
 
             GRID(ng) % omn(i,j) = IniVal
             GRID(ng) % om_p(i,j) = IniVal

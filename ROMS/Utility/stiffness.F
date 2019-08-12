@@ -56,11 +56,7 @@
 #ifdef SOLVE3D
      &                     GRID(ng) % Hz,                               &
      &                     GRID(ng) % z_w,                              &
-#else
-# ifdef ICESHELF
-     &                     GRID(ng) % zice,                             &
-# endif
-#endif 
+#endif
      &                     OCEAN(ng)% zeta)
       RETURN
       END SUBROUTINE stiffness
@@ -75,10 +71,6 @@
      &                           h, omn,                                &
 #ifdef SOLVE3D
      &                           Hz, z_w,                               &
-#else
-# ifdef ICESHELF
-     &                           zice,                                  &
-# endif
 #endif
      &                           zeta)
 !***********************************************************************
@@ -111,10 +103,6 @@
 # ifdef SOLVE3D
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
-# else
-#  ifdef ICESHELF
-      real(r8), intent(in) :: zice(LBi:,LBj:)
-#  endif
 # endif
       real(r8), intent(in) :: zeta(LBi:,LBj:,:)
 #else
@@ -128,10 +116,6 @@
 # ifdef SOLVE3D
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
-# else
-#  ifdef ICESHELF
-      real(r8), intent(in) :: zice(LBi:UBi,LBj:UBj)
-#  endif
 # endif
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
 #endif
@@ -237,11 +221,7 @@
 # ifdef MASKING
           IF (rmask(i,j).gt.0.0_r8) THEN
 # endif
-# ifdef ICESHELF
-            cff=omn(i,j)*(zeta(i,j,1)+h(i,j)-ABS(zice(i,j)))
-# else
             cff=omn(i,j)*(zeta(i,j,1)+h(i,j))
-# endif
             my_volume0=my_volume0+cff
             my_volume1=MIN(my_volume1,cff)
             my_volume2=MAX(my_volume2,cff)

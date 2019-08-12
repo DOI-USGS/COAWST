@@ -1065,10 +1065,11 @@
 # endif
             END DO
           END DO
+
 # if defined DIAGNOSTICS_UV && defined MASKING
           DO k=1,N(ng)
-            DO idiag=1,NDM3d
-              DO i=Istr,Iend
+            DO i=Istr,Iend
+              DO idiag=1,NDM3d
                 DiaV3wrk(i,j,k,idiag)=DiaV3wrk(i,j,k,idiag)*vmask(i,j)
               END DO
             END DO

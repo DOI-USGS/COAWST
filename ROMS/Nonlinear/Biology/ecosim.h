@@ -46,6 +46,9 @@
 !***********************************************************************
 !
       USE mod_param
+#ifdef DIAGNOSTICS_BIO
+      USE mod_diags
+#endif
       USE mod_forces
       USE mod_grid
       USE mod_ncparam
@@ -72,7 +75,8 @@
       END IF
 !
 #ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 15, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 15, __LINE__,                           &
+     &                __FILE__)
 #endif
       CALL biology_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj, N(ng), NT(ng),             &
@@ -80,15 +84,23 @@
      &                   nstp(ng), nnew(ng),                            &
 #ifdef MASKING
      &                   GRID(ng) % rmask,                              &
+# if defined WET_DRY && defined DIAGNOSTICS_BIO
+     &                   GRID(ng) % rmask_full,                         &
+# endif
 #endif
      &                   GRID(ng) % Hz,                                 &
      &                   GRID(ng) % z_r,                                &
      &                   GRID(ng) % z_w,                                &
      &                   FORCES(ng) % SpecIr,                           &
      &                   FORCES(ng) % avcos,                            &
+#ifdef DIAGNOSTICS_BIO
+     &                   DIAGS(ng) % DiaBio3d,                          &
+     &                   DIAGS(ng) % DiaBio4d,                          &
+#endif
      &                   OCEAN(ng) % t)
 #ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 15, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 15, __LINE__,                          &
+     &                 __FILE__)
 #endif
       RETURN
       END SUBROUTINE biology
@@ -100,9 +112,16 @@
      &                         nstp, nnew,                              &
 #ifdef MASKING
      &                         rmask,                                   &
+# if defined WET_DRY && defined DIAGNOSTICS_BIO
+     &                         rmask_full,                              &
+# endif
 #endif
      &                         Hz, z_r, z_w,                            &
      &                         SpecIr, avcos,                           &
+#ifdef DIAGNOSTICS_BIO
+     &                         DiaBio3d,                                &
+     &                         DiaBio4d,                                &
+#endif
      &                         t)
 !***********************************************************************
 !
@@ -122,22 +141,38 @@
 #ifdef ASSUMED_SHAPE
 # ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:,LBj:)
+#  if defined WET_DRY && defined DIAGNOSTICS_BIO
+      real(r8), intent(in) :: rmask_full(LBi:,LBj:)
+#  endif
 # endif
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_r(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: SpecIr(LBi:,LBj:,:)
       real(r8), intent(in) :: avcos(LBi:,LBj:,:)
+# ifdef DIAGNOSTICS_BIO
+      real(r8), intent(inout) :: DiaBio3d(LBi:,LBj:,:,:)
+      real(r8), intent(inout) :: DiaBio4d(LBi:,LBj:,:,:,:)
+# endif
       real(r8), intent(inout) :: t(LBi:,LBj:,:,:,:)
 #else
 # ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
+#  if defined WET_DRY && defined DIAGNOSTICS_BIO
+      real(r8), intent(in) :: rmask_full(LBi:UBi,LBj:UBj)
+#  endif
 # endif
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,UBk)
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,UBk)
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:UBk)
       real(r8), intent(in) :: SpecIr(LBi:UBi,LBj:UBj,NBands)
       real(r8), intent(in) :: avcos(LBi:UBi,LBj:UBj,NBands)
+# ifdef DIAGNOSTICS_BIO
+      real(r8), intent(inout) :: DiaBio3d(LBi:UBi,LBj:UBj,              &
+     &                                    NDbands,NDbio3d)
+      real(r8), intent(inout) :: DiaBio4d(LBi:UBi,LBj:UBj,N(ng),        &
+     &                                    NDbands,NDbio4d)
+# endif
       real(r8), intent(inout) :: t(LBi:UBi,LBj:UBj,UBk,3,UBt)
 #endif
 !
@@ -145,7 +180,8 @@
 !
       integer, parameter :: Msink = 30
 
-      integer :: Iter, Tindex, i, isink, ibio, id, itrc, j, k, ic, ks
+      integer :: i, j, k, ks
+      integer :: Iter, Tindex, ic, isink, ibio, id, itrc, ivar
       integer :: ibac, iband, idom, ifec, iphy, ipig
       integer :: Nsink
 
@@ -156,13 +192,16 @@
 
       real(r8) :: FV1, FV2, FV3, FV4, FV5, FV6, FV7, dtbio
       real(r8) :: DOC_lab, Ed_tot, Nup_max, aph442, aPHYN_wa
-      real(r8) :: avgcos_min, par_b, par_bb, photo_DIC, photo_DOC
+      real(r8) :: avgcos_min, par_b, par_s, photo_DIC, photo_DOC
       real(r8) :: photo_decay, slope_AC, tChl, theta_m, total_photo
-      real(r8) :: tot_ab, tot_b, tot_bb
+      real(r8) :: WLE, factint
 
       real(r8) :: Het_BAC
       real(r8) :: N_quota, RelDOC1, RelDON1, RelDOP1, RelFe
-      real(r8) :: cff, cff1, cffL, cffR, cu, dltL, dltR
+      real(r8) :: cff, cff1, cff2, cffL, cffR, cu, dltL, dltR
+#ifdef DIAGNOSTICS_BIO
+      real(r8) :: fiter
+#endif
 
       real(r8), dimension(Msink) :: Wbio
 
@@ -170,9 +209,12 @@
 
       real(r8), dimension(NBands) :: dATT_sum
 
-      real(r8), dimension(N(ng),NBands) :: specir_d
       real(r8), dimension(N(ng),NBands) :: avgcos, dATT
-
+      real(r8), dimension(N(ng),NBands) :: specir_d
+      real(r8), dimension(N(ng),NBands) :: tot_ab, tot_b, tot_s
+#ifdef BIO_OPTIC
+      real(r8), dimension(0:N(ng),NBands) :: specir_w
+#endif
       real(r8), dimension(N(ng),Nphy) :: C2CHL, C2CHL_w
       real(r8), dimension(N(ng),Nphy) :: Gt_fl, Gt_ll, Gt_nl
       real(r8), dimension(N(ng),Nphy) :: Gt_sl, Gt_pl
@@ -237,6 +279,12 @@
       real(r8), dimension(IminS:ImaxS,N(ng),NBands) :: specir_scal
       real(r8), dimension(IminS:ImaxS,N(ng),Nphy,NBands) :: aPHYN_al
       real(r8), dimension(IminS:ImaxS,N(ng),Nphy,NBands) :: aPHYN_at
+      real(r8), dimension(IminS:ImaxS,N(ng),NBands) :: aDET
+      real(r8), dimension(IminS:ImaxS,N(ng),NBands) :: aCDC
+      real(r8), dimension(IminS:ImaxS,N(ng),NBands) :: b_phy
+      real(r8), dimension(IminS:ImaxS,N(ng),NBands) :: s_phy
+      real(r8), dimension(IminS:ImaxS,N(ng),NBands) :: b_tot
+      real(r8), dimension(IminS:ImaxS,N(ng),NBands) :: s_tot
 
       real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: Bio
       real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: Bio_old
@@ -253,6 +301,38 @@
       real(r8), dimension(IminS:ImaxS,N(ng)) :: qc
 
 #include "set_bounds.h"
+#ifdef DIAGNOSTICS_BIO
+!
+!-----------------------------------------------------------------------
+! If appropriate, initialize time-averaged diagnostic arrays.
+!-----------------------------------------------------------------------
+!
+      IF (((iic(ng).gt.ntsDIA(ng)).and.                                 &
+     &     (MOD(iic(ng),nDIA(ng)).eq.1)).or.                            &
+     &    ((iic(ng).ge.ntsDIA(ng)).and.(nDIA(ng).eq.1)).or.             &
+     &    ((nrrec(ng).gt.0).and.(iic(ng).eq.ntstart(ng)))) THEN
+        DO ivar=1,NDbio3d
+          DO k=1,NDbands
+            DO j=Jstr,Jend
+              DO i=Istr,Iend
+                DiaBio3d(i,j,k,ivar)=0.0_r8
+              END DO
+            END DO
+          END DO
+        END DO
+        DO ivar=1,NDbio4d
+          DO iband=1,NDbands
+            DO k=1,N(ng)
+              DO j=Jstr,Jend
+                DO i=Istr,Iend
+                  DiaBio4d(i,j,k,iband,ivar)=0.0_r8
+                END DO
+              END DO
+            END DO
+          END DO
+        END DO
+      END IF
+#endif
 !
 !=======================================================================
 !  Add EcoSim Source/Sink terms.
@@ -261,6 +341,13 @@
 !  Set internal time-stepping.
 !
       dtbio=dt(ng)/REAL(BioIter(ng),r8)
+#ifdef DIAGNOSTICS_BIO
+!
+!  A factor to account for the number of iterations in accumulating
+!  diagnostic rate variables.
+!
+      fiter=1.0_r8/REAL(BioIter(ng),r8)
+#endif
 !
 !  Set vertical sinking identification and associated sinking velocity
 !  arrays.
@@ -412,26 +499,26 @@
               FV1=maxC2nALG(iphy,ng)*(1.0_r8+GtALG(i,k,iphy))
               mu_bar_n(i,k,iphy)=GtALG(i,k,iphy)*                       &
      &                           FV1/(FV1-minC2nALG(iphy,ng))
-              IF (HsSiO(iphy,ng).lt.LARGE) THEN
+              IF (HsSiO(iphy,ng).lt.LARGER) THEN
                 FV1=maxC2SiALG(iphy,ng)*(1.0_r8+GtALG(i,k,iphy))
                 mu_bar_s(i,k,iphy)=GtALG(i,k,iphy)*                     &
      &                             FV1/(FV1-minC2SiALG(iphy,ng))
               ELSE
-                mu_bar_s(i,k,iphy)=LARGE
+                mu_bar_s(i,k,iphy)=LARGER
               END IF
-              IF (HsPO4(iphy,ng).lt.LARGE) THEN
+              IF (HsPO4(iphy,ng).lt.LARGER) THEN
                 FV1=maxC2pALG(iphy,ng)*(1.0_r8+GtALG(i,k,iphy))
                 mu_bar_p(i,k,iphy)=GtALG(i,k,iphy)*                     &
      &                             FV1/(FV1-minC2pALG(iphy,ng))
               ELSE
-                mu_bar_p(i,k,iphy)=LARGE
+                mu_bar_p(i,k,iphy)=LARGER
               END IF
-              IF (HsFe(iphy,ng).lt.LARGE) THEN
+              IF (HsFe(iphy,ng).lt.LARGER) THEN
                 FV1=maxC2FeALG(iphy,ng)*(1.0_r8+GtALG(i,k,iphy))
                 mu_bar_f(i,k,iphy)=GtALG(i,k,iphy)*                     &
      &                             FV1/(FV1-minC2FeALG(iphy,ng))
               ELSE
-                mu_bar_f(i,k,iphy)=LARGE
+                mu_bar_f(i,k,iphy)=LARGER
               END IF
             END DO
           END DO
@@ -547,7 +634,16 @@
               DO iband=1,NBands
                 dATT_sum(iband)=0.0_r8
                 DO k=1,N(ng)
+                  avgcos(k,iband)=0.0_r8
                   dATT(k,iband)=0.0_r8
+#ifdef DIAGNOSTICS_BIO
+                  aDET(i,k,iband)=0.0_r8
+                  aCDC(i,k,iband)=0.0_r8
+                  b_phy(i,k,iband)=0.0_r8
+                  s_phy(i,k,iband)=0.0_r8
+                  b_tot(i,k,iband)=0.0_r8
+                  s_tot(i,k,iband)=0.0_r8
+#endif
                 END DO
                 DO iphy=1,Nphy
                   DO k=1,N(ng)
@@ -601,7 +697,7 @@
                   END DO
 !
 !  Calculate absorption.
-!  Calculating phytoplankton absorption for attentuation calculation.
+!  Calculating phytoplankton absorption for attenuation calculation.
 !  NOTE: 12 factor to convert to ugrams (mg m-3)
 !
                   aph442=0.5_r8*aph442
@@ -617,7 +713,14 @@
      &                                      pac_eff(k,iphy)
                         END IF
                       END DO
-                      tot_ab=tot_ab+aPHYN_at(i,k,iphy,iband)
+                      tot_ab(k,iband)=tot_ab(k,iband)+                  &
+     &                                aPHYN_at(i,k,iphy,iband)
+#ifdef DIAGNOSTICS_BIO
+                      DiaBio4d(i,j,k,iband,idaPHY)=DiaBio4d(i,j,k,iband,&
+     &                                                      idaPHY)+    &
+     &                                             aPHYN_at(i,k,iphy,   &
+     &                                                      iband)
+#endif
 !
 !  Removing absorption due to PPC for "alfa" calculation.
 !
@@ -633,9 +736,16 @@
 !
 !  Adding detrital absorption.
 !
-                    tot_ab=tot_ab+                                      &
-     &                     aph442*EXP(0.011_r8*(442.0_r8-               &
-     &                                (397.0_r8+REAL(iband,r8)*DLAM)))
+                    cff=aph442*EXP(0.011_r8*                            &
+     &                             (442.0_r8-                           &
+     &                              (397.0_r8+REAL(iband,r8)*DLAM)))
+                    tot_ab(k,iband)=tot_ab(k,iband)+cff
+#ifdef DIAGNOSTICS_BIO
+                    aDET(i,k,iband)=aDET(i,k,iband)+cff
+                    DiaBio4d(i,j,k,iband,idaDET)=DiaBio4d(i,j,k,iband,  &
+     &                                                    idaDET)+      &
+     &                                           aDET(i,k,iband)
+#endif
 !
 !  Calculate CDOC absorption.
 !  NOTE: 12 factor is to convert ugrams per liter, and 0.001 converts
@@ -643,12 +753,17 @@
 !        coefficients were calculated as m-1 / (mg DOC/liters sw).
 !        net factor = (12*0.001) = 0.012
 !
-                    tot_ab=tot_ab+                                      &
-     &                     0.012_r8*(Bio(i,k,iCDMC(ilab))*              &
-     &                               aDOC(ilab,iband)+                  &
-     &                               Bio(i,k,iCDMC(irct))*              &
-     &                               aDOC(irct,iband))+                 &
-     &                     awater(iband)
+                    cff=0.012_r8*(Bio(i,k,iCDMC(ilab))*                 &
+     &                            aDOC(ilab,iband)+                     &
+     &                            Bio(i,k,iCDMC(irct))*                 &
+     &                            aDOC(irct,iband))
+                    tot_ab(k,iband)=tot_ab(k,iband)+cff+awater(iband)
+#ifdef DIAGNOSTICS_BIO
+                    aCDC(i,k,iband)=aCDC(i,k,iband)+cff
+                    DiaBio4d(i,j,k,iband,idaCDC)=DiaBio4d(i,j,k,iband,  &
+     &                                                    idaCDC)+      &
+     &                                           aCDC(i,k,iband)
+#endif
 !
 !  Calculate scattering and backscattering (see equation 19 Morel, 1991,
 !  Prog. Ocean). Morel, 1988 puts spectral dependency in backscattering.
@@ -656,36 +771,76 @@
 !  paper. Morel 2001 has slight adjustment 0.01, rather than 0.02.
 !  This was altered, but never tested in ROMS 1.8 on 03/08/03.
 !
-                    par_b =0.3_r8*(tChl**0.62_r8)
-                    par_bb=0.0_r8
+                    par_s=0.3_r8*(tChl**0.62_r8)       ! scattering
+                    par_b=0.0_r8                       ! backscattering
                     IF (tChl.gt.0.0_r8) THEN
-                      par_bb=par_b*(0.002_r8+0.01_r8*                   &
-     &                              (0.5_r8-0.25_r8*LOG10(tChl))*       &
-     &                              wavedp(iband))
+                      par_b=par_s*(0.002_r8+                            &
+     &                             0.01_r8*                             &
+     &                             (0.5_r8-0.25_r8*LOG10(tChl))*        &
+     &                             wavedp(iband))
                     END IF
-                    par_bb=MAX(par_bb,0.0_r8)
+                    par_b=MAX(par_b,0.0_r8)
+#ifdef DIAGNOSTICS_BIO
+                    s_phy(i,k,iband)=s_phy(i,k,iband)+par_s
+                    b_phy(i,k,iband)=b_phy(i,k,iband)+par_b
+                    DiaBio4d(i,j,k,iband,idsPHY)=DiaBio4d(i,j,k,iband,  &
+    &                                                     idsPHY)+      &
+    &                                            s_phy(i,k,iband)
+                    DiaBio4d(i,j,k,iband,idbPHY)=DiaBio4d(i,j,k,iband,  &
+    &                                                     idbPHY)+      &
+    &                                            b_phy(i,k,iband)
+#endif
 !
-!  However, for omega0 calculation, par_b must be spectral, so use
-!  dependency from Sathy and Platt 1988
+!  However, for omega0 calculation, "par_s" must be spectral, so use
+!  dependency from Sathy and Platt 1988.
 !
-                    tot_b=bwater(iband)+par_b*wavedp(iband)
+                    tot_s(k,iband)=bwater(iband)+par_s*wavedp(iband)
+#ifdef DIAGNOSTICS_BIO
+                    s_tot(i,k,iband)=s_tot(i,k,iband)+tot_s(k,iband)
+#endif
 !
-!  Morel, 1988 instead of 1991. See methods
+!  Morel, 1988 instead of 1991. See methods.
 !
-                    tot_bb=0.5_r8*bwater(iband)+par_bb
+                    tot_b(k,iband)=0.5_r8*bwater(iband)+par_b
+#ifdef DIAGNOSTICS_BIO
+                    b_tot(i,k,iband)=b_tot(i,k,iband)+tot_b(k,iband)
+
+                    DiaBio4d(i,j,k,iband,idsTOT)=DiaBio4d(i,j,k,iband,  &
+     &                                                    idsTOT)+      &
+     &                                           s_tot(i,k,iband)
+                    DiaBio4d(i,j,k,iband,idbTOT)=DiaBio4d(i,j,k,iband,  &
+     &                                                    idbTOT)+      &
+     &                                           b_tot(i,k,iband)
+#endif
+#ifdef BIO_OPTIC
+!
+!  Next statement is Eq. 11 of Lee et al. (2005) from Gallegos
+!  equal to SPECKD in Gallegos. Notice that the in-water solar
+!  angle in "cff1" is in degrees.
+!
+                    cff1=1.0_r8+                                        &
+     &                   0.005_r8*ACOS(avgcos(k,iband))*rad2deg
+                    cff2=4.18_r8*(1.0_r8-0.52_r8*                       &
+     &                            EXP(-10.8_r8*tot_ab(k,iband)))
+                    dATT(k,iband)=cff1*tot_ab(k,iband)+                 &
+     &                            cff2*tot_b (k,iband)
+#else
 !
 !  Sathy and Platt JGR 1988.  This is set with the average cosine of
 !  the box above, and used to calculate a new avgcos for this level.
 !  This new average cosine is then used to recalculate the attenuation
-!  coefficient
+!  coefficient.
 !
-                    dATT(k,iband)=(tot_ab+tot_bb)/avgcos(k,iband)
+                    dATT(k,iband)=(tot_ab(k,iband)+                     &
+     &                             tot_b (k,iband))/avgcos(k,iband)
+#endif
 !
 !  See Mobley, 1995 for graphical depiction of this equation.
 !
                     avgcos_min=avgcos(k,iband)+                         &
      &                         (0.5_r8-avgcos(k,iband))*                &
-     &                         (tot_b/(tot_ab+tot_b))
+     &                         (tot_s(k,iband)/                         &
+     &                          (tot_ab(k,iband)+tot_s(k,iband)))
 !
 !  Calculate average cosine. Linear fit to average cosine versus optical
 !  depth relationship. The FV1 calculation keeps the denominator of the
@@ -696,8 +851,20 @@
                     slope_AC =MIN(0.0_r8,                               &
      &                            (avgcos_min-avgcos(k,iband))/FV1)
                     avgcos(k,iband)=avgcos(k,iband)+                    &
-     &                             slope_AC*dATT(k,iband)*Hz(i,j,k)
-                    dATT(k,iband)=(tot_ab+tot_bb)/avgcos(k,iband)
+     &                              slope_AC*dATT(k,iband)*Hz(i,j,k)
+#ifdef BIO_OPTIC
+!
+!  Next statement is Eq. 11 of Lee et al. (2005). Notice that "cff1" is
+!  recomputed because "avgcos" changed and "cff2" is the same as above.
+!
+                    cff1=1.0_r8+                                        &
+     &                   0.005_r8*ACOS(avgcos(k,iband))*rad2deg
+                    dATT(k,iband)=cff1*tot_ab(k,iband)+                 &
+     &                            cff2*tot_b (k,iband)
+#else
+                    dATT(k,iband)=(tot_ab(k,iband)+                     &
+     &                             tot_b (k,iband))/avgcos(k,iband)
+#endif
 !
 !  Set avgcos for next level.
 !
@@ -716,12 +883,30 @@
 !  Calculate spectral scalar irradiance.  Morel, 1991 Prog. Ocean.
 !
                     specir_scal(i,k,iband)=specir_d(k,iband)*           &
-     &                                     (dATT(k,iband)/tot_ab)
+     &                                     (dATT(k,iband)/              &
+     &                                      tot_ab(k,iband))
                     E0_nz(i,k)=E0_nz(i,k)+specir_scal(i,k,iband)
 !
 !  Calculate Ed_nz.
 !
                     Ed_nz(i,k)=Ed_nz(i,k)+specir_d(k,iband)
+#ifdef DIAGNOSTICS_BIO
+                    DiaBio3d(i,j,iband,idSpIr)=DiaBio3d(i,j,iband,      &
+     &                                                  idSpIr)+        &
+     &                                         SpecIr(i,j,iband)
+                    DiaBio4d(i,j,k,iband,iddIrr)=DiaBio4d(i,j,k,iband,  &
+     &                                                    iddIrr)+      &
+     &                                           specir_d(k,iband)
+                    DiaBio4d(i,j,k,iband,idsIrr)=DiaBio4d(i,j,k,iband,  &
+     &                                                    idsIrr)+      &
+     &                                           specir_scal(i,k,iband)
+                    DiaBio4d(i,j,k,iband,idLatt)=DiaBio4d(i,j,k,iband,  &
+     &                                                    idLatt)+      &
+     &                                           dATT(k,iband)
+                    DiaBio4d(i,j,k,iband,idAcos)=DiaBio4d(i,j,k,iband,  &
+     &                                                    idAcos)+      &
+     &                                           avgcos(k,iband)
+#endif
                   END DO
                   Ed_tot=E0_nz(i,k)
 !
@@ -847,9 +1032,9 @@
                 END IF
 !
 !  Dark silica uptake, min C2Si test.
-!  The LARGE test can be removed after testing phase.
+!  The LARGER test can be removed after testing phase.
 !
-                IF (HsSiO(iphy,ng).lt.LARGE) THEN
+                IF (HsSiO(iphy,ng).lt.LARGER) THEN
                   IF (C2sALG(i,k,iphy).gt.C2SiALGminABS(iphy,ng)) THEN
                     Nup_max=GtALG(i,k,iphy)
                     NupSiO(i,k,iphy)=Bio(i,k,iSiO_)/                    &
@@ -871,9 +1056,9 @@
                 END IF
 !
 !  Dark phophorus uptake, min C2P test.
-!  The LARGE test can be removed after testing phase.
+!  The LARGER test can be removed after testing phase.
 !
-                IF (HsPO4(iphy,ng).lt.LARGE) THEN
+                IF (HsPO4(iphy,ng).lt.LARGER) THEN
                   IF (C2pALG(i,k,iphy).gt.C2pALGminABS(iphy,ng)) THEN
                     Nup_max=GtALG(i,k,iphy)
                     NupPO4(i,k,iphy)=Bio(i,k,iPO4_)/                    &
@@ -901,9 +1086,9 @@
                 END IF
 !
 !  Dark iron uptake, min C2Fe test.
-!  The LARGE test can be removed after testing phase.
+!  The LARGER test can be removed after testing phase.
 !
-                IF (HsFe(iphy,ng).lt.LARGE) THEN
+                IF (HsFe(iphy,ng).lt.LARGER) THEN
                   IF (C2fALG(i,k,iphy).gt.C2FeALGminABS(iphy,ng)) THEN
                     Nup_max=GtALG(i,k,iphy)
                     NupFe(i,k,iphy)=Bio(i,k,iFeO_)/                     &
@@ -1220,7 +1405,7 @@
 !  Testing for silica incorporation.
 !
                   IF (iPhyS(iphy).gt.0) THEN
-                    IF ((HsSiO(iphy,ng).lt.LARGE).and.                  &
+                    IF ((HsSiO(iphy,ng).lt.LARGER).and.                 &
      &                  (Bio(i,k,iPhyS(iphy)).gt.0.0_r8)) THEN
                       FV1=Bio(i,k,iPhyC(iphy))/                         &
      &                    (Bio(i,k,iPhyS(iphy))+                        &
@@ -1231,15 +1416,15 @@
      &                                  MIN(Gt_sl(k,iphy),              &
      &                                      GtALG(i,k,iphy)))
                     ELSE
-                      Gt_sl(k,iphy)=LARGE
+                      Gt_sl(k,iphy)=LARGER
                     END IF
                   ELSE
-                    Gt_sl(k,iphy)=LARGE
+                    Gt_sl(k,iphy)=LARGER
                   END IF
 !
 !  Phosphorus limited growth rate.
 !
-                  IF ((HsPO4(iphy,ng).lt.LARGE).and.                    &
+                  IF ((HsPO4(iphy,ng).lt.LARGER).and.                   &
      &                (Bio(i,k,iPhyP(iphy)).gt.0.0_r8)) THEN
                     FV1=Bio(i,k,iPhyC(iphy))/                           &
      &                  (Bio(i,k,iPhyP(iphy))+Bio_new(i,k,iPhyP(iphy)))
@@ -1249,12 +1434,12 @@
      &                                MIN(Gt_pl(k,iphy),                &
      &                                    GtALG(i,k,iphy)))
                   ELSE
-                    Gt_pl(k,iphy)=LARGE
+                    Gt_pl(k,iphy)=LARGER
                   END IF
 !
 !  Iron limited growth rate
 !
-                  IF ((HsFe(iphy,ng).lt.LARGE).and.                     &
+                  IF ((HsFe(iphy,ng).lt.LARGER).and.                    &
      &                (Bio(i,k,iPhyF(iphy)).gt.0.0_r8)) THEN
                     FV1=Bio(i,k,iPhyC(iphy))/                           &
      &                  (Bio(i,k,iPhyF(iphy))+Bio_new(i,k,iPhyF(iphy)))
@@ -1264,7 +1449,7 @@
      &                                MIN(Gt_fl(k,iphy),                &
      &                                    GtALG(i,k,iphy)))
                   ELSE
-                    Gt_fl(k,iphy)=LARGE
+                    Gt_fl(k,iphy)=LARGER
                   END IF
 !
 !  Realized growth rate is minimum of light or nutrient limited rate.
@@ -1272,7 +1457,7 @@
                   GtALG_r(i,k,iphy)=MIN(Gt_ll(k,iphy),Gt_nl(k,iphy),    &
      &                                  Gt_sl(k,iphy),Gt_pl(k,iphy),    &
      &                                  Gt_fl(k,iphy))
-                  IF (GtALG_r(i,k,iphy).ge.LARGE) THEN
+                  IF (GtALG_r(i,k,iphy).ge.LARGER) THEN
                     GtALG_r(i,k,iphy)=0.0_r8
                   END IF
 !
@@ -1591,7 +1776,7 @@
      &               C2nALGminABS(iphy,ng)).and.                        &
      &              (C2pALG(i,k,iphy).ge.                               &
      &               C2pALGminABS(iphy,ng)).and.                        &
-     &              (HsSiO(iphy,ng).gt.LARGE)) THEN
+     &              (HsSiO(iphy,ng).gt.LARGER)) THEN
                   FV1=Bio(i,k,iPhyC(iphy))*ExALG(iphy,ng)
                   Bio_new(i,k,iPhyC(iphy))=Bio_new(i,k,iPhyC(iphy))-    &
      &                                     FV1

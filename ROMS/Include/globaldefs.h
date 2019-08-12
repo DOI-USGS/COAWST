@@ -202,6 +202,14 @@
 #  define DSTEQR ssteqr
 #endif
 
+/*
+** Single intrinsic Fortran functions.
+*/
+
+#ifdef SINGLE_PRECISION
+# define DSIGN SIGN
+#endif
+
 #ifdef ICE_MODEL
 # define IOUT linew(ng)
 # define IUOUT liunw(ng)
@@ -212,9 +220,13 @@
 ** Set 4DVAR sensitivity switch.
 */
 
-#if defined W4DPSAS_SENSITIVITY || \
+#if defined W4DPSAS_SENSITIVITY || defined W4DPSAS_FCT_SENSITIVITY || \
     defined W4DVAR_SENSITIVITY
 # define SENSITIVITY_4DVAR
+#endif
+
+#if defined W4DPSAS && defined OBS_SPACE
+# undef OBS_SPACE
 #endif
 
 /*
@@ -408,12 +420,12 @@
 ** Set internal switches for all the 4DVAR schemes.
 */
 
-#if !defined WEAK_CONSTRAINT     && \
-    (defined ARRAY_MODES         || defined CLIPPING            || \
-     defined R_SYMMETRY          || defined TL_W4DPSAS          || \
-     defined TL_W4DVAR           || defined W4DPSAS             || \
-     defined W4DVAR              || defined W4DPSAS_SENSITIVITY || \
-     defined W4DVAR_SENSITIVITY)
+#if !defined WEAK_CONSTRAINT    && \
+    (defined ARRAY_MODES        || defined CLIPPING                || \
+     defined R_SYMMETRY         || defined TL_W4DPSAS              || \
+     defined TL_W4DVAR          || defined W4DPSAS                 || \
+     defined W4DVAR             || defined W4DPSAS_SENSITIVITY     || \
+     defined W4DVAR_SENSITIVITY || defined W4DPSAS_FCT_SENSITIVITY)
 # define WEAK_CONSTRAINT
 #endif
 #if !defined WEAK_CONSTRAINT     && defined RPM_RELAXATION
@@ -442,12 +454,11 @@
       defined OBS_IMPACT
 # undef OBS_IMPACT
 #endif
-#if !(defined OBS_IMPACT             && \
-      (defined W4DVAR_SENSITIVITY    || defined W4DPSAS_SENSITIVITY || \
-       defined IS4DVAR_SENSITIVITY))
+#if !(defined OBS_IMPACT                && \
+      (defined IS4DVAR_SENSITIVITY      || defined W4DPSAS_SENSITIVITY || \
+       defined W4DPSAS_FCT_SENSITIVITY  || defined W4DVAR_SENSITIVITY))
 # undef IMPACT_INNER
 #endif
-
 
 /*
 ** Activate internal switch to process 4DVAR observations.

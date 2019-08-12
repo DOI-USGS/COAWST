@@ -537,7 +537,19 @@
 !-----------------------------------------------------------------------
 !
 !$OMP MASTER
-      CALL obs_initial (ng, iADM, .TRUE.)
+# ifdef W4DPSAS_FCT_SENSITIVITY
+      IF (.not.LsenPSAS(ng).and.LsenFCT(ng)) THEN
+#  ifdef OBS_SPACE
+        IF (Lobspace(ng)) THEN
+#  endif
+# endif
+          CALL obs_initial (ng, iADM, .TRUE.)
+# ifdef OBS_SPACE
+        END IF
+# endif
+# ifdef W4DPSAS_FCT_SENSITIVITY
+      END IF
+# endif
 !$OMP END MASTER
 !$OMP BARRIER
       IF (FoundError(exit_flag, NoError, __LINE__,                      &

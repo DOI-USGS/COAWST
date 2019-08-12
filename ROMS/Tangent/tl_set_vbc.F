@@ -97,6 +97,12 @@
      &                      FORCES(ng) % tl_bustr,                      &
      &                      FORCES(ng) % tl_bvstr,                      &
 #  endif
+#  if defined BULK_FLUXES || defined ATM_COUPLING
+     &                      FORCES(ng) % snhflx,                        &
+#  endif
+#  if (defined BULK_FLUXES && defined EMINUSP) || defined ATM_COUPLING
+     &                      FORCES(ng) % EminusP,                       &
+#  endif
      &                      FORCES(ng) % stflx,                         &
      &                      FORCES(ng) % btflx,                         &
      &                      FORCES(ng) % tl_stflx,                      &
@@ -147,6 +153,12 @@
 #  endif
 #  ifndef BBL_MODEL_NOT_YET
      &                            tl_bustr, tl_bvstr,                   &
+#  endif
+#  if defined BULK_FLUXES || defined ATM_COUPLING
+     &                            snhflx,                               &
+#  endif
+#  if (defined BULK_FLUXES && defined EMINUSP) || defined ATM_COUPLING
+     &                            EminusP,                              &
 #  endif
      &                            stflx, btflx,                         &
      &                            tl_stflx, tl_btflx)
@@ -203,6 +215,12 @@
 #   if defined SCORRECTION || defined SRELAXATION
       real(r8), intent(in) :: sss(LBi:,LBj:)
 #   endif
+#   if defined BULK_FLUXES || defined ATM_COUPLING
+      real(r8), intent(in) :: snhflx(LBi:,LBj:)
+#   endif
+#   if (defined BULK_FLUXES && defined EMINUSP) || defined ATM_COUPLING
+      real(r8), intent(in) :: EminusP(LBi:,LBj:)
+#   endif
 #   if defined ICESHELF
 #    ifdef SHORTWAVE
       real(r8), intent(inout) :: srflx(LBi:,LBj:)
@@ -252,6 +270,12 @@
 #   if defined SCORRECTION || defined SRELAXATION
       real(r8), intent(in) :: sss(LBi:UBi,LBj:UBj)
 #   endif
+#   if defined BULK_FLUXES || defined ATM_COUPLING
+      real(r8), intent(in) :: snhflx(LBi:UBi,LBj:UBj)
+#   endif
+#   if (defined BULK_FLUXES && defined EMINUSP) || defined ATM_COUPLING
+      real(r8), intent(in) :: EminusP(LBi:UBi,LBj:UBj)
+#   endif
 #   if defined ICESHELF
 #    ifdef SHORTWAVE
       real(r8), intent(inout) :: srflx(LBi:UBi,LBj:UBj)
@@ -271,6 +295,7 @@
 !
       integer :: i, j, itrc
 
+      real(r8) :: EmP, tl_EmP
 #  if !defined BBL_MODEL_NOT_YET || defined ICESHELF
       real(r8) :: cff1, cff2, cff3
       real(r8) :: tl_cff1, tl_cff2, tl_cff3
@@ -282,6 +307,25 @@
 #  endif
 
 #  include "set_bounds.h"
+
+#  if defined BULK_FLUXES || defined ATM_COUPLING
+!
+!-----------------------------------------------------------------------
+!  If air-sea parameterization and or atmospheric coupling, assign
+!  surface net heat flux (degC m/s).  During model coupling, we need
+!  to make sure that this forcing is unaltered during the coupling
+!  interval when ROMS timestep size is smaller. Notice that further
+!  manipulations to state variable stflx(:,:,itemp) are allowed below.
+!-----------------------------------------------------------------------
+!
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+!>        stflx(i,j,itemp)=snhflx(i,j)
+!>
+!!        tl_stflx(i,j,itemp)=0.0_r8      ! not needed in TLM
+        END DO
+      END DO
+#  endif
 
 #  ifdef QCORRECTION
 !
@@ -296,7 +340,8 @@
 !>        stflx(i,j,itemp)=stflx(i,j,itemp)+                            &
 !>   &                     dqdt(i,j)*(t(i,j,N(ng),nrhs,itemp)-sst(i,j))
 !>
-          tl_stflx(i,j,itemp)=dqdt(i,j)*tl_t(i,j,N(ng),nrhs,itemp)
+          tl_stflx(i,j,itemp)=tl_stflx(i,j,itemp)+                      &
+     &                        dqdt(i,j)*tl_t(i,j,N(ng),nrhs,itemp)
         END DO
       END DO
 #  endif
@@ -346,13 +391,20 @@
 !
       DO j=JstrR,JendR
         DO i=IstrR,IendR
+#  if (defined BULK_FLUXES && defined EMINUSP) || defined ATM_COUPLING
+          EmP=EminusP(i,j)
+          tl_EmP=0.0_r8
+#  else
+          EmP=stflx(i,j,isalt)
+          tl_EmP=tl_stflx(i,j,isalt)
+#  endif
 #  if defined SCORRECTION
-!>        stflx(i,j,isalt)=stflx(i,j,isalt)*t(i,j,N(ng),nrhs,isalt)-    &
+!>        stflx(i,j,isalt)=EmP*t(i,j,N(ng),nrhs,isalt)-                 &
 !>   &                     Tnudg(isalt,ng)*Hz(i,j,N(ng))*               &
 !>   &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
 !>
-          tl_stflx(i,j,isalt)=stflx(i,j,isalt)*                         &
-     &                        tl_t(i,j,N(ng),nrhs,isalt)-               &
+          tl_stflx(i,j,isalt)=EmP*tl_t(i,j,N(ng),nrhs,isalt)+           &
+     &                        tl_EmP*t(i,j,N(ng),nrhs,isalt)-           &
      &                        Tnudg(isalt,ng)*                          &
      &                        (tl_Hz(i,j,N(ng))*                        &
      &                         (t(i,j,N(ng),nrhs,isalt)-sss(i,j))+      &
@@ -368,10 +420,10 @@
      &                         Hz(i,j,N(ng))*                           &
      &                         tl_t(i,j,N(ng),nrhs,isalt))
 #  else
-!>        stflx(i,j,isalt)=stflx(i,j,isalt)*t(i,j,N(ng),nrhs,isalt)
+!>        stflx(i,j,isalt)=EmP*t(i,j,N(ng),nrhs,isalt)
 !>
-          tl_stflx(i,j,isalt)=stflx(i,j,isalt)*                         &
-     &                        tl_t(i,j,N(ng),nrhs,isalt)
+          tl_stflx(i,j,isalt)=EmP*tl_t(i,j,N(ng),nrhs,isalt)+           &
+     &                        tl_EmP*t(i,j,N(ng),nrhs,isalt)
 #  endif
 !>        btflx(i,j,isalt)=btflx(i,j,isalt)*t(i,j,1,nrhs,isalt)
 !>

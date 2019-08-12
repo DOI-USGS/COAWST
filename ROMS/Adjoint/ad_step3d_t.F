@@ -1020,18 +1020,13 @@
 !  Apply tracers point sources to the BASIC STATE horizontal advection
 !  terms.
 !
-          IF (LuvSrc(ng).and.ANY(LtracerSrc(:,ng))) THEN
+          IF (LuvSrc(ng)) THEN
             DO is=1,Nsrc(ng)
               Isrc=SOURCES(ng)%Isrc(is)
               Jsrc=SOURCES(ng)%Jsrc(is)
               IF (INT(SOURCES(ng)%Dsrc(is)).eq.0) THEN
-#  ifdef TS_MPDATA_NOT_YET
                 IF (((IstrUm2.le.Isrc).and.(Isrc.le.Iendp3)).and.       &
      &              ((JstrVm2.le.Jsrc).and.(Jsrc.le.Jendp2i))) THEN
-#  else
-                IF (((Istr.le.Isrc).and.(Isrc.le.Iend+1)).and.          &
-     &              ((Jstr.le.Jsrc).and.(Jsrc.le.Jend))) THEN
-#  endif
                   IF (LtracerSrc(itrc,ng)) THEN
                     FX(Isrc,Jsrc)=Huon(Isrc,Jsrc,k)*                    &
      &                            SOURCES(ng)%Tsrc(is,k,itrc)
@@ -1050,13 +1045,8 @@
                   END IF
                 END IF
               ELSE IF (INT(SOURCES(ng)%Dsrc(is)).eq.1) THEN
-#  ifdef TS_MPDATA_NOT_YET
                 IF (((IstrUm2.le.Isrc).and.(Isrc.le.Iendp2i)).and.      &
      &              ((JstrVm2.le.Jsrc).and.(Jsrc.le.Jendp3))) THEN
-#  else
-                IF (((Istr.le.Isrc).and.(Isrc.le.Iend)).and.            &
-     &              ((Jstr.le.Jsrc).and.(Jsrc.le.Jend+1))) THEN
-#  endif
                   IF (LtracerSrc(itrc,ng)) THEN
                     FE(Isrc,Jsrc)=Hvom(Isrc,Jsrc,k)*                    &
      &                            SOURCES(ng)%Tsrc(is,k,itrc)
@@ -1119,7 +1109,7 @@
 !
 !  Apply mass point sources (volume vertical influx), if any.
 !
-          IF (LwSrc(ng).and.ANY(LtracerSrc(:,ng))) THEN
+          IF (LwSrc(ng)) THEN
             DO is=1,Nsrc(ng)
               Isrc=SOURCES(ng)%Isrc(is)
               Jsrc=SOURCES(ng)%Jsrc(is)
@@ -1473,7 +1463,7 @@
 !  Apply tracers point sources to the BASIC STATE horizontal advection
 !  terms, if any.
 !
-          IF (LuvSrc(ng).and.ANY(LtracerSrc(:,ng))) THEN
+          IF (LuvSrc(ng)) THEN
             DO is=1,Nsrc(ng)
               Isrc=SOURCES(ng)%Isrc(is)
               Jsrc=SOURCES(ng)%Jsrc(is)
@@ -1773,7 +1763,7 @@
 !
 !  Apply mass point sources (volume vertical influx), if any.
 !
-          IF (LwSrc(ng).and.ANY(LtracerSrc(:,ng))) THEN
+          IF (LwSrc(ng)) THEN
             DO is=1,Nsrc(ng)
               Isrc=SOURCES(ng)%Isrc(is)
               Jsrc=SOURCES(ng)%Jsrc(is)
@@ -2315,7 +2305,7 @@
 !  Apply adjoint tracers point sources to the horizontal advection
 !  terms, if any.
 !
-          IF (LuvSrc(ng).and.ANY(LtracerSrc(:,ng))) THEN
+          IF (LuvSrc(ng)) THEN
             DO is=1,Nsrc(ng)
               Isrc=SOURCES(ng)%Isrc(is)
               Jsrc=SOURCES(ng)%Jsrc(is)

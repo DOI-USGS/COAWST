@@ -105,6 +105,9 @@
       real(r8) :: bry_pgr, bry_cor, bry_str
       real(r8) :: cff, cff1, cff2, cff3, dt2d
       real(r8) :: obc_in, obc_out, tau
+# if defined ATM_PRESS && defined PRESS_COMPENSATE
+      real(r8) :: OneAtm, fac
+# endif
 
       real(r8) :: tl_Ce, tl_Cx, tl_Zx
       real(r8) :: tl_bry_pgr, tl_bry_cor, tl_bry_str, tl_bry_val
@@ -128,6 +131,10 @@
         know=kstp
         dt2d=dtfast(ng)
       END IF
+# if defined ATM_PRESS && defined PRESS_COMPENSATE
+      OneAtm=1013.25_r8                  ! 1 atm = 1013.25 mb
+      fac=100.0_r8/(g*rho0)
+# endif
 !
 !-----------------------------------------------------------------------
 !  Lateral boundary conditions at the western edge.
@@ -311,6 +318,30 @@
      &                                 tl_zeta(Istr  ,j,know)))
               Cx=SQRT(g*cff)
               tl_Cx=0.5_r8*g*tl_cff/Cx
+# if defined ATM_PRESS && defined PRESS_COMPENSATE
+!>            ubar(Istr,j,kout)=bry_val-                                &
+!>   &                          Cx*(0.5_r8*                             &
+!>   &                              (zeta(Istr-1,j,know)+               &
+!>   &                               zeta(Istr  ,j,know)+               &
+!>   &                               fac*(FORCES(ng)%Pair(Istr-1,j)+    &
+!>   &                                    FORCES(ng)%Pair(Istr  ,j)-    &
+!>   &                                    2.0_r8*OneAtm))-              &
+!>   &                              BOUNDARY(ng)%zeta_west(j))
+!>
+              tl_ubar(Istr,j,kout)=tl_bry_val-                          &
+     &                             tl_Cx*                               &
+     &                             (0.5_r8*                             &
+     &                              (zeta(Istr-1,j,know)+               &
+     &                               zeta(Istr  ,j,know)+               &
+     &                               fac*(FORCES(ng)%Pair(Istr-1,j)+    &
+     &                                    FORCES(ng)%Pair(Istr  ,j)-    &
+     &                                    2.0_r8*OneAtm))-              &
+     &                              BOUNDARY(ng)%zeta_west(j))-         &
+     &                             Cx*                                  &
+     &                             (0.5_r8*                             &
+     &                              (tl_zeta(Istr-1,j,know)+            &
+     &                               tl_zeta(Istr  ,j,know)))
+# else
 !>            ubar(Istr,j,kout)=bry_val-                                &
 !>   &                          Cx*(0.5_r8*(zeta(Istr-1,j,know)+        &
 !>   &                                      zeta(Istr  ,j,know))-       &
@@ -324,6 +355,7 @@
      &                             Cx*                                  &
      &                             (0.5_r8*(tl_zeta(Istr-1,j,know)+     &
      &                                      tl_zeta(Istr  ,j,know)))
+# endif
 # ifdef ADJUST_BOUNDARY
               IF (Lobc(iwest,isUbar,ng)) THEN
                 tl_ubar(Istr,j,kout)=tl_ubar(Istr,j,kout)+              &
@@ -823,6 +855,29 @@
      &                                 tl_zeta(Iend+1,j,know)))
               Cx=SQRT(g*cff)
               tl_Cx=0.5_r8*g*tl_cff/Cx
+# if defined ATM_PRESS && defined PRESS_COMPENSATE
+!>            ubar(Iend+1,j,kout)=bry_val+                              &
+!>   &                            Cx*(0.5_r8*                           &
+!>   &                                (zeta(Iend  ,j,know)+             &
+!>   &                                 zeta(Iend+1,j,know)+             &
+!>   &                                 fac*(FORCES(ng)%Pair(Iend  ,j)+  &
+!>   &                                      FORCES(ng)%Pair(Iend+1,j)-  &
+!>   &                                      2.0_r8*OneAtm))-            &
+!>   &                                BOUNDARY(ng)%zeta_east(j))
+!>
+              tl_ubar(Iend+1,j,kout)=tl_bry_val+                        &
+     &                               tl_Cx*                             &
+     &                               (0.5_r8*                           &
+     &                                (zeta(Iend  ,j,know)+             &
+     &                                 zeta(Iend+1,j,know)+             &
+     &                                 fac*(FORCES(ng)%Pair(Iend  ,j)+  &
+     &                                      FORCES(ng)%Pair(Iend+1,j)-  &
+     &                                      2.0_r8*OneAtm))-            &
+     &                                BOUNDARY(ng)%zeta_east(j))+       &
+     &                               Cx*                                &
+     &                               (0.5_r8*(tl_zeta(Iend  ,j,know)+   &
+     &                                        tl_zeta(Iend+1,j,know)))
+# else
 !>            ubar(Iend+1,j,kout)=bry_val+                              &
 !>   &                            Cx*(0.5_r8*(zeta(Iend  ,j,know)+      &
 !>   &                                        zeta(Iend+1,j,know))-     &
@@ -836,6 +891,7 @@
      &                               Cx*                                &
      &                               (0.5_r8*(tl_zeta(Iend  ,j,know)+   &
      &                                        tl_zeta(Iend+1,j,know)))
+# endif
 # ifdef ADJUST_BOUNDARY
               IF (Lobc(ieast,isUbar,ng)) THEN
                 tl_ubar(Iend+1,j,kout)=tl_ubar(Iend+1,j,kout)-          &

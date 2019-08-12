@@ -58,21 +58,11 @@
 #ifdef ADJUST_BOUNDARY
       integer :: IorJdim, brecdim
 #endif
+      integer :: DimIDs(nDimID)
       integer :: t2dgrd(3), u2dgrd(3), v2dgrd(3)
 #ifdef ADJUST_BOUNDARY
       integer :: t2dobc(4)
 #endif
-
-#if defined VEGETATION && (defined VEG_DRAG || defined VEG_BIOMASS)
-      integer :: DimIDs(35)
-#elif defined ESTUARYBGC
-      integer :: DimIDs(34)
-#elif defined INWAVE_MODEL
-      integer :: DimIDs(33)
-#else
-      integer :: DimIDs(32)
-#endif
-      integer :: Vsize(4)
 
       integer :: def_dim
 
@@ -289,6 +279,11 @@
 # endif
 
 # ifdef ECOSIM
+        status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname, 'Nbands',        &
+     &                 NBands, DimIDs(33))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+
         status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname, 'Nphy',          &
      &                 Nphy, DimIDs(25))
         IF (FoundError(exit_flag, NoError, __LINE__,                    &

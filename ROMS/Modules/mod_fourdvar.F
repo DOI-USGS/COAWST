@@ -44,10 +44,10 @@
 !                  preconditioning.                                    !
 !  Lritz         Logical switch to activw Ritz limited-memory          !
 !                  preconditioning.                                    !
-#ifdef RPCG
+# ifdef RPCG
 !  LaugWeak      Logical switch for computing augmented model error    !
 !                terms in the routine "error_covariance".              !
-#endif
+# endif
 !  nConvRitz     Number of converged Ritz eigenvalues.                 !
 !  Nimpact       Outer loop to consider for observations impact and    !
 !                  observations sensitivity.                           !
@@ -123,7 +123,7 @@
 !  BgThresh      Number of standard deviations threshold used in the   !
 !                  background quality control of observations.         !
 !  Jact_S        Saved actual cost function.                           !
-#endif
+# endif
 !                                                                      !
 !=======================================================================
 !
@@ -148,8 +148,8 @@
           real(r8), allocatable :: CostNorm(:)
           real(r8), allocatable :: ObsCost(:)
           real(r8), allocatable :: DataPenalty(:)
-#   if defined DATALESS_LOOPS || defined TL_W4DPSAS          || \
-       defined W4DPSAS        || defined W4DPSAS_SENSITIVITY
+#   if defined DATALESS_LOOPS || defined SENSITIVITY_4DVAR || \
+       defined TL_W4DPSAS     || defined W4DPSAS
           real(r8), allocatable :: NLPenalty(:)
 #   endif
           real(r8), allocatable :: NLobsCost(:)
@@ -184,9 +184,12 @@
           real(r8), allocatable :: SurveyTime(:)
 
 #  ifdef RPCG
+          real(r8), allocatable :: cg_pxout(:)
           real(r8), allocatable :: cg_pxsave(:)
           real(r8), allocatable :: cg_pxsum(:)
           real(r8), allocatable :: cg_Dpxsum(:)
+          real(r8), allocatable :: tl_cg_pxsave(:)
+          real(r8), allocatable :: ad_cg_pxsave(:)
 #  endif
 
         END TYPE T_FOURDVAR
@@ -226,11 +229,27 @@
        defined W4DVAR               || defined ARRAY_MODES || \
        defined CLIPPING
         real(r8), allocatable :: TLmodVal_S(:,:,:)
+#    if defined RPCG              && \
+       (defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
+        defined TL_W4DVAR)
+        real(r8), allocatable :: tl_TLmodVal_S(:,:,:)
+        real(r8), allocatable :: ad_TLmodVal_S(:,:,:)
+#    endif
 #   endif
-#   if defined ARRAY_MODES || defined TL_W4DPSAS          || \
-       defined W4DPSAS     || defined W4DPSAS_SENSITIVITY
+#   if defined ARRAY_MODES || defined SENSITIVITY_4DVAR || \
+       defined TL_W4DPSAS  || defined W4DPSAS
         real(r8), allocatable :: BCKmodVal(:)
+
+#    ifdef RPCG
         real(r8), allocatable :: Hbk(:,:)
+#     if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
+         defined TL_W4DVAR
+        real(r8), allocatable :: tl_BCKmodVal(:)
+        real(r8), allocatable :: tl_Hbk(:)
+        real(r8), allocatable :: ad_BCKmodVal(:)
+        real(r8), allocatable :: ad_Hbk(:)
+#     endif
+#    endif
 #   endif
 #  endif
 #  ifdef WEAK_CONSTRAINT
@@ -238,7 +257,6 @@
 #   ifdef RPCG
         real(r8), allocatable :: vcglwk(:,:,:)
         real(r8), allocatable :: Jb0(:)
-        real(r8), allocatable :: Hdx(:)
 #   endif
         real(r8), allocatable :: vcglev(:,:,:)
         real(r8), allocatable :: zgrad0(:,:)
@@ -248,15 +266,26 @@
         real(r8), allocatable :: vgnorm(:)
         real(r8), allocatable :: cg_innov(:)
         real(r8), allocatable :: cg_dla(:,:)
-#     ifndef RPCG
+#   ifndef RPCG
         real(r8), allocatable :: cg_pxsave(:)
-#     endif
-#   if defined TL_W4DPSAS          || defined TL_W4DVAR          || \
-       defined W4DPSAS_SENSITIVITY || defined W4DVAR_SENSITIVITY
+#   endif
+#   if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
+       defined TL_W4DVAR
         real(r8), allocatable :: ad_zcglwk(:,:)
         real(r8), allocatable :: ad_zgrad0(:)
+#    if defined RPCG              && \
+       (defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
+        defined TL_W4DVAR)
+        real(r8), allocatable :: ad_vcglwk(:,:)
+        real(r8), allocatable :: ad_vgrad0(:)
+        real(r8), allocatable :: ad_vgrad0s(:)
+        real(r8), allocatable :: ad_Jb0(:)
+        real(r8), allocatable :: ad_ObsErr(:)
+        real(r8), allocatable :: ad_ObsScale(:)
+#    endif
         real(r8), allocatable :: ad_cg_innov(:)
         real(r8), allocatable :: ad_cg_pxsave(:)
+        real(r8), allocatable :: ad_cg_pxout(:)
 #    ifdef IMPACT_INNER
         real(r8), allocatable :: ad_ObsVal(:,:)
 #    else
@@ -265,8 +294,17 @@
 
         real(r8), allocatable :: tl_zcglwk(:,:)
         real(r8), allocatable :: tl_zgrad0(:)
+#    ifdef RPCG
+        real(r8), allocatable :: tl_vcglwk(:,:)
+        real(r8), allocatable :: tl_vgrad0(:)
+        real(r8), allocatable :: tl_vgrad0s(:)
+        real(r8), allocatable :: tl_Jb0(:)
+        real(r8), allocatable :: tl_ObsErr(:)
+        real(r8), allocatable :: tl_ObsScale(:)
+#    endif
         real(r8), allocatable :: tl_cg_innov(:)
         real(r8), allocatable :: tl_cg_pxsave(:)
+        real(r8), allocatable :: tl_cg_pxout(:)
         real(r8), allocatable :: tl_ObsVal(:)
 #   endif
 #  endif
@@ -585,7 +623,12 @@
 
         real(r8), allocatable :: tl_cg_delta(:)
         real(r8), allocatable :: tl_cg_QG(:)
+#   ifdef RPCG
+        real(r8), allocatable :: tl_cg_Gnorm_v(:)
+        real(r8), allocatable :: ad_cg_Gnorm_v(:)
+#   else
         real(r8), allocatable :: tl_cg_Gnorm(:)
+#   endif
 #  endif
         real(r8), allocatable :: cg_delta(:,:)
         real(r8), allocatable :: cg_gamma(:,:)
@@ -724,7 +767,7 @@
 !  2008).
 !
         logical :: Lritz
-#ifdef RPCG
+# ifdef RPCG
 !
 !  Switch that controls computation of the augumented contributions
 !  to the model error forcing terms in error_covariance.
@@ -788,12 +831,26 @@
 #  ifdef RPM_RELAXATION
         logical, allocatable :: LweakRelax(:)
 #  endif
-#  if defined W4DPSAS_SENSITIVITY  || defined W4DVAR_SENSITIVITY
+#  ifdef W4DPSAS_FCT_SENSITIVITY
+        logical, allocatable :: LsenFCT(:)
+#  endif
+#  if defined W4DPSAS_SENSITIVITY || defined W4DPSAS_FCT_SENSITIVITY ||\
+      defined W4DVAR_SENSITIVITY
 !
 !  Switch to activate reading of adjoint sensitivity initial conditions
 !  for weak constraint 4DVAR observation sensitivity.
 !
         logical, allocatable :: LsenPSAS(:)
+#   ifdef OBS_SPACE
+        logical, allocatable :: Lobspace(:)
+#    ifndef OBS_IMPACT
+        logical, allocatable :: LadjVAR(:)
+#    endif
+#   endif
+#  endif
+#  ifdef W4DPSAS_FCT_SENSITIVITY
+        integer, allocatable :: ntimes_ana(:)
+        integer, allocatable :: ntimes_fct(:)
 #  endif
 !
 !  Weak-constraint forcing time.  A new variable is required since this
@@ -978,9 +1035,38 @@
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 #  endif
-#  if defined W4DPSAS_SENSITIVITY  || defined W4DVAR_SENSITIVITY
+#  ifdef W4DPSAS_FCT_SENSITIVITY
+      IF (.not.allocated(LsenFCT)) THEN
+        allocate ( LsenFCT(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+#  endif
+#  if defined W4DPSAS_SENSITIVITY || defined W4DPSAS_FCT_SENSITIVITY ||\
+      defined W4DVAR_SENSITIVITY
       IF (.not.allocated(LsenPSAS)) THEN
         allocate ( LsenPSAS(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+#   ifdef OBS_SPACE
+      IF (.not.allocated(Lobspace)) THEN
+        allocate ( Lobspace(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+#    ifndef OBS_IMPACT
+      IF (.not.allocated(LadjVAR)) THEN
+        allocate ( LadjVAR(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+#    endif
+#   endif
+#  endif
+#  ifdef W4DPSAS_FCT_SENSITIVITY
+      IF (.not.allocated(ntimes_ana)) THEN
+        allocate ( ntimes_ana(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(ntimes_fct)) THEN
+        allocate ( ntimes_fct(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 #  endif
@@ -992,6 +1078,399 @@
 
       RETURN
       END SUBROUTINE allocate_fourdvar
+
+# if defined W4DPSAS_FCT_SENSITIVITY && defined OBS_SPACE
+      SUBROUTINE deallocate_fourdvar
+!
+!=======================================================================
+!                                                                      !
+!  This routine deallocates several variables in module associated     !
+!  with observation dimension parameters Ndatum, Nsurvey, and Mobs.    !
+!  It is used in the observations impacts for the analysis-forecast    !
+!  cycle.                                                              !
+!                                                                      !
+!=======================================================================
+!
+!  Local variable declarations.
+!
+      integer :: ng
+!
+!-----------------------------------------------------------------------
+!  Deallocate structure variables for each nested grids.
+!-----------------------------------------------------------------------
+!
+      DO ng=1,Ngrids
+        IF (allocated(FOURDVAR(ng) % NobsSurvey)) THEN
+          deallocate (FOURDVAR(ng) % NobsSurvey)
+        END IF
+
+        IF (allocated(FOURDVAR(ng) % SurveyTime)) THEN
+          deallocate (FOURDVAR(ng) % SurveyTime)
+        END IF
+
+#  ifdef RPCG
+        IF (allocated(FOURDVAR(ng) % cg_pxsave)) THEN
+          deallocate (FOURDVAR(ng) % cg_pxsave)
+        END IF
+
+        IF (allocated(FOURDVAR(ng) % cg_pxout)) THEN
+          deallocate (FOURDVAR(ng) % cg_pxout)
+        END IF
+
+        IF (allocated(FOURDVAR(ng) % cg_pxsum)) THEN
+          deallocate (FOURDVAR(ng) % cg_pxsum)
+        END IF
+
+        IF (allocated(FOURDVAR(ng) % cg_Dpxsum)) THEN
+          deallocate (FOURDVAR(ng) % cg_Dpxsum)
+        END IF
+
+        IF (allocated(FOURDVAR(ng) % tl_cg_pxsave)) THEN
+          deallocate (FOURDVAR(ng) % tl_cg_pxsave)
+        END IF
+
+        IF (allocated(FOURDVAR(ng) % ad_cg_pxsave)) THEN
+          deallocate (FOURDVAR(ng) % ad_cg_pxsave)
+        END IF
+
+#  endif
+      END DO
+!
+!-----------------------------------------------------------------------
+!  deallocate and initialize model and observation variables.
+!-----------------------------------------------------------------------
+!
+#  ifdef CURVGRID
+      IF (allocated(ObsAngler)) THEN
+        deallocate (ObsAngler)
+      END IF
+#  endif
+
+      IF (allocated(ObsType)) THEN
+        deallocate (ObsType)
+      END IF
+
+      IF (allocated(ObsProv)) THEN
+        deallocate (ObsProv)
+      END IF
+
+      IF (allocated(ObsErr)) THEN
+        deallocate (ObsErr)
+      END IF
+
+      IF (allocated(ObsMeta)) THEN
+        deallocate (ObsMeta)
+      END IF
+
+      IF (allocated(ObsScale)) THEN
+        deallocate (ObsScale)
+      END IF
+
+#  ifndef WEAK_CONSTRAINT
+      IF (allocated(ObsScaleGlobal)) THEN
+        deallocate (ObsScaleGlobal)
+      END IF
+#  endif
+
+      IF (allocated(ObsVetting)) THEN
+        deallocate (ObsVetting)
+      END IF
+
+      IF (allocated(ObsVal)) THEN
+        deallocate (ObsVal)
+      END IF
+
+      IF (allocated(Tobs)) THEN
+        deallocate (Tobs)
+      END IF
+
+      IF (allocated(Xobs)) THEN
+        deallocate (Xobs)
+      END IF
+
+      IF (allocated(Yobs)) THEN
+        deallocate (Yobs)
+      END IF
+
+#  ifdef SOLVE3D
+      IF (allocated(Zobs)) THEN
+        deallocate (Zobs)
+      END IF
+#  endif
+
+      IF (allocated(ADmodVal)) THEN
+        deallocate (ADmodVal)
+      END IF
+
+      IF (allocated(NLmodVal)) THEN
+        deallocate (NLmodVal)
+      END IF
+
+#  ifdef BGQC
+      IF (allocated(BgErr)) THEN
+        deallocate (BgErr)
+      END IF
+
+      IF (allocated(BgThresh)) THEN
+        deallocate (BgThresh)
+      END IF
+#  endif
+
+#  ifdef TLM_OBS
+      IF (allocated(TLmodVal)) THEN
+        deallocate (TLmodVal)
+      END IF
+
+#   if defined SENSITIVITY_4DVAR    || defined TL_W4DPSAS  || \
+       defined TL_W4DVAR            || defined W4DPSAS     || \
+       defined W4DVAR               || defined ARRAY_MODES || \
+       defined CLIPPING
+
+      IF (allocated(TLmodVal_S)) THEN
+        deallocate (TLmodVal_S)
+      END IF
+
+#    if defined RPCG              && \
+       (defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
+        defined TL_W4DVAR)
+
+      IF (allocated(tl_TLmodVal_S)) THEN
+        deallocate (tl_TLmodVal_S)
+      END IF
+
+      IF (allocated(ad_TLmodVal_S)) THEN
+        deallocate (ad_TLmodVal_S)
+      END IF
+#    endif
+
+#   endif
+
+#   if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
+       defined W4DPSAS
+
+      IF (allocated(BCKmodVal)) THEN
+        deallocate (BCKmodVal)
+      END IF
+
+#    ifdef RPCG
+      IF (allocated(Hbk)) THEN
+        deallocate (Hbk)
+      END IF
+#     if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
+         defined TL_W4DVAR
+
+      IF (allocated(tl_BCKmodVal)) THEN
+        deallocate (tl_BCKmodVal)
+      END IF
+      IF (allocated(ad_BCKmodVal)) THEN
+        deallocate (ad_BCKmodVal)
+      END IF
+      IF (allocated(tl_Hbk)) THEN
+        deallocate (tl_Hbk)
+      END IF
+      IF (allocated(ad_Hbk)) THEN
+        deallocate (ad_Hbk)
+      END IF
+#     endif
+#    endif
+#   endif
+#  endif
+
+#  ifdef WEAK_CONSTRAINT
+!
+!  Deallocate and initialize weak constraint conjugate gradient vectors.
+!
+#   if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
+       defined TL_W4DVAR
+      IF (allocated(ad_zcglwk)) THEN
+        deallocate (ad_zcglwk)
+      END IF
+
+      IF (allocated(ad_zgrad0)) THEN
+        deallocate (ad_zgrad0)
+      END IF
+
+      IF (allocated(ad_cg_innov)) THEN
+        deallocate (ad_cg_innov)
+      END IF
+
+      IF (allocated(ad_cg_pxsave)) THEN
+        deallocate (ad_cg_pxsave)
+      END IF
+
+      IF (allocated(tl_zcglwk)) THEN
+        deallocate (tl_zcglwk)
+      END IF
+
+      IF (allocated(tl_zgrad0)) THEN
+        deallocate (tl_zgrad0)
+      END IF
+
+      IF (allocated(tl_cg_innov)) THEN
+        deallocate (tl_cg_innov)
+      END IF
+
+      IF (allocated(tl_cg_pxsave)) THEN
+        deallocate (tl_cg_pxsave)
+      END IF
+
+      IF (allocated(tl_ObsVal)) THEN
+        deallocate (tl_ObsVal)
+      END IF
+
+#    ifdef IMPACT_INNER
+      IF (allocated(ad_ObsVal)) THEN
+        deallocate (ad_ObsVal)
+      END IF
+#    else
+      IF (allocated(ad_ObsVal)) THEN
+        deallocate (ad_ObsVal)
+      END IF
+#    endif
+#   endif
+
+#   ifdef RPCG
+      IF (allocated(zcglwk)) THEN
+        deallocate (zcglwk)
+      END IF
+
+      IF (allocated(vcglwk)) THEN
+        deallocate (vcglwk)
+      END IF
+
+      IF (allocated(vcglev)) THEN
+        deallocate (vcglev)
+      END IF
+
+      IF (allocated(zgrad0)) THEN
+        deallocate (zgrad0)
+      END IF
+
+      IF (allocated(vgrad0)) THEN
+        deallocate (vgrad0)
+      END IF
+
+      IF (allocated(vgrad0s)) THEN
+        deallocate (vgrad0s)
+      END IF
+
+      IF (allocated(cg_innov)) THEN
+        deallocate (cg_innov)
+      END IF
+
+#    if defined TL_W4DPSAS             || defined TL_W4DVAR          || \
+        defined W4DPSAS_SENSITIVITY    || defined W4DVAR_SENSITIVITY || \
+        defined W4DPSAS_FCT_SENSITIVITY
+
+      IF (allocated(ad_vcglwk)) THEN
+        deallocate (ad_vcglwk)
+      END IF
+
+      IF (allocated(ad_vgrad0)) THEN
+        deallocate (ad_vgrad0)
+      END IF
+
+      IF (allocated(ad_vgrad0s)) THEN
+        deallocate (ad_vgrad0s)
+      END IF
+
+      IF (allocated(ad_Jb0)) THEN
+        deallocate (ad_Jb0)
+      END IF
+
+      IF (allocated(ad_ObsErr)) THEN
+        deallocate (ad_ObsErr)
+      END IF
+
+      IF (allocated(ad_ObsScale)) THEN
+        deallocate (ad_ObsScale)
+      END IF
+
+      IF (allocated(ad_ObsVal)) THEN
+        deallocate (ad_ObsVal)
+      END IF
+
+      IF (allocated(tl_vcglwk)) THEN
+        deallocate (tl_vcglwk)
+      END IF
+
+      IF (allocated(tl_vgrad0)) THEN
+        deallocate (tl_vgrad0)
+      END IF
+
+      IF (allocated(tl_vgrad0s)) THEN
+        deallocate (tl_vgrad0s)
+      END IF
+
+      IF (allocated(tl_Jb0)) THEN
+        deallocate (tl_Jb0)
+      END IF
+
+      IF (allocated(tl_ObsErr)) THEN
+        deallocate (tl_ObsErr)
+      END IF
+
+      IF (allocated(tl_ObsScale)) THEN
+        deallocate (tl_ObsScale)
+      END IF
+
+      IF (allocated(tl_ObsVal)) THEN
+        deallocate (tl_ObsVal)
+      END IF
+
+      IF (allocated(tl_cg_Gnorm_v)) THEN
+        deallocate (tl_cg_Gnorm_v)
+      END IF
+
+      IF (allocated(ad_cg_Gnorm_v)) THEN
+        deallocate (ad_cg_Gnorm_v)
+      END IF
+#    endif
+
+#   else
+
+      IF (allocated(cg_pxsave)) THEN
+        deallocate (cg_pxsave)
+      END IF
+
+      IF (allocated(zcglwk)) THEN
+        deallocate (zcglwk)
+      END IF
+
+      IF (allocated(vcglev)) THEN
+        deallocate (vcglev)
+      END IF
+
+      IF (allocated(zgrad0)) THEN
+        deallocate (zgrad0)
+      END IF
+
+      IF (allocated(vgrad0)) THEN
+        deallocate (vgrad0)
+      END IF
+
+      IF (allocated(vgrad0s)) THEN
+        deallocate (vgrad0s)
+      END IF
+
+      IF (allocated(gdgw)) THEN
+        deallocate (gdgw)
+      END IF
+
+      IF (allocated(cg_innov)) THEN
+        deallocate (cg_innov)
+      END IF
+
+      IF (allocated(cg_pxsave)) THEN
+        deallocate (cg_pxsave)
+      END IF
+
+#   endif
+#  endif
+
+      RETURN
+      END SUBROUTINE deallocate_fourdvar
+# endif
 
       SUBROUTINE initialize_fourdvar
 !
@@ -1090,7 +1569,7 @@
         LBj=BOUNDS(ng)%LBj(tile)
         UBj=BOUNDS(ng)%UBj(tile)
 
-        size2d=REAL((UBi-LBi)*(UBj-LBj),r8)
+        size2d=REAL((UBi-LBi+1)*(UBj-LBj+1),r8)
 #  endif
 #  ifdef SOLVE3D
         NstateVar(ng)=5+NT(ng)
@@ -1160,8 +1639,8 @@
           FOURDVAR(ng) % DataPenalty = IniVal
         END IF
 
-#   if defined DATALESS_LOOPS || defined TL_W4DPSAS          || \
-       defined W4DPSAS        || defined W4DPSAS_SENSITIVITY
+#   if defined DATALESS_LOOPS || defined SENSITIVITY_4DVAR || \
+       defined TL_W4DPSAS     || defined W4DPSAS
         IF (.not.allocated(FOURDVAR(ng) % NLPenalty)) THEN
           allocate ( FOURDVAR(ng) % NLPenalty(0:NobsVar(ng)) )
           Dmem(ng)=Dmem(ng)+REAL(NobsVar(ng)+1,r8)
@@ -1305,22 +1784,40 @@
         END IF
 
 #  ifdef RPCG
+        IF (.not.allocated(FOURDVAR(ng) % cg_pxout)) THEN
+          allocate ( FOURDVAR(ng) % cg_pxout(Nouter) )
+          Dmem(ng)=Dmem(ng)+REAL(Nouter)
+          FOURDVAR(ng) % cg_pxout = IniVal
+        END IF
+
         IF (.not.allocated(FOURDVAR(ng) % cg_pxsave)) THEN
           allocate ( FOURDVAR(ng) % cg_pxsave(Ndatum(ng)+1) )
           Dmem(ng)=Dmem(ng)+REAL(Ndatum(ng)+1,r8)
-          FOURDVAR(ng) % cg_pxsave = 0
+          FOURDVAR(ng) % cg_pxsave = IniVal
         END IF
 
         IF (.not.allocated(FOURDVAR(ng) % cg_pxsum)) THEN
           allocate ( FOURDVAR(ng) % cg_pxsum(Ndatum(ng)+1) )
           Dmem(ng)=Dmem(ng)+REAL(Ndatum(ng)+1,r8)
-          FOURDVAR(ng) % cg_pxsum = 0
+          FOURDVAR(ng) % cg_pxsum = IniVal
         END IF
 
         IF (.not.allocated(FOURDVAR(ng) % cg_Dpxsum)) THEN
           allocate ( FOURDVAR(ng) % cg_Dpxsum(Ndatum(ng)+1) )
           Dmem(ng)=Dmem(ng)+REAL(Ndatum(ng)+1,r8)
-          FOURDVAR(ng) % cg_Dpxsum = 0
+          FOURDVAR(ng) % cg_Dpxsum = IniVal
+        END IF
+
+        IF (.not.allocated(FOURDVAR(ng) % tl_cg_pxsave)) THEN
+          allocate ( FOURDVAR(ng) % tl_cg_pxsave(Ndatum(ng)+1) )
+          Dmem(ng)=Dmem(ng)+REAL(Ndatum(ng)+1,r8)
+          FOURDVAR(ng) % tl_cg_pxsave = IniVal
+        END IF
+
+        IF (.not.allocated(FOURDVAR(ng) % ad_cg_pxsave)) THEN
+          allocate ( FOURDVAR(ng) % ad_cg_pxsave(Ndatum(ng)+1) )
+          Dmem(ng)=Dmem(ng)+REAL(Ndatum(ng)+1,r8)
+          FOURDVAR(ng) % ad_cg_pxsave = IniVal
         END IF
 #  endif
 
@@ -1496,30 +1993,89 @@
         Dmem(1)=Dmem(1)+REAL(Mobs,r8)
       END IF
       TLmodVal = IniVal
+
 #   if defined SENSITIVITY_4DVAR    || defined TL_W4DPSAS  || \
        defined TL_W4DVAR            || defined W4DPSAS     || \
        defined W4DVAR               || defined ARRAY_MODES || \
        defined CLIPPING
-      IF (Master) THEN                                  ! Needed only
-        IF (.not.allocated(TLmodVal_S)) THEN            ! by master. It
-          allocate ( TLmodVal_S(Mobs,Ninner,Nouter) )   ! is a memory
-          Dmem(1)=Dmem(1)+REAL(Mobs*Ninner*Nouter,r8)   ! hog in other
-        END IF                                          ! nodes
+
+!
+!  The following arrays are only needed and used by the master node.
+!  In order to avoid hogging memory penalties in the other nodes, they
+!  are only allocated by the master node.
+!
+      IF (Master) THEN
+        IF (.not.allocated(TLmodVal_S)) THEN
+          allocate ( TLmodVal_S(Mobs,Ninner,Nouter) )
+          Dmem(1)=Dmem(1)+REAL(Mobs*Ninner*Nouter,r8)
+        END IF
         TLmodVal_S = IniVal
+
+#    if defined RPCG              && \
+       (defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
+        defined TL_W4DVAR)
+        IF (.not.allocated(tl_TLmodVal_S)) THEN
+          allocate ( tl_TLmodVal_S(Mobs,Ninner,Nouter) )
+          Dmem(1)=Dmem(1)+REAL(Mobs*Ninner*Nouter,r8)
+        END IF
+        tl_TLmodVal_S = IniVal
+
+        IF (.not.allocated(ad_TLmodVal_S)) THEN
+          allocate ( ad_TLmodVal_S(Mobs,Ninner,Nouter) )
+          Dmem(1)=Dmem(1)+REAL(Mobs*Ninner*Nouter,r8)
+        END IF
+        ad_TLmodVal_S = IniVal
+#    endif
       END IF
+
 #   endif
-#   if defined TL_W4DPSAS           || defined W4DPSAS    || \
-       defined W4DPSAS_SENSITIVITY
+
+#   if defined ARRAY_MODES || defined SENSITIVITY_4DVAR || \
+       defined TL_W4DPSAS  || defined W4DPSAS
+
       IF (.not.allocated(BCKmodVal)) THEN
         allocate ( BCKmodVal(Mobs) )
         Dmem(1)=Dmem(1)+REAL(Mobs,r8)
       END IF
       BCKmodVal = IniVal
+
+#    ifdef RPCG
+
       IF (.not.allocated(Hbk)) THEN
         allocate ( Hbk(Mobs,Nouter) )
         Dmem(1)=Dmem(1)+REAL(Mobs*Nouter,r8)
       END IF
       Hbk = IniVal
+
+#     if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
+         defined TL_W4DVAR
+
+      IF (.not.allocated(tl_BCKmodVal)) THEN
+        allocate ( tl_BCKmodVal(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      tl_BCKmodVal = IniVal
+
+      IF (.not.allocated(tl_Hbk)) THEN
+        allocate ( tl_Hbk(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      tl_Hbk = IniVal
+
+      IF (.not.allocated(ad_BCKmodVal)) THEN
+        allocate ( ad_BCKmodVal(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      ad_BCKmodVal = IniVal
+
+      IF (.not.allocated(ad_Hbk)) THEN
+        allocate ( ad_Hbk(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      ad_Hbk = IniVal
+
+#     endif
+#    endif
 #   endif
 #  endif
 !
@@ -1591,202 +2147,53 @@
 !
 !  Allocate and initialize weak constraint conjugate gradient vectors.
 !
-#   if defined TL_W4DPSAS          || defined TL_W4DVAR          || \
-       defined W4DPSAS_SENSITIVITY || defined W4DVAR_SENSITIVITY
-      IF (.not.allocated(ad_zcglwk)) THEN
-        allocate ( ad_zcglwk(Mobs,Ninner+1) )
-        Dmem(1)=Dmem(1)+REAL(Mobs*(Ninner+1),r8)
-      END IF
-      ad_zcglwk = IniVal
-
-      IF (.not.allocated(ad_zgrad0)) THEN
-        allocate ( ad_zgrad0(Mobs) )
-        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
-      END IF
-      ad_zgrad0 = IniVal
-
-      IF (.not.allocated(ad_cg_innov)) THEN
-        allocate ( ad_cg_innov(Mobs) )
-        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
-      END IF
-      ad_cg_innov = IniVal
-
-      IF (.not.allocated(ad_cg_pxsave)) THEN
-        allocate ( ad_cg_pxsave(Mobs) )
-        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
-      END IF
-      ad_cg_pxsave = IniVal
-
-      IF (.not.allocated(tl_zcglwk)) THEN
-        allocate ( tl_zcglwk(Mobs,Ninner+1) )
-        Dmem(1)=Dmem(1)+REAL(Mobs*(Ninner+1),r8)
-      END IF
-      tl_zcglwk = IniVal
-
-      IF (.not.allocated(tl_zgrad0)) THEN
-        allocate ( tl_zgrad0(Mobs) )
-        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
-      END IF
-      tl_zgrad0 = IniVal
-
-      IF (.not.allocated(tl_cg_innov)) THEN
-        allocate ( tl_cg_innov(Mobs) )
-        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
-      END IF
-      tl_cg_innov = IniVal
-
-      IF (.not.allocated(tl_cg_pxsave)) THEN
-        allocate ( tl_cg_pxsave(Mobs) )
-        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
-      END IF
-      tl_cg_pxsave = IniVal
-
-      IF (.not.allocated(tl_ObsVal)) THEN
-        allocate ( tl_ObsVal(Mobs) )
-        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
-      END IF
-      tl_ObsVal = IniVal
-
-#    ifdef IMPACT_INNER
-      IF (.not.allocated(ad_ObsVal)) THEN
-        allocate ( ad_ObsVal(Mobs,Ninner) )
-        Dmem(1)=Dmem(1)+REAL(Mobs*Ninner,r8)
-      END IF
-#    else
-      IF (.not.allocated(ad_ObsVal)) THEN
-        allocate ( ad_ObsVal(Mobs) )
-        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
-      END IF
-#    endif
-      ad_ObsVal = IniVal
+#   if defined RPCG
+#    define MyMobs Mobs+1
+#   else
+#    define MyMobs Mobs
 #   endif
 
-      IF (.not.allocated(cg_dla)) THEN
-        allocate ( cg_dla(Ninner,Nouter) )
-        Dmem(1)=Dmem(1)+REAL(Ninner*Nouter,r8)
+      IF (.not.allocated(zcglwk)) THEN
+        allocate ( zcglwk(MyMobs,Ninner+1,Nouter) )
+        Dmem(1)=Dmem(1)+REAL((MyMobs)*(Ninner+1)*Nouter,r8)
       END IF
-      cg_dla = IniVal
+      zcglwk = IniVal
 
 #   ifdef RPCG
+      IF (.not.allocated(vcglwk)) THEN
+        allocate ( vcglwk(MyMobs,Ninner+1,Nouter) )
+        Dmem(1)=Dmem(1)+REAL((MyMobs)*(Ninner+1)*Nouter,r8)
+      END IF
+      vcglwk = IniVal
+
       IF (.not.allocated(Jb0)) THEN
         allocate ( Jb0(0:Nouter) )
         Dmem(1)=Dmem(1)+REAL(Nouter+1,r8)
       END IF
       Jb0 = IniVal
-
-      IF (.not.allocated(Hdx)) THEN
-        allocate ( Hdx(Mobs) )
-        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
-      END IF
-      Hdx = IniVal
-
-#    ifdef W4DPSAS_SENSITIVITY
-
-      IF (.not.allocated(zcglwk)) THEN
-        allocate ( zcglwk(Mobs,Ninner+1,Nouter) )
-        Dmem(1)=Dmem(1)+REAL(Mobs*(Ninner+1)*Nouter,r8)
-      END IF
-      zcglwk = IniVal
-
-      IF (.not.allocated(vcglwk)) THEN
-        allocate ( vcglwk(Mobs,Ninner+1,Nouter) )
-        Dmem(1)=Dmem(1)+REAL(Mobs*(Ninner+1)*Nouter,r8)
-      END IF
-      vcglwk = IniVal
+#   endif
 
       IF (.not.allocated(vcglev)) THEN
-        allocate ( vcglev(Mobs,Ninner,Nouter) )
-        Dmem(1)=Dmem(1)+REAL(Mobs*Ninner*Nouter,r8)
+        allocate ( vcglev(MyMobs,Ninner,Nouter) )
+        Dmem(1)=Dmem(1)+REAL((MyMobs)*Ninner*Nouter,r8)
       END IF
       vcglev = IniVal
 
       IF (.not.allocated(zgrad0)) THEN
-        allocate ( zgrad0(Mobs,Nouter) )
-        Dmem(1)=Dmem(1)+REAL(Mobs*Nouter,r8)
-      END IF
-      zgrad0 = IniVal
-
-#    else
-      IF (.not.allocated(zcglwk)) THEN
-        allocate ( zcglwk(Mobs+1,Ninner+1,Nouter) )
-        Dmem(1)=Dmem(1)+REAL((Mobs+1)*(Ninner+1)*Nouter,r8)
-      END IF
-      zcglwk = IniVal
-
-      IF (.not.allocated(vcglwk)) THEN
-        allocate ( vcglwk(Mobs+1,Ninner+1,Nouter) )
-        Dmem(1)=Dmem(1)+REAL((Mobs+1)*(Ninner+1)*Nouter,r8)
-      END IF
-      vcglwk = IniVal
-
-      IF (.not.allocated(vcglev)) THEN
-        allocate ( vcglev(Mobs+1,Ninner,Nouter) )
-        Dmem(1)=Dmem(1)+REAL((Mobs+1)*Ninner*Nouter,r8)
-      END IF
-      vcglev = IniVal
-
-      IF (.not.allocated(zgrad0)) THEN
-        allocate ( zgrad0(Mobs+1,Nouter) )
-        Dmem(1)=Dmem(1)+REAL((Mobs+1)*Nouter,r8)
-      END IF
-      zgrad0 = IniVal
-#    endif
-
-      IF (.not.allocated(vgrad0)) THEN
-        allocate ( vgrad0(Mobs+1) )
-        Dmem(1)=Dmem(1)+REAL(Mobs+1,r8)
-      END IF
-      vgrad0 = IniVal
-
-      IF (.not.allocated(vgrad0s)) THEN
-        allocate ( vgrad0s(Mobs+1) )
-        Dmem(1)=Dmem(1)+REAL(Mobs+1,r8)
-      END IF
-      vgrad0s = IniVal
-
-      IF (.not.allocated(cg_innov)) THEN
-        allocate ( cg_innov(Mobs+1) )
-        Dmem(1)=Dmem(1)+REAL(Mobs+1,r8)
-      END IF
-      cg_innov = IniVal
-
-#     ifndef RPCG
-      IF (.not.allocated(cg_pxsave)) THEN
-        allocate ( cg_pxsave(Mobs) )
-        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
-      END IF
-      cg_pxsave = IniVal
-#     endif
-
-#    else
-
-      IF (.not.allocated(zcglwk)) THEN
-        allocate ( zcglwk(Mobs,Ninner+1,Nouter) )
-        Dmem(1)=Dmem(1)+REAL(Mobs*(Ninner+1)*Nouter,r8)
-      END IF
-      zcglwk = IniVal
-
-      IF (.not.allocated(vcglev)) THEN
-        allocate ( vcglev(Mobs,Ninner,Nouter) )
-        Dmem(1)=Dmem(1)+REAL(Mobs*Ninner*Nouter,r8)
-      END IF
-      vcglev = IniVal
-
-      IF (.not.allocated(zgrad0)) THEN
-        allocate ( zgrad0(Mobs,Nouter) )
-        Dmem(1)=Dmem(1)+REAL(Mobs*Nouter,r8)
+        allocate ( zgrad0(MyMobs,Nouter) )
+        Dmem(1)=Dmem(1)+REAL((MyMobs)*Nouter,r8)
       END IF
       zgrad0 = IniVal
 
       IF (.not.allocated(vgrad0)) THEN
-        allocate ( vgrad0(Mobs) )
-        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+        allocate ( vgrad0(MyMobs) )
+        Dmem(1)=Dmem(1)+REAL(MyMobs,r8)
       END IF
       vgrad0 = IniVal
 
-      IF (.not.allocated(vgrad0s)) THEN
-        allocate ( vgrad0s(Mobs) )
-        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+     IF (.not.allocated(vgrad0s)) THEN
+        allocate ( vgrad0s(MyMobs) )
+        Dmem(1)=Dmem(1)+REAL(MyMobs,r8)
       END IF
       vgrad0s = IniVal
 
@@ -1803,17 +2210,197 @@
       vgnorm = IniVal
 
       IF (.not.allocated(cg_innov)) THEN
-        allocate ( cg_innov(Mobs) )
-        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+        allocate ( cg_innov(MyMobs) )
+        Dmem(1)=Dmem(1)+REAL(MyMobs,r8)
       END IF
       cg_innov = IniVal
+
+      IF (.not.allocated(cg_dla)) THEN
+        allocate ( cg_dla(Ninner,Nouter) )
+        Dmem(1)=Dmem(1)+REAL(Ninner*Nouter,r8)
+      END IF
+      cg_dla = IniVal
+
+#   ifndef RPCG
 
       IF (.not.allocated(cg_pxsave)) THEN
         allocate ( cg_pxsave(Mobs) )
         Dmem(1)=Dmem(1)+REAL(Mobs,r8)
       END IF
       cg_pxsave = IniVal
+
+#   endif
+
+#   if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
+       defined TL_W4DVAR
+
+      IF (.not.allocated(ad_zcglwk)) THEN
+        allocate ( ad_zcglwk(MyMobs,Ninner+1) )
+        Dmem(1)=Dmem(1)+REAL((MyMobs)*(Ninner+1),r8)
+      END IF
+      ad_zcglwk = IniVal
+
+      IF (.not.allocated(ad_zgrad0)) THEN
+        allocate ( ad_zgrad0(MyMobs) )
+        Dmem(1)=Dmem(1)+REAL(MyMobs,r8)
+      END IF
+      ad_zgrad0 = IniVal
+
+#    if defined RPCG              && \
+       (defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
+        defined TL_W4DVAR)
+
+      IF (.not.allocated(ad_vcglwk)) THEN
+        allocate ( ad_vcglwk(MyMobs,Ninner+1) )
+        Dmem(1)=Dmem(1)+REAL((MyMobs)*(Ninner+1),r8)
+      END IF
+      ad_vcglwk = IniVal
+
+      IF (.not.allocated(ad_vgrad0)) THEN
+        allocate ( ad_vgrad0(MyMobs) )
+        Dmem(1)=Dmem(1)+REAL(MyMobs,r8)
+      END IF
+      ad_vgrad0 = IniVal
+
+      IF (.not.allocated(ad_vgrad0s)) THEN
+        allocate ( ad_vgrad0s(MyMobs) )
+        Dmem(1)=Dmem(1)+REAL(MyMobs,r8)
+      END IF
+      ad_vgrad0s = IniVal
+
+      IF (.not.allocated(ad_Jb0)) THEN
+        allocate ( ad_Jb0(0:Nouter) )
+        Dmem(1)=Dmem(1)+REAL(Nouter+1,r8)
+      END IF
+      ad_Jb0 = IniVal
+
+      IF (.not.allocated(ad_ObsErr)) THEN
+        allocate ( ad_ObsErr(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      ad_ObsErr = IniVal
+
+      IF (.not.allocated(ad_ObsScale)) THEN
+        allocate ( ad_ObsScale(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      ad_ObsScale = IniVal
+
 #    endif
+
+      IF (.not.allocated(ad_cg_innov)) THEN
+        allocate ( ad_cg_innov(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      ad_cg_innov = IniVal
+
+      IF (.not.allocated(ad_cg_pxsave)) THEN
+        allocate ( ad_cg_pxsave(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      ad_cg_pxsave = IniVal
+
+      IF (.not.allocated(ad_cg_pxout)) THEN
+        allocate ( ad_cg_pxout(Nouter) )
+        Dmem(1)=Dmem(1)+REAL(Nouter,r8)
+      END IF
+      ad_cg_pxout = IniVal
+
+#    ifdef IMPACT_INNER
+
+      IF (.not.allocated(ad_ObsVal)) THEN
+        allocate ( ad_ObsVal(Mobs,Ninner) )
+        Dmem(1)=Dmem(1)+REAL(Mobs*Ninner,r8)
+      END IF
+      ad_ObsVal = IniVal
+
+#    else
+
+      IF (.not.allocated(ad_ObsVal)) THEN
+        allocate ( ad_ObsVal(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      ad_ObsVal = IniVal
+
+#    endif
+
+      IF (.not.allocated(tl_zcglwk)) THEN
+        allocate ( tl_zcglwk(MyMobs,Ninner+1) )
+        Dmem(1)=Dmem(1)+REAL((MyMobs)*(Ninner+1),r8)
+      END IF
+      tl_zcglwk = IniVal
+
+      IF (.not.allocated(tl_zgrad0)) THEN
+        allocate ( tl_zgrad0(MyMobs) )
+        Dmem(1)=Dmem(1)+REAL(MyMobs,r8)
+      END IF
+      tl_zgrad0 = IniVal
+
+#    ifdef RPCG
+
+      IF (.not.allocated(tl_vcglwk)) THEN
+        allocate ( tl_vcglwk(MyMobs,Ninner+1) )
+        Dmem(1)=Dmem(1)+REAL((MyMobs)*(Ninner+1),r8)
+      END IF
+      tl_vcglwk = IniVal
+
+      IF (.not.allocated(tl_vgrad0)) THEN
+        allocate ( tl_vgrad0(MyMobs) )
+        Dmem(1)=Dmem(1)+REAL(MyMobs,r8)
+      END IF
+      tl_vgrad0 = IniVal
+
+      IF (.not.allocated(tl_vgrad0s)) THEN
+        allocate ( tl_vgrad0s(MyMobs) )
+        Dmem(1)=Dmem(1)+REAL(MyMobs,r8)
+      END IF
+      tl_vgrad0s = IniVal
+
+      IF (.not.allocated(tl_Jb0)) THEN
+        allocate ( tl_Jb0(0:Nouter) )
+        Dmem(1)=Dmem(1)+REAL(Nouter+1,r8)
+      END IF
+      tl_Jb0 = IniVal
+
+      IF (.not.allocated(tl_ObsErr)) THEN
+        allocate ( tl_ObsErr(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      tl_ObsErr = IniVal
+
+      IF (.not.allocated(tl_ObsScale)) THEN
+        allocate ( tl_ObsScale(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      tl_ObsScale = IniVal
+
+#    endif
+
+      IF (.not.allocated(tl_cg_innov)) THEN
+        allocate ( tl_cg_innov(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      tl_cg_innov = IniVal
+
+      IF (.not.allocated(tl_cg_pxsave)) THEN
+        allocate ( tl_cg_pxsave(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      tl_cg_pxsave = IniVal
+
+      IF (.not.allocated(tl_cg_pxout)) THEN
+        allocate ( tl_cg_pxout(Nouter) )
+        Dmem(1)=Dmem(1)+REAL(Nouter,r8)
+      END IF
+      tl_cg_pxout = IniVal
+
+      IF (.not.allocated(tl_ObsVal)) THEN
+        allocate ( tl_ObsVal(Mobs) )
+        Dmem(1)=Dmem(1)+REAL(Mobs,r8)
+      END IF
+      tl_ObsVal = IniVal
+
+#   endif
 #  endif
 
 # else
@@ -1938,11 +2525,27 @@
       END IF
       tl_cg_QG = IniVal
 
+#   ifdef RPCG
+      IF (.not.allocated(tl_cg_Gnorm_v)) THEN
+        allocate ( tl_cg_Gnorm_v(Nouter) )
+        Dmem(1)=Dmem(1)+REAL(Nouter,r8)
+      END IF
+      tl_cg_Gnorm_v = IniVal
+
+      IF (.not.allocated(ad_cg_Gnorm_v)) THEN
+        allocate ( ad_cg_Gnorm_v(Nouter) )
+        Dmem(1)=Dmem(1)+REAL(Nouter,r8)
+      END IF
+      ad_cg_Gnorm_v = IniVal
+
+#   else
       IF (.not.allocated(tl_cg_Gnorm)) THEN
         allocate ( tl_cg_Gnorm(Nouter) )
         Dmem(1)=Dmem(1)+REAL(Nouter,r8)
       END IF
       tl_cg_Gnorm = IniVal
+
+#   endif
 #  endif
 
       IF (.not.allocated(cg_alpha)) THEN
@@ -1969,8 +2572,8 @@
       END IF
       Ritz = IniVal
 
-# if defined POSTERIOR_EOFS    || defined POSTERIOR_ERROR_I || \
-     defined POSTERIOR_ERROR_F
+#  if defined POSTERIOR_EOFS    || defined POSTERIOR_ERROR_I || \
+      defined POSTERIOR_ERROR_F
 
       IF (.not.allocated(ae_beta)) THEN
         allocate ( ae_beta(NpostI+1,Nouter) )
@@ -2020,7 +2623,7 @@
       END IF
       ae_RitzErr = IniVal
 
-#  if defined POSTERIOR_ERROR_I || defined POSTERIOR_ERROR_F
+#   if defined POSTERIOR_ERROR_I || defined POSTERIOR_ERROR_F
       IF (.not.allocated(zLanczos_coef)) THEN
         allocate ( zLanczos_coef(Ninner,Ninner) )
         Dmem(1)=Dmem(1)+REAL(Ninner*Ninner,r8)
@@ -2038,8 +2641,8 @@
         Dmem(1)=Dmem(1)+REAL(Ninner*Ninner,r8)
       END IF
       zLanczos_err = IniVal
+#   endif
 #  endif
-# endif
 
 #  ifdef WEAK_CONSTRAINT
       IF (.not.allocated(cg_zv)) THEN

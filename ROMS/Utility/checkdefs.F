@@ -703,6 +703,13 @@
       Coptions(is:is+11)=' ESTUARYBGC,'
       ibiology=ibiology+1
 #endif
+#if defined BIO_OPTIC && defined ECOSIM
+!
+      IF (Master) WRITE (stdout,20) 'BIO_OPTIC',                        &
+     &   'Underwater light field calculations'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+11)=' BIO_OPTIC,'
+#endif
 #if defined BIO_SEDIMENT && \
    (defined BIO_FENNEL   || defined NEMURO || defined ECOSIM)
 !
@@ -873,7 +880,7 @@
 #endif
 #ifdef DATA_COUPLING
 !
-      IF (Master) WRITE (stdout,20) 'DATA_COUPLING',                     &
+      IF (Master) WRITE (stdout,20) 'DATA_COUPLING',                    &
      &   'DATA model included in coupling'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+15)=' DATA_COUPLING,'
@@ -1471,9 +1478,9 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+14)=' ICESHELF_3EQ,'
 #endif
-#if defined IMPACT_INNER        && defined OBS_IMPACT          && \
-   (defined W4DVAR_SENSITIVITY  || defined W4DPSAS_SENSITIVITY || \
-    defined IS4DVAR_SENSITIVITY)
+#if defined IMPACT_INNER        && defined OBS_IMPACT              && \
+   (defined IS4DVAR_SENSITIVITY || defined W4DPSAS_FCT_SENSITIVITY || \
+    defined W4DPSAS_SENSITIVITY || defined W4DVAR_SENSITIVITY)
 !
       IF (Master) WRITE (stdout,20) 'IMPACT_INNER',                     &
      &   'Writing observations impacts for each inner loop'
@@ -2237,6 +2244,13 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+12)=' PJ_GRADPQ4,'
 #endif
+# if defined PRESS_COMPENSATE && defined ATM_PRESS
+!
+      IF (Master) WRITE (stdout,20) 'PRESS_COMPENSATE',                 &
+     &   'Compensate for boundary data without ATM pressure effect'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' PRESS_COMPENSATE,'
+# endif
 #ifdef POSITIVE_ZERO
 !
       IF (Master) WRITE (stdout,20) 'POSITIVE_ZERO',                    &
@@ -2313,6 +2327,20 @@
      &   'Surface net heat flux correction'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' QCORRECTION,'
+#endif
+#ifdef OBSERVATIONS
+# ifdef RADIAL_ANGLE_CCW_EAST
+!
+      IF (Master) WRITE (stdout,20) 'RADIAL_ANGLE_CCW_EAST',            &
+     &   'Radial observations as an azimuth counterclockwise from EAST'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+23)=' RADIAL_ANGLE_CCW_EAST,'
+# else
+      IF (Master) WRITE (stdout,20) '!RADIAL_ANGLE_CCW_EAST',           &
+     &   'Radial observations as an azimuth clockwise from NORTH'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+24)=' !RADIAL_ANGLE_CCW_EAST,'
+# endif
 #endif
 #if defined RUNOFF
       IF (Master) WRITE (stdout,20) 'RUNOFF',                           &
@@ -2950,8 +2978,8 @@
 #endif
 #if defined TIME_INTERP && defined MODEL_COUPLING
 !
-      IF (Master) WRITE (stdout,20) 'TIME_INTERP',                  &
-     &   'Time interpolation from coupling snapshots arrays'
+      IF (Master) WRITE (stdout,20) 'TIME_INTERP',                      &
+     &   'Time interpolation from imported coupling snapshots data'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+13)=' TIME_INTERP,'
 #endif
@@ -3469,6 +3497,14 @@
      &   'Weak constraint 4D-PSAS data assimilation'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+9)=' W4DPSAS,'
+      idriver=idriver+1
+#endif
+#ifdef W4DPSAS_FCT_SENSITIVITY
+!
+      IF (Master) WRITE (stdout,20) 'W4DPSAS_FCT_SENSITIVITY',          &
+     &   'Weak constraint 4D-PSAS observation forecast sensitivity'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+25)=' W4DPSAS_FCT_SENSITIVITY,'
       idriver=idriver+1
 #endif
 #ifdef W4DPSAS_SENSITIVITY

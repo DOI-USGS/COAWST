@@ -409,7 +409,7 @@
             IF (AVG(ng)%ncid.ne.-1) THEN
               CALL netcdf_close (ng, iNLM, AVG(ng)%ncid)
             END IF
-            IF (ifile .ne. 0) CALL def_avg (ng, Newfile)
+            CALL def_avg (ng, Newfile)
             IF (FoundError(exit_flag, NoError, __LINE__,                &
      &                     __FILE__)) RETURN
             LwrtAVG(ng)=.TRUE.

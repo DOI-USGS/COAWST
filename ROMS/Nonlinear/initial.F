@@ -651,7 +651,7 @@
       END DO
 #endif
 
-#ifdef OBSERVATIONS
+#if defined OBSERVATIONS && !defined W4DPSAS_FCT_SENSITIVITY
 !
 !-----------------------------------------------------------------------
 !  Open observations NetCDF file and initialize various variables
@@ -671,13 +671,13 @@
 !$OMP BARRIER
 #endif
 
-#if (defined W4DPSAS || defined TL_W4DPSAS || \
-     defined W4DPSAS_SENSITIVITY)          && \
-    (defined ADJUST_BOUNDARY || defined ADJUST_WSTRESS ||\
+#if (defined TL_W4DPSAS          || defined W4DPSAS                  ||\
+     defined W4DPSAS_SENSITIVITY || defined W4DPSAS_FCT_SENSITIVITY) &&\
+    (defined ADJUST_BOUNDARY     || defined ADJUST_WSTRESS           ||\
      defined ADJUST_STFLUX)
 !
 !-----------------------------------------------------------------------
-!  Read in the surface forcing and/or open boundary conditions
+!  Read in the surface forcing and or open boundary conditions
 !  increments for PSAS from record IniRec of the NLM initial NetCDF
 !  file.
 !-----------------------------------------------------------------------
@@ -949,8 +949,9 @@
       END DO
 #endif
 
-#if defined NLM_OUTER || defined TL_W4DPSAS          || \
-    defined W4DPSAS   || defined W4DPSAS_SENSITIVITY
+#if defined NLM_OUTER               || defined TL_W4DPSAS          ||\
+    defined W4DPSAS                 || defined W4DPSAS_SENSITIVITY ||\
+    defined W4DPSAS_FCT_SENSITIVITY
 !
 !-----------------------------------------------------------------------
 !  Read in convolved adjoint impulse forcing (first record) and its

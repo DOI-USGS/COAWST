@@ -428,6 +428,13 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 
         ERRname == roms_err.nc
 
+! Input forcing filenames at observation locations for computing observations
+! impacts during the analysis-forecast cycle when the forecast is initialized
+! with the 4D-Var analysis (OIFnameA) or the 4D-Var background (OIFnameB).
+
+      OIFnameA == roms_oif_a.nc
+      OIFnameB == roms_oif_b.nc
+
 !
 !  GLOSSARY:
 !  =========
@@ -932,4 +939,14 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !  MODname        Output model data at observations locations file name.
 !
 !  ERRname        Output posterior error covariance matrix file name.
+!
+! Input forcing filenames at observation locations for computing observations
+! impacts during the analysis-forecast cycle when W4DPSAS_FCT_SENSITIVITY and
+! OBS_SPACE are activated:
+!
+! (See www.myroms.org/wiki/Analysis-Forecast_Cycle_Observation_Impacts)
+!
+!  OIFnameA    Forecast initialized with 4D-Var analysis (red curve)
+!
+!  OIFnameB    Forecast initialized with 4D_Var background (blue curve)
 !

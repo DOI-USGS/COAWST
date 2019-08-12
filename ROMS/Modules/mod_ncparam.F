@@ -81,6 +81,12 @@
         integer, parameter :: MV = 1400
         integer, parameter :: NV = 1400
 !
+!  Maximum number of dimension IDs stored in local array DimIDs used to
+!  defined variable dimensions in output NetCDF files.
+!
+!       integer, parameter :: nDimID = 33
+        integer, parameter :: nDimID = 35
+!
 !  Input/output grid-type variables.
 !
         integer, parameter :: p2dvar = 1         ! 2D PSI-variable
@@ -93,8 +99,11 @@
         integer, parameter :: v3dvar = 8         ! 3D V-variable
         integer, parameter :: w3dvar = 9         ! 3D W-variable
         integer, parameter :: b3dvar = 10        ! 3D BED-sediment
+        integer, parameter :: l3dvar = 11        ! 3D spectral light
+        integer, parameter :: l4dvar = 12        ! 4D spectral light
+
 #ifdef SPECTRAL_LIGHT
-        integer, parameter :: s3dvar = 11        ! 3D spectral light variable
+        integer, parameter :: s3dvar = 13        ! jcw 8/5/19 3D spectral light variable
 #endif
 !
 !  Number of horizontal interior and boundary water points.
@@ -621,7 +630,7 @@
         real(dp), allocatable :: Tintrp(:,:,:)
         real(dp), allocatable :: Vtime(:,:,:)
 
-        character (len=5  ) :: version = '3.7  '
+        character (len=5  ) :: version = '3.8  '
         character (len=40 ) :: varnam(MV)
         character (len=44 ) :: date_str
         character (len=46 ) :: Tname(0:NV)
@@ -645,10 +654,10 @@
         character (len=256), dimension(4) :: BIONAME
 #endif
 !
-!  SVN revision and repository root URL.
+!  GIT and SVN revision and repository root URL.
 !
-        character (len=40 ) :: svn_rev
-        character (len=256) :: svn_url
+        character (len=80 ) :: git_rev, svn_rev
+        character (len=256) :: git_url, svn_url
 !
       CONTAINS
 !
@@ -1283,6 +1292,29 @@
         END DO
       END DO
 !
+!  Set GIT and SVN Repository Root URL and revision.  Their values are
+!  assigned in the 'makefile' to the CPPFLAGS macro.
+!
+#ifdef GIT_URL
+      git_url=GIT_URL
+#else
+      git_url='https://www.myroms.org/git/src'
+#endif
+#ifdef GIT_REV
+      git_rev=GIT_REV
+#else
+      git_rev=' '
+#endif
+!
+#ifdef SVN_URL
+      svn_url=SVN_URL
+#else
+      svn_url='https://myroms.org/svn'
+#endif
+#ifdef SVN_REV
+      svn_rev=SVN_REV
+#endif
+!
 !-----------------------------------------------------------------------
 !  Define names of variables for Input/Output NetCDF files.
 !-----------------------------------------------------------------------
@@ -1296,31 +1328,19 @@
       STOP
   20  CONTINUE
 !
-!  Read in variable information.  Ignore blank and comment [char(33)=!]
-!  input lines.
+!  Read in variable information.  Ignore blank, comment [char(33)=!]
+!  input lines, and URL line [char(36)=$].
 !
       varid=0
       DO WHILE (.TRUE.)
         READ (inp,*,ERR=30,END=40) Vinfo(1)
         Lvar=LEN_TRIM(Vinfo(1))
 !
-!  Extract SVN Repository Root URL.
-!
-        IF ((Lvar.gt.0).and.(Vinfo(1)(1:1).eq.CHAR(36))) THEN
-          is=INDEX(Vinfo(1),'https')
-          ie=INDEX(Vinfo(1),'/ROMS')-1
-          IF (ie.gt.is) THEN
-            svn_url=Vinfo(1)(is:ie)
-          ELSE
-            svn_url='https:://myroms.org/svn/src'
-          END IF
-#ifdef SVN_REV
-          svn_rev=SVN_REV
-#endif
-!
 !  Read in other variable information.
 !
-        ELSE IF ((Lvar.gt.0).and.(Vinfo(1)(1:1).ne.CHAR(33))) THEN
+        IF ((Lvar.gt.0).and.                                            &
+     &      (Vinfo(1)(1:1).ne.CHAR(33)).and.                            &
+     &      (Vinfo(1)(1:1).ne.CHAR(36))) THEN
           READ (inp,*,ERR=30) Vinfo(2)
           READ (inp,*,ERR=30) Vinfo(3)
           READ (inp,*,ERR=30) Vinfo(4)
@@ -1352,6 +1372,12 @@
               gtype=w3dvar
             CASE ('b3dvar')
               gtype=b3dvar
+#if defined ECOSIM && defined DIAGNOSTICS_BIO
+            CASE ('l3dvar')
+              gtype=l3dvar
+            CASE ('l4dvar')
+              gtype=l4dvar
+#endif
 #ifdef SPECTRAL_LIGHT
             CASE ('s3dvar')
               gtype=s3dvar

@@ -86,7 +86,7 @@
       logical, intent(in) :: bounded(Nfloats(ng))
 # endif
 
-      real(r8), intent(in) :: Fspval
+      real(dp), intent(in) :: Fspval
 
       real(r8), intent(in) :: nudg(Lstr:Lend)
 

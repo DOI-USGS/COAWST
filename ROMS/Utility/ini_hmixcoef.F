@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE ini_hmixcoef_mod
 !
-! svn $Id: ini_hmixcoef.F 889 2018-02-10 03:32:52Z arango $
+! svn $Id: ini_hmixcoef.F 937 2019-01-28 06:13:04Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !

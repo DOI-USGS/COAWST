@@ -59,18 +59,11 @@
       integer :: i, j, nvd3, nvd4, nvd5
       integer :: recdim, status, varid
 
-#if defined VEGETATION && (defined VEG_DRAG || defined VEG_BIOMASS)
-      integer :: DimIDs(35)
-#elif defined INWAVE_MODEL
-      integer :: DimIDs(33)
-#else
-      integer :: DimIDs(32)
-#endif
+      integer :: DimIDs(nDimID)
       integer :: r2dgrd(4), ru2dgrd(4), rv2dgrd(4)
       integer :: sp2dgrd(3), sr2dgrd(3), su2dgrd(3), sv2dgrd(3)
       integer :: sr3dgrd(4), su3dgrd(4), sv3dgrd(4)
       integer :: t2dgrd(4), u2dgrd(4), v2dgrd(4)
-      integer :: Vsize(4)
 #if defined VEGETATION 
 # if defined VEG_DRAG || defined VEG_BIOMASS
       integer :: v3pgrd(4)
@@ -255,7 +248,7 @@
 !
 #ifdef INWAVE_MODEL
         status=def_dim(ng, iNLM, RST(ng)%ncid, ncname,'ND',             &
-                       ND, DimIDs(33))
+                       ND, DimIDs(34))
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
 #endif
@@ -444,7 +437,7 @@
 
         u3degrd(1)=DimIDs( 2)
         u3degrd(2)=DimIDs( 6)
-        u3degrd(3)=DimIDs(33)
+        u3degrd(3)=DimIDs(34)
         u3degrd(4)=DimIDs(12)
 
         v3degrd(1)=DimIDs( 3)
@@ -454,7 +447,7 @@
 
         t3degrd(1)=DimIDs( 1)
         t3degrd(2)=DimIDs( 5)
-        t3degrd(3)=DimIDs(33)
+        t3degrd(3)=DimIDs(34)
         t3degrd(4)=DimIDs(12)
 #endif
 !

@@ -17,7 +17,7 @@
 !     model    Calling model identifier (integer).                     !
 !     ncid     NetCDF file ID (integer).                               !
 !     ncname   NetCDF file name (character).                           !
-!     DimIDs   NetCDF dimensions IDs (integer vector):                 !
+!     DimIDs   NetCDF dimensions IDs (integer vector of size nDimID):  !
 !                DimIDs( 1) => XI-dimension at RHO-points.             !
 !                DimIDs( 2) => XI-dimension at U-points.               !
 !                DimIDs( 3) => XI-dimension at V-points.               !
@@ -42,14 +42,15 @@
 !                DimIDs(23) => Dimension 3D water W-points.            !
 !                DimIDs(24) => Dimension sediment bed water points.    !
 !                DimIDs(25) => Number of EcoSim phytoplankton groups.  !
-!                DimIDs(26) => Number of EcoSim bateria groups.        !
+!                DimIDs(26) => Number of EcoSim bacteria groups.       !
 !                DimIDs(27) => Number of EcoSim DOM groups.            !
 !                DimIDs(28) => Number of EcoSim fecal groups.          !
 !                DimIDs(29) => Number of state variables.              !
 !                DimIDs(30) => Number of 3D variables time levels (2). !
 !                DimIDs(31) => Number of 2D variables time levels (3). !
 !                DimIDs(32) => Number of sediment tracers.             !
-!                DimIDs(33) => Number of wave directions.              !
+!                DimIDs(33) => Number of light spectral bands.         !
+!                DimIDs(34) => Number of wave directions.              !
 !                DimIDs(35) => Number of vegetation properties.        !
 !                                                                      !
 !  On Output:                                                          !
@@ -86,11 +87,8 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng, model, ncid
-#ifdef INWAVE_MODEL
-      integer, intent(in) :: DimIDs(33)
-#else
-      integer, intent(in) :: DimIDs(32)
-#endif
+      integer, intent(in) :: DimIDs(nDimID)
+
       character (*), intent(in) :: ncname
 !
 !  Local variable declarations.
@@ -109,7 +107,7 @@
       integer :: statedim
 #endif
 #if defined BIOLOGY && defined ECOSIM
-      integer :: bacdim, domdim, fecdim, phydim
+      integer :: bacdim, domdim, fecdim, lightdim, phydim
 
       integer :: biodim(2)
 #endif
@@ -159,7 +157,7 @@
       seddim=DimIDs(32)
 #endif
 #ifdef INWAVE_MODEL
-      inwdim=DimIDs(33)
+      inwdim=DimIDs(34)
 #endif
       stadim=DimIDs(13)
       brydim=DimIDs(14)
@@ -175,6 +173,7 @@
       fecdim=DimIDs(28)
       biodim(1)=phydim
       biodim(2)=fecdim
+      lightdim=DimIDs(33)
 #endif
 # if defined VARIABLE_CDOM && defined SPECTRAL_LIGHT
       domdim=DimIDs(27)
@@ -652,6 +651,76 @@
         END IF
 #endif
 
+#ifdef W4DPSAS_FCT_SENSITIVITY
+        IF (exit_flag.eq.NoError) THEN
+          status=nf90_put_att(ncid, nf90_global, 'fcta_file',           &
+     &                        TRIM(FCTA(ng)%name))
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
+            IF (Master) WRITE (stdout,20) 'fcta_file', TRIM(ncname)
+            exit_flag=3
+            ioerror=status
+          END IF
+        END IF
+
+        IF (exit_flag.eq.NoError) THEN
+          status=nf90_put_att(ncid, nf90_global, 'fctb_file',           &
+     &                        TRIM(FCTB(ng)%name))
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
+            IF (Master) WRITE (stdout,20) 'fctb_file', TRIM(ncname)
+            exit_flag=3
+            ioerror=status
+          END IF
+        END IF
+
+# ifdef OBS_SPACE
+        IF (exit_flag.eq.NoError) THEN
+          status=nf90_put_att(ncid, nf90_global, 'oifa_file',           &
+     &                        TRIM(OIFA(ng)%name))
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
+            IF (Master) WRITE (stdout,20) 'oifa_file', TRIM(ncname)
+            exit_flag=3
+            ioerror=status
+          END IF
+        END IF
+
+        IF (exit_flag.eq.NoError) THEN
+          status=nf90_put_att(ncid, nf90_global, 'oifb_file',           &
+     &                        TRIM(OIFB(ng)%name))
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
+            IF (Master) WRITE (stdout,20) 'oifb_file', TRIM(ncname)
+            exit_flag=3
+            ioerror=status
+          END IF
+        END IF
+# else
+        IF (exit_flag.eq.NoError) THEN
+          status=nf90_put_att(ncid, nf90_global, 'foia_file',           &
+     &                        TRIM(FOIA(ng)%name))
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
+            IF (Master) WRITE (stdout,20) 'foia_file', TRIM(ncname)
+            exit_flag=3
+            ioerror=status
+          END IF
+        END IF
+
+        IF (exit_flag.eq.NoError) THEN
+          status=nf90_put_att(ncid, nf90_global, 'foib_file',           &
+     &                        TRIM(FOIB(ng)%name))
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
+            IF (Master) WRITE (stdout,20) 'foib_file', TRIM(ncname)
+            exit_flag=3
+            ioerror=status
+          END IF
+        END IF
+# endif
+#endif
+
 #if defined SSH_TIDES || defined UV_TIDES
         IF (exit_flag.eq.NoError) THEN
           IF (LprocessTides(ng)) THEN
@@ -861,6 +930,33 @@
           END IF
         END IF
 # endif
+#endif
+#ifdef GIT_URL
+!
+!  GIT repository information.
+!
+        IF (exit_flag.eq.NoError) THEN
+          status=nf90_put_att(ncid, nf90_global, 'git_url',             &
+     &                        TRIM(git_url))
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
+            IF (Master) WRITE (stdout,20) 'git_url', TRIM(ncname)
+            exit_flag=3
+            ioerror=status
+          END IF
+        END IF
+#endif
+#if !defined DEBUGGING && defined GIT_REV
+        IF (exit_flag.eq.NoError) THEN
+          status=nf90_put_att(ncid, nf90_global, 'git_rev',             &
+     &                        TRIM(git_rev))
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
+            IF (Master) WRITE (stdout,20) 'git_rev', TRIM(ncname)
+            exit_flag=3
+            ioerror=status
+          END IF
+        END IF
 #endif
 !
 !  SVN repository information.
@@ -1140,6 +1236,26 @@
      &               SetParAccess = .FALSE.)
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
+
+#ifdef W4DPSAS_FCT_SENSITIVITY
+      Vinfo( 1)='ntimes_ana'
+      Vinfo( 2)='number of time-steps for observation impacts, '//      &
+     &          'analysis interval'
+      status=def_var(ng, model, ncid, varid, nf90_int,                  &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+
+      Vinfo( 1)='ntimes_fct'
+      Vinfo( 2)='number of time-steps for observation impacts, '//      &
+     &          'forecast interval'
+      status=def_var(ng, model, ncid, varid, nf90_int,                  &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+#endif
 
 #if defined HDF5 && defined DEFLATE
       Vinfo( 1)='shuffle'
@@ -2370,8 +2486,9 @@
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
 # endif
-# if defined IS4DVAR_SENSITIVITY || defined W4DPSAS_SENSITIVITY || \
-     defined W4DVAR_SENSITIVITY
+# if defined IS4DVAR_SENSITIVITY     || defined W4DPSAS_SENSITIVITY || \
+     defined W4DPSAS_FCT_SENSITIVITY || defined W4DVAR_SENSITIVITY  || \
+     defined ARRAY_MODES
       Vinfo( 1)='Nimpact'
       Vinfo( 2)='Observations impact/sensitivity outer loop to use'
       status=def_var(ng, model, ncid, varid, nf90_int,                  &

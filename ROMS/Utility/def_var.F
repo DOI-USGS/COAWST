@@ -834,6 +834,12 @@
               ELSE IF (INT(Aval(5)).eq.p3dvar) THEN
                 text='lon_psi lat_psi s_rho'
                 location='node'
+              ELSE IF (INT(Aval(5)).eq.l3dvar) THEN
+                text='lon_rho lat_rho light'
+                location='face'
+              ELSE IF (INT(Aval(5)).eq.l4dvar) THEN
+                text='lon_rho lat_rho s_rho light'
+                location='face'
               END IF
             ELSE
               IF (INT(Aval(5)).eq.r2dvar) THEN
@@ -876,6 +882,12 @@
               ELSE IF (INT(Aval(5)).eq.p3dvar) THEN
                 text='x_psi y_psi s_rho'
                 location='node'
+              ELSE IF (INT(Aval(5)).eq.l3dvar) THEN
+                text='x_rho y_rho Nbands'
+                location='face'
+              ELSE IF (INT(Aval(5)).eq.l4dvar) THEN
+                text='x_rho y_rho s_rho Nbands'
+                location='face'
               END IF
             END IF
 

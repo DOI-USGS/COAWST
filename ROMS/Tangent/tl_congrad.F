@@ -1,6 +1,7 @@
 #include "cppdefs.h"
 
-#if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || defined TL_W4DVAR
+#if (defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
+     defined TL_W4DVAR)        && !defined RPCG
       SUBROUTINE tl_congrad (ng, model, outLoop, innLoop, NinnLoop,     &
      &                       Lcgini)
 !

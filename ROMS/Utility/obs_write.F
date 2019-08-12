@@ -56,10 +56,14 @@
 # endif
       real(r8), parameter :: IniVal = 0.0_r8
 
+      real(r8) :: angle
 # ifdef BGQC
       real(r8) :: df1, df2, Thresh
 # endif
-      real(r8) :: misfit(Mobs)
+      real(r8) :: misfit(Mobs), uradial(Mobs), vradial(Mobs)
+# ifdef BGQC
+      real(r8) :: uBgErr(Mobs), vBgErr(Mobs)
+# endif
 
       character (len=50) :: string
 
@@ -118,6 +122,8 @@
             NLmodVal(iobs)=IniVal
 #  ifdef BGQC
             BgErr(iobs)=IniVal
+            uBgErr(iobs)=IniVal
+            vBgErr(iobs)=IniVal
 #  endif
           END DO
 #  ifdef BGQC
@@ -489,6 +495,286 @@
      &                        GRID(ng)%vmask,                           &
 #   endif
      &                        TLmodVal)
+        END IF
+#  endif
+!
+!-----------------------------------------------------------------------
+!  Radial Velocity. The observations are in terms of radial speed and
+!  angle (stored in obs_meta).  The observation angle converts the
+!  velocity components to geographical EAST and North components.
+#  ifdef RADIAL_ANGLE_CCW_EAST
+!  The radial velocity observations are processed as magnitude and
+!  heading angle (obs_meta; radians) in the math convention: an
+!  azimuth that is counterclockwise from TRUE East.
+!
+!  In curvilinear coordinates, the radial forward problem is:
+!
+!     radial = u * COS(obs_meta - angler) + v * SIN(obs_meta - angler)
+#  else
+!  By default, the radial velocity observations are processed as
+!  magnitude and heading angle (obs_meta; radians) in the navigation
+!  convention: an azimuth that is clockwise from TRUE North.
+!
+!  In curvilinear coordinates, the radial forward problem is:
+!
+!     radial = u * SIN(obs_meta + angler) + v * COS(obs_meta + angler)
+#  endif
+!-----------------------------------------------------------------------
+!
+#  ifndef IS4DVAR_SENSITIVITY
+        IF (wrtNLmod(ng).and.                                           &
+     &      (FOURDVAR(ng)%ObsCount(isRadial).gt.0)) THEN
+          DO iobs=Mstr,Mend
+            uradial(iobs)=IniVal
+            vradial(iobs)=IniVal
+          END DO
+
+#   ifdef CURVGRID
+!
+!  If curvilinear coordinates, interpolate grid rotation angle (radians)
+!  for each observation location.
+!
+          CALL extract_obs2d (ng, 0, Lm(ng)+1, 0, Mm(ng)+1,             &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        ObsState2Type(isRadial),                  &
+     &                        Mobs, Mstr, Mend,                         &
+     &                        rXmin(ng), rXmax(ng),                     &
+     &                        rYmin(ng), rYmax(ng),                     &
+     &                        time(ng), dt(ng),                         &
+     &                        ObsType, ObsVetting,                      &
+     &                        Tobs, Xobs, Yobs,                         &
+     &                        GRID(ng)%angler,                          &
+#    ifdef MASKING
+     &                        GRID(ng)%rmask,                           &
+#    endif
+     &                        ObsAngler)
+#   endif
+!
+!  Radial NLM u-component.
+!
+          DO k=1,N(ng)
+            DO j=Jstr-1,Jend+1
+              DO i=IstrU-1,Iend+1
+                GRID(ng)%z_v(i,j,k)=0.5_r8*(GRID(ng)%z_r(i-1,j,k)+      &
+     &                                      GRID(ng)%z_r(i  ,j,k))
+              END DO
+            END DO
+          END DO
+          CALL extract_obs3d (ng, 1, Lm(ng)+1, 0, Mm(ng)+1,             &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        ObsState2Type(isRadial),                  &
+     &                        Mobs, Mstr, Mend,                         &
+     &                        uXmin(ng)+0.5_r8, uXmax(ng)+0.5_r8,       &
+     &                        uYmin(ng), uYmax(ng),                     &
+     &                        time(ng), dt(ng),                         &
+     &                        ObsType,  ObsVetting,                     &
+     &                        Tobs, Xobs+0.5_r8, Yobs, Zobs,            &
+     &                        OCEAN(ng)%u(:,:,:,NOUT),                  &
+     &                        GRID(ng)%z_v,                             &
+#   ifdef MASKING
+     &                        GRID(ng)%umask,                           &
+#   endif
+     &                        uradial)
+#   ifdef BGQC
+            CALL extract_obs3d (ng, 1, Lm(ng)+1, 0, Mm(ng)+1,           &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          ObsState2Type(isRadial),                &
+     &                          Mobs, Mstr, Mend,                       &
+     &                          uXmin(ng)+0.5_r8, rXmax(ng)+0.5_r8,     &
+     &                          uYmin(ng), uYmax(ng),                   &
+     &                          time(ng), dt(ng),                       &
+     &                          ObsType, ObsVetting,                    &
+     &                          Tobs, Xobs+0.5_r8, Yobs, Zobs,          &
+     &                          OCEAN(ng)%e_u(:,:,:,1),                 &
+     &                          GRID(ng)%z_v,                           &
+#    ifdef MASKING
+     &                          GRID(ng)%umask,                         &
+#    endif
+     &                          uBgErr)
+#   endif
+!
+!  Radial NLM v-component.
+!
+          DO k=1,N(ng)
+            DO j=JstrV-1,Jend+1
+              DO i=Istr-1,Iend+1
+                GRID(ng)%z_v(i,j,k)=0.5_r8*(GRID(ng)%z_r(i,j-1,k)+      &
+     &                                      GRID(ng)%z_r(i,j  ,k))
+              END DO
+            END DO
+          END DO
+          CALL extract_obs3d (ng, 0, Lm(ng)+1, 1, Mm(ng)+1,             &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        ObsState2Type(isRadial),                  &
+     &                        Mobs, Mstr, Mend,                         &
+     &                        vXmin(ng), vXmax(ng),                     &
+     &                        vYmin(ng)+0.5_r8, vYmax(ng)+0.5_r8,       &
+     &                        time(ng), dt(ng),                         &
+     &                        ObsType, ObsVetting,                      &
+     &                        Tobs, Xobs, Yobs+0.5_r8, Zobs,            &
+     &                        OCEAN(ng)%v(:,:,:,NOUT),                  &
+     &                        GRID(ng)%z_v,                             &
+#   ifdef MASKING
+     &                        GRID(ng)%vmask,                           &
+#   endif
+     &                        vradial)
+#   ifdef BGQC
+          CALL extract_obs3d (ng, 0, Lm(ng)+1, 1, Mm(ng)+1,             &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        ObsState2Type(isRadial),                  &
+     &                        Mobs, Mstr, Mend,                         &
+     &                        vXmin(ng), vXmax(ng),                     &
+     &                        vYmin(ng), vYmax(ng),                     &
+     &                        time(ng), dt(ng),                         &
+     &                        ObsType, ObsVetting,                      &
+     &                        Tobs, Xobs, Yobs+0.5_r8, Zobs,            &
+     &                        OCEAN(ng)%e_v(:,:,:,1),                   &
+     &                        GRID(ng)%z_v,                             &
+#    ifdef MASKING
+     &                        GRID(ng)%vmask,                           &
+#    endif
+     &                        vBgErr)
+#   endif
+!
+!  Compute NLM radial velocity.
+!
+          DO iobs=Mstr,Mend
+            IF (ObsType(iobs).eq.ObsState2Type(isRadial)) THEN
+#   ifdef RADIAL_ANGLE_CCW_EAST
+#    ifdef CURVGRID
+              angle=ObsMeta(iobs)-ObsAngler(iobs)
+              NLmodVal(iobs)=uradial(iobs)*COS(angle)+                  &
+     &                       vradial(iobs)*SIN(angle)
+#    else
+              NLmodVal(iobs)=uradial(iobs)*COS(ObsMeta(iobs))+          &
+     &                       vradial(iobs)*SIN(ObsMeta(iobs))
+#    endif
+#   else
+#    ifdef CURVGRID
+              angle=ObsMeta(iobs)+ObsAngler(iobs)
+              NLmodVal(iobs)=uradial(iobs)*SIN(angle)+                  &
+     &                       vradial(iobs)*COS(angle)
+#    else
+              NLmodVal(iobs)=uradial(iobs)*SIN(ObsMeta(iobs))+          &
+     &                       vradial(iobs)*COS(ObsMeta(iobs))
+#    endif
+#   endif
+#   ifdef BGQC
+              BgErr(iobs)=MAX(uBgErr(iobs), vBgErr(iobs))
+#   endif
+            END IF
+          END DO
+        END IF
+#  endif
+#  ifdef TLM_OBS
+!
+!  TLM or RPM radial velocities.
+!
+        IF ((wrtTLmod(ng).or.(wrtRPmod(ng))).and.                       &
+     &      (FOURDVAR(ng)%ObsCount(isRadial).gt.0)) THEN
+          DO iobs=Mstr,Mend
+            uradial(iobs)=IniVal
+            vradial(iobs)=IniVal
+          END DO
+
+#   ifdef CURVGRID
+!
+!  If curvilinear coordinates, interpolate grid rotation angle (radians)
+!  for each observation location.
+!
+          CALL extract_obs2d (ng, 0, Lm(ng)+1, 0, Mm(ng)+1,             &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        ObsState2Type(isRadial),                  &
+     &                        Mobs, Mstr, Mend,                         &
+     &                        rXmin(ng), rXmax(ng),                     &
+     &                        rYmin(ng), rYmax(ng),                     &
+     &                        time(ng), dt(ng),                         &
+     &                        ObsType, ObsVetting,                      &
+     &                        Tobs, Xobs, Yobs,                         &
+     &                        GRID(ng)%angler,                          &
+#    ifdef MASKING
+     &                        GRID(ng)%rmask,                           &
+#    endif
+     &                        ObsAngler)
+#   endif
+!
+!  TLM or RPM radial u-component.
+!
+          DO k=1,N(ng)
+            DO j=Jstr-1,Jend+1
+              DO i=IstrU-1,Iend+1
+                GRID(ng)%z_v(i,j,k)=0.5_r8*(GRID(ng)%z_r(i-1,j,k)+      &
+     &                                      GRID(ng)%z_r(i  ,j,k))
+              END DO
+            END DO
+          END DO
+          CALL extract_obs3d (ng, 1, Lm(ng)+1, 0, Mm(ng)+1,             &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        ObsState2Type(isRadial),                  &
+     &                        Mobs, Mstr, Mend,                         &
+     &                        uXmin(ng)+0.5_r8, uXmax(ng)+0.5_r8,       &
+     &                        uYmin(ng), uYmax(ng),                     &
+     &                        time(ng), dt(ng),                         &
+     &                        ObsType,  ObsVetting,                     &
+     &                        Tobs, Xobs+0.5_r8, Yobs, Zobs,            &
+     &                        OCEAN(ng)%tl_u(:,:,:,NOUT),               &
+     &                        GRID(ng)%z_v,                             &
+#   ifdef MASKING
+     &                        GRID(ng)%umask,                           &
+#   endif
+     &                        uradial)
+!
+!  TLM or RPM radial v-component.
+!
+          DO k=1,N(ng)
+            DO j=JstrV-1,Jend+1
+              DO i=Istr-1,Iend+1
+                GRID(ng)%z_v(i,j,k)=0.5_r8*(GRID(ng)%z_r(i,j-1,k)+      &
+     &                                      GRID(ng)%z_r(i,j  ,k))
+              END DO
+            END DO
+          END DO
+          CALL extract_obs3d (ng, 0, Lm(ng)+1, 1, Mm(ng)+1,             &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
+     &                        ObsState2Type(isRadial),                  &
+     &                        Mobs, Mstr, Mend,                         &
+     &                        vXmin(ng), vXmax(ng),                     &
+     &                        vYmin(ng)+0.5_r8, vYmax(ng)+0.5_r8,       &
+     &                        time(ng), dt(ng),                         &
+     &                        ObsType, ObsVetting,                      &
+     &                        Tobs, Xobs, Yobs+0.5_r8, Zobs,            &
+     &                        OCEAN(ng)%tl_v(:,:,:,NOUT),               &
+     &                        GRID(ng)%z_v,                             &
+#   ifdef MASKING
+     &                        GRID(ng)%vmask,                           &
+#   endif
+     &                        vradial)
+!
+!  Compute TLM or RPM radial velocity.
+!
+          DO iobs=Mstr,Mend
+            IF (ObsType(iobs).eq.ObsState2Type(isRadial)) THEN
+#   ifdef RADIAL_ANGLE_CCW_EAST
+#    ifdef CURVGRID
+              angle=ObsMeta(iobs)-ObsAngler(iobs)
+              TLmodVal(iobs)=uradial(iobs)*COS(angle)+                  &
+     &                       vradial(iobs)*SIN(angle)
+#    else
+              TLmodVal(iobs)=uradial(iobs)*COS(ObsMeta(iobs))+          &
+     &                       vradial(iobs)*SIN(ObsMeta(iobs))
+#    endif
+#   else
+#    ifdef CURVGRID
+              angle=ObsMeta(iobs)+ObsAngler(iobs)
+              TLmodVal(iobs)=uradial(iobs)*SIN(angle)+                  &
+     &                       vradial(iobs)*COS(angle)
+#    else
+              TLmodVal(iobs)=uradial(iobs)*SIN(ObsMeta(iobs))+          &
+     &                       vradial(iobs)*COS(ObsMeta(iobs))
+#    endif
+#   endif
+            END IF
+          END DO
         END IF
 #  endif
 !
@@ -1045,6 +1331,9 @@
             ELSE IF (ObsType(iobs).eq.ObsState2Type(isVvel)) THEN
               FOURDVAR(ng)%ObsReject(isVvel)=                           &
      &                              FOURDVAR(ng)%ObsReject(isVvel)+1
+            ELSE IF (ObsType(iobs).eq.ObsState2Type(isRadial)) THEN
+              FOURDVAR(ng)%ObsReject(isRadial)=                         &
+     &                              FOURDVAR(ng)%ObsReject(isRadial)+1
             ELSE
               DO itrc=1,NT(ng)
                 IF (ObsType(iobs).eq.ObsState2Type(isTvar(itrc))) THEN

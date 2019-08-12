@@ -5,7 +5,7 @@
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-local_sub  := ROMS/SeaIce
+local_sub  := ROMS/Nonlinear/SeaIce
 
 local_lib  := libICE.a
 local_src  := $(wildcard $(local_sub)/*.F)

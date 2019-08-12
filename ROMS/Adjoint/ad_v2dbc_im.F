@@ -106,6 +106,9 @@
       real(r8) :: bry_pgr, bry_cor, bry_str, bry_val
       real(r8) :: cff, cff1, cff2, cff3, dt2d
       real(r8) :: obc_in, obc_out, tau
+# if defined ATM_PRESS && defined PRESS_COMPENSATE
+      real(r8) :: OneAtm, fac
+# endif
 
       real(r8) :: ad_Ce, ad_Cx
       real(r8) :: ad_bry_pgr, ad_bry_cor, ad_bry_str, ad_bry_val, ad_Ze
@@ -148,6 +151,10 @@
         know=kstp
         dt2d=dtfast(ng)
       END IF
+# if defined ATM_PRESS && defined PRESS_COMPENSATE
+      OneAtm=1013.25_r8                  ! 1 atm = 1013.25 mb
+      fac=100.0_r8/(g*rho0)
+# endif
 
 # if defined WET_DRY_NOT_YET
 !
@@ -851,6 +858,33 @@
      &                                        Ce*ad_vbar(i,Jend+1,kout)
               END IF
 # endif
+# if defined ATM_PRESS && defined PRESS_COMPENSATE
+!>            tl_vbar(i,Jstr,kout)=tl_bry_val-                          &
+!>   &                             tl_Ce*                               &
+!>   &                             (0.5_r8*                             &
+!>   &                              (zeta(i,Jstr-1,know)+               &
+!>   &                               zeta(i,Jstr  ,know)+               &
+!>   &                               fac*(FORCES(ng)%Pair(i,Jstr-1)+    &
+!>   &                                    FORCES(ng)%Pair(i,Jstr  )-    &
+!>   &                                    2.0_r8*OneAtm))-              &
+!>   &                              BOUNDARY(ng)%zeta_south(i))-        &
+!>   &                             Ce*                                  &
+!>   &                             (0.5_r8*(tl_zeta(i,Jstr-1,know)+     &
+!>   &                                      tl_zeta(i,Jstr  ,know)))
+!>
+              adfac=Ce*0.5_r8*ad_vbar(i,Jend+1,kout)
+              ad_zeta(i,Jend  ,know)=ad_zeta(i,Jend  ,know)+adfac
+              ad_zeta(i,Jend+1,know)=ad_zeta(i,Jend+1,know)+adfac
+              ad_Ce=ad_Ce+                                              &
+     &              (0.5_r8*(zeta(i,Jend  ,know)+                       &
+     &                       zeta(i,Jend+1,know)+                       &
+     &                       fac*(FORCES(ng)%Pair(i,Jstr-1)+            &
+     &                            FORCES(ng)%Pair(i,Jstr  )-            &
+     &                            2.0_r8*OneAtm))-                      &
+     &               BOUNDARY(ng)%zeta_north(i))*ad_vbar(i,Jend+1,kout)
+              ad_bry_val=ad_bry_val+ad_vbar(i,Jend+1,kout)
+              ad_vbar(i,Jend+1,kout)=0.0_r8
+# else
 !>            tl_vbar(i,Jend+1,kout)=tl_bry_val+                        &
 !>   &                               tl_Ce*                             &
 !>   &                               (0.5_r8*(zeta(i,Jend  ,know)+      &
@@ -869,6 +903,7 @@
      &               BOUNDARY(ng)%zeta_north(i))*ad_vbar(i,Jend+1,kout)
               ad_bry_val=ad_bry_val+ad_vbar(i,Jend+1,kout)
               ad_vbar(i,Jend+1,kout)=0.0_r8
+# endif
 !>            tl_Ce=0.5_r8*g*tl_cff/Ce
 !>
               ad_cff=ad_cff+0.5_r8*g*ad_Ce/Ce
@@ -1614,6 +1649,33 @@
      &                                        Ce*ad_vbar(i,Jstr,kout)
               END IF
 # endif
+# if defined ATM_PRESS && defined PRESS_COMPENSATE
+!>            tl_vbar(i,Jstr,kout)=tl_bry_val-                          &
+!>   &                             tl_Ce*                               &
+!>   &                             (0.5_r8*                             &
+!>   &                              (zeta(i,Jstr-1,know)+               &
+!>   &                               zeta(i,Jstr  ,know)+               &
+!>   &                               fac*(FORCES(ng)%Pair(i,Jstr-1)+    &
+!>   &                                    FORCES(ng)%Pair(i,Jstr  )-    &
+!>   &                                    2.0_r8*OneAtm))-              &
+!>   &                              BOUNDARY(ng)%zeta_south(i))-        &
+!>   &                             Ce*                                  &
+!>   &                             (0.5_r8*(tl_zeta(i,Jstr-1,know)+     &
+!>   &                                      tl_zeta(i,Jstr  ,know)))
+!>
+              adfac=Ce*0.5_r8*ad_vbar(i,Jstr,kout)
+              ad_zeta(i,Jstr-1,know)=ad_zeta(i,Jstr-1,know)-adfac
+              ad_zeta(i,Jstr  ,know)=ad_zeta(i,Jstr  ,know)-adfac
+              ad_Ce=ad_Ce-                                              &
+     &              (0.5_r8*(zeta(i,Jstr-1,know)+                       &
+     &                       zeta(i,Jstr  ,know)+                       &
+     &                       fac*(FORCES(ng)%Pair(i,Jstr-1)+            &
+     &                            FORCES(ng)%Pair(i,Jstr  )-            &
+     &                            2.0_r8*OneAtm))-                      &
+     &               BOUNDARY(ng)%zeta_south(i))*ad_vbar(i,Jstr,kout)
+              ad_bry_val=ad_bry_val+ad_vbar(i,Jstr,kout)
+              ad_vbar(i,Jstr,kout)=0.0_r8
+# else
 !>            tl_vbar(i,Jstr,kout)=tl_bry_val-                          &
 !>   &                             tl_Ce*                               &
 !>   &                             (0.5_r8*(zeta(i,Jstr-1,know)+        &
@@ -1632,6 +1694,7 @@
      &               BOUNDARY(ng)%zeta_south(i))*ad_vbar(i,Jstr,kout)
               ad_bry_val=ad_bry_val+ad_vbar(i,Jstr,kout)
               ad_vbar(i,Jstr,kout)=0.0_r8
+# endif
 !>            tl_Ce=0.5_r8*g*tl_cff/Ce
 !>
               ad_cff=ad_cff+0.5_r8*g*ad_Ce/Ce

@@ -149,7 +149,11 @@
 # ifdef SOLVE3D
       integer :: itrc, j, k, nfrc
 # endif
+      real(r8) :: angle
+
       real(r8), parameter :: IniVal = 0.0_r8
+
+      real(r8) :: ad_uradial(Mobs), ad_vradial(Mobs)
 
 # include "set_bounds.h"
 !
@@ -345,6 +349,121 @@
         END IF
 !
 !-----------------------------------------------------------------------
+!  Radial Velocity.  The observations are in terms of radial speed and
+!  angle (stored in obs_meta).  The observation angle converts the
+!  velocity components to geographical EAST and North components.
+#  ifdef RADIAL_ANGLE_CCW_EAST
+!  The radial velocity observations are processed as magnitude and
+!  heading angle (obs_meta; radians) in the math convention: an
+!  azimuth that is counterclockwise from TRUE East.
+!
+!  In curvilinear coordinates, the radial forward problem is:
+!
+!     radial = u * COS(obs_meta - angler) + v * SIN(obs_meta - angler)
+!
+!  In the adjoint, we get:
+!
+!        ad_vradial = ad_vradial + ADmodVal * SIN(obs_meta - angler)
+!        ad_uradial = ad_uradial + ADmodVal * COS(obs_meta - angler)
+#  else
+!  By default, the radial velocity observations are processed as
+!  magnitude and heading angle (obs_meta; radians) in the navigation
+!  convention: an azimuth that is clockwise from TRUE North.
+!
+!  In curvilinear coordinates, the radial forward problem is:
+!
+!     radial = u * SIN(obs_meta + angler) + v * COS(obs_meta + angler)
+!
+!  In the adjoint, we get:
+!
+!        ad_vradial = ad_vradial + ADmodVal * COS(obs_meta + angler)
+!        ad_uradial = ad_uradial + ADmodVal * SIN(obs_meta + angler)
+#  endif
+!-----------------------------------------------------------------------
+!
+        IF (FOURDVAR(ng)%ObsCount(isRadial).gt.0) THEN
+          DO iobs=1,Nobs(ng)
+            ad_uradial(iobs)=IniVal
+            ad_vradial(iobs)=IniVal
+          END DO
+          DO iobs=1,Nobs(ng)
+            IF (ObsType(iobs).eq.ObsState2Type(isRadial)) THEN
+#  ifdef RADIAL_ANGLE_CCW_EAST
+#   ifdef CURVGRID
+              angle=ObsMeta(iobs)-ObsAngler(iobs)
+              ad_uradial(iobs)=ad_uradial(iobs)+                        &
+     &                         ADmodVal(iobs)*COS(angle)
+              ad_vradial(iobs)=ad_vradial(iobs)+                        &
+     &                         ADmodVal(iobs)*SIN(angle)
+#   else
+              ad_uradial(iobs)=ad_uradial(iobs)+                        &
+     &                         ADmodVal(iobs)*COS(ObsMeta(iobs))
+              ad_vradial(iobs)=ad_vradial(iobs)+                        &
+     &                         ADmodVal(iobs)*SIN(ObsMeta(iobs))
+#   endif
+#  else
+#   ifdef CURVGRID
+              angle=ObsMeta(iobs)+ObsAngler(iobs)
+              ad_uradial(iobs)=ad_uradial(iobs)+                        &
+     &                         ADmodVal(iobs)*SIN(angle)
+              ad_vradial(iobs)=ad_vradial(iobs)+                        &
+     &                         ADmodVal(iobs)*COS(angle)
+#   else
+              ad_uradial(iobs)=ad_uradial(iobs)+                        &
+     &                         ADmodVal(iobs)*SIN(ObsMeta(iobs))
+              ad_vradial(iobs)=ad_vradial(iobs)+                        &
+     &                         ADmodVal(iobs)*COS(ObsMeta(iobs))
+#   endif
+#  endif
+            END IF
+          END DO
+          DO k=1,N(ng)
+            DO j=JstrV-1,Jend+1
+              DO i=Istr-1,Iend+1
+                z_v(i,j,k)=0.5_r8*(z_r(i,j-1,k)+                        &
+     &                             z_r(i,j  ,k))
+              END DO
+            END DO
+          END DO
+          CALL ad_extract_obs3d (ng, 0, Lm(ng)+1, 1, Mm(ng)+1,          &
+     &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
+     &                           ObsState2Type(isRadial),               &
+     &                           Mobs, 1, Nobs(ng),                     &
+     &                           vXmin(ng), vXmax(ng),                  &
+     &                           vYmin(ng)+0.5_r8, vYmax(ng)+0.5_r8,    &
+     &                           time(ng), dt(ng),                      &
+     &                           ObsType, ObsVetting,                   &
+     &                           Tobs, Xobs, Yobs+0.5_r8, Zobs,         &
+     &                           ad_v(:,:,:,nfrc), z_v,                 &
+#  ifdef MASKING
+     &                           vmask,                                 &
+#  endif
+     &                           ad_vradial)
+          DO k=1,N(ng)
+            DO j=Jstr-1,Jend+1
+              DO i=IstrU-1,Iend+1
+                z_v(i,j,k)=0.5_r8*(z_r(i-1,j,k)+                        &
+     &                             z_r(i  ,j,k))
+              END DO
+            END DO
+          END DO
+          CALL ad_extract_obs3d (ng, 1, Lm(ng)+1, 0, Mm(ng)+1,          &
+     &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
+     &                           ObsState2Type(isRadial),               &
+     &                           Mobs, 1, Nobs(ng),                     &
+     &                           uXmin(ng)+0.5_r8, uXmax(ng)+0.5_r8,    &
+     &                           uYmin(ng), uYmax(ng),                  &
+     &                           time(ng), dt(ng),                      &
+     &                           ObsType, ObsVetting,                   &
+     &                           Tobs, Xobs+0.5_r8, Yobs, Zobs,         &
+     &                           ad_u(:,:,:,nfrc), z_v,                 &
+#  ifdef MASKING
+     &                           umask,                                 &
+#  endif
+     &                           ad_uradial)
+        END IF
+!
+!-----------------------------------------------------------------------
 !  Tracer type variables.
 !-----------------------------------------------------------------------
 !
@@ -402,6 +521,9 @@
             ELSE IF (ObsType(iobs).eq.ObsState2Type(isVvel)) THEN
               FOURDVAR(ng)%ObsReject(isVvel)=                           &
      &                              FOURDVAR(ng)%ObsReject(isVvel)+1
+            ELSE IF (ObsType(iobs).eq.ObsState2Type(isRadial)) THEN
+              FOURDVAR(ng)%ObsReject(isRadial)=                         &
+     &                              FOURDVAR(ng)%ObsReject(isRadial)+1
             ELSE
               DO itrc=1,NT(ng)
                 IF (ObsType(iobs).eq.ObsState2Type(isTvar(itrc))) THEN
