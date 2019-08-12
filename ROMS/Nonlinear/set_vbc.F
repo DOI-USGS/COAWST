@@ -525,8 +525,6 @@
         END DO
       END DO
 #   else
-
-!4dv
       DO j=JstrR,JendR
         DO i=IstrR,IendR
 #    if (defined BULK_FLUXES && defined EMINUSP) || defined AIR_OCEAN
@@ -559,7 +557,7 @@
      &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
 #     endif
 #    else
-          stflx(i,j,isalt)=stflx(i,j,isalt)*t(i,j,N(ng),nrhs,isalt)-    &
+          stflx(i,j,isalt)=EmP*t(i,j,N(ng),nrhs,isalt)-                 &
      &                     Tnudg(isalt,ng)*Hz(i,j,N(ng))*               &
 #     if defined SSSC_THRESHOLD
 ! limit mismatch to avoid too strong relaxation fluxes
@@ -592,7 +590,7 @@
 #    ifdef ICE_THERMO
           stflx(i,j,isalt)=stflx(i,j,isalt)
 #    else
-          stflx(i,j,isalt)=stflx(i,j,isalt)*t(i,j,N(ng),nrhs,isalt)
+          stflx(i,j,isalt)=EmP*t(i,j,N(ng),nrhs,isalt)
 #    endif
 #    ifdef WET_DRY
           stflx(i,j,isalt) = rmask_wet(i,j)*stflx(i,j,isalt)
@@ -625,6 +623,30 @@
 #   endif
 #  endif
 #  ifdef ICESHELF
+!
+!-----------------------------------------------------------------------
+!  If ice shelf cavities, zero out for now the surface tracer flux
+!  over the ice.
+!-----------------------------------------------------------------------
+!
+      DO itrc=1,NT(ng)
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            IF (zice(i,j).ne.0.0_r8) THEN
+              stflx(i,j,itrc)=0.0_r8
+            END IF
+          END DO
+        END DO
+      END DO
+#   ifdef SHORTWAVE
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          IF (zice(i,j).ne.0.0_r8) THEN
+            srflx(i,j)=0.0_r8
+          END IF
+        END DO
+      END DO
+#   endif
 !
 !-----------------------------------------------------------------------
 !  If ice shelf cavities, replace surface wind stress with ice shelf
