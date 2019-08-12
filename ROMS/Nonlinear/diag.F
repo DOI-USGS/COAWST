@@ -168,11 +168,7 @@
       integer :: my_max_Ci, my_max_Cj, my_max_Ck
 #ifdef DISTRIBUTE
 # ifdef SOLVE3D
-#  ifdef BIOLOGY
-      integer :: Nreduce
-#  else
       integer, parameter :: Nreduce = 5
-#  endif
       integer, parameter :: Ncourant = 7
 # else
       integer, parameter :: Nreduce = 4
@@ -215,15 +211,6 @@
 !  total energy, volume, Courant numbers.
 !-----------------------------------------------------------------------
 !
-#ifdef DISTRIBUTE
-# ifdef BIOLOGY
-      Nreduce = 5 + NBT
-# endif
-!     IF (.not. allocated(buffer))    allocate (buffer(Nreduce))
-!     IF (.not. allocated(op_handle)) allocate (op_handle(Nreduce))
-!     IF (.not. allocated(C_handle))  allocate (C_handle(Nreduce))
-#endif
-
       IF (MOD(iic(ng)-1,ninfo(ng)).eq.0) THEN
         my_max_C =0.0_r8
         my_max_Cu=0.0_r8

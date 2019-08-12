@@ -1266,14 +1266,14 @@
 # ifdef CICE_MODEL
           LW_down(i,j) = lrflx(i,j)*Hscale
           SW_down(i,j) = srflx(i,j)*Hscale
-# endif
-# if defined ALBEDO && defined SHORTWAVE
+#  if defined ALBEDO_CLOUD && defined SHORTWAVE
 #   if defined ALBEDO_CLOUD && !defined BENCHMARK
           cawdif = 1._r8-albw_d
           srflx(i,j) = srflx(i,j)*(cawdir(i,j)*                         &
      &                 (1._r8-cloud(i,j))+cawdif*cloud(i,j))
-#  else
+#   else
           srflx(i,j) = srflx(i,j)*(1._r8-albedo(i,j))
+#   endif
 #  endif
 # endif
           lrflx(i,j) = LRad(i,j)*Hscale2

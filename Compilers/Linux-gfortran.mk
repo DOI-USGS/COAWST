@@ -185,7 +185,7 @@ endif
 #$(SCRATCH_DIR)/mod_strings.o: FFLAGS += -ffree-form -ffree-line-length-none
 #$(SCRATCH_DIR)/analytical.o: FFLAGS += -ffree-form -ffree-line-length-none
 $(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -ffree-form
-$(SCRATCH_DIR)/mod_strings.o: FFLAGS += -ffree-form
+$(SCRATCH_DIR)/mod_strings.o: FFLAGS += -ffree-form -ffree-line-length-none
 $(SCRATCH_DIR)/analytical.o: FFLAGS += -ffree-form
 $(SCRATCH_DIR)/biology.o: FFLAGS += -ffree-form -ffree-line-length-none
 ifdef USE_ADJOINT

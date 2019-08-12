@@ -181,7 +181,8 @@
 !!
 !
           srflx(i,j)=0.0_r8
-          zenith=cff1+cff2*COS(Hangle-lonr(i,j)*deg2rad/15.0_r8)
+!         zenith=cff1+cff2*COS(Hangle-lonr(i,j)*deg2rad/15.0_r8)
+          zenith=cff1+cff2*COS(Hangle-lonr(i,j)*deg2rad)
           IF (zenith.gt.0.0_r8) THEN
             cff=(0.7859_r8+0.03477_r8*Tair(i,j))/                       &
      &          (1.0_r8+0.00412_r8*Tair(i,j))
