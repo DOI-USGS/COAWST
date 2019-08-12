@@ -61,9 +61,9 @@ function editmask(grid_file, varargin)
 %           BUTTON, RADIOBOX, TEXTBOX, AXISSCROLL,
 %
 
-% svn $Id: editmask.m 926 2018-10-09 21:53:45Z arango $
+% svn $Id: editmask.m 951 2019-02-12 22:00:53Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2019 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                            A. Shcherbina        %
 %=========================================================================%
@@ -309,13 +309,11 @@ switch lower(grid_file)
     got_matfile=false;                 % coastline from provided .mat file
 
     Cfile=which('gshhs_h.b','-ALL');   % select first directory found
-%jcw DIR=fileparts(Cfile{1});           % others are shadowed
 
     switch numel(varargin)
       case 0
-%       if (~isempty(DIR))
         if (~isempty(Cfile))
-          DIR=fileparts(Cfile{1});           % others are shadowed
+          DIR=fileparts(Cfile{1});            % others are shadowed
           database='h';
           Cname=fullfile(DIR, 'gshhs_h.b');   % high resolution GSHHS
           extract_coast=true;                 % (default)
@@ -326,7 +324,6 @@ switch lower(grid_file)
         if (ischar(varargin{1}))
           if (strfind(varargin{1}, '.mat'))
             coast_file=varargin{1};
-%jcw
             Cname=coast_file;
             if (~exist(coast_file,'file'))
               error(['Cannot file: ', coast_file]);
@@ -403,7 +400,7 @@ switch lower(grid_file)
           if (dx == 0)
             dx=1.5;
           end
-          if (dy == 0)
+	  if (dy == 0)
             dy=1.5;
           end
 

@@ -39,9 +39,9 @@ function G = uniform_grid (dx,dy,L,M)
 %                   G.dmde     Inverse metric, d(1/pm)/d(y) 
 %
 
-% svn $Id: uniform_grid.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: uniform_grid.m 938 2019-01-28 06:35:10Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2019 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

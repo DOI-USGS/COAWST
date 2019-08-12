@@ -108,7 +108,7 @@ function cmap = cmocean(ColormapName,varargin)
 %          cm_phase,  cm_solar, cm_speed,   cm_tempo, cm_thermal, cm_turbid,
 %          inferno,   magma,    parula,     plasma,   cividis,    viridis
   
-% svn $Id: cmocean.m 926 2018-10-09 21:53:45Z arango $
+% svn $Id: cmocean.m 938 2019-01-28 06:35:10Z arango $
 
 % Display colormap options: 
 

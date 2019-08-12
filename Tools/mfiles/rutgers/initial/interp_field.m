@@ -74,9 +74,9 @@ function V = interp_field(I,varargin)
 %    V             Interpolated 2D/3D field
 %
 
-% svn $Id: interp_field.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: interp_field.m 938 2019-01-28 06:35:10Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2019 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license           Hernan G. Arango      %
 %    See License_ROMS.txt                           John Wilkin           %
 %=========================================================================%  

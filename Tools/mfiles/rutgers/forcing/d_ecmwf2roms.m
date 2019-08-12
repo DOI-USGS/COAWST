@@ -24,9 +24,9 @@
 % Select step:   0  3  6  9  12
 %
 
-% svn $Id: d_ecmwf2roms.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: d_ecmwf2roms.m 938 2019-01-28 06:35:10Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group      Hernan G. Arango      %
+%  Copyright (c) 2002-2019 The ROMS/TOMS Group      Hernan G. Arango      %
 %    Licensed under a MIT/X style license           John Wilkin           %
 %    See License_ROMS.txt                                                 %
 %=========================================================================%
@@ -58,7 +58,7 @@
 % @  strd    W m-2 s        surface thermal radiation downwards
 % @  ewss    N m-2 s        east-west surface stress
 % @  nsss    N m-2 s        north-south surface stress
-% @  e       m              evaporation (downward flux is positive)
+% @  e       m              evaporation
 % @  ro      m              runoff
 % @  tcc     nondimensional total cloud cover [0:1]
 % @  tp      m              total precipitation
@@ -83,7 +83,7 @@
 %   sensible    (W m-2)         sshf / (3*3600):   3-hour step
 %   rain        (kg m-2 s-1)    tp * Rho_w / (3*3600)
 %   evaporation (kg m-2 s-1)    e  * Rho_w / (3*3600)
-%   swflux      (cm day-1)      (-e - tp) * 100 / (3/24);  0.125 day step
+%   swflux      (cm day-1)      (e - tp) * 100 / (3/24);  0.125 day step
 %   cloud       (nondimesional) tcc
 %   Pair        (mb)            msl / 100;   (1 mb = 100 Pa)
 %   Tair        (Celsius)       t2m - 273.15;   (1 C = 273.15 K)
@@ -211,8 +211,8 @@ F(15).input  = 'ecmwf_era_temp_';
 F(15).output = 'gom_Tair_era.nc';
 F(15).scale  = 1.0;
 
-F(16).Vname  = {'Qair', 'v2d'};         % Use temperature (v2t) and
-F(16).Tname  = {'qair_time',  'time'};  % dewpoint temperature (v2d)
+F(16).Vname  = {'Qair', 'v2d'};         % Use temperature (t2m) and
+F(16).Tname  = {'qair_time',  'time'};  % dewpoint temperature (d2m)
 F(16).input  = 'ecmwf_era_temp_';       % to compute relative humidity
 F(16).output = 'gom_Qair_era.nc';
 F(16).scale  = 1.0;
@@ -465,7 +465,7 @@ for n = doFields,
         case 'swflux'     
           evap  = nc_read(InpFile, 'e' , Rec);      % evaporation
           prec  = nc_read(InpFile, 'tp', Rec);      % precipitation
-          field = (-evap - prec) .* scale;          
+          field = (evap - prec) .* scale;          
         case 'shflux'   
           sensbl = nc_read(InpFile, 'sshf' , Rec);  % sensible
           latent = nc_read(InpFile, 'slhf', Rec);   % latent
@@ -481,7 +481,7 @@ for n = doFields,
 
 % If the scale F(n).scale is set to negative, the input ECMWF data is a
 % cummulative integral in forecast cycle from hour zero.
-% For steps at 6, 9 and 12 hours we must separate last 3 hours of 
+ % For steps at 6, 9 and 12 hours we must separate last 3 hours of 
 % integration from previous accumulation.
 % At 3 hour step don't change anything
 

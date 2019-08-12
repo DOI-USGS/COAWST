@@ -25,9 +25,9 @@ function [C]=ijcoast(ncfile, coast_file)
 %                  C.Jcst    => Coastline J-grid coordinates, (0:M)
 %
 
-% svn $Id: ijcoast.m 916 2018-07-14 01:28:47Z arango $
+% svn $Id: ijcoast.m 938 2019-01-28 06:35:10Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2019 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

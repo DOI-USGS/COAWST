@@ -29,6 +29,9 @@
 %                     of the minimum is marked with a filled magenta
 %                     circle whereas the maximum is marked with a filled
 %                     magenta square.
+%   roms_field    - Computes requested secondary 2D or 3D field from ROMS
+%                     state output history/average data. Currently, there
+%                     is code for compute 2D or 3D relative vorticity.
 %   roms_vectors  - Processes vector data for either the full grid
 %                     or boundary edges. The strategy is to get any
 %                     horizontal vector field at RHO-points for the
@@ -40,11 +43,19 @@
 %                     or viceversa. Input vector components may be
 %                     located at the center of the cell (RHO-points)
 %                     or at staggered Arakawa's C-grid locations.
+%   rvorticity    - Computes 2D or 3D relative vorticity from ROMS fields. 
 %   sample_grid   - Gets Parent grid indices range of the polygon that
 %                     tightly contains the Target Grid.
 %
 %   uv_barotropic - Computes vertically integrated velocity components
 %                     for ROMS full grid or boundaries.
+%   vector4stream - Given velocity components and grid information, it
+%                     interpolates data to a monotonic and plaid grid
+%                     (as if produced by MESHGRID) for the plotting of
+%                     streamlines elsewhere using 'streamslice' or
+%                     'm_streamline'
+%   wrt_latlon    - Writes the (lat,lon) pairs into an ASCII so it may be
+%                     used in the ROMS plotting package. 
 %
 % Filters:
 %
@@ -107,9 +118,9 @@
 %                      plotted with 'plot_nesting'. 
 %
 
-% svn $Id: Contents.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: Contents.m 951 2019-02-12 22:00:53Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2019 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

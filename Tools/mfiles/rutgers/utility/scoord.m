@@ -67,9 +67,9 @@ function [z,s,C]=scoord(h, x, y, Vtransform, Vstretching, ...
 %                    C(s), 1D array, [-1 <= C(s) <= 0]
 %
 
-% svn $Id: scoord.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: scoord.m 938 2019-01-28 06:35:10Z arango $
 %===========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                              %
+%  Copyright (c) 2002-2019 The ROMS/TOMS Group                              %
 %    Licensed under a MIT/X style license                                   %
 %    See License_ROMS.txt                           Hernan G. Arango        %
 %===========================================================================%

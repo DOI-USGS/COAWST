@@ -26,7 +26,7 @@ function cmap = cm_amp(varargin)
 %   selection, Oceanography, 29(3), 9-13, http://dx.doi.org/10.5670/oceanog.2016.66 
 % 
 
-% svn $Id: cm_amp.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: cm_amp.m 938 2019-01-28 06:35:10Z arango $
 
 % Initialize.
 

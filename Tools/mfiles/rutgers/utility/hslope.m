@@ -27,9 +27,9 @@ function [x,y,dhdx,dhde,slope,r]=hslope(fname,iprint,iplot);
 %    r           R-value (2D array)
 %
 
-% svn $Id: hslope.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: hslope.m 938 2019-01-28 06:35:10Z arango $
 %===========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                              %
+%  Copyright (c) 2002-2019 The ROMS/TOMS Group                              %
 %    Licensed under a MIT/X style license                                   %
 %    See License_ROMS.txt                           Hernan G. Arango        %
 %===========================================================================%
@@ -57,7 +57,7 @@ for n=1:nvars,
   name=char(S.Variables(n).Name);
   switch name
     case 'h'
-      h=nc_read(fname,'h',0);
+      h=nc_read(fname,'h',1);
     case 'bath'
       h=nc_read(fname,'bath',1);
     case 'angle'
@@ -85,8 +85,8 @@ M=Mp-1;
 %  Read in curvilinear grid metrics.
 %----------------------------------------------------------------------------
 
-pm=nc_read(fname,'pm',0);
-pn=nc_read(fname,'pn',0);
+pm=nc_read(fname,'pm');
+pn=nc_read(fname,'pn');
 
 dx=1./pm; dx=dx./1000;
 dy=1./pn; dy=dy./1000;
@@ -144,13 +144,13 @@ if (ischar(spherical)),
 end
 
 if (spherical),
-  xr=nc_read(fname,'lon_rho',0);
-  yr=nc_read(fname,'lat_rho',0);
+  xr=nc_read(fname,'lon_rho');
+  yr=nc_read(fname,'lat_rho');
   x(1:L,1:M)=0.25.*(xr(1:L,1:M)+xr(2:Lp,1:M)+xr(1:L,2:Mp)+xr(2:Lp,2:Mp));
   y(1:L,1:M)=0.25.*(yr(1:L,1:M)+yr(2:Lp,1:M)+yr(1:L,2:Mp)+yr(2:Lp,2:Mp));
 else
-  xr=nc_read(fname,'x_rho',0);
-  yr=nc_read(fname,'y_rho',0);
+  xr=nc_read(fname,'x_rho');
+  yr=nc_read(fname,'y_rho');
   x(1:L,1:M)=0.25.*(xr(1:L,1:M)+xr(2:Lp,1:M)+xr(1:L,2:Mp)+xr(2:Lp,2:Mp));
   y(1:L,1:M)=0.25.*(yr(1:L,1:M)+yr(2:Lp,1:M)+yr(1:L,2:Mp)+yr(2:Lp,2:Mp));
 end

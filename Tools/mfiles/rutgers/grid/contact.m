@@ -265,9 +265,9 @@ function [S,G] = contact(Gnames, Cname, varargin)
 %          receiver_value(Irg,Jrg) = donor_value(Idg,Jdg)
 %
 
-% svn $Id: contact.m 913 2018-07-02 22:16:58Z arango $
+% svn $Id: contact.m 938 2019-01-28 06:35:10Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2019 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

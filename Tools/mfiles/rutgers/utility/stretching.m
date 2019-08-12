@@ -40,9 +40,9 @@ function [s,C]=stretching(Vstretching, theta_s, theta_b, hc, N, kgrid,  ...
 %                    C(s), 1D array, [-1 <= C(s) <= 0]
 %
 
-% svn $Id: stretching.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: stretching.m 938 2019-01-28 06:35:10Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2019 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
