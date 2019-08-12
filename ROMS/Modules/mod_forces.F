@@ -442,6 +442,7 @@
           real(r8), pointer :: lrflxG(:,:,:)
 #  endif
           real(r8), pointer :: shflx(:,:)
+          real(r8), pointer :: snhflx(:,:)
 # endif
 # if defined ATM2OCN_FLUXES
           real(r8), pointer :: lhflx(:,:)
@@ -1062,6 +1063,9 @@
 #  endif
 
       allocate ( FORCES(ng) % shflx(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( FORCES(ng) % snhflx(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
 # endif
 # ifdef ATM2OCN_FLUXES
