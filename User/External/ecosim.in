@@ -591,12 +591,12 @@
 !
 !                   1       2       3       4
 
-   LBC(isTvar) ==   Per     Clo     Per     Clo      ! idbio(:), compact
+   LBC(isTvar) ==   Per     Per     Per     Per      ! idbio(:), compact
 
 ! Adjoint-based algorithms can have different lateral boundary
 ! conditions keywords.
 
-ad_LBC(isTvar) ==   Per     Clo     Per     Clo      ! idbio(:), compact
+ad_LBC(isTvar) ==   Per     Per     Per     Per      ! idbio(:), compact
 
 ! Logical switches (TRUE/FALSE) to activate biological tracers point
 ! Sources/Sinks (like river runoff) and to specify which tracer variables
@@ -657,6 +657,22 @@ ad_LBC(isTvar) ==   Per     Clo     Per     Clo      ! idbio(:), compact
   Dout(iTydif) == 61*T   ! ..., DIC_ydiff, ...     horizontal ETA-diffusion
   Dout(iTsdif) == 61*T   ! ..., DIC_sdiff, ...     horizontal S-diffusion
   Dout(iTvdif) == 61*T   ! ..., DIC_vdiff, ...     vertical diffusion
+
+! Logical switches (TRUE/FALSE) to activate writing of time-averaged,
+! underwater optical diagnostics terms into DIAGNOSTIC output file [Ngrids].
+
+  Dout(idSpIr) == T      ! surface_irradiance      surface spectral irradiance
+  Dout(iddIrr) == T      ! downward_irradiance     downward spectral irradiance
+  Dout(idsIrr) == T      ! scalar_irradiance       scalar spectral irradiance
+  Dout(idAcos) == T      ! light_cosine            light spectral average cosine
+  Dout(idLatt) == T      ! light_attenuation       diffuse light attenuation
+  Dout(idaPHY) == T      ! Phy_absorption          phytoplankton absorption
+  Dout(idaDET) == T      ! detrital_absorption     detrital absorption
+  Dout(idaCDC) == T      ! CDC_absorption          CDC absorption
+  Dout(idsPHY) == T      ! Phy_scattering          phytoplankton scattering
+  Dout(idbPHY) == T      ! Phy_backscattering      phytoplankton backscattering
+  Dout(idsTOT) == T      ! total_scattering        total scattering
+  Dout(idbTOT) == T      ! total_backscattering    total backscattering
 
 !
 !  GLOSSARY:
@@ -1369,4 +1385,21 @@ ad_LBC(isTvar) ==   Per     Clo     Per     Clo      ! idbio(:), compact
 !  Dout(iTsdif)     Write out horizontal   S-diffusion, if TS_DIF2 or TS_DIF4
 !                     and rotated tensor (MIX_GEO_TS or MIX_ISO_TS).
 !  Dout(iTvdif)     Write out vertical diffusion.
+!
+!
+!  Time-accumulated underwater spectral bio-optical processes diagnostics
+!  fields, [Ngrids] values are expected:
+!
+!  Dout(idSpIr)     Write out surface spectral light irradiance
+!  Dout(iddIrr)     Write out downward spectral light irradiance
+!  Dout(idsIrr)     Write out scalar spectral light irradiance
+!  Dout(idAcos)     Write out light spectral average cosine of zenith angle
+!  Dout(idLatt)     Write out diffuse light attenuation
+!  Dout(idaPHY)     Write out phytoplankton optical absorption
+!  Dout(idaDET)     Write out detrital optical absorption
+!  Dout(idaCDC)     Write out color degradational matter optical absorption
+!  Dout(idsPHY)     Write out phytoplankton optical scattering
+!  Dout(idbPHY)     Write out phytoplankton optical backscattering
+!  Dout(idsTOT)     Write out total optical scattering
+!  Dout(ibbTOT)     Write out total optical backscattering
 !

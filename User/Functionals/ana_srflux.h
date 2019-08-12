@@ -1,6 +1,6 @@
       SUBROUTINE ana_srflux (ng, tile, model)
 !
-!! svn $Id: ana_srflux.h 927 2018-10-16 03:51:56Z arango $
+!! svn $Id: ana_srflux.h 959 2019-03-13 15:59:03Z arango $
 !!======================================================================
 !! Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
@@ -102,13 +102,16 @@
       integer :: i, j
 #if defined ALBEDO_CLOUD || defined DIURNAL_SRFLUX
       integer :: iday, month, year
+      real(dp) :: hour, yday
       real(r8) :: Dangle, Hangle, LatRad
-      real(r8) :: cff1, cff2, hour, yday
+      real(r8) :: cff1, cff2
 # ifdef ALBEDO_CLOUD
       real(r8) :: Rsolar, e_sat, vap_p, zenith
 # endif
 #endif
       real(r8) :: cff
+
+      real(r8), parameter :: alb_w=0.06_r8
 
 #include "set_bounds.h"
 
@@ -117,7 +120,7 @@
 !-----------------------------------------------------------------------
 !  Compute shortwave radiation (degC m/s):
 !
-!  ALBEDO_CLOUD option: Compute shortwave radiation flux using the Laevastu
+!  ALBEDO option: Compute shortwave radiation flux using the Laevastu
 !                 cloud correction to the Zillman equation for cloudless
 !  radiation (Parkinson and Washington 1979, JGR, 84, 311-337).  Notice
 !  that flux is scaled from W/m2 to degC m/s by dividing by (rho0*Cp).
@@ -145,7 +148,7 @@
 !
 !  Estimate solar declination angle (radians).
 !
-      Dangle=23.44_dp*COS((172.0_dp-yday)*2.0_dp*pi/365.25_dp)
+      Dangle=23.44_dp*COS((172.0_dp-yday)*2.0_dp*pi/365.2425_dp)
       Dangle=Dangle*deg2rad
 !
 !  Compute hour angle (radians).
@@ -169,19 +172,20 @@
 !
 !  Estimate variation in optical thickness of the atmosphere over
 !  the course of a day under cloudless skies (Zillman, 1972). To
-!  obtain net incoming shortwave radiation multiply by (1.0-0.6*c**3),
+!  obtain incoming shortwave radiation multiply by (1.0-0.6*c**3),
 !  where c is the fractional cloud cover.
 !
 !  The equation for saturation vapor pressure is from Gill (Atmosphere-
 !  Ocean Dynamics, pp 606).
 !!
-!! If relative humidity in kg/kg.
+!! If specific humidity in kg/kg.
 !!
-!!          vap_p=Pair(i,j)*Hair(i,j)/(0.62197_r8+0.378_r8*Hair(i,j))
+!!        vap_p=Pair(i,j)*Hair(i,j)/(0.62197_r8+0.378_r8*Hair(i,j))
 !!
 !
           srflx(i,j)=0.0_r8
-          zenith=cff1+cff2*COS(Hangle-lonr(i,j)*deg2rad/15.0_r8)
+!         zenith=cff1+cff2*COS(Hangle-lonr(i,j)*deg2rad/15.0_r8)
+          zenith=cff1+cff2*COS(Hangle-lonr(i,j)*deg2rad)
           IF (zenith.gt.0.0_r8) THEN
             cff=(0.7859_r8+0.03477_r8*Tair(i,j))/                       &
      &          (1.0_r8+0.00412_r8*Tair(i,j))
@@ -192,6 +196,13 @@
      &                 ((zenith+2.7_r8)*vap_p*1.0E-3_r8+                &
      &                  1.085_r8*zenith+0.1_r8)
           END IF
+!
+!  Add correction for ocean albedo. Notice that the correction is not
+!  needed below because it is assumed that the input (>=24h-average)
+!  and 'srflx' is NET downward shortwave radiation.
+!
+          srflx(i,j)=(1.0_r8-alb_w)*srflx(i,j)
+
 # elif defined DIURNAL_SRFLUX
 !
 !  SRFLX is reset on each time step in subroutine SET_DATA which

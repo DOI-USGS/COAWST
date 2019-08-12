@@ -152,7 +152,7 @@ end
 #setenv FORT                 gfortran
 #setenv FORT                 pgi
 
- setenv USE_REAL_DOUBLE      on          # use real double precision (-r8)
+#setenv USE_REAL_DOUBLE      on          # use real double precision (-r8)
 #setenv USE_DEBUG            on          # use Fortran debugging flags
  setenv USE_HDF5             on          # compile with HDF5 library
  setenv USE_NETCDF           on          # compile with NetCDF
@@ -528,12 +528,18 @@ if ( $WRF_CASE == "em_real" ) then
   ln -sfv ${WRF_ROOT_DIR}/run/p3_lookup_table_1.dat-v2.8.2 .
   ln -sfv ${WRF_ROOT_DIR}/run/p3_lookup_table_2.dat-v2.8.2 .
 
-  if ( $USE_REAL_DOUBLE == 'on' ) then
+  if ( $?USE_REAL_DOUBLE ) then
     ln -sfv ${WRF_ROOT_DIR}/run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA
     ln -sfv ${WRF_ROOT_DIR}/run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain
     ln -sfv ${WRF_ROOT_DIR}/run/RRTM_DATA_DBL RRTM_DATA
     ln -sfv ${WRF_ROOT_DIR}/run/RRTMG_LW_DATA_DBL RRTMG_LW_DATA
     ln -sfv ${WRF_ROOT_DIR}/run/RRTMG_SW_DATA_DBL RRTMG_SW_DATA
+  else
+    ln -sfv ${WRF_ROOT_DIR}/run/ETAMPNEW_DATA ETAMPNEW_DATA
+    ln -sfv ${WRF_ROOT_DIR}/run/ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA.expanded_rain
+    ln -sfv ${WRF_ROOT_DIR}/run/RRTM_DATA RRTM_DATA
+    ln -sfv ${WRF_ROOT_DIR}/run/RRTMG_LW_DATA RRTMG_LW_DATA
+    ln -sfv ${WRF_ROOT_DIR}/run/RRTMG_SW_DATA RRTMG_SW_DATA
   endif
 
   ln -sfv ${WRF_ROOT_DIR}/run/GENPARM.TBL .

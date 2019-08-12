@@ -19,53 +19,92 @@
 # %---------------------------------%
 #
 # %---------------------------------------------------------%
+# | If you are using a VENDOR SUPPLIED VERSION of MPI, you  |
+# | must replace the mpif.h in the following directories    |
+# |                                                         |
+# |            ARPACK/PARPACK/SRC/MPI/mpif.h                |
+# |            ARPACK/PARPACK/UTIL/MPI/mpif.h               |
+# |            ARPACK/PARPACK/EXAMPLES/MPI/mpif.h           |
+# |                                                         |
+# | with the one for the native implementation.             |
+# %---------------------------------------------------------%
+#
+# %---------------------------------------------------------%
 # | The complete path to the top level of ARPACK directory, |
 # | usually $(HOME)/ARPACK                                  |
 # %---------------------------------------------------------%
 #
 home         = $(ROMSHOME)/Lib/ARPACK
 #
-#  %--------------------------------------%
-#  | The platform identifier to suffix to |
-#  | the end of library names             |
-#  %--------------------------------------%
 #
-#PLAT        = dbg_daggoo
-#PLAT        = daggoo
-#PLAT        = dbg_moby
- PLAT        = moby
+# %---------------------------------------------------------%
+# | The platform identifier to suffix to the end of library |
+# | names. Don't forget to include the underscore!          |
+# |                                                         |
+# |    PLAT = _myhost                                       |
+# %---------------------------------------------------------%
 #
-#  %------------------------------------------------------%
-#  | The directories to find the various pieces of ARPACK |
-#  %------------------------------------------------------%
+PLAT          =
+#
+# %---------------------------------------------------------%
+# | The communication library (for parallel library only)   |
+# | Current availible platforms are: BLACS or MPI           |
+# %---------------------------------------------------------%
+#
+COMMLIB       = MPI
+#
+#  %--------------------------------------------------------%
+#  | The directories to find the various pieces of ARPACK   |
+#  %--------------------------------------------------------%
 #
 BLASdir      = $(home)/BLAS
 LAPACKdir    = $(home)/LAPACK
 UTILdir      = $(home)/UTIL
 SRCdir       = $(home)/SRC
-#
+PSRCdir      = $(home)/PARPACK/SRC/$(COMMLIB)
+PUTILdir     = $(home)/PARPACK/UTIL/$(COMMLIB)
 #
 DIRS   = $(BLASdir) $(LAPACKdir) $(UTILdir) $(SRCdir)
 #
-# %-------------------------------------------------------------------%
-# | Comment out the previous line and uncomment the following         |
-# | if you already have the BLAS and LAPACK installed on your system. |
-# | NOTE: ARPACK assumes the use of LAPACK version 2 codes.           |
-# %-------------------------------------------------------------------%
-# 
+# %---------------------------------------------------------%
+# | Comment out the previous line and uncomment the         |
+# | following if you already have BLAS and LAPACK installed |
+# | on your system.                                         |
+# | NOTE: ARPACK assumes the use of LAPACK version 2 codes. |
+# %---------------------------------------------------------%
+#
 #DIRS   = $(UTILdir) $(SRCdir)
 #
+# %---------------------------------------------------------%
+# | The name of the libraries to be created/linked to.      |
+# | If you set PLAT above make sure to include it in the    |
+# | library name(s):                                        |
+# |                                                         |
+# |    ARPACKLIB  = $(home)/libarpack$(PLAT).a              |
+# |    PARPACKLIB = $(home)/libparpack$(PLAT).a             |
+# %---------------------------------------------------------%
 #
-# %---------------------------------------------------%
-# | The name of the libraries to be created/linked to |
-# %---------------------------------------------------%
+ARPACKLIB  = $(home)/libarpack.a
+PARPACKLIB = $(home)/libparpack.a
+LAPACKLIB =
+BLASLIB =
+
+ALIBS =  $(ARPACKLIB) $(LAPACKLIB) $(BLASLIB)
 #
-ARPACKLIB  = $(home)/libarpack_$(PLAT).a
-LAPACKLIB = 
-BLASLIB = 
+# %---------------------------------------------------------%
+# | If your system users custom MPI libraries specify them  |
+# | here for linking with Parallel ARPACK.                  |
+# |                                                         |
+# |        MPILIBS = -lfmpi -lmpi                           |
+# |                                                         |
+# | If your system uses mpif90 or other wrapper scripts you |
+# | should leave this blank.                                |
+# %---------------------------------------------------------%
+#
+MPILIBS =
 
-ALIBS =  $(ARPACKLIB) $(LAPACKLIB) $(BLASLIB) 
-
+PLIBS = $(PARPACKLIB) $(ALIBS) $(MPILIBS)
+#
 # %---------------------------------------------------------%
 # |                  SECTION 2: COMPILERS                   |
 # |                                                         |
@@ -99,18 +138,23 @@ ALIBS =  $(ARPACKLIB) $(LAPACKLIB) $(BLASLIB)
 	@$(FC) -c $(FFLAGS) $<
 
 #
-# %-----------------------------------------%
-# | Various compilation programs and flags. |
-# | You need to make sure these are correct |
-# | for your system.                        |
-# %-----------------------------------------%
+# %---------------------------------------------------------%
+# | Various compilation programs and flags.  You need to    |
+# | make sure these are correct for your system.            |
+# %---------------------------------------------------------%
 #
 
-FC	= pgf90
-#FFLAGS	= -g
-FFLAGS	= -u -Bstatic -fastsse -Mipa=fast
+FC	= ifort
+FFLAGS	= -ip -O3 -fp-model precise
 
-LDFLAGS = 
+# %-----------------------------------%
+# | Set the parallel fortran compiler |
+# %-----------------------------------%
+
+PFC     = mpif90
+PFFLAGS = -ip -O3 -fp-model precise
+
+LDFLAGS =
 CD	= cd
 
 ECHO	= echo
@@ -125,11 +169,11 @@ RMFLAGS	= -f
 
 SHELL	= /bin/sh
 #
-#  %----------------------------------------------------------------%
-#  | The archiver and the flag(s) to use when building an archive   |
-#  | (library).  Also the ranlib routine.  If your system has no    |
-#  | ranlib, set RANLIB = touch.                                    |
-#  %----------------------------------------------------------------%
+#  %--------------------------------------------------------%
+#  | The archiver and the flag(s) to use when building an   |
+#  | archive (library).  Also the ranlib routine.  If your  |
+#  | system has no ranlib, set RANLIB = touch.              |
+#  %--------------------------------------------------------%
 #
 AR = ar
 ARFLAGS = rv

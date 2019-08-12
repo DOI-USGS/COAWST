@@ -183,7 +183,7 @@ ifdef USE_ROMS
 #  step (begining and almost the end of ROMS library list).
 #--------------------------------------------------------------------------
 
-  libraries  := $(SCRATCH_DIR)/libUTIL.a
+   libraries := $(SCRATCH_DIR)/libNLM.a $(SCRATCH_DIR)/libUTIL.a
 endif
 
 #--------------------------------------------------------------------------
@@ -362,7 +362,8 @@ OS := $(patsubst sn%,UNICOS-sn,$(OS))
 
 CPU := $(shell uname -m | sed 's/[\/ ]/-/g')
 
-SVNREV ?= $(shell svnversion -n .)
+SVNURL := $(shell svn info | grep '^URL:' | sed 's/URL: //')
+SVNREV := $(shell svn info | grep '^Revision:' | sed 's/Revision: //')
 
 ROOTDIR := $(shell pwd)
 
@@ -410,12 +411,8 @@ ifdef MY_ANALYTICAL
   CPPFLAGS += -D'MY_ANALYTICAL="$(MY_ANALYTICAL)"'
 endif
 
-ifdef SVNREV
-  CPPFLAGS += -D'SVN_REV="$(SVNREV)"'
-else
-  SVNREV := $(shell grep Revision ./ROMS/Version | sed 's/.* \([0-9]*\) .*/\1/')
-  CPPFLAGS += -D'SVN_REV="$(SVNREV)"'
-endif
+CPPFLAGS += -D'SVN_URL="$(SVNURL)"'
+CPPFLAGS += -D'SVN_REV="$(SVNREV)"'
 
 #--------------------------------------------------------------------------
 #  Build target directories.
@@ -733,7 +730,7 @@ endif
 .PHONY: tarfile
 
 tarfile:
-		tar --exclude=".svn" --exclude Output -cvf coawst_v3.4.tar *
+		tar --exclude=".svn" --exclude Output -cvf coawst_v3.5.tar *
 
 .PHONY: zipfile
 
