@@ -2283,10 +2283,6 @@
         allocate ( maxrho(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
-      IF (.not.allocated(mintemp)) THEN
-        allocate ( mintemp(Ngrids) )
-      END IF
-
       IF (.not.allocated(levsfrc)) THEN
         allocate ( levsfrc(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)

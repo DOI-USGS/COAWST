@@ -128,7 +128,7 @@ ifdef USE_NETCDF4
 else
     NETCDF_INCDIR ?= /usr/include
     NETCDF_LIBDIR ?= /usr/lib
-      NETCDF_LIBS ?= -lnetcdf
+      NETCDF_LIBS ?= -lnetcdff -lnetcdf
              LIBS += -L$(NETCDF_LIBDIR) $(NETCDF_LIBS)
            INCDIR += $(NETCDF_INCDIR) $(INCDIR)
 endif

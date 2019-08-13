@@ -189,13 +189,6 @@
 
       TYPE(T_IO), allocatable :: FRC(:,:)
 !
-!  Input river source data.
-!
-      integer, allocatable :: nSSFfiles(:)
-      integer, allocatable :: SSFids(:,:)
-
-      TYPE(T_IO), allocatable :: SSF(:,:)
-!
 !  Error messages.
 !
       character (len=50), dimension(10) :: Rerror =                     &

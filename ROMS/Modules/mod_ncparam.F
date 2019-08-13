@@ -627,7 +627,7 @@
 !
 !  Input river NetCDF files IDs.
 !
-        integer, allocatable :: ncSSFid(:,:)
+!       integer, allocatable :: ncSSFid(:,:)
 !
 !  Flags to create output files.
 !
@@ -1043,8 +1043,8 @@
       END IF
 
       IF (.not.allocated(Finfo)) THEN
-        allocate ( Finfo(10,NV,Ngrids) )
-        Dmem(1)=Dmem(1)+10.0_r8*REAL(NV*Ngrids,r8)
+        allocate ( Finfo(11,NV,Ngrids) )
+        Dmem(1)=Dmem(1)+11.0_r8*REAL(NV*Ngrids,r8)
       END IF
       IF (.not.allocated(Fpoint)) THEN
         allocate ( Fpoint(2,NV,Ngrids) )
@@ -1321,7 +1321,7 @@
           ncBRYid(i,ng)=-1
           ncCLMid(i,ng)=-1
           ncFRCid(i,ng)=-1
-          ncSSFid(i,ng)=-1
+!         ncSSFid(i,ng)=-1
         END DO
       END DO
 !

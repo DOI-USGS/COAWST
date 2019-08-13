@@ -1530,7 +1530,6 @@
           qai_n(i,j) = Qai(i,j)
 # endif
 
-# endif
         END DO
       END DO
 !
