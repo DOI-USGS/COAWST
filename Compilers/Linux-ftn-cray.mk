@@ -16,6 +16,7 @@
 # HDF5_INCDIR    HDF5 include directory
 # HDF5_LIBDIR    HDF5 library directory
 # HDF5_LIBS      HDF5 library switches
+# LIBS           Required libraries during linking
 # NF_CONFIG      NetCDF Fortran configuration script
 # NETCDF_INCDIR  NetCDF include directory
 # NETCDF_LIBDIR  NetCDF library directory
@@ -36,7 +37,7 @@
            INCDIR := /usr/include /usr/local/bin
             SLIBS := -L/usr/local/lib -L/usr/lib
             ULIBS :=
-             LIBS :=
+             LIBS := $(SCRATCH_DIR)/libNLM.a         # cyclic dependencies
        MOD_SUFFIX := mod
                LD := $(FC)
           LDFLAGS :=

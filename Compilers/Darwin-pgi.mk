@@ -20,6 +20,7 @@
 # CLEAN          Name of cleaning executable after C-preprocessing
 # NETCDF_INCDIR  NetCDF include directory
 # NETCDF_LIBDIR  NetCDF libary directory
+# NETCDF_LIBS    NetCDF library switches
 # LD             Program to load the objects into an executable
 # LDFLAGS        Flags to the loader
 # RANLIB         Name of ranlib command
@@ -29,43 +30,125 @@
 #
                FC := pgf90
            FFLAGS :=
+       FIXEDFLAGS := -Mnofree
+        FREEFLAGS := -Mfree
               CPP := /usr/bin/cpp
          CPPFLAGS := -P -traditional-cpp
                CC := gcc
               CXX := g++
            CFLAGS :=
          CXXFLAGS :=
+           INCDIR := /usr/include /usr/local/bin
+            SLIBS := -L/usr/local/lib -L/usr/lib
+            ULIBS :=
+             LIBS := $(SCRATCH_DIR)/libNLM.a         # cyclic dependencies
+       MOD_SUFFIX := mod
+               LD := $(FC)
           LDFLAGS :=
                AR := ar
           ARFLAGS := r
             MKDIR := mkdir -p
+               CP := cp -p -v
                RM := rm -f
            RANLIB := ranlib
              PERL := perl
              TEST := test
 
-        MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
+#--------------------------------------------------------------------------
+# Compiling flags for ROMS Applications.
+#--------------------------------------------------------------------------
+#
+# Perform floating-point operations in strict conformance with the
+# IEEE standard by using -Kieee. This may slow down computations
+# because some optimizations are disabled.  However, we noticed a
+# speed-up. The user may want to have this option to allow similar,
+# if not identical solutions between different of the PGI compiler.
 
-#
+ifdef USE_ROMS
+ ifdef USE_DEBUG
+           FFLAGS += -g
+           FFLAGS += -C
+           FFLAGS += -Mchkstk -Mchkfpstk
+ else
+           FFLAGS += -fastsse -Mipa=fast
+ endif
+           FFLAGS += -Kieee
+        MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
+endif
+
+#--------------------------------------------------------------------------
+# Compiling flags for CICE Applications.
+#--------------------------------------------------------------------------
+
+ifdef CICE_APPLICATION
+          CPPDEFS := -DLINUS $(MY_CPP_FLAGS)
+ ifdef USE_DEBUG
+           FFLAGS += -g
+           FFLAGS += -C
+           FFLAGS += -Mchkstk -Mchkfpstk
+ else
+           FFLAGS += -fastsse -Mipa=fast
+ endif
+           FFLAGS += -Kieee
+endif
+
+#--------------------------------------------------------------------------
+# Coupled models libraries.
+#--------------------------------------------------------------------------
+
+ifdef USE_COAMPS
+             LIBS += $(COAMPS_LIB_DIR)/libashare.a
+             LIBS += $(COAMPS_LIB_DIR)/libcoamps.a
+             LIBS += $(COAMPS_LIB_DIR)/libaa.a
+             LIBS += $(COAMPS_LIB_DIR)/libam.a
+             LIBS += $(COAMPS_LIB_DIR)/libfishpak.a
+             LIBS += $(COAMPS_LIB_DIR)/libfnoc.a
+             LIBS += $(COAMPS_LIB_DIR)/libtracer.a
+#            LIBS += $(COAMPS_LIB_DIR)/libnl_beq.a
+endif
+
+ifdef CICE_APPLICATION
+            SLIBS += $(SLIBS) $(LIBS)
+endif
+
 # Library locations, can be overridden by environment variables.
+#--------------------------------------------------------------------------
 #
+# According to the PGI manual, the -u -Bstatic flags initializes
+# the symbol table with -Bstatic, which is undefined for the linker.
+# An undefined symbol triggers loading of the first member of an
+# archive library. The -u flag fails with version 7.x of the compiler
+# because it expects an argument.
+
+          LDFLAGS := $(FFLAGS)
 
 ifdef USE_NETCDF4
         NF_CONFIG ?= nf-config
     NETCDF_INCDIR ?= $(shell $(NF_CONFIG) --prefix)/include
-             LIBS := $(shell $(NF_CONFIG) --flibs)
+             LIBS += $(shell $(NF_CONFIG) --flibs)
+           INCDIR += $(NETCDF_INCDIR) $(INCDIR)
 else
-    NETCDF_INCDIR ?= /usr/local/include
-    NETCDF_LIBDIR ?= /usr/local/lib
-             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf
+    NETCDF_INCDIR ?= /opt/pgisoft/serial/netcdf3/include
+    NETCDF_LIBDIR ?= /opt/pgisoft/serial/netcdf3/lib
+      NETCDF_LIBS ?= -lnetcdf
+             LIBS += -L$(NETCDF_LIBDIR) $(NETCDF_LIBS)
+           INCDIR += $(NETCDF_INCDIR) $(INCDIR)
+endif
+
+ifdef USE_HDF5
+      HDF5_INCDIR ?= /opt/pgisoft/serial/hdf5/include
+      HDF5_LIBDIR ?= /opt/pgisoft/serial/hdf5/lib
+        HDF5_LIBS ?= -lhdf5_fortran -lhdf5hl_fortran -lhdf5 -lz
+             LIBS += -L$(HDF5_LIBDIR) $(HDF5_LIBS)
+           INCDIR += $(HDF5_INCDIR)
 endif
 
 ifdef USE_ARPACK
  ifdef USE_MPI
-   PARPACK_LIBDIR ?= /usr/local/lib
+   PARPACK_LIBDIR ?= /opt/pgisoft/PARPACK
              LIBS += -L$(PARPACK_LIBDIR) -lparpack
  endif
-    ARPACK_LIBDIR ?= /usr/local/lib
+    ARPACK_LIBDIR ?= /opt/pgisoft/ARPACK
              LIBS += -L$(ARPACK_LIBDIR) -larpack
 endif
 
@@ -83,23 +166,6 @@ ifdef USE_OpenMP
            FFLAGS += -mp
 endif
 
-# According to the PGI manual, the -u -Bstatic flags initializes
-# the symbol table with -Bstatic, which is undefined for the linker.
-# An undefined symbol triggers loading of the first member of an
-# archive library. The -u flag fails with version 7.x of the compiler
-# because it expects an argument.
-
-ifdef USE_DEBUG
-#          FFLAGS += -g -C -Mchkstk -Mchkfpstk
-           FFLAGS += -g -C
-#          FFLAGS += -g
-           CFLAGS += -g
-         CXXFLAGS += -g
-else
-           FFLAGS += -fastsse -Mipa=fast
-           CFLAGS += -O3
-         CXXFLAGS += -O3
-endif
 
 ifdef USE_ESMF
           ESMF_OS ?= $(OS)
@@ -146,42 +212,37 @@ endif
 
 #
 # Use full path of compiler.
-#
+
                FC := $(shell which ${FC})
                LD := $(FC)
 
-#
-# Perform floating-point operations in strict conformance with the
-# IEEE standard. This may slow down computations because some
-# optimizations are disabled.  However, we noticed a speed-up.
-# The user may want to uncomment this option to allow similar,
-# if not identical solutions between different of the PGI compiler.
+#--------------------------------------------------------------------------
+# ROMS specific rules.
+#--------------------------------------------------------------------------
 
-#          FFLAGS += -Kieee
-
-#
-# Set free form format in source files to allow long string for
+# Set free form format in some ROMS source files to allow long string for
 # local directory and compilation flags inside the code.
-#
 
-$(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -Mfree
-$(SCRATCH_DIR)/mod_strings.o: FFLAGS += -Mfree
-$(SCRATCH_DIR)/analytical.o: FFLAGS += -Mfree
-$(SCRATCH_DIR)/biology.o: FFLAGS += -Mfree
-ifdef USE_ADJOINT
-$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -Mfree
-endif
-ifdef USE_REPRESENTER
-$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -Mfree
-endif
-ifdef USE_TANGENT
-$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -Mfree
+ifdef USE_ROMS
+ $(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += $(FREEFLAGS)
+ $(SCRATCH_DIR)/mod_strings.o: FFLAGS += $(FREEFLAGS)
+ $(SCRATCH_DIR)/analytical.o: FFLAGS += $(FREEFLAGS)
+ $(SCRATCH_DIR)/biology.o: FFLAGS += $(FREEFLAGS)
+
+ ifdef USE_ADJOINT
+  $(SCRATCH_DIR)/ad_biology.o: FFLAGS += $(FREEFLAGS)
+ endif
+ ifdef USE_REPRESENTER
+  $(SCRATCH_DIR)/rp_biology.o: FFLAGS += $(FREEFLAGS)
+ endif
+ ifdef USE_TANGENT
+  $(SCRATCH_DIR)/tl_biology.o: FFLAGS += $(FREEFLAGS)
+ endif
 endif
 
 #
 # Supress free format in SWAN source files since there are comments
 # beyond column 72.
-#
 
 ifdef USE_SWAN
 

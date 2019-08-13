@@ -18,6 +18,7 @@
 # CXX            Name of the C++ compiler
 # CXXFLAGS       Flags to the C++ compiler
 # CLEAN          Name of cleaning executable after C-preprocessing
+# LIBS           Required libraries during linking
 # NETCDF_INCDIR  NetCDF include directory
 # NETCDF_LIBDIR  NetCDF libary directory
 # LD             Program to load the objects into an executable
@@ -35,6 +36,7 @@
               CXX := CC
            CFLAGS :=
          CXXFLAGS :=
+             LIBS := $(SCRATCH_DIR)/libNLM.a         # cyclic dependencies
           LDFLAGS :=
                AR := ar
           ARFLAGS := -r
@@ -67,19 +69,19 @@ endif
 ifdef USE_NETCDF4
         NF_CONFIG ?= nf-config
     NETCDF_INCDIR ?= $(shell $(NF_CONFIG) --prefix)/include
-             LIBS := $(shell $(NF_CONFIG) --flibs)
+             LIBS += $(shell $(NF_CONFIG) --flibs)
 else
     NETCDF_INCDIR ?= /usr/local/include
     NETCDF_LIBDIR ?= /usr/local/lib
-             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf
+             LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
 endif
 
 ifdef USE_ARPACK
  ifdef USE_MPI
-   PARPACK_LIBDIR ?= /opt/pgisoft/PARPACK
+   PARPACK_LIBDIR ?= /usr/local/lib
              LIBS += -L$(PARPACK_LIBDIR) -lparpack
  endif
-    ARPACK_LIBDIR ?= /opt/pgisoft/PARPACK
+    ARPACK_LIBDIR ?= /usr/local/lib
              LIBS += -L$(ARPACK_LIBDIR) -larpack
 endif
 
@@ -171,18 +173,18 @@ endif
 # local directory and compilation flags inside the code.
 #
 
-$(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -Mfree
-$(SCRATCH_DIR)/mod_strings.o: FFLAGS := $(MY_FFLAGS) -Mfree
-$(SCRATCH_DIR)/analytical.o: FFLAGS += -Mfree
-$(SCRATCH_DIR)/biology.o: FFLAGS += -Mfree
+$(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -free-form
+$(SCRATCH_DIR)/mod_strings.o: FFLAGS += -free-form
+$(SCRATCH_DIR)/analytical.o: FFLAGS += -free-form
+$(SCRATCH_DIR)/biology.o: FFLAGS += -free-form
 ifdef USE_ADJOINT
-$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -Mfree
+$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -free-form
 endif
 ifdef USE_REPRESENTER
-$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -Mfree
+$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -free-form
 endif
 ifdef USE_TANGENT
-$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -Mfree
+$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -free-form
 endif
 
 #

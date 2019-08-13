@@ -18,6 +18,7 @@
 # CXX            Name of the C++ compiler
 # CXXFLAGS       Flags to the C++ compiler
 # CLEAN          Name of cleaning executable after C-preprocessing
+# LIBS           Required libraries during linking
 # NETCDF_INCDIR  NetCDF include directory
 # NETCDF_LIBDIR  NetCDF libary directory
 # LD             Program to load the objects into an executable
@@ -35,6 +36,7 @@
               CXX := xlC_r
            CFLAGS :=
          CXXFLAGS :=
+             LIBS := $(SCRATCH_DIR)/libNLM.a         # cyclic dependencies
           LDFLAGS :=
                AR := ar
           ARFLAGS := -r
@@ -63,11 +65,11 @@ endif
 ifdef USE_NETCDF4
         NF_CONFIG ?= nf-config
     NETCDF_INCDIR ?= $(shell $(NF_CONFIG) --prefix)/include
-             LIBS := $(shell $(NF_CONFIG) --flibs)
+             LIBS += $(shell $(NF_CONFIG) --flibs)
 else
     NETCDF_INCDIR ?= /usr/local/include
     NETCDF_LIBDIR ?= /usr/local/lib
-             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf
+             LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
 endif
 
 ifdef USE_ARPACK
