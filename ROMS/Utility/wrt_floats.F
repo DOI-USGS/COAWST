@@ -138,7 +138,8 @@
      &                        (/1,tFLTindx(ng)/), (/Nfloats(ng),1/),    &
      &                        ncid = ncFLTid(ng),                       &
      &                        varid = fltVid(idglon,ng))
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       DO l=1,Nfloats(ng)
         IF (FLT(ng)%bounded(l)) THEN
@@ -154,6 +155,7 @@
      &                        varid = fltVid(idxspc,ng))
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
+
       DO l=1,Nfloats(ng)
         IF (FLT(ng)%bounded(l)) THEN
           Tout(l)=FLT(ng)%track(iflat,nf(ng),l)
@@ -168,6 +170,7 @@
      &                        varid = fltVid(idglat,ng))
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
+
       DO l=1,Nfloats(ng)
         IF (FLT(ng)%bounded(l)) THEN
           Tout(l)=FLT(ng)%track(iyspc,nf(ng),l)
@@ -182,6 +185,7 @@
      &                        varid = fltVid(idyspc,ng))
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
+
      DO l=1,Nfloats(ng)
         IF (FLT(ng)%bounded(l)) THEN
           Tout(l)=FLT(ng)%track(iwdph,nf(ng),l)

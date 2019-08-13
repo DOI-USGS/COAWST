@@ -806,6 +806,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+15)=' CCSM_FLUXES2D,'
 #endif
+#ifdef CCSM_ICE_SHORTWAVE
+      IF (Master) WRITE (stdout,20) 'CCSM_ICE_SHORTWAVE',               &
+     &   'Surface bulk fluxes parameterization'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+20)=' CCSM_ICE_SHORTWAVE,'
+#endif
 #if defined CELERITY_READ && defined FORWARD_READ
 !
       IF (Master) WRITE (stdout,20) 'CELERITY_READ',                    &
@@ -1195,6 +1201,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+10)=' FILTERED,'
 #endif
+#ifdef FILTERED_RST
+      IF (Master) WRITE(stdout,20) 'FILTERED_RST',                      &
+     &   'Reading and writing time-filtered restart files'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+14)=' FILTERED_RST,'
+#endif
 #ifdef FLOATS
 !
       IF (Master) WRITE (stdout,20) 'FLOATS',                           &
@@ -1405,6 +1417,14 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+14)=' ICE_CONVSNOW,'
 #endif
+!
+#ifdef ICE_DIAGS
+      IF (Master) WRITE (stdout,20) 'ICE_DIAGS',                        &
+     &   'Include extra diagnostic output from sea ice'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+11)=' ICE_DIAGS,'
+#endif
+!
 #ifdef ICE_EVP
       IF (Master) WRITE (stdout,20) 'ICE_EVP',                          &
      &   'Elastic-viscous-plastic ice rheology.'
@@ -1441,6 +1461,13 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+14)=' ICE_MOMENTUM,'
 #endif
+#ifdef ICE_SHALLOW_LIMIT
+      IF (Master) WRITE (stdout,20) 'ICE_SHALLOW_LIMIT',                &
+     &   "Grounded ice doesn't grow thermodynamically."
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+19)=' ICE_SHALLOW_LIMIT,'
+#endif
+!
 #ifdef ICE_SHOREFAST
       IF (Master) WRITE (stdout,20) 'ICE_SHOREFAST',                    &
      &   'Motionless shorefast ice.'

@@ -1017,7 +1017,6 @@
 !=======================================================================
 !  Read in open boundary conditions from BOUNDARY NetCDF file.
 !=======================================================================
-
 #ifndef ANA_FSOBC
 !
       IF (LprocessOBC(ng)) THEN
@@ -1544,92 +1543,7 @@
      &                    ILB, IUB, 1, 2, 0, Lm(ng)+1, 1,               &
      &                    BOUNDARY(ng) % tiG_north)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                 __FILE__)) RETURN
-
-        END IF
-      END IF
-#  endif
-#  if defined MELT_PONDS && !defined ANA_SFWATOBC
-      IF (.not.(RefinedGrid(ng).and.RefineScale(ng).gt.0)) THEN
-        IF (LBC(iwest,isApond,ng)%acquire) THEN
-          CALL get_ngfld (ng, iNLM, idApdbc(iwest),                     &
-     &                    ncBRYid(idApdbc(iwest),ng),                   &
-     &                    nBCfiles(ng), BRY(1,ng), update(1),           &
-     &                    JLB, JUB, 1, 2, 0, Mm(ng)+1, 1,               &
-     &                    BOUNDARY(ng) % apondG_west)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                 __FILE__)) RETURN
-
-        END IF
-        IF (LBC(ieast,isApond,ng)%acquire) THEN
-          CALL get_ngfld (ng, iNLM, idApdbc(ieast),                     &
-     &                    ncBRYid(idApdbc(ieast),ng),                   &
-     &                    nBCfiles(ng), BRY(1,ng), update(1),           &
-     &                    JLB, JUB, 1, 2, 0, Mm(ng)+1, 1,               &
-     &                    BOUNDARY(ng) % apondG_east)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                 __FILE__)) RETURN
-
-        END IF
-        IF (LBC(isouth,isApond,ng)%acquire) THEN
-          CALL get_ngfld (ng, iNLM, idApdbc(isouth),                    &
-     &                    ncBRYid(idApdbc(isouth),ng),                  &
-     &                    nBCfiles(ng), BRY(1,ng), update(1),           &
-     &                    ILB, IUB, 1, 2, 0, Lm(ng)+1, 1,               &
-     &                    BOUNDARY(ng) % apondG_south)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                 __FILE__)) RETURN
-
-        END IF
-        IF (LBC(inorth,isApond,ng)%acquire) THEN
-          CALL get_ngfld (ng, iNLM, idApdbc(inorth),                    &
-     &                    ncBRYid(idApdbc(inorth),ng),                  &
-     &                    nBCfiles(ng), BRY(1,ng), update(1),           &
-     &                    ILB, IUB, 1, 2, 0, Lm(ng)+1, 1,               &
-     &                    BOUNDARY(ng) % apondG_north)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                 __FILE__)) RETURN
-
-        END IF
-        IF (LBC(iwest,isHpond,ng)%acquire) THEN
-          CALL get_ngfld (ng, iNLM, idHpdbc(iwest),                     &
-     &                    ncBRYid(idHpdbc(iwest),ng),                   &
-     &                    nBCfiles(ng), BRY(1,ng), update(1),           &
-     &                    JLB, JUB, 1, 2, 0, Mm(ng)+1, 1,               &
-     &                    BOUNDARY(ng) % hpondG_west)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                 __FILE__)) RETURN
-
-        END IF
-        IF (LBC(ieast,isHpond,ng)%acquire) THEN
-          CALL get_ngfld (ng, iNLM, idHpdbc(ieast),                     &
-     &                    ncBRYid(idHpdbc(ieast),ng),                   &
-     &                    nBCfiles(ng), BRY(1,ng), update(1),           &
-     &                    JLB, JUB, 1, 2, 0, Mm(ng)+1, 1,               &
-     &                    BOUNDARY(ng) % hpondG_east)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                 __FILE__)) RETURN
-
-        END IF
-        IF (LBC(isouth,isHpond,ng)%acquire) THEN
-          CALL get_ngfld (ng, iNLM, idHpdbc(isouth),                    &
-     &                    ncBRYid(idHpdbc(isouth),ng),                  &
-     &                    nBCfiles(ng), BRY(1,ng), update(1),           &
-     &                    ILB, IUB, 1, 2, 0, Lm(ng)+1, 1,               &
-     &                    BOUNDARY(ng) % hpondG_south)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                 __FILE__)) RETURN
-
-        END IF
-        IF (LBC(inorth,isHpond,ng)%acquire) THEN
-          CALL get_ngfld (ng, iNLM, idHpdbc(inorth),                    &
-     &                    ncBRYid(idHpdbc(inorth),ng),                  &
-     &                    nBCfiles(ng), BRY(1,ng), update(1),           &
-     &                    ILB, IUB, 1, 2, 0, Lm(ng)+1, 1,               &
-     &                    BOUNDARY(ng) % hpondG_north)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                 __FILE__)) RETURN
-
+     &               __FILE__)) RETURN
         END IF
       END IF
 #  endif
@@ -1909,46 +1823,93 @@
      &                   __FILE__)) RETURN
 # endif
 
-# if !defined ANA_AICLIMA && defined AICLIMATOLOGY
-      CALL get_2dfld (ng, iNLM, idAIclm, ncCLMid(idAIclm,ng),           &
-     &                nCLMfiles(ng), CLM(1,ng), update(1),              &
-     &                LBi, UBi, LBj, UBj, 2, 1,                         &
-#  ifdef MASKING
-     &                GRID(ng) % rmask,                                 &
+# ifdef ICE_MODEL
+#  ifndef ANA_AICLIMA
+      IF (LaiCLM(ng)) THEN
+        CALL get_2dfld (ng, iNLM, idAIclm, ncCLMid(idAIclm,ng),         &
+     &                  nCLMfiles(ng), CLM(1,ng), update(1),            &
+     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
+#   ifdef MASKING
+     &                  GRID(ng) % rmask,                               &
+#   endif
+     &                  CLIMA(ng) % aiclmG)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &               __FILE__)) RETURN
+        CALL get_2dfld (ng, iNLM, idHIclm, ncCLMid(idHIclm,ng),         &
+     &                  nCLMfiles(ng), CLM(1,ng), update(1),            &
+     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
+#   ifdef MASKING
+     &                  GRID(ng) % rmask,                               &
+#   endif
+     &                  CLIMA(ng) % hiclmG)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &               __FILE__)) RETURN
+        CALL get_2dfld (ng, iNLM, idHSNclm, ncCLMid(idHSNclm,ng),       &
+     &                  nCLMfiles(ng), CLM(1,ng), update(1),            &
+     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
+#   ifdef MASKING
+     &                  GRID(ng) % rmask,                               &
+#   endif
+     &                  CLIMA(ng) % hsnclmG)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &               __FILE__)) RETURN
+      END IF
 #  endif
-     &                CLIMA(ng) % aiclmG)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-      CALL get_2dfld (ng, iNLM, idHIclm, ncCLMid(idHIclm,ng),           &
-     &                nCLMfiles(ng), CLM(1,ng), update(1),              &
-     &                LBi, UBi, LBj, UBj, 2, 1,                         &
+
+# ifndef ANA_SICLIMA
+      IF (LsiCLM(ng)) THEN
+        CALL get_2dfld (ng, iNLM, idS11clm, ncCLMid(idS11clm,ng),       &
+     &                  nCLMfiles(ng), CLM(1,ng), update(1),            &
+     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
 #  ifdef MASKING
-     &                GRID(ng) % rmask,                                 &
+     &                  GRID(ng) % rmask,                               &
 #  endif
-     &                CLIMA(ng) % hiclmG)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+     &                  CLIMA(ng) % sig11clmG)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &               __FILE__)) RETURN
+        CALL get_2dfld (ng, iNLM, idS12clm, ncCLMid(idS12clm,ng),       &
+     &                  nCLMfiles(ng), CLM(1,ng), update(1),            &
+     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
+#  ifdef MASKING
+     &                  GRID(ng) % rmask,                               &
+#  endif
+     &                  CLIMA(ng) % sig12clmG)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &               __FILE__)) RETURN
+        CALL get_2dfld (ng, iNLM, idS22clm, ncCLMid(idS22clm,ng),       &
+     &                  nCLMfiles(ng), CLM(1,ng), update(1),            &
+     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
+#  ifdef MASKING
+     &                  GRID(ng) % rmask,                               &
+#  endif
+     &                  CLIMA(ng) % sig22clmG)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &               __FILE__)) RETURN
+      END IF
 # endif
 
-# if !defined ANA_MICLIMA && defined MICLIMATOLOGY
-      CALL get_2dfld (ng, iNLM, idUIclm, ncCLMid(idUIclm,ng),           &
-     &                nCLMfiles(ng), CLM(1,ng), update(1),              &
-     &                LBi, UBi, LBj, UBj, 2, 1,                         &
-#  ifdef MASKING
-     &                GRID(ng) % rmask,                                 &
+# ifndef ANA_MICLIMA
+      IF (LmiCLM(ng)) THEN
+        CALL get_2dfld (ng, iNLM, idUIclm, ncCLMid(idUIclm,ng),         &
+     &                  nCLMfiles(ng), CLM(1,ng), update(1),            &
+     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
+#   ifdef MASKING
+     &                  GRID(ng) % rmask,                               &
+#   endif
+     &                  CLIMA(ng) % uiclmG)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &               __FILE__)) RETURN
+        CALL get_2dfld (ng, iNLM, idVIclm, ncCLMid(idVIclm,ng),         &
+     &                  nCLMfiles(ng), CLM(1,ng), update(1),            &
+     &                  LBi, UBi, LBj, UBj, 2, 1,                       &
+#   ifdef MASKING
+     &                  GRID(ng) % rmask,                               &
+#   endif
+     &                  CLIMA(ng) % viclmG)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &               __FILE__)) RETURN
+      END IF
 #  endif
-     &                CLIMA(ng) % uiclmG)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-      CALL get_2dfld (ng, iNLM, idVIclm, ncCLMid(idVIclm,ng),           &
-     &                nCLMfiles(ng), CLM(1,ng), update(1),              &
-     &                LBi, UBi, LBj, UBj, 2, 1,                         &
-#  ifdef MASKING
-     &                GRID(ng) % rmask,                                 &
-#  endif
-     &                CLIMA(ng) % viclmG)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
 # endif
 #endif
 

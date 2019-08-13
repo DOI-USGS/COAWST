@@ -226,6 +226,18 @@
                   END IF
                   exit_flag=5
                 END IF
+              CASE ('Mix')
+                IF (.not.S(ibry,ifield,ng)%mixed) THEN
+                  IF (Master) THEN
+                    WRITE (stdout,20) B(ibry),                          &
+     &                                TRIM(Vname(1,idBvar(ifield))),    &
+     &                                TRIM(string(ibry)),               &
+     &                                'S(',ibry,ifield,ng,')%mixed',    &
+     &                                S(ibry,ifield,ng)%mixed,          &
+     &                                TRIM(ncname)
+                  END IF
+                  exit_flag=5
+                END IF
               CASE ('Nes')
                 IF (.not.S(ibry,ifield,ng)%nested) THEN
                   IF (Master) THEN
@@ -448,6 +460,8 @@
             string(ibry)='Fla    '
           ELSE IF (S(ibry,ifield,ng)%gradient) THEN
             string(ibry)='Gra    '
+          ELSE IF (S(ibry,ifield,ng)%mixed) THEN
+            string(ibry)='Mix    '
           ELSE IF (S(ibry,ifield,ng)%nested) THEN
             string(ibry)='Nes    '
           ELSE IF (S(ibry,ifield,ng)%periodic) THEN
@@ -538,6 +552,8 @@
             string(ibry,ng)='Flather    '
           ELSE IF (S(ibry,ifield,ng)%gradient) THEN
             string(ibry,ng)='Gradient   '
+          ELSE IF (S(ibry,ifield,ng)%mixed) THEN
+            string(ibry,ng)='Mixed      '
           ELSE IF (S(ibry,ifield,ng)%nested) THEN
             string(ibry,ng)='Nested     '
           ELSE IF (S(ibry,ifield,ng)%periodic) THEN

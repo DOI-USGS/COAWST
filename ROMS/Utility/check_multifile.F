@@ -115,6 +115,8 @@
             ncname=BRY(i,ng)%files(ifile)
             foundit=check_file(ng, model, ncname, Tmin, Tmax, Tscale,   &
      &                         Lcheck)
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
             BRY(i,ng)%time_min(ifile)=Tmin
             BRY(i,ng)%time_max(ifile)=Tmax
           END DO
@@ -169,7 +171,7 @@
      &                     __FILE__)) RETURN
           END IF
 !
-!  Check if there is boundary data to the end of the simulation.
+!  Check if there is boundary data up to the end of the simulation.
 !
           IF (Lcheck) THEN
             IF (model.eq.iADM) THEN
@@ -182,6 +184,8 @@
      &                              'first ', Tmin_code, F_code
                 END IF
                 exit_flag=4
+                IF (FoundError(exit_flag, NoError, __LINE__,            &
+     &                         __FILE__)) RETURN
               END IF
             ELSE
               Tmax=Tscale*BRY(i,ng)%time_max(Nfiles)

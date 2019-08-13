@@ -101,10 +101,9 @@
 !
       integer :: i, j
 #if defined ALBEDO_CLOUD || defined DIURNAL_SRFLUX
-      integer :: iday, month, year
       real(dp) :: hour, yday
       real(r8) :: Dangle, Hangle, LatRad
-      real(r8) :: cff1, cff2
+      real(r8) :: cff1, cff2, hour, yday
 # ifdef ALBEDO_CLOUD
       real(r8) :: Rsolar, e_sat, vap_p, zenith
 # endif
@@ -120,7 +119,7 @@
 !-----------------------------------------------------------------------
 !  Compute shortwave radiation (degC m/s):
 !
-!  ALBEDO option: Compute shortwave radiation flux using the Laevastu
+!  ALBEDO_CLOUD option: Compute shortwave radiation flux using the Laevastu
 !                 cloud correction to the Zillman equation for cloudless
 !  radiation (Parkinson and Washington 1979, JGR, 84, 311-337).  Notice
 !  that flux is scaled from W/m2 to degC m/s by dividing by (rho0*Cp).
@@ -161,9 +160,9 @@
       DO j=JstrT,JendT
         DO i=IstrT,IendT
 !
-!  Local daylight is a function of the declination (Dangle) and hour
-!  angle adjusted for the local meridian (Hangle-lonr(i,j)/15.0).
-!  The 15.0 factor is because the sun moves 15 degrees every hour.
+!  Local daylight, GMT time zone, is a function of the declination
+!  (Dangle) and hour angle adjusted for the local meridian
+!  (Hangle-lonr(i,j)*deg2rad).
 !
           LatRad=latr(i,j)*deg2rad
           cff1=SIN(LatRad)*SIN(Dangle)
@@ -184,7 +183,6 @@
 !!
 !
           srflx(i,j)=0.0_r8
-!         zenith=cff1+cff2*COS(Hangle-lonr(i,j)*deg2rad/15.0_r8)
           zenith=cff1+cff2*COS(Hangle-lonr(i,j)*deg2rad)
           IF (zenith.gt.0.0_r8) THEN
             cff=(0.7859_r8+0.03477_r8*Tair(i,j))/                       &

@@ -91,7 +91,7 @@ ifdef USE_DEBUG
            CFLAGS += -g
          CXXFLAGS += -g
 else
-           FFLAGS += -O3
+           FFLAGS += -O3  ####-ffast-math
            CFLAGS += -O3
          CXXFLAGS += -O3
 endif

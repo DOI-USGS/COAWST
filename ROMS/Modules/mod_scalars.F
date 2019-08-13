@@ -503,6 +503,9 @@
         logical, allocatable :: Lm2CLM(:)            ! 2D momentum
         logical, allocatable :: Lm3CLM(:)            ! 3D momentum
         logical, allocatable :: LtracerCLM(:,:)      ! tracers
+        logical, allocatable :: LmiCLM(:)            ! ice momentum
+        logical, allocatable :: LaiCLM(:)            ! ice tracers
+        logical, allocatable :: LsiCLM(:)            ! ice tracers
 !
 !  Switched to nudge to climatology fields.
 !
@@ -510,6 +513,9 @@
         logical, allocatable :: LnudgeM2CLM(:)       ! 2D momentum
         logical, allocatable :: LnudgeM3CLM(:)       ! 3D momentum
         logical, allocatable :: LnudgeTCLM(:,:)      ! tracers
+        logical, allocatable :: LnudgeMICLM(:)       ! ice momentum
+        logical, allocatable :: LnudgeAICLM(:)       ! ice tracers
+        logical, allocatable :: LnudgeSICLM(:)       ! ice tracers
 !
 !  Switches to activate point Source/Sinks in an application:
 !    * Horizontal momentum transport (u or v)
@@ -1344,6 +1350,8 @@
         real(dp), allocatable :: M2nudg(:)         ! 2D momentum
         real(dp), allocatable :: M3nudg(:)         ! 3D momentum
         real(dp), allocatable :: Tnudg(:,:)        ! Tracers
+        real(dp), allocatable :: Tnudg_SSS(:)      ! Sea surface salinity
+        real(dp), allocatable :: sss_mismatch_threshold(:)! Sea surface salinity
 !
 !  Variables used to impose mass flux conservation in open boundary
 !  configurations.
@@ -1816,7 +1824,9 @@
         real(r8) :: spec_heat_air =  1004._r8
         real(r8) :: trans_coeff = 1.75E-3
         real(r8) :: sublim_latent_heat = 2.834E+6
-        real(r8) :: t0deg = 273.15_r8
+        real(r8) :: t0deg = 273.15_r8                     ! [Kelvin]
+!       real(r8), parameter :: sice_ref = 3.2_r8          ! [psu]
+        real(r8), parameter :: sice_ref = 7.0_r8          ! [psu]
 
         real(r8), allocatable :: dtice(:)
         real(r8), allocatable :: dte(:)
@@ -2107,12 +2117,6 @@
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 
-#ifdef ICE_MODEL
-      IF (.not.allocated(Lice)) THEN
-        allocate ( Lice(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-#endif
       IF (.not.allocated(Lbiology)) THEN
         allocate ( Lbiology(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -2121,6 +2125,12 @@
         allocate ( Lfloats(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+#ifdef ICE_MODEL
+      IF (.not. allocated(Lice)) THEN
+        allocate ( Lice(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+#endif
       IF (.not.allocated(Lsediment)) THEN
         allocate ( Lsediment(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -2209,6 +2219,19 @@
         Dmem(1)=Dmem(1)+REAL(MT*Ngrids,r8)
       END IF
 
+      IF (.not. allocated(LmiCLM)) THEN
+        allocate ( LmiCLM(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not. allocated(LaiCLM)) THEN
+        allocate ( LaiCLM(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not. allocated(LsiCLM)) THEN
+        allocate ( LsiCLM(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+
       IF (.not.allocated(Lnudging)) THEN
         allocate ( Lnudging(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -2224,6 +2247,19 @@
       IF (.not.allocated(LnudgeTCLM)) THEN
         allocate ( LnudgeTCLM(MT,Ngrids) )
         Dmem(1)=Dmem(1)+REAL(MT*Ngrids,r8)
+      END IF
+
+      IF (.not. allocated(LnudgeMICLM)) THEN
+        allocate ( LnudgeMICLM(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not. allocated(LnudgeAICLM)) THEN
+        allocate ( LnudgeAICLM(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not. allocated(LnudgeSICLM)) THEN
+        allocate ( LnudgeSICLM(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 
       IF (.not.allocated(LuvSrc)) THEN
@@ -2246,6 +2282,9 @@
       IF (.not.allocated(maxrho)) THEN
         allocate ( maxrho(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(mintemp)) THEN
+        allocate ( mintemp(Ngrids) )
       END IF
 
       IF (.not.allocated(levsfrc)) THEN
@@ -3148,6 +3187,14 @@
       END IF
       IF (.not.allocated(Tnudg)) THEN
         allocate ( Tnudg(MT,Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(MT*Ngrids,r8)
+      END IF
+      IF (.not.allocated(Tnudg_SSS)) THEN
+        allocate ( Tnudg_SSS(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not. allocated(sss_mismatch_threshold)) THEN
+        allocate ( sss_mismatch_threshold(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 
@@ -3669,10 +3716,16 @@
         Lnudging(ng)=.FALSE.
         LnudgeM2CLM(ng)=.FALSE.
         LnudgeM3CLM(ng)=.FALSE.
+        LnudgeMICLM(ng)=.FALSE.
+        LnudgeAICLM(ng)=.FALSE.
+        LnudgeSICLM(ng)=.FALSE.
         Lclimatology(ng)=.FALSE.
         Lm2CLM(ng)=.FALSE.
         Lm3CLM(ng)=.FALSE.
         LsshCLM(ng)=.FALSE.
+        LmiCLM(ng)=.FALSE.
+        LaiCLM(ng)=.FALSE.
+        LsiCLM(ng)=.FALSE.
         Lsponge(ng)=.FALSE.
         LuvSponge(ng)=.FALSE.
         LuvSrc(ng)=.FALSE.
@@ -3785,8 +3838,8 @@
 
         LdefADJ(ng)=.FALSE.
         LdefAVG(ng)=.TRUE.
-        LdefDAI(ng)=.FALSE.
         LdefAVG2(ng)=.TRUE.
+        LdefDAI(ng)=.FALSE.
         LdefDIA(ng)=.TRUE.
         LdefERR(ng)=.FALSE.
 #ifdef FLOATS

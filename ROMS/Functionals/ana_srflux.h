@@ -110,6 +110,8 @@
 #endif
       real(r8) :: cff
 
+      real(r8), parameter :: alb_w=0.06_r8
+
 #include "set_bounds.h"
 
 #if defined ALBEDO_CLOUD || defined DIURNAL_SRFLUX

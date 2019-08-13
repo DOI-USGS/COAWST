@@ -5,7 +5,7 @@
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 #
-# Include file for GNU g95 on Cygwin
+# Include file for GNU Fortran compiler on Cygwin
 # -------------------------------------------------------------------------
 #
 # ARPACK_LIBDIR  ARPACK libary directory
@@ -13,8 +13,13 @@
 # FFLAGS         Flags to the fortran compiler
 # CPP            Name of the C-preprocessor
 # CPPFLAGS       Flags to the C-preprocessor
+# HDF5_INCDIR    HDF5 include directory
+# HDF5_LIBDIR    HDF5 library directory
+# HDF5_LIBS      HDF5 library switches
+# NF_CONFIG      NetCDF Fortran configuration script
 # NETCDF_INCDIR  NetCDF include directory
-# NETCDF_LIBDIR  NetCDF libary directory
+# NETCDF_LIBDIR  NetCDF library directory
+# NETCDF_LIBS    NetCDF library switches
 # LD             Program to load the objects into an executable
 # LDFLAGS        Flags to the loader
 # RANLIB         Name of ranlib command
@@ -27,38 +32,120 @@
 
                FC := gfortran
            FFLAGS := -frepack-arrays
+       FIXEDFLAGS := -ffixed-form
+        FREEFLAGS := -ffree-form -ffree-line-length-none
               CPP := /usr/bin/cpp
-         CPPFLAGS := -P -traditional
+         CPPFLAGS := -P -traditional -w
                CC := gcc
               CXX := g++
            CFLAGS :=
          CXXFLAGS :=
+           INCDIR := /usr/include /usr/local/bin
+            SLIBS := -L/usr/local/lib -L/usr/lib
+            ULIBS :=
+             LIBS :=
+       MOD_SUFFIX := mod
+               LD := $(FC)
           LDFLAGS :=
                AR := ar
           ARFLAGS := -r
             MKDIR := mkdir -p
+               CP := cp -p -v
                RM := rm -f
            RANLIB := ranlib
              PERL := perl
              TEST := test
 
-        MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
+#--------------------------------------------------------------------------
+# Compiling flags for ROMS Applications.
+#--------------------------------------------------------------------------
 
-#
+ifdef USE_ROMS
+ ifdef USE_DEBUG
+           FFLAGS += -g
+           FFLAGS += -fbounds-check
+           FFLAGS += -fbacktrace
+           FFLAGS += -fcheck=all
+#          FFLAGS += -fsanitize=address -fsanitize=undefined
+           FFLAGS += -finit-real=nan -ffpe-trap=invalid,zero,overflow
+ else
+           FFLAGS += -O3
+           FFLAGS += -ffast-math
+ endif
+        MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
+endif
+
+#--------------------------------------------------------------------------
+# Compiling flags for CICE Applications.
+#--------------------------------------------------------------------------
+
+ifdef CICE_APPLICATION
+          CPPDEFS := -DLINUS $(MY_CPP_FLAGS)
+ ifdef USE_DEBUG
+           FFLAGS += -g
+           FFLAGS += -fbounds-check
+#          FFLAGS += -fcheck=all
+           FFLAGS += -fsanitize=address -fsanitize=undefined
+ else
+           FFLAGS := -O3 -w
+ endif
+endif
+
+#--------------------------------------------------------------------------
+# Coupled models.  Notice Linux needs the libraries repeated for
+# dependencies for some of the coupled components.
+#--------------------------------------------------------------------------
+
+ifdef USE_COAMPS
+             LIBS += $(COAMPS_LIB_DIR)/coamps_driver.a
+             LIBS += $(COAMPS_LIB_DIR)/libaa.a
+             LIBS += $(COAMPS_LIB_DIR)/libam.a
+             LIBS += $(COAMPS_LIB_DIR)/libashare.a
+             LIBS += $(COAMPS_LIB_DIR)/libcoamps.a
+             LIBS += $(COAMPS_LIB_DIR)/libfnoc.a
+             LIBS += $(COAMPS_LIB_DIR)/libaa.a
+             LIBS += $(COAMPS_LIB_DIR)/libam.a
+             LIBS += $(COAMPS_LIB_DIR)/libashare.a
+             LIBS += $(COAMPS_LIB_DIR)/libcoamps.a
+             LIBS += $(COAMPS_LIB_DIR)/libfnoc.a
+             LIBS += $(COAMPS_LIB_DIR)/libfishpak.a
+             LIBS += $(COAMPS_LIB_DIR)/libtracer.a
+endif
+
+ifdef CICE_APPLICATION
+            SLIBS += $(SLIBS) $(LIBS)
+endif
 # Library locations, can be overridden by environment variables.
-#
+#--------------------------------------------------------------------------
+
+          LDFLAGS := $(FFLAGS)
 
 ifdef USE_NETCDF4
         NF_CONFIG ?= nf-config
     NETCDF_INCDIR ?= $(shell $(NF_CONFIG) --prefix)/include
-             LIBS := $(shell $(NF_CONFIG) --flibs)
+             LIBS += $(shell $(NF_CONFIG) --flibs)
+           INCDIR += $(NETCDF_INCDIR) $(INCDIR)
 else
-    NETCDF_INCDIR ?= /usr/local/include
-    NETCDF_LIBDIR ?= /usr/local/lib
-            LIBS := -L$(NETCDF_LIBDIR) -lnetcdff -lnetcdf
+    NETCDF_INCDIR ?= /usr/include
+    NETCDF_LIBDIR ?= /usr/lib
+      NETCDF_LIBS ?= -lnetcdf
+             LIBS += -L$(NETCDF_LIBDIR) $(NETCDF_LIBS)
+           INCDIR += $(NETCDF_INCDIR) $(INCDIR)
+endif
+
+ifdef USE_HDF5
+      HDF5_INCDIR ?= /usr/include
+      HDF5_LIBDIR ?= /usr/lib
+        HDF5_LIBS ?= -lhdf5_fortran -lhdf5hl_fortran -lhdf5 -lz
+             LIBS += -L$(HDF5_LIBDIR) $(HDF5_LIBS)
+           INCDIR += $(HDF5_INCDIR)
 endif
 
 ifdef USE_ARPACK
+ ifdef USE_MPI
+   PARPACK_LIBDIR ?= /usr/local/lib
+             LIBS += -L$(PARPACK_LIBDIR) -lparpack
+ endif
     ARPACK_LIBDIR ?= /usr/local/lib
              LIBS += -L$(ARPACK_LIBDIR) -larpack
 endif
@@ -75,13 +162,13 @@ ifdef USE_MPI
            FFLAGS += #-mpe=mpicheck
   endif
  else
-  # MPI without mpif90 is not currently supported
+             LIBS += -lfmpi -lmpi
  endif
 endif
 
 ifdef USE_OpenMP
          CPPFLAGS += -D_OPENMP
-           FFLAGS += -fopenmp
+           FFLAGS += -fopenmp -static-libgcc
 endif
 
 ifdef USE_DEBUG
@@ -137,47 +224,66 @@ endif
 
 #
 # Use full path of compiler.
-#
+
                FC := $(shell which ${FC})
                LD := $(FC)
 
-#
+#--------------------------------------------------------------------------
+# ROMS specific rules.
+#--------------------------------------------------------------------------
+
 # Turn off bounds checking for function def_var, as "dimension(*)"
 # declarations confuse Gnu Fortran 95 bounds-checking code.
-#
 
-$(SCRATCH_DIR)/def_var.o: FFLAGS += -fno-bounds-check
+ifdef USE_ROMS
+ $(SCRATCH_DIR)/def_var.o: FFLAGS += -fno-bounds-check
+endif
 
-#
 # Allow integer overflow in ran_state.F.  This is not allowed
 # during -O3 optimization. This option should be applied only for
 # Gfortran versions >= 4.2.
-#
 
-FC_TEST := $(findstring $(shell ${FC} --version | head -1 | cut -d " " -f 5 | \
-                              cut -d "." -f 1-2),4.0 4.1)
+ifdef USE_ROMS
+ FC_TEST := $(findstring $(shell ${FC} --version | head -1 | \
+                              awk '{ sub("Fortran 95", "Fortran"); print }' | \
+                              cut -d " " -f 4 | \
+                              cut -d "." -f 1-2), \
+             4.0 4.1)
 
-ifeq "${FC_TEST}" ""
-$(SCRATCH_DIR)/ran_state.o: FFLAGS += -fno-strict-overflow
+ ifeq "${FC_TEST}" ""
+  $(SCRATCH_DIR)/ran_state.o: FFLAGS += -fno-strict-overflow
+ endif
 endif
 
-#
-# Set free form format in source files to allow long string for
+# Set free form format in some ROMS source files to allow long string for
 # local directory and compilation flags inside the code.
-#
 
-$(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -ffree-form -ffree-line-length-none
-$(SCRATCH_DIR)/mod_strings.o: FFLAGS += -ffree-form -ffree-line-length-none
-$(SCRATCH_DIR)/analytical.o: FFLAGS += -ffree-form -ffree-line-length-none
-$(SCRATCH_DIR)/biology.o: FFLAGS += -ffree-form -ffree-line-length-none
-ifdef USE_ADJOINT
-$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -ffree-form -ffree-line-length-none
+ifdef USE_ROMS
+ $(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += $(FREEFLAGS)
+ $(SCRATCH_DIR)/mod_strings.o: FFLAGS += $(FREEFLAGS)
+ $(SCRATCH_DIR)/analytical.o: FFLAGS += $(FREEFLAGS)
+ $(SCRATCH_DIR)/biology.o: FFLAGS += $(FREEFLAGS)
+
+ ifdef USE_ADJOINT
+  $(SCRATCH_DIR)/ad_biology.o: FFLAGS += $(FREEFLAGS)
+ endif
+ ifdef USE_REPRESENTER
+  $(SCRATCH_DIR)/rp_biology.o: FFLAGS += $(FREEFLAGS)
+ endif
+ ifdef USE_TANGENT
+  $(SCRATCH_DIR)/tl_biology.o: FFLAGS += $(FREEFLAGS)
+ endif
 endif
-ifdef USE_REPRESENTER
-$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -ffree-form -ffree-line-length-none
-endif
-ifdef USE_TANGENT
-$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -ffree-form -ffree-line-length-none
+
+#--------------------------------------------------------------------------
+# Model coupling specific rules.
+#--------------------------------------------------------------------------
+
+# Add COAMPS library directory to include path of ESMF coupling files.
+
+ifdef USE_COAMPS
+ $(SCRATCH_DIR)/esmf_atm.o: FFLAGS += -I$(COAMPS_LIB_DIR)
+ $(SCRATCH_DIR)/esmf_esm.o: FFLAGS += -I$(COAMPS_LIB_DIR)
 endif
 
 #

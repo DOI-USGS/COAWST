@@ -625,30 +625,6 @@
 #  ifdef ICESHELF
 !
 !-----------------------------------------------------------------------
-!  If ice shelf cavities, zero out for now the surface tracer flux
-!  over the ice.
-!-----------------------------------------------------------------------
-!
-      DO itrc=1,NT(ng)
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
-            IF (zice(i,j).ne.0.0_r8) THEN
-              stflx(i,j,itrc)=0.0_r8
-            END IF
-          END DO
-        END DO
-      END DO
-#   ifdef SHORTWAVE
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          IF (zice(i,j).ne.0.0_r8) THEN
-            srflx(i,j)=0.0_r8
-          END IF
-        END DO
-      END DO
-#   endif
-!
-!-----------------------------------------------------------------------
 !  If ice shelf cavities, replace surface wind stress with ice shelf
 !  cavity stress (m2/s2).
 !-----------------------------------------------------------------------

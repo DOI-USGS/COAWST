@@ -1106,6 +1106,77 @@
         allocate ( AVERAGE(ng) % avgchu_iw(LBi:UBi,LBj:UBj) )
         Dmem(ng)=Dmem(ng)+size2d
       END IF
+#ifdef ICE_DIAGS
+! Ice diagnostics
+      IF (Aout(idAlbe,ng)) THEN
+        allocate ( AVERAGE(ng) % avgAlbe(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idAlbI,ng)) THEN
+        allocate ( AVERAGE(ng) % avgAlbI(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idLWdn,ng)) THEN
+        allocate ( AVERAGE(ng) % avgLWdn(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idSWdn,ng)) THEN
+        allocate ( AVERAGE(ng) % avgSWdn(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idLatI,ng)) THEN
+        allocate ( AVERAGE(ng) % avgLatI(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idSenI,ng)) THEN
+        allocate ( AVERAGE(ng) % avgSenI(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idLWupI,ng)) THEN
+        allocate ( AVERAGE(ng) % avgLWupI(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idSWupI,ng)) THEN
+        allocate ( AVERAGE(ng) % avgSWupI(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idSWinI,ng)) THEN
+        allocate ( AVERAGE(ng) % avgSWinI(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idSWthruI,ng)) THEN
+        allocate ( AVERAGE(ng) % avgSWthruI(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idSaltI,ng)) THEN
+        allocate ( AVERAGE(ng) % avgSaltI(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idSaltL,ng)) THEN
+        allocate ( AVERAGE(ng) % avgSaltL(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idQao,ng)) THEN
+        allocate ( AVERAGE(ng) % avgQao(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idQai,ng)) THEN
+        allocate ( AVERAGE(ng) % avgQai(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idQio,ng)) THEN
+        allocate ( AVERAGE(ng) % avgQio(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idQi2,ng)) THEN
+        allocate ( AVERAGE(ng) % avgQi2(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idSnoI,ng)) THEN
+        allocate ( AVERAGE(ng) % avgSnoI(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+#endif
 # endif
 !
 !  Time-averaged quadratic fields.
@@ -2273,7 +2344,7 @@
             AVERAGE(ng) % avgit(i,j,itrc) = IniVal
           END DO
         END DO
-#  elif defined BERING_10K       
+#  elif defined BERING_10K
       IF (Aout(idIceNO3,ng)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
@@ -2401,6 +2472,13 @@
           END DO
         END DO
       END IF
+      IF (Aout(idT2ice,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgt2ice(i,j) = IniVal
+          END DO
+        END DO
+      END IF
       IF (Aout(idHsno,ng)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
@@ -2408,22 +2486,6 @@
           END DO
         END DO
       END IF
-#  ifdef MELT_PONDS
-      IF (Aout(idApond,ng)) THEN
-        DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            AVERAGE(ng) % avgapond(i,j) = IniVal
-          END DO
-        END DO
-      END IF
-      IF (Aout(idHpond,ng)) THEN
-        DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            AVERAGE(ng) % avghpond(i,j) = IniVal
-          END DO
-        END DO
-      END IF
-#  endif
       IF (Aout(idIomflx,ng)) THEN
         DO j=Jmin,Jmax
           DO i=Imin,Imax
@@ -2529,6 +2591,127 @@
           END DO
         END DO
       END IF
+#  ifdef ICE_DIAGS
+      IF (Aout(idAlbe,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgAlbe(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idAlbI,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgAlbI(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idLWdn,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgLWdn(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idSWdn,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgSWdn(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idLatI,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgLatI(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idSenI,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgSenI(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idLWupI,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgLWupI(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idSWupI,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgSWupI(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idSWinI,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgSWinI(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idSWthruI,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgSWthruI(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idSaltI,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgSaltI(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idSaltL,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgSaltL(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idQao,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgQao(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idQai,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgQai(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idQio,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgQio(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idQi2,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgQi2(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idSnoI,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgSnoI(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+#  endif
 # endif
 
       RETURN

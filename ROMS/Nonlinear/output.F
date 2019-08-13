@@ -173,6 +173,7 @@
         END IF
       END IF
 # endif
+!
 !-----------------------------------------------------------------------
 !  If appropriate, process nonlinear quicksave NetCDF file.
 !-----------------------------------------------------------------------
@@ -212,8 +213,13 @@
             QCK(ng)%Nrec(Fcount)=0
             ifile=(iic(ng)-1)/ndefQCK(ng)+1
             IF (Master) THEN
-              WRITE (QCK(ng)%name,10) TRIM(QCK(ng)%base), ifile
+              WRITE (QCK(ng)%name,12) TRIM(QCK(ng)%base), ifile
             END IF
+#ifdef LONG_NUMS
+  12          FORMAT (a,'_',i5.5,'.nc')
+#else
+  12          FORMAT (a,'_',i4.4,'.nc')
+#endif
 # ifdef DISTRIBUTE
             CALL mp_bcasts (ng, iNLM, QCK(ng)%name)
 # endif
@@ -504,13 +510,15 @@
               CALL netcdf_close(ng, iNLM, AVG2(ng)%ncid)
             END IF
             CALL def_avg2 (ng, Newfile)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
             LwrtAVG2(ng)=.TRUE.
           END IF
         ELSE
           IF (iic(ng).eq.ntstart(ng)) THEN
             CALL def_avg2 (ng, ldefout(ng))
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
             LwrtAVG2(ng)=.TRUE.
             LdefAVG2(ng)=.FALSE.
           END IF
@@ -520,8 +528,9 @@
 !  Write out data into time-averaged NetCDF file.
 !
       IF (LwrtAVG2(ng)) THEN
-        IF ((iic(ng).gt.ntstart(ng)).and.                               &
-     &      (MOD(iic(ng)-1,nAVG2(ng)).eq.0)) THEN
+        IF (((iic(ng).gt.ntstart(ng)).and.                              &
+     &       (MOD(iic(ng)-1,nAVG2(ng)).eq.0)).or.                       &
+     &      ((iic(ng).ge.ntsAVG2(ng)).and.(nAVG2(ng).eq.1))) THEN
           CALL wrt_avg2 (ng)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                     __FILE__)) RETURN
@@ -638,8 +647,8 @@
 #else
           CALL def_station (ng, ldefout(ng))
 #endif
-          IF (FoundError(exit_flag, NoError, __LINE__,                 &
-     &                     __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
           LdefSTA(ng)=.FALSE.
         END IF
 !
@@ -714,11 +723,12 @@
      &      (MOD(iic(ng)-1,nRST(ng)).eq.0)) THEN
           CALL wrt_rst (ng)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                     __FILE__)) RETURN
+     &                   __FILE__)) RETURN
 # ifdef FILTERED_RST
           DO i=1,FILN
             CALL wrt_filt (ng, i)
-            IF (exit_flag.ne.NoError) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
           END DO
 # endif
         END IF

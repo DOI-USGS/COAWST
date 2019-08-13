@@ -60,6 +60,7 @@
 !               Finfo( 8,*) => minimum value for current data.         !
 !               Finfo( 9,*) => maximum value for current data.         !
 !               Finfo(10,*) => value of scale_factor attribute if any. !
+!               Finfo(11,*) => value of add_offset attribute if any.   !
 !  Fscale     Scale to convert input data to model units.              !
 !  Fpoint     Latest two-time records of input point data.             !
 !  Tintrp     Time (sec) of latest field snapshots used for            !
@@ -439,7 +440,9 @@
         integer  :: idUnms         ! surface U-momentum stress (NCEP)
         integer  :: idVnms         ! surface V-momentum stress (NCEP)
 
+! Ice variables
         integer  :: idTimid        ! interior ice temperature
+        integer  :: idT2ice        ! top of ice temperature
         integer  :: idTauiw        ! ice-water friction velocity
         integer  :: idChuiw        ! ice-water momentum transfer coefficient
         integer  :: idS0mk         ! salinity of molecular sub-layer under ice
@@ -468,8 +471,29 @@
         integer  :: idSig12        ! internal ice stress component 12
         integer  :: idAIclm        ! ice concentration climatology
         integer  :: idHIclm        ! ice thickness climatology
+        integer  :: idHSNclm       ! ice thickness climatology
+        integer  :: idS11clm       ! ice sigma11 climatology
+        integer  :: idS12clm       ! ice sigma12 climatology
+        integer  :: idS22clm       ! ice sigma22 climatology
         integer  :: idUIclm        ! ice u-velocity climatology
         integer  :: idVIclm        ! ice v-velocity climatology
+! Ice diagnostics
+        integer  :: idAlbI         ! shortwave albedo of ice
+        integer  :: idLWdn         ! downward longwave
+        integer  :: idSWdn         ! downward shortwave
+        integer  :: idLatI         ! latent heat flux over ice
+        integer  :: idSenI         ! sensible heat flux over ice
+        integer  :: idLWupI        ! upward longwave from ice
+        integer  :: idSWupI        ! upward shortwave from ice
+        integer  :: idSWinI        ! upward shortwave from ice
+        integer  :: idSWthruI      ! shortwave through ice
+        integer  :: idSaltI        ! salt flux from ice
+        integer  :: idSaltL        ! salt flux from leads
+        integer  :: idQao          ! heat flux in leads
+        integer  :: idQai          ! heat flux ice to atmosphere
+        integer  :: idQio          ! heat flux ocean to ice
+        integer  :: idQi2          ! heat flux ocean to ice
+        integer  :: idSnoI         ! snow-ice conversion
 
         integer, allocatable :: idRtrc(:)    ! river runoff for tracers
         integer, allocatable :: idsurT(:)    ! model surface tracers
@@ -601,6 +625,10 @@
 !
         integer, allocatable :: ncFRCid(:,:)
 !
+!  Input river NetCDF files IDs.
+!
+        integer, allocatable :: ncSSFid(:,:)
+!
 !  Flags to create output files.
 !
         integer, allocatable :: idefADJ(:)    ! adjoint file
@@ -659,6 +687,8 @@
         character (len=80 ) :: git_rev, svn_rev
         character (len=256) :: git_url, svn_url
 !
+        integer             :: git_status = 0
+
       CONTAINS
 !
       SUBROUTINE allocate_ncparam
@@ -1226,6 +1256,7 @@
       isSig22=ic+11
       ic=ic+11
 #endif
+      isWvel=ic+1
 !
 !  Set generic lateral boundary indices for LBC structure.  Use the same
 !  values of the state variables at the same C-grid location.  Generic
@@ -1279,6 +1310,7 @@
           Finfo(6,i,ng)=0.0_r8
           Finfo(7,i,ng)=0.0_r8
           Finfo(10,i,ng)=1.0_r8
+          Finfo(11,i,ng)=0.0_r8
           Fscale(i,ng)=1.0_r8
           Fpoint(1,i,ng)=0.0_r8
           Fpoint(2,i,ng)=0.0_r8
@@ -1289,6 +1321,7 @@
           ncBRYid(i,ng)=-1
           ncCLMid(i,ng)=-1
           ncFRCid(i,ng)=-1
+          ncSSFid(i,ng)=-1
         END DO
       END DO
 !
@@ -1305,10 +1338,14 @@
 #else
       git_rev=' '
 #endif
+#ifdef GIT_STATUS
+      git_status=GIT_STATUS
+#endif
 !
 #ifdef SVN_URL
       svn_url=SVN_URL
 #else
+! Maybe I should put the COAWST URL here...
       svn_url='https://myroms.org/svn'
 #endif
 #ifdef SVN_REV
@@ -2386,6 +2423,8 @@
                 idTice=varid
               CASE ('idTimid')
                 idTimid=varid
+              CASE ('idT2ice')
+                idT2ice=varid
               CASE ('idTauiw')
                 idTauiw=varid
               CASE ('idChuiw')
@@ -2424,10 +2463,51 @@
                 idAIclm=varid
               CASE ('idHIclm')
                 idHIclm=varid
+              CASE ('idHSNclm')
+                idHSNclm=varid
+              CASE ('idS11clm')
+                idS11clm=varid
+              CASE ('idS12clm')
+                idS12clm=varid
+              CASE ('idS22clm')
+                idS22clm=varid
               CASE ('idUIclm')
                 idUIclm=varid
               CASE ('idVIclm')
                 idVIclm=varid
+! Ice diagnostics
+              CASE ('idAlbI')
+                idAlbI=varid
+              CASE ('idLWdn')
+                idLWdn=varid
+              CASE ('idSWdn')
+                idSWdn=varid
+              CASE ('idLatI')
+                idLatI=varid
+              CASE ('idSenI')
+                idSenI=varid
+              CASE ('idLWupI')
+                idLWupI=varid
+              CASE ('idSWupI')
+                idSWupI=varid
+              CASE ('idSWinI')
+                idSWinI=varid
+              CASE ('idSWthruI')
+                idSWthruI=varid
+              CASE ('idSaltI')
+                idSaltI=varid
+              CASE ('idSaltL')
+                idSaltL=varid
+              CASE ('idQao')
+                idQao=varid
+              CASE ('idQai')
+                idQai=varid
+              CASE ('idQio')
+                idQio=varid
+              CASE ('idQi2')
+                idQi2=varid
+              CASE ('idSnoI')
+                idSnoI=varid
 #endif
 
 #ifdef BIOLOGY

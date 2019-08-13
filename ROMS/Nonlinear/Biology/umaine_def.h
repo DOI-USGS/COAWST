@@ -6,7 +6,8 @@
       status=def_var(ng, model, ncid, varid, nf90_int,                  &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='reg1'
       Vinfo( 2)='microzooplankton excretion rate to ammonium'
@@ -14,7 +15,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='reg2'
       Vinfo( 2)='mesozooplankton excretion rate to ammonium'
@@ -22,7 +24,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='gmaxs1'
       Vinfo( 2)='maximum specific growth rate of small phytoplankton'
@@ -30,7 +33,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='gmaxs2'
       Vinfo( 2)='maximum specific growth rate of diatom'
@@ -38,7 +42,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='gmaxs3'
       Vinfo( 2)='maximum specific growth rate of coccolithophores'
@@ -46,14 +51,16 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='beta1'
       Vinfo( 2)='microzooplankton maximum grazing rate'
       Vinfo( 3)='day-1'
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='beta2'
       Vinfo( 2)='mesozooplankton maximum grazing rate'
@@ -61,7 +68,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='akz1'
       Vinfo( 2)='half saturation for microzooplankton grazing'
@@ -69,7 +77,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='akz2'
       Vinfo( 2)='half saturation for mesozooplankton grazing'
@@ -77,7 +86,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='PARfrac'
       Vinfo( 2)='photosynthetically available radiation fraction'
@@ -85,7 +95,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='alphachl_s1'
       Vinfo( 2)='slope chl-specific P-I curve of small phytoplankton'
@@ -93,7 +104,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='alphachl_s2'
       Vinfo( 2)='slope chl-specific P-I curve of diatom'
@@ -101,7 +113,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='alphachl_s3'
       Vinfo( 2)='slope chl-specific P-I curve of coccolithophores'
@@ -109,7 +122,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='pis1'
       Vinfo( 2)='ammonium inhibition parameter for small phytoplankton'
@@ -117,7 +131,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='pis2'
       Vinfo( 2)='ammonium inhibition parameter for diatom'
@@ -125,7 +140,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='pis3'
       Vinfo( 2)='ammonium inhibition parameter for coccolithophores'
@@ -133,7 +149,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='akno3s1'
       Vinfo( 2)='half saturation of nitrate uptake by iSphy'
@@ -141,7 +158,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='akno3s2'
       Vinfo( 2)='half saturation of nitrate uptake by diatom'
@@ -149,7 +167,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='akno3s3'
       Vinfo( 2)='half saturation of nitrate uptake by coccolithophores'
@@ -157,7 +176,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='aknh4s1'
       Vinfo( 2)='half saturation of ammonium uptake by iSphy'
@@ -165,7 +185,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='aknh4s2'
       Vinfo( 2)='half saturation of ammonium uptake by iLphy'
@@ -173,7 +194,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='aknh4s3'
       Vinfo( 2)='half saturation of ammonium uptake by coccolithophores'
@@ -181,7 +203,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='akpo4s1'
       Vinfo( 2)='half saturation of phosphate uptake by iSphy'
@@ -189,7 +212,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='akpo4s2'
       Vinfo( 2)='half saturation of phosphate uptake by iLphy'
@@ -197,7 +221,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='akpo4s3'
       Vinfo( 2)='half saturation of phosphate uptake by coccolithophores'
@@ -205,7 +230,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='akco2s1'
       Vinfo( 2)='half saturation of co2 uptake by iSphy'
@@ -213,7 +239,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='akco2s2'
       Vinfo( 2)='half saturation of co2 uptake by iLphy'
@@ -221,7 +248,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='akco2s3'
       Vinfo( 2)='half saturation of co2 uptake by coccolithophores'
@@ -229,7 +257,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='aksio4s2'
       Vinfo( 2)='half saturation of silicate uptake by iLphy'
@@ -237,7 +266,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='ES1'
       Vinfo( 2)='Phytoplankton exudation parameter for small phytoplankton'
@@ -245,7 +275,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='ES2'
       Vinfo( 2)='Phytoplankton exudation parameter for diatom'
@@ -253,7 +284,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='ES3'
       Vinfo( 2)='Phytoplankton exudation parameter for coccolithophores'
@@ -261,7 +293,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='ak1'
       Vinfo( 2)='light attenuation coefficient of water'
@@ -269,7 +302,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='ak2'
       Vinfo( 2)='phytoplankton specific light attenuation rate'
@@ -277,7 +311,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='Qmax'
       Vinfo( 2)='Maximum phytoplankton N:C ratio'
@@ -285,7 +320,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='Qmin'
       Vinfo( 2)='Minimum phytoplankton N:C ratio'
@@ -293,7 +329,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='lambdano3_s1'
       Vinfo( 2)='Cost of biosynthesis for small phytoplankton'
@@ -301,7 +338,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='lambdano3_s2'
       Vinfo( 2)='Cost of biosynthesis for diatom'
@@ -309,7 +347,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='lambdano3_s3'
       Vinfo( 2)='Cost of biosynthesis for coccolithophores'
@@ -317,7 +356,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='thetaNmax_s1'
       Vinfo( 2)='Maximum Chl:N for small phytoplankton'
@@ -325,7 +365,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='thetaNmax_s2'
       Vinfo( 2)='Maximum Chl:N for small phytoplankton'
@@ -333,7 +374,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='thetaNmax_s3'
       Vinfo( 2)='Maximum Chl:N for small phytoplankton'
@@ -341,7 +383,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='bgamma'
       Vinfo( 2)='mesozooplankton specific mortality rate'
@@ -349,7 +392,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='bgamma1'
       Vinfo( 2)='grazing efficiency of microzooplankton'
@@ -357,7 +401,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='bgamma2'
       Vinfo( 2)='grazing efficiency of mesozooplankton for N'
@@ -365,7 +410,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='bgamma22'
       Vinfo( 2)='grazing efficiency of mesozooplankton for C'
@@ -373,7 +419,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='bgamma3'
       Vinfo( 2)='death rate of small phytoplankton'
@@ -381,7 +428,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='bgamma4'
       Vinfo( 2)='death rate of large phytoplankton'
@@ -389,7 +437,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='bgamma10'
       Vinfo( 2)='death rate of coccolithophores'
@@ -397,7 +446,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='bgamma12'
       Vinfo( 2)='death rate of bacteria'
@@ -405,7 +455,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='bgamma5'
       Vinfo( 2)='decay rate of detritus'
@@ -413,7 +464,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='bgamma7'
       Vinfo( 2)='nitrafication rate'
@@ -421,7 +473,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='bgamma11'
       Vinfo( 2)='Maximum ammonium uptake rate by bacteria'
@@ -429,7 +482,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='bgamma13'
       Vinfo( 2)='Maximum semi-labile hydrolysis'
@@ -437,7 +491,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='mtos1'
       Vinfo( 2)='Mortality to dissolved pool of small phytoplankton'
@@ -445,7 +500,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='mtos2'
       Vinfo( 2)='Mortality to dissolved pool of diatom'
@@ -453,7 +509,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='mtos3'
       Vinfo( 2)='Mortality to dissolved pool of coccolithophores'
@@ -461,7 +518,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='flz1'
       Vinfo( 2)='Feeding loss by small zooplankton'
@@ -469,7 +527,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='flz2'
       Vinfo( 2)='Feeding loss by large zooplankton'
@@ -477,7 +536,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='lk1'
       Vinfo( 2)='Phytoplankton leakage fraction of small phytoplankton'
@@ -485,7 +545,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='lk2'
       Vinfo( 2)='Phytoplankton leakage fraction of diatom'
@@ -493,7 +554,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='lk3'
       Vinfo( 2)='Phytoplankton leakage fraction of coccolithophores'
@@ -501,7 +563,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='ratiol1'
       Vinfo( 2)='Labile fraction'
@@ -509,7 +572,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='ratiol2'
       Vinfo( 2)='Labile fraction for phytoplankton'
@@ -517,7 +581,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='wsdn'
       Vinfo( 2)='sinking velocity of detritus N'
@@ -525,7 +590,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='wsdc'
       Vinfo( 2)='sinking velocity of detritus C'
@@ -533,7 +599,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='wsdsi'
       Vinfo( 2)='sinking velocity of detritus silicate'
@@ -541,7 +608,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='wsdca'
       Vinfo( 2)='sinking velocity of particulate inorganic carbon'
@@ -549,7 +617,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='wsp1'
       Vinfo( 2)='sinking velocity of small phytoplankton'
@@ -557,7 +626,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='wsp2'
       Vinfo( 2)='sinking velocity of diatom'
@@ -565,7 +635,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='wsp3'
       Vinfo( 2)='sinking velocity of coccolithophores'
@@ -573,7 +644,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='pco2a'
       Vinfo( 2)='air CO2 partial pressure'
@@ -581,7 +653,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='p2n'
       Vinfo( 2)='Phosphorus to nitrogen ratio'
@@ -589,7 +662,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='o2no'
       Vinfo( 2)='oxygen to nitrate ratio'
@@ -597,7 +671,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='o2nh'
       Vinfo( 2)='oxygen to ammonium ratio'
@@ -605,7 +680,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='cnb'
       Vinfo( 2)='C:N in bacteria'
@@ -613,7 +689,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='apsilon'
       Vinfo( 2)='Ratio of PIC to organic carbon in coccolithophores'
@@ -621,7 +698,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='ro5'
       Vinfo( 2)='grazing preference for diatom'
@@ -629,7 +707,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='ro6'
       Vinfo( 2)='grazing preference for mesozooplankton'
@@ -637,7 +716,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='ro7'
       Vinfo( 2)='grazing preference for detritus'
@@ -645,7 +725,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='ro10'
       Vinfo( 2)='grazing preference for coccolithophores'
@@ -653,7 +734,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='rop'
       Vinfo( 2)='grazing preference for small phytoplankton'
@@ -661,7 +743,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='rob'
       Vinfo( 2)='grazing preference for bacteria'
@@ -669,7 +752,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='kabac'
       Vinfo( 2)='Half saturation for ammonium uptake by bacteria'
@@ -677,7 +761,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='klbac'
       Vinfo( 2)='Half saturation for labile DOC uptake'
@@ -685,7 +770,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='ksdoc'
       Vinfo( 2)='Half saturation for semi-labile DOC uptake'
@@ -693,7 +779,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='ksdon'
       Vinfo( 2)='Half saturation for semi-labile DON uptake'
@@ -701,7 +788,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='ratiob'
       Vinfo( 2)='Bacteria growth loss fraction'
@@ -709,7 +797,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='ratiobc'
       Vinfo( 2)='Color fraction of Bacteria loss'
@@ -717,7 +806,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='RtUVLDOC'
       Vinfo( 2)='Rate of conversion of colored labile DOC to labile DOC'
@@ -725,7 +815,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='RtUVSDOC'
       Vinfo( 2)='Conversion of colored semi-labile DOC to labile DOC'
@@ -733,7 +824,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='RtUVLDIC'
       Vinfo( 2)='Rate of conversion of colored labile DOC to DIC'
@@ -741,7 +833,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='RtUVSDIC'
       Vinfo( 2)='Rate of conversion of colored semi-labile DOC to DIC'
@@ -749,7 +842,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='colorFR1'
       Vinfo( 2)='Color fraction for labile DOC'
@@ -757,7 +851,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='colorFR2'
       Vinfo( 2)='Color fraction for semi-labile DOC'
@@ -765,7 +860,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
 #ifdef IRON_LIMIT
       Vinfo( 1)='T_Fe'
@@ -774,7 +870,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='A_Fe'
       Vinfo( 2)='Empirical FE:C power'
@@ -782,7 +879,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='B_Fe'
       Vinfo( 2)='Empirical FE:C coefficient'
@@ -790,7 +888,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='S1_FeC'
       Vinfo( 2)='Small phytoplankton Fe:C at F=0.5'
@@ -798,7 +897,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='S2_FeC'
       Vinfo( 2)='Large phytoplankton Fe:C at F=0.5'
@@ -806,7 +906,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='S3_FeC'
       Vinfo( 2)='Coccolithophores Fe:C at F=0.5'
@@ -814,7 +915,8 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 
       Vinfo( 1)='FeRR'
       Vinfo( 2)='Fe remineralization rate'
@@ -822,6 +924,6 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) RETURN
 #endif
- 

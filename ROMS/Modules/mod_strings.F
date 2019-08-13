@@ -117,7 +117,8 @@
         character (len=2048) :: Coptions
 
         integer, parameter :: Mregion = 60
-        integer, parameter :: Nregion = 73
+        integer, parameter :: Iceregion = 74
+        integer, parameter :: Nregion = 80
 
         character (len=48), dimension(17) :: StateMsg =                 &
      &    (/'state initial conditions,                       ',         & !01
@@ -211,7 +212,14 @@
      &      'Message Passage: nesting point data gathering ....',       & !70
      &      'Message Passage: nesting array data gathering ....',       & !71
      &      'Message Passage: synchronization barrier .........',       & !72
-     &      'Message Passage: multi-model coupling ............'/)        !73
+     &      'Message Passage: multi-model coupling ............',       & !73
+     &      'Unused 15 ........................................',       & !74
+     &      'Unused 16 ........................................',       & !75
+     &      'Ice thermodynamics................................',       & !76
+     &      'Ice rheology coefficients.........................',       & !77
+     &      'Iterative solver of ice dynamics..................',       & !78
+     &      'Advection of ice tracers..........................',       & !79
+     &      'Frazil ice........................................'/)
 !
 !  The following variables are assigned during C-preprocessing.  They
 !  have information about operating sytem, CPU hardware, compiling

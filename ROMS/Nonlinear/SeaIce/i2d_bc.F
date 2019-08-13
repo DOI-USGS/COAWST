@@ -100,13 +100,13 @@
               IF ((dTdt*dTdx).lt.0.0_r8) tau=Tobc_in(1,ng,iwest)
               tau=tau*dt(ng)
             END IF
-            IF ((dTdt*dTdx).lt.0.0_r8) dTdt=0.0_r8
             IF ((dTdt*(grad(Istr,j)+grad(Istr,j+1))).gt.0.0_r8) THEN
               dTde=grad(Istr,j  )
             ELSE
               dTde=grad(Istr,j+1)
             END IF
             cff=MAX(dTdx*dTdx+dTde*dTde,eps)
+            IF ((dTdt*dTdx).lt.0.0_r8) dTdt=0.0_r8
             Cx=dTdt*dTdx
 # ifdef RADIATION_2D
             Ce=MIN(cff,MAX(dTdt*dTde,-cff))
@@ -228,13 +228,13 @@
               IF ((dTdt*dTdx).lt.0.0_r8) tau=Tobc_in(1,ng,ieast)
               tau=tau*dt(ng)
             END IF
-            IF ((dTdt*dTdx).lt.0.0_r8) dTdt=0.0_r8
-              IF ((dTdt*(grad(Iend,j)+grad(Iend,j+1))).gt.0.0_r8) THEN
+            IF ((dTdt*(grad(Iend,j)+grad(Iend,j+1))).gt.0.0_r8) THEN
               dTde=grad(Iend,j  )
             ELSE
               dTde=grad(Iend,j+1)
             END IF
             cff=MAX(dTdx*dTdx+dTde*dTde,eps)
+            IF ((dTdt*dTdx).lt.0.0_r8) dTdt=0.0_r8
             Cx=dTdt*dTdx
 # ifdef RADIATION_2D
             Ce=MIN(cff,MAX(dTdt*dTde,-cff))
@@ -356,13 +356,13 @@
               IF ((dTdt*dTde).lt.0.0_r8) tau=Tobc_in(1,ng,isouth)
               tau=tau*dt(ng)
             END IF
-            IF ((dTdt*dTde).lt.0.0_r8) dTdt=0.0_r8
             IF ((dTdt*(grad(i,Jstr)+grad(i+1,Jstr))).gt.0.0_r8) THEN
               dTdx=grad(i  ,Jstr)
             ELSE
               dTdx=grad(i+1,Jstr)
             END IF
             cff=MAX(dTdx*dTdx+dTde*dTde,eps)
+            IF ((dTdt*dTde).lt.0.0_r8) dTdt=0.0_r8
 # ifdef RADIATION_2D
             Cx=MIN(cff,MAX(dTdt*dTdx,-cff))
 # else
@@ -484,13 +484,13 @@
               IF ((dTdt*dTde).lt.0.0_r8) tau=Tobc_in(1,ng,inorth)
               tau=tau*dt(ng)
             END IF
-            IF ((dTdt*dTde).lt.0.0_r8) dTdt=0.0_r8
             IF ((dTdt*(grad(i,Jend)+grad(i+1,Jend))).gt.0.0_r8) THEN
               dTdx=grad(i  ,Jend)
             ELSE
               dTdx=grad(i+1,Jend)
             END IF
             cff=MAX(dTdx*dTdx+dTde*dTde,eps)
+            IF ((dTdt*dTde).lt.0.0_r8) dTdt=0.0_r8
 # ifdef RADIATION_2D
             Cx=MIN(cff,MAX(dTdt*dTdx,-cff))
 # else

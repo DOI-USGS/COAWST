@@ -3,7 +3,7 @@
 #if defined ICE_ADVECT || defined ICE_THERMO
 !
 !============================================== W. Paul Budgell =======!
-!  Copyright (c) 2002-2014 ROMS/TOMS Group                             !
+!  Copyright (c) 2002-2014 ROMS/TOMS Group                                  !
 !============================================== Hernan G. Arango ======!
 !                                                                      !
 !  Limit ice tracer variables, for instance to not allow negative      !

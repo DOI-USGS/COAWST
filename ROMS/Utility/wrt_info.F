@@ -785,6 +785,19 @@
      &                      ncid = ncid)
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
+
+      CALL netcdf_put_fvar (ng, model, ncname, 'Tnudg_SSS',             &
+     &                      Tnudg_SSS(ng)/sec2day, (/0/), (/0/),        &
+     &                      ncid = ncid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+# ifdef SSSC_THRESHOLD
+      CALL netcdf_put_fvar (ng, model, ncname, 'sss_mismatch_threshold',&
+     &                      sss_mismatch_threshold(ng)/sec2day, (/0/),  &
+     &                      (/0/), ncid = ncid)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+# endif
 #endif
 
 #ifndef DEBUGGING

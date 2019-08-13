@@ -1,7 +1,7 @@
 /*
 ** svn $Id$
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2016 The ROMS/TOMS Group                        **
+** Copyright (c) 2002-2019 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -394,8 +394,6 @@
                 idTbry(inorth,iFeD_)=varid
 # endif
 
-#ifdef TS_PSOURCE
-
 !
 !  Biological tracers point Source/Sinks (river runoff).
 !
@@ -456,18 +454,27 @@
                 idRtrc(iCSDC)=varid
               CASE ('idRtrc(iDDCA)')
                 idRtrc(iDDCA)=varid
-
-# ifdef OXYGEN
+#ifdef OXYGEN
               CASE ('idRtrc(iOxyg)')
                 idRtrc(iOxyg)=varid
-# endif
-# ifdef CARBON
+#endif
+#ifdef CARBON
               CASE ('idRtrc(iTIC_)')
                 idRtrc(iTIC_)=varid
               CASE ('idRtrc(iTAlk)')
                 idRtrc(iTAlk)=varid
-# endif
 #endif
+#ifdef IRON_LIMIT
+              CASE ('idRtrc(iS1_Fe)')
+                idRtrc(iS1_Fe)=varid
+              CASE ('idRtrc(iS2_Fe)')
+                idRtrc(iS2_Fe)=varid
+              CASE ('idRtrc(iS3_Fe)')
+                idRtrc(iS3_Fe)=varid
+              CASE ('idRtrc(iFeD_)')
+                idRtrc(iFeD_)=varid
+#endif
+
 #ifdef DIAGNOSTICS_BIO
 /*
 **  Biological tracers term diagnostics.
@@ -491,4 +498,3 @@
               CASE ('iDbio3(iNO3u)')
                 iDbio3(iNO3u)=varid
 #endif
- 

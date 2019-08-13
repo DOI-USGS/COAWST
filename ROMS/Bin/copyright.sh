@@ -32,7 +32,7 @@ set replace = "2002-2019 The ROMS/TOMS"
 
 # Directories to search for replacements.
 
-set c_dirs = "Apps ESM Compilers Master ROMS User"
+set c_dirs = "Apps Compilers ESM Master ROMS User"
 
 # Specific files not in the "c_dirs".
 

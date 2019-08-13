@@ -351,7 +351,8 @@
 # endif
           status=def_var(ng, iNLM, FLT(ng)%ncid, fltVid(idxspc,ng),     &
      &                   NF_FOUT, 2, fgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
           Vinfo( 1)='y'
           Vinfo( 2)='y-location of floats trajectories'
           Vinfo( 3)='meter'

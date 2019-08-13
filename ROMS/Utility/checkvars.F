@@ -229,26 +229,22 @@
 #  endif
 # endif
 # ifdef ICE_MODEL
-        get_var(idUice)=.true.
-        get_var(idVice)=.true.
-        get_var(idAice)=.true.
-        get_var(idHice)=.true.
-        get_var(idTice)=.true.
-        get_var(idHsno)=.true.
-#  ifdef MELT_PONDS
-        get_var(idApond)=.true.
-        get_var(idHpond)=.true.
-#  endif
-        get_var(idAgeice)=.true.
-        get_var(idTimid)=.true.
-        get_var(idSig11)=.true.
-        get_var(idSig22)=.true.
-        get_var(idSig12)=.true.
-        get_var(idS0mk)=.true.
-        get_var(idT0mk)=.true.
+        get_var(idUice)=.TRUE.
+        get_var(idVice)=.TRUE.
+        get_var(idAice)=.TRUE.
+        get_var(idHice)=.TRUE.
+        get_var(idTice)=.TRUE.
+        get_var(idHsno)=.TRUE.
+        get_var(idAgeice)=.TRUE.
+        get_var(idTimid)=.TRUE.
+        get_var(idSig11)=.TRUE.
+        get_var(idSig22)=.TRUE.
+        get_var(idSig12)=.TRUE.
+        get_var(idS0mk)=.TRUE.
+        get_var(idT0mk)=.TRUE.
 #  ifndef ICE_MOM_BULK
-        get_var(idChuiw)=.true.
-        get_var(idTauiw)=.true.
+        get_var(idChuiw)=.TRUE.
+        get_var(idTauiw)=.TRUE.
 #  endif
 #  ifdef PERFECT_RESTART
         get_var(idUsms)=.true.
@@ -259,15 +255,15 @@
 #  endif
 # endif
 # ifdef NCEP_FLUXES
-        get_var(idWg2d)=.true.
-        get_var(idCdd)=.true.
-        get_var(idChd)=.true.
-        get_var(idCed)=.true.
-        get_var(idWg2m)=.true.
-        get_var(idCdm)=.true.
-        get_var(idChm)=.true.
-        get_var(idCem)=.true.
-        get_var(idRhoa)=.true.
+        get_var(idWg2d)=.TRUE.
+        get_var(idCdd)=.TRUE.
+        get_var(idChd)=.TRUE.
+        get_var(idCed)=.TRUE.
+        get_var(idWg2m)=.TRUE.
+        get_var(idCdm)=.TRUE.
+        get_var(idChm)=.TRUE.
+        get_var(idCem)=.TRUE.
+        get_var(idRhoa)=.TRUE.
 # endif
 #endif
 #ifdef PERFECT_RESTART
@@ -553,13 +549,7 @@
         ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTice))) THEN
           have_var(idTice)=.true.
         ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idHsno))) THEN
-          have_var(idHsno)=.true.
-#  ifdef MELT_PONDS
-        ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idApond))) THEN
-          have_var(idApond)=.true.
-        ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idHpond))) THEN
-          have_var(idHpond)=.true.
-#  endif
+          have_var(idHsno)=.TRUE.
         ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idAgeice))) THEN
           have_var(idAgeice)=.true.
         ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTimid))) THEN
@@ -973,22 +963,6 @@
         exit_flag=2
         RETURN
       END IF
-#  ifdef MELT_PONDS
-      IF (.not.have_var(idApond)) THEN
-        IF (Master) WRITE (stdout,10) string,                           &
-     &                                TRIM(Vname(1,idApond)),           &
-     &                                TRIM(ncname)
-        exit_flag=2
-        RETURN
-      END IF
-      IF (.not.have_var(idHpond)) THEN
-        IF (Master) WRITE (stdout,10) string,                           &
-     &                                TRIM(Vname(1,idHpond)),           &
-     &                                TRIM(ncname)
-        exit_flag=2
-        RETURN
-      END IF
-#  endif
       IF (.not.have_var(idAgeice)) THEN
         IF (Master) WRITE (stdout,10) string,                           &
      &                                TRIM(Vname(1,idAgeice)),          &

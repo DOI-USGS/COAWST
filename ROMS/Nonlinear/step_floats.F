@@ -154,8 +154,8 @@
 !      logical :: downward , upward
       real(r8) :: RiseStart,RiseEnd,SinkStart,SinkEnd
       real(r8) :: wNCsink,wNCrise
-      integer :: iday, month, year
-      real(r8) :: yday, hour, dtdays,cff,diapW
+      real(dp) :: yday, dtdays
+      real(r8) :: cff,diapW
       integer :: FloatPhase
 # endif
 
@@ -166,7 +166,7 @@
       real(r8), dimension(Nfloats(ng)*NFV(ng)*(NFT+1)) :: Fwrk
 # endif
 # ifdef DIAPAUSE
-      CALL caldate (r_date, tdays(ng), year, yday, month, iday, hour)
+      CALL caldate (tdays(ng), yd_dp=yday)
 # endif
 !
 !  Set tile array bounds.
@@ -231,14 +231,17 @@
 # endif
 
 # ifdef DIAPAUSE
+
            RiseStart=   1.0d0  ! Date NC begin to move upward (Day of Year)
            RiseEnd  =  90.00d0 ! 90 Date NC stop moving upward (Day of Year)
            SinkStart= 166.0d0  !166 Date NC begin to move downward (Day of Year)
            SinkEnd  = 365.0d0  ! 365.Date NC stop moving downward (Day of Year)
            wNCrise  =  10.0d0
            wNCsink  =  -10.0d0
+
            diapW=0.0
            dtdays = dt(ng)*sec2day
+
 # endif
 # if defined SOLVE3D && defined FLOAT_VWALK
 !
@@ -555,6 +558,7 @@
 !                  Hamming time-stepping scheme.
 !-----------------------------------------------------------------------
 !
+
       cff1=9.0_r8/8.0_r8
       cff2=1.0_r8/8.0_r8
       cff3=3.0_r8/8.0_r8

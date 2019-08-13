@@ -27,6 +27,7 @@
 !  mp_assemblei_2d   assembles 2D integer array from tiles             !
 !  mp_collect_f      collects 1D floating point array from tiles       !
 !  mp_collect_i      collects 1D integer array from tiles              !
+!  mp_collect_l      collects 1D logical vector data from tiles        !
 !  mp_dump           writes 2D and 3D tiles arrays for debugging       !
 !  mp_gather2d       collects a 2D tiled array for output purposes     !
 !  mp_gather3d       collects a 3D tiled array for output purposes     !
@@ -89,6 +90,7 @@
       INTERFACE mp_collect
         MODULE PROCEDURE mp_collect_f
         MODULE PROCEDURE mp_collect_i
+        MODULE PROCEDURE mp_collect_l
       END INTERFACE mp_collect
 !
       INTERFACE mp_reduce
@@ -3345,9 +3347,184 @@
       CALL wclock_off (ng, model, 69, __LINE__,                         &
      &                 __FILE__//":mp_collect")
 # endif
-
       RETURN
       END SUBROUTINE mp_collect_i
+
+      SUBROUTINE mp_collect_l (ng, model, Npts, A)
+!
+!***********************************************************************
+!                                                                      !
+!  This routine collects requested buffer from all members in the      !
+!  group. Then, it packs distributed data by removing the special      !
+!  values. This routine is used when extracting station data from      !
+!  tiled arrays.                                                       !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng         Nested grid number.                                   !
+!     model      Calling model identifier.                             !
+!     Npts       Number of extracted data points.                      !
+!     A          Extracted data.                                       !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     A          Collected data.                                       !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_scalars
+!
+      implicit none
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, Npts
+
+      logical, intent(inout) :: A(Npts)
+!
+!  Local variable declarations.
+!
+      integer :: Lstr, MyError, Nnodes, Serror
+      integer :: i, rank, request
+
+      integer, dimension(MPI_STATUS_SIZE) :: status
+
+# if defined COLLECT_ALLGATHER
+      logical, dimension(Npts,0:NtileI(ng)*NtileJ(ng)-1) :: Arecv
+# elif defined COLLECT_ALLREDUCE
+      logical, dimension(Npts) :: Asend
+# else
+      logical, allocatable :: Arecv(:)
+# endif
+
+      character (len=MPI_MAX_ERROR_STRING) :: string
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn on time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_on (ng, model, 66, __LINE__, __FILE__)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Collect data from all nodes.
+!-----------------------------------------------------------------------
+!
+# if defined COLLECT_ALLGATHER
+      CALL mpi_allgather (A, Npts, MPI_LOGICAL, Arecv, Npts,            &
+     &                    MPI_LOGICAL, OCN_COMM_WORLD, MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_ALLGATHER', MyRank, MyError,             &
+     &                    string(1:Lstr)
+        exit_flag=2
+        RETURN
+      END IF
+!
+!  Pack data according to special values: sum or ignore.
+!
+      Nnodes=NtileI(ng)*NtileJ(ng)-1
+      DO i=1,Npts
+        DO rank=0,Nnodes
+          A(i)=Arecv(i,rank)
+        END DO
+      END DO
+# elif defined COLLECT_ALLREDUCE
+!
+!  Copy data to send.
+!
+      DO i=1,Npts
+        Asend(i)=A(i)
+      END DO
+!
+!  Collect data from all nodes as a reduced sum.
+!
+      CALL mpi_allreduce (Asend, A, Npts, MPI_LOGICAL, MPI_LOR,         &
+     &                    OCN_COMM_WORLD, MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_ALLREDUCE', MyRank, MyError,             &
+     &                    string(1:Lstr)
+        exit_flag=2
+        RETURN
+      END IF
+# else
+      IF (MyRank.eq.MyMaster) THEN
+!
+!  If master node, allocate and receive buffer.
+!
+        IF (.not.allocated(Arecv)) THEN
+          allocate (Arecv(Npts))
+        END IF
+!
+!  If master node, loop over other nodes to receive and accumulate the
+!  data.
+!
+        DO rank=1,NtileI(ng)*NtileJ(ng)-1
+          CALL mpi_irecv (Arecv, Npts, MPI_LOGICAL, rank, rank+5,       &
+     &                    OCN_COMM_WORLD, request, MyError)
+          CALL mpi_wait (request, status, MyError)
+          IF (MyError.ne.MPI_SUCCESS) THEN
+            CALL mpi_error_string (MyError, string, Lstr, Serror)
+            Lstr=LEN_TRIM(string)
+            WRITE (stdout,10) 'MPI_IRECV', rank, MyError, string(1:Lstr)
+            exit_flag=2
+            RETURN
+          END IF
+          DO i=1,Npts
+            A(i)=A(i) .or. Arecv(i)
+          END DO
+        END DO
+        deallocate (Arecv)
+!
+!  Otherwise, send data to master node.
+!
+      ELSE
+        CALL mpi_isend (A, Npts, MPI_LOGICAL, MyMaster, MyRank+5,       &
+     &                  OCN_COMM_WORLD, request, MyError)
+        CALL mpi_wait (request, status, MyError)
+        IF (MyError.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (MyError, string, Lstr, Serror)
+          Lstr=LEN_TRIM(string)
+          WRITE (stdout,10) 'MPI_ISEND', MyRank, MyError, string(1:Lstr)
+          exit_flag=2
+          RETURN
+        END IF
+      END IF
+!
+!  Broadcast accumulated (full) data to all nodes.
+!
+      CALL mpi_bcast (A, Npts, MP_FLOAT, MyMaster, OCN_COMM_WORLD,      &
+     &                MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        Lstr=LEN_TRIM(string)
+        WRITE (stdout,10) 'MPI_BCAST', MyRank, MyError, string(1:Lstr)
+        exit_flag=2
+        RETURN
+      END IF
+# endif
+ 10   FORMAT (/,' MP_COLLECT - error during ',a,' call, Node = ',       &
+     &        i3.3,' Error = ',i3,/,14x,a)
+
+# ifdef PROFILE
+!
+!-----------------------------------------------------------------------
+!  Turn off time clocks.
+!-----------------------------------------------------------------------
+!
+      CALL wclock_off (ng, model, 66, __LINE__, __FILE__)
+# endif
+
+      RETURN
+      END SUBROUTINE mp_collect_l
 !
       SUBROUTINE mp_gather2d (ng, model, LBi, UBi, LBj, UBj,            &
      &                        tindex, gtype, Ascl,                      &
@@ -6216,7 +6393,7 @@
 !
 !  If water points only, fill land points.
 !
-      IF (gtype.gt.0) THEN
+      IF (gtype.ge.0) THEN
         DO nc=1,MySize-2
           Arecv(nc)=A(nc)
         END DO

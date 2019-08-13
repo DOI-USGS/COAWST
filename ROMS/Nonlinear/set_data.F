@@ -145,42 +145,58 @@
      &                     FORCES(ng)%cloudG,                           &
      &                     FORCES(ng)%cloud,                            &
      &                     update)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
       CALL set_2dfld_tile (ng, tile, iNLM, idSrad,                      &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     FORCES(ng)%srflxG,                           &
      &                     FORCES(ng)%srflx,                            &
      &                     update)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
       CALL set_2dfld_tile (ng, tile, iNLM, idLrad,                      &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     FORCES(ng)%lrflxG,                           &
      &                     FORCES(ng)%lrflx,                            &
      &                     update)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
       CALL set_2dfld_tile (ng, tile, iNLM, idShea,                      &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     FORCES(ng)%shflxG,                           &
      &                     FORCES(ng)%shflx,                            &
      &                     update)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
       CALL set_2dfld_tile (ng, tile, iNLM, idLhea,                      &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     FORCES(ng)%lhflxG,                           &
      &                     FORCES(ng)%lhflx,                            &
      &                     update)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
       CALL set_2dfld_tile (ng, tile, iNLM, idPair,                      &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     FORCES(ng)%PairG,                            &
      &                     FORCES(ng)%Pair,                             &
      &                     update)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
       CALL set_2dfld_tile (ng, tile, iNLM, idRain,                      &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     FORCES(ng)%rainG,                            &
      &                     FORCES(ng)%rain,                             &
      &                     update)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 #   ifdef SNOWFALL
       CALL set_2dfld_tile (ng, tile, iNLM, idsnow,                      &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     FORCES(ng)%snowG,                            &
      &                     FORCES(ng)%snow,                             &
      &                     update)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 #   endif
 #   ifdef SNOW_FROM_RAIN
 ! Subtract snowfall from total precip
@@ -209,27 +225,37 @@
      &                     FORCES(ng)%runoffG,                          &
      &                     FORCES(ng)%runoff,                           &
      &                     update)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 #   endif
       CALL set_2dfld_tile (ng, tile, iNLM, idSkt,                       &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     FORCES(ng)%sktG,                             &
      &                     FORCES(ng)%skt,                              &
      &                     update)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
       CALL set_2dfld_tile (ng, tile, iNLM, idIcec,                      &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     FORCES(ng)%icecG,                            &
      &                     FORCES(ng)%icec,                             &
      &                     update)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
       CALL set_2dfld_tile (ng, tile, iNLM, idUnms,                      &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     FORCES(ng)%nustrG,                           &
      &                     FORCES(ng)%nustr,                            &
      &                     update)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
       CALL set_2dfld_tile (ng, tile, iNLM, idVnms,                      &
      &                     LBi, UBi, LBj, UBj,                          &
      &                     FORCES(ng)%nvstrG,                           &
      &                     FORCES(ng)%nvstr,                            &
      &                     update)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 #   if defined SCORRECTION || defined SRELAXATION
 !
 !-----------------------------------------------------------------------
@@ -1555,89 +1581,6 @@
       END IF
 
       IF (.not.(RefinedGrid(ng).and.RefineScale(ng).gt.0)) THEN
-# ifdef MELT_PONDS
-#  ifdef ANA_SFWATOBC
-        CALL ana_sfwatobc (ng, tile, iNLM)
-#  else
-        IF (DOMAIN(ng)%SouthWest_Test(tile)) THEN
-          IF (LBC(iwest,isApond,ng)%acquire) THEN
-            CALL set_ngfld (ng, iNLM, idApdbc(iwest), JLB, JUB, 1,      &
-     &                      0, Mm(ng)+1, 1,                             &
-     &                      BOUNDARY(ng) % apondG_west,                 &
-     &                      BOUNDARY(ng) % apond_west,                  &
-     &                      update)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
-          END IF
-          IF (LBC(ieast,isApond,ng)%acquire) THEN
-            CALL set_ngfld (ng, iNLM, idApdbc(ieast), JLB, JUB, 1,      &
-     &                      0, Mm(ng)+1, 1,                             &
-     &                      BOUNDARY(ng) % apondG_east,                 &
-     &                      BOUNDARY(ng) % apond_east,                  &
-     &                      update)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
-          END IF
-          IF (LBC(isouth,isApond,ng)%acquire) THEN
-            CALL set_ngfld (ng, iNLM, idApdbc(isouth), ILB, IUB, 1,     &
-     &                      0, Lm(ng)+1 ,1,                             &
-     &                      BOUNDARY(ng) % apondG_south,                &
-     &                      BOUNDARY(ng) % apond_south,                 &
-     &                      update)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
-          END IF
-          IF (LBC(inorth,isApond,ng)%acquire) THEN
-            CALL set_ngfld (ng, iNLM, idApdbc(inorth), ILB, IUB, 1,     &
-     &                      0, Lm(ng)+1, 1,                             &
-     &                      BOUNDARY(ng) % apondG_north,                &
-     &                      BOUNDARY(ng) % apond_north,                 &
-     &                      update)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
-          END IF
-          IF (LBC(iwest,isHpond,ng)%acquire) THEN
-            CALL set_ngfld (ng, iNLM, idHpdbc(iwest), JLB, JUB, 1,      &
-     &                      0, Mm(ng)+1, 1,                             &
-     &                      BOUNDARY(ng) % hpondG_west,                 &
-     &                      BOUNDARY(ng) % hpond_west,                  &
-     &                      update)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
-          END IF
-          IF (LBC(ieast,isHpond,ng)%acquire) THEN
-            CALL set_ngfld (ng, iNLM, idHpdbc(ieast), JLB, JUB, 1,      &
-     &                      0, Mm(ng)+1, 1,                             &
-     &                      BOUNDARY(ng) % hpondG_east,                 &
-     &                      BOUNDARY(ng) % hpond_east,                  &
-     &                      update)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
-          END IF
-          IF (LBC(isouth,isHpond,ng)%acquire) THEN
-            CALL set_ngfld (ng, iNLM, idHpdbc(isouth), ILB, IUB, 1,     &
-     &                      0, Lm(ng)+1 ,1,                             &
-     &                      BOUNDARY(ng) % hpondG_south,                &
-     &                      BOUNDARY(ng) % hpond_south,                 &
-     &                      update)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
-          END IF
-          IF (LBC(inorth,isHpond,ng)%acquire) THEN
-            CALL set_ngfld (ng, iNLM, idHpdbc(inorth), ILB, IUB, 1,     &
-     &                      0, Lm(ng)+1, 1,                             &
-     &                      BOUNDARY(ng) % hpondG_north,                &
-     &                      BOUNDARY(ng) % hpond_north,                 &
-     &                      update)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
-          END IF
-        END IF
-#  endif
-# endif
-      END IF
-
-      IF (.not.(RefinedGrid(ng).and.RefineScale(ng).gt.0)) THEN
 # ifdef ANA_SIG11OBC
         CALL ana_sig11obc (ng, tile, iNLM)
 # else
@@ -2124,6 +2067,7 @@
             END DO
           END DO
         END DO
+
         IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
           DO i=1,2
             CALL exchange_u3d_tile (ng, tile,                           &
@@ -2137,7 +2081,7 @@
 #   ifdef DISTRIBUTE
         DO i=1,2
           CALL mp_exchange3d (ng, tile, iNLM, 2,                        &
-     &                        LBi, UBi, LBj, UBj, 0, N(ng),             &
+     &                        LBi, UBi, LBj, UBj, 1, N(ng),             &
      &                        NghostPoints,                             &
      &                        EWperiodic(ng), NSperiodic(ng),           &
      &                        OCEAN(ng)%u(:,:,:,i),OCEAN(ng)%v(:,:,:,i))
@@ -2205,7 +2149,8 @@
 #   endif
 #  endif
 
-#  ifdef AICLIMATOLOGY
+#  ifdef ICE_MODEL
+      IF (LaiCLM(ng)) THEN
 #   ifdef ANA_AICLIMA
         CALL ana_aiclima (ng, tile, iNLM)
 #   else
@@ -2215,24 +2160,53 @@
      &                       CLIMA(ng)%aiclm,                           &
      &                       update)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
-#   endif
-#  endif
-#  ifdef HICLIMATOLOGY
-#   ifdef ANA_HICLIMA
-        CALL ana_hiclima (ng, tile, iNLM)
-#   else
+     &               __FILE__)) RETURN
         CALL set_2dfld_tile (ng, tile, iNLM, idHIclm,                   &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       CLIMA(ng)%hiclmG,                          &
      &                       CLIMA(ng)%hiclm,                           &
      &                       update)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+     &               __FILE__)) RETURN
+        CALL set_2dfld_tile (ng, tile, iNLM, idHSNclm,                  &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       CLIMA(ng)%hsnclmG,                         &
+     &                       CLIMA(ng)%hsnclm,                          &
+     &                       update)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &               __FILE__)) RETURN
 #   endif
-#  endif
+      END IF
 
-#  ifdef MICLIMATOLOGY
+      IF (LsiCLM(ng)) THEN
+#   ifdef ANA_SICLIMA
+        CALL ana_siclima (ng, tile, iNLM)
+#   else
+        CALL set_2dfld_tile (ng, tile, iNLM, idS11clm,                  &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       CLIMA(ng)%sig11clmG,                       &
+     &                       CLIMA(ng)%sig11clm,                        &
+     &                       update)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &               __FILE__)) RETURN
+        CALL set_2dfld_tile (ng, tile, iNLM, idS12clm,                  &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       CLIMA(ng)%sig12clmG,                       &
+     &                       CLIMA(ng)%sig12clm,                        &
+     &                       update)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &               __FILE__)) RETURN
+        CALL set_2dfld_tile (ng, tile, iNLM, idS22clm,                  &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       CLIMA(ng)%sig22clmG,                       &
+     &                       CLIMA(ng)%sig22clm,                        &
+     &                       update)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &               __FILE__)) RETURN
+#   endif
+      END IF
+
+      IF (LmiCLM(ng)) THEN
 #   ifdef ANA_MICLIMA
         CALL ana_miclima (ng, tile, iNLM)
 #   else
@@ -2241,15 +2215,17 @@
      &                       CLIMA(ng)%uiclmG,                          &
      &                       CLIMA(ng)%uiclm,                           &
      &                       update)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &               __FILE__)) RETURN
         CALL set_2dfld_tile (ng, tile, iNLM, idVIclm,                   &
      &                       LBi, UBi, LBj, UBj,                        &
      &                       CLIMA(ng)%viclmG,                          &
      &                       CLIMA(ng)%viclm,                           &
      &                       update)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+     &               __FILE__)) RETURN
 #   endif
+      END IF
 #  endif
 # endif
 

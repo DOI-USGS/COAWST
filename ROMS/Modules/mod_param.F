@@ -476,9 +476,9 @@
 
 #ifdef FILTERED_RST
 # ifdef ICE_MODEL
-        integer, parameter :: nfile = 10
+      integer, parameter :: nfile = 10
 # else
-        integer, parameter :: nfile = 9
+      integer, parameter :: nfile = 9
 # endif
 #endif
 !
@@ -512,7 +512,7 @@
 #ifdef FLOATS
 !
 !-----------------------------------------------------------------------
-!  Floats tracjectories parameters.
+!  Floats trajectories parameters.
 !-----------------------------------------------------------------------
 !
 !  Number of trajectory time-stepping levels, [0:NFT].
@@ -1094,7 +1094,7 @@
 #  endif
 # endif
 #ifdef OFFLINE_FLOATS_LATLON
-! add 4 variables: x-space, y-space, water depth and Hz 
+! add 4 variables: x-space, y-space, water depth and Hz
           NFV(ng)=NFV(ng)+4
 #endif
 #endif

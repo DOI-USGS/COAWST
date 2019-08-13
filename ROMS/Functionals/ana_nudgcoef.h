@@ -211,6 +211,30 @@
           END DO
         END DO
       END IF
+
+      IF (LnudgeMICLM(ng)) THEN
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
+            CLIMA(ng)%MInudgcof(i,j)=M2nudg(ng)
+          END DO
+        END DO
+      END IF
+
+      IF (LnudgeAICLM(ng)) THEN
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
+            CLIMA(ng)%AInudgcof(i,j)=M2nudg(ng)
+          END DO
+        END DO
+      END IF
+
+      IF (LnudgeSICLM(ng)) THEN
+        DO j=JstrT,JendT
+          DO i=IstrT,IendT
+            CLIMA(ng)%SInudgcof(i,j)=wrk(i,j)
+          END DO
+        END DO
+      END IF
 # endif
 #endif
 #ifdef DISTRIBUTE

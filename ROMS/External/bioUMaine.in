@@ -2,7 +2,7 @@
 !
 !svn $Id$
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -520,17 +520,25 @@ Aout(idTvar) == 31*T
                     Per     Clo     Per     Clo \ ! iTAlk Total alkalinity
                     Per     Clo     Per     Clo   ! iTIC_ Total CO2
 
+! Logical switches (TRUE/FALSE) to specify which variables to consider on
+! tracers point Sources/Sinks (like river runoff): [NBT,Ngrids] values are
+! expected. See glossary below for details.
+
+  LtracerSrc == 31*F
+
 ! Logical switches (TRUE/FALSE) to specify which variables to process for
 ! tracers climatology: [NBT,Ngrids] values are expected. See glossary below
 ! for details.
 
   LtracerCLM == 31*F
 
-! Logical switches (TRUE/FALSE) to specify which variables to consider on
-! tracers point Sources/Sinks (like river runoff): [NBT,Ngrids] values are
-! expected. See glossary below for details.
+! Logical switches (TRUE/FALSE) to nudge the desired biological tracer
+! climatology field. If not analytical climatology fields, users need to
+! turn on the logical switches above to process the fields from the
+! climatology NetCDF file that are needed for nudging; [NBT,Ngrids]
+! values are expected. See glossary below for details.
 
-  LtracerSrc == 31*F
+  LnudgeTCLM == 31*F
 
 !
 !  GLOSSARY:
@@ -803,7 +811,7 @@ Aout(idTvar) == 31*T
 !                   variables to consider when the option TCLIMATOLOGY is
 !                   activated; [1:NBT,1:Ngrids] values are expected.
 !
-!                     LtracerCLM(idbio(1:31),ng)    
+!                     LtracerCLM(idbio(1:31),ng)
 !
 !                 Recall that TCLIMATOLOGY is usually activated to nudge to
 !                 tracer climatology (TLCM_NUDGING).  The purpose of these
@@ -854,4 +862,3 @@ Aout(idTvar) == 31*T
 !                   that tracer. Recall that you need to specify the tracer
 !                   values for all rivers, even if their values are zero.
 !
- 

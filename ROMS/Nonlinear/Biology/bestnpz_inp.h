@@ -11,6 +11,7 @@
       USE mod_biology
       USE mod_ncparam
       USE mod_scalars
+      USE inp_decode_mod
 !
       implicit none
 !
@@ -25,20 +26,18 @@
       integer :: iTrcStr, iTrcEnd
       integer :: i, ifield, igrid, is, itracer, itrc, ng, nline, status
 
-      integer :: decode_line, load_i, load_l, load_r
-
       logical, dimension(NBT,Ngrids) :: Ltrc
 
-#ifdef ICE_BIO      
+#ifdef ICE_BIO
       logical, dimension(NIB,Ngrids) :: LtrcI
 #endif
       real(r8), dimension(NBT,Ngrids) :: Rbio
 
-      real(r8), dimension(200) :: Rval
+      real(r8), dimension(nRval) :: Rval
 
       character (len=40 ) :: KeyWord
       character (len=256) :: line
-      character (len=256), dimension(200) :: Cval
+      character (len=256), dimension(nCval) :: Cval
 !
 !-----------------------------------------------------------------------
 !  Initialize.
@@ -67,8 +66,8 @@
 !----------------------------------
 !  Vertical mixing tuning parameter
 !----------------------------------
-          ELSE IF (TRIM(KeyWord).eq.'VertMixIncr') THEN 
-            Npts=load_r(Nval, Rval, 1, VertMixIncr)         
+          ELSE IF (TRIM(KeyWord).eq.'VertMixIncr') THEN
+            Npts=load_r(Nval, Rval, 1, VertMixIncr)
 !------------------
 !  Bio- conversions
 !------------------
@@ -76,7 +75,7 @@
             Npts=load_r(Nval, Rval, 1, xi)
           ELSE IF (TRIM(KeyWord).eq.'ccr') THEN
             Npts=load_r(Nval, Rval, 1, ccr)
-          ELSE IF (TRIM(KeyWord).eq.'ccrPhL') THEN 
+          ELSE IF (TRIM(KeyWord).eq.'ccrPhL') THEN
             Npts=load_r(Nval, Rval, 1, ccrPhL)
 !-------------------------
 !  extinction coefficients
@@ -256,17 +255,17 @@
           ELSE IF (TRIM(KeyWord).eq.'eJel') THEN
             Npts=load_r(Nval, Rval, 1, eJel)
           ELSE IF (TRIM(KeyWord).eq.'Q10Jelr') THEN
-            Npts=load_r(Nval, Rval, 1, Q10Jelr) 
+            Npts=load_r(Nval, Rval, 1, Q10Jelr)
           ELSE IF (TRIM(KeyWord).eq.'Q10JelTr') THEN
             Npts=load_r(Nval, Rval, 1, Q10JelTr)
           ELSE IF (TRIM(KeyWord).eq.'Q10Jele') THEN
-            Npts=load_r(Nval, Rval, 1, Q10Jele) 
+            Npts=load_r(Nval, Rval, 1, Q10Jele)
           ELSE IF (TRIM(KeyWord).eq.'Q10JelTe') THEN
             Npts=load_r(Nval, Rval, 1, Q10JelTe)
           ELSE IF (TRIM(KeyWord).eq.'gammaJel') THEN
-            Npts=load_r(Nval, Rval, 1, gammaJel) 
+            Npts=load_r(Nval, Rval, 1, gammaJel)
           ELSE IF (TRIM(KeyWord).eq.'mpredJel') THEN
-            Npts=load_r(Nval, Rval, 1, mpredJel) 
+            Npts=load_r(Nval, Rval, 1, mpredJel)
           ELSE IF (TRIM(KeyWord).eq.'respJel') THEN
             Npts=load_r(Nval, Rval, 1,respJel)
           ELSE IF (TRIM(KeyWord).eq.'bmJ') THEN
@@ -319,9 +318,9 @@
           ELSE IF (TRIM(KeyWord).eq.'mpredEup') THEN
             Npts=load_r(Nval, Rval, 1, mpredEup)
 !--------------------------------
-!  sinking 
+!  sinking
 !--------------------------------
-        
+
           ELSE IF (TRIM(KeyWord).eq.'wPhS') THEN
             Npts=load_r(Nval, Rval, 1, wPhS)
           ELSE IF (TRIM(KeyWord).eq.'wPhL') THEN
@@ -455,7 +454,7 @@
           ELSE IF (TRIM(KeyWord).eq.'tI0') THEN
             Npts=load_r(Nval, Rval, 1,tI0)
           ELSE IF (TRIM(KeyWord).eq.'KI') THEN
-            Npts=load_r(Nval, Rval, 1,KI)  
+            Npts=load_r(Nval, Rval, 1,KI)
 
 !-------------------
 !Benthic Parameters
@@ -528,7 +527,7 @@
                 Hout(i,ng)=Ltrc(itrc,ng)
               END DO
             END DO
-# elif defined BERING_10K  
+# elif defined BERING_10K
           ELSE IF (TRIM(KeyWord).eq.'Hout(idIcePhL)') THEN
             Npts=load_l(Nval, Cval,NIB*Ngrids, LtrcI)
             DO ng=1,Ngrids
@@ -605,7 +604,7 @@
           ELSE IF (TRIM(KeyWord).eq.'TNUDG') THEN
             Npts=load_r(Nval, Rval, NBT*Ngrids, Rbio)
 
-! Hard wired this in for now as wasnt reading correctly from input file    
+! Hard wired this in for now as wasnt reading correctly from input file
             Rbio(15,1)=360_r8
 
             DO ng=1,Ngrids
@@ -681,7 +680,7 @@
                 Aout(i,ng)=Ltrc(itrc,ng)
               END DO
             END DO
-#  elif defined BERING_10K  
+#  elif defined BERING_10K
           ELSE IF (TRIM(KeyWord).eq.'Aout(idIcePhL)') THEN
             Npts=load_l(Nval, Cval,NIB*Ngrids, LtrcI)
             DO ng=1,Ngrids
@@ -713,59 +712,59 @@
           ELSE IF (TRIM(KeyWord).eq.'Hout(idTSvar)') THEN
             Npts=load_l(Nval, Cval, NTS*Ngrids, Ltrc)
             DO ng=1,Ngrids
-              DO itrc=1, NBTS   
+              DO itrc=1, NBTS
                 i=idTSvar(itrc)
                 Hout(i,ng)=Ltrc(itrc,ng)
               END DO
             END DO
-         
+
 #endif
 #ifdef BIOFLUX
           ELSE IF (TRIM(KeyWord).eq.'Hout(idTBFvar)') THEN
             Npts=load_l(Nval, Cval, NT*Ngrids, Ltrc)
             DO ng=1,Ngrids
-!              DO itrc=1, NT(ng)   
+!              DO itrc=1, NT(ng)
                 i=idTBFvar(iBF)
                 Hout(i,ng)=Ltrc(iBF,ng)
 !              END DO
             END DO
-         
+
 #endif
 #ifdef STATIONARY2
           ELSE IF (TRIM(KeyWord).eq.'Hout(idTS2var)') THEN
             Npts=load_l(Nval, Cval, NTS2*Ngrids, Ltrc)
             DO ng=1,Ngrids
-              DO itrc=1, NBTS2   
+              DO itrc=1, NBTS2
                 i=idTS2var(itrc)
                 Hout(i,ng)=Ltrc(itrc,ng)
               END DO
             END DO
-         
+
 #endif
 
 #ifdef PROD3
           ELSE IF (TRIM(KeyWord).eq.'Hout(idPT3var)') THEN
             Npts=load_l(Nval, Cval, NPT3*Ngrids, Ltrc)
             DO ng=1,Ngrids
-              DO itrc=1, NBPT3   
+              DO itrc=1, NBPT3
                 i=idPT3var(itrc)
                 Hout(i,ng)=Ltrc(itrc,ng)
               END DO
             END DO
-          
+
 #endif
 #ifdef PROD2
           ELSE IF (TRIM(KeyWord).eq.'Hout(idPT2var)') THEN
             Npts=load_l(Nval, Cval, NPT2*Ngrids, Ltrc)
             DO ng=1,Ngrids
-              DO itrc=1, NBPT2   
+              DO itrc=1, NBPT2
                 i=idPT2var(itrc)
                 Hout(i,ng)=Ltrc(itrc,ng)
               END DO
             END DO
 #endif
 
-          END IF 
+          END IF
 
           IF ( Lwrite .and.                                             &
      &         TRIM(KeyWord).ne.'TNU2' .and.                            &
@@ -900,4 +899,3 @@
 
       RETURN
       END SUBROUTINE read_BioPar
- 

@@ -403,6 +403,16 @@ ZOS_HSIG_ALPHA == 0.5d0                    ! roughness from wave amplitude
       M2NUDG == 0.0d0                      ! days
       M3NUDG == 0.0d0                      ! days
 
+! Nudging/relaxation time scale for surface salinity nudging, inverse
+! scales will be computed internally, [1:Ngrids].
+
+       TNUDG_SSS == 90.0d0                 ! days
+
+! Threshold to trigger SSS correction toward climatolgy,
+! needs SCORRECTION and SSSC_THRESHOLD defined
+
+       SSS_MISMATCH_THRESHOLD = 0.2d0
+
 ! Factor between passive (outflow) and active (inflow) open boundary
 ! conditions, [1:Ngrids]. If OBCFAC > 1, nudging on inflow is stronger
 ! than on outflow (recommended).
@@ -452,6 +462,15 @@ ZOS_HSIG_ALPHA == 0.5d0                    ! roughness from wave amplitude
  LnudgeM3CLM == F                          ! 3D momentum
 
   LnudgeTCLM == F F                        ! temperature, salinity, inert
+
+! Logical switches for ice climatology and nudging
+
+      LmiCLM == F
+      LaiCLM == F
+      LsiCLM == F
+ LnudgeMICLM == F
+ LnudgeAICLM == F
+ LnudgeSICLM == F
 
 ! Starting (DstrS) and ending (DendS) day for adjoint sensitivity forcing.
 ! DstrS must be less or equal to DendS. If both values are zero, their
@@ -900,8 +919,16 @@ Dout(iTvdif) == 2*T     ! temp_vdiff, ...    vertical diffusion
 
      NGCNAME =  dogbone_ngc.nc
 
-! Input lateral boundary conditions and climatology file names.  The
-! USER has the option to split input data time records into several
+! Input lateral boundary and climatology file names.  The USER has the
+! option to enter several files names per each nested grid.  For example,
+! the USER may have a different files for velocity, ice, etc.
+! The model will scan the file list and will read the needed data
+! from the first file in the list containing the boundary field. Therefore,
+! the order of the file names is very important.  If multiple boundary
+! files per grid, enter first all the file names for grid 1, then grid 2,
+! and so on.  Use a single line per entry with a continuation (\) symbol
+! at the each entry, except the last one.
+! The USER has the option to split input data time records into several
 ! NetCDF files (see prologue instructions above). If so, use a single
 ! line per entry with a vertical bar (|) symbol after each entry,
 ! except the last one.
@@ -918,6 +945,7 @@ Dout(iTvdif) == 2*T     ! temp_vdiff, ...    vertical diffusion
 
 ! Input Sources/Sinks forcing (like river runoff) file name.
 
+     NSSFFILES == 1
      SSFNAME == dogbone_rivers.nc
 
 ! Input tidal forcing file name.
@@ -1188,6 +1216,20 @@ Dout(iTvdif) == 2*T     ! temp_vdiff, ...    vertical diffusion
 ! LBC(isVvel) 3D V-momentum, [1:4, Ngrids] values are expected.
 ! LBC(isMtke) Mixing TKE,    [1:4, Ngrids] values are expected.
 ! LBC(isTvar) Tracers,       [1:4, 1:NAT+NPT, Ngrids] values are expected.
+!
+! Ice boundary conditions
+!
+!  LBC(isAice) Ice concentration, [1:4, Ngrids] values are expected.
+!  LBC(isHice) Ice thickness,     [1:4, Ngrids] values are expected.
+!  LBC(isHsno) Snow thickness,    [1:4, Ngrids] values are expected.
+!  LBC(isTice) Ice temperature,   [1:4, Ngrids] values are expected.
+!  LBC(isApond)Surface water,     [1:4, Ngrids] values are expected.
+!  LBC(isHpond)Surface water,     [1:4, Ngrids] values are expected.
+!  LBC(isSig11)Sigma-11,          [1:4, Ngrids] values are expected.
+!  LBC(isSig12)Sigma-12,          [1:4, Ngrids] values are expected.
+!  LBC(isSig22)Sigma-22,          [1:4, Ngrids] values are expected.
+!  LBC(isUice) Ice U-momentum,    [1:4, Ngrids] values are expected.
+!  LBC(isVice) Ice V-momentum,    [1:4, Ngrids] values are expected.
 !
 ! Similarly, the adjoint-based algorithms (ADM, TLM, RPM) can have different
 ! lateral boundary conditions keywords:
@@ -1977,6 +2019,10 @@ Dout(iTvdif) == 2*T     ! temp_vdiff, ...    vertical diffusion
 ! M2NUDG       Nudging time scale (days) for 2D momentum.
 !
 ! M3NUDG       Nudging time scale (days) for 3D momentum.
+!
+! TNUDG_SSS    Nudging time scale (days) for surface salinity.
+!
+! SSS_MISMATCH_THRESHOLD   Threshold to trigger SSS correction.
 !
 ! OBCFAC       Factor between passive (outflow) and active (inflow) open
 !                boundary conditions.  The nudging time scales for the

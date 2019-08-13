@@ -668,28 +668,6 @@
           real(r8), pointer :: tiG_north(:,:)
 # endif
 
-# ifdef MELT_PONDS
-          real(r8), pointer :: apond_west(:)
-          real(r8), pointer :: apond_east(:)
-          real(r8), pointer :: apond_south(:)
-          real(r8), pointer :: apond_north(:)
-          real(r8), pointer :: hpond_west(:)
-          real(r8), pointer :: hpond_east(:)
-          real(r8), pointer :: hpond_south(:)
-          real(r8), pointer :: hpond_north(:)
-
-#  ifndef ANA_SFWATOBC
-          real(r8), pointer :: apondG_west(:,:)
-          real(r8), pointer :: apondG_east(:,:)
-          real(r8), pointer :: apondG_south(:,:)
-          real(r8), pointer :: apondG_north(:,:)
-          real(r8), pointer :: hpondG_west(:,:)
-          real(r8), pointer :: hpondG_east(:,:)
-          real(r8), pointer :: hpondG_south(:,:)
-          real(r8), pointer :: hpondG_north(:,:)
-#  endif
-# endif
-
           real(r8), pointer :: sig11_west(:)
           real(r8), pointer :: sig11_east(:)
           real(r8), pointer :: sig11_south(:)
@@ -2068,59 +2046,6 @@
       END IF
 # endif
 
-# ifdef MELT_PONDS
-      allocate ( BOUNDARY(ng) % apond_west(LBj:UBj) )
-      Dmem(ng)=Dmem(ng)+Ysize
-      allocate ( BOUNDARY(ng) % apond_east(LBj:UBj) )
-      Dmem(ng)=Dmem(ng)+Ysize
-      allocate ( BOUNDARY(ng) % apond_south(LBi:UBi) )
-      Dmem(ng)=Dmem(ng)+Xsize
-      allocate ( BOUNDARY(ng) % apond_north(LBi:UBi) )
-      Dmem(ng)=Dmem(ng)+Xsize
-      allocate ( BOUNDARY(ng) % hpond_west(LBj:UBj) )
-      Dmem(ng)=Dmem(ng)+Ysize
-      allocate ( BOUNDARY(ng) % hpond_east(LBj:UBj) )
-      Dmem(ng)=Dmem(ng)+Ysize
-      allocate ( BOUNDARY(ng) % hpond_south(LBi:UBi) )
-      Dmem(ng)=Dmem(ng)+Xsize
-      allocate ( BOUNDARY(ng) % hpond_north(LBi:UBi) )
-      Dmem(ng)=Dmem(ng)+Xsize
-
-#  ifndef ANA_SFWATOBC
-      IF (LBC(iwest,isApond,ng)%acquire) THEN
-        allocate ( BOUNDARY(ng) % apondG_west(LBj:UBj,2) )
-        Dmem(ng)=Dmem(ng)+Ysize
-      END IF
-      IF (LBC(ieast,isApond,ng)%acquire) THEN
-        allocate ( BOUNDARY(ng) % apondG_east(LBj:UBj,2) )
-        Dmem(ng)=Dmem(ng)+Ysize
-      END IF
-      IF (LBC(isouth,isApond,ng)%acquire) THEN
-        allocate ( BOUNDARY(ng) % apondG_south(LBi:UBi,2) )
-        Dmem(ng)=Dmem(ng)+Xsize
-      END IF
-      IF (LBC(inorth,isApond,ng)%acquire) THEN
-        allocate ( BOUNDARY(ng) % apondG_north(LBi:UBi,2) )
-        Dmem(ng)=Dmem(ng)+Xsize
-      END IF
-      IF (LBC(iwest,isHpond,ng)%acquire) THEN
-        allocate ( BOUNDARY(ng) % hpondG_west(LBj:UBj,2) )
-        Dmem(ng)=Dmem(ng)+Ysize
-      END IF
-      IF (LBC(ieast,isHpond,ng)%acquire) THEN
-        allocate ( BOUNDARY(ng) % hpondG_east(LBj:UBj,2) )
-        Dmem(ng)=Dmem(ng)+Ysize
-      END IF
-      IF (LBC(isouth,isHpond,ng)%acquire) THEN
-        allocate ( BOUNDARY(ng) % hpondG_south(LBi:UBi,2) )
-        Dmem(ng)=Dmem(ng)+Xsize
-      END IF
-      IF (LBC(inorth,isHpond,ng)%acquire) THEN
-        allocate ( BOUNDARY(ng) % hpondG_north(LBi:UBi,2) )
-        Dmem(ng)=Dmem(ng)+Xsize
-      END IF
-#  endif
-# endif
 
       allocate ( BOUNDARY(ng) % sig11_west(LBj:UBj) )
       Dmem(ng)=Dmem(ng)+Ysize
@@ -2676,26 +2601,6 @@
           BOUNDARY(ng) % tiG_west = IniVal
         END IF
 #  endif
-#  ifdef MELT_PONDS
-        IF (DOMAIN(ng)%NorthWest_Test(tile).and.                        &
-     &      LBC(iwest,isApond,ng)%acquire) THEN
-          BOUNDARY(ng) % apond_west = IniVal
-        END IF
-        IF (DOMAIN(ng)%NorthWest_Test(tile).and.                        &
-     &      LBC(iwest,isHpond,ng)%acquire) THEN
-          BOUNDARY(ng) % hpond_west = IniVal
-        END IF
-#   ifndef ANA_SFWATOBC
-        IF (DOMAIN(ng)%NorthWest_Test(tile).and.                        &
-     &      LBC(iwest,isApond,ng)%acquire) THEN
-          BOUNDARY(ng) % apondG_west = IniVal
-        END IF
-        IF (DOMAIN(ng)%NorthWest_Test(tile).and.                        &
-     &      LBC(iwest,isHpond,ng)%acquire) THEN
-          BOUNDARY(ng) % hpondG_west = IniVal
-        END IF
-#   endif
-#  endif
         IF (DOMAIN(ng)%NorthWest_Test(tile).and.                        &
      &      LBC(iwest,isSig11,ng)%acquire) THEN
           BOUNDARY(ng) % sig11_west = IniVal
@@ -2787,26 +2692,6 @@
           BOUNDARY(ng) % tiG_east = IniVal
         END IF
 #  endif
-#  ifdef MELT_PONDS
-        IF (DOMAIN(ng)%SouthEast_Test(tile).and.                        &
-     &      LBC(ieast,isApond,ng)%acquire) THEN
-          BOUNDARY(ng) % apond_east = IniVal
-        END IF
-        IF (DOMAIN(ng)%SouthEast_Test(tile).and.                        &
-     &      LBC(ieast,isHpond,ng)%acquire) THEN
-          BOUNDARY(ng) % hpond_east = IniVal
-        END IF
-#   ifndef ANA_SFWATOBC
-        IF (DOMAIN(ng)%SouthEast_Test(tile).and.                        &
-     &      LBC(ieast,isApond,ng)%acquire) THEN
-          BOUNDARY(ng) % apondG_east = IniVal
-        END IF
-        IF (DOMAIN(ng)%SouthEast_Test(tile).and.                        &
-     &      LBC(ieast,isHpond,ng)%acquire) THEN
-          BOUNDARY(ng) % hpondG_east = IniVal
-        END IF
-#   endif
-#  endif
         IF (DOMAIN(ng)%SouthEast_Test(tile).and.                        &
      &      LBC(ieast,isSig11,ng)%acquire) THEN
           BOUNDARY(ng) % sig11_east = IniVal
@@ -2897,26 +2782,6 @@
           BOUNDARY(ng) % tiG_south = IniVal
         END IF
 #  endif
-#  ifdef MELT_PONDS
-        IF (DOMAIN(ng)%SouthWest_Test(tile).and.                        &
-     &      LBC(isouth,isApond,ng)%acquire) THEN
-          BOUNDARY(ng) % apond_south = IniVal
-        END IF
-        IF (DOMAIN(ng)%SouthWest_Test(tile).and.                        &
-     &      LBC(isouth,isHpond,ng)%acquire) THEN
-          BOUNDARY(ng) % hpond_south = IniVal
-        END IF
-#   ifndef ANA_SFWATOBC
-        IF (DOMAIN(ng)%SouthWest_Test(tile).and.                        &
-     &      LBC(isouth,isApond,ng)%acquire) THEN
-          BOUNDARY(ng) % apondG_south = IniVal
-        END IF
-        IF (DOMAIN(ng)%SouthWest_Test(tile).and.                        &
-     &      LBC(isouth,isHpond,ng)%acquire) THEN
-          BOUNDARY(ng) % hpondG_south = IniVal
-        END IF
-#   endif
-#  endif
         IF (DOMAIN(ng)%SouthWest_Test(tile).and.                        &
      &      LBC(isouth,isSig11,ng)%acquire) THEN
           BOUNDARY(ng) % sig11_south = IniVal
@@ -3006,26 +2871,6 @@
      &      LBC(inorth,isTice,ng)%acquire) THEN
           BOUNDARY(ng) % tiG_north = IniVal
         END IF
-#  endif
-#  ifdef MELT_PONDS
-        IF (DOMAIN(ng)%NorthEast_Test(tile).and.                        &
-     &      LBC(inorth,isApond,ng)%acquire) THEN
-          BOUNDARY(ng) % apond_north = IniVal
-        END IF
-        IF (DOMAIN(ng)%NorthEast_Test(tile).and.                        &
-     &      LBC(inorth,isHpond,ng)%acquire) THEN
-          BOUNDARY(ng) % hpond_north = IniVal
-        END IF
-#   ifndef ANA_SFWATOBC
-        IF (DOMAIN(ng)%NorthEast_Test(tile).and.                        &
-     &      LBC(inorth,isApond,ng)%acquire) THEN
-          BOUNDARY(ng) % apondG_north = IniVal
-        END IF
-        IF (DOMAIN(ng)%NorthEast_Test(tile).and.                        &
-     &      LBC(inorth,isHpond,ng)%acquire) THEN
-          BOUNDARY(ng) % hpondG_north = IniVal
-        END IF
-#   endif
 #  endif
         IF (DOMAIN(ng)%NorthEast_Test(tile).and.                        &
      &      LBC(inorth,isSig11,ng)%acquire) THEN

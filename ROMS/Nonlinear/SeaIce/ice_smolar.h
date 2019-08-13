@@ -1,7 +1,7 @@
        SUBROUTINE ice_advect (ng, tile)
 !
 !*************************************************** W. Paul Budgell ***
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                        **
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                        **
 !************************************************** Hernan G. Arango ***
 !                                                                      !
 !  This subroutine performs advection of ice scalars using the         !
@@ -19,7 +19,7 @@
 #include "tile.h"
 
 #ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 56)
+      CALL wclock_on (ng, iNLM, 79, __LINE__, __FILE__)
 #endif
 ! ---------------------------------------------------------------------
 !  Advect the ice concentration.
@@ -29,7 +29,7 @@
      &                      IminS, ImaxS, JminS, JmaxS                  &
      &                      )
 #ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 56)
+      CALL wclock_off (ng, iNLM, 79, __LINE__, __FILE__)
 #endif
       RETURN
       END SUBROUTINE ice_advect
@@ -310,126 +310,6 @@
 !
 # endif
 !
-# ifdef MELT_PONDS
-! ---------------------------------------------------------------------
-!  Advect the surface melt water.
-! ---------------------------------------------------------------------
-      DO j=LBj,UBj
-        DO i=LBi,UBi
-          wrk(i,j,liold(ng)) = ICE(ng)%ai(i,j,liold(ng))*                         &
-       &                       ICE(ng)%apond(i,j,liold(ng))
-        ENDDO
-      ENDDO
-
-      CALL ice_advect_tile (ng, tile,                                   &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      IminS, ImaxS, JminS, JmaxS,                 &
-     &                      nrhs(ng), linew(ng), liold(ng), liunw(ng),  &
-#  ifdef MASKING
-     &                      GRID(ng) % rmask,                           &
-#  endif
-#  ifdef WET_DRY
-     &                      GRID(ng) % rmask_wet,                       &
-#  endif
-#  ifdef ICESHELF
-     &                      GRID(ng) % zice,                            &
-#  endif
-#  ifndef ICE_UPWIND
-     &                      GRID(ng) % pm,                              &
-     &                      GRID(ng) % pn,                              &
-#  endif
-     &                      GRID(ng) % on_u,                            &
-     &                      GRID(ng) % om_v,                            &
-     &                      GRID(ng) % omn,                             &
-     &                      ICE(ng) % ui,                               &
-     &                      ICE(ng) % vi,                               &
-     &                      wrk                                         &
-     &                      )
-
-      DO j=LBj,UBj
-        DO i=LBi,UBi
-          IF (ICE(ng)%ai(i,j,linew(ng)) > 0.0_r8) THEN
-            ICE(ng)%apond(i,j,linew) = wrk(i,j,linew(ng))/              &
-       &             ICE(ng)%ai(i,j,linew(ng))
-            ICE(ng)%apond(i,j,linew) =                                  &
-       &             MAX(0.0_r8,ICE(ng)%apond(i,j,linew))
-          ELSE
-            ICE(ng)%apond(i,j,linew) = 0.0_r8
-          END IF
-        ENDDO
-      ENDDO
-!
-      DO j=LBj,UBj
-        DO i=LBi,UBi
-          wrk(i,j,liold(ng)) = ICE(ng)%ai(i,j,liold(ng))*               &
-       &                       ICE(ng)%apond(i,j,liold(ng))*            &
-       &                       ICE(ng)%hpond(i,j,liold(ng))
-        ENDDO
-      ENDDO
-
-      CALL ice_advect_tile (ng, tile,                                   &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      IminS, ImaxS, JminS, JmaxS,                 &
-     &                      nrhs(ng), linew(ng), liold(ng), liunw(ng),  &
-# ifdef MASKING
-     &                      GRID(ng) % rmask,                           &
-# endif
-# ifdef WET_DRY
-     &                      GRID(ng) % rmask_wet,                       &
-# endif
-# ifdef ICESHELF
-     &                      GRID(ng) % zice,                            &
-# endif
-#ifndef ICE_UPWIND
-     &                      GRID(ng) % pm,                              &
-     &                      GRID(ng) % pn,                              &
-#endif
-     &                      GRID(ng) % on_u,                            &
-     &                      GRID(ng) % om_v,                            &
-     &                      GRID(ng) % omn,                             &
-     &                      ICE(ng) % ui,                               &
-     &                      ICE(ng) % vi,                               &
-     &                      wrk                                         &
-     &                      )
-
-      DO j=LBj,UBj
-        DO i=LBi,UBi
-          IF (ICE(ng)%ai(i,j,linew(ng))*ICE(ng)%apond(i,j,linew(ng))    &
-     &                    > 0.0_r8) THEN
-            ICE(ng)%hpond(i,j,linew) = wrk(i,j,linew(ng))/              &
-     &          (ICE(ng)%ai(i,j,linew(ng))*ICE(ng)%apond(i,j,linew(ng)))
-            ICE(ng)%hpond(i,j,linew) =                                  &
-       &             MAX(0.0_r8,ICE(ng)%hpond(i,j,linew))
-          ELSE
-            ICE(ng)%hpond(i,j,linew) = 0.0_r8
-          END IF
-        ENDDO
-      ENDDO
-!
-      CALL i2d_bc_tile (ng, tile, iNLM,                                 &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  IminS, ImaxS, JminS, JmaxS,                     &
-     &                  liold(ng), linew(ng),                           &
-     &                  BOUNDARY(ng)%apond_west(LBj:UBj),               &
-     &                  BOUNDARY(ng)%apond_east(LBj:UBj),               &
-     &                  BOUNDARY(ng)%apond_north(LBi:UBi),              &
-     &                  BOUNDARY(ng)%apond_south(LBi:UBi),              &
-     &                  ICE(ng)%ui,                                     &
-     &                  ICE(ng)%vi,                                     &
-     &                  ICE(ng)%apond, LBC(:,isApond,ng))
-      CALL i2d_bc_tile (ng, tile, iNLM,                                 &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  IminS, ImaxS, JminS, JmaxS,                     &
-     &                  liold(ng), linew(ng),                           &
-     &                  BOUNDARY(ng)%hpond_west(LBj:UBj),               &
-     &                  BOUNDARY(ng)%hpond_east(LBj:UBj),               &
-     &                  BOUNDARY(ng)%hpond_north(LBi:UBi),              &
-     &                  BOUNDARY(ng)%hpond_south(LBi:UBi),              &
-     &                  ICE(ng)%ui,                                     &
-     &                  ICE(ng)%vi,                                     &
-     &                  ICE(ng)%hpond, LBC(:,isHpond,ng))
-# endif
-!
 ! ---------------------------------------------------------------------
 !  Advect the interior ice temperature.
 ! ---------------------------------------------------------------------
@@ -561,14 +441,6 @@
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          ICE(ng)%hsn(:,:,linew(ng)))
-# ifdef MELT_PONDS
-        CALL exchange_r2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          ICE(ng)%apond(:,:,linew(ng)))
-        CALL exchange_r2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          ICE(ng)%hpond(:,:,linew(ng)))
-# endif
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          ICE(ng)%ti(:,:,linew(ng)))
@@ -607,13 +479,6 @@
      &                    ICE(ng)%enthalpi(:,:,linew(ng)),              &
      &                    ICE(ng)%ageice(:,:,linew(ng)),                &
      &                    ICE(ng)%hage(:,:,linew(ng)))
-#  ifdef MELT_PONDS
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
-     &                    ICE(ng)%apond(:,:,linew(ng)),                 &
-     &                    ICE(ng)%hpond(:,:,linew(ng)))
-#  endif
 #  if defined ICE_BIO && defined BERING_10K
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &

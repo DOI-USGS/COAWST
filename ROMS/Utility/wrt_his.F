@@ -2183,6 +2183,31 @@
         END IF
       END IF
 !
+!  Write out ice top temperature
+!
+      IF (Hout(idT2ice,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid,                      &
+     &                     HIS(ng)%Vid(idT2ice),                        &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#  ifdef MASKING
+     &                     GRID(ng) % rmask_full,                       &
+#  endif
+     &                     ICE(ng) % t2)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idT2ice)),                   &
+     &                        HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
 !  Write out internal ice stress component 11
 !
       IF (Hout(idSig11,ng)) THEN

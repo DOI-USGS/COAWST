@@ -65,7 +65,7 @@
       integer :: iSDet                  ! Small detritus concentration
 #ifdef IRON_LIMIT
       integer :: iFphy                  ! Phytoplankton-associated iron
-      integer :: iFdis                  ! Available disolved iron
+      integer :: iFdis                  ! Available dissolved iron
 #endif
 !
 !  Biological parameters.

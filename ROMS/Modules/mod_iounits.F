@@ -98,6 +98,7 @@
 !  BRYids      NetCDF file ID associated with each boundary field.     !
 !  CLMids      NetCDF file ID associated with each climatology field.  !
 !  FRCids      NetCDF file ID associated with each forcing field.      !
+!  SSFids      NetCDF file ID associated with each river source field. !
 !  Rerror      Running error messages.                                 !
 !  SourceFile  Current executed file name. It is used for IO error     !
 !                purposes.                                             !
@@ -187,6 +188,13 @@
       integer, allocatable :: FRCids(:,:)
 
       TYPE(T_IO), allocatable :: FRC(:,:)
+!
+!  Input river source data.
+!
+      integer, allocatable :: nSSFfiles(:)
+      integer, allocatable :: SSFids(:,:)
+
+      TYPE(T_IO), allocatable :: SSF(:,:)
 !
 !  Error messages.
 !

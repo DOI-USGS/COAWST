@@ -215,7 +215,6 @@
       real(r8), dimension(IminS:ImaxS) :: PARsur
 
       real(r8), dimension(NT(ng),2) :: BioTrc
-
       real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: Bio
       real(r8), dimension(IminS:ImaxS,N(ng),NT(ng)) :: Bio_old
 
@@ -238,6 +237,7 @@
       real(r8), dimension(IminS:ImaxS) :: frac_buried
 
 #include "set_bounds.h"
+
 !
 !-----------------------------------------------------------------------
 !  Add biological Source/Sink terms.
@@ -353,7 +353,7 @@
 #endif
 !
 #if defined IRON_LIMIT && defined IRON_RSIN
-!  Variable Si:N ratio for dimatoms based on dissolved iron concentration
+!  Variable Si:N ratio for diatoms based on dissolved iron concentration
 !  Si:N varies between 1:1 (high iron) and 3:1 (low iron)
         DO k=1,N(ng)
           DO i=Istr,Iend

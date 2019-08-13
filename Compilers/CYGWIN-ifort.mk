@@ -62,9 +62,6 @@ ifdef USE_NETCDF4
         NF_CONFIG ?= nf-config
     NETCDF_INCDIR ?= $(shell $(NF_CONFIG) --prefix)/include
              LIBS := $(shell $(NF_CONFIG) --flibs)
-#    NETCDF_INCDIR ?= /usr/local/netcdf4/include
-#    NETCDF_LIBDIR ?= /usr/local/netcdf4/lib
-#      HDF5_LIBDIR ?= /usr/local/hdf5/lib
 else
     NETCDF_INCDIR ?= /netcdf-win32/include
     NETCDF_LIBDIR ?= /netcdf-win32/lib
@@ -164,7 +161,6 @@ endif
 # file names needed when linking. Use of the "=" sign means that
 # variables will be evaluated only when needed.
 #
-
          BIN_WIN32 = "$$(cygpath --windows $(BIN))"
         LIBS_WIN32 += "$$(cygpath --windows $(NETCDF_LIB))"
         LIBS_WIN32 += "c:\cygwin\lib\gcc\i686-pc-cygwin\4.9.2\libgcc.a"

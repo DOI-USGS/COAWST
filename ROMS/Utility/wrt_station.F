@@ -2132,6 +2132,7 @@
      &                        varid = STA(ng)%Vid(idUiceE))
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
+
         CALL extract_sta2d (ng, iNLM, Cgrid, idViceN, r2dvar,           &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      scale, Vr2d,                                &
@@ -2143,6 +2144,7 @@
      &                        varid = STA(ng)%Vid(idViceN))
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
+
         deallocate (Ur2d)
         deallocate (Vr2d)
       END IF
@@ -2198,42 +2200,6 @@
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
       END IF
-#ifdef MELT_PONDS
-!
-!  Write out surface water fraction (on ice)
-!
-      IF (Sout(idApond,ng)) THEN
-        scale=1.0_r8
-        CALL extract_sta2d (ng, iNLM, Cgrid, idApond, r2dvar,           &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, ICE(ng)%apond(:,:,IOUT),             &
-     &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
-     &                        TRIM(Vname(1,idApond)), psta,             &
-     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
-     &                        ncid = STA(ng)%ncid,                      &
-     &                        varid = STA(ng)%Vid(idApond))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
-      END IF
-!
-!  Write out surface water thickness (on ice)
-!
-      IF (Sout(idHpond,ng)) THEN
-        scale=1.0_r8
-        CALL extract_sta2d (ng, iNLM, Cgrid, idHpond, r2dvar,           &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      scale, ICE(ng)%hpond(:,:,IOUT),             &
-     &                      Nstation(ng), Xpos, Ypos, psta)
-        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
-     &                        TRIM(Vname(1,idHpond)), psta,             &
-     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
-     &                        ncid = STA(ng)%ncid,                      &
-     &                        varid = STA(ng)%Vid(idHpond))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
-      END IF
-#endif
 !
 !  Write out ice age.
 !
@@ -2299,6 +2265,23 @@
      &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idTimid))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out ice top temperature
+!
+      IF (Sout(idT2ice,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idT2ice, r2dvar,           &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%t2,                          &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idT2ice)), psta,             &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idT2ice))
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
       END IF
@@ -2456,6 +2439,23 @@
      &                 __FILE__)) RETURN
       END IF
 !
+!  Write out ice divergence rate
+!
+      IF (Sout(idWdiv,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idWdiv, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, ICE(ng)%wdiv,                        &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idWdiv)), psta,              &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idWdiv))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
 !  Write out internal ice stress sig11
 !
       IF (Sout(idSig11,ng)) THEN
@@ -2523,6 +2523,297 @@
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
       END IF
+#  ifdef ICE_DIAGS
+!
+!  Write out ocean albedo
+!
+      IF (Sout(idAlbe,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idAlbe, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%albedo,                   &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idAlbe)), psta,              &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idAlbe))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out ice albedo
+!
+      IF (Sout(idAlbI,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idAlbI, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%albedo_ice,               &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idAlbI)), psta,              &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idAlbI))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out longwave down
+!
+      IF (Sout(idLWdn,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idLWdn, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%LW_down,                  &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idLWdn)), psta,              &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idLWdn))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out shorwave down
+!
+      IF (Sout(idSWdn,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idSWdn, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%SW_down,                  &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idSWdn)), psta,              &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idSWdn))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out ice latent heat
+!
+      IF (Sout(idLatI,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idLatI, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%lat_ice,                  &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idLatI)), psta,              &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idLatI))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out ice sensible heat
+!
+      IF (Sout(idSenI,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idSenI, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%sens_ice,                 &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idSenI)), psta,              &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idSenI))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out ice longwave up
+!
+      IF (Sout(idLWupI,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idLWupI, r2dvar,           &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%LW_up_ice,                &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idLWupI)), psta,             &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idLWupI))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out ice shortwave up
+!
+      IF (Sout(idSWupI,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idSWupI, r2dvar,           &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%SW_up_ice,                &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idSWupI)), psta,             &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idSWupI))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out shortwave into ice
+!
+      IF (Sout(idSWinI,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idSWinI, r2dvar,           &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%qi_o_n,                   &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idSWinI)), psta,             &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idSWinI))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out shortwave through the ice
+!
+      IF (Sout(idSWthruI,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idSWthruI, r2dvar,         &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%SW_thru_ice,              &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idSWthruI)), psta,           &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idSWthruI))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out salt flux under ice
+!
+      IF (Sout(idSaltI,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idSaltI, r2dvar,           &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%saltflux_ice,             &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idSaltI)), psta,             &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idSaltI))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out salt flux in leads
+!
+      IF (Sout(idSaltL,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idSaltL, r2dvar,           &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%saltflux_ocean,           &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idSaltL)), psta,             &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idSaltL))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out air-ocean heat flux
+!
+      IF (Sout(idQao,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idQao, r2dvar,             &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%qao_n,                    &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idQao)), psta,               &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idQao))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out ice-air heat flux
+!
+      IF (Sout(idQai,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idQai, r2dvar,             &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%qai_n,                    &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idQai)), psta,               &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idQai))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out ice-ocean heat flux
+!
+      IF (Sout(idQio,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idQio, r2dvar,             &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%qio_n,                    &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idQio)), psta,               &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idQio))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out ice heat flux
+!
+      IF (Sout(idQi2,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idQi2, r2dvar,             &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%qi2_n,                    &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idQi2)), psta,               &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idQi2))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+!
+!  Write out snow-ice conversion rate
+!
+      IF (Sout(idSnoI,ng)) THEN
+        scale=1.0_r8
+        CALL extract_sta2d (ng, iNLM, Cgrid, idSnoI, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, FORCES(ng)%snoice,                   &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idSnoI)), psta,              &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idSnoI))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END IF
+#  endif
 # endif
 !
 !-----------------------------------------------------------------------

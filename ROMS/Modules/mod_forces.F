@@ -381,6 +381,17 @@
           real(r8), pointer :: LW_down(:,:)
           real(r8), pointer :: SW_down(:,:)
 #endif
+#ifdef ICE_DIAGS
+          real(r8), pointer :: LW_down(:,:)
+          real(r8), pointer :: SW_down(:,:)
+          real(r8), pointer :: lat_ice(:,:)
+          real(r8), pointer :: sens_ice(:,:)
+          real(r8), pointer :: LW_up_ice(:,:)
+          real(r8), pointer :: SW_up_ice(:,:)
+          real(r8), pointer :: saltflux_ice(:,:)
+          real(r8), pointer :: saltflux_ocean(:,:)
+          real(r8), pointer :: snoice(:,:)
+#endif
 #if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
     defined SPECTRAL_LIGHT  || defined ATM2OCN_FLUXES ||          \
     defined CCSM_FLUXES2D
@@ -423,8 +434,11 @@
           real(r8), pointer :: tau_aiy_n(:,:)
           real(r8), pointer :: qai_n(:,:)
           real(r8), pointer :: qi_o_n(:,:)
+          real(r8), pointer :: SW_thru_ice(:,:)
           real(r8), pointer :: qswi_n(:,:)
           real(r8), pointer :: qao_n(:,:)
+          real(r8), pointer :: qio_n(:,:)
+          real(r8), pointer :: qi2_n(:,:)
           real(r8), pointer :: snow_n(:,:)
           real(r8), pointer :: p_e_n(:,:)
 # endif 
@@ -754,6 +768,10 @@
       Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % qao_n(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % qio_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % qi2_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % qai_n(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % qswi_n(LBi:UBi,LBj:UBj) )
@@ -983,6 +1001,34 @@
       Dmem(ng)=Dmem(ng)+2.0_r8*size2d
 # endif
 #endif
+#ifdef CICE_MODEL
+      allocate ( FORCES(ng) % PotT(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % LW_down(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % SW_down(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+#endif
+#ifdef ICE_DIAGS
+      allocate ( FORCES(ng) % LW_down(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % SW_down(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % lat_ice(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % sens_ice(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % LW_up_ice(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % SW_up_ice(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % saltflux_ice(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % saltflux_ocean(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % snoice(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+#endif
 
 #ifdef SOLVE3D
 
@@ -1030,9 +1076,15 @@
       Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % qi_o_n(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % SW_thru_ice(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % qswi_n(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % qao_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % qio_n(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+      allocate ( FORCES(ng) % qi2_n(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
       allocate ( FORCES(ng) % snow_n(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
@@ -1491,6 +1543,8 @@
             FORCES(ng) % snow_n(i,j) = IniVal
             FORCES(ng) % p_e_n(i,j) = IniVal
             FORCES(ng) % qao_n(i,j) = IniVal
+            FORCES(ng) % qio_n(i,j) = IniVal
+            FORCES(ng) % qi2_n(i,j) = IniVal
             FORCES(ng) % qai_n(i,j) = IniVal
             FORCES(ng) % qswi_n(i,j) = IniVal
             FORCES(ng) % tau_awx_n(i,j) = IniVal
@@ -1672,6 +1726,17 @@
             FORCES(ng) % LW_down(i,j) = IniVal
             FORCES(ng) % SW_down(i,j) = IniVal
 #endif
+#ifdef ICE_DIAGS
+            FORCES(ng) % LW_down(i,j) = IniVal
+            FORCES(ng) % SW_down(i,j) = IniVal
+            FORCES(ng) % lat_ice(i,j) = IniVal
+            FORCES(ng) % sens_ice(i,j) = IniVal
+            FORCES(ng) % LW_up_ice(i,j) = IniVal
+            FORCES(ng) % SW_up_ice(i,j) = IniVal
+            FORCES(ng) % saltflux_ice(i,j) = IniVal
+            FORCES(ng) % saltflux_ocean(i,j) = IniVal
+            FORCES(ng) % snoice(i,j) = IniVal
+#endif
 #if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS || \
     defined SPECTRAL_LIGHT || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
             FORCES(ng) % Pair(i,j) = IniVal
@@ -1714,8 +1779,11 @@
             FORCES(ng) % tau_aiy_n(i,j) = IniVal
             FORCES(ng) % qai_n(i,j) = IniVal
             FORCES(ng) % qi_o_n(i,j) = IniVal
+            FORCES(ng) % SW_thru_ice(i,j) = IniVal
             FORCES(ng) % qswi_n(i,j) = IniVal
             FORCES(ng) % qao_n(i,j) = IniVal
+            FORCES(ng) % qio_n(i,j) = IniVal
+            FORCES(ng) % qi2_n(i,j) = IniVal
             FORCES(ng) % snow_n(i,j) = IniVal
             FORCES(ng) % p_e_n(i,j) = IniVal
 # endif

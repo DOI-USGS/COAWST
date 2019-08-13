@@ -617,7 +617,8 @@
             CALL ana_ice (ng, TILE, iNLM)
           END DO
 !$OMP BARRIER
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
           time(ng)=io_time                   ! needed for shared-memory
         END IF
       END DO

@@ -188,6 +188,7 @@
               hwater=hwater-ABS(zice(i,j))
 # endif
               hinv=1.0_r8/hwater
+
               z_w0=cff_w+cff1_w*hwater
               z_w(i,j,k)=z_w0+Zt_avg1(i,j)*(1.0_r8+z_w0*hinv)
               z_r0=cff_r+cff1_r*hwater

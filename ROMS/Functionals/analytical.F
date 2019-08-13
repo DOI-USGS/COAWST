@@ -86,8 +86,12 @@
       implicit none
 !
       CONTAINS
-!
+
 #ifdef ANALYTICAL
+# if defined ANA_AICLIMA && defined ICE_MODEL
+#  include <ana_aiclima.h>
+# endif
+
 # if defined ANA_AIOBC && defined ICE_MODEL
 #  include <ana_aiobc.h>
 # endif
@@ -188,6 +192,10 @@
 
 # if defined ANA_GRID && defined MASKING
 #  include <ana_mask.h>
+# endif
+
+# if defined ANA_MICLIMA && defined ICE_MODEL
+#  include <ana_miclima.h>
 # endif
 
 # if defined ANA_NCEP && defined NCEP_FLUXES

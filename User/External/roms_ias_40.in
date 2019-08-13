@@ -155,6 +155,20 @@ GridsInLayer =  1
    LBC(isTvar) ==   Clo     Clo     Cla     Cla \       ! temperature
                     Clo     Clo     Cla     Cla         ! salinity
 
+! Ice boundary conditions
+
+   LBC(isAice) ==   Clo     Clo     Clo     Clo         ! ice concentration
+   LBC(isHice) ==   Clo     Clo     Clo     Clo         ! ice thickness
+   LBC(isHsno) ==   Clo     Clo     Clo     Clo         ! snow thickness
+   LBC(isTice) ==   Clo     Clo     Clo     Clo         ! ice temperature
+   LBC(isApond)==   Clo     Clo     Clo     Clo         ! surface water
+   LBC(isHpond)==   Clo     Clo     Clo     Clo         ! surface water
+   LBC(isSig11)==   Clo     Clo     Clo     Clo         ! sigma-11
+   LBC(isSig12)==   Clo     Clo     Clo     Clo         ! sigma-12
+   LBC(isSig22)==   Clo     Clo     Clo     Clo         ! sigma-22
+   LBC(isUice) ==   Clo     Clo     Clo     Clo         ! ice U-momentum
+   LBC(isVice) ==   Clo     Clo     Clo     Clo         ! ice V-momentum
+
 ! Adjoint-based algorithms can have different lateral boundary
 ! conditions keywords.
 
@@ -389,6 +403,16 @@ LtracerSponge == F F                            ! temperature, salinity, inert
       M2NUDG == 50.0d0                     ! days
       M3NUDG == 50.0d0                     ! days
 
+! Nudging/relaxation time scale for surface salinity nudging, inverse
+! scales will be computed internally, [1:Ngrids].
+
+       TNUDG_SSS == 90.0d0                 ! days
+
+! Threshold to trigger SSS correction toward climatolgy,
+! needs SCORRECTION and SSSC_THRESHOLD defined
+
+       SSS_MISMATCH_THRESHOLD = 0.2d0
+
 ! Factor between passive (outflow) and active (inflow) open boundary
 ! conditions, [1:Ngrids]. If OBCFAC > 1, nudging on inflow is stronger
 ! than on outflow (recommended).
@@ -438,6 +462,15 @@ LtracerSponge == F F                            ! temperature, salinity, inert
  LnudgeM3CLM == F                          ! 3D momentum
 
   LnudgeTCLM == F F                        ! temperature, salinity, inert
+
+! Logical switches for ice climatology and nudging
+
+      LmiCLM == F
+      LaiCLM == F
+      LsiCLM == F
+ LnudgeMICLM == F
+ LnudgeAICLM == F
+ LnudgeSICLM == F
 
 ! Starting (DstrS) and ending (DendS) day for adjoint sensitivity forcing.
 ! DstrS must be less or equal to DendS. If both values are zero, their
@@ -891,8 +924,11 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! line per entry with a vertical bar (|) symbol after each entry,
 ! except the last one.
 
-     BRYNAME == Data/ias40_bry.nc
+     NCLMFILES == 1                         ! number of climate files
      CLMNAME == Data/ias40_clim.nc
+
+     NBCFILES == 1                          ! number of boundary files
+     BRYNAME == Data/ias40_bry.nc
 
 ! Input climatology nudging coefficients file name.
 
@@ -900,6 +936,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 
 ! Input Sources/Sinks forcing (like river runoff) file name.
 
+     NSSFFILES == 1
      SSFNAME == ias40_rivers.nc
 
 ! Input tidal forcing file name.
@@ -1170,6 +1207,20 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! LBC(isVvel) 3D V-momentum, [1:4, Ngrids] values are expected.
 ! LBC(isMtke) Mixing TKE,    [1:4, Ngrids] values are expected.
 ! LBC(isTvar) Tracers,       [1:4, 1:NAT+NPT, Ngrids] values are expected.
+!
+! Ice boundary conditions
+!
+!  LBC(isAice) Ice concentration, [1:4, Ngrids] values are expected.
+!  LBC(isHice) Ice thickness,     [1:4, Ngrids] values are expected.
+!  LBC(isHsno) Snow thickness,    [1:4, Ngrids] values are expected.
+!  LBC(isTice) Ice temperature,   [1:4, Ngrids] values are expected.
+!  LBC(isApond)Surface water,     [1:4, Ngrids] values are expected.
+!  LBC(isHpond)Surface water,     [1:4, Ngrids] values are expected.
+!  LBC(isSig11)Sigma-11,          [1:4, Ngrids] values are expected.
+!  LBC(isSig12)Sigma-12,          [1:4, Ngrids] values are expected.
+!  LBC(isSig22)Sigma-22,          [1:4, Ngrids] values are expected.
+!  LBC(isUice) Ice U-momentum,    [1:4, Ngrids] values are expected.
+!  LBC(isVice) Ice V-momentum,    [1:4, Ngrids] values are expected.
 !
 ! Similarly, the adjoint-based algorithms (ADM, TLM, RPM) can have different
 ! lateral boundary conditions keywords:
@@ -1959,6 +2010,10 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! M2NUDG       Nudging time scale (days) for 2D momentum.
 !
 ! M3NUDG       Nudging time scale (days) for 3D momentum.
+!
+! TNUDG_SSS    Nudging time scale (days) for surface salinity.
+!
+! SSS_MISMATCH_THRESHOLD   Threshold to trigger SSS correction.
 !
 ! OBCFAC       Factor between passive (outflow) and active (inflow) open
 !                boundary conditions.  The nudging time scales for the

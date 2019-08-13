@@ -342,6 +342,38 @@
  50           FORMAT (t47,'Total:',f14.3,2x,f8.4)
             END IF
           END DO
+# ifdef ICE_MODEL
+!
+!  Report elapsed time for message passage communications.
+!
+          DO imodel=1,4
+            total=0.0_r8
+            DO iregion=Iceregion,Nregion
+              total=total+Csum(iregion,imodel,ng)
+            END DO
+            IF (Master.and.(total.gt.0.0_r8)) THEN
+              WRITE (stdout,30) TRIM(label(imodel)),                    &
+     &                'sea-ice model elapsed time profile, Grid:', ng
+            END IF
+            sumcpu=0.0_r8
+            sumper=0.0_r8
+            IF (total.gt.0.0_r8) THEN
+              DO iregion=Iceregion,Nregion
+                IF (Csum(iregion,imodel,ng).gt.0.0_r8 .and. Master) THEN
+                  percent=100.0_r8*Csum(iregion, imodel,ng)/            &
+     &                             Csum( region,Mymodel,ng)
+                  WRITE (stdout,40) Pregion(iregion),                   &
+     &                              Csum(iregion,imodel,ng), percent
+                  sumcpu=sumcpu+Csum(iregion,imodel,ng)
+                  sumper=sumper+percent
+                END IF
+              END DO
+              IF (Master.and.(total.gt.0.0_r8)) THEN
+                WRITE (stdout,50) sumcpu, sumper
+              END IF
+            END IF
+          END DO
+# endif
 # ifdef DISTRIBUTE
 !
 !  Report elapsed time for message passage communications.

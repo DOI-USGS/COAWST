@@ -101,7 +101,6 @@
 #endif
 
 #ifdef DISTRIBUTE
-!
       USE distribute_mod, ONLY : mp_reduce
       USE distribute_mod, ONLY : mp_reduce2
 #endif
@@ -148,7 +147,7 @@
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
-      real(r8), intent(in) :: t(LBi:UBi,LBj:UBj,N(ng),NT(ng),2)
+      real(r8), intent(in) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
       real(r8), intent(in) :: wvel(LBi:UBi,LBj:UBj,0:N(ng))
 # endif
 # ifdef ICESHELF
