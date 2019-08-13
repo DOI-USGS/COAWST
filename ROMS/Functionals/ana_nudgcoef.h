@@ -211,7 +211,7 @@
           END DO
         END DO
       END IF
-
+#  ifdef ICE_MODEL
       IF (LnudgeMICLM(ng)) THEN
         DO j=JstrT,JendT
           DO i=IstrT,IendT
@@ -235,6 +235,7 @@
           END DO
         END DO
       END IF
+#  endif
 # endif
 #endif
 #ifdef DISTRIBUTE
