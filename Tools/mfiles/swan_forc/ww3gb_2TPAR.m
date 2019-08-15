@@ -9,8 +9,9 @@ eval(['tpname=''',ww3_area,'.tp.',yearww3,mmww3,'.grb2'';']);
 hsnc=ncgeodataset(hsname);
 tpnc=ncgeodataset(tpname);
 dpnc=ncgeodataset(dpname);
+disp('We are subtracting 360 from the Longitude - line 14 ww3gb_2TPAR.m')
 xg=dpnc{'lon'}(:);%lat of ww3 data
-xg(xg>0)=xg(xg>0)-360;
+xg(xg>0)=xg(xg>0)-360;                % maybe 0 for reference on other grids
 yg=dpnc{'lat'}(:);%lon of ww3 data
 [xg,yg]=meshgrid(xg,yg);
 time=dpnc{'time'}(:);%time interval 3 hours
