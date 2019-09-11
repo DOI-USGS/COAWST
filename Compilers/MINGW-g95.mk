@@ -30,7 +30,10 @@
 #
 
               BIN := $(BIN).exe
-             LIBS := $(SCRATCH_DIR)/libNLM.a         # cyclic dependencies
+             LIBS :=
+ifdef USE_ROMS
+             LIBS += $(SCRATCH_DIR)/libNLM.a         # cyclic dependencies
+endif
                FC := g95
            FFLAGS := -fno-second-underscore
               CPP := cpp

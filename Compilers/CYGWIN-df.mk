@@ -39,7 +39,10 @@
               CXX := g++
            CFLAGS :=
          CXXFLAGS :=
-             LIBS := $(SCRATCH_DIR)/libNLM.a         # cyclic dependencies
+             LIBS :=
+ifdef USE_ROMS
+             LIBS += $(SCRATCH_DIR)/libNLM.a         # cyclic dependencies
+endif
           LDFLAGS := /link /nodefaultlib:libcmt /nodefaultlib:libifcore /stack:67108864
                AR := ar
           ARFLAGS := r

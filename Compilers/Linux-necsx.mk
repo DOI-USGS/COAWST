@@ -36,7 +36,10 @@
               CXX := g++
            CFLAGS :=
          CXXFLAGS :=
-             LIBS := $(SCRATCH_DIR)/libNLM.a         # cyclic dependencies
+             LIBS :=
+ifdef USE_ROMS
+             LIBS += $(SCRATCH_DIR)/libNLM.a         # cyclic dependencies
+endif
                LD := $(FC)
           LDFLAGS :=
                AR := sxar

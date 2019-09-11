@@ -36,7 +36,10 @@
               CXX := xlC_r
            CFLAGS :=
          CXXFLAGS :=
-             LIBS := $(SCRATCH_DIR)/libNLM.a         # cyclic dependencies
+             LIBS :=
+ifdef USE_ROMS
+             LIBS += $(SCRATCH_DIR)/libNLM.a         # cyclic dependencies
+endif
           LDFLAGS :=
                AR := ar
           ARFLAGS := -r
