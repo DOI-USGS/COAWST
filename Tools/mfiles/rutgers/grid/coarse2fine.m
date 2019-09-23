@@ -275,6 +275,8 @@ end
 
 Qconservative = false;        % quadratic conservative interpolation
                               % off by default
+%COAWST - sometimes this helps for small grid spacings to ensure dx_child*Nrefined=dx_parent etc
+%Qconservative = true;        %  Use Nrefined scaling to compute pm pn dmde dndx angle f h hraw
 
 % Set method (linear or cubic spline) for regular interpolation of grid
 % coordinates (x,y) and/or (lon,lat) coordinates. The method is 'linear'
