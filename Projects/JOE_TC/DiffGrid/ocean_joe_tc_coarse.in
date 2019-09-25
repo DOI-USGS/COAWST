@@ -536,7 +536,7 @@ Hout(idVbar) == T       ! vbar               2D V-velocity
 Hout(idu2dE) == F       ! ubar_eastward      2D U-eastward  at RHO-points
 Hout(idv2dN) == F       ! vbar_northward     2D V-northward at RHO-points
 Hout(idFsur) == T       ! zeta               free-surface
-Hout(idBath) == T       ! bath               time-dependent bathymetry
+Hout(idBath) == F       ! bath               time-dependent bathymetry
 
 Hout(idTvar) == T T     ! temp, salt         temperature and salinity
 
@@ -545,8 +545,8 @@ Hout(idpthU) == F       ! z_u                time-varying depths of U-points
 Hout(idpthV) == F       ! z_v                time-varying depths of V-points
 Hout(idpthW) == F       ! z_w                time-varying depths of W-points
 
-Hout(idUair) == F       ! Uwind              surface U-wind
-Hout(idVair) == F       ! Vwind              surface V-wind
+Hout(idUair) == T       ! Uwind              surface U-wind
+Hout(idVair) == T       ! Vwind              surface V-wind
 Hout(idUairE) == F      ! Uwind_eastward     surface U-wind
 Hout(idVairN) == F      ! Vwind_northward    surface V-wind
 Hout(idUsms) == T       ! sustr              surface U-stress
@@ -558,9 +558,9 @@ Hout(idUbrs) == T       ! bustrc             bottom U-current stress
 Hout(idVbrs) == T       ! bvstrc             bottom V-current stress
 Hout(idUbws) == T       ! bustrw             bottom U-wave stress
 Hout(idVbws) == T       ! bvstrw             bottom V-wave stress
-Hout(idUbcs) == T       ! bustrcwmax         bottom max wave-current U-stress
-Hout(idVbcs) == T       ! bvstrcwmax         bottom max wave-current V-stress
-Hout(idUVwc) == T       ! bstrcwmax          bottom max wave-current stress magnitude
+Hout(idUbcs) == F       ! bustrcwmax         bottom max wave-current U-stress
+Hout(idVbcs) == F       ! bvstrcwmax         bottom max wave-current V-stress
+Hout(idUVwc) == F       ! bstrcwmax          bottom max wave-current stress magnitude
 
 Hout(idUbot) == T       ! Ubot               bed wave orbital U-velocity
 Hout(idVbot) == T       ! Vbot               bed wave orbital V-velocity
@@ -580,14 +580,14 @@ Hout(idWztw) == T       ! zetaw              WEC_VF quasi-static sea level adjus
 Hout(idWqsp) == T       ! qsp                WEC_VF quasi-static pressure
 Hout(idWbeh) == T       ! bh                 WEC_VF Bernoulli head
 
-Hout(idACen) == T       ! AC                 InWave 3D wave action
-Hout(idACcx) == T       ! Cx                 InWave 2D Group velocity in xi dimension
-Hout(idACcy) == T       ! Cy                 InWave 2D Group velocity in etai dimension
-Hout(idACct) == T       ! Ct                 InWave 2D Group velocity in the directional dimension
-Hout(idACtp) == T       ! Tp                 InWave 2D Group peak period
+Hout(idACen) == F       ! AC                 InWave 3D wave action
+Hout(idACcx) == F       ! Cx                 InWave 2D Group velocity in xi dimension
+Hout(idACcy) == F       ! Cy                 InWave 2D Group velocity in etai dimension
+Hout(idACct) == F       ! Ct                 InWave 2D Group velocity in the directional dimension
+Hout(idACtp) == F       ! Tp                 InWave 2D Group peak period
 
-Hout(idU2rs) == T       ! ubar_Wecstress     WEC 2D U-stress
-Hout(idV2rs) == T       ! vbar_Wecstress     WEC 2D V-stress
+Hout(idU2rs) == F       ! ubar_Wecstress     WEC 2D U-stress
+Hout(idV2rs) == F       ! vbar_Wecstress     WEC 2D V-stress
 Hout(idU3rs) == T       ! u_Rstress          WEC 3D U-stress
 Hout(idV3rs) == T       ! v_Rstress          WEC 3D V-stress
 
@@ -614,15 +614,15 @@ Hout(idWdis) == F       ! Dissip_roller      wave roller dissipation
 Hout(idWrol) == F       ! rollA              wave roller action density
 
 Hout(idRunoff) == F     ! Runoff             surface runoff from land
-Hout(idPair) == F       ! Pair               surface air pressure
-Hout(idTsur) == F F     ! shflux, ssflux     surface net heat and salt flux
-Hout(idLhea) == F       ! latent             latent heat flux
-Hout(idShea) == F       ! sensible           sensible heat flux
-Hout(idLrad) == F       ! lwrad              longwave radiation flux
-Hout(idSrad) == F       ! swrad              shortwave radiation flux
-Hout(idEmPf) == F       ! EminusP            E-P flux
-Hout(idevap) == F       ! evaporation        evaporation rate
-Hout(idrain) == F       ! rain               precipitation rate
+Hout(idPair) == T       ! Pair               surface air pressure
+Hout(idTsur) == T T     ! shflux, ssflux     surface net heat and salt flux
+Hout(idLhea) == T       ! latent             latent heat flux
+Hout(idShea) == T       ! sensible           sensible heat flux
+Hout(idLrad) == T       ! lwrad              longwave radiation flux
+Hout(idSrad) == T       ! swrad              shortwave radiation flux
+Hout(idEmPf) == T       ! EminusP            E-P flux
+Hout(idevap) == T       ! evaporation        evaporation rate
+Hout(idrain) == T       ! rain               precipitation rate
 
 Hout(idDano) == F       ! rho                density anomaly
 Hout(idVvis) == T       ! AKv                vertical viscosity

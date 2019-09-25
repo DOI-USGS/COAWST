@@ -125,8 +125,8 @@
 # ifdef WRF_MODEL
 #  undef  BULK_FLUXES
 #  define ATM2OCN_FLUXES
-#  define ANA_SSFLUX
-#  undef LONGWAVE_OUT
+#  undef  ANA_SSFLUX
+#  undef  LONGWAVE_OUT
 # else
 #  define ANA_SMFLUX
 #  define ANA_STFLUX
@@ -135,6 +135,7 @@
 # define ATM_PRESS
 # define ANA_BTFLUX
 # define ANA_BSFLUX
+# define EMINUSP
 
 /* Turbulence closure */
 # define GLS_MIXING

@@ -503,7 +503,7 @@
       DO j=JstrR,JendR
         DO i=IstrR,IendR
           IF (Nrun.eq.1) THEN
-#    if (defined BULK_FLUXES && defined EMINUSP) || defined ATM_COUPLING
+#    if (defined BULK_FLUXES && defined EMINUSP) || defined AIR_OCEAN
             EmP=EminusP(i,j)
 #    else
             EmP=stflx(i,j,isalt)
