@@ -4244,12 +4244,21 @@
   'nulvar'
   1.0d0
 
-'AC_north'                                          ! Input/Output
+'AC_north'                                         ! Input/Output
   'northern boundary wave action envelope'
   'Joules s m-2 rad-1'                             ! [kg rad/s]
   'AC_north, scalar, series'
   'energy_time'
   'idACbc(inorth)'
+  'nulvar'
+  1.0d0
+
+'bndwave_z'                                        ! Input/Output
+  'wave action bound wave'
+  'm'                                              ! [m]
+  'boundwave elevation, scalar, series'
+  'energy_time'
+  'idACbz'
   'nulvar'
   1.0d0
 !

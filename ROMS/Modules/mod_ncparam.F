@@ -1789,6 +1789,8 @@
                 idACbc(isouth)=varid
               CASE ('idACbc(inorth)')
                 idACbc(inorth)=varid
+              CASE ('idACbz')
+               idACbz=varid
 #endif
 #ifdef ICE_MODEL
             CASE ('idAibc(iwest)')

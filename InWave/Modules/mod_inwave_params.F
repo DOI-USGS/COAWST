@@ -24,9 +24,11 @@
       integer  :: idACag                    ! energy angle direction
       integer  :: idACac                    ! energy angle direction centered
       integer  :: idACen                    ! wave action 
+      integer  :: idACkl                    ! wave 3D wave length
       integer  :: idACcx                    ! wave action celerity in xi  
       integer  :: idACcy                    ! wave action celerity in eta
       integer  :: idACct                    ! wave action celerity in theta dir
+      integer  :: idACbz                    ! wave action bound wave
 
 !  These integers are assigned values in mod_ncparam.F
 

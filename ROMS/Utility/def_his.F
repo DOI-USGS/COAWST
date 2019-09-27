@@ -196,10 +196,10 @@
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
 #endif
-        
+
 #ifdef INWAVE_MODEL
         status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname,'ND',             &
-                       ND, DimIDs(33))
+                       ND, DimIDs(34))
 #endif
 
 #ifdef SOLVE3D
@@ -455,22 +455,22 @@
 !
         r3degrd(1)=DimIDs( 1)
         r3degrd(2)=DimIDs( 5)
-        r3degrd(3)=DimIDs(33)
+        r3degrd(3)=DimIDs(34)
         r3degrd(4)=DimIDs(12)
 
         u3degrd(1)=DimIDs( 2)
         u3degrd(2)=DimIDs( 6)
-        u3degrd(3)=DimIDs(33)
+        u3degrd(3)=DimIDs(34)
         u3degrd(4)=DimIDs(12)
 
         v3degrd(1)=DimIDs( 3)
         v3degrd(2)=DimIDs( 7)
-        v3degrd(3)=DimIDs(33)
+        v3degrd(3)=DimIDs(34)
         v3degrd(4)=DimIDs(12)
 
         t3degrd(1)=DimIDs( 1)
         t3degrd(2)=DimIDs( 5)
-        t3degrd(3)=DimIDs(33)
+        t3degrd(3)=DimIDs(34)
         t3degrd(4)=DimIDs(12)
 #endif
 #ifdef SOLVE3D
@@ -2508,6 +2508,25 @@
           Aval(5)=REAL(r3dvar,r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACtp),   &
      &                   NF_FOUT, nvd4, t3degrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
+        END IF
+!
+!  Define bound wave.
+!
+        IF (Hout(idACbz,ng)) THEN
+          Vinfo( 1)=Vname(1,idACbz)
+          Vinfo( 2)=Vname(2,idACbz)
+          Vinfo( 3)=Vname(3,idACbz)
+          Vinfo(14)=Vname(4,idACbz)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(r3dvar,r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACbz),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
@@ -5427,6 +5446,9 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdiw))) THEN
             got_var(idWdiw)=.TRUE.
             HIS(ng)%Vid(idWdiw)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idACbz))) THEN
+            got_var(idACbz)=.TRUE.
+            HIS(ng)%Vid(idACbz)=var_id(i)
 #endif
 #ifdef BEDLOAD_VANDERA
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idsurs))) THEN
@@ -6087,6 +6109,12 @@
         END IF
         IF (.not.got_var(idWdiw).and.Hout(idWdiw,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idWdiw)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idACbz).and.Hout(idACbz,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idACbz)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

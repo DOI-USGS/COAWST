@@ -1,5 +1,4 @@
 #include "cppdefs.h"
-#undef VARY_ACBC
       MODULE bndwavebc_mod
 #ifdef INWAVE_SWAN_COUPLING
 # ifdef SOLVE3D
@@ -57,6 +56,7 @@
      &                          Insteps)
 !***********************************************************************
 
+      USE mod_forces
       USE mod_grid
       USE mod_ncparam
       USE mod_boundary
@@ -74,16 +74,15 @@
 !
       integer :: i, j, d, nt1, nt2, tidx
       real(r8):: cff, cff1, cff2, cff3, ramp, alpha
-      real(r8):: phiw, cw, dist, toff, bndtot
-      real(r8), parameter :: eps =0.0001_r8
+      real(r8):: phiw, cw, dist, toff, bndtot, veltot
+      real(r8), parameter :: eps = 0.0001_r8
 
 #  include "set_bounds.h"
 #  ifdef RAMP_INWAVE
-      ramp=TANH((tdays(ng)-dstart)/0.14_r8)
+      ramp=TANH((tdays(ng)-dstart)/0.25_r8)
 #  else
       ramp=1.0_r8
 #  endif
-
       tidx=MOD(iic(ng),Insteps)+1
 !
 !-----------------------------------------------------------------------
@@ -94,34 +93,19 @@
      &    DOMAIN(ng)%Western_Edge(tile)) THEN
         IF (LBC(iwest,isAC3d,ng)%acquire) THEN
           DO j=Jstr,Jend
-#  ifdef VARY_ACBC
-            bndtot=0.0_r8
-            DO d=1,ND
-              cff1=0.5_r8*(WAVEP(ng)%cy(Istr-1,j  ,d)+                  &
-                           WAVEP(ng)%cy(Istr-1,j+1,d))
-              cff2=WAVEP(ng)%cx(Istr-1,j,d)
-              cw=sqrt(cff1**2+cff2**2)
-              dist=REAL(j,r8)/GRID(ng)%pn(Istr-1,j)*                    &
-     &             sin(WAVEG(ng)%wd(d)-GRID(ng)%angler(Istr-1,j))
-              toff=ABS(dist/(cw+eps))
-              toff=MIN(toff,2.0_r8*WAVES(ng)%dur)
-              cff1=toff/dt(ng)
-              nt1=tidx+INT(cff1)
-              IF (nt1.le.0) nt1=MOD(nt1,WAVES(ng)%Insteps)
-              IF (nt1.le.0) nt1=nt1+WAVES(ng)%Insteps
-              nt2=nt1+1
-              IF (nt2>WAVES(ng)%Insteps) nt2=nt2-WAVES(ng)%Insteps
-              phiw=toff/dt(ng)-INT(toff/dt(ng))
-              cff2=(1.0_r8-phiw)*WAVES(ng)%bndwave(nt1)+                &
-     &                     phiw*WAVES(ng)%bndwave(nt2)
-              cff2=cff2*WAVES(ng)%SDD(d)/WAVES(ng)%int
-              bndtot=bndtot+cff2
-            END DO
-#  else
-            bndtot=WAVES(ng)%bndwave(tidx)
-#  endif
+# ifdef VARY_ACBC
+            bndtot=WAVES(ng)%bndwave_z(j,tidx)
+            veltot=WAVES(ng)%bndwave_u(j,tidx)
+# else
+            bndtot=WAVES(ng)%bndwave_z(tidx)
+            veltot=WAVES(ng)%bndwave_u(tidx)
+# endif
             BOUNDARY(ng)%zeta_west(j)=(BOUNDARY(ng)%zeta_west(j)+       &
      &                                 bndtot)*ramp
+            IF (LBC(iwest,isVbar,ng)%acquire) THEN
+              BOUNDARY(ng)%ubar_west(j)=(BOUNDARY(ng)%ubar_west(j)+     &
+     &                                   veltot)*ramp
+            END IF
           END DO
         END IF
       END IF
@@ -134,34 +118,19 @@
      &    DOMAIN(ng)%Eastern_Edge(tile)) THEN
         IF (LBC(ieast,isAC3d,ng)%acquire) THEN
           DO j=Jstr,Jend
-#  ifdef VARY_ACBC
-            bndtot=0.0_r8
-            DO d=1,ND
-              cff1=0.5_r8*(WAVEP(ng)%cy(Iend+1,j  ,d)+                  &
-                           WAVEP(ng)%cy(Iend+1,j+1,d))
-              cff2=WAVEP(ng)%cx(Iend+1,j,d)
-              cw=sqrt(cff1**2+cff2**2)
-              dist=REAL(j,r8)/GRID(ng)%pn(Iend+1,j)*                    &
-     &             sin(WAVEG(ng)%wd(d)-GRID(ng)%angler(Iend+1,j))
-              toff=ABS(dist/(cw+eps))
-              toff=MIN(toff,2.0_r8*WAVES(ng)%dur)
-              cff1=toff/dt(ng)
-              nt1=tidx+INT(cff1)
-              IF (nt1.le.0) nt1=MOD(nt1,WAVES(ng)%Insteps)
-              IF (nt1.le.0) nt1=nt1+WAVES(ng)%Insteps
-              nt2=nt1+1
-              IF (nt2>WAVES(ng)%Insteps) nt2=nt2-WAVES(ng)%Insteps
-              phiw=toff/dt(ng)-INT(toff/dt(ng))
-              cff2=(1.0_r8-phiw)*WAVES(ng)%bndwave(nt1)+                &
-     &                     phiw*WAVES(ng)%bndwave(nt2)
-              cff2=cff2*WAVES(ng)%SDD(d)/WAVES(ng)%int
-              bndtot=bndtot+cff2
-            END DO
-#  else
-            bndtot=WAVES(ng)%bndwave(tidx)
-#  endif
+# ifdef VARY_ACBC
+            bndtot=WAVES(ng)%bndwave_z(j,tidx)
+            veltot=WAVES(ng)%bndwave_u(j,tidx)
+# else
+            bndtot=WAVES(ng)%bndwave_z(tidx)
+            veltot=WAVES(ng)%bndwave_u(tidx)
+# endif
             BOUNDARY(ng)%zeta_east(j)=(BOUNDARY(ng)%zeta_east(j)+       &
      &                                 bndtot)*ramp
+            IF (LBC(ieast,isVbar,ng)%acquire) THEN
+              BOUNDARY(ng)%ubar_east(j)=(BOUNDARY(ng)%ubar_east(j)+     &
+     &                                   veltot)*ramp
+            END IF
           END DO
         END IF
       END IF
@@ -174,33 +143,19 @@
      &    DOMAIN(ng)%Southern_Edge(tile)) THEN
         IF (LBC(isouth,isAC3d,ng)%acquire) THEN
           DO i=Istr,Iend
-#  ifdef VARY_ACBC
-            bndtot=0.0_r8
-            DO d=1,ND
-              cff1=0.5_r8*(WAVEP(ng)%cx(i  ,Jstr-1,d)+                  &
-                           WAVEP(ng)%cx(i+1,Jstr-1,d))
-              cff2=WAVEP(ng)%cy(i  ,Jstr-1,d)
-              alpha=GRID(ng)%angler(i,Jstr-1)
-              cw=cff1*cos(alpha)-cff2*sin(alpha)
-              dist=REAL(i,r8)/GRID(ng)%pm(i,Jstr-1)*                    &
-     &             sin(pi-WAVEG(ng)%wd(d))
-              toff=ABS(dist/(cw+eps))
-              cff1=toff/dt(ng)
-              nt1=tidx+INT(cff1)
-              nt1=MAX(MOD(nt1,WAVES(ng)%Insteps),1)
-              nt2=nt1+1
-              IF (nt2>WAVES(ng)%Insteps) nt2=nt2-WAVES(ng)%Insteps
-              phiw=toff/dt(ng)-INT(toff/dt(ng))
-              cff2=(1.0_r8-phiw)*WAVES(ng)%bndwave(nt1)+                &
-     &                     phiw*WAVES(ng)%bndwave(nt2)
-              cff2=cff2*WAVES(ng)%SDD(d)/WAVES(ng)%int
-              bndtot=bndtot+cff2
-            END DO
-#  else
-            bndtot=WAVES(ng)%bndwave(tidx)
-#  endif
+# ifdef VARY_ACBC
+            bndtot=WAVES(ng)%bndwave_z(i,tidx)
+            veltot=WAVES(ng)%bndwave_v(i,tidx)
+# else
+            bndtot=WAVES(ng)%bndwave_z(tidx)
+            veltot=WAVES(ng)%bndwave_v(tidx)
+# endif
             BOUNDARY(ng)%zeta_south(i)=(BOUNDARY(ng)%zeta_south(i)+     &
      &                                  bndtot)*ramp
+            IF (LBC(isouth,isVbar,ng)%acquire) THEN
+              BOUNDARY(ng)%vbar_south(i)=(BOUNDARY(ng)%vbar_south(i)+   &
+     &                                    veltot)*ramp
+            END IF
           END DO
         END IF
       END IF
@@ -213,34 +168,19 @@
      &    DOMAIN(ng)%Northern_Edge(tile)) THEN
         IF (LBC(inorth,isAC3d,ng)%acquire) THEN
           DO i=Istr,Iend
-#  ifdef VARY_ACBC
-            bndtot=0.0_r8
-            DO d=1,ND
-              cff1=0.5_r8*(WAVEP(ng)%cx(i  ,Jend+1,d)+                  &
-                           WAVEP(ng)%cx(i+1,Jend+1,d))
-              cff2=WAVEP(ng)%cy(i  ,Jend+1,d)
-              cw=sqrt(cff1**2+cff2**2)
-              dist=REAL(i,r8)/GRID(ng)%pm(i,Jend+1)*                    &
-     &             sin(WAVEG(ng)%wd(d)-GRID(ng)%angler(i,Jend+1))
-              toff=ABS(dist/(cw+eps))
-              toff=MIN(toff,2.0_r8*WAVES(ng)%dur)
-              cff1=toff/dt(ng)
-              nt1=tidx+INT(cff1)
-              IF (nt1.le.0) nt1=MOD(nt1,WAVES(ng)%Insteps)
-              IF (nt1.le.0) nt1=nt1+WAVES(ng)%Insteps
-              nt2=nt1+1
-              IF (nt2>WAVES(ng)%Insteps) nt2=nt2-WAVES(ng)%Insteps
-              phiw=toff/dt(ng)-INT(toff/dt(ng))
-              cff2=(1.0_r8-phiw)*WAVES(ng)%bndwave(nt1)+                &
-     &                     phiw*WAVES(ng)%bndwave(nt2)
-              cff2=cff2*WAVES(ng)%SDD(d)/WAVES(ng)%int
-              bndtot=bndtot+cff2
-            END DO
-#  else
-            bndtot=WAVES(ng)%bndwave(tidx)
-#  endif
+# ifdef VARY_ACBC
+            bndtot=WAVES(ng)%bndwave_z(i,tidx)
+            veltot=WAVES(ng)%bndwave_v(i,tidx)
+# else
+            bndtot=WAVES(ng)%bndwave_z(tidx)
+            veltot=WAVES(ng)%bndwave_v(tidx)
+# endif
             BOUNDARY(ng)%zeta_north(i)=(BOUNDARY(ng)%zeta_north(i)+     &
      &                                  bndtot)*ramp
+            IF (LBC(inorth,isVbar,ng)%acquire) THEN
+              BOUNDARY(ng)%vbar_north(i)=(BOUNDARY(ng)%vbar_north(i)+   &
+     &                                    veltot)*ramp
+            END IF
           END DO
         END IF
       END IF

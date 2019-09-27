@@ -552,7 +552,7 @@
           tstar=Taucwmax(i,j)/(Taucr+eps)
           IF (tstar.lt.1.0_r8) THEN                         ! no motion
             zoST(i,j)=0.0_r8
-            zoBF(i,j)=ar*rheight(i,j)**2/rlength(i,j)
+            zoBF(i,j)=ar*rheight(i,j)**2/(rlength(i,j)+eps)
           ELSE
 !
 !  Threshold of motion exceeded - calculate new zoST and zoBF

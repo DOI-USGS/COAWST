@@ -432,7 +432,7 @@
 !
         r3degrd(1)=DimIDs( 1)
         r3degrd(2)=DimIDs( 5)
-        r3degrd(3)=DimIDs(33)
+        r3degrd(3)=DimIDs(34)
         r3degrd(4)=DimIDs(12)
 
         u3degrd(1)=DimIDs( 2)
@@ -442,7 +442,7 @@
 
         v3degrd(1)=DimIDs( 3)
         v3degrd(2)=DimIDs( 7)
-        v3degrd(3)=DimIDs(33)
+        v3degrd(3)=DimIDs(34)
         v3degrd(4)=DimIDs(12)
 
         t3degrd(1)=DimIDs( 1)

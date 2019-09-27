@@ -201,24 +201,8 @@
             END IF
 #  elif defined WDISS_GAMMA
             Hmax_r=breakg*(MAX(h_tot(i,j),0.0_r8))
-#   ifdef JCW_DISSIP
-            vel_tot=SQRT(u_rho(i,j)**2+v_rho(i,j)**2)
-            wavec=Lwave(i,j)/Pwave_bot(i,j)
-            IF (vel_tot.ge.wavec) THEN
-              Hmax_r=0.0_r8
-            END IF
-#   endif
-#   ifdef JCW_DISSIP2
-            IF (h_tot(i,j).le.0.25_r8) THEN
-              Hmax_r=0.0_r8
-            END IF
-#   endif
             Emax_r=0.125_r8*g*rho0*Hmax_r**2.0_r8
             diff=EW-Emax_r
-#   ifdef JCW_DISSIP3
-            cff=1.0_r8-exp(-((EW/Emax_r)**20.0_r8))
-            diff=cff*EW
-#   endif
             Dissip_break(i,j)=MAX(0.0_r8,diff)
 #  endif
           ELSE

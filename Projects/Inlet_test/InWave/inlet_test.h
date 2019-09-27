@@ -24,6 +24,7 @@
 # undef  DOPPLER
 # define WDISS_GAMMA
 # undef  WDISS_ROELVINK
+# undef  VARY_ACBC
 #endif
 
 #define WEC_VF

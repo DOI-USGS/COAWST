@@ -4374,6 +4374,36 @@
           RETURN
         END IF
       END IF
+
+!
+!  Write out bound wave.  jcw
+!
+      IF (Hout(idACbz,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+!        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACbz), &
+!     &                     HIS(ng)%Rindex, gtype,                       &
+!     &                     LBi, UBi, LBj, UBj, scale,                   &
+!# ifdef MASKING
+!#  ifdef WET_DRY
+!     &                     GRID(ng) % rmask_full,                       &
+!#  else
+!     &                     GRID(ng) % rmask,                            &
+!#  endif
+!# endif
+!     &                     WAVES(ng)%bndwave_z)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idACbz)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+
+
 #endif
 #ifdef VEGETATION
 #include "vegetation_wrt_his.h"
