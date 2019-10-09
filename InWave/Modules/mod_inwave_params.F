@@ -21,6 +21,7 @@
 
 !     These indices are for the I/O.
       integer  :: idACtp                    ! absolute peak period
+      integer  :: idACkc                    ! wave number
       integer  :: idACag                    ! energy angle direction
       integer  :: idACac                    ! energy angle direction centered
       integer  :: idACen                    ! wave action 

@@ -232,7 +232,7 @@
 # endif
 # ifdef DOPPLER
             IF ((h_tot(i,j).LE.Dcrit(ng))                                &
-               .OR.(((cwc(i,j)+u_dir(i,j)).LE.0.0_r8)) THEN
+               .OR.((cwc(i,j)+u_dir(i,j)).LE.0.0_r8)) THEN
 # else
             IF (h_tot(i,j).LE.Dcrit(ng)) THEN
 # endif
@@ -276,7 +276,7 @@
           DO i=Istr,Iend
 # ifdef DOPPLER
             IF ((h_tot(i,j).LE.Dcrit(ng))                                &
-               .OR.(((cwc(i,j)+u_dir(i,j)).LE.0.0_r8)) THEN
+     &         .OR.((cwc(i,j)+u_dir(i,j)).LE.0.0_r8)) THEN
 # else
             IF (h_tot(i,j).LE.Dcrit(ng)) THEN
 # endif

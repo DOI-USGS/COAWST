@@ -1767,6 +1767,8 @@
             CASE ('idHbbl')
               idHbbl=varid
 #ifdef INWAVE_MODEL
+              CASE ('idACkc')
+                idACkc=varid
               CASE ('idACtp')
                 idACtp=varid
               CASE ('idACag')

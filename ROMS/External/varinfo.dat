@@ -4217,6 +4217,15 @@
   'r3dvar'
   1.0d0
 
+'kwc'                                              ! Input/Output
+  'Wave number'
+  'm-1'                                            ! [deg/s]
+  'kwc, scalar, series'
+  'energy_time'
+  'idACkc'
+  'r3dvar'
+  1.0d0
+
 'AC_west'                                          ! Input/Ouput
   'western boundary wave action envelope'
   'Joules s m-2 rad-1'                             ! [kg rad/s]

@@ -2512,6 +2512,26 @@
      &                   __FILE__)) RETURN
         END IF
 !
+!  Define wave number.
+!
+!        IF (Hout(idACkc,ng)) THEN
+        IF (Hout(idACtp,ng)) THEN
+          Vinfo( 1)=Vname(1,idACkc)
+          Vinfo( 2)=Vname(2,idACkc)
+          Vinfo( 3)=Vname(3,idACkc)
+          Vinfo(14)=Vname(4,idACkc)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(r3dvar,r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACkc),   &
+     &                   NF_FOUT, nvd4, t3degrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
+        END IF
+!
 !  Define bound wave.
 !
         IF (Hout(idACbz,ng)) THEN
@@ -2530,6 +2550,9 @@
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
+
+
+
 #endif
 #ifdef SOLVE3D
 # ifdef UV_KIRBY
@@ -5440,6 +5463,9 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idACtp))) THEN
             got_var(idACtp)=.TRUE.
             HIS(ng)%Vid(idACtp)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idACkc))) THEN
+            got_var(idACkc)=.TRUE.
+            HIS(ng)%Vid(idACkc)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdib))) THEN
             got_var(idWdib)=.TRUE.
             HIS(ng)%Vid(idWdib)=var_id(i)
@@ -6097,6 +6123,12 @@
         END IF
         IF (.not.got_var(idACtp).and.Hout(idACtp,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idACtp)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+        IF (.not.got_var(idACkc).and.Hout(idACkc,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idACkc)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

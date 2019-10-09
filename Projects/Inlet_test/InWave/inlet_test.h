@@ -22,9 +22,9 @@
 # define ACY_ADVECTION
 # define ACT_ADVECTION
 # undef  DOPPLER
-# define WDISS_GAMMA
-# undef  WDISS_ROELVINK
-# undef  VARY_ACBC
+# undef  WDISS_GAMMA
+# define WDISS_ROELVINK
+# define VARY_ACBC
 #endif
 
 #define WEC_VF

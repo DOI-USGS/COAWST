@@ -49,7 +49,6 @@
 !  POSITION    positive frequencies of the Fourier Components          !
 !  CompFn      Fourier components                                      !
 !  Comptemp    Fourier components                                      !
-!  Comptemp_tot    Fourier components                                  !
 !=======================================================================
 !
 !
@@ -127,7 +126,6 @@
          real(r8), pointer :: bndwave_u(:)
          real(r8), pointer :: bndwave_v(:)
 # endif
-         complex(fftkind),dimension(:),allocatable   :: Comptemp_tot
 
         END TYPE SHORT_WAVE
 
@@ -194,10 +192,10 @@
 
 !  Local variable declarations.
 
-      integer :: i, j, dir_index, numavg, numavgh, start
-      integer, allocatable :: peaks(:)
-      real(r8) :: cff
-      real(r8), allocatable :: zeta_filt(:), zeta_filt2(:)
+!      integer :: i, j, dir_index, numavg, numavgh, start, tidx, dindex
+!      integer, allocatable :: peaks(:)
+!      real(r8) :: cff
+!      real(r8), allocatable :: zeta_filt(:), zeta_filt2(:)
 !
 !-----------------------------------------------------------------------
 ! Read swan output spectra
@@ -291,7 +289,7 @@
         WAVES(ng)%ndir=ND
         WAVES(ng)%fmin=WAVES(ng)%df
         IF (Master) THEN
-          WRITE(stdout,*) 'Computing AC boundary forcing'
+          WRITE(stdout,*) 'Computing InWave boundary forcing'
           WRITE(stdout,*) 'Freqs min max are : ',WAVES(ng)%fmin,        &
      &                                           WAVES(ng)%fmax
         END IF
@@ -428,8 +426,8 @@
 !  Determine the time dimensions of duration and num steps.
 !  The Ampzeta time series will repeat every 1/df time steps.
 !
-!        WAVES(ng)%dur=1./WAVES(ng)%df
-         WAVES(ng)%dur=1800.0_r8
+         WAVES(ng)%dur=1./WAVES(ng)%df
+!        WAVES(ng)%dur=1800.0_r8
 !        WAVES(ng)%dur=900.0_r8
 !  Force the number of steps to be 2000 to Hilbert.
         WAVES(ng)%Insteps=nint(WAVES(ng)%dur/dt(ng))
@@ -442,6 +440,7 @@
         allocate(WAVES(ng)%Ampzeta(WAVES(ng)%Insteps,WAVES(ng)%ndir))
 # endif
         allocate(WAVES(ng)%Ampzeta_tot(WAVES(ng)%Insteps))
+!       allocate(WAVES(ng)%bndwave(WAVES(ng)%Insteps))
 !
 !-----------------------------------------------------------------------
 ! Create frequency and directional arrays for the spectra
@@ -659,24 +658,33 @@
 !  Local variable declarations.
 !
       integer                         :: i, j, m, dindex, tidx
-      integer                         :: SstrR, SendR
+      integer                         :: SstrR, SendR, is, jcenter
       integer                         :: MyError, Npts, p1
-      real(r8)                        :: cff, cff1, cff2
+      real(r8)                        :: cff, cff1, cff2, DIR3, k3_x, k3_y
       real(r8)                        :: twopi, otwopi, x
-      real(r8)                        :: error, sinalpha
+      real(r8)                        :: error, kedge
       real(r8)                        :: F, FDER, tanhkh
       real(r8)                        :: L0, k0, k1, kh, wr
-      real(r8)                        :: h0
-      real(r8), allocatable           :: k(:), angle_edge(:), x_edge(:)
+      real(r8)                        :: h0, oh0, fmin, fmax
+      real(r8)                        :: x_mid, y_mid, dx_min
+      real(r8), allocatable           :: k(:), angle_edge(:)
+      real(r8), allocatable           :: dist_local(:), dist_x(:), dist_y(:)
+      real(r8), allocatable           :: dx_local(:)
       real(r8), dimension((Lm(ng)+2)*(Mm(ng)+2)) :: Awrk
-      real(r8), dimension(0:(Lm(ng)+2)-1,0:(Mm(ng)+2)-1) :: h_local
-      real(r8), dimension(0:(Lm(ng)+2)-1,0:(Mm(ng)+2)-1) :: zeta_local
+      real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: h_local
+      real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: zeta_local
+      real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: xr_local
+      real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: yr_local
+      real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: pm_local
+      real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: pn_local
 
       real(r8), parameter :: maxErr = 0.1_r8
       real(r8), parameter :: alphad = 0.2_r8
 
 # include "set_bounds.h"
 
+      fmin=1.0_r8/15.0_r8
+      fmax=1.0_r8/3.0_r8
       twopi=2.0_r8*pi
       otwopi=1.0_r8/(2.0_r8*pi)
 !
@@ -686,15 +694,19 @@
         DO i=0,Lm(ng)+1
           h_local(i,j)=0.0_r8
           zeta_local(i,j)=0.0_r8
+          xr_local(i,j)=0.0_r8
+          yr_local(i,j)=0.0_r8
+          pm_local(i,j)=0.0_r8
+          pn_local(i,j)=0.0_r8
         END DO
       END DO
+
 # ifdef DISTRIBUTE
       CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                   &
      &                  0, r2dvar, 1.0_r8,                              &
      &                  GRID(ng) % rmask,                               &
-     &                  GRID(ng)%h(:,:), Npts, Awrk)
+     &                  GRID(ng)%h, Npts, Awrk)
       CALL mp_bcastf (ng, iNLM, Awrk)
-!
       p1=0
       DO j=0,Mm(ng)+1
         DO i=0,Lm(ng)+1
@@ -708,7 +720,6 @@
      &                  GRID(ng) % rmask,                               &
      &                  OCEAN(ng)%zeta(:,:,1), Npts, Awrk)
       CALL mp_bcastf (ng, iNLM, Awrk)
-!
       p1=0
       DO j=0,Mm(ng)+1
         DO i=0,Lm(ng)+1
@@ -716,79 +727,197 @@
           zeta_local(i,j)=Awrk(p1)
         END DO
       END DO
+!
+      CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                   &
+     &                  0, r2dvar, 1.0_r8,                              &
+     &                  GRID(ng) % rmask,                               &
+     &                  GRID(ng) % xr, Npts, Awrk)
+      CALL mp_bcastf (ng, iNLM, Awrk)
+      p1=0
+      DO j=0,Mm(ng)+1
+        DO i=0,Lm(ng)+1
+          p1=p1+1
+          xr_local(i,j)=Awrk(p1)
+        END DO
+      END DO
+!
+      CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                   &
+     &                  0, r2dvar, 1.0_r8,                              &
+     &                  GRID(ng) % rmask,                               &
+     &                  GRID(ng) % yr, Npts, Awrk)
+      CALL mp_bcastf (ng, iNLM, Awrk)
+      p1=0
+      DO j=0,Mm(ng)+1
+        DO i=0,Lm(ng)+1
+          p1=p1+1
+          yr_local(i,j)=Awrk(p1)
+        END DO
+      END DO
+!
+      CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                   &
+     &                  0, r2dvar, 1.0_r8,                              &
+     &                  GRID(ng) % rmask,                               &
+     &                  GRID(ng) % pm, Npts, Awrk)
+      CALL mp_bcastf (ng, iNLM, Awrk)
+      p1=0
+      DO j=0,Mm(ng)+1
+        DO i=0,Lm(ng)+1
+          p1=p1+1
+          pm_local(i,j)=Awrk(p1)
+        END DO
+      END DO
+!
+      CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                   &
+     &                  0, r2dvar, 1.0_r8,                              &
+     &                  GRID(ng) % rmask,                               &
+     &                  GRID(ng) % pn, Npts, Awrk)
+      CALL mp_bcastf (ng, iNLM, Awrk)
+      p1=0
+      DO j=0,Mm(ng)+1
+        DO i=0,Lm(ng)+1
+          p1=p1+1
+          pn_local(i,j)=Awrk(p1)
+        END DO
+      END DO
 # else
       DO j=0,Mm(ng)+1
         DO i=0,Lm(ng)+1
           h_local(i,j)=GRID(ng)%h(i,j)
           zeta_local(i,j)=OCEAN(ng)%zeta(i,j,1)
+          xr_local(i,j)=GRID(ng)%xr(i,j)
+          yr_local(i,j)=GRID(ng)%yr(i,j)
+          pm_local(i,j)=GRID(ng)%pm(i,j)
+          pn_local(i,j)=GRID(ng)%pn(i,j)
         END DO
       END DO
 # endif
 !
-!  Now set h0 based on the middle boundary total depth.
 !
-!# ifdef DISTRIBUTE
-!      IF (Master) THEN
-!# endif
-      IF (LBC(iwest,isAC3d,ng)%acquire) THEN
-        j=INT(Mm(ng)/2)
-        h0=h_local(0,j)+zeta_local(0,j)
+      IF (((LBC(iwest,isAC3d,ng)%acquire).and.                         &
+     &    (DOMAIN(ng)%Western_Edge(tile))).or.                         &
+     &    ((LBC(ieast,isAC3d,ng)%acquire).and.                         &
+     &    (DOMAIN(ng)%Eastern_Edge(tile)))) THEN
+!
+!  Find the boundary cell closest to the center of the boundary
+!
+        IF (LBC(iwest,isAC3d,ng)%acquire) THEN
+# ifdef DISTRIBUTE
+          IF (Master) THEN
+# endif
+          write(*,*) 'Computing western AC forcing'
+# ifdef DISTRIBUTE
+          END IF
+# endif
+           is=0
+        ELSE
+# ifdef DISTRIBUTE
+          IF (Master) THEN
+# endif
+          write(*,*) 'Computing eastern AC forcing'
+# ifdef DISTRIBUTE
+          END IF
+# endif
+          is=Lm(ng)+1
+        END IF
         SstrR=JstrR
         SendR=JendR
-        allocate (angle_edge(SstrR:SendR),x_edge(SstrR:SendR))
-        DO i=SstrR,SendR
-          angle_edge(i)=GRID(ng)%angler(0,i)
-          x_edge(i)=REAL(i,r8)/GRID(ng)%pn(0,i)
+
+        allocate(angle_edge(SstrR:SendR))
+        DO j=SstrR,SendR
+          angle_edge(j)=GRID(ng)%angler(is,j)
         END DO
-      ELSE IF (LBC(ieast,isAC3d,ng)%acquire) THEN
-        j=INT(Mm(ng)/2)
-        h0=h_local(Lm(ng)+1,j)+zeta_local(Lm(ng)+1,j)
-        SstrR=JstrR
-        SendR=JendR
-        allocate (angle_edge(SstrR:SendR),x_edge(SstrR:SendR))
-        DO i=SstrR,SendR
-          angle_edge(i)=GRID(ng)%angler(Lm(ng)+1,i)
-          x_edge(i)=REAL(i,r8)/GRID(ng)%pn(Lm(ng)+1,i)
+
+        x_mid=0.5_r8*(xr_local(is,Mm(ng)+1)+xr_local(is,0))
+        y_mid=0.5_r8*(yr_local(is,Mm(ng)+1)+yr_local(is,0))
+
+        allocate(dist_local(0:Mm(ng)+1))
+        allocate(dx_local(0:Mm(ng)+1))
+
+        DO j=0,Mm(ng)+1
+          dist_local(j)=(yr_local(is,j)-y_mid)
+          dx_local(j)=1.0_r8/pn_local(is,j)
         END DO
-      ELSE IF (LBC(inorth,isAC3d,ng)%acquire) THEN
-        i=INT(Lm(ng)/2)
-        h0=h_local(i,Mm(ng)+1)+zeta_local(i,Mm(ng)+1)
+
+        jcenter=minloc(abs(dx_local), DIM = 1)
+        dx_min=dx_local(jcenter)
+        jcenter=minloc(abs(dist_local), DIM = 1)
+        h0=h_local(is,jcenter)+zeta_local(is,jcenter)
+        
+        deallocate(dist_local, dx_local)
+        allocate(dist_x(0:Mm(ng)+1),dist_y(0:Mm(ng)+1))        
+
+        DO j=0,Mm(ng)+1
+          dist_x(j)=xr_local(is,j)-xr_local(is,jcenter)
+          dist_y(j)=yr_local(is,j)-yr_local(is,jcenter)
+        END DO
+      END IF
+!
+      IF (((LBC(isouth,isAC3d,ng)%acquire).and.                         &
+     &    (DOMAIN(ng)%Southern_Edge(tile))).or.                         &
+     &    ((LBC(inorth,isAC3d,ng)%acquire).and.                         &
+     &    (DOMAIN(ng)%Northern_Edge(tile)))) THEN
+!
+!  Find the boundary cell closest to the center of the boundary
+!
+        IF (LBC(isouth,isAC3d,ng)%acquire) THEN
+# ifdef DISTRIBUTE
+          IF (Master) THEN
+# endif
+           write(*,*) 'Computing Southern AC forcing'
+# ifdef DISTRIBUTE
+          END IF
+# endif
+           is=0
+        ELSE
+# ifdef DISTRIBUTE
+          IF (Master) THEN
+# endif
+          write(*,*) 'Computing Northern AC forcing'
+# ifdef DISTRIBUTE
+          END IF
+# endif
+          is=Mm(ng)+1
+        END IF
         SstrR=IstrR
         SendR=IendR
-        allocate (angle_edge(SstrR:SendR),x_edge(SstrR:SendR))
+        allocate(angle_edge(SstrR:SendR))
         DO i=SstrR,SendR
-          angle_edge(i)=GRID(ng)%angler(i,Mm(ng)+1)
-          x_edge(i)=REAL(i,r8)/GRID(ng)%pm(i,Mm(ng)+1)
+          angle_edge(i)=GRID(ng)%angler(i,is)
         END DO
-      ELSE IF (LBC(isouth,isAC3d,ng)%acquire) THEN
-        i=INT(Lm(ng)/2)
-        h0=h_local(i,0)+zeta_local(i,0)
-        SstrR=IstrR
-        SendR=IendR
-        allocate (angle_edge(SstrR:SendR),x_edge(SstrR:SendR))
-        DO i=SstrR,SendR
-          angle_edge(i)=GRID(ng)%angler(i,0)
-          x_edge(i)=REAL(i,r8)/GRID(ng)%pm(i,0)
+
+        x_mid=0.5_r8*(xr_local(Lm(ng)+1,is)+xr_local(0,is))
+        y_mid=0.5_r8*(yr_local(Lm(ng)+1,is)+yr_local(0,is))
+
+        allocate(dist_local(0:Lm(ng)+1))
+        allocate(dx_local(0:Lm(ng)+1))
+
+        DO i=0,Lm(ng)+1
+          dist_local(i)=(xr_local(i,is)-x_mid)
+          dx_local(i)=1.0_r8/pm_local(i,is)
         END DO
-      END IF        
-!# ifdef DISTRIBUTE
-!      END IF
-!      CALL MPI_BCAST(h0, 1, MP_FLOAT, 0,                                &
-!     &               OCN_COMM_WORLD, MyError)
-!# endif
-!# ifdef DISTRIBUTE
-!      IF (Master) THEN
-!# endif
-      write(*,*) 'Mean offshore water depth for bndwave is ', h0
-!# ifdef DISTRIBUTE
-!      END IF
-!# endif
+
+        jcenter=minloc(abs(dx_local), DIM = 1)
+        dx_min=dx_local(jcenter)
+        jcenter=minloc(abs(dist_local), DIM = 1)
+        h0=h_local(jcenter,is)+zeta_local(jcenter,is)
+
+        deallocate(dist_local, dx_local)
+        allocate(dist_x(0:Lm(ng)+1),dist_y(0:Lm(ng)+1))        
+
+        DO i=0,Lm(ng)+1
+          dist_x(i)=xr_local(i,is)-xr_local(jcenter,is)
+          dist_y(i)=yr_local(i,is)-yr_local(jcenter,is)
+        END DO
+      END IF
+      oh0=1.0_r8/h0
+
+      write(*,*) 'Mean offshore water depth for AC is ', h0
 !
 !  Compute the wave numbers.
 !
       allocate (k(WAVES(ng)%nfreq))
       DO i=1,WAVES(ng)%nfreq
-        L0=g*otwopi*(1.0_r8/WAVES(ng)%f(i))**2.0_r8
+        L0=g*otwopi*(1.0_r8/WAVES(ng)%f(i))**2
         k0=twopi/L0
         error=100.0_r8
         wr=twopi*WAVES(ng)%f(i)
@@ -806,45 +935,67 @@
           k0=k1
         END DO
         k(i)=k0
+!        write(*,*) 'wave length ', i,2.0_r8*pi/k(i),1.0_r8/WAVES(ng)%f(i)
       END DO
 !
-!
-!
-       write(*,*) 'fourier 1'
       IF (first.eq.1) THEN
         allocate(WAVES(ng)%CompFn(SstrR:SendR,WAVES(ng)%Insteps))
-       write(*,*) 'fourier 1.1 ',sstrr,sendr
         allocate(WAVES(ng)%Ampzeta(SstrR:SendR,WAVES(ng)%Insteps,WAVES(ng)%ndir))
       END IF
-       write(*,*) 'fourier 2'
 !
 ! COMPUTES THE FOURIER COMPONENTS
 !
-        DO tidx=1,WAVES(ng)%Insteps
-          DO i=SstrR,SendR
-            WAVES(ng)%CompFn(i,tidx)=0.0_r8
-            DO dindex=1,WAVES(ng)%ndir
-              WAVES(ng)%Ampzeta(i,tidx,dindex)=0.0_r8
-            END DO
-          END DO
-        END DO
-!
-      DO dindex=1,ND
+      DO tidx=1,WAVES(ng)%Insteps
         DO i=SstrR,SendR
-          sinalpha=-1.0_r8*COS(1.5_r8*pi-WAVEG(ng)%wd(dindex)-          &
-     &             angle_edge(i))
-          DO tidx=1,WAVES(ng)%Insteps
-            cff2=0.0_r8
-            cff=REAL((tidx-1),r8)*dt(ng)
-            DO j=1,WAVES(ng)%nfreq
-              cff2=cff2+WAVES(ng)%amp(j,dindex)*                        &
-     &                  COS(twopi*WAVES(ng)%f(j)*cff+                   &
-     &                  WAVES(ng)%phase(j,dindex)+                      &
-     &                  x_edge(i)*k(j)*sinalpha)
-            END DO
-           WAVES(ng)%CompFn(i,tidx)=WAVES(ng)%CompFn(i,tidx)+cff2
+          WAVES(ng)%CompFn(i,tidx)=0.0_r8
+          DO dindex=1,WAVES(ng)%ndir
+            WAVES(ng)%Ampzeta(i,tidx,dindex)=0.0_r8
           END DO
         END DO
+      END DO
+      DO dindex=1,ND
+!
+! check if this dir has at least 10 percent of total energy
+!
+        cff2=WAVES(ng)%SDD(dindex)/WAVES(ng)%int
+        IF (cff2.gt.0.10_r8) THEN
+          DO i=SstrR,SendR
+            DO tidx=1,WAVES(ng)%Insteps
+              cff2=0.0_r8
+              cff=REAL((tidx-1),r8)*dt(ng)
+              DO j=1,WAVES(ng)%nfreq
+                IF ((WAVES(ng)%f(j).ge.fmin).and.(WAVES(ng)%f(j).le.fmax)) THEN
+                  DIR3=1.5_r8*pi-WAVEG(ng)%wd(dindex)-angle_edge(i)
+
+!
+!  Here we use an avg wavelength for each group, based on min grid size.
+!
+                  if (twopi/k(j).ge.(8.0_r8*dx_min)) then
+                    k(j)=twopi/(8.0_r8*dx_min)
+                  elseif (twopi/k(j).ge.(6.0_r8*dx_min)) then
+                    k(j)=twopi/(6.0_r8*dx_min)
+                  elseif (twopi/k(j).ge.(4.0_r8*dx_min)) then
+                    k(j)=twopi/(4.0_r8*dx_min)
+                  elseif (twopi/k(j).ge.(2.0_r8*dx_min)) then
+!                    k(j)=twopi/(2.0_r8*dx_min)
+!                  else
+!!                  k(j)=twopi/(2.0_r8*dx_min)
+                   k(j)=0.0_r8
+                  end if
+!
+                  k3_x=k(j)*cos(DIR3)
+                  k3_y=k(j)*sin(DIR3)
+                  kedge=k3_x*dist_x(i)+k3_y*dist_y(i)
+                  cff2=cff2+WAVES(ng)%amp(j,dindex)*                    &
+     &                      COS(twopi*WAVES(ng)%f(j)*cff+               &
+     &                      WAVES(ng)%phase(j,dindex)-                  &
+     &                      kedge)
+                END IF
+              END DO
+              WAVES(ng)%CompFn(i,tidx)=WAVES(ng)%CompFn(i,tidx)+cff2            
+            END DO
+          END DO
+        END IF
       END DO
 !
 !  Sum over all the directions and then partition out.
@@ -855,16 +1006,34 @@
           END DO
           call hilbert(WAVES(ng)%Ampzeta_tot,                           &
      &                 size(WAVES(ng)%Ampzeta_tot))
+          DO tidx=1,WAVES(ng)%Insteps
+            WAVES(ng)%CompFn(i,tidx)=WAVES(ng)%Ampzeta_tot(tidx)
+          END DO
+        END DO
+
+        DO i=SstrR,SendR
+          DO tidx=2,WAVES(ng)%Insteps-1
+            WAVES(ng)%CompFn(i,tidx)=0.3333_r8*(WAVES(ng)%CompFn(i,tidx-1)+ &
+     &                                           WAVES(ng)%CompFn(i,tidx)+ &
+     &                                           WAVES(ng)%CompFn(i,tidx+1))
+          END DO
+        END DO
+
+        DO i=SstrR,SendR
           DO dindex=1,ND
             DO tidx=1,WAVES(ng)%Insteps
+!              WAVES(ng)%Ampzeta(i,tidx,dindex)=0.5_r8*g*rho0*           &
+!     &                    ((ABS(WAVES(ng)%Ampzeta_tot(tidx)))**2)*      &
+!     &                                   WAVES(ng)%SDD(dindex)/         &
+!     &                                   WAVES(ng)%int
               WAVES(ng)%Ampzeta(i,tidx,dindex)=0.5_r8*g*rho0*           &
-     &                    ((ABS(WAVES(ng)%Ampzeta_tot(tidx)))**2.0_r8)* &
+     &                    ((ABS(WAVES(ng)%CompFn(i,tidx)))**2)*      &
      &                                   WAVES(ng)%SDD(dindex)/         &
      &                                   WAVES(ng)%int
             END DO
           END DO
         END DO
-        deallocate (k, angle_edge, x_edge)
+        deallocate (k, angle_edge, dist_x, dist_y)
       RETURN
       END SUBROUTINE FourierComp_tile
 
@@ -886,42 +1055,33 @@
 !
       integer                         :: i, j, dindex
       real(r8)                        :: cff
-      real(r8)                        :: twopi
+      real(r8)                        :: twopi, fmin, fmax
 
       twopi=2.0_r8*pi
+      fmin=1.0_r8/400.0_r8
+      fmax=1.0_r8/3.0_r8
 
 ! COMPUTES THE FOURIER COMPONENTS
+      DO i=1,WAVES(ng)%Insteps
+        WAVES(ng)%CompFn(i)=0.0_r8
+      END DO
       DO dindex=1,ND
-        DO i=1,WAVES(ng)%Insteps
-          WAVES(ng)%CompFn(i)=0.0_r8
-          DO j=1,WAVES(ng)%nfreq
+        DO j=1,WAVES(ng)%nfreq
+          IF ((WAVES(ng)%f(j).ge.fmin).and.(WAVES(ng)%f(j).le.fmax)) THEN
+          DO i=1,WAVES(ng)%Insteps
             cff=REAL((i-1),r8)*dt(ng)
             WAVES(ng)%CompFn(i)=WAVES(ng)%CompFn(i)+                    &
      &                          WAVES(ng)%amp(j,dindex)*                &
      &                          COS(twopi*WAVES(ng)%f(j)*cff+           &
      &                          WAVES(ng)%phase(j,dindex))
           END DO
-        END DO
-
-        IF ((dindex.eq.1).and.(first.eq.1)) THEN
-          allocate(WAVES(ng)%Comptemp_tot(WAVES(ng)%Insteps))
-        ENDIF
-
-        IF (dindex.eq.1) THEN
-          DO i=1,WAVES(ng)%Insteps
-            WAVES(ng)%Comptemp_tot(i)=0.0_r8
-          END DO
-        ENDIF
-
-        DO i=1,WAVES(ng)%Insteps
-          WAVES(ng)%Comptemp_tot(i)=WAVES(ng)%Comptemp_tot(i)+          &
-     &                              WAVES(ng)%CompFn(i)
+          END IF
         END DO
       END DO
 !
-      call hilbert(WAVES(ng)%Comptemp_tot,size(WAVES(ng)%Comptemp_tot))
+      call hilbert(WAVES(ng)%CompFn,size(WAVES(ng)%CompFn))
 !
-      WAVES(ng)%Ampzeta_tot(:)=abs(WAVES(ng)%Comptemp_tot)
+      WAVES(ng)%Ampzeta_tot(:)=abs(WAVES(ng)%CompFn)
 
 !
 !-----------------------------------------------------------------------
@@ -930,10 +1090,10 @@
 !
       DO dindex=1,ND
         DO i=1,WAVES(ng)%Insteps
-          WAVES(ng)%Ampzeta(i,dindex)=0.5_r8*g*rho0*                    &
-     &                          (WAVES(ng)%Ampzeta_tot(i)**2.0_r8)*     &
-     &                                   WAVES(ng)%SDD(dindex)/         &
-     &                                   WAVES(ng)%int
+          WAVES(ng)%Ampzeta(i,dindex)=0.5_r8*g*rho0*                     &
+     &                                (WAVES(ng)%Ampzeta_tot(i)**2)*     &
+     &                                 WAVES(ng)%SDD(dindex)/            &
+     &                                 WAVES(ng)%int
         ENDDO
       ENDDO
 
@@ -1020,6 +1180,8 @@
 !      real(r8), allocatable           :: E1d(:), D1d(:), P1d(:)
       real(r8), allocatable           :: k(:)
       real(r8), allocatable           :: dist_local(:), dist_x(:), dist_y(:)
+      real(r8), allocatable           :: junk1(:), junk2(:), junk3(:), junk4(:)
+      real(r8), allocatable           :: junk(:,:)
 
 # ifdef DISTRIBUTE
       real(r8), allocatable :: wrk(:)
@@ -1029,295 +1191,327 @@
 
 # include "set_bounds.h"
 
-      twopi=2.0_r8*pi
-      otwopi=1.0_r8/(2.0_r8*pi)
-      Tr_min=1.0_r8
-      fmin=1.0_r8/400.0_r8
-      fmax=1.0_r8/30.0_r8
-!
-!  Gather the depth and zeta to determine total depth at boundary point.
-!
-      DO j=0,Mm(ng)+1
-        DO i=0,Lm(ng)+1
-          h_local(i,j)=0.0_r8
-          zeta_local(i,j)=0.0_r8
-          xr_local(i,j)=0.0_r8
-          yr_local(i,j)=0.0_r8
-        END DO
-      END DO
 
-# ifdef DISTRIBUTE
-      CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                   &
-     &                  0, r2dvar, 1.0_r8,                              &
-     &                  GRID(ng) % rmask,                               &
-     &                  GRID(ng)%h, Npts, Awrk)
-      CALL mp_bcastf (ng, iNLM, Awrk)
-!
-      p1=0
-      DO j=0,Mm(ng)+1
-        DO i=0,Lm(ng)+1
-          p1=p1+1
-          h_local(i,j)=Awrk(p1)
-        END DO
-      END DO
-!
-      CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                   &
-     &                  0, r2dvar, 1.0_r8,                              &
-     &                  GRID(ng) % rmask,                               &
-     &                  OCEAN(ng)%zeta(:,:,1), Npts, Awrk)
-      CALL mp_bcastf (ng, iNLM, Awrk)
-!
-      p1=0
-      DO j=0,Mm(ng)+1
-        DO i=0,Lm(ng)+1
-          p1=p1+1
-          zeta_local(i,j)=Awrk(p1)
-        END DO
-      END DO
-!
-      CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                   &
-     &                  0, r2dvar, 1.0_r8,                              &
-     &                  GRID(ng) % rmask,                               &
-     &                  GRID(ng) % xr, Npts, Awrk)
-      CALL mp_bcastf (ng, iNLM, Awrk)
-!
-      p1=0
-      DO j=0,Mm(ng)+1
-        DO i=0,Lm(ng)+1
-          p1=p1+1
-          xr_local(i,j)=Awrk(p1)
-        END DO
-      END DO
-!
-      CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                   &
-     &                  0, r2dvar, 1.0_r8,                              &
-     &                  GRID(ng) % rmask,                               &
-     &                  GRID(ng) % yr, Npts, Awrk)
-      CALL mp_bcastf (ng, iNLM, Awrk)
-!
-      p1=0
-      DO j=0,Mm(ng)+1
-        DO i=0,Lm(ng)+1
-          p1=p1+1
-          yr_local(i,j)=Awrk(p1)
-        END DO
-      END DO
-# else
-      DO j=0,Mm(ng)+1
-        DO i=0,Lm(ng)+1
-          h_local(i,j)=GRID(ng)%h(i,j)
-          zeta_local(i,j)=OCEAN(ng)%zeta(i,j,1)
-          xr_local(i,j)=GRID(ng)%xr(i,j)
-          yr_local(i,j)=GRID(ng)%yr(i,j)
-        END DO
-      END DO
-# endif
-!
-!
-      IF (((LBC(iwest,isAC3d,ng)%acquire).and.                         &
-     &    (DOMAIN(ng)%Western_Edge(tile))).or.                         &
-     &    ((LBC(ieast,isAC3d,ng)%acquire).and.                         &
-     &    (DOMAIN(ng)%Eastern_Edge(tile)))) THEN
-!
-!  Find the boundary cell closest to the center of the boundary
-!
-        IF (DOMAIN(ng)%Western_Edge(tile)) THEN
-          write(*,*) 'Computing western boundary wave'
-           is=0
-        ELSE
-          write(*,*) 'Computing eastern boundary wave'
-          is=Lm(ng)+1
-        END IF
-        SstrR=JstrR
-        SendR=JendR
-
-        x_mid=0.5_r8*(xr_local(is,Mm(ng)+1)+xr_local(is,0))
-        y_mid=0.5_r8*(yr_local(is,Mm(ng)+1)+yr_local(is,0))
-
-        allocate(dist_local(0:Mm(ng)+1))
-
-!        h0=0.0_r8        
-        DO j=0,Mm(ng)+1
-          dist_local(j)=(yr_local(is,j)-y_mid)
-        END DO
-
-        jcenter=minloc(abs(dist_local), DIM = 1)
-        h0=h_local(is,jcenter)+zeta_local(is,jcenter)
-        
-        deallocate(dist_local)
-
-        allocate(dist_x(0:Mm(ng)+1),dist_y(0:Mm(ng)+1))        
-
-        DO j=0,Mm(ng)+1
-          dist_x(j)=xr_local(is,j)-xr_local(is,jcenter)
-          dist_y(j)=yr_local(is,j)-yr_local(is,jcenter)
-        END DO
-      END IF
-!
-      IF (((LBC(isouth,isAC3d,ng)%acquire).and.                         &
+      IF (  ((LBC(iwest,isAC3d,ng)%acquire).and.                        &
+     &       (DOMAIN(ng)%Western_Edge(tile)) ).or.                      &
+     &      ((LBC(ieast,isAC3d,ng)%acquire).and.                        &
+     &       (DOMAIN(ng)%Eastern_Edge(tile))).or.                       &
+     &     ((LBC(isouth,isAC3d,ng)%acquire).and.                        &
      &    (DOMAIN(ng)%Southern_Edge(tile))).or.                         &
      &    ((LBC(inorth,isAC3d,ng)%acquire).and.                         &
      &    (DOMAIN(ng)%Northern_Edge(tile)))) THEN
+
+        twopi=2.0_r8*pi
+        otwopi=1.0_r8/(2.0_r8*pi)
+        Tr_min=1.0_r8
+        fmin=1.0_r8/400.0_r8
+        fmax=1.0_r8/30.0_r8
+!
+!  Gather the depth and zeta to determine total depth at boundary point.
+!
+        DO j=0,Mm(ng)+1
+          DO i=0,Lm(ng)+1
+            h_local(i,j)=0.0_r8
+            zeta_local(i,j)=0.0_r8
+            xr_local(i,j)=0.0_r8
+            yr_local(i,j)=0.0_r8
+          END DO
+        END DO
+
+# ifdef DISTRIBUTE
+        CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                 &
+     &                    0, r2dvar, 1.0_r8,                            &
+     &                    GRID(ng) % rmask,                             &
+     &                    GRID(ng)%h, Npts, Awrk)
+        CALL mp_bcastf (ng, iNLM, Awrk)
+!
+        p1=0
+        DO j=0,Mm(ng)+1
+          DO i=0,Lm(ng)+1
+            p1=p1+1
+            h_local(i,j)=Awrk(p1)
+          END DO
+        END DO
+!
+        CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                 &
+     &                    0, r2dvar, 1.0_r8,                            &
+     &                    GRID(ng) % rmask,                             &
+     &                    OCEAN(ng)%zeta(:,:,1), Npts, Awrk)
+        CALL mp_bcastf (ng, iNLM, Awrk)
+!
+        p1=0
+        DO j=0,Mm(ng)+1
+          DO i=0,Lm(ng)+1
+            p1=p1+1
+            zeta_local(i,j)=Awrk(p1)
+          END DO
+        END DO
+!
+        CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                 &
+     &                    0, r2dvar, 1.0_r8,                            &
+     &                    GRID(ng) % rmask,                             &
+     &                    GRID(ng) % xr, Npts, Awrk)
+        CALL mp_bcastf (ng, iNLM, Awrk)
+!
+        p1=0
+        DO j=0,Mm(ng)+1
+          DO i=0,Lm(ng)+1
+            p1=p1+1
+            xr_local(i,j)=Awrk(p1)
+          END DO
+        END DO
+!
+        CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                 &
+     &                    0, r2dvar, 1.0_r8,                            &
+     &                    GRID(ng) % rmask,                             &
+     &                    GRID(ng) % yr, Npts, Awrk)
+        CALL mp_bcastf (ng, iNLM, Awrk)
+!
+        p1=0
+        DO j=0,Mm(ng)+1
+          DO i=0,Lm(ng)+1
+            p1=p1+1
+            yr_local(i,j)=Awrk(p1)
+          END DO
+        END DO
+# else
+        DO j=0,Mm(ng)+1
+          DO i=0,Lm(ng)+1
+            h_local(i,j)=GRID(ng)%h(i,j)
+            zeta_local(i,j)=OCEAN(ng)%zeta(i,j,1)
+            xr_local(i,j)=GRID(ng)%xr(i,j)
+            yr_local(i,j)=GRID(ng)%yr(i,j)
+          END DO
+        END DO
+# endif
+!
+        IF (((LBC(iwest,isAC3d,ng)%acquire).and.                       &
+     &      (DOMAIN(ng)%Western_Edge(tile))).or.                       &
+     &      ((LBC(ieast,isAC3d,ng)%acquire).and.                       &
+     &      (DOMAIN(ng)%Eastern_Edge(tile)))) THEN
 !
 !  Find the boundary cell closest to the center of the boundary
 !
-        IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
-           write(*,*) 'Computing Southern boundary wave'
-           is=0
-        ELSE
-          write(*,*) 'Computing Northern boundary wave'
-          is=Mm(ng)+1
-        END IF
-        SstrR=IstrR
-        SendR=IendR
+          IF (LBC(iwest,isAC3d,ng)%acquire) THEN
+# ifdef DISTRIBUTE
+           IF (Master) THEN
+# endif
+            write(*,*) 'Computing western bound wave'
+# ifdef DISTRIBUTE
+           END IF
+# endif
+             is=0
+          ELSE
+# ifdef DISTRIBUTE
+           IF (Master) THEN
+# endif
+            write(*,*) 'Computing eastern bound wave'
+# ifdef DISTRIBUTE
+           END IF
+# endif
+            is=Lm(ng)+1
+          END IF
+          SstrR=JstrR
+          SendR=JendR
 
-        x_mid=0.5_r8*(xr_local(Lm(ng)+1,is)+xr_local(0,is))
-        y_mid=0.5_r8*(yr_local(Lm(ng)+1,is)+yr_local(0,is))
+          x_mid=0.5_r8*(xr_local(is,Mm(ng)+1)+xr_local(is,0))
+          y_mid=0.5_r8*(yr_local(is,Mm(ng)+1)+yr_local(is,0))
 
-        allocate(dist_local(0:Lm(ng)+1))
-            write(*,*) 'compute bndwave -1.1',SstrR,SendR,x_mid,y_mid !,is,xr_local(1:5,is)
+          allocate(dist_local(0:Mm(ng)+1))
 
-!        h0=0.0_r8        
-        DO i=0,Lm(ng)+1
-          dist_local(i)=(xr_local(i,is)-x_mid)
-!           write(*,*) 'dist loc ', i,dist_local(i)
-        END DO
+          DO j=0,Mm(ng)+1
+            dist_local(j)=(yr_local(is,j)-y_mid)
+          END DO
 
-        jcenter=minloc(abs(dist_local), DIM = 1)
-        h0=h_local(jcenter,is)+zeta_local(jcenter,is)
+          jcenter=minloc(abs(dist_local), DIM = 1)
+          h0=h_local(is,jcenter)+zeta_local(is,jcenter)
         
-        allocate(dist_x(0:Lm(ng)+1),dist_y(0:Lm(ng)+1))        
+          deallocate(dist_local)
 
-        DO i=0,Lm(ng)+1
-          dist_x(i)=xr_local(i,is)-xr_local(jcenter,is)
-          dist_y(i)=yr_local(i,is)-yr_local(jcenter,is)
-        END DO
-      END IF
-      oh0=1.0_r8/h0
-            write(*,*) 'compute bndwave 0',SstrR,SendR, h0
+          allocate(dist_x(0:Mm(ng)+1),dist_y(0:Mm(ng)+1))        
+
+          DO j=0,Mm(ng)+1
+            dist_x(j)=xr_local(is,j)-xr_local(is,jcenter)
+            dist_y(j)=yr_local(is,j)-yr_local(is,jcenter)
+          END DO
+        END IF
 !
+        IF (((LBC(isouth,isAC3d,ng)%acquire).and.                       &
+     &      (DOMAIN(ng)%Southern_Edge(tile))).or.                       &
+     &      ((LBC(inorth,isAC3d,ng)%acquire).and.                       &
+     &      (DOMAIN(ng)%Northern_Edge(tile)))) THEN
+!
+!  Find the boundary cell closest to the center of the boundary
+!
+          IF (LBC(isouth,isAC3d,ng)%acquire) THEN
+# ifdef DISTRIBUTE
+           IF (Master) THEN
+# endif
+             write(*,*) 'Computing Southern bound wave'
+# ifdef DISTRIBUTE
+           END IF
+# endif
+             is=0
+          ELSE
+# ifdef DISTRIBUTE
+           IF (Master) THEN
+# endif
+            write(*,*) 'Computing Northern bound wave'
+# ifdef DISTRIBUTE
+           END IF
+# endif
+            is=Mm(ng)+1
+          END IF
+          SstrR=IstrR
+          SendR=IendR
+
+          x_mid=0.5_r8*(xr_local(Lm(ng)+1,is)+xr_local(0,is))
+          y_mid=0.5_r8*(yr_local(Lm(ng)+1,is)+yr_local(0,is))
+
+          allocate(dist_local(0:Lm(ng)+1))
+
+          DO i=0,Lm(ng)+1
+            dist_local(i)=(xr_local(i,is)-x_mid)
+          END DO
+
+          jcenter=minloc(abs(dist_local), DIM = 1)
+          h0=h_local(jcenter,is)+zeta_local(jcenter,is)
+        
+          allocate(dist_x(0:Lm(ng)+1),dist_y(0:Lm(ng)+1))        
+
+          DO i=0,Lm(ng)+1
+            dist_x(i)=xr_local(i,is)-xr_local(jcenter,is)
+            dist_y(i)=yr_local(i,is)-yr_local(jcenter,is)
+          END DO
+        END IF
+        oh0=1.0_r8/h0
 !
 !  Allocate boundwave and local wavenumber arrays.
 !
 # ifdef VARY_ACBC
-      IF (first.eq.1) THEN
-        allocate(WAVES(ng)%bndwave_z(SstrR:SendR,WAVES(ng)%Insteps))
-        allocate(WAVES(ng)%bndwave_u(SstrR:SendR,WAVES(ng)%Insteps))
-        allocate(WAVES(ng)%bndwave_v(SstrR:SendR,WAVES(ng)%Insteps))
-      END IF
-      DO i=SstrR,SendR
-        DO t=1,WAVES(ng)%Insteps
-          WAVES(ng)%bndwave_z(i,t)=0.0_r8
-          WAVES(ng)%bndwave_u(i,t)=0.0_r8
-          WAVES(ng)%bndwave_v(i,t)=0.0_r8
+        IF (first.eq.1) THEN
+          allocate(WAVES(ng)%bndwave_z(SstrR:SendR,WAVES(ng)%Insteps))
+          allocate(WAVES(ng)%bndwave_u(SstrR:SendR,WAVES(ng)%Insteps))
+          allocate(WAVES(ng)%bndwave_v(SstrR:SendR,WAVES(ng)%Insteps))
+        END IF
+        DO i=SstrR,SendR
+          DO t=1,WAVES(ng)%Insteps
+            WAVES(ng)%bndwave_z(i,t)=0.0_r8
+            WAVES(ng)%bndwave_u(i,t)=0.0_r8
+            WAVES(ng)%bndwave_v(i,t)=0.0_r8
+          END DO
         END DO
-      END DO
 # else
-      IF (first.eq.1) THEN
-        allocate(WAVES(ng)%bndwave_z(WAVES(ng)%Insteps))
-        allocate(WAVES(ng)%bndwave_u(WAVES(ng)%Insteps))
-        allocate(WAVES(ng)%bndwave_v(WAVES(ng)%Insteps))
-      END IF
-      DO t=1,WAVES(ng)%Insteps
-        WAVES(ng)%bndwave_z(t)=0.0_r8
-        WAVES(ng)%bndwave_u(t)=0.0_r8
-        WAVES(ng)%bndwave_v(t)=0.0_r8
-      END DO
+        IF (first.eq.1) THEN
+          allocate(WAVES(ng)%bndwave_z(WAVES(ng)%Insteps))
+          allocate(WAVES(ng)%bndwave_u(WAVES(ng)%Insteps))
+          allocate(WAVES(ng)%bndwave_v(WAVES(ng)%Insteps))
+        END IF
+        DO t=1,WAVES(ng)%Insteps
+          WAVES(ng)%bndwave_z(t)=0.0_r8
+          WAVES(ng)%bndwave_u(t)=0.0_r8
+          WAVES(ng)%bndwave_v(t)=0.0_r8
+        END DO
 # endif
 !
-      allocate (k(WAVES(ng)%nfreq))
+        allocate (k(WAVES(ng)%nfreq))
 !
 ! Compute the wave number or each freq bin
 !
-      DO i=1,WAVES(ng)%nfreq
-        L0=g*otwopi*(1.0_r8/WAVES(ng)%f(i))**2.0_r8
-        k0=twopi/L0
-        error=100.0_r8
-        wr=twopi*WAVES(ng)%f(i)
-        DO WHILE(error.gt.maxErr)
-          kh=k0*h0
-          tanhkh=TANH(kh)
-          cff1=wr**2.0_r8
-          cff2=-g*k0*tanhkh
-          F=cff1+cff2
-          cff1=-g*tanhkh
-          cff2=-g*kh/COSH(kh)**2.0_r8
-          FDER=cff1+cff2
-          k1=k0-F/FDER
-          error=100.0_r8*ABS((k1-k0)/k0)
-          k0=k1
+        DO i=1,WAVES(ng)%nfreq
+          L0=g*otwopi*(1.0_r8/WAVES(ng)%f(i))**2.0_r8
+          k0=twopi/L0
+          error=100.0_r8
+          wr=twopi*WAVES(ng)%f(i)
+          DO WHILE(error.gt.maxErr)
+            kh=k0*h0
+            tanhkh=TANH(kh)
+            cff1=wr**2.0_r8
+            cff2=-g*k0*tanhkh
+            F=cff1+cff2
+            cff1=-g*tanhkh
+            cff2=-g*kh/COSH(kh)**2.0_r8
+            FDER=cff1+cff2
+            k1=k0-F/FDER
+            error=100.0_r8*ABS((k1-k0)/k0)
+            k0=k1
+          END DO
+          k(i)=k0
         END DO
-        k(i)=k0
-      END DO
-            write(*,*) 'compute bndwave 2',SstrR,SendR
-!
 !
 ! Compute the wave number or each freq bin
 !
 ! Compute the energy transfer for each pair of frequency bins.
 !
-# ifdef DISTRIBUTE
-      IF (Master) THEN
-# endif
-      write(*,*) 'Computing bound wave'
-# ifdef DISTRIBUTE
-      END IF
-# endif
-          fac4=WAVES(ng)%df
-          fac5=WAVEG(ng)%pd
-          DO f1=1,WAVES(ng)%nfreq-1
-           DO n1=1,WAVES(ng)%ndir
+        allocate( junk1(WAVES(ng)%Insteps))
+        allocate( junk2(WAVES(ng)%Insteps))
+        allocate( junk3(WAVES(ng)%Insteps))
+        allocate( junk4(WAVES(ng)%Insteps))
+        DO t=1,WAVES(ng)%Insteps
+          junk1(t)=0.0_r8
+          junk2(t)=0.0_r8
+          junk3(t)=0.0_r8
+          junk4(t)=REAL(t,r8)
+        END DO
+        fac4=WAVES(ng)%df
+        fac5=WAVEG(ng)%pd
+!
+        DO f1=1,WAVES(ng)%nfreq-1
 !
 !  Do the double summation loop.
 !
-            DO f2=f1,WAVES(ng)%nfreq
-             DO n2=1,WAVES(ng)%ndir
-!
-! Compute the freq diff, dir diff, wave number, and phase of bound wave.
-!
-            DDtheta=abs(WAVEG(ng)%wd(n1)-WAVEG(ng)%wd(n2))
-            k3=sqrt(k(f1)**2+k(f2)**2-2.0_r8*k(f1)*k(f2)*COS(DDtheta))
-            Z_bw=Waves(ng)%phase(f2,n2)-Waves(ng)%phase(f1,n1)+pi
-
-            fac1=WAVES(ng)%f(f1)*WAVES(ng)%f(f2)
-            fac2=1.0_r8/cosh(k(f1)*h0)
-            fac3=1.0_r8/cosh(k(f2)*h0)
+          DO f2=f1,WAVES(ng)%nfreq
             DDf=WAVES(ng)%f(f2)-WAVES(ng)%f(f1)
 !
 !  Limit the freq diff range from 1/400 to 1/30, that is
 !  df=1/400=.0025 to df=1/30=0.033
 !
-          IF ((DDf.ge.fmin).and.(DDf.le.fmax)) THEN
+            IF ((DDf.ge.fmin).and.(DDf.le.fmax)) THEN
+  
+              DO n1=1,WAVES(ng)%ndir
+                DO n2=1,WAVES(ng)%ndir
+!
+! Compute the freq diff, dir diff, wave number, and phase of bound wave.
+!
+                  DDtheta=abs(WAVEG(ng)%wd(n1)-WAVEG(ng)%wd(n2))
+                  k3=sqrt(k(f1)**2+k(f2)**2-                            &
+     &               2.0_r8*k(f1)*k(f2)*COS(DDtheta))
+                  Z_bw=Waves(ng)%phase(f2,n2)-Waves(ng)%phase(f1,n1)+pi
+
+                  fac1=WAVES(ng)%f(f1)*WAVES(ng)%f(f2)
+                  fac2=1.0_r8/cosh(k(f1)*h0)
+                  fac3=1.0_r8/cosh(k(f2)*h0)
             
-            D1a=g*k(f1)*k(f2)/(8.0_r8*pi**2*fac1)*                      &
-     &          fac2*fac3
-            D3a=((2.0_r8*pi)**4*(fac1)**2)/(g**2)
-            D4=-0.5*(-WAVES(ng)%f(f1)*k(f2)**2*fac3**2+                 &
-     &                WAVES(ng)%f(f2)*k(f1)**2*fac2**2)
+                  D1a=g*k(f1)*k(f2)/(8.0_r8*pi**2*fac1)*                &
+     &                fac2*fac3
+                  D3a=((2.0_r8*pi)**4*(fac1)**2)/(g**2)
+                  D4=-0.5*(-WAVES(ng)%f(f1)*k(f2)**2*fac3**2+           &
+     &                      WAVES(ng)%f(f2)*k(f1)**2*fac2**2)
 !
 !  Compute the double summation.
 !
-            D1=D1a*COS(DDtheta+pi)*MIN(cosh(k3*h0),1.0E10_r8)
-            D2=-g*(DDf)/((g*k3*tanh(k3*h0)-(2.0_r8*pi)**2*DDf**2)*      &
-     &             fac1+eps)
-            D3=DDf*(D3a-k(f1)*k(f2)*COS(DDtheta+pi))
-            DTOT=D1+D2*(D3+D4)
+                  D1=D1a*COS(DDtheta+pi)*MIN(cosh(k3*h0),1.0E10_r8)
+                  D2=-g*(DDf)/((g*k3*tanh(k3*h0)-(2.0_r8*pi)**2*DDf**2)*&
+     &                   fac1+eps)
+                  D3=DDf*(D3a-k(f1)*k(f2)*COS(DDtheta+pi))
+                  DTOT=D1+D2*(D3+D4)
 !
 !  Compute energy of bound wave
 !
-            E3=2.0_r8*DTOT**2*                                          &
-     &         WAVES(ng)%SD(f1,n1)*WAVES(ng)%SD(f2,n2)*fac4*fac5**2
-    
-            A3=SQRT(2.0_r8*E3*fac4)
+                  E3=2.0_r8*DTOT**2*                                    &
+     &              WAVES(ng)%SD(f1,n1)*WAVES(ng)%SD(f2,n2)*fac4*fac5**2
+                  A3=SQRT(2.0_r8*E3*fac4)
 !
 !  Compute the direction of the bound wave (this is in radians)
 !
-            cff1=k(f2)*sin(WAVEG(ng)%wd(n2))-k(f1)*sin(WAVEG(ng)%wd(n1))
-            cff2=k(f2)*cos(WAVEG(ng)%wd(n2))-k(f1)*cos(WAVEG(ng)%wd(n1))
-            DIR3=atan(cff1/cff2)
-            k3_x=k3*cos(1.5_r8*pi-DIR3)   !DIR3 is in nautical coordinates
-            k3_y=k3*sin(1.5_r8*pi-DIR3)
-
+                  cff1=k(f2)*sin(WAVEG(ng)%wd(n2))-                     &
+     &                 k(f1)*sin(WAVEG(ng)%wd(n1))
+                  cff2=k(f2)*cos(WAVEG(ng)%wd(n2))-                     &
+     &                 k(f1)*cos(WAVEG(ng)%wd(n1))
+                  DIR3=atan(cff1/cff2)
+                  k3_x=k3*cos(1.5_r8*pi-DIR3)   !DIR3 is in nautical coordinates
+                  k3_y=k3*sin(1.5_r8*pi-DIR3)
+!
 !  Compute this contribution to the bndwave (water level) and associated 
 !  currents; currents depend on direction
 !  Here we need to include the phase difference along the boundary; this
@@ -1325,44 +1519,45 @@
 !  the free surface elevation)
 !
 # ifdef VARY_ACBC
-           DO j=SstrR,SendR
-             cff2=k3_x*dist_x(j)+k3_y*dist_y(j)
+                  DO j=SstrR,SendR
+                  cff2=k3_x*dist_x(j)+k3_y*dist_y(j)
 # else
-             cff2=0.0_r8
+                  cff2=0.0_r8
 # endif
-             DO t=1,WAVES(ng)%Insteps
-               cff=REAL((t-1),r8)*dt(ng)
-               cff1=-2.0_r8*pi*DDf*cff+Z_bw
-!  this might be rotated to the roms grid
-               cff3=COS(cff2+cff1)
-               cff4=A3*cff3
+!
+                  junk2(:)=-2.0_r8*pi*DDf*junk4(:)*dt(ng)+Z_bw+cff2
+                  junk1(:)=A3*COS(junk2(:))
+
 !  The currents need to be rotated to the roms grid plus they are
 !  defined in the rho points
 !  Here we assume these waves are shallow progressive water waves
 # ifdef VARY_ACBC
-              WAVES(ng)%bndwave_z(j,t)=WAVES(ng)%bndwave_z(j,t)+cff4
-              WAVES(ng)%bndwave_u(j,t)=WAVES(ng)%bndwave_u(j,t)+cff4*oh0*sqrt(g*h0)
-              WAVES(ng)%bndwave_v(j,t)=WAVES(ng)%bndwave_v(j,t)+cff4*oh0*sqrt(g*h0)
+                  WAVES(ng)%bndwave_z(j,:)=WAVES(ng)%bndwave_z(j,:)+    &
+     &                                     junk1(:)
+                  WAVES(ng)%bndwave_u(j,:)=WAVES(ng)%bndwave_u(j,:)+    &
+     &                                     junk1(:)*oh0*sqrt(g*h0)
+                  WAVES(ng)%bndwave_v(j,:)=WAVES(ng)%bndwave_v(j,:)+    &
+     &                                     junk1(:)*oh0*sqrt(g*h0)
 # else
-              WAVES(ng)%bndwave_z(t)=WAVES(ng)%bndwave_z(t)+cff4
-              WAVES(ng)%bndwave_u(t)=WAVES(ng)%bndwave_u(t)+cff4*oh0*sqrt(g*h0)
-              WAVES(ng)%bndwave_v(t)=WAVES(ng)%bndwave_v(t)+cff4*oh0*sqrt(g*h0)
+                  WAVES(ng)%bndwave_z(:)=WAVES(ng)%bndwave_z(:)+junk1(:)
+                  WAVES(ng)%bndwave_u(t)=WAVES(ng)%bndwave_u(t)+        &
+     &                                   junk1(:)*oh0*sqrt(g*h0)
+                  WAVES(ng)%bndwave_v(t)=WAVES(ng)%bndwave_v(t)+        &
+     &                                   junk1(:)*oh0*sqrt(g*h0)
 # endif
-             END DO
 # ifdef VARY_ACBC
-           END DO
+                END DO
 # endif
-
-          END IF
-
-         END DO
+                END DO
+              END DO
+            END IF
+          END DO
         END DO
-       END DO
-      END DO
-
-      deallocate(dist_x,dist_y)
-      deallocate (k)
-      deallocate( dist_local, junk1, junk2, junk3 )
+!
+        deallocate(dist_x,dist_y)
+        deallocate (k)
+        deallocate( dist_local, junk1, junk2, junk3, junk4 )
+      END IF
 
       RETURN
 
