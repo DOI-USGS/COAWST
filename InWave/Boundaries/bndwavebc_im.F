@@ -102,7 +102,7 @@
 # endif
             BOUNDARY(ng)%zeta_west(j)=(BOUNDARY(ng)%zeta_west(j)+       &
      &                                 bndtot)*ramp
-            IF (LBC(iwest,isVbar,ng)%acquire) THEN
+            IF (LBC(iwest,isUbar,ng)%acquire) THEN
               BOUNDARY(ng)%ubar_west(j)=(BOUNDARY(ng)%ubar_west(j)+     &
      &                                   veltot)*ramp
             END IF
@@ -127,7 +127,7 @@
 # endif
             BOUNDARY(ng)%zeta_east(j)=(BOUNDARY(ng)%zeta_east(j)+       &
      &                                 bndtot)*ramp
-            IF (LBC(ieast,isVbar,ng)%acquire) THEN
+            IF (LBC(ieast,isUbar,ng)%acquire) THEN
               BOUNDARY(ng)%ubar_east(j)=(BOUNDARY(ng)%ubar_east(j)+     &
      &                                   veltot)*ramp
             END IF
