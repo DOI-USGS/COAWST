@@ -1367,8 +1367,6 @@
         END IF
 # endif
         
-          deallocate(dist_local)
-
           allocate(dist_x(0:Mm(ng)+1),dist_y(0:Mm(ng)+1))        
 
           DO j=0,Mm(ng)+1
