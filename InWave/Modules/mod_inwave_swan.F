@@ -842,6 +842,14 @@
         dx_min=dx_local(jcenter)
         jcenter=minloc(abs(dist_local), DIM = 1)
         h0=h_local(is,jcenter)+zeta_local(is,jcenter)
+        oh0=1.0_r8/h0
+# ifdef DISTRIBUTE
+          IF (Master) THEN
+# endif
+            write(*,*) 'Mean offshore water depth for AC is ', h0
+# ifdef DISTRIBUTE
+          END IF
+# endif
         
         deallocate(dist_local, dx_local)
         allocate(dist_x(0:Mm(ng)+1),dist_y(0:Mm(ng)+1))        
@@ -900,6 +908,14 @@
         dx_min=dx_local(jcenter)
         jcenter=minloc(abs(dist_local), DIM = 1)
         h0=h_local(jcenter,is)+zeta_local(jcenter,is)
+        oh0=1.0_r8/h0
+# ifdef DISTRIBUTE
+        IF (Master) THEN
+# endif
+          write(*,*) 'Mean offshore water depth for AC is ', h0
+# ifdef DISTRIBUTE
+        END IF
+# endif
 
         deallocate(dist_local, dx_local)
         allocate(dist_x(0:Lm(ng)+1),dist_y(0:Lm(ng)+1))        
@@ -909,9 +925,15 @@
           dist_y(i)=yr_local(i,is)-yr_local(jcenter,is)
         END DO
       END IF
-      oh0=1.0_r8/h0
 
-      write(*,*) 'Mean offshore water depth for AC is ', h0
+      IF (  ((LBC(iwest,isAC3d,ng)%acquire).and.                        &
+     &       (DOMAIN(ng)%Western_Edge(tile)) ).or.                      &
+     &      ((LBC(ieast,isAC3d,ng)%acquire).and.                        &
+     &       (DOMAIN(ng)%Eastern_Edge(tile))).or.                       &
+     &     ((LBC(isouth,isAC3d,ng)%acquire).and.                        &
+     &    (DOMAIN(ng)%Southern_Edge(tile))).or.                         &
+     &    ((LBC(inorth,isAC3d,ng)%acquire).and.                         &
+     &    (DOMAIN(ng)%Northern_Edge(tile)))) THEN
 !
 !  Compute the wave numbers.
 !
@@ -1034,6 +1056,7 @@
           END DO
         END DO
         deallocate (k, angle_edge, dist_x, dist_y)
+      END IF
       RETURN
       END SUBROUTINE FourierComp_tile
 
@@ -1061,6 +1084,14 @@
       fmin=1.0_r8/400.0_r8
       fmax=1.0_r8/3.0_r8
 
+      IF (  ((LBC(iwest,isAC3d,ng)%acquire).and.                        &
+     &       (DOMAIN(ng)%Western_Edge(tile)) ).or.                      &
+     &      ((LBC(ieast,isAC3d,ng)%acquire).and.                        &
+     &       (DOMAIN(ng)%Eastern_Edge(tile))).or.                       &
+     &     ((LBC(isouth,isAC3d,ng)%acquire).and.                        &
+     &    (DOMAIN(ng)%Southern_Edge(tile))).or.                         &
+     &    ((LBC(inorth,isAC3d,ng)%acquire).and.                         &
+     &    (DOMAIN(ng)%Northern_Edge(tile)))) THEN
 ! COMPUTES THE FOURIER COMPONENTS
       DO i=1,WAVES(ng)%Insteps
         WAVES(ng)%CompFn(i)=0.0_r8
@@ -1096,6 +1127,7 @@
      &                                 WAVES(ng)%int
         ENDDO
       ENDDO
+          END IF
 
       RETURN
       END SUBROUTINE FourierComp
@@ -1192,14 +1224,6 @@
 # include "set_bounds.h"
 
 
-      IF (  ((LBC(iwest,isAC3d,ng)%acquire).and.                        &
-     &       (DOMAIN(ng)%Western_Edge(tile)) ).or.                      &
-     &      ((LBC(ieast,isAC3d,ng)%acquire).and.                        &
-     &       (DOMAIN(ng)%Eastern_Edge(tile))).or.                       &
-     &     ((LBC(isouth,isAC3d,ng)%acquire).and.                        &
-     &    (DOMAIN(ng)%Southern_Edge(tile))).or.                         &
-     &    ((LBC(inorth,isAC3d,ng)%acquire).and.                         &
-     &    (DOMAIN(ng)%Northern_Edge(tile)))) THEN
 
         twopi=2.0_r8*pi
         otwopi=1.0_r8/(2.0_r8*pi)
@@ -1285,6 +1309,15 @@
         END DO
 # endif
 !
+      IF (  ((LBC(iwest,isAC3d,ng)%acquire).and.                        &
+     &       (DOMAIN(ng)%Western_Edge(tile)) ).or.                      &
+     &      ((LBC(ieast,isAC3d,ng)%acquire).and.                        &
+     &       (DOMAIN(ng)%Eastern_Edge(tile))).or.                       &
+     &     ((LBC(isouth,isAC3d,ng)%acquire).and.                        &
+     &    (DOMAIN(ng)%Southern_Edge(tile))).or.                         &
+     &    ((LBC(inorth,isAC3d,ng)%acquire).and.                         &
+     &    (DOMAIN(ng)%Northern_Edge(tile)))) THEN
+
         IF (((LBC(iwest,isAC3d,ng)%acquire).and.                       &
      &      (DOMAIN(ng)%Western_Edge(tile))).or.                       &
      &      ((LBC(ieast,isAC3d,ng)%acquire).and.                       &
@@ -1325,6 +1358,14 @@
 
           jcenter=minloc(abs(dist_local), DIM = 1)
           h0=h_local(is,jcenter)+zeta_local(is,jcenter)
+          oh0=1.0_r8/h0
+# ifdef DISTRIBUTE
+        IF (Master) THEN
+# endif
+          write(*,*) 'Mean offshore water depth for bndwave is ', h0
+# ifdef DISTRIBUTE
+        END IF
+# endif
         
           deallocate(dist_local)
 
@@ -1376,6 +1417,14 @@
 
           jcenter=minloc(abs(dist_local), DIM = 1)
           h0=h_local(jcenter,is)+zeta_local(jcenter,is)
+          oh0=1.0_r8/h0
+# ifdef DISTRIBUTE
+        IF (Master) THEN
+# endif
+          write(*,*) 'Mean offshore water depth for bndwave is ', h0
+# ifdef DISTRIBUTE
+        END IF
+# endif
         
           allocate(dist_x(0:Lm(ng)+1),dist_y(0:Lm(ng)+1))        
 
@@ -1384,7 +1433,6 @@
             dist_y(i)=yr_local(i,is)-yr_local(jcenter,is)
           END DO
         END IF
-        oh0=1.0_r8/h0
 !
 !  Allocate boundwave and local wavenumber arrays.
 !
@@ -1461,6 +1509,15 @@
 !  Do the double summation loop.
 !
           DO f2=f1,WAVES(ng)%nfreq
+
+# ifdef DISTRIBUTE
+        IF (Master) THEN
+# endif
+!          write(*,*) 'f1 f2 are  ', f1,f2
+# ifdef DISTRIBUTE
+        END IF
+# endif
+
             DDf=WAVES(ng)%f(f2)-WAVES(ng)%f(f1)
 !
 !  Limit the freq diff range from 1/400 to 1/30, that is
@@ -1540,9 +1597,9 @@
      &                                     junk1(:)*oh0*sqrt(g*h0)
 # else
                   WAVES(ng)%bndwave_z(:)=WAVES(ng)%bndwave_z(:)+junk1(:)
-                  WAVES(ng)%bndwave_u(t)=WAVES(ng)%bndwave_u(t)+        &
+                  WAVES(ng)%bndwave_u(:)=WAVES(ng)%bndwave_u(:)+        &
      &                                   junk1(:)*oh0*sqrt(g*h0)
-                  WAVES(ng)%bndwave_v(t)=WAVES(ng)%bndwave_v(t)+        &
+                  WAVES(ng)%bndwave_v(:)=WAVES(ng)%bndwave_v(:)+        &
      &                                   junk1(:)*oh0*sqrt(g*h0)
 # endif
 # ifdef VARY_ACBC
