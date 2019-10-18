@@ -661,7 +661,7 @@
       integer                         :: SstrR, SendR, is, jcenter
       integer                         :: MyError, Npts, p1
       real(r8)                        :: cff, cff1, cff2, DIR3, k3_x, k3_y
-      real(r8)                        :: twopi, otwopi, x
+      real(r8)                        :: twopi, otwopi, x, cff3
       real(r8)                        :: error, kedge
       real(r8)                        :: F, FDER, tanhkh
       real(r8)                        :: L0, k0, k1, kh, wr
@@ -669,7 +669,8 @@
       real(r8)                        :: x_mid, y_mid, dx_min
       real(r8), allocatable           :: k(:), angle_edge(:)
       real(r8), allocatable           :: dist_local(:), dist_x(:), dist_y(:)
-      real(r8), allocatable           :: dx_local(:)
+      real(r8), allocatable           :: dx_local(:), SDD_cumul(:)
+      real(r8), allocatable           :: Hsig_check(:)
       real(r8), dimension((Lm(ng)+2)*(Mm(ng)+2)) :: Awrk
       real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: h_local
       real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: zeta_local
@@ -683,7 +684,7 @@
 
 # include "set_bounds.h"
 
-      fmin=1.0_r8/15.0_r8
+      fmin=1.0_r8/20.0_r8
       fmax=1.0_r8/3.0_r8
       twopi=2.0_r8*pi
       otwopi=1.0_r8/(2.0_r8*pi)
@@ -801,22 +802,14 @@
 !  Find the boundary cell closest to the center of the boundary
 !
         IF (LBC(iwest,isAC3d,ng)%acquire) THEN
-# ifdef DISTRIBUTE
-          IF (Master) THEN
-# endif
-          write(*,*) 'Computing western AC forcing'
-# ifdef DISTRIBUTE
+          IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+            write(*,*) 'Computing western AC forcing'
           END IF
-# endif
-           is=0
+          is=0
         ELSE
-# ifdef DISTRIBUTE
-          IF (Master) THEN
-# endif
-          write(*,*) 'Computing eastern AC forcing'
-# ifdef DISTRIBUTE
+          IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+            write(*,*) 'Computing eastern AC forcing'
           END IF
-# endif
           is=Lm(ng)+1
         END IF
         SstrR=JstrR
@@ -843,14 +836,11 @@
         jcenter=minloc(abs(dist_local), DIM = 1)
         h0=h_local(is,jcenter)+zeta_local(is,jcenter)
         oh0=1.0_r8/h0
-# ifdef DISTRIBUTE
-          IF (Master) THEN
-# endif
+
+        IF (DOMAIN(ng)%SouthWest_Corner(tile).or.                       &
+     &      DOMAIN(ng)%SouthEast_Corner(tile)) THEN
             write(*,*) 'Mean offshore water depth for AC is ', h0
-# ifdef DISTRIBUTE
-          END IF
-# endif
-        
+        END IF
         deallocate(dist_local, dx_local)
         allocate(dist_x(0:Mm(ng)+1),dist_y(0:Mm(ng)+1))        
 
@@ -868,22 +858,14 @@
 !  Find the boundary cell closest to the center of the boundary
 !
         IF (LBC(isouth,isAC3d,ng)%acquire) THEN
-# ifdef DISTRIBUTE
-          IF (Master) THEN
-# endif
-           write(*,*) 'Computing Southern AC forcing'
-# ifdef DISTRIBUTE
+          IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+            write(*,*) 'Computing Southern AC forcing'
           END IF
-# endif
-           is=0
+          is=0
         ELSE
-# ifdef DISTRIBUTE
-          IF (Master) THEN
-# endif
-          write(*,*) 'Computing Northern AC forcing'
-# ifdef DISTRIBUTE
+          IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+            write(*,*) 'Computing Northern AC forcing'
           END IF
-# endif
           is=Mm(ng)+1
         END IF
         SstrR=IstrR
@@ -909,13 +891,10 @@
         jcenter=minloc(abs(dist_local), DIM = 1)
         h0=h_local(jcenter,is)+zeta_local(jcenter,is)
         oh0=1.0_r8/h0
-# ifdef DISTRIBUTE
-        IF (Master) THEN
-# endif
-          write(*,*) 'Mean offshore water depth for AC is ', h0
-# ifdef DISTRIBUTE
+        IF (DOMAIN(ng)%SouthWest_Corner(tile).or.                       &
+     &      DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+            write(*,*) 'Mean offshore water depth for AC is ', h0
         END IF
-# endif
 
         deallocate(dist_local, dx_local)
         allocate(dist_x(0:Lm(ng)+1),dist_y(0:Lm(ng)+1))        
@@ -937,90 +916,111 @@
 !
 !  Compute the wave numbers.
 !
-      allocate (k(WAVES(ng)%nfreq))
-      DO i=1,WAVES(ng)%nfreq
-        L0=g*otwopi*(1.0_r8/WAVES(ng)%f(i))**2
-        k0=twopi/L0
-        error=100.0_r8
-        wr=twopi*WAVES(ng)%f(i)
-        DO WHILE(error.gt.maxErr)
-          kh=k0*h0
-          tanhkh=TANH(kh)
-          cff1=wr**2.0_r8
-          cff2=-g*k0*tanhkh
-          F=cff1+cff2
-          cff1=-g*tanhkh
-          cff2=-g*kh/COSH(kh)**2.0_r8
-          FDER=cff1+cff2
-          k1=k0-F/FDER
-          error=100.0_r8*ABS((k1-k0)/k0)
-          k0=k1
-        END DO
-        k(i)=k0
-!        write(*,*) 'wave length ', i,2.0_r8*pi/k(i),1.0_r8/WAVES(ng)%f(i)
-      END DO
-!
-      IF (first.eq.1) THEN
-        allocate(WAVES(ng)%CompFn(SstrR:SendR,WAVES(ng)%Insteps))
-        allocate(WAVES(ng)%Ampzeta(SstrR:SendR,WAVES(ng)%Insteps,WAVES(ng)%ndir))
-      END IF
-!
-! COMPUTES THE FOURIER COMPONENTS
-!
-      DO tidx=1,WAVES(ng)%Insteps
-        DO i=SstrR,SendR
-          WAVES(ng)%CompFn(i,tidx)=0.0_r8
-          DO dindex=1,WAVES(ng)%ndir
-            WAVES(ng)%Ampzeta(i,tidx,dindex)=0.0_r8
+        allocate (k(WAVES(ng)%nfreq))
+        DO i=1,WAVES(ng)%nfreq
+          L0=g*otwopi*(1.0_r8/WAVES(ng)%f(i))**2
+          k0=twopi/L0
+          error=100.0_r8
+          wr=twopi*WAVES(ng)%f(i)
+          DO WHILE(error.gt.maxErr)
+            kh=k0*h0
+            tanhkh=TANH(kh)
+            cff1=wr**2.0_r8
+            cff2=-g*k0*tanhkh
+            F=cff1+cff2
+            cff1=-g*tanhkh
+            cff2=-g*kh/COSH(kh)**2.0_r8
+            FDER=cff1+cff2
+            k1=k0-F/FDER
+            error=100.0_r8*ABS((k1-k0)/k0)
+            k0=k1
           END DO
+          k(i)=k0
         END DO
-      END DO
-      DO dindex=1,ND
 !
-! check if this dir has at least 10 percent of total energy
+        IF (first.eq.1) THEN
+          allocate(WAVES(ng)%CompFn(SstrR:SendR,WAVES(ng)%Insteps))
+          allocate(WAVES(ng)%Ampzeta(SstrR:SendR,                       &
+     &             WAVES(ng)%Insteps,WAVES(ng)%ndir))
+        END IF
 !
-        cff2=WAVES(ng)%SDD(dindex)/WAVES(ng)%int
-        IF (cff2.gt.0.10_r8) THEN
+! Initialize the final array.
+!
+        DO tidx=1,WAVES(ng)%Insteps
           DO i=SstrR,SendR
-            DO tidx=1,WAVES(ng)%Insteps
-              cff2=0.0_r8
-              cff=REAL((tidx-1),r8)*dt(ng)
-              DO j=1,WAVES(ng)%nfreq
-                IF ((WAVES(ng)%f(j).ge.fmin).and.(WAVES(ng)%f(j).le.fmax)) THEN
-                  DIR3=1.5_r8*pi-WAVEG(ng)%wd(dindex)-angle_edge(i)
-
-!
-!  Here we use an avg wavelength for each group, based on min grid size.
-!
-                  if (twopi/k(j).ge.(8.0_r8*dx_min)) then
-                    k(j)=twopi/(8.0_r8*dx_min)
-                  elseif (twopi/k(j).ge.(6.0_r8*dx_min)) then
-                    k(j)=twopi/(6.0_r8*dx_min)
-                  elseif (twopi/k(j).ge.(4.0_r8*dx_min)) then
-                    k(j)=twopi/(4.0_r8*dx_min)
-                  elseif (twopi/k(j).ge.(2.0_r8*dx_min)) then
-!                    k(j)=twopi/(2.0_r8*dx_min)
-!                  else
-!!                  k(j)=twopi/(2.0_r8*dx_min)
-                   k(j)=0.0_r8
-                  end if
-!
-                  k3_x=k(j)*cos(DIR3)
-                  k3_y=k(j)*sin(DIR3)
-                  kedge=k3_x*dist_x(i)+k3_y*dist_y(i)
-                  cff2=cff2+WAVES(ng)%amp(j,dindex)*                    &
-     &                      COS(twopi*WAVES(ng)%f(j)*cff+               &
-     &                      WAVES(ng)%phase(j,dindex)-                  &
-     &                      kedge)
-                END IF
-              END DO
-              WAVES(ng)%CompFn(i,tidx)=WAVES(ng)%CompFn(i,tidx)+cff2            
+            WAVES(ng)%CompFn(i,tidx)=0.0_r8
+            DO dindex=1,WAVES(ng)%ndir
+              WAVES(ng)%Ampzeta(i,tidx,dindex)=0.0_r8
             END DO
           END DO
-        END IF
-      END DO
+        END DO
+!
+!  Here we create a cumulative distribution function based on 
+!  energy specta.  SDD is directional energy spectra (but not x pd).
+!
+        allocate(SDD_cumul(WAVES(ng)%ndir))
+        SDD_cumul(1)=0.0_r8
+        DO dindex=2,WAVES(ng)%ndir
+          cff2=WAVES(ng)%SDD(dindex)/WAVES(ng)%int
+          IF (cff2.gt.0.10_r8) THEN
+            SDD_cumul(dindex)=SDD_cumul(dindex-1)+WAVES(ng)%SDD(dindex)
+          ELSE
+            SDD_cumul(dindex)=SDD_cumul(dindex-1)
+          END IF
+        END DO
+!  Scale SDD_cumul so it goes from ~0.0 to 1.0
+        DO j=1,WAVES(ng)%ndir
+          SDD_cumul(j)=SDD_cumul(j)/SDD_cumul(WAVES(ng)%ndir)
+        END DO
+        cff2=0.0_r8
+        DO j=1,WAVES(ng)%nfreq
+          IF ((WAVES(ng)%f(j).ge.fmin).and.(WAVES(ng)%f(j).le.fmax)) THEN
+!
+!  Determine which direction to use for this freq.
+!
+            call random_number(cff1)
+            DO dindex=1,ND
+              IF (cff1.lt.SDD_cumul(dindex)) THEN
+                m=dindex
+                EXIT
+              END IF
+            END DO
+!
+!  Here we limit the wavelength to not be smaller than 4x dxmin
+!
+            IF (twopi/k(j).le.(4.0_r8*dx_min)) THEN
+              cff3=0.0_r8
+            ELSE
+              cff3=k(j)
+            END IF
+!
+!  Here we compute the amplitude time series for the boundary AC forcing.
+!
+            DO i=SstrR,SendR
+              DIR3=1.5_r8*pi-WAVEG(ng)%wd(m)-angle_edge(i)
+              k3_x=cff3*cos(DIR3)
+              k3_y=cff3*sin(DIR3)
+              kedge=k3_x*dist_x(i)+k3_y*dist_y(i)
+              DO dindex=1,ND
+                IF ((WAVES(ng)%SDD(dindex)/WAVES(ng)%int).gt.           &
+     &               0.10_r8) THEN
+                  DO tidx=1,WAVES(ng)%Insteps
+                    cff=REAL((tidx-1),r8)*dt(ng)
+                    cff2=WAVES(ng)%amp(j,dindex)*                       &
+     &                        COS(twopi*WAVES(ng)%f(j)*cff+             &
+     &                        WAVES(ng)%phase(j,dindex)-                &
+     &                        kedge)
+                    WAVES(ng)%CompFn(i,tidx)=WAVES(ng)%CompFn(i,tidx)+  &
+     &                                       cff2
+                  END DO
+                END IF
+              END DO
+            END DO
+          END IF
+        END DO
 !
 !  Sum over all the directions and then partition out.
+!  I put it back into CompFn incase we want to filter in time and space.
 !
         DO i=SstrR,SendR
           DO tidx=1,WAVES(ng)%Insteps
@@ -1032,30 +1032,36 @@
             WAVES(ng)%CompFn(i,tidx)=WAVES(ng)%Ampzeta_tot(tidx)
           END DO
         END DO
-
+!
+        allocate(Hsig_check(SstrR:SendR))
         DO i=SstrR,SendR
-          DO tidx=2,WAVES(ng)%Insteps-1
-            WAVES(ng)%CompFn(i,tidx)=0.3333_r8*(WAVES(ng)%CompFn(i,tidx-1)+ &
-     &                                           WAVES(ng)%CompFn(i,tidx)+ &
-     &                                           WAVES(ng)%CompFn(i,tidx+1))
-          END DO
-        END DO
-
-        DO i=SstrR,SendR
+          cff=0.0_r8
           DO dindex=1,ND
             DO tidx=1,WAVES(ng)%Insteps
-!              WAVES(ng)%Ampzeta(i,tidx,dindex)=0.5_r8*g*rho0*           &
-!     &                    ((ABS(WAVES(ng)%Ampzeta_tot(tidx)))**2)*      &
-!     &                                   WAVES(ng)%SDD(dindex)/         &
-!     &                                   WAVES(ng)%int
-              WAVES(ng)%Ampzeta(i,tidx,dindex)=0.5_r8*g*rho0*           &
-     &                    ((ABS(WAVES(ng)%CompFn(i,tidx)))**2)*      &
+              cff1=0.5_r8*((ABS(WAVES(ng)%CompFn(i,tidx)))**2)*         &
      &                                   WAVES(ng)%SDD(dindex)/         &
      &                                   WAVES(ng)%int
+              WAVES(ng)%Ampzeta(i,tidx,dindex)=cff1*g*rho0
+              cff=cff+cff1
+            END DO
+          END DO
+          Hsig_check(i)=4.0_r8*sqrt(cff/WAVES(ng)%Insteps)
+        END DO
+!
+!  Scale boundary Hwave so the temporal avg = Hm0 from SWAN spec2d
+!
+        DO i=SstrR,SendR
+          cff=WAVES(ng)%hm0gew/Hsig_check(i)
+          DO dindex=1,ND
+            DO tidx=1,WAVES(ng)%Insteps
+              WAVES(ng)%Ampzeta(i,tidx,dindex)=                         &
+     &               WAVES(ng)%Ampzeta(i,tidx,dindex)*cff
             END DO
           END DO
         END DO
+!
         deallocate (k, angle_edge, dist_x, dist_y)
+        deallocate(SDD_cumul, Hsig_check)
       END IF
       RETURN
       END SUBROUTINE FourierComp_tile
@@ -1222,9 +1228,6 @@
       real(r8), parameter :: eps = 1.0E-10_r8
 
 # include "set_bounds.h"
-
-
-
         twopi=2.0_r8*pi
         otwopi=1.0_r8/(2.0_r8*pi)
         Tr_min=1.0_r8
@@ -1326,22 +1329,14 @@
 !  Find the boundary cell closest to the center of the boundary
 !
           IF (LBC(iwest,isAC3d,ng)%acquire) THEN
-# ifdef DISTRIBUTE
-           IF (Master) THEN
-# endif
-            write(*,*) 'Computing western bound wave'
-# ifdef DISTRIBUTE
-           END IF
-# endif
-             is=0
+            IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+              write(*,*) 'Computing western bound wave'
+            END IF
+            is=0
           ELSE
-# ifdef DISTRIBUTE
-           IF (Master) THEN
-# endif
-            write(*,*) 'Computing eastern bound wave'
-# ifdef DISTRIBUTE
-           END IF
-# endif
+            IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+              write(*,*) 'Computing eastern bound wave'
+            END IF
             is=Lm(ng)+1
           END IF
           SstrR=JstrR
@@ -1359,14 +1354,11 @@
           jcenter=minloc(abs(dist_local), DIM = 1)
           h0=h_local(is,jcenter)+zeta_local(is,jcenter)
           oh0=1.0_r8/h0
-# ifdef DISTRIBUTE
-        IF (Master) THEN
-# endif
-          write(*,*) 'Mean offshore water depth for bndwave is ', h0
-# ifdef DISTRIBUTE
-        END IF
-# endif
-        
+
+          IF (DOMAIN(ng)%SouthWest_Corner(tile).or.                     &
+     &        DOMAIN(ng)%SouthEast_Corner(tile)) THEN
+            write(*,*) 'Mean offshore water depth for bndwave is ', h0
+          END IF
           allocate(dist_x(0:Mm(ng)+1),dist_y(0:Mm(ng)+1))        
 
           DO j=0,Mm(ng)+1
@@ -1383,22 +1375,14 @@
 !  Find the boundary cell closest to the center of the boundary
 !
           IF (LBC(isouth,isAC3d,ng)%acquire) THEN
-# ifdef DISTRIBUTE
-           IF (Master) THEN
-# endif
-             write(*,*) 'Computing Southern bound wave'
-# ifdef DISTRIBUTE
-           END IF
-# endif
-             is=0
+            IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
+               write(*,*) 'Computing Southern bound wave'
+            END IF
+            is=0
           ELSE
-# ifdef DISTRIBUTE
-           IF (Master) THEN
-# endif
-            write(*,*) 'Computing Northern bound wave'
-# ifdef DISTRIBUTE
-           END IF
-# endif
+            IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+              write(*,*) 'Computing Northern bound wave'
+            END IF
             is=Mm(ng)+1
           END IF
           SstrR=IstrR
@@ -1416,14 +1400,11 @@
           jcenter=minloc(abs(dist_local), DIM = 1)
           h0=h_local(jcenter,is)+zeta_local(jcenter,is)
           oh0=1.0_r8/h0
-# ifdef DISTRIBUTE
-        IF (Master) THEN
-# endif
-          write(*,*) 'Mean offshore water depth for bndwave is ', h0
-# ifdef DISTRIBUTE
-        END IF
-# endif
-        
+
+          IF (DOMAIN(ng)%SouthWest_Corner(tile).or.                     &
+     &        DOMAIN(ng)%NorthWest_Corner(tile)) THEN
+            write(*,*) 'Mean offshore water depth for bndwave is ', h0
+          END IF        
           allocate(dist_x(0:Lm(ng)+1),dist_y(0:Lm(ng)+1))        
 
           DO i=0,Lm(ng)+1
@@ -1507,15 +1488,6 @@
 !  Do the double summation loop.
 !
           DO f2=f1,WAVES(ng)%nfreq
-
-# ifdef DISTRIBUTE
-        IF (Master) THEN
-# endif
-!          write(*,*) 'f1 f2 are  ', f1,f2
-# ifdef DISTRIBUTE
-        END IF
-# endif
-
             DDf=WAVES(ng)%f(f2)-WAVES(ng)%f(f1)
 !
 !  Limit the freq diff range from 1/400 to 1/30, that is
