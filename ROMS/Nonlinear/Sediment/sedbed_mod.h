@@ -44,6 +44,8 @@
 !  ustrc_wbl      Current friction vel. (m/s).                         ! 
 !  thck_wbl       Thickness at WBL edge (m).                           ! 
 !  udelta_wbl     Current vel. at wave boundary layer(WBL) edge (m/s). ! 
+!  phic_sgwbl     angle between waves/currents. at user input elevation!
+!                 to get near-bottom current velocity.                 ! 
 !  phi_wc         angle between waves/currents.                        !
 !  fd_wbl         Friction factor at WBL edge (m).                     ! 
 !  ucrest_r       Crest velocity of the asymmetric wave form (m/s).    !
@@ -142,6 +144,7 @@
         real(r8), pointer :: ustrc_wbl(:,:)
         real(r8), pointer :: thck_wbl(:,:)
         real(r8), pointer :: udelta_wbl(:,:)
+        real(r8), pointer :: phic_sgwbl(:,:)
         real(r8), pointer :: phi_wc(:,:)
         real(r8), pointer :: fd_wbl(:,:)
         real(r8), pointer :: ucrest_r(:,:)
@@ -271,6 +274,7 @@
       allocate ( SEDBED(ng) % ustrc_wbl(LBi:UBi,LBj:UBj) )
       allocate ( SEDBED(ng) % thck_wbl(LBi:UBi,LBj:UBj) )
       allocate ( SEDBED(ng) % udelta_wbl(LBi:UBi,LBj:UBj) )
+      allocate ( SEDBED(ng) % phic_sgwbl(LBi:UBi,LBj:UBj) )
       allocate ( SEDBED(ng) % phi_wc(LBi:UBi,LBj:UBj) )
       allocate ( SEDBED(ng) % fd_wbl(LBi:UBi,LBj:UBj) )
       allocate ( SEDBED(ng) % ucrest_r(LBi:UBi,LBj:UBj) )
@@ -473,6 +477,7 @@
             SEDBED(ng) % ustrc_wbl(i,j)    = IniVal
             SEDBED(ng) % thck_wbl(i,j)     = IniVal
             SEDBED(ng) % udelta_wbl(i,j)   = IniVal
+            SEDBED(ng) % phic_sgwbl(i,j)   = IniVal
             SEDBED(ng) % phi_wc(i,j)       = IniVal
             SEDBED(ng) % fd_wbl(i,j)       = IniVal
             SEDBED(ng) % ucrest_r(i,j)     = IniVal

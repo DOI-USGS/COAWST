@@ -881,11 +881,16 @@
                   Hout(i,ng)=Lsand(itrc,ng)
                 END DO
               END DO
-!            CASE ('THCK_WBL_INP')
-!              Npts=load_r(Nval, Rval, Ngrids, Rbed)
-!                DO ng=1,Ngrids
-!                  THCK_WBL_INP(ng)=Rbed(ng)
-!                END DO
+            CASE ('THCK_WBL_INP')
+              Npts=load_r(Nval, Rval, Ngrids, Rbed)
+                DO ng=1,Ngrids
+                  THCK_WBL_INP(ng)=Rbed(ng)
+                END DO
+            CASE ('SG_ZWBL')
+              Npts=load_r(Nval, Rval, Ngrids, Rbed)
+                DO ng=1,Ngrids
+                  SG_ZWBL(ng)=Rbed(ng)
+                END DO
             CASE ('Hout(idstbl)')
               Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids

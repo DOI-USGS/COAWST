@@ -27,6 +27,7 @@
 !   morph_fac       Morphological scale factor (nondimensional).       !
 !                                                                      !
 !   thck_wbl_inp    Thickness of the wave boundary layer (m)           !
+!   sg_zwbl         Input elevation to get near-bottom current vel.(m) !
 !                                                                      !
 !  BED properties indices:                                             !
 !  ======================                                              !
@@ -160,7 +161,8 @@
 !
 #if defined BEDLOAD 
 # if defined BEDLOAD_VANDERA
-      real(r8), allocatable :: thck_wbl_inp(:)    ! bedload rate coefficient
+      real(r8), allocatable :: thck_wbl_inp(:)    ! input thickness of wave boundary layer
+      real(r8), allocatable :: sg_zwbl(:)         ! input elevation to get near-bottom current vel
 # endif  
 #endif 
 !
@@ -336,6 +338,11 @@
       IF (.not.allocated(thck_wbl_inp)) THEN
         allocate ( thck_wbl_inp(Ngrids) )
         thck_wbl_inp = IniVal
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(sg_zwbl)) THEN
+        allocate ( sg_zwbl(Ngrids) )
+        sg_zwbl = IniVal
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 # endif

@@ -1615,9 +1615,11 @@
 !
 !      alphac=0.75_r8
 !      alphaw=0.04_r8
-!      jcw    facuaaaa
+!      jcw
+# ifdef VANDERA_FACS
        alphac=0.75_r8
        alphaw=0.04_r8
+# endif
 !
       ui_rx=ui_r*alphaw+udelta*COS(phi_curwave)*alphac
       ui_ry=udelta*SIN(phi_curwave)*alphac
