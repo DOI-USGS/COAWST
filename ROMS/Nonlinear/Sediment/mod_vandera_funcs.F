@@ -220,29 +220,30 @@
 ! This function is not getting used at the time because
 ! we compute current frction factor from bottom current stress 
 ! 
-     REAL(r8) FUNCTION fd_calc_old(umag_curr, delta, ksd)
+      REAL(r8) FUNCTION fd_calc_santoss(udelta, delta, ksd)
 
-     USE mod_kinds
-     USE mod_scalars
+      USE mod_kinds
+      USE mod_scalars
 
-     implicit none
+      implicit none
 
 ! Calculate current related friction factor VA2013 Eqn. 20
 ! Assuming logarithmic velocity profile.
  
-     real(r8) :: umag_curr, delta, ksd
-     real(r8), parameter :: von_k=0.41_r8
+      real(r8) :: udelta, delta, ksd
+      real(r8), parameter :: min_udelta=1.0E-4_r8
+      real(r8), parameter :: von_k=0.41_r8
  
-     IF(umag_curr.eq.0.0_r8) THEN
-       fd_calc_old=0.0_r8
-     ELSE
-       fd_calc_old=2.0_r8*(von_k/LOG(30.0_r8*delta/ksd))**2.0_r8
-     ENDIF
+      IF(udelta.lt.min_udelta) THEN
+        fd_calc_santoss=0.0_r8
+      ELSE
+        fd_calc_santoss=2.0_r8*(von_k/LOG(30.0_r8*delta/ksd))**2.0_r8
+      ENDIF
      
-     RETURN
-     END FUNCTION fd_calc_old
+      RETURN
+      END FUNCTION fd_calc_santoss
 !
-      REAL(r8) FUNCTION fd_calc_new(udelta, mag_bstrc)
+      REAL(r8) FUNCTION fd_calc_madsen(udelta, mag_bstrc)
 !
       USE mod_kinds
       USE mod_scalars
@@ -257,15 +258,16 @@
       real(r8) :: udelta, mag_bstrc
 ! 
       IF(udelta.lt.min_udelta) THEN
-        fd_calc_new=0.0_r8
+        fd_calc_madsen=0.0_r8
       ELSE
         !fd_calc_new=MAX((mag_bstrc/(0.5_r8*udelta*udelta*rho0)),eps)
-        fd_calc_new=MAX((mag_bstrc/(0.5_r8*udelta*udelta)),eps)
-        fd_calc_new=MIN(fd_calc_new,2.0_r8) 
+        fd_calc_madsen=MAX((mag_bstrc/(0.5_r8*udelta*udelta)),eps)
+!        fd_calc_new=MIN(fd_calc_new,2.0_r8) 
+        fd_calc_madsen=fd_calc_madsen
       ENDIF
 !     
       RETURN
-      END FUNCTION fd_calc_new
+      END FUNCTION fd_calc_madsen
 !
       REAL(r8) FUNCTION fwi_calc(T_iu, T_i, ahat, ksw)
 !

@@ -69,7 +69,7 @@
      &                OCEAN(ng) % vbar,                                 &
      &                OCEAN(ng) % u,                                    &
      &                OCEAN(ng) % v,                                    &
-#if defined BEDLOAD_VANDERA_STOKES
+#if defined SSW_LOGINT_STOKES
      &                OCEAN(ng) % ubar_stokes,                          &
      &                OCEAN(ng) % vbar_stokes,                          &
      &                OCEAN(ng) % u_stokes,                             &
@@ -79,12 +79,14 @@
      &                OCEAN(ng) % zeta,                                 &
 #endif
 #if defined BEDLOAD_VANDERA_MADSEN
-     &                SEDBED(ng) % Zr_wbl,                              &
      &                SEDBED(ng) % ksd_wbl,                             &
      &                SEDBED(ng) % ustrc_wbl,                           &
      &                SEDBED(ng) % thck_wbl,                            &
+#endif 
+# if defined BEDLOAD_VANDERA_MADSEN || defined BEDLOAD_VANDERA_DIRECT_UDELTA      
+     &                SEDBED(ng) % Zr_wbl,                              &
      &                SEDBED(ng) % udelta_wbl,                          &
-     &                SEDBED(ng) % fd_wbl,                              &
+     &                SEDBED(ng) % phic_sgwbl,                          & 
 #endif
      &                BBL(ng) % Iconv,                                  &
      &                BBL(ng) % Ubot,                                   &
@@ -122,7 +124,7 @@
 #endif
      &                      bottom, rho,                                &
      &                      ubar, vbar, u, v,                           &
-#if defined BEDLOAD_VANDERA_STOKES
+#if defined SSW_LOGINT_STOKES
      &                      ubar_stokes, vbar_stokes,                   &
      &                      u_stokes, v_stokes,                         &
 #endif
@@ -130,8 +132,10 @@
      &                      zeta,                                       &
 #endif
 #if defined BEDLOAD_VANDERA_MADSEN
-     &                      Zr_wbl, ksd_wbl, ustrc_wbl,                 &
-     &                      thck_wbl, udelta_wbl, fd_wbl,               &
+     &                      ksd_wbl, ustrc_wbl, thck_wbl,               &
+#endif      
+#if defined BEDLOAD_VANDERA_MADSEN || defined BEDLOAD_VANDERA_DIRECT_UDELTA      
+     &                      Zr_wbl, udelta_wbl, phic_sgwbl,             &
 #endif
      &                      Iconv,                                      &
      &                      Ubot, Vbot, Ur, Vr,                         &
@@ -184,7 +188,7 @@
       real(r8), intent(in) :: vbar(LBi:,LBj:,:)
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
-# if defined BEDLOAD_VANDERA_STOKES
+# if defined SSW_LOGINT_STOKES
       real(r8), intent(in) :: ubar_stokes(LBi:,LBj:)
       real(r8), intent(in) :: vbar_stokes(LBi:,LBj:)
       real(r8), intent(in) :: u_stokes(LBi:,LBj:,:)
@@ -194,13 +198,15 @@
       real(r8), intent(in) :: zeta(LBi:,LBj:,:)
 # endif
 # if defined BEDLOAD_VANDERA_MADSEN
-      real(r8), intent(inout) :: Zr_wbl(LBi:,LBj:)
       real(r8), intent(inout) :: ksd_wbl(LBi:,LBj:)
       real(r8), intent(inout) :: ustrc_wbl(LBi:,LBj:)
       real(r8), intent(inout) :: thck_wbl(LBi:,LBj:)
-      real(r8), intent(inout) :: udelta_wbl(LBi:,LBj:)
-      real(r8), intent(inout) :: fd_wbl(LBi:,LBj:)
 # endif
+# if defined BEDLOAD_VANDERA_MADSEN || defined BEDLOAD_VANDERA_DIRECT_UDELTA      
+      real(r8), intent(inout) :: Zr_wbl(LBi:,LBj:)
+      real(r8), intent(inout) :: udelta_wbl(LBi:,LBj:)
+      real(r8), intent(inout) :: phic_sgwbl(LBi:,LBj:)
+# endif 
       real(r8), intent(out) :: Ubot(LBi:,LBj:)
       real(r8), intent(out) :: Vbot(LBi:,LBj:)
       real(r8), intent(out) :: Ur(LBi:,LBj:)
@@ -238,7 +244,7 @@
       real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
-# if defined BEDLOAD_VANDEARA_STOKES
+# if defined SSW_LOGINT_STOKES
       real(r8), intent(in) :: ubar_stokes(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vbar_stokes(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: u_stokes(LBi:UBi,LBj:UBj,N(ng))
@@ -248,12 +254,14 @@
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
 # endif
 # if defined BEDLOAD_VANDERA_MADSEN
-      real(r8), intent(inout) :: Zr_wbl(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: thck_wbl(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: ksd_wbl(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: ustrc_wbl(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: thck_wbl(LBi:UBi,LBj:UBj)
+# endif
+# if defined BEDLOAD_VANDERA_MADSEN || defined BEDLOAD_VANDERA_DIRECT_UDELTA      
+      real(r8), intent(inout) :: Zr_wbl(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: udelta_wbl(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: fd_wbl(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: phic_sgwbl(LBi:UBi,LBj:UBj)
 # endif
       real(r8), intent(out) :: Ubot(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: Vbot(LBi:UBi,LBj:UBj)
@@ -284,7 +292,7 @@
       real(r8) :: lamorb, lamanorb
       real(r8) :: m_ubr, m_wr, m_ucr, m_zr, m_phicw, m_kb
       real(r8) :: m_ustrc, m_ustrwm, m_ustrr, m_fwc, m_zoa, m_dwc
-      real(r8) :: zo
+      real(r8) :: zo, Dstp
       real(r8) :: Kb, Kdelta, Ustr
       real(r8) :: anglec, anglew
       real(r8) :: cff, cff1, cff2, cff3, og, fac, fac1, fac2
@@ -294,10 +302,12 @@
       real(r8) :: sg_shdnrm, sg_shld, sg_shldcr, sg_scf, rhos, sg_star
       real(r8) :: sg_ub, sg_ubokur, sg_ubouc, sg_ubouwm, sg_ur
       real(r8) :: sg_ustarc, sg_ustarcw, sg_ustarwm, sg_znot, sg_znotp
-      real(r8) :: sg_zr, sg_zrozn, sg_z1, sg_z1ozn, sg_z2, twopi, z1, z2
+      real(r8) :: sg_zr, sg_zrozn, sg_z1, sg_z1ozn, sg_z2, z1, z2
       real(r8) :: zoMIN, zoMAX
       real(r8) :: coef_fd
 
+      real(r8), parameter :: twopi=2.0_r8*pi
+!
       real(r8), parameter :: absolute_zoMIN = 5.0d-5  ! in Harris-Wiberg
 !!    real(r8), parameter :: absolute_zoMIN = 5.0d-8  ! in Harris-Wiberg
       real(r8), parameter ::  Cd_fd = 0.5_r8
@@ -347,126 +357,76 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zoBF
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zoDEF
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zoBIO
-
+!
+#  if defined BEDLOAD_VANDERA_MADSEN || defined BEDLOAD_VANDERA_DIRECT_UDELTA      
+!
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Ur_sgwbl
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Vr_sgwbl
+      real(r8) :: Ucur_sgwbl, Vcur_sgwbl
+#  endif
+!
 #include "set_bounds.h"
 !
 !-----------------------------------------------------------------------
 !  Set currents above the bed.
 !-----------------------------------------------------------------------
 !
-      twopi=2.0_r8*pi
-!
-! Height at which near-bottom current velocity is calculated
-!
-      sg_z1min=0.1_r8
-
       DO j=JstrV-1,Jend+1
         DO i=IstrU-1,Iend+1
 !
 ! Calculate bottom cell thickness
 !
           Zr(i,j)=z_r(i,j,1)-z_w(i,j,0)
+!
+#  if defined SSW_LOGINT 
+!
+!  If using the logarithmic interpolation 
+!
+          Dstp=z_r(i,j,N(ng))-z_w(i,j,0)
+#   if defined CRS_FIX 
+!
+! Capping the minimum Zr for Madsen calc. to 0.9*depth. 
+!
+          sg_z1min=MIN(0.9_r8*Dstp, MAX(Zr(i,j), sg_z1min))
+!
+#   elif defined JCW_BBLTHICK
+          sg_z1min=MIN(0.98_r8*Dstp,MAX(Zr(i,j), thck_wbl(i,j)*1.1_r8))
+#   else 
+! 
+! Use the original coded ssw_logint formulation
+!                                             
+          sg_z1min=sg_z1min
+#   endif 
+!
+          CALL log_interp( N(ng), Dstp, sg_z1min,                       &
+     &                 u(i,j,:,nrhs),     v(i,j,:,nrhs),                &
+#   ifdef SSW_LOGINT_STOKES     
+     &                 u_stokes(i,j,:),   v_stokes(i,j,:),              &
+#   endif
+     &                 z_r(i,j,:),        z_w(i,j,:),                   &
+     &                 ubar(i,j,nrhs),    vbar(i,j,nrhs),               &
+#   ifdef SSW_LOGINT_STOKES
+     &                 ubar_stokes(i,j),  vbar_stokes(i,j),             &
+#   endif
+     &                 bottom(i,j,isd50), bottom(i,j,izapp),            &
+     &                 Zr(i,j),                                         & 
+     &                 Ur_sg(i,j),        Vr_sg(i,j) )
+!
+! end of SSW_LOGINT
+!
+#  else
+!
+! Regular method to get reference velocity for Madsen
+! without using log interp by the bottom cell. 
+!
           Ur_sg(i,j)=u(i,j,1,nrhs)
           Vr_sg(i,j)=v(i,j,1,nrhs)
-#ifdef SSW_LOGINT
+#   ifdef SSW_LOGINT_STOKES
+          Ur_sg(i,j)=Ur_sg(i,j)+u_stokes(i,j,1)
+          Vr_sg(i,j)=Vr_sg(i,j)+v_stokes(i,j,1)
+#   endif
+#  endif 
 !
-! If chosen height is greater than the bottom cell thickness.
-!
-          IF ( sg_z1min.ge.Zr(i,j) ) THEN
-!
-!  If chosen height to get near bottom-current velocity lies
-!  within any vertical level, perform logarithmic interpolation.
-!
-            DO k=2,N(ng)
-              z1=z_r(i,j,k-1)-z_w(i,j,0)
-              z2=z_r(i,j,k  )-z_w(i,j,0)
-              IF ( ( z1.le.sg_z1min ).and.( sg_z1min.lt.z2 )) THEN
-                fac=1.0_r8/LOG(z2/z1)
-                fac1=fac*LOG(z2/sg_z1min)
-                fac2=fac*LOG(sg_z1min/z1)
-!
-# ifdef BEDLOAD_VANDERA_STOKES
-                Ur_sg(i,j)=fac1*( u(i,j,k-1,nrhs)+                      &
-     &                            u_stokes(i,j,k-1) )+                  &
-     &                     fac2*( u(i,j,k,nrhs)+                        &
-     &                            u_stokes(i,j,k)   )
-                Vr_sg(i,j)=fac1*( v(i,j,k-1,nrhs)+                      &
-     &                            v_stokes(i,j,k-1) )+                  &
-     &                     fac2*( v(i,j,k,nrhs)+                        &
-     &                            v_stokes(i,j,k)   )
-# else
-                Ur_sg(i,j)=fac1*u(i,j,k-1,nrhs)+fac2*u(i,j,k,nrhs)
-                Vr_sg(i,j)=fac1*v(i,j,k-1,nrhs)+fac2*v(i,j,k,nrhs)
-# endif
-!
-                Zr(i,j)=sg_z1min
-              ENDIF
-!
-! If chosen height is greater than the depth
-! then modify the the sg_z1min, then perform the logarithmic interpolation.
-!
-              IF ( sg_z1min.gt.z2 ) THEN
-!
-# ifdef BEDLOAD_VANDERA_STOKES
-                Ur_sg(i,j)=ubar(i,j,nrhs)+ubar_stokes(i,j)
-                Vr_sg(i,j)=vbar(i,j,nrhs)+vbar_stokes(i,j)
-# else
-                Ur_sg(i,j)=ubar(i,j,nrhs)
-                Vr_sg(i,j)=vbar(i,j,nrhs)
-# endif
-!
-                Zr(i,j)=0.4_r8*z2
-              END IF
-!
-            END DO
-!
-          ELSEIF ( sg_z1min.lt.Zr(i,j) ) THEN
-            d50=bottom(i,j,isd50)
-            z1=MAX( 2.5_r8*d50/30.0_r8, bottom(i,j,izapp) )
-            z2=Zr(i,j)
-!
-            IF ( sg_z1min.lt.z1 ) THEN
-!
-! If chosen height is less than the bottom roughness
-! perform linear interpolation.
-!
-              z1=sg_z1min
-              fac=z1/z2
-!
-# ifdef BEDLOAD_VANDERA_STOKES
-              Ur_sg(i,j)=fac*(u(i,j,1,nrhs)+u_stokes(i,j,1))
-              Vr_sg(i,j)=fac*(v(i,j,1,nrhs)+v_stokes(i,j,1))
-# else
-              Ur_sg(i,j)=fac*u(i,j,1,nrhs)
-              Vr_sg(i,j)=fac*v(i,j,1,nrhs)
-# endif
-              Zr(i,j)=sg_z1min
-!
-            ELSEIF ( sg_z1min.gt.z1 ) THEN
-!
-! If chosen height is less than the bottom cell thickness
-! perform logarithmic interpolation with bottom roughness.
-!
-              fac=1.0_r8/LOG(z2/z1)
-              fac2=fac*LOG(sg_z1min/z1)
-!
-# ifdef BEDLOAD_VANDERA_STOKES
-              Ur_sg(i,j)=fac2*(u(i,j,1,nrhs)+u_stokes(i,j,1))
-              Vr_sg(i,j)=fac2*(v(i,j,1,nrhs)+v_stokes(i,j,1))
-# else
-              Ur_sg(i,j)=fac2*u(i,j,1,nrhs)
-              Vr_sg(i,j)=fac2*v(i,j,1,nrhs)
-# endif
-!
-              Zr(i,j)=sg_z1min
-            END IF
-!
-          END IF
-!
-# if defined BEDLOAD_VANDERA_MADSEN
-          Zr_wbl(i,j)=Zr(i,j)
-# endif
-#endif
         END DO
       END DO
 !
@@ -510,6 +470,7 @@
             phic(i,j)=ATAN2(Vcur(i,j),Ucur(i,j))
           ENDIF
           phicw(i,j)=1.5_r8*pi-Dwave(i,j)-phic(i,j)-angler(i,j)
+!
         END DO
       END DO
 !
@@ -762,8 +723,9 @@
             m_zr=Zr(i,j)
             m_phicw=phicw(i,j)
             m_kb=30.0_r8*zo
+            Dstp=z_r(i,j,N(ng))-z_w(i,j,0)
             CALL madsen94 (m_ubr, m_wr, m_ucr,                          &
-     &                     m_zr, m_phicw, m_kb,                         &
+     &                     m_zr, m_phicw, m_kb, Dstp,                   &
      &                     m_ustrc, m_ustrwm, m_ustrr, m_fwc, m_zoa,    &
      &                     m_dwc)
             Tauc(i,j)=m_ustrc*m_ustrc
@@ -771,6 +733,7 @@
             Taucwmax(i,j)=m_ustrr*m_ustrr
             znotc(i,j)=min( m_zoa, zoMAX )
             u100(i,j)=(m_ustrc/vonKar)*LOG(1.0_r8/m_zoa)
+
 #endif
 #if defined SSW_FORM_DRAG_COR
             IF (rheight(i,j).gt.(zoN(i,j)+zoST(i,j))) THEN
@@ -783,22 +746,139 @@
      &                       rheight(i,j)/rlength(i,j))
             END IF
 #endif
+!
 #if defined BEDLOAD_VANDERA_MADSEN
             ksd_wbl(i,j)=m_zoa
-            ustrc_wbl(i,j)=ABS(m_ustrc)
+            ustrc_wbl(i,j)=m_ustrc
             thck_wbl(i,j)=m_dwc
-            cff=LOG(MAX((thck_wbl(i,j)/ksd_wbl(i,j)),1.0_r8 ))
-!
-# ifdef BEDLOAD_VANDERA_ZEROCURR
-            udelta_wbl(i,j)=0.0_r8
-# else
-            udelta_wbl(i,j)=(ustrc_wbl(i,j)/vonKar)*cff
-# endif
-!
 #endif
+!
           END IF
         END DO
       END DO
+!
+#  if defined BEDLOAD_VANDERA_MADSEN 
+! 
+! Find the near-bottom current velocity(udelta) at a given elevation.
+! Use the Madsen output of current shear stress, apparent roughness
+! to get udelta.
+! Find the angle at that near-bottom current velocity. 
+!
+      DO j=JstrV-1,Jend+1
+        DO i=IstrU-1,Iend+1
+!
+          Dstp=z_r(i,j,N(ng))-z_w(i,j,0)
+!
+#   ifdef BEDLOAD_VANDERA_CALC_WBL
+! Use wave boundary layer (wbl) thickness based on Madsen to get 
+! near bottom current velocity.
+!
+          cff=MIN( 0.98_r8*Dstp, thck_wbl(i,j) )
+#   else 
+!
+! Use user input elevation to get near bottom current velocity. 
+!
+          cff=MIN (0.98_r8*Dstp, sg_zwbl(ng) ) 
+#   endif 
+!
+! Make sure that wbl is under total depth and greater than
+! apparent roughness. 
+!
+          cff1=MAX( cff, 1.1_r8*ksd_wbl(i,j) )   
+          cff2=LOG(cff1/ksd_wbl(i,j))
+#   ifdef BEDLOAD_VANDERA_ZEROCURR
+          udelta_wbl(i,j)=0.0_r8
+#   else
+          udelta_wbl(i,j)=(ustrc_wbl(i,j)/vonKar)*cff2
+#   endif   
+!
+          CALL log_interp( N(ng), Dstp, cff1,                           &
+     &                 u(i,j,:,nrhs),     v(i,j,:,nrhs),                &
+#   ifdef SSW_LOGINT_STOKES     
+     &                 u_stokes(i,j,:),   v_stokes(i,j,:),              &
+#   endif 
+     &                 z_r(i,j,:),        z_w(i,j,:),                   &
+     &                 ubar(i,j,nrhs),    vbar(i,j,nrhs),               &
+#   ifdef SSW_LOGINT_STOKES
+     &                 ubar_stokes(i,j),  vbar_stokes(i,j),             &
+#   endif 
+     &                 bottom(i,j,isd50), bottom(i,j,izapp),            & 
+     &                 Zr_wbl(i,j),                                     & 
+     &                 Ur_sgwbl(i,j),     Vr_sgwbl(i,j) )
+!
+        END DO
+      END DO
+!
+!  Compute angle between currents at an elevation
+!  to find currents to obtain asymmetric bedload transport.
+!
+      DO j=JstrV-1,Jend
+        DO i=IstrU-1,Iend
+!
+!  Compute bottom current magnitude at RHO-points.
+!
+          Ucur_sgwbl=0.5_r8*(Ur_sgwbl(i,j)+Ur_sgwbl(i+1,j))
+          Vcur_sgwbl=0.5_r8*(Vr_sgwbl(i,j)+Vr_sgwbl(i,j+1))
+!
+          IF (Ucur_sgwbl.eq.0.0_r8) THEN
+            phic_sgwbl(i,j)=0.5_r8*pi*SIGN(1.0_r8,Vcur_sgwbl)
+          ELSE
+            phic_sgwbl(i,j)=ATAN2(Vcur_sgwbl,Ucur_sgwbl)
+          ENDIF
+        END DO
+      END DO
+#  endif
+
+#  if defined BEDLOAD_VANDERA_DIRECT_UDELTA
+! 
+! Find the near-bottom current velocity directly at a given
+! elevation (doesnot require Madsen output)
+! Find the angle at that near-bottom current velocity. 
+!
+      DO j=JstrV-1,Jend+1
+        DO i=IstrU-1,Iend+1
+!
+          Dstp=z_r(i,j,N(ng))-z_w(i,j,0)
+          cff=MIN( 0.98_r8*Dstp, sg_zwbl(ng) )
+          CALL log_interp( N(ng), Dstp, cff,                            &
+     &                 u(i,j,:,nrhs),     v(i,j,:,nrhs),                &
+#   ifdef SSW_LOGINT_STOKES     
+     &                 u_stokes(i,j,:),   v_stokes(i,j,:),              &
+#   endif 
+     &                 z_r(i,j,:),        z_w(i,j,:),                   &
+     &                 ubar(i,j,nrhs),    vbar(i,j,nrhs),               &
+#   ifdef SSW_LOGINT_STOKES
+     &                 ubar_stokes(i,j),  vbar_stokes(i,j),             &
+#   endif 
+     &                 bottom(i,j,isd50), bottom(i,j,izapp),            & 
+     &                 Zr_wbl(i,j),                                     & 
+     &                 Ur_sgwbl(i,j),     Vr_sgwbl(i,j) )
+!
+        END DO
+      END DO
+!
+!  Compute udelta along with angle at that elevation.
+!
+      DO j=JstrV-1,Jend
+        DO i=IstrU-1,Iend
+!
+!  Compute bottom current magnitude at RHO-points.
+!
+          Ucur_sgwbl=0.5_r8*(Ur_sgwbl(i,j)+Ur_sgwbl(i+1,j))
+          Vcur_sgwbl=0.5_r8*(Vr_sgwbl(i,j)+Vr_sgwbl(i,j+1))
+          
+          udelta_wbl(i,j)=SQRT(Ur_sgwbl(i,j)*Ur_sgwbl(i,j)+             &
+     &                         Vr_sgwbl(i,j)*Vr_sgwbl(i,j)+eps)
+!
+          IF (Ucur_sgwbl.eq.0.0_r8) THEN
+            phic_sgwbl(i,j)=0.5_r8*pi*SIGN(1.0_r8,Vcur_sgwbl)
+          ELSE
+            phic_sgwbl(i,j)=ATAN2(Vcur_sgwbl,Ucur_sgwbl)
+          ENDIF
+        END DO
+      END DO
+!
+#  endif
 !
 !-----------------------------------------------------------------------
 !  Compute kinematic bottom stress components due current and wind-
@@ -929,6 +1009,28 @@
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  bottom(:,:,izwbl))
+#if defined BEDLOAD_VANDERA_MADSEN
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  ksd_wbl)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  ustrc_wbl)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  thck_wbl)
+#endif
+#if defined BEDLOAD_VANDERA_MADSEN || defined BEDLOAD_VANDERA_DIRECT_UDELTA
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  Zr_wbl)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  udelta_wbl)
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  phic_sgwbl)
+#endif 
 #ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -966,6 +1068,20 @@
      &                    bottom(:,:,izbio),                            &
      &                    bottom(:,:,izbfm),                            &
      &                    bottom(:,:,izwbl))
+# if defined BEDLOAD_VANDERA_MADSEN
+      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    ksd_wbl, ustrc_wbl, thck_wbl)
+# endif
+# if defined BEDLOAD_VANDERA_MADSEN || defined BEDLOAD_VANDERA_DIRECT_UDELTA
+      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    zr_wbl, udelta_wbl, phic_sgwbl)
+# endif
 #endif
 
       RETURN
@@ -1418,7 +1534,7 @@
 #endif
 
 #ifdef M94WC
-      SUBROUTINE madsen94 (ubr, wr, ucr, zr, phiwc, kN,                 &
+      SUBROUTINE madsen94 (ubr, wr, ucr, zr, phiwc, kN, Dstp,           &
      &                     ustrc, ustrwm, ustrr, fwc, zoa, dwc_va)
 !
 !=======================================================================
@@ -1433,6 +1549,7 @@
 !     zr      Reference height for current velocity (m).               !
 !     phiwc   Angle between currents and waves at zr (radians).        !
 !     kN      Bottom roughness height, like Nikuradse k, (m).          !
+!     Dstp    Total water depth (m).                                   !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
@@ -1449,9 +1566,10 @@
 !
 !  Imported variable declarations.
 !
-      real(r8), intent(in) ::  ubr, wr, ucr, zr, phiwc, kN
-      real(r8), intent(out) :: ustrc, ustrwm, ustrr, fwc, zoa
-      real(r8), intent(out) :: dwc_va
+      real(r8), intent(in)    :: ubr, wr, ucr, zr, phiwc, Dstp
+      real(r8), intent(inout) :: kN
+      real(r8), intent(out)   :: ustrc, ustrwm, ustrr, fwc, zoa
+      real(r8), intent(out)   :: dwc_va
 !
 !  Local variable declarations.
 !
@@ -1480,7 +1598,9 @@
       ustrc=dval
       ustrwm=dval
       ustrr=dval
-      fwc=0.4_r8
+#ifdef CRS_FIX 
+      kN=MIN(kN,0.9_r8*zr) 
+#endif 
       zoa=kN/30.0_r8
       phicwc=phiwc
 
@@ -1508,6 +1628,20 @@
       Cmu(1)=1.0_r8
 
       cukw=Cmu(1)*ubr/(kN*wr)
+#if defined CRS_FIX 	
+!
+! New fwc CRS calculation 
+!
+      fwci(1)=Cmu(1)*0.3_r8 
+      IF ((cukw.gt.0.352_r8).and.(cukw.le.100.0_r8)) THEN       ! Eq 32/33
+        fwci(1)=Cmu(1)*EXP(7.02_r8*cukw**(-0.078_r8)-8.82_r8)
+      ELSE IF (cukw.gt.100.0_r8) THEN
+        fwci(1)=Cmu(1)*EXP(5.61_r8*cukw**(-0.109_r8)-7.30_r8)
+      END IF
+#else  
+!
+! Original method fwc calculation 
+!
       IF ((cukw.gt.0.2_r8).and.(cukw.le.100.0_r8)) THEN       ! Eq 32/33
         fwci(1)=Cmu(1)*EXP(7.02_r8*cukw**(-0.078_r8)-8.82_r8)
       ELSE IF ((cukw.gt.100.).and.(cukw.le.10000.0_r8)) THEN
@@ -1517,11 +1651,18 @@
       ELSE
         fwci(1)=Cmu(1)*0.43_r8
       END IF
+#endif
+!
       ustrwm2(1)=0.5_r8*fwci(1)*ubr*ubr                       ! Eq 29
       ustrr2(1)=Cmu(1)*ustrwm2(1)                             ! Eq 26
       ustrr=SQRT(ustrr2(1))
       IF (cukw.ge.8.0_r8) THEN
-        dwc(1)=2.0_r8*vonKar*ustrr/wr                         ! Eq 36
+        dwc(1)=2.0_r8*vonKar*ustrr/wr 
+# if defined   JCW_BBLTHICK 
+        dwc(1)=MAX( zo, MIN( 0.97_r8*zr, dwc(1)) )
+# elif defined CRS_FIX 
+	dwc(1)=MIN( 0.9_r8*zr, dwc(1) )
+# endif 
       ELSE
         dwc(1)=kN
       END IF
@@ -1540,6 +1681,20 @@
         Cmu(i)=SQRT(1.0_r8+                                             &
      &              2.0_r8*rmu(i)*cosphiwc+rmu(i)*rmu(i))     ! Eq 27
         cukw=Cmu(i)*ubr/(kN*wr)
+#ifdef CRS_FIX
+!
+! New fwc CRS calculation 
+!
+        fwci(i)=Cmu(i)*0.3_r8 
+        IF ((cukw.gt.0.352_r8).and.(cukw.le.100.0_r8)) THEN       ! Eq 32/33
+          fwci(i)=Cmu(i)*EXP(7.02_r8*cukw**(-0.078_r8)-8.82_r8)
+        ELSE IF (cukw.gt.100.0_r8) THEN
+          fwci(i)=Cmu(i)*EXP(5.61_r8*cukw**(-0.109_r8)-7.30_r8)
+        END IF
+#else
+!
+! Original method fwc calculation 
+!
         IF ((cukw.gt.0.2_r8).and.(cukw.le.100.0_r8)) THEN     ! Eq 32/33
           fwci(i)=Cmu(i)*EXP(7.02_r8*cukw**(-0.078_r8)-8.82_r8)
         ELSE IF ((cukw.gt.100.).and.(cukw.le.10000.0_r8)) THEN
@@ -1549,12 +1704,19 @@
         ELSE
           fwci(i)=Cmu(i)*0.43_r8
         END IF
+#endif 
+!
         ustrwm2(i)=0.5_r8*fwci(i)*ubr*ubr                     ! Eq 29
         ustrr2(i)=Cmu(i)*ustrwm2(i)                           ! Eq 26
         ustrr=SQRT(ustrr2(i))
 !!      IF ((Cmu(1)*ubr/(kN*wr)).ge.8.0_r8) THEN  ! HGA Why 1?
         IF (cukw.ge.8.0_r8) THEN
           dwc(i)=2.0_r8*vonKar*ustrr/wr                       ! Eq 36
+# if defined JCW_BBLTHICK
+          dwc(i)=MAX( zo, MIN( 0.97_r8*zr, dwc(i) ) )
+# elif defined CRS_FIX 
+	  dwc(i)=MIN( 0.9_r8*zr, dwc(i) )
+# endif 
         ELSE
           dwc(i)=kN
         END IF
@@ -1576,4 +1738,131 @@
 
       RETURN
       END SUBROUTINE madsen94
+!
 #endif
+!
+#if defined SSW_LOGINT || defined BEDLOAD_VANDERA_MADSEN 
+      SUBROUTINE log_interp( kmax, Dstp, sg_loc, u_1d, v_1d,            &
+# ifdef SSW_LOGINT_STOKES
+     &                        u_stokes_1d, v_stokes_1d,                 &
+# endif
+     &                        z_r_1d, z_w_1d,                           &
+     &                        ubar_1, vbar_1,                           &
+# ifdef SSW_LOGINT_STOKES
+     &                        ubar_stokes_1, vbar_stokes_1,             &
+# endif
+     &                        d50, zapp_loc,                            & 
+     &                        Zr_sg,                                    & 
+     &                        Ur_sg, Vr_sg)
+!
+!=======================================================================
+!   Find the near-bottom current velocity in x, y dir. that corresponds! 
+!   to user input elevation to get near-bottom current vel. (m)        !
+!                                                                      !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_param
+      USE mod_sediment
+      USE mod_scalars
+! 
+      implicit none 
+!
+!  Imported variable declarations.
+!
+      integer,  intent(in)  :: kmax
+      real(r8), intent(in)  :: Dstp, sg_loc
+      real(r8), intent(in)  :: u_1d(1:kmax), v_1d(1:kmax)
+# ifdef SSW_LOGINT_STOKES
+      real(r8), intent(in)  :: u_stokes_1d(1:kmax), v_stokes_1d(1:kmax)
+# endif
+      real(r8), intent(in)  :: z_r_1d(1:kmax), z_w_1d(0:kmax)
+      real(r8), intent(in)  :: ubar_1, vbar_1 
+# ifdef SSW_LOGINT_STOKES
+      real(r8), intent(in)  :: ubar_stokes_1, vbar_stokes_1
+# endif
+      real(r8), intent(in)  :: d50, zapp_loc
+      real(r8), intent(out) :: Zr_sg
+      real(r8), intent(out) :: Ur_sg, Vr_sg
+!
+!  Local variables. 
+!
+      integer  :: k
+      real(r8) :: z1, z2, Zr 
+      real(r8) :: fac, fac1, fac2
+!
+      Zr=z_r_1d(1)-z_w_1d(0)
+!
+      IF ( sg_loc.ge.Zr ) THEN 
+!
+!  If chosen height to get near bottom-current velocity lies 
+!  within any vertical level, perform logarithmic interpolation.
+!
+        DO k=2,kmax
+          z1=z_r_1d(k-1)-z_w_1d(0)
+          z2=z_r_1d(k  )-z_w_1d(0)
+          IF ( ( z1.le.sg_loc ).and.( sg_loc.lt.z2 )) THEN 
+            fac=1.0_r8/LOG(z2/z1)
+            fac1=fac*LOG(z2/sg_loc)
+            fac2=fac*LOG(sg_loc/z1)
+!
+# ifdef SSW_LOGINT_STOKES
+            Ur_sg=fac1*( u_1d(k-1)+u_stokes_1d(k-1) )+                  &
+     &               fac2*( u_1d(k)+u_stokes_1d(k)     )    
+            Vr_sg=fac1*( v_1d(k-1)+v_stokes_1d(k-1) )+                  &
+     &               fac2*( v_1d(k)+v_stokes_1d(k)     )    
+# else
+            Ur_sg=fac1*u_1d(k-1)+fac2*u_1d(k)
+            Vr_sg=fac1*v_1d(k-1)+fac2*v_1d(k)
+# endif
+            Zr_sg=sg_loc 
+          ENDIF
+        END DO 
+
+      ELSEIF ( sg_loc.lt.Zr ) THEN 
+        z1=MAX( 2.5_r8*d50/30.0_r8, zapp_loc )
+        z2=Zr
+!
+        IF ( sg_loc.lt.z1 ) THEN 
+!
+! If chosen height is less than the bottom roughness
+! perform linear interpolation.
+!
+          z1=sg_loc
+          fac=z1/z2
+!
+# ifdef SSW_LOGINT_STOKES
+          Ur_sg=fac*(u_1d(1)+u_stokes_1d(1))
+          Vr_sg=fac*(v_1d(1)+v_stokes_1d(1))
+# else
+          Ur_sg=fac*u_1d(1)
+          Vr_sg=fac*v_1d(1)
+# endif
+          Zr_sg=sg_loc                          
+!
+        ELSEIF ( sg_loc.gt.z1 ) THEN
+!
+! If chosen height is less than the bottom cell thickness
+! perform logarithmic interpolation with bottom roughness.
+!
+          fac=1.0_r8/LOG(z2/z1)
+          fac2=fac*LOG(sg_loc/z1)
+!
+# ifdef SSW_LOGINT_STOKES
+          Ur_sg=fac2*(u_1d(1)+u_stokes_1d(1))
+          Vr_sg=fac2*(v_1d(1)+v_stokes_1d(1))
+# else
+          Ur_sg=fac2*u_1d(1)
+          Vr_sg=fac2*v_1d(1)
+# endif
+          Zr_sg=sg_loc 
+        END IF
+      END IF
+!
+      RETURN 
+      END SUBROUTINE log_interp
+#endif 
