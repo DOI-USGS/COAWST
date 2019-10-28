@@ -349,7 +349,7 @@
       real(r8) :: bedld_tx, bedld_ty
       real(r8) :: bedld_x, bedld_y
 !
-      real(r8) :: wavecycle
+      real(r8) :: wavecycle, alphac, alphaw
       real(r8) :: twopi, otwopi, sqrt2
 !
 # ifdef SED_SLUMP
@@ -377,6 +377,8 @@
 !-----------------------------------------------------------------------
 !
       sed_angle=DTAN(33.0_r8*pi/180.0_r8)
+      alphac=bedload_vandera_alphac(ng)
+      alphaw=bedload_vandera_alphaw(ng)
 !
       DO j=Jstrm1,Jendp1
         DO i=Istrm1,Iendp1
@@ -495,7 +497,8 @@
 !
             CALL half_wave_cycle_stress_factors( T_cu, T_crest(i,j),    &
      &                                           ahat, ksw,             &
-     &                                          fd_wbl(i,j), alpha,     &
+     &                                           fd_wbl(i,j), alpha,    &
+     &                                           alphac, alphaw,        &
      &                                           d50, osmgd,            &
      &              ucrest_r(i,j), uhat_c, udelta_wbl(i,j), phi_curwave,&
      &                                           tau_wRe,               &
@@ -520,7 +523,8 @@
 !
             CALL half_wave_cycle_stress_factors( T_tu, T_trough(i,j),   &
      &                                           ahat, ksw,             &
-     &                                         fd_wbl(i,j), alpha,      &
+     &                                           fd_wbl(i,j), alpha,    &
+     &                                           alphac, alphaw,        &
      &                                           d50, osmgd,            &
      &             utrough_r(i,j), uhat_t, udelta_wbl(i,j), phi_curwave,&
      &                                           tau_wRe,               &
@@ -1462,6 +1466,7 @@
 !
       SUBROUTINE half_wave_cycle_stress_factors( T_iu, T_i, ahat, ksw,  &
      &                                           fd, alpha,             &
+     &                                           alphac, alphaw,        &
      &                                           d50, osmgd,            &
      &                                ui_r, uhat_i, udelta, phi_curwave,&
      &                                           tau_wRe,               &
@@ -1486,6 +1491,7 @@
 !       
       real(r8), intent(in) :: T_iu, T_i, ahat, ksw
       real(r8), intent(in) :: fd, alpha
+      real(r8), intent(in) :: alphac, alphaw
       real(r8), intent(in) :: d50, osmgd
       real(r8), intent(in) :: ui_r, uhat_i, udelta, phi_curwave
       real(r8), intent(in) :: tau_wRe
@@ -1495,7 +1501,6 @@
 ! 
       real(r8), parameter :: eps = 1.0E-14_r8
       real(r8) :: fw_i, fwd_i
-      real(r8) :: alphac, alphaw
       real(r8) :: alpha_w, fwd, k, c_w
       real(r8) :: theta_hat_i
       real(r8) :: ui_rx, ui_ry, mag_ui
@@ -1526,9 +1531,8 @@
 !    as well as full cycle orbital velocity and excursion
 !-----------------------------------------------------------------------
 !
-      ui_rx=ui_r*bedload_vandera_alphaw+                                &
-     &      udelta*COS(phi_curwave)*bedload_vandera_alphac
-      ui_ry=udelta*SIN(phi_curwave)*bedload_vandera_alphac
+      ui_rx=udelta*COS(phi_curwave)*alphac+ui_r*alphaw
+      ui_ry=udelta*SIN(phi_curwave)*alphac
 !
 ! mag_ui is set to a min value to avoid non-zero division
 !
