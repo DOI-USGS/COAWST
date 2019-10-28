@@ -1485,6 +1485,17 @@
 !
         DO f1=1,WAVES(ng)%nfreq-1
 !
+!  Report percent done
+!
+              IF (DOMAIN(ng)%SouthWest_Corner(tile).or.                 &
+     &            DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+                cff2=REAL(f1,r8)/REAL(WAVES(ng)%nfreq,r8)
+                IF (MOD(INT(cff2*100.0_r8),10).eq.0) THEN
+                  write(*,*) 'percent done for computing bndwave is ',  &
+     &                       INT(cff2*100.0_r8)
+                END IF
+              END IF
+!
 !  Do the double summation loop.
 !
           DO f2=f1,WAVES(ng)%nfreq
@@ -1494,7 +1505,6 @@
 !  df=1/400=.0025 to df=1/30=0.033
 !
             IF ((DDf.ge.fmin).and.(DDf.le.fmax)) THEN
-  
               DO n1=1,WAVES(ng)%ndir
                 DO n2=1,WAVES(ng)%ndir
 !

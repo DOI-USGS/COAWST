@@ -342,22 +342,19 @@
       real(r8) :: theta_cx, theta_cy, theta_tx, theta_ty
       real(r8) :: mag_theta_c, mag_theta_t
       real(r8) :: mag_bstrc
-!
       real(r8) :: om_cc, om_tt, om_ct, om_tc
-!        
-!      real(r8) :: cff, cff1, cff2, cff3
       real(r8) :: smgd_3
+!
       real(r8) :: bedld_cx, bedld_cy
       real(r8) :: bedld_tx, bedld_ty
       real(r8) :: bedld_x, bedld_y
 !
       real(r8) :: wavecycle
-!     real(r8) :: Zref
+      real(r8) :: twopi, otwopi, sqrt2
 !
 # ifdef SED_SLUMP
-      real(r8) :: sedslope_wet, sedslope_dry, slopefac_wet, slopefac_dry
+      real(r8) :: slopefac_wet_local, slopefac_dry_local
 # endif
-!     real(r8), parameter :: min_theta = 1.0E-7_r8
       real(r8), parameter :: eps = 1.0E-14_r8
 !
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
@@ -370,6 +367,9 @@
 # include "set_bounds.h"
 !
 !
+      twopi=2.0_r8*pi
+      otwopi=1.0_r8/twopi
+      sqrt2=SQRT(2.0_r8)
 # ifdef BEDLOAD
 !
 !-----------------------------------------------------------------------
@@ -425,8 +425,8 @@
             mag_bstrc=SQRT(bustrc(i,j)*bustrc(i,j)+                     &
      &                     bvstrc(i,j)*bvstrc(i,j))
 !
-            uhat=urms*SQRT(2.0_r8)
-            ahat=uhat*Td/(2.0_r8*pi)
+            uhat=urms*sqrt2
+            ahat=uhat*Td*otwopi
             k_wn=kh(Td,depth)/depth                ! Wave number 
             c_w=2.0_r8*pi/(k_wn*Td)                ! Wave speed
 !
@@ -464,8 +464,8 @@
 ! VA2013 Equation 10, 11.
 !-----------------------------------------------------------------------
 !
-            ucrest_r(i,j)=0.5_r8*sqrt(2.0_r8)*uhat_c
-            utrough_r(i,j)=0.5_r8*sqrt(2.0_r8)*uhat_t
+            ucrest_r(i,j)=0.5_r8*sqrt2*uhat_c
+            utrough_r(i,j)=0.5_r8*sqrt2*uhat_t
 !
             smgd=(rhos/rho0-1.0_r8)*g*d50
             osmgd=1.0_r8/smgd
@@ -603,49 +603,11 @@
      &           (h(i,j-1)-h(i,j))/on_v(i  ,j)*cff4
             a_slopex=1.7_r8*dzdx
             a_slopey=1.7_r8*dzdy
-!           a_slopex=1.7_r8*dzdx*SIGN(1.0_r8,FX_r(i,j))*0.0_r8
-!           a_slopey=1.7_r8*dzdy*SIGN(1.0_r8,FE_r(i,j))*1.0_r8
 !
 ! Add contribution of bed slope to bed load transport fluxes.
 !
             FX_r(i,j)=FX_r(i,j)*(1.0_r8+a_slopex)
             FE_r(i,j)=FE_r(i,j)*(1.0_r8+a_slopey)
-!       dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
-!       a_slopex=1.7_r8*dzdx
-!       IF (dzdx.le.0.0_r8) THEN        !uphill, dzdy negative
-!            IF (FX_r(i,j).gt.0.0_r8) THEN
-!              FX_r(i,j)=FX_r(i,j)*MAX((1.0_r8+a_slopex*1.3_r8),0.0_r8)
-!            END IF
-!            IF (FX_r(i,j).le.0.0_r8) THEN
-!              FX_r(i,j)=FX_r(i,j)*MIN((1.0_r8-a_slopex*2.0_r8),2.0_r8)
-!            END IF
-!       ELSE                            !downhill, dzdy positive
-!            IF (FX_r(i,j).gt.0.0_r8) THEN
-!              FX_r(i,j)=FX_r(i,j)*MIN((1.0_r8+a_slopex*2.0_r8),2.0_r8)
-!            END IF
-!            IF (FX_r(i,j).le.0.0_r8) THEN
-!              FX_r(i,j)=FX_r(i,j)*MAX((1.0_r8-a_slopex*1.3_r8),0.0_r8)
-!            END IF
-!       END IF
-!
-!       dzdy=(h(i,j)-h(i  ,j-1))/on_v(i,j)
-!       a_slopey=1.7_r8*dzdy
-!       IF (dzdy.le.0.0_r8) THEN        !uphill, dzdy negative
-!            IF (FE_r(i,j).gt.0.0_r8) THEN
-!              FE_r(i,j)=FE_r(i,j)*MAX((1.0_r8+a_slopey*1.3_r8),0.0_r8)  ! uphilll
-!            END IF
-!            IF (FE_r(i,j).le.0.0_r8) THEN
-!              FE_r(i,j)=FE_r(i,j)*MIN((1.0_r8-a_slopey*2.0_r8),2.0_r8)  ! downhill
-!            END IF
-!       ELSE                            !downhill, dzdy positive
-!            IF (FE_r(i,j).gt.0.0_r8) THEN
-!              FE_r(i,j)=FE_r(i,j)*MIN((1.0_r8+a_slopey*2.0_r8),2.0_r8)  ! downhill
-!            END IF
-!            IF (FE_r(i,j).le.0.0_r8) THEN
-!              FE_r(i,j)=FE_r(i,j)*MAX((1.0_r8-a_slopey*1.3_r8),0.0_r8) ! uphill
-!            END IF
-!       END IF
-
 !
 #  elif defined SLOPE_LESSER
             dzdx=MIN(((h(i+1,j)-h(i  ,j))/om_u(i+1,j)*cff1+             &
@@ -785,21 +747,6 @@
           DO i=Istr,Iend+1
             cff1=0.5_r8*(1.0_r8+SIGN(1.0_r8,FX_r(i,j)))
             cff2=0.5_r8*(1.0_r8-SIGN(1.0_r8,FX_r(i,j)))
-! orig upwind
-!            FX(i,j)=0.5_r8*(1.0_r8+SIGN(1.0_r8,FX_r(i-1,j)))*           &
-!     &              (cff1*FX_r(i-1,j)+                                  &
-!     &               cff2*0.5_r8*(FX_r(i-1,j)+FX_r(i,j)))+              &
-!     &              0.5_r8*(1.0_r8-SIGN(1.0_r8,FX_r(i-1,j)))*           &
-!     &              (cff2*FX_r(i  ,j)+                                  &
-!     &               cff1*0.5_r8*(FX_r(i-1,j)+FX_r(i,j)))
-! modified upwind
-!            FX(i,j)=0.5_r8*(1.0_r8+SIGN(1.0_r8,FX_r(i-1,j)))*           &
-!     &              (cff1*FX_r(i-1,j)+                                  &
-!     &               cff2*(FX_r(i-1,j)+FX_r(i,j)))+                     &
-!     &              0.5_r8*(1.0_r8-SIGN(1.0_r8,FX_r(i-1,j)))*           &
-!     &              (cff2*FX_r(i  ,j)+                                  &
-!     &               cff1*0.0_r8*(FX_r(i-1,j)+FX_r(i,j)))
-! new avg
             FX(i,j)=0.5_r8*(FX_r(i-1,j)+FX_r(i,j))
 #  ifdef SLOPE_KIRWAN
             cff1=10.0_r8
@@ -824,21 +771,6 @@
           DO i=IstrR,IendR
             cff1=0.5_r8*(1.0_r8+SIGN(1.0_r8,FE_r(i,j)))
             cff2=0.5_r8*(1.0_r8-SIGN(1.0_r8,FE_r(i,j)))
-!orig upwind
-!            FE(i,j)=0.5_r8*(1.0_r8+SIGN(1.0_r8,FE_r(i,j-1)))*           &
-!     &              (cff1*FE_r(i,j-1)+                                  &
-!     &               cff2*0.5_r8*(FE_r(i,j-1)+FE_r(i,j)))+              &
-!     &              0.5_r8*(1.0_r8-SIGN(1.0_r8,FE_r(i,j-1)))*           &
-!     &              (cff2*FE_r(i  ,j)+                                  &
-!     &               cff1*0.5_r8*(FE_r(i,j-1)+FE_r(i,j)))
-!modified upwind
-!            FE(i,j)=0.5_r8*(1.0_r8+SIGN(1.0_r8,FE_r(i,j-1)))*           &
-!     &              (cff1*FE_r(i,j-1)+                                  &
-!     &               cff2*(FE_r(i,j-1)+FE_r(i,j)))+                     &
-!     &              0.5_r8*(1.0_r8-SIGN(1.0_r8,FE_r(i,j-1)))*           &
-!     &              (cff2*FE_r(i  ,j)+                                  &
-!     &               cff1*0.0_r8*(FE_r(i,j-1)+FE_r(i,j)))
-! new avg
             FE(i,j)=0.5_r8*(FE_r(i,j-1)+FE_r(i,j))
 #  ifdef SLOPE_KIRWAN
             cff1=10.0_r8
@@ -865,18 +797,15 @@
 !  and  at the wet/dry interface.
 !
 !  sedslopes are the critical slopes to allow slumping.
-       sedslope_wet=0.25_r8
-       sedslope_dry=0.05_r8
-!
 !  slopefac are the scale factors for sediment movement.
 !
         cff2=Srho(ised,ng)*(1.0_r8-bed(i,j,1,iporo))
-        slopefac_dry=cff2*dt(ng)*0.001_r8*1.0_r8
-        slopefac_wet=cff2*dt(ng)*0.002_r8*1.0_r8
+        slopefac_dry_local=cff2*dt(ng)*slopefac_dry(ng)
+        slopefac_wet_local=cff2*dt(ng)*slopefac_wet(ng)
 !
 #   ifdef SED_MORPH
-        slopefac_wet=slopefac_wet*morph_fac(ised,ng)
-        slopefac_dry=slopefac_dry*morph_fac(ised,ng)
+        slopefac_wet_local=slopefac_wet_local*morph_fac(ised,ng)
+        slopefac_dry_local=slopefac_dry_local*morph_fac(ised,ng)
 #   endif
 !
 !  U-direction slumping
@@ -885,12 +814,14 @@
           DO i=Istr,Iend+1
             dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
             dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)
+!           dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
+!           dzdy=(bed(i,j,1,ithck)-bed(i,j-1,1,ithck))/on_v(i,j)
             dzdxdy=sqrt(dzdx**2.0_r8+dzdy**2.0_r8)
 !  For the wet part
-            cff=ABS(dzdxdy)-sedslope_wet
+            cff=ABS(dzdxdy)-sedslope_crit_wet(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
             cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
-            cff2=cff*slopefac_wet*SIGN(1.0_r8,dzdx)
+            cff2=cff*slopefac_wet_local*SIGN(1.0_r8,dzdx)
 #  ifdef MASKING
             cff2=cff2*umask(i,j)
 #   ifdef WET_DRY
@@ -899,10 +830,10 @@
 #  endif
             FX(i,j)=FX(i,j)+cff2
 !  For the dry part
-            cff=ABS(dzdx)-sedslope_dry
+            cff=ABS(dzdx)-sedslope_crit_dry(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
             cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
-            cff2=cff*slopefac_dry*SIGN(1.0_r8,dzdx)
+            cff2=cff*slopefac_dry_local*SIGN(1.0_r8,dzdx)
 #  ifdef MASKING
             cff2=cff2*umask(i,j)
 #   ifdef WET_DRY
@@ -914,36 +845,21 @@
 #   endif
 #  endif
             FX(i,j)=FX(i,j)+cff2
-
-!
-!  For the lateral shear.
-!
-            cff1=0.5_r8*(vbar(i-1,j,1)+vbar(i-1,j+1,1))
-            cff2=0.5_r8*(vbar(i,j,1)+vbar(i,j+1,1))
-            cff=(cff2-cff1)*0.5_r8*(pm(i-1,j)+pm(i,j))
-!           cff2=MAX(ABS(cff)-0.25_r8,0.0_r8)
-            cff2=MAX(ABS(cff)-0.01_r8,0.0_r8)
-!           cff2=cff2*SIGN(1.0_r8,cff)*100.0_r8
-            cff2=cff2*SIGN(1.0_r8,dzdx)*0.00_r8
-#  ifdef MASKING
-            cff2=cff2*umask(i,j)
-#   ifdef WET_DRY
-            cff2=cff2*(1.0_r8-umask_wet(i,j))
-#   endif
-#  endif
-            FX(i,j)=FX(i,j)+cff2
           END DO
         END DO
+!
         DO j=Jstr,Jend+1
           DO i=Istr,Iend
             dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)   ! positive is downhill
             dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
+!           dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
+!           dzdy=(bed(i,j,1,ithck)-bed(i,j-1,1,ithck))/on_v(i,j)
             dzdxdy=sqrt(dzdx**2.0_r8+dzdy**2.0_r8)
 ! For the wet part
-            cff=ABS(dzdxdy)-sedslope_wet
+            cff=ABS(dzdxdy)-sedslope_crit_wet(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
             cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
-            cff2=cff*slopefac_wet*SIGN(1.0_r8,dzdy)
+            cff2=cff*slopefac_wet_local*SIGN(1.0_r8,dzdy)
 #  ifdef MASKING
             cff2=cff2*vmask(i,j)
 #   ifdef WET_DRY
@@ -952,10 +868,10 @@
 #  endif
             FE(i,j)=FE(i,j)+cff2
 ! For the dry part
-            cff=ABS(dzdy)-sedslope_dry
+            cff=ABS(dzdy)-sedslope_crit_dry(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
             cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
-            cff2=cff*slopefac_dry*SIGN(1.0_r8,dzdy)
+            cff2=cff*slopefac_dry_local*SIGN(1.0_r8,dzdy)
 #  ifdef MASKING
             cff2=cff2*vmask(i,j)
 #   ifdef WET_DRY
@@ -967,14 +883,12 @@
 #   endif
 #  endif
             FE(i,j)=FE(i,j)+cff2
-
           END DO
         END DO
 #  endif
 !
 ! Limit fluxes to prevent bottom from breaking thru water surface.
 !
-!# if defined BEDLOAD_VERTLIMIT
         DO j=Jstr,Jend
           DO i=Istr,Iend+1
 !
@@ -1029,8 +943,7 @@
             FE(i,j)=FE(i,j)*(1.0_r8-cff1)
           END DO
         END DO
-!#endif
-
+!
         IF (.not.(CompositeGrid(iwest,ng).or.EWperiodic(ng))) THEN
           IF (DOMAIN(ng)%Western_Edge(tile)) THEN
             IF (LBC(iwest,isTvar(idsed(ised)),ng)%closed) THEN
@@ -1613,16 +1526,9 @@
 !    as well as full cycle orbital velocity and excursion
 !-----------------------------------------------------------------------
 !
-!      alphac=0.75_r8
-!      alphaw=0.04_r8
-!      jcw
-# ifdef VANDERA_FACS
-       alphac=0.75_r8
-       alphaw=0.04_r8
-# endif
-!
-      ui_rx=ui_r*alphaw+udelta*COS(phi_curwave)*alphac
-      ui_ry=udelta*SIN(phi_curwave)*alphac
+      ui_rx=ui_r*bedload_vandera_alphaw+                                &
+     &      udelta*COS(phi_curwave)*bedload_vandera_alphac
+      ui_ry=udelta*SIN(phi_curwave)*bedload_vandera_alphac
 !
 ! mag_ui is set to a min value to avoid non-zero division
 !

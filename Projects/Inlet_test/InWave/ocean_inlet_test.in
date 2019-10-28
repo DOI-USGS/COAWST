@@ -1042,7 +1042,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
      SPOSNAM =  Projects/Inlet_test/Coupled/stations_inlet_test.in
      FPOSNAM =  ROMS/External/floats.in
      BPARNAM =  ROMS/External/bioFasham.in
-     SPARNAM =  Projects/Inlet_test/Coupled/sediment_inlet_test.in 
+     SPARNAM =  Projects/Inlet_test/InWave/sediment_inlet_test.in 
      USRNAME =  ROMS/External/MyFile.dat
      VEGNAM  =  vegetation.in
 
