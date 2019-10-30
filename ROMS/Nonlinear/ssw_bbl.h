@@ -66,13 +66,9 @@
 #endif
      &                SEDBED(ng) % bottom,                              &
      &                OCEAN(ng) % rho,                                  &
-     &                OCEAN(ng) % ubar,                                 &
-     &                OCEAN(ng) % vbar,                                 &
      &                OCEAN(ng) % u,                                    &
      &                OCEAN(ng) % v,                                    &
 #if defined SSW_LOGINT_STOKES
-     &                OCEAN(ng) % ubar_stokes,                          &
-     &                OCEAN(ng) % vbar_stokes,                          &
      &                OCEAN(ng) % u_stokes,                             &
      &                OCEAN(ng) % v_stokes,                             &
 #endif
@@ -124,9 +120,8 @@
      &                      bedldu, bedldv,                             &
 #endif
      &                      bottom, rho,                                &
-     &                      ubar, vbar, u, v,                           &
+     &                      u, v,                                       &
 #if defined SSW_LOGINT_STOKES
-     &                      ubar_stokes, vbar_stokes,                   &
      &                      u_stokes, v_stokes,                         &
 #endif
 #if defined SSW_CALC_UB
@@ -185,13 +180,9 @@
 # endif
       real(r8), intent(inout) :: bottom(LBi:,LBj:,:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
-      real(r8), intent(in) :: ubar(LBi:,LBj:,:)
-      real(r8), intent(in) :: vbar(LBi:,LBj:,:)
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
 # if defined SSW_LOGINT_STOKES
-      real(r8), intent(in) :: ubar_stokes(LBi:,LBj:)
-      real(r8), intent(in) :: vbar_stokes(LBi:,LBj:)
       real(r8), intent(in) :: u_stokes(LBi:,LBj:,:)
       real(r8), intent(in) :: v_stokes(LBi:,LBj:,:)
 # endif
@@ -241,13 +232,9 @@
 # endif
       real(r8), intent(inout) :: bottom(LBi:UBi,LBj:UBj,MBOTP)
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
-      real(r8), intent(in) :: ubar(LBi:UBi,LBj:UBj,3)
-      real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
 # if defined SSW_LOGINT_STOKES
-      real(r8), intent(in) :: ubar_stokes(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: vbar_stokes(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: u_stokes(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: v_stokes(LBi:UBi,LBj:UBj,N(ng))
 # endif
@@ -362,6 +349,7 @@
 #if defined BEDLOAD_VANDERA_MADSEN || defined BEDLOAD_VANDERA_DIRECT_UDELTA
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Ur_sgwbl
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Vr_sgwbl
+      real(r8), dimension(1:N(ng)) :: Urz, Vrz
       real(r8) :: Ucur_sgwbl, Vcur_sgwbl
 #endif
 !
@@ -380,9 +368,8 @@
 !
 #if defined SSW_LOGINT
 !
-!  If using the logarithmic interpolation
-!
           Dstp=z_r(i,j,N(ng))-z_w(i,j,0)
+!
 !# if defined CRS_FIX
 # if defined BEDLOAD_VANDERA_DIRECT_UDELTA
 !
@@ -402,16 +389,19 @@
           cff1=sg_zwbl(ng)
 # endif
 !
+!  If using the logarithmic interpolation
+!
+          DO k=1,N(ng)
+            Urz(k)=0.5_r8*(u(i,j,k,nrhs)+u(i+1,j,k,nrhs))
+            Vrz(k)=0.5_r8*(v(i,j,k,nrhs)+v(i,j+1,k,nrhs))
+# ifdef SSW_LOGINT_STOKES
+            Urz(k)=Urz(k)+0.5_r8*(u_stokes(i,j,k,nrhs)+u_stokes(i+1,j,k,nrhs))
+            Vrz(k)=Vrz(k)+0.5_r8*(v_stokes(i,j,k,nrhs)+v_stokes(i,j+1,k,nrhs))
+# endif
+          END DO
           CALL log_interp( N(ng), Dstp, cff1,                           &
-     &                 u(i,j,:,nrhs),     v(i,j,:,nrhs),                &
-# ifdef SSW_LOGINT_STOKES
-     &                 u_stokes(i,j,:),   v_stokes(i,j,:),              &
-# endif
+     &                 Urz, Vrz,                                        &
      &                 z_r(i,j,:),        z_w(i,j,:),                   &
-     &                 ubar(i,j,nrhs),    vbar(i,j,nrhs),               &
-# ifdef SSW_LOGINT_STOKES
-     &                 ubar_stokes(i,j),  vbar_stokes(i,j),             &
-# endif
      &                 bottom(i,j,isd50), bottom(i,j,izapp),            &
      &                 Zr(i,j),                                         &
      &                 Ur_sg(i,j),        Vr_sg(i,j) )
@@ -420,11 +410,11 @@
 ! Regular method to get reference velocity for Madsen
 ! without using log interp by the bottom cell.
 !
-          Ur_sg(i,j)=u(i,j,1,nrhs)
-          Vr_sg(i,j)=v(i,j,1,nrhs)
+          Ur_sg(i,j)=0.5_r8*(u(i,j,1,nrhs)+u(i+1,j,1,nrhs))
+          Vr_sg(i,j)=0.5_r8*(v(i,j,1,nrhs)+v(i,j+1,1,nrhs))
 # ifdef SSW_LOGINT_STOKES
-          Ur_sg(i,j)=Ur_sg(i,j)+u_stokes(i,j,1)
-          Vr_sg(i,j)=Vr_sg(i,j)+v_stokes(i,j,1)
+          Ur_sg(i,j)=Ur_sg(i,j)+0.5_r8*(u_stokes(i,j,1)+u_stokes(i+1,j,1))
+          Vr_sg(i,j)=Vr_sg(i,j)+0.5_r8*(v_stokes(i,j,1)+v_stokes(i,j+1,1))
 # endif
 #endif
 !
@@ -458,8 +448,8 @@
 !
 !  Compute bottom current magnitude at RHO-points.
 !
-          Ucur(i,j)=0.5_r8*(Ur_sg(i,j)+Ur_sg(i+1,j))
-          Vcur(i,j)=0.5_r8*(Vr_sg(i,j)+Vr_sg(i,j+1))
+          Ucur(i,j)=Ur_sg(i,j)
+          Vcur(i,j)=Vr_sg(i,j)
 !
           Umag(i,j)=SQRT(Ucur(i,j)*Ucur(i,j)+Vcur(i,j)*Vcur(i,j)+eps)
 !
@@ -796,16 +786,17 @@
           udelta_wbl(i,j)=(ustrc_wbl(i,j)/vonKar)*cff2
 # endif
 !
+          DO k=1,N(ng)
+            Urz(k)=0.5_r8*(u(i,j,k,nrhs)+u(i+1,j,k,nrhs))
+            Vrz(k)=0.5_r8*(v(i,j,k,nrhs)+v(i,j+1,k,nrhs))
+# ifdef SSW_LOGINT_STOKES
+            Urz(k)=Urz(k)+0.5_r8*(u_stokes(i,j,k,nrhs)+u_stokes(i+1,j,k,nrhs))
+            Vrz(k)=Vrz(k)+0.5_r8*(v_stokes(i,j,k,nrhs)+v_stokes(i,j+1,k,nrhs))
+# endif
+          END DO
           CALL log_interp( N(ng), Dstp, cff1,                           &
-     &                 u(i,j,:,nrhs),     v(i,j,:,nrhs),                &
-# ifdef SSW_LOGINT_STOKES
-     &                 u_stokes(i,j,:),   v_stokes(i,j,:),              &
-# endif
+     &                 Urz, Vrz,                                        &
      &                 z_r(i,j,:),        z_w(i,j,:),                   &
-     &                 ubar(i,j,nrhs),    vbar(i,j,nrhs),               &
-# ifdef SSW_LOGINT_STOKES
-     &                 ubar_stokes(i,j),  vbar_stokes(i,j),             &
-# endif
      &                 bottom(i,j,isd50), bottom(i,j,izapp),            &
      &                 Zr_wbl(i,j),                                     &
      &                 Ur_sgwbl(i,j),     Vr_sgwbl(i,j) )
@@ -841,16 +832,17 @@
         DO i=IstrU-1,Iend+1
           Dstp=z_r(i,j,N(ng))-z_w(i,j,0)
           cff=MIN( 0.98_r8*Dstp, sg_zwbl(ng) )
+          DO k=1,N(ng)
+            Urz(k)=0.5_r8*(u(i,j,k,nrhs)+u(i+1,j,k,nrhs))
+            Vrz(k)=0.5_r8*(v(i,j,k,nrhs)+v(i,j+1,k,nrhs))
+# ifdef SSW_LOGINT_STOKES
+            Urz(k)=Urz(k)+0.5_r8*(u_stokes(i,j,k,nrhs)+u_stokes(i+1,j,k,nrhs))
+            Vrz(k)=Vrz(k)+0.5_r8*(v_stokes(i,j,k,nrhs)+v_stokes(i,j+1,k,nrhs))
+# endif
+          END DO
           CALL log_interp( N(ng), Dstp, cff,                            &
-     &                 u(i,j,:,nrhs),     v(i,j,:,nrhs),                &
-# ifdef SSW_LOGINT_STOKES
-     &                 u_stokes(i,j,:),   v_stokes(i,j,:),              &
-# endif
+     &                 Urz, Vrz,                                        &
      &                 z_r(i,j,:),        z_w(i,j,:),                   &
-     &                 ubar(i,j,nrhs),    vbar(i,j,nrhs),               &
-# ifdef SSW_LOGINT_STOKES
-     &                 ubar_stokes(i,j),  vbar_stokes(i,j),             &
-# endif
      &                 bottom(i,j,isd50), bottom(i,j,izapp),            &
      &                 Zr_wbl(i,j),                                     &
      &                 Ur_sgwbl(i,j),     Vr_sgwbl(i,j) )
@@ -887,7 +879,7 @@
 !
       DO j=Jstr,Jend
         DO i=IstrU,Iend
-          anglec=Ur_sg(i,j)/(0.5*(Umag(i-1,j)+Umag(i,j)))
+          anglec=0.5_r8*(Ur_sg(i,j)+Ur_sg(i-1,j))/(0.5_r8*(Umag(i-1,j)+Umag(i,j)))
           bustr(i,j)=0.5_r8*(Tauc(i-1,j)+Tauc(i,j))*anglec
 #ifdef WET_DRY
           cff2=0.75_r8*0.5_r8*(z_w(i-1,j,1)+z_w(i,j,1)-                 &
@@ -899,7 +891,7 @@
       END DO
       DO j=JstrV,Jend
         DO i=Istr,Iend
-          anglec=Vr_sg(i,j)/(0.5_r8*(Umag(i,j-1)+Umag(i,j)))
+          anglec=0.5_r8*(Vr_sg(i,j)+Vr_sg(i,j-1))/(0.5_r8*(Umag(i,j-1)+Umag(i,j)))
           bvstr(i,j)=0.5_r8*(Tauc(i,j-1)+Tauc(i,j))*anglec
 #ifdef WET_DRY
           cff2=0.75_r8*0.5_r8*(z_w(i,j-1,1)+z_w(i,j,1)-                 &
@@ -1739,14 +1731,7 @@
 !
 #if defined SSW_LOGINT || defined BEDLOAD_VANDERA_MADSEN
       SUBROUTINE log_interp( kmax, Dstp, sg_loc, u_1d, v_1d,            &
-# ifdef SSW_LOGINT_STOKES
-     &                        u_stokes_1d, v_stokes_1d,                 &
-# endif
      &                        z_r_1d, z_w_1d,                           &
-     &                        ubar_1, vbar_1,                           &
-# ifdef SSW_LOGINT_STOKES
-     &                        ubar_stokes_1, vbar_stokes_1,             &
-# endif
      &                        d50, zapp_loc,                            &
      &                        Zr_sg,                                    &
      &                        Ur_sg, Vr_sg)
@@ -1773,14 +1758,7 @@
       integer,  intent(in)  :: kmax
       real(r8), intent(in)  :: Dstp, sg_loc
       real(r8), intent(in)  :: u_1d(1:kmax), v_1d(1:kmax)
-# ifdef SSW_LOGINT_STOKES
-      real(r8), intent(in)  :: u_stokes_1d(1:kmax), v_stokes_1d(1:kmax)
-# endif
       real(r8), intent(in)  :: z_r_1d(1:kmax), z_w_1d(0:kmax)
-      real(r8), intent(in)  :: ubar_1, vbar_1
-# ifdef SSW_LOGINT_STOKES
-      real(r8), intent(in)  :: ubar_stokes_1, vbar_stokes_1
-# endif
       real(r8), intent(in)  :: d50, zapp_loc
       real(r8), intent(out) :: Zr_sg
       real(r8), intent(out) :: Ur_sg, Vr_sg
@@ -1806,15 +1784,8 @@
             fac1=fac*LOG(z2/sg_loc)
             fac2=fac*LOG(sg_loc/z1)
 !
-# ifdef SSW_LOGINT_STOKES
-            Ur_sg=fac1*( u_1d(k-1)+u_stokes_1d(k-1) )+                  &
-     &               fac2*( u_1d(k)+u_stokes_1d(k)     )
-            Vr_sg=fac1*( v_1d(k-1)+v_stokes_1d(k-1) )+                  &
-     &               fac2*( v_1d(k)+v_stokes_1d(k)     )
-# else
             Ur_sg=fac1*u_1d(k-1)+fac2*u_1d(k)
             Vr_sg=fac1*v_1d(k-1)+fac2*v_1d(k)
-# endif
             Zr_sg=sg_loc
           ENDIF
         END DO
@@ -1831,13 +1802,8 @@
           z1=sg_loc
           fac=z1/z2
 !
-# ifdef SSW_LOGINT_STOKES
-          Ur_sg=fac*(u_1d(1)+u_stokes_1d(1))
-          Vr_sg=fac*(v_1d(1)+v_stokes_1d(1))
-# else
           Ur_sg=fac*u_1d(1)
           Vr_sg=fac*v_1d(1)
-# endif
           Zr_sg=sg_loc
 !
         ELSEIF ( sg_loc.gt.z1 ) THEN
@@ -1848,13 +1814,8 @@
           fac=1.0_r8/LOG(z2/z1)
           fac2=fac*LOG(sg_loc/z1)
 !
-# ifdef SSW_LOGINT_STOKES
-          Ur_sg=fac2*(u_1d(1)+u_stokes_1d(1))
-          Vr_sg=fac2*(v_1d(1)+v_stokes_1d(1))
-# else
           Ur_sg=fac2*u_1d(1)
           Vr_sg=fac2*v_1d(1)
-# endif
           Zr_sg=sg_loc
         END IF
       END IF
