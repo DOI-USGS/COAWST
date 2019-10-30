@@ -816,10 +816,10 @@
 !
         DO j=Jstr,Jend
           DO i=Istr,Iend+1
-            dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
-            dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)
-!           dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
-!           dzdy=(bed(i,j,1,ithck)-bed(i,j-1,1,ithck))/on_v(i,j)
+!           dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
+!           dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)
+            dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
+            dzdy=(bed(i,j,1,ithck)-bed(i,j-1,1,ithck))/on_v(i,j)
             dzdxdy=sqrt(dzdx**2.0_r8+dzdy**2.0_r8)
 !  For the wet part
             cff=ABS(dzdxdy)-sedslope_crit_wet(ng)
@@ -854,10 +854,10 @@
 !
         DO j=Jstr,Jend+1
           DO i=Istr,Iend
-            dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)   ! positive is downhill
-            dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
-!           dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
-!           dzdy=(bed(i,j,1,ithck)-bed(i,j-1,1,ithck))/on_v(i,j)
+!           dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)   ! positive is downhill
+!           dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
+            dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
+            dzdy=(bed(i,j,1,ithck)-bed(i,j-1,1,ithck))/on_v(i,j)
             dzdxdy=sqrt(dzdx**2.0_r8+dzdy**2.0_r8)
 ! For the wet part
             cff=ABS(dzdxdy)-sedslope_crit_wet(ng)

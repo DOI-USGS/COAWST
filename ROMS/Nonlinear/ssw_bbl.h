@@ -395,8 +395,8 @@
             Urz(k)=0.5_r8*(u(i,j,k,nrhs)+u(i+1,j,k,nrhs))
             Vrz(k)=0.5_r8*(v(i,j,k,nrhs)+v(i,j+1,k,nrhs))
 # ifdef SSW_LOGINT_STOKES
-            Urz(k)=Urz(k)+0.5_r8*(u_stokes(i,j,k,nrhs)+u_stokes(i+1,j,k,nrhs))
-            Vrz(k)=Vrz(k)+0.5_r8*(v_stokes(i,j,k,nrhs)+v_stokes(i,j+1,k,nrhs))
+            Urz(k)=Urz(k)+0.5_r8*(u_stokes(i,j,k)+u_stokes(i+1,j,k))
+            Vrz(k)=Vrz(k)+0.5_r8*(v_stokes(i,j,k)+v_stokes(i,j+1,k))
 # endif
           END DO
           CALL log_interp( N(ng), Dstp, cff1,                           &
@@ -790,8 +790,8 @@
             Urz(k)=0.5_r8*(u(i,j,k,nrhs)+u(i+1,j,k,nrhs))
             Vrz(k)=0.5_r8*(v(i,j,k,nrhs)+v(i,j+1,k,nrhs))
 # ifdef SSW_LOGINT_STOKES
-            Urz(k)=Urz(k)+0.5_r8*(u_stokes(i,j,k,nrhs)+u_stokes(i+1,j,k,nrhs))
-            Vrz(k)=Vrz(k)+0.5_r8*(v_stokes(i,j,k,nrhs)+v_stokes(i,j+1,k,nrhs))
+            Urz(k)=Urz(k)+0.5_r8*(u_stokes(i,j,k)+u_stokes(i+1,j,k))
+            Vrz(k)=Vrz(k)+0.5_r8*(v_stokes(i,j,k)+v_stokes(i,j+1,k))
 # endif
           END DO
           CALL log_interp( N(ng), Dstp, cff1,                           &
@@ -836,8 +836,8 @@
             Urz(k)=0.5_r8*(u(i,j,k,nrhs)+u(i+1,j,k,nrhs))
             Vrz(k)=0.5_r8*(v(i,j,k,nrhs)+v(i,j+1,k,nrhs))
 # ifdef SSW_LOGINT_STOKES
-            Urz(k)=Urz(k)+0.5_r8*(u_stokes(i,j,k,nrhs)+u_stokes(i+1,j,k,nrhs))
-            Vrz(k)=Vrz(k)+0.5_r8*(v_stokes(i,j,k,nrhs)+v_stokes(i,j+1,k,nrhs))
+            Urz(k)=Urz(k)+0.5_r8*(u_stokes(i,j,k)+u_stokes(i+1,j,k))
+            Vrz(k)=Vrz(k)+0.5_r8*(v_stokes(i,j,k)+v_stokes(i,j+1,k))
 # endif
           END DO
           CALL log_interp( N(ng), Dstp, cff,                            &
