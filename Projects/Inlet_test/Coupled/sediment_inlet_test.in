@@ -124,9 +124,37 @@ ad_LBC(isTvar) ==   Gra     Per     Clo     Per      ! idsed(:), compact
 
    DBZM == 0.08d0
 
-! Depth of minimum biodiffusivity, [1:Ngrids]. 
+! Depth of minimum biodiffusivity, [1:Ngrids].
    
    DBZP == 0.01d0
+
+! Asymmetric bedload parameter: Elevation(m) for near-bottom current vel., [1:Ngrids].
+
+   SG_ZWBL == 0.1d0
+
+! Asymmetric bedload parameter: Sed slumping critical wet bed slope, [1:Ngrids].
+
+   SEDSLOPE_CRIT_WET == 0.30d0
+
+! Asymmetric bedload parameter: Sed slumping critical dry bed slope, [1:Ngrids].
+
+   SEDSLOPE_CRIT_DRY == 0.05d0
+
+! Asymmetric bedload parameter: Sed slumping factor for wet bed slope, [1:Ngrids].
+
+   SLOPEFAC_WET == 0.0d0
+
+! Asymmetric bedload parameter: Sed slumping factor for dry bed slope, [1:Ngrids].
+
+   SLOPEFAC_DRY == 0.0d0
+
+! Asymmetric bedload parameter: Scale factor for wave contribution to bed load, [1:Ngrids].
+
+   BEDLOAD_VANDERA_ALPHAW == 0.04d0
+   
+! Asymmetric bedload parameter: Scale factor for currents contribution to bed load, [1:Ngrids].
+
+   BEDLOAD_VANDERA_ALPHAC == 0.75d0
 
 ! Logical switches (TRUE/FALSE) to activate writing of bed layer
 ! parameters, [1:Ngrids] values expected.
@@ -135,7 +163,25 @@ ad_LBC(isTvar) ==   Gra     Per     Clo     Per      ! idsed(:), compact
  Hout(iaged) == T                               ! sediment layer age
  Hout(iporo) == T                               ! sediment layer porosity
  Hout(idiff) == T                               ! biodiffusivity
- 
+
+! Logical switches for wave asymmetry parameters obtained when using
+! bedload formulation from Vander A et al. (2013).
+
+Hout(idsurs) == T                               ! Ursell number for the asymmetric wave form
+Hout(idsrrw) == T                               ! Velocity skewness parameter for the asymmetric wave form
+Hout(idsbtw) == T                               ! Acceleration asymmetry parameter for the asymmetric wave form
+Hout(idsksd) == T                               ! Bed roughness (Zo) for the wave boundary layer calc.
+Hout(idsusc) == T                               ! Current friction velocity the wave boundary layer
+Hout(idstbl) == T                               ! thickness at the wave boundary layer
+Hout(idsubl) == T                               ! Current velocity at the wave boundary layer
+Hout(idsfdw) == T                               ! Friction factor from the currents
+Hout(idszrw) == T
+Hout(idspwc) == T
+Hout(idsucr) == T                               ! Crest velocity of the asymmetric wave form
+Hout(idsutr) == T                               ! Trough velocity of the asymmetric wave form
+Hout(idstcr) == T                               ! Crest wave time period of the asymmetric wave form
+Hout(idsttr) == T                               ! Trough wave time period of the aymmetric wave form
+
 ! Logical switches (TRUE/FALSE) to activate writing of bed
 ! bottom sediment parameters, [1:Ngrids] values expected.
   

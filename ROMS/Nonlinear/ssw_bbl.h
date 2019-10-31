@@ -346,10 +346,10 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zoDEF
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zoBIO
 !
+      real(r8), dimension(1:N(ng)) :: Urz, Vrz
 #if defined BEDLOAD_VANDERA_MADSEN || defined BEDLOAD_VANDERA_DIRECT_UDELTA
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Ur_sgwbl
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Vr_sgwbl
-      real(r8), dimension(1:N(ng)) :: Urz, Vrz
       real(r8) :: Ucur_sgwbl, Vcur_sgwbl
 #endif
 !
@@ -359,8 +359,8 @@
 !  Set currents above the bed.
 !-----------------------------------------------------------------------
 !
-      DO j=JstrV-1,Jend+1
-        DO i=IstrU-1,Iend+1
+      DO j=JstrV-1,Jend
+        DO i=IstrU-1,Iend
 !
 ! Calculate bottom cell thickness
 !
@@ -385,8 +385,8 @@
 !
 ! Use the original coded ssw_logint formulation
 !
-!         cff1=sg_z1min
-          cff1=sg_zwbl(ng)
+          cff1=sg_z1min
+!         cff1=sg_zwbl(ng)
 # endif
 !
 !  If using the logarithmic interpolation
@@ -758,8 +758,8 @@
 ! to get udelta.
 ! Find the angle at that near-bottom current velocity.
 !
-      DO j=JstrV-1,Jend+1
-        DO i=IstrU-1,Iend+1
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
 !
           Dstp=z_r(i,j,N(ng))-z_w(i,j,0)
 !
@@ -800,19 +800,11 @@
      &                 bottom(i,j,isd50), bottom(i,j,izapp),            &
      &                 Zr_wbl(i,j),                                     &
      &                 Ur_sgwbl(i,j),     Vr_sgwbl(i,j) )
-        END DO
-      END DO
-!
-!  Compute angle between currents at an elevation
-!  to find currents to obtain asymmetric bedload transport.
-!
-      DO j=JstrV-1,Jend
-        DO i=IstrU-1,Iend
 !
 !  Compute bottom current magnitude at RHO-points.
 !
-          Ucur_sgwbl=0.5_r8*(Ur_sgwbl(i,j)+Ur_sgwbl(i+1,j))
-          Vcur_sgwbl=0.5_r8*(Vr_sgwbl(i,j)+Vr_sgwbl(i,j+1))
+          Ucur_sgwbl=Ur_sgwbl(i,j)
+          Vcur_sgwbl=Vr_sgwbl(i,j)
 !
           IF (Ucur_sgwbl.eq.0.0_r8) THEN
             phic_sgwbl(i,j)=0.5_r8*pi*SIGN(1.0_r8,Vcur_sgwbl)
@@ -828,8 +820,8 @@
 ! elevation (doesnot require Madsen output)
 ! Find the angle at that near-bottom current velocity.
 !
-      DO j=JstrV-1,Jend+1
-        DO i=IstrU-1,Iend+1
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
           Dstp=z_r(i,j,N(ng))-z_w(i,j,0)
           cff=MIN( 0.98_r8*Dstp, sg_zwbl(ng) )
           DO k=1,N(ng)
@@ -846,19 +838,11 @@
      &                 bottom(i,j,isd50), bottom(i,j,izapp),            &
      &                 Zr_wbl(i,j),                                     &
      &                 Ur_sgwbl(i,j),     Vr_sgwbl(i,j) )
-        END DO
-      END DO
-!
-!  Compute udelta along with angle at that elevation.
-!
-      DO j=JstrV-1,Jend
-        DO i=IstrU-1,Iend
 !
 !  Compute bottom current magnitude at RHO-points.
 !
-          Ucur_sgwbl=0.5_r8*(Ur_sgwbl(i,j)+Ur_sgwbl(i+1,j))
-          Vcur_sgwbl=0.5_r8*(Vr_sgwbl(i,j)+Vr_sgwbl(i,j+1))
-
+          Ucur_sgwbl=Ur_sgwbl(i,j)
+          Vcur_sgwbl=Vr_sgwbl(i,j)
           udelta_wbl(i,j)=SQRT(Ur_sgwbl(i,j)*Ur_sgwbl(i,j)+             &
      &                         Vr_sgwbl(i,j)*Vr_sgwbl(i,j)+eps)
 !

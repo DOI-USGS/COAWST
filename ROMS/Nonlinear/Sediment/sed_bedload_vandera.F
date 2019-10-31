@@ -751,7 +751,16 @@
           DO i=Istr,Iend+1
             cff1=0.5_r8*(1.0_r8+SIGN(1.0_r8,FX_r(i,j)))
             cff2=0.5_r8*(1.0_r8-SIGN(1.0_r8,FX_r(i,j)))
+# ifdef JCW_ADVECT
+            FX(i,j)=0.5_r8*(1.0_r8+SIGN(1.0_r8,FX_r(i-1,j)))*           &
+     &              (cff1*FX_r(i-1,j)+                                  &
+     &               cff2*(FX_r(i-1,j)+FX_r(i,j)))+                     &
+     &              0.5_r8*(1.0_r8-SIGN(1.0_r8,FX_r(i-1,j)))*           &
+     &              (cff2*FX_r(i  ,j)+                                  &
+     &               cff1*0.0_r8*(FX_r(i-1,j)+FX_r(i,j)))
+# else
             FX(i,j)=0.5_r8*(FX_r(i-1,j)+FX_r(i,j))
+# endif
 #  ifdef SLOPE_KIRWAN
             cff1=10.0_r8
             dzdx=(h(i,j)-h(i-1  ,j))/om_u(i,j)
@@ -775,7 +784,16 @@
           DO i=IstrR,IendR
             cff1=0.5_r8*(1.0_r8+SIGN(1.0_r8,FE_r(i,j)))
             cff2=0.5_r8*(1.0_r8-SIGN(1.0_r8,FE_r(i,j)))
+# ifdef JCW_ADVECT
+            FE(i,j)=0.5_r8*(1.0_r8+SIGN(1.0_r8,FE_r(i,j-1)))*           &
+     &              (cff1*FE_r(i,j-1)+                                  &
+     &               cff2*(FE_r(i,j-1)+FE_r(i,j)))+                     &
+     &              0.5_r8*(1.0_r8-SIGN(1.0_r8,FE_r(i,j-1)))*           &
+     &              (cff2*FE_r(i  ,j)+                                  &
+     &               cff1*0.0_r8*(FE_r(i,j-1)+FE_r(i,j)))
+# else
             FE(i,j)=0.5_r8*(FE_r(i,j-1)+FE_r(i,j))
+# endif
 #  ifdef SLOPE_KIRWAN
             cff1=10.0_r8
             dzdy=(h(i,j)-h(i  ,j-1))/on_v(i,j)
@@ -816,10 +834,10 @@
 !
         DO j=Jstr,Jend
           DO i=Istr,Iend+1
-!           dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
-!           dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)
-            dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
-            dzdy=(bed(i,j,1,ithck)-bed(i,j-1,1,ithck))/on_v(i,j)
+            dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
+            dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)
+!           dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
+!           dzdy=(bed(i,j,1,ithck)-bed(i,j-1,1,ithck))/on_v(i,j)
             dzdxdy=sqrt(dzdx**2.0_r8+dzdy**2.0_r8)
 !  For the wet part
             cff=ABS(dzdxdy)-sedslope_crit_wet(ng)
@@ -854,10 +872,10 @@
 !
         DO j=Jstr,Jend+1
           DO i=Istr,Iend
-!           dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)   ! positive is downhill
-!           dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
-            dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
-            dzdy=(bed(i,j,1,ithck)-bed(i,j-1,1,ithck))/on_v(i,j)
+            dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)   ! positive is downhill
+            dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
+!           dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
+!           dzdy=(bed(i,j,1,ithck)-bed(i,j-1,1,ithck))/on_v(i,j)
             dzdxdy=sqrt(dzdx**2.0_r8+dzdy**2.0_r8)
 ! For the wet part
             cff=ABS(dzdxdy)-sedslope_crit_wet(ng)
