@@ -1775,7 +1775,7 @@
         END DO
 
       ELSEIF ( sg_loc.lt.Zr ) THEN
-        z1=MAX( 2.5_r8*d50/30.0_r8, zapp_loc )
+        z1=MAX( 2.5_r8*d50/30.0_r8, zapp_loc, 1.0e-10_r8 )
         z2=Zr
 !
         IF ( sg_loc.lt.z1 ) THEN
