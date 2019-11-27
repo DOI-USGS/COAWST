@@ -215,9 +215,9 @@
 #  if defined SED_MORPH
       real(r8), intent(inout):: bed_thick(LBi:,LBj:,:)
 #  endif
-# ifdef SED_SLUMP
+#  ifdef SED_SLUMP
       real(r8), intent(in):: vbar(LBi:,LBj:,:)
-# endif
+#  endif
       real(r8), intent(inout) :: ursell_no(LBi:,LBj:)
       real(r8), intent(inout) :: RR_asymwave(LBi:,LBj:)
       real(r8), intent(inout) :: beta_asymwave(LBi:,LBj:)
@@ -276,9 +276,9 @@
 #  if defined SED_MORPH
       real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,2)
 #  endif
-# ifdef SED_SLUMP
+#  ifdef SED_SLUMP
       real(r8), intent(in):: vbar(LBi:UBi,LBj:UBj,3)
-# endif
+#  endif
       real(r8), intent(inout) :: ursell_no(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: RR_asymwave(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: beta_asymwave(LBi:UBi,LBj:UBj)
@@ -657,15 +657,15 @@
      &                    om_r(i,j)*on_r(i,j)*ABS(FE_r(i,j))/           &
      &                    bedld_mass)*                                  &
      &                    SIGN(1.0_r8,FE_r(i,j))
-#   ifdef MASKING
-#    ifdef WET_DRY
+#  ifdef MASKING
+#   ifdef WET_DRY
             FX_r(i,j)=FX_r(i,j)*rmask_wet(i,j)
             FE_r(i,j)=FE_r(i,j)*rmask_wet(i,j)
-#    else
+#   else
             FX_r(i,j)=FX_r(i,j)*rmask(i,j)
             FE_r(i,j)=FE_r(i,j)*rmask(i,j)
-#    endif
 #   endif
+#  endif
           END DO
         END DO
 !
@@ -751,16 +751,16 @@
           DO i=Istr,Iend+1
             cff1=0.5_r8*(1.0_r8+SIGN(1.0_r8,FX_r(i,j)))
             cff2=0.5_r8*(1.0_r8-SIGN(1.0_r8,FX_r(i,j)))
-# ifdef JCW_ADVECT
+#  ifdef JCW_ADVECT
             FX(i,j)=0.5_r8*(1.0_r8+SIGN(1.0_r8,FX_r(i-1,j)))*           &
      &              (cff1*FX_r(i-1,j)+                                  &
      &               cff2*(FX_r(i-1,j)+FX_r(i,j)))+                     &
      &              0.5_r8*(1.0_r8-SIGN(1.0_r8,FX_r(i-1,j)))*           &
      &              (cff2*FX_r(i  ,j)+                                  &
      &               cff1*0.0_r8*(FX_r(i-1,j)+FX_r(i,j)))
-# else
+#  else
             FX(i,j)=0.5_r8*(FX_r(i-1,j)+FX_r(i,j))
-# endif
+#  endif
 #  ifdef SLOPE_KIRWAN
             cff1=10.0_r8
             dzdx=(h(i,j)-h(i-1  ,j))/om_u(i,j)
@@ -784,16 +784,16 @@
           DO i=IstrR,IendR
             cff1=0.5_r8*(1.0_r8+SIGN(1.0_r8,FE_r(i,j)))
             cff2=0.5_r8*(1.0_r8-SIGN(1.0_r8,FE_r(i,j)))
-# ifdef JCW_ADVECT
+#  ifdef JCW_ADVECT
             FE(i,j)=0.5_r8*(1.0_r8+SIGN(1.0_r8,FE_r(i,j-1)))*           &
      &              (cff1*FE_r(i,j-1)+                                  &
      &               cff2*(FE_r(i,j-1)+FE_r(i,j)))+                     &
      &              0.5_r8*(1.0_r8-SIGN(1.0_r8,FE_r(i,j-1)))*           &
      &              (cff2*FE_r(i  ,j)+                                  &
      &               cff1*0.0_r8*(FE_r(i,j-1)+FE_r(i,j)))
-# else
+#  else
             FE(i,j)=0.5_r8*(FE_r(i,j-1)+FE_r(i,j))
-# endif
+#  endif
 #  ifdef SLOPE_KIRWAN
             cff1=10.0_r8
             dzdy=(h(i,j)-h(i  ,j-1))/on_v(i,j)
@@ -844,28 +844,28 @@
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
             cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
             cff2=cff*slopefac_wet_local*SIGN(1.0_r8,dzdx)
-#  ifdef MASKING
-            cff2=cff2*umask(i,j)
+#   ifdef MASKING
+             cff2=cff2*umask(i,j)
 #   ifdef WET_DRY
             cff2=cff2*umask_wet(i,j)
+#    endif
 #   endif
-#  endif
             FX(i,j)=FX(i,j)+cff2
 !  For the dry part
             cff=ABS(dzdx)-sedslope_crit_dry(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
             cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
             cff2=cff*slopefac_dry_local*SIGN(1.0_r8,dzdx)
-#  ifdef MASKING
+#   ifdef MASKING
             cff2=cff2*umask(i,j)
-#   ifdef WET_DRY
+#    ifdef WET_DRY
 !            cff2=cff2*umask_wet(i,j)
 !             cff2=cff2*(1.0_r8-umask_wet(i,j))
             cff2=cff2*(1.0_r8-umask_wet(i,j))*                          &
      &                ((1.0_r8-umask_wet(i-1,j))*umask_wet(i+1,j)+      &
      &                 (1.0_r8-umask_wet(i+1,j))*umask_wet(i-1,j))
+#    endif
 #   endif
-#  endif
             FX(i,j)=FX(i,j)+cff2
           END DO
         END DO
@@ -882,28 +882,28 @@
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
             cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
             cff2=cff*slopefac_wet_local*SIGN(1.0_r8,dzdy)
-#  ifdef MASKING
+#   ifdef MASKING
             cff2=cff2*vmask(i,j)
-#   ifdef WET_DRY
+#    ifdef WET_DRY
             cff2=cff2*vmask_wet(i,j)
+#    endif
 #   endif
-#  endif
             FE(i,j)=FE(i,j)+cff2
 ! For the dry part
             cff=ABS(dzdy)-sedslope_crit_dry(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
             cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
             cff2=cff*slopefac_dry_local*SIGN(1.0_r8,dzdy)
-#  ifdef MASKING
+#   ifdef MASKING
             cff2=cff2*vmask(i,j)
-#   ifdef WET_DRY
+#    ifdef WET_DRY
 !            cff2=cff2*vmask_wet(i,j)
 !           cff2=cff2*(1.0_r8-vmask_wet(i,j))
             cff2=cff2*(1.0_r8-vmask_wet(i,j))*                          &
      &                ((1.0_r8-vmask_wet(i,j-1))*vmask_wet(i,j+1)+      &
      &                 (1.0_r8-vmask_wet(i,j+1))*vmask_wet(i,j-1))
+#    endif
 #   endif
-#  endif
             FE(i,j)=FE(i,j)+cff2
           END DO
         END DO

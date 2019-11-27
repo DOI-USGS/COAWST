@@ -1,5 +1,10 @@
 #include "cppdefs.h"
 
+#ifdef VARY_ACBC
+#  undef  SINGLESUM
+#  define DOUBLESUM
+#endif
+
       MODULE mod_inwave_swan
 !
 !svn $Id: swan_reader.F 1336 2008-01-24 02:45:56Z jcwarner $
@@ -13,9 +18,9 @@
 !  DUR         duration of the time series to generate                 !
 !  DT          time step in the time series of the free surface        !
 !              elevation signal                                        !
-!  FNYQ        Nyquist frequency                                       !
 !  FMAX        Maximum frequency to consider when recontructing the    !
-!              free surface signal                                     !
+!              free surface signal - this is equivalent to the Nyquist !
+!              frequency                                               !
 !  FMIN        Minimum frequency to consider when recontructing the    !
 !              free surface signal                                     !
 !  DF          Frequency interval for the frequency array              !
@@ -28,7 +33,6 @@
 !              interpolated spectra                                    !
 !  DANG        
 !  INT         
-!  FP          Peak frequency                                          !
 !  DF_FFT      Frequency increment for the positive Fourier Components !
 !  FSW         Frequency array                                         !
 !  F           Frequency array                                         !
@@ -37,18 +41,14 @@
 !  SF          Spectral density function read from swan                !
 !  SDSW        Directional spectral density function read from swan    !
 !  SD          Directional spectral density function                   !
-!  SDD         Spectral density function integrated over the frequencies!
+!  SDD         Spectral density function integrated over frequency     !
 !  PHASE       Random phase for each frequency- direction component    !
 !  AMP         Amplitude of the Fourier components                     !
-!  POS_F       Positive frequencies of the Fourier Components          !
-!  ZETA        Free surface elevation for each directional bin         !
-!  AMPZETA     Amplitude of the free surface elevation for the         !
-!              free surface elevation                                  !
-!  AMPZETA_TOT Amplitude of the free surface elevation for the         !
-!              free surface elevation                                  !
+!  AMPZETA     Amplitude of the free surface elevation for each        !
+!              directional component                                   !
+!  AMPZETA_TOT Amplitude of the free surface elevation                 !
 !  POSITION    positive frequencies of the Fourier Components          !
 !  CompFn      Fourier components                                      !
-!  Comptemp    Fourier components                                      !
 !=======================================================================
 !
 !
@@ -56,17 +56,18 @@
 !                                                                      !
 !  CONTAINS THE FOLLOWING SUBROUTINES:                                 !
 !                                                                      !
-!     inwave_swan: this is the main driver of boundary conditions      !
-!                  computations from swan output spectra               !
-!     array_gen  : this subroutine generates the arrays necesary to    !
-!                  compute the free surface elevation time series      !
-!                  from the directional wave spectra derived from swan !
-!     random_phase  : it assignes random phases to each                !
-!                     frequency component                              !
+!     inwave_swan  : main driver of boundary condition computations    !
+!                    from swan output spectra                          !
+!     swan_reader  : read swan output spectra                          !
+!     array_gen    : generate the arrays necessary to compute the free !
+!                    surface elevation time series from the            !
+!                    directional wave spectra derived from swan        !
+!     random_phase : assign random phases to each frequency-direction  !
+!                    component                                         !
 !     tpdcalc    : This subroutine computes the respresentative period !
-!     amplitudes : This subroutine computes the amplitude for the      !
-!                  Fourier components for each frequency in the spectra!
-!     FourierComp : Computes the Fourier components                    !
+!     amplitudes   : compute the amplitude for each frequency-direction!
+!                    components                                        !
+!     FourierComp  : compute the Fourier components                    !
 !=======================================================================
 !
 
@@ -81,11 +82,11 @@
 
         TYPE SHORT_WAVE
 
-         integer             :: ndir,nfreq, mainangi
-         integer             :: ndirsw,nfreqsw
+         integer             :: ndir, nfreq, mainangi
+         integer             :: ndirsw, nfreqsw
          integer             :: Insteps, Swancircle
-         real(r8)            :: dur,dt
-         real(r8)            :: fnyq,fmax,fmin,df
+         real(r8)            :: dur, idt
+         real(r8)            :: fmax, fmin, df
          real(r8)            :: ddir,fp
          real(r8)            :: mainang, hm0gew, dang,int
          real(r8)            :: df_fft
@@ -104,7 +105,6 @@
          real(r8), pointer :: SDD(:)
          real(r8), pointer :: phase(:,:)
          real(r8), pointer :: amp(:,:)
-         real(r8), pointer :: pos_f(:)
          real(r8), pointer :: zeta(:,:)
 # ifdef VARY_ACBC
          real(r8), pointer :: Ampzeta(:,:,:)
@@ -190,13 +190,6 @@
 !
       integer, intent(in) :: ng, first, tile
 
-!  Local variable declarations.
-
-!      integer :: i, j, dir_index, numavg, numavgh, start, tidx, dindex
-!      integer, allocatable :: peaks(:)
-!      real(r8) :: cff
-!      real(r8), allocatable :: zeta_filt(:), zeta_filt2(:)
-!
 !-----------------------------------------------------------------------
 ! Read swan output spectra
 !-----------------------------------------------------------------------
@@ -204,19 +197,19 @@
       call swan_reader (ng, first, tile)
 !
 !-----------------------------------------------------------------------
-! Generate the arrays for the frequency components and Fourier components
+! Generate the arrays 
 !-----------------------------------------------------------------------
 !
       call array_gen (ng, first)
 !
 !-----------------------------------------------------------------------
-! Generate random phases for each frequency component
+! Generate random phases for each frequency-direction component
 !-----------------------------------------------------------------------
 !
       call random_phase (ng)
 !
 !-----------------------------------------------------------------------
-! Compute the amplitudes for each frequency component
+! Compute the amplitudes for each frequency-direction component
 !-----------------------------------------------------------------------
 !
       call amplitudes (ng)
@@ -231,10 +224,8 @@
 ! Compute the boundwave
 !-----------------------------------------------------------------------
 !
-      call boundwave (ng, tile, first)
+       call boundwave (ng, tile, first)
 !
-!-----------------------------------------------------------------------
-! Compute the Hilbert transform
 !-----------------------------------------------------------------------
 !
       RETURN
@@ -269,22 +260,27 @@
 !  Local variable declarations.
 
       logical             :: rectangular
-      integer             :: i, t, d, j, k, p, n_pos_f, offset
+      integer             :: dd, ff, k, offset, i
       real(r8), parameter :: IJspv = 0.0_r8
-      real(r8)            :: Fmin, Fmax, cff
+      real(r8)            :: cff
       real(r8)            :: my_min, my_max
       real(r8), allocatable :: angle(:,:), Iout(:,:), Jout(:,:)
       real(r8), allocatable :: fsw_2d(:,:), theta_2d(:,:)
       real(r8), allocatable :: f_2d(:,:), wd_2d(:,:), SDSW_circle(:,:)
 !
 !-----------------------------------------------------------------------
-! Define the Nyquist frequency, the maximum and minimum frequencies and 
+! Define the Nyquist frequency and minimum frequency and 
 ! the number of directional bins
 !-----------------------------------------------------------------------
 !
       IF (first.eq.1) THEN
-        WAVES(ng)%nfreq=100   !jcw 200 ! based on Van Dongeren et al. (2004)
-        WAVES(ng)%fmax=0.5_r8  !! Tmin=2 sec
+# ifdef DOUBLESUM
+!        WAVES(ng)%nfreq=2000
+        WAVES(ng)%nfreq=200
+# elif defined SINGLESUM
+        WAVES(ng)%nfreq=200
+# endif
+        WAVES(ng)%fmax=0.5_r8  !! Tmin = 2 s, this is ~ the Nyquist f
         WAVES(ng)%df=WAVES(ng)%fmax/WAVES(ng)%nfreq
         WAVES(ng)%ndir=ND
         WAVES(ng)%fmin=WAVES(ng)%df
@@ -301,15 +297,15 @@
         allocate (WAVES(ng)%f(WAVES(ng)%nfreq))
         allocate (WAVES(ng)%SD(WAVES(ng)%nfreq,ND))
         allocate (WAVES(ng)%SDD(ND))
-        DO j=1,WAVES(ng)%ndir
-          DO i=1,WAVES(ng)%nfreq
-            WAVES(ng)%SD(i,j)=0.0_r8
+        DO dd=1,WAVES(ng)%ndir
+          DO ff=1,WAVES(ng)%nfreq
+            WAVES(ng)%SD(ff,dd)=0.0_r8
           ENDDO
-          WAVES(ng)%SDD(j)=0.0_r8
+          WAVES(ng)%SDD(dd)=0.0_r8
         ENDDO
 !
-        DO i=1,WAVES(ng)%nfreq
-          WAVES(ng)%f(i)=REAL(i-1,r8)*WAVES(ng)%df+WAVES(ng)%fmin
+        DO ff=1,WAVES(ng)%nfreq
+          WAVES(ng)%f(ff)=REAL(ff-1,r8)*WAVES(ng)%df+WAVES(ng)%fmin
         END DO
       END IF
 !
@@ -333,25 +329,25 @@
       allocate (theta_2d(1:WAVES(ng)%nfreqsw,1:WAVES(ng)%ndirsw*offset))
       allocate (SDSW_circle(1:WAVES(ng)%nfreqsw,                        &
      &                      1:WAVES(ng)%ndirsw*offset))
-      DO i=1,WAVES(ng)%nfreqsw
-        DO j=1,WAVES(ng)%ndirsw*offset
-          angle(i,j)=0.0_r8
+      DO ff=1,WAVES(ng)%nfreqsw
+        DO dd=1,WAVES(ng)%ndirsw*offset
+          angle(ff,dd)=0.0_r8
         END DO
       END DO
-      DO i=1,WAVES(ng)%nfreqsw
-        DO j=1,WAVES(ng)%ndirsw*offset
-          fsw_2d(i,j)=WAVES(ng)%fsw(i)
-          IF (j.le.WAVES(ng)%ndirsw) THEN
-            k=j
-            theta_2d(i,j)=WAVES(ng)%theta(k)-360.0_r8*pi/180.0_r8
-          ELSEIF (j.le.WAVES(ng)%ndirsw*2) THEN
-            k=j-WAVES(ng)%ndirsw
-            theta_2d(i,j)=WAVES(ng)%theta(k)
+      DO ff=1,WAVES(ng)%nfreqsw
+        DO dd=1,WAVES(ng)%ndirsw*offset
+          fsw_2d(ff,dd)=WAVES(ng)%fsw(ff)
+          IF (dd.le.WAVES(ng)%ndirsw) THEN
+            k=dd
+            theta_2d(ff,dd)=WAVES(ng)%theta(k)-360.0_r8*pi/180.0_r8
+          ELSEIF (dd.le.WAVES(ng)%ndirsw*2) THEN
+            k=dd-WAVES(ng)%ndirsw
+            theta_2d(ff,dd)=WAVES(ng)%theta(k)
           ELSE
-            k=j-WAVES(ng)%ndirsw*2
-            theta_2d(i,j)=WAVES(ng)%theta(k)+360.0_r8*pi/180.0_r8
+            k=dd-WAVES(ng)%ndirsw*2
+            theta_2d(ff,dd)=WAVES(ng)%theta(k)+360.0_r8*pi/180.0_r8
           END IF
-          SDSW_circle(i,j)=WAVES(ng)%SDSW(i,k)
+          SDSW_circle(ff,dd)=WAVES(ng)%SDSW(ff,k)
         END DO
       END DO
 !
@@ -361,16 +357,16 @@
       allocate (Jout(1:WAVES(ng)%nfreq,1:ND))
       allocate (f_2d(1:WAVES(ng)%nfreq,1:ND))
       allocate (wd_2d(1:WAVES(ng)%nfreq,1:ND))
-      DO i=1,WAVES(ng)%nfreq
-        DO j=1,ND
-          Iout(i,j)=0.0_r8
-          Jout(i,j)=0.0_r8
+      DO ff=1,WAVES(ng)%nfreq
+        DO dd=1,ND
+          Iout(ff,dd)=0.0_r8
+          Jout(ff,dd)=0.0_r8
         END DO
       END DO
-      DO i=1,WAVES(ng)%nfreq
-        DO j=1,ND
-          f_2d(i,j)=WAVES(ng)%f(i)
-          wd_2d(i,j)=WAVEG(ng)%wd(j)
+      DO ff=1,WAVES(ng)%nfreq
+        DO dd=1,ND
+          f_2d(ff,dd)=WAVES(ng)%f(ff)
+          wd_2d(ff,dd)=WAVEG(ng)%wd(dd)
         END DO
       END DO
 !
@@ -395,23 +391,25 @@
                           my_min, my_max)
       deallocate(angle, Iout, Jout)
       deallocate(fsw_2d, theta_2d, SDSW_circle, f_2d, wd_2d)
+# ifdef SINGLESUM
 !
 !  Sum up all wave E for each dir.
 !
-      DO j=1,WAVES(ng)%ndir
+      DO dd=1,WAVES(ng)%ndir
         cff=0.0_r8
-        DO i=1,WAVES(ng)%nfreq
-          cff=cff+WAVES(ng)%SD(i,j)
+        DO ff=1,WAVES(ng)%nfreq
+          cff=cff+WAVES(ng)%SD(ff,dd)
         ENDDO
-        WAVES(ng)%SDD(j)=cff
+        WAVES(ng)%SDD(dd)=cff
       ENDDO
 !
 !  Sum up E over all freqs
 !
       WAVES(ng)%int=0.0_r8
-      DO i=1,WAVES(ng)%ndir
-        WAVES(ng)%int=WAVES(ng)%int+WAVES(ng)%SDD(i)
+      DO dd=1,WAVES(ng)%ndir
+        WAVES(ng)%int=WAVES(ng)%int+WAVES(ng)%SDD(dd)
       ENDDO
+# endif
 !
       IF (first.eq.1) THEN
 !
@@ -419,19 +417,18 @@
 !
         WAVEB(ng)%ND_bnd=ND
         allocate(WAVEB(ng)%WD_bnd(ND))
-        DO i=1,ND
-          WAVEB(ng)%WD_BND(i)=WAVEG(ng)%wd(i)
+        DO dd=1,ND
+          WAVEB(ng)%WD_BND(dd)=WAVEG(ng)%wd(dd)
         END DO
 !
 !  Determine the time dimensions of duration and num steps.
 !  The Ampzeta time series will repeat every 1/df time steps.
 !
-         WAVES(ng)%dur=1./WAVES(ng)%df
-!        WAVES(ng)%dur=1800.0_r8
-!        WAVES(ng)%dur=900.0_r8
-!  Force the number of steps to be 2000 to Hilbert.
-        WAVES(ng)%Insteps=nint(WAVES(ng)%dur/dt(ng))
-!       WAVES(ng)%Insteps=nint(WAVES(ng)%dur/1.0_r8)
+        WAVES(ng)%dur=1./WAVES(ng)%df
+        WAVES(ng)%idt=4.0_r8
+!       WAVES(ng)%Insteps=nint(WAVES(ng)%dur/dt(ng))
+        WAVES(ng)%Insteps=nint(WAVES(ng)%dur/WAVES(ng)%idt)+1
+!       WAVES(ng)%Insteps=MIN(nint(WAVES(ng)%dur/dt(ng)), 1800)
 !
 !  Allocate and init the computational arrays.
 !
@@ -440,7 +437,6 @@
         allocate(WAVES(ng)%Ampzeta(WAVES(ng)%Insteps,WAVES(ng)%ndir))
 # endif
         allocate(WAVES(ng)%Ampzeta_tot(WAVES(ng)%Insteps))
-!       allocate(WAVES(ng)%bndwave(WAVES(ng)%Insteps))
 !
 !-----------------------------------------------------------------------
 ! Create frequency and directional arrays for the spectra
@@ -452,9 +448,9 @@
       END IF
 !
 # if !defined VARY_ACBC
-      DO j=1,WAVES(ng)%ndir
+      DO dd=1,WAVES(ng)%ndir
         DO i=1,WAVES(ng)%Insteps
-          WAVES(ng)%Ampzeta(i,j)=0.0_r8
+          WAVES(ng)%Ampzeta(i,dd)=0.0_r8
         END DO
       END DO
 
@@ -479,7 +475,7 @@
       
 !  Local variable declarations.
 
-      integer :: i, j, k, Npts, MyError
+      integer :: ff, dd, k, Npts, MyError
       real(r8) :: twopi
 # ifdef DISTRIBUTE
       real(r8), allocatable :: wrk(:)
@@ -492,9 +488,9 @@
 # ifdef DISTRIBUTE
       IF (Master) THEN
 # endif
-        DO i=1,WAVES(ng)%nfreq
-          DO j=1,WAVES(ng)%ndir
-            WAVES(ng)%phase(i,j)=WAVES(ng)%phase(i,j)*twopi
+        DO ff=1,WAVES(ng)%nfreq
+          DO dd=1,WAVES(ng)%ndir
+            WAVES(ng)%phase(ff,dd)=WAVES(ng)%phase(ff,dd)*twopi
           END DO
         END DO
 # ifdef DISTRIBUTE
@@ -508,20 +504,20 @@
       allocate(wrk(Npts))
       IF (Master) THEN
         k=0
-        DO i=1,WAVES(ng)%nfreq
-          DO j=1,WAVES(ng)%ndir
+        DO ff=1,WAVES(ng)%nfreq
+          DO dd=1,WAVES(ng)%ndir
             k=k+1
-            wrk(k)=WAVES(ng)%phase(i,j)
+            wrk(k)=WAVES(ng)%phase(ff,dd)
           END DO
         END DO
       END IF
       CALL MPI_BCAST(wrk, Npts, MP_FLOAT, 0,                            &
      &               OCN_COMM_WORLD, MyError)
       k=0
-      DO i=1,WAVES(ng)%nfreq
-        DO j=1,WAVES(ng)%ndir
+      DO ff=1,WAVES(ng)%nfreq
+        DO dd=1,WAVES(ng)%ndir
           k=k+1
-          WAVES(ng)%phase(i,j)=wrk(k)
+          WAVES(ng)%phase(ff,dd)=wrk(k)
         END DO
       END DO
 !
@@ -575,8 +571,7 @@
 
 !  Local variable declarations.
 !
-      integer                         :: i, j
-      integer                         :: dir_index
+      integer                         :: ff, dd 
       real(r8)                        :: cff1, cff2
 !
 !-----------------------------------------------------------------------
@@ -586,16 +581,17 @@
 !
       cff1=WAVES(ng)%df
       cff2=WAVEG(ng)%pd
-      DO j=1,WAVES(ng)%ndir
-        DO i=1,WAVES(ng)%nfreq
-          WAVES(ng)%amp(i,j)= sqrt(2.0_r8*WAVES(ng)%SD(i,j)*cff1*cff2)
+      DO dd=1,WAVES(ng)%ndir
+        DO ff=1,WAVES(ng)%nfreq
+          WAVES(ng)%amp(ff,dd)= sqrt(2.0_r8*WAVES(ng)%SD(ff,dd)*cff1*cff2)
         END DO
       END DO
 
-! Assing a position in the spectral frequency array to each Fourier component
+! Assigning a position in the spectral frequency array
+! to each Fourier component
 
-      DO i=1,WAVES(ng)%nfreq
-        WAVES(ng)%position(i)=i
+      DO ff=1,WAVES(ng)%nfreq
+        WAVES(ng)%position(ff)=ff
       END DO
 
       RETURN
@@ -657,15 +653,16 @@
 !
 !  Local variable declarations.
 !
-      integer                         :: i, j, m, dindex, tidx
+      integer                         :: i, j, m, tidx
+      integer                         :: ff, dd
       integer                         :: SstrR, SendR, is, jcenter
       integer                         :: MyError, Npts, p1
-      real(r8)                        :: cff, cff1, cff2, DIR3, k3_x, k3_y
+      real(r8)                        :: cff, cff1, cff2, DIR3, kwx, kwy
       real(r8)                        :: twopi, otwopi, x, cff3
       real(r8)                        :: error, kedge
       real(r8)                        :: F, FDER, tanhkh
       real(r8)                        :: L0, k0, k1, kh, wr
-      real(r8)                        :: h0, oh0, fmin, fmax
+      real(r8)                        :: h0, oh0 
       real(r8)                        :: x_mid, y_mid, dx_min
       real(r8), allocatable           :: k(:), angle_edge(:)
       real(r8), allocatable           :: dist_local(:), dist_x(:), dist_y(:)
@@ -684,8 +681,6 @@
 
 # include "set_bounds.h"
 
-      fmin=1.0_r8/20.0_r8
-      fmax=1.0_r8/3.0_r8
       twopi=2.0_r8*pi
       otwopi=1.0_r8/(2.0_r8*pi)
 !
@@ -917,11 +912,11 @@
 !  Compute the wave numbers.
 !
         allocate (k(WAVES(ng)%nfreq))
-        DO i=1,WAVES(ng)%nfreq
-          L0=g*otwopi*(1.0_r8/WAVES(ng)%f(i))**2
+        DO ff=1,WAVES(ng)%nfreq
+          L0=g*otwopi*(1.0_r8/WAVES(ng)%f(ff))**2
           k0=twopi/L0
           error=100.0_r8
-          wr=twopi*WAVES(ng)%f(i)
+          wr=twopi*WAVES(ng)%f(ff)
           DO WHILE(error.gt.maxErr)
             kh=k0*h0
             tanhkh=TANH(kh)
@@ -935,11 +930,13 @@
             error=100.0_r8*ABS((k1-k0)/k0)
             k0=k1
           END DO
-          k(i)=k0
+          k(ff)=k0
         END DO
-!
+
         IF (first.eq.1) THEN
+# ifdef SINGLESUM
           allocate(WAVES(ng)%CompFn(SstrR:SendR,WAVES(ng)%Insteps))
+# endif
           allocate(WAVES(ng)%Ampzeta(SstrR:SendR,                       &
      &             WAVES(ng)%Insteps,WAVES(ng)%ndir))
         END IF
@@ -948,79 +945,75 @@
 !
         DO tidx=1,WAVES(ng)%Insteps
           DO i=SstrR,SendR
+# ifdef SINGLESUM
             WAVES(ng)%CompFn(i,tidx)=0.0_r8
-            DO dindex=1,WAVES(ng)%ndir
-              WAVES(ng)%Ampzeta(i,tidx,dindex)=0.0_r8
+# endif
+            DO dd=1,WAVES(ng)%ndir
+              WAVES(ng)%Ampzeta(i,tidx,dd)=0.0_r8
             END DO
           END DO
         END DO
 !
-!  Here we create a cumulative distribution function based on 
-!  energy specta.  SDD is directional energy spectra (but not x pd).
+!  Here we choose single or double summation.
+!  Single adds up all the contributions for Ampzeta from all dirs, then
+!  scales them back out. Double summ keeps the energy in each dir.
+!
+# ifdef SINGLESUM
+!
+!  Create a cumulative distribution function based on 
+!  energy spectra. SDD is directional energy spectra (but not x pd).
 !
         allocate(SDD_cumul(WAVES(ng)%ndir))
         SDD_cumul(1)=0.0_r8
-        DO dindex=2,WAVES(ng)%ndir
-          cff2=WAVES(ng)%SDD(dindex)/WAVES(ng)%int
+        DO dd=2,WAVES(ng)%ndir
+          cff2=WAVES(ng)%SDD(dd)/WAVES(ng)%int
           IF (cff2.gt.0.10_r8) THEN
-            SDD_cumul(dindex)=SDD_cumul(dindex-1)+WAVES(ng)%SDD(dindex)
+            SDD_cumul(dd)=SDD_cumul(dd-1)+WAVES(ng)%SDD(dd)
           ELSE
-            SDD_cumul(dindex)=SDD_cumul(dindex-1)
+            SDD_cumul(dd)=SDD_cumul(dd-1)
           END IF
         END DO
 !  Scale SDD_cumul so it goes from ~0.0 to 1.0
-        DO j=1,WAVES(ng)%ndir
-          SDD_cumul(j)=SDD_cumul(j)/SDD_cumul(WAVES(ng)%ndir)
+        DO dd=1,WAVES(ng)%ndir
+          SDD_cumul(dd)=SDD_cumul(dd)/SDD_cumul(WAVES(ng)%ndir)
         END DO
         cff2=0.0_r8
-        DO j=1,WAVES(ng)%nfreq
-          IF ((WAVES(ng)%f(j).ge.fmin).and.(WAVES(ng)%f(j).le.fmax)) THEN
 !
+!  Loop over all freqs.
+!
+        DO ff=1,WAVES(ng)%nfreq
 !  Determine which direction to use for this freq.
-!
-            call random_number(cff1)
-            DO dindex=1,ND
-              IF (cff1.lt.SDD_cumul(dindex)) THEN
-                m=dindex
-                EXIT
+          call random_number(cff1)
+          DO dd=1,ND
+            IF (cff1.lt.SDD_cumul(dd)) THEN
+              m=dd
+              EXIT
+            END IF
+          END DO
+!  Compute the amplitude time series for the boundary AC forcing.
+          DO i=SstrR,SendR
+            DIR3=1.5_r8*pi-WAVEG(ng)%wd(m)-angle_edge(i)
+            kwx=k(ff)*cos(DIR3)
+            kwy=k(ff)*sin(DIR3)
+            kedge=kwx*dist_x(i)+kwy*dist_y(i)
+            DO dd=1,ND
+              IF ((WAVES(ng)%SDD(dd)/WAVES(ng)%int).gt.                 &
+     &             0.10_r8) THEN
+                DO tidx=1,WAVES(ng)%Insteps
+                  cff=REAL((tidx-1),r8)*WAVES(ng)%idt
+                  cff2=WAVES(ng)%amp(ff,dd)*                            &
+     &                      COS(twopi*WAVES(ng)%f(ff)*cff+              &
+     &                      WAVES(ng)%phase(ff,dd)-                     &
+     &                      kedge)
+                  WAVES(ng)%CompFn(i,tidx)=WAVES(ng)%CompFn(i,tidx)+    &
+     &                                     cff2
+                END DO
               END IF
             END DO
-!
-!  Here we limit the wavelength to not be smaller than 4x dxmin
-!
-            IF (twopi/k(j).le.(4.0_r8*dx_min)) THEN
-              cff3=0.0_r8
-            ELSE
-              cff3=k(j)
-            END IF
-!
-!  Here we compute the amplitude time series for the boundary AC forcing.
-!
-            DO i=SstrR,SendR
-              DIR3=1.5_r8*pi-WAVEG(ng)%wd(m)-angle_edge(i)
-              k3_x=cff3*cos(DIR3)
-              k3_y=cff3*sin(DIR3)
-              kedge=k3_x*dist_x(i)+k3_y*dist_y(i)
-              DO dindex=1,ND
-                IF ((WAVES(ng)%SDD(dindex)/WAVES(ng)%int).gt.           &
-     &               0.10_r8) THEN
-                  DO tidx=1,WAVES(ng)%Insteps
-                    cff=REAL((tidx-1),r8)*dt(ng)
-                    cff2=WAVES(ng)%amp(j,dindex)*                       &
-     &                        COS(twopi*WAVES(ng)%f(j)*cff+             &
-     &                        WAVES(ng)%phase(j,dindex)-                &
-     &                        kedge)
-                    WAVES(ng)%CompFn(i,tidx)=WAVES(ng)%CompFn(i,tidx)+  &
-     &                                       cff2
-                  END DO
-                END IF
-              END DO
-            END DO
-          END IF
+          END DO
         END DO
 !
 !  Sum over all the directions and then partition out.
-!  I put it back into CompFn incase we want to filter in time and space.
 !
         DO i=SstrR,SendR
           DO tidx=1,WAVES(ng)%Insteps
@@ -1032,36 +1025,76 @@
             WAVES(ng)%CompFn(i,tidx)=WAVES(ng)%Ampzeta_tot(tidx)
           END DO
         END DO
-!
+
         allocate(Hsig_check(SstrR:SendR))
         DO i=SstrR,SendR
           cff=0.0_r8
-          DO dindex=1,ND
+          DO dd=1,ND
             DO tidx=1,WAVES(ng)%Insteps
               cff1=0.5_r8*((ABS(WAVES(ng)%CompFn(i,tidx)))**2)*         &
-     &                                   WAVES(ng)%SDD(dindex)/         &
+     &                                   WAVES(ng)%SDD(dd)/             &
      &                                   WAVES(ng)%int
-              WAVES(ng)%Ampzeta(i,tidx,dindex)=cff1*g*rho0
+              WAVES(ng)%Ampzeta(i,tidx,dd)=cff1*g*rho0
               cff=cff+cff1
             END DO
           END DO
           Hsig_check(i)=4.0_r8*sqrt(cff/WAVES(ng)%Insteps)
         END DO
-!
+
 !  Scale boundary Hwave so the temporal avg = Hm0 from SWAN spec2d
-!
+
         DO i=SstrR,SendR
           cff=WAVES(ng)%hm0gew/Hsig_check(i)
-          DO dindex=1,ND
+          DO dd=1,ND
             DO tidx=1,WAVES(ng)%Insteps
-              WAVES(ng)%Ampzeta(i,tidx,dindex)=                         &
-     &               WAVES(ng)%Ampzeta(i,tidx,dindex)*cff
+              WAVES(ng)%Ampzeta(i,tidx,dd)=                             &
+     &               WAVES(ng)%Ampzeta(i,tidx,dd)*cff
             END DO
           END DO
         END DO
-!
-        deallocate (k, angle_edge, dist_x, dist_y)
         deallocate(SDD_cumul, Hsig_check)
+# endif
+# ifdef DOUBLESUM
+!  Compute the amplitude time series for the boundary AC forcing.
+!  Dont sum over the directions.
+          DO dd=1,WAVES(ng)%ndir 
+            DO i=SstrR,SendR
+              DO ff=1,WAVES(ng)%nfreq
+                DIR3=1.5_r8*pi-WAVEG(ng)%wd(dd)-angle_edge(i)
+                kwx=k(ff)*COS(DIR3)
+                kwy=k(ff)*SIN(DIR3)
+                kedge=kwx*dist_x(i)+kwy*dist_y(i)
+                DO tidx=1,WAVES(ng)%Insteps
+                  cff=REAL((tidx-1),r8)*WAVES(ng)%idt
+                  cff2=WAVES(ng)%amp(ff,dd)*                          &
+     &                      COS(twopi*WAVES(ng)%f(ff)*cff+            &
+     &                      WAVES(ng)%phase(ff,dd)-                   &
+     &                      kedge)
+                  WAVES(ng)%Ampzeta(i,tidx,dd)=                        &
+     &                          WAVES(ng)%Ampzeta(i,tidx,dd)+cff2
+                END DO
+              END DO
+            END DO
+          END DO
+!
+!  Do Hilbert on each dir separately.
+!
+        DO i=SstrR,SendR
+          DO dd=1,WAVES(ng)%ndir 
+            DO tidx=1,WAVES(ng)%Insteps
+              WAVES(ng)%Ampzeta_tot(tidx)=                             &
+     &                               WAVES(ng)%Ampzeta(i,tidx,dd)
+            END DO
+            call hilbert(WAVES(ng)%Ampzeta_tot,                        &
+     &                 size(WAVES(ng)%Ampzeta_tot))
+            DO tidx=1,WAVES(ng)%Insteps
+              cff1=(ABS(WAVES(ng)%Ampzeta_tot(tidx)))**2
+              WAVES(ng)%Ampzeta(i,tidx,dd)=0.5_r8*cff1*g*rho0
+            END DO
+          END DO
+        END DO
+# endif
+        deallocate (k, angle_edge, dist_x, dist_y)
       END IF
       RETURN
       END SUBROUTINE FourierComp_tile
@@ -1082,13 +1115,11 @@
 
 !  Local variable declarations.
 !
-      integer                         :: i, j, dindex
+      integer                         :: i, ff, dd
       real(r8)                        :: cff
-      real(r8)                        :: twopi, fmin, fmax
+      real(r8)                        :: twopi 
 
       twopi=2.0_r8*pi
-      fmin=1.0_r8/400.0_r8
-      fmax=1.0_r8/3.0_r8
 
       IF (  ((LBC(iwest,isAC3d,ng)%acquire).and.                        &
      &       (DOMAIN(ng)%Western_Edge(tile)) ).or.                      &
@@ -1102,17 +1133,15 @@
       DO i=1,WAVES(ng)%Insteps
         WAVES(ng)%CompFn(i)=0.0_r8
       END DO
-      DO dindex=1,ND
-        DO j=1,WAVES(ng)%nfreq
-          IF ((WAVES(ng)%f(j).ge.fmin).and.(WAVES(ng)%f(j).le.fmax)) THEN
+      DO dd=1,ND
+        DO ff=1,WAVES(ng)%nfreq
           DO i=1,WAVES(ng)%Insteps
-            cff=REAL((i-1),r8)*dt(ng)
+            cff=REAL((i-1),r8)*WAVES(ng)%idt
             WAVES(ng)%CompFn(i)=WAVES(ng)%CompFn(i)+                    &
-     &                          WAVES(ng)%amp(j,dindex)*                &
-     &                          COS(twopi*WAVES(ng)%f(j)*cff+           &
-     &                          WAVES(ng)%phase(j,dindex))
+     &                          WAVES(ng)%amp(ff,dd)*                   &
+     &                          COS(twopi*WAVES(ng)%f(ff)*cff+          &
+     &                          WAVES(ng)%phase(ff,dd))
           END DO
-          END IF
         END DO
       END DO
 !
@@ -1125,11 +1154,11 @@
 ! Compute the wave energy, scale for each direction
 !-----------------------------------------------------------------------
 !
-      DO dindex=1,ND
+      DO dd=1,ND
         DO i=1,WAVES(ng)%Insteps
-          WAVES(ng)%Ampzeta(i,dindex)=0.5_r8*g*rho0*                     &
+          WAVES(ng)%Ampzeta(i,dd)=0.5_r8*g*rho0*                         &
      &                                (WAVES(ng)%Ampzeta_tot(i)**2)*     &
-     &                                 WAVES(ng)%SDD(dindex)/            &
+     &                                 WAVES(ng)%SDD(dd)/                &
      &                                 WAVES(ng)%int
         ENDDO
       ENDDO
@@ -1195,12 +1224,12 @@
 !
 !  Local variable declarations.
 !
-      integer                         :: i, j, t, is, p1, p2, f1, f2, dum
+      integer                         :: i, j, t, is, p1, p2, f1, f2
       integer                         :: n1, n2, SstrR, SendR
-      integer                         :: Npts, MyError, jcenter
+      integer                         :: Npts, jcenter
       real(r8)                        :: cff, cff1, cff2, cff3, cff4
-      real(r8)                        :: twopi, otwopi
-      real(r8)                        :: error, Tr_min, fmin, fmax
+      real(r8)                        :: twopi, otwopi, og2
+      real(r8)                        :: error, fmin, fmax
       real(r8)                        :: fac1, fac2, fac3, fac4
       real(r8)                        :: L0, k0, k1, kh, wr
       real(r8)                        :: F, FDER, tanhkh
@@ -1209,28 +1238,31 @@
       real(r8)                        :: D1, D2, D3, D4, D1a, D3a, DTOT
       real(r8)                        :: h0, oh0, E3, DIR3, fac5
       real(r8)                        :: x_mid, y_mid
+      real(r8), dimension(WAVES(ng)%Insteps) :: junk4
+!      real(r8), dimension(0:Lm(ng)+1,WAVES(ng)%Insteps) :: junk1
+!      real(r8), dimension(WAVES(ng)%Insteps,0:Lm(ng)+1) :: junk1
+!
+!      real(r8), dimension(0:Lm(ng)+1) :: dist_x, dist_y
       real(r8), dimension((Lm(ng)+2)*(Mm(ng)+2)) :: Awrk
       real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: h_local
       real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: zeta_local
       real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: xr_local
       real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: yr_local
 
-!      real(r8), allocatable           :: E1d(:), D1d(:), P1d(:)
-      real(r8), allocatable           :: k(:)
-      real(r8), allocatable           :: dist_local(:), dist_x(:), dist_y(:)
-      real(r8), allocatable           :: junk1(:), junk2(:), junk3(:), junk4(:)
-      real(r8), allocatable           :: junk(:,:)
+      real(r8), allocatable           :: k(:), ocoshkh(:)
+      real(r8), allocatable           :: dist_local(:)
+      real(r8), allocatable           :: junk1(:,:)
+      real(r8), allocatable           :: dist_x(:), dist_y(:)
 
-# ifdef DISTRIBUTE
-      real(r8), allocatable :: wrk(:)
-# endif
+!# ifdef DISTRIBUTE
+!      real(r8), allocatable :: wrk(:)
+!# endif
       real(r8), parameter :: maxErr = 0.1_r8
       real(r8), parameter :: eps = 1.0E-10_r8
 
 # include "set_bounds.h"
         twopi=2.0_r8*pi
         otwopi=1.0_r8/(2.0_r8*pi)
-        Tr_min=1.0_r8
         fmin=1.0_r8/400.0_r8
         fmax=1.0_r8/30.0_r8
 !
@@ -1443,7 +1475,7 @@
 !
         allocate (k(WAVES(ng)%nfreq))
 !
-! Compute the wave number or each freq bin
+! Compute the wave number of each freq bin
 !
         DO i=1,WAVES(ng)%nfreq
           L0=g*otwopi*(1.0_r8/WAVES(ng)%f(i))**2.0_r8
@@ -1466,64 +1498,70 @@
           k(i)=k0
         END DO
 !
+!make some temp arrays
+!
+        allocate (ocoshkh(WAVES(ng)%nfreq))
+        DO i=1,WAVES(ng)%nfreq
+          fac2=cosh(k(i)*h0)
+          ocoshkh(i)=1.0_r8/fac2
+        END DO
+!
 ! Compute the wave number or each freq bin
 !
 ! Compute the energy transfer for each pair of frequency bins.
 !
-        allocate( junk1(WAVES(ng)%Insteps))
-        allocate( junk2(WAVES(ng)%Insteps))
-        allocate( junk3(WAVES(ng)%Insteps))
-        allocate( junk4(WAVES(ng)%Insteps))
+        allocate (junk1(SstrR:SendR,WAVES(ng)%Insteps))
         DO t=1,WAVES(ng)%Insteps
-          junk1(t)=0.0_r8
-          junk2(t)=0.0_r8
-          junk3(t)=0.0_r8
-          junk4(t)=REAL(t,r8)
+          junk4(t)=REAL(t-1,r8)*WAVES(ng)%idt
+          DO j=SstrR,SendR
+            junk1(j,t)=0.0_r8
+          END DO
         END DO
         fac4=WAVES(ng)%df
         fac5=WAVEG(ng)%pd
+        og2=1.0_r8/(g**2)
+!  Do the double summation loop.
 !
         DO f1=1,WAVES(ng)%nfreq-1
 !
 !  Report percent done
 !
-              IF (DOMAIN(ng)%SouthWest_Corner(tile).or.                 &
-     &            DOMAIN(ng)%NorthEast_Corner(tile)) THEN
-                cff2=REAL(f1,r8)/REAL(WAVES(ng)%nfreq,r8)
-                IF (MOD(INT(cff2*100.0_r8),10).eq.0) THEN
-                  write(*,*) 'percent done for computing bndwave is ',  &
-     &                       INT(cff2*100.0_r8)
-                END IF
-              END IF
+          IF (DOMAIN(ng)%SouthWest_Corner(tile).or.                     &
+     &        DOMAIN(ng)%NorthEast_Corner(tile)) THEN
+            cff2=REAL(f1,r8)/REAL(WAVES(ng)%nfreq,r8)
+            IF (MOD(INT(cff2*100.0_r8),10).eq.0) THEN
+              write(*,*) 'percent done for computing bndwave is ',      &
+     &                    INT(cff2*100.0_r8)
+            END IF
+          END IF
+
+          DO f2=f1+1,WAVES(ng)%nfreq
 !
-!  Do the double summation loop.
+! Compute the freq dif
 !
-          DO f2=f1,WAVES(ng)%nfreq
             DDf=WAVES(ng)%f(f2)-WAVES(ng)%f(f1)
 !
 !  Limit the freq diff range from 1/400 to 1/30, that is
 !  df=1/400=.0025 to df=1/30=0.033
 !
             IF ((DDf.ge.fmin).and.(DDf.le.fmax)) THEN
+              fac1=WAVES(ng)%f(f1)*WAVES(ng)%f(f2)
+              D1a=g*k(f1)*k(f2)/(8.0_r8*pi**2*fac1)*                    &
+     &            ocoshkh(f1)*ocoshkh(f2)
+              D3a=((2.0_r8*pi)**4*(fac1)**2)*og2
+              D4=-0.5*(-WAVES(ng)%f(f1)*k(f2)**2*ocoshkh(f2)**2+               &
+     &                  WAVES(ng)%f(f2)*k(f1)**2*ocoshkh(f1)**2)
+
               DO n1=1,WAVES(ng)%ndir
                 DO n2=1,WAVES(ng)%ndir
 !
-! Compute the freq diff, dir diff, wave number, and phase of bound wave.
+! Compute the dir diff, wave number, and phase of bound wave.
 !
                   DDtheta=abs(WAVEG(ng)%wd(n1)-WAVEG(ng)%wd(n2))
                   k3=sqrt(k(f1)**2+k(f2)**2-                            &
      &               2.0_r8*k(f1)*k(f2)*COS(DDtheta))
                   Z_bw=Waves(ng)%phase(f2,n2)-Waves(ng)%phase(f1,n1)+pi
 
-                  fac1=WAVES(ng)%f(f1)*WAVES(ng)%f(f2)
-                  fac2=1.0_r8/cosh(k(f1)*h0)
-                  fac3=1.0_r8/cosh(k(f2)*h0)
-            
-                  D1a=g*k(f1)*k(f2)/(8.0_r8*pi**2*fac1)*                &
-     &                fac2*fac3
-                  D3a=((2.0_r8*pi)**4*(fac1)**2)/(g**2)
-                  D4=-0.5*(-WAVES(ng)%f(f1)*k(f2)**2*fac3**2+           &
-     &                      WAVES(ng)%f(f2)*k(f1)**2*fac2**2)
 !
 !  Compute the double summation.
 !
@@ -1535,6 +1573,7 @@
 !
 !  Compute energy of bound wave
 !
+!   jcw is this **2 for both
                   E3=2.0_r8*DTOT**2*                                    &
      &              WAVES(ng)%SD(f1,n1)*WAVES(ng)%SD(f2,n2)*fac4*fac5**2
                   A3=SQRT(2.0_r8*E3*fac4)
@@ -1546,7 +1585,7 @@
                   cff2=k(f2)*cos(WAVEG(ng)%wd(n2))-                     &
      &                 k(f1)*cos(WAVEG(ng)%wd(n1))
                   DIR3=atan(cff1/cff2)
-                  k3_x=k3*cos(1.5_r8*pi-DIR3)   !DIR3 is in nautical coordinates
+                  k3_x=k3*cos(1.5_r8*pi-DIR3)  !DIR3 is nautical coords
                   k3_y=k3*sin(1.5_r8*pi-DIR3)
 !
 !  Compute this contribution to the bndwave (water level) and associated 
@@ -1556,34 +1595,17 @@
 !  the free surface elevation)
 !
 # ifdef VARY_ACBC
+!  The implicit time do loop here allows compiler to optimize it.
                   DO j=SstrR,SendR
-                  cff2=k3_x*dist_x(j)+k3_y*dist_y(j)
+                    cff2=k3_x*dist_x(j)+k3_y*dist_y(j)
+!                     junk1(j,:)=junk1(j,:)+A3*COS(-2.0_r8*pi*DDf*junk4(:)+Z_bw+cff2)
+                    DO t=1,WAVES(ng)%Insteps
+                      junk1(j,t)=junk1(j,t)+A3*COS(-2.0_r8*pi*DDf*junk4(t)+Z_bw+cff2)
+                    END DO
+                  END DO
 # else
-                  cff2=0.0_r8
-# endif
-!
-                  junk2(:)=-2.0_r8*pi*DDf*junk4(:)*dt(ng)+Z_bw+cff2
-                  junk1(:)=A3*COS(junk2(:))
-
-!  The currents need to be rotated to the roms grid plus they are
-!  defined in the rho points
-!  Here we assume these waves are shallow progressive water waves
-# ifdef VARY_ACBC
-                  WAVES(ng)%bndwave_z(j,:)=WAVES(ng)%bndwave_z(j,:)+    &
-     &                                     junk1(:)
-                  WAVES(ng)%bndwave_u(j,:)=WAVES(ng)%bndwave_u(j,:)+    &
-     &                                     junk1(:)*oh0*sqrt(g*h0)
-                  WAVES(ng)%bndwave_v(j,:)=WAVES(ng)%bndwave_v(j,:)+    &
-     &                                     junk1(:)*oh0*sqrt(g*h0)
-# else
-                  WAVES(ng)%bndwave_z(:)=WAVES(ng)%bndwave_z(:)+junk1(:)
-                  WAVES(ng)%bndwave_u(:)=WAVES(ng)%bndwave_u(:)+        &
-     &                                   junk1(:)*oh0*sqrt(g*h0)
-                  WAVES(ng)%bndwave_v(:)=WAVES(ng)%bndwave_v(:)+        &
-     &                                   junk1(:)*oh0*sqrt(g*h0)
-# endif
-# ifdef VARY_ACBC
-                END DO
+                  junk1=junk1+A3*COS(-2.0_r8*pi*DDf*junk4+Z_bw)
+!                 junk1=junk1+A3*COS(-2.0_r8*pi*DDf*WAVES(ng)%idt*REAL(t,r8)+Z_bw)
 # endif
                 END DO
               END DO
@@ -1591,9 +1613,31 @@
           END DO
         END DO
 !
+!  The currents need to be rotated to the roms grid plus they are
+!  defined in the rho points
+!  Here we assume these waves are shallow progressive water waves
+!
+        DO j=SstrR,SendR
+# ifdef VARY_ACBC
+          WAVES(ng)%bndwave_z(j,:)=WAVES(ng)%bndwave_z(j,:)+            &
+     &                             junk1(j,:)
+          WAVES(ng)%bndwave_u(j,:)=WAVES(ng)%bndwave_u(j,:)+            &
+     &                             junk1(J,:)*oh0*sqrt(g*h0)
+          WAVES(ng)%bndwave_v(j,:)=WAVES(ng)%bndwave_v(j,:)+            &
+     &                             junk1(j,:)*oh0*sqrt(g*h0)
+# else
+          WAVES(ng)%bndwave_z(:)=WAVES(ng)%bndwave_z(:)+junk1(:)
+          WAVES(ng)%bndwave_u(:)=WAVES(ng)%bndwave_u(:)+                &
+     &                           junk1(:)*oh0*sqrt(g*h0)
+          WAVES(ng)%bndwave_v(:)=WAVES(ng)%bndwave_v(:)+                &
+     &                           junk1(:)*oh0*sqrt(g*h0)
+# endif
+        END DO
+!
         deallocate(dist_x,dist_y)
-        deallocate (k)
-        deallocate( dist_local, junk1, junk2, junk3, junk4 )
+        deallocate (k, ocoshkh)
+        deallocate (junk1)
+
       END IF
 
       RETURN
