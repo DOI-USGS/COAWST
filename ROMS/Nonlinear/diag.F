@@ -101,6 +101,7 @@
 #endif
 
 #ifdef DISTRIBUTE
+!
       USE distribute_mod, ONLY : mp_reduce
       USE distribute_mod, ONLY : mp_reduce2
 #endif
@@ -147,7 +148,7 @@
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
-      real(r8), intent(in) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
+      real(r8), intent(in) :: t(LBi:UBi,LBj:UBj,N(ng),NT(ng),2)
       real(r8), intent(in) :: wvel(LBi:UBi,LBj:UBj,0:N(ng))
 # endif
 # ifdef ICESHELF
@@ -167,16 +168,26 @@
       integer :: my_max_Ci, my_max_Cj, my_max_Ck
 #ifdef DISTRIBUTE
 # ifdef SOLVE3D
+#  ifdef BIOLOGY
+      integer :: Nreduce
+#  else
       integer, parameter :: Nreduce = 5
+#  endif
       integer, parameter :: Ncourant = 7
 # else
       integer, parameter :: Nreduce = 4
       integer, parameter :: Ncourant = 5
 # endif
-      real(r8), dimension(Nreduce) :: buffer
       real(r8), dimension(Ncourant) :: Courant
+# ifndef BIOLOGY
+      real(r8), dimension(Nreduce) :: buffer
       character (len=3), dimension(Nreduce) :: op_handle
       character (len=6), dimension(Nreduce) :: C_handle
+# else
+      real(r8), dimension(NBT+5) :: buffer
+      character (len=3), dimension(NBT+5) :: op_handle
+      character (len=6), dimension(NBT+5) :: C_handle
+# endif
 #else
       integer :: my_threadnum
 #endif
@@ -210,6 +221,15 @@
 !  total energy, volume, Courant numbers.
 !-----------------------------------------------------------------------
 !
+#ifdef DISTRIBUTE
+# ifdef BIOLOGY
+      Nreduce = 5 + NBT
+# endif
+!     IF (.not. allocated(buffer))    allocate (buffer(Nreduce))
+!     IF (.not. allocated(op_handle)) allocate (op_handle(Nreduce))
+!     IF (.not. allocated(C_handle))  allocate (C_handle(Nreduce))
+#endif
+
       IF (MOD(iic(ng)-1,ninfo(ng)).eq.0) THEN
         my_max_C =0.0_r8
         my_max_Cu=0.0_r8
