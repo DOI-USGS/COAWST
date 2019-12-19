@@ -88,9 +88,6 @@
 # if defined SED_MORPH
      &                       SEDBED(ng) % bed_thick,                    &
 # endif
-# ifdef SED_SLUMP
-     &                       OCEAN(ng) % vbar,                          &
-# endif
      &                       SEDBED(ng) % ursell_no,                    &
      &                       SEDBED(ng) % RR_asymwave,                  &
      &                       SEDBED(ng) % beta_asymwave,                &
@@ -145,9 +142,6 @@
      &                             angler,                              &
 # if defined SED_MORPH
      &                             bed_thick,                           &
-# endif
-# ifdef SED_SLUMP
-     &                             vbar,                                &
 # endif
      &                             ursell_no,                           &
      &                             RR_asymwave, beta_asymwave,          &
@@ -215,9 +209,6 @@
 #  if defined SED_MORPH
       real(r8), intent(inout):: bed_thick(LBi:,LBj:,:)
 #  endif
-#  ifdef SED_SLUMP
-      real(r8), intent(in):: vbar(LBi:,LBj:,:)
-#  endif
       real(r8), intent(inout) :: ursell_no(LBi:,LBj:)
       real(r8), intent(inout) :: RR_asymwave(LBi:,LBj:)
       real(r8), intent(inout) :: beta_asymwave(LBi:,LBj:)
@@ -275,9 +266,6 @@
       real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj)
 #  if defined SED_MORPH
       real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,2)
-#  endif
-#  ifdef SED_SLUMP
-      real(r8), intent(in):: vbar(LBi:UBi,LBj:UBj,3)
 #  endif
       real(r8), intent(inout) :: ursell_no(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: RR_asymwave(LBi:UBi,LBj:UBj)

@@ -1673,7 +1673,7 @@
               DO itrc=1,NST
                 i=idBmas(itrc)
                 IF (Hout(i,ng)) WRITE (out,160) Hout(i,ng),             &
-     &              'Hout(idfrac)',                                     &
+     &              'Hout(idmass)',                                     &
      &              'Write out mass, sediment ', itrc,                  &
      &              TRIM(Vname(1,i))
               END DO

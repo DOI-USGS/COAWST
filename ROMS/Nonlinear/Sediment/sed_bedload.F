@@ -98,12 +98,6 @@
 # endif
      &                       FORCES(ng) % bustr,                        &
      &                       FORCES(ng) % bvstr,                        &
-# ifdef SED_DUNEFACE
-     &                       GRID(ng) % on_u,                           &
-     &                       GRID(ng) % om_v,                           &
-     &                       OCEAN(ng) % ubar,                          &
-     &                       OCEAN(ng) % vbar,                          &
-# endif
 # if defined BEDLOAD_SOULSBY
      &                       FORCES(ng) % Hwave,                        &
      &                       FORCES(ng) % Lwave,                        &
@@ -151,10 +145,6 @@
      &                             Dwave, Pwave_bot,                    &
 # endif
      &                             bustr, bvstr,                        &
-# ifdef SED_DUNEFACE
-     &                             on_u, om_v,                          &
-     &                             ubar, vbar,                          &
-# endif
 # if defined BEDLOAD_SOULSBY
      &                             Hwave, Lwave,                        &
      &                             angler,                              &
@@ -216,12 +206,6 @@
 #  endif
       real(r8), intent(in) :: bustr(LBi:,LBj:)
       real(r8), intent(in) :: bvstr(LBi:,LBj:)
-#  ifdef SED_DUNEFACE
-      real(r8), intent(in) :: on_u(LBi:,LBj:)
-      real(r8), intent(in) :: om_v(LBi:,LBj:)
-      real(r8), intent(in) :: ubar(LBi:,LBj:,:)
-      real(r8), intent(in) :: vbar(LBi:,LBj:,:)
-#  endif
 #  if defined BEDLOAD_SOULSBY
       real(r8), intent(in) :: Hwave(LBi:,LBj:)
       real(r8), intent(in) :: Lwave(LBi:,LBj:)
@@ -269,12 +253,6 @@
 #  endif
       real(r8), intent(in) :: bustr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: bvstr(LBi:UBi,LBj:UBj)
-#  ifdef SED_DUNEFACE
-      real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
-      real(r8), intent(in) :: ubar(LBi:UBi,LBj:UBj,3)
-      real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,3)
-#  endif
 #  if defined BEDLOAD_SOULSBY
       real(r8), intent(in) :: Hwave(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
@@ -317,7 +295,7 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tau_wE
 # endif
 # ifdef SED_SLUMP
-      real(r8) :: sedslope_wet, sedslope_dry, slopefac_wet, slopefac_dry
+      real(r8) :: slopefac_wet_local, slopefac_dry_local
 # endif
 # ifdef BEDLOAD
       real(r8) :: bedld, bedld_mass, dzdx, dzdy, dzdxdy
@@ -798,110 +776,95 @@
         END DO
 #  ifdef SED_SLUMP
 !
-!  Sed slump computation to allow slumping at wet/dry interface.
+!  Sed slump computation to allow slumping for wet areas everywhere
+!  and  at the wet/dry interface.
 !
-!       sedslopes are the critical slopes to allow slumping.
-        sedslope_wet=0.25_r8
-        sedslope_dry=1.0_r8
-!
-!       slopefac are the scale factors for sediment movement.
+!  sedslopes are the critical slopes to allow slumping.
+!  slopefac are the scale factors for sediment movement.
 !
         cff2=Srho(ised,ng)*(1.0_r8-bed(i,j,1,iporo))
-        slopefac_dry=cff2*0.001_r8  !  kirwan 10 bedcoeff .2, still too much eros
-        slopefac_wet=cff2*0.001_r8  !  
+        slopefac_dry_local=cff2*dt(ng)*slopefac_dry(ng)
+        slopefac_wet_local=cff2*dt(ng)*slopefac_wet(ng)
 !
 #   ifdef SED_MORPH
-        slopefac_wet=slopefac_wet*morph_fac(ised,ng)
-        slopefac_dry=slopefac_dry*morph_fac(ised,ng)
+        slopefac_wet_local=slopefac_wet_local*morph_fac(ised,ng)
+        slopefac_dry_local=slopefac_dry_local*morph_fac(ised,ng)
 #   endif
+!
+!  U-direction slumping
+!
         DO j=Jstr,Jend
           DO i=Istr,Iend+1
             dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
             dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)
+!           dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
+!           dzdy=(bed(i,j,1,ithck)-bed(i,j-1,1,ithck))/on_v(i,j)
             dzdxdy=sqrt(dzdx**2.0_r8+dzdy**2.0_r8)
-! for the wet part
-            cff=ABS(dzdx)-sedslope_wet
-            cff=(0.5_r8+SIGN(0.5_r8,cff))
-!*ABS(dzdx)/(dzdxdy+eps)
-            cff=0.5_r8*cff*(ABS(dzdxdy)-sedslope_wet)*1.0_r8/          &
-     &          (pm(i,j)*pn(i,j))
-            cff2=cff*slopefac_wet*SIGN(1.0_r8,dzdx)
-#  ifdef MASKING
-            cff2=cff2*umask(i,j)
+!  For the wet part
+            cff=ABS(dzdxdy)-sedslope_crit_wet(ng)
+            cff1=(0.5_r8+SIGN(0.5_r8,cff))
+            cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
+            cff2=cff*slopefac_wet_local*SIGN(1.0_r8,dzdx)
+#   ifdef MASKING
+             cff2=cff2*umask(i,j)
 #   ifdef WET_DRY
             cff2=cff2*umask_wet(i,j)
+#    endif
 #   endif
-#  endif
             FX(i,j)=FX(i,j)+cff2
-! for the dry part
-            cff=ABS(dzdx)-sedslope_dry
-            cff=(0.5_r8+SIGN(0.5_r8,cff))
-!*ABS(dzdx)/(dzdxdy+eps)
-            cff=0.5_r8*cff*(ABS(dzdxdy)-sedslope_dry)*1.0_r8/           &
-     &          (pm(i,j)*pn(i,j))
-            cff2=cff*slopefac_dry*SIGN(1.0_r8,dzdx)
-#  ifdef MASKING
+!  For the dry part
+            cff=ABS(dzdx)-sedslope_crit_dry(ng)
+            cff1=(0.5_r8+SIGN(0.5_r8,cff))
+            cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
+            cff2=cff*slopefac_dry_local*SIGN(1.0_r8,dzdx)
+#   ifdef MASKING
             cff2=cff2*umask(i,j)
-#   ifdef WET_DRY
-!           cff2=cff2*rmask_wet(i-1,j)*(1.0_r8-rmask_wet(i,j))+         &
-!    &           cff2*rmask_wet(i,j)*(1.0_r8-rmask_wet(i-1,j))
-            cff2=cff2*(1.0_r8-umask_wet(i,j))
+#    ifdef WET_DRY
+!            cff2=cff2*umask_wet(i,j)
+!             cff2=cff2*(1.0_r8-umask_wet(i,j))
+            cff2=cff2*(1.0_r8-umask_wet(i,j))*                          &
+     &                ((1.0_r8-umask_wet(i-1,j))*umask_wet(i+1,j)+      &
+     &                 (1.0_r8-umask_wet(i+1,j))*umask_wet(i-1,j))
+#    endif
 #   endif
-#  endif
             FX(i,j)=FX(i,j)+cff2
-!
-!  For the lateral shear.
-!
-            cff1=0.5_r8*(vbar(i-1,j,1)+vbar(i-1,j+1,1))
-            cff2=0.5_r8*(vbar(i,j,1)+vbar(i,j+1,1))
-            cff=(cff2-cff1)*0.5_r8*(pm(i-1,j)+pm(i,j))
-!           cff2=MAX(ABS(cff)-0.25_r8,0.0_r8)
-            cff2=MAX(ABS(cff)-0.01_r8,0.0_r8)
-!           cff2=cff2*SIGN(1.0_r8,cff)*100.0_r8
-            cff2=cff2*SIGN(1.0_r8,dzdx)*10.0_r8
-#  ifdef MASKING
-            cff2=cff2*umask(i,j)
-#   ifdef WET_DRY
-            cff2=cff2*(1.0_r8-umask_wet(i,j))
-#   endif
-#  endif
-!            FX(i,j)=FX(i,j)+cff2
           END DO
         END DO
+!
         DO j=Jstr,Jend+1
           DO i=Istr,Iend
-            dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)
+            dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)   ! positive is downhill
             dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
+!           dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
+!           dzdy=(bed(i,j,1,ithck)-bed(i,j-1,1,ithck))/on_v(i,j)
             dzdxdy=sqrt(dzdx**2.0_r8+dzdy**2.0_r8)
-! for the wet part
-            cff=ABS(dzdy)-sedslope_wet
-            cff=(0.5_r8+SIGN(0.5_r8,cff))
-!*ABS(dzdy)/(dzdxdy+eps)
-            cff=0.5_r8*cff*(ABS(dzdxdy)-sedslope_wet)*1.0_r8/           &
-     &          (pm(i,j)*pn(i,j))
-            cff2=cff*slopefac_wet*SIGN(1.0_r8,dzdy)
-#  ifdef MASKING
+! For the wet part
+            cff=ABS(dzdxdy)-sedslope_crit_wet(ng)
+            cff1=(0.5_r8+SIGN(0.5_r8,cff))
+            cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
+            cff2=cff*slopefac_wet_local*SIGN(1.0_r8,dzdy)
+#   ifdef MASKING
             cff2=cff2*vmask(i,j)
-#   ifdef WET_DRY
+#    ifdef WET_DRY
             cff2=cff2*vmask_wet(i,j)
+#    endif
 #   endif
-#  endif
             FE(i,j)=FE(i,j)+cff2
-! for the dry part
-            cff=ABS(dzdy)-sedslope_dry
-            cff=(0.5_r8+SIGN(0.5_r8,cff))
-!*ABS(dzdy)/(dzdxdy+eps)
-            cff=0.5_r8*cff*(ABS(dzdxdy)-sedslope_wet)*1.0_r8/           &
-     &          (pm(i,j)*pn(i,j))
-            cff2=cff*slopefac_dry*SIGN(1.0_r8,dzdy)
-#  ifdef MASKING
+! For the dry part
+            cff=ABS(dzdy)-sedslope_crit_dry(ng)
+            cff1=(0.5_r8+SIGN(0.5_r8,cff))
+            cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
+            cff2=cff*slopefac_dry_local*SIGN(1.0_r8,dzdy)
+#   ifdef MASKING
             cff2=cff2*vmask(i,j)
-#   ifdef WET_DRY
-!           cff2=cff2*rmask_wet(i,j-1)*(1.0_r8-rmask_wet(i,j))+         &
-!    &           cff2*rmask_wet(i,j)*(1.0_r8-rmask_wet(i,j-1))
-            cff2=cff2*(1.0_r8-vmask_wet(i,j))
+#    ifdef WET_DRY
+!            cff2=cff2*vmask_wet(i,j)
+!           cff2=cff2*(1.0_r8-vmask_wet(i,j))
+            cff2=cff2*(1.0_r8-vmask_wet(i,j))*                          &
+     &                ((1.0_r8-vmask_wet(i,j-1))*vmask_wet(i,j+1)+      &
+     &                 (1.0_r8-vmask_wet(i,j+1))*vmask_wet(i,j-1))
+#    endif
 #   endif
-#  endif
             FE(i,j)=FE(i,j)+cff2
           END DO
         END DO
