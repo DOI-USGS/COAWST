@@ -119,6 +119,7 @@
       integer (kind=int_kind) :: ratio, MyStr, MyEnd
       integer (kind=int_kind) :: i, j, ij, add1, add2, got_weight
       integer (kind=int_kind) :: nlink, min_link, max_link
+      integer (kind=int_kind), dimension(MPI_STATUS_SIZE) :: status
       integer (kind=int_kind), dimension(:), allocatable :: Numlinks
       integer (kind=int_kind), dimension(:), allocatable :: Asendi
       integer (kind=int_kind), dimension(:), allocatable :: Arecv1
@@ -927,7 +928,7 @@
 !
       allocate(Numlinks(Nprocs))
       call mpi_gather(num_links_map1, 1, MPI_INT, Numlinks, 1, MPI_INT, &
-     &                MyComm, MyError)
+     &                0, MyComm, MyError)
 !
 !  Now gather all the weights from other nodes to make one combined set.
 !
@@ -969,17 +970,17 @@
 !         Receiving grid1 area.
 !
           call mpi_recv(Arecv1, Numlinks(i), MPI_INT, i-1, 10,          &
-     &                  MyComm, MyError)
+     &                  MyComm, status, MyError)
 !
 !         Receiving grid2 area.
 !
           call mpi_recv(Arecv2, Numlinks(i), MPI_INT, i-1, 20,          &
-     &                  MyComm, MyError)
+     &                  MyComm, status, MyError)
 !
 !         Receiving weights
 !
           call mpi_recv(Arecvw, Numlinks(i)*num_wts, MPI_DOUBLE,i-1,30, &
-     &                  MyComm, MyError)
+     &                  MyComm, status, MyError)
           ij=0
           DO nlink=1,Numlinks(i)
             DO j=1,num_wts
@@ -1043,15 +1044,8 @@
 
       deallocate(Numlinks)
       CALL mpi_comm_rank (MyComm, MyRank, MyError)
-
-      write(*,*) 'doing polerrrrrrrrrrrrrrrrrrr ', MyRank
-
       IF (MyRank.eq.0) THEN
 #endif
-
-
-      write(*,*) 'doing polessssssssssssss ', wts_map1(:,1)
-      
 !-----------------------------------------------------------------------
 !
 !     correct for situations where N/S pole not explicitly included in
