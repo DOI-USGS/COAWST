@@ -23,7 +23,9 @@
       use scrip         ! calls the scrip package subroutine
 
       implicit none
-
+#ifdef MPI
+!      include 'mpif.h'
+#endif
 !     Variables that are used in all the subroutines below
       character(char_len) :: grid1_file, grid2_file
       character(char_len) :: interp_file1, interp_file2
@@ -31,8 +33,11 @@
       character(char_len) :: mo_string, mw_string, ma_string
       integer(int_kind)   :: ncstat, nc_file_id, offset
       integer(int_kind)   :: i, j, c, Ikeep, Jkeep
+      integer(int_kind)   :: ii, jj, ij
       integer(int_kind)   :: mo, ma, mw, nx, ny, grdsize
+      integer(int_kind)   :: igrdstr, igrdstr1, igrdstr2, igrdend
       integer(int_kind)   :: N, INOUT, count
+      integer(int_kind)   :: ratio, MyStr, MyEnd, MyError
       real(dbl_kind)      :: dist1, dist_max, dlon
       real(dbl_kind)      :: latrad1, latrad2, dep, dlat
       real(dbl_kind)      :: xx1, yy1, xx2, yy2, PX, PY
@@ -40,13 +45,47 @@
       integer(int_kind), allocatable :: src_mask_unlim(:,:)
       integer(int_kind), allocatable :: dst_mask_unlim(:,:)
       integer(int_kind), allocatable :: do_adjust(:)
+      integer(int_kind), allocatable :: mask_rho_vec(:), mask_rho_rec(:)
+      integer(int_kind), allocatable :: mask_rho_vec2(:)
+      integer(int_kind), allocatable :: mask_rho_rec2(:)
+      real (dbl_kind), allocatable :: lon_rho_vec(:), lat_rho_vec(:)
+
 
       contains
+
 !=======================================================================
-      subroutine ocn2wav_mask()
+      subroutine get_MyStrMyEnd(MyComm, nx, ny)
+
+      implicit none
+      integer (kind=int_kind), intent(in) :: MyComm, nx, ny
+#ifdef MPI
+      integer (kind=int_kind) :: MyError, MyRank, Nprocs
+
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      CALL mpi_comm_size (MyComm, Nprocs, MyError)
+
+      IF (Nprocs.eq.1) THEN
+        MyStr=1
+        MyEnd=nx*ny
+      ELSE
+        ratio=INT(nx*ny/Nprocs)
+        MyStr=(MyRank*ratio)+1
+        MyEnd=MyStr+ratio-1
+        IF (MyRank+1.eq.Nprocs) MyEnd=nx*ny
+      END IF
+#else
+      MyStr=1
+      MyEnd=nx*ny
+#endif
+
+      end subroutine get_MyStrMyEnd
+
+!=======================================================================
+      subroutine ocn2wav_mask(MyComm)
 
       implicit none
 
+      integer (kind=int_kind), intent(in) :: MyComm
 !     local variables
       real(dbl_kind), allocatable :: XX(:), YY(:)
 
@@ -269,7 +308,7 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile)
+     &                       output_ncfile, MyComm)
 !
 !  Undo the grid adjust.
           if ((do_adjust(mw).eq.1).and.(mo.lt.Ngrids_roms)) then
@@ -305,10 +344,11 @@
 
 !======================================================================
 
-      subroutine wav2ocn_mask()
+      subroutine wav2ocn_mask(MyComm)
 
       implicit none
 
+      integer (kind=int_kind), intent(in) :: MyComm
 !     local variables
       real(dbl_kind), allocatable :: XX(:), YY(:)
 
@@ -484,7 +524,7 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile)
+     &                       output_ncfile, MyComm)
 
           deallocate(ngrd_rm(mo)%dst_mask)
           deallocate(dst_mask_unlim)
@@ -498,10 +538,14 @@
 
 !======================================================================
 
-      subroutine ocn2atm_mask()
+      subroutine ocn2atm_mask(MyComm)
 
       implicit none
 
+#ifdef MPI
+      include 'mpif.h'
+#endif
+      integer (kind=int_kind), intent(in) :: MyComm
 !     local variables
       real(dbl_kind), allocatable :: XX(:), YY(:)
 
@@ -560,15 +604,63 @@
 !  where src_mask=1.
 !
           offset=MIN(mo-1,1)
-          do nx=1,ngrd_wr(ma)%we_size
-            do ny=1,ngrd_wr(ma)%sn_size
+          call get_MyStrMyEnd(MyComm, nx, ny)
+!
+! Chunk out the dst grid to each processor.
+!
+          allocate( lon_rho_vec(nx*ny) )
+          allocate( lat_rho_vec(nx*ny) )
+          allocate( mask_rho_vec(nx*ny) )
+          allocate( mask_rho_rec(nx*ny) )
+          ij=0
+          do ii=1,nx
+            do jj=1,ny
+              ij=ij+1
+              lon_rho_vec(ij)=ngrd_wr(ma)%lon_rho_a(ii,jj)
+              lat_rho_vec(ij)=ngrd_wr(ma)%lat_rho_a(ii,jj)
+              mask_rho_vec(ij)=0
+              mask_rho_rec(ij)=0
+            enddo
+          enddo
+
+!         do nx=1,ngrd_wr(ma)%we_size
+!           do ny=1,ngrd_wr(ma)%sn_size
+          do ij = MyStr,MyEnd
               dist_max=10e6
               Ikeep=1
               Jkeep=1
-              xx2=ngrd_wr(ma)%lon_rho_a(nx,ny)
-              yy2=ngrd_wr(ma)%lat_rho_a(nx,ny)
+!             xx2=ngrd_wr(ma)%lon_rho_a(nx,ny)
+!             yy2=ngrd_wr(ma)%lat_rho_a(nx,ny)
+              xx2=lon_rho_vec(ij)
+              yy2=lat_rho_vec(ij)
+
+! here we determine approx columns to use to limit the search.
+! go along bottom, then top
+              igrdstr1=1
+              j=1
+              do i=1+offset,ngrd_rm(mo)%xi_size-offset
+                xx1=ngrd_rm(mo)%lon_rho_o(i,j)
+                if (xx1.gt.xx2) then
+                  igrdstr1=i
+                  exit
+                end if
+              end do
+              igrdstr2=1
+              j=ngrd_rm(mo)%eta_size
+              do i=1+offset,ngrd_rm(mo)%xi_size-offset
+                xx1=ngrd_rm(mo)%lon_rho_o(i,j)
+                if (xx1.gt.xx2) then
+                  igrdstr2=i
+                  exit
+                end if
+              end do
+              igrdstr=MAX( MIN(igrdstr1,igrdstr2)-4,1+offset)
+              igrdend=MIN( MAX(igrdstr1,igrdstr2)+4,                    &
+     &                     ngrd_rm(mo)%xi_size-offset)
+
               do j=1+offset,ngrd_rm(mo)%eta_size-offset
-                do i=1+offset,ngrd_rm(mo)%xi_size-offset
+!               do i=1+offset,ngrd_rm(mo)%xi_size-offset
+                do i=igrdstr,igrdend
                   xx1=ngrd_rm(mo)%lon_rho_o(i,j)
                   yy1=ngrd_rm(mo)%lat_rho_o(i,j)
                   dlon = xx1-xx2
@@ -584,10 +676,30 @@
                   endif
                 enddo
               enddo
-              ngrd_wr(ma)%dst_mask(nx,ny)=                              &
-     &                                 ngrd_rm(mo)%src_mask(Ikeep,Jkeep)
-            enddo
+              mask_rho_vec(ij)=ngrd_rm(mo)%src_mask(Ikeep,Jkeep)
+!             ngrd_wr(ma)%dst_mask(nx,ny)=                              &
+!    &                                 ngrd_rm(mo)%src_mask(Ikeep,Jkeep)
+!            enddo
           enddo
+#ifdef MPI
+      call mpi_allreduce(mask_rho_vec, mask_rho_rec, nx*ny,             &
+     &                   MPI_INT, MPI_SUM, MyComm, MyError)
+      do ij =1,nx*ny
+          mask_rho_vec(ij)=mask_rho_rec(ij)
+      enddo
+#endif
+!
+!  Unvectorize the mask rho back into a 2D array.
+!
+      ij=0
+      do ii=1,nx
+        do jj=1,ny
+          ij=ij+1
+          ngrd_wr(ma)%dst_mask(ii,jj)=mask_rho_vec(ij)
+        enddo
+      enddo
+      deallocate( lon_rho_vec, lat_rho_vec, mask_rho_vec, mask_rho_rec)
+
 !  Apply the wrf grid Land/Sea mask to dst_mask
           do j=1,ngrd_wr(ma)%sn_size
             do i=1,ngrd_wr(ma)%we_size
@@ -723,7 +835,7 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile)
+     &                       output_ncfile, MyComm)
 !
 !  Undo the grid adjust.
           if ((do_adjust(ma).eq.1).and.(mo.lt.Ngrids_roms)) then
@@ -759,10 +871,14 @@
 
 !======================================================================
 
-      subroutine atm2ocn_mask()
+      subroutine atm2ocn_mask(MyComm)
 
       implicit none
 
+#ifdef MPI
+      include 'mpif.h'
+#endif
+      integer (kind=int_kind), intent(in) :: MyComm
 !     local variables
       real(dbl_kind), allocatable :: XX(:), YY(:)
 
@@ -824,15 +940,65 @@
 !  Compute roms grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
 !
-          do nx=1,ngrd_rm(mo)%xi_size
-            do ny=1,ngrd_rm(mo)%eta_size
+          call get_MyStrMyEnd(MyComm, nx, ny)
+!
+! Chunk out the dst grid to each processor.
+!
+          allocate( lon_rho_vec(nx*ny) )
+          allocate( lat_rho_vec(nx*ny) )
+          allocate( mask_rho_vec(nx*ny) )
+          allocate( mask_rho_rec(nx*ny) )
+          allocate( mask_rho_vec2(nx*ny) )
+          allocate( mask_rho_rec2(nx*ny) )
+          ij=0
+          do ii=1,nx
+            do jj=1,ny
+              ij=ij+1
+              lon_rho_vec(ij)=ngrd_rm(mo)%lon_rho_o(ii,jj)
+              lat_rho_vec(ij)=ngrd_rm(mo)%lat_rho_o(ii,jj)
+              mask_rho_vec(ij)=0
+              mask_rho_rec(ij)=0
+              mask_rho_vec2(ij)=0
+              mask_rho_rec2(ij)=0
+            enddo
+          enddo
+!         do nx=1,ngrd_rm(mo)%xi_size
+!           do ny=1,ngrd_rm(mo)%eta_size
+          do ij = MyStr,MyEnd
               dist_max=10e6
               Ikeep=1
               Jkeep=1
-              xx2=ngrd_rm(mo)%lon_rho_o(nx,ny)
-              yy2=ngrd_rm(mo)%lat_rho_o(nx,ny)
+!             xx2=ngrd_rm(mo)%lon_rho_o(nx,ny)
+!             yy2=ngrd_rm(mo)%lat_rho_o(nx,ny)
+              xx2=lon_rho_vec(ij)
+              yy2=lat_rho_vec(ij)
+
+! here we determine approx columns to use to limit the search.
+! go along bottom, then top
+              igrdstr1=1
+              j=1
+              do i=1,ngrd_wr(ma)%we_size
+                xx1=ngrd_wr(ma)%lon_rho_a(i,j)
+                if (xx1.gt.xx2) then
+                  igrdstr1=i
+                  exit
+                end if
+              end do
+              igrdstr2=1
+              j=ngrd_wr(ma)%sn_size
+              do i=1,ngrd_wr(ma)%we_size
+                xx1=ngrd_wr(ma)%lon_rho_a(i,j)
+                if (xx1.gt.xx2) then
+                  igrdstr2=i
+                  exit
+                end if
+              end do
+              igrdstr=MAX( MIN(igrdstr1,igrdstr2)-4,1)
+              igrdend=MIN( MAX(igrdstr1,igrdstr2)+4,ngrd_wr(ma)%we_size)
+!
               do j=1,ngrd_wr(ma)%sn_size
-                do i=1,ngrd_wr(ma)%we_size
+!               do i=1,ngrd_wr(ma)%we_size
+                do i=igrdstr,igrdend
                   xx1=ngrd_wr(ma)%lon_rho_a(i,j)
                   yy1=ngrd_wr(ma)%lat_rho_a(i,j)
                   dlon = xx1-xx2
@@ -849,11 +1015,41 @@
                 enddo
               enddo
               count=ngrd_wr(ma)%src_mask(Ikeep,Jkeep)
-              ngrd_rm(mo)%dst_mask(nx,ny)=count
+!             ngrd_rm(mo)%dst_mask(nx,ny)=count
+              mask_rho_vec(ij)=count
               count=src_mask_unlim(Ikeep,Jkeep)
-              dst_mask_unlim(nx,ny)=count
-            enddo
+!             dst_mask_unlim(nx,ny)=count
+              mask_rho_vec2(ij)=count
+!           enddo
           enddo
+
+#ifdef MPI
+      call mpi_allreduce(mask_rho_vec, mask_rho_rec, nx*ny,             &
+     &                   MPI_INT, MPI_SUM, MyComm, MyError)
+      do ij =1,nx*ny
+          mask_rho_vec(ij)=mask_rho_rec(ij)
+      enddo
+      call mpi_allreduce(mask_rho_vec2, mask_rho_rec2, nx*ny,           &
+     &                   MPI_INT, MPI_SUM, MyComm, MyError)
+      do ij =1,nx*ny
+          mask_rho_vec2(ij)=mask_rho_rec2(ij)
+      enddo
+#endif
+!
+!  Unvectorize the mask rho back into a 2D array.
+!
+      ij=0
+      do ii=1,nx
+        do jj=1,ny
+          ij=ij+1
+          ngrd_rm(mo)%dst_mask(ii,jj)=mask_rho_vec(ij)
+          dst_mask_unlim(ii,jj)=mask_rho_vec2(ij)
+        enddo
+      enddo
+
+      deallocate( lon_rho_vec, lat_rho_vec, mask_rho_vec, mask_rho_rec)
+      deallocate( mask_rho_vec2, mask_rho_rec2)
+
 !  Apply the roms grid Land/Sea mask to dst_mask
 !  Check to see if there are any dst points that have valid mask
 !  but are not being picked up by the src grid
@@ -949,7 +1145,7 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile)
+     &                       output_ncfile, MyComm)
 !
           deallocate(ngrd_rm(mo)%dst_mask)
           deallocate(src_mask_unlim, dst_mask_unlim)
@@ -963,10 +1159,14 @@
 
 !======================================================================
 
-      subroutine atm2wav_mask()
+      subroutine atm2wav_mask(MyComm)
 
       implicit none
 
+#ifdef MPI
+      include 'mpif.h'
+#endif
+      integer (kind=int_kind), intent(in) :: MyComm
 !     local variables
       real(dbl_kind), allocatable :: XX(:), YY(:)
 
@@ -1009,15 +1209,61 @@
 !  Compute swan grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
 !
-          do nx=1,ngrd_sw(mw)%Numx_swan
-            do ny=1,ngrd_sw(mw)%Numy_swan
+          call get_MyStrMyEnd(MyComm, nx, ny)
+!
+! Chunk out the dst grid to each processor.
+!
+          allocate( lon_rho_vec(nx*ny) )
+          allocate( lat_rho_vec(nx*ny) )
+          allocate( mask_rho_vec(nx*ny) )
+          allocate( mask_rho_rec(nx*ny) )
+          ij=0
+          do ii=1,nx
+            do jj=1,ny
+              ij=ij+1
+              lon_rho_vec(ij)=ngrd_sw(mw)%lon_rho_w(ii,jj)
+              lat_rho_vec(ij)=ngrd_sw(mw)%lat_rho_w(ii,jj)
+              mask_rho_vec(ij)=0
+              mask_rho_rec(ij)=0
+            enddo
+          enddo
+!         do nx=1,ngrd_sw(mw)%Numx_swan
+!           do ny=1,ngrd_sw(mw)%Numy_swan
+          do ij = MyStr,MyEnd
               dist_max=10e6
               Ikeep=1
               Jkeep=1
-              xx2=ngrd_sw(mw)%lon_rho_w(nx,ny)
-              yy2=ngrd_sw(mw)%lat_rho_w(nx,ny)
+!             xx2=ngrd_sw(mw)%lon_rho_w(nx,ny)
+!             yy2=ngrd_sw(mw)%lat_rho_w(nx,ny)
+              xx2=lon_rho_vec(ij)
+              yy2=lat_rho_vec(ij)
+
+! here we determine approx columns to use to limit the search.
+! go along bottom, then top
+              igrdstr1=1
+              j=1
+              do i=1,ngrd_wr(ma)%we_size
+                xx1=ngrd_wr(ma)%lon_rho_a(i,j)
+                if (xx1.gt.xx2) then
+                  igrdstr1=i
+                  exit
+                end if
+              end do
+              igrdstr2=1
+              j=ngrd_wr(ma)%sn_size
+              do i=1,ngrd_wr(ma)%we_size
+                xx1=ngrd_wr(ma)%lon_rho_a(i,j)
+                if (xx1.gt.xx2) then
+                  igrdstr2=i
+                  exit
+                end if
+              end do
+              igrdstr=MAX( MIN(igrdstr1,igrdstr2)-4,1)
+              igrdend=MIN( MAX(igrdstr1,igrdstr2)+4,ngrd_wr(ma)%we_size)
+!
               do j=1,ngrd_wr(ma)%sn_size
-                do i=1,ngrd_wr(ma)%we_size
+!               do i=1,ngrd_wr(ma)%we_size
+                do i=igrdstr,igrdend
                   xx1=ngrd_wr(ma)%lon_rho_a(i,j)
                   yy1=ngrd_wr(ma)%lat_rho_a(i,j)
                   dlon = xx1-xx2
@@ -1033,10 +1279,32 @@
                   endif
                 enddo
               enddo
-              ngrd_sw(mw)%dst_mask(nx,ny)=                              &
-     &                                 ngrd_wr(ma)%src_mask(Ikeep,Jkeep)
-            enddo
+!             ngrd_sw(mw)%dst_mask(nx,ny)=                              &
+!    &                                 ngrd_wr(ma)%src_mask(Ikeep,Jkeep)
+              mask_rho_vec(ij)=ngrd_wr(ma)%src_mask(Ikeep,Jkeep)
+!           enddo
           enddo
+
+#ifdef MPI
+      call mpi_allreduce(mask_rho_vec, mask_rho_rec, nx*ny,             &
+     &                   MPI_INT, MPI_SUM, MyComm, MyError)
+      do ij =1,nx*ny
+          mask_rho_vec(ij)=mask_rho_rec(ij)
+      enddo
+#endif
+!
+!  Unvectorize the mask rho back into a 2D array.
+!
+      ij=0
+      do ii=1,nx
+        do jj=1,ny
+          ij=ij+1
+          ngrd_sw(mw)%dst_mask(ii,jj)=mask_rho_vec(ij)
+        enddo
+      enddo
+      deallocate( lon_rho_vec, lat_rho_vec, mask_rho_vec, mask_rho_rec)
+
+
 !  Apply the swan grid Land/Sea mask to dst_mask
           do j=1,ngrd_sw(mw)%Numy_swan
             do i=1,ngrd_sw(mw)%Numx_swan
@@ -1127,7 +1395,7 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile)
+     &                       output_ncfile, MyComm)
 
           deallocate(ngrd_sw(mw)%dst_mask)
           deallocate(dst_mask_unlim)
@@ -1141,10 +1409,14 @@
 
 !======================================================================
 
-      subroutine wav2atm_mask()
+      subroutine wav2atm_mask(MyComm)
 
       implicit none
 
+#ifdef MPI
+      include 'mpif.h'
+#endif
+      integer (kind=int_kind), intent(in) :: MyComm
 !     local variables
       real(dbl_kind), allocatable :: XX(:), YY(:)
 
@@ -1201,15 +1473,63 @@
 !  where src_mask=1.
 !
           offset=MIN(mw-1,1)
-          do nx=1,ngrd_wr(ma)%we_size
-            do ny=1,ngrd_wr(ma)%sn_size
+          call get_MyStrMyEnd(MyComm, nx, ny)
+!
+! Chunk out the dst grid to each processor.
+!
+          allocate( lon_rho_vec(nx*ny) )
+          allocate( lat_rho_vec(nx*ny) )
+          allocate( mask_rho_vec(nx*ny) )
+          allocate( mask_rho_rec(nx*ny) )
+          ij=0
+          do ii=1,nx
+            do jj=1,ny
+              ij=ij+1
+              lon_rho_vec(ij)=ngrd_wr(ma)%lon_rho_a(ii,jj)
+              lat_rho_vec(ij)=ngrd_wr(ma)%lat_rho_a(ii,jj)
+              mask_rho_vec(ij)=0
+              mask_rho_rec(ij)=0
+            enddo
+          enddo
+
+!         do nx=1,ngrd_wr(ma)%we_size
+!           do ny=1,ngrd_wr(ma)%sn_size
+          do ij = MyStr,MyEnd
               dist_max=10e6
               Ikeep=1
               Jkeep=1
-              xx2=ngrd_wr(ma)%lon_rho_a(nx,ny)
-              yy2=ngrd_wr(ma)%lat_rho_a(nx,ny)
+!             xx2=ngrd_wr(ma)%lon_rho_a(nx,ny)
+!             yy2=ngrd_wr(ma)%lat_rho_a(nx,ny)
+              xx2=lon_rho_vec(ij)
+              yy2=lat_rho_vec(ij)
+
+! here we determine approx columns to use to limit the search.
+! go along bottom, then top
+              igrdstr1=1
+              j=1
+              do i=1+offset,ngrd_sw(mw)%Numx_swan-offset
+                xx1=ngrd_sw(mw)%lon_rho_w(i,j)
+                if (xx1.gt.xx2) then
+                  igrdstr1=i
+                  exit
+                end if
+              end do
+              igrdstr2=1
+              j=ngrd_sw(mw)%Numy_swan
+              do i=1+offset,ngrd_sw(mw)%Numx_swan-offset
+                xx1=ngrd_sw(mw)%lon_rho_w(i,j)
+                if (xx1.gt.xx2) then
+                  igrdstr2=i
+                  exit
+                end if
+              end do
+              igrdstr=MAX( MIN(igrdstr1,igrdstr2)-4,1+offset)
+              igrdend=MIN( MAX(igrdstr1,igrdstr2)+4,                    &
+     &                     ngrd_rm(mo)%xi_size-offset)
+
               do j=1+offset,ngrd_sw(mw)%Numy_swan-offset
-                do i=1+offset,ngrd_sw(mw)%Numx_swan-offset
+!               do i=1+offset,ngrd_sw(mw)%Numx_swan-offset
+                do i=igrdstr,igrdend
                   xx1=ngrd_sw(mw)%lon_rho_w(i,j)
                   yy1=ngrd_sw(mw)%lat_rho_w(i,j)
                   dlon = xx1-xx2
@@ -1225,10 +1545,31 @@
                   endif
                 enddo
               enddo
-              ngrd_wr(ma)%dst_mask(nx,ny)=                              &
-     &                                 ngrd_sw(mw)%src_mask(Ikeep,Jkeep)
-            enddo
+              mask_rho_vec(ij)=ngrd_sw(mw)%src_mask(Ikeep,Jkeep)
+!             ngrd_wr(ma)%dst_mask(nx,ny)=                              &
+!    &                                 ngrd_sw(mw)%src_mask(Ikeep,Jkeep)
+!           enddo
           enddo
+#ifdef MPI
+      call mpi_allreduce(mask_rho_vec, mask_rho_rec, nx*ny,             &
+     &                   MPI_INT, MPI_SUM, MyComm, MyError)
+      do ij =1,nx*ny
+          mask_rho_vec(ij)=mask_rho_rec(ij)
+      enddo
+#endif
+!
+!  Unvectorize the mask rho back into a 2D array.
+!
+      ij=0
+      do ii=1,nx
+        do jj=1,ny
+          ij=ij+1
+          ngrd_wr(ma)%dst_mask(ii,jj)=mask_rho_vec(ij)
+        enddo
+      enddo
+
+      deallocate( lon_rho_vec, lat_rho_vec, mask_rho_vec, mask_rho_rec)
+
 !  Apply the wrf grid Land/Sea mask to dst_mask
           do j=1,ngrd_wr(ma)%sn_size
             do i=1,ngrd_wr(ma)%we_size
@@ -1319,7 +1660,7 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile)
+     &                       output_ncfile, MyComm)
 
           deallocate(ngrd_wr(ma)%dst_mask)
           deallocate(dst_mask_unlim)
@@ -1331,16 +1672,12 @@
 
       end subroutine wav2atm_mask
 
-
-
-
-!!!!!!!!NEWWWWWWWWWWw
-
 !=======================================================================
-      subroutine ocn2ww3_mask()
+      subroutine ocn2ww3_mask(MyComm)
 
       implicit none
 
+      integer (kind=int_kind), intent(in) :: MyComm
 !     local variables
       real(dbl_kind), allocatable :: XX(:), YY(:)
 
@@ -1563,7 +1900,7 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile)
+     &                       output_ncfile, MyComm)
 !
 !  Undo the grid adjust.
           if ((do_adjust(mw).eq.1).and.(mo.lt.Ngrids_roms)) then
@@ -1599,10 +1936,11 @@
 
 !======================================================================
 !
-      subroutine ww32ocn_mask()
+      subroutine ww32ocn_mask(MyComm)
 
       implicit none
 
+      integer (kind=int_kind), intent(in) :: MyComm
 !     local variables
       real(dbl_kind), allocatable :: XX(:), YY(:)
 
@@ -1778,7 +2116,7 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile)
+     &                       output_ncfile, MyComm)
 
           deallocate(ngrd_rm(mo)%dst_mask)
           deallocate(dst_mask_unlim)
@@ -1793,10 +2131,14 @@
       
 !======================================================================
 
-      subroutine atm2ww3_mask()
+      subroutine atm2ww3_mask(MyComm)
 
       implicit none
 
+#ifdef MPI
+      include 'mpif.h'
+#endif
+      integer (kind=int_kind), intent(in) :: MyComm
 !     local variables
       real(dbl_kind), allocatable :: XX(:), YY(:)
 
@@ -1839,15 +2181,61 @@
 !  Compute ww3 grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
 !
-          do nx=1,ngrd_w3(mw)%Numx_ww3
-            do ny=1,ngrd_w3(mw)%Numy_ww3
+          call get_MyStrMyEnd(MyComm, nx, ny)
+!
+! Chunk out the dst grid to each processor.
+!
+          allocate( lon_rho_vec(nx*ny) )
+          allocate( lat_rho_vec(nx*ny) )
+          allocate( mask_rho_vec(nx*ny) )
+          allocate( mask_rho_rec(nx*ny) )
+          ij=0
+          do ii=1,nx
+            do jj=1,ny
+              ij=ij+1
+              lon_rho_vec(ij)=ngrd_w3(mw)%lon_rho_w(ii,jj)
+              lat_rho_vec(ij)=ngrd_w3(mw)%lat_rho_w(ii,jj)
+              mask_rho_vec(ij)=0
+              mask_rho_rec(ij)=0
+            enddo
+          enddo
+!         do nx=1,ngrd_w3(mw)%Numx_ww3
+!           do ny=1,ngrd_w3(mw)%Numy_ww3
+          do ij = MyStr,MyEnd
               dist_max=10e6
               Ikeep=1
               Jkeep=1
-              xx2=ngrd_w3(mw)%lon_rho_w(nx,ny)
-              yy2=ngrd_w3(mw)%lat_rho_w(nx,ny)
+!             xx2=ngrd_w3(mw)%lon_rho_w(nx,ny)
+!             yy2=ngrd_w3(mw)%lat_rho_w(nx,ny)
+              xx2=lon_rho_vec(ij)
+              yy2=lat_rho_vec(ij)
+
+! here we determine approx columns to use to limit the search.
+! go along bottom, then top
+              igrdstr1=1
+              j=1
+              do i=1,ngrd_wr(ma)%we_size
+                xx1=ngrd_wr(ma)%lon_rho_a(i,j)
+                if (xx1.gt.xx2) then
+                  igrdstr1=i
+                  exit
+                end if
+              end do
+              igrdstr2=1
+              j=ngrd_wr(ma)%sn_size
+              do i=1,ngrd_wr(ma)%we_size
+                xx1=ngrd_wr(ma)%lon_rho_a(i,j)
+                if (xx1.gt.xx2) then
+                  igrdstr2=i
+                  exit
+                end if
+              end do
+              igrdstr=MAX( MIN(igrdstr1,igrdstr2)-4,1)
+              igrdend=MIN( MAX(igrdstr1,igrdstr2)+4,ngrd_wr(ma)%we_size)
+!
               do j=1,ngrd_wr(ma)%sn_size
-                do i=1,ngrd_wr(ma)%we_size
+!               do i=1,ngrd_wr(ma)%we_size
+                do i=igrdstr,igrdend
                   xx1=ngrd_wr(ma)%lon_rho_a(i,j)
                   yy1=ngrd_wr(ma)%lat_rho_a(i,j)
                   dlon = xx1-xx2
@@ -1863,10 +2251,31 @@
                   endif
                 enddo
               enddo
-              ngrd_w3(mw)%dst_mask(nx,ny)=                              &
-     &                                 ngrd_wr(ma)%src_mask(Ikeep,Jkeep)
-            enddo
+!             ngrd_w3(mw)%dst_mask(nx,ny)=                              &
+!    &                                 ngrd_wr(ma)%src_mask(Ikeep,Jkeep)
+              mask_rho_vec(ij)=ngrd_wr(ma)%src_mask(Ikeep,Jkeep)
+!           enddo
           enddo
+
+#ifdef MPI
+      call mpi_allreduce(mask_rho_vec, mask_rho_rec, nx*ny,             &
+     &                   MPI_INT, MPI_SUM, MyComm, MyError)
+      do ij =1,nx*ny
+          mask_rho_vec(ij)=mask_rho_rec(ij)
+      enddo
+#endif
+!
+!  Unvectorize the mask rho back into a 2D array.
+!
+      ij=0
+      do ii=1,nx
+        do jj=1,ny
+          ij=ij+1
+          ngrd_w3(mw)%dst_mask(ii,jj)=mask_rho_vec(ij)
+        enddo
+      enddo
+      deallocate( lon_rho_vec, lat_rho_vec, mask_rho_vec, mask_rho_rec)
+
 !  Apply the ww3 grid Land/Sea mask to dst_mask
           do j=1,ngrd_w3(mw)%Numy_ww3
             do i=1,ngrd_w3(mw)%Numx_ww3
@@ -1957,7 +2366,7 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile)
+     &                       output_ncfile, MyComm)
 
           deallocate(ngrd_w3(mw)%dst_mask)
           deallocate(dst_mask_unlim)
@@ -1971,10 +2380,14 @@
 
 !======================================================================
 
-      subroutine ww32atm_mask()
+      subroutine ww32atm_mask(MyComm)
 
       implicit none
 
+#ifdef MPI
+      include 'mpif.h'
+#endif
+      integer (kind=int_kind), intent(in) :: MyComm
 !     local variables
       real(dbl_kind), allocatable :: XX(:), YY(:)
 
@@ -2031,15 +2444,63 @@
 !  where src_mask=1.
 !
           offset=MIN(mw-1,1)
-          do nx=1,ngrd_wr(ma)%we_size
-            do ny=1,ngrd_wr(ma)%sn_size
+          call get_MyStrMyEnd(MyComm, nx, ny)
+!
+! Chunk out the dst grid to each processor.
+!
+          allocate( lon_rho_vec(nx*ny) )
+          allocate( lat_rho_vec(nx*ny) )
+          allocate( mask_rho_vec(nx*ny) )
+          allocate( mask_rho_rec(nx*ny) )
+          ij=0
+          do ii=1,nx
+            do jj=1,ny
+              ij=ij+1
+              lon_rho_vec(ij)=ngrd_wr(ma)%lon_rho_a(ii,jj)
+              lat_rho_vec(ij)=ngrd_wr(ma)%lat_rho_a(ii,jj)
+              mask_rho_vec(ij)=0
+              mask_rho_rec(ij)=0
+            enddo
+          enddo
+!
+!         do nx=1,ngrd_wr(ma)%we_size
+!           do ny=1,ngrd_wr(ma)%sn_size
+          do ij = MyStr,MyEnd
               dist_max=10e6
               Ikeep=1
               Jkeep=1
-              xx2=ngrd_wr(ma)%lon_rho_a(nx,ny)
-              yy2=ngrd_wr(ma)%lat_rho_a(nx,ny)
+!             xx2=ngrd_wr(ma)%lon_rho_a(nx,ny)
+!             yy2=ngrd_wr(ma)%lat_rho_a(nx,ny)
+              xx2=lon_rho_vec(ij)
+              yy2=lat_rho_vec(ij)
+
+! here we determine approx columns to use to limit the search.
+! go along bottom, then top
+              igrdstr1=1
+              j=1
+              do i=1+offset,ngrd_w3(mw)%Numx_ww3-offset
+                xx1=ngrd_w3(mw)%lon_rho_w(i,j)
+                if (xx1.gt.xx2) then
+                  igrdstr1=i
+                  exit
+                end if
+              end do
+              igrdstr2=1
+              j=ngrd_w3(mw)%Numy_ww3
+              do i=1+offset,ngrd_w3(mw)%Numx_ww3-offset
+                xx1=ngrd_w3(mw)%lon_rho_w(i,j)
+                if (xx1.gt.xx2) then
+                  igrdstr2=i
+                  exit
+                end if
+              end do
+              igrdstr=MAX( MIN(igrdstr1,igrdstr2)-4,1+offset)
+              igrdend=MIN( MAX(igrdstr1,igrdstr2)+4,                    &
+     &                     ngrd_rm(mo)%xi_size-offset)
+
               do j=1+offset,ngrd_w3(mw)%Numy_ww3-offset
-                do i=1+offset,ngrd_w3(mw)%Numx_ww3-offset
+!               do i=1+offset,ngrd_w3(mw)%Numx_ww3-offset
+                do i=igrdstr,igrdend
                   xx1=ngrd_w3(mw)%lon_rho_w(i,j)
                   yy1=ngrd_w3(mw)%lat_rho_w(i,j)
                   dlon = xx1-xx2
@@ -2055,10 +2516,34 @@
                   endif
                 enddo
               enddo
-              ngrd_wr(ma)%dst_mask(nx,ny)=                              &
-     &                                 ngrd_w3(mw)%src_mask(Ikeep,Jkeep)
-            enddo
+              mask_rho_vec(ij)=ngrd_w3(mw)%src_mask(Ikeep,Jkeep)
+!             ngrd_wr(ma)%dst_mask(nx,ny)=                              &
+!    &                                 ngrd_w3(mw)%src_mask(Ikeep,Jkeep)
+!           enddo
           enddo
+
+#ifdef MPI
+      call mpi_allreduce(mask_rho_vec, mask_rho_rec, nx*ny,             &
+     &                   MPI_INT, MPI_SUM, MyComm, MyError)
+      do ij =1,nx*ny
+          mask_rho_vec(ij)=mask_rho_rec(ij)
+      enddo
+#endif
+!
+!  Unvectorize the mask rho back into a 2D array.
+!
+      ij=0
+      do ii=1,nx
+        do jj=1,ny
+          ij=ij+1
+          ngrd_wr(ma)%dst_mask(ii,jj)=mask_rho_vec(ij)
+        enddo
+      enddo
+
+      deallocate( lon_rho_vec, lat_rho_vec, mask_rho_vec, mask_rho_rec)
+
+
+
 !  Apply the wrf grid Land/Sea mask to dst_mask
           do j=1,ngrd_wr(ma)%sn_size
             do i=1,ngrd_wr(ma)%we_size
@@ -2149,7 +2634,7 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile)
+     &                       output_ncfile, MyComm)
 
           deallocate(ngrd_wr(ma)%dst_mask)
           deallocate(dst_mask_unlim)
