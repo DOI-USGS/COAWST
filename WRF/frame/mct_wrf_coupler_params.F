@@ -85,6 +85,9 @@
       real(m8), dimension(:), pointer :: dtwav
       real(m8), dimension(:), pointer :: dtatm
 !
+!# ifdef MOVE_NESTS
+      integer, dimension(:), pointer :: wrf_e_we
+!# endif
 # ifdef WAVES_OCEAN
       integer, dimension(:,:), pointer :: nOCN2WAV
       integer, dimension(:,:), pointer :: nWAV2OCN
@@ -120,6 +123,8 @@
       integer, dimension(:), pointer :: full_Jsize
       integer, dimension(:), pointer :: parent_id
       integer, dimension(:), pointer :: moving_nest
+      integer, dimension(:), pointer :: moving_nest_istart
+      integer, dimension(:), pointer :: moving_nest_jstart
 # endif
 
       CONTAINS
@@ -169,11 +174,9 @@
       allocate (full_Jsize(Natm_grids))
       allocate (parent_id(Natm_grids))
       allocate (moving_nest(Natm_grids))
-      DO i=1,Natm_grids-1
-       moving_nest(i)=0
-      END DO
-      moving_nest(Natm_grids)=1
-
+      allocate (moving_nest_istart(Natm_grids))
+      allocate (moving_nest_jstart(Natm_grids))
+      allocate (moving_nest(Natm_grids))
 # endif
 
       RETURN

@@ -111,6 +111,13 @@
         CALL allocate_coupler_iounits
         CALL read_coawst_par(2)
 #endif
+#if defined MCT_INTERP_OC2AT || defined MCT_INTERP_WV2AT
+!
+!  To find out if we have any moving wrf grids, get wrf dst sizes.
+!  This will be compared to wrf actual grid size in mc_wrf_coupler_params.
+!
+        CALL get_wrf_moving_grids
+#endif
 !
 !  Compute the mct send and recv instances.
 !

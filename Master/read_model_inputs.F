@@ -310,6 +310,7 @@
           read(aline(1:indx-1),'(i5)') Natm_grids
           allocate (dtatm(Natm_grids))
           allocate (parentid(Natm_grids))
+          allocate (wrf_e_we(Natm_grids))
 !
 ! Process the time steps
 !
@@ -364,6 +365,15 @@
           aline=ADJUSTL(aline(indx+1:LEN(aline)))
           indx=MAX(INDEX(aline,','),LEN(aline))
           read(aline(1:indx-1),'(i1)') sstupdate
+        END IF
+        IF(aline(1:4).eq.'e_we') THEN
+          indx=INDEX(aline,'=')
+          DO ia=1,Natm_grids
+            aline=aline(indx+1:LEN(aline))
+            indx=INDEX(aline,',')
+            saveline1=TRIM(ADJUSTL(aline(1:indx-1)))
+            read(saveline1,'(i5)') wrf_e_we(ia)
+          END DO
         END IF
       END DO
 !
