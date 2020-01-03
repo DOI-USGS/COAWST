@@ -104,9 +104,6 @@
           IF ((wrf_e_we(ia)-1).ne.src_dims(1)) THEN
             moving_nest(ia)=1
           END IF
-
-          write(*,*) 'wrf e we size ', ia, wrf_e_we(ia),src_dims(1)
-
 !
 ! Close GRID NetCDF file.
 !
