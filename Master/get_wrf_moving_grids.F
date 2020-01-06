@@ -41,12 +41,13 @@
   35  FORMAT(a3,i1,a7,i1,a11)
 !      IF (Myrank.eq.MyMaster) THEN
 !
-!  Set moving nest of grid 1 to be zero.
-        moving_nest(1)=0
+!  Set moving nest of all grids to be zero.
+        DO ia=1,Natm_grids
+          moving_nest(ia)=0
+        END DO
 !
 !  Now do the other wrf grids.
 !
-
         DO ia=2,Natm_grids
 !
 !  Open grid NetCDF file for reading.
