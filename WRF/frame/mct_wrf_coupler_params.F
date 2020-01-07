@@ -174,7 +174,6 @@
       allocate (full_Isize(Natm_grids))
       allocate (full_Jsize(Natm_grids))
       allocate (parent_id(Natm_grids))
-      allocate (moving_nest(Natm_grids))
       allocate (moving_nest_istart(Natm_grids))
       allocate (moving_nest_jstart(Natm_grids))
 # endif
