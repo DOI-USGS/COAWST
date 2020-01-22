@@ -80,8 +80,8 @@ ifdef USE_ROMS
            FFLAGS += -traceback
            FFLAGS += -check uninit
  endif
-        MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
 endif
+        MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
 
 #--------------------------------------------------------------------------
 # Compiling flags for CICE Applications.

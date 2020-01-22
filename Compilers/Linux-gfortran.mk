@@ -77,8 +77,8 @@ ifdef USE_ROMS
            FFLAGS += -O3
            FFLAGS += -ffast-math
  endif
-        MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
 endif
+        MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
 
 #--------------------------------------------------------------------------
 # Compiling flags for CICE Applications.

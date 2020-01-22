@@ -71,8 +71,8 @@ ifdef USE_ROMS
            FFLAGS += -ftree-vectorize -ftree-loop-linear -funroll-loops -w -ffree-form -ffree-line-length-none -frecord-marker=4 -fconvert=big-endian
 ##                   -fconvert=big-endian
  endif
-        MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
 endif
+        MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
 
 #--------------------------------------------------------------------------
 # Compiling flags for CICE Applications.

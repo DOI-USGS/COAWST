@@ -84,8 +84,8 @@ ifdef USE_ROMS
            FFLAGS += -Wl,-no_compact_unwind
            FFLAGS += -Wl,-stack_size,0x64000000
  endif
-        MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
 endif
+        MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
 
 #--------------------------------------------------------------------------
 # Compiling flags for CICE Applications.

@@ -76,8 +76,8 @@ ifdef USE_ROMS
            FFLAGS += -fastsse -Mipa=fast
  endif
            FFLAGS += -Kieee
-        MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
 endif
+        MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
 
 #--------------------------------------------------------------------------
 # Compiling flags for CICE Applications.
