@@ -7,10 +7,10 @@
 fname='scrip_sandy_nowavenest.nc';
 
 %2) enter number of wrf,roms,ww3,and swan grids.
-NGRIDS_ROMS=1;
-NGRIDS_SWAN=0;
-NGRIDS_WW3=1;
-NGRIDS_WRF=1;
+NGRIDS_ROMS=2;
+NGRIDS_SWAN=2;
+NGRIDS_WW3=0;
+NGRIDS_WRF=0;
 
 %%%%%%%%%%%%%%%%%  END OF USER INPUT  %%%%%%%%%%%%%%%%%%%
 
@@ -19,6 +19,7 @@ NGRIDS_WRF=1;
 %  strnames(mm,:)='            ';
 %end
 count=0;
+clear strnames;
 for mo=1:NGRIDS_ROMS
   for mw=1:NGRIDS_SWAN
     count=count+1;
@@ -128,5 +129,57 @@ for mm=1:count
   hold on
   %src_cor_lon(src_cor_lon>pi)=src_cor_lon(src_cor_lon>pi)-2*pi;
   %plot(src_cor_lon(:)*180/pi+360,src_cor_lat(:)*180/pi,'r+')
+end
+
+% compute sum of weights on destination grids
+count=0;
+clear zstring;
+for nn=1:NGRIDS_ROMS
+  count=count+1;
+  zstring(count,:)=['to_ocn',num2str(nn)];
+end
+for nn=1:NGRIDS_SWAN
+  count=count+1;
+  zstring(count,:)=['to_wav',num2str(nn)];
+end
+for nn=1:NGRIDS_WW3
+  count=count+1;
+  zstring(count,:)=['to_wav',num2str(nn)];
+end
+for nn=1:NGRIDS_WRF
+  count=count+1;
+  zstring(count,:)=['to_atm',num2str(nn)];
+end
+%
+for aa=1:count
+  start=1;
+  for ii=1:size(strnames,1)
+    if strmatch(zstring(aa,:),strnames(ii,end-6:end))
+      str=strnames(ii,:)
+      remap=ncread(fname,['/',str,'_weights.nc/remap_matrix']);
+      dst=ncread(fname,['/',str,'_weights.nc/dst_address']);
+      dst_mask=double(ncread(fname,['/',str,'_weights.nc/dst_grid_imask']));
+      dst_lat=ncread(fname,['/',str,'_weights.nc/dst_grid_center_lat']);
+      dst_lon=ncread(fname,['/',str,'_weights.nc/dst_grid_center_lon']);
+      dst_size=ncread(fname,['/',str,'_weights.nc/dst_grid_dims']);
+      if start==1
+        zd=double([1:dst_size(1)*dst_size(2)]*0.);
+        start=0
+      end
+      for mm=1:length(dst)
+        zd(dst(mm))=zd(dst(mm))+remap(1,mm)*dst_mask(dst(mm));
+      end
+    end
+  end
+
+  figure
+  zd2=reshape(zd,dst_size(1),dst_size(2));
+  dst_lon(dst_lon>pi)=dst_lon(dst_lon>pi)-2*pi;
+  dst_lon=reshape(dst_lon,dst_size(1),dst_size(2))*180/pi;
+  dst_lat=reshape(dst_lat,dst_size(1),dst_size(2))*180/pi;
+  dst_mask=double(reshape(dst_mask,dst_size(1),dst_size(2)));
+  pcolorjw(dst_lon,dst_lat,zd2); colorbar
+  title(['Sum of destination weights ',zstring(aa,:)])
+
 end
 
