@@ -11,6 +11,7 @@ NGRIDS_ROMS=2;
 NGRIDS_SWAN=2;
 NGRIDS_WW3=0;
 NGRIDS_WRF=0;
+NGRIDS_HYDRO=1;
 
 %%%%%%%%%%%%%%%%%  END OF USER INPUT  %%%%%%%%%%%%%%%%%%%
 
@@ -32,6 +33,10 @@ for mo=1:NGRIDS_ROMS
   for ma=1:NGRIDS_WRF
     count=count+1;
     strnames(count,:)=['ocn',num2str(mo),'_to_atm',num2str(ma)];
+  end
+  for mh=1:NGRIDS_HYDRO
+    count=count+1;
+    strnames(count,:)=['ocn',num2str(mo),'_to_hyd',num2str(mh)];
   end
 end
 for mw=1:NGRIDS_SWAN
@@ -68,6 +73,13 @@ for ma=1:NGRIDS_WRF
     strnames(count,:)=['atm',num2str(ma),'_to_ocn',num2str(mo)];
   end
 end
+for mh=1:NGRIDS_HYDRO
+  for mo=1:NGRIDS_ROMS
+    count=count+1;
+    strnames(count,:)=['hyd',num2str(mh),'_to_ocn',num2str(mo)];
+  end
+end
+
 
 %if (count~=num_str)
 %  disp('error : numstrings not = number of grid connections');
@@ -149,6 +161,10 @@ end
 for nn=1:NGRIDS_WRF
   count=count+1;
   zstring(count,:)=['to_atm',num2str(nn)];
+end
+for nn=1:NGRIDS_HYDRO
+  count=count+1;
+  zstring(count,:)=['to_hyd',num2str(nn)];
 end
 %
 for aa=1:count
