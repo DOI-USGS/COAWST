@@ -39,15 +39,17 @@ for i=1:length(specpts)
     jrg=[num2str(jg0) ':' num2str(jg1) ]; % jrg='[2318:2722]';
     daplon=xg(ig0:ig1,jg0:jg1); daplat=yg(ig0:ig1,jg0:jg1);
     clear ii jj;
-    
+
     %Interpolate the data to each point and create/write TPAR file
     for wavet=1:length(time)
 %       eval(['hst=squeeze(hsnc{''Significant_height_of_combined_wind_waves_and_swell''}(wavet,',irg,',',jrg,'));']);
         eval(['hst=squeeze(hsnc{''Significant_height_of_combined_wind_waves_and_swell_surface''}(wavet,',irg,',',jrg,'));']); 
         zz=hst>1000;
         hst(zz)=0; %make bad data 0, swan not like NaNs
-        Z1=interp2(daplon,daplat,hst,gx,gy);
-        Z1(isnan(Z1))=0;
+%       Z1=interp2(daplon,daplat,hst,gx,gy);
+%       Z1(isnan(Z1))=0;
+        idxgood=~(isnan(daplon) | isnan(daplat) | isnan(hst));
+        Z1=griddata(double(daplon(idxgood)),double(daplat(idxgood)),double(hst(idxgood)),gx,gy);
         TPAR(wavet,2)=Z1;
     end
 %
@@ -56,8 +58,10 @@ for i=1:length(specpts)
         eval(['tpt=squeeze(tpnc{''Primary_wave_mean_period_surface''}(wavet,',irg,',',jrg,'));']); 
         zz=tpt>1000;
         tpt(zz)=0; %make bad data 0, swan not like NaNs
-        Z1=interp2(daplon,daplat,tpt,gx,gy);
-        Z1(isnan(Z1))=0;
+%       Z1=interp2(daplon,daplat,tpt,gx,gy);
+%       Z1(isnan(Z1))=0;
+        idxgood=~(isnan(daplon) | isnan(daplat) | isnan(tpt));
+        Z1=griddata(double(daplon(idxgood)),double(daplat(idxgood)),double(tpt(idxgood)),gx,gy);
         TPAR(wavet,3)=Z1;
     end
 %
@@ -66,8 +70,18 @@ for i=1:length(specpts)
         eval(['dpt=squeeze(dpnc{''Primary_wave_direction_degree_true_surface''}(wavet,',irg,',',jrg,'));']); 
         zz=dpt>1000;
         dpt(zz)=0; %make bad data 0, swan not like NaNs
-        Z1=interp2(daplon,daplat,dpt,gx,gy);
-        Z1(isnan(Z1))=0;
+%       Z1=interp2(daplon,daplat,dpt,gx,gy);
+%       Z1(isnan(Z1))=0;
+        idxgood=~(isnan(daplon) | isnan(daplat) | isnan(dpt));
+
+        Dwave_Ax=1*cos((90-double(dpt(idxgood)))*pi/180);%grid of x
+        Dwave_Ay=1*sin((90-double(dpt(idxgood)))*pi/180);%grid of y
+        Z1x=griddata(double(daplon(idxgood)),double(daplat(idxgood)),Dwave_Ax,gx,gy);
+        Z1y=griddata(double(daplon(idxgood)),double(daplat(idxgood)),Dwave_Ay,gx,gy);
+        Z1=90 - atan2(Z1y,Z1x)*180/pi; %calculate direction
+        if Z1<0
+            Z1=Z1+360;
+        end
         TPAR(wavet,4)=Z1;
     end
 %

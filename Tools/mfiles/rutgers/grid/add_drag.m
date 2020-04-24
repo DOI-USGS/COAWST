@@ -26,9 +26,9 @@ function add_drag(ncfile, D)
 %                    D.rdrag2    quadratic bottom drag coefficients
 %
 
-% svn $Id: add_drag.m 938 2019-01-28 06:35:10Z arango $
+% svn $Id: add_drag.m 996 2020-01-10 04:28:56Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2019 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

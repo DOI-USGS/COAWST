@@ -527,6 +527,7 @@
       USE OUTP_DATA                                                       40.31
       USE M_PARALL                                                        40.31
       USE M_MPI
+      USE mct_coupler_params
 !
 !
 !

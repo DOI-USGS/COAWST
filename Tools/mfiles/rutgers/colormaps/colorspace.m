@@ -85,7 +85,7 @@ function varargout = colorspace(Conversion,varargin)
 %
 % Pascal Getreuer 2005-2010
 
-% svn $Id: colorspace.m 938 2019-01-28 06:35:10Z arango $
+% svn $Id: colorspace.m 996 2020-01-10 04:28:56Z arango $
 
 %%% Input parsing %%%
 

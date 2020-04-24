@@ -33,9 +33,9 @@ function [deltaR_b]=rho_balance(K,deltaT,deltaS_b);
 %    deltaR_b    Balanced density anomaly.
 %
 
-% svn $Id: rho_balance.m 938 2019-01-28 06:35:10Z arango $
+% svn $Id: rho_balance.m 996 2020-01-10 04:28:56Z arango $
 %===========================================================================%
-%  Copyright (c) 2002-2019 The ROMS/TOMS Group                              %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                              %
 %    Licensed under a MIT/X style license                                   %
 %    See License_ROMS.txt                           Hernan G. Arango        %
 %===========================================================================%

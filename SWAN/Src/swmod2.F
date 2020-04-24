@@ -1109,7 +1109,7 @@
 
 #ifdef SWAN_MODEL
 ! Mine
-      INTEGER, SAVE :: WAV_COMM_WORLD
+!     INTEGER, SAVE :: WAV_COMM_WORLD
       INTEGER :: Numspecl
       INTEGER :: NBGRPT_last
       INTEGER, SAVE, ALLOCATABLE :: BGRIDPG(:,:)

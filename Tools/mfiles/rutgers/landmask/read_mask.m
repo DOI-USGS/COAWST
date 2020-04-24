@@ -24,9 +24,9 @@ function [spherical,x,y,bath,rmask]=read_mask(ncfile)
 %                  rmask=0 land, rmask=1 Sea.
 %
 
-% svn $Id: read_mask.m 938 2019-01-28 06:35:10Z arango $
+% svn $Id: read_mask.m 996 2020-01-10 04:28:56Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2019 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

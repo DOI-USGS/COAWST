@@ -1499,6 +1499,19 @@
 !         value of turbulent viscosity                                    40.35
           IGRD = 12                                                       40.35
           PSNAME = 'TURBGRID'                                             40.35
+#ifdef COAWST_COUPLING
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+          IF (JTURB2.LE.1) THEN                                             40.55
+            MCMVAR = MCMVAR + 2                                             40.55
+            JTURB2 = MCMVAR - 1                                             40.55
+            JTURB3 = MCMVAR                                                 40.55
+            ALOCMP = .TRUE.                                                 40.97
+          ENDIF                                                             40.55
+          DEALLOCATE(M_GENARR_MOD(ng)%TURBF_G)
+          ALLOCATE (M_GENARR_MOD(ng)%TURBF_G(MXG(IGR1)*MYG(IGR1)))
+          TURBF=>M_GENARR_MOD(ng)%TURBF_G
+          TURBF=0.
+#endif
         ELSE IF (KEYWIS ('MUDL')) THEN                                    40.59
 !         fluid mud layer                                                 40.59
           IGRD = 13                                                       40.59
@@ -4435,6 +4448,11 @@
          ALLOCATE (M_GENARR_MOD(ng)%NPLAF_G(MXG(IGR1)*MYG(IGR1)))
          NPLAF=>M_GENARR_MOD(ng)%NPLAF_G
          CALL SWCOPR( TARR, NPLAF, MXG(IGR1)*MYG(IGR1) )                  40.31
+      ELSE IF (IGR1.EQ.12) THEN                                           40.55
+         DEALLOCATE(M_GENARR_MOD(ng)%TURBF_G)
+         ALLOCATE (M_GENARR_MOD(ng)%TURBF_G(MXG(IGR1)*MYG(IGR1)))
+         TURBF=>M_GENARR_MOD(ng)%TURBF_G
+         CALL SWCOPR( TARR, TURBF, MXG(IGR1)*MYG(IGR1) )                  40.31
       END IF                                                              40.31
 #else
       IF (IGR1.EQ.1) THEN                                                 40.31

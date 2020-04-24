@@ -281,6 +281,8 @@
       ALLOCATE (M_GENARR_MOD(ng)%WLEVL_G(1))
       ALLOCATE (M_GENARR_MOD(ng)%ASTDF_G(1))
       ALLOCATE (M_GENARR_MOD(ng)%NPLAF_G(1))
+      ALLOCATE (M_GENARR_MOD(ng)%TURBF_G(1))
+      ALLOCATE (M_GENARR_MOD(ng)%MUDLF_G(1))
       ALLOCATE (COMPT_MOD(ng)%NCOMPT_G)
       NCOMPT=>COMPT_MOD(ng)%NCOMPT_G
       ALLOCATE (COMPT_MOD(ng)%RCOMPT_G(50,5))
@@ -588,6 +590,8 @@
       WLEVL=> M_GENARR_MOD(ng)%WLEVL_G
       ASTDF=> M_GENARR_MOD(ng)%ASTDF_G
       NPLAF=> M_GENARR_MOD(ng)%NPLAF_G
+      TURBF=> M_GENARR_MOD(ng)%TURBF_G
+      MUDLF=> M_GENARR_MOD(ng)%MUDLF_G
 # ifdef WRF_COUPLING
       CosAngler=>M_GENARR_MOD(ng)%CosAngler_G
       SinAngler=>M_GENARR_MOD(ng)%SinAngler_G
@@ -1064,6 +1068,8 @@
       WLEVL=> M_GENARR_MOD(ng)%WLEVL_G
       ASTDF=> M_GENARR_MOD(ng)%ASTDF_G
       NPLAF=> M_GENARR_MOD(ng)%NPLAF_G
+      TURBF=> M_GENARR_MOD(ng)%TURBF_G
+      MUDLF=> M_GENARR_MOD(ng)%MUDLF_G
 # ifdef WRF_COUPLING
       CosAngler=>M_GENARR_MOD(ng)%CosAngler_G
       SinAngler=>M_GENARR_MOD(ng)%SinAngler_G
@@ -2848,7 +2854,9 @@
       JNPLA2= 33                                                          40.55
       JNPLA3= 34                                                          40.55
       JDSXV = 35                                                          40.65 40.61
-      MCMVAR = 35
+      JTURB2= 36                                                           40.35
+      JTURB3= 37                                                           40.35
+      MCMVAR = 37
       LADDS = .TRUE.
 #else
       MCMVAR = 28                                                         41.38 40.65 40.61 40.51 40.13
@@ -2871,10 +2879,10 @@
 !     added for number of plants per square meter                         40.55
       JNPLA2= 1                                                           40.55
       JNPLA3= 1                                                           40.55
-#endif
 !     added for turbulent viscosity                                       40.35
       JTURB2= 1                                                           40.35
       JTURB3= 1                                                           40.35
+#endif
       JGAMMA = 1                                                          41.38
       JRESPL = 1                                                          41.38
 !
@@ -10253,6 +10261,8 @@
       DEALLOCATE(WLEVL )
       DEALLOCATE(ASTDF )
       DEALLOCATE(NPLAF )
+      DEALLOCATE(TURBF )
+      DEALLOCATE(MUDLF )
 # ifdef WRF_COUPLING
       DEALLOCATE(CosAngler)
       DEALLOCATE(SinAngler)
@@ -10303,6 +10313,7 @@
       IF (ALLOCATED(VEGNSL))   DEALLOCATE(VEGNSL)
       IF (ALLOCATED(VEGDRL))   DEALLOCATE(VEGDRL)
       IF (ALLOCATED(TURBF ))   DEALLOCATE(TURBF )
+      IF (ALLOCATED(MUDLF ))   DEALLOCATE(MUDLF )
 !
       IF (ALLOCATED(xcugrd  )) DEALLOCATE(xcugrd  )
       IF (ALLOCATED(ycugrd  )) DEALLOCATE(ycugrd  )

@@ -41,6 +41,7 @@
 !
 #ifdef SWAN_MODEL
       USE M_MPI
+      USE mct_coupler_params
 #else
       USE MPI
 #endif
@@ -253,7 +254,8 @@
       USE OCPCOMM4                                                        40.41
 !COH      USE M_PARALL, ONLY: COMM                                            41.61
 #ifdef SWAN_MODEL
-      USE M_PARALL
+!     USE M_PARALL
+      USE mct_coupler_params
 #endif
 !
       IMPLICIT NONE
@@ -387,6 +389,7 @@
 !
 #ifdef SWAN_MODEL
       USE M_MPI
+      USE mct_coupler_params
 #else
       USE MPI
 #endif
@@ -523,6 +526,7 @@
 !
 #ifdef SWAN_MODEL
       USE M_MPI
+      USE mct_coupler_params
 #else
       USE MPI
 #endif
@@ -668,6 +672,7 @@
 !
 #ifdef SWAN_MODEL
       USE M_MPI
+      USE mct_coupler_params
 #else
       USE MPI
 #endif
@@ -819,6 +824,7 @@
 !
 #ifdef SWAN_MODEL
       USE M_MPI
+      USE mct_coupler_params
 #else
       USE MPI
 #endif
@@ -963,6 +969,7 @@
 !
 #ifdef SWAN_MODEL
       USE M_MPI
+      USE mct_coupler_params
 #else
       USE MPI
 #endif
@@ -1287,6 +1294,7 @@
 !
 #ifdef SWAN_MODEL
       USE M_MPI
+      USE mct_coupler_params
 #else
       USE MPI
 #endif
@@ -1435,6 +1443,7 @@
 !
 #ifdef SWAN_MODEL
       USE M_MPI
+      USE mct_coupler_params
 #else
       USE MPI
 #endif

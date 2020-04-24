@@ -31,7 +31,7 @@ function [lon,lat,u,v] = vector4stream(U,V,G,dx,dy,varargin)
 %
 %    V          Input V-velocity component (2D or 3D array) at staggered
 %                 V-points or RHO-points.
-%lo
+%
 %    G          Application grid NetCDF filename (string) 
 %           or, an existing ROMS grid structure (struct array)
 %
@@ -58,9 +58,9 @@ function [lon,lat,u,v] = vector4stream(U,V,G,dx,dy,varargin)
 %    v          Interpolated V-velocity data into monotonic grid
 %
 
-% svn $Id: vector4stream.m 951 2019-02-12 22:00:53Z arango $
+% svn $Id: vector4stream.m 996 2020-01-10 04:28:56Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2019 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -153,6 +153,12 @@ if (is3d)
   vlat = repmat(vlat,[1,1,N]);
 end
 
+% Determine the points inside of the application domain perimenter.
+
+[IN,ON]=inpolygon(lon(:), lat(:), G.lon_perimeter, G.lat_perimeter);
+
+IN(ON) = true;  
+
 %-------------------------------------------------------------------------
 % If applicable, rotate input velocity components to geographical EAST and
 % NORTH components.
@@ -165,7 +171,7 @@ if (G.vector_rotation)
 end
 
 %-------------------------------------------------------------------------
-%  Interpolate input velocity components to a monotonic and plaid grid.
+% Interpolate input velocity components to a monotonic and plaid grid.
 %-------------------------------------------------------------------------
 
 Fu = scatteredInterpolant(ulon(:), ulat(:), U(:), Smethod);
@@ -173,5 +179,10 @@ u  = Fu(lon,lat);
 
 Fv = scatteredInterpolant(vlon(:), vlat(:), V(:), Smethod);
 v  = Fv(lon,lat);
+
+% Flag out points outside of the application domain perimeter.
+
+u(~IN) = NaN;
+v(~IN) = NaN;
 
 return

@@ -35,9 +35,9 @@ function [F]=roms_field(ncname, rec, FieldName)
 % in the future.
 %
 
-% svn $Id: roms_field.m 951 2019-02-12 22:00:53Z arango $
+% svn $Id: roms_field.m 996 2020-01-10 04:28:56Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2019 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

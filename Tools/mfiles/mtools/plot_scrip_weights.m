@@ -4,21 +4,18 @@
 %
 
 %1) enter scrip weight file name
-fname='scrip_sandy_nowavenest.nc';
+%fname='scrip_sandy_nowavenest.nc';
+fname='scrip_florence_1romshydro.nc';
 
 %2) enter number of wrf,roms,ww3,and swan grids.
-NGRIDS_ROMS=2;
-NGRIDS_SWAN=2;
+NGRIDS_ROMS=1;
+NGRIDS_SWAN=0;
 NGRIDS_WW3=0;
 NGRIDS_WRF=0;
 NGRIDS_HYDRO=1;
 
 %%%%%%%%%%%%%%%%%  END OF USER INPUT  %%%%%%%%%%%%%%%%%%%
 
-%num_str=(NGRIDS_ROMS+NGRIDS_SWAN+NGRIDS_WW3+NGRIDS_WRF);
-%for mm=1:num_str
-%  strnames(mm,:)='            ';
-%end
 count=0;
 clear strnames;
 for mo=1:NGRIDS_ROMS
@@ -80,11 +77,6 @@ for mh=1:NGRIDS_HYDRO
   end
 end
 
-
-%if (count~=num_str)
-%  disp('error : numstrings not = number of grid connections');
-%  return
-%end
 for mm=1:count
   str=strnames(mm,:);
   remap=ncread(fname,['/',str,'_weights.nc/remap_matrix']);
@@ -101,28 +93,14 @@ for mm=1:count
   src_cor_lon=ncread(fname,['/',str,'_weights.nc/src_grid_corner_lon']);
   src_size=ncread(fname,['/',str,'_weights.nc/src_grid_dims']);
   dst_size=ncread(fname,['/',str,'_weights.nc/dst_grid_dims']);
-% add_src=ncread(fname,['/',str,'_weights.nc/add_src_address']);
-% add_dst=ncread(fname,['/',str,'_weights.nc/add_dst_address']);
-% add_remap=ncread(fname,['/',str,'_weights.nc/add_remap_matrix']);
-
 %
   zd=double([1:dst_size(1)*dst_size(2)]*0.);
   zs=double([1:src_size(1)*src_size(2)]*0.);
   for mm=1:length(dst)
     zd(dst(mm))=zd(dst(mm))+remap(1,mm);
-    zs(src(mm))=zs(src(mm))+remap(1,mm);
+    zs(src(mm))=zs(src(mm))+1;
   end
-%  for mm=1:length(add_dst)
-%    zd(add_dst(mm))=zd(add_dst(mm))+add_remap(mm);
-%    zs(add_src(mm))=zs(add_src(mm))+add_remap(mm);
-%  end
-  
-  if (0)
-    figure
-    plot(zd,'b+')
-    hold on
-    plot(zs,'r+')
-  end
+%
   figure
   subplot(211)
   zs2=reshape(zs,src_size(1),src_size(2));
@@ -130,7 +108,7 @@ for mm=1:count
   src_lon=reshape(src_lon,src_size(1),src_size(2))*180/pi;
   src_lat=reshape(src_lat,src_size(1),src_size(2))*180/pi;
   pcolorjw(src_lon,src_lat,zs2); colorbar
-  title(str)
+  title([str(1:4),' to ',str(9:12),' number of times these src location is used'])
   subplot(212)
   zd2=reshape(zd,dst_size(1),dst_size(2));
   dst_lon(dst_lon>pi)=dst_lon(dst_lon>pi)-2*pi;
@@ -138,6 +116,7 @@ for mm=1:count
   dst_lat=reshape(dst_lat,dst_size(1),dst_size(2))*180/pi;
   dst_mask=double(reshape(dst_mask,dst_size(1),dst_size(2)));
   pcolorjw(dst_lon,dst_lat,zd2.*dst_mask); colorbar
+  title([str(1:4),' to ',str(9:12),' sum of weigths to each location on dst grid'])
   hold on
   %src_cor_lon(src_cor_lon>pi)=src_cor_lon(src_cor_lon>pi)-2*pi;
   %plot(src_cor_lon(:)*180/pi+360,src_cor_lat(:)*180/pi,'r+')
@@ -167,6 +146,8 @@ for nn=1:NGRIDS_HYDRO
   zstring(count,:)=['to_hyd',num2str(nn)];
 end
 %
+% Plot sum of destination weights to each grid
+%
 for aa=1:count
   start=1;
   for ii=1:size(strnames,1)
@@ -195,7 +176,7 @@ for aa=1:count
   dst_lat=reshape(dst_lat,dst_size(1),dst_size(2))*180/pi;
   dst_mask=double(reshape(dst_mask,dst_size(1),dst_size(2)));
   pcolorjw(dst_lon,dst_lat,zd2); colorbar
-  title(['Sum of destination weights ',zstring(aa,:)])
+  title(['Sum of all weights to dest',zstring(aa,4:end),' should be 0 to 1'])
 
 end
 

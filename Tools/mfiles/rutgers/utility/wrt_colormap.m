@@ -31,9 +31,9 @@ function wrt_colormap(Cname, Ncolors)
 % package color palette.
 %
 
-% svn $Id: wrt_colormap.m 940 2019-01-28 07:22:54Z arango $
+% svn $Id: wrt_colormap.m 996 2020-01-10 04:28:56Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2019 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

@@ -26,7 +26,7 @@ function cmap = cm_solar(varargin)
 %   selection, Oceanography, 29(3), 9-13, http://dx.doi.org/10.5670/oceanog.2016.66 
 % 
 
-% svn $Id: cm_solar.m 938 2019-01-28 06:35:10Z arango $
+% svn $Id: cm_solar.m 996 2020-01-10 04:28:56Z arango $
 
 % Initialize.
 

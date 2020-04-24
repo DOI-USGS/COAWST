@@ -57,9 +57,9 @@ function [data]=load_sst_pfeg(GRDfile, StartDay, EndDay, varargin)
 %          SNCTOOLS with OpenDAP to read data.
 %
 
-% svn $Id: load_sst_pfeg.m 938 2019-01-28 06:35:10Z arango $
+% svn $Id: load_sst_pfeg.m 996 2020-01-10 04:28:56Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2019 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license           Hernan G. Arango      %
 %    See License_ROMS.txt                           John Wilkin           %
 %=========================================================================%

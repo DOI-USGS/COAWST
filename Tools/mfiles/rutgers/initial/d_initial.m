@@ -6,9 +6,9 @@
 %  variables. USERS can use this as a prototype for their application.
 %
 
-% svn $Id: d_initial.m 938 2019-01-28 06:35:10Z arango $
+% svn $Id: d_initial.m 996 2020-01-10 04:28:56Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2019 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
