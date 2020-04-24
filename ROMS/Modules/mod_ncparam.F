@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_ncparam
 !
-!svn $Id: mod_ncparam.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: mod_ncparam.F 1001 2020-01-10 22:41:16Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -221,6 +221,8 @@
         integer  :: idHice        ! depth of ice cover
         integer  :: idHsbl        ! depth of surface boundary layer
         integer  :: idHsno        ! depth of snow cover
+        integer  :: idIncr        ! 4D-Var analysis increment
+        integer  :: idInno        ! 4D-Var innovation vector
         integer  :: idKhor        ! convolution horizontal diffusion
         integer  :: idKver        ! convolution vertical diffusion
         integer  :: idLdwn        ! downwelling longwave radiation flux
@@ -296,6 +298,7 @@
         integer  :: idSSTc        ! SST climatology
         integer  :: idShea        ! net sensible heat flux
         integer  :: idSWCW        ! SIN(omega(k)*t)*COS(omega(l)*t)
+        integer  :: idResi        ! 4D-Var residual vector
         integer  :: idsfwf        ! surface freswater flux
         integer  :: idTLmo        ! TLM at observation locations
         integer  :: idTair        ! surface air temperature
@@ -397,6 +400,7 @@
         integer  :: idW3yy        ! 3D radiation stress, Syy-component
         integer  :: idW3zx        ! 3D radiation stress, Szx-component
         integer  :: idW3zy        ! 3D radiation stress, Szy-component
+        integer  :: idWads        ! 3D W-velocity adjoint sensitivity
         integer  :: idW3Sd        ! 3D W-Stokes omega drift velocity
         integer  :: idW3St        ! 3D W-Stokes vertical drift velocity
         integer  :: idWamp        ! wave amplitude
@@ -2333,6 +2337,10 @@
               idBgEr=varid
             CASE ('idBgTh')
               idBgTh=varid
+            CASE ('idIncr')
+              idIncr=varid
+            CASE ('idInno')
+              idInno=varid
             CASE ('idNLmi')
               idNLmi=varid
             CASE ('idNLmo')
@@ -2367,8 +2375,8 @@
               idOtyp=varid
             CASE ('idOval')
               idOval=varid
-            CASE ('idOvar')
-              idOvar=varid
+            CASE ('idResi')
+              idResi=varid
             CASE ('idKhor')
               idKhor=varid
             CASE ('idKver')

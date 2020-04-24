@@ -28,9 +28,10 @@
 #  ifdef MASKING
      &                       GRID(ng) % rmask,                          &
 #  endif
-     &                       VEG(ng) % plant(:,:,:,i))
-          IF (FoundError(status, nf90_noerr, __LINE__,                  &
-     &                   __FILE__)) THEN
+     &                       VEG(ng) % plant(:,:,:,i),                  &
+     &                       SetFillVal= .FALSE.)
+	  IF (FoundError(status, nf90_noerr, __LINE__,                    &
+       &                   __FILE__)) THEN
             IF (Master) THEN 
               WRITE (stdout,10) TRIM(Vname(1,idvprp(i))), HIS(ng)%Rindex
             END IF
@@ -55,9 +56,9 @@
 # ifdef MASKING
      &                     GRID(ng) % rmask,                            &
 # endif
-     &                     VEG(ng)%Dissip_veg )
+     &                     VEG(ng)%Dissip_veg)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+     &                   __FILE__)) THEN
           IF (Master) THEN 
             WRITE (stdout,10) TRIM(Vname(1,idWdvg)), HIS(ng)%Rindex
           END IF
@@ -68,9 +69,9 @@
       END IF
 # endif
 ! 
-# ifdef MARSH_WAVE_THRUST
+# ifdef MARSH_DYNAMICS
 !
-!  Write out initial masking for marshes 
+!  Write out masking for marsh cells. 
 ! 
       IF (Hout(idTims,ng)) THEN 
         scale=1.0_r8
@@ -78,12 +79,12 @@
         status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTims), &
      &                     HIS(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
-# ifdef MASKING
+#   ifdef MASKING
      &                     GRID(ng) % rmask,                            &
-# endif
-     &                     VEG(ng)%marsh_mask)
+#   endif
+     &                     VEG(ng)%marsh_mask) 
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+     &                   __FILE__)) THEN
           IF (Master) THEN 
             WRITE (stdout,10) TRIM(Vname(1,idTims)), HIS(ng)%Rindex
           END IF
@@ -92,96 +93,183 @@
           RETURN
         END IF
       END IF
+#  ifdef MARSH_WAVE_THRUST 
 !
-!  Write out wave thrust on marsh output 
-! 
-      IF (Hout(idTmsk,ng)) THEN 
+!  Write total thrust in all directions due to waves.
+!
+      IF (Hout(idTtot,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r2dvar
-        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmsk), &
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTtot), &
      &                     HIS(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
-# ifdef MASKING
+#   ifdef MASKING
      &                     GRID(ng) % rmask,                            &
-# endif
-     &                     VEG(ng)%mask_thrust)
+#   endif
+     &                     VEG(ng)%Thrust_total)                         
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
-          IF (Master) THEN 
-            WRITE (stdout,10) TRIM(Vname(1,idTmsk)), HIS(ng)%Rindex
-          END IF
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
-      END IF
-!
-!  Define maximum thrust due to waves. 
-!
-      IF (Hout(idTmax,ng)) THEN 
-        scale=1.0_r8
-        gtype=gfactor*r2dvar
-        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmax), &
-     &                     HIS(ng)%Rindex, gtype,                       &    
-     &                     LBi, UBi, LBj, UBj, scale,                   &
-# ifdef MASKING
-     &                     GRID(ng) % rmask,                            &
-# endif
-     &                     VEG(ng)%Thrust_max)
-        IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+     &                   __FILE__)) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idTmax)), HIS(ng)%Rindex
+            WRITE (stdout,10) TRIM(Vname(1,idTtot)), HIS(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
           RETURN
         END IF
       END IF
+#  endif 
 !
-!  Define maximum thrust due to waves. 
+#  if defined MARSH_SED_EROSION
 !
-      IF (Hout(idTmax,ng)) THEN
+!  Write out marsh sediment flux out from marsh cells from each sedclass.
+!
+      DO i=1,NST
+        IF (Hout(idTmfo(i),ng)) THEN
+          scale=1.0_r8
+          gtype=gfactor*r2dvar
+          status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid,                    &
+     &                       HIS(ng)%Vid(idTmfo(i)),                    &
+     &                       HIS(ng)%Rindex, gtype,                     &
+     &                       LBi, UBi, LBj, UBj, scale,                 &
+#   ifdef MASKING
+     &                       GRID(ng) % rmask,                          &
+#   endif
+     &                       VEG(ng) % marsh_flux_out(:,:,i))
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
+            IF (Master) THEN
+              WRITE (stdout,10) TRIM(Vname(1,idTmfo(i))), HIS(ng)%Rindex
+            END IF
+            exit_flag=3
+            ioerror=status
+            RETURN
+          END IF
+        END IF
+      END DO
+#  endif 
+!
+#  if defined MARSH_RETREAT
+!
+!  Amount of marsh lateral retreat from all directions.
+!
+      IF (Hout(idTmmr,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r2dvar
-        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmax), &
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmmr), &
      &                     HIS(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
-# ifdef MASKING
+#   ifdef MASKING
      &                     GRID(ng) % rmask,                            &
-# endif
-     &                     VEG(ng)%Thrust_max)
+#   endif
+     &                     VEG(ng)%marsh_retreat)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+     &                   __FILE__)) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idTmax)), HIS(ng)%Rindex
+            WRITE (stdout,10) TRIM(Vname(1,idTmmr)), HIS(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
           RETURN
         END IF
-      END IF
+      END IF 
+#  endif 
+!# endif 
 !
-!  Define Tonelli masking based thrust due to waves. 
+#  if defined MARSH_TIDAL_RANGE
 !
-      IF (Hout(idTton,ng)) THEN
+!  Write tidal range over a given frequency.
+!
+      IF (Hout(idTmtr,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r2dvar
-        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTton), &
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmtr), &
      &                     HIS(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
-# ifdef MASKING
+#   ifdef MASKING
      &                     GRID(ng) % rmask,                            &
-# endif
-     &                     VEG(ng)%Thrust_tonelli)
+#   endif
+     &                     VEG(ng)%marsh_tidal_range)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+     &                   __FILE__)) THEN
           IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idTton)), HIS(ng)%Rindex
+            WRITE (stdout,10) TRIM(Vname(1,idTmtr)), HIS(ng)%Rindex
           END IF
           exit_flag=3
           ioerror=status
           RETURN
         END IF
       END IF
-# endif 
+!
+!  Write mean high high water over a given frequency.
+!
+      IF (Hout(idTmhw,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmhw), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#   ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#   endif
+     &                     VEG(ng)%marsh_high_water) 
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                   __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idTmhw)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+#   if  defined MARSH_VERT_GROWTH 
+!
+!  Write amount of marsh biomass peak.
+!
+      IF (Hout(idTmbp,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmbp), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#    ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#    endif
+     &                     VEG(ng)%marsh_biomass_peak)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                   __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idTmbp)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+!
+!  Write amount of marsh vertical growth.
+!
+      IF (Hout(idTmvg,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmvg), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#    ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#    endif
+     &                     VEG(ng)%marsh_vert)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                   __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idTmvg)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+#   endif 
+#  endif  
+# endif  

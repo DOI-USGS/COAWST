@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_mixing
 !
-!svn $Id: mod_mixing.F 921 2018-09-06 18:27:34Z arango $
+!svn $Id: mod_mixing.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -501,8 +501,10 @@
 #ifdef WEC_MELLOR
       allocate ( MIXING(ng) % Sxx_bar(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( MIXING(ng) % Sxy_bar(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
+
       allocate ( MIXING(ng) % Syy_bar(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
 #endif

@@ -809,19 +809,17 @@
 !  sedslopes are the critical slopes to allow slumping.
 !  slopefac are the scale factors for sediment movement.
 !
-        cff2=Srho(ised,ng)*(1.0_r8-bed(i,j,1,iporo))
-        slopefac_dry_local=cff2*dt(ng)*slopefac_dry(ng)
-        slopefac_wet_local=cff2*dt(ng)*slopefac_wet(ng)
-!
-#   ifdef SED_MORPH
-        slopefac_wet_local=slopefac_wet_local*morph_fac(ised,ng)
-        slopefac_dry_local=slopefac_dry_local*morph_fac(ised,ng)
-#   endif
-!
 !  U-direction slumping
 !
         DO j=Jstr,Jend
           DO i=Istr,Iend+1
+            cff2=Srho(ised,ng)*(1.0_r8-bed(i,j,1,iporo))
+            slopefac_dry_local=cff2*dt(ng)*slopefac_dry(ng)
+            slopefac_wet_local=cff2*dt(ng)*slopefac_wet(ng)
+#   ifdef SED_MORPH
+            slopefac_wet_local=slopefac_wet_local*morph_fac(ised,ng)
+            slopefac_dry_local=slopefac_dry_local*morph_fac(ised,ng)
+#   endif
             dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
             dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)
 !           dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
@@ -860,6 +858,13 @@
 !
         DO j=Jstr,Jend+1
           DO i=Istr,Iend
+            cff2=Srho(ised,ng)*(1.0_r8-bed(i,j,1,iporo))
+            slopefac_dry_local=cff2*dt(ng)*slopefac_dry(ng)
+            slopefac_wet_local=cff2*dt(ng)*slopefac_wet(ng)
+#   ifdef SED_MORPH
+            slopefac_wet_local=slopefac_wet_local*morph_fac(ised,ng)
+            slopefac_dry_local=slopefac_dry_local*morph_fac(ised,ng)
+#   endif
             dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)   ! positive is downhill
             dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
 !           dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)

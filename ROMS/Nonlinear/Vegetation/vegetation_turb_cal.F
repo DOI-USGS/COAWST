@@ -5,14 +5,14 @@
 #if defined NONLINEAR && defined VEGETATION && defined VEG_TURB
 !
 !svn $Id: vegetation_turb_cal.F 429 2015-06-10 12:30:26Z arango $
-!=======================================================================
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!======================================================================!
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                                              !
-!==================================================== John C. Warner ===
-!==================================================== Neil K. Ganju  ===
-!==================================================== Alexis Beudin  ===
-!==================================================Tarandeep S. Kalra===
+!==================================================== John C. Warner ==!
+!==================================================== Neil K. Ganju  ==!
+!==================================================== Alexis Beudin  ==!
+!==================================================Tarandeep S. Kalra==!
 !                                                                      !
 !  This routine computes the turbulent kinetic energy and length scale !
 !  modifications due to vegetation for gls_corstep.F                   !
@@ -28,8 +28,8 @@
 !   Performance of four turbulence closure models implemented using a  !
 !   generic length scale method, Ocean Modelling 8: 81-113.            !
 !                                                                      !
-!=======================================================================
-!
+!======================================================================!
+!                                                                      !
       implicit none
 
       PRIVATE
@@ -99,7 +99,6 @@
       USE mod_vegetation 
       USE mod_vegarr
       USE vegetation_drag_mod
-!
 !
 !  Imported variable declarations.
 !

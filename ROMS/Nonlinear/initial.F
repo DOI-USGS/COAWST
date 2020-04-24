@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE initial
 !
-!svn $Id: initial.F 882 2017-11-23 05:41:19Z arango $
+!svn $Id: initial.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -78,6 +78,10 @@
       USE ocean_coupler_mod, ONLY : ocn2atm_coupling
       USE ocean_coupler_mod, ONLY : ocnfatm_coupling
 #endif
+#ifdef HYDRO_OCEAN
+      USE ocean_coupler_mod, ONLY : ocn2hyd_coupling
+      USE ocean_coupler_mod, ONLY : ocnfhyd_coupling
+#endif
 #ifdef INWAVE_MODEL
       USE driver_inwave_mod, ONLY : inwave_init
 #endif
@@ -89,7 +93,7 @@
       logical, save :: First = .TRUE.
       logical :: update = .FALSE.
 
-      integer :: Fcount, iw, ia, io
+      integer :: Fcount, iw, ia, io, ih
       integer :: ng, thread, tile
 #ifdef NESTING
       integer :: ig, nl
@@ -1082,6 +1086,31 @@
         END DO
       END DO
 #endif
+#ifdef HYDRO_OCEAN
+!
+!-----------------------------------------------------------------------
+!  Read in initial forcing from coupled atm model.
+!-----------------------------------------------------------------------
+!
+      DO ng=1,Ngrids
+        DO ih=1,Nhyd_grids
+          DO tile=first_tile(ng),last_tile(ng),+1
+            CALL ocnfhyd_coupling (ng, ih, tile)
+          END DO
+!$OMP BARRIER
+          IF (Master) WRITE (stdout,'(/)')
+        END DO
+      END DO
+      DO ng=1,Ngrids
+        DO ih=1,Nhyd_grids
+          DO tile=first_tile(ng),last_tile(ng),+1
+            CALL ocn2hyd_coupling (ng, ih, tile)
+          END DO
+!$OMP BARRIER
+          IF (Master) WRITE (stdout,'(/)')
+        END DO
+      END DO
+#endif
 !
 !-----------------------------------------------------------------------
 !  Initialize time-stepping counter and clock.
@@ -1092,6 +1121,7 @@
 !
       DO ng=1,Ngrids
         iic(ng)=ntstart(ng)-1
+        INItime(ng)=time(ng)         ! Save NLM initial conditions time
         time(ng)=time(ng)-dt(ng)
       END DO
 

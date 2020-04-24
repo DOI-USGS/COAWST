@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_param
 !
-!svn $Id: mod_param.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: mod_param.F 1001 2020-01-10 22:41:16Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -141,11 +141,14 @@
 !
 !  This structure is used to declare the variables associated with
 !  input and output files, like TYPE(IO) :: HIS(Ngrids). It is a
-!  compact way to store a lot of information.
+!  compact way to store a lot of information.  The "Fcount" variable
+!  is used during data processing in "check_multifile" and "inquiry"
+!  whereas "load" is used storing information in the structure.
 !
       TYPE T_IO
         integer :: Nfiles                        ! number of multi-files
         integer :: Fcount                        ! multi-file counter
+        integer :: load                          ! filename load counter
         integer :: Rindex                        ! NetCDF record index
         integer :: ncid                          ! NetCDF file ID
         integer,  pointer :: Nrec(:)             ! NetCDF record size
@@ -154,7 +157,8 @@
         real(dp), pointer :: time_min(:)         ! starting time
         real(dp), pointer :: time_max(:)         ! ending time
         character (len=50 ) :: label             ! structure label
-        character (len=256) :: base              ! base file name
+        character (len=256) :: head              ! head filename
+        character (len=256) :: base              ! base filename
         character (len=256) :: name              ! current name
         character (len=256), pointer :: files(:) ! multi-file names
       END TYPE T_IO
@@ -391,6 +395,40 @@
 #if defined ADJOINT || defined TANGENT || defined TL_IOMS
       TYPE (T_LBC), allocatable :: ad_LBC(:,:,:)
       TYPE (T_LBC), allocatable :: tl_LBC(:,:,:)
+#endif
+#ifdef SOLVE3D
+!
+!-----------------------------------------------------------------------
+!  Tracer horizontal and vertical advection switches structure.
+!-----------------------------------------------------------------------
+!
+!  A different advection scheme is allowed for each tracer.  For
+!  example, a positive-definite algorithm can be activated for salinity,
+!  biological, and sediment tracers, while a different one is set for
+!  temperature.
+!
+      TYPE T_ADV
+        logical :: AKIMA4         ! fourth-order Akima
+        logical :: CENTERED2      ! second-order centered differences
+        logical :: CENTERED4      ! fourth-order centered differences
+        logical :: HSIMT          ! third-order HSIMT-TVD
+        logical :: MPDATA         ! recursive flux corrected MPDATA
+        logical :: SPLINES        ! parabolic splines (vertical only)
+        logical :: SPLIT_U3       ! split third-order upstream
+        logical :: UPSTREAM3      ! third-order upstream bias
+      END TYPE T_ADV
+
+      TYPE (T_ADV), allocatable :: Hadvection(:,:)       ! horizontal
+      TYPE (T_ADV), allocatable :: Vadvection(:,:)       ! vertical
+
+# ifdef ADJOINT
+      TYPE (T_ADV), allocatable :: ad_Hadvection(:,:)    ! horizontal
+      TYPE (T_ADV), allocatable :: ad_Vadvection(:,:)    ! vertical
+# endif
+# if defined TANGENT || defined TL_IOMS
+      TYPE (T_ADV), allocatable :: tl_Hadvection(:,:)    ! horizontal
+      TYPE (T_ADV), allocatable :: tl_Vadvection(:,:)    ! vertical
+# endif
 #endif
 !
 !-----------------------------------------------------------------------
@@ -643,6 +681,9 @@
       integer :: iTLM = 2
       integer :: iRPM = 3
       integer :: iADM = 4
+
+      character (len=3), dimension(4) :: kernel =                       &
+     &                                   (/ 'NLM','TLM','RPM','ADM' /)
 !
 !-----------------------------------------------------------------------
 !  Domain partition parameters.
@@ -838,7 +879,7 @@
 !  Local variable declarations
 !
       integer :: I_padd, J_padd, Ntiles
-      integer :: ibry, ivar, ng
+      integer :: ibry, itrc, ivar, ng
 !
 !-----------------------------------------------------------------------
 !  Now that we know the values for the tile partitions (NtileI,NtileJ),
@@ -1207,6 +1248,119 @@
           END DO
         END DO
       END IF
+#endif
+#ifdef SOLVE3D
+!
+!-----------------------------------------------------------------------
+!  Allocate rracer horizontal and vertical advection switches structure.
+!-----------------------------------------------------------------------
+!
+!  Nonlinear model kernel.
+!
+      IF (.not.allocated(Hadvection)) THEN
+        allocate ( Hadvection(MAXVAL(NT),Ngrids) )
+        DO ng=1,Ngrids
+          DO itrc=1,NT(ng)
+            Hadvection(itrc,ng)%AKIMA4 = .FALSE.
+            Hadvection(itrc,ng)%CENTERED2 = .FALSE.
+            Hadvection(itrc,ng)%CENTERED4 = .FALSE.
+            Hadvection(itrc,ng)%HSIMT = .FALSE.
+            Hadvection(itrc,ng)%MPDATA = .FALSE.
+            Hadvection(itrc,ng)%SPLINES = .FALSE.
+            Hadvection(itrc,ng)%SPLIT_U3 = .FALSE.
+            Hadvection(itrc,ng)%UPSTREAM3 = .FALSE.
+          END DO
+        END DO
+      END IF
+!
+      IF (.not.allocated(Vadvection)) THEN
+        allocate ( Vadvection(MAXVAL(NT),Ngrids) )
+        DO ng=1,Ngrids
+          DO itrc=1,NT(ng)
+            Vadvection(itrc,ng)%AKIMA4 = .FALSE.
+            Vadvection(itrc,ng)%CENTERED2 = .FALSE.
+            Vadvection(itrc,ng)%CENTERED4 = .FALSE.
+            Vadvection(itrc,ng)%HSIMT = .FALSE.
+            Vadvection(itrc,ng)%MPDATA = .FALSE.
+            Vadvection(itrc,ng)%SPLINES = .FALSE.
+            Vadvection(itrc,ng)%SPLIT_U3 = .FALSE.
+            Vadvection(itrc,ng)%UPSTREAM3 = .FALSE.
+          END DO
+        END DO
+      END IF
+
+# ifdef ADJOINT
+!
+!  Adjoint model kernel.
+!
+      IF (.not.allocated(ad_Hadvection)) THEN
+        allocate ( ad_Hadvection(MAXVAL(NT),Ngrids) )
+        DO ng=1,Ngrids
+          DO itrc=1,NT(ng)
+            ad_Hadvection(itrc,ng)%AKIMA4 = .FALSE.
+            ad_Hadvection(itrc,ng)%CENTERED2 = .FALSE.
+            ad_Hadvection(itrc,ng)%CENTERED4 = .FALSE.
+            ad_Hadvection(itrc,ng)%HSIMT = .FALSE.
+            ad_Hadvection(itrc,ng)%MPDATA = .FALSE.
+            ad_Hadvection(itrc,ng)%SPLINES = .FALSE.
+            ad_Hadvection(itrc,ng)%SPLIT_U3 = .FALSE.
+            ad_Hadvection(itrc,ng)%UPSTREAM3 = .FALSE.
+          END DO
+        END DO
+      END IF
+!
+      IF (.not.allocated(ad_Vadvection)) THEN
+        allocate ( ad_Vadvection(MAXVAL(NT),Ngrids) )
+        DO ng=1,Ngrids
+          DO itrc=1,NT(ng)
+            ad_Vadvection(itrc,ng)%AKIMA4 = .FALSE.
+            ad_Vadvection(itrc,ng)%CENTERED2 = .FALSE.
+            ad_Vadvection(itrc,ng)%CENTERED4 = .FALSE.
+            ad_Vadvection(itrc,ng)%HSIMT = .FALSE.
+            ad_Vadvection(itrc,ng)%MPDATA = .FALSE.
+            ad_Vadvection(itrc,ng)%SPLINES = .FALSE.
+            ad_Vadvection(itrc,ng)%SPLIT_U3 = .FALSE.
+            ad_Vadvection(itrc,ng)%UPSTREAM3 = .FALSE.
+          END DO
+        END DO
+      END IF
+# endif
+# if defined TANGENT || defined TL_IOMS
+!
+!  Perturbation or finite-amplitude tangent linear model kernels.
+!
+      IF (.not.allocated(tl_Hadvection)) THEN
+        allocate ( tl_Hadvection(MAXVAL(NT),Ngrids) )
+        DO ng=1,Ngrids
+          DO itrc=1,NT(ng)
+            tl_Hadvection(itrc,ng)%AKIMA4 = .FALSE.
+            tl_Hadvection(itrc,ng)%CENTERED2 = .FALSE.
+            tl_Hadvection(itrc,ng)%CENTERED4 = .FALSE.
+            tl_Hadvection(itrc,ng)%HSIMT = .FALSE.
+            tl_Hadvection(itrc,ng)%MPDATA = .FALSE.
+            tl_Hadvection(itrc,ng)%SPLINES = .FALSE.
+            tl_Hadvection(itrc,ng)%SPLIT_U3 = .FALSE.
+            tl_Hadvection(itrc,ng)%UPSTREAM3 = .FALSE.
+          END DO
+        END DO
+      END IF
+!
+      IF (.not.allocated(tl_Vadvection)) THEN
+        allocate ( tl_Vadvection(MAXVAL(NT),Ngrids) )
+        DO ng=1,Ngrids
+          DO itrc=1,NT(ng)
+            tl_Vadvection(itrc,ng)%AKIMA4 = .FALSE.
+            tl_Vadvection(itrc,ng)%CENTERED2 = .FALSE.
+            tl_Vadvection(itrc,ng)%CENTERED4 = .FALSE.
+            tl_Vadvection(itrc,ng)%HSIMT = .FALSE.
+            tl_Vadvection(itrc,ng)%MPDATA = .FALSE.
+            tl_Vadvection(itrc,ng)%SPLINES = .FALSE.
+            tl_Vadvection(itrc,ng)%SPLIT_U3 = .FALSE.
+            tl_Vadvection(itrc,ng)%UPSTREAM3 = .FALSE.
+          END DO
+        END DO
+      END IF
+# endif
 #endif
 
       RETURN

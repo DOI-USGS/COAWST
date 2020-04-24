@@ -2,9 +2,9 @@
       MODULE step_floats_mod
 #if defined NONLINEAR && defined FLOATS
 !
-!svn $Id: step_floats.F 889 2018-02-10 03:32:52Z arango $
+!svn $Id: step_floats.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group        John M. Klinck   !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group        John M. Klinck   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -89,7 +89,6 @@
       USE mod_ncparam
       USE mod_ocean
       USE mod_scalars
-      USE interp_floats_mod
 # ifdef DIAPAUSE
       USE interp_floats_diapW_mod
 # endif
@@ -100,6 +99,7 @@
 # ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_collect
 # endif
+      USE interp_floats_mod
 # if defined SOLVE3D && defined FLOAT_VWALK
       USE vwalk_floats_mod, ONLY : vwalk_floats
 # endif
@@ -558,7 +558,6 @@
 !                  Hamming time-stepping scheme.
 !-----------------------------------------------------------------------
 !
-
       cff1=9.0_r8/8.0_r8
       cff2=1.0_r8/8.0_r8
       cff3=3.0_r8/8.0_r8

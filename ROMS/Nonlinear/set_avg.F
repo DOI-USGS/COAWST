@@ -2,9 +2,9 @@
       MODULE set_avg_mod
 #ifdef AVERAGES
 !
-!svn $Id: set_avg.F 889 2018-02-10 03:32:52Z arango $
+!svn $Id: set_avg.F 1007 2020-02-25 22:29:41Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -857,6 +857,19 @@
               AVERAGE(ng)%avgPair(i,j)=FORCES(ng)%Pair(i,j)
 #   ifdef WET_DRY
               AVERAGE(ng)%avgPair(i,j)=AVERAGE(ng)%avgPair(i,j)*        &
+     &                                 GRID(ng)%rmask_full(i,j)
+#   endif
+            END DO
+          END DO
+        END IF
+#  endif
+#  if defined BULK_FLUXES
+        IF (Aout(idTair,ng)) THEN
+          DO j=JstrR,JendR
+            DO i=IstrR,IendR
+              AVERAGE(ng)%avgTair(i,j)=FORCES(ng)%Tair(i,j)
+#   ifdef WET_DRY
+              AVERAGE(ng)%avgTair(i,j)=AVERAGE(ng)%avgTair(i,j)*        &
      &                                 GRID(ng)%rmask_full(i,j)
 #   endif
             END DO
@@ -2976,6 +2989,19 @@
      &                                 GRID(ng)%rmask_full(i,j)*        &
 #   endif
      &                                 FORCES(ng)%Pair(i,j)
+            END DO
+          END DO
+        END IF
+#  endif
+#  if defined BULK_FLUXES
+        IF (Aout(idTair,ng)) THEN
+          DO j=JstrR,JendR
+            DO i=IstrR,IendR
+              AVERAGE(ng)%avgTair(i,j)=AVERAGE(ng)%avgTair(i,j)+        &
+#   ifdef WET_DRY
+     &                                 GRID(ng)%rmask_full(i,j)*        &
+#   endif
+     &                                 FORCES(ng)%Tair(i,j)
             END DO
           END DO
         END IF
@@ -5510,6 +5536,29 @@
      &                          NghostPoints,                           &
      &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          AVERAGE(ng)%avgPair)
+#   endif
+          END IF
+        END IF
+#  endif
+
+#  if defined BULK_FLUXES
+        IF (Aout(idTair,ng)) THEN
+          DO j=JstrR,JendR
+            DO i=IstrR,IendR
+              AVERAGE(ng)%avgTair(i,j)=rfac(i,j)*                       &
+     &                                 AVERAGE(ng)%avgTair(i,j)
+            END DO
+          END DO
+          IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+            CALL exchange_r2d_tile (ng, tile,                           &
+     &                              LBi, UBi, LBj, UBj,                 &
+     &                              AVERAGE(ng)%avgTair)
+#   ifdef DISTRIBUTE
+            CALL mp_exchange2d (ng, tile, iNLM, 1,                      &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          AVERAGE(ng)%avgTair)
 #   endif
           END IF
         END IF

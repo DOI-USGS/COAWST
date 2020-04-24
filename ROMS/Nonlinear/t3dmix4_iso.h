@@ -1,8 +1,8 @@
       SUBROUTINE t3dmix4 (ng, tile)
 !
-!svn $Id: t3dmix4_iso.h 889 2018-02-10 03:32:52Z arango $
+!svn $Id: t3dmix4_iso.h 995 2020-01-10 04:01:28Z arango $
 !***********************************************************************
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !****************************************** Alexander F. Shchepetkin ***
@@ -63,7 +63,7 @@
 #else
      &                   MIXING(ng) % diff4,                            &
 #endif
-     &                   OCEAN(ng) % rho,                               &
+     &                   OCEAN(ng) % pden,                              &
 #ifdef TS_MIX_CLIMA
      &                   CLIMA(ng) % tclm,                              &
 #endif
@@ -100,7 +100,7 @@
 #else
      &                         diff4,                                   &
 #endif
-     &                         rho,                                     &
+     &                         pden,                                    &
 #ifdef TS_MIX_CLIMA
      &                         tclm,                                    &
 #endif

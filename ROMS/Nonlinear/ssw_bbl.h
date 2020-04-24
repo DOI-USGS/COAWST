@@ -5,9 +5,9 @@
 
       SUBROUTINE bblm (ng, tile)
 !
-!svn $Id: ssw_bbl.h 900 2018-03-21 03:23:08Z arango $
+!svn $Id: ssw_bbl.h 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group        Chris Sherwood   !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group        Chris Sherwood   !
 !    Licensed under a MIT/X style license               Rich Signell   !
 !    See License_ROMS.txt                             John C. Warner   !
 !=======================================================================
@@ -736,7 +736,7 @@
               coef_fd=0.5_r8*Cd_fd*(rheight(i,j)/rlength(i,j))*         &
      &                (1.0_r8/(vonKar*vonKar))*                         &
      &                (LOG(rheight(i,j)/                                &
-     &                 (zoN(i,j)+zoST(i,j))-1.0_r8))**2
+     &                 (zoN(i,j)+zoST(i,j)))-1.0_r8)**2
                Taucwmax(i,j)=Taucwmax(i,j)/(1.0_r8+coef_fd)
                Taucwmax(i,j)=Taucwmax(i,j)*(1.0_r8+8.0_r8*              &
      &                       rheight(i,j)/rlength(i,j))
@@ -1772,8 +1772,12 @@
             Vr_sg=fac1*v_1d(k-1)+fac2*v_1d(k)
             Zr_sg=sg_loc
           ENDIF
+          IF ((k.eq.kmax).and.(sg_loc.ge.z2)) THEN
+            Ur_sg=u_1d(k)
+            Vr_sg=v_1d(k)
+            Zr_sg=z2
+          END IF
         END DO
-
       ELSEIF ( sg_loc.lt.Zr ) THEN
         z1=MAX( 2.5_r8*d50/30.0_r8, zapp_loc, 1.0e-10_r8 )
         z2=Zr

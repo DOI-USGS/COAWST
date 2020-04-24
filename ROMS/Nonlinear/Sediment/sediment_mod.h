@@ -1,7 +1,7 @@
 !
-!svn $Id: sediment_mod.h 921 2018-09-06 18:27:34Z arango $
+!svn $Id: sediment_mod.h 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group        John C. Warner   !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group        John C. Warner   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -165,7 +165,7 @@
       real(r8), allocatable :: bedload_coeff(:)    ! bedload rate coefficient
 !
 #if defined BEDLOAD
-# if defined BEDLOAD_VANDERA
+!# if defined BEDLOAD_VANDERA
       real(r8), allocatable :: sg_zwbl(:)         ! input elevation to get near-bottom current vel
       real(r8), allocatable :: sedslope_crit_wet(:) ! critical wet bed slope for slumping
       real(r8), allocatable :: sedslope_crit_dry(:) ! critical dry bed slope for slumping
@@ -173,7 +173,7 @@
       real(r8), allocatable :: slopefac_dry(:)    ! bedload dry bed slumping factor
       real(r8), allocatable :: bedload_vandera_alphaw(:)    ! bedload scale factor for waves contribution
       real(r8), allocatable :: bedload_vandera_alphac(:)    ! bedload scale factor for currs contribution
-# endif
+!# endif
 #endif
 !
       real(r8), allocatable :: Csed(:,:)       ! initial concentration
@@ -344,7 +344,7 @@
       END IF
 !
 #if defined BEDLOAD
-# if defined BEDLOAD_VANDERA
+!# if defined BEDLOAD_VANDERA
       IF (.not.allocated(sg_zwbl)) THEN
         allocate ( sg_zwbl(Ngrids) )
         sg_zwbl = 0.1_r8
@@ -380,7 +380,7 @@
         bedload_vandera_alphac = IniVal
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
-# endif
+!# endif
 #endif
 !
 #if defined COHESIVE_BED || defined MIXED_BED

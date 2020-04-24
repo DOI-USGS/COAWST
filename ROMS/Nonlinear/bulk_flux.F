@@ -2,9 +2,9 @@
       MODULE bulk_flux_mod
 #if defined BULK_FLUXES && !defined CCSM_FLUXES
 !
-!svn $Id: bulk_flux.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: bulk_flux.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -210,6 +210,7 @@
 # ifdef PROFILE
       CALL wclock_off (ng, iNLM, 17, __LINE__, __FILE__)
 # endif
+
       RETURN
       END SUBROUTINE bulk_flux
 !
@@ -440,7 +441,6 @@
       real(r8), intent(out) :: sustr(LBi:,LBj:)
       real(r8), intent(out) :: svstr(LBi:,LBj:)
 # else
-
 #  ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)

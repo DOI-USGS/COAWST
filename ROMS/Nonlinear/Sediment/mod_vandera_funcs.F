@@ -147,7 +147,7 @@
         mu_calc=6.0_r8
       ELSEIF(d50_mm.gt.0.15_r8.and.d50_mm.lt.0.20_r8) THEN
         mu_calc=6.0_r8-5.0_r8*((d50_mm-0.15_r8)/(0.2_r8-0.15_r8))
-      ELSEIF(d50_mm.gt.0.20_r8) THEN
+      ELSEIF(d50_mm.ge.0.20_r8) THEN
         mu_calc=1.0_r8
       ENDIF
 !

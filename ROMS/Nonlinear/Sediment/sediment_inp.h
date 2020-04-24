@@ -1,5 +1,6 @@
       SUBROUTINE read_SedPar (model, inp, out, Lwrite)
 !
+!svn $Id: sediment_inp.h 1001 2020-01-10 22:41:16Z arango $
 !=======================================================================
 !                                                                      !
 !  This routine reads in cohesive and non-cohesive sediment model      !
@@ -118,6 +119,52 @@
                 Dbzp(ng)=Rbed(ng)
               END DO
 #endif
+            CASE ('Hadvection')
+              IF (itracer.lt.NST) THEN
+                itracer=itracer+1
+              ELSE
+                itracer=1                      ! next nested grid
+              END IF
+              itrc=idsed(itracer)
+              Npts=load_tadv(Nval, Cval, line, nline, itrc, igrid,      &
+     &                       itracer, idsed(iTrcStr), idsed(iTrcEnd),   &
+     &                       Vname(1,idTvar(itrc)),                     &
+     &                       Hadvection)
+            CASE ('Vadvection')
+              IF (itracer.lt.NST) THEN
+                itracer=itracer+1
+              ELSE
+                itracer=1                      ! next nested grid
+              END IF
+              itrc=idsed(itracer)
+              Npts=load_tadv(Nval, Cval, line, nline, itrc, igrid,      &
+     &                       itracer, idsed(iTrcStr), idsed(iTrcEnd),   &
+     &                       Vname(1,idTvar(itrc)),                     &
+     &                       Vadvection)
+#if defined ADJOINT || defined TANGENT || defined TL_IOMS
+            CASE ('ad_Hadvection')
+              IF (itracer.lt.NST) THEN
+                itracer=itracer+1
+              ELSE
+                itracer=1                      ! next nested grid
+              END IF
+              itrc=idsed(itracer)
+              Npts=load_tadv(Nval, Cval, line, nline, itrc, igrid,      &
+     &                       itracer, idsed(iTrcStr), idsed(iTrcEnd),   &
+     &                       Vname(1,idTvar(itrc)),                     &
+     &                       ad_Hadvection)
+            CASE ('Vadvection')
+              IF (itracer.lt.(NST) THEN
+                itracer=itracer+1
+              ELSE
+                itracer=1                      ! next nested grid
+              END IF
+              itrc=idsed(itracer)
+              Npts=load_tadv(Nval, Cval, line, nline, itrc, igrid,      &
+     &                       itracer, idsed(iTrcStr), idsed(iTrcEnd),   &
+     &                       Vname(1,idTvar(itrc)),                     &
+     &                       ad_Vadvection)
+#endif
             CASE ('LBC(isTvar)')
               IF (itracer.lt.NST) THEN
                 itracer=itracer+1
@@ -235,7 +282,7 @@
                 DO itrc=1,NCS
                   i=idsed(itrc)
                   ad_tnu4(i,ng)=Rmud(itrc,ng)
-                  nl_tnu4(i,ng)=Rmud(itrc,ng)
+                  tl_tnu4(i,ng)=Rmud(itrc,ng)
                 END DO
               END DO
             CASE ('MUD_Sponge')
@@ -832,7 +879,7 @@
                   Hout(i,ng)=Lsand(itrc,ng)
                 END DO
               END DO
-# ifdef BEDLOAD_VANDERA
+!# ifdef BEDLOAD_VANDERA
             CASE ('Hout(idsurs)')
               Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)
               DO ng=1,Ngrids
@@ -980,7 +1027,7 @@
                   Hout(i,ng)=Lsand(itrc,ng)
                 END DO
               END DO
-# endif
+!# endif
 #endif
             CASE ('Qout(idsand)')
               Npts=load_l(Nval, Cval, NNS, Ngrids, Lsand)

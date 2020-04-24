@@ -2,9 +2,9 @@
       MODULE mod_floats
 #ifdef FLOATS
 !
-!svn $Id: mod_floats.F 921 2018-09-06 18:27:34Z arango $
+!svn $Id: mod_floats.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================

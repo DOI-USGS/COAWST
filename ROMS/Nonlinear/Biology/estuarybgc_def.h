@@ -1,17 +1,21 @@
 /*
-** svn $Id: estuarybgc_def.h 429 2009-12-20 17:30:26Z arango $
+** svn $Id: estuarybgc_def.h 429 2019-12-20 17:30:26Z arango $
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2010 The ROMS/TOMS Group                        **
+!************************************************ Tarandeep S. Kalra ***
+!************************************************** Neil K. Ganju    ***
+!************************************************** Jeremy Testa     ***
+!************************************************* John C. Warner    ***
+** Copyright (c) 2002-2019 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
 **                                                                    **
-**  Defines Fennel et al. (2006) ecosystem model input parameters in  **
+**  Defines Kalra et al. (2020) SAV growth model                      **
+**  and Fennel et al. (2006) ecosystem input parameters in            **
 **  output NetCDF files. It is included in routine "def_info.F".      **
 **                                                                    **
 ************************************************************************
 */
-
 !
 !  Define Fennel et al. (2006) ecosystem model parameters.
 !
@@ -409,7 +413,7 @@
      &               SetParAccess = .FALSE.)
       IF (exit_flag.ne.NoError) RETURN
 
-      Vinfo( 1)='LMBAMX'
+      Vinfo( 1)='LMBMAX'
       Vinfo( 2)='Maximum AGB in self-shading formulation'
       Vinfo( 3)='g C m-2'
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
@@ -448,7 +452,7 @@
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
 
-      Vinfo( 1)='RC'
+      Vinfo( 1)='BRC'
       Vinfo( 2)='Basal respiration coefficient'
       Vinfo( 3)='unitless'
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
@@ -490,6 +494,96 @@
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
+
+      Vinfo( 1)='KN_EPB'
+      Vinfo( 2)='Half saturation nutrient limitation (epiphytes)'
+      Vinfo( 3)='mu-M'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+
+      Vinfo( 1)='KL_EPB'
+      Vinfo( 2)='Half saturation light limitation (epiphytes)'
+      Vinfo( 3)='muE m-2 s-1'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+
+      Vinfo( 1)='ARSC_EPB'
+      Vinfo( 2)='Max. fraction of photosynthesis (epiphytes)'
+      Vinfo( 3)='unitless'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+
+      Vinfo( 1)='ARC_EPB'
+      Vinfo( 2)='Active respiration coefficient (epiphytes)'
+      Vinfo( 3)='unitless'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+
+      Vinfo( 1)='BSRC_EPB'
+      Vinfo( 2)='Max fraction of epiphyte biomass respired (epiphytes)'
+      Vinfo( 3)='unitless'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+
+      Vinfo( 1)='BRC_EPB'
+      Vinfo( 2)='Basal respiration coefficient (epiphytes)'
+      Vinfo( 3)='unitless'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+
+      Vinfo( 1)='LMBMAX_EPB'
+      Vinfo( 2)='Max. EPB in self-shading formulation (epiphytes)'
+      Vinfo( 3)='g C m-2'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+
+      Vinfo( 1)='GRZMX_EPB'
+      Vinfo( 2)='Maximum grazing rate (epiphytes)'
+      Vinfo( 3)='unitless'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+
+      Vinfo( 1)='GRZK_EPB'
+      Vinfo( 2)='Grazing coefficient (epiphytes)'
+      Vinfo( 3)='unitless'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+
+      Vinfo( 1)='TOPT_EPB'
+      Vinfo( 2)='Optimum temperature (epiphytes)'
+      Vinfo( 3)='deg C'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+
+      Vinfo( 1)='KMORT_EPB'
+      Vinfo( 2)='Mortality rate (epiphytes)'
+      Vinfo( 3)='days-1'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+
+      Vinfo( 1)='SCL2_EPB'
+      Vinfo( 2)='Maximum growth fraction (epiphytes)'
+      Vinfo( 3)='unitless'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+
+      Vinfo( 1)='THTA2_EPB'
+      Vinfo( 2)='Temp. growth rate (epiphytes)'
+      Vinfo( 3)='unitless'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
 #endif
       
- 

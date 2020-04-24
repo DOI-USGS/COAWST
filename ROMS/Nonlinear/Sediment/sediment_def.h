@@ -1,7 +1,7 @@
 /*
-** svn $Id: sediment_def.h 830 2017-01-24 21:21:11Z arango $
+** svn $Id: sediment_def.h 995 2020-01-10 04:01:28Z arango $
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2019 The ROMS/TOMS Group                        **
+** Copyright (c) 2002-2020 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -43,7 +43,7 @@
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
 !
-# ifdef BEDLOAD_VANDERA
+!# ifdef BEDLOAD_VANDERA
       Vinfo( 1)='sg_zwbl'
       Vinfo( 2)='input elevation to get near-bottom current vel.'
       status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
@@ -99,7 +99,7 @@
      &               SetParAccess = .FALSE.)
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
-# endif
+!# endif
 !
 #endif
 !

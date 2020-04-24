@@ -404,7 +404,8 @@
 !  Compute metrics for vertical dissipation distribution.
 !
           odiss(i,j)=0.0_r8
-          gamr(i,j)=MAX(MIN(0.707_r8*Dstp(i,j)/                         &
+!         gamr(i,j)=MAX(MIN(0.707_r8*Dstp(i,j)/                         &
+          gamr(i,j)=MAX(MIN(2.0_r8*0.707_r8*Dstp(i,j)/                  &
      &              (1.25_r8*Hwave(i,j)+eps),1.0_r8),0.0_r8)
           DO k=1,N(ng)
             cff2=MAX(MIN((z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)*gamr(i,j),  &
