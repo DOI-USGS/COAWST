@@ -1,6 +1,6 @@
-# svn $Id: makefile 889 2018-02-10 03:32:52Z arango $
+# svn $Id: makefile 995 2020-01-10 04:01:28Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
-# Copyright (c) 2002-2019 The ROMS/TOMS Group             Kate Hedstrom :::
+# Copyright (c) 2002-2020 The ROMS/TOMS Group             Kate Hedstrom :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -176,7 +176,7 @@ endif
 
 ifdef USE_ROMS
 #--------------------------------------------------------------------------
-#  Notice that the token "libraries" is initialize with the ROMS/Utility
+#  Notice that the token "libraries" is initialized with the ROMS/Utility
 #  library to account for calls to objects in other ROMS libraries or
 #  cycling dependencies. These type of dependencies are problematic in
 #  some compilers during linking. This library appears twice at linking
@@ -602,6 +602,22 @@ MYLIB := libocean.a
 libraries: $(libraries)
 
 #--------------------------------------------------------------------------
+#  Build MCT coupler param files.
+#--------------------------------------------------------------------------
+
+.PHONY: mct_params
+
+mct_params:
+	$(shell $(TEST) -d $(SCRATCH_DIR) || $(MKDIR) $(SCRATCH_DIR) )                               \
+	cd $(SCRATCH_DIR);                                                                           \
+	cpp -P $(ROMS_CPPFLAGS) -I$(MY_ROMS_SRC)/ROMS/Include $(MY_ROMS_SRC)/Master/MCT_coupler/mod_coupler_kinds.F > mod_coupler_kinds.f90; \
+	$(MY_ROMS_SRC)/$(CLEAN) mod_coupler_kinds.f90;                                                              \
+	$(FC) -c $(FFLAGS) mod_coupler_kinds.f90;                                                  \
+	cpp -P $(ROMS_CPPFLAGS) -I$(MY_ROMS_SRC)/ROMS/Include $(MY_ROMS_SRC)/Master/MCT_coupler/mct_coupler_params.F > mct_coupler_params.f90; \
+	$(MY_ROMS_SRC)/$(CLEAN) mct_coupler_params.f90;                                                             \
+	$(FC) -c $(FFLAGS) mct_coupler_params.f90;
+
+#--------------------------------------------------------------------------
 #  Build WW3.
 #--------------------------------------------------------------------------
 
@@ -667,6 +683,52 @@ ifdef USE_WRF
 endif
 
 #--------------------------------------------------------------------------
+#  Build WRF_hydro.
+#--------------------------------------------------------------------------
+
+.PHONY: wrfhydroclean
+
+wrfhydroclean:
+ifdef USE_WRFHYDRO
+	cd $(WRFHYDRO_DIR); ls;                                   \
+	./configure;                                              \
+	 make clean;                                              \
+	echo " "; echo " ";                                       \
+	echo "cleaned wrf";
+endif
+
+.PHONY: wrfhydro
+
+wrfhydro:
+ifdef USE_WRFHYDRO
+	export "WRF_HYDRO=1";                                     \
+	export FC=$(FC);                                          \
+	export "FFLAGS=$(FFLAGS)";                                \
+	export "HEADER=$(HEADER)";                                \
+	export MY_ROMS_SRC=$(MY_ROMS_SRC);                        \
+	export "USE_MCT=$(USE_MCT)";                              \
+	cp -p $(BIN) $(BIN).backup;                               \
+	$(RM) -r $(BIN);                                          \
+	cd $(WRFHYDRO_DIR); ls;                                   \
+	echo " "; echo " ";                                       \
+	ls;                                                       \
+	echo "Compiling wrfhydro";                                \
+	cp -p compile_offline_NoahMP.sh compile;                  \
+	./compile;                                                \
+	echo "";                                                  \
+	rm -rf compile;                                           \
+	echo "-------- Finished compiling WRFhydro ------------"
+ ifndef USE_ROMS
+  ifndef USE_SWAN
+   ifndef USE_WW3
+	ln -sf WRF/hydro_v5.0/Run/wrf_hydro.exe coawstM;
+   endif
+  endif
+ endif
+	echo "";
+endif
+
+#--------------------------------------------------------------------------
 #  Target to create ROMS/TOMS dependecies.
 #--------------------------------------------------------------------------
 ifneq "$(MAKECMDGOALS)" "tarfile"
@@ -676,12 +738,12 @@ $(SCRATCH_DIR)/$(NETCDF_MODFILE): | $(SCRATCH_DIR)
 $(SCRATCH_DIR)/$(TYPESIZES_MODFILE): | $(SCRATCH_DIR)
 	cp -f $(NETCDF_INCDIR)/$(TYPESIZES_MODFILE) $(SCRATCH_DIR)
 
+ifdef USE_CICE
 $(SCRATCH_DIR)/libCICE.a: $(MY_CICE_DIR)/libCICE.a
 	cp -f $(MY_CICE_DIR)/libCICE.a $(MY_CICE_DIR)/*.mod $(SCRATCH_DIR)
 
 $(MY_CICE_DIR)/libCICE.a:
 	SeaIce/comp_ice
-ifdef USE_CICE
 $(SCRATCH_DIR)/initial.o: $(MY_CICE_DIR)/CICE_InitMod.o
 $(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/CICE_RunMod.o
 $(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_blocks.o
@@ -730,7 +792,7 @@ endif
 .PHONY: tarfile
 
 tarfile:
-		tar --exclude=".svn" --exclude Output -cvf coawst_v3.5.tar *
+		tar --exclude=".svn" --exclude Output -cvf coawst_v3.6.tar *
 
 .PHONY: zipfile
 

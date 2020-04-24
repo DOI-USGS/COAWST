@@ -1,0 +1,380 @@
+!
+!  Export/Import Coupling Variables
+!
+!svn $Id: coupling_esmf_coamps.dat 1007 2020-02-25 22:29:41Z arango $
+!========================================================= Hernan G. Arango ===
+!  Copyright (c) 2002-2018 The ROMS/TOMS Group                                !
+!    Licensed under a MIT/X style license                                     !
+!    See License_ROMS.txt                                                     !
+!==============================================================================
+!                                                                             !
+!  This file contains all ROMS/TOMS Import/Export metadata used for coupling  !
+!  to other Earth System Model (ESM). The following information is needed for !
+!  imported/exported field.                                                   !
+!                                                                             !
+!       Cinfo( 1)     Field short name (string)                               !
+!       Cinfo( 2)     Field standard name (string)                            !
+!       Cinfo( 3)     Field long descriptive name (string)                    !
+!       Cinfo( 4)     Field source variable name (string)                     !
+!       Cinfo( 5)     Field source units (string)                             !
+!       Cinfo( 6)     Field source grid-cell location (string):               !
+!                       'Center'        => cell center                        !
+!                       'Corner'        => cell corners                       !
+!                       'U'             => right and left  cell faces         !
+!                       'V'             => upper and lower cell faces         !
+!       Cinfo( 7)     Field destination name (string)                         !
+!       Cinfo( 8)     Field destination units (string)                        !
+!       Cinfo( 9)     Field destination grid-cell location (string):          !
+!                       'Center'        => cell center                        !
+!                       'Corner'        => cell corners                       !
+!                       'U'             => right and left  cell faces         !
+!                       'V'             => upper and lower cell faces         !
+!       Cinfo(10)     DATA Model file variable name (only NetCDF files)       !
+!       Cinfo(11)     Field regridding method from source to destination:     !
+!                       'bilinear'      => bilinear interpolation             !
+!                       'patch'         => high-order patch recovery          !
+!                       'conservative1' => first-order conservative           !
+!                       'conservative2' => second-order conservative          !
+!                       'nearest'       => nearest neighbor interpolation     !
+!       Cinfo(12)     Field extrapolation method for unmapped points:         !
+!                       'none'          => no extrapolation                   !
+!                       'nearest'       => nearest source to destination      !
+!                       'idavg'         => nearest inverse distance average   !
+!                       'creep'         => creep fill at specified level      !
+!                       '2steps'        => Turuncoglu's 2 steps extrapolation !
+!       connected     Field connected to coupler (logical):                   !
+!                       .FALSE.         => derived from exchanged field       !
+!                       .TRUE.          => interpolated (regridded, exchanged)!
+!       debug_write   Write out (TRUE/FALSE) exchanged field if DebugLevel>2  !
+!       add_offset    Value added to imported data (real)                     !
+!       scale         Scale to convert imported data to model units (real)    !
+!                                                                             !
+!  The ESM imported fields are processed as:                                  !
+!                                                                             !
+!       field (destination_units) = field (source_units) * scale + add_offset !
+!                                                                             !
+!  Field grid-cell location diagrams:                                         !
+!                                                                             !
+!     Arakawa B-grid    Arakawa C-grid                                        !
+!                                                                             !
+!     q --------- q     q --- v --- q                                         !
+!     |           |     |           |                                         !
+!     |     c     |     u     c     u                                         !
+!     |           |     |           |                                         !
+!     q --------- q     q --- v --- q                                         !
+!                                                                             !
+!  Enclose Cinfo variables with single quotes so this file can be read with   !
+!  a free format statement.                                                   !
+!                                                                             !
+!  Check ESMF Reference Manual (v 8.0 or higher) for more information about   !
+!  regridding methods, unmapped points extrapolation methods, and associated  !
+!  parameters.                                                                !
+!                                                                             !
+!==============================================================================
+!
+
+'dLWrad'
+  'surface_downward_longwave_flux'                 ! standard name
+  'surface downward longwave radiation flux'
+  'ifld_lwdown', 'COAMPS'                          ! source variable, COAMPS
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'lwrad', 'ROMS'                                  ! destination variable, ROMS
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'dLWrad'                                         ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .FALSE.                                          ! debug write into a NetCDF file
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'LWrad'
+  'surface_net_longwave_flux'                      ! standard name
+  'surface net longwave radiation flux'
+  'ifld_lonflx', 'COAMPS'                          ! source variable, COAMPS
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'lwrad', 'ROMS'                                  ! destination variable, ROMS
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  LWrad'                                           ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .FALSE.                                          ! debug write into a NetCDF file
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'SWrad'
+  'surface_net_shortwave_flux'                     ! standard name
+  'surface net shortwave radiation flux'
+  'ifld_solflx', 'COAMPS'                          ! source variable, COAMPS
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'swrad', 'ROMS'                                  ! destination variable, ROMS
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'SS'                                             ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .FALSE.                                          ! debug write into a NetCDF file
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'LHfx'
+  'surface_latent_heat_flux'                       ! standard name
+  'surface latent heat flux'
+  'ifld_lahflx', 'COAMPS'                          ! source variable, COAMPS
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'latent', 'ROMS'                                 ! destination variable, ROMS
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'latent'                                         ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .FALSE.                                          ! debug write into a NetCDF file
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'SHfx'
+  'surface_sensible_heat_flux'                     ! standard name
+  'surface sensible heat flux'
+  'ifld_sehflx', 'COAMPS'                          ! source variable, COAMPS
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'sensible', 'ROMS'                               ! destination variable, ROMS
+  'W m-2'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'sensible'                                       ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .FALSE.                                          ! debug write into a NetCDF file
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'Pair'
+  'inst_pres_height_lowest'                        ! standard name
+  'near surface air pressure'
+  'ifld_slpres', 'COAMPS'                          ! source variable, COAMPS
+  'mb'                                             ! source units
+  'Center'                                         ! source grid-cell
+  'Pair', 'ROMS'                                   ! destination variable, ROMS
+  'mb'                                             ! destination units
+  'Center'                                         ! destination grid-cell
+  'PRESSFC'                                        ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .FALSE.                                          ! debug write into a NetCDF file
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'Tair'
+  'inst_temp_height_lowest'                        ! standard name
+  'near surface air temperature'
+  'ifld_airtmp', 'COAMPS'                          ! source variable, COAMPS
+  'K'                                              ! source units
+  'Center'                                         ! source grid-cell
+  'Tair', 'ROMS'                                   ! destination variable, ROMS
+  'C'                                              ! destination units
+  'Center'                                         ! destination grid-cell
+  'TS'                                             ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .FALSE.                                          ! debug write into a NetCDF file
+  -273.15d0                                        ! importing add offset
+  1.0d0                                            ! importing scale
+
+'Hair'
+  'inst_spec_humid_height_lowest'                  ! standard name
+  'near surface specific humidity'
+  'ifld_airshm', 'COAMPS'                          ! source variable, COAMPS
+  'kg/kg'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'Hair', 'ROMS'                                   ! destination variable, ROMS
+  'g/kg'                                           ! destination units
+  'Center'                                         ! destination grid-cell
+  'QLM'                                            ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .FALSE.                                          ! debug write into a NetCDF file
+  0.0d0                                            ! importing add offset
+  1000.0d0                                         ! importing scale
+
+'Qair'
+  'inst_relative_humid_height_lowest'              ! standard name
+  'near surface relative humidity'
+  'ifld_airrhm', 'COAMPS'                          ! source variable, COAMPS
+  'percent'                                        ! source units
+  'Center'                                         ! source grid-cell
+  'Hair', 'ROMS'                                   ! destination variable, ROMS
+  'fraction'                                       ! destination units
+  'Center'                                         ! destination grid-cell
+  'QLM'                                            ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .FALSE.                                          ! debug write into a NetCDF file
+  0.0d0                                            ! importing add offset
+  0.01d0                                           ! importing scale
+
+'rain'
+  'precipitation_flux'                             ! standard name
+  'total precipitation rate'
+  'ifld_ttlprr', 'COAMPS'                          ! source variable, COAMPS
+  'kg m-2 s-1'                                     ! source units
+  'Center'                                         ! source grid-cell
+  'rain', 'ROMS'                                   ! destination variable, ROMS
+  'kg m-2 s-1'                                     ! destination units
+  'Center'                                         ! destination grid-cell
+  'PRRATE'                                         ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .FALSE.                                          ! debug write into a NetCDF file
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'Uwind'                                            ! short name
+  'inst_zonal_wind_height_lowest'                  ! standard name
+  'surface zonal wind component'
+  'ifld_u10_true', 'COAMPS'                        ! source variable, COAMPS
+  'm s-1'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'Uair', 'ROMS'                                   ! destination variable, ROMS
+  'm s-1'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'ULM'                                            ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .FALSE.                                          ! debug write into a NetCDF file
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'Vwind'                                            ! short name
+  'inst_merid_wind_height_lowest'                  ! standard name
+  'surface meridional wind component'
+  'ifld_v10_true', 'COAMPS'                        ! source variable, COAMPS
+  'm s-1'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'Vwind', 'ROMS'                                  ! destination variable, ROMS
+  'm s-1'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'VLM'                                            ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .FALSE.                                          ! debug write into a NetCDF file
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'shflux'
+  'surface_net_heat_flux'                          ! standard name
+  'surface net heat flux'
+  'ifld_heaflx', 'COAMPS'                          ! source variable, COAMPS
+  'W m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'shflux', 'ROMS'                                 ! destination variable, ROMS
+  'Celsius m s-1'                                  ! destination units
+  'Center'                                         ! destination grid-cell
+  'shflux'                                         ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .FALSE.                                          ! debug write into a NetCDF file
+  0.0d0                                            ! importing add offset
+ -1.0d0                                            ! importing scale
+
+'swflux'
+  'surface_freshwater_flux'                        ! standard name
+  'surface freshwater flux (E-P)'
+  'ifld_mstflx', 'COAMPS'                          ! source variable, COAMPS
+  'kg m-2 s-1'                                     ! source units
+  'Center'                                         ! source grid-cell
+  'swflux', 'ROMS'                                 ! destination variable, ROMS
+  'm s-1'                                          ! destination units
+  'Center'                                         ! destination grid-cell
+  'shflux'                                         ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .FALSE.                                          ! debug write into a NetCDF file
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'sustr'                                            ! short name
+  'surface_zonal_wind_stress'                      ! standard name
+  'surface zonal wind stress component'
+  'ifld_stress_u_true', 'COAMPS'                   ! source variable, COAMPS
+  'N m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'sustr', 'ROMS'                                  ! destination variable, ROMS
+  'm2 s-2'                                         ! destination units
+  'U'                                              ! destination grid-cell
+  'sustr'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .FALSE.                                          ! debug write into a NetCDF file
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'svstr'                                            ! short name
+  'surface_meridional_wind_stress'                 ! standard name
+  'surface meridional wind stress component'
+  'ifld_stress_v_true', 'COAMPS'                   ! source variable, COAMPS
+  'N m-2'                                          ! source units
+  'Center'                                         ! source grid-cell
+  'svstr', 'ROMS'                                  ! destination variable, ROMS
+  'm2 s-2'                                         ! destination units
+  'V'                                              ! destination grid-cell
+  'svstr'                                          ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .FALSE.                                          ! debug write into a NetCDF file
+  0.0d0                                            ! importing add offset
+  1.0d0                                            ! importing scale
+
+'SST'
+  'sea_surface_temperature'                        ! standard name
+  'sea surface temperature'
+  't(:,:,N,itemp)', 'ROMS'                         ! source variable, ROMS
+  'C'                                              ! source units
+  'Center'                                         ! source grid-cell
+  'tsea', 'COAMPS'                                 ! destination variable, COAMPS
+  'K'                                              ! destination units
+  'Center'                                         ! destination grid-cell
+  'SST'                                            ! DATA Model file variable
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .TRUE.                                           ! debug write into a NetCDF file
+  273.15d0                                         ! importing add offset
+  1.0d0                                            ! importing scale
+
+'dSST'
+  'sea_surface_temperature_data'                   ! standard name
+  'sea surface temperature data'
+  'water_temp', 'HyCOM'                            ! source variable, DATA
+  'C'                                              ! source units
+  'Center'                                         ! source grid-cell
+  'tsea', 'COAMPS'                                 ! destination variable, COAMPS
+  'K'                                              ! destination units
+  'Center'                                         ! destination grid-cell
+  'water_temp',                                    ! DATA field and time variables
+  'bilinear'                                       ! regridding method
+  'none'                                           ! unmapped extrapolation method
+  .TRUE.                                           ! connected to coupler
+  .TRUE.                                           ! debug write into a NetCDF file
+  273.15d0                                         ! importing add offset
+  1.0d0                                            ! importing scale
