@@ -34,7 +34,6 @@
 #define MASKING
 #define UV_ADV
 #undef  UV_COR
-#define TS_MPDATA
 #define DJ_GRADPS
 #define SOLVE3D
 #define SPLINES_VVISC

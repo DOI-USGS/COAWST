@@ -27,8 +27,6 @@
 #define WET_DRY
 #define UV_ADV
 #define UV_C2ADVECTION
-#undef  TS_MPDATA
-#define TS_U3HADVECTION
 #define DJ_GRADPS
 #undef  SALINITY
 #define SOLVE3D
@@ -75,7 +73,7 @@
 # if defined GLS_MIXING
 #  define KANTHA_CLAYSON
 #  define N2S2_HORAVG
-#  define RI_SPLINES 
+#  define RI_SPLINES
 #  undef CRAIG_BANNER
 #  undef CHARNOK
 #  undef ZOS_HSIG

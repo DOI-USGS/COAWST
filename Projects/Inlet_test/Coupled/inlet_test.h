@@ -23,7 +23,6 @@
 #define MASKING
 #define UV_ADV
 #undef  UV_COR
-#define TS_MPDATA
 #define DJ_GRADPS
 #define SPLINES_VDIFF
 #define SPLINES_VVISC

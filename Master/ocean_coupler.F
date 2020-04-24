@@ -55,7 +55,8 @@
       USE m_Transfer, ONLY: MCT_waitr => waitrecv
       USE m_Transfer, ONLY: MCT_waits => waitsend
 
-# if defined MCT_INTERP_OC2WV || defined MCT_INTERP_OC2AT
+# if defined MCT_INTERP_OC2WV || defined MCT_INTERP_OC2AT || \
+     defined MCT_INTERP_OC2HY
 !
 !  Sparse Matrix DataType and associated methods.
 !
@@ -104,6 +105,13 @@
       PUBLIC :: ocnfatm_coupling
       PUBLIC :: finalize_ocn2atm_coupling
 # endif
+# ifdef HYDRO_COUPLING
+      PUBLIC :: initialize_ocn2hyd_coupling
+      PUBLIC :: initialize_ocn2hyd_routers
+      PUBLIC :: ocn2hyd_coupling
+      PUBLIC :: ocnfhyd_coupling
+      PUBLIC :: finalize_ocn2hyd_coupling
+# endif
 !
 !  Declarations.
 !
@@ -124,6 +132,12 @@
       END TYPE T_GSMapInterp_A
       TYPE (T_GSMapInterp_A), ALLOCATABLE :: GSMapInterp_A(:,:)
 # endif
+# ifdef MCT_INTERP_OC2HY
+      TYPE T_GSMapInterp_H
+        TYPE(GlobalSegMap) :: GSMapHYD        ! GloabalSegMap variables
+      END TYPE T_GSMapInterp_H
+      TYPE (T_GSMapInterp_H), ALLOCATABLE :: GSMapInterp_H(:,:)
+# endif
 
       TYPE T_AttrVect_G
 # if defined SWAN_COUPLING || defined WW3_COUPLING
@@ -133,6 +147,10 @@
 # ifdef WRF_COUPLING
       TYPE(AttrVect) :: atm2ocn_AV            ! AttrVect variables
       TYPE(AttrVect) :: ocn2atm_AV 
+# endif
+# ifdef HYDRO_COUPLING
+      TYPE(AttrVect) :: hyd2ocn_AV            ! AttrVect variables
+      TYPE(AttrVect) :: ocn2hyd_AV 
 # endif
       END TYPE T_AttrVect_G
       TYPE (T_AttrVect_G), ALLOCATABLE :: AttrVect_G(:)
@@ -148,6 +166,12 @@
         TYPE(Router)   :: ROMStoWRF           ! Router variables
       END TYPE T_Router_A
       TYPE (T_Router_A), ALLOCATABLE :: Router_A(:,:)
+# endif
+# ifdef HYDRO_COUPLING
+      TYPE T_Router_H
+        TYPE(Router)   :: ROMStoHYD           ! Router variables
+      END TYPE T_Router_H
+      TYPE (T_Router_H), ALLOCATABLE :: Router_H(:,:)
 # endif
 
 # ifdef MCT_INTERP_OC2WV
@@ -185,6 +209,24 @@
       END TYPE T_SMPlus_A
       TYPE (T_SMPlus_A), ALLOCATABLE :: SMPlus_A(:,:)
 # endif
+# ifdef MCT_INTERP_OC2HY
+      TYPE T_AV2_H
+        TYPE(AttrVect) :: hyd2ocn_AV2           ! AttrVect variables
+        TYPE(AttrVect) :: ocn2hyd_AV2
+      END TYPE T_AV2_H
+      TYPE (T_AV2_H), ALLOCATABLE :: AV2_H(:,:)
+
+#  if !defined MCT_INTERP_OC2WV
+      TYPE(SparseMatrix) :: sMatO             ! Sparse matrix elements
+#  endif
+      TYPE(SparseMatrix) :: sMatH             ! Sparse matrix elements
+
+      TYPE T_SMPlus_H
+        TYPE(SparseMatrixPlus) :: H2OMatPlus  ! Sparse matrix plus elements
+        TYPE(SparseMatrixPlus) :: O2HMatPlus  ! Sparse matrix plus elements
+      END TYPE T_SMPlus_H
+      TYPE (T_SMPlus_H), ALLOCATABLE :: SMPlus_H(:,:)
+# endif
 
       CONTAINS
 /*
@@ -204,6 +246,9 @@
 # endif
 # ifdef WRF_COUPLING
 #  include "mct_roms_wrf.h"
+# endif
+# ifdef HYDRO_COUPLING
+#  include "mct_roms_hydro.h"
 # endif
 
 
@@ -233,7 +278,7 @@
 !  Local variable declarations.
 !
       integer :: MyError, nprocs, tile
-      integer :: ng, iw, ia, ig, nlay, offset
+      integer :: ng, iw, ia, ig, ih, nlay, offset
 !
 !-----------------------------------------------------------------------
 !
@@ -268,6 +313,44 @@
               IF (MOD(iic(1)+offset,nOCN2ATM(1,1)).eq.0) THEN
                 DO tile=first_tile(ng),last_tile(ng),+1
                   CALL ocn2atm_coupling (ng, ia, tile)
+                END DO
+              END IF
+            END DO
+          END DO
+        END DO
+      END IF
+# endif
+# ifdef HYDRO_OCEAN
+!
+!-----------------------------------------------------------------------
+!  Couple ocean to atmosphere model every nOCN_ATM timesteps.
+!-----------------------------------------------------------------------
+!
+      IF (nl.eq.1) THEN
+        DO nlay=1,NestLayers
+          DO ig=1,GridsInLayer(nlay)
+            ng=GridNumber(ig,nlay)
+            DO ih=1,Nhyd_grids
+              offset=-1 !nlay-NestLayers
+              IF (MOD(iic(1)+offset,nOCNFHYD(1,1)).eq.0) THEN
+                DO tile=first_tile(ng),last_tile(ng),+1
+                  CALL ocnfhyd_coupling (ng, ih, tile)
+                END DO
+              END IF
+            END DO
+          END DO
+        END DO
+      END IF
+!
+      IF (nl.eq.1) THEN
+        DO nlay=1,NestLayers
+          DO ig=1,GridsInLayer(nlay)
+            ng=GridNumber(ig,nlay)
+            DO ih=1,Nhyd_grids
+              offset=-1 !nlay-NestLayers
+              IF (MOD(iic(1)+offset,nOCN2HYD(1,1)).eq.0) THEN
+                DO tile=first_tile(ng),last_tile(ng),+1
+                  CALL ocn2hyd_coupling (ng, ih, tile)
                 END DO
               END IF
             END DO

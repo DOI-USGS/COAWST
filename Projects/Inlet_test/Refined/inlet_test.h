@@ -25,7 +25,6 @@
 #define MASKING
 #define UV_ADV
 #undef  UV_COR
-#define TS_MPDATA
 #define DJ_GRADPS
 
 #define SOLVE3D
@@ -55,7 +54,7 @@
 # ifdef GLS_MIXING
 #  define KANTHA_CLAYSON
 #  define N2S2_HORAVG
-#  define RI_SPLINES 
+#  define RI_SPLINES
 # endif
 # define SEDIMENT
 # ifdef SEDIMENT

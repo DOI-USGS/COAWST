@@ -15,7 +15,6 @@
 #define ROMS_MODEL
 
 #define UV_LOGDRAG
-#define TS_U3HADVECTION
 #define SALINITY
 #define SOLVE3D
 #define SPLINES_VVISC

@@ -1,8 +1,8 @@
       PROGRAM mct_driver
 !
-!svn $Id: mct_driver.h 830 2017-01-24 21:21:11Z arango $
+!svn $Id: mct_driver.h 995 2020-01-10 04:01:28Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !==================================================== John C. Warner ===
@@ -27,6 +27,11 @@
 !        http://polar.ncep.noaa.gov/waves/wavewatch/                   !
 !                                                                      !
 #endif
+#ifdef HYDRO_COUPLING
+!  WRF Hydro:                                                          !
+!       https://ral.ucar.edu/projects/wrf_hydro/overview               !
+!                                                                      !
+#endif
 !=======================================================================
 !
 #if defined ROMS_COUPLING
@@ -40,6 +45,11 @@
       USE module_wrf_top, ONLY : wrf_init
       USE module_wrf_top, ONLY : wrf_run
       USE module_wrf_top, ONLY : wrf_finalize
+#endif
+#ifdef HYDRO_COUPLING
+      USE main_hrldas_driver, ONLY : coawst_hydro_init
+      USE main_hrldas_driver, ONLY : coawst_hydro_run
+      USE main_hrldas_driver, ONLY : coawst_hydro_finalize
 #endif
       USE mct_coupler_params
       USE mod_coupler_iounits
@@ -72,8 +82,8 @@
 
       integer :: MyColor, MyCOMM, MyError, MyKey, Nnodes
       integer :: MyRank, pelast
-      integer :: Ocncolor, Wavcolor, Atmcolor
-      integer :: ng, iw, io, ia, icc
+      integer :: Ocncolor, Wavcolor, Atmcolor, Hydcolor
+	integer :: ng, iw, io, ia, ih, icc
       real(m8) :: lcm, gcdlcm
 
       real(m4) :: CouplingTime             ! single precision
@@ -104,7 +114,7 @@
       CALL allocate_coupler_params
 !
 #if defined MCT_INTERP_OC2WV || defined MCT_INTERP_OC2AT || \
-     defined MCT_INTERP_WV2AT
+    defined MCT_INTERP_WV2AT || defined MCT_INTERP_OC2HY
 !
 !  Read coupled model sparse matrix file names from standard input.
 !
@@ -172,6 +182,31 @@
           ELSE
             lcm=gcdlcm(TI_OCN2ATM,lcm)
             nOCN2ATM(io,ia)=INT(lcm/dtocn(io))
+          END IF
+        END DO
+      END DO
+#endif
+#ifdef HYDRO_OCEAN
+      DO ih=1,Nhyd_grids
+        DO io=1,Nocn_grids
+          lcm=gcdlcm(dthyd(ih),dtocn(io))
+          IF (MOD(TI_HYD2OCN,lcm).eq.0) THEN
+            nHYD2OCN(ih,io)=INT(TI_HYD2OCN/dthyd(ih))
+          ELSE
+            lcm=gcdlcm(TI_HYD2OCN,lcm)
+            nHYD2OCN(ih,io)=INT(lcm/dthyd(ih))
+          END IF
+        END DO
+      END DO
+!
+      DO io=1,Nocn_grids
+        DO ih=1,Nhyd_grids
+          lcm=gcdlcm(dthyd(ih),dtocn(io))
+          IF (MOD(TI_OCN2HYD,lcm).eq.0) THEN
+            nOCN2HYD(io,ih)=INT(TI_OCN2HYD/dtocn(io))
+          ELSE
+            lcm=gcdlcm(TI_OCN2HYD,lcm)
+            nOCN2HYD(io,ih)=INT(lcm/dtocn(io))
           END IF
         END DO
       END DO
@@ -257,6 +292,31 @@
         END DO
       END DO
 #endif
+#ifdef HYDRO_OCEAN
+      DO ih=1,Nhyd_grids
+        DO io=1,Nocn_grids
+          lcm=gcdlcm(dthyd(ih),dtocn(io))
+          IF (MOD(TI_OCN2HYD,lcm).eq.0) THEN
+            nHYDFOCN(ih,io)=INT(TI_OCN2HYD/dthyd(ih))
+          ELSE
+            lcm=gcdlcm(TI_OCN2HYD,lcm)
+            nHYDFOCN(ih,io)=INT(lcm/dthyd(ih))
+          END IF
+        END DO
+      END DO
+!
+      DO io=1,Nocn_grids
+        DO ih=1,Nhyd_grids
+          lcm=gcdlcm(dthyd(ih),dtocn(io))
+          IF (MOD(TI_ATM2OCN,lcm).eq.0) THEN
+            nOCNFHYD(io,ih)=INT(TI_ATM2OCN/dtocn(io))
+          ELSE
+            lcm=gcdlcm(TI_ATM2OCN,lcm)
+            nOCNFHYD(io,ih)=INT(lcm/dtocn(io))
+          END IF
+        END DO
+      END DO
+#endif
 #ifdef AIR_WAVES
       DO ia=1,Natm_grids
         DO iw=1,Nwav_grids
@@ -294,6 +354,9 @@
 #ifdef WRF_COUPLING
       allocate(atmids(Natm_grids))
 #endif
+#ifdef HYDRO_COUPLING
+      allocate(hydids(Nhyd_grids))
+#endif
 !
       N_mctmodels=0
 #ifdef ROMS_COUPLING
@@ -314,6 +377,12 @@
         atmids(ng)=N_mctmodels
      END DO
 #endif
+#ifdef HYDRO_COUPLING
+      DO ng=1,Nhyd_grids
+        N_mctmodels=N_mctmodels+1
+        hydids(ng)=N_mctmodels
+     END DO
+#endif
 !
 !  Assign processors to the models.
 !
@@ -332,6 +401,11 @@
       peATM_frst=pelast+1
       peATM_last=peATM_frst+NnodesATM-1
       pelast=peATM_last
+#endif
+#ifdef HYDRO_COUPLING
+      peHYD_frst=pelast+1
+      peHYD_last=peHYD_frst+NnodesHYD-1
+      pelast=peHYD_last
 #endif
       IF (pelast.ne.Nnodes-1) THEN
         IF (MyRank.eq.0) THEN
@@ -356,51 +430,68 @@
           WRITE (stdout,22) peATM_frst, peATM_last
  22       FORMAT (/,7x,'Atmos Model MPI nodes: ',i3.3,' - ', i3.3)
 #endif
+#ifdef HYDRO_COUPLING
+          WRITE (stdout,22) peHYD_frst, peHYD_last
+ 22       FORMAT (/,7x,'Hydro Model MPI nodes: ',i3.3,' - ', i3.3)
+#endif
 !
 !  Write out some coupled model info.
 !
-
 #ifdef WAVES_OCEAN
-      DO iw=1,Nwav_grids
-        DO io=1,Nocn_grids
-          WRITE (stdout,25) iw, dtwav(iw),io, dtocn(io),                &
-     &                      TI_WAV2OCN, nWAV2OCN(iw,io)
- 25       FORMAT (/,7x,'WAVgrid ',i2.2,' dt= ',f5.1,' -to- OCNgrid ',   &
-     &            i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
-          WRITE (stdout,26) io, dtocn(io),iw, dtwav(iw),                &
-     &                      TI_OCN2WAV, nOCN2WAV(io,iw)
- 26       FORMAT (/,7x,'OCNgrid ',i2.2,' dt= ',f5.1,' -to- WAVgrid ',   &
-     &            i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+        DO iw=1,Nwav_grids
+          DO io=1,Nocn_grids
+            WRITE (stdout,25) iw, dtwav(iw),io, dtocn(io),              &
+     &                        TI_WAV2OCN, nWAV2OCN(iw,io)
+ 25         FORMAT (/,7x,'WAVgrid ',i2.2,' dt= ',f5.1,' -to- OCNgrid ', &
+     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+            WRITE (stdout,26) io, dtocn(io),iw, dtwav(iw),              &
+     &                        TI_OCN2WAV, nOCN2WAV(io,iw)
+ 26         FORMAT (/,7x,'OCNgrid ',i2.2,' dt= ',f5.1,' -to- WAVgrid ', &
+     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+          END DO
         END DO
-      END DO
 #endif
 #ifdef AIR_OCEAN
-      DO ia=1,Natm_grids
-        DO io=1,Nocn_grids
-          WRITE (stdout,27) ia, dtatm(ia),io, dtocn(io),                &
-     &                      TI_ATM2OCN, nATM2OCN(ia,io)
- 27       FORMAT (/,7x,'ATMgrid ',i2.2,' dt= ',f5.1,' -to- OCNgrid ',   &
-     &            i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
-          WRITE (stdout,28) io, dtocn(io),ia, dtatm(ia),                &
-     &                      TI_OCN2ATM, nOCN2ATM(io,ia)
- 28       FORMAT (/,7x,'OCNgrid ',i2.2,' dt= ',f5.1,' -to- ATMgrid ',   &
-     &            i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+        DO ia=1,Natm_grids
+          DO io=1,Nocn_grids
+            WRITE (stdout,27) ia, dtatm(ia),io, dtocn(io),                &
+     &                        TI_ATM2OCN, nATM2OCN(ia,io)
+ 27         FORMAT (/,7x,'ATMgrid ',i2.2,' dt= ',f5.1,' -to- OCNgrid ',   &
+     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+            WRITE (stdout,28) io, dtocn(io),ia, dtatm(ia),                &
+     &                        TI_OCN2ATM, nOCN2ATM(io,ia)
+ 28         FORMAT (/,7x,'OCNgrid ',i2.2,' dt= ',f5.1,' -to- ATMgrid ',   &
+     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+          END DO
         END DO
-      END DO
 #endif
 #ifdef AIR_WAVES
-      DO ia=1,Natm_grids
-        DO iw=1,Nwav_grids
-          WRITE (stdout,29) ia, dtatm(ia),iw, dtwav(iw),                &
-     &                      TI_ATM2WAV, nATM2WAV(ia,iw)
- 29       FORMAT (/,7x,'ATMgrid ',i2.2,' dt= ',f5.1,' -to- WAVgrid ',   &
-     &            i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
-          WRITE (stdout,30) iw, dtwav(iw),ia, dtatm(ia),                &
-     &                      TI_WAV2ATM, nWAV2ATM(iw,ia)
- 30       FORMAT (/,7x,'WAVgrid ',i2.2,' dt= ',f5.1,' -to- ATMgrid ',   &
-     &            i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+        DO ia=1,Natm_grids
+          DO iw=1,Nwav_grids
+            WRITE (stdout,29) ia, dtatm(ia),iw, dtwav(iw),                &
+     &                        TI_ATM2WAV, nATM2WAV(ia,iw)
+ 29         FORMAT (/,7x,'ATMgrid ',i2.2,' dt= ',f5.1,' -to- WAVgrid ',   &
+     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+            WRITE (stdout,30) iw, dtwav(iw),ia, dtatm(ia),                &
+     &                        TI_WAV2ATM, nWAV2ATM(iw,ia)
+ 30         FORMAT (/,7x,'WAVgrid ',i2.2,' dt= ',f5.1,' -to- ATMgrid ',   &
+     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+          END DO
         END DO
-      END DO
+#endif
+#ifdef HYDRO_OCEAN
+        DO ih=1,Nhyd_grids
+          DO io=1,Nocn_grids
+            WRITE (stdout,25) ih, dthyd(ih),io, dtocn(io),                &
+     &                        TI_HYD2OCN, nHYD2OCN(ih,io)
+ 25         FORMAT (/,7x,'HYDgrid ',i2.2,' dt= ',f5.1,' -to- OCNgrid ',   &
+     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+            WRITE (stdout,26) io, dtocn(io),ih, dthyd(ih),                &
+     &                        TI_OCN2HYD, nOCN2HYD(io,ih)
+ 26         FORMAT (/,7x,'OCNgrid ',i2.2,' dt= ',f5.1,' -to- HYDgrid ',   &
+     &              i2.2,' dt= ',f5.1,', CplInt: ',f7.1,' Steps: ',i3.3)
+          END DO
+        END DO
 #endif
         END IF
       END IF
@@ -412,6 +503,7 @@
       Atmcolor=1
       Ocncolor=2
       Wavcolor=3
+      Hydcolor=4
       MyKey=0
 #ifdef ROMS_COUPLING
       IF ((peOCN_frst.le.MyRank).and.(MyRank.le.peOCN_last)) THEN
@@ -426,6 +518,11 @@
 #ifdef WRF_COUPLING
       IF ((peATM_frst.le.MyRank).and.(MyRank.le.peATM_last)) THEN
         MyColor=ATMcolor
+      END IF
+#endif
+#ifdef HYDRO_COUPLING
+      IF ((peHYD_frst.le.MyRank).and.(MyRank.le.peHYD_last)) THEN
+        MyColor=HYDcolor
       END IF
 #endif
       CALL mpi_comm_split (MPI_COMM_WORLD, MyColor, MyKey, MyCOMM,      &
@@ -444,15 +541,8 @@
 #elif defined WW3_COUPLING
       IF (MyColor.eq.WAVcolor) THEN
         CALL WW3_init (MyCOMM)
-!        CALL WW3_driver_run
-!        CALL WW3_driver_finalize
-      END IF
-#elif defined REFDIF_COUPLING
-      IF (MyColor.eq.WAVcolor) THEN
-        CouplingTime=REAL(TimeInterval(Iocean,Iwaves))
-        CALL refdif_initialize (MyCOMM)
-        CALL refdif_run (CouplingTime, INPname(Iwaves))
-        CALL refdif_finalize
+!       CALL WW3_driver_run
+!       CALL WW3_driver_finalize
       END IF
 #endif
 #ifdef WRF_COUPLING
@@ -460,6 +550,13 @@
         CALL wrf_init (MyCOMM)
         CALL wrf_run
         CALL wrf_finalize(.TRUE.)
+      END IF
+#endif
+#ifdef HYDRO_COUPLING
+      IF (MyColor.eq.HYDcolor) THEN
+        CALL coawst_hydro_init (MyCOMM)
+        CALL coawst_hydro_run
+        CALL coawst_hydro_finalize
       END IF
 #endif
 #ifdef ROMS_COUPLING

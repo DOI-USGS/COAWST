@@ -86,9 +86,6 @@
 # define UV_COR
 # define UV_VIS2
 # define MIX_S_UV
-# define TS_U3HADVECTION
-# define TS_C4VADVECTION
-# undef  TS_MPDATA
 
 # ifdef SSW_BBL
 #  define SSW_CALC_ZNOT

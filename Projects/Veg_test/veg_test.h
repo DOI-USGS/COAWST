@@ -1,7 +1,7 @@
 /*
-** svn $Id: inlet_test.h 838 2008-11-17 04:22:18Z jcwarner $
+** svn $Id: veg_test.h 838 2019-11-17 04:22:18Z jcwarner $
 *******************************************************************************
-** Copyright (c) 2002-2008 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2019 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -9,14 +9,15 @@
 ** Options for Vegetation Test Case, ROMS only.
 **
 ** Application flag:   VEG_TEST
-** Input script:       ocean_veg_test.in
+** Input script:       coupling_veg_test.in
+**                     ocean_veg_test.in
 **                     vegetation.in
 **                     sediment_veg_test.in
 */
 
 #define ROMS_MODEL
-#define SWAN_MODEL 
-#define MCT_LIB 
+#define SWAN_MODEL
+#define MCT_LIB
 
 #define UV_VIS2
 #define MIX_S_UV
@@ -24,7 +25,6 @@
 #define WET_DRY
 #define UV_ADV
 #undef  UV_COR
-#define TS_MPDATA
 #define DJ_GRADPS
 #define SOLVE3D
 #define SPLINES_VVISC
@@ -46,9 +46,10 @@
 # define SSW_CALC_ZNOT
 #endif
 
-#define VEGETATION 
-# ifdef VEGETATION 
-#  undef ANA_VEGETATION 
+/* Vegetation flags*/
+#define VEGETATION
+# ifdef VEGETATION
+#  undef ANA_VEGETATION
 #  define VEG_DRAG
 #  ifdef VEG_DRAG
 #   define VEG_FLEX
@@ -58,7 +59,6 @@
 #  ifdef VEG_SWAN_COUPLING
 #   define VEG_STREAMING ! dependence to WEC_VF/BOTTOM_STREAMING
 #  endif
-# define MARSH_WAVE_THRUST
 # endif
 
 #ifdef SOLVE3D
@@ -71,6 +71,7 @@
 # endif
 #  define RI_SPLINES
 # endif
+
 # undef SEDIMENT
 # ifdef SEDIMENT
 #  define SUSPLOAD

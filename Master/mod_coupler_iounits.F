@@ -20,11 +20,6 @@
 # ifdef ROMS_MODEL
       USE mod_param
 # endif
-# if defined WW3_COUPLING
-#  ifdef MCT_INTERP_WV2AT
-      USE mctww3pa
-#  endif
-# endif
 
       implicit none
 
@@ -38,13 +33,9 @@
 !      character (len=IOnamesize) :: Wname
 !# endif
 
-!# if defined MCT_INTERP_OC2WV || defined MCT_INTERP_OC2AT || \
-!     defined MCT_INTERP_WV2AT
 ! this flag is temporary for SCRIP option.
-
       integer :: scrip_opt
       character (len=80) :: SCRIPname
-!# endif
 # ifdef ROMS_COUPLING
 #  ifdef MCT_INTERP_OC2WV
       character (len=80), dimension(:,:), pointer :: O2Wname
@@ -54,15 +45,26 @@
       character (len=80), dimension(:,:), pointer :: O2Aname
       character (len=80), dimension(:,:), pointer :: A2Oname
 #  endif
+#  ifdef MCT_INTERP_OC2HY
+      character (len=80), dimension(:,:), pointer :: O2Hname
+      character (len=80), dimension(:,:), pointer :: H2Oname
+#  endif
 # endif
 # if defined SWAN_COUPLING || defined WW3_COUPLING
 #  ifdef MCT_INTERP_WV2AT
       character (len=80), dimension(:,:), pointer :: W2Aname
       character (len=80), dimension(:,:), pointer :: A2Wname
 #  endif
+#  ifdef MCT_INTERP_WV2HY
+      character (len=80), dimension(:,:), pointer :: W2Hname
+      character (len=80), dimension(:,:), pointer :: H2Wname
+#  endif
 # endif
 # ifdef WRF_MODEL
       character (len=80) :: Aname
+# endif
+# ifdef WRFHYDRO_MODEL
+      character (len=80) :: Hname
 # endif
 # ifdef INWAVE_MODEL
 !     character (len=80), dimension(Ngridss) :: IWINIname
@@ -80,7 +82,7 @@
 !=======================================================================
 
       character (len=1 ), parameter :: blank = ' '
-      integer :: i, io, ia, iw
+      integer :: i, io, ia, iw, ih
 
 # ifdef ROMS_COUPLING
 #  ifdef MCT_INTERP_OC2WV
@@ -95,7 +97,6 @@
         END DO
       END DO
 #  endif
-
 #  ifdef MCT_INTERP_OC2AT
       allocate (O2Aname(Nocn_grids,Natm_grids))
       allocate (A2Oname(Natm_grids,Nocn_grids))
@@ -108,7 +109,18 @@
         END DO
       END DO
 #  endif
-
+#  ifdef MCT_INTERP_OC2HY
+      allocate (O2Hname(Nocn_grids,Nhyd_grids))
+      allocate (H2Oname(Nhyd_grids,Nocn_grids))
+      DO ih=1,Nhyd_grids
+        DO io=1,Nocn_grids
+          DO i=1,LEN(O2Hname(io,ih))
+            O2Hname(io,ih)(i:i)=blank
+            H2Oname(ih,io)(i:i)=blank
+          END DO
+        END DO
+      END DO
+#  endif
 # endif
 # if defined SWAN_COUPLING || defined WW3_COUPLING
 #  ifdef MCT_INTERP_WV2AT

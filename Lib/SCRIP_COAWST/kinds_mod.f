@@ -40,7 +40,7 @@
 
 !-----------------------------------------------------------------------
 
-      integer, parameter :: char_len  = 80,                             &
+      integer, parameter :: char_len  = 120,                            &
      &                      int_kind  = kind(1),                        &
      &                      log_kind  = kind(.true.),                   &
      &                      real_kind = selected_real_kind(6),          &

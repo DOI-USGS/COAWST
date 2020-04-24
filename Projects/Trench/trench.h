@@ -18,7 +18,6 @@
 #undef  LOG_PROFILE
 #define UV_ADV
 #define UV_LOGDRAG
-#define TS_U3HADVECTION
 #undef  SALINITY
 #define SOLVE3D
 #define SEDIMENT

@@ -17,6 +17,7 @@ NGRIDS_ROMS=2,
 NGRIDS_SWAN=2,
 NGRIDS_WW3=0,
 NGRIDS_WRF=2,
+NGRIDS_HYD=0,
 
 ! 3) Enter name of the ROMS grid file(s):
 !
@@ -61,6 +62,10 @@ PARENT_GRID_RATIO(1)=1,
 PARENT_GRID_RATIO(2)=3,
 PARENT_ID(1)=0
 PARENT_ID(2)=1
+
+! 7) Enter the name of the WRF Hydro input grid(s).
+!
+HYDRO_GRIDS(1)='../../WRF_hydro/forcings/WRF-Hydro/DOMAIN/Fulldom_hires.nc',
 
 !
 !  The $END statement below is required

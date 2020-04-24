@@ -7,8 +7,8 @@
 #  1. You need to set: FORT
 #
 
-#FORT = ifort
-FORT = gfortran
+FORT = ifort
+#FORT = gfortran
 #FORT  = pgi
 
 # 2. If you want to run in MPI, then set USE_MPI=on,
@@ -17,9 +17,12 @@ FORT = gfortran
 
 USE_MPI=on               # distributed-memory parallelism
 USE_MPIF90=on            # compile with mpif90 script
+USE_NETCDF4=on
 
 #
-#   3. YOU  SHOULD NOT NEED TO CHANGE ANYTHING BELOW HERE
+#   3. At the command prompt, type-->      make
+#
+#   4. YOU  SHOULD NOT NEED TO CHANGE ANYTHING BELOW HERE
 #
 
 COMPILERS = ../../Compilers
@@ -56,6 +59,7 @@ OBJSET  = \
 	read_ww3.o \
 	read_roms.o \
 	read_wrf.o \
+	read_hydro.o \
 	remap_vars.o \
 	remap_distwgt.o \
 	remap_conserv.o \
@@ -115,6 +119,10 @@ read_wrf.o: $(SRCDIR)/read_wrf.f kinds_mod.o scripwrap_mod.o  \
 	$(CPP) $(CPPFLAGS)  $(SRCDIR)/read_wrf.f  $(SRCDIR)/read_wrf.fpp
 	$(FC) $(FLAGS) -c $(SRCDIR)/read_wrf.fpp
 
+read_hydro.o: $(SRCDIR)/read_hydro.f kinds_mod.o scripwrap_mod.o  \
+                        netcdf.o create_fullgrid.o $(INCLUDE)
+	$(FC) $(FLAGS) -c $(SRCDIR)/read_hydro.f
+
 remap_vars.o: $(SRCDIR)/remap_vars.f kinds_mod.o constants.o grids.o \
                             $(INCLUDE)
 	$(FC) $(FLAGS) -c $(SRCDIR)/remap_vars.f
@@ -164,7 +172,7 @@ create_masks.o: $(SRCDIR)/create_masks.f kinds_mod.o scripwrap_mod.o  \
 
 scrip_coawst.o: $(SRCDIR)/scrip_coawst.f kinds_mod.o constants.o iounits.o \
 		scripwrap_mod.o create_fullgrid.o read_swan.o read_roms.o  \
-		read_wrf.o read_ww3.o scrip.o create_masks.o \
+		read_wrf.o read_hydro.o read_ww3.o scrip.o create_masks.o \
 		$(INCLUDE)
 	$(CPP) $(CPPFLAGS)  $(SRCDIR)/scrip_coawst.f  $(SRCDIR)/scrip_coawst.fpp
 	$(FC) $(FLAGS) -c $(SRCDIR)/scrip_coawst.fpp

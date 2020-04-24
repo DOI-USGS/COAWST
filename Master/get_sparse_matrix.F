@@ -1,6 +1,6 @@
 #include "cppdefs.h"
 #if defined MCT_INTERP_OC2AT || defined MCT_INTERP_OC2WV || \
-    defined MCT_INTERP_WV2AT
+    defined MCT_INTERP_WV2AT || defined MCT_INTERP_OC2HY
       SUBROUTINE get_sparse_matrix (ng, nc_name, num_sparse_elems,      &
      &                              src_dims, dst_dims)
 !
