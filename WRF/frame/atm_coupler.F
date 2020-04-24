@@ -81,8 +81,7 @@
       USE m_MatAttrVectMul, ONLY : MCT_MatVecMul => sMatAvMult
 # endif
 !
-      USE mct_wrf_coupler_params
-      USE module_parallel
+      USE mct_coupler_params
 !
       implicit none
 !

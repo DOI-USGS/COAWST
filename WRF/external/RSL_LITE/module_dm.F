@@ -1707,7 +1707,7 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
    SUBROUTINE split_communicator
 #ifndef STUBMPI
 # ifdef WRF_COUPLING
-      USE module_parallel
+      USE mct_coupler_params
 # endif
       IMPLICIT NONE
       LOGICAL mpi_inited
@@ -1815,8 +1815,7 @@ LOGICAL FUNCTION wrf_dm_land_logical ( inval )
       END IF
 ! this should have been reset by init_module_wrf_quilt to be just the compute tasks
 # ifdef WRF_COUPLING
-      mpi_comm_here=MyComm
-      ATM_COMM_WORLD=MyComm
+      mpi_comm_here=ATM_COMM_WORLD
       CALL wrf_set_dm_communicator ( ATM_COMM_WORLD )
 # endif
       CALL wrf_get_dm_communicator( mpi_comm_here )
@@ -2516,6 +2515,8 @@ END MODULE module_dm
    SUBROUTINE push_communicators_for_domain( id )
       USE module_dm
       INTEGER, INTENT(IN) :: id   ! if specified also does an instate for grid id
+!  Only required for distrbuted memory parallel runs
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
       IF ( communicator_stack_cursor .GE. max_domains ) CALL wrf_error_fatal("push_communicators_for_domain would excede stacksize")
       communicator_stack_cursor = communicator_stack_cursor + 1
 
@@ -2533,10 +2534,13 @@ END MODULE module_dm
       mytask_y_stack( communicator_stack_cursor )       =    mytask_y
 
       CALL instate_communicators_for_domain( id )
+#endif
    END SUBROUTINE push_communicators_for_domain
    SUBROUTINE pop_communicators_for_domain
       USE module_dm
       IMPLICIT NONE
+      !  Only required for distrbuted memory parallel runs
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
       IF ( communicator_stack_cursor .LT. 1 ) CALL wrf_error_fatal("pop_communicators_for_domain on empty stack")
       current_id = id_stack(communicator_stack_cursor)
       local_communicator = local_communicator_stack( communicator_stack_cursor )
@@ -2551,9 +2555,12 @@ END MODULE module_dm
       mytask_x = mytask_x_stack( communicator_stack_cursor )
       mytask_y = mytask_y_stack( communicator_stack_cursor )
       communicator_stack_cursor = communicator_stack_cursor - 1
+#endif
    END SUBROUTINE pop_communicators_for_domain
    SUBROUTINE instate_communicators_for_domain( id )
       USE module_dm
+!  Only required for distrbuted memory parallel runs
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: id
       INTEGER ierr
@@ -2569,9 +2576,12 @@ END MODULE module_dm
       ntasks_y       = ntasks_y_store( id )
       mytask_x       = mytask_x_store( id )
       mytask_y       = mytask_y_store( id )
+#endif
    END SUBROUTINE instate_communicators_for_domain
    SUBROUTINE store_communicators_for_domain( id )
       USE module_dm
+!  Only required for distrbuted memory parallel runs
+#if ( defined( DM_PARALLEL ) && ( ! defined( STUBMPI ) ) )
       IMPLICIT NONE
       INTEGER, INTENT(IN) :: id
       local_communicator_store( id )    =    local_communicator
@@ -2585,6 +2595,7 @@ END MODULE module_dm
       mytask_store( id )        =    mytask
       mytask_x_store( id )      =    mytask_x
       mytask_y_store( id )      =    mytask_y
+#endif
    END SUBROUTINE store_communicators_for_domain
 
 !=========================================================================
@@ -6343,9 +6354,9 @@ IF ( grid%active_this_task ) THEN
                                 cims, cime, cjms, cjme, ckms, ckme,    &
                                 cips, cipe, cjps, cjpe, ckps, ckpe    )
 
-     smoother: if(config_flags%smooth_option/=0) then
+     smoothr: if(config_flags%smooth_option/=0) then
 #include "nest_feedbackup_smooth.inc"
-     endif smoother
+     endif smoothr
 
     CALL pop_communicators_for_domain
 END IF

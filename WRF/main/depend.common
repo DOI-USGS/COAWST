@@ -15,7 +15,7 @@ module_dm.o: module_machine.o module_state_description.o module_wrf_error.o \
 		module_comm_nesting_dm.o \
 		module_configure.o module_comm_dm.o \
 		module_cpl.o \
-		module_parallel.o \
+		$(MCT_PARAMS_DIR)/mct_coupler_params.o \
 		../share/module_model_constants.o
 
 module_timing.o: hires_timer.o clog.o
@@ -83,7 +83,6 @@ module_integrate.o: \
 		module_cpl.o \
 		module_dm.o \
 		atm_coupler.o \
-		mct_wrf_coupler_params.o \
 		$(ESMF_MOD_DEPENDENCE)
 
 module_intermediate_nmm.o: \
@@ -138,9 +137,7 @@ module_wrf_error.o: \
 		clog.o \
 		$(ESMF_MOD_DEPENDENCE)
 
-atm_coupler.o: module_domain.o module_parallel.o mct_wrf_coupler_params.o
-
-mct_wrf_coupler_params.o: mod_wrf_coupler_kinds.o
+atm_coupler.o: module_domain.o $(MCT_PARAMS_DIR)/mct_coupler_params.o
 
 wrf_debug.o: \
 		module_wrf_error.o
