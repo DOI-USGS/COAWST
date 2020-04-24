@@ -101,7 +101,7 @@
   then
     opt="$opt ${FFLAGS}"
     opt="$opt -I$MCT_INCDIR"
-    opt="$opt -I${WRF_DIR}/frame"
+    opt="$opt -I${MCT_PARAMS_DIR}"
   fi
 
   # netcdf include dir

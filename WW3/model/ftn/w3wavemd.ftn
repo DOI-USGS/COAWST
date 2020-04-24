@@ -2167,6 +2167,14 @@
 ! ==================================================================== /
 !
   400 CONTINUE
+
+#if defined COAWST_COUPLING && defined MCT_LIB
+!          jcw bottom of wavemd calling the coupler
+!/COAWST      IF (ITIME.gt.0) THEN
+!/COAWST        CALL COAWST_CPL (ITIME)
+!/COAWST      END IF
+#endif
+
 !
 ! 4.  Perform output to file if requested ---------------------------- /
 ! 4.a Check if time is output time
@@ -2345,9 +2353,9 @@
 
 #if defined COAWST_COUPLING && defined MCT_LIB
 !          jcw bottom of wavemd calling the coupler
-!/COAWST      IF (ITIME.gt.0) THEN
-!/COAWST        CALL COAWST_CPL (ITIME)
-!/COAWST      END IF
+!/COOOOAWST      IF (ITIME.gt.0) THEN
+!/COOOOAWST        CALL COAWST_CPL (ITIME)
+!/COOOOAWST      END IF
 #endif
 
             DO J=1, NOTYPE

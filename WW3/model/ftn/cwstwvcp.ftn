@@ -80,6 +80,8 @@
       USE m_MatAttrVectMul, ONLY : MCT_MatVecMul => sMatAvMult
 # endif
 
+      USE W3ODATMD, ONLY: SCREEN
+
       implicit none
 !
 !     PRIVATE
@@ -160,7 +162,7 @@
 !                                                                      *
 !***********************************************************************
 !
-      USE MCTWW3PA
+      USE MCT_COUPLER_PARAMS
 !
       IMPLICIT NONE
 !
@@ -250,7 +252,7 @@
 !                                                                      !
 !=======================================================================
 !
-      USE MCTWW3PA
+      USE MCT_COUPLER_PARAMS
       USE W3GDATMD, ONLY: NX, NY, NSEA
 # ifdef MCT_INTERP_WV2AT
 !     USE mod_coupler_iounits
@@ -693,7 +695,7 @@
 !                                                                      !
 !=======================================================================
 !
-      USE MCTWW3PA
+      USE MCT_COUPLER_PARAMS
 !      USE ww3_iounits
 !     USE M_PARALL
 !
@@ -772,7 +774,7 @@
 !
       USE CONSTANTS, ONLY: PI
       USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, MAPSF
-      USE MCTWW3PA
+      USE MCT_COUPLER_PARAMS
       USE W3ADATMD, ONLY: HS, PHIBBL, PHIOC, FP0, T0M1, UBA
       USE W3ADATMD, ONLY: THM, WLM
 !     USE W3ODATMD, ONLY: QB
@@ -1295,7 +1297,7 @@
 !
       USE CONSTANTS, ONLY: PI
       USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, MAPSF
-      USE MCTWW3PA
+      USE MCT_COUPLER_PARAMS
       USE W3ADATMD, ONLY: HS, PHIBBL, PHIOC, FP0, T0M1, UBA
       USE W3ADATMD, ONLY: WLM
 !
@@ -1548,7 +1550,7 @@
       USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, MAPSF
       USE W3SERVMD
       USE W3IDATMD
-      USE MCTWW3PA
+      USE MCT_COUPLER_PARAMS
       USE W3WDATMD, ONLY: WLV
       USE W3ADATMD, ONLY: CX, CY
 !
@@ -1853,7 +1855,7 @@
       USE W3GDATMD, ONLY: NX, NY, NSEA, NSEAL, MAPSF
       USE W3SERVMD
       USE W3IDATMD
-      USE MCTWW3PA
+      USE MCT_COUPLER_PARAMS
       USE W3ADATMD, ONLY: UA, UD
 !
       implicit none
@@ -2072,7 +2074,7 @@
 !  This routines terminates execution during coupling error.         ===
 !                                                                    ===
 !=======================================================================
-      USE MCTWW3PA
+      USE MCT_COUPLER_PARAMS
 !
 !  Local variable declarations.
 !

@@ -401,7 +401,6 @@
                                    touch w3wdatmd.ftn
                                    touch ww3_shel.ftn ;;
       'coawst' ) cd $main_dir/ftn ; touch cwstwvcp.ftn ;;
-      'coawst' ) cd $main_dir/ftn ; touch mctww3pa.ftn ;;
       'agcm'  ) cd $main_dir/ftn ; touch w3agcmmd.ftn
                                    touch w3fldsmd.ftn
                                    touch w3iogomd.ftn

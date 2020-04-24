@@ -98,7 +98,7 @@
               shared mpp mpiexp thread GSE prop \
               stress s_ln source stab s_nl snls s_bot s_db miche s_tr s_bs \
               dstress s_ice s_is reflection s_xx \
-              wind windx rwind curr currx mgwind mgprop mggse \
+              wind windx wcor rwind curr currx mgwind mgprop mggse \
               subsec tdyn dss0 pdif tide refrx ig rotag arctic nnt mprf \
               cou oasis agcm ogcm igcm trknc setup pdlib memck uost coawst
   do
@@ -248,6 +248,11 @@
       windx  ) TY='one'
                ID='wind interpolation in space'
                OK='WNX0 WNX1 WNX2' ;;
+#sort:wcor:
+      wcor   ) TY='upto1'
+               ID='wind speed correction'
+               TS='WCOR'
+               OK='WCOR' ;;
 #sort:rwind:
       rwind  ) TY='upto1'
                ID='wind vs. current definition'
@@ -791,7 +796,7 @@
 
   coawstmd=$NULL
   case $coawst in
-   COAWST) coawstmd='mctww3pa cwstwvcp'
+   COAWST) coawstmd='cwstwvcp'
    echo " found COAWST in switch file"
   esac
 
@@ -1356,7 +1361,6 @@
          'W3PARALL'     ) modtest=w3parall.o ;;
          'W3SMCOMD'     ) modtest=w3smcomd.o ;;
          'CWSTWVCP'     ) modtest=cwstwvcp.o ;;
-         'MCTWW3PA'     ) modtest=mctww3pa.o ;;
          *              ) modfound=no ;; 
       esac
 

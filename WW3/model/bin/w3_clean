@@ -270,7 +270,7 @@ EOF
       done
     fi
     # clean up ftn & aux
-    for folder in ftn aux
+    for folder in ftn auxx
     do
       if [ -d $main_dir/$folder ]
       then

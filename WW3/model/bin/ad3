@@ -211,7 +211,7 @@
   then
 
 # jcw Run cpp on files we added ifdefs to.
-    if [ "$name" = "cwstwvcp" ] || [ "$name" = "mctww3pa" ] || [ "$name" = "ww3_shel" ] || [ "$name" = "w3wavemd" ] || [ "$name" = "w3updtmd" ]
+    if [ "$name" = "cwstwvcp" ] || [ "$name" = "ww3_shel" ] || [ "$name" = "w3wavemd" ] || [ "$name" = "w3updtmd" ]
     then
       headpre="$(echo ${COAWST_APPLICATION} | tr '[A-Z]' '[a-z]')"
       HEADER=$headpre.h
