@@ -14,9 +14,6 @@ variables:
 	double survey_time(survey) ;
 		survey_time:long_name = "survey time" ;
 		survey_time:units = "day" ;
-	double obs_variance(state_variable) ;
-		obs_variance:long_name = "global time and space observation variance" ;
-		obs_variance:units = "squared state variable units" ;
 	int obs_type(datum) ;
 		obs_type:long_name = "model state variable associated with observation" ;
                 obs_type:flag_values = "1, 2, 3, 4, 5, 6, 7" ;

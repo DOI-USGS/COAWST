@@ -311,8 +311,8 @@
 ! Advection in theta space.
 ! Need to wrap around in theta dir. NOt always
 !
-# ifdef AC_U3HADVECTION
       opd=1.0_r8/pd
+# ifdef AC_U3HADVECTION
       J_LOOP: DO j=Jstr,Jend
         DO i=Istr,Iend
 #  if defined THETA_AC_PERIODIC

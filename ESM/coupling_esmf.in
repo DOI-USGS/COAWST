@@ -1,9 +1,9 @@
 !
 ! Multiple model coupling parameters: ESMF/NUOPC Library
 !
-!svn $Id: coupling_esmf.in 946 2019-02-03 16:32:28Z arango $
+!svn $Id: coupling_esmf.in 1007 2020-02-25 22:29:41Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -65,6 +65,10 @@
 
            CPLname = coupling_esmf.dat
 
+! Coupling free-format run sequence configuration filename.
+
+          CONFname = esmApp.runconfig
+
 ! Coupled models standard input script or namelist filename.
 
    INPname(roms)   = roms.in
@@ -72,29 +76,52 @@
    INPname(seaice) = seaice.in
    INPname(waves)  = waves.in
 
-! Active coupled Earth System Models (ESM) switch (T/F).  If a component
-! is nested, each grid is considered an independent component. Specify
-! which nested grids are coupled. The first grid of active ESM componets
-! needs to be coupled always.
+! Active coupled Earth System Models (ESM) switch (T/F).
 
-  IsActive(roms)   == T F                   ! ROMS (NgridsR)
-  IsActive(atmos)  == F F                   ! atmosphere model (NgridsA)
-  IsActive(seaice) == F                     ! sea-ice model (NgridsI)
-  IsActive(waves)  == F                     ! wave model (NgridsW)
-  IsActive(data)   =  T                     ! data model
+  IsActive(roms)   = T                      ! ROMS
+  IsActive(atmos)  = F                      ! atmosphere model
+  IsActive(seaice) = F                      ! seaice model
+  IsActive(waves)  = F                      ! wave model
+  IsActive(data)   = T                      ! DATA model
 
-! Set which ESM components are connected during coupling (T/F).
+! Set which ESM components are connected to the ocean component (ROMS)
+! during coupling (T/F). If ROMS has nested grids, indicate which grids
+! are connected to the other ESM components, [1:NgridsR] expected.
 
-  Coupled(OCN-ATM) =  F                     ! ROMS-atmosphere connected
-  Coupled(OCN-DAT) =  T                     ! ROMS-data connected
-  Coupled(OCN-ICE) =  F                     ! ROMS-seaice connected
-  Coupled(OCN-WAV) =  F                     ! ROMS-wave coupling connected
-  Coupled(ATM-DAT) =  F                     ! atmosphere-data connected
-  Coupled(ATM-ICE) =  F                     ! atmosphere-seaice connected
-  Coupled(ATM-WAV) =  F                     ! atmosphere-wave connected
-  Coupled(ICE-DAT) =  F                     ! seaice-data connected
-  Coupled(ICE-WAV) =  F                     ! seaice-wave connected
-  Coupled(WAV-DAT) =  F                     ! wave-data connected
+  Coupled(ATM2OCN) ==  F                    ! atmosphere -> ROMS connected
+  Coupled(ICE2OCN) ==  F                    ! seaice -> ROMS connected
+  Coupled(WAV2OCN) ==  F                    ! wave -> ROMS connected
+  Coupled(DAT2OCN) ==  T                    ! DATA -> ROMS connected
+
+! Set which ESM components are connected to the atmosphere component
+! during coupling (T/F). If the atmosphere component has nested grids,
+! indicate which grids are connected to the other ESM components,
+! [1:NgridsA] expected.
+
+  Coupled(OCN2ATM) ==  F                    ! ROMS -> atmosphere connected
+  Coupled(ICE2ATM) ==  F                    ! seaice -> atmosphere connected
+  Coupled(WAV2ATM) ==  F                    ! wave -> atmosphere connected
+  Coupled(DAT2ATM) ==  F                    ! DATA -> atmosphere connected
+
+! Set which ESM components are connected to the seaice component
+! during coupling (T/F). If the seaice component has nested grids,
+! indicate which grids are connected to the other ESM components,
+! [1:NgridsI] expected.
+
+  Coupled(ATM2ICE) ==  F                    ! atmosphere -> seaice connected
+  Coupled(OCN2ICE) ==  F                    ! ROMS -> seaice connected
+  Coupled(WAV2ICE) ==  F                    ! wave -> seaice connected
+  Coupled(DAT2ICE) ==  F                    ! DATA -> seaice connected
+
+! Set which ESM components are connected to the wave component
+! during coupling (T/F). If the wave component has nested grids,
+! indicate which grids are connected to the other ESM components,
+! [1:NgridsW] expected.
+
+  Coupled(ATM2WAV) ==  F                    ! atmosphere -> wave connected
+  Coupled(ICE2WAV) ==  F                    ! seaice -> wave connected
+  Coupled(OCN2WAV) ==  F                    ! ROMS -> wave connected
+  Coupled(DAT2WAV) ==  F                    ! DATA -> wave connected
 
 ! Model coupling type (check Glossary):
 !
@@ -110,7 +137,7 @@
 
    PETlayoutOption = 0
 
-! Data Model parallel distributed-memory domain decomposition.
+! DATA Model parallel distributed-memory domain decomposition.
 
             ItileD = 2                      ! I-direction partition
             JtileD = 2                      ! J-direction partition
@@ -120,9 +147,9 @@
 ! layout, the number of PETs needed is the sum of all coupled model components.
 ! Only the PET values for IsActive(...)=T are processed and considered.
 
-  Nthreads(roms)   == 4                     ! ocean model PETs
-  Nthreads(atmos)  == 1                     ! atmosphere model PETs
-  Nthreads(seaice) =  1                     ! sea-ice model PETs
+  Nthreads(roms)   =  4                     ! ocean model PETs
+  Nthreads(atmos)  =  1                     ! atmosphere model PETs
+  Nthreads(seaice) =  1                     ! seaice model PETs
   Nthreads(waves)  =  1                     ! wave model PETs
 
 ! Set ESM coupling driver clock. If not re-starting, set StartTime and
@@ -138,44 +165,64 @@
           StopTime =  2014 01 06 00 00 00   ! Simulation stop time
           TimeStep =  0000 00 00 03 00 00   ! Coupler driver interval
 
-          Calendar =  gregorian             ! date calendar
+          Calendar =  gregorian
 
 ! Coupling time interval fraction (INTEGER) from driver TimeStep indicating
 ! how often the exchange of information between ESM components occurs. That
 ! is, the coupling interval between ESM components is TimeStep/TimeFrac.
-! If coupling ROMS nested grids, [NgridsR] values are expected.
+! If coupling nested grids, specify the respective number of values.
 ! Only active model components are processed and considered.
 
- TimeFrac(OCN-ATM) == 1                     ! ROMS-atmosphere coupling [NgridsR]
- TimeFrac(OCN-DAT) == 1                     ! ROMS-data coupling [NgridsR]
- TimeFrac(OCN-ICE) == 1                     ! ROMS-seaice coupling [NgridsR]
- TimeFrac(OCN-WAV) == 1                     ! ROMS-wave coupling [NgridsR]
- TimeFrac(ATM-DAT) == 1                     ! atmosphere-data coupling [NgridsA]
- TimeFrac(ATM-ICE) == 1                     ! atmosphere-seaice coupling [NgridsA]
- TimeFrac(ATM-WAV) == 1                     ! atmosphere-wave coupling [NgridsA]
- TimeFrac(ICE-DAT) =  1                     ! seaice-data coupling
- TimeFrac(ICE-WAV) =  1                     ! seaice-wave coupling
- TimeFrac(WAV-DAT) =  1                     ! wave-data coupling
+ TimeFrac(ATM2OCN) ==  1                    ! atmosphere -> ROMS coupling, NgridsR
+ TimeFrac(ICE2OCN) ==  1                    ! seaice -> ROMS coupling, NgridsR
+ TimeFrac(WAV2OCN) ==  1                    ! wave -> ROMS coupling, NgridsR
+ TimeFrac(DAT2OCN) ==  1                    ! DATA -> ROMS coupling, NgridsR
 
-! Weighted average coefficients for the merging of DATA component fields with
-! the same field from other ESM components. Both coefficients are positive and
-! MUST add to unity (WeightDAT + WeightESM = 1.0d0)
+ TimeFrac(OCN2ATM) ==  1                    ! ROMS -> atmosphere coupling, NgridsA
+ TimeFrac(ICE2ATM) ==  1                    ! seaice -> atmosphere coupling, NgridsA
+ TimeFrac(WAV2ATM) ==  1                    ! wave -> atmosphere coupling, NgridsA
+ TimeFrac(DAT2ATM) ==  1                    ! DATA -> atmosphere coupling, NgridsA
 
-         WeightDAT = 0.5d0                  ! DATA component weight
-         WeightESM = 0.5d0                  ! ESM  component weight
+ TimeFrac(ATM2ICE) ==  1                    ! atmosphere -> seaice coupling, NgridsI
+ TimeFrac(OCN2ICE) ==  1                    ! ROMS -> seaice coupling, NgridsI
+ TimeFrac(WAV2ICE) ==  1                    ! wave -> seaice coupling, NgridsI
+ TimeFrac(DAT2ICE) ==  1                    ! DATA -> seaice coupling, NgridsI
+
+ TimeFrac(ATM2WAV) ==  1                    ! atmosphere -> wave coupling, NgridsW
+ TimeFrac(ICE2WAV) ==  1                    ! seaice -> wave coupling, NgridsW
+ TimeFrac(OCN2WAV) ==  1                    ! ROMS -> wave coupling, NgridsW
+ TimeFrac(DAT2WAV) ==  1                    ! DATA -> wave coupling, NgridsW
+
+! Internal ESMF parameters (see below for information).
+
+   extrapNumLevels =  4     ! number of levels for creep fill extrapolation
+
+! Weighted coefficients for the merging of DATA component fields with the same
+! field from other ESM components. Melding coefficients are positive and MUST
+! add to unity. They are read from an input NetCDF file ('WeightsFile'). The
+! user needs to specify the NetCDF variable names for the weights for the DATA
+! ('VnameDATA') and ESM ('VnameESM') components. Also, specify which grid
+! ('NestedGrid') needs a merged field from DATA and ESM components. Currently,
+! the weight values are only needed by the atmosphere component.
+
+WeightsFile(atmos) =  meld_weights_atm.nc
+  VnameDATA(atmos) =  data_weight
+   VnameESM(atmos) =  ocean_weight
+ NestedGrid(atmos) =  1
 
 ! Coupling debug flag:      [0] no debugging
 !                           [1] reports informative messages
-!                           [2] <1> and writes grid information in VTK format
+!                           [2] <1> and coupled components RunSequence
 !                           [3] <2> and writes exchange fields into NetCDF files
+!                           [4] <3> and writes grid information in VTK format
 !
         DebugLevel = 1
 
 ! Execution trace flag:     [0] no tracing
-!                           [1] reports run sequence of coupling subroutine calls
+!                           [1] reports the sequence of coupling subroutine calls
 !                           [2] <1> writes voluminous ESMF library tracing information
 
-        TraceLevel = 1
+        TraceLevel = 0
 
 ! Export/Import fields: Use the following string codes to set the fields
 !                       to export/import for each coupled model.
@@ -362,86 +409,86 @@
 ! DATA model export to ROMS.
 !------------------------------------------------------------------------------
 
-  nDataExport(roms) == 8                ! number of fields to export
+  nDataExport(roms) = 8                 ! number of fields to export
 
-   nDataFiles(roms) == 8                ! number of NetCDF files to process
+   nDataFiles(roms) = 8                 ! number of NetCDF files to process
 
-   DataExport(roms) == dLWrad \
-                       SWrad  \
-                       Pair   \
-                       Tair   \
-                       Qair   \
-                       rain   \
-                       Uwind  \
-                       Vwind
+   DataExport(roms) = dLWrad \
+                      SWrad  \
+                      Pair   \
+                      Tair   \
+                      Qair   \
+                      rain   \
+                      Uwind  \
+                      Vwind
 
-    DataFiles(roms) == ../om/lwrad_down_nam_3hourly_MAB_and_GoM_2014.nc |
-                       ../om/lwrad_down_nam_3hourly_MAB_and_GoM_2015.nc |
-                       ../om/lwrad_down_nam_3hourly_MAB_and_GoM_2016.nc \
+    DataFiles(roms) = ../om/lwrad_down_nam_3hourly_MAB_and_GoM_2014.nc |
+                      ../om/lwrad_down_nam_3hourly_MAB_and_GoM_2015.nc |
+                      ../om/lwrad_down_nam_3hourly_MAB_and_GoM_2016.nc \
 
-                       ../om/swrad_nam_3hourly_MAB_and_GoM_2014.nc |
-                       ../om/swrad_nam_3hourly_MAB_and_GoM_2015.nc |
-                       ../om/swrad_nam_3hourly_MAB_and_GoM_2016.nc \
+                      ../om/swrad_nam_3hourly_MAB_and_GoM_2014.nc |
+                      ../om/swrad_nam_3hourly_MAB_and_GoM_2015.nc |
+                      ../om/swrad_nam_3hourly_MAB_and_GoM_2016.nc \
 
-                       ../om/Pair_nam_3hourly_MAB_and_GoM_2014.nc |
-                       ../om/Pair_nam_3hourly_MAB_and_GoM_2015.nc |
-                       ../om/Pair_nam_3hourly_MAB_and_GoM_2016.nc \
+                      ../om/Pair_nam_3hourly_MAB_and_GoM_2014.nc |
+                      ../om/Pair_nam_3hourly_MAB_and_GoM_2015.nc |
+                      ../om/Pair_nam_3hourly_MAB_and_GoM_2016.nc \
 
-                       ../om/Tair_nam_3hourly_MAB_and_GoM_2014.nc |
-                       ../om/Tair_nam_3hourly_MAB_and_GoM_2015.nc |
-                       ../om/Tair_nam_3hourly_MAB_and_GoM_2016.nc \
+                      ../om/Tair_nam_3hourly_MAB_and_GoM_2014.nc |
+                      ../om/Tair_nam_3hourly_MAB_and_GoM_2015.nc |
+                      ../om/Tair_nam_3hourly_MAB_and_GoM_2016.nc \
 
-                       ../om/Qair_nam_3hourly_MAB_and_GoM_2014.nc |
-                       ../om/Qair_nam_3hourly_MAB_and_GoM_2015.nc |
-                       ../om/Qair_nam_3hourly_MAB_and_GoM_2016.nc \
+                      ../om/Qair_nam_3hourly_MAB_and_GoM_2014.nc |
+                      ../om/Qair_nam_3hourly_MAB_and_GoM_2015.nc |
+                      ../om/Qair_nam_3hourly_MAB_and_GoM_2016.nc \
 
-                       ../om/rain_nam_3hourly_MAB_and_GoM_2014.nc |
-                       ../om/rain_nam_3hourly_MAB_and_GoM_2015.nc |
-                       ../om/rain_nam_3hourly_MAB_and_GoM_2016.nc \
+                      ../om/rain_nam_3hourly_MAB_and_GoM_2014.nc |
+                      ../om/rain_nam_3hourly_MAB_and_GoM_2015.nc |
+                      ../om/rain_nam_3hourly_MAB_and_GoM_2016.nc \
 
-                       ../om/Uwind_nam_3hourly_MAB_and_GoM_2014.nc |
-                       ../om/Uwind_nam_3hourly_MAB_and_GoM_2015.nc |
-                       ../om/Uwind_nam_3hourly_MAB_and_GoM_2016.nc \
+                      ../om/Uwind_nam_3hourly_MAB_and_GoM_2014.nc |
+                      ../om/Uwind_nam_3hourly_MAB_and_GoM_2015.nc |
+                      ../om/Uwind_nam_3hourly_MAB_and_GoM_2016.nc \
 
-                       ../om/Vwind_nam_3hourly_MAB_and_GoM_2014.nc |
-                       ../om/Vwind_nam_3hourly_MAB_and_GoM_2015.nc |
-                       ../om/Vwind_nam_3hourly_MAB_and_GoM_2016.nc
+                      ../om/Vwind_nam_3hourly_MAB_and_GoM_2014.nc |
+                      ../om/Vwind_nam_3hourly_MAB_and_GoM_2015.nc |
+                      ../om/Vwind_nam_3hourly_MAB_and_GoM_2016.nc
 
 !------------------------------------------------------------------------------
 ! DATA model export to the Atmosphere Model.
 !------------------------------------------------------------------------------
 
- nDataExport(atmos) == 0                ! number of fields to export
+ nDataExport(atmos) = 0                 ! number of fields to export
 
-  nDataFiles(atmos) == 0                ! number of NetCDF files to process
+  nDataFiles(atmos) = 0                 ! number of NetCDF files to process
 
-  DataExport(atmos) == NONE
+  DataExport(atmos) = NONE
 
-   DataFiles(atmos) == data2atm.nc
+   DataFiles(atmos) = data2atm.nc
 
 !------------------------------------------------------------------------------
 ! DATA model Export to the Sea Ice Model.
 !------------------------------------------------------------------------------
 
-nDataExport(seaice) == 0                ! number of fields to export
+nDataExport(seaice) = 0                 ! number of fields to export
 
- nDataFiles(seaice) == 0                ! number of NetCDF files to process
+ nDataFiles(seaice) = 0                 ! number of NetCDF files to process
 
- DataExport(seaice) == NONE
+ DataExport(seaice) = NONE
 
-  DataFiles(seaice) == data2ice.nc
+  DataFiles(seaice) = data2ice.nc
 
 !------------------------------------------------------------------------------
 ! DATA model Export to the Wave Model.
 !------------------------------------------------------------------------------
 
- nDataExport(waves) == 0                ! number of fields to export
+ nDataExport(waves) = 0                 ! number of fields to export
 
-  nDataFiles(waves) == 0                ! number of NetCDF files to process
+  nDataFiles(waves) = 0                 ! number of NetCDF files to process
 
-  DataExport(waves) == NONE
+  DataExport(waves) = NONE
 
-   DataFiles(waves) == data2wav.nc
+   DataFiles(waves) = data2wav.nc
 
 
 !
@@ -465,6 +512,8 @@ nDataExport(seaice) == 0                ! number of fields to export
 !------------------------------------------------------------------------------
 !
 ! CPL_name       Coupling import/export variables metadata filename.
+!
+! CONFname       Coupling free-format run sequence configuration filename.
 !
 ! INPname        Coupled models components standard input script or namelist
 !                  filenames:
@@ -538,19 +587,37 @@ nDataExport(seaice) == 0                ! number of fields to export
 !                  main grid is coupled.
 !
 ! Coupled          Logical switch indicating which ESM components are connected
-!                    during coupling (T/F).  It is used by ESMF to stablish the
-!                    coupling run sequence.
+!                    during coupling (T/F). If the ESM component has nested
+!                    grids, it specifies which ones are connected to other
+!                    components.
 !
-!                    Coupled(OCN-ATM)    ROMS-atmosphere connected
-!                    Coupled(OCN-DAT)    ROMS-data connected
-!                    Coupled(OCN-ICE)    ROMS-seaice connected
-!                    Coupled(OCN-WAV)    ROMS-wave connected
-!                    Coupled(ATM-DAT)    atmosphere-data connected
-!                    Coupled(ATM-ICE)    atmosphere-seaice connected
-!                    Coupled(ATM-WAV)    atmosphere-wave connected
-!                    Coupled(ICE-DAT)    seaice-data connected
-!                    Coupled(ICE-WAV)    seaice-wave connected
-!                    Coupled(WAV-DAT)    wave-data connected
+!                    Components connected to ROMS, [1:NgridsR] expected:
+!
+!                      Coupled(ATM2OCN)       atmosphere -> ROMS
+!                      Coupled(ICE2OCN)       seaice -> ROMS
+!                      Coupled(WAV2OCN)       wave -> ROMS
+!                      Coupled(DAT2OCN)       DATA -> ROMS
+!
+!                    Components connected to ATMOSPHERE, [1:NgridsA] expected:
+!
+!                      Coupled(OCN2ATM)       ROMS -> atmosphere
+!                      Coupled(ICE2ATM)       seaice -> atmosphere
+!                      Coupled(WAV2ATM)       wave -> atmosphere
+!                      Coupled(DAT2ATM)       DATA -> atmosphere
+!
+!                    Components connected to SEAICE [1:NgridsI] expected:
+!
+!                      Coupled(ATM2ICE)       atmosphere -> seaice
+!                      Coupled(OCN2ICE)       ROMS -> seaice
+!                      Coupled(WAV2ICE)       wave -> seaice
+!                      Coupled(DAT2ICE)       DATA -> seaice
+!
+!                    Components connected to WAVE [1:NgridsW] expected:
+!
+!                      Coupled(ATM2WAV)       atmosphere -> wave
+!                      Coupled(ICE2WAV)       seaice -> wave
+!                      Coupled(OCN2WAV)       ROMS -> wave
+!                      Coupled(DAT2WAV)       data -> wave
 !
 ! CouplingType     Model coupling type (check Glossary):
 !
@@ -607,41 +674,84 @@ nDataExport(seaice) == 0                ! number of fields to export
 !                    PETs needed is the sum of all active coupled model
 !                    components.
 !
-! WeightDAT          Weighted average coefficient for DATA component field.
-!
-! WeightESM          Weighted average coefficient for ESM  component field.
-!
-!                    The weighted average coefficients are used for merging
-!                    fields from DATA and ESM components. Both coefficients
-!                    are positive and MUST add to unity:
-!
-!                      WeightDAT + WeightESM = 1.0d0
-!
-!                    Recall that the DATA component supplies needed data to
-!                    a particular ESM component.  For example, it may export
-!                    data to the atmosphere model at locations not covered
-!                    by the other ESM components because of smaller grid
-!                    coverage.  If the atmosphere and ocean model grids
-!                    are incongruent, the atmosphere component needs to
-!                    import sea surface temperature (SST) on those grid
-!                    points not covered by the ocean component. Thus, the
-!                    weightind coefficient are used to merge the SST data.
-!
 ! DebugLevel       Coupling debugging flag:
 !
-!                    [0] no debug
+!                    [0] no debugging
 !                    [1] reports informative messages
-!                    [2] <1> plus writes grid information in VTK format
-!                    [3] <2> plus writes exchange fields into NetCDF files
-!                            (it generates lots of small NetCDF files)
+!                    [2] <1> and coupled components RunSequence
+!                    [3] <2> and writes exchanged fields into NetCDF files
+!                    [4] <3> and writes grid information in VTK format
+!
+!                    If DebugLevel >= 3, a single NetCDF file is created for
+!                    every exchanged field when the "debug_write" switch in
+!                    the Import/Export metadata file CPL_name is .TRUE. for
+!                    field.  WARNING: Lot and lots of small NetCDF files are
+!                    created that will slow down computations and fill disk
+!                    space. Use this capability only during debugging to
+!                    ensure that the regridding is doing correctly.
 !
 ! TraceLevel       Execution tracing flag:
 !
 !                    [0] no tracing
-!                    [1] reports run sequence of coupling subroutine calls
+!                    [1] reports the sequence of coupling subroutine calls
 !                    [2] <1> plus writes voluminous ESMF library tracing
 !                            information which slowdown performace, and
 !                            creates large log file
+!
+!------------------------------------------------------------------------------
+! ESMF library internal parameters.
+!------------------------------------------------------------------------------
+!
+! extrapNumLevels  The number of levels for creep fill extrapolation of
+!                    unmapped destination points during regridding. After
+!                    regular regridding, the creep fill method of unmapped
+!                    points repeatedly moves data from mapped locations to
+!                    the neighboring unmapped locations by the specified
+!                    "extrapNumLevels" amount. For each creeped point, the
+!                    extrapolation value is the average of the immediate
+!                    neighbors from regridding. See ESMF Reference Manual
+!                    (version 8.0 or higher) for ESMF_EXTRAPMETHOD_CREEP
+!                    flag to ESMF_FieldRegridStore.
+!
+!------------------------------------------------------------------------------
+! Melding weighting coefficients.
+!------------------------------------------------------------------------------
+!
+! Melding coefficients used to combine fields from DATA and ESM components.
+! The weight factors are read from the input NetCDF specified in the
+! "WeightsFile(atmos)"  keyword.  The user has full control of how the
+! merging is done. It is recommended to provide a gradual transition between
+! the two components.  The weighting factors have the same dimension as
+! the atmosphere grid.
+!
+! Recall that the DATA component supplies needed data to a particular ESM
+! component.  For example, it may export data to the atmosphere model at
+! locations not covered by the other ESM components because of smaller grid
+! coverage.  If the atmosphere and ocean model grids are incongruent, the
+! atmosphere component needs to import sea surface temperature (SST) on
+! those grid points not covered by the ocean component. Thus, the weighting
+! coefficients are used to merge the SST data:
+!
+!   SST_atm(:,:) = Cesm(:,:) * SST_esm(;,;) + Cdat(:,:) * SST_dat(:,:)
+!
+! where Cesm(:,:) + Cdat(:,:) = 1.
+!
+! Currently, only the atmosphere component needs the weigth coefficients
+! when DATA_COUPLING is activated.
+!
+! WeightsFile(atmos) Input NetCDF containing weighting coefficients for the
+!                    atmosphere grid.
+!
+! VnameDATA(atmos)   NetCDF variable name containing the weight factor (Cdat)
+!                    for the DATA component.
+!
+! VnameESM(atmos)    NetCDF variable name containing the weight factor (Cesm)
+!                    for the ESM component (usually ocean: ROMS).
+!
+! NestedGrid(atmos)  Atmosphere grid number needing a merged field from
+!                    DATA and ESM components. Usually, NestedGrid=1, but it
+!                    is possible to merge DATA and an ESM component in a
+!                    particular Atmosphere component nested grid.
 !
 !------------------------------------------------------------------------------
 ! Time Managing.
@@ -686,19 +796,37 @@ nDataExport(seaice) == 0                ! number of fields to export
 !                    TimeStep indicating how often the exchange of information
 !                    between ESM components occurs. That is, the coupling
 !                    interval between ESM components is TimeStep/TimeFrac.
-!                    If coupling ROMS (OCN) nested grids, [Ngrids] values are
-!                    expected.
+!                    If coupling nested grids, specify the respective number
+!                    of values. Only active model components are processed
+!                    and considered.
 !
-!                    TimeFrac(OCN-ATM)   ROMS-atmosphere coupling interval
-!                    TimeFrac(OCN-DAT)   ROMS-data coupling interval
-!                    TimeFrac(OCN-ICE)   ROMS-seaice coupling interval
-!                    TimeFrac(OCN-WAV)   ROMS-wave coupling interval
-!                    TimeFrac(ATM-DAT)   atmosphere-data coupling interval
-!                    TimeFrac(ATM-ICE)   atmosphere-seaice coupling interval
-!                    TimeFrac(ATM-WAV)   atmosphere-wave coupling interval
-!                    TimeFrac(ICE-DAT)   seaice-data coupling interval
-!                    TimeFrac(ICE-WAV)   seaice-wave coupling interval
-!                    TimeFrac(WAV-DAT)   wave-data coupling interval
+!                    Components connected to ROMS, [1:NgridsR] expected:
+!
+!                      TimeFrac(ATM2OCN)      atmosphere -> ROMS
+!                      TimeFrac(ICE2OCN)      seaice -> ROMS
+!                      TimeFrac(WAV2OCN)      wave -> ROMS
+!                      TimeFrac(DAT2OCN)      DATA -> ROMS
+!
+!                    Components connected to ATMOSPHERE, [1:NgridsA] expected:
+!
+!                      TimeFrac(OCN2ATM)      ROMS -> atmosphere
+!                      TimeFrac(ICE2ATM)      seaice -> atmosphere
+!                      TimeFrac(WAV2ATM)      wave -> atmosphere
+!                      TimeFrac(DAT2ATM)      DATA -> atmosphere
+!
+!                    Components connected to SEAICE, [1:NgridsI] expected:
+!
+!                      TimeFrac(ATM2ICE)      atmosphere -> seaice
+!                      TimeFrac(OCN2ICE)      ROMS -> seaice
+!                      TimeFrac(WAV2ICE)      wave -> seaice
+!                      TimeFrac(DAT2ICE)      DATA -> seaice
+!
+!                    Components connected to WAVE, [1:NgridsW] expected:
+!
+!                      TimeFrac(ATM2WAV)      atmosphere -> wave coupling
+!                      TimeFrac(ICE2WAV)      seaice -> wave
+!                      TimeFrac(OCN2WAV)      ROMS -> wave
+!                      TimeFrac(DAT2WAV)      DATA -> wave
 !
 !                    For example, if TimeStep = 15 minutes = 900 seconds and
 !                    TimeFrac = 3, the coupling exchange between those two

@@ -1,9 +1,24 @@
 #include "cppdefs.h"
 
 #ifdef VARY_ACBC
-#  undef  SINGLESUM
 #  define DOUBLESUM
+#  undef  SINGLESUM
+#  ifdef SINGLESUM
+#    undef  INTCDF
+#    define FCDF
+#  endif
+#  define DHILBERT
+#  undef  IHILBERT
+#  undef  HSCALE
 #endif
+
+! SINGLESUM: SINGLE SUMMATION METHOD
+! DOUBLESUM: DOUBLE SUMMATION METHOD
+! INTCDF:    INTEGRATED DIRECTIONAL DISTRIBUTION
+! FCDF:      FREQUENCY-DEPENDENT DIRECTIONAL DISTRIBUTIONS
+! DHILBERT:  HILBERT TAKEN OVER DIRECTIONAL AMPZETA
+! IHILBERT:  HILBERT TAKEN OVER INTEGRATED AMPZETA
+! HSCALE:    SCALE ENERGY BY ENERGY IN SWAN SPECTRUM
 
       MODULE mod_inwave_swan
 !
@@ -104,35 +119,32 @@
          real(r8), pointer :: SD(:,:)
          real(r8), pointer :: SDD(:)
          real(r8), pointer :: phase(:,:)
+# ifdef SINGLESUM
+         real(r8), pointer :: amp(:)
+# elif defined DOUBLESUM
          real(r8), pointer :: amp(:,:)
+# endif
          real(r8), pointer :: zeta(:,:)
 # ifdef VARY_ACBC
          real(r8), pointer :: Ampzeta(:,:,:)
-# else
-         real(r8), pointer :: Ampzeta(:,:)
-         real(r8), pointer :: Ampzeta_tot(:)
-# endif
-         real(r8), pointer :: position(:)
-
-# ifdef VARY_ACBC
-         complex(fftkind),dimension(:,:),allocatable :: CompFn
-         complex(fftkind),dimension(:),allocatable   :: Ampzeta_tot
+         complex(fftkind), dimension(:), allocatable :: Ampzeta_tot
          real(r8), pointer :: bndwave_z(:,:)
          real(r8), pointer :: bndwave_u(:,:)
          real(r8), pointer :: bndwave_v(:,:)
 # else
-         complex(fftkind),dimension(:),allocatable   :: CompFn
+         real(r8), pointer :: Ampzeta(:,:)
+         real(r8), pointer :: Ampzeta_tot(:)
          real(r8), pointer :: bndwave_z(:)
          real(r8), pointer :: bndwave_u(:)
          real(r8), pointer :: bndwave_v(:)
 # endif
+         real(r8), pointer :: position(:)
 
         END TYPE SHORT_WAVE
 
         TYPE (SHORT_WAVE), allocatable :: WAVES(:)
 
       CONTAINS
-
 !
 !***********************************************************************
       SUBROUTINE allocate_inwave_swan (ng)
@@ -274,12 +286,8 @@
 !-----------------------------------------------------------------------
 !
       IF (first.eq.1) THEN
-# ifdef DOUBLESUM
 !        WAVES(ng)%nfreq=2000
         WAVES(ng)%nfreq=200
-# elif defined SINGLESUM
-        WAVES(ng)%nfreq=200
-# endif
         WAVES(ng)%fmax=0.5_r8  !! Tmin = 2 s, this is ~ the Nyquist f
         WAVES(ng)%df=WAVES(ng)%fmax/WAVES(ng)%nfreq
         WAVES(ng)%ndir=ND
@@ -295,15 +303,15 @@
 !-----------------------------------------------------------------------
 !
         allocate (WAVES(ng)%f(WAVES(ng)%nfreq))
-        allocate (WAVES(ng)%SD(WAVES(ng)%nfreq,ND))
-        allocate (WAVES(ng)%SDD(ND))
+        allocate (WAVES(ng)%SD(WAVES(ng)%nfreq,WAVES(ng)%ndir))
+        allocate (WAVES(ng)%SDD(WAVES(ng)%ndir))
         DO dd=1,WAVES(ng)%ndir
           DO ff=1,WAVES(ng)%nfreq
             WAVES(ng)%SD(ff,dd)=0.0_r8
           ENDDO
           WAVES(ng)%SDD(dd)=0.0_r8
         ENDDO
-!
+
         DO ff=1,WAVES(ng)%nfreq
           WAVES(ng)%f(ff)=REAL(ff-1,r8)*WAVES(ng)%df+WAVES(ng)%fmin
         END DO
@@ -393,7 +401,7 @@
       deallocate(fsw_2d, theta_2d, SDSW_circle, f_2d, wd_2d)
 # ifdef SINGLESUM
 !
-!  Sum up all wave E for each dir.
+!  Integrate energy over frequency
 !
       DO dd=1,WAVES(ng)%ndir
         cff=0.0_r8
@@ -403,7 +411,7 @@
         WAVES(ng)%SDD(dd)=cff
       ENDDO
 !
-!  Sum up E over all freqs
+!  Integrate frequency spectrum over direction 
 !
       WAVES(ng)%int=0.0_r8
       DO dd=1,WAVES(ng)%ndir
@@ -416,8 +424,8 @@
 !  Set bound directional arrays to be equal to the computational dirs.
 !
         WAVEB(ng)%ND_bnd=ND
-        allocate(WAVEB(ng)%WD_bnd(ND))
-        DO dd=1,ND
+        allocate(WAVEB(ng)%WD_bnd(WAVEB(ng)%ND_bnd))
+        DO dd=1,WAVEB(ng)%ND_bnd
           WAVEB(ng)%WD_BND(dd)=WAVEG(ng)%wd(dd)
         END DO
 !
@@ -425,15 +433,15 @@
 !  The Ampzeta time series will repeat every 1/df time steps.
 !
         WAVES(ng)%dur=1./WAVES(ng)%df
-        WAVES(ng)%idt=4.0_r8
+!       WAVES(ng)%idt=4.0_r8
+        WAVES(ng)%idt=1.0_r8
 !       WAVES(ng)%Insteps=nint(WAVES(ng)%dur/dt(ng))
-        WAVES(ng)%Insteps=nint(WAVES(ng)%dur/WAVES(ng)%idt)+1
-!       WAVES(ng)%Insteps=MIN(nint(WAVES(ng)%dur/dt(ng)), 1800)
+!       WAVES(ng)%Insteps=nint(WAVES(ng)%dur/WAVES(ng)%idt)+1
+        WAVES(ng)%Insteps=nint(WAVES(ng)%dur/WAVES(ng)%idt)
 !
 !  Allocate and init the computational arrays.
 !
 # if !defined VARY_ACBC
-        allocate(WAVES(ng)%CompFn(WAVES(ng)%Insteps))
         allocate(WAVES(ng)%Ampzeta(WAVES(ng)%Insteps,WAVES(ng)%ndir))
 # endif
         allocate(WAVES(ng)%Ampzeta_tot(WAVES(ng)%Insteps))
@@ -444,7 +452,11 @@
 !
         allocate (WAVES(ng)%position(WAVES(ng)%nfreq))
         allocate (WAVES(ng)%phase(WAVES(ng)%nfreq,WAVES(ng)%ndir))
+# ifdef SINGLESUM
+        allocate (WAVES(ng)%amp(WAVES(ng)%nfreq))
+# elif defined DOUBLESUM
         allocate (WAVES(ng)%amp(WAVES(ng)%nfreq,WAVES(ng)%ndir))
+# endif
       END IF
 !
 # if !defined VARY_ACBC
@@ -476,10 +488,19 @@
 !  Local variable declarations.
 
       integer :: ff, dd, k, Npts, MyError
+      integer :: i, clock
+!      integer, dimension(:), allocatable :: seed
       real(r8) :: twopi
 # ifdef DISTRIBUTE
       real(r8), allocatable :: wrk(:)
 # endif
+
+!      call random_seed(size=1)
+!      allocate(seed(1))
+!      call system_clock(count=clock)
+!      seed = clock + 37 * (/(i-1,i=1,n)/)
+!      call random_seed(put=seed)
+!      deallocate(seed)
 
       call random_number(WAVES(ng)%phase)
 
@@ -543,6 +564,7 @@
 
       allocate(temp(size(Sf)))
       temp=0.0_r8
+! CH note: do we need this limitation of the energy?
       where (Sf>0.8_r8*maxval(Sf))
        temp=1.0_r8
       end where
@@ -572,7 +594,7 @@
 !  Local variable declarations.
 !
       integer                         :: ff, dd 
-      real(r8)                        :: cff1, cff2
+      real(r8)                        :: cff, cff1, cff2
 !
 !-----------------------------------------------------------------------
 ! Compute the amplitude for the Fourier components
@@ -581,11 +603,22 @@
 !
       cff1=WAVES(ng)%df
       cff2=WAVEG(ng)%pd
+
+# ifdef DOUBLESUM
       DO dd=1,WAVES(ng)%ndir
         DO ff=1,WAVES(ng)%nfreq
           WAVES(ng)%amp(ff,dd)= sqrt(2.0_r8*WAVES(ng)%SD(ff,dd)*cff1*cff2)
         END DO
       END DO
+# elif defined SINGLESUM
+      DO ff=1,WAVES(ng)%nfreq
+        cff=0.0_r8
+        DO dd=1,WAVES(ng)%ndir
+          cff=cff+(WAVES(ng)%SD(ff,dd)*cff2)
+        END DO
+        WAVES(ng)%amp(ff)= sqrt(2.0_r8*cff*cff1)
+      END DO
+# endif
 
 ! Assigning a position in the spectral frequency array
 ! to each Fourier component
@@ -666,8 +699,15 @@
       real(r8)                        :: x_mid, y_mid, dx_min
       real(r8), allocatable           :: k(:), angle_edge(:)
       real(r8), allocatable           :: dist_local(:), dist_x(:), dist_y(:)
-      real(r8), allocatable           :: dx_local(:), SDD_cumul(:)
+      real(r8), allocatable           :: dx_local(:)
+# ifdef INTCDF
+      real(r8), allocatable           :: SDD_cumul(:)
+# elif defined FCDF
+      real(r8), allocatable           :: SDD_cumul(:,:)
+# endif
+# ifdef HSCALE
       real(r8), allocatable           :: Hsig_check(:)
+# endif
       real(r8), dimension((Lm(ng)+2)*(Mm(ng)+2)) :: Awrk
       real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: h_local
       real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: zeta_local
@@ -934,9 +974,6 @@
         END DO
 
         IF (first.eq.1) THEN
-# ifdef SINGLESUM
-          allocate(WAVES(ng)%CompFn(SstrR:SendR,WAVES(ng)%Insteps))
-# endif
           allocate(WAVES(ng)%Ampzeta(SstrR:SendR,                       &
      &             WAVES(ng)%Insteps,WAVES(ng)%ndir))
         END IF
@@ -945,160 +982,196 @@
 !
         DO tidx=1,WAVES(ng)%Insteps
           DO i=SstrR,SendR
-# ifdef SINGLESUM
-            WAVES(ng)%CompFn(i,tidx)=0.0_r8
-# endif
             DO dd=1,WAVES(ng)%ndir
               WAVES(ng)%Ampzeta(i,tidx,dd)=0.0_r8
             END DO
           END DO
         END DO
 !
-!  Here we choose single or double summation.
-!  Single adds up all the contributions for Ampzeta from all dirs, then
-!  scales them back out. Double summ keeps the energy in each dir.
+!  Choose single or double summation method.
 !
 # ifdef SINGLESUM
 !
-!  Create a cumulative distribution function based on 
-!  energy spectra. SDD is directional energy spectra (but not x pd).
+!  Create a cumulative distribution function (CDF) of energy.
 !
+#   ifdef INTCDF
+!  Create a CDF integrated over frequencies. 
+!  SDD is directional energy spectra (but not x pd).
         allocate(SDD_cumul(WAVES(ng)%ndir))
         SDD_cumul(1)=0.0_r8
         DO dd=2,WAVES(ng)%ndir
-          cff2=WAVES(ng)%SDD(dd)/WAVES(ng)%int
-          IF (cff2.gt.0.10_r8) THEN
+! CH note: do we need this energy check?
+!          cff2=WAVES(ng)%SDD(dd)/WAVES(ng)%int
+!          IF (cff2.gt.0.10_r8) THEN
             SDD_cumul(dd)=SDD_cumul(dd-1)+WAVES(ng)%SDD(dd)
-          ELSE
-            SDD_cumul(dd)=SDD_cumul(dd-1)
-          END IF
+!          ELSE
+!            SDD_cumul(dd)=SDD_cumul(dd-1)
+!          END IF
         END DO
 !  Scale SDD_cumul so it goes from ~0.0 to 1.0
         DO dd=1,WAVES(ng)%ndir
           SDD_cumul(dd)=SDD_cumul(dd)/SDD_cumul(WAVES(ng)%ndir)
         END DO
-        cff2=0.0_r8
+#   elif defined FCDF
+        allocate(SDD_cumul(WAVES(ng)%nfreq,WAVES(ng)%ndir))
+        DO ff=1,WAVES(ng)%nfreq
+          SDD_cumul(ff,1)=0.0_r8
+          DO dd=2,WAVES(ng)%ndir
+!            cff2=WAVES(ng)%SD(ff,dd)/WAVES(ng)%SDD(ff)
+!            IF (cff2.gt.0.10_r8) THEN
+              SDD_cumul(ff,dd)=SDD_cumul(ff,dd-1)+WAVES(ng)%SD(ff,dd)
+!            ELSE
+!              SDD_cumul(ff,dd)=SDD_cumul(ff,dd-1)
+!            END IF
+          END DO
+        END DO
+!  Scale SDD_cumul so it goes from ~0.0 to 1.0
+        DO ff=1,WAVES(ng)%nfreq
+          DO dd=1,WAVES(ng)%ndir
+            SDD_cumul(ff,dd)=SDD_cumul(ff,dd)/SDD_cumul(ff,WAVES(ng)%ndir)
+          END DO
+        END DO
+#   endif
+# endif
 !
-!  Loop over all freqs.
+!  Compute the amplitude time series for the boundary AC forcing.
+!  Loop over all frequencies
 !
         DO ff=1,WAVES(ng)%nfreq
+# ifdef SINGLESUM
+!
 !  Determine which direction to use for this freq.
+!
           call random_number(cff1)
-          DO dd=1,ND
+#   ifdef INTCDF
+          DO dd=1,WAVES(ng)%ndir
             IF (cff1.lt.SDD_cumul(dd)) THEN
               m=dd
               EXIT
             END IF
           END DO
-!  Compute the amplitude time series for the boundary AC forcing.
-          DO i=SstrR,SendR
-            DIR3=1.5_r8*pi-WAVEG(ng)%wd(m)-angle_edge(i)
-            kwx=k(ff)*cos(DIR3)
-            kwy=k(ff)*sin(DIR3)
-            kedge=kwx*dist_x(i)+kwy*dist_y(i)
-            DO dd=1,ND
-              IF ((WAVES(ng)%SDD(dd)/WAVES(ng)%int).gt.                 &
-     &             0.10_r8) THEN
-                DO tidx=1,WAVES(ng)%Insteps
-                  cff=REAL((tidx-1),r8)*WAVES(ng)%idt
-                  cff2=WAVES(ng)%amp(ff,dd)*                            &
-     &                      COS(twopi*WAVES(ng)%f(ff)*cff+              &
-     &                      WAVES(ng)%phase(ff,dd)-                     &
-     &                      kedge)
-                  WAVES(ng)%CompFn(i,tidx)=WAVES(ng)%CompFn(i,tidx)+    &
-     &                                     cff2
-                END DO
-              END IF
-            END DO
+#   elif defined FCDF
+          DO dd=1,WAVES(ng)%ndir
+            IF (cff1.lt.SDD_cumul(ff,dd)) THEN
+              m=dd
+              EXIT
+            END IF
           END DO
-        END DO
-!
-!  Sum over all the directions and then partition out.
-!
-        DO i=SstrR,SendR
-          DO tidx=1,WAVES(ng)%Insteps
-            WAVES(ng)%Ampzeta_tot(tidx)=WAVES(ng)%CompFn(i,tidx)
-          END DO
-          call hilbert(WAVES(ng)%Ampzeta_tot,                           &
-     &                 size(WAVES(ng)%Ampzeta_tot))
-          DO tidx=1,WAVES(ng)%Insteps
-            WAVES(ng)%CompFn(i,tidx)=WAVES(ng)%Ampzeta_tot(tidx)
-          END DO
-        END DO
-
-        allocate(Hsig_check(SstrR:SendR))
-        DO i=SstrR,SendR
-          cff=0.0_r8
-          DO dd=1,ND
-            DO tidx=1,WAVES(ng)%Insteps
-              cff1=0.5_r8*((ABS(WAVES(ng)%CompFn(i,tidx)))**2)*         &
-     &                                   WAVES(ng)%SDD(dd)/             &
-     &                                   WAVES(ng)%int
-              WAVES(ng)%Ampzeta(i,tidx,dd)=cff1*g*rho0
-              cff=cff+cff1
-            END DO
-          END DO
-          Hsig_check(i)=4.0_r8*sqrt(cff/WAVES(ng)%Insteps)
-        END DO
-
-!  Scale boundary Hwave so the temporal avg = Hm0 from SWAN spec2d
-
-        DO i=SstrR,SendR
-          cff=WAVES(ng)%hm0gew/Hsig_check(i)
-          DO dd=1,ND
-            DO tidx=1,WAVES(ng)%Insteps
-              WAVES(ng)%Ampzeta(i,tidx,dd)=                             &
-     &               WAVES(ng)%Ampzeta(i,tidx,dd)*cff
-            END DO
-          END DO
-        END DO
-        deallocate(SDD_cumul, Hsig_check)
+#   endif
 # endif
-# ifdef DOUBLESUM
-!  Compute the amplitude time series for the boundary AC forcing.
-!  Dont sum over the directions.
-          DO dd=1,WAVES(ng)%ndir 
-            DO i=SstrR,SendR
-              DO ff=1,WAVES(ng)%nfreq
+          DO i=SstrR,SendR
+!
+!  If DOUBLESUM, double summation loop over all directions.
+!  If SINGLESUM, check if the random direction assigned above.
+!
+            DO dd=1,WAVES(ng)%ndir
+! CH note: removed the energy check here
+# ifdef SINGLESUM
+              IF (m.eq.dd) THEN
+# endif
                 DIR3=1.5_r8*pi-WAVEG(ng)%wd(dd)-angle_edge(i)
-                kwx=k(ff)*COS(DIR3)
-                kwy=k(ff)*SIN(DIR3)
+                kwx=k(ff)*cos(DIR3)
+                kwy=k(ff)*sin(DIR3)
                 kedge=kwx*dist_x(i)+kwy*dist_y(i)
                 DO tidx=1,WAVES(ng)%Insteps
                   cff=REAL((tidx-1),r8)*WAVES(ng)%idt
-                  cff2=WAVES(ng)%amp(ff,dd)*                          &
-     &                      COS(twopi*WAVES(ng)%f(ff)*cff+            &
-     &                      WAVES(ng)%phase(ff,dd)-                   &
-     &                      kedge)
-                  WAVES(ng)%Ampzeta(i,tidx,dd)=                        &
+# ifdef SINGLESUM
+                  cff2=WAVES(ng)%amp(ff)*                               &
+     &                      COS(twopi*WAVES(ng)%f(ff)*cff-              &
+     &                      kedge+WAVES(ng)%phase(ff,dd))               
+# elif defined DOUBLESUM
+                  cff2=WAVES(ng)%amp(ff,dd)*                            &
+     &                      COS(twopi*WAVES(ng)%f(ff)*cff-              &
+     &                      kedge+WAVES(ng)%phase(ff,dd))               
+# endif
+                  WAVES(ng)%Ampzeta(i,tidx,dd)=                         &
      &                          WAVES(ng)%Ampzeta(i,tidx,dd)+cff2
+
                 END DO
-              END DO
+# ifdef SINGLESUM
+              END IF
+# endif
             END DO
           END DO
+        END DO
 !
-!  Do Hilbert on each dir separately.
+!  Take the Hilbert transform of the amplitude time series 
+# ifdef DHILBERT
+!  Maintain the directional distribution
 !
         DO i=SstrR,SendR
-          DO dd=1,WAVES(ng)%ndir 
+          DO dd=1,WAVES(ng)%ndir
             DO tidx=1,WAVES(ng)%Insteps
-              WAVES(ng)%Ampzeta_tot(tidx)=                             &
-     &                               WAVES(ng)%Ampzeta(i,tidx,dd)
+              WAVES(ng)%Ampzeta_tot(tidx)=WAVES(ng)%Ampzeta(i,tidx,dd)
             END DO
-            call hilbert(WAVES(ng)%Ampzeta_tot,                        &
-     &                 size(WAVES(ng)%Ampzeta_tot))
+            call hilbert(WAVES(ng)%Ampzeta_tot,                         &
+     &                   size(WAVES(ng)%Ampzeta_tot))
             DO tidx=1,WAVES(ng)%Insteps
               cff1=(ABS(WAVES(ng)%Ampzeta_tot(tidx)))**2
               WAVES(ng)%Ampzeta(i,tidx,dd)=0.5_r8*cff1*g*rho0
             END DO
           END DO
         END DO
+# elif defined IHILBERT
+!  Integrated 
+!
+# ifdef HSCALE
+        allocate(Hsig_check(SstrR:SendR))
 # endif
-        deallocate (k, angle_edge, dist_x, dist_y)
+        DO i=SstrR,SendR
+          DO tidx=1,WAVES(ng)%Insteps
+            WAVES(ng)%Ampzeta_tot(tidx)=0.0_r8
+            DO dd=1,WAVES(ng)%ndir
+              WAVES(ng)%Ampzeta_tot(tidx)=WAVES(ng)%Ampzeta_tot(tidx)+  &
+     &                                    WAVES(ng)%Ampzeta(i,tidx,dd)
+            END DO
+          END DO
+          call hilbert(WAVES(ng)%Ampzeta_tot,                           &
+     &                 size(WAVES(ng)%Ampzeta_tot))
+!
+!  Partition back out to all directions
+!
+# ifdef HSCALE
+        cff=0.0_r8
+# endif
+          DO dd=1,WAVES(ng)%ndir
+              cff2=WAVES(ng)%SDD(dd)/WAVES(ng)%int
+            DO tidx=1,WAVES(ng)%Insteps
+              cff1=((ABS(WAVES(ng)%Ampzeta_tot(tidx)))**2)*cff2     
+              WAVES(ng)%Ampzeta(i,tidx,dd)=0.5_r8*cff1*g*rho0
+# ifdef HSCALE
+              cff=cff+cff1
+# endif
+            END DO
+          END DO
+# ifdef HSCALE
+          Hsig_check(i)=4.0_r8*sqrt(cff/WAVES(ng)%Insteps)
+# endif
+        END DO
+!
+# ifdef HSCALE
+!
+!  Scale energy so the time-averaged Hm0 is equivalent to SWAN spectra 
+!
+        DO i=SstrR,SendR
+          cff=WAVES(ng)%hm0gew/Hsig_check(i)
+          DO dd=1,WAVES(ng)%ndir
+            DO tidx=1,WAVES(ng)%Insteps
+              WAVES(ng)%Ampzeta(i,tidx,dd)=                             &
+     &               WAVES(ng)%Ampzeta(i,tidx,dd)*cff
+            END DO
+          END DO
+        END DO
+        deallocate(Hsig_check)
+# endif
+# endif
+# ifdef SINGLESUM
+        deallocate(SDD_cumul)
+# endif
+        deallocate(k, angle_edge, dist_x, dist_y)
       END IF
       RETURN
       END SUBROUTINE FourierComp_tile
-
 #else
 !
 !***********************************************************************
@@ -1505,8 +1578,6 @@
           fac2=cosh(k(i)*h0)
           ocoshkh(i)=1.0_r8/fac2
         END DO
-!
-! Compute the wave number or each freq bin
 !
 ! Compute the energy transfer for each pair of frequency bins.
 !

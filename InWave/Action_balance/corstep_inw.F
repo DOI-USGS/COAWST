@@ -440,8 +440,8 @@
 !  Time-step directional advection term.
 !-----------------------------------------------------------------------
 !
-# ifdef AC_U3HADVECTION
       opd=1.0_r8/pd
+# ifdef AC_U3HADVECTION
       J_LOOP: DO j=Jstr,Jend
         DO i=Istr,Iend
 #  if defined THETA_AC_PERIODIC
