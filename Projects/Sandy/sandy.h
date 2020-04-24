@@ -38,9 +38,6 @@
 # define UV_VIS2
 # define MIX_S_UV
 # undef  TS_FIXED
-# define TS_U3HADVECTION
-# define TS_C4VADVECTION
-# undef  TS_MPDATA
 
 # undef SSW_BBL
 # ifdef SSW_BBL
