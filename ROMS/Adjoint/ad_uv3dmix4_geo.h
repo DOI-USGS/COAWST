@@ -1,8 +1,8 @@
       SUBROUTINE ad_uv3dmix4 (ng, tile)
 !
-!svn $Id: ad_uv3dmix4_geo.h 889 2018-02-10 03:32:52Z arango $
+!svn $Id: ad_uv3dmix4_geo.h 1009 2020-03-03 20:38:52Z arango $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -141,6 +141,7 @@
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_scalars
 !
 !  Imported variable declarations.

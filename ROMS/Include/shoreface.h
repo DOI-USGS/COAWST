@@ -1,7 +1,7 @@
 /*
-** svn $Id: shoreface.h 889 2018-02-10 03:32:52Z arango $
+** svn $Id: shoreface.h 1001 2020-01-10 22:41:16Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2019 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2020 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -28,9 +28,6 @@
 #define WET_DRY
 #define OUT_DOUBLE
 #define UV_ADV
-#undef  UV_C2ADVECTION
-#define TS_MPDATA
-#undef  TS_U3HADVECTION
 #define DJ_GRADPS
 #define SALINITY
 #define SPLINES_VDIFF

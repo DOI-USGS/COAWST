@@ -1,9 +1,9 @@
 /*
 ** Include file "cppdefs.h"
 **
-** svn $Id: cppdefs.h 927 2018-10-16 03:51:56Z arango $
+** svn $Id: cppdefs.h 1001 2020-01-10 22:41:16Z arango $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2019 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2020 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -48,32 +48,8 @@
 **                                                                           **
 ** OPTIONS associated with tracers equations:                                **
 **                                                                           **
-**   The default horizontal and vertical advection is 4th-order centered.    **
+** OPTIONS associated with tracers equations:                                **
 **                                                                           **
-**   The 3rd-order upstream split advection (TS_U3ADV_SPLIT) can be used     **
-**   to correct for the spurious diapycnal diffusion of the advection        **
-**   operator in terrain-following coordinates. If this is the case, the     **
-**   advection operator is split in advective and diffusive components       **
-**   and several internal flags are activated in "globaldefs.h".  Notice     **
-**   that horizontal and vertical advection of tracer is 4th-order centered  **
-**   plus biharmonic diffusion to correct for spurious diapycnal mixing.     **
-**   The total time-dependent horizontal mixing coefficient are computed     **
-**   in "hmixing.F". It is also recommended to use the rotated mixing        **
-**   tensor along geopotentials (MIX_GEO_TS) for the biharmonic operator.    **
-**                                                                           **
-**   WARNING:  Use the splines vertical advection option (TS_SVADVECTION)    **
-**             only in idealized, high vertical resolution applications.     **
-**                                                                           **
-** TS_U3ADV_SPLIT      use if 3rd-order upstream split tracer advection      **
-** TS_A4HADVECTION     use if 4th-order Akima horizontal advection           **
-** TS_C2HADVECTION     use if 2nd-order centered horizontal advection        **
-** TS_C4HADVECTION     use if 4th-order centered horizontal advection        **
-** TS_MPDATA           use if recursive MPDATA 3D advection                  **
-** TS_U3HADVECTION     use if 3rd-order upstream horiz. advection            **
-** TS_A4VADVECTION     use if 4th-order Akima vertical advection             **
-** TS_C2VADVECTION     use if 2nd-order centered vertical advection          **
-** TS_C4VADVECTION     use if 4th-order centered vertical advection          **
-** TS_SVADVECTION      use if splines vertical advection                     **
 ** TS_DIF2             use to turn ON or OFF harmonic horizontal mixing      **
 ** TS_DIF4             use to turn ON or OFF biharmonic horizontal mixing    **
 ** TS_SMAGORINSKY      use to turn ON or OFF Smagorinsky-like diffusion      **
@@ -98,38 +74,10 @@
 **                                                                           **
 ** LIMIT_STFLX_COOLING use to suppress SST cooling below freezing point      **
 **                                                                           **
-** OPTIONS for MPDATA 3D Advection:                                          **
+** OPTIONS for MPDATA 3D Advection: Hadvection(itrc,ng)%MPDATA and           **
+**                                  Vadvection(itrc,ng)%MPDATA switches      **
 **                                                                           **
 ** TS_MPDATA_LIMIT     use to limit upwind corrector fluxes for stability    **
-**                                                                           **
-** Tracer advection OPTIONS for adjoint-based algorithms:                    **
-**                                                                           **
-**   Some of the tracer advection algorithms are highly nonlinear and        **
-**   may become unstable when running the tangent linear, representer,       **
-**   and adjoint models. This may affect the convergence of the 4DVar        **
-**   data assimilation algorithms. Therefore, it is possible to choose       **
-**   a simpler (less nonlinear) horizontal and vertical tracer advection     **
-**   scheme, if so desired, for the tangent linear, representer and          **
-**   adjoint models. Notice that this strategy still allows us to use        **
-**   highly nonlinear tracer advection schemes in the basic state upon       **
-**   which the tangent linear and adjoint models are linearized. Also,       **
-**   it allows us to use those schemes that have not been adjointed yet,     **
-**   for example, TS_MPDATA.  Recall that basic state trajectory is          **
-**   computed by running the nonlinear model.                                **
-**                                                                           **
-**   The flags below are optional. By default, the same options chosen       **
-**   for the nonlinear model are selected for the tangent linear,            **
-**   representer, and adjoint models.                                        **
-**                                                                           **
-** TS_A4HADVECTION_TL  use if 4th-order Akima horizontal advection           **
-** TS_C2HADVECTION_TL  use if 2nd-order centered horizontal advection        **
-** TS_C4HADVECTION_TL  use if 4th-order centered horizontal advection        **
-** TS_U3HADVECTION_TL  use if 3rd-order upstream horiz. advection            **
-**                                                                           **
-** TS_A4VADVECTION_TL  use if 4th-order Akima vertical advection             **
-** TS_C2VADVECTION_TL  use if 2nd-order centered vertical advection          **
-** TS_C4VADVECTION_TL  use if 4th-order centered vertical advection          **
-** TS_SVADVECTION_TL   use if splines vertical advection                     **
 **                                                                           **
 ** Pressure gradient algorithm OPTIONS:                                      **
 **                                                                           **

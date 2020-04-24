@@ -2,9 +2,9 @@
 #ifdef ADJOINT
       SUBROUTINE ad_wrt_his (ng)
 !
-!svn $Id: ad_wrt_his.F 889 2018-02-10 03:32:52Z arango $
+!svn $Id: ad_wrt_his.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -128,7 +128,7 @@
 !  Set time record index.
 !
       ADM(ng)%Rindex=ADM(ng)%Rindex+1
-      Fcount=ADM(ng)%Fcount
+      Fcount=ADM(ng)%load
       ADM(ng)%Nrec(Fcount)=ADM(ng)%Nrec(Fcount)+1
 !
 !  If requested, set time index to recycle time records in the adjoint

@@ -1,9 +1,9 @@
 !
 !  ROMS/TOMS Standard Input parameters.
 !
-!svn $Id: ocean_coupling_test.in 889 2018-02-10 03:32:52Z arango $
+!svn $Id: roms_coupling_test.in 1009 2020-03-03 20:38:52Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -108,6 +108,42 @@ GridsInLayer =  1
 
       NtileI == 1                               ! I-direction partition
       NtileJ == 2                               ! J-direction partition
+
+! Set horizontal and vertical advection schemes for active and inert
+! tracers. A different advection scheme is allowed for each tracer.
+! For example, a positive-definite (monotonic) algorithm can be activated
+! for salinity and inert tracers, while a different one is set for
+! temperature. [1:NAT+NPT,Ngrids] values are expected.
+!
+!   Keyword    Advection Algorithm
+!
+!   A4         4th-order Akima (horizontal/vertical)
+!   C2         2nd-order centered differences (horizontal/vertical)
+!   C4         4th-order centered differences (horizontal/vertical)
+!   HSIMT      3th-order HSIMT-TVD (horizontal/vertical)
+!   MPDATA     recursive flux corrected MPDATA (horizontal/vertical)
+!   SPLINES    parabolic splines (only vertical)
+!   SU3        split third-order upstream (horizontal/vertical)
+!   U3         3rd-order upstream-biased (only horizontal)
+!
+! The user has the option of specifying the full Keyword or the first
+! two letters, regardless if using uppercase or lowercase. If nested
+! grids, specify values for each grid (see glossary below).
+
+   Hadvection == U3       \                     ! temperature
+                 U3                             ! salinity
+
+   Vadvection == C4       \                     ! temperature
+                 C4                             ! salinity
+
+! Adjoint-based algorithms can have different horizontal and schemes
+! for active and inert tracers.
+
+ad_Hadvection == U3       \                     ! temperature
+                 U3                             ! salinity
+
+ad_Vadvection == C4       \                     ! temperature
+                 C4                             ! salinity
 
 ! Set lateral boundary conditions keyword. Notice that a value is expected
 ! for each boundary segment per nested grid for each state variable.
@@ -597,6 +633,7 @@ Hout(idWorb) == F       ! Ub_swan            wave bottom orbital velocity
 Hout(idWdis) == F       ! Wave_dissip        wave dissipation
 
 Hout(idPair) == F       ! Pair               surface air pressure
+Hout(idTair) == F       ! Tair               surface air temperature
 Hout(idUair) == F       ! Uair               surface U-wind component
 Hout(idVair) == F       ! Vair               surface V-wind component
 
@@ -701,6 +738,7 @@ Qout(idWorb) == F       ! Ub_swan            wave bottom orbital velocity
 Qout(idWdis) == F       ! Wave_dissip        wave dissipation
 
 Qout(idPair) == F       ! Pair               surface air pressure
+Qout(idTair) == F       ! Tair               surface air temperature
 Qout(idUair) == F       ! Uair               surface U-wind component
 Qout(idVair) == F       ! Vair               surface V-wind component
 
@@ -773,6 +811,7 @@ Aout(idU3Sd) == F       ! u_stokes           3D U-Stokes velocity
 Aout(idV3Sd) == F       ! v_stokes           3D V-Stokes velocity
 
 Aout(idPair) == F       ! Pair               surface air pressure
+Aout(idTair) == F       ! Tair               surface air temperature
 Aout(idUair) == F       ! Uair               surface U-wind component
 Aout(idVair) == F       ! Vair               surface V-wind component
 
@@ -990,6 +1029,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
      SPARNAM =  ROMS/External/sediment.in
      USRNAME =  ROMS/External/MyFile.dat
 
+
 !
 !  GLOSSARY:
 !  =========
@@ -1159,6 +1199,83 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !              In distributed-memory (MPI), the product of NtileI and NtileJ
 !              must be EQUAL to the number of parallel nodes specified during
 !              execution with the "mprun" or "mpirun" command.
+!
+!------------------------------------------------------------------------------
+! Tracer advection scheme
+!------------------------------------------------------------------------------
+!
+! It is more advantageous to set the horizontal and vertical advection schemes
+! for each tracer with switches instead of a single CPP flag for all of them.
+! Positive-definite and monotonic algorithms (i.e., MPDATA and HSIMT) are
+! appropriate and useful for positive fields like salinity, inert, biological,
+! and sediment tracers.  However, since the temperature has a dynamic range
+! with negative and positive values in the ocean, other advection schemes are
+! more appropriate.
+!
+! Currently, the following tracer advection schemes are available and are
+! activated using the associated Keyword:
+!
+!   Keyword    Advection Algorithm
+!
+!   A4         4th-order Akima (horizontal/vertical)
+!   C2         2nd-order centered differences (horizontal/vertical)
+!   C4         4th-order centered differences (horizontal/vertical)
+!   HSIMT      3th-order HSIMT with TVD limiter (horizontal/vertical)
+!   MPDATA     recursive flux corrected MPDATA (horizontal/vertical)
+!   SPLINES    parabolic splines reconstruction (only vertical)
+!   SU3        split third-order upstream (horizontal/vertical)
+!   U3         3rd-order upstresm-bias (only horizontal)
+!
+! The user has the option of specifying the full Keyword or the first
+! two letters, regardless if using uppercase or lowercase.
+!
+! If using either HSIMT (Wu and Zhu, 2010) or MPDATA (Margolin and
+! Smolarkiewicz, 1998) options, the user needs to set the same scheme
+! for both horizontal and vertical advection to preserve monotonicity.
+!
+! Hadvection     Horizontal advection for each active (temperature and
+!                  salinity) and inert tracers, [1:NAT+NPT,Ngrids]
+!                  values are expected.
+!
+! Vadvection     Vertical advection for each active (temperature and
+!                  salinity) and inert tracers, [1:NAT+NPT,Ngrids]
+!                  values are expected.
+!
+! ad_Hadvection  Horizontal advection for each active (temperature and
+!                  salinity) and inert tracers in the adjoint-based
+!                  algorithms, [1:NAT+NPT,Ngrids] values are expected.
+!
+! ad_Vadvection  Vertical advection for each active (temperature and
+!                  salinity) and inert tracers in the adjoint-based
+!                  algorithms, [1:NAT+NPT,Ngrids] values are expected.
+!
+! Examples:
+!
+!  Hadvection == A4       \                     ! temperature
+!                MPDATA   \                     ! salinity
+!                HSIMT    \                     ! dye_01, inert(1)
+!                HSIMT                          ! dy2_02, inert(2)
+!
+!  Vadvection == A4       \                     ! temperature
+!                MPDATA   \                     ! salinity
+!                HSIMT    \                     ! dye_01, inert(1)
+!                HSIMT                          ! dye_02, inert(2)
+!
+! or in nested applications
+!
+!  Hadvection == U3       \                     ! temperature, Grid 1
+!                HSIMT    \                     ! salinity,    Grid 1
+!                U3       \                     ! temperature, Grid 2
+!                HSIMT    \                     ! salinity,    Grid 2
+!                U3       \                     ! temperature, Grid 3
+!                HSIMT                          ! salinity,    Grid 3
+!
+!  Vadvection == C4       \                     ! temperature, Grid 1
+!                HSIMT    \                     ! salinity,    Grid 1
+!                C4       \                     ! temperature, Grid 2
+!                HSIMT    \                     ! salinity,    Grid 2
+!                C4       \                     ! temperature, Grid 3
+!                HSIMT                          ! salinity,    Grid 3
 !
 !------------------------------------------------------------------------------
 ! Lateral boundary conditions parameters.
@@ -2381,6 +2498,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! Hout(idWdis)   Write out wave dissipation.
 !
 ! Hout(idPair)   Write out surface air pressure.
+! Hout(idTair)   Write out surface air temperature.
 ! Hout(idUair)   Write out surface U-wind component.
 ! Hout(idVair)   Write out surface V-wind component.
 !
@@ -2480,6 +2598,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! Qout(idWdis)   Write out wave dissipation.
 !
 ! Qout(idPair)   Write out surface air pressure.
+! Qout(idTair)   Write out surface air temperature.
 ! Qout(idUair)   Write out surface U-wind component.
 ! Qout(idVair)   Write out surface V-wind component.
 !
@@ -2547,6 +2666,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! Aout(idV3Sd)   Write out 3D V-Stokes velocity.
 !
 ! Aout(idPair)   Write out surface air pressure.
+! Aout(idTair)   Write out surface air temperature.
 ! Aout(idUair)   Write out surface U-wind component.
 ! Aout(idVair)   Write out surface V-wind component.
 !

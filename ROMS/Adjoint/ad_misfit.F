@@ -3,9 +3,9 @@
 #if  defined ADJOINT && defined FOUR_DVAR  && defined OBSERVATIONS && \
     !defined WEAK_CONSTRAINT
 !
-!svn $Id: ad_misfit.F 889 2018-02-10 03:32:52Z arango $
+!svn $Id: ad_misfit.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -430,10 +430,10 @@
      &                           ObsState2Type(isRadial),               &
      &                           Mobs, 1, Nobs(ng),                     &
      &                           vXmin(ng), vXmax(ng),                  &
-     &                           vYmin(ng)+0.5_r8, vYmax(ng)+0.5_r8,    &
+     &                           vYmin(ng), vYmax(ng),                  &
      &                           time(ng), dt(ng),                      &
      &                           ObsType, ObsVetting,                   &
-     &                           Tobs, Xobs, Yobs+0.5_r8, Zobs,         &
+     &                           Tobs, Xobs, Yobs, Zobs,                &
      &                           ad_v(:,:,:,nfrc), z_v,                 &
 #  ifdef MASKING
      &                           vmask,                                 &
@@ -451,11 +451,11 @@
      &                           LBi, UBi, LBj, UBj, 1, N(ng),          &
      &                           ObsState2Type(isRadial),               &
      &                           Mobs, 1, Nobs(ng),                     &
-     &                           uXmin(ng)+0.5_r8, uXmax(ng)+0.5_r8,    &
+     &                           uXmin(ng), uXmax(ng),                  &
      &                           uYmin(ng), uYmax(ng),                  &
      &                           time(ng), dt(ng),                      &
      &                           ObsType, ObsVetting,                   &
-     &                           Tobs, Xobs+0.5_r8, Yobs, Zobs,         &
+     &                           Tobs, Xobs, Yobs, Zobs,                &
      &                           ad_u(:,:,:,nfrc), z_v,                 &
 #  ifdef MASKING
      &                           umask,                                 &

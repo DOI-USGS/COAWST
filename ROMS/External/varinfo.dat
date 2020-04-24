@@ -1,9 +1,9 @@
 !
 !  ROMS/TOMS IO NetCDF variables.
 !
-!svn $Id: varinfo.dat 889 2018-02-10 03:32:52Z arango $
+!svn $Id: varinfo.dat 995 2020-01-10 04:01:28Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -7626,6 +7626,116 @@
   'idTvar(iPigs)'
   'r3dvar'
   1.0d0
+!
+!  Diagnostic Ecosim variables.
+!
+'surface_irradiance'                               ! Output
+  'surface spectral light irradiance'
+  'micromole meter-2 s-1 nm-1'                     ! [micromole/m2/s/nm]
+  'surface_irradiance, scalar, series'
+  'ocean_time'
+  'iDbio3(idSpIr)'
+  'l3dvar'
+  1.0d0
+
+'downward_irradiance'                              ! Output
+  'spectral downward light irradiance'
+  'micromole meter-2 s-1 nm-1'                     ! [micromole/m2/s/nm]
+  'downward_irradiance, scalar, series'
+  'ocean_time'
+  'iDbio4(iddIrr)'
+  'l4dvar'
+  1.0d0
+
+'scalar_irradiance'                                ! Output
+  'scalar spectral light irradiance'
+  'micromole meter-2 s-1 nm-1'                     ! [micromole/m2/s/nm]
+  'scalar_irradiance, scalar, series'
+  'ocean_time'
+  'iDbio4(idsIrr)'
+  'l4dvar'
+  1.0d0
+
+'light_cosine'                                     ! Output
+  'underwater light spectral average cosine of zenith angle'
+  'nondimensional'                                 ! [nondimensional]
+  'light_cosine, scalar, series'
+  'ocean_time'
+  'iDbio4(idAcos)'
+  'l4dvar'
+  1.0d0
+
+'light_attenuation'                                ! Output
+  'diffuse light attenuation'
+  'meter-1'                                        ! [1/m]
+  'light_attenuation, scalar, series'
+  'ocean_time'
+  'iDbio4(idLatt)'
+  'l4dvar'
+  1.0d0
+
+'Phy_absorption'                                   ! Output
+  'phytoplankton optical absorption'
+  'meter-1'                                        ! [1/m]
+  'Phy_absorption, scalar, series'
+  'ocean_time'
+  'iDbio4(idaPHY)'
+  'l4dvar'
+  1.0d0
+
+'detrital_absorption'                              ! Output
+  'detrital optical absorption'
+  'meter-1'                                        ! [1/m]
+  'Det_absorption, scalar, series'
+  'ocean_time'
+  'iDbio4(idaDET)'
+  'l4dvar'
+  1.0d0
+
+'CDC_absorption'                                   ! Output
+  'color degradational matter optical absorption'
+  'meter-1'                                        ! [1/m]
+  'CDC_absorption, scalar, series'
+  'ocean_time'
+  'iDbio4(idaCDC)'
+  'l4dvar'
+  1.0d0
+
+'Phy_scattering'                                   ! Output
+  'phytoplankton optical scattering'
+  'meter-1'                                        ! [1/m]
+  'Phy_scattering, scalar, series'
+  'ocean_time'
+  'iDbio4(idsPHY)'
+  'l4dvar'
+  1.0d0
+
+'Phy_backscattering'                               ! Output
+  'phytoplankton optical backscattering'
+  'meter-1'                                        ! [1/m]
+  'Phy_backscattering, scalar, series'
+  'ocean_time'
+  'iDbio4(idbPHY)'
+  'l4dvar'
+  1.0d0
+
+'total_scattering'                                 ! Output
+  'total optical scattering'
+  'meter-1'                                        ! [1/m]
+  'total_scattering, scalar, series'
+  'ocean_time'
+  'iDbio4(idsTOT)'
+  'l4dvar'
+  1.0d0
+
+'total_backscattering'                             ! Output
+  'total optical backscattering'
+  'meter-1'                                        ! [1/m]
+  'total_backscattering, scalar, series'
+  'ocean_time'
+  'iDbio4(idbTOT)'
+  'l4dvar'
+  1.0d0
 
 !
 !-----------------------------------------------------------------------
@@ -8951,18 +9061,9 @@
   'nulvar'
   1.0d0
 
-'obs_variance'                                     ! Input
-  'observation global variance'
-  'squared state variable units'                   ! [squared state units]
-  'nulvar'
-  'datum'
-  'idOvar'
-  'nulvar'
-  1.0d0
-
 'obs_error'                                        ! Input
-  'observation error, assigned weight'
-  'inverse squared state variable units'           ! [1/(squared state units)]
+  'observation error covariance'
+  'squared state variable units'                   ! [squared state units]
   'nulvar'
   'datum'
   'idOerr'
@@ -8998,7 +9099,7 @@
 
 'NLmodel_initial'                                  ! Output
   'initial nonlinear model at observation locations'
-  'nulvar'
+  'state variable units'
   'nulvar'
   'datum'
   'idNLmi'
@@ -9007,7 +9108,7 @@
 
 'NLmodel_value'                                    ! Output
   'nonlinear model at observation locations'
-  'nulvar'
+  'state variable units'
   'nulvar'
   'datum'
   'idNLmo'
@@ -9023,9 +9124,27 @@
   'nulvar'
   1.0d0
 
+'increment '                                       ! Output
+  '4D-Var increment: analysis minus background, dx_a = H(x_a) - H(x_b)'
+  'state variable units'                           ! [state units]
+  'nulvar'
+  'datum'
+  'idIncr'
+  'nulvar'
+  1.0d0
+
+'innovation'                                       ! Output
+  '4D-Var innovation: observation minus background, d_b = y - H(x_b)'
+  'state variable units'                           ! [state units]
+  'nulvar'
+  'datum'
+  'idInno'
+  'nulvar'
+  1.0d0
+
 'misfit_initial'                                   ! Output
   'initial model-observation misfit'
-  'nulvar'
+  'nondimensional'
   'nulvar'
   'datum'
   'idMOMi'
@@ -9034,16 +9153,25 @@
 
 'misfit_final'                                     ! Output
   'final model-observation misfit'
-  'nulvar'
+  'nondimensional'
   'nulvar'
   'datum'
   'idMOMf'
   'nulvar'
   1.0d0
 
-'BgError_value'                                    ! Output
-  'Background error at observation locations'
+'residual'                                       ! Output
+  '4D-Var residual: observation minus analysis, d_a = y - H(x_b + dx_a)'
+  'state variable units'                           ! [state units]
   'nulvar'
+  'datum'
+  'idResi'
+  'nulvar'
+  1.0d0
+
+'BgError_value'                                    ! Output
+  'Background error standard deviation at observation locations'
+  'state variable units'                           ! [state units]
   'nulvar'
   'datum'
   'idBgEr'
@@ -9051,8 +9179,8 @@
   1.0d0
 
 'BgThresh_value'                                   ! Output
-  'Threshold for background quality control check of observations'
-  'nulvar'
+  'Threshold number of standard deviations for background quality control of observations'
+  'nondimensional'
   'nulvar'
   'datum'
   'idBgTh'
@@ -9066,7 +9194,7 @@
 !
 'Dinwcr'                                           ! Input/Output
   'Dissolved inorganic N in water column'
-  'millimole'                                      ! [millimole]
+  'millimole_N'                                    ! [millimole_N]
   'Dinwcr, scalar, series'
   'ocean_time'
   'iddinw'
@@ -9075,7 +9203,7 @@
 
 'Dinsed'                                           ! Input/Output
   'Dissolved inorganic N in sediment column'
-  'millimole'                                      ! [millimole]
+  'millimole_N'                                    ! [millimole_N]
   'Dinsed, scalar, series'
   'ocean_time'
   'iddins'
@@ -9084,25 +9212,25 @@
 
 'DOwcr'                                            ! Input/Output
   'Dissolved Oxygen in water column'
-  'millimole'                                      ! [millimole]
+  'millimole_O2'                                   ! [millimole_O2]
   'DOwcr, scalar, series'
   'ocean_time'
   'iddowc'
-  'r3dvar'
+  'r2dvar'
   1.0d0
 
 'DINwcr_sav'                                       ! Input/Output
   'Dissolved inorganic N in water column in SAV'
-  'millimole'                                      ! [millimole]
+  'millimole_N'                                    ! [millimole_N]
   'DINwcr_sav, scalar, series'
   'ocean_time'
   'idwsvl'
-  'r3dvar'
+  'r2dvar'
   1.0d0
 
 'AGB'                                              ! Input/Output
   'Above ground biomass'
-  'millimole_nitrogen meter-2'                     ! [millimole-N/m2]
+  'millimole_N meter-2'                            ! [millimole-N/m2]
   'AGB, scalar, series'
   'ocean_time'
   'idsagb'
@@ -9111,92 +9239,101 @@
 
 'BGB'                                              ! Input/Output
   'Below ground biomass'
-  'millimole_nitrogen meter-2'                     ! [millimole-N/m2]
+  'millimole_N meter-2'                            ! [millimole-N/m2]
   'BGB, scalar, series'
   'ocean_time'
   'idsbgb'
   'r2dvar'
   1.0d0
 
+'EPB'                                              ! Input/Output
+  'Epiphyte biomass'
+  'millimole_N meter-2'                            ! [millimole-N/m2]
+  'EPB, scalar, series'
+  'ocean_time'
+  'idsepb'
+  'r2dvar'
+  1.0d0
+
 'PP'                                               ! Input/Output
-  'New var'
-  'units'                                          ! [millimole]
+  'Primary production'
+  'millimole_N'                                    ! [millimole_N]
   'PP, scalar, series'
   'ocean_time'
   'idsvpp'
-  'r3dvar'
+  'r2dvar'
   1.0d0
 
 'AGM'                                              ! Input/Output
-  'New var'
-  'millimole'                                      ! [millimole]
+  'Above ground mortality'
+  'millimole_N'                                    ! [millimole_N]
   'AGM, scalar, series'
   'ocean_time'
   'idsvam'
-  'r3dvar'
+  'r2dvar'
   1.0d0
 
 'AGAR'                                             ! Input/Output
-  'New var' 
-  'units'                                          ! [millimole]
+  'Active respiration' 
+  'millimole_N'                                    ! [millimole_N]
   'AGAR, scalar, series'
   'ocean_time'
   'idsgar'
-  'r3dvar'
+  'r2dvar'
   1.0d0
 
-'AGBR'                                                ! Input/Output
-  'New var'    
-  'units'                                             ! [millimole]
+'AGBR'                                             ! Input/Output
+  'Above ground basal respiration'    
+  'millimole_N'                                    ! [millimole_N]
   'AGBR, scalar, series'
   'ocean_time'
   'idsvbr'
-  'r3dvar'
+  'r2dvar'
   1.0d0
 
-'SEARS'                                              ! Input/Output
-  'New var'  
-  'units'                                            ! [millimole]
+'SEARS'                                            ! Input/Output
+  'Seasonal root storage of Carbon'  
+  'millimole_C'                                    ! [millimole_C]
   'SEARS, scalar, series'
   'ocean_time'
   'idsvrs'
-  'r3dvar'
+  'r2dvar'
   1.0d0
 
 'AGBG'                                               ! Input/Output
-  'New var'     
-  'units'                                            ! [millimole]
+  'Translocation of above ground biomass to below ground'     
+  'millimole_N'                                      ! [millimole_N]
   'AGBG, scalar, series'
   'ocean_time'
   'idsvbg'
-  'r3dvar'
+  'r2dvar'
   1.0d0
 
 'BGAG'                                               ! Input/Output
-  'New var'  
-  'units'                                            ! [millimole]
+  'Translocation of below ground biomass to above ground'  
+  'millimole_N'                                      ! [millimole_N]
   'BGAG, scalar, series'
   'ocean_time'
   'idsvag'
-  'r3dvar'
+  'r2dvar'
   1.0d0
 
 'BGR'                                                ! Input/Output
-  'New var'  
-  'units'                                            ! [millimole]
+  'Below ground biomass respiration'  
+  'millimole_N'                                      ! [millimole_N]
   'BGR, scalar, series'
   'ocean_time'
   'idsbgr'
-  'r3dvar'
+  'r2dvar'
   1.0d0
 
 'BGM'                                                ! Input/Output
-  'New var'  
-  'units'                                            ! [millimole]
+  'Below ground mortality'  
+  'millimole_N'                                      ! [millimole_N]
   'BGM, scalar, series'
   'ocean_time'
   'idsbgm'
-  'r3dvar'
+  'r2dvar'
   1.0d0
 !
 !------------------------------------------------------------------------------
@@ -9236,24 +9373,6 @@
   'plant_thickness, scalar, series'
   'ocean_time'
   'idvprp(pthck)'
-  'v3pgrd'
-   1.0d0
-
-'plant_agb'                                       ! Input/Output
-  'plant above ground biomass' 
-  'millimole_nitrogen meter-2'                    ! [millimole-N/m2]
-  'plant_agb, scalar, series'
-  'ocean_time'
-  'idvprp(pagbm)'
-  'v3pgrd'
-   1.0d0
-
-'plant_bgb'                                       ! Input/Output
-  'plant below ground biomass' 
-  'millimole_nitrogen meter-2'                    ! [millimole-N/m2]
-  'plant_bgb, scalar, series'
-  'ocean_time'
-  'idvprp(pbgbm)'
   'v3pgrd'
    1.0d0
 
@@ -9308,11 +9427,11 @@
   1.0d0
 !
 !------------------------------------------------------------------------------
-!  WAVE Thrust model for marshes variables.
+! Marsh dynamics variables.
 !------------------------------------------------------------------------------
 !
-'marsh_mask'                                      ! Input/Output
-  'Input masking for getting thrust due to waves at rho pts.'
+'marsh_mask'                                       ! Input/Output
+  'Store masking marsh for marsh cells.'
   'nondimensional'     
   'marsh_mask, scalar, series'
   'ocean_time'
@@ -9320,29 +9439,75 @@
   'r2dvar' 
   1.0d0
 
-'mask_thrust'                                      ! Output
-  'Masking for getting thrust due to waves at rho pts.'
-  'nondimensional'     
-  'mask_thrust, scalar, series'
+'Thrust_total'                                     ! Output
+  'Total thrust in all directions due to waves.'
+  'kilonewtons meter-1 '                           ! [kN/m]
+  'Thrust_total, scalar, series'
   'ocean_time'
-  'idTmsk'
+  'idTtot'
+  'r2dvar'
+  1.0d0
+
+'marsh_flux_out_'                                  ! Output
+  'Marsh sediment flux out from marsh cells.' 
+  'kg'                                             ! [kg]
+  'marsh_flux_out_, scalar, series'
+  'ocean_time'
+  'idTmfo'
+  'r2dvar'
+   1.0d0
+
+'marsh_retreat'                                    ! Output
+  'Amount of marsh retreat from all directions.'
+  'm'     
+  'marsh_retreat, scalar, series'                  ! [m]
+  'ocean_time'
+  'idTmmr'
   'r2dvar' 
-  1.0d0
+   1.0d0
 
-'Thrust_max'                                       ! Output
-  'Maximum thrust due to waves'
-  'kilonewtons/m '                                 ! [kN/m]
-  'Thrust_w_wet, scalar, series'
+'marsh_scrp_hght'                                  ! Output
+  'Scarp height '
+  'm'     
+  'marsh_scrp_hght, scalar, series'                ! [m]
   'ocean_time'
-  'idTmax'
-  'r2dvar'
-  1.0d0
+  'idTmsc'
+  'r2dvar' 
+   1.0d0
 
-'Thrust_tonelli'                                   ! Output
-  'Tonelli masking based thrust due to waves'
-  'kilonewtons/m'                                  ! [kN/m]
-  'Thrust_tonelli, scalar, series'
+'marsh_tidal_range'                               ! Output
+  'Tidal range for marsh growth model.'
+  'm'     
+  'marsh_tidal_range, scalar, series'             ! [m]
   'ocean_time'
-  'idTton'
+  'idTmtr'
+  'r2dvar' 
+   1.0d0
+
+'marsh_high_water'                                ! Output
+  'marsh mean high water.'
+  'm'     
+  'marsh_high_water, scalar, series'              ! [m]
+  'ocean_time'
+  'idTmhw'
+  'r2dvar' 
+   1.0d0
+
+'marsh_vert'                                      ! Output
+  'Amount of marsh vertical growth.'
+  'm'     
+  'marsh_vert, scalar, series'                    ! [m]
+  'ocean_time'
+  'idTmvg'
+  'r2dvar' 
+   1.0d0
+
+'marsh_biomass_peak'                              ! Output
+  'Marsh biomass peak.'
+  'kg/sq.m'
+  'marsh_biomass_peak, scalar, series'            ! [kg/sq.m]
+  'ocean_time'
+  'idTmbp'
   'r2dvar'
-  1.0d0
+   1.0d0
+

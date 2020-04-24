@@ -3,8 +3,9 @@
 
 #if defined NESTING && defined ADJOINT
 !
+!svn $Id: ad_nesting.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -820,9 +821,6 @@
       integer :: Tindex3d, itrc
 # endif
       integer :: LBi, UBi, LBj, UBj
-# ifdef NESTING_DEBUG
-      real :: IniTime
-# endif
 !
 !-----------------------------------------------------------------------
 !  Get donor grid data needed to process refinement grid contact points.
@@ -879,7 +877,6 @@
                 first=.FALSE.
                 WRITE (102,10)
               END IF
-              IniTime=dstart*86400.0_r8
               WRITE (102,20) ng, cr, dg, rg, iic(dg), iic(rg),          &
      &                       3-tnew, tnew, Tindex2d, Tindex3d,          &
      &                       INT(time(rg)),                             &
@@ -6870,8 +6867,8 @@
 
 # ifdef DISTRIBUTE
 !
-!  Adjoint of nitialize contact points array to special value to
-!  facilite distribute-memory data collection from all nodes.
+!  Adjoint of initialize contact points array to special value to
+!  facilitate distribute-memory data collection from all nodes.
 !
       DO m=1,Npoints
         Ac(1,m)=0.0_r8
@@ -7049,7 +7046,7 @@
 #  ifdef DISTRIBUTE
 !
 !  Adjoint of initialize contact points array to special value to
-!  facilite distribute-memory data collection from all nodes.
+!  facilitate distribute-memory data collection from all nodes.
 !
       DO k=LBk,UBk
         DO m=1,Npoints
@@ -7275,13 +7272,11 @@
         END IF
       END DO
 
-
 # ifdef DISTRIBUTE
 !
 !  Initialize contact points array to special value to facilite
 !  distribute-memory data collection from all nodes.
 !
-      Npts=4*Npoints
       DO m=1,Npoints
         Ac(1,m)=0.0_r8
         Ac(2,m)=0.0_r8

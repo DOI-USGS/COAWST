@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: array_modes_w4dvar.h 927 2018-10-16 03:51:56Z arango $
+!svn $Id: array_modes_w4dvar.h 995 2020-01-10 04:01:28Z arango $
 !=================================================== Andrew M. Moore ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -381,8 +381,8 @@
 
       integer :: my_inner, my_outer
       integer :: Lbck, Lini, Rec1, Rec2
-      integer :: i, ng, status, tile
-      integer :: Fcount, NRMrec, TLMouter
+      integer :: i, lstr, ng, status, tile
+      integer :: Fcount, NRMrec
 
       integer, dimension(Ngrids) :: Nrec
 
@@ -450,7 +450,7 @@
 !
       DO ng=1,Ngrids
         INI(ng)%Rindex=1
-        Fcount=INI(ng)%Fcount
+        Fcount=INI(ng)%load
         INI(ng)%Nrec(Fcount)=1
         CALL wrt_ini (ng, 1)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
@@ -463,7 +463,13 @@
       DO ng=1,Ngrids
         LdefHIS(ng)=.TRUE.
         LwrtHIS(ng)=.TRUE.
-        WRITE (HIS(ng)%name,10) TRIM(FWD(ng)%base), Nimpact-1
+#if defined BULK_FLUXES && defined NL_BULK_FLUXES
+        LreadBLK(ng)=.FALSE.
+#endif
+        LreadFWD(ng)=.FALSE.
+        WRITE (HIS(ng)%name,10) TRIM(FWD(ng)%head), Nimpact-1
+        lstr=LEN_TRIM(HIS(ng)%name)
+        HIS(ng)%base=HIS(ng)%name(1:lstr-3)
       END DO
 
 #if defined BULK_FLUXES && defined NL_BULK_FLUXES
@@ -472,7 +478,7 @@
 !  and processed by other algorithms.
 !
       DO ng=1,Ngrids
-        BLK(ng)%name=HIS(ng)%name
+!       BLK(ng)%name=HIS(ng)%name
       END DO
 #endif
 !
@@ -581,10 +587,9 @@
 !  Define output 4DVAR NetCDF file containing all processed data
 !  at observation locations.
 !
-      TLMouter=1
       DO ng=1,Ngrids
         LdefMOD(ng)=.TRUE.
-        WRITE (DAV(ng)%name,10) TRIM(DAV(ng)%base), TLMouter+2
+        WRITE (DAV(ng)%name,20) TRIM(DAV(ng)%head), Nimpact, 'TOTAL'
         CALL def_mod (ng)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
@@ -611,16 +616,16 @@
       DO ng=1,Ngrids
         wrtObsScale(ng)=.TRUE.
         IF (Master) THEN
-          WRITE (stdout,20) 'NL', ng, ntstart(ng), ntend(ng)
+          WRITE (stdout,30) 'NL', ng, ntstart(ng), ntend(ng)
         END IF
       END DO
 
 !$OMP PARALLEL
-#ifdef SOLVE3D
+# ifdef SOLVE3D
       CALL main3d (RunInterval)
-#else
+# else
       CALL main2d (RunInterval)
-#endif
+# endif
 !$OMP END PARALLEL
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
@@ -629,15 +634,36 @@
         wrtNLmod(ng)=.FALSE.
         wrtObsScale(ng)=.FALSE.
       END DO
-!
 #endif
 !
-!  Set forward basic state NetCDF ID to nonlinear model trajectory to
-!  avoid the inquiring stage.
+!  Set structure for the nonlinear forward trajectory to be processed
+!  by the tangent linear and adjoint models. Also, set switches to
+!  process the FWD structure in routine "check_multifile". Notice that
+!  it is possible to split solution into multiple NetCDF files to reduce
+!  their size.
 !
+      CALL edit_multifile ('HIS2FWD')
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
       DO ng=1,Ngrids
-        FWD(ng)%ncid=HIS(ng)%ncid
+        LreadFWD(ng)=.TRUE.
       END DO
+
+#if defined BULK_FLUXES && defined NL_BULK_FLUXES
+!
+!  Set structure for the nonlinear surface fluxes to be processed by
+!  by the tangent linear and adjoint models. Also, set switches to
+!  process the BLK structure in routine "check_multifile".  Notice that
+!  it is possible to split solution into multiple NetCDF files to reduce
+!  their size.
+!
+      CALL edit_multifile ('HIS2BLK')
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+      DO ng=1,Ngrids
+        LreadBLK(ng)=.TRUE.
+      END DO
+#endif
 
 #ifdef RECOMPUTE_4DVAR
 !
@@ -690,7 +716,7 @@
 !  nonlinear model.
 !
         DO ng=1,Ngrids
-          WRITE (FWD(ng)%name,10) TRIM(FWD(ng)%base), outer-1
+          WRITE (FWD(ng)%name,10) TRIM(FWD(ng)%head), outer-1
         END DO
 !
 !  Set representer model output file name.  The strategy is to write
@@ -699,7 +725,9 @@
         DO ng=1,Ngrids
           LdefTLM(ng)=.TRUE.
           LwrtTLM(ng)=.TRUE.
-          WRITE (TLM(ng)%name,10) TRIM(TLM(ng)%base), outer
+          WRITE (TLM(ng)%name,10) TRIM(TLM(ng)%head), outer
+          lstr=LEN_TRIM(TLM(ng)%name)
+          TLM(ng)%base=TLM(ng)%name(1:lstr-3)
         END DO
 !
 !  Activate switch to write the representer model at observation points.
@@ -731,7 +759,7 @@
 !
         DO ng=1,Ngrids
           IF (Master) THEN
-            WRITE (stdout,20) 'RP', ng, ntstart(ng), ntend(ng)
+            WRITE (stdout,30) 'RP', ng, ntstart(ng), ntend(ng)
           END IF
         END DO
 
@@ -756,7 +784,7 @@
                 string=ObsName(i)
               END IF
               IF (FOURDVAR(ng)%DataPenalty(i).ne.0.0_r8) THEN
-                WRITE (stdout,30) outer, inner, 'RPM',                  &
+                WRITE (stdout,40) outer, inner, 'RPM',                  &
      &                            FOURDVAR(ng)%DataPenalty(i),          &
      &                            TRIM(string)
               END IF
@@ -885,7 +913,7 @@
             DO ng=1,Ngrids
               WRTforce(ng)=.TRUE.
               IF (Nrun.gt.1) LdefADJ(ng)=.FALSE.
-              Fcount=ADM(ng)%Fcount
+              Fcount=ADM(ng)%load
               ADM(ng)%Nrec(Fcount)=0
               ADM(ng)%Rindex=0
             END DO
@@ -894,7 +922,7 @@
 !
             DO ng=1,Ngrids
               IF (Master) THEN
-                WRITE (stdout,20) 'AD', ng, ntstart(ng), ntend(ng)
+                WRITE (stdout,30) 'AD', ng, ntstart(ng), ntend(ng)
               END IF
             END DO
 
@@ -944,7 +972,7 @@
 !  the adjoint solution in ADM(ng)%name is backwards in time).
 !
             IF (Master) THEN
-              WRITE (stdout,50) outer, inner
+              WRITE (stdout,60) outer, inner
             END IF
             DO ng=1,Ngrids
               TLF(ng)%Rindex=0
@@ -965,9 +993,11 @@
 !:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 !
             DO ng=1,Ngrids
-              TLM(ng)%name=TRIM(TLM(ng)%base)//'.nc'
               wrtNLmod(ng)=.FALSE.
               wrtTLmod(ng)=.TRUE.
+              TLM(ng)%name=TRIM(TLM(ng)%head)//'.nc'
+              lstr=LEN_TRIM(TLM(ng)%name)
+              TLM(ng)%base=TLM(ng)%name(1:lstr-3)
             END DO
 !
 !  If weak constraint, the impulses are time-interpolated at each
@@ -1005,7 +1035,7 @@
 !
             DO ng=1,Ngrids
               IF (inner.gt.1) LdefTLM(ng)=.FALSE.
-              Fcount=TLM(ng)%Fcount
+              Fcount=TLM(ng)%load
               TLM(ng)%Nrec(Fcount)=0
               TLM(ng)%Rindex=0
             END DO
@@ -1016,7 +1046,7 @@
 !
             DO ng=1,Ngrids
               IF (Master) THEN
-                WRITE (stdout,20) 'TL', ng, ntstart(ng), ntend(ng)
+                WRITE (stdout,30) 'TL', ng, ntstart(ng), ntend(ng)
               END IF
             END DO
 
@@ -1095,7 +1125,7 @@
         DO ng=1,Ngrids
           WRTforce(ng)=.TRUE.
           IF (Nrun.gt.1) LdefADJ(ng)=.FALSE.
-          Fcount=ADM(ng)%Fcount
+          Fcount=ADM(ng)%load
           ADM(ng)%Nrec(Fcount)=0
           ADM(ng)%Rindex=0
         END DO
@@ -1105,7 +1135,7 @@
 !
         DO ng=1,Ngrids
           IF (Master) THEN
-            WRITE (stdout,20) 'AD', ng, ntstart(ng), ntend(ng)
+            WRITE (stdout,30) 'AD', ng, ntstart(ng), ntend(ng)
           END IF
         END DO
 
@@ -1155,7 +1185,7 @@
 !  the adjoint solution in ADM(ng)%name is backwards in time).
 !
         IF (Master) THEN
-          WRITE (stdout,50) outer, inner
+          WRITE (stdout,60) outer, inner
         END IF
         DO ng=1,Ngrids
           TLF(ng)%Rindex=0
@@ -1184,7 +1214,9 @@
           wrtNLmod(ng)=.FALSE.
           wrtTLmod(ng)=.TRUE.
           wrtRPmod(ng)=.TRUE.
-          WRITE (TLM(ng)%name,10) TRIM(FWD(ng)%base), outer
+          WRITE (TLM(ng)%name,10) TRIM(FWD(ng)%head), outer
+          lstr=LEN_TRIM(TLM(ng)%name)
+          TLM(ng)%base=TLM(ng)%name(1:lstr-3)
         END DO
 !
 !  If weak constraint, the impulses are time-interpolated at each
@@ -1225,7 +1257,7 @@
 !
         DO ng=1,Ngrids
           IF (Master) THEN
-            WRITE (stdout,20) 'RP', ng, ntstart(ng), ntend(ng)
+            WRITE (stdout,30) 'RP', ng, ntstart(ng), ntend(ng)
           END IF
         END DO
 
@@ -1250,11 +1282,11 @@
                 string=ObsName(i)
               END IF
               IF (FOURDVAR(ng)%DataPenalty(i).ne.0.0_r8) THEN
-                WRITE (stdout,30) outer, inner, 'RPM',                  &
+                WRITE (stdout,40) outer, inner, 'RPM',                  &
      &                            FOURDVAR(ng)%DataPenalty(i),          &
      &                            TRIM(string)
 # ifdef DATALESS_LOOPS
-                WRITE (stdout,30) outer, inner, 'NLM',                  &
+                WRITE (stdout,40) outer, inner, 'NLM',                  &
      &                            FOURDVAR(ng)%NLPenalty(i),            &
      &                            TRIM(string)
 # endif
@@ -1303,7 +1335,7 @@
 !  its indices with the forward file ID which was closed above.
 !
       DO ng=1,Ngrids
-        HIS(ng)%ncid=-1
+!       HIS(ng)%ncid=-1
       END DO
 !!
 !! Compute and report model-observation comparison statistics.
@@ -1347,11 +1379,11 @@
 !  Set basic state trajectory.
 !
       DO ng=1,Ngrids
-        WRITE (FWD(ng)%name,10) TRIM(FWD(ng)%base), outer-1
+        WRITE (FWD(ng)%name,10) TRIM(FWD(ng)%head), outer-1
       END DO
 
       IF ((outer.eq.1).and.Master) THEN
-        WRITE (stdout,60)
+        WRITE (stdout,70)
       END IF
 !
 !  Initialize the adjoint model: initialize using dI/dxf is
@@ -1373,7 +1405,7 @@
       WRTforce=.TRUE.
       DO ng=1,Ngrids
         IF (Nrun.gt.1) LdefADJ(ng)=.FALSE.
-        Fcount=ADM(ng)%Fcount
+        Fcount=ADM(ng)%load
         ADM(ng)%Nrec(Fcount)=0
         ADM(ng)%Rindex=0
       END DO
@@ -1385,7 +1417,7 @@
 !
       DO ng=1,Ngrids
         IF (Master) THEN
-          WRITE (stdout,20) 'AD', ng, ntstart(ng), ntend(ng)
+          WRITE (stdout,30) 'AD', ng, ntstart(ng), ntend(ng)
         END IF
       END DO
 
@@ -1435,7 +1467,7 @@
 !  the adjoint solution in ADM(ng)%name is backwards in time).
 !
       IF (Master) THEN
-        WRITE (stdout,50) outer, inner
+        WRITE (stdout,60) outer, inner
       END IF
       DO ng=1,Ngrids
         TLF(ng)%Rindex=0
@@ -1465,7 +1497,9 @@
 !  name here.
 !
       DO ng=1,Ngrids
-        WRITE (TLM(ng)%name,10) TRIM(TLM(ng)%base), TLMouter+2
+        WRITE (TLM(ng)%name,20) TRIM(TLM(ng)%head), Nimpact, 'TOTAL'
+        lstr=LEN_TRIM(TLM(ng)%name)
+        TLM(ng)%base=TLM(ng)%name(1:lstr-3)
       END DO
 !
 !  Clear tangent linear forcing arrays before entering inner-loop.
@@ -1487,7 +1521,7 @@
 !  Set basic state trajectory.
 !
       DO ng=1,Ngrids
-        WRITE (FWD(ng)%name,10) TRIM(FWD(ng)%base), outer-1
+        WRITE (FWD(ng)%name,10) TRIM(FWD(ng)%head), outer-1
       END DO
 !
 !  If weak constraint, the impulses are time-interpolated at each
@@ -1525,7 +1559,7 @@
 !
       DO ng=1,Ngrids
         IF (Master) THEN
-          WRITE (stdout,20) 'TL', ng, ntstart(ng), ntend(ng)
+          WRITE (stdout,30) 'TL', ng, ntstart(ng), ntend(ng)
         END IF
       END DO
 
@@ -1574,8 +1608,10 @@
 !  name here.
 !
       DO ng=1,Ngrids
-        WRITE (TLM(ng)%name,10) TRIM(TLM(ng)%base), TLMouter+3
-        WRITE (DAV(ng)%name,10) TRIM(DAV(ng)%base), TLMouter+3
+        WRITE (DAV(ng)%name,20) TRIM(DAV(ng)%head), Nimpact, 'IC'
+        WRITE (TLM(ng)%name,20) TRIM(TLM(ng)%head), Nimpact, 'IC'
+        lstr=LEN_TRIM(TLM(ng)%name)
+        TLM(ng)%base=TLM(ng)%name(1:lstr-3)
         FrequentImpulse(ng)=.FALSE.
         LdefMOD(ng)=.TRUE.
         CALL def_mod (ng)
@@ -1617,7 +1653,7 @@
 
       DO ng=1,Ngrids
         IF (Master) THEN
-          WRITE (stdout,20) 'TL', ng, ntstart(ng), ntend(ng)
+          WRITE (stdout,30) 'TL', ng, ntstart(ng), ntend(ng)
         END IF
       END DO
 
@@ -1653,8 +1689,10 @@
 !  name here.
 !
       DO ng=1,Ngrids
-        WRITE (TLM(ng)%name,10) TRIM(TLM(ng)%base), TLMouter+4
-        WRITE (DAV(ng)%name,10) TRIM(DAV(ng)%base), TLMouter+4
+        WRITE (DAV(ng)%name,20) TRIM(DAV(ng)%head), Nimpact, 'FC'
+        WRITE (TLM(ng)%name,20) TRIM(TLM(ng)%head), Nimpact, 'FC'
+        lstr=LEN_TRIM(TLM(ng)%name)
+        TLM(ng)%base=TLM(ng)%name(1:lstr-3)
         FrequentImpulse(ng)=.FALSE.
         LdefMOD(ng)=.TRUE.
         CALL def_mod (ng)
@@ -1696,7 +1734,7 @@
 
       DO ng=1,Ngrids
         IF (Master) THEN
-          WRITE (stdout,20) 'NL', ng, ntstart(ng), ntend(ng)
+          WRITE (stdout,30) 'NL', ng, ntstart(ng), ntend(ng)
         END IF
       END DO
 
@@ -1732,8 +1770,10 @@
 !  name here.
 !
       DO ng=1,Ngrids
-        WRITE (TLM(ng)%name,10) TRIM(TLM(ng)%base), TLMouter+5
-        WRITE (DAV(ng)%name,10) TRIM(DAV(ng)%base), TLMouter+5
+        WRITE (DAV(ng)%name,20) TRIM(DAV(ng)%head), Nimpact, 'BC'
+        WRITE (TLM(ng)%name,20) TRIM(TLM(ng)%head), Nimpact, 'BC'
+        lstr=LEN_TRIM(TLM(ng)%name)
+        TLM(ng)%base=TLM(ng)%name(1:lstr-3)
         FrequentImpulse(ng)=.FALSE.
         LdefMOD(ng)=.TRUE.
         CALL def_mod (ng)
@@ -1744,7 +1784,7 @@
 !  Set basic state trajectory.
 !
       DO ng=1,Ngrids
-        WRITE (FWD(ng)%name,10) TRIM(FWD(ng)%base), outer-1
+        WRITE (FWD(ng)%name,10) TRIM(FWD(ng)%head), outer-1
         FrequentImpulse(ng)=.FALSE.
       END DO
 !
@@ -1780,7 +1820,7 @@
 
       DO ng=1,Ngrids
         IF (Master) THEN
-          WRITE (stdout,20) 'TL', ng, ntstart(ng), ntend(ng)
+          WRITE (stdout,30) 'TL', ng, ntstart(ng), ntend(ng)
         END IF
       END DO
 
@@ -1814,8 +1854,10 @@
 !  The array mode will be saved in the TLM netcdf file, so define the
 !  name here.
 !
-          WRITE (TLM(ng)%name,10) TRIM(TLM(ng)%base), TLMouter+6
-          WRITE (DAV(ng)%name,10) TRIM(DAV(ng)%base), TLMouter+6
+          WRITE (DAV(ng)%name,20) TRIM(DAV(ng)%head), Nimpact, 'ERROR'
+          WRITE (TLM(ng)%name,20) TRIM(TLM(ng)%head), Nimpact, 'ERROR'
+          lstr=LEN_TRIM(TLM(ng)%name)
+          TLM(ng)%base=TLM(ng)%name(1:lstr-3)
           FrequentImpulse(ng)=.FALSE.
           LdefMOD(ng)=.TRUE.
           CALL def_mod (ng)
@@ -1859,7 +1901,7 @@
       IF (MAXVAL(FrcRec).gt.3) THEN
         DO ng=1,Ngrids
           IF (Master) THEN
-            WRITE (stdout,20) 'TL', ng, ntstart(ng), ntend(ng)
+            WRITE (stdout,30) 'TL', ng, ntstart(ng), ntend(ng)
           END IF
         END DO
 
@@ -1887,23 +1929,24 @@
       SourceFile=__FILE__ // ", ROMS_run"
       DO ng=1,Ngrids
         CALL netcdf_close (ng, iNLM, FWD(ng)%ncid)
-        FWD(ng)%ncid=-1
+        HIS(ng)%ncid=-1
       END DO
 !
- 10   FORMAT (a,'_',i3.3,'.nc')
- 20   FORMAT (/,1x,a,1x,'ROMS/TOMS: started time-stepping:',            &
+ 10   FORMAT (a,'_outer',i0,'.nc')
+ 20   FORMAT (a,'_outer',i0,'_',a,'.nc')
+ 30   FORMAT (/,1x,a,1x,'ROMS/TOMS: started time-stepping:',            &
      &        ' (Grid: ',i2.2,' TimeSteps: ',i8.8,' - ',i8.8,')',/)
- 30   FORMAT (' (',i3.3,',',i3.3,'): ',a,' data penalty, Jdata = ',     &
+ 40   FORMAT (' (',i3.3,',',i3.3,'): ',a,' data penalty, Jdata = ',     &
      &        1p,e17.10,0p,t68,a)
- 40   FORMAT (/,' Convolving Adjoint Trajectory: Outer = ',i3.3,        &
+ 50   FORMAT (/,' Convolving Adjoint Trajectory: Outer = ',i3.3,        &
      &          ' Inner = ',i3.3)
- 50   FORMAT (/,' Converting Convolved Adjoint Trajectory to',          &
+ 60   FORMAT (/,' Converting Convolved Adjoint Trajectory to',          &
      &          ' Impulses: Outer = ',i3.3,' Inner = ',i3.3,/)
- 60   FORMAT (/,'ROMS/TOMS: Started adjoint Sensitivity calculation',   &
+ 70   FORMAT (/,'ROMS/TOMS: Started adjoint Sensitivity calculation',   &
      &          ' ...',/)
- 70   FORMAT (/,'ROMS/TOMS: ',a,1x,a,', Outer = ',i3.3,                 &
+ 80   FORMAT (/,'ROMS/TOMS: ',a,1x,a,', Outer = ',i3.3,                 &
      &          ' Inner = ',i3.3,/)
- 80   FORMAT (/,1x,a,1x,'ROMS/TOMS: started time-stepping:',            &
+ 90   FORMAT (/,1x,a,1x,'ROMS/TOMS: started time-stepping:',            &
      &        '( TimeSteps: ',i8.8,' - ',i8.8,')',/,15x,                &
      &        'adjoint forcing time range: ',f12.4,' - ',f12.4 ,/)
 
@@ -1940,7 +1983,7 @@
           IF (Master) WRITE (stdout,10)
  10       FORMAT (/,' Blowing-up: Saving latest model state into ',     &
      &              ' RESTART file',/)
-          Fcount=RST(ng)%Fcount
+          Fcount=RST(ng)%load
           IF (LcycleRST(ng).and.(RST(ng)%Nrec(Fcount).ge.2)) THEN
             RST(ng)%Rindex=2
             LcycleRST(ng)=.FALSE.
@@ -1979,6 +2022,9 @@
 !
 !  Close IO files.
 !
+      DO ng=1,Ngrids
+        CALL close_inp (ng, iNLM)
+      END DO
       CALL close_out
 
       RETURN

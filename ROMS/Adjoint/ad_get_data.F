@@ -2,9 +2,9 @@
 #ifdef ADJOINT
       SUBROUTINE ad_get_data (ng)
 !
-!svn $Id: ad_get_data.F 900 2018-03-21 03:23:08Z arango $
+!svn $Id: ad_get_data.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -406,7 +406,7 @@
 #  if !defined ANA_TAIR && \
      ((defined BULK_FLUXES && !defined NL_BULK_FLUXES) || \
       defined ECOSIM       || \
-      (defined SHORTWAVE && defined ANA_SRFLUX && defined ALBEDO_DIRDIFF))
+      (defined SHORTWAVE   && defined ANA_SRFLUX && defined ALBEDO))
 !
 !-----------------------------------------------------------------------
 !  Surface air temperature.

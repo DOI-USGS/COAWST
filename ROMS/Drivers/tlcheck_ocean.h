@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: tlcheck_ocean.h 937 2019-01-28 06:13:04Z arango $
+!svn $Id: tlcheck_ocean.h 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -227,6 +227,10 @@
         Lold(ng)=1
         Lnew(ng)=1
         nTLM(ng)=nHIS(ng)                      ! to allow IO comparison
+#if defined BULK_FLUXES && defined NL_BULK_FLUXES
+        LreadBLK(ng)=.FALSE.
+#endif
+        LreadFWD(ng)=.FALSE.
       END DO
       Nrun=1
       Ipass=1
@@ -265,17 +269,40 @@
 !$OMP END PARALLEL
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
-!
-!  Close current nonlinear model history file.
-!
-      SourceFile=__FILE__ // ", ROMS_run"
+
       DO ng=1,Ngrids
-        CALL netcdf_close (ng, iNLM, HIS(ng)%ncid)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
         wrtNLmod(ng)=.FALSE.
         wrtTLmod(ng)=.TRUE.
       END DO
+!
+!  Set structure for the nonlinear forward trajectory to be processed
+!  by the tangent linear and adjoint models. Also, set switches to
+!  process the FWD structure in routine "check_multifile". Notice that
+!  it is possible to split solution into multiple NetCDF files to reduce
+!  their size.
+!
+      CALL edit_multifile ('HIS2FWD')
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+      DO ng=1,Ngrids
+        LreadFWD(ng)=.TRUE.
+      END DO
+
+#if defined BULK_FLUXES && defined NL_BULK_FLUXES
+!
+!  Set structure for the nonlinear surface fluxes to be processed by
+!  by the tangent linear and adjoint models. Also, set switches to
+!  process the BLK structure in routine "check_multifile".  Notice that
+!  it is possible to split solution into multiple NetCDF files to reduce
+!  their size.
+!
+      CALL edit_multifile ('HIS2BLK')
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+      DO ng=1,Ngrids
+        LreadBLK(ng)=.TRUE.
+      END DO
+#endif
 !
 !  Save and Report cost function between nonlinear model and
 !  observations.
@@ -427,7 +454,7 @@
 !  Get current nonlinear model trajectory.
 !
           DO ng=1,Ngrids
-            FWD(ng)%name=TRIM(HIS(ng)%base)//'.nc'
+            FWD(ng)%name=TRIM(HIS(ng)%head)//'.nc'
             CALL get_state (ng, iNLM, 1, FWD(ng)%name, IniRec, Lnew(ng))
             IF (FoundError(exit_flag, NoError, __LINE__,                &
      &                     __FILE__)) RETURN
@@ -493,7 +520,7 @@
 !
       DO ng=1,Ngrids
         IF (Master) THEN
-          WRITE (stdout,80)                                             &
+                                                                                                                                                                                                                   WRITE (stdout,80)                                             &
      &      'TLM Test - Dot Products Summary: p, g1, g2, (g1-g2)/g1'
           inner=1
           DO i=1,MIN(ig1count,ig2count)
@@ -557,7 +584,7 @@
             IF (Master) WRITE (stdout,10)
  10         FORMAT (/,' Blowing-up: Saving latest model state into ',   &
      &                ' RESTART file',/)
-            Fcount=RST(ng)%Fcount
+            Fcount=RST(ng)%load
             IF (LcycleRST(ng).and.(RST(ng)%Nrec(Fcount).ge.2)) THEN
               RST(ng)%Rindex=2
               LcycleRST(ng)=.FALSE.
@@ -597,6 +624,9 @@
 !
 !  Close IO files.
 !
+      DO ng=1,Ngrids
+        CALL close_inp (ng, iNLM)
+      END DO
       CALL close_out
 
       RETURN

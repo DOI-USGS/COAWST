@@ -1,11 +1,11 @@
 #include "cppdefs.h"
       MODULE ad_forcing_mod
 
-#if defined ADJOINT && defined FORCING_SV
+#if defined ADJOINT && (defined WEAK_CONSTRAINT || defined FORCING_SV)
 !
-!svn $Id: ad_forcing.F 889 2018-02-10 03:32:52Z arango $
+!svn $Id: ad_forcing.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group      Andrew M. Moore    !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group      Andrew M. Moore    !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -166,7 +166,7 @@
       real(r8), intent(inout) :: ad_v_sol(LBi:,LBj:,:)
 #  else
       real(r8), intent(inout) :: ad_ubar_sol(LBi:,LBj:)
-      real(r8), intent(inout) :: ad_vbar(_solLBi:,LBj:)
+      real(r8), intent(inout) :: ad_vbar_sol(LBi:,LBj:)
 #  endif
       real(r8), intent(inout) :: ad_zeta_sol(LBi:,LBj:)
 # else
@@ -256,6 +256,7 @@
         END DO
 
 # else
+#  ifdef FORCING_SV
 !
 !  Adjoint linear 2D momentum.
 !
@@ -270,6 +271,7 @@
           f_vbar(i,j)=f_vbar(i,j)+ad_vbar(i,j,1)+ad_vbar(i,j,2)
         END DO
       END DO
+#  endif
 !
 !  Adjoint linear 3D momentum.
 !
