@@ -2,9 +2,9 @@
       SUBROUTINE checkvars (ng, model, ncname, ncid, string, Nrec,      &
      &                      Nvar,tvarnam, get_var, have_var)
 !
-!svn $Id: checkvars.F 889 2018-02-10 03:32:52Z arango $
+!svn $Id: checkvars.F 1012 2020-03-04 22:09:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -135,8 +135,10 @@
         END IF
 #else
         get_var(idFsur)=.TRUE.
-        get_var(idUbar)=.TRUE.
-        get_var(idVbar)=.TRUE.
+        IF (model.ne.7) THEN        ! not needed by impulse forcing
+          get_var(idUbar)=.TRUE.
+          get_var(idVbar)=.TRUE.
+        END IF
 # ifdef SOLVE3D
         get_var(idUvel)=.TRUE.
         get_var(idVvel)=.TRUE.
@@ -174,15 +176,19 @@
 # endif
 # ifdef VEGETATION 
 #  ifdef ANA_VEGETATION 
+#   if defined VEG_DRAG || defined VEG_BIOMASS 
         IF (nrrec(ng).ne.0) THEN
           DO ivpr=1,NVEGP
             get_var(idvprp(ivpr))=.TRUE.
           END DO
         END IF
+#   endif         
 #  else
+#   if defined VEG_DRAG || defined VEG_BIOMASS 
         DO ivpr=1,NVEGP
           get_var(idvprp(ivpr))=.TRUE.
         END DO
+#   endif         
 #  endif 
 # endif
 # ifdef SEDIMENT
@@ -275,11 +281,6 @@
           get_var(idRu3d)=.TRUE.
           get_var(idRv3d)=.TRUE.
 # endif
-# ifdef WET_DRY
-          get_var(idRwet)=.TRUE.
-          get_var(idUwet)=.TRUE.
-          get_var(idVwet)=.TRUE.
-# endif
           get_var(idRzet)=.TRUE.
           get_var(idRu2d)=.TRUE.
           get_var(idRv2d)=.TRUE.
@@ -346,26 +347,6 @@
 # endif
       END IF
 #endif
-#ifdef BNORM
-!
-!  Determine variables for Hessian singular vectors with background
-!  normalization.
-!  (HGA: This is not needed because already accounted above when
-!        model < 8).
-!
-      IF (model.eq.6) THEN
-        get_var(idFsur)=.TRUE.
-        get_var(idUbar)=.TRUE.
-        get_var(idVbar)=.TRUE.
-# ifdef SOLVE3D
-        get_var(idUvel)=.TRUE.
-        get_var(idVvel)=.TRUE.
-        DO itrc=1,NAT
-          get_var(idTvar(itrc))=.TRUE.
-        END DO
-# endif
-      END IF
-#endif
 !
 !  Scan variable list from input NetCDF and activate switches for
 !  model state variables.
@@ -401,14 +382,6 @@
      &            TRIM(Vname(1,idSbry(isVvel))))) THEN
           have_var(idSbry(isVvel))=.TRUE.
 # endif
-#endif
-#if defined WET_DRY && defined PERFECT_RESTART
-        ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idRwet))) THEN
-          have_var(idRwet)=.TRUE.
-        ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUwet))) THEN
-          have_var(idUwet)=.TRUE.
-        ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVwet))) THEN
-          have_var(idVwet)=.TRUE.
 #endif
 #ifdef SOLVE3D
         ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idKver))) THEN
@@ -718,26 +691,6 @@
           exit_flag=2
           RETURN
         END IF
-      END IF
-#endif
-#if defined WET_DRY && defined PERFECT_RESTART
-      IF (.not.have_var(idRwet).and.get_var(idRwet)) THEN
-        IF (Master) WRITE (stdout,10) string, TRIM(Vname(1,idRwet)),    &
-     &                                TRIM(ncname)
-        exit_flag=2
-        RETURN
-      END IF
-      IF (.not.have_var(idUwet).and.get_var(idUwet)) THEN
-        IF (Master) WRITE (stdout,10) string, TRIM(Vname(1,idUwet)),    &
-     &                                TRIM(ncname)
-        exit_flag=2
-        RETURN
-      END IF
-      IF (.not.have_var(idVwet).and.get_var(idVwet)) THEN
-        IF (Master) WRITE (stdout,10) string, TRIM(Vname(1,idVwet)),    &
-     &                                TRIM(ncname)
-        exit_flag=2
-        RETURN
       END IF
 #endif
 #ifdef SOLVE3D

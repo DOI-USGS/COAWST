@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE inp_decode_mod
 !
-!svn $Id: inp_decode.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: inp_decode.F 1007 2020-02-25 22:29:41Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -32,6 +32,12 @@
 !                                                                      !
 !  load_s2d       Processes and loads I/O parameters into 2D derived   !
 !                   type structure, TYPE(T_IO).                        !
+!                                                                      !
+#ifdef SOLVE3D
+!  load_tadv      Processes and loads tracers horizontal and vertical  !
+!                   advection switches into derived type structure,    !
+!                   TYPE(T_ADV).                                       !
+#endif
 !                                                                      !
 !=======================================================================
 !
@@ -1685,16 +1691,16 @@
       END IF
       load_lbc=ic
 
- 10   FORMAT (/,' INP_PAR - illegal lateral boundary condition ',       &
-     &        'keyword: ',a,/,11x,a)
- 20   FORMAT (/,' INP_PAR - incorrect continuation symbol in line:',/,  &
-     &        11x,a,/,11x,'number of nested grid values exceeded.')
+ 10   FORMAT (/,' LOAD_LBC - illegal lateral boundary condition ',      &
+     &        'keyword: ',a,/,12x,a)
+ 20   FORMAT (/,' LOAD_LBC - incorrect continuation symbol in line:',/, &
+     &        12x,a,/,12x,'number of nested grid values exceeded.')
 !
       RETURN
       END FUNCTION load_lbc
 !
-      FUNCTION load_s1d (Nval, Fname, Fdim, line, label, igrid, Nfiles, &
-     &                   S)
+      FUNCTION load_s1d (Nval, Fname, Fdim, line, label, igrid,         &
+     &                   Mgrids, Nfiles, S)
 !
 !***********************************************************************
 !                                                                      !
@@ -1709,6 +1715,7 @@
 !     line       Current input line (string)                           !
 !     label      I/O structure label (string)                          !
 !     igrid      Nested grid counter (integer)                         !
+!     Mgrids     Number of nested grids (integer)                      !
 !     Nfiles     Number of files per grid (integer array)              !
 !     S          Derived type structure, TYPE(T_IO)                    !
 !                                                                      !
@@ -1728,21 +1735,21 @@
 !
 !  Imported variable declarations.
 !
-      integer, intent(in)    :: Nval, Fdim
+      integer, intent(in)    :: Mgrids, Nval, Fdim
       integer, intent(inout) :: igrid
-      integer, intent(inout) :: Nfiles(Ngrids)
+      integer, intent(inout) :: Nfiles(Mgrids)
 
       character (len=*),   intent(in) :: line
       character (len=256), intent(in) :: Fname(Fdim)
       character (len=*),   intent(inout) :: label
 
-      TYPE(T_IO), intent(inout) :: S(Ngrids)
+      TYPE(T_IO), intent(inout) :: S(Mgrids)
 !
 !  Local variable declarations.
 !
       logical :: load, persist
 
-      integer :: Icont, Ipipe, i, j, lstr, my_Ngrids, ng
+      integer :: Icont, Ipipe, i, j, lstr, my_Mgrids, ng
       integer :: load_s1d
 
       character (len=1 ), parameter :: blank = ' '
@@ -1774,7 +1781,7 @@
       IF (.not.load) THEN
         igrid=igrid+MIN(1,Icont)
       END IF
-      IF (igrid.gt.Ngrids) THEN
+      IF (igrid.gt.Mgrids) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(line)
         END IF
@@ -1788,25 +1795,25 @@
 !
       IF (load) THEN
 !
-!  If nesting and the number of file name entries is less than Ngrids,
+!  If nesting and the number of file name entries is less than Mgrids,
 !  persist the last values provided.  This is the case when not enough
 !  entries are provided by "==" plural symbol after the KEYWORD.
 !
-        IF (igrid.lt.Ngrids) THEN
-          DO i=igrid+1,Ngrids
+        IF (igrid.lt.Mgrids) THEN
+          DO i=igrid+1,Mgrids
             Nfiles(i)=Nfiles(igrid)
           END DO
-          my_Ngrids=igrid
+          my_Mgrids=igrid
           persist=.TRUE.
         ELSE
-          my_Ngrids=Ngrids
+          my_Mgrids=Mgrids
           persist=.FALSE.
         END IF
 !
 !  Allocate various fields in structure, if not continuation or pipe
 !  symbol is found which indicates end of input data.
 !
-        DO ng=1,Ngrids
+        DO ng=1,Mgrids
           allocate ( S(ng)%Nrec(Nfiles(ng)) )
           allocate ( S(ng)%time_min(Nfiles(ng)) )
           allocate ( S(ng)%time_max(Nfiles(ng)) )
@@ -1825,9 +1832,10 @@
 !
 !  Intialize strings to blank to facilitate processing.
 !
-        DO ng=1,Ngrids
+        DO ng=1,Mgrids
           lstr=LEN(S(ng)%name)
           DO i=1,lstr
+            S(ng)%head(i:i)=blank
             S(ng)%base(i:i)=blank
             S(ng)%name(i:i)=blank
           END DO
@@ -1841,9 +1849,10 @@
 !  Initialize and load fields into structure.
 !
         i=0
-        DO ng=1,my_Ngrids
+        DO ng=1,my_Mgrids
           S(ng)%Nfiles=Nfiles(ng)              ! number of multi-files
           S(ng)%Fcount=1                       ! multi-file counter
+          S(ng)%load=1                         ! filename load counter
           S(ng)%Rindex=0                       ! time index
           S(ng)%ncid=-1                        ! closed NetCDF state
           S(ng)%Vid=-1                         ! NetCDF variables IDs
@@ -1858,6 +1867,7 @@
           S(ng)%label=TRIM(label)              ! structure label
           S(ng)%name=TRIM(S(ng)%files(1))      ! load first file
           lstr=LEN_TRIM(S(ng)%name)
+          S(ng)%head=S(ng)%name(1:lstr-3)      ! do not include ".nc"
           S(ng)%base=S(ng)%name(1:lstr-3)      ! do not include ".nc"
           Nfiles(ng)=0                         ! clean file counter
         END DO
@@ -1865,9 +1875,10 @@
 !  If appropriate, persist last value(s).
 !
         IF (persist) THEN
-          DO ng=igrid+1,Ngrids
+          DO ng=igrid+1,Mgrids
             S(ng)%Nfiles=S(igrid)%Nfiles
             S(ng)%Fcount=1
+            S(ng)%load=1
             S(ng)%Rindex=0
             S(ng)%ncid=-1
             S(ng)%Vid=-1
@@ -1888,7 +1899,7 @@
 !  Reset counters and clean label.
 !
         igrid=1
-        DO ng=1,Ngrids
+        DO ng=1,Mgrids
           Nfiles(ng)=0
         END DO
         DO i=1,LEN(label)
@@ -1897,8 +1908,8 @@
       END IF
       load_s1d=Nval
 
- 10   FORMAT (/,' INP_PAR - incorrect continuation symbol in line:',/,  &
-     &        11x,a,/,11x,'number of nested grid values exceeded.')
+ 10   FORMAT (/,' LOAD_S1D - incorrect continuation symbol in line:',/, &
+     &        12x,a,/,12x,'number of nested grid values exceeded.')
 !
       RETURN
       END FUNCTION load_s1d
@@ -2056,6 +2067,7 @@
           DO i=1,idim
             lstr=LEN(S(i,ng)%name)
             DO j=1,lstr
+              S(i,ng)%head(j:j)=blank
               S(i,ng)%base(j:j)=blank
               S(i,ng)%name(j:j)=blank
             END DO
@@ -2074,6 +2086,7 @@
           DO i=1,Nfiles(ng)
             S(i,ng)%Nfiles=Ncount(i,ng)         ! number of multi-files
             S(i,ng)%Fcount=1                    ! multi-file counter
+            S(i,ng)%load=1                      ! filename load counter
             S(i,ng)%Rindex=0                    ! time index
             S(i,ng)%ncid=-1                     ! closed NetCDF state
             S(i,ng)%Vid=-1                      ! NetCDF variables IDs
@@ -2088,6 +2101,7 @@
             S(i,ng)%label=TRIM(label)           ! structure label
             S(i,ng)%name=TRIM(S(i,ng)%files(1)) ! load first file
             lstr=LEN_TRIM(S(i,ng)%name)
+            S(i,ng)%head=S(i,ng)%name(1:lstr-3) ! do not include ".nc"
             S(i,ng)%base=S(i,ng)%name(1:lstr-3) ! do not include ".nc"
           END DO
         END DO
@@ -2099,6 +2113,7 @@
             DO i=1,Nfiles(ng)
               S(i,ng)%Nfiles=S(i,igrid)%Nfiles
               S(i,ng)%Fcount=1
+              S(i,ng)%load=1
               S(i,ng)%Rindex=0
               S(i,ng)%ncid=-1
               S(i,ng)%Vid=-1
@@ -2110,8 +2125,9 @@
                 S(i,ng)%time_max(j)=0.0_dp
               END DO
               S(i,ng)%label=TRIM(label)
-              S(i,ng)%name=S(i,igrid)%name
+              S(i,ng)%head=S(i,igrid)%head
               S(i,ng)%base=S(i,igrid)%base
+              S(i,ng)%name=S(i,igrid)%name
               Ncount(i,ng)=0
             END DO
           END DO
@@ -2132,12 +2148,182 @@
       END IF
       load_s2d=Nval
 
- 10   FORMAT (/,' INP_PAR - incorrect continuation symbol in line:',/,  &
-     &        11x,a,/,11x,'inner dimension of structure exceeded.')
- 20   FORMAT (/,' INP_PAR - incorrect continuation symbol in line:',/,  &
-     &        11x,a,/,11x,'number of nested grid values exceeded.')
+ 10   FORMAT (/,' LOAD_S2D - incorrect continuation symbol in line:',/, &
+     &        12x,a,/,12x,'inner dimension of structure exceeded.')
+ 20   FORMAT (/,' LOAD_S2D - incorrect continuation symbol in line:',/, &
+     &        12x,a,/,12x,'number of nested grid values exceeded.')
 !
       RETURN
       END FUNCTION load_s2d
+!
+#ifdef SOLVE3D
+      FUNCTION load_tadv (Ninp, Vinp, line, nline, itrc, igrid,         &
+     &                    itracer, iTrcStr, iTrcEnd, svname, S)
+!
+!***********************************************************************
+!                                                                      !
+!  This function sets tracers advection logical switches according to  !
+!  input string keywords.                                              !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     Ninp       Size of input variable (integer)                      !
+!     Vinp       Input values (string)                                 !
+!     line       Current input line (string)                           !
+!     nline      Multi-line counter (integer)                          !
+!     itrc       Tracer array index (integer)                          !
+!     itracer    Calling routine tracer counter (integer)              !
+!     igrid      Nested grid counter (integer)                         !
+!     iTrcStr    Starting tracer index to process (integer)            !
+!     iTrcEnd    Ending   tracer index to process (integer)            !
+!     svname     State variable name (string)                          !
+!     S          Derived type structure, TYPE(T_ADV)                   !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     nline      Updated multi-line counter (integer)                  !
+!     itracer    Updated calling routine tracer counter (integer)      !
+!     igrid      Updated nested grid counter (integer)                 !
+!     S          Updated derived type structure, TYPE(T_LBC)           !
+!     load_tadv  Number of output values processed.                    !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_ncparam
+      USE mod_scalars
+!
+      USE strings_mod, ONLY : uppercase
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: Ninp, itrc, iTrcStr, iTrcEnd
+      integer, intent(inout) :: igrid, itracer, nline
+
+      character (len=256), intent(in) :: line
+      character (len=256), intent(in) :: Vinp(Ninp)
+      character (len=*  ), intent(in) :: svname
+
+      TYPE(T_ADV), intent(inout) :: S(MAXVAL(NT),Ngrids)
+!
+!  Local variable declarations.
+!
+      integer :: Icont, i, ic
+      integer :: load_tadv
+
+      character (len=10) :: Astring, string
+!
+!-----------------------------------------------------------------------
+!  Set tracers advection switches in structure.
+!-----------------------------------------------------------------------
+!
+!  Check current line for the continuation symbol [char(92)=\].
+!
+      Icont=INDEX(TRIM(line),CHAR(92) ,BACK=.FALSE.)
+!
+!  Extract tracer advection scheme keywords from Vinp. Notice that
+!  additional array elements are added to Vinp during continuation
+!  lines.
+!
+      i=nline
+      Astring=TRIM(Vinp(i+1))
+!
+!  Advance or reset entry lines counter.
+!
+      IF (Icont.gt.0) THEN
+        nline=nline+1
+      ELSE
+        nline=0
+      END IF
+!
+!  Set advection switches for each tracer.
+!
+      ic=1
+      IF ((0.lt.itrc).and.(itrc.le.iTrcEnd)) THEN
+        string=uppercase(Astring)
+        SELECT CASE (TRIM(string))
+          CASE ('A4', 'AKIMA4')
+            S(itrc,igrid) % AKIMA4 = .TRUE.
+          CASE ('C2', 'CENTERED2')
+            S(itrc,igrid) % CENTERED2 = .TRUE.
+          CASE ('C4', 'CENTERED4')
+            S(itrc,igrid) % CENTERED4 = .TRUE.
+          CASE ('HS', 'HSIMT')
+            S(itrc,igrid) % HSIMT = .TRUE.
+          CASE ('MP', 'MPDATA')
+            S(itrc,igrid) % MPDATA = .TRUE.
+          CASE ('SP', 'SPLINES')
+            S(itrc,igrid) % SPLINES = .TRUE.
+          CASE ('SU', 'SU3', 'SPLIT_U3')
+            S(itrc,igrid) % SPLIT_U3 = .TRUE.
+          CASE ('U3', 'UPSTREAM3')
+            S(itrc,igrid) % UPSTREAM3 = .TRUE.
+          CASE DEFAULT
+            IF (Master) THEN
+              WRITE (stdout,10) TRIM(Astring)
+            END IF
+            exit_flag=2
+            RETURN
+        END SELECT
+!
+!  If processing tracers and last standard input entry (Icont=0), set
+!  unspecified tracer values to the last tracer entry.
+!
+        IF ((iTrcStr.gt.0).and.(iTrcEnd.gt.0)) THEN
+          IF ((Icont.eq.0).and.(itracer.lt.iTrcEnd)) THEN
+            DO i=itrc+1,iTrcEnd
+              S(i,igrid) % AKIMA4    = S(itrc,igrid) % AKIMA4
+              S(i,igrid) % CENTERED2 = S(itrc,igrid) % CENTERED2
+              S(i,igrid) % CENTERED4 = S(itrc,igrid) % CENTERED4
+              S(i,igrid) % HSIMT     = S(itrc,igrid) % HSIMT
+              S(i,igrid) % MPDATA    = S(itrc,igrid) % MPDATA
+              S(i,igrid) % SPLINES   = S(itrc,igrid) % SPLINES
+              S(i,igrid) % SPLIT_U3  = S(itrc,igrid) % SPLIT_U3
+              S(i,igrid) % UPSTREAM3 = S(itrc,igrid) % UPSTREAM3
+            END DO
+            ic=ic+1
+          END IF
+        END IF
+      END IF
+!
+!  If appropriate, reset tracer grid counter.  It is done to process
+!  other keywords using this function.
+!
+      IF ((itrc.eq.iTrcEnd).or.(ic.gt.1)) THEN
+        itracer=0
+      END IF
+!
+!  If appropriate, increase or reset nested grid counter.
+!
+      IF ((Icont.gt.0).and.(Ngrids.gt.1)) THEN
+        IF ((iTrcStr.gt.0).and.(iTrcEnd.gt.0)) THEN
+          IF ((itrc.eq.iTrcEnd).or.(ic.gt.1)) THEN
+            igrid=igrid+MIN(1,Icont)
+          END IF
+        ELSE
+          igrid=igrid+MIN(1,Icont)
+        END IF
+        IF (igrid.gt.Ngrids) THEN
+          IF (Master) THEN
+            WRITE (stdout,20) TRIM(line)
+          END IF
+          exit_flag=2
+          RETURN
+        END IF
+      ELSE
+        igrid=1
+      END IF
+      load_tadv=ic
+
+ 10   FORMAT (/,' LOAD_TADV - illegal tracer advection scheme ',        &
+     &        'keyword: ',a,/,13x,'Correct standard input file.',/)
+ 20   FORMAT (/,' LOAD_TADV - incorrect continuation symbol in line:',  &
+     &        /,13x,a,/,13x,'number of nested grid values exceeded.')
+!
+      RETURN
+      END FUNCTION load_tadv
+#endif
 !
       END MODULE inp_decode_mod

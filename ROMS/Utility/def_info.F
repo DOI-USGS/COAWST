@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE def_info (ng, model, ncid, ncname, DimIDs)
 !
-!svn $Id: def_info.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: def_info.F 1001 2020-01-10 22:41:16Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -903,6 +903,34 @@
 #endif
 
 #ifndef DEBUGGING
+# ifdef SOLVE3D
+!
+!  NLM tracer advection scheme.
+!
+        IF (exit_flag.eq.NoError) THEN
+          CALL tadv_putatt (ng, ncid, ncname, 'NLM_TADV',               &
+     &                      Hadvection, Vadvection, status)
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
+            IF (Master) WRITE (stdout,20) 'NLM_TADV', TRIM(ncname)
+            exit_flag=3
+            ioerror=status
+          END IF
+        END IF
+
+#  if defined ADJOINT || defined TANGENT || defined TL_IOMS
+        IF (exit_flag.eq.NoError) THEN
+          CALL tadv_putatt (ng, ncid, ncname, 'ADM_TADV',               &
+     &                      ad_Hadvection, ad_Vadvection, status)
+          IF (FoundError(status, nf90_noerr, __LINE__,                  &
+     &                   __FILE__)) THEN
+            IF (Master) WRITE (stdout,20) 'NLM_TADV', TRIM(ncname)
+            exit_flag=3
+            ioerror=status
+          END IF
+        END IF
+#  endif
+# endif
 !
 !  NLM Lateral boundary conditions.
 !

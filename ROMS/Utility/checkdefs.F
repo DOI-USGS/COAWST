@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE checkdefs
 !
-!svn $Id: checkdefs.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: checkdefs.F 1001 2020-01-10 22:41:16Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -826,6 +826,13 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' CELERITY_WRITE,'
 #endif
+#ifdef CHECK_OPEN_FILES
+!
+      IF (Master) WRITE (stdout,20) 'CHECK_OPEN_FILES',                 &
+     &   'Monitor the number opened, closed, and created NetCDF files'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+18)=' CHECK_OPEN_FILES,'
+#endif
 #ifdef CICE_MODEL
       IF (Master) WRITE (stdout,20) 'CICE_MODEL',                       &
      &   'Include CICE Ice Model.'
@@ -1063,7 +1070,7 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+14)=' CHL_BACKSCAT,'
 #endif
-#if defined VEGETATION 
+#if defined VEGETATION && defined VEG_DRAG 
       IF (Master) WRITE (stdout,20) 'VEGETATION',                       &
      &   'Active submerged/emergent vegetation effects.'
       is=LEN_TRIM(Coptions)+1
@@ -1071,9 +1078,21 @@
 #endif
 #if defined VEGETATION && defined MARSH_WAVE_THRUST 
       IF (Master) WRITE (stdout,20) 'MARSH_WAVE_THRUST',                &
-     &   'Vegetation module containing wave thrust effect on marshes .'
+     &   'Vegetation module containing wave thrust effect on marshes'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+19)=' MARSH_WAVE_THRUST,'
+#endif
+#if defined VEGETATION && defined MARSH_VERT_GROWTH
+      IF (Master) WRITE (stdout,20) 'MARSH_VERT_GROWTH',                &
+     &   'Vegetation module containing marsh vertical growth routines'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+19)=' MARSH_VERT_GROWTH,'
+#endif
+#if defined MARSH_BIOMASS_VEG 
+      IF (Master) WRITE (stdout,20) 'MARSH_BIOMASS_VEG',                &
+     &   'Marsh colonization and veg growth with organic sed. in Class 1'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' MARSH_BIOMASS_VEG'
 #endif
 #ifdef DIAGNOSTICS_TS
 !
@@ -2102,6 +2121,13 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+18)=' OBS_IMPACT_SPLIT,'
 #endif
+#if defined OBS_SPACE && defined W4DPSAS_FCT_SENSITIVITY
+!
+      IF (Master) WRITE (stdout,20) 'OBS_SPACE',                        &
+     &   'Forecast metric in obsrvation-space instead of state-space'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+11)=' OBS_SPACE,'
+#endif
 #ifdef OCLIMATOLOGY
       IF (Master) WRITE (stdout,20) 'OCLIMATOLOGY',                     &
      &   'Processing omega climatology data.'
@@ -3067,14 +3093,6 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+11)=' T_PASSIVE,'
 # endif
-# ifdef TS_HSIMT
-      IF (Master) WRITE (stdout,20) 'TS_HSIMT',                        &
-     &   'the 3rd HSIMT-TVD scheme for tracers (Wu and Zhu, 2010).'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+10)=' TS_HSIMT,'
-      itrcHadv=itrcHadv+1
-      itrcVadv=itrcVadv+1
-# endif
 # if defined TS_MIX_CLIMA && \
     (defined TS_DIF2      || defined TS_DIF4)
 !
@@ -3107,183 +3125,12 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+18)=' TS_MIX_STABILITY,'
 # endif
-# ifdef TS_MPDATA
-!
-      IF (Master) WRITE (stdout,20) 'TS_MPDATA',                        &
-     &   'Recursive flux corrected MPDATA 3D advection of tracers'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+11)=' TS_MPDATA,'
-      itrcHadv=itrcHadv+1
-      itrcVadv=itrcVadv+1
-#  ifdef TS_MPDATA_LIMIT
+# ifdef TS_MPDATA_LIMIT
 !
       IF (Master) WRITE (stdout,20) 'TS_MPDATA_LIMIT',                  &
      &   'Further limiter in upwind corrector fluxes for stability'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' TS_MPDATA_LIMIT,'
-#  endif
-# endif
-# ifdef TS_A4HADVECTION
-!
-      IF (Master) WRITE (stdout,20) 'TS_A4HADVECTION',                  &
-     &   'Fourth-order Akima horizontal advection of tracers'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+17)=' TS_A4HADVECTION,'
-      itrcHadv=itrcHadv+1
-# endif
-# if defined TS_A4HADVECTION_TL && \
-    (defined TANGENT || defined ADJOINT || defined TL_IOMS)
-!
-      IF (Master) WRITE (stdout,20) 'TS_A4HADVECTION_TL',               &
-     &   'TL/AD fourth-order Akima horizontal tracer advection'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+20)=' TS_A4HADVECTION_TL,'
-      itrcHadvtl=itrcHadvtl+1
-# endif
-# ifdef TS_C2HADVECTION
-!
-      IF (Master) WRITE (stdout,20) 'TS_C2HADVECTION',                  &
-     &   'Second-order centered horizontal advection of tracers'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+17)=' TS_C2HADVECTION,'
-      itrcHadv=itrcHadv+1
-# endif
-# if defined TS_C2HADVECTION_TL && \
-    (defined TANGENT || defined ADJOINT || defined TL_IOMS)
-!
-      IF (Master) WRITE (stdout,20) 'TS_C2HADVECTION_TL',               &
-     &   'TL/AD second-order centered horizontal tracer advection'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+20)=' TS_C2HADVECTION_TL,'
-      itrcHadvtl=itrcHadvtl+1
-# endif
-# if defined TS_C4HADVECTION || defined TS_U3ADV_SPLIT
-!
-      IF (Master) WRITE (stdout,20) 'TS_C4HADVECTION',                  &
-     &   'Fourth-order centered horizontal advection of tracers'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+17)=' TS_C4HADVECTION,'
-      itrcHadv=itrcHadv+1
-# endif
-# if defined TS_C4HADVECTION_TL && \
-    (defined TANGENT || defined ADJOINT || defined TL_IOMS)
-!
-      IF (Master) WRITE (stdout,20) 'TS_C4HADVECTION_TL',               &
-     &   'TL/AD fourth-order centered horizontal tracer advection'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+20)=' TS_C4HADVECTION_TL,'
-      itrcHadvtl=itrcHadvtl+1
-# endif
-# ifdef TS_U3HADVECTION
-!
-      IF (Master) WRITE (stdout,20) 'TS_U3HADVECTION',                  &
-     &   'Third-order upstream horizontal advection of tracers'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+17)=' TS_U3HADVECTION,'
-      itrcHadv=itrcHadv+1
-# endif
-# if defined TS_U3HADVECTION_TL && \
-    (defined TANGENT || defined ADJOINT || defined TL_IOMS)
-!
-      IF (Master) WRITE (stdout,20) 'TS_U3HADVECTION_TL',               &
-     &   'TL/AD third-order upstream horizontal tracer advection'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+20)=' TS_U3HADVECTION_TL,'
-      itrcHadvtl=itrcHadvtl+1
-# endif
-# if !(defined TS_MPDATA       || defined TS_A4HADVECTION || \
-       defined TS_C2HADVECTION || defined TS_C4HADVECTION || \
-       defined TS_U3HADVECTION || defined TS_HSIMT) 
-      IF (Master) WRITE (stdout,20) 'TS_C4HADVECTION',                  &
-     &   'Fourth-order centered horizontal advection of tracers'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+17)=' TS_C4HADVECTION,'
-      itrcHadv=itrcHadv+1
-# endif
-# ifdef TS_A4VADVECTION
-!
-      IF (Master) WRITE (stdout,20) 'TS_A4VADVECTION',                  &
-     &   'Fourth-order Akima vertical advection of tracers'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+17)=' TS_A4VADVECTION,'
-      itrcVadv=itrcVadv+1
-# endif
-# if defined TS_A4VADVECTION_TL && \
-    (defined TANGENT || defined ADJOINT || defined TL_IOMS)
-!
-      IF (Master) WRITE (stdout,20) 'TS_A4VADVECTION_TL',               &
-     &   'TL/AD fourth-order Akima vertical tracer advection'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+20)=' TS_A4VADVECTION_TL,'
-      itrcVadvtl=itrcVadvtl+1
-# endif
-# ifdef TS_C2VADVECTION
-!
-      IF (Master) WRITE (stdout,20) 'TS_C2VADVECTION',                  &
-     &   'Second-order centered vertical advection of tracers'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+17)=' TS_C2VADVECTION,'
-      itrcVadv=itrcVadv+1
-# endif
-# if defined TS_C2VADVECTION_TL && \
-    (defined TANGENT || defined ADJOINT || defined TL_IOMS)
-!
-      IF (Master) WRITE (stdout,20) 'TS_C2VADVECTION_TL',               &
-     &   'TL/AD second-order centered vertical tracer advection'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+20)=' TS_C2VADVECTION_TL,'
-      itrcVadvtl=itrcVadvtl+1
-# endif
-# if defined TS_C4VADVECTION || defined TS_U3ADV_SPLIT
-!
-      IF (Master) WRITE (stdout,20) 'TS_C4VADVECTION',                  &
-     &   'Fourth-order centered vertical advection of tracers'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+17)=' TS_C4VADVECTION,'
-      itrcVadv=itrcVadv+1
-# endif
-# if defined TS_C4VADVECTION_TL && \
-    (defined TANGENT || defined ADJOINT || defined TL_IOMS)
-!
-      IF (Master) WRITE (stdout,20) 'TS_C4VADVECTION_TL',               &
-     &   'TL/AD fourth-order centered vertical tracer advection'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+20)=' TS_C4VADVECTION_TL,'
-      itrcVadvtl=itrcVadvtl+1
-# endif
-# ifdef TS_SVADVECTION
-!
-      IF (Master) WRITE (stdout,20) 'TS_SVADVECTION',                   &
-     &   'Parabolic splines vertical advection of tracers'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+16)=' TS_SVADVECTION,'
-      itrcVadv=itrcVadv+1
-# endif
-# if defined TS_SVADVECTION_TL && \
-    (defined TANGENT || defined ADJOINT || defined TL_IOMS)
-!
-      IF (Master) WRITE (stdout,20) 'TS_SVADVECTION_TL',                &
-     &   'TL/AD parabolic splines vertical tracer advection'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+19)=' TS_SVADVECTION_TL,'
-      itrcVadvtl=itrcVadvtl+1
-# endif
-# if !(defined TS_MPDATA       || defined TS_A4VADVECTION || \
-       defined TS_C2VADVECTION || defined TS_C4VADVECTION || \
-       defined TS_SVADVECTION  || defined TS_HSIMT)
-!
-      IF (Master) WRITE (stdout,20) 'TS_C4VADVECTION',                  &
-     &   'Fourth-order centered vertical advection of tracers'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+17)=' TS_C4VADVECTION,'
-      itrcVadv=itrcVadv+1
-# endif
-# ifdef TS_U3ADV_SPLIT
-!
-      IF (Master) WRITE (stdout,20) 'TS_U3ADV_SPLIT',                   &
-     &   'Split third-order upstream advection of tracers'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+16)=' TS_U3ADV_SPLIT,'
 # endif
 #endif
 #if defined TS_DIF2 && defined SOLVE3D
@@ -3776,28 +3623,6 @@
 # ifdef SOLVE3D
       IF (Master.and.(ivelVadv.gt.1)) THEN
         WRITE (stdout,140) 'vertical','momentum','ivelVadv =',ivelVadv
-        exit_flag=5
-      END IF
-# endif
-#endif
-#ifdef SOLVE3D
-      IF (Master.and.(itrcHadv.gt.1)) THEN
-        WRITE (stdout,140) 'horizontal','tracers','itrcHadv =',itrcHadv
-        exit_flag=5
-      END IF
-      IF (Master.and.(itrcVadv.gt.1)) THEN
-        WRITE (stdout,140) 'vertical','tracers','itrcVadv =',itrcVadv
-        exit_flag=5
-      END IF
-# if defined TANGENT || defined TL_IOMS || defined ADJOINT
-      IF (Master.and.(itrcHadvtl.gt.1)) THEN
-        WRITE (stdout,140) 'TL/AD horizontal','tracers','itrcHadvtl =', &
-     &                     itrcHadvtl
-        exit_flag=5
-      END IF
-      IF (Master.and.(itrcVadvtl.gt.1)) THEN
-        WRITE (stdout,140) 'TL/AD vertical','tracers','itrcVadvtl =',   &
-     &                     itrcVadvtl
         exit_flag=5
       END IF
 # endif

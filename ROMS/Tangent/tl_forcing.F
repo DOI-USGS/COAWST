@@ -3,9 +3,9 @@
 
 #if defined TANGENT && (defined WEAK_CONSTRAINT || defined FORCING_SV)
 !
-!svn $Id: tl_forcing.F 889 2018-02-10 03:32:52Z arango $
+!svn $Id: tl_forcing.F 1012 2020-03-04 22:09:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group   Emanuele Di Lorenzo   !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group   Emanuele Di Lorenzo   !
 !    Licensed under a MIT/X style license            Andrew M. Moore   !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -232,22 +232,6 @@
       END DO
 
 # else
-!
-!  Tangent linear 2D momentum.
-!
-      DO j=JstrR,JendR
-        DO i=Istr,IendR
-          tl_ubar(i,j,1)=tl_ubar(i,j,1)+f_ubar(i,j)
-          tl_ubar(i,j,2)=tl_ubar(i,j,2)+f_ubar(i,j)
-        END DO
-      END DO
-!
-      DO j=Jstr,JendR
-        DO i=IstrR,IendR
-          tl_vbar(i,j,1)=tl_vbar(i,j,1)+f_vbar(i,j)
-          tl_vbar(i,j,2)=tl_vbar(i,j,2)+f_vbar(i,j)
-        END DO
-      END DO
 !
 !  Tangent linear 3D momentum.
 !

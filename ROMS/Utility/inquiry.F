@@ -2,9 +2,9 @@
       SUBROUTINE inquiry (ng, model, job, Iout, Irec, Mrec, ifield,     &
      &                    ncid, Lmulti, nfiles, S)
 !
-!svn $Id: inquiry.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: inquiry.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -125,8 +125,6 @@
             END IF
             S(ifile)%Fcount=Fcount
             S(ifile)%name=TRIM(S(ifile)%files(Fcount))
-            lstr=LEN_TRIM(S(ifile)%name)
-            S(ifile)%base=S(ifile)%name(1:lstr-3)
             CALL netcdf_close (ng, model, ncid)
             IF (FoundError(exit_flag, NoError, __LINE__,                &
      &                     __FILE__)) RETURN
@@ -326,12 +324,14 @@
      &                    Tstr, Tend, Tmin, Tmax,  Tscale)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
+          SourceFile=__FILE__
         END IF
 !
 !  Store variable information into global information arrays.  Also
 !  fill some structure values.
 !
         IF (foundit) THEN
+          ncid=my_ncid
           Linfo( 1,ifield,ng)=Lgridded
           Linfo( 2,ifield,ng)=Liocycle
           Iinfo( 2,ifield,ng)=Vid
@@ -450,6 +450,7 @@
       IF (label(1:3).eq.'FRC') THEN
         DO ifile=1,nfiles
           IF ((TRIM(ncfile).eq.TRIM(S(ifile)%name)).and.                &
+     &        (FRCids(ifile,ng).ne.-1).and.                             &
      &        (ncid.ne.FRCids(ifile,ng))) THEN
             ncid=FRCids(ifile,ng)
             EXIT
@@ -459,6 +460,7 @@
       IF (label(1:3).eq.'BRY') THEN
         DO ifile=1,nfiles
           IF ((TRIM(ncfile).eq.TRIM(S(ifile)%name)).and.                &
+     &        (BRYids(ifile,ng).ne.-1).and.                             &
      &        (ncid.ne.BRYids(ifile,ng))) THEN
             ncid=BRYids(ifile,ng)
             EXIT
@@ -468,6 +470,7 @@
       IF (label(1:3).eq.'CLM') THEN
         DO ifile=1,nfiles
           IF ((TRIM(ncfile).eq.TRIM(S(ifile)%name)).and.                &
+     &        (CLMids(ifile,ng).ne.-1).and.                             &
      &        (ncid.ne.CLMids(ifile,ng))) THEN
             ncid=CLMids(ifile,ng)
             EXIT
@@ -476,6 +479,8 @@
       END IF
 !
 !  If appropriate, open input NetCDF file for reading.
+!  (HGA: it is not needed since file was already open and
+!        ncid=my_ncid was assigned above.
 !
       IF (ncid.eq.-1) THEN
         CALL netcdf_open (ng, model, ncfile, 0, ncid)
@@ -484,36 +489,36 @@
            IF (Master) WRITE (stdout,60) TRIM(ncfile)
           RETURN
         END IF
+      END IF
 !
 !  If processing model forcing, load ID into association table (FRCids).
 !
-        IF (label(1:3).eq.'FRC') THEN
-          DO ifile=1,nfiles
-            IF (TRIM(ncfile).eq.TRIM(S(ifile)%name)) THEN
-              FRCids(ifile,ng)=ncid
-              S(ifile)%ncid=ncid
-              EXIT
-            END IF
-          END DO
-        ELSE IF (label(1:3).eq.'BRY') THEN
-          DO ifile=1,nfiles
-            IF (TRIM(ncfile).eq.TRIM(S(ifile)%name)) THEN
-              BRYids(ifile,ng)=ncid
-              S(ifile)%ncid=ncid
-              EXIT
-            END IF
-          END DO
-        ELSE IF (label(1:3).eq.'CLM') THEN
-          DO ifile=1,nfiles
-            IF (TRIM(ncfile).eq.TRIM(S(ifile)%name)) THEN
-              CLMids(ifile,ng)=ncid
-              S(ifile)%ncid=ncid
-              EXIT
-            END IF
-          END DO
-        ELSE
-          S(1)%ncid=ncid
-        END IF
+      IF (label(1:3).eq.'FRC') THEN
+        DO ifile=1,nfiles
+          IF (TRIM(ncfile).eq.TRIM(S(ifile)%name)) THEN
+            FRCids(ifile,ng)=ncid
+            S(ifile)%ncid=ncid
+            EXIT
+          END IF
+        END DO
+      ELSE IF (label(1:3).eq.'BRY') THEN
+        DO ifile=1,nfiles
+          IF (TRIM(ncfile).eq.TRIM(S(ifile)%name)) THEN
+            BRYids(ifile,ng)=ncid
+            S(ifile)%ncid=ncid
+            EXIT
+          END IF
+        END DO
+      ELSE IF (label(1:3).eq.'CLM') THEN
+        DO ifile=1,nfiles
+          IF (TRIM(ncfile).eq.TRIM(S(ifile)%name)) THEN
+            CLMids(ifile,ng)=ncid
+            S(ifile)%ncid=ncid
+            EXIT
+          END IF
+        END DO
+      ELSE
+        S(1)%ncid=ncid
       END IF
       Cinfo(ifield,ng)=TRIM(ncfile)
 !

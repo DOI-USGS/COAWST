@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE wrt_quick (ng, tile)
 !
-!svn $Id: wrt_quick.F 889 2018-02-10 03:32:52Z arango $
+!svn $Id: wrt_quick.F 1007 2020-02-25 22:29:41Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -104,7 +104,7 @@
 !  Set time record index.
 !
       QCK(ng)%Rindex=QCK(ng)%Rindex+1
-      Fcount=QCK(ng)%Fcount
+      Fcount=QCK(ng)%load
       QCK(ng)%Nrec(Fcount)=QCK(ng)%Nrec(Fcount)+1
 !
 !  Write out model time (s).
@@ -1452,6 +1452,33 @@
 # endif
 # if defined BULK_FLUXES || defined ECOSIM
 !
+!  Write out surface air temperature.
+!
+      IF (Qout(idTair,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, QCK(ng)%ncid, QCK(ng)%Vid(idTair), &
+     &                     QCK(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+#  ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#  endif
+     &                     FORCES(ng) % Tair)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idTair)), QCK(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
+# endif
+# if defined BULK_FLUXES || defined BULK_FLUXES2D || defined ECOSIM || \
+     defined CCSM_FLUXES2D || defined ATM2OCN_FLUXES || \
+     defined SPECTRAL_LIGHT
+!
 !  Write out surface winds.
 !
       IF (Qout(idUair,ng)) THEN
@@ -1511,9 +1538,9 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    GRID(ng) % CosAngler,                         &
      &                    GRID(ng) % SinAngler,                         &
-#ifdef MASKING
+#  ifdef MASKING
      &                    GRID(ng) % rmask_full,                        &
-#endif
+#  endif
      &                    FORCES(ng) % Uwind,                           &
      &                    FORCES(ng) % Vwind,                           &
      &                    Ur2d, Vr2d)
@@ -1523,9 +1550,9 @@
      &                     QCK(ng)%Vid(idUairE),                        &
      &                     QCK(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
-# ifdef MASKING
+#  ifdef MASKING
      &                     GRID(ng) % rmask_full,                       &
-# endif
+#  endif
      &                     Ur2d)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
      &                 __FILE__)) THEN
@@ -1545,9 +1572,9 @@
      &                     QCK(ng)%Vid(idVairN),                        &
      &                     QCK(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
-# ifdef MASKING
+#  ifdef MASKING
      &                     GRID(ng) % rmask_full,                       &
-# endif
+#  endif
      &                     Vr2d)
         IF (FoundError(status, nf90_noerr, __LINE__,                    &
      &                 __FILE__)) THEN
@@ -1559,7 +1586,6 @@
           RETURN
         END IF
       END IF
-
 # endif
 !
 !  Write out surface active traces fluxes.

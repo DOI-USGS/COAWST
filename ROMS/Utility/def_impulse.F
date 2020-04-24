@@ -2,9 +2,9 @@
 #ifdef WEAK_CONSTRAINT
       SUBROUTINE def_impulse (ng)
 !
-!svn $Id: def_impulse.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: def_impulse.F 1012 2020-03-04 22:09:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -378,6 +378,8 @@
      &                 NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
+
+# ifndef SOLVE3D
 !
 !  Define 2D U-momentum component impulse forcing.
 !
@@ -386,9 +388,9 @@
         Vinfo( 3)=Vname(3,idUbtf)
         Vinfo(14)=Vname(4,idUbtf)
         Vinfo(16)=Vname(1,idtime)
-# if defined WRITE_WATER && defined MASKING
+#  if defined WRITE_WATER && defined MASKING
         Vinfo(20)='mask_u'
-# endif
+#  endif
         Vinfo(22)='coordinates'
         Aval(5)=REAL(Iinfo(1,idUbtf,ng),r8)
         status=def_var(ng, iTLM, TLF(ng)%ncid, TLF(ng)%Vid(idUbtf),     &
@@ -403,9 +405,9 @@
         Vinfo( 3)=Vname(3,idVbtf)
         Vinfo(14)=Vname(4,idVbtf)
         Vinfo(16)=Vname(1,idtime)
-# if defined WRITE_WATER && defined MASKING
+#  if defined WRITE_WATER && defined MASKING
         Vinfo(20)='mask_v'
-# endif
+#  endif
         Vinfo(22)='coordinates'
         Aval(5)=REAL(Iinfo(1,idVbtf,ng),r8)
         status=def_var(ng, iTLM, TLF(ng)%ncid, TLF(ng)%Vid(idVbtf),     &
@@ -413,7 +415,7 @@
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
 
-# ifdef SOLVE3D
+# else
 !
 !  Define 3D U-momentum component impulse forcing.
 !
@@ -505,11 +507,13 @@
 !
 !  Open impulse forcing file for read/write.
 !
-        CALL netcdf_open (ng, iTLM, ncname, 1, TLF(ng)%ncid)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) THEN
-          WRITE (stdout,30) TRIM(ncname)
-          RETURN
+        IF (TLF(ng)%ncid.eq.-1) THEN
+          CALL netcdf_open (ng, iTLM, ncname, 1, TLF(ng)%ncid)
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) THEN
+            WRITE (stdout,30) TRIM(ncname)
+            RETURN
+          END IF
         END IF
 !
 !  Inquire about the dimensions and check for consistency.
@@ -542,13 +546,15 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idZtlf))) THEN
             got_var(idZtlf)=.TRUE.
             TLF(ng)%Vid(idZtlf)=var_id(i)
+# ifndef SOLVE3D
+
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUbtf))) THEN
             got_var(idUbtf)=.TRUE.
             TLF(ng)%Vid(idUbtf)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVbtf))) THEN
             got_var(idVbtf)=.TRUE.
             TLF(ng)%Vid(idVbtf)=var_id(i)
-# ifdef SOLVE3D
+# else
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUtlf))) THEN
             got_var(idUtlf)=.TRUE.
             TLF(ng)%Vid(idUtlf)=var_id(i)
@@ -582,6 +588,7 @@
           exit_flag=3
           RETURN
         END IF
+# ifndef SOLVE3D
         IF (.not.got_var(idUbtf)) THEN
           IF (Master) WRITE (stdout,40) TRIM(Vname(1,idUbtf)),          &
      &                                  TRIM(ncname)
@@ -594,7 +601,7 @@
           exit_flag=3
           RETURN
         END IF
-# ifdef SOLVE3D
+# else
         IF (.not.got_var(idUtlf)) THEN
           IF (Master) WRITE (stdout,40) TRIM(Vname(1,idUtlf)),          &
      &                                  TRIM(ncname)
@@ -607,8 +614,6 @@
           exit_flag=3
           RETURN
         END IF
-# endif
-# ifdef SOLVE3D
         DO itrc=1,NT(ng)
           IF (.not.got_var(idTtlf(itrc))) THEN
             IF (Master) WRITE (stdout,40) TRIM(Vname(1,idTtlf(itrc))),  &

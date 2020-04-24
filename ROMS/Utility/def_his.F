@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE def_his (ng, ldef)
 !
-!svn $Id: def_his.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: def_his.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -63,7 +63,7 @@
 #ifdef ADJUST_BOUNDARY
       integer :: t2dobc(4)
 #endif
-
+      integer :: Vsize(4)
       integer :: def_dim
 
 #ifdef INWAVE_MODEL
@@ -266,7 +266,7 @@
 
 # if defined ESTUARYBGC && defined SPECTRAL_LIGHT
         status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname, 'NBAND',         &
-     &                 NBAND, DimIDs(34))
+     &                 NBAND, DimIDs(33))
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
 # endif
@@ -418,6 +418,17 @@
 # endif
 #endif
 !
+!  Define dimensions for the plant array variables
+!
+#ifdef VEGETATION 
+# if defined VEG_DRAG || defined VEG_BIOMASS
+        v3pgrd(1)=DimIDs( 1)
+        v3pgrd(2)=DimIDs( 5)
+        v3pgrd(3)=DimIDs(35)
+        v3pgrd(4)=DimIDs(12)
+# endif 
+#endif 
+!
 !  Define dimension vectors for staggered v-momentum type variables.
 !
 #if defined WRITE_WATER && defined MASKING
@@ -436,17 +447,6 @@
         v3dgrd(2)=DimIDs( 7)
         v3dgrd(3)=DimIDs( 9)
         v3dgrd(4)=DimIDs(12)
-# endif
-#endif
-!
-!  Define dimensions for the plant array variables
-!
-#ifdef VEGETATION
-# if defined VEG_DRAG || defined VEG_BIOMASS
-        v3pgrd(1)=DimIDs( 1)
-        v3pgrd(2)=DimIDs( 5)
-        v3pgrd(3)=DimIDs(35)
-        v3pgrd(4)=DimIDs(12)
 # endif
 #endif
 #ifdef INWAVE_MODEL
@@ -506,7 +506,7 @@
 !
         s3dgrd(1)=DimIDs( 1)
         s3dgrd(2)=DimIDs( 5)
-        s3dgrd(3)=DimIDs(34)
+        s3dgrd(3)=DimIDs(33)
         s3dgrd(4)=DimIDs(12)
 # endif
 #endif
@@ -1990,7 +1990,8 @@
 #endif
 !
 # if defined ESTUARYBGC && defined SPECTRAL_LIGHT
-!  Define Photosynthetically Available Radiation (PAR)
+!
+!  Define Photosynthetically Available Radiation (PAR).
 !
         IF (Hout(idPARo,ng)) THEN
           Vinfo( 1)=Vname(1,idPARo)
@@ -2008,7 +2009,8 @@
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
-!  Define Spectral Photosynthetically Available Radiation (PARs)
+!
+!  Define Spectral Photosynthetically Available Radiation (PARs).
 !
         IF (Hout(idPARs,ng)) THEN
           Vinfo( 1)=Vname(1,idPARs)
@@ -2087,7 +2089,7 @@
      &                   __FILE__)) RETURN
         END IF
 !
-!  Define Dissolved Oxygen in water column
+!  Define Dissolved Oxygen in water column.
 !
         IF (Hout(iddowc,ng)) THEN 
           Vinfo( 1)=Vname(1,iddowc)
@@ -2101,12 +2103,12 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,iddowc,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(iddowc),   &
-     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
 !
-!  Define Dissolved Inorganic Nitrogen in water column due to SAV 
+!  Define Dissolved Inorganic Nitrogen in water column due to SAV.
 !
         IF (Hout(idwsvl,ng)) THEN 
           Vinfo( 1)=Vname(1,idwsvl)
@@ -2120,12 +2122,12 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idwsvl,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idwsvl),   &
-     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
 !
-!  Above ground biomass
+!  Define Above ground biomass.
 !
         IF (Hout(idsagb,ng)) THEN
           Vinfo( 1)=Vname(1,idsagb)
@@ -2144,7 +2146,7 @@
      &                   __FILE__)) RETURN
         END IF
 !
-!  Below ground biomass.
+! Define Below ground biomass.
 !
         IF (Hout(idsbgb,ng)) THEN
           Vinfo( 1)=Vname(1,idsbgb)
@@ -2163,7 +2165,26 @@
      &                   __FILE__)) RETURN
         END IF
 !
-!  PP
+! Define Epiphyte biomass.
+!
+        IF (Hout(idsepb,ng)) THEN
+          Vinfo( 1)=Vname(1,idsepb)
+          Vinfo( 2)=Vname(2,idsepb)
+          Vinfo( 3)=Vname(3,idsepb)
+          Vinfo(14)=Vname(4,idsepb)
+          Vinfo(16)=Vname(1,idsepb)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idsepb,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsepb),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
+        END IF
+!
+! Define Primary production.
 !
         IF (Hout(idsvpp,ng)) THEN
           Vinfo( 1)=Vname(1,idsvpp)
@@ -2177,12 +2198,12 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idsvpp,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsvpp),   &
-     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
 !
-!  AGM
+!  Define above ground mortality. 
 !
         IF (Hout(idsvam,ng)) THEN
           Vinfo( 1)=Vname(1,idsvam)
@@ -2196,12 +2217,12 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idsvam,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsvam),   &
-     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
 !
-!  AGAR
+!  Define active respiration.
 !
         IF (Hout(idsgar,ng)) THEN
           Vinfo( 1)=Vname(1,idsgar)
@@ -2215,12 +2236,12 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idsgar,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsgar),   &
-     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
 !
-!  AGBR
+!  Define above ground basal respiration.
 !
         IF (Hout(idsvbr,ng)) THEN
           Vinfo( 1)=Vname(1,idsvbr)
@@ -2234,12 +2255,12 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idsvbr,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsvbr),   &
-     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
 !
-!  SEARS
+!  Define seasonal root storage of Carbon (SEARS).
 !
         IF (Hout(idsvrs,ng)) THEN
           Vinfo( 1)=Vname(1,idsvrs)
@@ -2253,12 +2274,12 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idsvrs,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsvrs),   &
-     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
 !
-! AGBG
+! Define translocation of above ground biomass to below ground (AGBG).
 ! 
         IF (Hout(idsvbg,ng)) THEN
           Vinfo( 1)=Vname(1,idsvbg)
@@ -2272,12 +2293,12 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idsvbg,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsvbg),   &
-     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
 !
-! BGAG
+! Define translocation of below ground biomass to above ground (BGAG).
 ! 
         IF (Hout(idsvag,ng)) THEN
           Vinfo( 1)=Vname(1,idsvag)
@@ -2291,12 +2312,12 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idsvag,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsvag),   &
-     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
 !
-! BGR 
+! Define below ground biomass respiration. 
 ! 
         IF (Hout(idsbgr,ng)) THEN
           Vinfo( 1)=Vname(1,idsbgr)
@@ -2310,12 +2331,12 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idsbgr,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsbgr),   &
-     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
 !
-! BGM
+! Define below ground mortality. 
 ! 
         IF (Hout(idsbgm,ng)) THEN
           Vinfo( 1)=Vname(1,idsbgm)
@@ -2329,7 +2350,7 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idsbgm,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsbgm),   &
-     &                   NF_FOUT, nvd4, t3dgrd, Aval, Vinfo, ncname)
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF

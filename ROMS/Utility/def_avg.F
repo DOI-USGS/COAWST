@@ -5,9 +5,9 @@
    (defined TL_AVERAGES && defined TANGENT)
       SUBROUTINE def_avg (ng, ldef)
 !
-!svn $Id: def_avg.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: def_avg.F 1007 2020-02-25 22:29:41Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -59,8 +59,8 @@
 # endif
       integer :: recdim, status
 
-      integer :: DimIDs(32), p2dgrd(3), t2dgrd(3), u2dgrd(3), v2dgrd(3)
-      integer :: Vsize(4)
+      integer :: DimIDs(nDimID)
+      integer :: p2dgrd(3), t2dgrd(3), u2dgrd(3), v2dgrd(3)
 
       integer :: def_dim
 
@@ -253,6 +253,11 @@
      &                 __FILE__)) RETURN
 #  endif
 #  ifdef ECOSIM
+        status=def_dim(ng, iNLM, AVG(ng)%ncid, ncname, 'Nbands',        &
+     &                 NBands, DimIDs(33))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+
         status=def_dim(ng, model, AVG(ng)%ncid, ncname, 'Nphy',         &
      &                 Nphy, DimIDs(25))
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
@@ -1769,6 +1774,27 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idPair,ng),r8)
           status=def_var(ng, iNLM, AVG(ng)%ncid, AVG(ng)%Vid(idPair),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
+        END IF
+#  endif
+#  if defined BULK_FLUXES
+!
+!  Define surface air temperature.
+!
+        IF (Aout(idTair,ng)) THEN
+          Vinfo( 1)=Vname(1,idTair)
+          WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,idTair))
+          Vinfo( 3)=Vname(3,idTair)
+          Vinfo(14)=Vname(4,idTair)
+          Vinfo(16)=Vname(1,idtime)
+#   if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+#   endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idTair,ng),r8)
+          status=def_var(ng, iNLM, AVG(ng)%ncid, AVG(ng)%Vid(idTair),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN

@@ -1,8 +1,8 @@
 #include "cppdefs.h"
 !
-!svn $Id: lbc.F 889 2018-02-10 03:32:52Z arango $
+!svn $Id: lbc.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -223,18 +223,6 @@
      &                    'S(',ibry,ifield,ng,')%gradient',             &
      &                    S(ibry,ifield,ng)%gradient,                   &
      &                    TRIM(ncname)
-                  END IF
-                  exit_flag=5
-                END IF
-              CASE ('Mix')
-                IF (.not.S(ibry,ifield,ng)%mixed) THEN
-                  IF (Master) THEN
-                    WRITE (stdout,20) B(ibry),                          &
-     &                                TRIM(Vname(1,idBvar(ifield))),    &
-     &                                TRIM(string(ibry)),               &
-     &                                'S(',ibry,ifield,ng,')%mixed',    &
-     &                                S(ibry,ifield,ng)%mixed,          &
-     &                                TRIM(ncname)
                   END IF
                   exit_flag=5
                 END IF
@@ -460,8 +448,6 @@
             string(ibry)='Fla    '
           ELSE IF (S(ibry,ifield,ng)%gradient) THEN
             string(ibry)='Gra    '
-          ELSE IF (S(ibry,ifield,ng)%mixed) THEN
-            string(ibry)='Mix    '
           ELSE IF (S(ibry,ifield,ng)%nested) THEN
             string(ibry)='Nes    '
           ELSE IF (S(ibry,ifield,ng)%periodic) THEN
@@ -552,8 +538,6 @@
             string(ibry,ng)='Flather    '
           ELSE IF (S(ibry,ifield,ng)%gradient) THEN
             string(ibry,ng)='Gradient   '
-          ELSE IF (S(ibry,ifield,ng)%mixed) THEN
-            string(ibry,ng)='Mixed      '
           ELSE IF (S(ibry,ifield,ng)%nested) THEN
             string(ibry,ng)='Nested     '
           ELSE IF (S(ibry,ifield,ng)%periodic) THEN
