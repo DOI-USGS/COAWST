@@ -1,6 +1,6 @@
-# svn $Id: Linux-ftn-gnu.mk 897 2018-02-14 17:47:30Z arango $
+# svn $Id: Linux-ftn-gnu.mk 995 2020-01-10 04:01:28Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2019 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -174,6 +174,7 @@ endif
                FC := $(shell which ${FC})
                LD := $(FC)
 
+             LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
 ifdef USE_MCT
        MCT_INCDIR ?= /usr/local/mct/include
        MCT_LIBDIR ?= /usr/local/mct/lib

@@ -1,6 +1,6 @@
-# svn $Id: Darwin-ifort.mk 904 2018-05-17 22:40:45Z arango $
+# svn $Id: Darwin-ifort.mk 995 2020-01-10 04:01:28Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2019 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -212,6 +212,7 @@ ifdef USE_CXX
              LIBS += -lstdc++
 endif
 
+             LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
 ifdef USE_MCT
        MCT_INCDIR ?= /usr/local/mct/include
        MCT_LIBDIR ?= /usr/local/mct/lib

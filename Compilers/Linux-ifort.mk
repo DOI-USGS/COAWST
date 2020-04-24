@@ -1,6 +1,6 @@
-# svn $Id: Linux-ifort.mk 909 2018-06-23 22:06:04Z arango $
+# svn $Id: Linux-ifort.mk 995 2020-01-10 04:01:28Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2019 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -33,7 +33,9 @@
 # First the defaults
 #
                FC := ifort
+#              FC := mpiifort
            FFLAGS := -fp-model precise
+#          FFLAGS := -fc=ifort
 #          FFLAGS += -heap-arrays
        FIXEDFLAGS := -nofree
         FREEFLAGS := -free
@@ -73,12 +75,19 @@ ifdef USE_ROMS
            FFLAGS += -check bounds
            FFLAGS += -traceback
            FFLAGS += -check uninit
-           FFLAGS += -warn interfaces,nouncalled
+           FFLAGS += -warn interfaces,nouncalled -gen-interfaces
            FFLAGS += -gen-interfaces
+##         FFLAGS += -fp-stack-check
+#          FFLAGS += -Wl,-no_compact_unwind
+#          FFLAGS += -Wl,-stack_size,0x64000000
+           FFLAGS += -ftrapuv -fpe0
  else
            FFLAGS += -ip -O3
            FFLAGS += -traceback
+#          FFLAGS += -Wl,-stack_size,0x64000000
+  ifndef USE_WRFHYDRO
            FFLAGS += -check uninit
+  endif
  endif
 endif
         MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
@@ -182,21 +191,8 @@ endif
 
 ifdef USE_DEBUG
          CPPFLAGS += -DUSE_DEBUG
-           FFLAGS += -g
-#          FFLAGS += -check all
-           FFLAGS += -check bounds
-           FFLAGS += -check uninit
-##         FFLAGS += -fp-stack-check
-           FFLAGS += -traceback
-           FFLAGS += -warn interfaces,nouncalled -gen-interfaces
-#          FFLAGS += -Wl,-no_compact_unwind
-#          FFLAGS += -Wl,-stack_size,0x64000000
-           FFLAGS += -ftrapuv -fpe0
-           CFLAGS += -g
          CXXFLAGS += -g
 else
-           FFLAGS += -ip -O3
-#          FFLAGS += -Wl,-stack_size,0x64000000
            CFLAGS += -O3
          CXXFLAGS += -O3
 endif
@@ -218,6 +214,7 @@ ifdef USE_CXX
              LIBS += -lstdc++
 endif
 
+             LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
 ifdef USE_MCT
        MCT_INCDIR ?= /opt/intelsoft/mct/include
        MCT_LIBDIR ?= /opt/intelsoft/mct/lib
@@ -239,6 +236,26 @@ ifdef USE_WRF
              LIBS += WRF/frame/pack_utils.o
              LIBS += WRF/external/io_netcdf/libwrfio_nf.a
 endif
+
+ifdef USE_WRFHYDRO
+             FFLAGS += -I $(WRFHYDRO_DIR)/Land_models/NoahMP/IO_code
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/IO_code/main_hrldas_driver.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/IO_code/module_hrldas_netcdf_io.o 
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/phys/module_sf_noahmpdrv.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/phys/module_sf_noahmplsm.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/phys/module_sf_noahmp_glacier.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/phys/module_sf_noahmp_groundwater.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/Utility_routines/module_wrf_utilities.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/Utility_routines/module_model_constants.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/Utility_routines/module_date_utilities.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/Utility_routines/kwm_string_utilities.o
+             LIBS += $(WRFHYDRO_DIR)/CPL/COAWST_cpl/hydro_coupler.o
+             LIBS += $(WRFHYDRO_DIR)/Land_models/NoahMP/IO_code/module_NoahMP_hrldas_driver.o
+             LIBS += $(WRFHYDRO_DIR)/lib/libHYDRO.a
+#            LIBS +=  $(WRFHYDRO_DIR)/Land_models/NoahMP/Noah/module_sf_myjsfc.o
+#            LIBS +=  $(WRFHYDRO_DIR)/Land_models/NoahMP/Noah/module_sf_sfclay.o
+endif
+
 
 ifdef USE_WW3
              FFLAGS += -I${COAWST_WW3_DIR}/mod_MPI

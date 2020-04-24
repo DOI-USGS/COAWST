@@ -1,6 +1,6 @@
-# svn $Id: CYGWIN-df.mk 889 2018-02-10 03:32:52Z arango $
+# svn $Id: CYGWIN-df.mk 995 2020-01-10 04:01:28Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2019 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -98,6 +98,7 @@ ifdef USE_ESMF
        LIBS_WIN32 += $(ESMF_F90LINKPATHS) $(ESMF_F90ESMFLINKLIBS)
 endif
 
+             LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
 ifdef USE_MCT
        MCT_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\mct
       MPEU_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\mpeu

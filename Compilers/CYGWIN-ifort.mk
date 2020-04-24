@@ -1,6 +1,6 @@
-# svn $Id: CYGWIN-ifort.mk 889 2018-02-10 03:32:52Z arango $
+# svn $Id: CYGWIN-ifort.mk 995 2020-01-10 04:01:28Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2019 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -109,6 +109,7 @@ ifdef USE_MPI
            FFLAGS += -I$(MPI_INCDIR)
 endif
 
+       LIBS_WIN32 += "$(MCT_PARAMS_DIR)\mct_coupler_params.o"
 ifdef USE_MCT
        MCT_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\lib
        MCT_INCDIR ?= c:\\work\\models\\MCT_v2.2\\include
@@ -124,21 +125,6 @@ ifdef USE_ESMF
                      include $(ESMF_MK_DIR)/esmf.mk
            FFLAGS += $(ESMF_F90COMPILEPATHS)
        LIBS_WIN32 += $(ESMF_F90LINKPATHS) $(ESMF_F90ESMFLINKLIBS)
-endif
-
-ifdef USE_REFDIF
-#         CPPFLAGS += -traditional-cpp
-           FFLAGS += -I$(MCT_LIBDIR) -I$(MPEU_LIBDIR) 
-#           FFLAGS += /noextend_source -assume:byterecl
-       LIBS_WIN32 += "$(MCT_LIBDIR)\libmct.a" "$(MPEU_LIBDIR)\libmpeu.a"
-endif
-
-ifdef USE_MCT
-       MCT_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\lib
-       MCT_INCDIR ?= c:\\work\\models\\MCT_v2.2\\include
-         CPPFLAGS += -traditional-cpp
-           FFLAGS += -I$(MCT_INCDIR)
-       LIBS_WIN32 += "$(MCT_LIBDIR)\libmct.a" "$(MCT_LIBDIR)\libmpeu.a"
 endif
 
 ifdef USE_WRF

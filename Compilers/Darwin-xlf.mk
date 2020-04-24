@@ -1,6 +1,6 @@
-# svn $Id: Darwin-xlf.mk 889 2018-02-10 03:32:52Z arango $
+# svn $Id: Darwin-xlf.mk 995 2020-01-10 04:01:28Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2019 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -29,7 +29,7 @@
 # First the defaults
 #
                FC := xlf95_r
-           FFLAGS := -qsuffix=f=f90 -qmaxmem=-1 -qextname
+           FFLAGS := -qsuffix=f=f90 -qmaxmem=-1
               CPP := /usr/bin/cpp
          CPPFLAGS := -P -traditional
                CC := gcc
@@ -107,6 +107,7 @@ ifdef USE_CXX
              LIBS += -lstdc++
 endif
 
+             LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
 ifdef USE_MCT
        MCT_INCDIR ?= /usr/local/mct/include
        MCT_LIBDIR ?= /usr/local/mct/lib

@@ -1,6 +1,6 @@
-# svn $Id: Linux-gfortran.mk 897 2018-02-14 17:47:30Z arango $
+# svn $Id: Linux-gfortran.mk 995 2020-01-10 04:01:28Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2019 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -133,7 +133,7 @@ ifdef USE_NETCDF4
 else
     NETCDF_INCDIR ?= /opt/gfortransoft/serial/netcdf3/include
     NETCDF_LIBDIR ?= /opt/gfortransoft/serial/netcdf3/lib
-      NETCDF_LIBS ?= -lnetcdf
+      NETCDF_LIBS ?= -lnetcdf -lnetcdff
              LIBS += -L$(NETCDF_LIBDIR) $(NETCDF_LIBS)
            INCDIR += $(NETCDF_INCDIR) $(INCDIR)
 endif
@@ -219,6 +219,7 @@ ifdef CICE_APPLICATION
             SLIBS += $(SLIBS) $(LIBS)
 endif
 
+             LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
 ifdef USE_MCT
        MCT_INCDIR ?= /usr/local/mct/include
        MCT_LIBDIR ?= /usr/local/mct/lib

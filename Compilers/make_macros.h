@@ -1,7 +1,7 @@
 /*
-** svn $Id: make_macros.h 889 2018-02-10 03:32:52Z arango $
+** svn $Id: make_macros.h 995 2020-01-10 04:01:28Z arango $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2019 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2020 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -108,6 +108,16 @@
   USE_WRF := on
 #else
   USE_WRF :=
+#endif
+
+/*
+** Process WRF_hydro hydrologic model.
+*/
+
+#ifdef WRFHYDRO_MODEL
+  USE_WRFHYDRO := on
+#else
+  USE_WRFHYDRO :=
 #endif
 
 /*

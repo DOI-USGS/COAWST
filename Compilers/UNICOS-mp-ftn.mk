@@ -1,6 +1,6 @@
-# svn $Id: UNICOS-mp-ftn.mk 889 2018-02-10 03:32:52Z arango $
+# svn $Id: UNICOS-mp-ftn.mk 995 2020-01-10 04:01:28Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2019 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -105,6 +105,7 @@ ifdef USE_CXX
              LIBS += -lstdc++
 endif
 
+             LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
 ifdef USE_MCT
        MCT_INCDIR ?= /usr/local/pkg/mct/include
        MCT_LIBDIR ?= /usr/local/pkg/mct/lib

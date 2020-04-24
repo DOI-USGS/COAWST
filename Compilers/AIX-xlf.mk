@@ -1,6 +1,6 @@
-# svn $Id: AIX-xlf.mk 889 2018-02-10 03:32:52Z arango $
+# svn $Id: AIX-xlf.mk 995 2020-01-10 04:01:28Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2019 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -29,7 +29,7 @@
 # First the defaults
 #
                FC := xlf95_r
-           FFLAGS := -qsuffix=f=f90 -qmaxmem=-1 -qarch=auto -qtune=auto
+           FFLAGS := -qsuffix=f=f90 -qmaxmem=-1 -qarch=pwr4 -qtune=pwr4
               CPP := /usr/lib/cpp
          CPPFLAGS := -P
                CC := xlc_r
@@ -100,7 +100,7 @@ ifdef USE_DEBUG
            CFLAGS += -g -qfullpath
          CXXFLAGS += -g -qfullpath
 else
-           FFLAGS += -O2 -qstrict
+           FFLAGS += -O3 -qstrict
            CFLAGS += -O2
          CXXFLAGS += -O2
 endif
@@ -118,6 +118,7 @@ ifdef USE_CXX
              LIBS += -lstdc++
 endif
 
+             LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
 ifdef USE_MCT
        MCT_INCDIR ?= /usr/local/pkg/mct/include
        MCT_LIBDIR ?= /usr/local/pkg/mct/lib
