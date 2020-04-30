@@ -115,8 +115,11 @@
 
 #ifdef MPI
       include 'mpif.h'
+#endif
+      integer (kind=int_kind) :: MyStr, MyEnd
+#ifdef MPI
       integer (kind=int_kind) :: MyError, MyRank, Nprocs, rank
-      integer (kind=int_kind) :: ratio, MyStr, MyEnd
+      integer (kind=int_kind) :: ratio
       integer (kind=int_kind) :: i, j, ij, add1, add2, got_weight
       integer (kind=int_kind) :: nlink, min_link, max_link
       integer (kind=int_kind), dimension(MPI_STATUS_SIZE) :: status
@@ -232,7 +235,9 @@
       allocate(srch_mask(grid2_size))
 
       print *,'grid1 sweep grid1 size is ', grid1_size
+#ifdef MPI
       print *,'MyRank is ', MyRank
+#endif
       first_call=.true.  ! first_call set to true 
 
 !     do grid1_add = 1,grid1_size

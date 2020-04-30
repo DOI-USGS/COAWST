@@ -153,7 +153,9 @@ ifdef USE_OpenMP
            FFLAGS += -openmp -fpp
 endif
 
+ifndef USE_SCRIP
              LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
+endif
 ifdef USE_MCT
        MCT_INCDIR ?= /usr/local/mct/include
        MCT_LIBDIR ?= /usr/local/mct/lib

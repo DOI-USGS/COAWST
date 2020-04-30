@@ -98,7 +98,9 @@ ifdef USE_ESMF
        LIBS_WIN32 += $(ESMF_F90LINKPATHS) $(ESMF_F90ESMFLINKLIBS)
 endif
 
+ifndef USE_SCRIP
              LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
+endif
 ifdef USE_MCT
        MCT_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\mct
       MPEU_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\mpeu

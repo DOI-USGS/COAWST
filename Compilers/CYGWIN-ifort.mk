@@ -109,7 +109,9 @@ ifdef USE_MPI
            FFLAGS += -I$(MPI_INCDIR)
 endif
 
+ifndef USE_SCRIP
        LIBS_WIN32 += "$(MCT_PARAMS_DIR)\mct_coupler_params.o"
+endif
 ifdef USE_MCT
        MCT_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\lib
        MCT_INCDIR ?= c:\\work\\models\\MCT_v2.2\\include
