@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE inp_decode_mod
 !
-!svn $Id: inp_decode.F 1007 2020-02-25 22:29:41Z arango $
+!svn $Id: inp_decode.F 1014 2020-04-06 15:48:43Z arango $
 !================================================== Hernan G. Arango ===
 !  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
@@ -71,6 +71,11 @@
         MODULE PROCEDURE load_2d_r8      ! 2D real(r8) array
         MODULE PROCEDURE load_3d_r8      ! 3D real(r8) array
       END INTERFACE load_r
+
+      INTERFACE load_s1d
+        MODULE PROCEDURE load_s1d1       ! 1D structrure, S(:)
+        MODULE PROCEDURE load_s1d2       ! 2D structrure, S(Ie,:)
+      END INTERFACE load_s1d
 !
 !  Module dimension parameters.
 !
@@ -1699,31 +1704,31 @@
       RETURN
       END FUNCTION load_lbc
 !
-      FUNCTION load_s1d (Nval, Fname, Fdim, line, label, igrid,         &
-     &                   Mgrids, Nfiles, S)
+      FUNCTION load_s1d1 (Nval, Fname, Fdim, line, label, igrid,        &
+     &                    Mgrids, Nfiles, S)
 !
 !***********************************************************************
 !                                                                      !
 !  This function loads input values into requested 1D structure        !
-!  containing information about I/O files.                             !
+!  S(Mgrids) containing information about I/O files.                   !
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
-!     Nval       Number of values processed (integer)                  !
-!     Fname      File name(s) processed (string array)                 !
-!     Fdim       File name(s) dimension in calling program (integer)   !
-!     line       Current input line (string)                           !
-!     label      I/O structure label (string)                          !
-!     igrid      Nested grid counter (integer)                         !
-!     Mgrids     Number of nested grids (integer)                      !
-!     Nfiles     Number of files per grid (integer array)              !
-!     S          Derived type structure, TYPE(T_IO)                    !
+!     Nval        Number of values processed (integer)                 !
+!     Fname       File name(s) processed (string array)                !
+!     Fdim        File name(s) dimension in calling program (integer)  !
+!     line        Current input line (string)                          !
+!     label       I/O structure label (string)                         !
+!     igrid       Nested grid counter (integer)                        !
+!     Mgrids      Number of nested grids (integer)                     !
+!     Nfiles      Number of files per grid (integer array)             !
+!     S(Mgrids)   Derived type structure array, TYPE(T_IO)             !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
-!     igrid      Updated nested grid counter.                          !
-!     S          Updated derived type structure, TYPE(T_IO).           !
-!     load_s1d   Number of output values processed.                    !
+!     igrid       Updated nested grid counter.                         !
+!     S(Mgrids)   Updated derived type structure array, TYPE(T_IO).    !
+!     load_s1d_1  Number of output values processed.                   !
 !                                                                      !
 !***********************************************************************
 !
@@ -1750,7 +1755,7 @@
       logical :: load, persist
 
       integer :: Icont, Ipipe, i, j, lstr, my_Mgrids, ng
-      integer :: load_s1d
+      integer :: load_s1d1
 
       character (len=1 ), parameter :: blank = ' '
 !
@@ -1906,13 +1911,230 @@
           label(i:i)=blank
         END DO
       END IF
-      load_s1d=Nval
+      load_s1d1=Nval
 
- 10   FORMAT (/,' LOAD_S1D - incorrect continuation symbol in line:',/, &
-     &        12x,a,/,12x,'number of nested grid values exceeded.')
+ 10   FORMAT (/,' LOAD_S1D1 - incorrect continuation symbol in line:',  &
+     &        /,14x,a,/,11x,'number of nested grid values exceeded.')
 !
       RETURN
-      END FUNCTION load_s1d
+      END FUNCTION load_s1d1
+!
+      FUNCTION load_s1d2 (Nval, Fname, Fdim, line, label, igrid,        &
+     &                    Mgrids, Nfiles, idim, Ie, S)
+!
+!***********************************************************************
+!                                                                      !
+!  This function loads input values into requested 2D structure        !
+!  S(Ie,:) elemement containing information about I/O files.           !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     Nval         Number of values processed (integer)                !
+!     Fname        File name(s) processed (string array)               !
+!     Fdim         File name(s) dimension in calling program (integer) !
+!     line         Current input line (string)                         !
+!     label        I/O structure label (string)                        !
+!     igrid        Nested grid counter (integer)                       !
+!     Mgrids       Number of nested grids (integer)                    !
+!     Nfiles       Number of files per grid (integer array)            !
+!     idim         Size of structure inner dimension (integer)         !
+!     Ie           Inner dimension element to process (integer)        !
+!     S(Ie,Mgrids) Derived type structure array, TYPE(T_IO)            !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     igrid        Updated nested grid counter.                        !
+!     S(Ie,Mgrids) Updated derived type structure array, TYPE(T_IO).   !
+!     load_s1d_2   Number of output values processed.                  !
+!                                                                      !
+!***********************************************************************
+!
+      USE mod_param
+      USE mod_parallel
+      USE mod_iounits
+      USE mod_ncparam
+      USE mod_scalars
+!
+!  Imported variable declarations.
+!
+      integer, intent(in)    :: Mgrids, Nval, Fdim, idim, Ie
+      integer, intent(inout) :: igrid
+      integer, intent(inout) :: Nfiles(Mgrids)
+
+      character (len=*),   intent(in) :: line
+      character (len=256), intent(in) :: Fname(Fdim)
+      character (len=*),   intent(inout) :: label
+
+      TYPE(T_IO), intent(inout) :: S(idim,Mgrids)
+!
+!  Local variable declarations.
+!
+      logical :: load, persist
+
+      integer :: Icont, Ipipe, i, j, lstr, my_Mgrids, ng
+      integer :: load_s1d2
+
+      character (len=1 ), parameter :: blank = ' '
+!
+!-----------------------------------------------------------------------
+!  Count files for all grids and activate load switch.
+!-----------------------------------------------------------------------
+!
+!  Check current line for the continuation symbol [char(92)=\] or pipe
+!  symbol [char(124)=|]. The continuation symbol is used to separate
+!  string values for different grid, whereas the pipe symbol is used
+!  to separate multi-string values for split input files. User may
+!  split the records for a particular input field into several files.
+!
+      Icont=INDEX(TRIM(line),CHAR(92) ,BACK=.FALSE.)
+      Ipipe=INDEX(TRIM(line),CHAR(124),BACK=.FALSE.)
+      IF ((Icont.eq.0).and.(Ipipe.eq.0)) THEN
+        load=.TRUE.                           ! last input string
+      ELSE
+        load=.FALSE.                          ! process next string
+      END IF
+!
+!  Accumulate number of multi-files per each grid.
+!
+      Nfiles(igrid)=Nfiles(igrid)+1
+!
+!  Set grid counter.
+!
+      IF (.not.load) THEN
+        igrid=igrid+MIN(1,Icont)
+      END IF
+      IF (igrid.gt.Mgrids) THEN
+        IF (Master) THEN
+          WRITE (stdout,10) TRIM(line)
+        END IF
+        exit_flag=2
+        RETURN
+      END IF
+!
+!-----------------------------------------------------------------------
+!  Load I/O information into structure.
+!-----------------------------------------------------------------------
+!
+      IF (load) THEN
+!
+!  If nesting and the number of file name entries is less than Mgrids,
+!  persist the last values provided.  This is the case when not enough
+!  entries are provided by "==" plural symbol after the KEYWORD.
+!
+        IF (igrid.lt.Mgrids) THEN
+          DO i=igrid+1,Mgrids
+            Nfiles(i)=Nfiles(igrid)
+          END DO
+          my_Mgrids=igrid
+          persist=.TRUE.
+        ELSE
+          my_Mgrids=Mgrids
+          persist=.FALSE.
+        END IF
+!
+!  Allocate various fields in structure, if not continuation or pipe
+!  symbol is found which indicates end of input data.
+!
+        DO ng=1,Mgrids
+          allocate ( S(Ie,ng)%Nrec(Nfiles(ng)) )
+          allocate ( S(Ie,ng)%time_min(Nfiles(ng)) )
+          allocate ( S(Ie,ng)%time_max(Nfiles(ng)) )
+          IF (label(1:3).eq.'FLT') THEN
+#ifdef FLOAT_BIOLOGY
+            allocate ( S(Ie,ng)%Vid(-10:NV) )
+#else
+            allocate ( S(Ie,ng)%Vid(-6:NV) )
+#endif
+          ELSE
+            allocate ( S(Ie,ng)%Vid(NV) )
+          END IF
+          allocate ( S(Ie,ng)%Tid(MT) )
+          allocate ( S(Ie,ng)%files(Nfiles(ng)) )
+        END DO
+!
+!  Intialize strings to blank to facilitate processing.
+!
+        DO ng=1,Mgrids
+          lstr=LEN(S(Ie,ng)%name)
+          DO i=1,lstr
+            S(Ie,ng)%head(i:i)=blank
+            S(Ie,ng)%base(i:i)=blank
+            S(Ie,ng)%name(i:i)=blank
+          END DO
+          DO j=1,Nfiles(ng)
+            DO i=1,lstr
+              S(Ie,ng)%files(j)(i:i)=blank
+            END DO
+          END DO
+        END DO
+!
+!  Initialize and load fields into structure.
+!
+        i=0
+        DO ng=1,my_Mgrids
+          S(Ie,ng)%Nfiles=Nfiles(ng)            ! number of multi-files
+          S(Ie,ng)%Fcount=1                     ! multi-file counter
+          S(Ie,ng)%load=1                       ! filename load counter
+          S(Ie,ng)%Rindex=0                     ! time index
+          S(Ie,ng)%ncid=-1                      ! closed NetCDF state
+          S(Ie,ng)%Vid=-1                       ! NetCDF variables IDs
+          S(Ie,ng)%Tid=-1                       ! NetCDF tracers IDs
+          DO j=1,Nfiles(ng)
+            i=i+1
+            S(Ie,ng)%files(j)=TRIM(Fname(i))    ! load multi-files
+            S(Ie,ng)%Nrec(j)=0                  ! record counter
+            S(Ie,ng)%time_min(j)=0.0_dp         ! starting time
+            S(Ie,ng)%time_max(j)=0.0_dp         ! ending time
+          END DO
+          S(Ie,ng)%label=TRIM(label)            ! structure label
+          S(Ie,ng)%name=TRIM(S(Ie,ng)%files(1)) ! load first file
+          lstr=LEN_TRIM(S(Ie,ng)%name)
+          S(Ie,ng)%head=S(Ie,ng)%name(1:lstr-3) ! do not include ".nc"
+          S(Ie,ng)%base=S(Ie,ng)%name(1:lstr-3) ! do not include ".nc"
+          Nfiles(ng)=0                          ! clean file counter
+        END DO
+!
+!  If appropriate, persist last value(s).
+!
+        IF (persist) THEN
+          DO ng=igrid+1,Mgrids
+            S(Ie,ng)%Nfiles=S(Ie,igrid)%Nfiles
+            S(Ie,ng)%Fcount=1
+            S(Ie,ng)%load=1
+            S(Ie,ng)%Rindex=0
+            S(Ie,ng)%ncid=-1
+            S(Ie,ng)%Vid=-1
+            S(Ie,ng)%Tid=-1
+            DO j=1,S(Ie,igrid)%Nfiles
+              S(Ie,ng)%files(j)=S(Ie,igrid)%files(j)
+              S(Ie,ng)%Nrec(j)=0
+              S(Ie,ng)%time_min(j)=0.0_dp
+              S(Ie,ng)%time_max(j)=0.0_dp
+            END DO
+            S(Ie,ng)%label=TRIM(label)
+            S(Ie,ng)%name=S(Ie,igrid)%name
+            S(Ie,ng)%base=S(Ie,igrid)%base
+            Nfiles(ng)=0
+          END DO
+        END IF
+!
+!  Reset counters and clean label.
+!
+        igrid=1
+        DO ng=1,Mgrids
+          Nfiles(ng)=0
+        END DO
+        DO i=1,LEN(label)
+          label(i:i)=blank
+        END DO
+      END IF
+      load_s1d2=Nval
+
+ 10   FORMAT (/,' LOAD_S1D2 - incorrect continuation symbol in line:',  &
+     &        /,14x,a,/,11x,'number of nested grid values exceeded.')
+!
+      RETURN
+      END FUNCTION load_s1d2
 !
       FUNCTION load_s2d (Nval, Fname, Fdim, line, label, ifile, igrid,  &
      &                   Mgrids, Nfiles, Ncount, idim, S)

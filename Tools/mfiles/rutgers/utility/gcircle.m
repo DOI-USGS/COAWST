@@ -65,6 +65,9 @@ elat = lat2.*deg2rad;
 
 alpha = sin(slat).*sin(elat) + cos(slat).*cos(elat).*cos(elon-slon);
 
+%jcw = maybe try https://en.wikipedia.org/wiki/Great-circle_distance
+%Vincenty formula
+
 ind = find (abs(alpha)>1);
 if (~isempty(ind)), alpha(ind) = sign(alpha(ind)); end;
 

@@ -59,6 +59,8 @@
       real(r8), parameter :: spv = 0.0_r8
       character*2 :: ngnumber
 !
+      SourceFile=__FILE__
+!
 !-----------------------------------------------------------------------
 !  Read in and report input model parameters.
 !-----------------------------------------------------------------------
@@ -204,8 +206,10 @@
 !
 !  Set switch for three ghost-points in the halo region.
 !
+#ifdef SOLVE3D
       ThreeGhostPoints=ANY(Hadvection(:,:)%MPDATA).or.                  &
      &                 ANY(Hadvection(:,:)%HSIMT)
+#endif
 #ifdef UV_VIS4
       ThreeGhostPoints=.TRUE.
 #endif

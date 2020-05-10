@@ -2834,9 +2834,23 @@
       Coptions(is:is+16)=' !SO_SEMI_WHITE,'
 # endif
 #endif
+#ifdef SP4DVAR
+      IF (Master) WRITE (stdout,20) 'SP4DVAR',                          &
+     &   'Weak Constraint, Saddle-Point 4D-Var Data Assimilation.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+16)=' SP4DVAR,'
+      idriver=idriver+1
+#endif
+#ifdef SPHERICAL
+!
+      IF (Master) WRITE (stdout,20) 'SPHERICAL',                        &
+     &   'Spherical grid configuration'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+11)=' SPHERICAL,'
+#endif
 #if defined SPLINES_VCONV && defined FOUR_DVAR && defined VCONVOLUTION
 !
-      IF (Master) WRITE (stdout,20) 'IMPLICIT_VCONV',                   &
+      IF (Master) WRITE (stdout,20) 'SPLINES_VCONV',                    &
      &   'Implicit, Parabolic Splines Vertical Convolution Algorithm'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' SPLINES_VCONV,'
@@ -2854,13 +2868,6 @@
      &   'Parabolic Spline Reconstruction for Vertical Viscosity'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+15)=' SPLINES_VVISC,'
-#endif
-#ifdef SPHERICAL
-!
-      IF (Master) WRITE (stdout,20) 'SPHERICAL',                        &
-     &   'Spherical grid configuration'
-      is=LEN_TRIM(Coptions)+1
-      Coptions(is:is+11)=' SPHERICAL,'
 #endif
 #ifdef SRELAXATION
       IF (Master) WRITE (stdout,20) 'SRELAXATION',                      &

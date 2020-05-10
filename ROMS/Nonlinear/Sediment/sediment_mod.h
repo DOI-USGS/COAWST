@@ -138,7 +138,7 @@
       integer, allocatable :: idVbld(:)    ! bed load v-points
 !
 #if defined BEDLOAD
-# if defined BEDLOAD_VANDERA
+!# if defined BEDLOAD_VANDERA
       integer :: idsurs                    ! Ursell number of the asymmetric wave
       integer :: idsrrw                    ! velocity skewness of the asymmetric wave
       integer :: idsbtw                    ! acceleration asymmetry parameter
@@ -153,7 +153,7 @@
       integer :: idsutr                    ! Trough velocity of the asymmetric wave
       integer :: idstcr                    ! Crest time period of the asymmetric wave
       integer :: idsttr                    ! Trough time period of the asymmetric wave
-# endif
+!# endif
 #endif
 !
 !-----------------------------------------------------------------------
