@@ -29,7 +29,7 @@
 #include "tile.h"
 
 #ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 51)
+      CALL wclock_on (ng, iNLM, 76, __LINE__, __FILE__)
 #endif
       CALL ice_flux_rst_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -40,7 +40,7 @@
      &                        FORCES(ng) % svstr,                       &
      &                        FORCES(ng) % stflx)
 #ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 51)
+      CALL wclock_off (ng, iNLM, 76, __LINE__, __FILE__)
 #endif
       RETURN
       END SUBROUTINE ice_flux_rst

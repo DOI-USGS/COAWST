@@ -3,7 +3,7 @@
 !
 !svn $Id: ocean_inlet_test.in 838 2008-11-17 04:22:18Z jcwarner $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -97,6 +97,7 @@
           ND == 11            ! Number of wave directional bins
 
         Nbed =  1             ! Number of sediment bed layers
+       NBAND =  30            ! Number of spectral irradiance bands 
 
          NAT =  1             ! Number of active tracers (usually, 2)
          NPT =  0             ! Number of inactive passive tracers
@@ -107,8 +108,44 @@
 ! shared-memory configurations used to determine tile horizontal range
 ! indices (Istr,Iend) and (Jstr,Jend), [1:Ngrids].
 
-      NtileI == 1                               ! I-direction partition
-      NtileJ == 1                               ! J-direction partition
+      NtileI == 1                                ! I-direction partition
+      NtileJ == 1                                ! J-direction partition
+
+! Set horizontal and vertical advection schemes for active and inert
+! tracers. A different advection scheme is allowed for each tracer.
+! For example, a positive-definite (monotonic) algorithm can be activated
+! for salinity and inert tracers, while a different one is set for
+! temperature. [1:NAT+NPT,Ngrids] values are expected.
+!
+!   Keyword    Advection Algorithm
+!
+!   A4         4th-order Akima (horizontal/vertical)
+!   C2         2nd-order centered differences (horizontal/vertical)
+!   C4         4th-order centered differences (horizontal/vertical)
+!   HSIMT      3th-order HSIMT-TVD (horizontal/vertical)
+!   MPDATA     recursive flux corrected MPDATA (horizontal/vertical)
+!   SPLINES    parabolic splines (only vertical)
+!   SU3        split third-order upstream (horizontal/vertical)
+!   U3         3rd-order upstream-biased (only horizontal)
+!
+! The user has the option of specifying the full Keyword or the first
+! two letters, regardless if using uppercase or lowercase. If nested
+! grids, specify values for each grid (see glossary below).
+
+   Hadvection == U3       \                     ! temperature
+                 U3                             ! salinity
+
+   Vadvection == C4       \                     ! temperature
+                 C4                             ! salinity
+
+! Adjoint-based algorithms can have different horizontal and schemes
+! for active and inert tracers.
+
+ad_Hadvection == U3       \                     ! temperature
+                 U3                             ! salinity
+
+ad_Vadvection == C4       \                     ! temperature
+                 C4                             ! salinity
 
 ! Set lateral boundary conditions keyword. Notice that a value is expected
 ! for each boundary segment per nested grid for each state variable.
@@ -217,6 +254,11 @@ ad_VolCons(north) ==  F                            ! northern boundary
       NTIMES == 10000
           DT == 0.05d0
      NDTFAST == 20
+! Number of timesteps for computing observation impacts during the
+! analysis-forecast cycle.
+
+  NTIMES_ANA == 1800                               ! analysis interval
+  NTIMES_FCT == 1800                               ! forecast interval
 
 ! Model iteration loops parameters.
 
@@ -409,10 +451,20 @@ LtracerSponge == F F                            ! temperature, salinity, inert
 ! Nudging/relaxation time scales, inverse scales will be computed
 ! internally, [1:Ngrids].
 
-       TNUDG == 0.000d0                    ! days
-       ZNUDG == 0.000d0                    ! days
-      M2NUDG == 0.000d0                    ! days
-      M3NUDG == 0.000d0                    ! days
+       TNUDG == 0.0d0                      ! days
+       ZNUDG == 0.0d0                      ! days
+      M2NUDG == 0.0d0                      ! days
+      M3NUDG == 0.0d0                      ! days
+
+! Nudging/relaxation time scale for surface salinity nudging, inverse
+! scales will be computed internally, [1:Ngrids].
+
+       TNUDG_SSS == 90.0d0                 ! days
+
+! Threshold to trigger SSS correction toward climatolgy,
+! needs SCORRECTION and SSSC_THRESHOLD defined
+
+       SSS_MISMATCH_THRESHOLD = 0.2d0
 
 ! Factor between passive (outflow) and active (inflow) open boundary
 ! conditions, [1:Ngrids]. If OBCFAC > 1, nudging on inflow is stronger
@@ -463,6 +515,15 @@ LtracerSponge == F F                            ! temperature, salinity, inert
  LnudgeM3CLM == F                          ! 3D momentum
 
   LnudgeTCLM == F F                        ! temperature, salinity, inert
+
+! Logical switches for ice climatology and nudging
+
+      LmiCLM == F
+      LaiCLM == F
+      LsiCLM == F
+ LnudgeMICLM == F
+ LnudgeAICLM == F
+ LnudgeSICLM == F
 
 ! Starting (DstrS) and ending (DendS) day for adjoint sensitivity forcing.
 ! DstrS must be less or equal to DendS. If both values are zero, their
@@ -545,10 +606,6 @@ Hout(idpthU) == F       ! z_u                time-varying depths of U-points
 Hout(idpthV) == F       ! z_v                time-varying depths of V-points
 Hout(idpthW) == F       ! z_w                time-varying depths of W-points
 
-Hout(idUair) == F       ! Uwind              surface U-wind
-Hout(idVair) == F       ! Vwind              surface V-wind
-Hout(idUairE) == F      ! Uwind_eastward     surface U-wind
-Hout(idVairN) == F      ! Vwind_northward    surface V-wind
 Hout(idUsms) == F       ! sustr              surface U-stress
 Hout(idVsms) == F       ! svstr              surface V-stress
 Hout(idUbms) == T       ! bustr              bottom U-stress
@@ -600,7 +657,7 @@ Hout(idW3St) == T       ! w_stokes           3D W-Stokes velocity
 Hout(idWamp) == T       ! Hwave              wave height
 Hout(idWlen) == T       ! Lwave              wave length-mean
 Hout(idWlep) == T       ! Lwavep             wave length-peak
-Hout(idWdir) == T       ! Dwave              wave direction
+Hout(idWdir) == T       ! Dwave              wave direction-mean
 Hout(idWdip) == T       ! Dwavep             wave direction-peak
 Hout(idWptp) == T       ! Pwave_top          wave surface period
 Hout(idWpbt) == T       ! Pwave_bot          wave bottom period
@@ -614,8 +671,14 @@ Hout(idWdiw) == T       ! Dissip_wcap        wave dissipation due to white cappi
 Hout(idWdis) == T       ! Dissip_roller      wave roller dissipation
 Hout(idWrol) == T       ! rollA              wave roller action density
 
-Hout(idRunoff) == F     ! Runoff             surface runoff from land
 Hout(idPair) == F       ! Pair               surface air pressure
+Hout(idTair) == F       ! Tair               surface air temperature
+Hout(idUair) == F       ! Uwind              surface U-wind
+Hout(idVair) == F       ! Vwind              surface V-wind
+Hout(idUairE) == F      ! Uwind_eastward     surface U-wind
+Hout(idVairN) == F      ! Vwind_northward    surface V-wind
+
+Hout(idRunoff) == F     ! Runoff             surface runoff from land
 Hout(idTsur) == F F     ! shflux, ssflux     surface net heat and salt flux
 Hout(idLhea) == F       ! latent             latent heat flux
 Hout(idShea) == F       ! sensible           sensible heat flux
@@ -710,13 +773,15 @@ Qout(idV3Sd) == F       ! v_stokes           3D V-Stokes velocity
 
 Qout(idWamp) == F       ! Hwave              wave height
 Qout(idWlen) == F       ! Lwave              wave length
-Qout(idWdir) == F       ! Dwave              wave direction
+Qout(idWdir) == F       ! Dwave              wave direction-mean
+Qout(idWdip) == F       ! Dwavep             wave direction-peak
 Qout(idWptp) == F       ! Pwave_top          wave surface period
 Qout(idWpbt) == F       ! Pwave_bot          wave bottom period
 Qout(idWorb) == F       ! Ub_swan            wave bottom orbital velocity
 Qout(idWdis) == F       ! Wave_dissip        wave dissipation
 
 Qout(idPair) == F       ! Pair               surface air pressure
+Qout(idTair) == F       ! Tair               surface air temperature
 Qout(idUair) == F       ! Uair               surface U-wind component
 Qout(idVair) == F       ! Vair               surface V-wind component
 
@@ -766,10 +831,6 @@ Aout(idBath) == F       ! bath               time-dependent bathymetry
 
 Aout(idTvar) == F F     ! temp, salt         temperature and salinity
 
-Aout(idUair) == F       ! Uwind              surface U-wind
-Aout(idVair) == F       ! Vwind              surface V-wind
-Aout(idUairE) == F      ! Uwind_eastward     surface U-wind
-Aout(idVairN) == F      ! Vwind_northward    surface V-wind
 Aout(idUsms) == F       ! sustr              surface U-stress
 Aout(idVsms) == F       ! svstr              surface V-stress
 Aout(idUbms) == F       ! bustr              bottom U-stress
@@ -791,45 +852,50 @@ Aout(idVbvr) == F       ! Vr                 bottom V-velocity above bed
 Aout(idW2xx) == F       ! Sxx_bar            WEC_Mellor 2D Sxx radiation stress
 Aout(idW2xy) == F       ! Sxy_bar            WEC_Mellor 2D Sxy radiation stress
 Aout(idW2yy) == F       ! Syy_bar            WEC_Mellor 2D Syy radiation stress
+Aout(idU2rs) == F       ! ubar_Wecstress     WEC 2D U-stress
+Aout(idV2rs) == F       ! vbar_Wecstress     WEC 2D V-stress
+Aout(idU2Sd) == F       ! ubar_stokes        2D U-Stokes velocity
+Aout(idV2Sd) == F       ! vbar_stokes        2D V-Stokes velocity
+Aout(idWztw) == F       ! zetaw              WEC_VF quasi-static sea level adjustment
+Aout(idWqsp) == F       ! qsp                WEC_VF quasi-static pressure
+Aout(idWbeh) == F       ! bh                 WEC_VF Bernoulli head
+
 Aout(idW3xx) == F       ! Sxx                WEC_Mellor 3D Sxx radiation stress
 Aout(idW3xy) == F       ! Sxy                WEC_Mellor 3D Sxy radiation stress
 Aout(idW3yy) == F       ! Syy                WEC_Mellor 3D Syy radiation stress
 Aout(idW3zx) == F       ! Szx                WEC_Mellor 3D Szx radiation stress
 Aout(idW3zy) == F       ! Szy                WEC_Mellor 3D Szy radiation stress
-
-Aout(idWztw) == F       ! zetaw              WEC_VF quasi-static sea level adjustment
-Aout(idWqsp) == F       ! qsp                WEC_VF quasi-static pressure
-Aout(idWbeh) == F       ! bh                 WEC_VF Bernoulli head
-
-Aout(idU2rs) == F       ! ubar_Wecstress     WEC 2D U-stress
-Aout(idV2rs) == F       ! vbar_Wecstress     WEC 2D V-stress
 Aout(idU3rs) == F       ! u_Rstress          WEC 3D U-stress
 Aout(idV3rs) == F       ! v_Rstress          WEC 3D V-stress
-
-Aout(idU2Sd) == T       ! ubar_stokes        2D U-Stokes velocity
-Aout(idV2Sd) == T       ! vbar_stokes        2D V-Stokes velocity
 Aout(idU3Sd) == F       ! u_stokes           3D U-Stokes velocity
 Aout(idV3Sd) == F       ! v_stokes           3D V-Stokes velocity
 Aout(idW3Sd) == F       ! omega_stokes       3D Omega-Stokes velocity
 Aout(idW3St) == F       ! w_stokes           3D W-Stokes velocity
-Aout(idWamp) == T       ! Hwave              wave height
-Aout(idWlen) == T       ! Lwave              wave length-mean
+
+Aout(idWamp) == F       ! Hwave              wave height
+Aout(idWlen) == F       ! Lwave              wave length-mean
 Aout(idWlep) == F       ! Lwavep             wave length-peak
-Aout(idWdir) == T       ! Dwave              wave direction
+Aout(idWdir) == F       ! Dwave              wave direction
 Aout(idWptp) == F       ! Pwave_top          wave surface period
 Aout(idWpbt) == F       ! Pwave_bot          wave bottom period
 Aout(idWorb) == F       ! Uwave_rms          wave bottom orbital velocity
 Aout(idWbrk) == F       ! Wave_break         wave breaking (percent)
-Aout(idUwav) == T       ! uWave              wave-depth avgeraged U-velocity
-Aout(idVwav) == T       ! vWave              wave-depth avgeraged V-velocity
+Aout(idUwav) == F       ! uWave              wave-depth avgeraged U-velocity
+Aout(idVwav) == F       ! vWave              wave-depth avgeraged V-velocity
 Aout(idWdif) == F       ! Dissip_fric        wave dissipation due to bottom friction
 Aout(idWdib) == F       ! Dissip_break       wave dissipation due to breaking
 Aout(idWdiw) == F       ! Dissip_wcap        wave dissipation due to white capping
 Aout(idWdis) == F       ! Dissip_roller      wave roller dissipation
 Aout(idWrol) == F       ! rollA              wave roller action density
 
-Aout(idRunoff) == F     ! Runoff             surface runoff from land
 Aout(idPair) == F       ! Pair               surface air pressure
+Aout(idTair) == F       ! Tair               surface air temperature
+Aout(idUair) == F       ! Uwind              surface U-wind
+Aout(idVair) == F       ! Vwind              surface V-wind
+Aout(idUairE) == F      ! Uwind_eastward     surface U-wind
+Aout(idVairN) == F      ! Vwind_northward    surface V-wind
+
+Aout(idRunoff) == F     ! Runoff             surface runoff from land
 Aout(idTsur) == F F     ! shflux, ssflux     surface net heat and salt flux
 Aout(idLhea) == F       ! latent             latent heat flux
 Aout(idShea) == F       ! sensible           sensible heat flux
@@ -893,6 +959,7 @@ Dout(M2xvis) == F       ! ubar_xvisc, ...    horizontal XI-viscosity
 Dout(M2yvis) == F       ! ubar_yvisc, ...    horizontal ETA-viscosity
 Dout(M2sstr) == F       ! ubar_sstr, ...     surface stress
 Dout(M2bstr) == F       ! ubar_bstr, ...     bottom stress
+Dout(M2fveg) == T       ! ubar_fveg, ...     vegetation drag force
 Dout(M2hjvf) == F       ! 2D wec_vf horizontal J vortex force
 Dout(M2kvrf) == F       ! 2D wec_vf K vortex force
 Dout(M2fsco) == F       ! 2D wec_vf coriolis-stokes
@@ -916,11 +983,12 @@ Dout(M3xadv) == F       ! u_xadv, ...        horizontal XI-advection
 Dout(M3yadv) == F       ! u_yadv, ...        horizontal ETA-advection
 Dout(M3vadv) == F       ! u_vadv, ...        vertical advection
 Dout(M3hrad) == F       ! u_hrad, ...        horizontal total wec_mellor radiation stress
-Dout(M3vrad) == F       ! v_hrad, ...        vertical total wec_mellor radiation stress
+Dout(M3vrad) == F       ! u_vrad, ...        vertical total wec_mellor radiation stress
 Dout(M3hvis) == F       ! u_hvisc, ...       horizontal total viscosity
 Dout(M3xvis) == F       ! u_xvisc, ...       horizontal XI-viscosity
 Dout(M3yvis) == F       ! u_yvisc, ...       horizontal ETA-viscosity
 Dout(M3vvis) == F       ! u_vvisc, ...       vertical viscosity
+Dout(M3fveg) == T       ! u_fveg, ...        vegetation drag force
 Dout(M3vjvf) == F       ! 3D wec_vf vertical J vortex force
 Dout(M3hjvf) == F       ! 3D wec_vf horizontal J vortex force
 Dout(M3kvrf) == F       ! 3D wec_vf K vortex force
@@ -967,6 +1035,24 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
      ADSNAME == ocean_ads.nc
      IWININAME == inwave_ini.nc
      IWSWNNAME == point1.spc2d
+! Input adjoint forcing NetCDF filenames for computing observations
+! impacts during the analysis-forecast cycle. If the forecast error
+! metric is defined in state-space, then FOInameA and FOInameB should
+! be regular adjoint forcing files just like ADSname. If the forecast
+! error metric is defined in observation space (OBS_SPACE is activated)
+! then the forecast is initialized OIFnameA and OIFnameB (specified in
+! s4dvar.in input script) will have the structure of a 4D-Var observation
+! file.
+
+    FOInameA == dogbone_foi_a.nc
+    FOInameB == dogbone_foi_b.nc
+
+! Input NetCDF filenames for the forecasts initialized from the analysis
+! of the current 4D-Var cycle (FCTnameA) and initialized from the analysis
+! of the previous 4D-Var cycle (FCTnameB).
+
+    FCTnameA == dogbone_fct_a.nc
+    FCTnameB == dogbone_fct_b.nc
 
 ! Nesting grids connectivity data: contact points information. This
 ! NetCDF file is special and complex. It is currently generated using
@@ -1060,10 +1146,10 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! MyAppCPP     Application C-preprocessing option.
 !
 !------------------------------------------------------------------------------
-! Variable information file name (string with a maximum of 256 characters).
+! Variable information filename (string with a maximum of 256 characters).
 !------------------------------------------------------------------------------
 !
-! VARNAME      Input/Output variable information file name.  This file needs to
+! VARNAME      Input/Output variable information filename.  This file needs to
 !                be processed first so all information arrays and indices can
 !                be initialized properly in "mod_ncparam.F".
 !
@@ -1217,6 +1303,83 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !              execution with the "mprun" or "mpirun" command.
 !
 !------------------------------------------------------------------------------
+! Tracer advection scheme
+!------------------------------------------------------------------------------
+!
+! It is more advantageous to set the horizontal and vertical advection schemes
+! for each tracer with switches instead of a single CPP flag for all of them.
+! Positive-definite and monotonic algorithms (i.e., MPDATA and HSIMT) are
+! appropriate and useful for positive fields like salinity, inert, biological,
+! and sediment tracers.  However, since the temperature has a dynamic range
+! with negative and positive values in the ocean, other advection schemes are
+! more appropriate.
+!
+! Currently, the following tracer advection schemes are available and are
+! activated using the associated Keyword:
+!
+!   Keyword    Advection Algorithm
+!
+!   A4         4th-order Akima (horizontal/vertical)
+!   C2         2nd-order centered differences (horizontal/vertical)
+!   C4         4th-order centered differences (horizontal/vertical)
+!   HSIMT      3th-order HSIMT with TVD limiter (horizontal/vertical)
+!   MPDATA     recursive flux corrected MPDATA (horizontal/vertical)
+!   SPLINES    parabolic splines reconstruction (only vertical)
+!   SU3        split third-order upstream (horizontal/vertical)
+!   U3         3rd-order upstresm-bias (only horizontal)
+!
+! The user has the option of specifying the full Keyword or the first
+! two letters, regardless if using uppercase or lowercase.
+!
+! If using either HSIMT (Wu and Zhu, 2010) or MPDATA (Margolin and
+! Smolarkiewicz, 1998) options, the user needs to set the same scheme
+! for both horizontal and vertical advection to preserve monotonicity.
+!
+! Hadvection     Horizontal advection for each active (temperature and
+!                  salinity) and inert tracers, [1:NAT+NPT,Ngrids]
+!                  values are expected.
+!
+! Vadvection     Vertical advection for each active (temperature and
+!                  salinity) and inert tracers, [1:NAT+NPT,Ngrids]
+!                  values are expected.
+!
+! ad_Hadvection  Horizontal advection for each active (temperature and
+!                  salinity) and inert tracers in the adjoint-based
+!                  algorithms, [1:NAT+NPT,Ngrids] values are expected.
+!
+! ad_Vadvection  Vertical advection for each active (temperature and
+!                  salinity) and inert tracers in the adjoint-based
+!                  algorithms, [1:NAT+NPT,Ngrids] values are expected.
+!
+! Examples:
+!
+!  Hadvection == A4       \                     ! temperature
+!                MPDATA   \                     ! salinity
+!                HSIMT    \                     ! dye_01, inert(1)
+!                HSIMT                          ! dy2_02, inert(2)
+!
+!  Vadvection == A4       \                     ! temperature
+!                MPDATA   \                     ! salinity
+!                HSIMT    \                     ! dye_01, inert(1)
+!                HSIMT                          ! dye_02, inert(2)
+!
+! or in nested applications
+!
+!  Hadvection == U3       \                     ! temperature, Grid 1
+!                HSIMT    \                     ! salinity,    Grid 1
+!                U3       \                     ! temperature, Grid 2
+!                HSIMT    \                     ! salinity,    Grid 2
+!                U3       \                     ! temperature, Grid 3
+!                HSIMT                          ! salinity,    Grid 3
+!
+!  Vadvection == C4       \                     ! temperature, Grid 1
+!                HSIMT    \                     ! salinity,    Grid 1
+!                C4       \                     ! temperature, Grid 2
+!                HSIMT    \                     ! salinity,    Grid 2
+!                C4       \                     ! temperature, Grid 3
+!                HSIMT                          ! salinity,    Grid 3
+!
+!------------------------------------------------------------------------------
 ! Lateral boundary conditions parameters.
 !------------------------------------------------------------------------------
 !
@@ -1334,7 +1497,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! Timestepping parameters.
 !------------------------------------------------------------------------------
 !
-! NTIMES       Total number timesteps in current run.  If 3D configuration,
+! NTIMES       Total number of timesteps in current run.  If 3D configuration,
 !                NTIMES is the total of baroclinic timesteps.  If only 2D
 !                configuration, NTIMES is the total of barotropic timesteps.
 !
@@ -1345,6 +1508,14 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! NDTFAST      Number of barotropic timesteps between each baroclinic time
 !                step. If only 2D configuration, NDTFAST should be unity since
 !                there is no need to split timestepping.
+!
+! NTIMES_ANA   Total number of timesteps for computing observations impacts
+!                interval during the analysis cycle. It is only used when
+!                W4DPSAS_FCT_SENSITIVITY is activated.
+!
+! NTIMES_FCT   Total number of timesteps for computing observations impacts
+!                interval during the forecast cycle. It is only used when
+!                W4DPSAS_FCT_SENSITIVITY is activated.
 !
 !------------------------------------------------------------------------------
 ! Model iteration loops parameters.
@@ -2091,6 +2262,10 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !
 ! M3NUDG       Nudging time scale (days) for 3D momentum.
 !
+! TNUDG_SSS    Nudging time scale (days) for surface salinity.
+!
+! SSS_MISMATCH_THRESHOLD   Threshold to trigger SSS correction.
+!
 ! OBCFAC       Factor between passive (outflow) and active (inflow) open
 !                boundary conditions.  The nudging time scales for the
 !                active (inflow) conditions are obtained by multiplying
@@ -2393,103 +2568,110 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! HISTORY file.
 !------------------------------------------------------------------------------
 !
-!  Hout(idUvel)  Write out 3D U-velocity component.
-!  Hout(idVvel)  Write out 3D V-velocity component.
-!  Hout(idWvel)  Write out 3D W-velocity component.
-!  Hout(idOvel)  Write out 3D omega vertical velocity.
-!  Hout(idUbar)  Write out 2D U-velocity component.
-!  Hout(idVbar)  Write out 2D V-velocity component.
-!  Hout(idFsur)  Write out free-surface.
-!  Hout(idBath)  Write out time-dependent bathymetry.
+! Hout(idUvel)   Write out 3D U-velocity component.
+! Hout(idVvel)   Write out 3D V-velocity component.
+! Hout(idu3dE)   Write out 3D Eastward  velocity component at RHO-points.
+! Hout(idv3dN)   Write out 3D Northward velocity component at RHO-points.
+! Hout(idWvel)   Write out 3D W-velocity component.
+! Hout(idOvel)   Write out 3D omega vertical velocity.
+! Hout(idUbar)   Write out 2D U-velocity component.
+! Hout(idVbar)   Write out 2D V-velocity component.
+! Hout(idu2dE)   Write out 2D Eastward  velocity component at RHO-points.
+! Hout(idv2dN)   Write out 2D Northward velocity component at RHO-points.
+! Hout(idFsur)   Write out free-surface.
+! Hout(idBath)   Write out time-dependent bathymetry.
 !
-!  Hout(idTvar)  Write out active (NAT) tracers: temperature and salinity.
+! Hout(idTvar)   Write out active (NAT) tracers: temperature and salinity.
 !
-!  Hout(idpthR)   Write out time-varying depths of RHO-points.
-!  Hout(idpthU)   Write out time-varying depths of U-points.
-!  Hout(idpthV)   Write out time-varying depths of V-points.
-!  Hout(idpthW)   Write out time-varying depths of W-points.
+! Hout(idpthR)   Write out time-varying depths of RHO-points.
+! Hout(idpthU)   Write out time-varying depths of U-points.
+! Hout(idpthV)   Write out time-varying depths of V-points.
+! Hout(idpthW)   Write out time-varying depths of W-points.
 !
-!  Hout(idUsms)  Write out surface U-momentum stress.
-!  Hout(idVsms)  Write out surface V-momentum stress.
-!  Hout(idUbms)  Write out bottom  U-momentum stress.
-!  Hout(idVbms)  Write out bottom  V-momentum stress.
+! Hout(idUsms)   Write out surface U-momentum stress.
+! Hout(idVsms)   Write out surface V-momentum stress.
+! Hout(idUbms)   Write out bottom  U-momentum stress.
+! Hout(idVbms)   Write out bottom  V-momentum stress.
 !
-!  Hout(idUbrs)  Write out current-induced, U-momentum stress.
-!  Hout(idVbrs)  Write out current-induced, V-momentum stress.
-!  Hout(idUbws)  Write out wind-induced, bottom U-wave stress.
-!  Hout(idVbws)  Write out wind-induced, bottom V-wave stress.
-!  Hout(idUbcs)  Write out bottom maximum wave and current U-stress.
-!  Hout(idVbcs)  Write out bottom maximum wave and current V-stress.
+! Hout(idUbrs)   Write out current-induced, U-momentum stress.
+! Hout(idVbrs)   Write out current-induced, V-momentum stress.
+! Hout(idUbws)   Write out wind-induced, bottom U-wave stress.
+! Hout(idVbws)   Write out wind-induced, bottom V-wave stress.
+! Hout(idUbcs)   Write out bottom maximum wave and current U-stress.
+! Hout(idVbcs)   Write out bottom maximum wave and current V-stress.
 !
-!  Hout(idUbot)  Write out wind-induced, bed wave orbital U-velocity.
-!  Hout(idVbot)  Write out wind-induced, bed wave orbital V-velocity.
-!  Hout(idUbur)  Write out bottom U-velocity above bed.
-!  Hout(idVbvr)  Write out bottom V-velocity above bed.
+! Hout(idUbot)   Write out wind-induced, bed wave orbital U-velocity.
+! Hout(idVbot)   Write out wind-induced, bed wave orbital V-velocity.
+! Hout(idUbur)   Write out bottom U-velocity above bed.
+! Hout(idVbvr)   Write out bottom V-velocity above bed.
 !
-!  Hout(idW2xx)  Write out 2D radiation stress, Sxx component.
-!  Hout(idW2xy)  Write out 2D radiation stress, Sxy component.
-!  Hout(idW2yy)  Write out 2D radiation stress, Syy component.
-!  Hout(idW3xx)  Write out 3D radiation stress, Sxx component.
-!  Hout(idW3xy)  Write out 3D radiation stress, Sxy component.
-!  Hout(idW3yy)  Write out 3D radiation stress, Syy component.
-!  Hout(idW3zx)  Write out 3D radiation stress, Szx component.
-!  Hout(idW3zy)  Write out 3D radiation stress, Szy component.
+! Hout(idW2xx)   Write out 2D radiation stress, Sxx component.
+! Hout(idW2xy)   Write out 2D radiation stress, Sxy component.
+! Hout(idW2yy)   Write out 2D radiation stress, Syy component.
+! Hout(idU2rs)   Write out 2D U-radiation stress.
+! Hout(idV2rs)   Write out 2D V-radiation stress.
+! Hout(idU2Sd)   Write out 2D U-Stokes velocity.
+! Hout(idV2Sd)   Write out 2D V-Stokes velocity.
 !
-!  Hout(idU2rs)  Write out 2D WEC U-stress.
-!  Hout(idV2rs)  Write out 2D WEC V-stress.
-!  Hout(idU3rs)  Write out 3D WEC U-stress.
-!  Hout(idV3rs)  Write out 3D WEC V-stress.
+! Hout(idW3xx)   Write out 3D radiation stress, Sxx component.
+! Hout(idW3xy)   Write out 3D radiation stress, Sxy component.
+! Hout(idW3yy)   Write out 3D radiation stress, Syy component.
+! Hout(idW3zx)   Write out 3D radiation stress, Szx component.
+! Hout(idW3zy)   Write out 3D radiation stress, Szy component.
+! Hout(idU3rs)   Write out 3D U-radiation stress.
+! Hout(idV3rs)   Write out 3D V-radiation stress.
+! Hout(idU3Sd)   Write out 3D U-Stokes velocity.
+! Hout(idV3Sd)   Write out 3D V-Stokes velocity.
 !
-!  Hout(idU2Sd)  Write out 2D U-Stokes velocity.
-!  Hout(idV2Sd)  Write out 2D V-Stokes velocity.
-!  Hout(idU3Sd)  Write out 3D U-Stokes velocity.
-!  Hout(idV3Sd)  Write out 3D V-Stokes velocity.
-!  Hout(idW3St)  Write out 3D W-Stokes velocity.
-!  Hout(idW3Sd)  Write out 3D Omega-Stokes velocity.
+! Hout(idWamp)  Write out wave height.
+! Hout(idWlen)  Write out wave length.
+! Hout(idWdir)  Write out wave direction.
+! Hout(idWptp)  Write out wave surface period.
+! Hout(idWpbt)  Write out wave bottom period.
+! Hout(idWorb)  Write out wave bottom orbital velocity.
+! Hout(idWbrk)  Write out wave breaking (percent).
+! Hout(idUwav)  Write out wave-depth avgeraged U-velocity.
+! Hout(idVwav)  Write out wave-depth avgeraged V-velocity.
+! Hout(idWdif)  Write out wave dissipation due to bottom friction.
+! Hout(idWdib)  Write out wave dissipation due to breaking.
+! Hout(idWdiw)  Write out wave dissipation due to white capping.
+! Hout(idWdis)  Write out wave roller dissipation.
+! Hout(idWrol)  Write out wave roller action density.
+! Hout(idWztw)  Write out WEC quasi-static sea level adjustment.
+! Hout(idWqsp)  Write out WEC quasi-static pressure.
+! Hout(idWbeh)  Write out WEC Bernoulli head.
 !
-!  Hout(idWamp)  Write out wave height.
-!  Hout(idWlen)  Write out wave length.
-!  Hout(idWdir)  Write out wave direction.
-!  Hout(idWptp)  Write out wave surface period.
-!  Hout(idWpbt)  Write out wave bottom period.
-!  Hout(idWorb)  Write out wave bottom orbital velocity.
-!  Hout(idWbrk)  Write out wave breaking (percent).
-!  Hout(idUwav)  Write out wave-depth avgeraged U-velocity.
-!  Hout(idVwav)  Write out wave-depth avgeraged V-velocity.
-!  Hout(idWdif)  Write out wave dissipation due to bottom friction.
-!  Hout(idWdib)  Write out wave dissipation due to breaking.
-!  Hout(idWdiw)  Write out wave dissipation due to white capping.
-!  Hout(idWdis)  Write out wave roller dissipation.
-!  Hout(idWrol)  Write out wave roller action density.
-!  Hout(idWztw)  Write out WEC quasi-static sea level adjustment.
-!  Hout(idWqsp)  Write out WEC quasi-static pressure.
-!  Hout(idWbeh)  Write out WEC Bernoulli head.
+! Hout(idACen)  Write out InWave 3D wave action
+! Hout(idACcx)  Write out InWave 2D Group velocity in xi dimension
+! Hout(idACcy)  Write out InWave 2D Group velocity in etai dimension
+! Hout(idACct)  Write out InWave 2D Group velocity in the directional dimension
+! Hout(idACtp)  Write out InWave 2D Group peak period
 !
-!  Hout(idACen)  Write out InWave 3D wave action
-!  Hout(idACcx)  Write out InWave 2D Group velocity in xi dimension
-!  Hout(idACcy)  Write out InWave 2D Group velocity in etai dimension
-!  Hout(idACct)  Write out InWave 2D Group velocity in the directional dimension
-!  Hout(idACtp)  Write out InWave 2D Group peak period
+! Hout(idPair)   Write out surface air pressure.
+! Hout(idTair)   Write out surface air temperature.
+! Hout(idUair)   Write out surface U-wind component.
+! Hout(idVair)   Write out surface V-wind component.
 !
-!  Hout(idTsur)  Write out surface net heat and salt flux
-!  Hout(idLhea)  Write out latent heat flux.
-!  Hout(idShea)  Write out sensible heat flux.
-!  Hout(idLrad)  Write out long-wave radiation flux.
-!  Hout(idSrad)  Write out short-wave radiation flux.
-!  Hout(idEmPf)  Write out E-P flux.
-!  Hout(idevap)  Write out evaporation rate.
-!  Hout(idrain)  Write out precipitation rate.
+! Hout(idTsur)   Write out surface net heat and salt flux
+! Hout(idLhea)   Write out latent heat flux.
+! Hout(idShea)   Write out sensible heat flux.
+! Hout(idLrad)   Write out long-wave radiation flux.
+! Hout(idSrad)   Write out short-wave radiation flux.
+! Hout(idEmPf)   Write out E-P flux.
+! Hout(idevap)   Write out evaporation rate.
+! Hout(idrain)   Write out precipitation rate.
 !
-!  Hout(idDano)  Write out density anomaly.
-!  Hout(idVvis)  Write out vertical viscosity coefficient.
-!  Hout(idTdif)  Write out vertical diffusion coefficient of temperature.
-!  Hout(idSdif)  Write out vertical diffusion coefficient of salinity.
-!  Hout(idHsbl)  Write out depth of oceanic surface boundary layer.
-!  Hout(idHbbl)  Write out depth of oceanic bottom boundary layer.
-!  Hout(idMtke)  Write out turbulent kinetic energy.
-!  Hout(idMtls)  Write out turbulent kinetic energy times length scale.
+! Hout(idDano)   Write out density anomaly.
+! Hout(idVvis)   Write out vertical viscosity coefficient.
+! Hout(idTdif)   Write out vertical diffusion coefficient of temperature.
+! Hout(idSdif)   Write out vertical diffusion coefficient of salinity.
+! Hout(idHsbl)   Write out depth of oceanic surface boundary layer.
+! Hout(idHbbl)   Write out depth of oceanic bottom boundary layer.
+! Hout(idMtke)   Write out turbulent kinetic energy.
+! Hout(idMtls)   Write out turbulent kinetic energy times length scale.
 !
-!  Hout(inert)   Write out extra inert passive tracers.
+! Hout(inert)    Write out extra inert passive tracers.
+!
 !------------------------------------------------------------------------------
 ! Logical switches (T/F) to activate writing of instantaneous fields into
 ! QUICKSAVE file.
@@ -2566,6 +2748,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! Qout(idWdis)   Write out wave dissipation.
 !
 ! Qout(idPair)   Write out surface air pressure.
+! Qout(idTair)   Write out surface air temperature.
 ! Qout(idUair)   Write out surface U-wind component.
 ! Qout(idVair)   Write out surface V-wind component.
 !
@@ -2633,6 +2816,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! Aout(idV3Sd)   Write out 3D V-Stokes velocity.
 !
 ! Aout(idPair)   Write out surface air pressure.
+! Aout(idTair)   Write out surface air temperature.
 ! Aout(idUair)   Write out surface U-wind component.
 ! Aout(idVair)   Write out surface V-wind component.
 !
@@ -2790,33 +2974,51 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !                between 0 and 9.
 !
 !------------------------------------------------------------------------------
-! Input/output NetCDF file names (string with a maximum of 256 characters).
+! Input/output NetCDF filenames (string with a maximum of 256 characters).
 !------------------------------------------------------------------------------
 !
-! Input file names:
+! Input filenames:
 !
-!  GRDNAME     Input grid file name.
+!  GRDNAME     Input grid filename.
 !
-!  ININAME     Input nonlinear initial conditions file name. It can be a
+!  ININAME     Input nonlinear initial conditions filename. It can be a
 !                re-start file.
 !
-!  ITLNAME     Input tangent linear model initial conditions file name.
+!  ITLNAME     Input tangent linear model initial conditions filename.
 !
-!  IRPNAME     Input representer model initial conditions file name.
+!  IRPNAME     Input representer model initial conditions filename.
 !
-!  IADNAME     Input adjoint model initial conditions file name.
+!  IADNAME     Input adjoint model initial conditions filename.
 !
-!  FWDNAME     Input forward solution fields file name.
+!  FWDNAME     Input forward solution fields filename.
 !
-!  ADSNAME     Input adjoint sensitivity functional file name.
+!  ADSNAME     Input adjoint sensitivity functional filename.
 !
+! Input adjoint forcing filenames for computing observations impacts
+! during the analysis-forecast cycle when W4DPSAS_FCT_SENSITIVITY is
+! activated.  The files FOInameA and FOInameB are used when the forecast
+! metric is defined in state-space (CPP option OBS_SPACE is off). Both
+! are regular adjoint forcing files just like ADSname.
+!
+! (See www.myroms.org/wiki/Analysis-Forecast_Cycle_Observation_Impacts)
+!
+!  FOInameA    Forecast initialized with 4D-Var analysis (red curve)
+!
+!  FOInameB    Forecast initialized with 4D_Var background (blue curve)
+!
+! Input NetCDF filenames for the forecasts initialized from the 4D-Var
+! analysis files:
+!
+!  FCTnameA    Current  4D-Var analysis cycle (red curve)
+!
+!  FCTnameB    Previous 4D-Var analysis cycle (blue curve)
 !  IWININAME   Input initial conditions file name for InWave.
 !
 !  IWSWNNAME   Input file of SWAN 2D spec to drive InWave
 !
 ! Nesting grids connectivity data:
 !
-!  NGCNAME     Input nested grids contact points information file name. This
+!  NGCNAME     Input nested grids contact points information filename. This
 !                NetCDF file is currently generated using script:
 !
 !                matlab/grid/contact.m
@@ -2830,11 +3032,11 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !                for more information.
 !
 !
-! Input lateral boundary conditions and climatology file names:
+! Input lateral boundary conditions and climatology filenames:
 !
-! BRYNAME      Input open boundary data file name(s) per nested grid.
+! BRYNAME      Input open boundary data filename(s) per nested grid.
 !
-! CLMNAME      Input climatology fields file name(s) per nested grid
+! CLMNAME      Input climatology fields filename(s) per nested grid
 !
 !  The USER has the option to split input data time records into several
 !  NetCDF files, as many as required. If so, use a single line per entry
@@ -2847,12 +3049,12 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !               my_clm_year2.nc
 !
 !
-! Input nudging coefficients file name:
+! Input nudging coefficients filename:
 !
-! NUDNAME      Input nudging coefficients file name.
+! NUDNAME      Input nudging coefficients filename.
 !
 !
-! Input Sources/Sinks forcing file name:
+! Input Sources/Sinks forcing filename:
 !
 ! SSFNAME      River runoff data. This file is now separated from the
 !                regular forcing files to allow manipulations over nested
@@ -2873,7 +3075,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !                be processed in ROMS because of the logical switches are
 !                FALSE the second grid.
 !
-! Input/output tidal forcing file name:
+! Input/output tidal forcing filename:
 !
 ! TIDENAME     Tidal constituents period, phase, elevation, and current data.
 !                This data is needed when SSH_TIDES, UV_TIDES, or both are
@@ -2888,14 +3090,14 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !
 ! NFFILES      Number of unique forcing files per nested grid.
 !
-! FRCNAME      Input forcing fields file name per nested grid.
+! FRCNAME      Input forcing fields filename per nested grid.
 !
-!  The USER has the option to enter several file names for forcing fields
+!  The USER has the option to enter several filenames for forcing fields
 !  and/or split input data time records for each nested grid. For example,
 !  the USER may have different files for wind products, heat fluxes, etc.
 !  The model will scan the file list and will read the needed data from
 !  the first file in the list containing the forcing field. Therefore,
-!  the order of the file names is very important. It is also possible to
+!  the order of the filenames is very important. It is also possible to
 !  split input data time records into several NetCDF files.
 !
 !  Use a single line per entry with a continuation (\) or vertical bar (|)
@@ -2917,32 +3119,32 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !               my_Tair_year2.nc
 !
 !
-! Output file names:
+! Output filenames:
 !
 ! DAINAME      Output data assimilation next cycle initial conditions (4D-Var
-!                analysis) or restart (Ensemble Kalman Filter, EnKF) file name.
-! GSTNAME      Output GST analysis re-start file name.
-! RSTNAME      Output re-start file name.
-! HISNAME      Output history file name.
-! QCKNAME      Output quicksave file name.
+!                analysis) or restart (Ensemble Kalman Filter, EnKF) filename.
+! GSTNAME      Output GST analysis re-start filename.
+! RSTNAME      Output re-start filename.
+! HISNAME      Output history filename.
+! QCKNAME      Output quicksave filename.
 ! TLFNAME      Output impulse forcing for tangent linear (TLM and RPM) models.
-! TLMNAME      Output tangent linear file name.
-! ADJNAME      Output adjoint file name.
-! AVGNAME      Output averages file name.
-! HARNAME      Output least-squares detiding harmonics file name.
-! DIANAME      Output diagnostics file name.
-! STANAME      Output stations file name.
-! FLTNAME      Output floats file name.
+! TLMNAME      Output tangent linear filename.
+! ADJNAME      Output adjoint filename.
+! AVGNAME      Output averages filename.
+! HARNAME      Output least-squares detiding harmonics filename.
+! DIANAME      Output diagnostics filename.
+! STANAME      Output stations filename.
+! FLTNAME      Output floats filename.
 !
 !------------------------------------------------------------------------------
-! Input ASCII parameters file names.
+! Input ASCII parameters filenames.
 !------------------------------------------------------------------------------
 !
-! APARNAM      Input assimilation parameters file name.
-! SPOSNAM      Input stations positions file name.
-! FPOSNAM      Input initial drifters positions file name.
-! BPARNAM      Input biological parameters file name.
-! SPARNAM      Input sediment transport parameters file name.
-! USRNAME      USER's input generic file name.
+! APARNAM      Input assimilation parameters filename.
+! SPOSNAM      Input stations positions filename.
+! FPOSNAM      Input initial drifters positions filename.
+! BPARNAM      Input biological parameters filename.
+! SPARNAM      Input sediment transport parameters filename.
+! USRNAME      USER's input generic filename.
 ! VEGNAM       Input vegetation file name.
 !

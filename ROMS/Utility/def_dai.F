@@ -2,9 +2,9 @@
 #if defined FOUR_DVAR || defined ENKF_RESTART
       SUBROUTINE def_dai (ng)
 !
-!svn $Id: def_dai.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: def_dai.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -49,12 +49,11 @@
       integer :: i, j, itrc, nvd3, nvd4
       integer :: recdim, status, varid
 
-      integer :: DimIDs(32)
+      integer :: DimIDs(nDimID)
       integer :: t2dgrd(3), u2dgrd(3), v2dgrd(3)
 # ifdef SOLVE3D
       integer :: t3dgrd(4), u3dgrd(4), v3dgrd(4), w3dgrd(4)
 # endif
-      integer :: Vsize(4)
 
       integer :: def_dim
 
@@ -172,6 +171,11 @@
      &                 __FILE__)) RETURN
 #  endif
 #  ifdef ECOSIM
+        status=def_dim(ng, iNLM, DAI(ng)%ncid, ncname, 'Nbands',        &
+     &                 NBands, DimIDs(33))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+
         status=def_dim(ng, iNLM, DAI(ng)%ncid, ncname, 'Nphy',          &
      &                 Nphy, DimIDs(25))
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
@@ -286,6 +290,8 @@
         CALL def_info (ng, iNLM, DAI(ng)%ncid, ncname, DimIDs)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
+
+# ifdef SOLVE3D
 !
 !  Define time independent (unperturb) depths of RHO-points.
 !
@@ -342,6 +348,7 @@
      &                 SetFillVal = .FALSE.)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
+# endif
 !
 !-----------------------------------------------------------------------
 !  Define time-varying variables.

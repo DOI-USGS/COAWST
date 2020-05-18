@@ -1,7 +1,7 @@
 /*
-** svn $Id: wc13.h 1610 2015-01-07 22:48:23Z arango $
+** svn $Id: wc13.h 1748 2018-02-10 03:25:17Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2019 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2020 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -60,8 +60,6 @@
 #define SPLINES_VDIFF
 #define SPLINES_VVISC
 #define TS_DIF2
-#define TS_U3HADVECTION
-#define TS_C4VADVECTION
 #define SOLVE3D
 #define SALINITY
 #define NONLIN_EOS

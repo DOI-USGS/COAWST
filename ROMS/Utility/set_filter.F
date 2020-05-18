@@ -30,7 +30,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 5)
+      CALL wclock_on (ng, iNLM, 5, __LINE__, __FILE__)
 # endif
       CALL set_filter_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
@@ -51,7 +51,7 @@
 # endif
 
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 5)
+      CALL wclock_off (ng, iNLM, 5, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE set_filter
@@ -83,6 +83,7 @@
 # ifdef SOLVE3D
       USE uv_rotate_mod, ONLY : uv_rotate3d
 # endif
+      USE vorticity_mod, ONLY : vorticity_tile
 !
       implicit none
 !
@@ -101,6 +102,12 @@
       integer  :: i, itrc, j, k, iw, f
       real(r8) :: fac
       real(r8) :: rfac(IminS:ImaxS,JminS:JmaxS)
+# ifdef SOLVE3D
+      real(r8) :: potvor(LBi:UBi,LBj:UBj,N(ng))
+      real(r8) :: relvor(LBi:UBi,LBj:UBj,N(ng))
+# endif
+      real(r8) :: potvor_bar(LBi:UBi,LBj:UBj)
+      real(r8) :: relvor_bar(LBi:UBi,LBj:UBj)
 
 # include "set_bounds.h"
 
@@ -463,6 +470,41 @@
 !       print *, 'SET_FILTER  iic-1:',iic-1
 !       print *, 'SET_FILTER  ntstart:',ntstart,'nrrec',nrrec
 !     END IF
+      IF (Aout(id2dPV,ng).or.Aout(id2dRV,ng).or.                        &
+     &    Aout(id3dPV,ng).or.Aout(id3dRV,ng)) THEN
+        CALL vorticity_tile (ng, tile,                                  &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       IminS, ImaxS, JminS, JmaxS,                &
+# ifdef SOLVE3D
+     &                       Kout, Nout,                                &
+# else
+     &                       Kout,                                      &
+# endif
+# ifdef MASKING
+     &                       GRID(ng) % pmask,                          &
+     &                       GRID(ng) % umask,                          &
+     &                       GRID(ng) % vmask,                          &
+# endif
+     &                       GRID(ng) % fomn,                           &
+     &                       GRID(ng) % h,                              &
+     &                       GRID(ng) % om_u,                           &
+     &                       GRID(ng) % on_v,                           &
+     &                       GRID(ng) % pm,                             &
+     &                       GRID(ng) % pn,                             &
+# ifdef SOLVE3D
+     &                       GRID(ng) % z_r,                            &
+     &                       OCEAN(ng) % pden,                          &
+     &                       OCEAN(ng) % u,                             &
+     &                       OCEAN(ng) % v,                             &
+# endif
+     &                       OCEAN(ng) % ubar,                          &
+     &                       OCEAN(ng) % vbar,                          &
+     &                       OCEAN(ng) % zeta,                          &
+# ifdef SOLVE3D
+     &                       potvor, relvor,                            &
+# endif
+     &                       potvor_bar, relvor_bar)
+        END IF
       IF ((iic(ng).gt.ntsAVG(ng)).and.                                  &
      &     (MOD(iic(ng)-ntstart(ng),nfil/nw).eq.0).and.                 &
      &    ((iic(ng).ne.ntstart(ng)))) THEN
@@ -657,6 +699,22 @@
                 END DO
               END DO
             END IF
+#   ifdef EMINUSP
+            IF (Aout(idevap,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filevap(i,j,f)= FORCES(ng)%evap(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idrain,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filrain(i,j,f)= FORCES(ng)%rain(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+#   endif
 #  endif
 # endif
             IF (Aout(idUsms,ng)) THEN
@@ -688,6 +746,42 @@
                 DO i=IstrR,IendR
                   FILTER(ng)%filbvs(i,j,f) = FORCES(ng)%bvstr(i,j)*     &
      &                          fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(id2dPV,ng)) THEN
+              DO j=Jstr,JendR
+                DO i=Istr,IendR
+                  FILTER(ng)%filpotvor_bar(i,j,f) = potvor_bar(i,j)*    &
+     &                          fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(id2dRV,ng)) THEN
+              DO j=Jstr,JendR
+                DO i=Istr,IendR
+                  FILTER(ng)%filrelvor_bar(i,j,f) = relvor_bar(i,j)*    &
+     &                          fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(id3dPV,ng)) THEN
+              DO k=1,N(ng)
+                DO j=Jstr,JendR
+                  DO i=Istr,IendR
+                    FILTER(ng)%filpotvor(i,j,k,f) = potvor(i,j,k)*      &
+     &                            fw(iw)
+                  END DO
+                END DO
+              END DO
+            END IF
+            IF (Aout(id3dRV,ng)) THEN
+              DO k=1,N(ng)
+                DO j=Jstr,JendR
+                  DO i=Istr,IendR
+                    FILTER(ng)%filrelvor(i,j,k,f) = relvor(i,j,k)*      &
+     &                            fw(iw)
+                  END DO
                 END DO
               END DO
             END IF
@@ -728,24 +822,6 @@
                 END DO
               END DO
             END IF
-#ifdef MELT_PONDS
-            IF (Aout(idApond,ng)) THEN
-              DO j=JstrR,JendR
-                DO i=IstrR,IendR
-                  FILTER(ng)%filapond(i,j,f) = ICE(ng)%apond(i,j,Iout)* &
-     &                            fw(iw)
-                END DO
-              END DO
-            END IF
-            IF (Aout(idHpond,ng)) THEN
-              DO j=JstrR,JendR
-                DO i=IstrR,IendR
-                  FILTER(ng)%filhpond(i,j,f) = ICE(ng)%hpond(i,j,Iout)* &
-     &                            fw(iw)
-                END DO
-              END DO
-            END IF
-#endif
             IF (Aout(idTice,ng)) THEN
               DO j=JstrR,JendR
                 DO i=IstrR,IendR
@@ -757,6 +833,13 @@
               DO j=JstrR,JendR
                 DO i=IstrR,IendR
                   FILTER(ng)%filti(i,j,f) = ICE(ng)%ti(i,j,Iout)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idT2ice,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filt2(i,j,f) = ICE(ng)%t2(i,j)*fw(iw)
                 END DO
               END DO
             END IF
@@ -872,6 +955,144 @@
                 END DO
               END DO
             END IF
+#  ifdef ICE_DIAGS
+            IF (Aout(idAlbe,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filAlbe(i,j,f) =            &
+     &                        FORCES(ng)%albedo(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idAlbI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filAlbI(i,j,f) =            &
+     &                        FORCES(ng)%albedo_ice(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idLWdn,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filLWdn(i,j,f) =            &
+     &                        FORCES(ng)%LW_down(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idSWdn,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filSWdn(i,j,f) =            &
+     &                        FORCES(ng)%SW_down(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idLatI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filLatI(i,j,f) =            &
+     &                        FORCES(ng)%lat_ice(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idSenI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filSenI(i,j,f) =            &
+     &                        FORCES(ng)%sens_ice(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idLWupI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filLWupI(i,j,f) =            &
+     &                        FORCES(ng)%LW_up_ice(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idSWupI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filSWupI(i,j,f) =            &
+     &                        FORCES(ng)%SW_up_ice(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idSWinI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filSWinI(i,j,f) =            &
+     &                        FORCES(ng)%qi_o_n(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idSWthruI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filSWthruI(i,j,f) =            &
+     &                        FORCES(ng)%SW_thru_ice(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idSaltI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filSaltI(i,j,f) =            &
+     &                        FORCES(ng)%saltflux_ice(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idSaltL,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filSaltL(i,j,f) =            &
+     &                        FORCES(ng)%saltflux_ocean(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idQao,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filQao(i,j,f) =            &
+     &                        FORCES(ng)%qao_n(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idQai,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filQai(i,j,f) =            &
+     &                        FORCES(ng)%qai_n(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idQio,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filQio(i,j,f) =            &
+     &                        FORCES(ng)%qio_n(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idQi2,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filQi2(i,j,f) =            &
+     &                        FORCES(ng)%qi2_n(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idSnoI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  FILTER(ng)%filSnoI(i,j,f) =            &
+     &                        FORCES(ng)%snoice(i,j)*fw(iw)
+                END DO
+              END DO
+            END IF
+#  endif
 # endif
             fcount(f)=iw
 !
@@ -1074,6 +1295,24 @@
                   END DO
                 END DO
               END IF
+#   ifdef EMINUSP
+              IF (Aout(idevap,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filevap(i,j,f)=FILTER(ng)%filevap(i,j,f)+&
+     &                                      FORCES(ng)%evap(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idrain,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filrain(i,j,f)=FILTER(ng)%filrain(i,j,f)+&
+     &                                      FORCES(ng)%rain(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+#   endif
 #  endif
 #  ifdef SHORTWAVE
               IF (Aout(idSrad,ng)) THEN
@@ -1118,6 +1357,46 @@
                   END DO
                 END DO
               END IF
+              IF (Aout(id2dPV,ng)) THEN
+                DO j=Jstr,JendR
+                  DO i=Istr,IendR
+                    FILTER(ng)%filpotvor_bar(i,j,f)=                    &
+     &                         FILTER(ng)%filpotvor_bar(i,j,f)+         &
+     &                         potvor_bar(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(id2dRV,ng)) THEN
+                DO j=Jstr,JendR
+                  DO i=Istr,IendR
+                    FILTER(ng)%filrelvor_bar(i,j,f)=                    &
+     &                         FILTER(ng)%filrelvor_bar(i,j,f)+         &
+     &                         relvor_bar(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(id3dPV,ng)) THEN
+                DO k=1,N(ng)
+                  DO j=Jstr,JendR
+                    DO i=Istr,IendR
+                      FILTER(ng)%filpotvor(i,j,k,f)=                    &
+     &                           FILTER(ng)%filpotvor(i,j,k,f)+         &
+     &                           potvor(i,j,k)*fw(iw)
+                    END DO
+                  END DO
+                END DO
+              END IF
+              IF (Aout(id3dRV,ng)) THEN
+                DO k=1,N(ng)
+                  DO j=Jstr,JendR
+                    DO i=Istr,IendR
+                      FILTER(ng)%filrelvor(i,j,k,f)=                    &
+     &                           FILTER(ng)%filrelvor(i,j,k,f)+         &
+     &                           relvor(i,j,k)*fw(iw)
+                    END DO
+                  END DO
+                END DO
+              END IF
 # ifdef ICE_MODEL
               IF (Aout(idUice,ng) .or. Aout(idUiceE,ng)) THEN
                 DO j=JstrR,JendR
@@ -1159,26 +1438,6 @@
                   END DO
                 END DO
               END IF
-#ifdef MELT_PONDS
-              IF (Aout(idApond,ng)) THEN
-                DO j=JstrR,JendR
-                  DO i=IstrR,IendR
-                    FILTER(ng)%filapond(i,j,f)=                         &
-     &                               FILTER(ng)%filapond(i,j,f)+        &
-     &                               ICE(ng)%apond(i,j,Iout)*fw(iw)
-                  END DO
-                END DO
-              END IF
-              IF (Aout(idHpond,ng)) THEN
-                DO j=JstrR,JendR
-                  DO i=IstrR,IendR
-                    FILTER(ng)%filhpond(i,j,f)=                         &
-     &                               FILTER(ng)%filhpond(i,j,f)+        &
-     &                               ICE(ng)%hpond(i,j,Iout)*fw(iw)
-                  END DO
-                END DO
-              END IF
-#endif
               IF (Aout(idTice,ng)) THEN
                 DO j=JstrR,JendR
                   DO i=IstrR,IendR
@@ -1201,6 +1460,14 @@
                   DO i=IstrR,IendR
                     FILTER(ng)%filti(i,j,f)=FILTER(ng)%filti(i,j,f)+    &
      &                                    ICE(ng)%ti(i,j,Iout)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idT2ice,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filt2(i,j,f)=FILTER(ng)%filt2(i,j,f)+    &
+     &                                    ICE(ng)%t2(i,j)*fw(iw)
                   END DO
                 END DO
               END IF
@@ -1322,6 +1589,150 @@
                   END DO
                 END DO
               END IF
+#   ifdef ICE_DIAGS
+              IF (Aout(idAlbe,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filAlbe(i,j,f)=FILTER(ng)%filAlbe(i,j,f)+&
+     &                                    FORCES(ng)%albedo(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idAlbI,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filAlbI(i,j,f)=FILTER(ng)%filAlbI(i,j,f)+&
+     &                            FORCES(ng)%albedo_ice(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idLWdn,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filLWdn(i,j,f)=FILTER(ng)%filLWdn(i,j,f)+&
+     &                                    FORCES(ng)%LW_down(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idSWdn,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filSWdn(i,j,f)=FILTER(ng)%filSWdn(i,j,f)+&
+     &                                    FORCES(ng)%SW_down(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idLatI,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filLatI(i,j,f)=FILTER(ng)%filLatI(i,j,f)+&
+     &                                    FORCES(ng)%lat_ice(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idSenI,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filSenI(i,j,f)=FILTER(ng)%filSenI(i,j,f)+&
+     &                                   FORCES(ng)%sens_ice(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idLWupI,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filLWupI(i,j,f)=                         &
+     &                                       FILTER(ng)%filLWupI(i,j,f)+&
+     &                                  FORCES(ng)%LW_up_ice(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idSWupI,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filSWupI(i,j,f)=                         &
+     &                                       FILTER(ng)%filSWupI(i,j,f)+&
+     &                                 FORCES(ng)%SW_up_ice(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idSWinI,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filSWinI(i,j,f)=                         &
+     &                                       FILTER(ng)%filSWinI(i,j,f)+&
+     &                                FORCES(ng)%qi_o_n(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idSWthruI,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filSWthruI(i,j,f)=                       &
+     &                                     FILTER(ng)%filSWthruI(i,j,f)+&
+     &                               FORCES(ng)%SW_thru_ice(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idSaltI,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filSaltI(i,j,f)=                         &
+     &                                       FILTER(ng)%filSaltI(i,j,f)+&
+     &                            FORCES(ng)%saltflux_ice(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idSaltL,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filSaltL(i,j,f)=                         &
+     &                                       FILTER(ng)%filSaltL(i,j,f)+&
+     &                           FORCES(ng)%saltflux_ocean(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idQao,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filQao(i,j,f)=FILTER(ng)%filQao(i,j,f)+  &
+     &                                    FORCES(ng)%qao_n(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idQai,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filQai(i,j,f)=FILTER(ng)%filQai(i,j,f)+  &
+     &                                    FORCES(ng)%qai_n(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idQio,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filQio(i,j,f)=FILTER(ng)%filQio(i,j,f)+  &
+     &                                    FORCES(ng)%qio_n(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idQi2,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filQi2(i,j,f)=FILTER(ng)%filQi2(i,j,f)+  &
+     &                                    FORCES(ng)%qi2_n(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+              IF (Aout(idSnoI,ng)) THEN
+                DO j=JstrR,JendR
+                  DO i=IstrR,IendR
+                    FILTER(ng)%filSnoI(i,j,f)=FILTER(ng)%filSnoI(i,j,f)+&
+     &                                    FORCES(ng)%snoice(i,j)*fw(iw)
+                  END DO
+                END DO
+              END IF
+#   endif
 # endif
             END IF
             fcount(f)=iw
@@ -1532,6 +1943,22 @@
                 END DO
               END DO
             END IF
+#   ifdef EMINUSP
+            IF (Aout(idevap,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgevap(i,j)=FILTER(ng)%filevap(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idrain,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgrain(i,j)=FILTER(ng)%filrain(i,j,f)
+                END DO
+              END DO
+            END IF
+#   endif
 #  endif
 #  ifdef SHORTWAVE
             IF (Aout(idSrad,ng)) THEN
@@ -1568,6 +1995,42 @@
               DO j=Jstr,JendR
                 DO i=IstrR,IendR
                   AVERAGE(ng)%avgbvs(i,j)=FILTER(ng)%filbvs(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(id2dPV,ng)) THEN
+              DO j=Jstr,JendR
+                DO i=Istr,IendR
+                  AVERAGE(ng)%avgpvor2d(i,j)=                           &
+     &                        FILTER(ng)%filpotvor_bar(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(id2dRV,ng)) THEN
+              DO j=Jstr,JendR
+                DO i=Istr,IendR
+                  AVERAGE(ng)%avgrvor2d(i,j)=                           &
+     &                        FILTER(ng)%filrelvor_bar(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(id3dPV,ng)) THEN
+              DO k=1,N(ng)
+                DO j=Jstr,JendR
+                  DO i=Istr,IendR
+                    AVERAGE(ng)%avgpvor3d(i,j,k)=                       &
+     &                          FILTER(ng)%filpotvor(i,j,k,f)
+                  END DO
+                END DO
+              END DO
+            END IF
+            IF (Aout(id3dRV,ng)) THEN
+              DO k=1,N(ng)
+                DO j=Jstr,JendR
+                  DO i=Istr,IendR
+                    AVERAGE(ng)%avgrvor3d(i,j,k)=                       &
+     &                          FILTER(ng)%filrelvor(i,j,k,f)
+                  END DO
                 END DO
               END DO
             END IF
@@ -1620,22 +2083,6 @@
                 END DO
               END DO
             END IF
-#ifdef MELT_PONDS
-            IF (Aout(idApond,ng)) THEN
-              DO j=JstrR,JendR
-                DO i=IstrR,IendR
-                  AVERAGE(ng)%avgapond(i,j)=FILTER(ng)%filapond(i,j,f)
-                END DO
-              END DO
-            END IF
-            IF (Aout(idHpond,ng)) THEN
-              DO j=JstrR,JendR
-                DO i=IstrR,IendR
-                  AVERAGE(ng)%avghpond(i,j)=FILTER(ng)%filhpond(i,j,f)
-                END DO
-              END DO
-            END IF
-#endif
             IF (Aout(idTice,ng)) THEN
               DO j=JstrR,JendR
                 DO i=IstrR,IendR
@@ -1647,6 +2094,13 @@
               DO j=JstrR,JendR
                 DO i=IstrR,IendR
                   AVERAGE(ng)%avgtimid(i,j)=FILTER(ng)%filti(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idT2ice,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgt2ice(i,j)=FILTER(ng)%filt2(i,j,f)
                 END DO
               END DO
             END IF
@@ -1757,6 +2211,128 @@
                 END DO
               END DO
             END IF
+#   ifdef ICE_DIAGS
+            IF (Aout(idAlbe,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgAlbe(i,j)=FILTER(ng)%filAlbe(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idAlbI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgAlbI(i,j)=FILTER(ng)%filAlbI(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idLWdn,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgLWdn(i,j)=FILTER(ng)%filLWdn(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idSWdn,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgSWdn(i,j)=FILTER(ng)%filSWdn(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idLatI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgLatI(i,j)=FILTER(ng)%filLatI(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idSenI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgSenI(i,j)=FILTER(ng)%filSenI(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idLWupI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgLWupI(i,j)=FILTER(ng)%filLWupI(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idSWupI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgSWupI(i,j)=FILTER(ng)%filSWupI(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idSWinI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgSWinI(i,j)=FILTER(ng)%filSWinI(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idSWthruI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgSWthruI(i,j)=                          &
+     &                          FILTER(ng)%filSWthruI(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idSaltI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgSaltI(i,j)=FILTER(ng)%filSaltI(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idSaltL,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgSaltL(i,j)=FILTER(ng)%filSaltL(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idQao,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgQao(i,j)=FILTER(ng)%filQao(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idQai,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgQai(i,j)=FILTER(ng)%filQai(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idQio,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgQio(i,j)=FILTER(ng)%filQio(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idQi2,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgQi2(i,j)=FILTER(ng)%filQi2(i,j,f)
+                END DO
+              END DO
+            END IF
+            IF (Aout(idSnoI,ng)) THEN
+              DO j=JstrR,JendR
+                DO i=IstrR,IendR
+                  AVERAGE(ng)%avgSnoI(i,j)=FILTER(ng)%filSnoI(i,j,f)
+                END DO
+              END DO
+            END IF
+#   endif
 # endif
             fcount(f)=0
           END IF

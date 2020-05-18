@@ -3,22 +3,21 @@
        MODULE vegetation_stream_mod
 #if defined VEGETATION && defined VEG_STREAMING 
 !
-!svn $Id: vegetation_stream.F 429 2015-04-20 17:30:26Z arango $
-!=======================================================================
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!svn $Id: vegetation_stream.F 429 2019-04-20 17:30:26Z arango $
+!======================================================================!
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                   Alexander F. Shchepetkin   !
-!================================================John C. Warner=========
-!================================================Neil K. Ganju  ========
-!================================================Alexis Beudin  ========
-!==============================================Tarandeep S. Kalra=======
+!================================================John C. Warner========!
+!================================================Neil K. Ganju  =======!
+!================================================Alexis Beudin  =======!
+!==============================================Tarandeep S. Kalra======!
 !                                                                      ! 
-!  References:                                                         !   
+!  Calculates the effect of changes in current on waves due to         ! 
+!  the presence of vegetation.                                         !   
 !                                                                      !
-!=======================================================================
+!======================================================================!
 !                                                                      !
-!=======================================================================
-
       implicit none
 
       PRIVATE
@@ -128,6 +127,7 @@
       real(r8) :: sigma, osigma
 
 # include "set_bounds.h"
+!
 !----------------------------------------------------------------------
 !----------Executing the code------------------------------------------
 !----------------------------------------------------------------------
@@ -136,9 +136,11 @@
         DO j=Jstr,Jend
           DO i=Istr,Iend
             Dstp=z_w(i,j,N(ng))-z_w(i,j,0)
+!
 !----------------------------------------------------------------------
 !  Compute wave amplitude (0.5*Hrms), wave number, intrinsic frequency.
 !----------------------------------------------------------------------
+!
             waven=2.0_r8*pi/MAX(Lwave(i,j),Lwave_min)
             cff1=1.5_r8*pi-Dwave(i,j)-angler(i,j)
             wavenx=waven*COS(cff1)

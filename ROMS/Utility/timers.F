@@ -2,9 +2,9 @@
       RECURSIVE SUBROUTINE wclock_on (ng, model, region, line, routine)
 !
 
-!svn $Id: timers.F 921 2018-09-06 18:27:34Z arango $
+!svn $Id: timers.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -342,6 +342,38 @@
  50           FORMAT (t47,'Total:',f14.3,2x,f8.4)
             END IF
           END DO
+# ifdef ICE_MODEL
+!
+!  Report elapsed time for message passage communications.
+!
+          DO imodel=1,4
+            total=0.0_r8
+            DO iregion=Iceregion,Nregion
+              total=total+Csum(iregion,imodel,ng)
+            END DO
+            IF (Master.and.(total.gt.0.0_r8)) THEN
+              WRITE (stdout,30) TRIM(label(imodel)),                    &
+     &                'sea-ice model elapsed time profile, Grid:', ng
+            END IF
+            sumcpu=0.0_r8
+            sumper=0.0_r8
+            IF (total.gt.0.0_r8) THEN
+              DO iregion=Iceregion,Nregion
+                IF (Csum(iregion,imodel,ng).gt.0.0_r8 .and. Master) THEN
+                  percent=100.0_r8*Csum(iregion, imodel,ng)/            &
+     &                             Csum( region,Mymodel,ng)
+                  WRITE (stdout,40) Pregion(iregion),                   &
+     &                              Csum(iregion,imodel,ng), percent
+                  sumcpu=sumcpu+Csum(iregion,imodel,ng)
+                  sumper=sumper+percent
+                END IF
+              END DO
+              IF (Master.and.(total.gt.0.0_r8)) THEN
+                WRITE (stdout,50) sumcpu, sumper
+              END IF
+            END IF
+          END DO
+# endif
 # ifdef DISTRIBUTE
 !
 !  Report elapsed time for message passage communications.

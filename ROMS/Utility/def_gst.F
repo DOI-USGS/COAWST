@@ -2,9 +2,9 @@
 #if defined PROPAGATOR && defined CHECKPOINTING
       SUBROUTINE def_gst (ng, model)
 !
-!svn $Id: def_gst.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: def_gst.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -41,7 +41,7 @@
       integer :: iparamdim, ipntrdim, laitrdim, laup2dim, raitrdim
       integer :: raup2dim
       integer :: i, j, status, varid
-      integer :: DimIDs(32), vardim(2)
+      integer :: DimIDs(nDimID), vardim(2)
 
       integer :: def_dim
 

@@ -11,7 +11,7 @@ subroutine SwanPrepComp ( cross )
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -85,9 +85,6 @@ subroutine SwanPrepComp ( cross )
 !PUN       if ( vmark(ivert) == 999 ) vert(ivert)%atti(VBC) = 1
 !PUN    enddo
 !PUN    !
-    ! setup a vertex list
-    !
-    call SwanVertlist
     !
     ! find obstacles in computational grid, if present
     !

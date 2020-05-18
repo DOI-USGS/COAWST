@@ -1,8 +1,8 @@
 #!/bin/bash
 #
-# svn $Id: build_wrf.bash 937 2019-01-28 06:13:04Z arango $
+# svn $Id: build_wrf.bash 995 2020-01-10 04:01:28Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2019 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
 #                                                                       :::
 # WRF Compiling BASH Script                                             :::
@@ -153,7 +153,7 @@ done
 #export FORT=gfortran
 #export FORT=pgi
 
- export USE_REAL_DOUBLE=on          # use real double precision (-r8)
+#export USE_REAL_DOUBLE=on          # use real double precision (-r8)
 #export USE_DEBUG=on                # use Fortran debugging flags
  export USE_HDF5=on                 # compile with HDF5 library
  export USE_NETCDF=on               # compile with NetCDF
@@ -393,7 +393,7 @@ echo ""
 echo "   ${WRF_ROOT_DIR}/compile ${WRF_CASE}"
 echo "        WRF_DA_CORE = ${WRF_DA_CORE},    Data Assimilation core"
 echo "        WRF_EM_CORE = ${WRF_EM_CORE},    Eurelian Mass-coordinate core"
-echo "        WRF_NMM_CORE = ${WRF_EM_CORE},   Nonhydrostatic Mesoscale Model core"
+echo "        WRF_NMM_CORE = ${WRF_NMM_CORE}, Nonhydrostatic Mesoscale Model core"
 echo "        J = ${J},          number of compiling CPUs"
 echo "${separator}"
 echo ""
@@ -530,12 +530,18 @@ if [ "$WRF_CASE" == "em_real" ]; then
   ln -sfv ${WRF_ROOT_DIR}/run/p3_lookup_table_1.dat-v2.8.2 .
   ln -sfv ${WRF_ROOT_DIR}/run/p3_lookup_table_2.dat-v2.8.2 .
 
-  if [ "$USE_REAL_DOUBLE" == "on" ]; then
+  if [ "${USE_REAL_DOUBLE:+1}" ]; then
     ln -sfv ${WRF_ROOT_DIR}/run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA
     ln -sfv ${WRF_ROOT_DIR}/run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain
     ln -sfv ${WRF_ROOT_DIR}/run/RRTM_DATA_DBL RRTM_DATA
     ln -sfv ${WRF_ROOT_DIR}/run/RRTMG_LW_DATA_DBL RRTMG_LW_DATA
     ln -sfv ${WRF_ROOT_DIR}/run/RRTMG_SW_DATA_DBL RRTMG_SW_DATA
+  else
+    ln -sfv ${WRF_ROOT_DIR}/run/ETAMPNEW_DATA ETAMPNEW_DATA
+    ln -sfv ${WRF_ROOT_DIR}/run/ETAMPNEW_DATA.expanded_rain ETAMPNEW_DATA.expanded_rain
+    ln -sfv ${WRF_ROOT_DIR}/run/RRTM_DATA RRTM_DATA
+    ln -sfv ${WRF_ROOT_DIR}/run/RRTMG_LW_DATA RRTMG_LW_DATA
+    ln -sfv ${WRF_ROOT_DIR}/run/RRTMG_SW_DATA RRTMG_SW_DATA
   fi
 
   ln -sfv ${WRF_ROOT_DIR}/run/GENPARM.TBL .

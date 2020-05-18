@@ -18,9 +18,6 @@
 #undef  BODYFORCE
 #undef  LOG_PROFILE
 #define DJ_GRADPS
-#undef  TS_U3HADVECTION
-#undef  TS_C2VADVECTION
-#define TS_MPDATA
 #undef  SALINITY
 #define SPLINES_VVISC
 #define SPLINES_VDIFF

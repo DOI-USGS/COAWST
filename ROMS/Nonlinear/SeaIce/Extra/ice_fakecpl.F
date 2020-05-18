@@ -1,7 +1,7 @@
 #include "cppdefs.h"
 !svn $Id$
 !=======================================================================
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -38,7 +38,6 @@
       use ice_init
       use ice_history
       use ice_restart
-      use ice_timers
       use ice_fileunits
       use ice_domain_size, only: max_blocks
       use ice_restart_shared, only: restart
@@ -89,8 +88,8 @@
 
       real(r8) :: wrk_big(0:Lm(1)+1,0:Mm(1)+1)
       real(r8) :: wrk_small(Lm(1),Mm(1))
-      real(r8) :: urho(Lm(1),Mm(1))
-      real(r8) :: vrho(Lm(1),Mm(1))
+      real(r8) :: upsi(Lm(1),Mm(1))
+      real(r8) :: vpsi(Lm(1),Mm(1))
       real(r8) :: ua(0:Lm(1)+1,0:Mm(1)+1)
       real(r8) :: va(0:Lm(1)+1,0:Mm(1)+1)
       real(r8) :: zetaa(0:Lm(1)+1,0:Mm(1)+1)
@@ -119,17 +118,16 @@
           UBi=BOUNDS(ng)%UBi(tile)
           LBj=BOUNDS(ng)%LBj(tile)
           UBj=BOUNDS(ng)%UBj(tile)
-          CALL ice_timer_start(timer_step)
 ! Ocean velocity
           call gather(ng, iNLM, LBi, UBi, LBj, UBj, u2dvar,             &
      &                OCEAN(ng)%u(LBi,LBj,N(ng),nrhs(ng)),ua)
           call gather(ng, iNLM, LBi, UBi, LBj, UBj, v2dvar,             &
      &                OCEAN(ng)%v(LBi,LBj,N(ng),nrhs(ng)),va)
-          CALL roms_u2rho(ua, urho)
-          CALL roms_v2rho(va, vrho)
-          call scatter_global(uocn, urho, master_task, distrb_info,     &
+          CALL roms_u2psi(ua, upsi)
+          CALL roms_v2psi(va, vpsi)
+          call scatter_global(uocn, upsi, master_task, distrb_info,     &
      &             field_loc_center, field_type_scalar)
-          call scatter_global(vocn, vrho, master_task, distrb_info,     &
+          call scatter_global(vocn, vpsi, master_task, distrb_info,     &
      &             field_loc_center, field_type_scalar)
 
 ! SST
@@ -243,23 +241,27 @@
           IF (iic(ng).eq.ntstart(ng) .and. .not. restart) THEN
 #ifdef INI_GLORYS_ICE
 ! ai
-          call gather(ng, iNLM, LBi, UBi, LBj, UBj, r2dvar,             &
-     &                ICE(ng)%ai, wrk_big)
-          wrk_small = wrk_big(1:Lm(ng),1:Mm(Ng))
-          call scatter_global(aice_init2, wrk_small, master_task,       &
-     &             distrb_info, field_loc_center, field_type_scalar)
+            call gather(ng, iNLM, LBi, UBi, LBj, UBj, r2dvar,           &
+     &                  ICE(ng)%ai, wrk_big)
+            wrk_small = wrk_big(1:Lm(ng),1:Mm(Ng))
+            call scatter_global(aice_init2, wrk_small, master_task,     &
+     &               distrb_info, field_loc_center, field_type_scalar)
 ! hi
-          call gather(ng, iNLM, LBi, UBi, LBj, UBj, r2dvar,             &
-     &                ICE(ng)%hi, wrk_big)
-          wrk_small = wrk_big(1:Lm(ng),1:Mm(Ng))
-          call scatter_global(hice_init, wrk_small, master_task,        &
-     &             distrb_info, field_loc_center, field_type_scalar)
+            call gather(ng, iNLM, LBi, UBi, LBj, UBj, r2dvar,           &
+     &                  ICE(ng)%hi, wrk_big)
+            wrk_small = wrk_big(1:Lm(ng),1:Mm(Ng))
+            call scatter_global(hice_init, wrk_small, master_task,      &
+     &               distrb_info, field_loc_center, field_type_scalar)
 #endif
+! ai
+            call gather(ng, iNLM, LBi, UBi, LBj, UBj, r2dvar,           &
+     &                  GRID(ng)%h, wrk_big)
+            wrk_small = wrk_big(1:Lm(ng),1:Mm(Ng))
+            call scatter_global(bath, wrk_small, master_task,           &
+     &               distrb_info, field_loc_center, field_type_scalar)
             CALL init_state
           END IF
-          CALL ice_step
-
-          CALL ice_timer_stop(timer_step)
+          CALL CICE_Run
 
 ! Fields to go back to ROMS, starting with ice concentration
           CALL gather_global(wrk_small, aice, master_task, distrb_info)
@@ -328,31 +330,21 @@
           wrk_big(:,0) = wrk_big(:,1)
           wrk_big(:,Mm(Ng)+1) = wrk_big(:,Mm(Ng))
           call scatter(ng, iNLM, LBi, UBi, LBj, UBj, r2dvar, wrk_big,   &
-     &             FORCES(ng)%stflx(LBi,LBj,1), ICE(ng)%ai, .false.)
+     &             FORCES(ng)%stflx(LBi,LBj,itemp), ICE(ng)%ai, .false.)
+! add fresh water flux to salt flux
           CALL gather_global(wrk_small, fsalt, master_task,             &
      &                     distrb_info)
           CALL gather_global(fresh_small, fresh, master_task,           &
      &                     distrb_info)
-! add fresh water flux to salt flux
-          wrk_small = wrk_small - sss_small*1.e-3_r8*fresh_small
+!  convert units of kg/m2/s to salt (factor of 1000.)
+          wrk_small = - wrk_small*1000._r8 - sss_small/rho0*fresh_small
           wrk_big(1:Lm(ng),1:Mm(Ng)) = wrk_small
           wrk_big(0,1:Mm(Ng)) = wrk_big(1,1:Mm(Ng))
           wrk_big(Lm(ng)+1,1:Mm(Ng)) = wrk_big(Lm(ng),1:Mm(Ng))
           wrk_big(:,0) = wrk_big(:,1)
           wrk_big(:,Mm(Ng)+1) = wrk_big(:,Mm(Ng))
           call scatter(ng, iNLM, LBi, UBi, LBj, UBj, r2dvar, wrk_big,   &
-     &             FORCES(ng)%stflx(LBi,LBj,2), ICE(ng)%ai, .false.)
-
-! Copying more from CICE_Run
-
-          istep  = istep  + 1    ! update time step counters
-          istep1 = istep1 + 1
-          ice_time = ice_time + ice_dt       ! determine the time and date
-          call calendar(ice_time)    ! at the end of the timestep
-!          if (stop_now >= 1) exit timeLoop
-
-          CALL init_flux_atm   ! reset atmosphere fluxes to zero for next step
-          CALL init_flux_ocn   ! reset tracer fluxes to zero for next step
+     &             FORCES(ng)%stflx(LBi,LBj,isalt), ICE(ng)%ai, .false.)
 
         END DO
 
@@ -360,12 +352,12 @@
       END SUBROUTINE cice_fakecpl
       !------------------------------------
 
-      subroutine roms_u2rho(uvar,rhovar)
+      subroutine roms_u2psi(uvar,psivar)
 
       use mod_param
 
       real (kind=dbl_kind), intent(in) :: uvar(0:Lm(1)+1,0:Mm(1)+1)
-      real (kind=dbl_kind), intent(out) :: rhovar(Lm(1),Mm(1))
+      real (kind=dbl_kind), intent(out) :: psivar(Lm(1),Mm(1))
 
       integer(kind=int_kind) :: i,j   !loop index!
 
@@ -374,39 +366,39 @@
       do j=1,Mm(1)
         do i=1,Lm(1)
 !          if ((uvar(i+1,j).eq.c0) .or. (uvar(i,j).eq.c0)) then
-!            rhovar(i,j) = uvar(i+1,j) + uvar(i,j)
+!            psivar(i,j) = uvar(i+1,j) + uvar(i,j)
 !          else
-            rhovar(i,j) = 0.5_r8 * (uvar(i+1,j) + uvar(i,j))
+            psivar(i,j) = 0.5_r8 * (uvar(i+1,j) + uvar(i+1,j+1))
 !          endif
-!          rhovar(i,j) = 0.0_r8
+!          psivar(i,j) = 0.0_r8
         enddo
       enddo
 
-      end subroutine roms_u2rho
+      end subroutine roms_u2psi
 
       !-------------------------------------
 
-      subroutine roms_v2rho(vvar,rhovar)
+      subroutine roms_v2psi(vvar,psivar)
 
       use mod_param
 
       real (kind=dbl_kind), intent(in) :: vvar(0:Lm(1)+1,0:Mm(1)+1)
-      real (kind=dbl_kind), intent(out) :: rhovar(Lm(1),Mm(1))
+      real (kind=dbl_kind), intent(out) :: psivar(Lm(1),Mm(1))
 
       integer(kind=int_kind) :: i,j   !loop index
 
       do j=1,Mm(1)
         do i=1,Lm(1)
 !          if ((vvar(i,j+1).eq.c0) .or. (vvar(i,j).eq.c0)) then
-!            rhovar(i,j) = vvar(i,j+1) + vvar(i,j)
+!            psivar(i,j) = vvar(i,j+1) + vvar(i,j)
 !          else
-            rhovar(i,j) = 0.5_r8 * (vvar(i,j+1) + vvar(i,j))
+            psivar(i,j) = 0.5_r8 * (vvar(i,j+1) + vvar(i+1,j+1))
 !          endif
-!          rhovar(i,j) = 0.0_r8
+!          psivar(i,j) = 0.0_r8
         enddo
       enddo
 
-      end subroutine roms_v2rho
+      end subroutine roms_v2psi
 
       !--------------------------------------
 

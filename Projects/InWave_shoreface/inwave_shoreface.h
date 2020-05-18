@@ -35,7 +35,6 @@
 #define WET_DRY
 #define OUT_DOUBLE
 #define UV_ADV
-#define TS_U3HADVECTION
 #define DJ_GRADPS
 #undef  SALINITY
 #define SOLVE3D

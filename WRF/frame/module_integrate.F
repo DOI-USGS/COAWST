@@ -44,7 +44,7 @@ RECURSIVE SUBROUTINE integrate ( grid )
    USE atm_coupler_mod, ONLY: atm2wav_coupling
    USE atm_coupler_mod, ONLY: atmfwav_coupling
 # endif
-   USE mct_wrf_coupler_params
+   USE mct_coupler_params
 #endif
 
    IMPLICIT NONE

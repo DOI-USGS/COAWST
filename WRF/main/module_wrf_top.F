@@ -135,12 +135,12 @@ MODULE module_wrf_top
 CONTAINS
 
 #ifdef WRF_COUPLING
-   SUBROUTINE wrf_init( MyComm_r, no_init1)
+   SUBROUTINE wrf_init( MyCOMM, no_init1 )
 !<DESCRIPTION>
 !     WRF initialization routine.
 !</DESCRIPTION>
 !jcw
-   USE module_parallel
+   USE mct_coupler_params
    USE atm_coupler_mod, ONLY: initialize_atm_coupling
 #else
    SUBROUTINE wrf_init( no_init1 )
@@ -155,7 +155,7 @@ CONTAINS
      use accel_lib
 #endif
 #ifdef WRF_COUPLING
-     integer, intent(in) :: MyComm_r
+     integer, intent(in) :: MyCOMM
 #endif
      LOGICAL, OPTIONAL, INTENT(IN) :: no_init1
      INTEGER i, myproc, nproc, hostid, loccomm, ierr, buddcounter, mydevice, save_comm
@@ -187,14 +187,13 @@ CONTAINS
    program_name = "WRF " // TRIM(release_version) // " MODEL"
 
 #ifdef WRF_COUPLING
-   MyComm=MyComm_r
-!
    ! Initialize WRF modules:  
    ! Phase 1 returns after MPI_INIT() (if it is called)
+   ATM_COMM_WORLD=MyCOMM
    CALL init_modules(1)
 !  IF ( .NOT. PRESENT( no_init1 ) ) THEN
-     ! Initialize utilities (time manager, etc.)
-     CALL WRFU_Initialize( defaultCalKind=WRFU_CAL_GREGORIAN )
+   ! Initialize utilities (time manager, etc.)
+   CALL WRFU_Initialize( defaultCalKind=WRFU_CAL_GREGORIAN )
 !  ENDIF
 #else
    ! Initialize WRF modules:  

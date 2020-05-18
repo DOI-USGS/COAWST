@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE mod_arrays (allocate_vars)
 !
-!svn $Id: mod_arrays.F 923 2018-09-26 21:20:30Z arango $
+!svn $Id: mod_arrays.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -42,9 +42,6 @@
       USE mod_mixing, ONLY : allocate_mixing, initialize_mixing
 #ifdef NESTING
       USE mod_nesting, ONLY : allocate_nesting, initialize_nesting
-#endif
-#if defined ASSIMILATION || defined NUDGING
-      USE mod_obs, ONLY : allocate_obs, initialize_obs
 #endif
       USE mod_ocean, ONLY : allocate_ocean, initialize_ocean
 #if defined SEDIMENT || defined BBL_MODEL
@@ -158,9 +155,6 @@
           CALL allocate_forces (ng, LBi, UBi, LBj, UBj)
           CALL allocate_grid (ng, LBi, UBi, LBj, UBj, LBij, UBij)
           CALL allocate_mixing (ng, LBi, UBi, LBj, UBj)
-#if defined ASSIMILATION || defined NUDGING
-          CALL allocate_obs (ng, LBi, UBi, LBj, UBj)
-#endif
           CALL allocate_ocean (ng, LBi, UBi, LBj, UBj)
 #if defined SEDIMENT || defined BBL_MODEL
           CALL allocate_sedbed (ng, LBi, UBi, LBj, UBj)
@@ -239,9 +233,6 @@
           CALL initialize_forces (ng, tile, model)
           CALL initialize_grid (ng, tile, model)
           CALL initialize_mixing (ng, tile, model)
-#if defined ASSIMILATION || defined NUDGING
-          CALL initialize_obs (ng, tile)
-#endif
           CALL initialize_ocean (ng, tile, model)
 #if defined SEDIMENT || defined BBL_MODEL
           CALL initialize_sedbed (ng, tile, model)

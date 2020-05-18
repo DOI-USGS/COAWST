@@ -24,9 +24,11 @@
 
       contains
 
-      subroutine load_wrf_grid()
+      subroutine load_wrf_grid( MyComm )
 
       implicit none
+
+      integer (kind=int_kind), intent(in) :: MyComm
 
       ! local variables 
       integer(int_kind) :: i, j, iunit
@@ -52,7 +54,8 @@
       do ma=1,Ngrids_wrf
 !     Open the file. 
         if (wrf_grids(ma)=="moving") then
-          call create_wrf_moving_grid(ma)
+          write(*,*) 'calling create wrf moving '
+          call create_wrf_moving_grid(ma, MyComm)
         else
           ncstat=nf_open(wrf_grids(ma),nf_nowrite,nc_file_id)
           call netcdf_error_handler(ncstat)
@@ -245,28 +248,54 @@
 
 !======================================================================
 !
-      subroutine create_wrf_moving_grid(ma)
+      subroutine create_wrf_moving_grid(ma, MyComm )
 
       use grids                      ! module with grid information
+
       implicit none
 
-      integer (int_kind), intent(in) :: ma
+      integer (kind=int_kind), intent(in) :: ma, MyComm
+#ifdef MPI
+      include 'mpif.h'
+      integer (kind=int_kind) :: MyError, MyRank, Nprocs
+#endif
+!     integer (int_kind) :: ratio, MyStr, MyEnd
+!     integer (int_kind) :: Istr, Iend, Jstr, Jend
+      integer (int_kind) :: i, j, ii, jj, ij, nx, ny, mm, nn, pgr
+      integer (int_kind) :: pid, pid_nomove
+      integer (int_kind) :: icount, jcount
+!     integer (int_kind) :: igrdstr1, igrdstr2
 
-      integer (int_kind) :: i, j, ii, jj, nx, ny, mm, nn, pgr
-      integer (int_kind) :: icount, jcount, pid, Ikeep, Jkeep
+      integer (int_kind) :: Ikeep, Jkeep
       real (dbl_kind)    :: x1, y1, x2, y2, dx, dy
       real (dbl_kind)    :: dist1, dist_max, dlon
       real (dbl_kind)    :: latrad1, latrad2, dep, dlat
       real (dbl_kind)    :: xx1, yy1, xx2, yy2
       real (dbl_kind), allocatable :: lon_rho_t(:,:), lat_rho_t(:,:)
 
-!  Create a grid that is the size of the parent x refined ratio.
-      pgr=parent_grid_ratio(ma)
+
+      integer (int_kind) :: we_size, sn_size, t_size
+
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      CALL mpi_comm_size (MyComm, Nprocs, MyError)
+#endif
+
+      write(*,*) 'top of create wrf moving ', ma
+
+
+!  Create a grid that is the size of the parent times the refined ratio.
+
+!              lon_2drho_a(i,j)=ngrd_wr(pid)%lon_rho_a(i,j)
+!              lat_2drho_a(i,j)=ngrd_wr(pid)%lat_rho_a(i,j)
+
       pid=parent_id(ma)
+      pgr=parent_grid_ratio(ma)
       nx=ngrd_wr(pid)%we_size*pgr
       ny=ngrd_wr(pid)%sn_size*pgr
       ngrd_wr(ma)%we_size=nx
       ngrd_wr(ma)%sn_size=ny
+
 !     t is temporary arrays
       allocate( lon_rho_t(nx-2,ny-2) )
       allocate( lat_rho_t(nx-2,ny-2) )
@@ -382,36 +411,24 @@
 
       deallocate( lon_rho_t, lat_rho_t )
 !
-! Compute child mask based on closest parent cell.
+! Here we set this moving child grid mask based on parent mask.
 !
-      do ii=1,nx
-        do jj=1,ny
-          dist_max=10e6
-          Ikeep=1
-          Jkeep=1
-          xx2=ngrd_wr(ma)%lon_rho_a(ii,jj)
-          yy2=ngrd_wr(ma)%lat_rho_a(ii,jj)
-          do j=1,ngrd_wr(pid)%sn_size
-            do i=1,ngrd_wr(pid)%we_size
-              xx1=ngrd_wr(pid)%lon_rho_a(i,j)
-              yy1=ngrd_wr(pid)%lat_rho_a(i,j)
-              dlon = xx1-xx2
-              latrad1=abs(yy1*deg2rad)
-              latrad2=abs(yy2*deg2rad)
-              dep=cos(0.5*(latrad2+latrad1))*dlon
-              dlat=yy2-yy1
-              dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
-              if(dist1<=dist_max)then
-                dist_max=dist1
-                Ikeep=i
-                Jkeep=j
-              endif
-            enddo
-          enddo
-          ngrd_wr(ma)%mask_rho_a(ii,jj)=                                &
-     &                   ngrd_wr(pid)%mask_rho_a(Ikeep,Jkeep)
-        enddo
-      enddo
+      icount=0
+      do i=2,nx-1,pgr
+        icount=icount+1
+        jcount=0
+        do j=2,ny-1,pgr
+          jcount=jcount+1
+          do ii=i-1,i+1
+            do jj=j-1,j+1
+              ngrd_wr(ma)%mask_rho_a(ii,jj)=                            &
+     &                   ngrd_wr(pid)%mask_rho_a(icount,jcount)
+            end do
+          end do
+        end do
+      end do
+
+
 
       end subroutine create_wrf_moving_grid
 

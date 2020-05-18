@@ -176,11 +176,12 @@
       real(r8) :: cc1, cc2, cc3, epson, sw
       real(r8) :: sw_xi, rl, rkal, a1, b1, betal, rt, rkar, betar
       real(r8) :: sw_eta, rd, rkad, betad, ru, rkau, betau
-      real(r8), dimension(IminS:ImaxS) :: kax, kax_inverse
       real(r8), dimension(IminS:ImaxS) :: grad_x
       real(r8), dimension(JminS:JmaxS) :: grad_y
+      real(r8), dimension(IminS:ImaxS) :: kax, kax_inverse
       real(r8), dimension(JminS:JmaxS) :: kay, kay_inverse
-      real(r8), dimension(0:N(ng)) :: kaz, kaz_inverse, grad_k
+      real(r8), dimension(0:N(ng))     :: kaz, kaz_inverse, grad_k
+      real(r8), dimension(0:ND+1)      :: grad_d, kad, kad_inverse
 # endif
 
 # include "set_bounds.h"
@@ -440,31 +441,32 @@
 !-----------------------------------------------------------------------
 !
       opd=1.0_r8/pd
+# ifdef AC_U3HADVECTION
       J_LOOP: DO j=Jstr,Jend
         DO i=Istr,Iend
-# if defined THETA_AC_PERIODIC
+#  if defined THETA_AC_PERIODIC
             FD(i,0)=AC(i,j,ND  ,3)-                                     &
      &              AC(i,j,ND-1,3)
             FD(i,1)=AC(i,j,1   ,3)-                                     &
      &              AC(i,j,ND  ,3)
-# else
+#  else
 !!IN THIS POINT IT DOESNT MATTER THE BOUNDARY CONDITION, 
 !!WE JUST PUT IT AS IF IT WAS A NO GRADIENT
 !!THE WALL BOUNDARY CONDITION WILL BE STABLISHED LATER
           FD(i,0)=0.0_r8
           FD(i,1)=0.0_r8
-# endif
+#  endif
           DO d=2,ND
             FD(i,d)=AC(i,j,d  ,3)-                                      &
      &              AC(i,j,d-1,3)
           END DO
-# if defined THETA_AC_PERIODIC
+#  if defined THETA_AC_PERIODIC
           FD(i,ND+1)=FD(i,1)
           FD(i,ND+2)=FD(i,2)
-# else
+#  else
           FD(i,ND+1)=0.0_r8
           FD(i,ND+2)=0.0_r8
-# endif
+#  endif
         END DO
 !
         DO i=Istr,Iend
@@ -477,23 +479,23 @@
         cff2=1.0_r8/3.0_r8
         DO i=Istr,Iend
           DO d=1,1
-# if defined THETA_AC_PERIODIC
+#  if defined THETA_AC_PERIODIC
             cff=ct(i,j,d)*opd
-# else
-#  if defined THETA_AC_WALL
-            cff=0.0_r8
 #  else
+#   if defined THETA_AC_WALL
+            cff=0.0_r8
+#   else
             cff=ct(i,j,d)*opd
+#   endif
 #  endif
-# endif
             FD(i,d)=cff*0.5_r8*                                         &
-# if defined THETA_AC_PERIODIC
+#  if defined THETA_AC_PERIODIC
      &              (AC(i,j,ND,3)+                                      &
      &               AC(i,j,d  ,3))-                                    &
-# else
+#  else
      &              (AC(i,j,d     ,3)+                                  &
      &               AC(i,j,d  ,3))-                                    &
-# endif
+#  endif
      &               cff1*(curvd(i,d-1)*MAX(cff,0.0_r8)+                &
      &                     curvd(i,d  )*MIN(cff,0.0_r8))
           END DO
@@ -506,27 +508,195 @@
      &                     curvd(i,d  )*MIN(cff,0.0_r8))
           END DO
           DO d=ND+1,ND+1
-# if defined THETA_AC_PERIODIC
+#  if defined THETA_AC_PERIODIC
             cff=ct(i,j,d)*opd
-# else
-#  if defined THETA_AC_WALL
-            cff=0.0_r8
 #  else
+#   if defined THETA_AC_WALL
+            cff=0.0_r8
+#   else
             cff=ct(i,j,d)*opd
+#   endif
 #  endif
-# endif
             FD(i,d)=cff*0.5_r8*                                         &
-# if defined THETA_AC_PERIODIC
+#  if defined THETA_AC_PERIODIC
      &              (AC(i,j,ND,3)+                                      &
      &               AC(i,j,1  ,3))-                                    &
-# else
+#  else
      &              (AC(i,j,ND,3)+                                      &
      &               AC(i,j,ND,3))-                                     &
-# endif
+#  endif
      &               cff1*(curvd(i,d-1)*MAX(cff,0.0_r8)+                &
      &                     curvd(i,d  )*MIN(cff,0.0_r8))
           END DO
         END DO
+# elif defined AC_MPDATA || defined AC_HSIMT
+      J_LOOP: DO j=Jstr,Jend
+        cc1=0.25_r8
+        cc2=0.5_r8
+        cc3=1.0_r8/12.0_r8
+        epson=1.0E-12_r8
+!
+        DO i=Istr,Iend
+          DO d=2,ND
+            grad_d(d)=(AC(i,j,d,3)-AC(i,j,d-1,3))
+            kad(d)=(1.0_r8-abs(ct(i,j,d)*dt(ng)))
+          END DO
+
+          DO d=0,0
+#  if defined THETA_AC_PERIODIC
+            grad_d(d)=(AC(i,j,ND,3)-AC(i,j,ND-1,3))
+#  else
+            grad_d(d)=0.0_r8
+#  endif
+            kad(d)=0.0_r8
+          END DO
+          DO d=1,1
+#  if defined THETA_AC_PERIODIC
+            grad_d(d)=(AC(i,j,d,3)-AC(i,j,ND,3))
+#  else
+            grad_d(d)=0.0_r8
+#  endif
+            kad(d)=(1.0_r8-abs(ct(i,j,d)*dt(ng)))
+          END DO
+          DO d=ND+1,ND+1
+#  if defined THETA_AC_PERIODIC
+            grad_d(d)=(AC(i,j,1,3)-AC(i,j,d-1,3))
+#  else
+            grad_d(d)=0.0_r8
+#  endif
+            kad(d)=0.0_r8
+          END DO
+          DO d=1,1
+            IF (kad(d).le.epson) THEN
+              kad_inverse(d)=0.0_r8
+            ELSE
+              kad_inverse(d)=1.0_r8/MAX(kad(d),epson)
+            END IF
+#  if defined THETA_AC_WALL
+            FD(i,d)=0.0_r8
+#  else
+            IF (ct(i,j,d).ge.0.0_r8) THEN
+              IF (abs(grad_d(d)).le.epson) THEN
+                rl=0.0_r8
+                rkal=0.0_r8
+              ELSE
+                rl=grad_d(d-1)/(grad_d(d))
+                rkal=kad(d-1)*kad_inverse(d)
+              END IF
+              a1= cc1*kad(d)+cc2-cc3*kad_inverse(d)
+              b1=-cc1*kad(d)+cc2+cc3*kad_inverse(d)
+              betal=a1+b1*rl
+              cff=0.5_r8*max(0.0_r8,min(2.0_r8,2.0_r8*rl*rkal,betal))*    &
+     &                                    grad_d(d)*kad(d)
+#   if defined THETA_AC_PERIODIC
+              sw_xi=AC(i,j,ND,3)+cff
+#   else
+              sw_xi=0.0_r8
+#   endif
+            ELSE
+              IF (abs(grad_d(d)).le.epson) THEN
+                rt=0.0_r8
+                rkar=0.0_r8
+              ELSE
+                rt=grad_d(d+1)/(grad_d(d))
+                rkar=kad(d+1)*kad_inverse(d)
+              END IF
+              a1= cc1*kad(d)+cc2-cc3*kad_inverse(d)
+              b1=-cc1*kad(d)+cc2+cc3*kad_inverse(d)
+              betar=a1+b1*rt
+              cff=0.5_r8*max(0.0_r8,min(2.0_r8,2.0_r8*rt*rkar,betar))*    &
+     &                                  grad_d(d)*kad(d)
+              sw_xi=AC(i,j,d,3)-cff
+            END IF
+            FD(i,d)=sw_xi*ct(i,j,d)*opd
+#  endif
+          END DO
+
+          DO d=2,ND
+            IF (kad(d).le.epson) THEN
+              kad_inverse(d)=0.0_r8
+            ELSE
+              kad_inverse(d)=1.0_r8/MAX(kad(d),epson)
+            END IF
+            IF (ct(i,j,d).ge.0.0_r8) THEN
+              IF (abs(grad_d(d)).le.epson) THEN
+                rl=0.0_r8
+                rkal=0.0_r8
+              ELSE
+                rl=grad_d(d-1)/(grad_d(d))
+                rkal=kad(d-1)*kad_inverse(d)
+              END IF
+              a1= cc1*kad(d)+cc2-cc3*kad_inverse(d)
+              b1=-cc1*kad(d)+cc2+cc3*kad_inverse(d)
+              betal=a1+b1*rl
+              cff=0.5_r8*max(0.0_r8,min(2.0_r8,2.0_r8*rl*rkal,betal))*    &
+     &                                    grad_d(d)*kad(d)
+              sw_xi=AC(i,j,d-1,3)+cff
+            ELSE
+              IF (abs(grad_d(d)).le.epson) THEN
+                rt=0.0_r8
+                rkar=0.0_r8
+              ELSE
+                rt=grad_d(d+1)/(grad_d(d))
+                rkar=kad(d+1)*kad_inverse(d)
+              END IF
+              a1= cc1*kad(d)+cc2-cc3*kad_inverse(d)
+              b1=-cc1*kad(d)+cc2+cc3*kad_inverse(d)
+              betar=a1+b1*rt
+              cff=0.5_r8*max(0.0_r8,min(2.0_r8,2.0_r8*rt*rkar,betar))*    &
+     &                                  grad_d(d)*kad(d)
+              sw_xi=AC(i,j,d,3)-cff
+            END IF
+            FD(i,d)=sw_xi*ct(i,j,d)*opd
+          END DO
+
+          DO d=ND+1,ND+1
+            IF (kad(d).le.epson) THEN
+              kad_inverse(d)=0.0_r8
+            ELSE
+              kad_inverse(d)=1.0_r8/MAX(kad(d),epson)
+            END IF
+#  if defined THETA_AC_WALL
+            FD(i,d)=0.0_r8
+#  else
+            IF (ct(i,j,d).ge.0.0_r8) THEN
+              IF (abs(grad_d(d)).le.epson) THEN
+                rl=0.0_r8
+                rkal=0.0_r8
+              ELSE
+                rl=grad_d(d-1)/(grad_d(d))
+                rkal=kad(d-1)*kad_inverse(d)
+              END IF
+              a1= cc1*kad(d)+cc2-cc3*kad_inverse(d)
+              b1=-cc1*kad(d)+cc2+cc3*kad_inverse(d)
+              betal=a1+b1*rl
+              cff=0.5_r8*max(0.0_r8,min(2.0_r8,2.0_r8*rl*rkal,betal))*    &
+     &                                    grad_d(d)*kad(d)
+              sw_xi=AC(i,j,d-1,3)+cff
+            ELSE
+              IF (abs(grad_d(d)).le.epson) THEN
+                rt=0.0_r8
+                rkar=0.0_r8
+              ELSE
+                rt=grad_d(d+1)/(grad_d(d))
+                rkar=kad(d+1)*kad_inverse(d)
+              END IF
+              a1= cc1*kad(d)+cc2-cc3*kad_inverse(d)
+              b1=-cc1*kad(d)+cc2+cc3*kad_inverse(d)
+              betar=a1+b1*rt
+              cff=0.5_r8*max(0.0_r8,min(2.0_r8,2.0_r8*rt*rkar,betar))*    &
+     &                                  grad_d(d)*kad(d)
+#   if defined THETA_AC_PERIODIC
+              sw_xi=AC(i,j,1,3)-cff
+#   else
+              sw_xi=0.0_r8
+#   endif
+            END IF
+            FD(i,d)=sw_xi*ct(i,j,d)*opd
+#  endif
+          END DO
+        END DO
+# endif
 !
 !  Time-step directional advection (m Tunits).
 !

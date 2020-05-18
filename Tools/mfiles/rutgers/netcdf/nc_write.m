@@ -34,9 +34,9 @@ function status = nc_write(ncfile, Vname, f, varargin)
 %    status      Error flag
 %
 
-% svn $Id: nc_write.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: nc_write.m 996 2020-01-10 04:28:56Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%
@@ -63,7 +63,7 @@ end
 
 [method,~,~] = nc_interface(ncfile);
 
-switch(method),
+switch(method)
   case {'native'}
     status = nc_write_matlab(ncfile, Vname, f, Tindex, Info);
   case {'mexnc'}
@@ -139,11 +139,11 @@ status = 0;
 % Check if there is an unlimited dimension or a time dimension.
 
 index = 0;
-if (nvdims > 0),
-  for n=1:nvdims,
+if (nvdims > 0)
+  for n=1:nvdims
     dname = char(Info.Variables(ivar).Dimensions(n).Name);
     if (Info.Variables(ivar).Dimensions(n).Unlimited ||                 ...
-        ~isempty(strfind(dname,'time'))),
+        ~isempty(strfind(dname,'time')))
       got.RecDim = true;
       index = n;
     end
@@ -152,13 +152,13 @@ end
 
 % Inquire information about the attributes.
 
-if (nvatts > 0),
-  for n=1:nvatts,
+if (nvatts > 0)
+  for n=1:nvatts
     aname = char(Info.Variables(ivar).Attributes(n).Name);
     switch aname
       case {'_FillValue', '_fillvalue', 'missing_value'}
         spval = Info.Variables(ivar).Attributes(n).Value;
-        if (strcmp(aname, 'missing_value')),
+        if (strcmp(aname, 'missing_value'))
           got.missing_value = true;
         else
           got.FillValue = true;
@@ -169,11 +169,11 @@ end
 
 % Set start and count indices to process.
 
-if (nvdims > 0),
+if (nvdims > 0)
   start = zeros([1 nvdims]);
   count = Inf([1 nvdims]); 
 
-  for n=1:nvdims,
+  for n=1:nvdims
     start(n) = 0;
     count(n) = Info.Variables(ivar).Dimensions(n).Length;
   end
@@ -184,10 +184,10 @@ end
 % (like variational data assimilation files).
 
 datum = false;
-if (got.RecDim  && (nvdims == 1)),
+if (got.RecDim  && (nvdims == 1))
   if (length(f) > 1)
     datum = true;
-    if (time_rec),
+    if (time_rec)
       start(index) = Tindex-1;
     else
       start(index) = 0;
@@ -196,7 +196,7 @@ if (got.RecDim  && (nvdims == 1)),
   end
 end
 
-if (~datum && time_rec && (index > 0)),
+if (~datum && time_rec && (index > 0))
   start(index) = Tindex-1;
   count(index) = 1;
 end
@@ -212,7 +212,7 @@ fmax = max(f(:));
 
 % Replace NaNs if any with fill value.
 
-if (got.FillValue),
+if (got.FillValue)
   ind = isnan(f);
   if (~isempty(ind))
     switch nctype
@@ -243,7 +243,7 @@ varid = netcdf.inqVarID(ncid, Vname);
 
 % Write out data.
 
-if (nvdims > 0),
+if (nvdims > 0)
   netcdf.putVar(ncid, varid, start, count, f)
 else
   netcdf.putVar(ncid, varid, f)
@@ -255,10 +255,10 @@ netcdf.close(ncid);
 
 % Report.
 
-if (nvdims > 1),
+if (nvdims > 1)
   text(1:19)=' ';
   text(1:length(Vname))=Vname;
-  if (nargin > 3),
+  if (got.RecDim)
     disp(['Wrote ',sprintf('%19s',text),                                ...
           ' into record: ',num2str(Tindex,'%4.4i'),                     ...
           ', Min=',sprintf('%12.5e',fmin),                              ...
@@ -322,7 +322,7 @@ end
 % Open NetCDF file.
 
 [ncid]=mexnc('ncopen',ncfile,'NC_WRITE');
-if (ncid == -1),
+if (ncid == -1)
   error(['NC_WRITE_MEXNC: ncopen - unable to open file: ', ncfile]);
 end
 
@@ -337,7 +337,7 @@ mexnc('setopts',0);
 % Get variable ID.
 
 [varid]=mexnc('ncvarid',ncid,Vname);
-if (varid < 0),
+if (varid < 0)
   [status]=mexnc('ncclose',ncid);
   nc_inq(ncfile);
   disp('  ');
@@ -347,14 +347,14 @@ end
 % Inquire about unlimmited dimension.
 
 [~,~,~,recdim,status]=mexnc('ncinquire',ncid);
-if (status == -1),
+if (status == -1)
   error(['NC_WRITE_MEXNC: ncinquire - cannot inquire file: ',ncfile])
 end
 
 % Get information about requested variable.
 
 [Vname,nctype,nvdims,dimids,nvatts,status]=mexnc('ncvarinq',ncid,varid);
-if (status == -1),
+if (status == -1)
   error(['NC_WRITE_MEXNC: ncvarinq - unable to inquire about ',         ...
          'variable: ',Vname]);
 end
@@ -364,19 +364,19 @@ end
 index = 0;
 unlimited = false;
 
-if (nvdims > 0),
+if (nvdims > 0)
   start = zeros([1 nvdims]);
   count = Inf([1 nvdims]); 
 
-  for n=1:nvdims,
+  for n=1:nvdims
     [dname,size,status]=mexnc('ncdiminq',ncid,dimids(n));
-    if (status == -1),
+    if (status == -1)
       error(['NC_WRITE_MEXNC: ncdiminq - unable to inquire about ',     ...
              'dimension ID: ',num2str(dimids(n))])
     else
       start(n) = 0;
       count(n) = size;
-      if ((dimids(n) == recdim) || ~isempty(strfind(dname,'time'))),
+      if ((dimids(n) == recdim) || ~isempty(strfind(dname,'time')))
         unlimited = true;
         index = n;
       end
@@ -388,7 +388,7 @@ end
 
 got.FillValue = false;
 
-for i = 0:nvatts-1,
+for i = 0:nvatts-1
   [attnam,status]=mexnc('inq_attname',ncid,varid,i);
   if (status == -1)
     error(['NC_WRITE_MEXNC: inq_attname: error while inquiring ',       ...
@@ -399,9 +399,9 @@ for i = 0:nvatts-1,
   if (status == -1)
     error(['NC_WRITE_MEXNC: inq_atttype: error while inquiring ',       ...
            'attribute ', num2str(i)]);
-  end,
+  end
   if (strcmp(attnam(1:lstr),'_FillValue')     ||                        ...
-      strcmp(attnam(1:lstr),'missing_value')),
+      strcmp(attnam(1:lstr),'missing_value'))
     switch atype
       case (nc_constant('nc_double'))
         [spval,status] = mexnc('get_att_double',ncid,varid,attnam(1:lstr));
@@ -422,7 +422,7 @@ for i = 0:nvatts-1,
         [spval,status] = mexnc('ncattget'      ,ncid,varid,attnam(1:lstr));
         myfunc = 'ncattget';
     end
-    if (status == -1),
+    if (status == -1)
       error(['NC_WRITE_MEXNC: ',myfunc,' - error while reading ',       ...
              attnam(1:lstr),' attribute'])
     end
@@ -435,10 +435,10 @@ end
 % dimension (like variational data assimilation files).
 
 datum = false;
-if (unlimited && (nvdims == 1)),
+if (unlimited && (nvdims == 1))
   if (length(f) > 1)
     datum = true;
-    if (time_rec),
+    if (time_rec)
       start(index) = Tindex-1;
     else
       start(index) = 0;
@@ -447,7 +447,7 @@ if (unlimited && (nvdims == 1)),
   end
 end
 
-if (~datum && time_rec && (index > 0)),
+if (~datum && time_rec && (index > 0))
   start(index) = Tindex-1;
   count(index) = 1;
 end
@@ -463,7 +463,7 @@ fmax = max(f(:));
 
 % Replace NaNs if any with fill value.
 
-if (got.FillValue),
+if (got.FillValue)
   ind = isnan(f);
   if (~isempty(ind))
     switch nctype
@@ -487,7 +487,7 @@ end
 % Write out variable into NetCDF file.
 %--------------------------------------------------------------------------
 
-if (nvdims > 0),
+if (nvdims > 0)
   switch nctype
     case (nc_constant('nc_double'))
       status = mexnc('put_vara_double',ncid,varid,start,count,f);
@@ -538,10 +538,10 @@ end
 
 % Report.
 
-if (status ~= -1 && nvdims > 1),
+if (status ~= -1 && nvdims > 1)
   text(1:19)=' ';
   text(1:length(Vname))=Vname;
-  if (nargin > 3),
+  if (got.RecDim)
     disp(['Wrote ',sprintf('%19s',text),                                ...
           ' into record: ',num2str(Tindex,'%4.4i'),                     ...
           ', Min=',sprintf('%12.5e',fmin),                              ...
@@ -553,7 +553,7 @@ if (status ~= -1 && nvdims > 1),
   end
 end
 
-if (status == -1),
+if (status == -1)
   error(['NC_WRITE_MEXNC: ',myfunc,' - error while writting ',          ...
          'variable: ', Vname, sprintf('\n'), blanks(16),                ...
           mexnc('strerror',status)]);
@@ -564,7 +564,7 @@ end
 %--------------------------------------------------------------------------
 
 status = mexnc('ncclose',ncid);
-if (status == -1),
+if (status == -1)
   error(['NC_WRITE_MEXNC: ncclose - unable to close NetCDF file: ',     ...
         ncfile]);
 end

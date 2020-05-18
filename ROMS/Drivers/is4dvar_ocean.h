@@ -1,9 +1,8 @@
-#include "cppdefs.h"
       MODULE ocean_control_mod
 !
-!svn $Id: is4dvar_ocean.h 927 2018-10-16 03:51:56Z arango $
+!svn $Id: is4dvar_ocean.h 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -236,18 +235,6 @@
      &                 __FILE__)) RETURN
       END DO
 #endif
-!
-!-----------------------------------------------------------------------
-!  Create 4D-Var analysis file that used as initial conditions for the
-!  next data assimilation cycle.
-!-----------------------------------------------------------------------
-!
-      DO ng=1,Ngrids
-        LdefDAI(ng)=.TRUE.
-        CALL def_dai (ng)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
-      END DO
 
       RETURN
       END SUBROUTINE ROMS_initialize
@@ -311,7 +298,7 @@
 
       integer :: my_inner, my_outer
       integer :: AdjRec, Lbck, Lini, Lsav, Rec1, Rec2, Rec3, Rec4
-      integer :: i, my_iic, ng, tile
+      integer :: i, lstr, my_iic, ng, tile
       integer :: Lcon, LTLM1, LTLM2, LTLM3, LADJ1, LADJ2
       integer :: Fcount, NRMrec
       integer :: status
@@ -364,22 +351,17 @@
 !  for each outher loop.
 !
         DO ng=1,Ngrids
+          idefHIS(ng)=-1
           LdefHIS(ng)=.TRUE.
           LwrtHIS(ng)=.TRUE.
-          WRITE (HIS(ng)%name,10) TRIM(FWD(ng)%base), outer-1
-        END DO
-
 #if defined BULK_FLUXES && defined NL_BULK_FLUXES
-!
-!  Set file name containing the nonlinear model bulk fluxes to be read
-!  and processed by other algorithms.
-!
-        IF (outer.eq.1) THEN
-          DO ng=1,Ngrids
-            BLK(ng)%name=HIS(ng)%name
-          END DO
-        END IF
+          LreadBLK(ng)=.FALSE.
 #endif
+          LreadFWD(ng)=.FALSE.
+          WRITE (HIS(ng)%name,10) TRIM(FWD(ng)%head), outer-1
+          lstr=LEN_TRIM(HIS(ng)%name)
+          HIS(ng)%base=HIS(ng)%name(1:lstr-3)
+        END DO
 !
 !  Clear nonlinear mixing arrays.
 !
@@ -400,7 +382,7 @@
           wrtNLmod(ng)=.TRUE.
           wrtTLmod(ng)=.FALSE.
           RST(ng)%Rindex=0
-          Fcount=RST(ng)%Fcount
+          Fcount=RST(ng)%load
           RST(ng)%Nrec(Fcount)=0
         END DO
 
@@ -419,9 +401,21 @@
         IF (Nrun.eq.1) THEN
           DO ng=1,Ngrids
             INI(ng)%Rindex=1
-            Fcount=INI(ng)%Fcount
+            Fcount=INI(ng)%load
             INI(ng)%Nrec(Fcount)=1
             CALL wrt_ini (ng, 1)
+            IF (FoundError(exit_flag, NoError, __LINE__,                &
+     &                     __FILE__)) RETURN
+          END DO
+        END IF
+!
+!  Create 4D-Var analysis file that used as initial conditions for the
+!  next data assimilation cycle now that grid information is known.
+!
+        IF (outer.eq.1) THEN
+          DO ng=1,Ngrids
+            LdefDAI(ng)=.TRUE.
+            CALL def_dai (ng)
             IF (FoundError(exit_flag, NoError, __LINE__,                &
      &                     __FILE__)) RETURN
           END DO
@@ -514,18 +508,24 @@
 !
         DO ng=1,Ngrids
 #ifdef AVERAGES
+          idefAVG(ng)=-1
           LdefAVG(ng)=.TRUE.
           LwrtAVG(ng)=.TRUE.
-          WRITE (AVG(ng)%name,10) TRIM(AVG(ng)%base), outer
+          WRITE (AVG(ng)%name,10) TRIM(AVG(ng)%head), outer
+          lstr=LEN_TRIM(AVG(ng)%name)
+          AVG(ng)%base=AVG(ng)%name(1:lstr-3)
 #endif
 #ifdef DIAGNOSTICS
+          idefDIA(ng)=-1
           LdefDIA(ng)=.TRUE.
           LwrtDIA(ng)=.TRUE.
-          WRITE (DIA(ng)%name,10) TRIM(DIA(ng)%base), outer
+          WRITE (DIA(ng)%name,10) TRIM(DIA(ng)%head), outer
+          lstr=LEN_TRIM(DIA(ng)%name)
+          DIA(ng)%base=DIA(ng)%name(1:lstr-3)
 #endif
           wrtObsScale(ng)=.TRUE.
           IF (Master) THEN
-            WRITE (stdout,20) 'NL', ng, ntstart(ng), ntend(ng)
+            WRITE (stdout,30) 'NL', ng, ntstart(ng), ntend(ng)
           END IF
         END DO
 
@@ -552,6 +552,35 @@
           wrtObsScale(ng)=.FALSE.
           wrtTLmod(ng)=.TRUE.
         END DO
+!
+!  Set structure for the nonlinear forward trajectory to be processed
+!  by the tangent linear and adjoint models. Also, set switches to
+!  process the FWD structure in routine "check_multifile". Notice that
+!  it is possible to split solution into multiple NetCDF files to reduce
+!  their size.
+!
+        CALL edit_multifile ('HIS2FWD')
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+        DO ng=1,Ngrids
+          LreadFWD(ng)=.TRUE.
+        END DO
+
+#if defined BULK_FLUXES && defined NL_BULK_FLUXES
+!
+!  Set structure for the nonlinear surface fluxes to be processed by
+!  by the tangent linear and adjoint models. Also, set switches to
+!  process the BLK structure in routine "check_multifile".  Notice that
+!  it is possible to split solution into multiple NetCDF files to reduce
+!  their size.
+!
+        CALL edit_multifile ('HIS2BLK')
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+        DO ng=1,Ngrids
+          LreadBLK(ng)=.TRUE.
+        END DO
+#endif
 
 #if defined ADJUST_BOUNDARY || defined ADJUST_STFLUX || \
     defined ADJUST_WSTRESS
@@ -596,15 +625,18 @@
 !
         DO ng=1,Ngrids
           ADM(ng)%Rindex=0
-          Fcount=ADM(ng)%Fcount
+          Fcount=ADM(ng)%load
           ADM(ng)%Nrec(Fcount)=0
         END DO
 !
 !  An adjoint NetCDF is created for each outer loop.
 !
         DO ng=1,Ngrids
+          idefADJ(ng)=-1
           LdefADJ(ng)=.TRUE.
-          WRITE (ADM(ng)%name,10) TRIM(ADM(ng)%base), outer
+          WRITE (ADM(ng)%name,10) TRIM(ADM(ng)%head), outer
+          lstr=LEN_TRIM(ADM(ng)%name)
+          ADM(ng)%base=ADM(ng)%name(1:lstr-3)
         END DO
 !
 !  Define output Hessian NetCDF file containing the eigenvectors
@@ -613,8 +645,10 @@
 !  outer loop. That is, a file is created for each outer loop.
 !
         DO ng=1,Ngrids
-          WRITE (HSS(ng)%name,10) TRIM(HSS(ng)%base), outer
           LdefHSS(ng)=.TRUE.
+          WRITE (HSS(ng)%name,10) TRIM(HSS(ng)%head), outer
+          lstr=LEN_TRIM(HSS(ng)%name)
+          HSS(ng)%base=HSS(ng)%name(1:lstr-3)
           CALL def_hessian (ng)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
@@ -665,14 +699,17 @@
 #ifdef MULTIPLE_TLM
 !
 !  If multiple TLM history NetCDF files, activate writing and determine
-!  output file name. The multiple file option is use to perturb initial
+!  output filename. The multiple file option is used to perturb initial
 !  state and create ensembles.  The TLM final trajectory is written for
 !  each inner loop on separated NetCDF files.
 !
           DO ng=1,Ngrids
+            idefTLM(ng)=-1
             LdefTLM(ng)=.TRUE.
             LwrtTLM(ng)=.TRUE.
-            WRITE (TLM(ng)%name,10) TRIM(TLM(ng)%base), Nrun
+            WRITE (TLM(ng)%name,20) TRIM(TLM(ng)%head), Nrun
+            lstr=LEN_TRIM(TLM(ng)%name)
+            TLM(ng)%base=TLM(ng)%name(1:lstr-3)
           END DO
 #endif
 !
@@ -692,7 +729,7 @@
 !
           DO ng=1,Ngrids
             IF (Master) THEN
-              WRITE (stdout,20) 'TL', ng, ntstart(ng), ntend(ng)
+              WRITE (stdout,30) 'TL', ng, ntstart(ng), ntend(ng)
             END IF
           END DO
 
@@ -758,7 +795,7 @@
 !
           DO ng=1,Ngrids
             IF (Master) THEN
-              WRITE (stdout,20) 'AD', ng, ntstart(ng), ntend(ng)
+              WRITE (stdout,30) 'AD', ng, ntstart(ng), ntend(ng)
             END IF
           END DO
 
@@ -959,7 +996,7 @@
               Optimality(ng)=2.0_r8*FOURDVAR(ng)%CostFun(0)/            &
      &                       (FOURDVAR(ng)%ObsCount(0)-                 &
      &                        FOURDVAR(ng)%ObsReject(0))
-              WRITE (stdout,30) outer, inner,                           &
+              WRITE (stdout,40) outer, inner,                           &
      &                          FOURDVAR(ng)%BackCost(0)/               &
      &                          FOURDVAR(ng)%CostNorm(0),               &
      &                          FOURDVAR(ng)%ObsCost(0)/                &
@@ -969,11 +1006,11 @@
                 DO i=0,NobsVar(ng)
                   IF (FOURDVAR(ng)%NLobsCost(i).ne.0.0_r8) THEN
                     IF (i.eq.0) THEN
-                      WRITE (stdout,40) outer, inner,                   &
+                      WRITE (stdout,50) outer, inner,                   &
      &                                  FOURDVAR(ng)%NLobsCost(i)/      &
      &                                  FOURDVAR(ng)%CostNorm(i)
                     ELSE
-                      WRITE (stdout,50) outer, inner,                   &
+                      WRITE (stdout,60) outer, inner,                   &
      &                                  FOURDVAR(ng)%NLobsCost(i)/      &
      &                                  FOURDVAR(ng)%CostNorm(i),       &
      &                                  TRIM(ObsName(i))
@@ -982,7 +1019,7 @@
                   FOURDVAR(ng)%NLobsCost(i)=0.0
                 END DO
               END IF
-              WRITE (stdout,60) outer, inner, Optimality(ng)
+              WRITE (stdout,70) outer, inner, Optimality(ng)
             END DO
           END IF
 !
@@ -1151,7 +1188,7 @@
 !
         DO ng=1,Ngrids
           INI(ng)%Rindex=0
-          Fcount=INI(ng)%Fcount
+          Fcount=INI(ng)%load
           INI(ng)%Nrec(Fcount)=1
           CALL wrt_ini (ng, Lini)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
@@ -1248,7 +1285,7 @@
 !
         SourceFile=__FILE__ // ", ROMS_run"
         DO ng=1,Ngrids
-          CALL netcdf_close (ng, iNLM, FWD(ng)%ncid)
+!!        CALL netcdf_close (ng, iNLM, FWD(ng)%ncid)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END DO
@@ -1262,15 +1299,24 @@
 !-----------------------------------------------------------------------
 !
 !  Set nonlinear output history file name. Create a basic state file
-!  for each outher loop.
+!  for each outher loop. Notice that the LreadBLK and LreadFWD switches
+!  are turned off to suppress processing of the structures when
+!  "check_multifile" during nonlinear model execution.
 !
       DO ng=1,Ngrids
+        idefHIS(ng)=-1
         LdefHIS(ng)=.TRUE.
         LwrtHIS(ng)=.TRUE.
+#if defined BULK_FLUXES && defined NL_BULK_FLUXES
+        LreadBLK(ng)=.FALSE.
+#endif
+        LreadFWD(ng)=.FALSE.
         HIS(ng)%Rindex=0
-        Fcount=HIS(ng)%Fcount
+        Fcount=HIS(ng)%load
         HIS(ng)%Nrec(Fcount)=0
-        WRITE (HIS(ng)%name,10) TRIM(FWD(ng)%base), Nouter
+        WRITE (HIS(ng)%name,10) TRIM(FWD(ng)%head), Nouter
+        lstr=LEN_TRIM(HIS(ng)%name)
+        HIS(ng)%base=HIS(ng)%name(1:lstr-3)
       END DO
 !
 !  Clear nonlinear mixing arrays.
@@ -1290,7 +1336,7 @@
         wrtTLmod(ng)=.FALSE.
         wrtMisfit(ng)=.FALSE.
         RST(ng)%Rindex=0
-        Fcount=RST(ng)%Fcount
+        Fcount=RST(ng)%load
         RST(ng)%Nrec(Fcount)=0
       END DO
 
@@ -1313,17 +1359,23 @@
 !
       DO ng=1,Ngrids
 #ifdef AVERAGES
+        idefAVG(ng)=-1
         LdefAVG(ng)=.TRUE.
         LwrtAVG(ng)=.TRUE.
-        WRITE (AVG(ng)%name,10) TRIM(AVG(ng)%base), outer
+        WRITE (AVG(ng)%name,10) TRIM(AVG(ng)%head), outer
+        lstr=LEN_TRIM(AVG(ng)%name)
+        AVG(ng)%base=AVG(ng)%name(1:lstr-3)
 #endif
 #ifdef DIAGNOSTICS
+        idefDIA(ng)=-1
         LdefDIA(ng)=.TRUE.
         LwrtDIA(ng)=.TRUE.
-        WRITE (DIA(ng)%name,10) TRIM(DIA(ng)%base), outer
+        WRITE (DIA(ng)%name,10) TRIM(DIA(ng)%head), outer
+        lstr=LEN_TRIM(DIA(ng)%name)
+        DIA(ng)%base=DIA(ng)%name(1:lstr-3)
 #endif
         IF (Master) THEN
-          WRITE (stdout,20) 'NL', ng, ntstart(ng), ntend(ng)
+          WRITE (stdout,30) 'NL', ng, ntstart(ng), ntend(ng)
         END IF
       END DO
 
@@ -1336,6 +1388,35 @@
 !$OMP END PARALLEL
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
+!
+!  Set structure for the nonlinear forward trajectory to be processed
+!  by the tangent linear and adjoint models. Also, set switches to
+!  process the FWD structure in routine "check_multifile".  Notice that
+!  it is possible to split solution into multiple NetCDF files to reduce
+!  their size.
+!
+      CALL edit_multifile ('HIS2FWD')
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+      DO ng=1,Ngrids
+        LreadFWD(ng)=.TRUE.
+      END DO
+
+#if defined BULK_FLUXES && defined NL_BULK_FLUXES
+!
+!  Set structure for the nonlinear surface fluxes to be processed by
+!  by the tangent linear and adjoint models. Also, set switches to
+!  process the BLK structure in routine "check_multifile".  Notice that
+!  it is possible to split solution into multiple NetCDF files to reduce
+!  their size.
+!
+      CALL edit_multifile ('HIS2BLK')
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+      DO ng=1,Ngrids
+        LreadBLK(ng)=.TRUE.
+      END DO
+#endif
 !
 !  Write out nonlinear model final misfit cost function into
 !  DAV(ng)%name NetCDF file. Notice that it is written in the
@@ -1358,11 +1439,11 @@
           DO i=0,NobsVar(ng)
             IF (FOURDVAR(ng)%NLobsCost(i).ne.0.0_r8) THEN
               IF (i.eq.0) THEN
-                WRITE (stdout,40) outer, inner,                         &
+                WRITE (stdout,50) outer, inner,                         &
      &                            FOURDVAR(ng)%NLobsCost(i)/            &
      &                            FOURDVAR(ng)%CostNorm(i)
               ELSE
-                WRITE (stdout,50) outer, inner,                         &
+                WRITE (stdout,60) outer, inner,                         &
      &                            FOURDVAR(ng)%NLobsCost(i)/            &
      &                            FOURDVAR(ng)%CostNorm(i),             &
      &                            TRIM(ObsName(i))
@@ -1379,16 +1460,17 @@
         HIS(ng)%ncid=-1
       END DO
 !
- 10   FORMAT (a,'_',i3.3,'.nc')
- 20   FORMAT (/,1x,a,1x,'ROMS/TOMS: started time-stepping:',            &
+ 10   FORMAT (a,'_outer',i0,'.nc')
+ 20   FORMAT (a,'_member',i3.3,'.nc')
+ 30   FORMAT (/,1x,a,1x,'ROMS/TOMS: started time-stepping:',            &
      &        ' (Grid: ',i2.2,' TimeSteps: ',i8.8,' - ',i8.8,')',/)
- 30   FORMAT (/,' (',i3.3,',',i3.3,'): TLM Cost Jb, J  = ',             &
+ 40   FORMAT (/,' (',i3.3,',',i3.3,'): TLM Cost Jb, J  = ',             &
      &        1p,e17.10,0p,1x,1p,e17.10,0p,t68,1p,e11.4,' %')
- 40   FORMAT (/,'>(',i3.3,',',i3.3,'): NLM Cost     J  = ',             &
+ 50   FORMAT (/,'>(',i3.3,',',i3.3,'): NLM Cost     J  = ',             &
      &        18x,1p,e17.10,0p)
- 50   FORMAT (' (',i3.3,',',i3.3,'): NLM Cost     J  = ',               &
+ 60   FORMAT (' (',i3.3,',',i3.3,'): NLM Cost     J  = ',               &
      &        18x,1p,e17.10,0p,t69,a)
- 60   FORMAT (/,1x,'(',i3.3,',',i3.3,'): Optimality (2*J/Nobs) = ',     &
+ 70   FORMAT (/,1x,'(',i3.3,',',i3.3,'): Optimality (2*J/Nobs) = ',     &
      &        1p,e17.10,/)
 
       RETURN
@@ -1452,7 +1534,7 @@
             IF (Master) WRITE (stdout,10)
  10         FORMAT (/,' Blowing-up: Saving latest model state into ',   &
      &                ' RESTART file',/)
-            Fcount=RST(ng)%Fcount
+            Fcount=RST(ng)%load
             IF (LcycleRST(ng).and.(RST(ng)%Nrec(Fcount).ge.2)) THEN
               RST(ng)%Rindex=2
               LcycleRST(ng)=.FALSE.
@@ -1492,6 +1574,9 @@
 !
 !  Close IO files.
 !
+      DO ng=1,Ngrids
+        CALL close_inp (ng, iNLM)
+      END DO
       CALL close_out
 
       RETURN

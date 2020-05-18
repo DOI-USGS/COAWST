@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: tl_w4dvar_ocean.h 937 2019-01-28 06:13:04Z arango $
+!svn $Id: tl_w4dvar_ocean.h 995 2020-01-10 04:01:28Z arango $
 !=================================================== Andrew M. Moore ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -368,7 +368,7 @@
 !
       DO ng=1,Ngrids
         INI(ng)%Rindex=1
-        Fcount=INI(ng)%Fcount
+        Fcount=INI(ng)%load
         INI(ng)%Nrec(Fcount)=1
         CALL wrt_ini (ng, 1)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
@@ -763,7 +763,7 @@
             DO ng=1,Ngrids
               WRTforce(ng)=.TRUE.
               IF (Nrun.gt.1) LdefADJ(ng)=.FALSE.
-              Fcount=ADM(ng)%Fcount
+              Fcount=ADM(ng)%load
               ADM(ng)%Nrec(Fcount)=0
               ADM(ng)%Rindex=0
             END DO
@@ -883,7 +883,7 @@
 !
             DO ng=1,Ngrids
               IF (inner.gt.1) LdefTLM(ng)=.FALSE.
-              Fcount=TLM(ng)%Fcount
+              Fcount=TLM(ng)%load
               TLM(ng)%Nrec(Fcount)=0
               TLM(ng)%Rindex=0
             END DO
@@ -973,7 +973,7 @@
         DO ng=1,Ngrids
           WRTforce(ng)=.TRUE.
           IF (Nrun.gt.1) LdefADJ(ng)=.FALSE.
-          Fcount=ADM(ng)%Fcount
+          Fcount=ADM(ng)%load
           ADM(ng)%Nrec(Fcount)=0
           ADM(ng)%Rindex=0
         END DO
@@ -1299,7 +1299,7 @@
             DO ng=1,Ngrids
               WRTforce(ng)=.TRUE.
               IF (Nrun.gt.1) LdefADJ(ng)=.FALSE.
-              Fcount=ADM(ng)%Fcount
+              Fcount=ADM(ng)%load
               ADM(ng)%Nrec(Fcount)=0
               ADM(ng)%Rindex=0
             END DO
@@ -1419,7 +1419,7 @@
 !
             DO ng=1,Ngrids
               IF (inner.gt.1) LdefTLM(ng)=.FALSE.
-              Fcount=TLM(ng)%Fcount
+              Fcount=TLM(ng)%load
               TLM(ng)%Nrec(Fcount)=0
               TLM(ng)%Rindex=0
             END DO
@@ -1496,7 +1496,7 @@
         DO ng=1,Ngrids
           WRTforce(ng)=.TRUE.
           IF (Nrun.gt.1) LdefADJ(ng)=.FALSE.
-          Fcount=ADM(ng)%Fcount
+          Fcount=ADM(ng)%load
           ADM(ng)%Nrec(Fcount)=0
           ADM(ng)%Rindex=0
         END DO
@@ -1617,7 +1617,7 @@
 !
         DO ng=1,Ngrids
 ! AMM     IF (inner.gt.1) LdefTLM(ng)=.FALSE.
-          Fcount=TLM(ng)%Fcount
+          Fcount=TLM(ng)%load
           TLM(ng)%Nrec(Fcount)=0
           TLM(ng)%Rindex=0
         END DO
@@ -1708,7 +1708,7 @@
             IF (Master) WRITE (stdout,10)
  10         FORMAT (/,' Blowing-up: Saving latest model state into ',   &
      &                ' RESTART file',/)
-            Fcount=RST(ng)%Fcount
+            Fcount=RST(ng)%load
             IF (LcycleRST(ng).and.(RST(ng)%Nrec(Fcount).ge.2)) THEN
               RST(ng)%Rindex=2
               LcycleRST(ng)=.FALSE.
@@ -1748,6 +1748,9 @@
 !
 !  Close IO files.
 !
+      DO ng=1,Ngrids
+        CALL close_inp (ng, iNLM)
+      END DO
       CALL close_out
 
       RETURN

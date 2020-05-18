@@ -61,7 +61,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -377,7 +377,8 @@
         IF (OQPROC(20) .AND. OPTG.EQ.5) THEN                              40.80
            ALLOCATE(FORCE(nverts,2))                                      40.80
            CALL SwanComputeForce ( FORCE(1,1), FORCE(1,2), AC2,           40.80
-     &                             COMPDA(1,JDP2), SPCSIG, SPCDIR )       40.80
+     &                             COMPDA(1,JDP2), COMPDA(1,JHS),         40.80
+     &                             SPCSIG, SPCDIR )                       40.80
         ELSE                                                              40.80
            ALLOCATE(FORCE(0,0))                                           40.80
         ENDIF                                                             40.80
@@ -425,7 +426,7 @@
      &                   SPCDIR              ,NE                   ,      40.31 30.90
      &                   NED                 ,KGRPNT               ,      40.31 30.90
      &                   XCGRID              ,YCGRID               ,      30.72
-     &                   IONOD                                            40.31
+     &                   COMPDA(1,JHS)       ,IONOD                       40.31
      &                                                             )
 !
           DEALLOCATE(ACLOC)                                               40.31
@@ -526,6 +527,7 @@
       USE OUTP_DATA                                                       40.31
       USE M_PARALL                                                        40.31
       USE M_MPI
+      USE mct_coupler_params
 !
 !
 !
@@ -1503,7 +1505,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1861,7 +1863,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2130,7 +2132,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2460,7 +2462,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -2490,6 +2492,7 @@
 !     40.80: Marcel Zijlema
 !     40.86: Nico Booij
 !     41.12: Nico Booij
+!     41.75: Erick Rogers
 !
 !  1. Updates
 !
@@ -2514,6 +2517,7 @@
 !                     points on the other side of the obstacle not taken into account
 !                     calls of SWIPOL changed
 !     41.12, Apr. 10: output quantity NPL (type nr 70) added
+!     41.75, Jan. 19: adding sea ice
 !
 !  2. Purpose
 !
@@ -2570,6 +2574,11 @@
       INTEGER MIP,IENT,JJ,IVXP,IVYP,IVDIST,IP,JVQX,JVQY,
      &        KK, IXB, IXE, IYB, IYE, IX, IY
       REAL UXLOC,UYLOC,RDIST,RDX,RDY,RR,UBLOC,F1,RTMP,XP1,YP1
+!
+      INTEGER IVTYPE ! temporary counter for NMOVAR, used in VOQR,
+                     ! OQPROC, OVKEYW, etc.
+      INTEGER JCOMPDA ! temporary index for COMPDA, corresponds to
+                      ! permanent variable Jw2o1x, etc.
 !
       type(verttype), dimension(:), pointer :: vert                       40.91
       SAVE IENT
@@ -2733,44 +2742,44 @@
 !
 !     DirBot                                                              !PSD 09/22/2001
 !
-      IF (OQPROC(76)) THEN                                                !PSD
+      IF (OQPROC(79)) THEN                                                !PSD
         IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 76,
-     &  VOQR(76), JDBOT
+     &  VOQR(79), JDBOT
         IF (JDBOT.GT.1) THEN                                              !PSD
            UIN = COS(COMPDA(:,JDBOT));
            VIN = SIN(COMPDA(:,JDBOT));
-           WHERE (COMPDA(:,JDBOT) .EQ. OVEXCV(76)) UIN = OVEXCV(76)
-           WHERE (COMPDA(:,JDBOT) .EQ. OVEXCV(76)) VIN = OVEXCV(76)
+           WHERE (COMPDA(:,JDBOT) .EQ. OVEXCV(79)) UIN = OVEXCV(79)
+           WHERE (COMPDA(:,JDBOT) .EQ. OVEXCV(79)) VIN = OVEXCV(79)
            IF (OPTG.NE.5) THEN                                            !PSD
-              CALL SWIPOL(UIN,OVEXCV(76),XC, YC, MIP, CROSS,
+              CALL SWIPOL(UIN,OVEXCV(79),XC, YC, MIP, CROSS,
      &                    UOUT(1) ,KGRPNT, COMPDA(1,JDP2))
-              CALL SWIPOL(VIN,OVEXCV(76),XC, YC, MIP, CROSS,
+              CALL SWIPOL(VIN,OVEXCV(79),XC, YC, MIP, CROSS,
      &                    VOUT(1) ,KGRPNT, COMPDA(1,JDP2))
            ELSE                                                           !PSD
            !PSD TESTED FOR UNSTRUCTURED
               CALL SwanInterpolateOutput ( UOUT(1), VOQ(1,1),             !PSD
      &                                     VOQ(1,2), UIN,                 !PSD
-     &                                     MIP, KVERT, OVEXCV(76) )       !PSD
+     &                                     MIP, KVERT, OVEXCV(79) )       !PSD
               CALL SwanInterpolateOutput ( VOUT(1), VOQ(1,1),             !PSD
      &                                     VOQ(1,2), VIN,                 !PSD
-     &                                     MIP, KVERT, OVEXCV(76) )       !PSD
+     &                                     MIP, KVERT, OVEXCV(79) )       !PSD
            ENDIF                                                          !PSD
            !Put in the proper convention...calculated in cartesian radians
            DO IP = 1, MIP
-              VOQ(IP,VOQR(76)) = ATAN2(VOUT(IP),UOUT(IP))
+              VOQ(IP,VOQR(79)) = ATAN2(VOUT(IP),UOUT(IP))
 	      IF (BNAUT) THEN
-                VOQ(IP,VOQR(76)) = VOQ(IP,VOQR(76)) * 180./PI
+                VOQ(IP,VOQR(79)) = VOQ(IP,VOQR(79)) * 180./PI
               ELSE
-                VOQ(IP,VOQR(76)) = (ALCQ + VOQ(IP,VOQR(76))) * 180./PI
+                VOQ(IP,VOQR(79)) = (ALCQ + VOQ(IP,VOQR(79))) * 180./PI
               ENDIF
-              IF (VOQ(IP,VOQR(76)).LT.0) THEN
-                 VOQ(IP,VOQR(76)) = VOQ(IP,VOQR(76)) + 360.
+              IF (VOQ(IP,VOQR(79)).LT.0) THEN
+                 VOQ(IP,VOQR(79)) = VOQ(IP,VOQR(79)) + 360.
               ENDIF
-              VOQ(IP,VOQR(76)) = DEGCNV(VOQ(IP,VOQR(76)))
+              VOQ(IP,VOQR(79)) = DEGCNV(VOQ(IP,VOQR(79)))
            ENDDO
         ELSE
            DO IP = 1, MIP                                                 !PSD
-             VOQ(IP,VOQR(76)) = OVEXCV(76)                                !PSD
+             VOQ(IP,VOQR(79)) = OVEXCV(79)                                !PSD
            ENDDO                                                          !PSD
         ENDIF
       ENDIF
@@ -2985,6 +2994,87 @@
           END DO
         ENDIF
       ENDIF
+!
+!     dissipation by sea ice: integrated Sice term
+!
+      IVTYPE=76
+      JCOMPDA=JDSXI ! give J-name here, JDSXI/JAICE2/JHICE2
+!     begin block of code that is identical for all new variables
+      IF (OQPROC(IVTYPE)) THEN                                                41.75
+        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) IVTYPE,
+     &  VOQR(IVTYPE), JCOMPDA
+        IF (JCOMPDA.GT.1) THEN
+           IF (OPTG.NE.5) THEN
+              CALL SWIPOL(COMPDA(1,JCOMPDA),OVEXCV(IVTYPE),XC,YC, MIP,
+     &                CROSS,VOQ(1,VOQR(IVTYPE)) ,KGRPNT, COMPDA(1,JDP2))
+           ELSE
+              CALL SwanInterpolateOutput ( VOQ(1,VOQR(IVTYPE)),VOQ(1,1),
+     &                                     VOQ(1,2), COMPDA(1,JCOMPDA),
+     &                                     MIP, KVERT, OVEXCV(IVTYPE) )
+           ENDIF
+        ELSE
+           DO IP = 1, MIP
+             VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
+           ENDDO
+        ENDIF
+      ENDIF
+      IVTYPE=-999
+      JCOMPDA=-999
+!     end block of code that is identical for all new variables
+!
+!     ice concentration (fraction)
+!
+      IVTYPE=77
+      JCOMPDA=JAICE2 ! give J-name here, JDSXI/JAICE2/JHICE2
+!     begin block of code that is identical for all new variables
+      IF (OQPROC(IVTYPE)) THEN                                                41.75
+        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) IVTYPE,
+     &  VOQR(IVTYPE), JCOMPDA
+        IF (JCOMPDA.GT.1) THEN
+           IF (OPTG.NE.5) THEN
+              CALL SWIPOL(COMPDA(1,JCOMPDA),OVEXCV(IVTYPE),XC,YC, MIP,
+     &                CROSS,VOQ(1,VOQR(IVTYPE)) ,KGRPNT, COMPDA(1,JDP2))
+           ELSE
+              CALL SwanInterpolateOutput ( VOQ(1,VOQR(IVTYPE)),VOQ(1,1),
+     &                                     VOQ(1,2), COMPDA(1,JCOMPDA),
+     &                                     MIP, KVERT, OVEXCV(IVTYPE) )
+           ENDIF
+        ELSE
+           DO IP = 1, MIP
+             VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
+           ENDDO
+        ENDIF
+      ENDIF
+      IVTYPE=-999
+      JCOMPDA=-999
+!     end block of code that is identical for all new variables
+!
+!     ice thickness (in meters)
+!
+      IVTYPE=78
+      JCOMPDA=JHICE2 ! give J-name here, JDSXI/JAICE2/JHICE2
+!     begin block of code that is identical for all new variables
+      IF (OQPROC(IVTYPE)) THEN                                                41.75
+        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) IVTYPE,
+     &  VOQR(IVTYPE), JCOMPDA
+        IF (JCOMPDA.GT.1) THEN
+           IF (OPTG.NE.5) THEN
+              CALL SWIPOL(COMPDA(1,JCOMPDA),OVEXCV(IVTYPE),XC,YC, MIP,
+     &                CROSS,VOQ(1,VOQR(IVTYPE)) ,KGRPNT, COMPDA(1,JDP2))
+           ELSE
+              CALL SwanInterpolateOutput ( VOQ(1,VOQR(IVTYPE)),VOQ(1,1),
+     &                                     VOQ(1,2), COMPDA(1,JCOMPDA),
+     &                                     MIP, KVERT, OVEXCV(IVTYPE) )
+           ENDIF
+        ELSE
+           DO IP = 1, MIP
+             VOQ(IP,VOQR(IVTYPE)) = OVEXCV(IVTYPE)
+           ENDDO
+        ENDIF
+      ENDIF
+      IVTYPE=-999
+      JCOMPDA=-999
+!     end block of code that is identical for all new variables
 !
 !     energy generation
 !
@@ -3341,9 +3431,11 @@
             VOQ(IP,JVQY) = SINCQ*UXLOC + COSCQ*UYLOC
           ENDDO
         ELSE
+          UXLOC = U10*COS(WDIP)                                           10.36
+          UYLOC = U10*SIN(WDIP)                                           10.36
           DO IP = 1, MIP
-            VOQ(IP,JVQX) = U10*COS(WDIP-ALPQ)                             10.36
-            VOQ(IP,JVQY) = U10*SIN(WDIP-ALPQ)                             10.36
+            VOQ(IP,JVQX) = COSCQ*UXLOC - SINCQ*UYLOC
+            VOQ(IP,JVQY) = SINCQ*UXLOC + COSCQ*UYLOC
           ENDDO
         ENDIF
       ENDIF
@@ -3739,7 +3831,6 @@
 !PUN            ENDIF
 !PUN            IF ( IONOD(IP).EQ.MYPROC ) WRITE(NREF) IP, IVERTP
 !PUN         ENDDO
-!PUN         IF (IRQ.EQ.NREOQ) CLOSE(NREF)
 !PUN      ENDIF
 !
  900  IF (ALLOCATED(KVERT)) DEALLOCATE(KVERT)                             41.07
@@ -3769,7 +3860,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4034,7 +4125,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5675,7 +5766,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5868,7 +5959,7 @@
      &                   VOQ      ,AC2      ,DEP2     ,SPCSIG   ,         30.72
      &                   WK       ,CG       ,SPCDIR   ,NE       ,
      &                   NED      ,KGRPNT   ,XCGRID   ,YCGRID   ,         30.72
-     &                   IONOD                                            40.31
+     &                   HS       ,IONOD                                  40.31
      &                                                          )
 !                                                                      *
 !***********************************************************************
@@ -5895,7 +5986,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6000,6 +6091,7 @@
       INTEGER MIP, VOQR(*) ,KGRPNT(MXC,MYC)                               30.21
       INTEGER IONOD(*)                                                    40.31
       REAL    AC2(MDC,MSC,MCGRD), CG(*), DEP2(MCGRD), NE(*), NED(*)
+      REAL    HS(MCGRD)
       REAL    SPCDIR(MDC,6)                                               30.82
       REAL    SPCSIG(MSC)                                                 30.72
       REAL    XC(MIP), YC(MIP)
@@ -6051,7 +6143,7 @@
 !                  in Y-direction
 !     NAX, NAY     derivative of N * Ac.dens. = N * E / Sigma, w.r.t. X
 !                  or Y, respectively.
-!     ONX, ONY     Indicates whether or not a output point lies on a
+!     ONX, ONY     Indicates whether or not an output point lies on a
 !                  computational point or not
 !     RRDI,RRDJ    multiplication factor: 0.5 in case of two-sided or 1 in case
 !                  of one-sided differential
@@ -6267,22 +6359,22 @@
         IND8 = KGRPNT(JX  ,JYUP)                                          30.21
         IND9 = KGRPNT(JX  ,JY  )                                          30.21
         IF (ONY) THEN                                                     40.00
-          IF (DEP2(IND5).LE.DEPMIN) GOTO 700
-          IF (DEP2(IND6).LE.DEPMIN) GOTO 700
+          IF (DEP2(IND5).LE.DEPMIN .OR. .NOT. HS(IND5).NE.0.) GOTO 700
+          IF (DEP2(IND6).LE.DEPMIN .OR. .NOT. HS(IND6).NE.0.) GOTO 700
         ELSE
-          IF (DEP2(IND1).LE.DEPMIN) GOTO 700
-          IF (DEP2(IND2).LE.DEPMIN) GOTO 700
-          IF (DEP2(IND3).LE.DEPMIN) GOTO 700
-          IF (DEP2(IND4).LE.DEPMIN) GOTO 700
+          IF (DEP2(IND1).LE.DEPMIN .OR. .NOT. HS(IND1).NE.0.) GOTO 700
+          IF (DEP2(IND2).LE.DEPMIN .OR. .NOT. HS(IND2).NE.0.) GOTO 700
+          IF (DEP2(IND3).LE.DEPMIN .OR. .NOT. HS(IND3).NE.0.) GOTO 700
+          IF (DEP2(IND4).LE.DEPMIN .OR. .NOT. HS(IND4).NE.0.) GOTO 700
         ENDIF
         IF (ONX) THEN                                                     40.00
-          IF (DEP2(IND7).LE.DEPMIN) GOTO 700
-          IF (DEP2(IND8).LE.DEPMIN) GOTO 700
+          IF (DEP2(IND7).LE.DEPMIN .OR. .NOT. HS(IND7).NE.0.) GOTO 700
+          IF (DEP2(IND8).LE.DEPMIN .OR. .NOT. HS(IND8).NE.0.) GOTO 700
         ELSE
-          IF (DEP2(IND1).LE.DEPMIN) GOTO 700
-          IF (DEP2(IND2).LE.DEPMIN) GOTO 700
-          IF (DEP2(IND3).LE.DEPMIN) GOTO 700
-          IF (DEP2(IND4).LE.DEPMIN) GOTO 700
+          IF (DEP2(IND1).LE.DEPMIN .OR. .NOT. HS(IND1).NE.0.) GOTO 700
+          IF (DEP2(IND2).LE.DEPMIN .OR. .NOT. HS(IND2).NE.0.) GOTO 700
+          IF (DEP2(IND3).LE.DEPMIN .OR. .NOT. HS(IND3).NE.0.) GOTO 700
+          IF (DEP2(IND4).LE.DEPMIN .OR. .NOT. HS(IND4).NE.0.) GOTO 700
         ENDIF
 !
 !       determine depth and (x,y) derivatives w.r.t. i and j

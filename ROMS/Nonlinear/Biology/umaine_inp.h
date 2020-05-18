@@ -11,6 +11,7 @@
       USE mod_biology
       USE mod_ncparam
       USE mod_scalars
+      USE inp_decode_mod
 !
       implicit none
 !
@@ -25,8 +26,6 @@
       integer :: iTrcStr, iTrcEnd
       integer :: i, ifield, is, itracer, itrc, ng, nline, status
 
-      integer :: decode_line, load_i, load_l, load_r,load_lbc
-
       integer :: igrid
 
       logical, dimension(NBT,Ngrids) :: Ltrc
@@ -37,11 +36,11 @@
 
       real(r8), dimension(NBT,Ngrids) :: Rbio
 
-      real(r8), dimension(200) :: Rval
+      real(r8), dimension(nRval) :: Rval
 
       character (len=40 ) :: KeyWord
       character (len=256) :: line
-      character (len=256), dimension(200) :: Cval
+      character (len=256), dimension(nCval) :: Cval
 !
 !-----------------------------------------------------------------------
 !  Initialize.
@@ -278,7 +277,7 @@
               DO ng=1,Ngrids
                 DO itrc=1,NBT
                   i=idbio(itrc)
-                  tnu2(i,ng)=Rbio(itrc,ng)
+                  nl_tnu2(i,ng)=Rbio(itrc,ng)
                 END DO
               END DO
             CASE ('TNU4')
@@ -286,7 +285,33 @@
               DO ng=1,Ngrids
                 DO itrc=1,NBT
                   i=idbio(itrc)
-                  tnu4(i,ng)=Rbio(itrc,ng)
+                  nl_tnu4(i,ng)=Rbio(itrc,ng)
+                END DO
+              END DO
+            CASE ('ad_TNU2')
+              Npts=load_r(Nval, Rval, NBT*Ngrids, Rbio)
+              DO ng=1,Ngrids
+                DO itrc=1,NBT
+                  i=idbio(itrc)
+                  ad_tnu2(i,ng)=Rbio(itrc,ng)
+                  tl_tnu2(i,ng)=Rbio(itrc,ng)
+                END DO
+              END DO
+            CASE ('ad_TNU4')
+              Npts=load_r(Nval, Rval, NBT*Ngrids, Rbio)
+              DO ng=1,Ngrids
+                DO itrc=1,NBT
+                  i=idbio(itrc)
+                  ad_tnu4(i,ng)=Rbio(itrc,ng)
+                  ad_tnu4(i,ng)=Rbio(itrc,ng)
+                END DO
+              END DO
+            CASE ('LtracerSponge')
+              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO itrc=1,NBT
+                  i=idbio(itrc)
+                  LtracerSponge(i,ng)=Ltrc(itrc,ng)
                 END DO
               END DO
             CASE ('AKT_BAK')
@@ -305,7 +330,7 @@
                   Tnudg(i,ng)=Rbio(itrc,ng)
                 END DO
               END DO
-            CASE ( 'LBC(isTvar)')
+            CASE ('LBC(isTvar)')
               IF (itracer.lt.NBT) THEN
                 itracer=itracer+1
               ELSE
@@ -316,17 +341,6 @@
      &                      idbio(iTrcStr), idbio(iTrcEnd),             &
      &                      Vname(1,idTvar(idbio(itracer))), LBC)
 
-#ifdef TCLIMATOLOGY
-            CASE ('LtracerCLM')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
-              DO ng=1,Ngrids
-                DO itrc=1,NBT
-                  i=idbio(itrc)
-                  LtracerCLM(i,ng)=Ltrc(itrc,ng)
-                END DO
-              END DO
-#endif
-#ifdef TS_PSOURCE
             CASE ('LtracerSrc')
               Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
               DO ng=1,Ngrids
@@ -335,7 +349,22 @@
                   LtracerSrc(i,ng)=Ltrc(itrc,ng)
                 END DO
               END DO
-#endif
+            CASE ('LtracerCLM')
+              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO itrc=1,NBT
+                  i=idbio(itrc)
+                  LtracerCLM(i,ng)=Ltrc(itrc,ng)
+                END DO
+              END DO
+            CASE ('LnudgeTCLM')
+              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO itrc=1,NBT
+                  i=idbio(itrc)
+                  LnudgeTCLM(i,ng)=Ltrc(itrc,ng)
+                END DO
+              END DO
             CASE ('Hout(idTvar)')
               Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
               DO ng=1,Ngrids
@@ -343,7 +372,7 @@
                   i=idTvar(idbio(itrc))
                   IF (i.eq.0) THEN
                     IF (Master) WRITE (out,120)                           &
-       &                      'idTvar(idbio(', itrc, '))'
+     &                      'idTvar(idbio(', itrc, '))'
                     exit_flag=5
                     RETURN
                   END IF
@@ -357,7 +386,7 @@
                   i=idTsur(idbio(itrc))
                   IF (i.eq.0) THEN
                     IF (Master) WRITE (out,120)                           &
-       &                      'idTsur(idbio(', itrc, '))'
+     &                      'idTsur(idbio(', itrc, '))'
                     exit_flag=5
                     RETURN
                   END IF
@@ -714,7 +743,6 @@
      &              'Nudging/relaxation time scale (days)',             &
      &              'for tracer ', i, TRIM(Vname(1,idTvar(i)))
             END DO
-#ifdef TCLIMATOLOGY
             DO itrc=1,NBT
               i=idbio(itrc)
               IF (LtracerCLM(i,ng)) THEN
@@ -739,15 +767,12 @@
      &              TRIM(Vname(1,idTvar(i)))
               END IF
             END DO
-#endif
-#ifdef TS_PSOURCE
             DO itrc=1,NBT
               i=idbio(itrc)
               WRITE (out,150) LtracerSrc(i,ng), 'LtracerSrc',           &
      &              i, 'Processing point sources/Sink on tracer ', i,   &
      &              TRIM(Vname(1,idTvar(i)))
             END DO
-#endif
             DO itrc=1,NBT
               i=idbio(itrc)
               IF (Hout(idTvar(i),ng)) WRITE (out,60)                    &
@@ -826,4 +851,3 @@
 
       RETURN
       END SUBROUTINE read_BioPar
- 

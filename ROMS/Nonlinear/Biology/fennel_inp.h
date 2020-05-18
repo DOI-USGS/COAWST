@@ -1,8 +1,8 @@
       SUBROUTINE read_BioPar (model, inp, out, Lwrite)
 !
-!svn $Id: fennel_inp.h 927 2018-10-16 03:51:56Z arango $
+!svn $Id: fennel_inp.h 1001 2020-01-10 22:41:16Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -164,7 +164,7 @@
                 DO itrc=1,NBT
                   i=idbio(itrc)
                   ad_tnu4(i,ng)=Rbio(itrc,ng)
-                  ad_tnu4(i,ng)=Rbio(itrc,ng)
+                  tl_tnu4(i,ng)=Rbio(itrc,ng)
                 END DO
               END DO
             CASE ('LtracerSponge')
@@ -200,6 +200,52 @@
                   Tnudg(i,ng)=Rbio(itrc,ng)
                 END DO
               END DO
+            CASE ('Hadvection')
+              IF (itracer.lt.NBT) THEN
+                itracer=itracer+1
+              ELSE
+                itracer=1                      ! next nested grid
+              END IF
+              itrc=idbio(itracer)
+              Npts=load_tadv(Nval, Cval, line, nline, itrc, igrid,      &
+     &                       itracer, idbio(iTrcStr), idbio(iTrcEnd),   &
+     &                       Vname(1,idTvar(itrc)),                     &
+     &                       Hadvection)
+            CASE ('Vadvection')
+              IF (itracer.lt.NBT) THEN
+                itracer=itracer+1
+              ELSE
+                itracer=1                      ! next nested grid
+              END IF
+              itrc=idbio(itracer)
+              Npts=load_tadv(Nval, Cval, line, nline, itrc, igrid,      &
+     &                       itracer, idbio(iTrcStr), idbio(iTrcEnd),   &
+     &                       Vname(1,idTvar(itrc)),                     &
+     &                       Vadvection)
+#if defined ADJOINT || defined TANGENT || defined TL_IOMS
+            CASE ('ad_Hadvection')
+              IF (itracer.lt.NBT) THEN
+                itracer=itracer+1
+              ELSE
+                itracer=1                      ! next nested grid
+              END IF
+              itrc=idbio(itracer)
+              Npts=load_tadv(Nval, Cval, line, nline, itrc, igrid,      &
+     &                       itracer, idbio(iTrcStr), idbio(iTrcEnd),   &
+     &                       Vname(1,idTvar(itrc)),                     &
+     &                       ad_Hadvection)
+            CASE ('Vadvection')
+              IF (itracer.lt.(NBT) THEN
+                itracer=itracer+1
+              ELSE
+                itracer=1                      ! next nested grid
+              END IF
+              itrc=idbio(itracer)
+              Npts=load_tadv(Nval, Cval, line, nline, itrc, igrid,      &
+     &                       itracer, idbio(iTrcStr), idbio(iTrcEnd),   &
+     &                       Vname(1,idTvar(itrc)),                     &
+     &                       ad_Vadvection)
+#endif
             CASE ('LBC(isTvar)')
               IF (itracer.lt.NBT) THEN
                 itracer=itracer+1
@@ -492,6 +538,96 @@
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Lbio)
               i=iDbio2(iO2fx)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+# endif
+# ifdef SEDBIO_COUP
+            CASE ('Dout(isdO2)')
+              IF (iDbio2(isdO2).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(isdO2)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(isdO2)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+            CASE ('Dout(iseO2)')
+              IF (iDbio2(iseO2).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(iseO2)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(iseO2)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+            CASE ('Dout(isdNO)')
+              IF (iDbio2(isdNO).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(isdNO)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(isdNO)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+            CASE ('Dout(iseNO)')
+              IF (iDbio2(iseNO).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(iseNO)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(iseNO)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+            CASE ('Dout(isdNH)')
+              IF (iDbio2(isdNH).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(isdNH)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(isdNH)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+            CASE ('Dout(iseNH)')
+              IF (iDbio2(iseNH).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(iseNH)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(iseNH)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+            CASE ('Dout(isdOD)')
+              IF (iDbio2(isdOD).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(isdOD)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(isdOD)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+            CASE ('Dout(iseOD)')
+              IF (iDbio2(iseOD).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(iseOD)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(iseOD)
               DO ng=1,Ngrids
                 Dout(i,ng)=Lbio(ng)
               END DO
@@ -895,14 +1031,14 @@
                 DO itrc=1,NDbio2d
                   i=iDbio2(itrc)
                   IF (Dout(i,ng)) WRITE (out,130)                         &
-     &                Dout(i,ng), 'Hout(iDbio2)',                         &
+     &                Dout(i,ng), 'Dout(iDbio2)',                         &
      &                'Write out diagnostics for', TRIM(Vname(1,i))
                 END DO
               END IF
               DO itrc=1,NDbio3d
                 i=iDbio3(itrc)
                 IF (Dout(i,ng)) WRITE (out,130)                           &
-     &              Dout(i,ng), 'Hout(iDbio3)',                           &
+     &              Dout(i,ng), 'Dout(iDbio3)',                           &
      &              'Write out diagnostics for', TRIM(Vname(1,i))
               END DO
             END IF

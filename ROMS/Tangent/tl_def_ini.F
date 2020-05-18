@@ -2,9 +2,9 @@
 #if (defined TANGENT || defined TL_IOMS) && defined FOUR_DVAR
       SUBROUTINE tl_def_ini (ng)
 !
-!svn $Id: tl_def_ini.F 889 2018-02-10 03:32:52Z arango $
+!svn $Id: tl_def_ini.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -46,11 +46,11 @@
 # if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
       integer :: frecdim
 # endif
-      integer :: DimIDs(32), t2dgrd(3), u2dgrd(3), v2dgrd(3)
+      integer :: DimIDs(nDimID)
+      integer :: t2dgrd(3), u2dgrd(3), v2dgrd(3)
 # ifdef ADJUST_BOUNDARY
       integer :: t2dobc(4)
 # endif
-      integer :: Vsize(4)
 
       integer :: def_dim
 

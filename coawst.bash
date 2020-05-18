@@ -50,6 +50,7 @@ parallel=0
 clean=1
 dprint=0
 cleanwrf=1
+cleanwrfhydro=1
 cleanww3=1
 
 while [ $# -gt 0 ]
@@ -85,6 +86,11 @@ do
       cleanwrf=0
       ;;
 
+    -nocleanwrfhydro )
+      shift
+      cleanwrfhydro=0
+      ;;
+
     -nocleanww3 )
       shift
       cleanww3=0
@@ -102,6 +108,7 @@ do
       echo "              For example:  build.bash -p FFLAGS"
       echo "-noclean       Do not clean already compiled objects"
       echo "-nocleanwrf    Do not clean already compiled wrf objects"
+      echo "-nocleanwrfhydro Do not clean already compiled wrf objects"
       echo "-nocleanww3    Do not clean already compiled ww3 objects"
       echo ""
       exit 1
@@ -143,7 +150,7 @@ export   MY_ROMS_SRC=${MY_ROOT_DIR}/
 # Wave Watch 3: Here we provide 5 environment variables for WW3.
 #
 # 1) COAWST_WW3_DIR is a pointer to root WW3 code, do not change.
-export   COAWST_WW3_DIR=${MY_ROOT_DIR}/WW3
+export   COAWST_WW3_DIR=${MY_ROOT_DIR}/WW3/model
 #
 # 2) WWATCH3_NETCDF can be NC3 or NC4. We need NC4 for COAWST. do not change.
 export   WWATCH3_NETCDF=NC4
@@ -154,7 +161,7 @@ export   WWATCH_ENV=${COAWST_WW3_DIR}/wwatch.env
 # 4) NETCDF_CONFIG is needed by WW3. You need to set this:
 #export   NETCDF_CONFIG=${NETCDF_LIBDIR}/../bin/nc-config
 #    This may require nf-config, depending on your system.
-export   NETCDF_CONFIG=/share/apps/netcdf-4.1.3_intel-2011.4.191/bin/nc-config
+export   NETCDF_CONFIG=/usr/bin/nc-config
 #
 # 5) WW3_SWITCH_FILE is like cpp options for WW3. You need to create it and
 #    list the name here.  You need to have COAWST listed in the switch file.
@@ -206,8 +213,8 @@ export   NETCDF_CONFIG=/share/apps/netcdf-4.1.3_intel-2011.4.191/bin/nc-config
 #export              FORT=pgi
 
  export         USE_DEBUG=              # use Fortran debugging flags
- export         USE_LARGE=              # activate 64-bit compilation
- export       USE_NETCDF4=              # compile with NetCDF-4 library
+ export         USE_LARGE=on            # activate 64-bit compilation
+ export       USE_NETCDF4=on            # compile with NetCDF-4 library
 #export   USE_PARALLEL_IO=on            # Parallel I/O with Netcdf-4/HDF5
 
 #export       USE_MY_LIBS=on            # use my library paths below
@@ -480,18 +487,33 @@ fi
 
 # Compile (the binary will go to BINDIR set above).
 
+# first go to make some coupler files
+if [ $clean -eq 1 ] && [ $cleanwrf -eq 1 ] && [ $cleanwrfhydro -eq 1 ] && [ $cleanww3 -eq 1 ] ; then
+  make mct_params
+fi
+  cd ${SCRATCH_DIR}
+  export MCT_PARAMS_DIR=${PWD}
+  cd ${MY_ROMS_SRC}
+
   export WRF_DIR=${MY_ROMS_SRC}/WRF
 if [ $cleanwrf -eq 1 ]; then
   make wrfclean
   cd ${MY_ROMS_SRC}
 fi
-make wrf
+  make wrf
+
+  export WRFHYDRO_DIR=${MY_ROMS_SRC}/WRF/hydro_v5.0
+if [ $cleanwrfhydro -eq 1 ]; then
+  make wrfhydroclean
+  cd ${MY_ROMS_SRC}
+fi
+  make wrfhydro
 
 if [ $cleanww3 -eq 1 ]; then
   make ww3clean
   cd ${MY_ROMS_SRC}
 fi
-make ww3
+  make ww3
 
 if [ $dprint -eq 1 ]; then
   make $debug

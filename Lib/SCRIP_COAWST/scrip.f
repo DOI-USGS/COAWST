@@ -74,7 +74,7 @@
      &                          dst_mask_unlim,                         &
      &                          counter_grid,                           &
      &                          Ngrids_comb_total,                      &
-     &                          output_ncfile)
+     &                          output_ncfile, MyComm)
 
       implicit none 
 
@@ -101,6 +101,7 @@
       integer (kind=int_kind), intent(in) :: dst_mask_unlim(:,:)
       integer (kind=int_kind), intent(in) :: counter_grid
       integer (kind=int_kind), intent(in) :: Ngrids_comb_total
+      integer (kind=int_kind), intent(in) :: MyComm
 !
       real    (kind=dbl_kind), intent(in) :: grid1_lon_rho(:,:)
       real    (kind=dbl_kind), intent(in) :: grid1_lat_rho(:,:)
@@ -132,7 +133,9 @@
       integer (kind=int_kind) :: n,                                     &
                                         ! dummy counter
      &                           iunit  ! unit number for namelist file
-
+#ifdef MPI
+      integer (kind=int_kind) :: MyError, MyRank
+#endif
 !-----------------------------------------------------------------------
 !
 !     initialize timers
@@ -217,7 +220,7 @@
 
       select case(map_type)
       case(map_type_conserv)
-        call remap_conserv
+        call remap_conserv (MyComm)
       case(map_type_bilinear)
         call remap_bilin
       case(map_type_distwgt)
@@ -228,6 +231,10 @@
         stop 'Invalid Map Type'
       end select
 
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
 !-----------------------------------------------------------------------
 !
 !     reduce size of remapping arrays and then write remapping info
@@ -252,6 +259,10 @@
      &                 interp_file1, interp_file2, output_opt,          &
      &                 counter_grid, Ngrids_comb_total, output_ncfile)
 
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
 !-----------------------------------------------------------------------
 !     DEALLOCATE HERE for SCRIP_COAWST package
       write(stdout,*) "-------------------------------------------"
@@ -347,6 +358,7 @@
               iloc(add_wts)=i
               jloc(add_wts)=j
               add_dst_address(add_wts)=(j-1)*grid2_xdim+i
+              add_src_address(add_wts)=-9999
               add_remap_matrix(add_wts)=1
             end if
           end do
@@ -466,11 +478,20 @@
         i=0
         do mm=mxlinks+1,num_links_map1
           i=i+1
-          grid1_add_map1(mm) = add_src_address(i)
-          grid2_add_map1(mm) = add_dst_address(i)
-          wts_map1    (1,mm) = add_remap_matrix(i)
-          wts_map1    (2,mm) = 0
-          wts_map1    (3,mm) = 0
+          if ((add_src_address(i).le.0).or.                             &
+     &        (add_dst_address(i).le.0)) then
+            grid1_add_map1(mm) = 1
+            grid2_add_map1(mm) = 1
+            wts_map1    (1,mm) = 0
+            wts_map1    (2,mm) = 0
+            wts_map1    (3,mm) = 0
+          else
+            grid1_add_map1(mm) = add_src_address(i)
+            grid2_add_map1(mm) = add_dst_address(i)
+            wts_map1    (1,mm) = add_remap_matrix(i)
+            wts_map1    (2,mm) = 0
+            wts_map1    (3,mm) = 0
+          endif
         end do
 
         deallocate(add1_tmp, add2_tmp, wts_tmp)

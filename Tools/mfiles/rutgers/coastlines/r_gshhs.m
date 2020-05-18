@@ -38,9 +38,9 @@ function [C]=r_gshhs(Llon, Rlon, Blat, Tlat, Fname)
 %                 C.k    => number of points in polygon
 %
 
-% svn $Id: r_gshhs.m 926 2018-10-09 21:53:45Z arango $
+% svn $Id: r_gshhs.m 996 2020-01-10 04:28:56Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

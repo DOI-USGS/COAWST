@@ -2,9 +2,9 @@
 #if defined FOUR_DVAR || defined VERIFICATION
       SUBROUTINE def_mod (ng)
 !
-!svn $Id: def_mod.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: def_mod.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -61,7 +61,7 @@
 # endif
       integer :: i, j, lstr, nvatt, nvdim, status, varid, vindex
       integer :: OBSncid
-      integer :: Vsize(4), vardim(3)
+      integer :: vardim(3)
 # ifdef DISTRIBUTE
       integer :: ibuffer(2)
 # endif
@@ -106,11 +106,16 @@
 !
 !  Open input observations NetCDF.
 !
-      CALL netcdf_open (ng, iNLM, OBS(ng)%name, 0, OBSncid)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) THEN
-        WRITE (stdout,30) TRIM(OBS(ng)%name)
-        RETURN
+      IF (OBS(ng)%ncid.eq.-1) THEN
+        CALL netcdf_open (ng, iNLM, OBS(ng)%name, 0, OBSncid)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) THEN
+          WRITE (stdout,30) TRIM(OBS(ng)%name)
+          RETURN
+        END IF
+        OBS(ng)%ncid=OBSncid
+      ELSE
+        OBSncid=OBS(ng)%ncid
       END IF
 !
 !  Inquire about input observations variables.
@@ -271,6 +276,8 @@
             string=uppercase('w4dpsas')
 # elif defined W4DPSAS_SENSITIVITY
             string=uppercase('w4dpsas_sensitivity')
+# elif defined W4DPSAS_FCT_SENSITIVITY
+            string=uppercase('w4dpsas_fct_sensitivity')
 # elif defined W4DVAR
             string=uppercase('w4dvar')
 # elif defined W4DVAR_SENSITIVITY
@@ -520,8 +527,9 @@
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
 # endif
-# if defined IS4DVAR_SENSITIVITY || defined W4DPSAS_SENSITIVITY || \
-     defined W4DVAR_SENSITIVITY
+# if defined IS4DVAR_SENSITIVITY     || defined W4DPSAS_SENSITIVITY || \
+     defined W4DPSAS_FCT_SENSITIVITY || defined W4DVAR_SENSITIVITY  || \
+     defined ARRAY_MODES
 !
 !  Observations impact/sensitivity outer loop beeing processed.
 !
@@ -927,8 +935,8 @@
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
 # endif
-# if defined TL_W4DPSAS          || defined W4DPSAS || \
-     defined W4DPSAS_SENSITIVITY
+# if defined TL_W4DPSAS || defined W4DPSAS_FCT_SENSITIVITY || \
+     defined W4DPSAS    || defined W4DPSAS_SENSITIVITY
 !
 !  Define NLM initial and final data penalty function.
 !
@@ -1372,6 +1380,7 @@
               Vinfo(2)=TRIM(var_Achar(i))
             END IF
           END DO
+          Vinfo(3)=TRIM(Vname(3,idOerr))
           status=def_var(ng, iNLM, DAV(ng)%ncid, DAV(ng)%Vid(idOerr),   &
      &                   NF_FRST, 1, (/datumDim/), Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
@@ -1394,6 +1403,7 @@
               Vinfo(2)=TRIM(var_Achar(i))
             END IF
           END DO
+          Vinfo(3)=TRIM(Vname(3,idOval))
           status=def_var(ng, iNLM, DAV(ng)%ncid, DAV(ng)%Vid(idOval),   &
      &                   NF_FRST, 1, (/datumDim/), Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
@@ -1439,24 +1449,63 @@
 !
         Vinfo( 1)=Vname(1,idNLmi)
         Vinfo( 2)=Vname(2,idNLmi)
+        Vinfo( 3)=Vname(3,idNLmi)
         Vinfo(24)='_FillValue'
         Aval(6)=spval
         status=def_var(ng, iNLM, DAV(ng)%ncid, DAV(ng)%Vid(idNLmi),     &
      &                 NF_FRST, 1, (/datumDim/), Aval, Vinfo, ncname)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
-#  ifdef BGQC
 !
-!  Background error at observation locations.
+!  4D-Var background error standard deviation at observation locations.
 !
         Vinfo( 1)=Vname(1,idBgEr)
         Vinfo( 2)=Vname(2,idBgEr)
+        Vinfo( 3)=Vname(3,idBgEr)
         Vinfo(24)='_FillValue'
         Aval(6)=spval
         status=def_var(ng, iNLM, DAV(ng)%ncid, DAV(ng)%Vid(idBgEr),     &
      &                 NF_FRST, 1, (/datumDim/), Aval, Vinfo, ncname)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
+!
+!  4D-Var innovation vector: observation minus background.
+!
+        Vinfo( 1)=Vname(1,idInno)
+        Vinfo( 2)=Vname(2,idInno)
+        Vinfo( 3)=Vname(3,idInno)
+        Vinfo(24)='_FillValue'
+        Aval(6)=spval
+        status=def_var(ng, iNLM, DAV(ng)%ncid, DAV(ng)%Vid(idInno),     &
+     &                 NF_FRST, 1, (/datumDim/), Aval, Vinfo, ncname)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+!
+!  4D-Var increment vector: analysis minus background.
+!
+        Vinfo( 1)=Vname(1,idIncr)
+        Vinfo( 2)=Vname(2,idIncr)
+        Vinfo( 3)=Vname(3,idIncr)
+        Vinfo(24)='_FillValue'
+        Aval(6)=spval
+        status=def_var(ng, iNLM, DAV(ng)%ncid, DAV(ng)%Vid(idIncr),     &
+     &                 NF_FRST, 1, (/datumDim/), Aval, Vinfo, ncname)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+!
+!  4D-Var residual vector: observation minus analysis.
+!
+        Vinfo( 1)=Vname(1,idResi)
+        Vinfo( 2)=Vname(2,idResi)
+        Vinfo( 3)=Vname(3,idResi)
+        Vinfo(24)='_FillValue'
+        Aval(6)=spval
+        status=def_var(ng, iNLM, DAV(ng)%ncid, DAV(ng)%Vid(idResi),     &
+     &                 NF_FRST, 1, (/datumDim/), Aval, Vinfo, ncname)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+
+#  ifdef BGQC
 !
 !  Threshold for background quality control check of observations.
 !
@@ -1479,6 +1528,7 @@
         haveNLmod(ng)=.FALSE.
         Vinfo( 1)=Vname(1,idNLmo)
         Vinfo( 2)=Vname(2,idNLmo)
+        Vinfo( 3)=Vname(3,idNLmo)
         Vinfo(24)='_FillValue'
         Aval(6)=spval
 #  ifdef VERIFICATION
@@ -1709,8 +1759,8 @@
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
 # endif
-# if defined W4DVAR_SENSITIVITY  || defined W4DPSAS_SENSITIVITY || \
-     defined IS4DVAR_SENSITIVITY
+# if defined IS4DVAR_SENSITIVITY     || defined W4DPSAS_SENSITIVITY || \
+     defined W4DPSAS_FCT_SENSITIVITY || W4DVAR_SENSITIVITY
 #  ifdef OBS_IMPACT
 !
 !  Define total observations impact.
@@ -1752,9 +1802,9 @@
      &                 __FILE__)) RETURN
 #  endif
 # endif
-# if defined OBS_IMPACT_SPLIT     && \
-     (defined W4DVAR_SENSITIVITY  || defined W4DPSAS_SENSITIVITY || \
-      defined IS4DVAR_SENSITIVITY)
+# if defined OBS_IMPACT_SPLIT         && \
+     (defined IS4DVAR_SENSITIVITY     || defined W4DPSAS_SENSITIVITY ||\
+      defined W4DPSAS_FCT_SENSITIVITY || defined W4DVAR_SENSITIVITY)
 !
 !  Define observation impact due to initial condition increments.
 !
@@ -1858,13 +1908,6 @@
         CALL netcdf_enddef (ng, iNLM, ncname, DAV(ng)%ncid)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
-!
-!  Close input observations NetCDF file.
-!
-        CALL netcdf_close (ng, iNLM, OBSncid, OBS(ng)%name, .FALSE.)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
-
       END IF DEFINE
 !
 !=======================================================================

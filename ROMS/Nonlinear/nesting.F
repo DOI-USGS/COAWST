@@ -3,9 +3,9 @@
 
 #ifdef NESTING
 !
-!svn $Id: nesting.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: nesting.F 995 2020-01-10 04:01:28Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                             John C. Warner   !
 !=======================================================================
@@ -5346,9 +5346,10 @@
 
 # ifdef DISTRIBUTE
 !
-      USE distribute_mod, ONLY : mp_assemble
+      USE distribute_mod,  ONLY : mp_assemble
       USE mp_exchange_mod, ONLY : mp_exchange2d
 # endif
+      USE strings_mod,     ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -5435,6 +5436,8 @@
      &                        INT(RollingTime(tnew,cr))
           END IF
           exit_flag=8
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
       END IF
 !
@@ -5871,6 +5874,7 @@
 !
       USE mp_exchange_mod, ONLY : mp_exchange3d, mp_exchange4d
 #  endif
+      USE strings_mod,     ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -5922,6 +5926,8 @@
      &                        INT(RollingTime(tnew,cr))
           END IF
           exit_flag=8
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
         END IF
       END IF
 

@@ -24,9 +24,9 @@ function [h]=pltmask(Gname, ptype, C)
 %                  C.Jcst    => Coastline J-grid coordinates, (0:M).
 %
 
-% svn $Id: pltmask.m 916 2018-07-14 01:28:47Z arango $
+% svn $Id: pltmask.m 996 2020-01-10 04:28:56Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

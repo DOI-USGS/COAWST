@@ -1,9 +1,9 @@
 !
 !  ROMS/TOMS Standard Input parameters.
 !
-!svn $Id: ocean_riverplume1.in 889 2018-02-10 03:32:52Z arango $
+!svn $Id: roms_riverplume1.in 1009 2020-03-03 20:38:52Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -108,6 +108,42 @@ GridsInLayer =  1
 
       NtileI == 1                               ! I-direction partition
       NtileJ == 1                               ! J-direction partition
+
+! Set horizontal and vertical advection schemes for active and inert
+! tracers. A different advection scheme is allowed for each tracer.
+! For example, a positive-definite (monotonic) algorithm can be activated
+! for salinity and inert tracers, while a different one is set for
+! temperature. [1:NAT+NPT,Ngrids] values are expected.
+!
+!   Keyword    Advection Algorithm
+!
+!   A4         4th-order Akima (horizontal/vertical)
+!   C2         2nd-order centered differences (horizontal/vertical)
+!   C4         4th-order centered differences (horizontal/vertical)
+!   HSIMT      3th-order HSIMT-TVD (horizontal/vertical)
+!   MPDATA     recursive flux corrected MPDATA (horizontal/vertical)
+!   SPLINES    parabolic splines (only vertical)
+!   SU3        split third-order upstream (horizontal/vertical)
+!   U3         3rd-order upstream-biased (only horizontal)
+!
+! The user has the option of specifying the full Keyword or the first
+! two letters, regardless if using uppercase or lowercase. If nested
+! grids, specify values for each grid (see glossary below).
+
+   Hadvection == A4       \                     ! temperature
+                 HSIMT                          ! salinity
+
+   Vadvection == A4       \                     ! temperature
+                 HSIMT                          ! salinity
+
+! Adjoint-based algorithms can have different horizontal and schemes
+! for active and inert tracers.
+
+ad_Hadvection == U3       \                     ! temperature
+                 U3                             ! salinity
+
+ad_Vadvection == C4       \                     ! temperature
+                 C4                             ! salinity
 
 ! Set lateral boundary conditions keyword. Notice that a value is expected
 ! for each boundary segment per nested grid for each state variable.
@@ -216,6 +252,12 @@ ad_VolCons(north) ==  F                            ! northern boundary
       NTIMES == 21600
           DT == 120.0d0
      NDTFAST == 20
+
+! Number of timesteps for computing observation impacts during the
+! analysis-forecast cycle.
+
+  NTIMES_ANA == 21600                              ! analysis interval
+  NTIMES_FCT == 21600                              ! forecast interval
 
 ! Model iteration loops parameters.
 
@@ -413,6 +455,16 @@ LtracerSponge == F F                            ! temperature, salinity, inert
       M2NUDG == 0.0d0                      ! days
       M3NUDG == 0.0d0                      ! days
 
+! Nudging/relaxation time scale for surface salinity nudging, inverse
+! scales will be computed internally, [1:Ngrids].
+
+       TNUDG_SSS == 90.0d0                 ! days
+
+! Threshold to trigger SSS correction toward climatolgy,
+! needs SCORRECTION and SSSC_THRESHOLD defined
+
+       SSS_MISMATCH_THRESHOLD = 0.2d0
+
 ! Factor between passive (outflow) and active (inflow) open boundary
 ! conditions, [1:Ngrids]. If OBCFAC > 1, nudging on inflow is stronger
 ! than on outflow (recommended).
@@ -462,6 +514,15 @@ LtracerSponge == F F                            ! temperature, salinity, inert
  LnudgeM3CLM == F                          ! 3D momentum
 
   LnudgeTCLM == F F                        ! temperature, salinity, inert
+
+! Logical switches for ice climatology and nudging
+
+      LmiCLM == F
+      LaiCLM == F
+      LsiCLM == F
+ LnudgeMICLM == F
+ LnudgeAICLM == F
+ LnudgeSICLM == F
 
 ! Starting (DstrS) and ending (DendS) day for adjoint sensitivity forcing.
 ! DstrS must be less or equal to DendS. If both values are zero, their
@@ -589,6 +650,7 @@ Hout(idWorb) == F       ! Ub_swan            wave bottom orbital velocity
 Hout(idWdis) == F       ! Wave_dissip        wave dissipation
 
 Hout(idPair) == F       ! Pair               surface air pressure
+Hout(idTair) == F       ! Tair               surface air temperature
 Hout(idUair) == F       ! Uair               surface U-wind component
 Hout(idVair) == F       ! Vair               surface V-wind component
 
@@ -693,6 +755,7 @@ Qout(idWorb) == F       ! Ub_swan            wave bottom orbital velocity
 Qout(idWdis) == F       ! Wave_dissip        wave dissipation
 
 Qout(idPair) == F       ! Pair               surface air pressure
+Qout(idTair) == F       ! Tair               surface air temperature
 Qout(idUair) == F       ! Uair               surface U-wind component
 Qout(idVair) == F       ! Vair               surface V-wind component
 
@@ -765,6 +828,7 @@ Aout(idU3Sd) == F       ! u_stokes           3D U-Stokes velocity
 Aout(idV3Sd) == F       ! v_stokes           3D V-Stokes velocity
 
 Aout(idPair) == F       ! Pair               surface air pressure
+Aout(idTair) == F       ! Tair               surface air temperature
 Aout(idUair) == F       ! Uair               surface U-wind component
 Aout(idVair) == F       ! Vair               surface V-wind component
 
@@ -904,6 +968,25 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
      FWDNAME == roms_fwd.nc
      ADSNAME == roms_ads.nc
 
+! Input adjoint forcing NetCDF filenames for computing observations
+! impacts during the analysis-forecast cycle. If the forecast error
+! metric is defined in state-space, then FOInameA and FOInameB should
+! be regular adjoint forcing files just like ADSname. If the forecast
+! error metric is defined in observation space (OBS_SPACE is activated)
+! then the forecast is initialized OIFnameA and OIFnameB (specified in
+! s4dvar.in input script) will have the structure of a 4D-Var observation
+! file.
+
+    FOInameA == roms_foi_a.nc
+    FOInameB == roms_foi_b.nc
+
+! Input NetCDF filenames for the forecasts initialized from the analysis
+! of the current 4D-Var cycle (FCTnameA) and initialized from the analysis
+! of the previous 4D-Var cycle (FCTnameB).
+
+    FCTnameA == roms_fct_a.nc
+    FCTnameB == roms_fct_b.nc
+
 ! Nesting grids connectivity data: contact points information. This
 ! NetCDF file is special and complex. It is currently generated using
 ! the script "matlab/grid/contact.m" from the Matlab repository.
@@ -928,6 +1011,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 
 ! Input Sources/Sinks forcing (like river runoff) file name.
 
+     NSSFFILES == 1
      SSFNAME == roms_rivers.nc
 
 ! Input tidal forcing file name.
@@ -996,10 +1080,10 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! MyAppCPP     Application C-preprocessing option.
 !
 !------------------------------------------------------------------------------
-! Variable information file name (string with a maximum of 256 characters).
+! Variable information filename (string with a maximum of 256 characters).
 !------------------------------------------------------------------------------
 !
-! VARNAME      Input/Output variable information file name.  This file needs to
+! VARNAME      Input/Output variable information filename.  This file needs to
 !                be processed first so all information arrays and indices can
 !                be initialized properly in "mod_ncparam.F".
 !
@@ -1153,6 +1237,83 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !              execution with the "mprun" or "mpirun" command.
 !
 !------------------------------------------------------------------------------
+! Tracer advection scheme
+!------------------------------------------------------------------------------
+!
+! It is more advantageous to set the horizontal and vertical advection schemes
+! for each tracer with switches instead of a single CPP flag for all of them.
+! Positive-definite and monotonic algorithms (i.e., MPDATA and HSIMT) are
+! appropriate and useful for positive fields like salinity, inert, biological,
+! and sediment tracers.  However, since the temperature has a dynamic range
+! with negative and positive values in the ocean, other advection schemes are
+! more appropriate.
+!
+! Currently, the following tracer advection schemes are available and are
+! activated using the associated Keyword:
+!
+!   Keyword    Advection Algorithm
+!
+!   A4         4th-order Akima (horizontal/vertical)
+!   C2         2nd-order centered differences (horizontal/vertical)
+!   C4         4th-order centered differences (horizontal/vertical)
+!   HSIMT      3th-order HSIMT with TVD limiter (horizontal/vertical)
+!   MPDATA     recursive flux corrected MPDATA (horizontal/vertical)
+!   SPLINES    parabolic splines reconstruction (only vertical)
+!   SU3        split third-order upstream (horizontal/vertical)
+!   U3         3rd-order upstresm-bias (only horizontal)
+!
+! The user has the option of specifying the full Keyword or the first
+! two letters, regardless if using uppercase or lowercase.
+!
+! If using either HSIMT (Wu and Zhu, 2010) or MPDATA (Margolin and
+! Smolarkiewicz, 1998) options, the user needs to set the same scheme
+! for both horizontal and vertical advection to preserve monotonicity.
+!
+! Hadvection     Horizontal advection for each active (temperature and
+!                  salinity) and inert tracers, [1:NAT+NPT,Ngrids]
+!                  values are expected.
+!
+! Vadvection     Vertical advection for each active (temperature and
+!                  salinity) and inert tracers, [1:NAT+NPT,Ngrids]
+!                  values are expected.
+!
+! ad_Hadvection  Horizontal advection for each active (temperature and
+!                  salinity) and inert tracers in the adjoint-based
+!                  algorithms, [1:NAT+NPT,Ngrids] values are expected.
+!
+! ad_Vadvection  Vertical advection for each active (temperature and
+!                  salinity) and inert tracers in the adjoint-based
+!                  algorithms, [1:NAT+NPT,Ngrids] values are expected.
+!
+! Examples:
+!
+!  Hadvection == A4       \                     ! temperature
+!                MPDATA   \                     ! salinity
+!                HSIMT    \                     ! dye_01, inert(1)
+!                HSIMT                          ! dy2_02, inert(2)
+!
+!  Vadvection == A4       \                     ! temperature
+!                MPDATA   \                     ! salinity
+!                HSIMT    \                     ! dye_01, inert(1)
+!                HSIMT                          ! dye_02, inert(2)
+!
+! or in nested applications
+!
+!  Hadvection == U3       \                     ! temperature, Grid 1
+!                HSIMT    \                     ! salinity,    Grid 1
+!                U3       \                     ! temperature, Grid 2
+!                HSIMT    \                     ! salinity,    Grid 2
+!                U3       \                     ! temperature, Grid 3
+!                HSIMT                          ! salinity,    Grid 3
+!
+!  Vadvection == C4       \                     ! temperature, Grid 1
+!                HSIMT    \                     ! salinity,    Grid 1
+!                C4       \                     ! temperature, Grid 2
+!                HSIMT    \                     ! salinity,    Grid 2
+!                C4       \                     ! temperature, Grid 3
+!                HSIMT                          ! salinity,    Grid 3
+!
+!------------------------------------------------------------------------------
 ! Lateral boundary conditions parameters.
 !------------------------------------------------------------------------------
 !
@@ -1270,7 +1431,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! Timestepping parameters.
 !------------------------------------------------------------------------------
 !
-! NTIMES       Total number timesteps in current run.  If 3D configuration,
+! NTIMES       Total number of timesteps in current run.  If 3D configuration,
 !                NTIMES is the total of baroclinic timesteps.  If only 2D
 !                configuration, NTIMES is the total of barotropic timesteps.
 !
@@ -1281,6 +1442,14 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! NDTFAST      Number of barotropic timesteps between each baroclinic time
 !                step. If only 2D configuration, NDTFAST should be unity since
 !                there is no need to split timestepping.
+!
+! NTIMES_ANA   Total number of timesteps for computing observations impacts
+!                interval during the analysis cycle. It is only used when
+!                W4DPSAS_FCT_SENSITIVITY is activated.
+!
+! NTIMES_FCT   Total number of timesteps for computing observations impacts
+!                interval during the forecast cycle. It is only used when
+!                W4DPSAS_FCT_SENSITIVITY is activated.
 !
 !------------------------------------------------------------------------------
 ! Model iteration loops parameters.
@@ -2027,6 +2196,10 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !
 ! M3NUDG       Nudging time scale (days) for 3D momentum.
 !
+! TNUDG_SSS    Nudging time scale (days) for surface salinity.
+!
+! SSS_MISMATCH_THRESHOLD   Threshold to trigger SSS correction.
+!
 ! OBCFAC       Factor between passive (outflow) and active (inflow) open
 !                boundary conditions.  The nudging time scales for the
 !                active (inflow) conditions are obtained by multiplying
@@ -2403,6 +2576,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !  Hout(idWbeh)  Write out WEC Bernoulli head.
 !
 ! Hout(idPair)   Write out surface air pressure.
+! Hout(idTair)   Write out surface air temperature.
 ! Hout(idUair)   Write out surface U-wind component.
 ! Hout(idVair)   Write out surface V-wind component.
 !
@@ -2502,6 +2676,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! Qout(idWdis)   Write out wave dissipation.
 !
 ! Qout(idPair)   Write out surface air pressure.
+! Qout(idTair)   Write out surface air temperature.
 ! Qout(idUair)   Write out surface U-wind component.
 ! Qout(idVair)   Write out surface V-wind component.
 !
@@ -2569,6 +2744,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! Aout(idV3Sd)   Write out 3D V-Stokes velocity.
 !
 ! Aout(idPair)   Write out surface air pressure.
+! Aout(idTair)   Write out surface air temperature.
 ! Aout(idUair)   Write out surface U-wind component.
 ! Aout(idVair)   Write out surface V-wind component.
 !
@@ -2726,33 +2902,48 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !                between 0 and 9.
 !
 !------------------------------------------------------------------------------
-! Input/output NetCDF file names (string with a maximum of 256 characters).
+! Input/output NetCDF filenames (string with a maximum of 256 characters).
 !------------------------------------------------------------------------------
 !
-! Input file names:
+! Input filenames:
 !
-!  GRDNAME     Input grid file name.
+!  GRDNAME     Input grid filename.
 !
-!  ININAME     Input nonlinear initial conditions file name. It can be a
+!  ININAME     Input nonlinear initial conditions filename. It can be a
 !                re-start file.
 !
-!  ITLNAME     Input tangent linear model initial conditions file name.
+!  ITLNAME     Input tangent linear model initial conditions filename.
 !
-!  IRPNAME     Input representer model initial conditions file name.
+!  IRPNAME     Input representer model initial conditions filename.
 !
-!  IADNAME     Input adjoint model initial conditions file name.
+!  IADNAME     Input adjoint model initial conditions filename.
 !
-!  FWDNAME     Input forward solution fields file name.
+!  FWDNAME     Input forward solution fields filename.
 !
-!  ADSNAME     Input adjoint sensitivity functional file name.
+!  ADSNAME     Input adjoint sensitivity functional filename.
 !
-!  IWININAME   Input initial conditions file name for InWave.
+! Input adjoint forcing filenames for computing observations impacts
+! during the analysis-forecast cycle when W4DPSAS_FCT_SENSITIVITY is
+! activated.  The files FOInameA and FOInameB are used when the forecast
+! metric is defined in state-space (CPP option OBS_SPACE is off). Both
+! are regular adjoint forcing files just like ADSname.
 !
-!  IWSWNNAME   Input file of SWAN 2D spec to drive InWave
+! (See www.myroms.org/wiki/Analysis-Forecast_Cycle_Observation_Impacts)
+!
+!  FOInameA    Forecast initialized with 4D-Var analysis (red curve)
+!
+!  FOInameB    Forecast initialized with 4D_Var background (blue curve)
+!
+! Input NetCDF filenames for the forecasts initialized from the 4D-Var
+! analysis files:
+!
+!  FCTnameA    Current  4D-Var analysis cycle (red curve)
+!
+!  FCTnameB    Previous 4D-Var analysis cycle (blue curve)
 !
 ! Nesting grids connectivity data:
 !
-!  NGCNAME     Input nested grids contact points information file name. This
+!  NGCNAME     Input nested grids contact points information filename. This
 !                NetCDF file is currently generated using script:
 !
 !                matlab/grid/contact.m
@@ -2766,11 +2957,11 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !                for more information.
 !
 !
-! Input lateral boundary conditions and climatology file names:
+! Input lateral boundary conditions and climatology filenames:
 !
-! BRYNAME      Input open boundary data file name(s) per nested grid.
+! BRYNAME      Input open boundary data filename(s) per nested grid.
 !
-! CLMNAME      Input climatology fields file name(s) per nested grid
+! CLMNAME      Input climatology fields filename(s) per nested grid
 !
 !  The USER has the option to split input data time records into several
 !  NetCDF files, as many as required. If so, use a single line per entry
@@ -2783,12 +2974,12 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !               my_clm_year2.nc
 !
 !
-! Input nudging coefficients file name:
+! Input nudging coefficients filename:
 !
-! NUDNAME      Input nudging coefficients file name.
+! NUDNAME      Input nudging coefficients filename.
 !
 !
-! Input Sources/Sinks forcing file name:
+! Input Sources/Sinks forcing filename:
 !
 ! SSFNAME      River runoff data. This file is now separated from the
 !                regular forcing files to allow manipulations over nested
@@ -2809,7 +3000,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !                be processed in ROMS because of the logical switches are
 !                FALSE the second grid.
 !
-! Input/output tidal forcing file name:
+! Input/output tidal forcing filename:
 !
 ! TIDENAME     Tidal constituents period, phase, elevation, and current data.
 !                This data is needed when SSH_TIDES, UV_TIDES, or both are
@@ -2824,14 +3015,14 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !
 ! NFFILES      Number of unique forcing files per nested grid.
 !
-! FRCNAME      Input forcing fields file name per nested grid.
+! FRCNAME      Input forcing fields filename per nested grid.
 !
-!  The USER has the option to enter several file names for forcing fields
+!  The USER has the option to enter several filenames for forcing fields
 !  and/or split input data time records for each nested grid. For example,
 !  the USER may have different files for wind products, heat fluxes, etc.
 !  The model will scan the file list and will read the needed data from
 !  the first file in the list containing the forcing field. Therefore,
-!  the order of the file names is very important. It is also possible to
+!  the order of the filenames is very important. It is also possible to
 !  split input data time records into several NetCDF files.
 !
 !  Use a single line per entry with a continuation (\) or vertical bar (|)
@@ -2853,31 +3044,31 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !               my_Tair_year2.nc
 !
 !
-! Output file names:
+! Output filenames:
 !
 ! DAINAME      Output data assimilation next cycle initial conditions (4D-Var
-!                analysis) or restart (Ensemble Kalman Filter, EnKF) file name.
-! GSTNAME      Output GST analysis re-start file name.
-! RSTNAME      Output re-start file name.
-! HISNAME      Output history file name.
-! QCKNAME      Output quicksave file name.
+!                analysis) or restart (Ensemble Kalman Filter, EnKF) filename.
+! GSTNAME      Output GST analysis re-start filename.
+! RSTNAME      Output re-start filename.
+! HISNAME      Output history filename.
+! QCKNAME      Output quicksave filename.
 ! TLFNAME      Output impulse forcing for tangent linear (TLM and RPM) models.
-! TLMNAME      Output tangent linear file name.
-! ADJNAME      Output adjoint file name.
-! AVGNAME      Output averages file name.
-! HARNAME      Output least-squares detiding harmonics file name.
-! DIANAME      Output diagnostics file name.
-! STANAME      Output stations file name.
-! FLTNAME      Output floats file name.
+! TLMNAME      Output tangent linear filename.
+! ADJNAME      Output adjoint filename.
+! AVGNAME      Output averages filename.
+! HARNAME      Output least-squares detiding harmonics filename.
+! DIANAME      Output diagnostics filename.
+! STANAME      Output stations filename.
+! FLTNAME      Output floats filename.
 !
 !------------------------------------------------------------------------------
-! Input ASCII parameters file names.
+! Input ASCII parameters filenames.
 !------------------------------------------------------------------------------
 !
-! APARNAM      Input assimilation parameters file name.
-! SPOSNAM      Input stations positions file name.
-! FPOSNAM      Input initial drifters positions file name.
-! BPARNAM      Input biological parameters file name.
-! SPARNAM      Input sediment transport parameters file name.
-! USRNAME      USER's input generic file name.
+! APARNAM      Input assimilation parameters filename.
+! SPOSNAM      Input stations positions filename.
+! FPOSNAM      Input initial drifters positions filename.
+! BPARNAM      Input biological parameters filename.
+! SPARNAM      Input sediment transport parameters filename.
+! USRNAME      USER's input generic filename.
 !

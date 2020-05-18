@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: obs_sen_is4dvar.h 937 2019-01-28 06:13:04Z arango $
+!svn $Id: obs_sen_is4dvar.h 995 2020-01-10 04:01:28Z arango $
 !=================================================== Andrew M. Moore ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -436,7 +436,7 @@
 !
       logical :: Ladjoint, Lweak
 
-      integer :: i, ng, tile
+      integer :: i, lstr, ng, tile
       integer :: Fcount, Lbck, Lini, Litl, Rec
 
       real (r8) :: str_day, end_day
@@ -465,13 +465,20 @@
       END DO
 !
 !  Initialize nonlinear model with the estimated initial conditions
-!  from the IS4DVAR Lanczos algorithm.
+!  from the IS4DVAR Lanczos algorithm.  Notice that the LreadBLK and
+!  LreadFWD switches are turned off to suppress processing of the
+!  structures when "check_multifile" during
+!  nonlinear model execution.
 !
       DO ng=1,Ngrids
+#if defined BULK_FLUXES && defined NL_BULK_FLUXES
+        LreadBLK(ng)=.FALSE.
+#endif
+        LreadFWD(ng)=.FALSE.
         wrtNLmod(ng)=.FALSE.
         wrtTLmod(ng)=.FALSE.
         RST(ng)%Rindex=0
-        Fcount=RST(ng)%Fcount
+        Fcount=RST(ng)%load
         RST(ng)%Nrec(Fcount)=0
       END DO
 
@@ -520,15 +527,34 @@
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
 #endif
+!
+!  Set structure for the nonlinear forward trajectory to be processed
+!  by the tangent linear and adjoint models. Also, set switches to
+!  process the FWD structure in routine "check_multifile". Notice that
+!  it is possible to split solution into multiple NetCDF files to reduce
+!  their size.
+!
+        CALL edit_multifile ('HIS2FWD')
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+        DO ng=1,Ngrids
+          LreadFWD(ng)=.TRUE.
+        END DO
 
 #if defined BULK_FLUXES && defined NL_BULK_FLUXES
 !
-!  Set file name containing the nonlinear model bulk fluxes to be read
-!  and processed by other algorithms.
+!  Set structure for the nonlinear surface fluxes to be processed by
+!  by the tangent linear and adjoint models. Also, set switches to
+!  process the BLK structure in routine "check_multifile".  Notice that
+!  it is possible to split solution into multiple NetCDF files to reduce
+!  their size.
 !
-      DO ng=1,Ngrids
-        BLK(ng)%name=HIS(ng)%name
-      END DO
+        CALL edit_multifile ('HIS2BLK')
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+        DO ng=1,Ngrids
+          LreadBLK(ng)=.TRUE.
+        END DO
 #endif
 !
 !  Initialize adjoint model and define sensitivity functional.
@@ -664,15 +690,22 @@
 !
 !  Initialize nonlinear model with the same initial conditions, xb(0),
 !  Lbck record in INI(ng)%name. This is the first guess NLM initial
-!  conditions used to start the IS4DVAR Lanczos algorithm.
+!  conditions used to start the IS4DVAR Lanczos algorithm. Notice that
+!  the LreadBLK and LreadFWD switches are turned off to suppress
+!  processing of the structures when "check_multifile" during
+!  nonlinear model execution.
 !
       DO ng=1,Ngrids
         LdefINI(ng)=.FALSE.
+# if defined BULK_FLUXES && defined NL_BULK_FLUXES
+        LreadBLK(ng)=.FALSE.
+# endif
+        LreadFWD(ng)=.FALSE.
         wrtNLmod(ng)=.FALSE.
         wrtTLmod(ng)=.FALSE.
         RST(ng)%Rindex=0
         INI(ng)%Rindex=Lbck
-        Fcount=RST(ng)%Fcount
+        Fcount=RST(ng)%load
         RST(ng)%Nrec(Fcount)=0
       END DO
 
@@ -701,6 +734,35 @@
 !$OMP END PARALLEL
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
+!
+!  Set structure for the nonlinear forward trajectory to be processed
+!  by the tangent linear and adjoint models. Also, set switches to
+!  process the FWD structure in routine "check_multifile".  Notice that
+!  it is possible to split solution into multiple NetCDF files to reduce
+!  their size.
+!
+      CALL edit_multifile ('HIS2FWD')
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+      DO ng=1,Ngrids
+        LreadFWD(ng)=.TRUE.
+      END DO
+
+# if defined BULK_FLUXES && defined NL_BULK_FLUXES
+!
+!  Set structure for the nonlinear surface fluxes to be processed by
+!  by the tangent linear and adjoint models. Also, set switches to
+!  process the BLK structure in routine "check_multifile".  Notice that
+!  it is possible to split solution into multiple NetCDF files to reduce
+!  their size.
+!
+      CALL edit_multifile ('HIS2BLK')
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+      DO ng=1,Ngrids
+        LreadBLK(ng)=.TRUE.
+      END DO
+# endif
 #endif
 !
 !  Initialize tangent linear model with the weighted sum of the
@@ -1193,7 +1255,7 @@
             IF (Master) WRITE (stdout,10)
  10         FORMAT (/,' Blowing-up: Saving latest model state into ',   &
      &                ' RESTART file',/)
-            Fcount=RST(ng)%Fcount
+            Fcount=RST(ng)%load
             IF (LcycleRST(ng).and.(RST(ng)%Nrec(Fcount).ge.2)) THEN
               RST(ng)%Rindex=2
               LcycleRST(ng)=.FALSE.
@@ -1220,7 +1282,7 @@
       DO ng=1,Ngrids
 !$OMP PARALLEL
         DO thread=THREAD_RANGE
-          CALL wclock_off (ng, iADM, 0, __LINE__, __FILE__)
+          CALL wclock_off (ng, iNLM, 0, __LINE__, __FILE__)
         END DO
 !$OMP END PARALLEL
       END DO
@@ -1233,6 +1295,9 @@
 !
 !  Close IO files.
 !
+      DO ng=1,Ngrids
+        CALL close_inp (ng, iNLM)
+      END DO
       CALL close_out
 
       RETURN

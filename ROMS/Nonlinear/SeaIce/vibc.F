@@ -104,13 +104,13 @@
               END IF
               tau=tau*dt(ng)
             END IF
-            IF ((dVdt*dVdx).lt.0.0_r8) dVdt=0.0_r8
             IF ((dVdt*(grad(Istr,j-1)+grad(Istr,j))).gt.0.0_r8) THEN
               dVde=grad(Istr,j-1)
             ELSE
               dVde=grad(Istr,j  )
             END IF
             cff=MAX(dVdx*dVdx+dVde*dVde,eps)
+            IF ((dVdt*dVdx).lt.0.0_r8) dVdt=0.0_r8
             Cx=dVdt*dVdx
 # ifdef RADIATION_2D
             Ce=MIN(cff,MAX(dVdt*dVde,-cff))
@@ -214,13 +214,13 @@
               END IF
               tau=tau*dt(ng)
             END IF
-            IF ((dVdt*dVdx).lt.0.0_r8) dVdt=0.0_r8
             IF ((dVdt*(grad(Iend,j-1)+grad(Iend,j))).gt.0.0_r8) THEN
               dVde=grad(Iend,j-1)
             ELSE
               dVde=grad(Iend,j  )
             END IF
             cff=MAX(dVdx*dVdx+dVde*dVde,eps)
+            IF ((dVdt*dVdx).lt.0.0_r8) dVdt=0.0_r8
             Cx=dVdt*dVdx
 # ifdef RADIATION_2D
             Ce=MIN(cff,MAX(dVdt*dVde,-cff))
@@ -324,13 +324,13 @@
               END IF
               tau=tau*dt(ng)
             END IF
-            IF ((dVdt*dVde).lt.0.0_r8) dVdt=0.0_r8
             IF ((dVdt*(grad(i,Jstr+1)+grad(i+1,Jstr+1))).gt.0.0_r8) THEN
               dVdx=grad(i  ,Jstr+1)
             ELSE
               dVdx=grad(i+1,Jstr+1)
             END IF
             cff=MAX(dVdx*dVdx+dVde*dVde,eps)
+            IF ((dVdt*dVde).lt.0.0_r8) dVdt=0.0_r8
 # ifdef RADIATION_2D
             Cx=MIN(cff,MAX(dVdt*dVdx,-cff))
 # else
@@ -418,13 +418,13 @@
               END IF
               tau=tau*dt(ng)
             END IF
-            IF ((dVdt*dVde).lt.0.0_r8) dVdt=0.0_r8
             IF ((dVdt*(grad(i,Jend)+grad(i+1,Jend))).gt.0.0_r8) THEN
               dVdx=grad(i  ,Jend)
             ELSE
               dVdx=grad(i+1,Jend)
             END IF
             cff=MAX(dVdx*dVdx+dVde*dVde,eps)
+            IF ((dVdt*dVde).lt.0.0_r8) dVdt=0.0_r8
 # ifdef RADIATION_2D
             Cx=MIN(cff,MAX(dVdt*dVdx,-cff))
 # else

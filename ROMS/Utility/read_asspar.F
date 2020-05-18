@@ -2,9 +2,9 @@
 #if defined FOUR_DVAR || defined VERIFICATION
       SUBROUTINE read_AssPar (model, inp, out, Lwrite)
 !
-!svn $Id: read_asspar.F 929 2018-11-07 20:33:12Z arango $
+!svn $Id: read_asspar.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -575,59 +575,69 @@
             CASE ('STDnameI')
               label='STD - initial conditions standard deviation'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Nfiles, STD(1,:))
+     &                      Ngrids, Nfiles, STD(1,:))
             CASE ('STDnameM')
               label='STD - model error standard deviation'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Nfiles, STD(2,:))
+     &                      Ngrids, Nfiles, STD(2,:))
             CASE ('STDnameB')
               label='STD - boundary conditions standard deviation'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Nfiles, STD(3,:))
+     &                      Ngrids, Nfiles, STD(3,:))
             CASE ('STDnameF')
               label='STD - surface forcing standard deviation'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Nfiles, STD(4,:))
+     &                      Ngrids, Nfiles, STD(4,:))
             CASE ('NRMnameI')
               label='NRM - initial conditions normalization'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Nfiles, NRM(1,:))
+     &                      Ngrids, Nfiles, NRM(1,:))
             CASE ('NRMnameM')
               label='NRM - model error normalization'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Nfiles, NRM(2,:))
+     &                      Ngrids, Nfiles, NRM(2,:))
             CASE ('NRMnameB')
               label='NRM - boundary conditions normalization'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Nfiles, NRM(3,:))
+     &                      Ngrids, Nfiles, NRM(3,:))
             CASE ('NRMnameF')
               label='NRM - surface forcing normalization'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Nfiles, NRM(4,:))
+     &                      Ngrids, Nfiles, NRM(4,:))
             CASE ('OBSname')
               label='OBS - data assimilation observations'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Nfiles, OBS)
+     &                      Ngrids, Nfiles, OBS)
             CASE ('HSSname')
               label='HSS - Hessian eigenvectors'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Nfiles, HSS)
+     &                      Ngrids, Nfiles, HSS)
             CASE ('LCZname')
               label='LCZ - Lanczos vectors'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Nfiles, LCZ)
+     &                      Ngrids, Nfiles, LCZ)
             CASE ('LZEname')
               label='LZE - Time-evolved Lanczos vectors'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Nfiles, LZE)
+     &                      Ngrids, Nfiles, LZE)
             CASE ('MODname')
               label='DAV - 4D-Var data assimilation variables'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Nfiles, DAV)
+     &                      Ngrids, Nfiles, DAV)
             CASE ('ERRname')
               label='ERR - 4D-Var posterior error covariance'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Nfiles, ERR)
+     &                      Ngrids, Nfiles, ERR)
+#if defined W4DPSAS_FCT_SENSITIVITY && defined OBS_SPACE
+            CASE ('OIFnameA')
+              label='OIFA - observartion impacts forecast, analysis'
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Ngrids, Nfiles, OIFA)
+            CASE ('OIFnameB')
+              label='OIFB - observartion impacts forecast, background'
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Ngrids, Nfiles, OIFB)
+#endif
           END SELECT
         END IF
       END DO
@@ -811,9 +821,22 @@
           WRITE (out,80) NpostI, 'NpostI',                              &
      &            'Number of Lanczos iterations in posterior analysis.'
 #   endif
-#   if defined W4DPSAS_SENSITIVITY || defined W$DVAR_SENSITIVITY
+#   if defined W4DPSAS_FCT_SENSITIVITY || defined W4DVAR_SENSITIVITY ||\
+       defined W4DPSAS_SENSITIVITY
           WRITE (out,80) Nimpact, 'Nimpact',                             &
      &            'Observations impact/sensitivity outer loop to use.'
+          IF (Nimpact.gt.Nouter) THEN
+            IF (Master) THEN
+              WRITE (out,240) 'Nimpact', Nimpact,                        &
+     &              'must be less or equal than Nouter'
+            END IF
+            exit_flag=5
+            RETURN
+          END IF
+#   endif
+#   if defined ARRAY_MODES
+          WRITE (out,80) Nimpact, 'Nimpact',                             &
+     &            'Array mode outer loop.'
           IF (Nimpact.gt.Nouter) THEN
             IF (Master) THEN
               WRITE (out,240) 'Nimpact', Nimpact,                        &
@@ -1202,23 +1225,23 @@
         defined W4DPSAS           || defined W4DVAR
           fname=STD(2,ng)%name
           IF (.not.find_file(ng, fname, 'STDnameM')) GO TO 30
-          WRITE (out,160) '               Model STD File:  ',           &
+          WRITE (out,160) '                   Model STD File:  ',       &
      &                    TRIM(fname)
 #    endif
           fname=STD(1,ng)%name
           IF (.not.find_file(ng, fname, 'STDnameI')) GO TO 30
-          WRITE (out,160) '  Initial Conditions STD File:  ',           &
+          WRITE (out,160) '      Initial Conditions STD File:  ',       &
      &                    TRIM(fname)
 #    ifdef ADJUST_BOUNDARY
           fname=STD(3,ng)%name
           IF (.not.find_file(ng, fname, 'STDnameB')) GO TO 30
-          WRITE (out,160) ' Boundary Conditions STD File:  ',           &
+          WRITE (out,160) '     Boundary Conditions STD File:  ',       &
      &                    TRIM(fname)
 #    endif
 #    if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
           fname=STD(4,ng)%name
           IF (.not.find_file(ng, fname, 'STDnameF')) GO TO 30
-          WRITE (out,160) '     Surface Forcing STD File:  ',           &
+          WRITE (out,160) '         Surface Forcing STD File:  ',       &
      &                    TRIM(fname)
 #    endif
 #   endif
@@ -1226,14 +1249,14 @@
        defined TL_W4DVAR         || defined W4DPSAS     || \
        defined W4DVAR
           fname=NRM(2,ng)%name
-          WRITE (out,160) '              Model Norm File:  ',           &
+          WRITE (out,160) '                  Model Norm File:  ',       &
      &                    TRIM(fname)
           IF (.not.LdefNRM(2,ng)) THEN
             IF (.not.find_file(ng, fname, 'NRMnameM')) GO TO 30
           END IF
 #   elif defined CORRELATION
           fname=NRM(2,ng)%name
-          WRITE (out,160) '              Model Norm File:  ',           &
+          WRITE (out,160) '                  Model Norm File:  ',       &
      &                    TRIM(fname)
           IF (.not.LdefNRM(2,ng).and.LwrtNRM(2,ng)) THEN
             IF (.not.find_file(ng, fname, 'NRMnameM')) GO TO 30
@@ -1241,14 +1264,14 @@
 #   endif
 #   if defined CORRELATION
           fname=NRM(1,ng)%name
-          WRITE (out,160) ' Initial Conditions Norm File:  ',           &
+          WRITE (out,160) '     Initial Conditions Norm File:  ',       &
      &                    TRIM(fname)
           IF (.not.LdefNRM(1,ng).and.LwrtNRM(1,ng)) THEN
             IF (.not.find_file(ng, fname, 'NRMnameI')) GO TO 30
           END IF
 #   else
           fname=NRM(1,ng)%name
-          WRITE (out,160) ' Initial Conditions Norm File:  ',           &
+          WRITE (out,160) '     Initial Conditions Norm File:  ',       &
      &                    TRIM(fname)
           IF (.not.LdefNRM(1,ng)) THEN
             IF (.not.find_file(ng, fname, 'NRMnameI')) GO TO 30
@@ -1257,14 +1280,14 @@
 #   ifdef ADJUST_BOUNDARY
 #    ifdef CORRELATION
           fname=NRM(3,ng)%name
-          WRITE (out,160) 'Boundary Conditions Norm File:  ',           &
+          WRITE (out,160) '    Boundary Conditions Norm File:  ',       &
      &                    TRIM(fname)
           IF (.not.LdefNRM(3,ng).and.LwrtNRM(3,ng)) THEN
             IF (.not.find_file(ng, fname, 'NRMnameB')) GO TO 30
           END IF
 #    else
           fname=NRM(3,ng)%name
-          WRITE (out,160) 'Boundary Conditions Norm File:  ',           &
+          WRITE (out,160) '    Boundary Conditions Norm File:  ',       &
      &                    TRIM(fname)
           IF (.not.LdefNRM(3,ng)) THEN
             IF (.not.find_file(ng, fname, 'NRMnameB')) GO TO 30
@@ -1274,14 +1297,14 @@
 #   if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
 #    ifdef CORRELATION
           fname=NRM(4,ng)%name
-          WRITE (out,160) '    Surface Forcing Norm File:  ',           &
+          WRITE (out,160) '        Surface Forcing Norm File:  ',       &
      &                    TRIM(fname)
           IF (.not.LdefNRM(4,ng).and.LwrtNRM(4,ng)) THEN
             IF (.not.find_file(ng, fname, 'NRMnameF')) GO TO 30
           END IF
 #    else
           fname=NRM(4,ng)%name
-          WRITE (out,160) '    Surface Forcing Norm File:  ',           &
+          WRITE (out,160) '        Surface Forcing Norm File:  ',       &
      &                    TRIM(fname)
           IF (.not.LdefNRM(4,ng)) THEN
             IF (.not.find_file(ng, fname, 'NRMnameF')) GO TO 30
@@ -1291,18 +1314,18 @@
 #   if !(defined CORRELATION || defined OPT_OBSERVATIONS)
           fname=OBS(ng)%name
           IF (.not.find_file(ng, fname, 'OBSname')) GO TO 30
-          WRITE (out,160) '      Input observations File:  ',           &
+          WRITE (out,160) '          Input observations File:  ',       &
      &                    TRIM(fname)
 #   endif
 #   if !defined CORRELATION
-          WRITE (out,160) '    Input/Output Lanczos File:  ',           &
+          WRITE (out,160) '        Input/Output Lanczos File:  ',       &
      &                    TRIM(LCZ(ng)%name)
 #    ifndef IS4DVAR_SENSITIVITY
-          WRITE (out,160) '    Input/Output Hessian File:  ',           &
+          WRITE (out,160) '        Input/Output Hessian File:  ',       &
      &                    TRIM(HSS(ng)%name)
 #    endif
 #    ifdef EVOLVED_LCZ
-          WRITE (out,160) '  Output evolved Lanczos File:  ',           &
+          WRITE (out,160) '      Output evolved Lanczos File:  ',       &
      &                    TRIM(LZE(ng)%name)
 #    endif
 #   endif
@@ -1311,20 +1334,31 @@
 #   ifdef VERIFICATION
           fname=OBS(ng)%name
           IF (.not.find_file(ng, fname, 'OBSname')) GO TO 30
-          WRITE (out,160) '      Input observations File:  ',           &
+          WRITE (out,160) '          Input observations File:  ',       &
      &                    TRIM(fname)
-          WRITE (out,160) '     Output verification File:  ',           &
+          WRITE (out,160) '         Output verification File:  ',       &
      &                    TRIM(DAV(ng)%name)
 #   else
-          WRITE (out,160) '            Output 4DVAR File:  ',           &
+          WRITE (out,160) '                Output 4DVAR File:  ',       &
      &                    TRIM(DAV(ng)%name)
 #   endif
 #  endif
 #  if defined WEAK_CONSTRAINT   && \
      (defined POSTERIOR_ERROR_F || defined POSTERIOR_ERROR_I)
-          WRITE (out,160) '  Output Posterior Error File:  ',           &
+          WRITE (out,160) '      Output Posterior Error File:  ',       &
      &                    TRIM(ERR(ng)%name)
 #  endif
+#  if defined W4DPSAS_FCT_SENSITIVITY && defined OBS_SPACE
+          fname=OIFA(ng)%name
+!!        IF (.not.find_file(ng, fname, 'OIFnameA')) GO TO 30
+          WRITE (out,160) '  Input Obs Impacts Analysis File:  ',       &
+     &                    TRIM(fname)
+!
+          fname=OIFB(ng)%name
+!!        IF (.not.find_file(ng, fname, 'OIFnameB')) GO TO 30
+          WRITE (out,160) 'Input Obs Impacts Background File:  ',       &
+     &                    TRIM(fname)
+#   endif
           GO TO 40
   30      IF (Master) THEN
             IF (LEN_TRIM(fname).eq.0) THEN

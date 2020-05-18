@@ -2,9 +2,9 @@
       MODULE mod_tides
 #if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES
 !
-!svn $Id: mod_tides.F 923 2018-09-26 21:20:30Z arango $
+!svn $Id: mod_tides.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -239,7 +239,7 @@
 !
 !  Set horizontal array size.
 !
-      size2d=REAL((UBi-LBi)*(UBj-LBj),r8)
+      size2d=REAL((UBi-LBi+1)*(UBj-LBj+1),r8)
 !
 !  Allocate tidal forcing variables.
 !
@@ -786,7 +786,7 @@
 
 ! Local variables
       real(r8) :: slat, hh, d1, tau, dtau_2, freq(MTC)
-      real(r8) :: h, pp, s, p, enp, dh, dpp, ds, dp, dnp
+      real(r8) :: h, pp, s, p, enp, dh, dpp, ds, dp2, dnp
       real(r8) :: uu, twopi, sumc, sums, v, rr, vdbl, uudbl
       integer  :: i, iv, j, k, iuu, itide, intdays
       integer  :: Imin, Imax, Jmin, Jmax
@@ -845,7 +845,7 @@
 !
       d1=ttime*sec2day
       twopi = 2.0_r8*pi
-      call astr(d1,h,pp,s,p,enp,dh,dpp,ds,dp,dnp)
+      call astr(d1,h,pp,s,p,enp,dh,dpp,ds,dp2,dnp)
       intdays=int(ttime*sec2day)
       hh=real(ttime-intdays*day2sec,r8)/3600._r8
       tau = hh/24._r8 + h - s
@@ -857,7 +857,7 @@
 !
       DO itide=1,MTC
         freq(itide)=(doodson(1,itide)*dtau_2+doodson(2,itide)*ds+       &
-     &               doodson(3,itide)*dh+doodson(4,itide)*dp+           &
+     &               doodson(3,itide)*dh+doodson(4,itide)*dp2+          &
      &               doodson(5,itide)*dnp+doodson(6,itide)*dpp)         &
      &               /(365._r8*24._r8)
         vdbl=doodson(1,itide)*tau+doodson(2,itide)*s+                   &
@@ -905,7 +905,7 @@
 !
       RETURN
       END SUBROUTINE tide_astro
-      SUBROUTINE astr(d1,h,pp,s,p,np,dh,dpp,ds,dp,dnp)
+      SUBROUTINE astr(d1,h,pp,s,p,np,dh,dpp,ds,dp2,dnp)
 !        this subroutine calculates the following five ephermides
 !        of the sun and moon
 !        h = mean longitude of the sum
@@ -923,7 +923,7 @@
 !
         implicit none
       real(r8), intent(in)  :: d1
-      real(r8), intent(out) :: h, pp, s, p, np, dh, dpp, ds, dp, dnp
+      real(r8), intent(out) :: h, pp, s, p, np, dh, dpp, ds, dp2, dnp
       real(r8)  :: d2, f, f2
 
         d2=d1*1.d-4
@@ -953,14 +953,14 @@
      &  +3.d-12*.00000007d0*d1**2
         ds=13.1763965268d0-2.d-8*.000085d0*d1+                          &
      &  3.d-12*.000000039d0*d1**2
-        dp=.1114040803d0-2.d-8*.0007739d0*d1-                           &
+        dp2=.1114040803d0-2.d-8*.0007739d0*d1-                          &
      &  3.d-12*.00000026d0*d1**2
         dnp=+.0529539222d0-2.d-8*.0001557d0*d1-                         &
      &  3.d-12*.00000005d0*d1**2
         dh=dh/f2
         dpp=dpp/f2
         ds=ds/f2
-        dp=dp/f2
+        dp2=dp2/f2
         dnp=dnp/f2
         RETURN
       END SUBROUTINE astr

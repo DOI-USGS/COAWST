@@ -11,7 +11,7 @@
 
 % 1) Enter name of ROMS grid, or provide the varaibles of 
 % lon_rho, lat_rho, h, and mask_rho:
-roms_grid='../../../Projects/Sandy/Sandy_roms_grid.nc';
+roms_grid='Sandy_roms_grid.nc';
 % or 
 % lon_rho= , lat_rho= , mask_rho= , h= .
 

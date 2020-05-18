@@ -59,7 +59,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -121,6 +121,8 @@
 !     40.80: Marcel Zijlema
 !     40.87: Marcel Zijlema
 !     41.65: Marcel Zijlema
+!     41.71: Gerbrant van Vledder
+!     41.75: Erick Rogers
 !
 !  1. Updates
 !
@@ -236,6 +238,8 @@
 !     40.87, Apr. 08: in keyword QUANTITY more than 1 output parameter at once
 !                     is possible and addition of [fmin] and [fmax]
 !     41.65, Jun. 16: extension frequency and direction dependent tranmission coefficients
+!     41.71, Dec. 18: extension freeboard dependent transmission and reflection
+!     41.75, Jan. 19: adding sea ice
 !
 !  2. Purpose
 !
@@ -300,6 +304,7 @@
       INTEGER           :: IGR1,IGR2,IGRD,MXS,MYS
       INTEGER           :: IVAL,NUMCOR,MSS,I,J,NVAR,IVTYPE,IFTMAX
       REAL              :: TRCF,HGT,SLP,BK,OGAM,OBET,REF0,XP,YP
+      REAL              :: GAMR, GAMT                                     41.71
       REAL              :: ALTMP,FRLOW,FRHIG,GAMMA,TMPDIR,VALX,VALY
       REAL*8            :: DIFF
       REAL              :: DEGCNV
@@ -316,7 +321,7 @@
       LOGICAL           :: MORE                                           40.17
       LOGICAL, SAVE     :: LOBST = .FALSE.                                40.31
 !
-      INTEGER        :: LREF, LREFDIFF, LRFRD                             40.31
+      INTEGER        :: LREF, LREFDIFF, LRFRD, LFREE, LQUAY               41.71 40.31
       REAL           :: POWN, DUM                                         40.31 40.18
       REAL           :: FD1, FD2, FD3, FD4                                40.31 40.28
       REAL, ALLOCATABLE :: RLAMBDA(:)                                     40.17
@@ -969,6 +974,8 @@
         ELSE
           ITERMX = MXITNS                                                 40.03
         ENDIF
+!       reset asort
+        asort = usort                                                     41.68
         RETURN                                                            30.00
       ENDIF
 !
@@ -987,8 +994,10 @@
 !                     |    DANGremond [hgt] [slope] [Bk]  |
 !                                                                         40.18
 !                        | -> RSPEC        |                              40.18
-!      ( REFLec [reflc] <                   > )   &
+!      ( REFLec [reflc] <                   > )               &
 !                        |    RDIFF [pown] |                              40.13 40.18
+!
+!      ( FREEboard [hgt] [gammat] [gammar] Quay )             &           41.71
 !
 !             LINe < [xp] [yp] >                                          40.18 40.09
 !
@@ -1006,6 +1015,9 @@
         OBSTMP%RFCOEF(4) = 0.                                             40.31
         OBSTMP%RFCOEF(5) = 0.                                             40.31
         OBSTMP%RFCOEF(6) = 0.                                             40.31
+        OBSTMP%FBCOEF(1) = 0.                                             41.71
+        OBSTMP%FBCOEF(2) = 0.                                             41.71
+        OBSTMP%FBCOEF(3) = 0.                                             41.71
 !
 !       data concerning transmission of energy over/through the obstacle
 !
@@ -1139,10 +1151,6 @@
             CALL MSGERR(3,'circle.                                    ')  40.09
           ENDIF                                                           40.09
           CALL INREAL ('REFLC', REF0, 'STA', 1.)                          40.09
-          DUM = REF0*REF0+TRCF*TRCF                                       40.51 40.14
-          IF (ITRAS.EQ.0 .AND. DUM.GT.1.) THEN                            40.51 40.14
-            CALL MSGERR(3,'Kt^2 + Kr^2 > 1 ')                             40.51 40.14
-          ENDIF                                                           40.14
           OBSTMP%RFCOEF(1) = REF0                                         40.31
 !                                                                         40.18
           CALL INKEYW ('REQ', '  ')                                       40.18
@@ -1183,8 +1191,6 @@
             LRFRD = 0                                                     40.31 40.28
           ENDIF                                                           40.28
           OBSTMP%RFTYP3 = LRFRD                                           40.31
-!                                                                         40.18
-          CALL INKEYW ('REQ', '  ')                                       40.09
 !                                                                         40.09
           IF ((REF0.LT.0.) .OR. (REF0.GT.1.)) THEN                        40.09
             CALL MSGERR(3,'Reflection coeff. [reflc] is not allowed ')    40.09
@@ -1196,10 +1202,53 @@
         ENDIF                                                             40.09
         OBSTMP%RFTYP1 = LREF                                              40.31
 !
+!       freeboard dependent transmission and reflection (optional)        41.71
+!
+        CALL INKEYW ('REQ', '  ')                                         41.71
+        IF (KEYWIS ('FREE')) THEN                                         41.71
+           LFREE = 1                                                      41.71
+           CALL INREAL ('HGT'   , HGT , 'REQ', 0.)                        41.71
+           CALL INREAL ('GAMMAT', GAMT, 'STA', 1.)                        41.71
+           CALL INREAL ('GAMMAR', GAMR, 'STA', 1.)                        41.71
+           IF ( GAMT.LT.0. .OR. GAMR.LT.0. ) THEN                         41.71
+              CALL MSGERR(3,'shape parameter gamma is not allowed')       41.71
+              CALL MSGERR(3,'to be smaller than 0!')                      41.71
+           ELSEIF ( GAMT.LT.0.1 ) THEN                                    41.71
+              CALL MSGERR(1,'gammat may not be smaller than 0.1')         41.71
+              GAMT = 0.1                                                  41.71
+           ELSEIF ( GAMR.LT.0.1 ) THEN                                    41.71
+              CALL MSGERR(1,'gammar may not be smaller than 0.1')         41.71
+              GAMR = 0.1                                                  41.71
+           ENDIF                                                          41.71
+           OBSTMP%FBCOEF(1) = HGT                                         41.71
+           OBSTMP%FBCOEF(2) = GAMT                                        41.71
+           OBSTMP%FBCOEF(3) = GAMR                                        41.71
+           CALL INKEYW ('STA', ' ')                                       41.71
+           IF (KEYWIS('Q')) THEN                                          41.71
+              LQUAY = 1                                                   41.71
+           ELSE                                                           41.71
+              LQUAY = 0                                                   41.71
+           ENDIF                                                          41.71
+        ELSE                                                              41.71
+           LFREE = 0                                                      41.71
+           LQUAY = 0                                                      41.71
+        ENDIF                                                             41.71
+        OBSTMP%FBTYP1 = LFREE                                             41.71
+        OBSTMP%FBTYP2 = LQUAY                                             41.71
+!
+!       check constant transmission/reflection coefficients
+!       in case of energy conservation
+!
+        IF (LFREE.EQ.0 .AND. ITRAS.EQ.0 .AND. LREF.EQ.1) THEN             41.71 40.51 40.14
+           DUM = TRCF*TRCF + REF0*REF0                                    40.51 40.14
+           IF (DUM.GT.1.) CALL MSGERR(3,'Kt^2 + Kr^2 > 1 ')               40.51 40.14
+        ENDIF                                                             40.14
+!
 !       location of obstacles
 !
 !       *** NUMCOR : Number of corners ***
         NUMCOR = 0
+        CALL INKEYW ('REQ', '  ')
         IF (KEYWIS ('LIN')) THEN
           FRST%X = 0.                                                     40.31
           FRST%Y = 0.                                                     40.31
@@ -1294,7 +1343,7 @@
 !
 !   INPgrid                                                                &
 !      BOTtom / WLEVel / CURrent / VX / VY / FRiction / WInd / WX / WY     &
-!      NPLAnts / TURB / MUDL                                               &
+!      NPLAnts / TURB / MUDL / AICE / HICE                                 &
 !      | REG [xpinp] [ypinp] [alpinp]  [mxinp] [myinp]  [dxinp] [dyinp] |
 !     <  CURVilinear [stagrx] [stagry] [mxinp] [myinp]                   > &
 !      | UNSTRUCtured                                                   |
@@ -1450,10 +1499,31 @@
 !         value of turbulent viscosity                                    40.35
           IGRD = 12                                                       40.35
           PSNAME = 'TURBGRID'                                             40.35
+#ifdef COAWST_COUPLING
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+          IF (JTURB2.LE.1) THEN                                             40.55
+            MCMVAR = MCMVAR + 2                                             40.55
+            JTURB2 = MCMVAR - 1                                             40.55
+            JTURB3 = MCMVAR                                                 40.55
+            ALOCMP = .TRUE.                                                 40.97
+          ENDIF                                                             40.55
+          DEALLOCATE(M_GENARR_MOD(ng)%TURBF_G)
+          ALLOCATE (M_GENARR_MOD(ng)%TURBF_G(MXG(IGR1)*MYG(IGR1)))
+          TURBF=>M_GENARR_MOD(ng)%TURBF_G
+          TURBF=0.
+#endif
         ELSE IF (KEYWIS ('MUDL')) THEN                                    40.59
 !         fluid mud layer                                                 40.59
           IGRD = 13                                                       40.59
           PSNAME = 'MUDLGRID'                                             40.59
+        ELSE IF (KEYWIS ('AICE')) THEN                                    41.75
+!         ice concentration (as a fraction)                               41.75
+          IGRD = 14                                                       41.75
+          PSNAME = 'AICEGRID'                                             41.75
+        ELSE IF (KEYWIS ('HICE')) THEN                                    41.75
+!         ice thickness (in meters)                                       41.75
+          IGRD = 15                                                       41.75
+          PSNAME = 'HICEGRID'                                             41.75
         ELSE
           IGRD = 1
           PSNAME = 'BOTTGRID'
@@ -2215,7 +2285,8 @@
 !   SET  [level]  [nor]  [depmin]  [maxmes]                &
 !        [maxerr]  [grav]  [rho] [cdcap] [uscap] [inrhog]  &
 !        [hsrerr]  CARTesian/NAUTical  [pwtail] [froudmax] &
-!        [sort]  CURV
+!        [icewind]                                         &
+!        [sort]  [nsweep]  CURV  (not documented)
 !        [printf]  [prtest] (not documented)
 !
 ! =============================================================
@@ -2231,22 +2302,6 @@
          CALL INREAL ('CDCAP',  CDCAP,  'UNC', 0.)
          CALL INREAL ('USCAP',  USCAP,  'UNC', 0.)                        40.88
          CALL ININTG ('INRHOG', INRHOG, 'UNC', 0)
-         IF (INRHOG.EQ.0) THEN                                            30.20
-           OVUNIT(7) = 'm2/s'
-           OVUNIT(9) = 'm2/s'
-           OVUNIT(19) = 'm3/s'
-           OVUNIT(21) = 'm2s'
-           OVUNIT(22) = 'm2'
-           OVUNIT(29) = 'm2'
-         ELSE
-           OVUNIT(7) = 'W/m2'
-           OVUNIT(9) = 'W/m2'
-           OVUNIT(19) = 'W/m'
-           OVUNIT(21) = 'Js/m2'
-           OVUNIT(22) = 'J/m2'
-           OVUNIT(29) = 'J/m2'
-         ENDIF                                                            10.17
-!
          CALL INREAL ('HSRERR', HSRERR, 'UNC', 0.)                        32.01
 !
          CALL INKEYW ('STA',' ')                                          32.01
@@ -2265,16 +2320,18 @@
            PWTAIL(3) = PWTAIL(1) + 1.
          ENDIF
          CALL INREAL ('FROUDMAX', PNUMS(18), 'UNC', 0.)                   30.50
-         CALL INREAL ('SORT'    , asort    , 'UNC', 0.)                   41.48
+         CALL INREAL ('ICEWIND' , ICEWIND  , 'UNC', 0.)
+         CALL INREAL ('SORT'    , usort    , 'UNC', 0.)                   41.68 41.48
+         CALL ININTG ('NSWEEP'  , nsweep   , 'UNC', 0 )                   41.68
          IF (KEYWIS ('CURV')) CCURV = .TRUE.                              41.53
 !        the unit numbers PRINTF and PRTEST should be set in swaninit,
 !        so not documented
          CALL ININTG ('PRINTF'  , PRINTF   , 'UNC', 0 )
          CALL ININTG ('PRTEST'  , PRTEST   , 'UNC', 0 )
-         if ( asort.gt.-999. ) then                                       41.48
-            asort = DEGCNV (asort)
-            ALTMP = asort / 360.
-            asort = PI2 * (ALTMP - NINT(ALTMP))
+         if ( usort.gt.-999. ) then                                       41.68 41.48
+            usort = DEGCNV (usort)
+            ALTMP = usort / 360.
+            usort = PI2 * (ALTMP - NINT(ALTMP))
          endif
          GOTO 100
       ENDIF
@@ -2642,9 +2699,31 @@
         GOTO 100
       ENDIF
 !
-!   ------------------------------------------------------------------
+! ==========================================
+!
+!   IC4M2 [aice] [c0] [c1] [c2] [c3] [c4] [c5] [c6]
+!
+! ==========================================
+!
+      IF (KEYWIS ('IC4M2')) THEN
+        IICE = 3
+        CALL INREAL('AICE',PIC4M2(1),'REQ',0.)
+        CALL INREAL('C0'  ,PIC4M2(2),'REQ',0.)
+        CALL INREAL('C1'  ,PIC4M2(3),'REQ',0.)
+        CALL INREAL('C2'  ,PIC4M2(4),'REQ',0.)
+        CALL INREAL('C3'  ,PIC4M2(5),'REQ',0.)
+        CALL INREAL('C4'  ,PIC4M2(6),'REQ',0.)
+        CALL INREAL('C5'  ,PIC4M2(7),'REQ',0.)
+        CALL INREAL('C6'  ,PIC4M2(8),'REQ',0.)
+        GOTO 100
+      ENDIF
+!
+! ==========================================
+!
 !   VEGEtation   < [height]  [diamtr]  [nstems]  [drag] >
-!   ------------------------------------------------------------------
+!
+! ==========================================
+!
       IF (KEYWIS ('VEGE')) THEN
         IVEG  = 1
         ILMAX = 0
@@ -3240,7 +3319,7 @@
 ! ============================================================
 !
       IF (KEYWIS ('TRI')) THEN
-        CALL ININTG ('ITRIAD', ITRIAD, 'STA', 1)
+        CALL ININTG ('ITRIAD', ITRIAD, 'STA', 11)
         IF (ITRIAD.EQ.1) THEN
            CALL INREAL ('TRFAC', PTRIAD(1), 'STA', 0.8)                   41.44
            CALL INREAL ('CUTFR', PTRIAD(2), 'STA', 2.5)                   40.61 40.56 30.82
@@ -3377,7 +3456,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3408,6 +3487,7 @@
 !     40.31: Marcel Zijlema
 !     40.41: Marcel Zijlema
 !     40.80: Marcel Zijlema
+!     41.75: Erick Rogers
 !
 !  1. Updates
 !
@@ -3435,6 +3515,7 @@
 !     40.31, Dec. 03: removing POOL-mechanism
 !     40.41, Oct. 04: common blocks replaced by modules, include files removed
 !     40.80, Dec. 07: extension to unstructured grids
+!     41.75, Jan. 19: adding sea ice
 !
 !  2. Purpose
 !
@@ -3512,9 +3593,9 @@
 !            |          |
 !            | FRiction |
 !            |          |
-! INPgrid  (<  WInd      >) &
+!            | WInd     |
 !            |          |
-!            | WX       |
+! INPgrid  (<  WX        >) &
 !            |          |
 !            | WY       |
 !            |          |
@@ -3525,6 +3606,10 @@
 !            | TURB     |                                                 40.35
 !            |          |
 !            | MUDLayer |                                                 40.59
+!            |          |
+!            | AICE     |                                                 41.75
+!            |          |
+!            | HICE     |                                                 41.75
 !
 !
 !    | REGular [xpinp] [ypinp] [alpinp] [mxinp] [myinp] [dxinp] [dyinp] |
@@ -3889,7 +3974,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -3920,6 +4005,7 @@
 !     40.55: Marcel Zijlema
 !     40.59: Erick Rogers
 !     41.20: Casey Dietrich
+!     41.75: Erick Rogers
 !
 !  1. Updates
 !
@@ -3937,6 +4023,7 @@
 !     40.55, Dec. 05: introducing vegetation model
 !     40.59, Aug. 07: introducing fluid mud-induced dissipation model
 !     41.20, Mar. 10: extension to tightly coupled ADCIRC+SWAN model
+!     41.75, Jan. 19: adding sea ice
 !
 !  2. Purpose
 !
@@ -4029,7 +4116,7 @@
 !   ============================================================================
 !
 !   READinp    BOTtom/WLevel/CURrent/FRiction/WInd/COORdinates/              &
-!              NPLAnts/TURB/MUDL                                             &
+!              NPLAnts/TURB/MUDL/AICE/HICE                                   &
 !        [fac]  / 'fname1'        \
 !               \ SERIES 'fname2' /  [idla] [nhedf] ([nhedt]) (nhedvec])     &
 !        FREE / FORMAT 'form' / [idfm] / UNFORMATTED
@@ -4236,6 +4323,27 @@
           JMUDL3 = MCMVAR                                                 40.59
           ALOCMP = .TRUE.                                                 40.97
         ENDIF                                                             40.59
+      ELSE IF (KEYWIS ('AICE')) THEN                                      41.75
+!       ice concentration (fraction)                                      41.75
+        IGR1   = 14                                                       41.75
+        VARAICE = .TRUE.                                                  41.75
+        IF (JAICE2.LE.1) THEN                                             41.75
+          MCMVAR = MCMVAR + 2                                             41.75
+          JAICE2 = MCMVAR - 1                                             41.75
+          JAICE3 = MCMVAR                                                 41.75
+          ALOCMP = .TRUE.                                                 41.75
+        ENDIF                                                             41.75
+
+      ELSE IF (KEYWIS ('HICE')) THEN                                      41.75
+!       ice thickness (in meters)                                         41.75
+        IGR1   = 15                                                       41.75
+        VARHICE = .TRUE.                                                  41.75
+        IF (JHICE2.LE.1) THEN                                             41.75
+          MCMVAR = MCMVAR + 2                                             41.75
+          JHICE2 = MCMVAR - 1                                             41.75
+          JHICE3 = MCMVAR                                                 41.75
+          ALOCMP = .TRUE.                                                 41.75
+        ENDIF                                                             41.75
       ELSE
         CALL  WRNKEY
       ENDIF
@@ -4340,6 +4448,11 @@
          ALLOCATE (M_GENARR_MOD(ng)%NPLAF_G(MXG(IGR1)*MYG(IGR1)))
          NPLAF=>M_GENARR_MOD(ng)%NPLAF_G
          CALL SWCOPR( TARR, NPLAF, MXG(IGR1)*MYG(IGR1) )                  40.31
+      ELSE IF (IGR1.EQ.12) THEN                                           40.55
+         DEALLOCATE(M_GENARR_MOD(ng)%TURBF_G)
+         ALLOCATE (M_GENARR_MOD(ng)%TURBF_G(MXG(IGR1)*MYG(IGR1)))
+         TURBF=>M_GENARR_MOD(ng)%TURBF_G
+         CALL SWCOPR( TARR, TURBF, MXG(IGR1)*MYG(IGR1) )                  40.31
       END IF                                                              40.31
 #else
       IF (IGR1.EQ.1) THEN                                                 40.31
@@ -4371,6 +4484,12 @@
       ELSE IF (IGR1.EQ.13) THEN                                           40.59
          IF (.NOT.ALLOCATED(MUDLF)) ALLOCATE(MUDLF(MXG(IGR1)*MYG(IGR1)))  40.59
          CALL SWCOPR( TARR, MUDLF, MXG(IGR1)*MYG(IGR1) )                  40.59
+      ELSE IF (IGR1.EQ.14) THEN                                           41.75
+         IF (.NOT.ALLOCATED(AICEF)) ALLOCATE(AICEF(MXG(IGR1)*MYG(IGR1)))  41.75
+         CALL SWCOPR( TARR, AICEF, MXG(IGR1)*MYG(IGR1) )                  41.75
+      ELSE IF (IGR1.EQ.15) THEN                                           41.75
+         IF (.NOT.ALLOCATED(HICEF)) ALLOCATE(HICEF(MXG(IGR1)*MYG(IGR1)))  41.75
+         CALL SWCOPR( TARR, HICEF, MXG(IGR1)*MYG(IGR1) )                  41.75
       END IF                                                              40.31
 #endif
       DEALLOCATE(TARR)                                                    40.31
@@ -4464,7 +4583,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4635,7 +4754,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -4979,7 +5098,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5194,7 +5313,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5559,7 +5678,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5669,7 +5788,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -5841,7 +5960,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6012,7 +6131,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -6624,7 +6743,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

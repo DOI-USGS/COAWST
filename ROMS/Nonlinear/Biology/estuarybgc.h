@@ -1,15 +1,38 @@
       SUBROUTINE biology (ng,tile)
 !
-!svn $Id: estuarybgc.h 2232 2012-01-03 18:55:20Z arango $
+!svn $Id: estuarybgc.h 2232 2019-01-03 18:55:20Z arango $
 !***********************************************************************
 !  Copyright (c) 2002-2012 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                               Katja Fennel   !
 !****************************************** Alexander F. Shchepetkin ***
+!***********************************************************************
+!  Modified Fennel module to add the SAV growth model                ***
+!************************************************ Tarandeep S. Kalra ***
+!************************************************** Neil K. Ganju    ***
+!************************************************** Jeremy Testa     ***
+!************************************************* John C. Warner    ***
+!***********************************************************************
+!  This routine is a modification of Fennel et al. (2006) ecosystem    !
+!  model to include the Submerged Aquatic Vegetation (SAV growth       !
+!  model) that allows for the fully coupled                            !
+!  water column biogeochemistry-sediment-hydrodynamics model.          !
+!  The biological tracers are computed using                           !
+!  Fennel et al. (2006) and SAV growth model routine is called.        !
 !                                                                      !
-!  This routine computes the  biological sources and sinks for the     !
-!  Fennel et at. (2006) ecosystem model. Then, it adds those terms     !
-!  to the global biological fields.                                    !
+!  Estuarine SAV Growth Model developed by                             !
+!  Jeremy Testa, May 2015, Chesapeake Biological Laboratory            !
+!                                                                      !
+!  References to SAV growth model:                                     !
+!                                                                      !
+!  Kalra, T. S., Ganju, N. K., and Testa, J. M.: Development of a      !
+!  Submerged Aquatic Vegetation Growth Model in a Coupled              !
+!  Wave-Current-Sediment-Transport Modeling System (COAWST v3.5),      !
+!  Geosci. Model Dev. Discuss. (in review 2019).                       !
+!                                                                      ! 
+!  Initially, this routine computes the  biological sources and        ! 
+!  sinks for the Fennel et at. (2006) ecosystem model. Then, it adds   !
+!  those terms to the global biological fields.                        !
 !                                                                      !
 !  This model is loosly based on the model by Fasham et al. (1990)     !
 !  but it differs in many respects.  The detailed equations of the     !
@@ -1606,7 +1629,7 @@
                 DINwcr(i,j,k)=Bio(i,k,iNH4_)+Bio(i,k,iNO3_)
               END DO
             END DO
-            DO k = 1,N(ng) 
+            DO k = 1,1  ! only do the calculations at the bottom cell. 
               CALL SAV_BIOMASS_SUB (ng, Istr, Iend, LBi, UBi,           &
      &                   pmonth, t(:,j,1,nstp,itemp),                   &
      &                   PARout(:,j,k), DINwcr(:,j,k),                  &
@@ -1629,7 +1652,7 @@
 !  Also divided SAV computed quantities with bottom cell thickness
 !
             DO i=Istr,Iend
-              cff1_sav=DINwcr_sav(i,j)/Hz(i,j,1)               
+              cff1_sav=DINwcr_sav(i,j)*Hz_inv(i,1)               
               IF (DINwcr_sav(i,j).gt.0.0_r8) THEN 
                 Bio(i,1,iNH4_)=Bio(i,1,iNH4_)+cff1_sav
               ELSE
@@ -1640,13 +1663,13 @@
                 Bio(i,1,iNH4_)=Bio(i,1,iNH4_)*                          &
      &                            (1.0_r8+cff1_sav*cff_weight)
               END IF 
-              Bio(i,1,iLDeN)=Bio(i,1,iLDeN)+LDeNwcr(i,j)/Hz(i,j,1)
+              Bio(i,1,iLDeN)=Bio(i,1,iLDeN)+LDeNwcr(i,j)*Hz_inv(i,1)
 #  ifdef OXYGEN
-              Bio(i,1,iOxyg)=Bio(i,1,iOxyg)+DOwcr(i,j)/Hz(i,j,1)
+              Bio(i,1,iOxyg)=Bio(i,1,iOxyg)+DOwcr(i,j)*Hz_inv(i,1)
 #  endif	
 #  ifdef CARBON
-              Bio(i,1,iTIC_)=Bio(i,1,iTIC_)+CO2wcr(i,j)/Hz(i,j,1)
-              Bio(i,1,iLDeC)=Bio(i,1,iLDeC)+LDeCwcr(i,j)/Hz(i,j,1)
+              Bio(i,1,iTIC_)=Bio(i,1,iTIC_)+CO2wcr(i,j)*Hz_inv(i,1)
+              Bio(i,1,iLDeC)=Bio(i,1,iLDeC)+LDeCwcr(i,j)*Hz_inv(i,1)
 #  endif
             END DO
 !#  endif 

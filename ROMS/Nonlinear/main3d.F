@@ -2,9 +2,9 @@
 #if defined NONLINEAR && defined SOLVE3D && (!defined OFFLINE)
       SUBROUTINE main3d (RunInterval)
 !
-!svn $Id: main3d.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: main3d.F 995 2020-01-10 04:01:28Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -71,8 +71,8 @@
 # ifdef TLM_CHECK
       USE dotproduct_mod,       ONLY : nl_dotproduct
 # endif
-# if defined W4DPSAS || defined NLM_OUTER || \
-     defined W4DPSAS_SENSITIVITY
+# if defined NLM_OUTER           || defined W4DPSAS                 ||\
+     defined W4DPSAS_SENSITIVITY || defined W4DPSAS_FCT_SENSITIVITY
       USE forcing_mod,          ONLY : forcing
 # endif
 # if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
@@ -125,18 +125,18 @@
       USE wec_wave_mix_mod,     ONLY : wec_wave_mix
 #  endif
 # endif
-# if defined VEGETATION && defined MARSH_WAVE_THRUST
+# ifdef SEDIMENT
+      USE sediment_mod,         ONLY : sediment
+# endif
+# if defined VEGETATION && defined MARSH_DYNAMICS
       USE mod_vegetation 
       USE mod_vegarr
-      USE marsh_wave_thrust_mod, ONLY : marsh_wave_thrust
+      USE marsh_dynamics_mod, ONLY : marsh_dynamics
 # endif
 # ifndef TS_FIXED
       USE rho_eos_mod,          ONLY : rho_eos
 # endif
       USE rhs3d_mod,            ONLY : rhs3d
-# ifdef SEDIMENT
-      USE sediment_mod,         ONLY : sediment
-# endif
 # ifdef AVERAGES
       USE set_avg_mod,          ONLY : set_avg
 # endif
@@ -270,8 +270,8 @@
             IF (FoundError(exit_flag, NoError, __LINE__,                &
      &                     __FILE__)) RETURN
 
-# if defined W4DPSAS || defined NLM_OUTER || \
-     defined W4DPSAS_SENSITIVITY
+# if defined NLM_OUTER           || defined W4DPSAS                 ||\
+     defined W4DPSAS_SENSITIVITY || defined W4DPSAS_FCT_SENSITIVITY
 !
 !-----------------------------------------------------------------------
 !  If appropriate, add convolved adjoint solution impulse forcing to
@@ -495,19 +495,7 @@
               CALL seaice
             END IF
 # endif
-# if defined VEGETATION && defined MARSH_WAVE_THRUST
 !
-!-----------------------------------------------------------------------
-!  Run wave thrust marsh module for one step
-!-----------------------------------------------------------------------
-!
-               DO ig=1,GridsInLayer(nl)
-                 ng=GridNumber(ig,nl)
-                 DO tile=first_tile(ng),last_tile(ng),+1
-                   CALL marsh_wave_thrust (ng, tile)
-                 END DO
-               END DO
-# endif 
 # ifdef ADJUST_BOUNDARY
 !
 !-----------------------------------------------------------------------
@@ -907,6 +895,19 @@
 !$OMP BARRIER
             END DO
 
+# if defined VEGETATION && defined MARSH_DYNAMICS
+!
+!-----------------------------------------------------------------------
+!  Calculate marsh erosion due to wave thrust. 
+!-----------------------------------------------------------------------
+!
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              DO tile=first_tile(ng),last_tile(ng),+1
+                CALL marsh_dynamics (ng, tile)
+              END DO
+            END DO
+# endif 
 # ifndef TS_FIXED
 !
 !-----------------------------------------------------------------------

@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE wrt_rst (ng)
 !
-!svn $Id: wrt_rst.F 889 2018-02-10 03:32:52Z arango $
+!svn $Id: wrt_rst.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -42,12 +42,12 @@
       USE mod_stepping
 !
       USE nf_fwrite2d_mod, ONLY : nf_fwrite2d
-#if defined PERFECT_RESTART || defined SOLVE3D
+# if defined PERFECT_RESTART || defined SOLVE3D
       USE nf_fwrite3d_mod, ONLY : nf_fwrite3d
-#endif
-#if defined PERFECT_RESTART && defined SOLVE3D
+# endif
+# if defined PERFECT_RESTART && defined SOLVE3D
       USE nf_fwrite4d_mod, ONLY : nf_fwrite4d
-#endif
+# endif
       USE strings_mod,     ONLY : FoundError
 #ifdef INWAVE_MODEL
       USE mod_inwave_params
@@ -64,9 +64,9 @@
 !
       integer :: LBi, UBi, LBj, UBj
       integer :: Fcount, gfactor, gtype, i, itrc, status, varid
-#if defined PERFECT_RESTART || defined SOLVE3D
+# if defined PERFECT_RESTART || defined SOLVE3D
       integer :: ntmp(1)
-#endif
+# endif
       real(r8) :: scale
 !
       LBi=LBOUND(GRID(ng)%h,DIM=1)
@@ -1094,8 +1094,11 @@
 #   endif
      &                 ICE (ng) % hi(:,:,IOUT))
 #  endif
-      IF (OutThread.and.(status.ne.nf90_noerr)) THEN
-        WRITE (stdout,10) TRIM(Vname(1,idHice)), RST(ng)%Rindex
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
+        IF (Master) THEN
+          WRITE (stdout,10) TRIM(Vname(1,idHice)), RST(ng)%Rindex
+        END IF
         exit_flag=3
         ioerror=status
         RETURN
@@ -1123,72 +1126,15 @@
 #   endif
      &                 ICE (ng) % hsn(:,:,IOUT))
 #  endif
-      IF (OutThread.and.(status.ne.nf90_noerr)) THEN
-        WRITE (stdout,10) TRIM(Vname(1,idHsno)), RST(ng)%Rindex
+      IF (FoundError(status, nf90_noerr, __LINE__,                      &
+     &               __FILE__)) THEN
+        IF (Master) THEN
+          WRITE (stdout,10) TRIM(Vname(1,idHsno)), RST(ng)%Rindex
+        END IF
         exit_flag=3
         ioerror=status
         RETURN
       END IF
-#ifdef MELT_PONDS
-!
-!  Write out surface water fraction (on ice)
-!
-      scale=1.0_r8
-#  ifdef PERFECT_RESTART
-      gtype=gfactor*r3dvar
-      status=nf_fwrite3d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idApond),  &
-     &                   RST(ng)%Rindex, gtype,                         &
-     &                   LBi, UBi, LBj, UBj, 1, 2, scale,               &
-#   ifdef MASKING
-     &                   GRID(ng) % rmask,                              &
-#   endif
-     &                   ICE (ng) % apond)
-#  else
-      gtype=gfactor*r2dvar
-      status=nf_fwrite2d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idApond),  &
-     &                 RST(ng)%Rindex, gtype,                           &
-     &                 LBi, UBi, LBj, UBj, scale,                       &
-#   ifdef MASKING
-     &                 GRID(ng) % rmask,                                &
-#   endif
-     &                 ICE (ng) % apond(:,:,IOUT))
-#  endif
-      IF (OutThread.and.(status.ne.nf90_noerr)) THEN
-        WRITE (stdout,10) TRIM(Vname(1,idApond)), RST(ng)%Rindex
-        exit_flag=3
-        ioerror=status
-        RETURN
-      END IF
-!
-!  Write out surface water thickness (on ice)
-!
-      scale=1.0_r8
-#  ifdef PERFECT_RESTART
-      gtype=gfactor*r3dvar
-      status=nf_fwrite3d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idHpond),  &
-     &                   RST(ng)%Rindex, gtype,                         &
-     &                   LBi, UBi, LBj, UBj, 1, 2, scale,               &
-#   ifdef MASKING
-     &                   GRID(ng) % rmask,                              &
-#   endif
-     &                   ICE (ng) % hpond)
-#  else
-      gtype=gfactor*r2dvar
-      status=nf_fwrite2d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idHpond),  &
-     &                 RST(ng)%Rindex, gtype,                           &
-     &                 LBi, UBi, LBj, UBj, scale,                       &
-#   ifdef MASKING
-     &                 GRID(ng) % rmask,                                &
-#   endif
-     &                 ICE (ng) % hpond(:,:,IOUT))
-#  endif
-      IF (OutThread.and.(status.ne.nf90_noerr)) THEN
-        WRITE (stdout,10) TRIM(Vname(1,idHpond)), RST(ng)%Rindex
-        exit_flag=3
-        ioerror=status
-        RETURN
-      END IF
-#endif
 !
 !  Write out ice age
 !

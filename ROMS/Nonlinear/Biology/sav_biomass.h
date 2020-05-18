@@ -1,25 +1,24 @@
-      SUBROUTINE sav_biomass_sub(ng, Istr, Iend, LBi, UBi,                &
-     &                        pmonth, wtemp,                              &
-     &                        PARz, DINwcr_loc,                           &
+      SUBROUTINE sav_biomass_sub(ng, Istr, Iend, LBi, UBi,              &
+     &                        pmonth, wtemp,                            &
+     &                        PARz, DINwcr_loc,                         &
 #ifdef WET_DRY
-     &                        rmask_wet_loc,                              &
+     &                        rmask_wet_loc,                            &
 #endif 
 #if defined VEGETATION && defined VEG_BIOMASS
-     &                        pdens_loc, phght_loc, pdiam_loc,            & 
+     &                        pdens_loc, phght_loc, pdiam_loc,          & 
 #endif 
-     &                        DINsed_loc, DINwcr_sav_loc, DOwcr_loc,      &
-     &                        CO2wcr_loc, LDeCwcr_loc, LDeNwcr_loc,       &
-     &                        agb_loc, bgb_loc, epb_loc,                  &
-     &                        pp_loc, agm_loc, agar_loc,                  &
-     &                        agbr_loc, sears_loc, agbg_loc,              &
+     &                        DINsed_loc, DINwcr_sav_loc, DOwcr_loc,    &
+     &                        CO2wcr_loc, LDeCwcr_loc, LDeNwcr_loc,     &
+     &                        agb_loc, bgb_loc, epb_loc,                &
+     &                        pp_loc, agm_loc, agar_loc,                &
+     &                        agbr_loc, sears_loc, agbg_loc,            &
      &                        bgag_loc, bgr_loc, bgm_loc)
-
-!
-!***********************************************************************
-!****************************************** John C. Warner *************
-!****************************************** Neil K. Ganju **************
-!****************************************** Jeremy Testa ***************
-!****************************************** Tarandeep S. Kalra *********
+!                                                                      ! 
+!**********************************************************************!
+!****************************************** John C. Warner ************!
+!****************************************** Neil K. Ganju *************!
+!****************************************** Jeremy Testa **************!
+!****************************************** Tarandeep S. Kalra ********!
 !                                                                      !
 !  This routine computes equilibrium partial pressure of CO2 (pCO2)    !
 !  in the surface seawater.                                            !
@@ -52,10 +51,15 @@
 !     bgb_loc     Vector of below ground biomass  (mmol N m-2)         !
 !     epb_loc     Vector of epiphyte biomass      (mmol N m-2)         !
 !                                                                      !
-!  Estuarine SAV Model                                                 !
+!  Estuarine SAV Model developed by                                    !
 !  Jeremy Testa, May 2015, Chesapeake Biological Laboratory            !
 !                                                                      !
 !  References:                                                         !
+!                                                                      !
+!      Kalra, T. S., Ganju, N. K., and Testa, J. M.: Development of a  !
+!      Submerged Aquatic Vegetation Growth Model in a Coupled          !
+!      Wave-Current-Sediment-Transport Modeling System (COAWST v3.5),  !
+!      Geosci. Model Dev. Discuss. (in review 2019).                   !
 !                                                                      !
 !      Madden, C. J., Kemp, W. M. June 1996: Ecosystem Model of an     !
 !      Estuarine Submersed Plant Community: Calibration and Simulation !
@@ -138,7 +142,6 @@
       real(r8), intent(inout) :: bgr_loc(LBi:UBi)
       real(r8), intent(inout) :: bgm_loc(LBi:UBi)
 #  endif
-
 !
 !-------------------------------------------------------
 !  Local variable declarations.
@@ -153,7 +156,6 @@
 !     real(r8) :: pp, agm, agar
 !     real(r8) :: agbr, sears, agbg, bgag
 !     real(r8) :: bgr, bgm
-      real(r8) :: shtdens, shtLen
       real(r8) :: cff,cff1
       real(r8) :: temp
       real(r8) :: dtdays
@@ -161,6 +163,10 @@
       real(r8) :: pdens, phght
       real(r8), parameter :: pdiam_const=0.003_r8
       real(r8), parameter :: cm_m=0.01_r8
+#  ifdef SAV_BIOMASS_DAILY_UPDATE 
+      real(r8) :: time_loc
+      real(r8) :: freq1, freq2
+#  endif 
 !
       real(r8), parameter :: Inival=0.0_r8
       real(r8), parameter :: eps=1.0e-10_r8
@@ -185,20 +191,6 @@
      real(r8) :: frc_slgh, epb_slgh
      real(r8) :: PARepb,   blade_area
 !
-     real(r8), parameter :: kn_epb     = 10.0_r8
-     real(r8), parameter :: kl_epb     = 50.0_r8
-     real(r8), parameter :: arsc_epb   = 0.01_r8
-     real(r8), parameter :: arc_epb    = 0.0633_r8
-     real(r8), parameter :: brc_epb    = 0.06_r8
-     real(r8), parameter :: brsc_epb   = 0.005_r8
-     real(r8), parameter :: lmbamx_epb = 475.0_r8     ! mmolN m-2
-     real(r8), parameter :: grzmx_epb  = 0.1_r8
-     real(r8), parameter :: grzk_epb   = 0.01_r8
-     real(r8), parameter :: TopT_epb   = 25.0_r8
-     real(r8), parameter :: kmort_epb  = 0.001_r8
-     real(r8), parameter :: scl2_epb   = 0.2_r8
-     real(r8), parameter :: thta2_epb  = 1.08_r8
-!
 !-------------------------------------------------------
 ! Initialize some arrays at each time 
 !-------------------------------------------------------
@@ -211,20 +203,29 @@
         LDeCwcr_loc(i)=Inival
       END DO
 !
+#  ifdef SAV_BIOMASS_DAILY_UPDATE 
+!
+!-------------------------------------------------------
+! To only update the vegetation growth every 24 hours
+!-------------------------------------------------------
+!
+      time_loc=dt(ng)*iic(ng)
+      freq1=MOD(time_loc,day2sec)
+      freq2=1.0_r8-CEILING(freq1/day2sec)
+#  endif
+!
 !-----------------------------------------------------------------------
 !     pmonth contains the month information calculated in estuarybgc.h
 !     compute more constants 
 !-----------------------------------------------------------------------
 !
       day_year = (pmonth - 52.0_r8)*365.0_r8
-
       dtdays=dt(ng)*sec2day
       knt=knwc(ng)/knsed(ng)
-!
+!       
 !     Use temp to convert from grams carbon to mmol nitrogen if needed
 !     Taran commented these 
 !     temp=gr2mmol/C2N_ratio
-!
 !
 !---------------------------------------------------------------------
 !     Enter the loop to get SAV Biomass computations 
@@ -255,14 +256,26 @@
         agb_loc(i)=agb_loc(i)*rmask_wet_loc(i)
         bgb_loc(i)=bgb_loc(i)*rmask_wet_loc(i)
 #  endif
-
+!
+#  ifdef SAV_BIOMASS_DAILY_UPDATE
 !
 !---------------------------------------------------------------------
 !       Compute SAV density, height, leaf area as below
+!       Only update the SAV density and height every 24 hours
+!---------------------------------------------------------------------
+!
+        IF(freq2.eq.1.0_r8) THEN
+          pdens=4.4554_r8*agb_loc(i)
+          phght=cm_m*45.0_r8*(agb_loc(i)/(120.0_r8+agb_loc(i)))
+        ENDIF 
+#  else
+!---------------------------------------------------------------------
+!       Update SAV density, height at model time step
 !---------------------------------------------------------------------
 !
         pdens=4.4554_r8*agb_loc(i)
         phght=cm_m*45.0_r8*(agb_loc(i)/(120.0_r8+agb_loc(i)))
+#  endif
 !
 #  if defined VEGETATION && defined VEG_BIOMASS
 !
@@ -314,14 +327,12 @@
         ELSE
           thresh=0.0_r8
         ENDIF
-
 !
         IF ( day_year.gt.273.0_r8 ) THEN
           thresh2=1.0_r8
         ELSE
           thresh2=0.0_r8
         ENDIF
-
 !
 !---------------------------------------------------------------------
 !    Epiphyte Model, Jeremy Testa and Amanda Moore, Apr-June 2017
@@ -332,19 +343,20 @@
 !       Compute light and nutrient limitation terms
 !---------------------------------------------------------------------
 !
-        llim_epb=PARz(i)/(PARz(i)+kl_epb)
-        nlim_epb=DINwcr_loc(i)/(kn_epb+DINwcr_loc(i))
+        llim_epb=PARz(i)/(PARz(i)+kl_epb(ng))
+        nlim_epb=DINwcr_loc(i)/(kn_epb(ng)+DINwcr_loc(i))
 !
 !---------------------------------------------------------------------
 !       Maximum Growth
 !---------------------------------------------------------------------
 !
-        lmba_epb = 1.0_r8-((epb_loc(i)/lmbamx_epb)**2)
+        lmba_epb = 1.0_r8-( (epb_loc(i)/lmbmax_epb(ng))**2 )
         IF(GMODopt(ng).eq.1)THEN
-          ua_epb=lmba_epb*scl2_epb*(EXP(arc_epb*(wtemp(i)-TopT_epb))    &
-      &                                                     -1.0_r8)
+          ua_epb=lmba_epb*scl2_epb(ng)*( EXP(arc_epb(ng)*               &
+     &	                          (wtemp(i)-Topt_epb(ng)))-1.0_r8 )
         ELSE
-          ua_epb=lmba_epb*scl2_epb*thta2_epb**(wtemp(i)-TopT_epb)
+          ua_epb=lmba_epb*scl2_epb(ng)*thta2_epb(ng)**( wtemp(i)-       &
+     &                                                 Topt_epb(ng) )
         ENDIF
 !
 !---------------------------------------------------------------------
@@ -357,25 +369,25 @@
 !       Active Respiration
 !---------------------------------------------------------------------
 !
-        aresp_epb=pp_epb*arsc_epb*EXP(arc_epb*wtemp(i))
+        aresp_epb=pp_epb*arsc_epb(ng)*EXP( arc_epb(ng)*wtemp(i) )
 !
 !---------------------------------------------------------------------
 !       Basal Respiration
 !---------------------------------------------------------------------
 !
-        bresp_epb=epb_loc(i)*brsc_epb*EXP(brc_epb*wtemp(i))
+        bresp_epb=epb_loc(i)*bsrc_epb(ng)*EXP( brc_epb(ng)*wtemp(i) )
 !
 !---------------------------------------------------------------------
 !       Mortality rate if no sloughing
 !---------------------------------------------------------------------
 !
-        mort_epb=epb_loc(i)*kmort_epb
+        mort_epb=epb_loc(i)*kmort_epb(ng)
 !
 !---------------------------------------------------------------------
 !       Grazing
 !---------------------------------------------------------------------
 !
-        grz_epb=grzmx_epb*(1.0_r8-EXP(-grzk_epb*epb_loc(i)))
+        grz_epb=grzmx_epb(ng)*( 1.0_r8-EXP(-grzk_epb(ng)*epb_loc(i)) )
 !
 !-----------------------------------------------------------------------
 !  Update Epiphyte Biomass  (mmol N m-2)
@@ -426,7 +438,7 @@
 !  Above ground basal respiration and seasonal root storage of carbon
 !-----------------------------------------------------------------------
 !
-        agbr_loc(i)=agb_loc(i)*(bsrc(ng)*EXP(rc(ng)*wtemp(i)))
+        agbr_loc(i)=agb_loc(i)*(bsrc(ng)*EXP(brc(ng)*wtemp(i)))
         sears_loc(i)=agb_loc(i)*RtSttl(ng)*thresh2
 !
 !-----------------------------------------------------------------------
@@ -445,7 +457,7 @@
 !  Below ground biomass respiration and Below ground biomass mortality
 !-----------------------------------------------------------------------
 !
-        bgr_loc(i)=bgb_loc(i)*bsrc(ng)*EXP(rc(ng)*wtemp(i))
+        bgr_loc(i)=bgb_loc(i)*bsrc(ng)*EXP(brc(ng)*wtemp(i))
         bgm_loc(i)=bgb_loc(i)*(0.01_r8*EXP(km(ng)*wtemp(i)))
 !
 !-----------------------------------------------------------------------
@@ -475,7 +487,7 @@
           cff1=bgag_loc(i)-agm_loc(i)-agar_loc(i)-agbr_loc(i)           &
      &                                    -sears_loc(i)-agbg_loc(i)
         ENDIF
-
+!
 !-----------------------------------------------------------------------
 !       Remove epiphytes with seagrass sloughing loss
 !-----------------------------------------------------------------------
@@ -513,20 +525,49 @@
 !#  endif 
         agb_loc(i)=agb_loc(i)+cff1*dtdays
 !
+#  ifdef SAV_BIOMASS_DAILY_UPDATE
+!
 !-----------------------------------------------------------------------
 !  Compute stems per square meter (mean of 6 Chinco cores = 1100)
 !  Formulation based upon  Krause-Jensen et al 2000 and lit synthesis
 !  Based on the updated agb_loc
 !-----------------------------------------------------------------------
+!  Empirical computation of shoot length from above ground biomass (cm)
+!  Update at 24 hour frequency
+!-----------------------------------------------------------------------
+!
+        IF(freq2.eq.1.0_r8) THEN
+!
+!---------------------------------------------------------------------
+!       Only update the SAV density and height every 24 hours
+!---------------------------------------------------------------------
+!
+          pdens=4.4554_r8*agb_loc(i)
+          phght=cm_m*45.0_r8*(agb_loc(i)/(120.0_r8+agb_loc(i)))
+!
+!---------------------------------------------------------------------
+!       Save updated SAV density, height to feedback main routines 
+!---------------------------------------------------------------------
+!
+          pdens_loc(i)=pdens
+          phght_loc(i)=phght
+        ENDIF
+#  else
+!
+!---------------------------------------------------------------------
+!  Update at model time step 
+!---------------------------------------------------------------------
 !
         pdens=4.4554_r8*agb_loc(i)
+        phght=cm_m*45.0_r8*(agb_loc(i)/(120.0_r8+agb_loc(i)))
 !
-!-----------------------------------------------------------------------
-!  Empirical computation of shoot length from above ground biomass (cm)
-!  Non-linear
-!-----------------------------------------------------------------------
+!---------------------------------------------------------------------
+!       Save updated SAV density, height to feedback main routines 
+!---------------------------------------------------------------------
 !
-        phght=cm_m*45.0_r8*(agb_loc(i)/(120.0_r8+agb_loc(i)))   
+        pdens_loc(i)=pdens
+        phght_loc(i)=phght
+#  endif
 !
 #  if defined VEGETATION && defined VEG_BIOMASS
 !
@@ -536,13 +577,6 @@
 !---------------------------------------------------------------------
 !
         blade_area=0.02_r8*pdens*phght*pdiam_loc(i)
-!
-!---------------------------------------------------------------------
-!       Save updated SAV density, height to feedback
-!---------------------------------------------------------------------
-!
-        pdens_loc(i)=pdens
-        phght_loc(i)=phght
 !
 #  else
 !
@@ -633,14 +667,14 @@
 !-----------------------------------------------------------------------
 !
         DOwcr_loc(i)=DOwcr_loc(i)+(pp_loc(i)-agar_loc(i)                &
-      &                           -agbr_loc(i))*molNmolC*pqrq*dtdays
+     &                           -agbr_loc(i))*molNmolC*pqrq*dtdays
 !
 !-----------------------------------------------------------------------
 !     Epiphytes Oxygen
 !-----------------------------------------------------------------------
 !
         DOwcr_loc(i)=DOwcr_loc(i)+(pp_epb-aresp_epb-bresp_epb)*         &
-      &                               molNmgC_epb*pqrq*dtdays
+     &                               molNmgC_epb*pqrq*dtdays
 #  ifdef WET_DRY
         DOwcr_loc(i)=DOwcr_loc(i)*rmask_wet_loc(i)
 #  endif
@@ -649,17 +683,15 @@
 !     Seagrass CO2
 !-----------------------------------------------------------------------
 !
-        DOwcr_loc(i)=DOwcr_loc(i)+(pp_loc(i)-agar_loc(i)-agbr_loc(i))   &
-      &                             *molNmolC*pqrq*dtdays 
         CO2wcr_loc(i)=CO2wcr_loc(i)+(agar_loc(i)+agbr_loc(i)-pp_loc(i)) &
-      &                             *molNmolC*pqrq*dtdays
+     &                             *molNmolC*pqrq*dtdays
 !
 !-----------------------------------------------------------------------
 !     Epiphyte CO2
 !-----------------------------------------------------------------------
 !
         CO2wcr_loc(i)=CO2wcr_loc(i)+(aresp_epb+bresp_epb-pp_epb)        &
-      &                             *molNmgC_epb*pqrq*dtdays
+     &                             *molNmgC_epb*pqrq*dtdays
 #  ifdef WET_DRY
         CO2wcr_loc(i)=CO2wcr_loc(i)*rmask_wet_loc(i)
 #  endif
@@ -672,18 +704,17 @@
 !-----------------------------------------------------------------------
 !
         LDeNwcr_loc(i)=LDeNwcr_loc(i)+(agm_loc(i))*dtdays +             &
-      &                  (mort_epb+grz_epb)*dtdays  
+     &                  (mort_epb+grz_epb)*dtdays  
 #  ifdef WET_DRY
         LDeNwcr_loc(i)=LDeNwcr_loc(i)*rmask_wet_loc(i)
 #  endif
 !
         LDeCwcr_loc(i)=LDeCwcr_loc(i)+(agm_loc(i))*molNmolC*dtdays +    &
-      &                      (mort_epb+grz_epb)*molNmgC_epb*dtdays
+     &                      (mort_epb+grz_epb)*molNmgC_epb*dtdays
 #  ifdef WET_DRY
         LDeCwcr_loc(i)=LDeCwcr_loc(i)*rmask_wet_loc(i)
 #  endif
 !
-
       END DO
 !
       RETURN

@@ -1,9 +1,9 @@
 !
 !  ROMS/TOMS Cohesive and Non-cohesive Sediment Model Parameters.
 !
-!svn $Id: sediment.in 889 2018-02-10 03:32:52Z arango $
+!svn $Id: sediment.in 1001 2020-01-10 22:41:16Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -46,9 +46,42 @@
    Lsediment == T
 
 !------------------------------------------------------------------------------
-!  General sediment bed model parameters.
+! Tracer horizontal and vertical advection scheme.
 !------------------------------------------------------------------------------
+!
+! Set horizontal and vertical advection schemes for sediment tracers.
+! A different advection scheme is allowed for each tracer. For example,
+! a positive-definite (monotonic) algorithm can be activated for
+! salinity and biological tracers, while a different one is set for
+! temperature. [1:NAT+NPT,Ngrids] values are expected.
+!
+!   Keyword    Advection Algorithm
+!
+!   A4         4th-order Akima (horizontal/vertical)
+!   C2         2nd-order centered differences (horizontal/vertical)
+!   C4         4th-order centered differences (horizontal/vertical)
+!   HSIMT      3th-order HSIMT-TVD (horizontal/vertical)
+!   MPDATA     recursive flux corrected MPDATA (horizontal/vertical)
+!   SPLINES    parabolic splines (only vertical)
+!   SU3        split third-order upstream (horizontal/vertical)
+!   U3         3rd-order upstream-biased (only horizontal)
+!
+! The user has the option of specifying the full Keyword or the first
+! two letters, regardless if using uppercase or lowercase. If nested
+! grids, specify values for each grid.
 
+   Hadvection == HSIMT                          ! idsed(:), compact
+
+   Vadvection == HSIMT                          ! idsed(:), compact
+
+! Adjoint-based algorithms can have different horizontal and schemes
+! for active and inert tracers.
+
+ad_Hadvection == U3                             ! idsed(:), compact
+
+ad_Vadvection == C4                             ! idsed(:), compact
+
+!------------------------------------------------------------------------------
 ! Depositional bed layer thickness criteria to create a new layer (m). If
 ! deposition exceeds this value, then a new layer is created, [1:Ngrids].
 

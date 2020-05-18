@@ -157,9 +157,9 @@ function [K]=balance_4dvar(A);
 %                   the hydrostatic equation from surface to bottom.
 %
 
-% svn $Id: balance_4dvar.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: balance_4dvar.m 996 2020-01-10 04:28:56Z arango $
 %===========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                              %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                              %
 %    Licensed under a MIT/X style license           Hernan G. Arango        %
 %    See License_ROMS.txt                           Andrew M. Moore         %
 %===========================================================================%

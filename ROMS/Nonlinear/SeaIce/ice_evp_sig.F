@@ -3,7 +3,7 @@
 #if defined ICE_MOMENTUM && defined ICE_EVP
 !
 !================================================ W. Paul Budgell ======
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !================================================== Hernan G. Arango ===
 !                                                                      !
 !  This routine time steps the EVP stresses                            !
@@ -30,7 +30,7 @@
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 55)
+      CALL wclock_on (ng, iNLM, 78, __LINE__, __FILE__)
 # endif
 !
       CALL ice_evp_sig_tile (ng, tile,                                  &
@@ -47,10 +47,9 @@
      &                      ICE(ng) % eta,                              &
      &                      ICE(ng) % sig11,                            &
      &                      ICE(ng) % sig22,                            &
-     &                      ICE(ng) % sig12                             &
-     &                      )
+     &                      ICE(ng) % sig12)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 55)
+      CALL wclock_off (ng, iNLM, 78, __LINE__, __FILE__)
 # endif
       RETURN
       END SUBROUTINE ice_evp_sig
@@ -63,8 +62,7 @@
      &                        pm, pn,                                   &
      &                        uie, vie,                                 &
      &                        hi, pice, zetai, eta,                     &
-     &                        sig11, sig22, sig12                       &
-     &                        ) 
+     &                        sig11, sig22, sig12)
 !***********************************************************************
 !
 
@@ -72,6 +70,7 @@
       USE mod_ncparam
       USE mod_scalars
       USE mod_boundary
+      USE mod_clima
 !
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
 #ifdef DISTRIBUTE
@@ -127,26 +126,27 @@
       real(r8) :: e0
       real(r8) :: ep
       real(r8) :: ee
-      real(r8) :: ees 
+      real(r8) :: ees
       real(r8) :: gamma
       real(r8) :: f1
       real(r8) :: f2
-      real(r8) :: f3 
+      real(r8) :: f3
       real(r8) :: alfa
       real(r8) :: beta
       real(r8) :: epx
       real(r8) :: epy
+      real(r8) :: cff
 
 # include "set_bounds.h"
 
 !----------------
 !
-!.....initial value for Youngs modulus (between 0 and 1) 
+!.....initial value for Youngs modulus (between 0 and 1)
 !
       e0=0.25_r8
 
 !
-!...........stress tensor 
+!...........stress tensor
 !
       DO j=Jstr,Jend
         DO i=Istr,Iend
@@ -163,37 +163,46 @@
       DO j=Jstr,Jend
         DO i=Istr,Iend
 !
-          IF (hi(i,j,liold).gt.0.01_r8) THEN 
-            e = 2.0_r8*e0*rhoice(ng)*hi(i,j,liold)/(pm(i,j)*dte(ng))**2 
-            ep = e*pice(i,j)/(4.0_r8*zetai(i,j)+1.0E-8_r8) 
-            ee = e/(2.0_r8*eta(i,j)+1.0E-8_r8) 
+          IF (hi(i,j,liold).gt.0.01_r8) THEN
+            e = 2.0_r8*e0*rhoice(ng)*hi(i,j,liold)/(pm(i,j)*dte(ng))**2
+            ep = e*pice(i,j)/(4.0_r8*zetai(i,j)+1.0E-8_r8)
+            ee = e/(2.0_r8*eta(i,j)+1.0E-8_r8)
             ees= e*(eta(i,j)-zetai(i,j))/                               &
-     &             (4.0_r8*eta(i,j)*zetai(i,j)+1.0E-8_r8) 
+     &             (4.0_r8*eta(i,j)*zetai(i,j)+1.0E-8_r8)
 !
-            alfa = 1.0_r8/dte(ng) + ee + ees 
-            beta = ees 
-            gamma = 1/dte(ng) + ee 
-            f1 = e*eps11(i,j) - ep + sig11(i,j,lieol)/dte(ng) 
-            f2 = e*eps22(i,j) - ep + sig22(i,j,lieol)/dte(ng) 
-            f3 = e*eps12(i,j) + sig12(i,j,lieol)/dte(ng) 
-            sig11(i,j,lienw) = (alfa*f1 - beta*f2)/(alfa**2 - beta**2) 
-            sig12(i,j,lienw) = f3/gamma 
-            sig22(i,j,lienw) = (alfa*f2 - beta*f1)/(alfa**2 - beta**2) 
+            alfa = 1.0_r8/dte(ng) + ee + ees
+            beta = ees
+            gamma = 1/dte(ng) + ee
+            f1 = e*eps11(i,j) - ep + sig11(i,j,lieol)/dte(ng)
+            f2 = e*eps22(i,j) - ep + sig22(i,j,lieol)/dte(ng)
+            f3 = e*eps12(i,j) + sig12(i,j,lieol)/dte(ng)
+            sig11(i,j,lienw) = (alfa*f1 - beta*f2)/(alfa**2 - beta**2)
+            sig12(i,j,lienw) = f3/gamma
+            sig22(i,j,lienw) = (alfa*f2 - beta*f1)/(alfa**2 - beta**2)
 !
           ELSE
-! 
+!
             sig11(i,j,lienw) = 2.0_r8*eta(i,j)*eps11(i,j)+              &
      &        (zetai(i,j)-eta(i,j))*                                    &
      &        (eps11(i,j)+eps22(i,j))  - pice(i,j)/2.0_r8
-!     
+!
             sig22(i,j,lienw) = 2.0_r8*eta(i,j)*eps22(i,j)+              &
      &        (zetai(i,j)-eta(i,j))*                                    &
-     &        (eps11(i,j)+eps22(i,j))  - pice(i,j)/2.0_r8 
+     &        (eps11(i,j)+eps22(i,j))  - pice(i,j)/2.0_r8
 !
             sig12(i,j,lienw) = 2.0_r8*eta(i,j)*eps12(i,j)
 !
-          END IF 
-        END DO 
+          END IF
+          IF (LnudgeSICLM(ng)) THEN
+            cff = CLIMA(ng)%SInudgcof(i,j)
+            sig11(i,j,lienw)=sig11(i,j,lienw)+                          &
+     &          dtice(ng)*cff*(CLIMA(ng)%sig11clm(i,j)-sig11(i,j,lienw))
+            sig12(i,j,lienw)=sig12(i,j,lienw)+                          &
+     &          dtice(ng)*cff*(CLIMA(ng)%sig12clm(i,j)-sig12(i,j,lienw))
+            sig22(i,j,lienw)=sig22(i,j,lienw)+                          &
+     &          dtice(ng)*cff*(CLIMA(ng)%sig22clm(i,j)-sig22(i,j,lienw))
+          END IF
+        END DO
       END DO
 
       CALL i2d_bc_tile (ng, tile, iNLM,                                 &

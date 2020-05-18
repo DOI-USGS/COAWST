@@ -23,7 +23,6 @@
 #define MASKING
 #define UV_ADV
 #undef  UV_COR
-#define TS_MPDATA
 #define DJ_GRADPS
 #define SPLINES_VDIFF
 #define SPLINES_VVISC
@@ -46,6 +45,8 @@
 #define SSW_BBL
 #ifdef SSW_BBL
 # define SSW_CALC_ZNOT
+# define SSW_LOGINT
+# define SSW_LOGINT_STOKES
 #endif
 
 #ifdef SOLVE3D
@@ -59,8 +60,18 @@
 # ifdef SEDIMENT
 #  define SUSPLOAD
 #  undef  BEDLOAD_SOULSBY
-#  undef  BEDLOAD_VANDERA
 #  undef  BEDLOAD_MPM
+#  undef  BEDLOAD_VANDERA
+#  ifdef BEDLOAD_VANDERA
+#   define BEDLOAD_VANDERA_STOKES
+#   define BEDLOAD_VANDERA_MADSEN
+#   define BEDLOAD_VANDERA_ASYM_LIMITS
+#   define BEDLOAD_VANDERA_SURFACE_WAVE
+#   undef  BEDLOAD_VANDERA_WAVE_AVGD_STRESS
+#   define BEDLOAD_VANDERA_CALC_WBL
+#   undef  BEDLOAD_VANDERA_DIRECT_UDELTA
+#   undef  BEDLOAD_VANDERA_ZEROCURR
+#  endif
 #  define SED_MORPH
 # endif
 # if defined SEDIMENT || defined SG_BBL || defined MB_BBL || defined SSW_BBL

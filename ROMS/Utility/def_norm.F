@@ -2,9 +2,9 @@
 #ifdef FOUR_DVAR
       SUBROUTINE def_norm (ng, model, ifile)
 !
-!svn $Id: def_norm.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: def_norm.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -49,11 +49,11 @@
 # ifdef ADJUST_BOUNDARY
       integer :: IorJdim, ifield
 # endif
-      integer :: DimIDs(32), t2dgrd(3), u2dgrd(3), v2dgrd(3)
+      integer :: DimIDs(nDimID)
+      integer :: t2dgrd(3), u2dgrd(3), v2dgrd(3)
 # ifdef ADJUST_BOUNDARY
       integer :: t2dobc(3)
 # endif
-      integer :: Vsize(4)
 
       integer :: def_dim
 
@@ -220,6 +220,11 @@
 #  endif
 
 #  ifdef ECOSIM
+        status=def_dim(ng, iNLM, NRM(ng)%ncid, ncname, 'Nbands',        &
+     &                 NBands, DimIDs(33))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+
         status=def_dim(ng, iTLM, NRM(ifile,ng)%ncid, ncname, 'Nphy',    &
      &                 Nphy, DimIDs(25))
         IF (FoundError(exit_flag, NoError, __LINE__,                    &

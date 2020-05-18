@@ -1,9 +1,9 @@
 /*
 ** Include file "globaldef.h"
 **
-** svn $Id: globaldefs.h 927 2018-10-16 03:51:56Z arango $
+** svn $Id: globaldefs.h 1001 2020-01-10 22:41:16Z arango $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2019 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
+** Copyright (c) 2002-2020 The ROMS/TOMS Group     Alexander F. Shchepetkin  **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -202,6 +202,14 @@
 #  define DSTEQR ssteqr
 #endif
 
+/*
+** Single intrinsic Fortran functions.
+*/
+
+#ifdef SINGLE_PRECISION
+# define DSIGN SIGN
+#endif
+
 #ifdef ICE_MODEL
 # define IOUT linew(ng)
 # define IUOUT liunw(ng)
@@ -212,9 +220,13 @@
 ** Set 4DVAR sensitivity switch.
 */
 
-#if defined W4DPSAS_SENSITIVITY || \
+#if defined W4DPSAS_SENSITIVITY || defined W4DPSAS_FCT_SENSITIVITY || \
     defined W4DVAR_SENSITIVITY
 # define SENSITIVITY_4DVAR
+#endif
+
+#if defined W4DPSAS && defined OBS_SPACE
+# undef OBS_SPACE
 #endif
 
 /*
@@ -262,65 +274,6 @@
     (defined CORRELATION     || defined SANITY_CHECK     || \
      defined R_SYMMETRY)
 # define ANA_PERTURB
-#endif
-
-/*
-** Since some of the tracer advection alogorithms are highly nonlinear,
-** it is possible to choose a simpler (less nonlinear) horizontal and
-** vertical tracer advection option for the tangent linear, representer
-** and adjoint routines. This is likely to improve the convergence of
-** the 4DVar algorithms. Notice that this strategy still allows us to
-** use highly nonlinear tracer advection schemes in the basic state
-** when running the nonlinear model.
-*/
-
-#if defined TANGENT || defined TL_IOMS || defined ADJOINT
-# if !defined TS_A4HADVECTION_TL       && \
-     !defined TS_C2HADVECTION_TL       && \
-     !defined TS_C4HADVECTION_TL       && \
-     !defined TS_U3HADVECTION_TL
-#  if defined TS_A4HADVECTION
-#   define TS_A4HADVECTION_TL
-#  elif defined TS_C2HADVECTION
-#   define TS_C2HADVECTION_TL
-#  elif defined TS_C4HADVECTION
-#   define TS_C4HADVECTION_TL
-#  elif defined TS_U3HADVECTION
-#   define TS_U3HADVECTION_TL
-#  endif
-# endif
-
-# if !defined TS_A4VADVECTION_TL       && \
-     !defined TS_C2VADVECTION_TL       && \
-     !defined TS_C4VADVECTION_TL       && \
-     !defined TS_SVADVECTION_TL
-#  if defined TS_A4VADVECTION
-#   define TS_A4VADVECTION_TL
-#  elif defined TS_C2VADVECTION
-#   define TS_C2VADVECTION_TL
-#  elif defined TS_C4VADVECTION
-#   define TS_C4VADVECTION_TL
-#  elif defined TS_SVADVECTION
-#   define TS_SVADVECTION_TL
-#  endif
-# endif
-#endif
-
-/*
-** Now, we need a switch the tracer advection schemes that
-** have not adjointed yet.
-*/
-
-#if defined TANGENT || defined TL_IOMS || defined ADJOINT
-# if defined TS_A4HADVECTION_TL || defined TS_C2HADVECTION_TL || \
-     defined TS_C4HADVECTION_TL || defined TS_U3HADVECTION_TL
-#  define TS_HADVECTION_TL
-# endif
-
-# if defined TS_A4VADVECTION_TL || defined TS_C2VADVECTION_TL || \
-     defined TS_C4VADVECTION_TL || defined TS_SVADVECTION_TL
-#  define TS_VADVECTION_TL
-# endif
 #endif
 
 /*
@@ -408,12 +361,12 @@
 ** Set internal switches for all the 4DVAR schemes.
 */
 
-#if !defined WEAK_CONSTRAINT     && \
-    (defined ARRAY_MODES         || defined CLIPPING            || \
-     defined R_SYMMETRY          || defined TL_W4DPSAS          || \
-     defined TL_W4DVAR           || defined W4DPSAS             || \
-     defined W4DVAR              || defined W4DPSAS_SENSITIVITY || \
-     defined W4DVAR_SENSITIVITY)
+#if !defined WEAK_CONSTRAINT    && \
+    (defined ARRAY_MODES        || defined CLIPPING                || \
+     defined R_SYMMETRY         || defined TL_W4DPSAS              || \
+     defined TL_W4DVAR          || defined W4DPSAS                 || \
+     defined W4DVAR             || defined W4DPSAS_SENSITIVITY     || \
+     defined W4DVAR_SENSITIVITY || defined W4DPSAS_FCT_SENSITIVITY)
 # define WEAK_CONSTRAINT
 #endif
 #if !defined WEAK_CONSTRAINT     && defined RPM_RELAXATION
@@ -442,12 +395,11 @@
       defined OBS_IMPACT
 # undef OBS_IMPACT
 #endif
-#if !(defined OBS_IMPACT             && \
-      (defined W4DVAR_SENSITIVITY    || defined W4DPSAS_SENSITIVITY || \
-       defined IS4DVAR_SENSITIVITY))
+#if !(defined OBS_IMPACT                && \
+      (defined IS4DVAR_SENSITIVITY      || defined W4DPSAS_SENSITIVITY || \
+       defined W4DPSAS_FCT_SENSITIVITY  || defined W4DVAR_SENSITIVITY))
 # undef IMPACT_INNER
 #endif
-
 
 /*
 ** Activate internal switch to process 4DVAR observations.
@@ -597,7 +549,7 @@
 #define COAWST_MODEL
 
 #if defined ROMS_MODEL && (defined SWAN_MODEL || defined WRF_MODEL || \
-                           defined WW3_MODEL)
+                           defined WW3_MODEL  || defined WRFHYDRO_MODEL)
 # define ROMS_COUPLING
 #endif
 #if defined SWAN_MODEL && (defined ROMS_MODEL || defined WRF_MODEL)
@@ -610,9 +562,17 @@
                           defined ROMS_MODEL)
 # define WRF_COUPLING
 #endif
+#if defined WRFHYDRO_MODEL && (defined SWAN_MODEL || defined WRF_MODEL || \
+                               defined WW3_MODEL  || defined ROMS_MODEL)
+# define HYDRO_COUPLING
+#endif
 
 #if defined WRF_COUPLING && defined ROMS_COUPLING
 # define AIR_OCEAN
+#endif
+
+#if defined HYDRO_COUPLING && defined ROMS_COUPLING
+# define HYDRO_OCEAN
 #endif
 
 #if defined WRF_COUPLING && (defined SWAN_COUPLING || defined WW3_COUPLING)
@@ -624,7 +584,7 @@
 # define WAVES_OCEAN
 #endif
 
-#if defined AIR_OCEAN || defined AIR_WAVES || defined WAVES_OCEAN
+#if defined AIR_OCEAN || defined AIR_WAVES || defined WAVES_OCEAN || defined HYDRO_OCEAN
 # define COAWST_COUPLING
 #endif
 
@@ -928,33 +888,6 @@
     defined ANA_WWAVE      || defined DIFF_GRID       || \
     defined VISC_GRID
 # define ANALYTICAL
-#endif
-
-/*
-** If splitting 3rd-order upstream bias horizontal advection of
-** tracer, activate other needed flags.
-*/
-
-#ifdef TS_U3ADV_SPLIT
-# define DIFF_3DCOEF
-# ifdef TS_U3HADVECTION
-#  undef TS_U3HADVECTION
-# endif
-# ifndef TS_C4HADVECTION
-#  define TS_C4HADVECTION
-# endif
-# ifndef TS_C4VADVECTION
-#  define TS_C4VADVECTION
-# endif
-# ifndef TS_DIF4
-#  define TS_DIF4
-# endif
-# ifdef TS_DIF2
-#  undef TS_DIF2
-# endif
-# ifdef TS_SMAGORINSKY
-#  undef TS_SMAGORINSKY
-# endif
 #endif
 
 /*

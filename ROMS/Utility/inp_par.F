@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE inp_par (model)
 !
-!svn $Id: inp_par.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: inp_par.F 1013 2020-03-11 01:46:00Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -58,6 +58,8 @@
       real(r8), parameter :: epsilon = 1.0E-8_r8
       real(r8), parameter :: spv = 0.0_r8
       character*2 :: ngnumber
+!
+      SourceFile=__FILE__
 !
 !-----------------------------------------------------------------------
 !  Read in and report input model parameters.
@@ -154,17 +156,43 @@
  40   CONTINUE
 # endif
 #endif
-
+!
       CALL read_PhyPar (model, inp, out, Lwrite)
 #ifdef DISTRIBUTE
       CALL mp_bcasti (1, model, exit_flag)
 #endif
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
+#ifdef BIOLOGY
+!
+!-----------------------------------------------------------------------
+!  Read in biological model input parameters.
+!-----------------------------------------------------------------------
+!
+      OPEN (15, FILE=TRIM(bparnam), FORM='formatted', STATUS='old')
+
+      CALL read_BioPar (model, 15, out, Lwrite)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+#endif
+#ifdef SEDIMENT
+!
+!-----------------------------------------------------------------------
+!  Read in sediment model input parameters.
+!-----------------------------------------------------------------------
+!
+      OPEN (25, FILE=TRIM(sparnam), FORM='formatted', STATUS='old')
+
+      CALL read_SedPar (model, 25, out, Lwrite)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+#endif
 #ifdef NESTING
 !
+!-----------------------------------------------------------------------
 !  Read in nesting contact points NetCDF file and allocate and
 !  initialize several structures and variables.
+!-----------------------------------------------------------------------
 !
       CALL set_contact (1, model)
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
@@ -176,13 +204,23 @@
 !  nested grids.
 !-----------------------------------------------------------------------
 !
+!  Set switch for three ghost-points in the halo region.
+!
+#ifdef SOLVE3D
+      ThreeGhostPoints=ANY(Hadvection(:,:)%MPDATA).or.                  &
+     &                 ANY(Hadvection(:,:)%HSIMT)
+#endif
+#ifdef UV_VIS4
+      ThreeGhostPoints=.TRUE.
+#endif
+!
 !  Determine the number of ghost-points in the halo region.
 !
-#if defined TS_MPDATA || defined UV_VIS4
-      NghostPoints=3
-#else
-      NghostPoints=2
-#endif
+      IF (ThreeGhostPoints) THEN
+        NghostPoints=3
+      ELSE
+        NghostPoints=2
+      END IF
       IF (ANY(CompositeGrid).or.ANY(RefinedGrid)) THEN
         NghostPoints=MAX(3,NghostPoints)
       END IF
@@ -760,36 +798,6 @@
       END DO
 #endif
 
-#ifdef BIOLOGY
-!
-!-----------------------------------------------------------------------
-!  Read in biological model input parameters.
-!-----------------------------------------------------------------------
-!
-      OPEN (15, FILE=TRIM(bparnam), FORM='formatted', STATUS='old')
-
-      CALL read_BioPar (model, 15, out, Lwrite)
-#endif
-#ifdef ICE_MODEL
-!
-!-----------------------------------------------------------------------
-!  Read in ice model input parameters.
-!-----------------------------------------------------------------------
-!
-      OPEN (inp, FILE=TRIM(iparnam), FORM='formatted', STATUS='old')
-
-      CALL read_IcePar (inp, out, Lwrite)
-#endif
-#ifdef SEDIMENT
-!
-!-----------------------------------------------------------------------
-!  Read in sediment model input parameters.
-!-----------------------------------------------------------------------
-!
-      OPEN (25, FILE=TRIM(sparnam), FORM='formatted', STATUS='old')
-
-      CALL read_SedPar (model, 25, out, Lwrite)
-#endif
 #if defined FOUR_DVAR || defined VERIFICATION
 !
 !-----------------------------------------------------------------------
@@ -799,6 +807,8 @@
       OPEN (35, FILE=TRIM(aparnam), FORM='formatted', STATUS='old')
 
       CALL read_AssPar (model, 35, out, Lwrite)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 #endif
 #ifdef FLOATS
 !
@@ -809,6 +819,8 @@
       OPEN (45, FILE=TRIM(fposnam), FORM='formatted', STATUS='old')
 
       CALL read_FltPar (model, 45, out, Lwrite)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 #endif
 #if defined FLOATS && defined FLOAT_BIOLOGY
 !
@@ -819,6 +831,8 @@
       OPEN (50, FILE=TRIM(fbionam), FORM='formatted', STATUS='old')
 
       CALL read_FltBioPar (model, 50, out, Lwrite)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 #endif
 #ifdef STATIONS
 !
@@ -829,6 +843,8 @@
       OPEN (55, FILE=TRIM(sposnam), FORM='formatted', STATUS='old')
 
       CALL read_StaPar (model, 55, out, Lwrite)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
 #endif
 !
 #ifdef VEGETATION
@@ -841,14 +857,68 @@
 
       CALL read_VegPar (model, 65, out, Lwrite)
 #endif 
+#ifdef SOLVE3D
+!
+!-----------------------------------------------------------------------
+!  Report tracer advection scheme.
+!-----------------------------------------------------------------------
+!
+      IF (Master) THEN
+        WRITE (out,120) 'NLM'
+ 120    FORMAT (/,1x,'Tracer Advection Scheme: ',a,/,1x,24('='),/,      &
+     &          /,1x,'Variable',t25,'Grid',t31,'Horizontal',            &
+     &          t50,'Vertical', /,1x,'---------',t25,'----',            &
+     &          t31,2('------------',7x))
+      END IF
+      CALL tadv_report (out, iNLM, Hadvection, Vadvection)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+
+# if defined ADJOINT || defined TANGENT || defined TL_IOMS
+!
+      IF (Master) THEN
+        WRITE (out,120) 'TLM, RPM, and ADM'
+      END IF
+      CALL tadv_report (out, iADM, ad_Hadvection, ad_Vadvection)
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+# endif
+#endif
+#if defined TANGENT || defined TL_IOMS
+!
+!  Set tracer advection scheme switches for the tangent linear models
+!  (TLM and RPM) to the same values as the adjoint model.
+!
+      DO ng=1,Ngrids
+        DO i=1,NT(ng)
+          tl_Hadvection(i,ng)%AKIMA4    = ad_Hadvection(i,ng)%AKIMA4
+          tl_Hadvection(i,ng)%CENTERED2 = ad_Hadvection(i,ng)%CENTERED2
+          tl_Hadvection(i,ng)%CENTERED4 = ad_Hadvection(i,ng)%CENTERED4
+          tl_Hadvection(i,ng)%HSIMT     = ad_Hadvection(i,ng)%HSIMT
+          tl_Hadvection(i,ng)%MPDATA    = ad_Hadvection(i,ng)%MPDATA
+          tl_Hadvection(i,ng)%SPLINES   = ad_Hadvection(i,ng)%SPLINES
+          tl_Hadvection(i,ng)%SPLIT_U3  = ad_Hadvection(i,ng)%SPLIT_U3
+          tl_Hadvection(i,ng)%UPSTREAM3 = ad_Hadvection(i,ng)%UPSTREAM3
+!
+          tl_Vadvection(i,ng)%AKIMA4    = ad_Vadvection(i,ng)%AKIMA4
+          tl_Vadvection(i,ng)%CENTERED2 = ad_Vadvection(i,ng)%CENTERED2
+          tl_Vadvection(i,ng)%CENTERED4 = ad_Vadvection(i,ng)%CENTERED4
+          tl_Vadvection(i,ng)%HSIMT     = ad_Vadvection(i,ng)%HSIMT
+          tl_Vadvection(i,ng)%MPDATA    = ad_Vadvection(i,ng)%MPDATA
+          tl_Vadvection(i,ng)%SPLINES   = ad_Vadvection(i,ng)%SPLINES
+          tl_Vadvection(i,ng)%SPLIT_U3  = ad_Vadvection(i,ng)%SPLIT_U3
+          tl_Vadvection(i,ng)%UPSTREAM3 = ad_Vadvection(i,ng)%UPSTREAM3
+        END DO
+      END DO
+#endif
 !
 !-----------------------------------------------------------------------
 !  Report lateral boundary conditions.
 !-----------------------------------------------------------------------
 !
       IF (Master) THEN
-        WRITE (out,120) 'NLM'
- 120    FORMAT (/,1x,'Lateral Boundary Conditions: ',a,/,1x,28('='),/,  &
+        WRITE (out,130) 'NLM'
+ 130    FORMAT (/,1x,'Lateral Boundary Conditions: ',a,/,1x,28('='),/,  &
      &          /,1x,'Variable',t25,'Grid',t31,'West Edge',             &
      &          t44,'South Edge', t57,'East Edge',t70,'North Edge',     &
      &          /,1x,'---------',t25,'----',t31,4('----------',3x))
@@ -857,7 +927,8 @@
         END DO
 
 #if defined ADJOINT || defined TANGENT || defined TL_IOMS
-        WRITE (out,120) 'TLM, RPM, and ADM'
+!
+        WRITE (out,130) 'TLM, RPM, and ADM'
         DO ifield=1,nLBCvar
           CALL lbc_report (out, ifield, ad_LBC)
         END DO
@@ -1201,8 +1272,8 @@
         IF (ANY(LnudgeTCLM(i,:))) THEN
           varid=varid+1
           IF (varid.gt.MV) THEN
-            WRITE (stdout,130) MV, varid
- 130        FORMAT (/,' INP_PAR - too small dimension ',                &
+            WRITE (stdout,140) MV, varid
+ 140        FORMAT (/,' INP_PAR - too small dimension ',                &
      &              'parameter, MV = ',2i5,/,15x,                       &
      &              'change file  mod_ncparam.F  and recompile.')
             STOP

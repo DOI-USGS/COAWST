@@ -11,9 +11,7 @@ function createswan2Dspec(YYYYMODD,HHMMSS,Loc,Freq,Dir,Spec,Fname)
 %Dir     = Vector of directional spacing of the two-dimensional spectrum
 %Spec    = Frequency-directional spectrum (expected units is m^2/Hz/Deg). Also it is 
 %          assumed that the spectrum is a 4-dimensional variable with a structure 
-%          Spec(NT,NLOC,NFREQ,NDIR). Further if working in geographical co-ordinates 
-%          the units of frequency-directional spectrum should be changed to J/m^2/Hz/Deg
-%          i.e., a multiplication by rho*g
+%          Spec(NT,NLOC,NFREQ,NDIR). 
 %Fname   = File name for output 
 
 if (nargin<7 || isempty(Fname)==1)
@@ -70,10 +68,10 @@ end
 clear i
 fprintf(fid,'%s\n', 'QUANT');
 fprintf(fid,'%s\n', '     1                                  number of quantities in table');
-%fprintf(fid,'%s\n', 'VaDens                                  variance densities in m2/Hz/degr');
-%fprintf(fid,'%s\n', 'm2/Hz/degr                             unit');
-fprintf(fid,'%s\n', 'EnDens                                   variance densities in m2/Hz/degr');
-fprintf(fid,'%s\n', 'J/m2/Hz/degr                             unit');
+fprintf(fid,'%s\n', 'VaDens                                  variance densities in m2/Hz/degr');
+fprintf(fid,'%s\n', 'm2/Hz/degr                             unit');
+%fprintf(fid,'%s\n', 'EnDens                                   variance densities in m2/Hz/degr');
+%fprintf(fid,'%s\n', 'J/m2/Hz/degr                             unit');
 fprintf(fid,'%14.4e',Exval);
 fprintf(fid,'%s\n', '                          exception value');
 
@@ -81,8 +79,8 @@ for p=1:1:NT
     fprintf(fid,'%15.6f',Time(p));
 	fprintf(fid,'%s\n','                         date and time');
 	for q=1:1:NLOC
-        Edens = rho*g*squeeze(Spec(p,q,:,:));
-        %Edens = squeeze(Spec(p,q,:,:));
+        %Edens = rho*g*squeeze(Spec(p,q,:,:));
+        Edens = squeeze(Spec(p,q,:,:));
         [ID]=max(max(Edens));
         if ID>(10^-10)
             FAC=(1.01*ID*10^(-4));

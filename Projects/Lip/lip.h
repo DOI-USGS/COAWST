@@ -40,9 +40,6 @@
 #define WET_DRY
 #undef  OUT_DOUBLE
 #define UV_ADV
-#define TS_HSIMT
-#undef  TS_U3HADV
-#undef  TS_MPDATA
 #define DJ_GRADPS
 #undef  SALINITY
 #define SOLVE3D

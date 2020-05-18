@@ -22,8 +22,9 @@
 # define ACY_ADVECTION
 # define ACT_ADVECTION
 # undef  DOPPLER
-# define WDISS_GAMMA
-# undef  WDISS_ROELVINK
+# undef  WDISS_GAMMA
+# define WDISS_ROELVINK
+# define VARY_ACBC
 #endif
 
 #define WEC_VF
@@ -33,7 +34,6 @@
 #define MASKING
 #define UV_ADV
 #undef  UV_COR
-#define TS_MPDATA
 #define DJ_GRADPS
 #define SOLVE3D
 #define SPLINES_VVISC
@@ -61,9 +61,11 @@
 # undef SEDIMENT
 # ifdef SEDIMENT
 #  undef  SUSPLOAD
-#  define BEDLOAD_SOULSBY
+#  undef  BEDLOAD_SOULSBY
 #  undef  BEDLOAD_MPM
-#  undef  BEDLOAD_VANDERA
+#  define BEDLOAD_VANDERA
+#  define BEDLOAD_VANDERA_STOKES
+#  define BEDLOAD_VANDERA_MADSEN
 #  undef  SED_MORPH
 # endif
 # if defined SEDIMENT || defined SG_BBL || defined MB_BBL || defined SSW_BBL

@@ -2,9 +2,9 @@
 #if defined NONLINEAR && !defined SOLVE3D
       SUBROUTINE main2d (RunInterval)
 !
-!svn $Id: main2d.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: main2d.F 995 2020-01-10 04:01:28Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -34,8 +34,8 @@
 # ifdef TLM_CHECK
       USE dotproduct_mod,       ONLY : nl_dotproduct
 # endif
-# if defined W4DPSAS || defined NLM_OUTER || \
-     defined W4DPSAS_SENSITIVITY
+# if defined NLM_OUTER           || defined W4DPSAS                 ||\
+     defined W4DPSAS_SENSITIVITY || defined W4DPSAS_FCT_SENSITIVITY
       USE forcing_mod,          ONLY : forcing
 # endif
 # ifdef ADJUST_WSTRESS
@@ -148,8 +148,8 @@
               IF (step_counter(ng).eq.Rsteps) Time_Step=.FALSE.
             END DO
 
-# if defined W4DPSAS || defined NLM_OUTER || \
-     defined W4DPSAS_SENSITIVITY
+# if defined NLM_OUTER           || defined W4DPSAS                 ||\
+     defined W4DPSAS_SENSITIVITY || defined W4DPSAS_FCT_SENSITIVITY
 !
 !-----------------------------------------------------------------------
 !  If appropriate, add convolved adjoint solution impulse forcing to

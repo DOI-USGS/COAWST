@@ -60,9 +60,9 @@ function [D]=load_ssh_aviso(GRDfile, StartDay, EndDay, ssh_URL)
 %          SNCTOOLS with OpenDAP to read data.
 %
 
-% svn $Id: load_ssh_aviso.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: load_ssh_aviso.m 996 2020-01-10 04:28:56Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license           Hernan G. Arango      %
 %    See License_ROMS.txt                           Brian Powell          %
 %=========================================================================%

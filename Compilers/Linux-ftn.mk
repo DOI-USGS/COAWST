@@ -1,6 +1,6 @@
-# svn $Id: Linux-ftn.mk 889 2018-02-10 03:32:52Z arango $
+# svn $Id: Linux-ftn.mk 995 2020-01-10 04:01:28Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2019 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -18,6 +18,7 @@
 # CXX            Name of the C++ compiler
 # CXXFLAGS       Flags to the C++ compiler
 # CLEAN          Name of cleaning executable after C-preprocessing
+# LIBS           Required libraries during linking
 # NETCDF_INCDIR  NetCDF include directory
 # NETCDF_LIBDIR  NetCDF libary directory
 # LD             Program to load the objects into an executable
@@ -35,6 +36,10 @@
               CXX := CC
            CFLAGS :=
          CXXFLAGS :=
+             LIBS :=
+ifdef USE_ROMS
+             LIBS += $(SCRATCH_DIR)/libNLM.a         # cyclic dependencies
+endif
           LDFLAGS :=
                AR := ar
           ARFLAGS := -r
@@ -67,19 +72,19 @@ endif
 ifdef USE_NETCDF4
         NF_CONFIG ?= nf-config
     NETCDF_INCDIR ?= $(shell $(NF_CONFIG) --prefix)/include
-             LIBS := $(shell $(NF_CONFIG) --flibs)
+             LIBS += $(shell $(NF_CONFIG) --flibs)
 else
     NETCDF_INCDIR ?= /usr/local/include
     NETCDF_LIBDIR ?= /usr/local/lib
-             LIBS := -L$(NETCDF_LIBDIR) -lnetcdf
+             LIBS += -L$(NETCDF_LIBDIR) -lnetcdf
 endif
 
 ifdef USE_ARPACK
  ifdef USE_MPI
-   PARPACK_LIBDIR ?= /opt/pgisoft/PARPACK
+   PARPACK_LIBDIR ?= /usr/local/lib
              LIBS += -L$(PARPACK_LIBDIR) -lparpack
  endif
-    ARPACK_LIBDIR ?= /opt/pgisoft/PARPACK
+    ARPACK_LIBDIR ?= /usr/local/lib
              LIBS += -L$(ARPACK_LIBDIR) -larpack
 endif
 
@@ -132,6 +137,9 @@ ifdef USE_CXX
              LIBS += -lstdc++
 endif
 
+ifndef USE_SCRIP
+             LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
+endif
 ifdef USE_MCT
        MCT_INCDIR ?= /usr/local/mct/include
        MCT_LIBDIR ?= /usr/local/mct/lib
@@ -156,8 +164,8 @@ ifdef USE_WRF
 endif
 
 ifdef USE_WW3
-             FFLAGS += -I${COAWST_WW3_DIR}/mod_DIST/
-             LIBS += WW3/obj/libWW3.a
+             FFLAGS += -I${COAWST_WW3_DIR}/mod_MPI
+             LIBS += WW3/model/obj_MPI/libWW3.a
 endif
 
 #
@@ -171,18 +179,18 @@ endif
 # local directory and compilation flags inside the code.
 #
 
-$(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -Mfree
-$(SCRATCH_DIR)/mod_strings.o: FFLAGS := $(MY_FFLAGS) -Mfree
-$(SCRATCH_DIR)/analytical.o: FFLAGS += -Mfree
-$(SCRATCH_DIR)/biology.o: FFLAGS += -Mfree
+$(SCRATCH_DIR)/mod_ncparam.o: FFLAGS += -free-form
+$(SCRATCH_DIR)/mod_strings.o: FFLAGS += -free-form
+$(SCRATCH_DIR)/analytical.o: FFLAGS += -free-form
+$(SCRATCH_DIR)/biology.o: FFLAGS += -free-form
 ifdef USE_ADJOINT
-$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -Mfree
+$(SCRATCH_DIR)/ad_biology.o: FFLAGS += -free-form
 endif
 ifdef USE_REPRESENTER
-$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -Mfree
+$(SCRATCH_DIR)/rp_biology.o: FFLAGS += -free-form
 endif
 ifdef USE_TANGENT
-$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -Mfree
+$(SCRATCH_DIR)/tl_biology.o: FFLAGS += -free-form
 endif
 
 #

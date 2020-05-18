@@ -11,7 +11,7 @@ module swn_outnc
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -59,7 +59,7 @@ module swn_outnc
     use OCPCOMM4
     use SWCOMM1,   only: CHTIME, OVEXCV
     use SWCOMM2,   only: XOFFS, YOFFS, OPTG, EXCFLD
-    use SWCOMM3,   only: NSTATM, ALPC, MDC, MSC, MCGRD, MXC, MYC, DNORTH, &
+    use SWCOMM3,   only: NSTATC, NSTATM, ALPC, MDC, MSC, MCGRD, MXC, MYC, DNORTH, &
                          PI2, ICUR, BNAUT
     use SWCOMM4
     use TIMECOMM,  only: TFINC, TIMCO, TINIC, DT
@@ -81,6 +81,7 @@ module swn_outnc
                                    skip_range_error = .true.
     type(recordaxe_type), save  :: recordaxe(MAX_OUTP_REQ)
     integer,save                :: ncoffset(MAX_OUTP_REQ) = 0
+    logical,save                :: read_header(MAX_OUTP_REQ) = .true.
 
 !PUN    logical                     :: PUNSWAN = .true.
 !NPUN    logical                     :: PUNSWAN = .false.
@@ -113,7 +114,7 @@ contains
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -238,7 +239,7 @@ contains
         if (STPNOW()) return
 
         call nccheck(nf90_close(oqi(1) + ncoffset(irq) ))
-        oqi(1) = 0
+        ncoffset(irq) = 0
       end if
 
       call swn_outnc_deallocate_spcaux( spcaux )
@@ -262,7 +263,7 @@ contains
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -281,10 +282,10 @@ contains
 !
 !
 !  0. Authors
-!
+!     41.70 A.Th.C. Hulst
 !
 !  1. Updates
-!
+!     41.70 Added support for multiple compute commands and multiple specout requests
 !
 !  2. Purpose
 !
@@ -308,7 +309,7 @@ contains
 !
 !  5. Local variables
 !
-      logical                             :: lopen, read_header, file_exists, &
+      logical                             :: lopen, file_exists, &
                                              EQREAL, STPNOW
       integer                             :: ip, ierr, otype, xpctime2, &
                                              i, tmip, binnr, irq, &
@@ -398,9 +399,6 @@ contains
                     call MSGERR(4, errmsg)
                     return
                 end if
-                read_header = .true.
-            else
-                read_header = .false.
             end if
             inquire(unit=binnr, opened=lopen)
             if ( .not. lopen ) then
@@ -411,7 +409,8 @@ contains
 
             ! In the final collocation the spatial, spectral and directional grids are unknown.
             ! They are exchanged via the binary file of the master process.
-            if ( read_header .and. iproc == 1 ) then
+            if ( read_header(irq) .and. iproc == 1 ) then
+                read_header(irq) = .false.
                 read(binnr, IOSTAT=ierr) spcaux%xp
                 if ( ierr /= 0 ) then
                   write(errmsg,'("Reading grid data from ", A, " returned IOSTAT ", I3.3)') trim(binfile), ierr
@@ -431,7 +430,7 @@ contains
 
             read(binnr, IOSTAT=ierr) xpctime2, tmip
             if ( ierr /= 0 ) then
-                write(errmsg,'("Reading time and tmip from ", A, "(",I3,") , time ", A, ", returned IOSTAT ", I3.3)') &
+                write(errmsg,'("Reading time and tmip from ", A, "(",I3,") , time ", A, ", returned IOSTAT ", I3)') &
                      trim(binfile), binnr, CHTIME, ierr
                 call MSGERR(4, errmsg)
                 return
@@ -467,9 +466,10 @@ contains
 !PUN         ilpos   = len(trim(LOCALDIR))+2
 !PUN         ncfile = ncfile(ilpos:LENFNM)
 !PUN         ncfile = trim(GLOBALDIR)//DIRCH2//trim(ncfile)
-
-        call swn_outnc_openspecfile(ncfile, spcaux, OQI, OQR)
-        if (STPNOW()) return
+        if ( ncoffset(irq) == 0 ) then
+            call swn_outnc_openspecfile(ncfile, spcaux, OQI, OQR)
+            if (STPNOW()) return
+        end if
 
         call swn_outnc_appendspc(OQI, spcaux, xpctime2)
         if (STPNOW()) return
@@ -477,8 +477,10 @@ contains
         call swn_outnc_deallocate_spcaux( spcaux )
 
         if ( NSTATM == 0 .or. TIMCO >= TFINC ) then
+            ! The end time is reached in each computation block. See
+            ! SWCOLOUT structure.
             call close_ncfile(OQI(1) + ncoffset(irq) )
-            OQI(1) = 0
+            ncoffset(irq) = 0
 
             ! The intermediate binary files are closed and deleted in
             !    swanparll.ftn -> SWCOLOUT
@@ -507,7 +509,7 @@ contains
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -526,10 +528,10 @@ contains
 !
 !
 !  0. Authors
-!
+!     41.70 Sander Hulst
 !
 !  1. Updates
-!
+!     41.70 Do not close binary files. Breaks on multiple compute commands
 !
 !  2. Purpose
 !
@@ -781,20 +783,6 @@ contains
         end if
       end do
 
-      if ( PARLL .or. PUNSWAN ) then
-        ! in parallel mode, close binary file when required
-        if (NSTATM == 0 .or. TIMCO >= TFINC) then
-          inquire(unit=OQI(1), opened=lopen)
-          if ( lopen ) then
-            close(unit=OQI(1))
-          else
-            write(errmsg, '("File ", A, " is already closed. This is a code error")') trim(OUTP_FILES(irq))
-            call MSGERR(4, errmsg)
-            return
-          end if
-        end if
-      end if
-
     end subroutine swn_outnc_spcaux
 
     subroutine swn_outnc_spcaux_on_wetnodes( lkgrpnt, lspcaux, spcaux )
@@ -899,7 +887,7 @@ contains
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1061,7 +1049,7 @@ contains
             call agnc_add_pntdata(ncid, 'xwnd',  ri, pspcaux%wndx,  OVEXCV(26), skip_range_error)
             call agnc_add_pntdata(ncid, 'ywnd',  ri, pspcaux%wndy,  OVEXCV(26), skip_range_error)
         end if
-    end if
+      end if
 
       ! garbage collect
       nullify(pspcaux)
@@ -1148,7 +1136,11 @@ contains
                 READ (chtime, '(I8,1X,I6)') (xpctmp(i), i=1,2)
                 ! should be seconds since epoch.
                 recordaxe(irq)%content(1) = seconds_since_epoch(xpctmp(1), xpctmp(2))
-                recordaxe(irq)%delta      = maxval((/oqr(2), DT/))
+                if ( NSTATC == 0 ) then
+                   recordaxe(irq)%delta   = oqr(2)
+                else
+                   recordaxe(irq)%delta   = maxval((/oqr(2), DT/))
+                endif
                 recordaxe(irq)%nstatm     = .true.
             else
                 ! stationary, record axe is "run"
@@ -1312,7 +1304,11 @@ contains
         ! if only only record found, set delta to delta specified in command file (or 1 on stationary)
         if ( recordaxe(irq)%ncontent == 1 ) then
             if ( NSTATM > 0 ) then
-                recordaxe(irq)%delta = maxval((/oqr(2), DT/))
+                if ( NSTATC == 0 ) then
+                   recordaxe(irq)%delta = oqr(2)
+                else
+                   recordaxe(irq)%delta = maxval((/oqr(2), DT/))
+                endif
             else
                 recordaxe(irq)%delta = 1
             end if
@@ -1426,8 +1422,8 @@ contains
         ! increasing the chance on file corruption
         if (LTRACE) call STRACE (IENT,'swn_outnc_close_on_end')
         if ( nstatm == 0 .or. TIMCO >= TFINC ) then
+            ncoffset(irq) = 0
             call close_ncfile(ncid)
-            nref = 0
         else
             call nccheck( NF90_SYNC(ncid) )
         end if
@@ -1508,7 +1504,11 @@ contains
                 READ (chtime, '(I8,1X,I6)') (xpctmp(i), i=1,2)
                 ! should be seconds since epoch. This is probably not it.
                 recordaxe(irq)%content(1) = seconds_since_epoch(xpctmp(1), xpctmp(2))
-                recordaxe(irq)%delta      = maxval((/oqr(2), DT/))
+                if ( NSTATC == 0 ) then
+                   recordaxe(irq)%delta   = oqr(2)
+                else
+                   recordaxe(irq)%delta   = maxval((/oqr(2), DT/))
+                endif
                 recordaxe(irq)%nstatm     = .true.
             else
                 ! stationary, record axe is "run"
@@ -1607,7 +1607,11 @@ contains
         ! if only only record found, set delta to delta specified in command file (or 1 on stationary)
         if ( recordaxe(irq)%ncontent == 1 ) then
             if ( NSTATM > 0 ) then
-                recordaxe(irq)%delta = maxval((/oqr(2), DT/))
+                if ( NSTATC == 0 ) then
+                   recordaxe(irq)%delta = oqr(2)
+                else
+                   recordaxe(irq)%delta = maxval((/oqr(2), DT/))
+                endif
             else
                 recordaxe(irq)%delta = 1
             end if

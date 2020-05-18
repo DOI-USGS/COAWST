@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_iounits
 !
-!svn $Id: mod_iounits.F 919 2018-08-21 22:25:53Z arango $
+!svn $Id: mod_iounits.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -23,7 +23,17 @@
 !    DAV       Output 4D-Var data assimilation variables               !
 !    DIA       Output diagnostics fields                               !
 !    ERR       Output 4DVar posterior error estimate                   !
+#ifdef W4DPSAS_FCT_SENSITIVITY
+!    FCTA      Input basic state forecast solution                     !
+!    FCTB      Input basic state forecast solution                     !
+#endif
 !    FLT       Output Lagrangian trajectories data                     !
+#if defined W4DPSAS_FCT_SENSITIVITY && !defined OBS_SPACE
+!    FOIA      Input Forecast Observation Impacts forcing data when    !
+!                initialized from the 4D-Var Analysis (red curve)      !
+!    FOIB      Input Forecast Observation Impacts forcing data when    !
+!                initialized from the 4D-Var Background (blue curve)   !
+#endif
 !    FRC       Input forcing data                                      !
 !    FWD       Input basic state forward solution                      !
 !    GRD       Input grid data                                         !
@@ -44,6 +54,12 @@
 !                NRM(4,ng)  surface forcing                            !
 !    NUD       Input climatology nudging coefficients                  !
 !    OBS       Input/output 4D-Var observations                        !
+#if defined W4DPSAS_FCT_SENSITIVITY && defined OBS_SPACE
+!    OIFA      Input Observations Impact Forcing at datum locations if !
+!                initialized from the 4D-Var Analysis (red curve)      !
+!    OIFB      Input Observations Impact Forcing at datum locations if !
+!                initialized from the 4D-Var Background (blue curve)   !
+#endif
 !    QCK       Output nonlinear model brief snpashots data             !
 !    RST       Output restart data                                     !
 !    TIDE      Input tide forcing                                      !
@@ -82,6 +98,7 @@
 !  BRYids      NetCDF file ID associated with each boundary field.     !
 !  CLMids      NetCDF file ID associated with each climatology field.  !
 !  FRCids      NetCDF file ID associated with each forcing field.      !
+!  SSFids      NetCDF file ID associated with each river source field. !
 !  Rerror      Running error messages.                                 !
 !  SourceFile  Current executed file name. It is used for IO error     !
 !                purposes.                                             !
@@ -114,6 +131,14 @@
       TYPE(T_IO), allocatable :: ERR(:)     ! 4D-Var posterior error
       TYPE(T_IO), allocatable :: FIL(:,:)   ! Filter restart
       TYPE(T_IO), allocatable :: FLT(:)     ! Lagrangian trajectories
+#ifdef W4DPSAS_FCT_SENSITIVITY
+      TYPE(T_IO), allocatable :: FCTA(:)    ! forecast for impacts, A
+      TYPE(T_IO), allocatable :: FCTB(:)    ! forecast for impacts, B
+#endif
+#if defined W4DPSAS_FCT_SENSITIVITY && !defined OBS_SPACE
+      TYPE(T_IO), allocatable :: FOIA(:)    ! observation impacts, A
+      TYPE(T_IO), allocatable :: FOIB(:)    ! observation impacts, B
+#endif
       TYPE(T_IO), allocatable :: FWD(:)     ! forward solution
       TYPE(T_IO), allocatable :: GRD(:)     ! grid data
       TYPE(T_IO), allocatable :: GST(:)     ! generalized stability
@@ -130,6 +155,10 @@
       TYPE(T_IO), allocatable :: NRM(:,:)   ! normalization
       TYPE(T_IO), allocatable :: NUD(:)     ! nudging coefficients
       TYPE(T_IO), allocatable :: OBS(:)     ! observations
+#if defined W4DPSAS_FCT_SENSITIVITY && defined OBS_SPACE
+      TYPE(T_IO), allocatable :: OIFA(:)    ! observation impacts, A
+      TYPE(T_IO), allocatable :: OIFB(:)    ! observation impacts, B
+#endif
       TYPE(T_IO), allocatable :: QCK(:)     ! quicksave fields
       TYPE(T_IO), allocatable :: RST(:)     ! restart fields
       TYPE(T_IO), allocatable :: SSF(:)     ! Sources/Sinks forcing
@@ -254,6 +283,22 @@
       IF (.not.allocated(FLT)) THEN
         allocate ( FLT(Ngrids) )
       END IF
+#ifdef W4DPSAS_FCT_SENSITIVITY
+      IF (.not.allocated(FCTA)) THEN
+        allocate ( FCTA(Ngrids) )
+      END IF
+      IF (.not.allocated(FCTB)) THEN
+        allocate ( FCTB(Ngrids) )
+      END IF
+#endif
+#if defined W4DPSAS_FCT_SENSITIVITY && !defined OBS_SPACE
+      IF (.not.allocated(FOIA)) THEN
+        allocate ( FOIA(Ngrids) )
+      END IF
+      IF (.not.allocated(FOIB)) THEN
+        allocate ( FOIB(Ngrids) )
+      END IF
+#endif
       IF (.not.allocated(FWD)) THEN
         allocate ( FWD(Ngrids) )
       END IF
@@ -299,6 +344,14 @@
       IF (.not.allocated(OBS)) THEN
         allocate ( OBS(Ngrids) )
       END IF
+#if defined W4DPSAS_FCT_SENSITIVITY && defined OBS_SPACE
+      IF (.not.allocated(OIFA)) THEN
+        allocate ( OIFA(Ngrids) )
+      END IF
+      IF (.not.allocated(OIFB)) THEN
+        allocate ( OIFB(Ngrids) )
+      END IF
+#endif
       IF (.not.allocated(QCK)) THEN
         allocate ( QCK(Ngrids) )
       END IF
@@ -358,6 +411,14 @@
         DIA(ng)%ncid=-1
         ERR(ng)%ncid=-1
         FLT(ng)%ncid=-1
+#ifdef W4DPSAS_FCT_SENSITIVITY
+        FCTA(ng)%ncid=-1
+        FCTB(ng)%ncid=-1
+#endif
+#if defined W4DPSAS_FCT_SENSITIVITY && !defined OBS_SPACE
+        FOIA(ng)%ncid=-1
+        FOIB(ng)%ncid=-1
+#endif
         FWD(ng)%ncid=-1
         GRD(ng)%ncid=-1
         GST(ng)%ncid=-1
@@ -372,6 +433,10 @@
         LZE(ng)%ncid=-1
         NUD(ng)%ncid=-1
         OBS(ng)%ncid=-1
+#if defined W4DPSAS_FCT_SENSITIVITY && defined OBS_SPACE
+        OIFA(ng)%ncid=-1
+        OIFB(ng)%ncid=-1
+#endif
         QCK(ng)%ncid=-1
         RST(ng)%ncid=-1
         SSF(ng)%ncid=-1
@@ -392,105 +457,169 @@
       DO ng=1,Ngrids
         lstr=LEN(HIS(ng)%name)
         DO i=1,lstr
+          ADM(ng)%head(i:i)=blank
           ADM(ng)%base(i:i)=blank
           ADM(ng)%name(i:i)=blank
 
+          ADS(ng)%head(i:i)=blank
           ADS(ng)%base(i:i)=blank
           ADS(ng)%name(i:i)=blank
 
+          AVG(ng)%head(i:i)=blank
           AVG(ng)%base(i:i)=blank
           AVG(ng)%name(i:i)=blank
 
+          BLK(ng)%head(i:i)=blank
           BLK(ng)%base(i:i)=blank
           BLK(ng)%name(i:i)=blank
 
+!         BRY(ng)%head(i:i)=blank
 !         BRY(ng)%base(i:i)=blank
 !         BRY(ng)%name(i:i)=blank
 
+!         CLM(ng)%head(i:i)=blank
 !         CLM(ng)%base(i:i)=blank
 !         CLM(ng)%name(i:i)=blank
 
+          DAI(ng)%head(i:i)=blank
           DAI(ng)%base(i:i)=blank
           DAI(ng)%name(i:i)=blank
 
+          DAV(ng)%head(i:i)=blank
           DAV(ng)%base(i:i)=blank
           DAV(ng)%name(i:i)=blank
 
+          DIA(ng)%head(i:i)=blank
           DIA(ng)%base(i:i)=blank
           DIA(ng)%name(i:i)=blank
 
+          ERR(ng)%head(i:i)=blank
           ERR(ng)%base(i:i)=blank
           ERR(ng)%name(i:i)=blank
 
+          FLT(ng)%head(i:i)=blank
           FLT(ng)%base(i:i)=blank
           FLT(ng)%name(i:i)=blank
 
+#ifdef W4DPSAS_FCT_SENSITIVITY
+          FCTA(ng)%head(i:i)=blank
+          FCTA(ng)%base(i:i)=blank
+          FCTA(ng)%name(i:i)=blank
+
+          FCTB(ng)%head(i:i)=blank
+          FCTB(ng)%base(i:i)=blank
+          FCTB(ng)%name(i:i)=blank
+#endif
+
+#if defined W4DPSAS_FCT_SENSITIVITY && !defined OBS_SPACE
+          FOIA(ng)%head(i:i)=blank
+          FOIA(ng)%base(i:i)=blank
+          FOIA(ng)%name(i:i)=blank
+
+          FOIB(ng)%head(i:i)=blank
+          FOIB(ng)%base(i:i)=blank
+          FOIB(ng)%name(i:i)=blank
+#endif
+
+          FWD(ng)%head(i:i)=blank
           FWD(ng)%base(i:i)=blank
           FWD(ng)%name(i:i)=blank
 
+          GRD(ng)%head(i:i)=blank
           GRD(ng)%base(i:i)=blank
           GRD(ng)%name(i:i)=blank
 
+          GST(ng)%head(i:i)=blank
           GST(ng)%base(i:i)=blank
           GST(ng)%name(i:i)=blank
 
+          HAR(ng)%head(i:i)=blank
           HAR(ng)%base(i:i)=blank
           HAR(ng)%name(i:i)=blank
 
+          HIS(ng)%head(i:i)=blank
           HIS(ng)%base(i:i)=blank
           HIS(ng)%name(i:i)=blank
 
+          HSS(ng)%head(i:i)=blank
           HSS(ng)%base(i:i)=blank
           HSS(ng)%name(i:i)=blank
 
+          IAD(ng)%head(i:i)=blank
           IAD(ng)%base(i:i)=blank
           IAD(ng)%name(i:i)=blank
 
+          INI(ng)%head(i:i)=blank
           INI(ng)%base(i:i)=blank
           INI(ng)%name(i:i)=blank
 
+          IRP(ng)%head(i:i)=blank
           IRP(ng)%base(i:i)=blank
           IRP(ng)%name(i:i)=blank
 
+          ITL(ng)%head(i:i)=blank
           ITL(ng)%base(i:i)=blank
           ITL(ng)%name(i:i)=blank
 
+          LCZ(ng)%head(i:i)=blank
           LCZ(ng)%base(i:i)=blank
           LCZ(ng)%name(i:i)=blank
 
+          LZE(ng)%head(i:i)=blank
           LZE(ng)%base(i:i)=blank
           LZE(ng)%name(i:i)=blank
 
+          NUD(ng)%head(i:i)=blank
           NUD(ng)%base(i:i)=blank
           NUD(ng)%name(i:i)=blank
 
+          OBS(ng)%head(i:i)=blank
           OBS(ng)%base(i:i)=blank
           OBS(ng)%name(i:i)=blank
 
+#if defined W4DPSAS_FCT_SENSITIVITY && defined OBS_SPACE
+          OIFA(ng)%head(i:i)=blank
+          OIFA(ng)%base(i:i)=blank
+          OIFA(ng)%name(i:i)=blank
+
+          OIFB(ng)%head(i:i)=blank
+          OIFB(ng)%base(i:i)=blank
+          OIFB(ng)%name(i:i)=blank
+#endif
+
+          QCK(ng)%head(i:i)=blank
           QCK(ng)%base(i:i)=blank
           QCK(ng)%name(i:i)=blank
 
+          RST(ng)%head(i:i)=blank
           RST(ng)%base(i:i)=blank
           RST(ng)%name(i:i)=blank
 
+          SSF(ng)%head(i:i)=blank
           SSF(ng)%base(i:i)=blank
           SSF(ng)%name(i:i)=blank
 
+          STA(ng)%head(i:i)=blank
           STA(ng)%base(i:i)=blank
           STA(ng)%name(i:i)=blank
 
+          TLF(ng)%head(i:i)=blank
           TLF(ng)%base(i:i)=blank
           TLF(ng)%name(i:i)=blank
 
+          TLM(ng)%head(i:i)=blank
           TLM(ng)%base(i:i)=blank
           TLM(ng)%name(i:i)=blank
 
+          TIDE(ng)%head(i:i)=blank
           TIDE(ng)%base(i:i)=blank
           TIDE(ng)%name(i:i)=blank
 
+          NRM(1:4,ng)%head(i:i)=blank
           NRM(1:4,ng)%base(i:i)=blank
           NRM(1:4,ng)%name(i:i)=blank
 
+          STD(1:4,ng)%head(i:i)=blank
           STD(1:4,ng)%base(i:i)=blank
           STD(1:4,ng)%name(i:i)=blank
         END DO

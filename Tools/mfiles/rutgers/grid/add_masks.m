@@ -15,9 +15,9 @@ function add_masks(ncfile, gname)
 %    gname        Source NetCDF containing land/sea mask variables (string)
 %
 
-% svn $Id: add_masks.m 899 2018-03-20 22:25:24Z arango $
+% svn $Id: add_masks.m 996 2020-01-10 04:28:56Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

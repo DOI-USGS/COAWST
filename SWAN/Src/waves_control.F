@@ -26,7 +26,6 @@
 
       implicit none
 
-
       PRIVATE
       PUBLIC  :: SWAN_driver_init
       PUBLIC  :: SWAN_driver_run
@@ -60,7 +59,6 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: MyCOMM
-!     real(m4), intent(in)  :: CouplingTime             ! single precision
 !
 !  Local variable declarations.
 !
@@ -197,7 +195,7 @@
 !=======================================================================
 !
       USE swan_iounits
-      USE mod_coupler_kinds
+      USE mct_coupler_params
       USE M_PARALL
       USE M_PARALL2
       USE SWCOMM3
@@ -205,8 +203,6 @@
       USE M_MPI
 !
 !  Imported variable declarations.
-!
-!     real(m4), intent(in)  :: CouplingTime             ! single precision
 !
 !  Local variable declarations.
 !

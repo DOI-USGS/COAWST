@@ -1,7 +1,7 @@
 !
-!svn $Id: npzd_iron_mod.h 921 2018-09-06 18:27:34Z arango $
+!svn $Id: npzd_iron_mod.h 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -65,7 +65,7 @@
       integer :: iSDet                  ! Small detritus concentration
 #ifdef IRON_LIMIT
       integer :: iFphy                  ! Phytoplankton-associated iron
-      integer :: iFdis                  ! Available disolved iron
+      integer :: iFdis                  ! Available dissolved iron
 #endif
 !
 !  Biological parameters.

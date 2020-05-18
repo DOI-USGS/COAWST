@@ -88,9 +88,6 @@
 # if defined SED_MORPH
      &                       SEDBED(ng) % bed_thick,                    &
 # endif
-# ifdef SED_SLUMP
-     &                       OCEAN(ng) % vbar,                          &
-# endif
      &                       SEDBED(ng) % ursell_no,                    &
      &                       SEDBED(ng) % RR_asymwave,                  &
      &                       SEDBED(ng) % beta_asymwave,                &
@@ -98,8 +95,9 @@
      &                       SEDBED(ng) % ustrc_wbl,                    &
      &                       SEDBED(ng) % thck_wbl,                     &
      &                       SEDBED(ng) % udelta_wbl,                   &
-     &                       SEDBED(ng) % phi_wc,                       &
+     &                       SEDBED(ng) % phic_sgwbl,                   &
      &                       SEDBED(ng) % fd_wbl,                       &
+     &                       SEDBED(ng) % phi_wc,                       &
      &                       GRID(ng) % h,                              &
      &                       GRID(ng) % om_r,                           &
      &                       GRID(ng) % om_u,                           &
@@ -145,14 +143,12 @@
 # if defined SED_MORPH
      &                             bed_thick,                           &
 # endif
-# ifdef SED_SLUMP
-     &                             vbar,                                &
-# endif
      &                             ursell_no,                           &
      &                             RR_asymwave, beta_asymwave,          &
      &                             ksd_wbl, ustrc_wbl,                  &
      &                             thck_wbl, udelta_wbl,                &
-     &                             phi_wc, fd_wbl,                      &
+     &                             phic_sgwbl,                          &
+     &                             fd_wbl, phi_wc,                      &
      &                             h, om_r, om_u, on_r, on_v,           &
      &                             zeta,                                &
      &                             ucrest_r, utrough_r,                 &
@@ -213,9 +209,6 @@
 #  if defined SED_MORPH
       real(r8), intent(inout):: bed_thick(LBi:,LBj:,:)
 #  endif
-# ifdef SED_SLUMP
-      real(r8), intent(in):: vbar(LBi:,LBj:,:)
-# endif
       real(r8), intent(inout) :: ursell_no(LBi:,LBj:)
       real(r8), intent(inout) :: RR_asymwave(LBi:,LBj:)
       real(r8), intent(inout) :: beta_asymwave(LBi:,LBj:)
@@ -223,8 +216,9 @@
       real(r8), intent(inout) :: ustrc_wbl(LBi:,LBj:)
       real(r8), intent(inout) :: thck_wbl(LBi:,LBj:)
       real(r8), intent(inout) :: udelta_wbl(LBi:,LBj:)
-      real(r8), intent(inout) :: phi_wc(LBi:,LBj:)
+      real(r8), intent(inout) :: phic_sgwbl(LBi:,LBj:)
       real(r8), intent(inout) :: fd_wbl(LBi:,LBj:)
+      real(r8), intent(inout) :: phi_wc(LBi:,LBj:)
 !
       real(r8), intent(in) :: h(LBi:,LBj:)
       real(r8), intent(in) :: om_r(LBi:,LBj:)
@@ -273,9 +267,6 @@
 #  if defined SED_MORPH
       real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,2)
 #  endif
-# ifdef SED_SLUMP
-      real(r8), intent(in):: vbar(LBi:UBi,LBj:UBj,3)
-# endif
       real(r8), intent(inout) :: ursell_no(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: RR_asymwave(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: beta_asymwave(LBi:UBi,LBj:UBj)
@@ -283,8 +274,9 @@
       real(r8), intent(inout) :: ustrc_wbl(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: thck_wbl(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: udelta_wbl(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: phi_wc(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: phic_sgwbl(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: fd_wbl(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: phi_wc(LBi:UBi,LBj:UBj)
 !
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_r(LBi:UBi,LBj:UBj)
@@ -338,22 +330,19 @@
       real(r8) :: theta_cx, theta_cy, theta_tx, theta_ty
       real(r8) :: mag_theta_c, mag_theta_t
       real(r8) :: mag_bstrc
-!
       real(r8) :: om_cc, om_tt, om_ct, om_tc
-!        
-!      real(r8) :: cff, cff1, cff2, cff3
       real(r8) :: smgd_3
+!
       real(r8) :: bedld_cx, bedld_cy
       real(r8) :: bedld_tx, bedld_ty
       real(r8) :: bedld_x, bedld_y
 !
-      real(r8) :: wavecycle
-!     real(r8) :: Zref
+      real(r8) :: wavecycle, alphac, alphaw
+      real(r8) :: twopi, otwopi, sqrt2
 !
 # ifdef SED_SLUMP
-      real(r8) :: sedslope_wet, sedslope_dry, slopefac_wet, slopefac_dry
+      real(r8) :: slopefac_wet_local, slopefac_dry_local
 # endif
-!     real(r8), parameter :: min_theta = 1.0E-7_r8
       real(r8), parameter :: eps = 1.0E-14_r8
 !
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
@@ -366,6 +355,9 @@
 # include "set_bounds.h"
 !
 !
+      twopi=2.0_r8*pi
+      otwopi=1.0_r8/twopi
+      sqrt2=SQRT(2.0_r8)
 # ifdef BEDLOAD
 !
 !-----------------------------------------------------------------------
@@ -373,6 +365,8 @@
 !-----------------------------------------------------------------------
 !
       sed_angle=DTAN(33.0_r8*pi/180.0_r8)
+      alphac=bedload_vandera_alphac(ng)
+      alphaw=bedload_vandera_alphaw(ng)
 !
       DO j=Jstrm1,Jendp1
         DO i=Istrm1,Iendp1
@@ -380,12 +374,7 @@
 ! Compute angle between currents and waves, measure CCW from current
 ! direction toward wave vector.
 !
-          IF (Ur(i,j).eq.0.0_r8) THEN
-            phic(i,j)=pi*SIGN(1.0_r8,Vr(i,j))
-          ELSE
-            phic(i,j)=ATAN2(Vr(i,j),Ur(i,j))
-          ENDIF
-          phi_cw=1.5_r8*pi-Dwave(i,j)-phic(i,j)-angler(i,j)
+          phi_cw=1.5_r8*pi-Dwave(i,j)-phic_sgwbl(i,j)-angler(i,j)
 !
 ! Compute angle between waves and current, measure CCW from wave 
 ! towards current vector
@@ -426,10 +415,10 @@
             mag_bstrc=SQRT(bustrc(i,j)*bustrc(i,j)+                     &
      &                     bvstrc(i,j)*bvstrc(i,j))
 !
-            uhat=urms*SQRT(2.0_r8)
-            ahat=uhat*Td/(2.0_r8*pi)
+            uhat=urms*sqrt2
+            ahat=uhat*Td*otwopi
             k_wn=kh(Td,depth)/depth                ! Wave number 
-            c_w=2*pi/(k_wn*Td)                     ! Wave speed
+            c_w=2.0_r8*pi/(k_wn*Td)                ! Wave speed
 !
 ! VA-2013 equation 1 is solved in 3 sub-steps
 !
@@ -465,8 +454,8 @@
 ! VA2013 Equation 10, 11.
 !-----------------------------------------------------------------------
 !
-            ucrest_r(i,j)=0.5_r8*sqrt(2.0_r8)*uhat_c
-            utrough_r(i,j)=0.5_r8*sqrt(2.0_r8)*uhat_t
+            ucrest_r(i,j)=0.5_r8*sqrt2*uhat_c
+            utrough_r(i,j)=0.5_r8*sqrt2*uhat_t
 !
             smgd=(rhos/rho0-1.0_r8)*g*d50
             osmgd=1.0_r8/smgd
@@ -496,7 +485,8 @@
 !
             CALL half_wave_cycle_stress_factors( T_cu, T_crest(i,j),    &
      &                                           ahat, ksw,             &
-     &                                          fd_wbl(i,j), alpha,     &
+     &                                           fd_wbl(i,j), alpha,    &
+     &                                           alphac, alphaw,        &
      &                                           d50, osmgd,            &
      &              ucrest_r(i,j), uhat_c, udelta_wbl(i,j), phi_curwave,&
      &                                           tau_wRe,               &
@@ -512,7 +502,7 @@
      &                              d50, d50_mix, rhos, c_w,            &
      &                              eta, dsf_c,                         &
      &                              T_crest(i,j), T_cu, uhat_c,         &
-     &                              mag_theta_c, om_cc, om_tc )
+     &                              mag_theta_c, om_cc, om_ct )
 !
 !-----------------------------------------------------------------------
 ! 2. Bed shear stress (Shields parameter) for Trough half cycle 
@@ -521,7 +511,8 @@
 !
             CALL half_wave_cycle_stress_factors( T_tu, T_trough(i,j),   &
      &                                           ahat, ksw,             &
-     &                                         fd_wbl(i,j), alpha,      &
+     &                                           fd_wbl(i,j), alpha,    &
+     &                                           alphac, alphaw,        &
      &                                           d50, osmgd,            &
      &             utrough_r(i,j), uhat_t, udelta_wbl(i,j), phi_curwave,&
      &                                           tau_wRe,               &
@@ -537,7 +528,7 @@
      &                              d50, d50_mix, rhos, c_w,            &
      &                              eta, dsf_t,                         &
      &                              T_trough(i,j), T_tu, uhat_t,        &
-     &                              mag_theta_t, om_tt, om_ct )
+     &                              mag_theta_t, om_tt, om_tc )
 !
 !-----------------------------------------------------------------------
 ! 3. Compute sediment load entrained during each trough half cycle
@@ -654,15 +645,15 @@
      &                    om_r(i,j)*on_r(i,j)*ABS(FE_r(i,j))/           &
      &                    bedld_mass)*                                  &
      &                    SIGN(1.0_r8,FE_r(i,j))
-#   ifdef MASKING
-#    ifdef WET_DRY
+#  ifdef MASKING
+#   ifdef WET_DRY
             FX_r(i,j)=FX_r(i,j)*rmask_wet(i,j)
             FE_r(i,j)=FE_r(i,j)*rmask_wet(i,j)
-#    else
+#   else
             FX_r(i,j)=FX_r(i,j)*rmask(i,j)
             FE_r(i,j)=FE_r(i,j)*rmask(i,j)
-#    endif
 #   endif
+#  endif
           END DO
         END DO
 !
@@ -748,18 +739,16 @@
           DO i=Istr,Iend+1
             cff1=0.5_r8*(1.0_r8+SIGN(1.0_r8,FX_r(i,j)))
             cff2=0.5_r8*(1.0_r8-SIGN(1.0_r8,FX_r(i,j)))
-!            FX(i,j)=0.5_r8*(1.0_r8+SIGN(1.0_r8,FX_r(i-1,j)))*           &
-!     &              (cff1*FX_r(i-1,j)+                                  &
-!     &               cff2*0.5_r8*(FX_r(i-1,j)+FX_r(i,j)))+              &
-!     &              0.5_r8*(1.0_r8-SIGN(1.0_r8,FX_r(i-1,j)))*           &
-!     &              (cff2*FX_r(i  ,j)+                                  &
-!     &               cff1*0.5_r8*(FX_r(i-1,j)+FX_r(i,j)))
+#  ifdef JCW_ADVECT
             FX(i,j)=0.5_r8*(1.0_r8+SIGN(1.0_r8,FX_r(i-1,j)))*           &
      &              (cff1*FX_r(i-1,j)+                                  &
      &               cff2*(FX_r(i-1,j)+FX_r(i,j)))+                     &
      &              0.5_r8*(1.0_r8-SIGN(1.0_r8,FX_r(i-1,j)))*           &
      &              (cff2*FX_r(i  ,j)+                                  &
      &               cff1*0.0_r8*(FX_r(i-1,j)+FX_r(i,j)))
+#  else
+            FX(i,j)=0.5_r8*(FX_r(i-1,j)+FX_r(i,j))
+#  endif
 #  ifdef SLOPE_KIRWAN
             cff1=10.0_r8
             dzdx=(h(i,j)-h(i-1  ,j))/om_u(i,j)
@@ -783,18 +772,16 @@
           DO i=IstrR,IendR
             cff1=0.5_r8*(1.0_r8+SIGN(1.0_r8,FE_r(i,j)))
             cff2=0.5_r8*(1.0_r8-SIGN(1.0_r8,FE_r(i,j)))
-!            FE(i,j)=0.5_r8*(1.0_r8+SIGN(1.0_r8,FE_r(i,j-1)))*           &
-!     &              (cff1*FE_r(i,j-1)+                                  &
-!     &               cff2*0.5_r8*(FE_r(i,j-1)+FE_r(i,j)))+              &
-!     &              0.5_r8*(1.0_r8-SIGN(1.0_r8,FE_r(i,j-1)))*           &
-!     &              (cff2*FE_r(i  ,j)+                                  &
-!     &               cff1*0.5_r8*(FE_r(i,j-1)+FE_r(i,j)))
+#  ifdef JCW_ADVECT
             FE(i,j)=0.5_r8*(1.0_r8+SIGN(1.0_r8,FE_r(i,j-1)))*           &
      &              (cff1*FE_r(i,j-1)+                                  &
      &               cff2*(FE_r(i,j-1)+FE_r(i,j)))+                     &
      &              0.5_r8*(1.0_r8-SIGN(1.0_r8,FE_r(i,j-1)))*           &
      &              (cff2*FE_r(i  ,j)+                                  &
      &               cff1*0.0_r8*(FE_r(i,j-1)+FE_r(i,j)))
+#  else
+            FE(i,j)=0.5_r8*(FE_r(i,j-1)+FE_r(i,j))
+#  endif
 #  ifdef SLOPE_KIRWAN
             cff1=10.0_r8
             dzdy=(h(i,j)-h(i  ,j-1))/on_v(i,j)
@@ -820,111 +807,97 @@
 !  and  at the wet/dry interface.
 !
 !  sedslopes are the critical slopes to allow slumping.
-        sedslope_wet=0.25_r8
-        sedslope_dry=1.00_r8
-!
 !  slopefac are the scale factors for sediment movement.
-!
-        cff2=Srho(ised,ng)*(1.0_r8-bed(i,j,1,iporo))
-        slopefac_dry=cff2*dt(ng)/10.0_r8
-        slopefac_wet=cff2*dt(ng)/10.0_r8
-!
-#   ifdef SED_MORPH
-        slopefac_wet=slopefac_wet*morph_fac(ised,ng)
-        slopefac_dry=slopefac_dry*morph_fac(ised,ng)
-#   endif
 !
 !  U-direction slumping
 !
         DO j=Jstr,Jend
           DO i=Istr,Iend+1
+            cff2=Srho(ised,ng)*(1.0_r8-bed(i,j,1,iporo))
+            slopefac_dry_local=cff2*dt(ng)*slopefac_dry(ng)
+            slopefac_wet_local=cff2*dt(ng)*slopefac_wet(ng)
+#   ifdef SED_MORPH
+            slopefac_wet_local=slopefac_wet_local*morph_fac(ised,ng)
+            slopefac_dry_local=slopefac_dry_local*morph_fac(ised,ng)
+#   endif
             dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
             dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)
+!           dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
+!           dzdy=(bed(i,j,1,ithck)-bed(i,j-1,1,ithck))/on_v(i,j)
             dzdxdy=sqrt(dzdx**2.0_r8+dzdy**2.0_r8)
 !  For the wet part
-            cff=ABS(dzdxdy)-sedslope_wet
+            cff=ABS(dzdxdy)-sedslope_crit_wet(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
             cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
-            cff2=cff*slopefac_wet*SIGN(1.0_r8,dzdx)
-#  ifdef MASKING
-            cff2=cff2*umask(i,j)
+            cff2=cff*slopefac_wet_local*SIGN(1.0_r8,dzdx)
+#   ifdef MASKING
+             cff2=cff2*umask(i,j)
 #   ifdef WET_DRY
             cff2=cff2*umask_wet(i,j)
+#    endif
 #   endif
-#  endif
             FX(i,j)=FX(i,j)+cff2
 !  For the dry part
-            cff=ABS(dzdx)-sedslope_dry
+            cff=ABS(dzdx)-sedslope_crit_dry(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
             cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
-            cff2=cff*slopefac_dry*SIGN(1.0_r8,dzdx)
-#  ifdef MASKING
+            cff2=cff*slopefac_dry_local*SIGN(1.0_r8,dzdx)
+#   ifdef MASKING
             cff2=cff2*umask(i,j)
-#   ifdef WET_DRY
-            cff2=cff2*(1.0_r8-umask_wet(i,j))
+#    ifdef WET_DRY
+!            cff2=cff2*umask_wet(i,j)
+!             cff2=cff2*(1.0_r8-umask_wet(i,j))
+            cff2=cff2*(1.0_r8-umask_wet(i,j))*                          &
+     &                ((1.0_r8-umask_wet(i-1,j))*umask_wet(i+1,j)+      &
+     &                 (1.0_r8-umask_wet(i+1,j))*umask_wet(i-1,j))
+#    endif
 #   endif
-#  endif
             FX(i,j)=FX(i,j)+cff2
-#  ifdef BEDLOAD_VANDERA_LIMIT
-            cff=20.0_r8*2.0_r8*dt(ng)/(pn(i-1,j)+pn(i,j))
-            FX(i,j)=MIN(ABS(FX(i,j)),cff)*SIGN(1.0_r8,FX(i,j))
-#  endif
-!
-!  For the lateral shear.
-!
-            cff1=0.5_r8*(vbar(i-1,j,1)+vbar(i-1,j+1,1))
-            cff2=0.5_r8*(vbar(i,j,1)+vbar(i,j+1,1))
-            cff=(cff2-cff1)*0.5_r8*(pm(i-1,j)+pm(i,j))
-!           cff2=MAX(ABS(cff)-0.25_r8,0.0_r8)
-            cff2=MAX(ABS(cff)-0.01_r8,0.0_r8)
-!           cff2=cff2*SIGN(1.0_r8,cff)*100.0_r8
-            cff2=cff2*SIGN(1.0_r8,dzdx)*0.00_r8
-#  ifdef MASKING
-            cff2=cff2*umask(i,j)
-#   ifdef WET_DRY
-            cff2=cff2*(1.0_r8-umask_wet(i,j))
-#   endif
-#  endif
-            FX(i,j)=FX(i,j)+cff2
-#  ifdef BEDLOAD_VANDERA_LIMIT
-            cff=20.0_r8*2.0_r8*dt(ng)/(pn(i-1,j)+pn(i,j))
-            FX(i,j)=MIN(ABS(FX(i,j)),cff)*SIGN(1.0_r8,FX(i,j))
-#  endif
           END DO
         END DO
+!
         DO j=Jstr,Jend+1
           DO i=Istr,Iend
-            dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)
+            cff2=Srho(ised,ng)*(1.0_r8-bed(i,j,1,iporo))
+            slopefac_dry_local=cff2*dt(ng)*slopefac_dry(ng)
+            slopefac_wet_local=cff2*dt(ng)*slopefac_wet(ng)
+#   ifdef SED_MORPH
+            slopefac_wet_local=slopefac_wet_local*morph_fac(ised,ng)
+            slopefac_dry_local=slopefac_dry_local*morph_fac(ised,ng)
+#   endif
+            dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)   ! positive is downhill
             dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
+!           dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
+!           dzdy=(bed(i,j,1,ithck)-bed(i,j-1,1,ithck))/on_v(i,j)
             dzdxdy=sqrt(dzdx**2.0_r8+dzdy**2.0_r8)
 ! For the wet part
-            cff=ABS(dzdxdy)-sedslope_wet
+            cff=ABS(dzdxdy)-sedslope_crit_wet(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
             cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
-            cff2=cff*slopefac_wet*SIGN(1.0_r8,dzdy)
-#  ifdef MASKING
+            cff2=cff*slopefac_wet_local*SIGN(1.0_r8,dzdy)
+#   ifdef MASKING
             cff2=cff2*vmask(i,j)
-#   ifdef WET_DRY
+#    ifdef WET_DRY
             cff2=cff2*vmask_wet(i,j)
+#    endif
 #   endif
-#  endif
             FE(i,j)=FE(i,j)+cff2
 ! For the dry part
-            cff=ABS(dzdy)-sedslope_dry
+            cff=ABS(dzdy)-sedslope_crit_dry(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
             cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
-            cff2=cff*slopefac_dry*SIGN(1.0_r8,dzdy)
-#  ifdef MASKING
+            cff2=cff*slopefac_dry_local*SIGN(1.0_r8,dzdy)
+#   ifdef MASKING
             cff2=cff2*vmask(i,j)
-#   ifdef WET_DRY
-            cff2=cff2*(1.0_r8-vmask_wet(i,j))
+#    ifdef WET_DRY
+!            cff2=cff2*vmask_wet(i,j)
+!           cff2=cff2*(1.0_r8-vmask_wet(i,j))
+            cff2=cff2*(1.0_r8-vmask_wet(i,j))*                          &
+     &                ((1.0_r8-vmask_wet(i,j-1))*vmask_wet(i,j+1)+      &
+     &                 (1.0_r8-vmask_wet(i,j+1))*vmask_wet(i,j-1))
+#    endif
 #   endif
-#  endif
             FE(i,j)=FE(i,j)+cff2
-#  ifdef BEDLOAD_VANDERA_LIMIT
-            cff=20.0_r8*2.0_r8*dt(ng)/(pm(i,j)+pm(i,j-1))
-            FE(i,j)=MIN(ABS(FE(i,j)),cff)*SIGN(1.0_r8,FE(i,j))
-#  endif
           END DO
         END DO
 #  endif
@@ -932,31 +905,57 @@
 ! Limit fluxes to prevent bottom from breaking thru water surface.
 !
         DO j=Jstr,Jend
-          DO i=Istr,Iend
+          DO i=Istr,Iend+1
 !
-! Total thickness available.
+! Compute Total thickness available and change.
 !
-            Dstp=MAX(z_w(i,j,N(ng))-z_w(i,j,0)-Dcrit(ng),0.0_r8)
-!
-! Thickness change that wants to occur.
-!
-            rhs_bed=(FX(i+1,j)-FX(i,j)+                                 &
-     &               FE(i,j+1)-FE(i,j))*pm(i,j)*pn(i,j)
-            bed_change=rhs_bed/(Srho(ised,ng)*(1.0_r8-bed(i,j,1,iporo)))
+            IF (FX(i,j).ge.0.0_r8) THEN
+             Dstp=z_w(i,j,1)-z_w(i,j,0)
+!              Dstp=z_w(i,j,N(ng))-z_w(i,j,0)
+              rhs_bed=FX(i,j)*pm(i,j)*pn(i,j)
+              bed_change=rhs_bed/(Srho(ised,ng)*                        &
+     &                   (1.0_r8-bed(i,j,1,iporo)))
+            ELSE
+              Dstp=z_w(i-1,j,1)-z_w(i-1,j,0)
+!              Dstp=z_w(i-1,j,N(ng))-z_w(i-1,j,0)
+              rhs_bed=ABS(FX(i,j))*pm(i-1,j)*pn(i-1,j)
+              bed_change=rhs_bed/(Srho(ised,ng)*                        &
+     &                   (1.0_r8-bed(i-1,j,1,iporo)))
+            END IF
 !
 ! Limit that change to be less than available.
 !
-            cff=MAX(bed_change-Dstp,0.0_r8)
+!           cff=MAX(bed_change-0.75_r8*Dstp,0.0_r8)
+            cff=MAX(bed_change-1.00_r8*Dstp,0.0_r8)
             cff1=cff/ABS(bed_change+eps)
+            FX(i,j)=FX(i,j)*(1.0_r8-cff1)
+          END DO
+        END DO
+        DO j=Jstr,Jend+1
+          DO i=Istr,Iend
 !
-! Only worry about this if the change is accretional.
+! Compute Total thickness available and change.
 !
-            cff=SIGN(1.0_r8,bed_change)
-            cff1=cff1*0.5_r8*(1.0_r8-cff)
-!            FX(i+1,j  )=FX(i+1,j  )*(1.0_r8-cff1)
-!            FX(i  ,j  )=FX(i  ,j  )*(1.0_r8-cff1)
-!            FE(i  ,j+1)=FE(i  ,j+1)*(1.0_r8-cff1)
-!            FE(i  ,j  )=FE(i  ,j  )*(1.0_r8-cff1)
+            IF (FE(i,j).ge.0.0_r8) THEN
+              Dstp=z_w(i,j,1)-z_w(i,j,0)
+!              Dstp=z_w(i,j,N(ng))-z_w(i,j,0)
+              rhs_bed=FE(i,j)*pm(i,j)*pn(i,j)
+              bed_change=rhs_bed/(Srho(ised,ng)*                        &
+     &                   (1.0_r8-bed(i,j,1,iporo)))
+            ELSE
+              Dstp=z_w(i,j-1,1)-z_w(i,j-1,0)
+!              Dstp=z_w(i,j-1,N(ng))-z_w(i,j-1,0)
+              rhs_bed=ABS(FE(i,j))*pm(i,j-1)*pn(i,j-1)
+              bed_change=rhs_bed/(Srho(ised,ng)*                        &
+     &                   (1.0_r8-bed(i,j-1,1,iporo)))
+            END IF
+!
+! Limit that change to be less than available.
+!
+!           cff=MAX(bed_change-0.75_r8*Dstp,0.0_r8)
+            cff=MAX(bed_change-1.00_r8*Dstp,0.0_r8)
+            cff1=cff/ABS(bed_change+eps)
+            FE(i,j)=FE(i,j)*(1.0_r8-cff1)
           END DO
         END DO
 !
@@ -1335,7 +1334,7 @@
 !  T_c, T_t, T_cu, T_tu: Updated time periods in half cycles 
 !                        based on current velocity
 !**********************************************************************
-!
+! 
       USE mod_grid
       USE mod_kinds
       USE mod_scalars
@@ -1366,7 +1365,7 @@
 !  Local variables
 ! 
       integer  :: iter
-      integer,  parameter :: total_iters=10
+      integer,  parameter :: total_iters=15
       real(r8), parameter :: tol=0.001_r8, von_k=0.41_r8
       real(r8), parameter :: eps=1.0E-14_r8
       real(r8), parameter :: crs_fac=1.0_r8
@@ -1405,12 +1404,9 @@
       theta_timeavg_old=0.0_r8
 !
 # if defined BEDLOAD_VANDERA_MADSEN
-      fd=fd_calc_new(udelta, mag_bstrc)
-!
-#  ifdef BEDLOAD_VANDERA_ZEROCURR
+      fd=fd_calc_madsen(udelta, mag_bstrc)
+# elif defined BEDLOAD_VANDERA_ZEROCURR
       fd=0.0_r8
-#  endif
-!
 # endif
 !
       DO iter=1,total_iters
@@ -1423,56 +1419,28 @@
 !
         fw=fw_calc(ahat, ksw)
 !
+# if defined BEDLOAD_VANDERA_DIRECT_UDELTA
+!
+! Calculate current-related bed roughness from VA2013 Appendix A.1
+! dont need ksd if fd is directly computed from mag_bustrc
+        ksd=ksd_calc(d50, d90, mu_calc(d50), theta_timeavg, eta, rlen)
+!
+! Calculate friction factor from ksd, udelta, delta
+!
+        fd=fd_calc_santoss(udelta, sg_zwbl(ng), ksd)
+!
+# endif
+!
 ! Calculate Time-averaged absolute Shields stress VA2013 Appendix Eq. A.3
 !
-#if defined BEDLOAD_VANDERA_MADSEN
         theta_timeavg=osmgd*(0.5_r8*fd*udelta**2.0_r8+                  &
      &                       0.25_r8*fw*uhat**2.0_r8)
-#else
-        theta_timeavg=osmgd*(mag_bstrc+0.25_r8*fw*uhat**2.0_r8)
-#endif
 !
         IF(ABS(theta_timeavg-theta_timeavg_old).lt.tol) THEN
           EXIT
         ENDIF
         theta_timeavg_old=theta_timeavg
       END DO
-!
-#if ! defined BEDLOAD_VANDERA_MADSEN
-!
-! Calculate full-cycle current friction factor from VA2013 Eqn. 20
-!
-!      fd=fd_calc(umag_curr, Zref, ksd)
-!
-! Calculate current-related bed roughness from VA2013 Appendix A.1
-! dont need ksd if fd is directly computed from mag_bustrc
-      ksd=ksd_calc(d50, d90, mu_calc(d50), theta_timeavg, eta, rlen)
-!
-! This is commented now because we calculate current friction factor
-! from current-based shear stress
-! udelta is the current velocity at the wave boundary layer
-!      ustarw=0.5_r8*fw*uhat**2.0_r8
-!
-      ustarw=SQRT(0.5_r8*fw*uhat**2.0_r8)
-      delw=2.0_r8*von_k*ustarw/omega
-!
-      IF(thck_wbl_inp(ng).gt.0.0_r8) THEN
-        delw=thck_wbl_inp(ng)
-      ENDIF
-!
-! Can also hardwire delw
-! Calculate the current velocity at a location at the height of wave boundary layer
-!
-      ustrc=SQRT(mag_bstrc)  ! ustarc
-      IF(uhat.eq.0.0_r8) THEN
-        udelta=0.05_r8
-      ELSE
-        udelta=MAX( ((ustrc/von_k)*log(30.0*delw/ksd)), eps )
-      ENDIF
-!
-      fd=fd_calc_new(udelta, mag_bstrc)
-!
-#endif 
 !
 ! Calculate full-cycle current friction factor from VA2013 Eqn. 20
 ! use the stress from COAWST and corresponding current velocity 
@@ -1482,13 +1450,14 @@
       fwd=alpha*fd+(1.0-alpha)*fw
 !
       k_wn=kh(Td,depth)/depth     ! Wave number 
-      c_w=2*pi/(k_wn*Td)          ! Wave speed
+      c_w=2.0_r8*pi/(k_wn*Td)          ! Wave speed
       alpha_w=0.424_r8
 !
-      tau_wRe=0.0_r8
 !
 #  ifdef BEDLOAD_VANDERA_WAVE_AVGD_STRESS
       tau_wRe=MAX((rho0*fwd*alpha_w*uhat**3.0_r8/(2.0_r8*c_w)),eps)
+#  else 
+      tau_wRe=0.0_r8
 #  endif
 !        
 ! Compute the change in time period based on converged udelta 
@@ -1508,6 +1477,7 @@
 !
       SUBROUTINE half_wave_cycle_stress_factors( T_iu, T_i, ahat, ksw,  &
      &                                           fd, alpha,             &
+     &                                           alphac, alphaw,        &
      &                                           d50, osmgd,            &
      &                                ui_r, uhat_i, udelta, phi_curwave,&
      &                                           tau_wRe,               &
@@ -1532,6 +1502,7 @@
 !       
       real(r8), intent(in) :: T_iu, T_i, ahat, ksw
       real(r8), intent(in) :: fd, alpha
+      real(r8), intent(in) :: alphac, alphaw
       real(r8), intent(in) :: d50, osmgd
       real(r8), intent(in) :: ui_r, uhat_i, udelta, phi_curwave
       real(r8), intent(in) :: tau_wRe
@@ -1571,8 +1542,8 @@
 !    as well as full cycle orbital velocity and excursion
 !-----------------------------------------------------------------------
 !
-      ui_rx=ui_r+udelta*COS(phi_curwave)
-      ui_ry=udelta*SIN(phi_curwave)
+      ui_rx=udelta*COS(phi_curwave)*alphac+ui_r*alphaw
+      ui_ry=udelta*SIN(phi_curwave)*alphac
 !
 ! mag_ui is set to a min value to avoid non-zero division
 !
@@ -1837,7 +1808,13 @@
 !
       cff=EXP((p3-log10(Ur))/p4)
       B=p1+((p2-p1)/(1.0_r8+cff))
+!
       psi=-90.0_r8*deg2rad*(1.0_r8-TANH(p5/Ur**p6))
+!
+#  ifdef BEDLOAD_VANDERA_ASYM_LIMITS
+      B=MIN(B,0.8554_r8) ! according to fig.2, max values w.r.t Ur=24
+      psi=MAX(psi,-1.4233_r8) 
+#  endif     
 ! 
 ! Markaley and Davies, equation provides bb which is "b" in paper
 ! Check from where CRS found these equations

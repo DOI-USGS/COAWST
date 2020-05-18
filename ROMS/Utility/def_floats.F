@@ -2,9 +2,9 @@
 #ifdef FLOATS
       SUBROUTINE def_floats (ng, ldef)
 !
-!svn $Id: def_floats.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: def_floats.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -56,8 +56,8 @@
       integer :: fltdim, i, itrc, j, l
       integer :: recdim, status
 
-      integer :: DimIDs(32), fgrd(2), start(2), total(2)
-      integer :: Vsize(4)
+      integer :: DimIDs(nDimID)
+      integer :: fgrd(2), start(2), total(2)
 
       integer :: def_dim, varid
 
@@ -137,6 +137,11 @@
      &                 __FILE__)) RETURN
 #  endif
 #  ifdef ECOSIM
+        status=def_dim(ng, iNLM, FLT(ng)%ncid, ncname, 'Nbands',        &
+     &                 NBands, DimIDs(33))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+
         status=def_dim(ng, iNLM, FLT(ng)%ncid, ncname, 'Nphy',          &
      &                 Nphy, DimIDs(25))
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
@@ -346,7 +351,8 @@
 # endif
           status=def_var(ng, iNLM, FLT(ng)%ncid, fltVid(idxspc,ng),     &
      &                   NF_FOUT, 2, fgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
           Vinfo( 1)='y'
           Vinfo( 2)='y-location of floats trajectories'
           Vinfo( 3)='meter'

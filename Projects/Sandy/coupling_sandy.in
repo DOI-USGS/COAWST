@@ -40,6 +40,7 @@
    NnodesATM =  1                   ! atmospheric model
    NnodesWAV =  1                   ! wave model
    NnodesOCN =  1                   ! ocean model
+   NnodesHYD =  0                   ! hydrology model
 
 ! Time interval (seconds) between coupling of models.
 
@@ -49,6 +50,8 @@
   TI_WAV2OCN =   1800.0d0              ! wave to ocean coupling interval
   TI_OCN2WAV =   1800.0d0              ! ocean to wave coupling interval
   TI_OCN2ATM =   1800.0d0              ! ocean to atmosphere coupling interval
+  TI_OCN2HYD =     0.0d0              ! ocean to hydro coupling interval
+  TI_HYD2OCN =     0.0d0              ! hydro to ocean coupling interval
 
 ! Enter names of Atm, Wav, and Ocn input files.
 ! The Wav program needs multiple input files, one for each grid.
@@ -56,8 +59,9 @@
    ATM_name = namelist.input                            ! atmospheric model
    WAV_name = Projects/Sandy/swan_sandy.in \
               Projects/Sandy/swan_sandy_ref3.in         ! wave model
-!  WAV_name = WW3/work/ww3_grid.inp
+!  WAV_name = ww3_grid.inp
    OCN_name = Projects/Sandy/ocean_sandy.in             ! ocean model
+   HYD_name = hydro.namelist                            ! hydro model
 
 ! Sparse matrix interpolation weights files. You have 2 options:
 ! Enter "1" for option 1, or "2" for option 2, and then list the 
@@ -72,7 +76,7 @@
 
 !  SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_moving.nc
    SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_static.nc
-!  SCRIP_COAWST_NAME = Projects/Sandy/scrip_sandy_nowavenest.nc
+!  SCRIP_COAWST_NAME = Projects/Sandy/WW3/scrip_sandy_nowavenest.nc
 
 ! Option 2: THIS OPTION WILL BE REMOVED IN FUTURE VERSIONS.
 !           IF you set "SCRIP_WEIGHT_OPTION = 2", then enter 

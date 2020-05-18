@@ -18,14 +18,35 @@
       use read_swan 
       use read_roms 
       use read_wrf
+      use read_hydro
       use read_ww3
       use create_masks
 
       implicit none
-
+#ifdef MPI
+      include 'mpif.h'
+!      integer (kind=int_kind) :: MyError, MyRank, Nnodes
+      integer (kind=int_kind) :: MyRank, Nnodes
+#endif
+      integer (kind=int_kind) :: MyComm
 !     local variables
       character(len=char_len)   :: inputfile
-
+!
+#ifdef MPI
+!  Initialize MPI execution environment.
+!
+      CALL mpi_init (MyError)
+!
+!  Get rank of the local process in the group associated with the
+!  comminicator.
+!
+      CALL mpi_comm_size (MPI_COMM_WORLD, Nnodes, MyError)
+      CALL mpi_comm_rank (MPI_COMM_WORLD, MyRank, MyError)
+      MyComm=MPI_COMM_WORLD
+#else
+      MyComm=0
+#endif
+!
 !     Reading input file 
       call getarg(1,inputfile)
 !     inputfile = arg1
@@ -46,51 +67,79 @@
         write(stdout,*) 'Num SWAN grids = ', Ngrids_swan
       end if
       if (Ngrids_swan>0) then 
+        write(stdout,*) 'Reading SWAN grids'
         call load_swan_grid()
       end if
       if (Ngrids_ww3>0) then 
+        write(stdout,*) 'Reading WW3 grids'
         call load_ww3_grid()
       end if
       if (Ngrids_roms>0) then
+        write(stdout,*) 'Reading ROMS grids'
         call load_roms_grid()
       end if
       if (Ngrids_wrf>0) then
-        call load_wrf_grid()
+        write(stdout,*) 'Reading WRF grids'
+        call load_wrf_grid( MyComm )
+      end if
+      if (Ngrids_hyd>0) then
+        write(stdout,*) 'Reading HYD grids'
+        call load_hydro_grid( MyComm )
       end if
 
 !     Calculate interpolation weights between combinations of grids
       if ((Ngrids_roms>0).and.(Ngrids_swan>0)) then 
-        call ocn2wav_mask()
+        write(stdout,*) 'Calling ocn2wav_mask'
+        call ocn2wav_mask(MyComm)
       end if
       if ((Ngrids_roms>0).and.(Ngrids_ww3>0)) then 
-        call ocn2ww3_mask()
+        write(stdout,*) 'Calling ocn2ww3_mask'
+        call ocn2ww3_mask(MyComm)
       end if
       if ((Ngrids_roms>0).and.(Ngrids_wrf>0))  then 
-        call ocn2atm_mask()
+        write(stdout,*) 'Calling ocn2atm_mask'
+        call ocn2atm_mask(MyComm)
       end if
 
       if ((Ngrids_swan>0).and.(Ngrids_roms>0)) then 
-        call wav2ocn_mask()
+        write(stdout,*) 'Calling wav2ocn_mask'
+        call wav2ocn_mask(MyComm)
       end if 
       if ((Ngrids_swan>0).and.(Ngrids_wrf>0)) then
-        call wav2atm_mask()
+        write(stdout,*) 'Calling wav2atm_mask'
+        call wav2atm_mask(MyComm)
       end if
       if ((Ngrids_ww3>0).and.(Ngrids_roms>0)) then 
-        call ww32ocn_mask()
+        write(stdout,*) 'Calling ww32ocn_mask'
+        call ww32ocn_mask(MyComm)
       end if 
       if ((Ngrids_ww3>0).and.(Ngrids_wrf>0)) then
-        call ww32atm_mask()
+        write(stdout,*) 'Calling ww32atm_mask'
+        call ww32atm_mask(MyComm)
       end if
 
       if ((Ngrids_wrf>0).and.(Ngrids_roms>0)) then
-        call atm2ocn_mask()
+        write(stdout,*) 'Calling atm2ocn_mask'
+        call atm2ocn_mask(MyComm)
       end if
       if ((Ngrids_wrf>0).and.(Ngrids_swan>0)) then
-        call atm2wav_mask()
+        write(stdout,*) 'Calling atm2wav_mask'
+        call atm2wav_mask(MyComm)
       end if
       if ((Ngrids_wrf>0).and.(Ngrids_ww3>0)) then
-        call atm2ww3_mask()
+        write(stdout,*) 'Calling atm2ww3_mask'
+        call atm2ww3_mask(MyComm)
       end if
+
+      if ((Ngrids_hyd>0).and.(Ngrids_roms>0)) then
+        write(stdout,*) 'Calling hyd2ocn_mask'
+        call hyd2ocn_mask(MyComm)
+      end if
+      if ((Ngrids_roms>0).and.(Ngrids_hyd>0)) then
+        write(stdout,*) 'Calling ocn2hyd_mask'
+        call ocn2hyd_mask(MyComm)
+      end if
+
 
       end program scrip_coawst
 
@@ -108,13 +157,13 @@
 
 !     Allocate input variables
       namelist /inputs/ Ngrids_roms, Ngrids_swan, Ngrids_ww3,           &
-     &                  Ngrids_wrf,                                     &
+     &                  Ngrids_wrf,  Ngrids_hyd,                        &
      &                  roms_grids, swan_coord, swan_bath,              &
      &                  swan_numx, swan_numy, cartesian,                &
      &                  ww3_xcoord, ww3_ycoord, ww3_bath,               &
      &                  ww3_numx, ww3_numy,                             &
      &                  wrf_grids, parent_grid_ratio, parent_id,        &
-     &                  output_ncfile
+     &                  output_ncfile, hydro_grids
 
       write(stdout,*)"================================================"
       write(stdout,*) ' Read input_file for SCRIP_COAWST Wrapper '
@@ -125,12 +174,14 @@
       write(stdout,*) "Ngrid_swan=",Ngrids_swan
       write(stdout,*) "Ngrid_ww3= ",Ngrids_ww3
       write(stdout,*) "Ngrid_wrf =",Ngrids_wrf
+      write(stdout,*) "Ngrid_hyd =",Ngrids_hyd
 
 !     Total number of grid interpolation combinations 
       Ngrids_comb_total=(Ngrids_roms*Ngrids_swan +                      &
      &                   Ngrids_roms*Ngrids_wrf  +                      &
      &                   Ngrids_swan*Ngrids_wrf  +                      & 
      &                   Ngrids_roms*Ngrids_ww3  +                      &
+     &                   Ngrids_roms*Ngrids_hyd  +                      &
      &                   Ngrids_ww3*Ngrids_wrf)*2
 
       write(stdout,*) "Common netcdf file is: ",output_ncfile
@@ -152,6 +203,10 @@
       end do 
       do i = 1,Ngrids_wrf
         write(*,10)"Input WRF grid ", i,"=", TRIM(ADJUSTL(wrf_grids(i)))
+      end do 
+      do i = 1,Ngrids_hyd
+        write(*,10)"Input Hydro grid ", i,"=",                          &
+     &              TRIM(ADJUSTL(hydro_grids(i)))
       end do 
       write(stdout,*)"================================================"
  10   FORMAT(A16, 1X, I1, A3, 1X, A)

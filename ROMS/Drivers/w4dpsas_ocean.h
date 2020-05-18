@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: w4dpsas_ocean.h 937 2019-01-28 06:13:04Z arango $
+!svn $Id: w4dpsas_ocean.h 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -246,18 +246,6 @@
      &                 __FILE__)) RETURN
       END DO
 #endif
-!
-!-----------------------------------------------------------------------
-!  Create 4D-Var analysis file that used as initial conditions for the
-!  next data assimilation cycle.
-!-----------------------------------------------------------------------
-!
-      DO ng=1,Ngrids
-        LdefDAI(ng)=.TRUE.
-        CALL def_dai (ng)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
-      END DO
 
       RETURN
       END SUBROUTINE ROMS_initialize
@@ -321,7 +309,7 @@
 #endif
       integer :: my_inner, my_outer
       integer :: Lbck, Lini, Rec, Rec1, Rec2
-      integer :: i, ng, status, tile
+      integer :: i, lstr, ng, status, tile
       integer :: Fcount, NRMrec
 #ifdef RPCG
       integer :: ADrec, nADrec, nLAST
@@ -397,8 +385,12 @@
         wrtNLmod(ng)=.TRUE.
         wrtRPmod(ng)=.FALSE.
         wrtTLmod(ng)=.FALSE.
+#if defined BULK_FLUXES && defined NL_BULK_FLUXES
+        LreadBLK(ng)=.FALSE.
+#endif
+        LreadFWD(ng)=.FALSE.
         RST(ng)%Rindex=0
-        Fcount=RST(ng)%Fcount
+        Fcount=RST(ng)%load
         RST(ng)%Nrec(Fcount)=0
       END DO
 
@@ -415,9 +407,19 @@
 !
       DO ng=1,Ngrids
         INI(ng)%Rindex=1
-        Fcount=INI(ng)%Fcount
+        Fcount=INI(ng)%load
         INI(ng)%Nrec(Fcount)=1
         CALL wrt_ini (ng, 1)
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+      END DO
+!
+!  Create 4D-Var analysis file that used as initial conditions for the
+!  next data assimilation cycle now that grid information is known.
+!
+      DO ng=1,Ngrids
+        LdefDAI(ng)=.TRUE.
+        CALL def_dai (ng)
         IF (FoundError(exit_flag, NoError, __LINE__,                    &
      &                 __FILE__)) RETURN
       END DO
@@ -428,18 +430,10 @@
       DO ng=1,Ngrids
         LdefHIS(ng)=.TRUE.
         LwrtHIS(ng)=.TRUE.
-        WRITE (HIS(ng)%name,10) TRIM(FWD(ng)%base), outer
+        WRITE (HIS(ng)%name,10) TRIM(FWD(ng)%head), outer
+        lstr=LEN_TRIM(HIS(ng)%name)
+        HIS(ng)%base=HIS(ng)%name(1:lstr-3)
       END DO
-
-#if defined BULK_FLUXES && defined NL_BULK_FLUXES
-!
-!  Set file name containing the nonlinear model bulk fluxes to be read
-!  and processed by other algorithms.
-!
-      DO ng=1,Ngrids
-        BLK(ng)%name=HIS(ng)%name
-      END DO
-#endif
 !
 !:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 !  Model-error covariance normalization and stardard deviation factors.
@@ -606,12 +600,16 @@
 #ifdef AVERAGES
         LdefAVG(ng)=.TRUE.
         LwrtAVG(ng)=.TRUE.
-        WRITE (AVG(ng)%name,10) TRIM(AVG(ng)%base), outer
+        WRITE (AVG(ng)%name,10) TRIM(AVG(ng)%head), outer
+        lstr=LEN_TRIM(AVG(ng)%name)
+        AVG(ng)%base=AVG(ng)%name(1:lstr-3)
 #endif
 #ifdef DIAGNOSTICS
         LdefDIA(ng)=.TRUE.
         LwrtDIA(ng)=.TRUE.
-        WRITE (DIA(ng)%name,10) TRIM(DIA(ng)%base), outer
+        WRITE (DIA(ng)%name,10) TRIM(DIA(ng)%head), outer
+        lstr=LEN_TRIM(DIA(ng)%name)
+        DIA(ng)%base=DIA(ng)%name(1:lstr-3)
 #endif
         wrtMisfit(ng)=.TRUE.
         wrtObsScale(ng)=.TRUE.
@@ -645,6 +643,35 @@
         wrtObsScale(ng)=.FALSE.
       END DO
 !
+!  Set structure for the nonlinear forward trajectory to be processed
+!  by the tangent linear and adjoint models. Also, set switches to
+!  process the FWD structure in routine "check_multifile". Notice that
+!  it is possible to split solution into multiple NetCDF files to reduce
+!  their size.
+!
+      CALL edit_multifile ('HIS2FWD')
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+      DO ng=1,Ngrids
+        LreadFWD(ng)=.TRUE.
+      END DO
+
+#if defined BULK_FLUXES && defined NL_BULK_FLUXES
+!
+!  Set structure for the nonlinear surface fluxes to be processed by
+!  by the tangent linear and adjoint models. Also, set switches to
+!  process the BLK structure in routine "check_multifile".  Notice that
+!  it is possible to split solution into multiple NetCDF files to reduce
+!  their size.
+!
+      CALL edit_multifile ('HIS2BLK')
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+      DO ng=1,Ngrids
+        LreadBLK(ng)=.TRUE.
+      END DO
+#endif
+!
 !  Report data penalty function.
 !
       DO ng=1,Ngrids
@@ -677,13 +704,6 @@
 !  Clean penalty array before next run of NL model.
 !
         FOURDVAR(ng)%NLPenalty=0.0_r8
-      END DO
-!
-!  Set forward basic state NetCDF ID to nonlinear model trajectory to
-!  avoid the inquiring stage.
-!
-      DO ng=1,Ngrids
-        FWD(ng)%ncid=HIS(ng)%ncid
       END DO
 !
 !-----------------------------------------------------------------------
@@ -723,13 +743,6 @@
       OUTER_LOOP : DO my_outer=1,Nouter
         outer=my_outer
         inner=0
-!
-!  Set basic state trajectory (X_n-1) file to previous outer loop file
-!  (outer-1).
-!
-        DO ng=1,Ngrids
-          WRITE (FWD(ng)%name,10) TRIM(FWD(ng)%base), outer-1
-        END DO
 !
 !  Clear tangent linear forcing arrays before entering inner-loop.
 !  This is very important since these arrays are non-zero and must
@@ -848,7 +861,7 @@
             DO ng=1,Ngrids
               WRTforce(ng)=.TRUE.
               IF (Nrun.gt.1) LdefADJ(ng)=.FALSE.
-              Fcount=ADM(ng)%Fcount
+              Fcount=ADM(ng)%load
               ADM(ng)%Nrec(Fcount)=0
               ADM(ng)%Rindex=0
             END DO
@@ -1071,7 +1084,7 @@
         DO ng=1,Ngrids
           WRTforce(ng)=.TRUE.
           IF (Nrun.gt.1) LdefADJ(ng)=.FALSE.
-          Fcount=ADM(ng)%Fcount
+          Fcount=ADM(ng)%load
           ADM(ng)%Nrec(Fcount)=0
           ADM(ng)%Rindex=0
         END DO
@@ -1121,7 +1134,7 @@
 !  error_covariance.
 !
           DO ng=1,Ngrids
-            Fcount=ADM(ng)%Fcount
+            Fcount=ADM(ng)%load
             Nrec(ng)=ADM(ng)%Nrec(Fcount)
           END DO
 #endif
@@ -1179,9 +1192,9 @@
             CALL wrt_frc_AD (ng, Lold(ng), INI(ng)%Rindex)
             IF (FoundError(exit_flag, NoError, __LINE__,                &
      &                     __FILE__)) RETURN
-          END DO
-#  endif
 # endif
+          END DO
+#endif
 #ifdef RPCG
 !
 ! Compute the augmented correction to the adjoint propagator.
@@ -1403,7 +1416,6 @@
 !
         END DO
 !
-!
 ! Gather the increments from the final inner-loop and
 ! save in record 3 of the ITL file. The current increment
 ! is in record 2 and the sum so far is in record 3.
@@ -1569,14 +1581,24 @@
 !  trajectory, X_n(t).
 !:::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 !
-!  Set new basic state trajectory for next outer loop.
+!  Set new basic state trajectory for next outer loop.  Notice that the
+!  LreadBLK and LreadFWD switches are turned off to suppress processing
+!  of the structures when "check_multifile" during nonlinear model
+!  execution.
 !
         DO ng=1,Ngrids
+          idefHIS(ng)=-1
           LdefHIS(ng)=.TRUE.
           LwrtHIS(ng)=.TRUE.
           wrtNLmod(ng)=.TRUE.
           wrtTLmod(ng)=.FALSE.
-          WRITE (HIS(ng)%name,10) TRIM(FWD(ng)%base), outer
+#if defined BULK_FLUXES && defined NL_BULK_FLUXES
+          LreadBLK(ng)=.FALSE.
+#endif
+          LreadFWD(ng)=.FALSE.
+          WRITE (HIS(ng)%name,10) TRIM(FWD(ng)%head), outer
+          lstr=LEN_TRIM(HIS(ng)%name)
+          HIS(ng)%base=HIS(ng)%name(1:lstr-3)
         END DO
 !
 !  If weak constraint, the impulses are time-interpolated at each
@@ -1612,7 +1634,7 @@
           indxSave(ng)=INI(ng)%Rindex
           INI(ng)%Rindex=outer+2
           RST(ng)%Rindex=0
-          Fcount=RST(ng)%Fcount
+          Fcount=RST(ng)%load
           RST(ng)%Nrec(Fcount)=0
         END DO
 
@@ -1640,14 +1662,20 @@
 !
         DO ng=1,Ngrids
 #ifdef AVERAGES
+          idefAVG(ng)=-1
           LdefAVG(ng)=.TRUE.
           LwrtAVG(ng)=.TRUE.
-          WRITE (AVG(ng)%name,10) TRIM(AVG(ng)%base), outer
+          WRITE (AVG(ng)%name,10) TRIM(AVG(ng)%head), outer
+          lstr=LEN_TRIM(AVG(ng)%name)
+          AVG(ng)%base=AVG(ng)%name(1:lstr-3)
 #endif
 #ifdef DIAGNOSTICS
+          idefDIA(ng)=-1
           LdefDIA(ng)=.TRUE.
           LwrtDIA(ng)=.TRUE.
-          WRITE (DIA(ng)%name,10) TRIM(DIA(ng)%base), outer
+          WRITE (DIA(ng)%name,10) TRIM(DIA(ng)%head), outer
+          lstr=LEN_TRIM(DIA(ng)%name)
+          DIA(ng)%base=DIA(ng)%name(1:lstr-3)
 #endif
           IF (Master) THEN
             WRITE (stdout,20) 'NL', ng, ntstart(ng), ntend(ng)
@@ -1676,6 +1704,35 @@
           wrtNLmod(ng)=.FALSE.
           wrtTLmod(ng)=.FALSE.
         END DO
+!
+!  Set structure for the nonlinear forward trajectory to be processed
+!  by the tangent linear and adjoint models. Also, set switches to
+!  process the FWD structure in routine "check_multifile".  Notice that
+!  it is possible to split solution into multiple NetCDF files to reduce
+!  their size.
+!
+      CALL edit_multifile ('HIS2FWD')
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+      DO ng=1,Ngrids
+        LreadFWD(ng)=.TRUE.
+      END DO
+
+#if defined BULK_FLUXES && defined NL_BULK_FLUXES
+!
+!  Set structure for the nonlinear surface fluxes to be processed by
+!  by the tangent linear and adjoint models. Also, set switches to
+!  process the BLK structure in routine "check_multifile".  Notice that
+!  it is possible to split solution into multiple NetCDF files to reduce
+!  their size.
+!
+      CALL edit_multifile ('HIS2BLK')
+      IF (FoundError(exit_flag, NoError, __LINE__,                      &
+     &               __FILE__)) RETURN
+      DO ng=1,Ngrids
+        LreadBLK(ng)=.TRUE.
+      END DO
+#endif
 !
 !  Report data penalty function.
 !
@@ -1710,14 +1767,6 @@
 !
           FOURDVAR(ng)%NLPenalty=0.0_r8
         END DO
-!
-!  Close current forward NetCDF file.
-!
-        DO ng=1,Ngrids
-          CALL netcdf_close (ng, iNLM, FWD(ng)%ncid)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END DO
 
 #ifdef RPCG
 !
@@ -1740,12 +1789,6 @@
 # endif
             END DO
 !$OMP END PARALLEL
-          END DO
-!
-!  Set FWDname to the new basic state just computed.
-!
-          DO ng=1,Ngrids
-            WRITE (FWD(ng)%name,10) TRIM(FWD(ng)%base), outer
           END DO
 !
 !  Initialize tangent linear model from initial impulse which is now
@@ -1951,7 +1994,7 @@
 !
         DO ng=1,Ngrids
           ADM(ng)%Rindex=0
-          Fcount=ADM(ng)%Fcount
+          Fcount=ADM(ng)%load
           ADM(ng)%Nrec(Fcount)=0
         END DO
 
@@ -2047,7 +2090,7 @@
         HIS(ng)%ncid=-1
       END DO
 !
- 10   FORMAT (a,'_',i3.3,'.nc')
+ 10   FORMAT (a,'_outer',i0,'.nc')
  20   FORMAT (/,1x,a,1x,'ROMS/TOMS: started time-stepping:',            &
      &        ' (Grid: ',i2.2,' TimeSteps: ',i8.8,' - ',i8.8,')',/)
  30   FORMAT (' (',i3.3,',',i3.3,'): ',a,' data penalty, Jdata = ',     &
@@ -2120,7 +2163,7 @@
             IF (Master) WRITE (stdout,10)
  10         FORMAT (/,' Blowing-up: Saving latest model state into ',   &
      &                ' RESTART file',/)
-            Fcount=RST(ng)%Fcount
+            Fcount=RST(ng)%load
             IF (LcycleRST(ng).and.(RST(ng)%Nrec(Fcount).ge.2)) THEN
               RST(ng)%Rindex=2
               LcycleRST(ng)=.FALSE.
@@ -2160,6 +2203,9 @@
 !
 !  Close IO files.
 !
+      DO ng=1,Ngrids
+        CALL close_inp (ng, iNLM)
+      END DO
       CALL close_out
 
       RETURN

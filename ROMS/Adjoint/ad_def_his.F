@@ -2,9 +2,9 @@
 #ifdef ADJOINT
       SUBROUTINE ad_def_his (ng, ldef)
 !
-!svn $Id: ad_def_his.F 889 2018-02-10 03:32:52Z arango $
+!svn $Id: ad_def_his.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -59,11 +59,11 @@
       integer :: MinnerDim, NinnerDim, NouterDim
       integer :: vardim(2)
 # endif
-      integer :: DimIDs(32), t2dgrd(3), u2dgrd(3), v2dgrd(3)
+      integer :: DimIDs(nDimID)
+      integer :: t2dgrd(3), u2dgrd(3), v2dgrd(3)
 # ifdef ADJUST_BOUNDARY
       integer :: t2dobc(4)
 # endif
-      integer :: Vsize(4)
 
       integer :: def_dim
 
@@ -248,6 +248,11 @@
 #  endif
 
 #  ifdef ECOSIM
+        status=def_dim(ng, iNLM, ADM(ng)%ncid, ncname, 'Nbands',        &
+     &                 NBands, DimIDs(33))
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
+
         status=def_dim(ng, iADM, ADM(ng)%ncid, ncname, 'Nphy',          &
      &                 Nphy, DimIDs(25))
         IF (FoundError(exit_flag, NoError, __LINE__,                    &

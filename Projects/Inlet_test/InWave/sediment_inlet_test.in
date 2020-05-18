@@ -46,6 +46,43 @@
 ! multiple connected grids, [1:Ngrids].
 
    Lsediment == T
+
+!------------------------------------------------------------------------------
+! Tracer horizontal and vertical advection scheme.
+!------------------------------------------------------------------------------
+!
+! Set horizontal and vertical advection schemes for sediment tracers.
+! A different advection scheme is allowed for each tracer. For example,
+! a positive-definite (monotonic) algorithm can be activated for
+! salinity and biological tracers, while a different one is set for
+! temperature. [1:NAT+NPT,Ngrids] values are expected.
+!
+!   Keyword    Advection Algorithm
+!
+!   A4         4th-order Akima (horizontal/vertical)
+!   C2         2nd-order centered differences (horizontal/vertical)
+!   C4         4th-order centered differences (horizontal/vertical)
+!   HSIMT      3th-order HSIMT-TVD (horizontal/vertical)
+!   MPDATA     recursive flux corrected MPDATA (horizontal/vertical)
+!   SPLINES    parabolic splines (only vertical)
+!   SU3        split third-order upstream (horizontal/vertical)
+!   U3         3rd-order upstream-biased (only horizontal)
+!
+! The user has the option of specifying the full Keyword or the first
+! two letters, regardless if using uppercase or lowercase. If nested
+! grids, specify values for each grid.
+
+   Hadvection == HSIMT                          ! idsed(:), compact
+
+   Vadvection == HSIMT                          ! idsed(:), compact
+
+! Adjoint-based algorithms can have different horizontal and schemes
+! for active and inert tracers.
+
+ad_Hadvection == U3                             ! idsed(:), compact
+
+ad_Vadvection == C4                             ! idsed(:), compact
+
 !
 !------------------------------------------------------------------------------
 !  Lateral boundary condition flags for all sediment tracers.
@@ -106,7 +143,7 @@ ad_LBC(isTvar) ==   Gra     Per     Clo     Per      ! idsed(:), compact
 
 ! Bed load transport rate coefficient. [1:Ngrids].
 
-   BEDLOAD_COEFF == 0.15d0
+   BEDLOAD_COEFF == 1.0d0
 
 ! Maximum biodiffusivity, [1:Ngrids].
 
@@ -124,9 +161,37 @@ ad_LBC(isTvar) ==   Gra     Per     Clo     Per      ! idsed(:), compact
 
    DBZM == 0.08d0
 
-! Depth of minimum biodiffusivity, [1:Ngrids]. 
+! Depth of minimum biodiffusivity, [1:Ngrids].
    
    DBZP == 0.01d0
+
+! Asymmetric bedload parameter: Elevation(m) for near-bottom current vel., [1:Ngrids].
+
+   SG_ZWBL == 0.1d0
+
+! Asymmetric bedload parameter: Sed slumping critical wet bed slope, [1:Ngrids].
+
+   SEDSLOPE_CRIT_WET ==  0.30d0
+
+! Asymmetric bedload parameter: Sed slumping critical dry bed slope, [1:Ngrids].
+
+   SEDSLOPE_CRIT_DRY == 0.05d0
+
+! Asymmetric bedload parameter: Sed slumping factor for wet bed slope, [1:Ngrids].
+
+   SLOPEFAC_WET ==  0.001d0
+
+! Asymmetric bedload parameter: Sed slumping factor for dry bed slope, [1:Ngrids].
+
+   SLOPEFAC_DRY == 0.001d0
+
+! Asymmetric bedload parameter: Scale factor for wave contribution to bed load, [1:Ngrids].
+
+   BEDLOAD_VANDERA_ALPHAW == 0.05d0
+   
+! Asymmetric bedload parameter: Scale factor for currents contribution to bed load, [1:Ngrids].
+
+   BEDLOAD_VANDERA_ALPHAC == 0.05d0
 
 ! Logical switches (TRUE/FALSE) to activate writing of bed layer
 ! parameters, [1:Ngrids] values expected.

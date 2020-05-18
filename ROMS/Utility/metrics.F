@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE metrics_mod
 !
-!svn $Id: metrics.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: metrics.F 995 2020-01-10 04:01:28Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -1211,8 +1211,8 @@
             IF (MOD(NVsteps(rec,is),2).ne.0) THEN
               NVsteps(rec,is)=NVsteps(rec,is)+1
             END IF
-# endif
           END IF
+# endif
         END DO
       END DO
 
@@ -1305,7 +1305,7 @@
                 Text='South bry Hconvolution, NHstepsB, DTsizeHB ='
               ELSE IF (ibry.eq.ieast) THEN
                 Text='East  bry Hconvolution, NHstepsB, DTsizeHB ='
-              ELSE IF (ibry.eq.isouth) THEN
+              ELSE IF (ibry.eq.inorth) THEN
                 Text='North bry Hconvolution, NHstepsB, DTsizeHB ='
               END IF
               IF (HdecayB(is,ibry,ng).gt.0.0_r8) THEN
@@ -1327,7 +1327,7 @@
                 Text='South bry Vconvolution, NVstepsB, DTsizeVB ='
               ELSE IF (ibry.eq.ieast) THEN
                 Text='East  bry Vconvolution, NVstepsB, DTsizeVB ='
-              ELSE IF (ibry.eq.isouth) THEN
+              ELSE IF (ibry.eq.inorth) THEN
                 Text='North bry Vconvolution, NVstepsB, DTsizeVB ='
               END IF
               IF (VdecayB(is,ibry,ng).gt.0.0_r8) THEN

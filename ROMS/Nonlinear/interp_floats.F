@@ -2,9 +2,9 @@
       MODULE interp_floats_mod
 #if defined NONLINEAR && defined FLOATS
 !
-!svn $Id: interp_floats.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: interp_floats.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group         Mark Hadfield   !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group         Mark Hadfield   !
 !    Licensed under a MIT/X style license             John M. Klinck   !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -86,7 +86,7 @@
       logical, intent(in) :: bounded(Nfloats(ng))
 # endif
 
-      real(r8), intent(in) :: Fspval
+      real(dp), intent(in) :: Fspval
 
       real(r8), intent(in) :: nudg(Lstr:Lend)
 

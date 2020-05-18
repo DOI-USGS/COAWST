@@ -6,7 +6,7 @@
 !   SET  [level]  [nor]  [depmin]  [maxmes]                                 &
 !        [maxerr]  [grav]  [rho] [cdcap] [uscap] [inrhog]                   &
 !        [hsrerr]  CARTesian|NAUTical  [pwtail]                             &
-!        [froudmax]  [sort]  CURV  [printf]  [prtest]
+!        [froudmax]  [icewind]  [sort]  [nsweep]  CURV  [printf]  [prtest]
 !
 !   MODE  / STATIONARY \  / TWODimensional
 !         \ DYNAMIC    /  \ ONEDimensional
@@ -23,6 +23,7 @@
 !
 !   INPgrid                                                                 &
 !      BOT | WLEV | CUR | VX | VY | FR | WI | WX | WY | NPLA | TURB | MUDL  &
+!      AICE | HICE                                                          &
 !
 !      | REG [xpinp] [ypinp] [alpinp]  [mxinp] [myinp]  [dxinp] [dyinp] |
 !      |                                                                |
@@ -38,9 +39,12 @@
 !   READgrid UNSTRUCtured <  TRIAngle \
 !                          | EASYmesh / 'fname'
 !
-!   READinp    BOTtom|WLevel|CURrent|FRiction|WInd|COOR|NPLAnts|TURB|MUDL   &
+!   READinp    BOTtom | WLevel | CURrent | FRiction | WInd | COOR | NPLAnts &
+!              TURB | MUDL | AICE | HICE                                    &
+!
 !        [fac]  / 'fname1'        \
 !               \ SERIES 'fname2' /  [idla] [nhedf] ([nhedt]) (nhedvec])    &
+!
 !        FREE | FORMAT 'form' | [idfm] | UNFORMATTED
 !
 !                              | WU
@@ -164,6 +168,8 @@
 !
 !   MUD  [layer]  [rhom]  [viscm]  [rhow]  [viscw]
 !
+!   IC4M2 [aice] [c0] [c1] [c2] [c3] [c4] [c5] [c6]
+!
 !   LIMiter [ursell] [qb]
 !
 !               | -> TRANSm [trcoef]                        |
@@ -178,7 +184,9 @@
 !        ( REFLec [reflc] <                   > )                           &
 !                          |    RDIFF [pown] |
 !
-!               LINe < [xp] [yp] >
+!        ( FREEboard [hgt] [gammat] [gammar] Quay )                         &
+!
+!        LINe < [xp] [yp] >
 !
 !   SETUP  [supcor]
 !
@@ -247,7 +255,7 @@
 !             DHSIGN|DRTM01|LEAK|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|DEPTH|  &
 !             TMBOT|QP|BFI|NPLANT|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP| &
 !             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS|LWAVP|  &
-!             DISTUR|TURB|DISMUD|DISSWELL|                                  &
+!             DISTUR|TURB|DISMUD|DISSWELL|AICE|DISICE|                      &
 !             PTHSIGN|PTRTP|PTWLEN|PTDIR|PTDSPR|PTWFRAC|PTSTEEP|PARTIT >    &
 !             ([unit]) (OUTPUT [tbegblk] [deltblk] SEC|MIN|HR|DAY)
 !
@@ -257,7 +265,7 @@
 !             DHSIGN|DRTM01|LEAK|TIME|TSEC|XP|YP|DIST|SETUP|TMM10|RTMM10|   &
 !             DEPTH|TMBOT|QP|BFI|WATLEV|BOTLEV|TPS|DISBOT|DISSURF|DISWCAP|  &
 !             GENE|GENW|REDI|REDQ|REDT|PROPA|PROPX|PROPT|PROPS|RADS|LWAVP|  &
-!             DISTUR|TURB|DISMUD|DISSWELL|                                  &
+!             DISTUR|TURB|DISMUD|DISSWELL|AICE|DISICE|                      &
 !             PTHSIGN|PTRTP|PTWLEN|PTDIR|PTDSPR|PTWFRAC|PTSTEEP >           &
 !             ([unit]) (OUTPUT [tbegtbl] [delttbl] SEC|MIN|HR|DAY)
 !

@@ -19,9 +19,9 @@ function wrt_palette(cmap, pname, varargin)
 %    wrt_palette(flipud(viridis), 'viridis_240_flip.dat', 240)
 %
 
-% svn $Id: wrt_palette.m 926 2018-10-09 21:53:45Z arango $
+% svn $Id: wrt_palette.m 996 2020-01-10 04:28:56Z arango $
 %===========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                              %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                              %
 %    Licensed under a MIT/X style license                                   %
 %    See License_ROMS.txt                           Hernan G. Arango        %
 %===========================================================================%

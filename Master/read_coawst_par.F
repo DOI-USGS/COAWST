@@ -38,6 +38,7 @@
       integer :: cdecode_line, cload_i, cload_r, count
 
       real(m8), dimension(100) :: Rval
+      real(m8), dimension(1) :: Readval
 
       character (len=1 ), parameter :: blank = ' '
       character (len=40) :: KeyWord
@@ -107,18 +108,32 @@
               Npts=cload_i(Nval, Rval, 1, NnodesWAV)
             ELSE IF (TRIM(KeyWord).eq.'NnodesOCN') THEN
               Npts=cload_i(Nval, Rval, 1, NnodesOCN)
+            ELSE IF (TRIM(KeyWord).eq.'NnodesHYD') THEN
+              Npts=cload_i(Nval, Rval, 1, NnodesHYD)
             ELSE IF (TRIM(KeyWord).eq.'TI_ATM2WAV') THEN
-              Npts=cload_r(Nval, Rval, 1, TI_ATM2WAV)
+              Npts=cload_r(Nval, Rval, 1, Readval)
+              TI_ATM2WAV=Readval(1)
             ELSE IF (TRIM(KeyWord).eq.'TI_ATM2OCN') THEN
-              Npts=cload_r(Nval, Rval, 1, TI_ATM2OCN)
+              Npts=cload_r(Nval, Rval, 1, Readval)
+              TI_ATM2OCN=Readval(1)
             ELSE IF (TRIM(KeyWord).eq.'TI_WAV2ATM') THEN
-              Npts=cload_r(Nval, Rval, 1, TI_WAV2ATM)
+              Npts=cload_r(Nval, Rval, 1, Readval)
+              TI_WAV2ATM=Readval(1)
             ELSE IF (TRIM(KeyWord).eq.'TI_WAV2OCN') THEN
-              Npts=cload_r(Nval, Rval, 1, TI_WAV2OCN)
+              Npts=cload_r(Nval, Rval, 1, Readval)
+              TI_WAV2OCN=Readval(1)
             ELSE IF (TRIM(KeyWord).eq.'TI_OCN2WAV') THEN
-              Npts=cload_r(Nval, Rval, 1, TI_OCN2WAV)
+              Npts=cload_r(Nval, Rval, 1, Readval)
+              TI_OCN2WAV=Readval(1)
             ELSE IF (TRIM(KeyWord).eq.'TI_OCN2ATM') THEN
-              Npts=cload_r(Nval, Rval, 1, TI_OCN2ATM)
+              Npts=cload_r(Nval, Rval, 1, Readval)
+              TI_OCN2ATM=Readval(1)
+            ELSE IF (TRIM(KeyWord).eq.'TI_OCN2HYD') THEN
+              Npts=cload_r(Nval, Rval, 1, Readval)
+              TI_OCN2HYD=Readval(1)
+            ELSE IF (TRIM(KeyWord).eq.'TI_HYD2OCN') THEN
+              Npts=cload_r(Nval, Rval, 1, Readval)
+              TI_HYD2OCN=Readval(1)
 # ifdef ROMS_MODEL
             ELSE IF (TRIM(KeyWord).eq.'OCN_name') THEN
               DO i=1,LEN(Iname)
@@ -149,6 +164,13 @@
                 Aname(i:i)=blank
               END DO
               Aname=TRIM(ADJUSTL(Cval(Nval)))
+# endif
+# ifdef WRFHYDRO_MODEL
+            ELSE IF (TRIM(KeyWord).eq.'HYD_name') THEN
+              DO i=1,LEN(Hname)
+                Hname(i:i)=blank
+              END DO
+              Hname=TRIM(ADJUSTL(Cval(Nval)))
 # endif
             END IF
             IF (TRIM(KeyWord).eq.'SCRIP_WEIGHT_OPTION') THEN
@@ -454,7 +476,7 @@
 !
       integer, intent(in) :: Ninp, Nout
       real(m8), intent(in) :: Vinp(Ninp)
-      integer, intent(out) :: Vout(Nout)
+      integer, intent(out) :: Vout
 !
 !  Local variable declarations.
 !
@@ -469,21 +491,10 @@
 !  for the rest of the array.
 !
       ic=0
-      IF (Ninp.le.Nout) THEN
-        DO i=1,Ninp
-          ic=ic+1
-          Vout(i)=INT(Vinp(i))
-        END DO
-        DO i=Ninp+1,Nout
-          ic=ic+1
-          Vout(i)=INT(Vinp(Ninp))
-        END DO
-      ELSE
-        DO i=1,Nout
-          ic=ic+1
-          Vout(i)=INT(Vinp(i))
-        END DO
-      END IF
+      DO i=1,Ninp
+        ic=ic+1
+        Vout=INT(Vinp(i))
+      END DO
       cload_i=ic
 
       RETURN

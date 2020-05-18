@@ -1,7 +1,7 @@
 /*
-** svn $Id: ecosim_wrt.h 889 2018-02-10 03:32:52Z arango $
+** svn $Id: ecosim_wrt.h 995 2020-01-10 04:01:28Z arango $
 *************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2019 The ROMS/TOMS Group                        **
+** Copyright (c) 2002-2020 The ROMS/TOMS Group                        **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -38,6 +38,18 @@
      &                      ncid = ncid)
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
+
+      IF (ncid.ne.DIA(ng)%ncid) THEN
+        CALL netcdf_put_fvar (ng, model, ncname, 'light',               &
+     &                        ec_wave_ab, (/1/), (/NBands/),            &
+     &                        ncid = ncid)
+#ifdef DIAGNOSTICS_BIO
+      ELSE
+        CALL netcdf_put_fvar (ng, model, ncname, 'light',               &
+     &                        dia_light, (/1/), (/NDbands/),            &
+     &                        ncid = ncid)
+#endif
+      END IF
 
       CALL netcdf_put_fvar (ng, model, ncname, 'HsNO3',                 &
      &                      HsNO3(:,ng), (/1/), (/Nphy/),               &

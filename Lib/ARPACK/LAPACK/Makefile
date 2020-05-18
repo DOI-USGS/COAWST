@@ -13,11 +13,11 @@
 #  Send bug reports, comments or suggestions to arpack.caam.rice.edu
 #
 ############################################################################
-#\SCCS Information: @(#) 
+#\SCCS Information: @(#)
 # FILE: Makefile   SID: 2.2   DATE OF SID: 9/24/96   RELEASE: 2
- 
+
 include ../ARmake.inc
- 
+
 ############################################################################
 #  To create or add to the library, enter make followed by one or
 #  more of the precisions desired.  Targets sdrv, ddrv, cdrv,
@@ -57,7 +57,7 @@ DOBJ  = dgeqr2.o dlabad.o dlacon.o dlacpy.o dladiv.o dlae2.o dlaev2.o\
 
 IOBJ  = ilaenv.o lsame.o lsamen.o xerbla.o xlaenv.o
 
-CIOBJ = icmax1.o 
+CIOBJ = icmax1.o
 
 ZIOBJ = izmax1.o
 
@@ -73,14 +73,14 @@ ZOBJ  = zgeqr2.o zlacon.o zlacpy.o zladiv.o zlahqr.o zlange.o zlanhs.o\
         zlatrs.o zmach.o  zrot.o   ztrevc.o ztrexc.o ztrsen.o ztrsyl.o\
         zunm2r.o\
         dzsum1.o dlabad.o dladiv.o dlamch.o dlapy2.o dlapy3.o dlaruv.o\
-        zpotrf.o zpotri zpotf2.o zlauum.o zlauu2.o ztrtri.o ztrti2.o
+        zpotrf.o zpotri.o zpotf2.o zlauum.o zlauu2.o ztrtri.o ztrti2.o
 #
 # The following LAPACK routines are not needed by ARPACK
 # source code.  They are used by the drivers in EXAMPLES
 # directory.
 #
 SDRVOBJ = sgbtf2.o sgbtrf.o sgbtrs.o sgttrf.o sgttrs.o spttrf.o spttrs.o\
-          slaswp.o  
+          slaswp.o
 
 DDRVOBJ = dgbtf2.o dgbtrf.o dgbtrs.o dgttrf.o dgttrs.o dpttrf.o dpttrs.o\
           dlaswp.o
@@ -95,11 +95,11 @@ ZDRVOBJ = zgbtrf.o zgbtrs.o zgbtf2.o zgttrf.o zgttrs.o zlaswp.o zlacgv.o
 	$(FC) $(FFLAGS) -c $<
 
 all: single double complex complex16 sdrv ddrv cdrv zdrv
- 
+
 single: $(SOBJ) $(IOBJ)
 	$(AR) $(ARFLAGS) $(ARPACKLIB) $(SOBJ) $(IOBJ)
 	$(RANLIB) $(ARPACKLIB)
- 
+
 double: $(DOBJ) $(IOBJ)
 	$(AR) $(ARFLAGS) $(ARPACKLIB) $(DOBJ) $(IOBJ)
 	$(RANLIB) $(ARPACKLIB)
@@ -110,7 +110,7 @@ complex: $(COBJ) $(CIOBJ) $(IOBJ)
 
 complex16: $(ZOBJ) $(ZIOBJ) $(IOBJ)
 	$(AR) $(ARFLAGS) $(ARPACKLIB) $(ZOBJ) $(ZIOBJ) $(IOBJ)
-	$(RANLIB) $(ARPACKLIB) 
+	$(RANLIB) $(ARPACKLIB)
 #
 # Add routines needed by driver programs (in the EXAMPLES
 # directory) to $(ARPACKLIB).

@@ -5,14 +5,14 @@
 #if defined VEGETATION && defined VEG_DRAG
 !
 !svn $Id: vegetation_drag.F 429 2015-05-26 10:10:26Z arango $
-!=======================================================================
-!  Copyright (c) 2002-2017 The ROMS/TOMS Group                         !
+!======================================================================!
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                   Alexander F. Shchepetkin   !
-!==================================================== John C. Warner ===
-!==================================================== Neil K. Ganju  ===
-!==================================================== Alexis Beudin  ===
-!==================================================Tarandeep S. Kalra===
+!==================================================== John C. Warner ==!
+!==================================================== Neil K. Ganju  ==!
+!==================================================== Alexis Beudin  ==!
+!==================================================Tarandeep S. Kalra==!
 !                                                                      !
 !  This routine computes the vegetation (posture-dependent) drag       !
 !  for rhs3d.F                                                         !
@@ -23,8 +23,8 @@
 !  buoyant and flexible aquatic vegetation, Limnology and Oceanography,!
 !   56(6): 2003-2017.                                                  !
 !                                                                      !
-!=======================================================================
-!
+!======================================================================!
+!                                                                      !
       implicit none
 
       PRIVATE
@@ -62,6 +62,9 @@
 # ifdef VEG_FLEX
      &                        VEG(ng) % bend,                           &
 # endif
+# if defined MARSH_DYNAMICS && defined MARSH_RETREAT
+     &                        VEG(ng) % marsh_mask,                     &
+# endif
      &                        VEG(ng) % ru_loc_veg,                     &
      &                        VEG(ng) % rv_loc_veg,                     &
      &                        VEG(ng) % ru_veg,                         &
@@ -87,6 +90,9 @@
 # ifdef VEG_FLEX
      &                              bend,                               &
 # endif
+# if defined MARSH_DYNAMICS && defined MARSH_RETREAT
+     &                              marsh_mask,                         &
+# endif
      &                              ru_loc_veg, rv_loc_veg,             &
      &                              ru_veg, rv_veg,                     &
      &                              step2d_uveg, step2d_vveg,           &
@@ -97,6 +103,13 @@
       USE mod_scalars
       USE mod_vegetation
       USE mod_vegarr
+      USE bc_3d_mod, ONLY: bc_r3d_tile
+      USE exchange_2d_mod
+      USE exchange_3d_mod
+# ifdef DISTRIBUTE
+      USE mp_exchange_mod, ONLY : mp_exchange2d,                       &
+     &                            mp_exchange3d, mp_exchange4d
+# endif
 !
 !  Imported variable declarations.
 !
@@ -109,10 +122,13 @@
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
-      real(r8), intent(in) :: plant(LBi:,LBj:,:,:)
+      real(r8), intent(inout) :: plant(LBi:,LBj:,:,:)
 #  ifdef VEG_FLEX
       real(r8), intent(inout) :: bend(LBi:,LBj:,:)
 #  endif
+# if defined MARSH_DYNAMICS && defined MARSH_RETREAT
+      real(r8), intent(inout) :: marsh_mask(LBi:,LBj:)
+# endif
       real(r8), intent(inout) :: ru_loc_veg(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: rv_loc_veg(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: ru_veg(LBi:,LBj:,:)
@@ -124,10 +140,13 @@
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
-      real(r8), intent(in) :: plant(LBi:UBi,LBj:UBj,NVEG,NVEGP)
+      real(r8), intent(inout) :: plant(LBi:UBi,LBj:UBj,NVEG,NVEGP)
 #  ifdef VEG_FLEX
       real(r8), intent(inout) :: bend(LBi:UBi,LBj:UBj,N(ng),NVEG)
 #  endif
+# if defined MARSH_DYNAMICS && defined MARSH_RETREAT 
+      real(r8), intent(inout) :: marsh_mask(LBi:UBi,LBj:UBj)
+# endif
       real(r8), intent(inout) ::                                        &
     &               ru_loc_veg(LBi:UBi,LBj:UBj,N(ng),NVEG),             &
     &               rv_loc_veg(LBi:UBi,LBj:UBj,N(ng),NVEG)
@@ -140,7 +159,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, j, k, iveg
+      integer :: i, j, k, ivpr, iveg
 ! 
       real(r8), parameter :: one_third  = 1.0_r8/3.0_r8
       real(r8), parameter :: one_twelfth  = 1.0_r8/12.0_r8
@@ -172,11 +191,31 @@
       cff=0.75_r8/dt(ng)
 # endif
 
+!
+# if defined MARSH_DYNAMICS && defined MARSH_RETREAT 
+      DO ivpr=1,NVEGP
+        DO iveg=1,NVEG
+          DO j=Jstr,Jend
+            DO i=Istr,Iend
+              plant(i,j,iveg,pdens)=plant(i,j,iveg,pdens)*             &
+     &                              marsh_mask(i,j)            
+              plant(i,j,iveg,phght)=plant(i,j,iveg,phght)*             &
+     &                              marsh_mask(i,j)            
+              plant(i,j,iveg,pthck)=plant(i,j,iveg,pthck)*             &
+     &                              marsh_mask(i,j)            
+              plant(i,j,iveg,pdiam)=plant(i,j,iveg,pdiam)*             &
+     &                              marsh_mask(i,j)            
+            END DO
+          END DO
+        END DO
+      END DO
+# endif 
+!
       VEG_LOOP: DO iveg=1,NVEG
         K_LOOP: DO k=1,N(ng)
           DO j=JstrV-1,Jend
             DO i=IstrU-1,Iend
-
+!
 # ifdef VEG_FLEX
 !
 ! Flexible vegetation
@@ -243,6 +282,21 @@
             END DO
           END DO
 !
+! Exchange boundary data 
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          wrk)
+      ENDIF
+
+!
+        CALL mp_exchange2d (ng, tile, iNLM, 1,                          &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    wrk(:,:)) 
+!
 ! Compute friction force (at cell faces)
 !
           DO j=Jstr,Jend
@@ -265,12 +319,13 @@
 # ifdef WET_DRY
               cff4=cff*0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))
               ru_veg(i,j,k)=SIGN(1.0_r8, ru_veg(i,j,k))*                &
-     &               MIN(ABS(ru_veg(i,j,k)),                            &
-     &                   ABS(u(i,j,k,nrhs))*cff4)
+     &                           MIN(ABS(ru_veg(i,j,k)),                &
+     &                               ABS(u(i,j,k,nrhs))*cff4)
 # endif
-
+!
             END DO
           END DO
+!
           DO j=JstrV,Jend
             DO i=Istr,Iend
               cff1=0.25_r8*(u(i  ,j  ,k,nrhs)+                          &
@@ -289,14 +344,65 @@
 # ifdef WET_DRY
               cff4=cff*0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))
               rv_veg(i,j,k)=SIGN(1.0_r8, rv_veg(i,j,k))*                &
-     &               MIN(ABS(rv_veg(i,j,k)),                            &
-     &                   ABS(v(i,j,k,nrhs))*cff4)
+     &                           MIN(ABS(rv_veg(i,j,k)),                &
+     &                               ABS(v(i,j,k,nrhs))*cff4)
 # endif
-
+!
             END DO
           END DO
         END DO K_LOOP
       END DO VEG_LOOP
+!
+! Exchange boundary data 
+!
+      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+        DO iveg=1,NVEG
+          CALL exchange_u3d_tile (ng, tile,                             &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          ru_loc_veg(:,:,:,iveg))
+          CALL exchange_v3d_tile (ng, tile,                             &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          rv_loc_veg(:,:,:,iveg))
+        END DO 
+        CALL exchange_u3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          ru_veg(:,:,:))
+        CALL exchange_v3d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj, 1, N(ng),           &
+     &                          rv_veg(:,:,:))
+      END IF
+!
+#  if defined MARSH_DYNAMICS && defined MARSH_RETREAT 
+      DO ivpr=1,NVEGP
+        CALL bc_r3d_tile (ng, tile,                                     &
+     &                          LBi, UBi, LBj, UBj, 1, NVEG,            &
+     &                          plant(:,:,:,ivpr))
+      END DO
+#  endif
+!
+# ifdef DISTRIBUTE
+!
+      CALL mp_exchange4d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng), 1, NVEG,        &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    ru_loc_veg(:,:,:,:),                          &
+     &                    rv_loc_veg(:,:,:,:))
+!
+      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj, 1, N(ng),                 &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    ru_veg, rv_veg)
+! 
+#  if defined MARSH_DYNAMICS && defined MARSH_RETREAT 
+      CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj, 1, NVEG, 1, NVEGP,        &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    plant(:,:,:,:))
+#  endif
+# endif
 !
 !-----------------------------------------------------------------------
 !  Add in resistance imposed on the flow by the vegetation (3D->2D).

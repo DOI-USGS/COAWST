@@ -1,7 +1,7 @@
 /*
-** svn $Id: mct_roms_swan.h 830 2017-01-24 21:21:11Z arango $
+** svn $Id: mct_roms_swan.h 995 2020-01-10 04:01:28Z arango $
 ***************************************************** John C. Warner ***
-** Copyright (c) 2002-2019 The ROMS/TOMS Group      Hernan G. Arango  **
+** Copyright (c) 2002-2020 The ROMS/TOMS Group      Hernan G. Arango  **
 **   Licensed under a MIT/X style license                             **
 **   See License_ROMS.txt                                             **
 ************************************************************************
@@ -32,7 +32,7 @@
 #endif
 #if defined VEGETATION && defined VEG_SWAN_COUPLING
       USE mod_vegetation
-      USE mod_vegarr 
+      USE mod_vegarr
 #endif
 !
 !  Imported variable definitions.
@@ -438,7 +438,7 @@
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
-#if defined VEGETATION && defined VEG_SWAN_COUPLING 
+#if defined VEGETATION && defined VEG_SWAN_COUPLING
 !
       to_add=':VEGDENS'
       cad=LEN_TRIM(to_add)
@@ -596,7 +596,7 @@
 #endif
 #if defined VEGETATION && defined VEG_SWAN_COUPLING
       USE mod_vegetation
-      USE mod_vegarr 
+      USE mod_vegarr
 #endif
 !
       USE exchange_2d_mod, ONLY : exchange_r2d_tile
@@ -620,7 +620,7 @@
       integer :: gtype, i, id, ifield, ij, j, k, status
 #if defined VEGETATION && defined VEG_SWAN_COUPLING
       integer :: iveg
-#endif	
+#endif
 
       real(r8), parameter ::  Lwave_min = 1.0_r8
       real(r8), parameter ::  Lwave_max = 500.0_r8
@@ -810,7 +810,7 @@
 #ifdef SOLVE3D
 # ifdef UV_KIRBY
       DO j=JstrR,JendR
-        DO i=IstrR,Iend
+        DO i=IstrR,IendR
           OCEAN(ng)%vwave(i,j)=vbar_rho(i,j)
         ENDDO
       ENDDO
@@ -876,7 +876,7 @@
 # else
 !         Specify this to be Madsen 0.05 minimum.
           A(ij)=MAX(0.05_r8, SEDBED(ng)%bottom(i,j,izNik)*30.0_r8)
-# endif 
+# endif
 #else
 !               This value will be replaced by the value entered in the
 !               SWAN INPUT file. See SWAN/Src/waves_coupler.F.
@@ -886,7 +886,7 @@
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "ZO",       &
      &                           A, Asize)
-#if defined VEGETATION && defined VEG_SWAN_COUPLING 
+#if defined VEGETATION && defined VEG_SWAN_COUPLING
 !
 !  Equivalent Plant density.
 !
@@ -1536,7 +1536,7 @@
 #ifdef WAVES_DSPR
 !
 !  wave directional spreading
-!  
+!
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WDSPR",    &
      &                           A, Asize)
       range(1)= Large
@@ -1565,7 +1565,7 @@
       END IF
 !
 !  wave spectrum peakedness
-!  
+!
       CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "WQP",      &
      &                           A, Asize)
       range(1)= Large
@@ -1592,7 +1592,7 @@
         write(stdout,40) 'SWANtoROMS Min/Max WQP     (-):     ',        &
      &                    range(1),range(2)
       END IF
-#endif 
+#endif
 !
 #if defined WAVES_OCEAN && defined WEC_VF && \
     defined BOTTOM_STREAMING && defined VEGETATION &&  \
@@ -1610,10 +1610,10 @@
         DO i=IstrR,IendR
           ij=ij+1
           cff=MAX(0.0_r8,A(ij)*ramp)*fac
-          IF (iw.eq.1) THEN 
+          IF (iw.eq.1) THEN
             VEG(ng)%Dissip_veg(i,j)=cff
           ELSE
-            VEG(ng)%Dissip_veg(i,j)=VEG(ng)%Dissip_veg(i,j)+            &    
+            VEG(ng)%Dissip_veg(i,j)=VEG(ng)%Dissip_veg(i,j)+            &
      &                              cff
           END IF
           range(1)=MIN(range(1),cff)

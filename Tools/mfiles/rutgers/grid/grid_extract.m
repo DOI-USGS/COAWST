@@ -32,9 +32,9 @@ function S = grid_extract(Ginp,Gout,Imin,Imax,Jmin,Jmax)
 %    S          Smaller Grid structure
 %
 
-% svn $Id: grid_extract.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: grid_extract.m 996 2020-01-10 04:28:56Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

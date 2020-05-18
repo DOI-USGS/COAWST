@@ -2,13 +2,18 @@
 !
 !svn $Id$
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!================================================ Tarandeep S. Kalra ===
+!================================================== Neil K. Ganju    ===
+!================================================== Jeremy Testa     ===
+!================================================  John C. Warner    ===
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
-!  This routine reads in Fennel et al. (2006) ecosystem model input    !
-!  parameters. They are specified in input script "estuarybgc.in".     !
+!  This routine reads in Kalra et al. (2020) SAV growth model and      !
+!  Fennel et al. (2006) ecosystem model input parameters.              !
+!  They are specified in input script "estuarybgc.in".                 !
 !                                                                      !
 !=======================================================================
 !
@@ -17,6 +22,8 @@
       USE mod_biology
       USE mod_ncparam
       USE mod_scalars
+!
+      USE inp_decode_mod
 !
       implicit none
 !
@@ -31,18 +38,16 @@
       integer :: iTrcStr, iTrcEnd
       integer :: i, ifield, igrid, itracer, itrc, ng, nline, status
 
-      integer :: decode_line, load_i, load_l, load_lbc, load_r
-
       logical, dimension(Ngrids) :: Lbio
       logical, dimension(NBT,Ngrids) :: Ltrc
 
       real(r8), dimension(NBT,Ngrids) :: Rbio
 
-      real(r8), dimension(200) :: Rval
+      real(dp), dimension(nRval) :: Rval
 
       character (len=40 ) :: KeyWord
       character (len=256) :: line
-      character (len=256), dimension(200) :: Cval
+      character (len=256), dimension(nCval) :: Cval
 !
 !-----------------------------------------------------------------------
 !  Initialize.
@@ -168,8 +173,8 @@
               Npts=load_r(Nval, Rval, Ngrids, KI)
             CASE ('SR')
               Npts=load_r(Nval, Rval, Ngrids, SR)
-            CASE ('LMBAMX')
-              Npts=load_r(Nval, Rval, Ngrids, LMBAMX)
+            CASE ('LMBMAX')
+              Npts=load_r(Nval, Rval, Ngrids, LMBMAX)
             CASE ('KMAG')
               Npts=load_r(Nval, Rval, Ngrids, KMAG)
             CASE ('ARSC')
@@ -178,8 +183,8 @@
               Npts=load_r(Nval, Rval, Ngrids, ARC)
             CASE ('BSRC')
               Npts=load_r(Nval, Rval, Ngrids, BSRC)
-            CASE ('RC')
-              Npts=load_r(Nval, Rval, Ngrids, RC)
+            CASE ('BRC')
+              Npts=load_r(Nval, Rval, Ngrids, BRC)
             CASE ('RtStTL')
               Npts=load_r(Nval, Rval, Ngrids, RtStTL)
             CASE ('DOWNt')
@@ -190,9 +195,35 @@
               Npts=load_r(Nval, Rval, Ngrids, TCRIT)
             CASE ('KM')
               Npts=load_r(Nval, Rval, Ngrids, KM)
+            CASE ('KN_EPB')
+              Npts=load_r(Nval, Rval, Ngrids, KN_EPB)
+            CASE ('KL_EPB')
+              Npts=load_r(Nval, Rval, Ngrids, KL_EPB)
+            CASE ('ARSC_EPB')
+              Npts=load_r(Nval, Rval, Ngrids, ARSC_EPB)
+            CASE ('ARC_EPB')
+              Npts=load_r(Nval, Rval, Ngrids, ARC_EPB)
+            CASE ('BRC_EPB')
+              Npts=load_r(Nval, Rval, Ngrids, BRC_EPB)
+            CASE ('BSRC_EPB')
+              Npts=load_r(Nval, Rval, Ngrids, BSRC_EPB)
+            CASE ('LMBMAX_EPB')
+              Npts=load_r(Nval, Rval, Ngrids, LMBMAX_EPB)
+            CASE ('GRZMX_EPB')
+              Npts=load_r(Nval, Rval, Ngrids, GRZMX_EPB)
+            CASE ('GRZK_EPB')
+              Npts=load_r(Nval, Rval, Ngrids, GRZK_EPB)
+            CASE ('TOPT_EPB')
+              Npts=load_r(Nval, Rval, Ngrids, TOPT_EPB)
+            CASE ('KMORT_EPB')
+              Npts=load_r(Nval, Rval, Ngrids, KMORT_EPB)
+            CASE ('SCL2_EPB')
+              Npts=load_r(Nval, Rval, Ngrids, SCL2_EPB)
+            CASE ('THTA2_EPB')
+              Npts=load_r(Nval, Rval, Ngrids, THTA2_EPB)
 #endif 
             CASE ('TNU2')
-              Npts=load_r(Nval, Rval, NBT*Ngrids, Rbio)
+              Npts=load_r(Nval, Rval, NBT, Ngrids, Rbio)
               DO ng=1,Ngrids
                 DO itrc=1,NBT
                   i=idbio(itrc)
@@ -200,7 +231,7 @@
                 END DO
               END DO
             CASE ('TNU4')
-              Npts=load_r(Nval, Rval, NBT*Ngrids, Rbio)
+              Npts=load_r(Nval, Rval, NBT, Ngrids, Rbio)
               DO ng=1,Ngrids
                 DO itrc=1,NBT
                   i=idbio(itrc)
@@ -208,7 +239,7 @@
                 END DO
               END DO
             CASE ('ad_TNU2')
-              Npts=load_r(Nval, Rval, NBT*Ngrids, Rbio)
+              Npts=load_r(Nval, Rval, NBT, Ngrids, Rbio)
               DO ng=1,Ngrids
                 DO itrc=1,NBT
                   i=idbio(itrc)
@@ -217,16 +248,16 @@
                 END DO
               END DO
             CASE ('ad_TNU4')
-              Npts=load_r(Nval, Rval, NBT*Ngrids, Rbio)
+              Npts=load_r(Nval, Rval, NBT, Ngrids, Rbio)
               DO ng=1,Ngrids
                 DO itrc=1,NBT
                   i=idbio(itrc)
                   ad_tnu4(i,ng)=Rbio(itrc,ng)
-                  ad_tnu4(i,ng)=Rbio(itrc,ng)
+                  tl_tnu4(i,ng)=Rbio(itrc,ng)
                 END DO
               END DO
             CASE ('LtracerSponge')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
               DO ng=1,Ngrids
                 DO itrc=1,NBT
                   i=idbio(itrc)
@@ -234,7 +265,7 @@
                 END DO
               END DO
             CASE ('AKT_BAK')
-              Npts=load_r(Nval, Rval, NBT*Ngrids, Rbio)
+              Npts=load_r(Nval, Rval, NBT, Ngrids, Rbio)
               DO ng=1,Ngrids
                 DO itrc=1,NBT
                   i=idbio(itrc)
@@ -242,7 +273,7 @@
                 END DO
               END DO
             CASE ('ad_AKT_fac')
-              Npts=load_r(Nval, Rval, NBT*Ngrids, Rbio)
+              Npts=load_r(Nval, Rval, NBT, Ngrids, Rbio)
               DO ng=1,Ngrids
                 DO itrc=1,NBT
                   i=idbio(itrc)
@@ -251,13 +282,59 @@
                 END DO
               END DO
             CASE ('TNUDG')
-              Npts=load_r(Nval, Rval, NBT*Ngrids, Rbio)
+              Npts=load_r(Nval, Rval, NBT, Ngrids, Rbio)
               DO ng=1,Ngrids
                 DO itrc=1,NBT
                   i=idbio(itrc)
                   Tnudg(i,ng)=Rbio(itrc,ng)
                 END DO
               END DO
+            CASE ('Hadvection')
+              IF (itracer.lt.NBT) THEN
+                itracer=itracer+1
+              ELSE
+                itracer=1                      ! next nested grid
+              END IF
+              itrc=idbio(itracer)
+              Npts=load_tadv(Nval, Cval, line, nline, itrc, igrid,      &
+     &                       itracer, idbio(iTrcStr), idbio(iTrcEnd),   &
+     &                       Vname(1,idTvar(itrc)),                     &
+     &                       Hadvection)
+            CASE ('Vadvection')
+              IF (itracer.lt.NBT) THEN
+                itracer=itracer+1
+              ELSE
+                itracer=1                      ! next nested grid
+              END IF
+              itrc=idbio(itracer)
+              Npts=load_tadv(Nval, Cval, line, nline, itrc, igrid,      &
+     &                       itracer, idbio(iTrcStr), idbio(iTrcEnd),   &
+     &                       Vname(1,idTvar(itrc)),                     &
+     &                       Vadvection)
+#if defined ADJOINT || defined TANGENT || defined TL_IOMS
+            CASE ('ad_Hadvection')
+              IF (itracer.lt.NBT) THEN
+                itracer=itracer+1
+              ELSE
+                itracer=1                      ! next nested grid
+              END IF
+              itrc=idbio(itracer)
+              Npts=load_tadv(Nval, Cval, line, nline, itrc, igrid,      &
+     &                       itracer, idbio(iTrcStr), idbio(iTrcEnd),   &
+     &                       Vname(1,idTvar(itrc)),                     &
+     &                       ad_Hadvection)
+            CASE ('Vadvection')
+              IF (itracer.lt.(NBT) THEN
+                itracer=itracer+1
+              ELSE
+                itracer=1                      ! next nested grid
+              END IF
+              itrc=idbio(itracer)
+              Npts=load_tadv(Nval, Cval, line, nline, itrc, igrid,      &
+     &                       itracer, idbio(iTrcStr), idbio(iTrcEnd),   &
+     &                       Vname(1,idTvar(itrc)),                     &
+     &                       ad_Vadvection)
+#endif
             CASE ('LBC(isTvar)')
               IF (itracer.lt.NBT) THEN
                 itracer=itracer+1
@@ -281,7 +358,7 @@
      &                      Vname(1,idTvar(idbio(itracer))), ad_LBC)
 #endif
             CASE ('LtracerSrc')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
               DO ng=1,Ngrids
                 DO itrc=1,NBT
                   i=idbio(itrc)
@@ -289,7 +366,7 @@
                 END DO
               END DO
             CASE ('LtracerCLM')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
               DO ng=1,Ngrids
                 DO itrc=1,NBT
                   i=idbio(itrc)
@@ -297,7 +374,7 @@
                 END DO
               END DO
             CASE ('LnudgeTCLM')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
               DO ng=1,Ngrids
                 DO itrc=1,NBT
                   i=idbio(itrc)
@@ -305,7 +382,7 @@
                 END DO
               END DO
             CASE ('Hout(idTvar)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
               DO ng=1,Ngrids
                 DO itrc=1,NBT
                   i=idTvar(idbio(itrc))
@@ -319,7 +396,7 @@
                 END DO
               END DO
             CASE ('Hout(idTsur)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
               DO ng=1,Ngrids
                 DO itrc=1,NBT
                   i=idTsur(idbio(itrc))
@@ -332,237 +409,52 @@
                   Hout(i,ng)=Ltrc(itrc,ng)
                 END DO
               END DO
-#if defined AVERAGES    || \
-   (defined AD_AVERAGES && defined ADJOINT) || \
-   (defined RP_AVERAGES && defined TL_IOMS) || \
-   (defined TL_AVERAGES && defined TANGENT)
-            CASE ('Aout(idTvar)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
+            CASE ('Qout(idTvar)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
               DO ng=1,Ngrids
                 DO itrc=1,NBT
                   i=idTvar(idbio(itrc))
-                  Aout(i,ng)=Ltrc(itrc,ng)
+                  Qout(i,ng)=Ltrc(itrc,ng)
                 END DO
               END DO
-            CASE ('Aout(idTTav)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
+            CASE ('Qout(idsurT)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
               DO ng=1,Ngrids
                 DO itrc=1,NBT
-                  i=idTTav(idbio(itrc))
-                  Aout(i,ng)=Ltrc(itrc,ng)
+                  i=idsurT(idbio(itrc))
+                  IF (i.eq.0) THEN
+                    IF (Master) WRITE (out,30)                          &
+     &                                'idsurT(idbio(', itrc, '))'
+                    exit_flag=5
+                    RETURN
+                  END IF
+                  Qout(i,ng)=Ltrc(itrc,ng)
                 END DO
               END DO
-            CASE ('Aout(idUTav)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
+            CASE ('Qout(idTsur)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
               DO ng=1,Ngrids
                 DO itrc=1,NBT
-                  i=idUTav(idbio(itrc))
-                  Aout(i,ng)=Ltrc(itrc,ng)
+                  i=idTsur(idbio(itrc))
+                  Qout(i,ng)=Ltrc(itrc,ng)
                 END DO
               END DO
-            CASE ('Aout(idVTav)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
-              DO ng=1,Ngrids
-                DO itrc=1,NBT
-                  i=idVTav(idbio(itrc))
-                  Aout(i,ng)=Ltrc(itrc,ng)
-                END DO
-              END DO
-            CASE ('Aout(iHUTav)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
-              DO ng=1,Ngrids
-                DO itrc=1,NBT
-                  i=iHUTav(idbio(itrc))
-                  Aout(i,ng)=Ltrc(itrc,ng)
-                END DO
-              END DO
-            CASE ('Aout(iHVTav)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
-              DO ng=1,Ngrids
-                DO itrc=1,NBT
-                  i=iHVTav(idbio(itrc))
-                  Aout(i,ng)=Ltrc(itrc,ng)
-                END DO
-              END DO
-#endif
-#ifdef DIAGNOSTICS_TS
-            CASE ('Dout(iTrate)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
-              DO ng=1,Ngrids
-                DO i=1,NBT
-                  itrc=idbio(i)
-                  Dout(idDtrc(itrc,iTrate),ng)=Ltrc(i,ng)
-                END DO
-              END DO
-            CASE ('Dout(iThadv)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
-              DO ng=1,Ngrids
-                DO i=1,NBT
-                  itrc=idbio(i)
-                  Dout(idDtrc(itrc,iThadv),ng)=Ltrc(i,ng)
-                END DO
-              END DO
-            CASE ('Dout(iTxadv)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
-              DO ng=1,Ngrids
-                DO i=1,NBT
-                  itrc=idbio(i)
-                  Dout(idDtrc(itrc,iTxadv),ng)=Ltrc(i,ng)
-                END DO
-              END DO
-            CASE ('Dout(iTyadv)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
-              DO ng=1,Ngrids
-                DO i=1,NBT
-                  itrc=idbio(i)
-                  Dout(idDtrc(itrc,iTyadv),ng)=Ltrc(i,ng)
-                END DO
-              END DO
-            CASE ('Dout(iTvadv)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
-              DO ng=1,Ngrids
-                DO i=1,NBT
-                  itrc=idbio(i)
-                  Dout(idDtrc(itrc,iTvadv),ng)=Ltrc(i,ng)
-                END DO
-              END DO
-# if defined TS_DIF2 || defined TS_DIF4
-            CASE ('Dout(iThdif)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
-              DO ng=1,Ngrids
-                DO i=1,NBT
-                  itrc=idbio(i)
-                  Dout(idDtrc(itrc,iThdif),ng)=Ltrc(i,ng)
-                END DO
-              END DO
-            CASE ('Dout(iTxdif)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
-              DO ng=1,Ngrids
-                DO i=1,NBT
-                  itrc=idbio(i)
-                  Dout(idDtrc(itrc,iTxdif),ng)=Ltrc(i,ng)
-                END DO
-              END DO
-            CASE ('Dout(iTydif)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
-              DO ng=1,Ngrids
-                DO i=1,NBT
-                  itrc=idbio(i)
-                  Dout(idDtrc(itrc,iTydif),ng)=Ltrc(i,ng)
-                END DO
-              END DO
-#  if defined MIX_GEO_TS || defined MIX_ISO_TS
-            CASE ('Dout(iTsdif)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
-              DO ng=1,Ngrids
-                DO i=1,NBT
-                  itrc=idbio(i)
-                  Dout(idDtrc(itrc,iTsdif),ng)=Ltrc(i,ng)
-                END DO
-              END DO
-#  endif
-# endif
-            CASE ('Dout(iTvdif)')
-              Npts=load_l(Nval, Cval, NBT*Ngrids, Ltrc)
-              DO ng=1,Ngrids
-                DO i=1,NBT
-                  itrc=idbio(i)
-                  Dout(idDtrc(itrc,iTvdif),ng)=Ltrc(i,ng)
-                END DO
-              END DO
-#endif
-#ifdef DIAGNOSTICS_BIO
-# ifdef CARBON
-            CASE ('Dout(iCOfx)')
-              IF (iDbio2(iCOfx).eq.0) THEN
-                IF (Master) WRITE (out,40) 'iDbio2(iCOfx)'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Lbio)
-              i=iDbio2(iCOfx)
-              DO ng=1,Ngrids
-                Dout(i,ng)=Lbio(ng)
-              END DO
-# endif
-# ifdef DENITRIFICATION
-            CASE ('Dout(iDNIT)')
-              IF (iDbio2(iDNIT).eq.0) THEN
-                IF (Master) WRITE (out,40) 'iDbio2(iDNIT)'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Lbio)
-              i=iDbio2(iDNIT)
-              DO ng=1,Ngrids
-                Dout(i,ng)=Lbio(ng)
-              END DO
-# endif
-# ifdef CARBON
-            CASE ('Dout(ipCO2)')
-              IF (iDbio2(ipCO2).eq.0) THEN
-                IF (Master) WRITE (out,40) 'iDbio2(ipCO2)'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Lbio)
-              i=iDbio2(ipCO2)
-              DO ng=1,Ngrids
-                Dout(i,ng)=Lbio(ng)
-              END DO
-# endif
-# ifdef OXYGEN
-            CASE ('Dout(iO2fx)')
-              IF (iDbio2(iO2fx).eq.0) THEN
-                IF (Master) WRITE (out,40) 'iDbio2(iO2fx)'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Lbio)
-              i=iDbio2(iO2fx)
-              DO ng=1,Ngrids
-                Dout(i,ng)=Lbio(ng)
-              END DO
-# endif
-            CASE ('Dout(iPPro)')
-              IF (iDbio3(iPPro).eq.0) THEN
-                IF (Master) WRITE (out,40) 'iDbio3(iPPro)'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Lbio)
-              i=iDbio3(iPPro)
-              DO ng=1,Ngrids
-                Dout(i,ng)=Lbio(ng)
-              END DO
-            CASE ('Dout(iNO3u)')
-              IF (iDbio3(iNO3u).eq.0) THEN
-                IF (Master) WRITE (out,40) 'iDbio3(iNO3u)'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Lbio)
-              i=iDbio3(iNO3u)
-              DO ng=1,Ngrids
-                Dout(i,ng)=Lbio(ng)
-              END DO
-#endif
 #if defined SPECTRAL_LIGHT 
-            CASE ('Hout(idPARo)') 
+            CASE ('Hout(idPARo)')
               IF (idPARo.eq.0) THEN
                 IF (Master) WRITE (out,40) 'idPARo'
                 exit_flag=5
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idPARo,1:Ngrids))
-            CASE ('Hout(idPARs)') 
+            CASE ('Hout(idPARs)')
               IF (idPARs.eq.0) THEN
                 IF (Master) WRITE (out,40) 'idPARs'
                 exit_flag=5
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idPARs,1:Ngrids))
-            CASE ('Hout(idSpKd)') 
+            CASE ('Hout(idSpKd)')
               IF (idSpKd.eq.0) THEN
                 IF (Master) WRITE (out,40) 'idSpKd'
                 exit_flag=5
@@ -613,6 +505,13 @@
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idsbgb,1:Ngrids))
+            CASE ('Hout(idsepb)')
+              IF (idsbgb.eq.0) THEN
+                IF (Master) WRITE (out,40) 'idsepb'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idsepb,1:Ngrids))
             CASE ('Hout(idsvpp)')
               IF (idsvpp.eq.0) THEN
                 IF (Master) WRITE (out,40) 'idsvpp'
@@ -676,6 +575,311 @@
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idsbgm,1:Ngrids))
+#endif
+#if defined AVERAGES    || \
+   (defined AD_AVERAGES && defined ADJOINT) || \
+   (defined RP_AVERAGES && defined TL_IOMS) || \
+   (defined TL_AVERAGES && defined TANGENT)
+            CASE ('Aout(idTvar)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO itrc=1,NBT
+                  i=idTvar(idbio(itrc))
+                  Aout(i,ng)=Ltrc(itrc,ng)
+                END DO
+              END DO
+            CASE ('Aout(idTTav)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO itrc=1,NBT
+                  i=idTTav(idbio(itrc))
+                  Aout(i,ng)=Ltrc(itrc,ng)
+                END DO
+              END DO
+            CASE ('Aout(idUTav)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO itrc=1,NBT
+                  i=idUTav(idbio(itrc))
+                  Aout(i,ng)=Ltrc(itrc,ng)
+                END DO
+              END DO
+            CASE ('Aout(idVTav)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO itrc=1,NBT
+                  i=idVTav(idbio(itrc))
+                  Aout(i,ng)=Ltrc(itrc,ng)
+                END DO
+              END DO
+            CASE ('Aout(iHUTav)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO itrc=1,NBT
+                  i=iHUTav(idbio(itrc))
+                  Aout(i,ng)=Ltrc(itrc,ng)
+                END DO
+              END DO
+            CASE ('Aout(iHVTav)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO itrc=1,NBT
+                  i=iHVTav(idbio(itrc))
+                  Aout(i,ng)=Ltrc(itrc,ng)
+                END DO
+              END DO
+#endif
+#ifdef DIAGNOSTICS_TS
+            CASE ('Dout(iTrate)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO i=1,NBT
+                  itrc=idbio(i)
+                  Dout(idDtrc(itrc,iTrate),ng)=Ltrc(i,ng)
+                END DO
+              END DO
+            CASE ('Dout(iThadv)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO i=1,NBT
+                  itrc=idbio(i)
+                  Dout(idDtrc(itrc,iThadv),ng)=Ltrc(i,ng)
+                END DO
+              END DO
+            CASE ('Dout(iTxadv)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO i=1,NBT
+                  itrc=idbio(i)
+                  Dout(idDtrc(itrc,iTxadv),ng)=Ltrc(i,ng)
+                END DO
+              END DO
+            CASE ('Dout(iTyadv)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO i=1,NBT
+                  itrc=idbio(i)
+                  Dout(idDtrc(itrc,iTyadv),ng)=Ltrc(i,ng)
+                END DO
+              END DO
+            CASE ('Dout(iTvadv)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO i=1,NBT
+                  itrc=idbio(i)
+                  Dout(idDtrc(itrc,iTvadv),ng)=Ltrc(i,ng)
+                END DO
+              END DO
+# if defined TS_DIF2 || defined TS_DIF4
+            CASE ('Dout(iThdif)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO i=1,NBT
+                  itrc=idbio(i)
+                  Dout(idDtrc(itrc,iThdif),ng)=Ltrc(i,ng)
+                END DO
+              END DO
+            CASE ('Dout(iTxdif)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO i=1,NBT
+                  itrc=idbio(i)
+                  Dout(idDtrc(itrc,iTxdif),ng)=Ltrc(i,ng)
+                END DO
+              END DO
+            CASE ('Dout(iTydif)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO i=1,NBT
+                  itrc=idbio(i)
+                  Dout(idDtrc(itrc,iTydif),ng)=Ltrc(i,ng)
+                END DO
+              END DO
+#  if defined MIX_GEO_TS || defined MIX_ISO_TS
+            CASE ('Dout(iTsdif)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO i=1,NBT
+                  itrc=idbio(i)
+                  Dout(idDtrc(itrc,iTsdif),ng)=Ltrc(i,ng)
+                END DO
+              END DO
+#  endif
+# endif
+            CASE ('Dout(iTvdif)')
+              Npts=load_l(Nval, Cval, NBT, Ngrids, Ltrc)
+              DO ng=1,Ngrids
+                DO i=1,NBT
+                  itrc=idbio(i)
+                  Dout(idDtrc(itrc,iTvdif),ng)=Ltrc(i,ng)
+                END DO
+              END DO
+#endif
+#ifdef DIAGNOSTICS_BIO
+# ifdef CARBON
+            CASE ('Dout(iCOfx)')
+              IF (iDbio2(iCOfx).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(iCOfx)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(iCOfx)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+# endif
+# ifdef DENITRIFICATION
+            CASE ('Dout(iDNIT)')
+              IF (iDbio2(iDNIT).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(iDNIT)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(iDNIT)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+# endif
+# ifdef CARBON
+            CASE ('Dout(ipCO2)')
+              IF (iDbio2(ipCO2).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(ipCO2)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(ipCO2)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+# endif
+# ifdef OXYGEN
+            CASE ('Dout(iO2fx)')
+              IF (iDbio2(iO2fx).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(iO2fx)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(iO2fx)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+# endif
+# ifdef SEDBIO_COUP
+            CASE ('Dout(isdO2)')
+              IF (iDbio2(isdO2).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(isdO2)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(isdO2)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+            CASE ('Dout(iseO2)')
+              IF (iDbio2(iseO2).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(iseO2)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(iseO2)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+            CASE ('Dout(isdNO)')
+              IF (iDbio2(isdNO).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(isdNO)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(isdNO)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+            CASE ('Dout(iseNO)')
+              IF (iDbio2(iseNO).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(iseNO)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(iseNO)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+            CASE ('Dout(isdNH)')
+              IF (iDbio2(isdNH).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(isdNH)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(isdNH)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+            CASE ('Dout(iseNH)')
+              IF (iDbio2(iseNH).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(iseNH)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(iseNH)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+            CASE ('Dout(isdOD)')
+              IF (iDbio2(isdOD).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(isdOD)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(isdOD)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+            CASE ('Dout(iseOD)')
+              IF (iDbio2(iseOD).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio2(iseOD)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio2(iseOD)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+# endif
+            CASE ('Dout(iPPro)')
+              IF (iDbio3(iPPro).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio3(iPPro)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio3(iPPro)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
+            CASE ('Dout(iNO3u)')
+              IF (iDbio3(iNO3u).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio3(iNO3u)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio3(iNO3u)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
 #endif
           END SELECT
         END IF
@@ -803,7 +1007,7 @@
      &            'Half saturation for light (muE m-2 s-1).'
             WRITE (out,80) SR(ng), 'SR',                                &
      &            'Surface reflectance of light.'
-            WRITE (out,80) LMBAMX(ng), 'LMBAMX',                        &
+            WRITE (out,80) LMBMAX(ng), 'LMBMAX',                        &
      &            'Maximum AGB in self-shading formulation (g C m-2). '
             WRITE (out,80) KMAG(ng), 'KMAG',                            &
      &            'Above biomass ground mortality rate (1/d).'
@@ -813,7 +1017,7 @@
      &            'Active respiration coefficient.'
             WRITE (out,80) BSRC(ng), 'BSRC',                            &
      &            'Maximum fraction of biomass respired.'
-            WRITE (out,80) RC(ng), 'RC',                                &
+            WRITE (out,80) BRC(ng), 'BRC',                              &
      &            'Basal respiration coefficient (1/d).'
             WRITE (out,80) RtStTL(ng), 'RtStTL',                        &
      &            'Seasonal root storage coefficient (1/d).'
@@ -825,6 +1029,32 @@
      &            'Crit. temp. development of abovegrd. biomass (deg C).'
             WRITE (out,80) KM(ng), 'KM',                                &
      &            'Below ground biomass mortality (1/d).'
+            WRITE (out,80) KN_EPB(ng), 'KN_EPB',                        &
+     &            'Half sauration nutrient limitation (epiphytes)(mu-M).'
+            WRITE (out,80) KL_EPB(ng), 'KL_EPB',                        &
+     &            'Half sauration light limitation (epiphytes)(mu-M).'
+            WRITE (out,80) ARSC_EPB(ng), 'ARSC_EPB',                    &
+     &            'Max. fraction of photosynthesis (epiphytes)(unitless).'
+            WRITE (out,80) ARC_EPB(ng), 'ARC_EPB',                      &
+     &            'Active respiration coefficient (epiphytes)(unitless).'
+            WRITE (out,80) BSRC_EPB(ng), 'BSRC_EPB',                    &
+     &            'Max. fraction of biomass respired(epiphytes)(unitless).'
+            WRITE (out,80) BRC_EPB(ng), 'BRC_EPB',                      &
+     &            'Basal respiration coefficient (epiphytes) (unitless).'
+            WRITE (out,80) LMBMAX_EPB(ng), 'LMBMAX_EPB',                &
+     &            'Max. EPB in self-shading formulation (muE m-2 s-1).'
+            WRITE (out,80) GRZMX_EPB(ng), 'GRZMX_EPB',                  &
+     &            'Max. grazing rate (epiphytes) (unitless).'
+            WRITE (out,80) GRZK_EPB(ng), 'GRZK_EPB',                    &
+     &            'Grazing coefficient (epiphytes) (unitless).'
+            WRITE (out,80) Topt_EPB(ng), 'TOPT_EPB',                    &
+     &            'Optimum temperature (epiphytes) (deg C).'
+            WRITE (out,80) SCL2_EPB(ng), 'SCL2_EPB',                    &
+     &            'Maximum growth fraction (epiphytes) (unitless).'
+            WRITE (out,80) KMORT_EPB(ng), 'KMORT_EPB',                  &
+     &            'Mortality rate (epiphytes) (1/days).'
+            WRITE (out,80) THTA2_EPB(ng), 'THTA2_EPB',                  &
+     &            'Temp. theta for growth model (epiphytes) (unitless).'
 #endif 
 #ifdef TS_DIF2
             DO itrc=1,NBT
@@ -937,149 +1167,188 @@
      &              TRIM(Vname(1,idTvar(i)))
               END IF
             END DO
-            DO itrc=1,NBT
-              i=idbio(itrc)
-              IF (Hout(idTvar(i),ng)) WRITE (out,120)                   &
-     &            Hout(idTvar(i),ng), 'Hout(idTvar)',                   &
-     &            'Write out tracer ', i, TRIM(Vname(1,idTvar(i)))
-            END DO
-            DO itrc=1,NBT
-              i=idbio(itrc)
-              IF (Hout(idTsur(i),ng)) WRITE (out,120)                   &
-     &            Hout(idTsur(i),ng), 'Hout(idTsur)',                   &
-     &            'Write out tracer flux ', i, TRIM(Vname(1,idTvar(i)))
-            END DO
+            IF ((nHIS(ng).gt.0).and.ANY(Hout(:,ng))) THEN
+              WRITE (out,'(1x)')
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Hout(idTvar(i),ng)) WRITE (out,120)                 &
+     &              Hout(idTvar(i),ng), 'Hout(idTvar)',                 &
+     &              'Write out tracer ', i, TRIM(Vname(1,idTvar(i)))
+              END DO
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Hout(idTsur(i),ng)) WRITE (out,120)                 &
+     &              Hout(idTsur(i),ng), 'Hout(idTsur)',                 &
+     &              'Write out tracer flux ', i,                        &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+            END IF
+            IF ((nQCK(ng).gt.0).and.ANY(Qout(:,ng))) THEN
+              WRITE (out,'(1x)')
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Qout(idTvar(i),ng)) WRITE (out,120)                 &
+     &              Qout(idTvar(i),ng), 'Qout(idTvar)',                 &
+     &              'Write out tracer ', i, TRIM(Vname(1,idTvar(i)))
+              END DO
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Qout(idsurT(i),ng)) WRITE (out,120)                 &
+     &              Qout(idsurT(i),ng), 'Qout(idsurT)',                 &
+     &              'Write out surface tracer ', i,                     &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Qout(idTsur(i),ng)) WRITE (out,120)                 &
+     &              Qout(idTsur(i),ng), 'Qout(idTsur)',                 &
+     &              'Write out tracer flux ', i,                        &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+            END IF
 #if defined AVERAGES    || \
    (defined AD_AVERAGES && defined ADJOINT) || \
    (defined RP_AVERAGES && defined TL_IOMS) || \
    (defined TL_AVERAGES && defined TANGENT)
-            WRITE (out,'(1x)')
-            DO itrc=1,NBT
-              i=idbio(itrc)
-              IF (Aout(idTvar(i),ng)) WRITE (out,120)                   &
-     &            Aout(idTvar(i),ng), 'Aout(idTvar)',                   &
-     &            'Write out averaged tracer ', i,                      &
-     &            TRIM(Vname(1,idTvar(i)))
-            END DO
-            DO itrc=1,NBT
-              i=idbio(itrc)
-              IF (Aout(idTTav(i),ng)) WRITE (out,120)                   &
-     &            Aout(idTTav(i),ng), 'Aout(idTTav)',                   &
-     &            'Write out averaged <t*t> for tracer ', i,            &
-     &            TRIM(Vname(1,idTvar(i)))
-            END DO
-            DO itrc=1,NBT
-              i=idbio(itrc)
-              IF (Aout(idUTav(i),ng)) WRITE (out,120)                   &
-     &            Aout(idUTav(i),ng), 'Aout(idUTav)',                   &
-     &            'Write out averaged <u*t> for tracer ', i,            &
-     &            TRIM(Vname(1,idTvar(i)))
-            END DO
-            DO itrc=1,NBT
-              i=idbio(itrc)
-              IF (Aout(idVTav(i),ng)) WRITE (out,120)                   &
-     &            Aout(idVTav(i),ng), 'Aout(idVTav)',                   &
-     &            'Write out averaged <v*t> for tracer ', i,            &
-     &            TRIM(Vname(1,idTvar(i)))
-            END DO
-            DO itrc=1,NBT
-              i=idbio(itrc)
-              IF (Aout(iHUTav(i),ng)) WRITE (out,120)                   &
-     &            Aout(iHUTav(i),ng), 'Aout(iHUTav)',                   &
-     &            'Write out averaged <Huon*t> for tracer ', i,         &
-     &            TRIM(Vname(1,idTvar(i)))
-            END DO
-            DO itrc=1,NBT
-              i=idbio(itrc)
-              IF (Aout(iHVTav(i),ng)) WRITE (out,120)                   &
-     &            Aout(iHVTav(i),ng), 'Aout(iHVTav)',                   &
-     &            'Write out averaged <Hvom*t> for tracer ', i,         &
-     &            TRIM(Vname(1,idTvar(i)))
-            END DO
+            IF ((nAVG(ng).gt.0).and.ANY(Aout(:,ng))) THEN
+              WRITE (out,'(1x)')
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Aout(idTvar(i),ng)) WRITE (out,120)                 &
+     &              Aout(idTvar(i),ng), 'Aout(idTvar)',                 &
+     &              'Write out averaged tracer ', i,                    &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Aout(idTTav(i),ng)) WRITE (out,120)                 &
+     &              Aout(idTTav(i),ng), 'Aout(idTTav)',                 &
+     &              'Write out averaged <t*t> for tracer ', i,          &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Aout(idUTav(i),ng)) WRITE (out,120)                 &
+     &              Aout(idUTav(i),ng), 'Aout(idUTav)',                 &
+     &              'Write out averaged <u*t> for tracer ', i,          &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Aout(idVTav(i),ng)) WRITE (out,120)                 &
+     &              Aout(idVTav(i),ng), 'Aout(idVTav)',                 &
+     &              'Write out averaged <v*t> for tracer ', i,          &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Aout(iHUTav(i),ng)) WRITE (out,120)                 &
+     &              Aout(iHUTav(i),ng), 'Aout(iHUTav)',                 &
+     &              'Write out averaged <Huon*t> for tracer ', i,       &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+              DO itrc=1,NBT
+                i=idbio(itrc)
+                IF (Aout(iHVTav(i),ng)) WRITE (out,120)                 &
+     &              Aout(iHVTav(i),ng), 'Aout(iHVTav)',                 &
+     &              'Write out averaged <Hvom*t> for tracer ', i,       &
+     &              TRIM(Vname(1,idTvar(i)))
+              END DO
+            END IF
 #endif
 #ifdef DIAGNOSTICS_TS
-            WRITE (out,'(1x)')
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iTrate),ng))                         &
-     &          WRITE (out,120) .TRUE., 'Dout(iTrate)',                 &
-     &              'Write out rate of change of tracer ', itrc,        &
-     &              TRIM(Vname(1,idTvar(itrc)))
-            END DO
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iThadv),ng))                         &
-     &          WRITE (out,120) .TRUE., 'Dout(iThadv)',                 &
-     &              'Write out horizontal advection, tracer ', itrc,    &
-     &              TRIM(Vname(1,idTvar(itrc)))
-            END DO
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iTxadv),ng))                         &
-     &          WRITE (out,120) .TRUE., 'Dout(iTxadv)',                 &
-     &              'Write out horizontal X-advection, tracer ', itrc,  &
-     &              TRIM(Vname(1,idTvar(itrc)))
-            END DO
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iTyadv),ng))                         &
-     &          WRITE (out,120) .TRUE., 'Dout(iTyadv)',                 &
-     &              'Write out horizontal Y-advection, tracer ', itrc,  &
-     &              TRIM(Vname(1,idTvar(itrc)))
-            END DO
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iTvadv),ng))                         &
-     &          WRITE (out,120) .TRUE., 'Dout(iTvadv)',                 &
-     &              'Write out vertical advection, tracer ', itrc,      &
-     &              TRIM(Vname(1,idTvar(itrc)))
-            END DO
+            IF ((nDIA(ng).gt.0).and.ANY(Dout(:,ng))) THEN
+              WRITE (out,'(1x)')
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iTrate),ng))                         &
+     &            WRITE (out,120) .TRUE., 'Dout(iTrate)',                 &
+     &                'Write out rate of change of tracer ', itrc,        &
+     &                TRIM(Vname(1,idTvar(itrc)))
+              END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iThadv),ng))                         &
+     &            WRITE (out,120) .TRUE., 'Dout(iThadv)',                 &
+     &                'Write out horizontal advection, tracer ', itrc,    &
+     &                TRIM(Vname(1,idTvar(itrc)))
+              END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iTxadv),ng))                         &
+     &            WRITE (out,120) .TRUE., 'Dout(iTxadv)',                 &
+     &                'Write out horizontal X-advection, tracer ', itrc,  &
+     &                TRIM(Vname(1,idTvar(itrc)))
+              END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iTyadv),ng))                         &
+     &            WRITE (out,120) .TRUE., 'Dout(iTyadv)',                 &
+     &                'Write out horizontal Y-advection, tracer ', itrc,  &
+     &                TRIM(Vname(1,idTvar(itrc)))
+              END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iTvadv),ng))                         &
+     &            WRITE (out,120) .TRUE., 'Dout(iTvadv)',                 &
+     &                'Write out vertical advection, tracer ', itrc,      &
+     &                TRIM(Vname(1,idTvar(itrc)))
+              END DO
 # if defined TS_DIF2 || defined TS_DIF4
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iThdif),ng))                         &
-     &          WRITE (out,120) .TRUE., 'Dout(iThdif)',                 &
-     &              'Write out horizontal diffusion, tracer ', itrc,    &
-     &              TRIM(Vname(1,idTvar(itrc)))
-            END DO
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(i,iTxdif),ng))                            &
-     &          WRITE (out,120) .TRUE., 'Dout(iTxdif)',                 &
-     &              'Write out horizontal X-diffusion, tracer ', itrc,  &
-     &              TRIM(Vname(1,idTvar(itrc)))
-            END DO
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iTydif),ng))                         &
-     &          WRITE (out,120) .TRUE., 'Dout(iTydif)',                 &
-     &              'Write out horizontal Y-diffusion, tracer ', itrc,  &
-     &              TRIM(Vname(1,idTvar(itrc)))
-            END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iThdif),ng))                         &
+     &            WRITE (out,120) .TRUE., 'Dout(iThdif)',                 &
+     &                'Write out horizontal diffusion, tracer ', itrc,    &
+     &                TRIM(Vname(1,idTvar(itrc)))
+              END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(i,iTxdif),ng))                            &
+     &            WRITE (out,120) .TRUE., 'Dout(iTxdif)',                 &
+     &                'Write out horizontal X-diffusion, tracer ', itrc,  &
+     &                TRIM(Vname(1,idTvar(itrc)))
+              END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iTydif),ng))                         &
+     &            WRITE (out,120) .TRUE., 'Dout(iTydif)',                 &
+     &                'Write out horizontal Y-diffusion, tracer ', itrc,  &
+     &                TRIM(Vname(1,idTvar(itrc)))
+              END DO
 #  if defined MIX_GEO_TS || defined MIX_ISO_TS
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iTsdif),ng))                         &
-     &          WRITE (out,120) .TRUE., 'Dout(iTsdif)',                 &
-     &              'Write out horizontal S-diffusion, tracer ', itrc,  &
-     &              TRIM(Vname(1,idTvar(itrc)))
-            END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iTsdif),ng))                         &
+     &            WRITE (out,120) .TRUE., 'Dout(iTsdif)',                 &
+     &                'Write out horizontal S-diffusion, tracer ', itrc,  &
+     &                TRIM(Vname(1,idTvar(itrc)))
+              END DO
 #  endif
 # endif
-            DO i=1,NBT
-              itrc=idbio(i)
-              IF (Dout(idDtrc(itrc,iTvdif),ng))                         &
-     &          WRITE (out,120) .TRUE., 'Dout(iTvdif)',                 &
-     &              'Write out vertical diffusion, tracer ', itrc,      &
-     &              TRIM(Vname(1,idTvar(itrc)))
-            END DO
+              DO i=1,NBT
+                itrc=idbio(i)
+                IF (Dout(idDtrc(itrc,iTvdif),ng))                         &
+     &            WRITE (out,120) .TRUE., 'Dout(iTvdif)',                 &
+     &                'Write out vertical diffusion, tracer ', itrc,      &
+     &                TRIM(Vname(1,idTvar(itrc)))
+              END DO
+            END IF
 #endif
 #ifdef DIAGNOSTICS_BIO
-            IF (NDbio2d.gt.0) THEN
-              DO itrc=1,NDbio2d
-                i=iDbio2(itrc)
-                IF (Dout(i,ng)) WRITE (out,130)                         &
-     &              Dout(i,ng), 'Hout(iDbio2)',                         &
+            IF (nDIA(ng).gt.0) THEN
+              IF (NDbio2d.gt.0) THEN
+                DO itrc=1,NDbio2d
+                  i=iDbio2(itrc)
+                  IF (Dout(i,ng)) WRITE (out,130)                         &
+     &                Dout(i,ng), 'Dout(iDbio2)',                         &
+     &                'Write out diagnostics for', TRIM(Vname(1,i))
+                END DO
+              END IF
+              DO itrc=1,NDbio3d
+                i=iDbio3(itrc)
+                IF (Dout(i,ng)) WRITE (out,130)                           &
+     &              Dout(i,ng), 'Dout(iDbio3)',                           &
      &              'Write out diagnostics for', TRIM(Vname(1,i))
               END DO
             END IF
@@ -1105,7 +1374,7 @@
             WRITE (out,70) Ndom, 'Ndom',                      &
      &            'Number of DOM constituents.'
 #endif
-#ifdef SAV_BIOMASS 
+#ifdef SAV_BIOMASS
           IF (Hout(iddins,ng)) WRITE (out,120) Hout(iddins,ng),         &
      &       'Hout(iddins)',                                            &
      &       'Write out sediment dissolved inorganic N in units (mu-M).'
@@ -1161,4 +1430,3 @@
 
       RETURN
       END SUBROUTINE read_BioPar
- 

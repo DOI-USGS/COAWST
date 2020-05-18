@@ -95,7 +95,7 @@
 
 !***********************************************************************
 
-      subroutine remap_conserv
+      subroutine remap_conserv (MyComm)
 
 !-----------------------------------------------------------------------
 !
@@ -105,12 +105,29 @@
 !
 !-----------------------------------------------------------------------
 
+      integer (kind=int_kind), intent(in) :: MyComm
+
 !-----------------------------------------------------------------------
 !
 !     local variables
 !
 !-----------------------------------------------------------------------
 
+#ifdef MPI
+      include 'mpif.h'
+#endif
+      integer (kind=int_kind) :: MyStr, MyEnd
+#ifdef MPI
+      integer (kind=int_kind) :: MyError, MyRank, Nprocs, rank
+      integer (kind=int_kind) :: ratio
+      integer (kind=int_kind) :: i, j, ij, add1, add2, got_weight
+      integer (kind=int_kind) :: nlink, min_link, max_link
+      integer (kind=int_kind), dimension(MPI_STATUS_SIZE) :: status
+      integer (kind=int_kind), dimension(:), allocatable :: Numlinks
+      integer (kind=int_kind), dimension(:), allocatable :: Asendi
+      integer (kind=int_kind), dimension(:), allocatable :: Arecv1
+      integer (kind=int_kind), dimension(:), allocatable :: Arecv2
+#endif
       integer (kind=int_kind), parameter ::                             &
      &        max_subseg = 10000 ! max number of subsegments per segment
                                  ! to prevent infinite loop
@@ -131,6 +148,8 @@
      &        next_corn,                                                &
                           ! corner of cell that segment ends on
      &        num_subseg  ! number of subsegments 
+     
+      integer (kind=int_kind) :: jcw, jcws, jcwe
 
       logical (kind=log_kind) ::                                        &
      &        lcoinc,                                                   &
@@ -162,7 +181,12 @@
                                                    ! full segment
 
       real (kind=dbl_kind), dimension(6) :: weights ! local wgt array
-
+#ifdef MPI
+      real (kind=dbl_kind), dimension(:), allocatable   ::  Asend
+      real (kind=dbl_kind), dimension(:), allocatable   ::  Arecvw
+      real (kind=dbl_kind), dimension(:,:), allocatable ::  Arecv
+      real (kind=dbl_kind), dimension(:,:), allocatable ::  Arecvw2d
+#endif
 
 !-----------------------------------------------------------------------
 !
@@ -186,12 +210,40 @@
 !
 !-----------------------------------------------------------------------
 
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      CALL mpi_comm_size (MyComm, Nprocs, MyError)
+!
+! To do this in mpi, we will just break up the sweep loops into chunks. Then
+! gather all of the data at end of each loop so that each proc has a full set of
+! data. First we want to determine start and end chunks for this processor.
+!
+      IF (Nprocs.eq.1) THEN
+        MyStr=1
+        MyEnd=grid1_size
+      ELSE
+        ratio=INT(grid1_size/Nprocs)
+        MyStr=(MyRank*ratio)+1
+        MyEnd=MyStr+ratio-1
+        IF (MyRank+1.eq.Nprocs) MyEnd=grid1_size
+      END IF
+#else
+      MyStr=1
+      MyEnd=grid1_size
+#endif
+
       allocate(srch_mask(grid2_size))
 
-      print *,'grid1 sweep'
+      print *,'grid1 sweep grid1 size is ', grid1_size
+#ifdef MPI
+      print *,'MyRank is ', MyRank
+#endif
       first_call=.true.  ! first_call set to true 
 
-      do grid1_add = 1,grid1_size
+!     do grid1_add = 1,grid1_size
+      do grid1_add = MyStr,MyEnd
+
+
 
         !***
         !*** restrict searches first using search bins
@@ -354,15 +406,6 @@
             !*** store the appropriate addresses and weights. 
             !*** also add contributions to cell areas and centroids.
             !***
-
-            !if (grid1_add == 119247) then
-            !  print *,grid1_add,grid2_add,corner,weights(1)
-            !  print *,grid1_corner_lat(:,grid1_add)
-            !  print *,grid1_corner_lon(:,grid1_add)
-            !  print *,grid2_corner_lat(:,grid2_add)
-            !  print *,grid2_corner_lon(:,grid2_add)
-            !  print *,beglat,beglon,intrsct_lat,intrsct_lon
-            !endif
      
             if (grid2_add /= 0) then
               if (grid1_mask(grid1_add)) then
@@ -409,18 +452,163 @@
 
       deallocate(srch_mask)
 
+#ifdef MPI
+!
+!  Here we need to gather all the data to each proc so they know the
+!  full data set.
+!
+!  first_call - not sure about this one
+!
+      allocate (Asend(grid1_size))
+      allocate (Arecv(grid1_size,1:Nprocs))
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  Work on grid1_frac(grid1_size)
+!  zero it out.
+      DO grid1_add=1,grid1_size
+        Asend(grid1_add)=zero
+      END DO
+!  fill the send for this tile.
+      DO grid1_add=MyStr,MyEnd
+        Asend(grid1_add)=grid1_frac(grid1_add)
+      END DO
+      call mpi_allgather(Asend, grid1_size, MPI_DOUBLE,                 &
+     &                   Arecv, grid1_size, MPI_DOUBLE, MyComm, MyError)
+!  fill the working array as a sum from all nodes.
+      DO grid1_add=1,grid1_size
+        grid1_frac(grid1_add)=zero
+        DO rank=1,Nprocs
+          grid1_frac(grid1_add)=grid1_frac(grid1_add)+                  &
+     &                          Arecv(grid1_add,rank)
+        END DO
+      END DO
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  Work on grid1_area(grid1_size)
+!  zero it out.
+      DO grid1_add=1,grid1_size
+        Asend(grid1_add)=zero
+      END DO
+!  fill the send for this tile.
+      DO grid1_add=MyStr,MyEnd
+        Asend(grid1_add)=grid1_area(grid1_add)
+      END DO
+      call mpi_allgather(Asend, grid1_size, MPI_DOUBLE,                    &
+     &                   Arecv, grid1_size, MPI_DOUBLE, MyComm, MyError)
+!  fill the working array as a sum from all nodes.
+      DO grid1_add=1,grid1_size
+        grid1_area(grid1_add)=zero
+        DO rank=1,Nprocs
+          grid1_area(grid1_add)=grid1_area(grid1_add)+                  &
+     &                          Arecv(grid1_add,rank)
+        END DO
+      END DO
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  Work on grid1_centroid_lat(grid1_size)
+!  zero it out.
+      DO grid1_add=1,grid1_size
+        Asend(grid1_add)=zero
+      END DO
+!  fill the send for this tile.
+      DO grid1_add=MyStr,MyEnd
+        Asend(grid1_add)=grid1_centroid_lat(grid1_add)
+      END DO
+      call mpi_allgather(Asend, grid1_size, MPI_DOUBLE,                 &
+     &                   Arecv, grid1_size, MPI_DOUBLE, MyComm, MyError)
+!  fill the working array as a sum from all nodes.
+      DO grid1_add=1,grid1_size
+        grid1_centroid_lat(grid1_add)=zero
+        DO rank=1,Nprocs
+          grid1_centroid_lat(grid1_add)=grid1_centroid_lat(grid1_add)+  &
+     &                          Arecv(grid1_add,rank)
+        END DO
+      END DO
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  Work on grid1_centroid_lon(grid1_size)
+!  zero it out.
+      DO grid1_add=1,grid1_size
+        Asend(grid1_add)=zero
+      END DO
+!  fill the send for this tile.
+      DO grid1_add=MyStr,MyEnd
+        Asend(grid1_add)=grid1_centroid_lon(grid1_add)
+      END DO
+      call mpi_allgather(Asend, grid1_size, MPI_DOUBLE,                 &
+     &                   Arecv, grid1_size, MPI_DOUBLE, MyComm, MyError)
+!  fill the working array as a sum from all nodes.
+      DO grid1_add=1,grid1_size
+        grid1_centroid_lon(grid1_add)=zero
+        DO rank=1,Nprocs
+          grid1_centroid_lon(grid1_add)=grid1_centroid_lon(grid1_add)+  &
+     &                          Arecv(grid1_add,rank)
+        END DO
+      END DO
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      deallocate(Asend, Arecv)
+      allocate (Asend(grid2_size))
+      allocate (Arecv(grid2_size,Nprocs))
+!  Work on grid2_frac(grid2_size)
+!  zero it out.
+      DO grid2_add=1,grid2_size
+        Asend(grid2_add)=zero
+      END DO
+!  fill the send for this tile.
+      DO grid2_add=1,grid2_size
+        Asend(grid2_add)=grid2_frac(grid2_add)
+      END DO
+      call mpi_allgather(Asend, grid2_size, MPI_DOUBLE,                 &
+     &                   Arecv, grid2_size, MPI_DOUBLE, MyComm, MyError)
+!  fill the working array as a sum from all nodes.
+      DO grid2_add=1,grid2_size
+        grid2_frac(grid2_add)=zero
+        DO rank=1,Nprocs
+          grid2_frac(grid2_add)=grid2_frac(grid2_add)+                  &
+     &                          Arecv(grid2_add,rank)
+        END DO
+      END DO
+      deallocate(Asend, Arecv)
+#endif
 !-----------------------------------------------------------------------
 !
 !     integrate around each cell on grid2
 !
 !-----------------------------------------------------------------------
 
+#ifdef MPI
+!
+! To do this in mpi, we will just break up the sweep loops into chunks. Then
+! gather all of the data at end of each loop so that each proc has a full set of
+! data. First we want to determine start and end chunks for this processor.
+!
+      IF (Nprocs.eq.1) THEN
+        MyStr=1
+        MyEnd=grid2_size
+      ELSE
+        ratio=INT(grid2_size/Nprocs)
+        MyStr=(MyRank*ratio)+1
+        MyEnd=MyStr+ratio-1
+        IF (MyRank+1.eq.Nprocs) MyEnd=grid2_size
+      END IF
+#else
+        MyStr=1
+        MyEnd=grid2_size
+#endif
+
       allocate(srch_mask(grid1_size))
 
       print *,'grid2 sweep '
-   
-      do grid2_add = 1,grid2_size
-        
+
+!     do grid2_add = 1,grid2_size
+      do grid2_add = MyStr,MyEnd
+
+#ifdef MPI
+        IF (MyRank.eq.0) THEN
+#endif
+!        write(*,*) 'percont done about ',                               &
+!     &             REAL((grid2_add-MyStr),dbl_kind)/                    &
+!     &             REAL((MyEnd-MyStr),dbl_kind)*100./2.+50.
+#ifdef MPI
+        END IF
+#endif
+
         !***
         !*** restrict searches first using search bins
         !***
@@ -571,15 +759,6 @@
             !*** the grid1 mask is the master mask
             !***
 
-            !if (grid1_add == 119247) then
-            !  print *,grid1_add,grid2_add,corner,weights(1)
-            !  print *,grid1_corner_lat(:,grid1_add)
-            !  print *,grid1_corner_lon(:,grid1_add)
-            !  print *,grid2_corner_lat(:,grid2_add)
-            !  print *,grid2_corner_lon(:,grid2_add)
-            !  print *,beglat,beglon,intrsct_lat,intrsct_lon
-            !endif
-
             if (.not. lcoinc .and. grid1_add /= 0) then
               if (grid1_mask(grid1_add)) then
                 call timer_start(8)
@@ -626,7 +805,252 @@
       end do
 
       deallocate(srch_mask)
+#ifdef MPI
+!
+!  Here we need to gather all the data to each proc so they know the
+!  full data set.
+!
+!  first_call - not sure about this one
+!
+      allocate (Asend(grid2_size))
+      allocate (Arecv(grid2_size,Nprocs))
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  Work on grid2_frac(grid2_size)
+!  zero it out.
+      DO grid2_add=1,grid2_size
+        Asend(grid2_add)=zero
+      END DO
+!  fill the send for this tile.
+      DO grid2_add=MyStr,MyEnd
+        Asend(grid2_add)=grid2_frac(grid2_add)
+      END DO
+      call mpi_allgather(Asend, grid2_size, MPI_DOUBLE,                 &
+     &                   Arecv, grid2_size, MPI_DOUBLE, MyComm, MyError)
+!  fill the working array as a sum from all nodes.
+      DO grid2_add=1,grid2_size
+        grid2_frac(grid2_add)=zero
+        DO rank=1,Nprocs
+          grid2_frac(grid2_add)=grid2_frac(grid2_add)+                  &
+     &                          Arecv(grid2_add,rank)
+        END DO
+      END DO
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  Work on grid2_area(grid2_size)
+!  zero it out.
+      DO grid2_add=1,grid2_size
+        Asend(grid2_add)=zero
+      END DO
+!  fill the send for this tile.
+      DO grid2_add=MyStr,MyEnd
+        Asend(grid2_add)=grid2_area(grid2_add)
+      END DO
+      call mpi_allgather(Asend, grid2_size, MPI_DOUBLE,                 &
+     &                   Arecv, grid2_size, MPI_DOUBLE, MyComm, MyError)
+!  fill the working array as a sum from all nodes.
+      DO grid2_add=1,grid2_size
+        grid2_area(grid2_add)=zero
+        DO rank=1,Nprocs
+          grid2_area(grid2_add)=grid2_area(grid2_add)+                  &
+     &                          Arecv(grid2_add,rank)
+        END DO
+      END DO
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  Work on grid2_centroid_lat(grid2_size)
+!  zero it out.
+      DO grid2_add=1,grid2_size
+        Asend(grid2_add)=zero
+      END DO
+!  fill the send for this tile.
+      DO grid2_add=MyStr,MyEnd
+        Asend(grid2_add)=grid2_centroid_lat(grid2_add)
+      END DO
+      call mpi_allgather(Asend, grid2_size, MPI_DOUBLE,                 &
+     &                   Arecv, grid2_size, MPI_DOUBLE, MyComm, MyError)
+!  fill the working array as a sum from all nodes.
+      DO grid2_add=1,grid2_size
+        grid2_centroid_lat(grid2_add)=zero
+        DO rank=1,Nprocs
+          grid2_centroid_lat(grid2_add)=grid2_centroid_lat(grid2_add)+  &
+     &                          Arecv(grid2_add,rank)
+        END DO
+      END DO
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+!  Work on grid2_centroid_lon(grid2_size)
+!  zero it out.
+      DO grid2_add=1,grid2_size
+        Asend(grid2_add)=zero
+      END DO
+!  fill the send for this tile.
+      DO grid2_add=MyStr,MyEnd
+        Asend(grid2_add)=grid2_centroid_lon(grid2_add)
+      END DO
+      call mpi_allgather(Asend, grid2_size, MPI_DOUBLE,                 &
+     &                   Arecv, grid2_size, MPI_DOUBLE, MyComm, MyError)
+!  fill the working array as a sum from all nodes.
+      DO grid2_add=1,grid2_size
+        grid2_centroid_lon(grid2_add)=zero
+        DO rank=1,Nprocs
+          grid2_centroid_lon(grid2_add)=grid2_centroid_lon(grid2_add)+  &
+     &                          Arecv(grid2_add,rank)
+        END DO
+      END DO
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      deallocate(Asend, Arecv)
+      allocate (Asend(grid1_size))
+      allocate (Arecv(grid1_size,Nprocs))
+!  Work on grid1_frac(grid1_size)
+!  zero it out.
+      DO grid1_add=1,grid1_size
+        Asend(grid1_add)=zero
+      END DO
+!  fill the send for this tile.
+      DO grid1_add=1,grid1_size
+        Asend(grid1_add)=grid1_frac(grid1_add)
+      END DO
+      call mpi_allgather(Asend, grid1_size, MPI_DOUBLE,                 &
+     &                   Arecv, grid1_size, MPI_DOUBLE, MyComm, MyError)
+!  fill the working array as a sum from all nodes.
+      DO grid1_add=1,grid1_size
+        grid1_frac(grid1_add)=zero
+        DO rank=1,Nprocs
+          grid1_frac(grid1_add)=grid1_frac(grid1_add)+                  &
+     &                          Arecv(grid1_add,rank)
+        END DO
+      END DO
+      deallocate(Asend, Arecv)
+#endif
 
+
+#ifdef MPI
+!
+!  Here we need to gather all the data that was computed in 
+!  store_link_cnsrv.  Then we just allow the Master node to
+!  compute the rest here. maybe redo this to allow each node to 
+!  do more work, but try this for now.  then we go to write out 
+!  the data back in scrip.f
+!
+! gather total number of links that were computed on each processor.
+!
+      allocate(Numlinks(Nprocs))
+      call mpi_gather(num_links_map1, 1, MPI_INT, Numlinks, 1, MPI_INT, &
+     &                0, MyComm, MyError)
+!
+!  Now gather all the weights from other nodes to make one combined set.
+!
+      IF (MyRank.ne.0) THEN
+        allocate (Asendi(num_links_map1))
+!
+        DO i=1,num_links_map1
+          Asendi(i)=grid1_add_map1(i)
+        END DO
+        call mpi_send(Asendi, num_links_map1, MPI_INT, 0,               &
+     &                10, MyComm, MyError)
+!
+        Asendi(1:num_links_map1)=grid2_add_map1(1:num_links_map1)
+        call mpi_send(Asendi, num_links_map1, MPI_INT, 0,               &
+     &                20, MyComm, MyError)
+!
+        deallocate (Asendi)
+        allocate (Asend(num_links_map1*num_wts))
+!
+        ij=0
+        DO i=1,num_links_map1
+          DO j=1,num_wts
+            ij=ij+1
+            Asend(ij)=wts_map1(j,i)
+          END DO
+        END DO
+        call mpi_send(Asend, num_links_map1*num_wts, MPI_DOUBLE, 0,     &
+     &                30, MyComm, MyError)
+        deallocate (Asend)
+      ELSE                ! we are on the Master
+
+
+        DO i=2,Nprocs
+          allocate (Arecv1(Numlinks(i)))            !grid1_add_map1
+          allocate (Arecv2(Numlinks(i)))            !grid2_add_map1
+          allocate (Arecvw(num_wts*Numlinks(i)))    !wts_map1
+          allocate (Arecvw2d(num_wts,Numlinks(i)))  !wts_map1
+!
+!         Receiving grid1 area.
+!
+          call mpi_recv(Arecv1, Numlinks(i), MPI_INT, i-1, 10,          &
+     &                  MyComm, status, MyError)
+!
+!         Receiving grid2 area.
+!
+          call mpi_recv(Arecv2, Numlinks(i), MPI_INT, i-1, 20,          &
+     &                  MyComm, status, MyError)
+!
+!         Receiving weights
+!
+          call mpi_recv(Arecvw, Numlinks(i)*num_wts, MPI_DOUBLE,i-1,30, &
+     &                  MyComm, status, MyError)
+          ij=0
+          DO nlink=1,Numlinks(i)
+            DO j=1,num_wts
+              ij=ij+1
+              Arecvw2d(j,nlink)=Arecvw(ij)
+            END DO
+          END DO
+!-----------------------------------------------------------------------
+!
+!     if the link already exists, add the weight to the current weight
+!     arrays
+!
+!-----------------------------------------------------------------------
+
+
+          do nlink=1,Numlinks(i)
+            add1=Arecv1(nlink)
+            add2=Arecv2(nlink)
+            got_weight=0
+!
+            min_link = min(link_add1(1,add1),link_add2(1,add2))
+            max_link = max(link_add1(2,add1),link_add2(2,add2))
+            if (min_link == 0) then
+              min_link = 1
+              max_link = 0
+            endif
+!           do j=min_link,max_link
+            do j=1,0                 !jcw for no do this loop
+              if (add1 == grid1_add_map1(j)) then
+                if (add2 == grid2_add_map1(j)) then
+                  wts_map1(:,j)=wts_map1(:,j)+Arecvw2d(1:num_wts,nlink)
+                  got_weight=1
+                endif
+              endif
+            end do
+!-----------------------------------------------------------------------
+!
+!     if the link does not yet exist, increment number of links and 
+!     check to see if remap arrays need to be increased to accomodate 
+!     the new link.  then store the link.
+!
+!-----------------------------------------------------------------------
+            if (got_weight.eq.0) then
+              num_links_map1  = num_links_map1 + 1
+              if (num_links_map1 > max_links_map1)                      &
+     &          call resize_remap_vars(1,resize_increment)
+              grid1_add_map1(num_links_map1) = add1
+              grid2_add_map1(num_links_map1) = add2
+              wts_map1    (:,num_links_map1) = Arecvw2d(1:num_wts,nlink)
+            END IF
+
+            if (link_add1(1,add1) == 0) link_add1(1,add1)=num_links_map1
+            if (link_add2(1,add2) == 0) link_add2(1,add2)=num_links_map1
+            link_add1(2,add1) = num_links_map1
+            link_add2(2,add2) = num_links_map1
+
+          END DO
+          deallocate (Arecv1, Arecv2, Arecvw, Arecvw2d)
+        END DO
+      END IF
+
+      deallocate(Numlinks)
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
 !-----------------------------------------------------------------------
 !
 !     correct for situations where N/S pole not explicitly included in
@@ -792,7 +1216,7 @@
      &                     (grid2_frac(grid2_add)*                      &
      &                      grid2_area_in(grid2_add))
             else
-              norm_factor = one/grid2_frac(grid2_add)
+              norm_factor = one/grid2_frac(grid2_add) !we use this one
             endif
           else
             norm_factor = zero
@@ -869,7 +1293,7 @@
         endif
         if (grid1_centroid_lat(n) < -pih-.01 .or.                       &
      &      grid1_centroid_lat(n) >  pih+.01) then
-          print *,'Grid 1 centroid lat error: ',n,grid1_centroid_lat(n)
+!          print *,'Grid 1 centroid lat error: ',n,grid1_centroid_lat(n)
         endif
         grid1_centroid_lat(n) = zero
         grid1_centroid_lon(n) = zero
@@ -881,7 +1305,7 @@
         endif
         if (grid2_centroid_lat(n) < -pih-.01 .or.                       &
      &      grid2_centroid_lat(n) >  pih+.01) then
-          print *,'Grid 2 centroid lat error: ',n,grid2_centroid_lat(n)
+!          print *,'Grid 2 centroid lat error: ',n,grid2_centroid_lat(n)
         endif
         grid2_centroid_lat(n) = zero
         grid2_centroid_lon(n) = zero
@@ -891,13 +1315,14 @@
         do n=1,num_links_map1
           grid1_add = grid1_add_map1(n)
           grid2_add = grid2_add_map1(n)
-        
-          if (wts_map1(1,n) < -.01) then
-            print *,'Map 1 weight < 0',grid1_add,grid2_add,wts_map1(1,n)
-          endif
-          if (norm_opt /= norm_opt_none .and. wts_map1(1,n) > 1.01) then
-            print *,'Map 1 weight > 1',grid1_add,grid2_add,wts_map1(1,n)
-          endif
+! jcw comment these out because we are letting the weights
+!                       have multiple instances
+!         if (wts_map1(1,n) < -.01) then
+!           print *,'Map 1 weight < 0',grid1_add,grid2_add,wts_map1(1,n)
+!         endif
+!         if (norm_opt /= norm_opt_none .and. wts_map1(1,n) > 1.01) then
+!           print *,'Map 1 weight > 1',grid1_add,grid2_add,wts_map1(1,n)
+!         endif
           grid2_centroid_lat(grid2_add) =                               &
      &    grid2_centroid_lat(grid2_add) + wts_map1(1,n)
 
@@ -931,8 +1356,8 @@
           end select
       
           if (abs(grid2_centroid_lat(grid2_add)-norm_factor) > .01) then
-            print *,'Error: sum of wts for map1 ',grid2_add,            &
-     &              grid2_centroid_lat(grid2_add),norm_factor
+!            print *,'Error: sum of wts for map1 ',grid2_add,            &
+!     &              grid2_centroid_lat(grid2_add),norm_factor
           endif
         end do
       endif
@@ -957,7 +1382,9 @@
           endif
         end do
       endif
-
+#ifdef MPI
+      END IF
+#endif
       deallocate(grid1_centroid_lat, grid1_centroid_lon)
       deallocate(grid2_centroid_lat, grid2_centroid_lon)
 !-----------------------------------------------------------------------

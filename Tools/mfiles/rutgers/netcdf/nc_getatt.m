@@ -42,9 +42,9 @@ function A = nc_getatt(ncfile, Aname, Vname)
 %        will return a numeric value for the attribute 'FillValue'
 %        in variable 'temp'.
   
-% svn $Id: nc_getatt.m 895 2018-02-11 23:15:37Z arango $
+% svn $Id: nc_getatt.m 996 2020-01-10 04:28:56Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

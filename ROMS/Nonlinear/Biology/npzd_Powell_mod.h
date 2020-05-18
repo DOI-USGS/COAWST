@@ -1,7 +1,7 @@
 !
-!svn $Id: npzd_Powell_mod.h 921 2018-09-06 18:27:34Z arango $
+!svn $Id: npzd_Powell_mod.h 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -31,9 +31,9 @@
 !  wDet      Detrital sinking rate, [m/day].                           !
 !  wPhy      Phytoplankton sinking rate, [m/day].                      !
 !  ZooEED    Zooplankton excretion efficiency to Detritus pool,        !
-!              {nondimensional].                                       !
+!              [nondimensional].                                       !
 !  ZooEEN    Zooplankton excretion efficiency to Nitrogen pool,        !
-!              {nondimensional].                                       !
+!              [nondimensional].                                       !
 !  ZooGR     Zooplankton grazing rate, [1/day].                        !
 !  ZooMRD    Zooplankton mortality rate to Detritus pool, [1/day].     !
 !  ZooMRN    Zooplankton mortality rate to Nitrogen pool, [1/day].     !

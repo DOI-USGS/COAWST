@@ -117,7 +117,7 @@ end
 
 % for all use:
     spherical='F';
-    projection.name='mercator';
+    projection='mercator';
 
 %%%%%%%%%%%%% END OF USER SECTION %%%%%%%%%%%%%%%%
 

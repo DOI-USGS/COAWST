@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_scalars
 !
-!svn $Id: mod_scalars.F 927 2018-10-16 03:51:56Z arango $
+!svn $Id: mod_scalars.F 1007 2020-02-25 22:29:41Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -220,7 +220,10 @@
 !    dt            Size baroclinic timestep (s).
 !    dtfast        Size barotropic timestep (s).
 !    dtau          Size of age increment
-!    run_time      Total run time for all nested grids (s).
+!    run_time      Total run time for all nested grids (s), it is
+!                    set in Masters/ocean.h
+!    MyRunInterval Total run time for all nested grids (s), it is
+!                    set in Drivers/nl_ocean.h (coupling window)
 !    io_time       Current I/O time (s) processed in "get_state".
 !    tdays         Model time clock (days).
 !    time          Model time clock (s).
@@ -228,6 +231,9 @@
 !    AVGtime       Model time clock for averages output (s).
 !    AVG2time      Model time clock for averages output (s).
 !    DIAtime       Model time clock for diagnostics output (s).
+!    F_code        Final time string for simulation
+!    I_code        Initial time string for simulation
+!    INItime       Nonlinear model initial conditions time (s).
 !    IMPtime       Impulse forcing time (s) to process.
 !    ObsTime       Observation time (s) to process.
 !    FrcTime       Adjoint or tangent linear Impulse forcing time (s).
@@ -265,6 +271,7 @@
         real(dp), allocatable :: AVG2time(:)             ! seconds
         real(dp), allocatable :: DIAtime(:)              ! seconds
         real(dp), allocatable :: IMPtime(:)              ! seconds
+        real(dp), allocatable :: INItime(:)              ! seconds
         real(dp), allocatable :: ObsTime(:)              ! seconds
         real(dp), allocatable :: FrcTime(:)              ! seconds
 #ifdef TIDES_ASTRO
@@ -277,7 +284,10 @@
         real(dp) :: dstart = 0.0_dp                      ! days
         real(dp) :: io_time = 0.0_dp                     ! seconds
         real(dp) :: run_time = 0.0_dp                    ! seconds
+        real(dp) :: MyRunInterval = 0.0_dp               ! seconds
         real(dp) :: tide_start = 0.0_dp                  ! days
+
+        character (len=22) :: F_code, I_code
 
 #ifdef CICE_MODEL
         real(r8), allocatable :: tspy(:)                 ! timesteps
@@ -384,9 +394,20 @@
 
         integer, allocatable :: NrecFrc(:)
 !
+!  HSIMT tracer advection coefficients for the TVD limiter (Wu and Zhu,
+!  2010).
+!
+        real(r8) :: cc1 = 0.25_r8
+        real(r8) :: cc2 = 0.5_r8
+        real(r8) :: cc3 = 1.0_r8/12.0_r8
+!
 !-----------------------------------------------------------------------
 !  Control switches.
 !-----------------------------------------------------------------------
+!
+!  Switch to use three ghost-points in the halo region.
+!
+        logical :: ThreeGhostPoints = .FALSE.
 !
 !  Switch to proccess nudging coefficients for radiation open boundary
 !  conditions.
@@ -503,6 +524,9 @@
         logical, allocatable :: Lm2CLM(:)            ! 2D momentum
         logical, allocatable :: Lm3CLM(:)            ! 3D momentum
         logical, allocatable :: LtracerCLM(:,:)      ! tracers
+        logical, allocatable :: LmiCLM(:)            ! ice momentum
+        logical, allocatable :: LaiCLM(:)            ! ice tracers
+        logical, allocatable :: LsiCLM(:)            ! ice tracers
 !
 !  Switched to nudge to climatology fields.
 !
@@ -510,6 +534,9 @@
         logical, allocatable :: LnudgeM2CLM(:)       ! 2D momentum
         logical, allocatable :: LnudgeM3CLM(:)       ! 3D momentum
         logical, allocatable :: LnudgeTCLM(:,:)      ! tracers
+        logical, allocatable :: LnudgeMICLM(:)       ! ice momentum
+        logical, allocatable :: LnudgeAICLM(:)       ! ice tracers
+        logical, allocatable :: LnudgeSICLM(:)       ! ice tracers
 !
 !  Switches to activate point Source/Sinks in an application:
 !    * Horizontal momentum transport (u or v)
@@ -537,6 +564,10 @@
         integer :: exit_flag = 0
         integer :: blowup = 0
         integer :: NoError = 0
+!
+!  Blow-up string.
+!
+        character (len=80) :: blowup_string
 !
 !  Set threshold maximum speed (m/s) and density anomaly (kg/m3) to
 !  test if the model is blowing-up.
@@ -943,6 +974,11 @@
         logical, allocatable :: LdefTLM(:)       ! Tangent linear file
         logical, allocatable :: LdefTLF(:)       ! TLM/RPM impulse file
 
+        logical, allocatable :: LreadADM(:)      ! Read ADM multi-files
+        logical, allocatable :: LreadBLK(:)      ! Read NLM bulk fluxes
+        logical, allocatable :: LreadFWD(:)      ! Read NLM trajectory
+        logical, allocatable :: LreadTLM(:)      ! Read TLM multi-files
+
         logical, allocatable :: LwrtADJ(:)       ! Write adjoint file
         logical, allocatable :: LwrtAVG(:)       ! Write average file
         logical, allocatable :: LwrtAVG2(:)      ! Write average2 file
@@ -1344,6 +1380,8 @@
         real(dp), allocatable :: M2nudg(:)         ! 2D momentum
         real(dp), allocatable :: M3nudg(:)         ! 3D momentum
         real(dp), allocatable :: Tnudg(:,:)        ! Tracers
+        real(dp), allocatable :: Tnudg_SSS(:)      ! Sea surface salinity
+        real(dp), allocatable :: sss_mismatch_threshold(:)! Sea surface salinity
 !
 !  Variables used to impose mass flux conservation in open boundary
 !  configurations.
@@ -1816,7 +1854,9 @@
         real(r8) :: spec_heat_air =  1004._r8
         real(r8) :: trans_coeff = 1.75E-3
         real(r8) :: sublim_latent_heat = 2.834E+6
-        real(r8) :: t0deg = 273.15_r8
+        real(r8) :: t0deg = 273.15_r8                     ! [Kelvin]
+!       real(r8), parameter :: sice_ref = 3.2_r8          ! [psu]
+        real(r8), parameter :: sice_ref = 7.0_r8          ! [psu]
 
         real(r8), allocatable :: dtice(:)
         real(r8), allocatable :: dte(:)
@@ -2008,6 +2048,10 @@
         allocate ( IMPtime(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+      IF (.not.allocated(INItime)) THEN
+        allocate ( INItime(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
       IF (.not.allocated(ObsTime)) THEN
         allocate ( ObsTime(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -2107,12 +2151,6 @@
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 
-#ifdef ICE_MODEL
-      IF (.not.allocated(Lice)) THEN
-        allocate ( Lice(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-#endif
       IF (.not.allocated(Lbiology)) THEN
         allocate ( Lbiology(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -2121,6 +2159,12 @@
         allocate ( Lfloats(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+#ifdef ICE_MODEL
+      IF (.not. allocated(Lice)) THEN
+        allocate ( Lice(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+#endif
       IF (.not.allocated(Lsediment)) THEN
         allocate ( Lsediment(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -2209,6 +2253,19 @@
         Dmem(1)=Dmem(1)+REAL(MT*Ngrids,r8)
       END IF
 
+      IF (.not. allocated(LmiCLM)) THEN
+        allocate ( LmiCLM(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not. allocated(LaiCLM)) THEN
+        allocate ( LaiCLM(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not. allocated(LsiCLM)) THEN
+        allocate ( LsiCLM(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+
       IF (.not.allocated(Lnudging)) THEN
         allocate ( Lnudging(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -2224,6 +2281,19 @@
       IF (.not.allocated(LnudgeTCLM)) THEN
         allocate ( LnudgeTCLM(MT,Ngrids) )
         Dmem(1)=Dmem(1)+REAL(MT*Ngrids,r8)
+      END IF
+
+      IF (.not. allocated(LnudgeMICLM)) THEN
+        allocate ( LnudgeMICLM(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not. allocated(LnudgeAICLM)) THEN
+        allocate ( LnudgeAICLM(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not. allocated(LnudgeSICLM)) THEN
+        allocate ( LnudgeSICLM(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 
       IF (.not.allocated(LuvSrc)) THEN
@@ -2715,6 +2785,23 @@
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 
+      IF (.not.allocated(LreadADM)) THEN
+        allocate ( LreadADM(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(LreadBLK)) THEN
+        allocate ( LreadBLK(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(LreadFWD)) THEN
+        allocate ( LreadFWD(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(LreadTLM)) THEN
+        allocate ( LreadTLM(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+
       IF (.not.allocated(LwrtADJ)) THEN
         allocate ( LwrtADJ(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -3148,6 +3235,14 @@
       END IF
       IF (.not.allocated(Tnudg)) THEN
         allocate ( Tnudg(MT,Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(MT*Ngrids,r8)
+      END IF
+      IF (.not.allocated(Tnudg_SSS)) THEN
+        allocate ( Tnudg_SSS(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not. allocated(sss_mismatch_threshold)) THEN
+        allocate ( sss_mismatch_threshold(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 
@@ -3669,10 +3764,16 @@
         Lnudging(ng)=.FALSE.
         LnudgeM2CLM(ng)=.FALSE.
         LnudgeM3CLM(ng)=.FALSE.
+        LnudgeMICLM(ng)=.FALSE.
+        LnudgeAICLM(ng)=.FALSE.
+        LnudgeSICLM(ng)=.FALSE.
         Lclimatology(ng)=.FALSE.
         Lm2CLM(ng)=.FALSE.
         Lm3CLM(ng)=.FALSE.
         LsshCLM(ng)=.FALSE.
+        LmiCLM(ng)=.FALSE.
+        LaiCLM(ng)=.FALSE.
+        LsiCLM(ng)=.FALSE.
         Lsponge(ng)=.FALSE.
         LuvSponge(ng)=.FALSE.
         LuvSrc(ng)=.FALSE.
@@ -3733,6 +3834,12 @@
       Tobc_out = 0.0_dp
 #endif
 !
+!  Initialize blowup string.
+!
+      DO i=1,LEN(blowup_string)
+        blowup_string(i:i)=' '
+      END DO
+!
 !  Initialize thread private variables.
 !
 !$OMP PARALLEL
@@ -3785,8 +3892,8 @@
 
         LdefADJ(ng)=.FALSE.
         LdefAVG(ng)=.TRUE.
-        LdefDAI(ng)=.FALSE.
         LdefAVG2(ng)=.TRUE.
+        LdefDAI(ng)=.FALSE.
         LdefDIA(ng)=.TRUE.
         LdefERR(ng)=.FALSE.
 #ifdef FLOATS
@@ -3808,6 +3915,10 @@
 #else
         LdefTIDE(ng)=.FALSE.
 #endif
+        LreadADM(ng)=.FALSE.
+        LreadBLK(ng)=.FALSE.
+        LreadFWD(ng)=.FALSE.
+        LreadTLM(ng)=.FALSE.
         LwrtADJ(ng)=.FALSE.
         LwrtAVG(ng)=.FALSE.
         LwrtAVG2(ng)=.FALSE.
@@ -3827,6 +3938,15 @@
         LwrtTime(ng)=.TRUE.
         ldefout(ng)=.FALSE.
 
+      END DO
+!
+!  Initialize the NLM initial conditions time to a negative number to
+!  check if its value was assigned elsewhere.  It can be used during
+!  the initialization of the adjoint model when DSTART is not the
+!  same as the start of the simulation.
+!
+      DO ng=1,Ngrids
+        INItime(ng)=-1.0_dp
       END DO
 #ifdef BIOLOGY
       DO ng=1,Ngrids

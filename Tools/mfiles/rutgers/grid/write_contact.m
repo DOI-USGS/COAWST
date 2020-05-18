@@ -21,9 +21,9 @@ function write_contact(ncname, S, G, varargin)
 %                                                    default true)
 %
 
-% svn $Id: write_contact.m 913 2018-07-02 22:16:58Z arango $
+% svn $Id: write_contact.m 996 2020-01-10 04:28:56Z arango $
 %=========================================================================%
-%  Copyright (c) 2002-2018 The ROMS/TOMS Group                            %
+%  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
 %    See License_ROMS.txt                           Hernan G. Arango      %
 %=========================================================================%

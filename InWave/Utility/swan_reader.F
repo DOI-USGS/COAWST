@@ -140,7 +140,7 @@
       allocate(posang(ndirsw))
 
 !     If swan was run on a full circle or just a sector.
-      IF (INT(2.0_r8*pi/WAVES(ng)%dang).eq.ndirsw) THEN
+      IF (NINT(2.0_r8*pi/WAVES(ng)%dang).eq.ndirsw) THEN
         WAVES(ng)%Swancircle=1
       ELSE
         WAVES(ng)%Swancircle=0
@@ -343,6 +343,7 @@
       temp=sum(WAVES(ng)%SDSW, DIM = 1)
       i=maxval(maxloc(temp))
       WAVES(ng)%mainang=WAVES(ng)%theta(i)
+      WAVES(ng)%mainangi=i
       IF (Master) THEN
         WRITE(stdout,*) 'Peak dir from ', WAVES(ng)%mainang*180.0_r8/pi
       END IF

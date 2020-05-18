@@ -46,6 +46,8 @@
      &                      GRID(ng)%angler,                            &
      &                      GRID(ng) % pm,                              &
      &                      GRID(ng) % pn,                              &
+     &                      GRID(ng) % on_u,                            &
+     &                      GRID(ng) % om_v,                            &
 # ifdef MASKING
      &                      GRID(ng) % rmask,                           &
 # endif
@@ -72,6 +74,7 @@
      &                            LBi, UBi, LBj, UBj,                   &
      &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            angler, pm, pn,                       &
+     &                            on_u, om_v,                           &
 # ifdef MASKING
      &                            rmask,                                &
 # endif
@@ -103,6 +106,8 @@
       real(r8), intent(in) :: angler(LBi:,LBj:)
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
+      real(r8), intent(in) :: on_u(LBi:,LBj:)
+      real(r8), intent(in) :: om_v(LBi:,LBj:)
 #   ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:,LBj:)
 #   endif
@@ -120,6 +125,8 @@
       real(r8), intent(in) :: angler(LBi:UBi,LBj:UBj,ND)
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
 #   ifdef MASKING
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
 #   endif
@@ -163,7 +170,7 @@
             crk=0.5_r8*(sqrt(MAX(g/kwc(i-1,j,d)*tanh(cff1),eps))+       &
      &                  sqrt(MAX(g/kwc(i  ,j,d)*tanh(cff2),eps)))
             cff1=0.5_r8*(u_rho(i-1,j)+u_rho(i,j))
-            cff=crk*cos(alfa_wave)+cff1
+            cff=(crk*cos(alfa_wave)+cff1)*on_u(i,j)
             cff1=MAX(cff,0.0_r8)
             cff2=MIN(cff,0.0_r8)
             FX(i,j)=cff1*kwc(i-1,j,d)+                                  &
@@ -178,7 +185,7 @@
             crk=0.5_r8*(sqrt(MAX(g/kwc(i,j-1,d)*tanh(cff1),eps))+       &
      &                  sqrt(MAX(g/kwc(i,j  ,d)*tanh(cff2),eps)))
             cff1=0.5_r8*(v_rho(i,j-1)+v_rho(i,j))
-            cff=crk*sin(alfa_wave)+cff1
+            cff=(crk*sin(alfa_wave)+cff1)*om_v(i,j)
             cff1=MAX(cff,0.0_r8)
             cff2=MIN(cff,0.0_r8)
             FE(i,j)=cff1*kwc(i,j-1,d)+                                  &

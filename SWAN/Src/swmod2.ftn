@@ -34,7 +34,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -157,7 +157,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -364,7 +364,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -466,7 +466,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -630,7 +630,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -681,6 +681,9 @@
 !  7. Local variables
 !
 !     FOBSTAC : first obstacle in list of obstacles
+!     FBCOEF  : freeboard dependent coefficients
+!     FBTYP1  : freeboard type: freeboard or not
+!     FBTYP2  : freeboard type: includes quay or not
 !     NCRPTS  : number of corner points in obstacle
 !     NEXTOBST: pointer to next obstacle in list
 !     RFCOEF  : reflection coefficients
@@ -700,6 +703,8 @@
          REAL, POINTER          :: TRCF1D(:), TRCF2D(:,:)
          INTEGER                :: RFTYP1, RFTYP2, RFTYP3
          REAL                   :: RFCOEF(6)
+         INTEGER                :: FBTYP1, FBTYP2
+         REAL                   :: FBCOEF(3)
          INTEGER                :: NCRPTS
          REAL, POINTER          :: XCRP(:), YCRP(:)
          TYPE(OBSTDAT), POINTER :: NEXTOBST
@@ -745,7 +750,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -766,10 +771,12 @@
 !  0. Authors
 !
 !     40.31: Marcel Zijlema
+!     41.75: Erick Rogers
 !
 !  1. Updates
 !
 !     Oct. 03: New Module
+!     41.75, Jan. 19: adding sea ice
 !
 !  2. Purpose
 !
@@ -790,6 +797,7 @@
 !     WLEVL , ASTDF
 !     NPLAF, TURBF
 !     MUDLF
+!     AICEF, HICEF
 !
 !  4. Modules used
 !
@@ -808,9 +816,11 @@
 !  7. Local variables
 !
 !     AC2   : Contains action density at present time step
+!     AICEF : input field containing ice concentration (fraction)
 !     ASTDF : input field of air-sea temperature difference
 !     DEPTH : input field of depth
 !     FRIC  : input field of friction
+!     HICEF : input field containing ice thickness (meters)
 !     KGRBND: array containing all boundary points
 !             (+ 2 extra zeros as area separator for all separated areas)
 !     KGRPNT: array containing indirect addresses for grid points
@@ -901,6 +911,7 @@
       REAL   , SAVE, ALLOCATABLE :: MUDLF(:)
       REAL   , SAVE, ALLOCATABLE :: NPLAF(:) , TURBF(:)
 #endif
+      REAL   , SAVE, ALLOCATABLE :: AICEF(:) , HICEF(:)
       REAL   , SAVE, ALLOCATABLE :: LAYH(:), VEGDIL(:), VEGDRL(:),
      &                              VEGNSL(:)
 !ESMF!
@@ -946,7 +957,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as
@@ -1098,7 +1109,7 @@
 
 #ifdef SWAN_MODEL
 ! Mine
-      INTEGER, SAVE :: WAV_COMM_WORLD
+!     INTEGER, SAVE :: WAV_COMM_WORLD
       INTEGER :: Numspecl
       INTEGER :: NBGRPT_last
       INTEGER, SAVE, ALLOCATABLE :: BGRIDPG(:,:)
@@ -1349,7 +1360,7 @@
 !
 !
 !     SWAN (Simulating WAves Nearshore); a third generation wave model
-!     Copyright (C) 1993-2017  Delft University of Technology
+!     Copyright (C) 1993-2019  Delft University of Technology
 !
 !     This program is free software; you can redistribute it and/or
 !     modify it under the terms of the GNU General Public License as

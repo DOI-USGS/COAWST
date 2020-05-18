@@ -1,16 +1,31 @@
 #!/bin/csh
 #
 #  Makefile for scrip coawst
-#  You need to set: FORT
+#  This make will look in the ../../Compilers folder and
+#  use those files as make control options.
+#
+#  1. You need to set: FORT
 #
 
-#FORT = ifort
-FORT = gfortran
+FORT = ifort
+#FORT = gfortran
 #FORT  = pgi
 
+# 2. If you want to run in MPI, then set USE_MPI=on,
+# otherwise just keep it blank USE_MPI=  [just keep it blank].
+# The USE_MPF90 will activate the call to mpif90.
+
+USE_MPI=on               # distributed-memory parallelism
+USE_MPIF90=on            # compile with mpif90 script
+USE_NETCDF4=on
+
 #
-#   YOU  SHOULD NOT NEED TO CHANGE ANYTHING BELOW HERE
+#   3. At the command prompt, type-->      make
 #
+#   4. YOU  SHOULD NOT NEED TO CHANGE ANYTHING BELOW HERE
+#
+
+USE_SCRIP := on
 
 COMPILERS = ../../Compilers
 
@@ -46,6 +61,7 @@ OBJSET  = \
 	read_ww3.o \
 	read_roms.o \
 	read_wrf.o \
+	read_hydro.o \
 	remap_vars.o \
 	remap_distwgt.o \
 	remap_conserv.o \
@@ -102,7 +118,12 @@ read_roms.o: $(SRCDIR)/read_roms.f kinds_mod.o scripwrap_mod.o  \
 
 read_wrf.o: $(SRCDIR)/read_wrf.f kinds_mod.o scripwrap_mod.o  \
                           netcdf.o  create_fullgrid.o $(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/read_wrf.f
+	$(CPP) $(CPPFLAGS)  $(SRCDIR)/read_wrf.f  $(SRCDIR)/read_wrf.fpp
+	$(FC) $(FLAGS) -c $(SRCDIR)/read_wrf.fpp
+
+read_hydro.o: $(SRCDIR)/read_hydro.f kinds_mod.o scripwrap_mod.o  \
+                        netcdf.o create_fullgrid.o $(INCLUDE)
+	$(FC) $(FLAGS) -c $(SRCDIR)/read_hydro.f
 
 remap_vars.o: $(SRCDIR)/remap_vars.f kinds_mod.o constants.o grids.o \
                             $(INCLUDE)
@@ -110,7 +131,8 @@ remap_vars.o: $(SRCDIR)/remap_vars.f kinds_mod.o constants.o grids.o \
 
 remap_conserv.o: $(SRCDIR)/remap_conserv.f kinds_mod.o constants.o \
 		timers.o remap_vars.o grids.o $(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/remap_conserv.f
+	$(CPP) $(CPPFLAGS)  $(SRCDIR)/remap_conserv.f  $(SRCDIR)/remap_conserv.fpp
+	$(FC) $(FLAGS) -c $(SRCDIR)/remap_conserv.fpp
 
 remap_distwgt.o: $(SRCDIR)/remap_distwgt.f kinds_mod.o constants.o \
 		remap_vars.o grids.o $(INCLUDE)
@@ -142,17 +164,20 @@ scrip.o: $(SRCDIR)/scrip.f kinds_mod.o constants.o iounits.o timers.o \
 		remap_vars.o grids.o remap_conserv.o remap_distwgt.o \
 		remap_bilinear.o remap_bicubic.o remap_write.o \
 		$(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/scrip.f
+	$(CPP) $(CPPFLAGS)  $(SRCDIR)/scrip.f  $(SRCDIR)/scrip.fpp
+	$(FC) $(FLAGS) -c $(SRCDIR)/scrip.fpp
 
 create_masks.o: $(SRCDIR)/create_masks.f kinds_mod.o scripwrap_mod.o  \
                           scrip.o   $(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/create_masks.f
+	$(CPP) $(CPPFLAGS)  $(SRCDIR)/create_masks.f  $(SRCDIR)/create_masks.fpp
+	$(FC) $(FLAGS) -c $(SRCDIR)/create_masks.fpp
 
 scrip_coawst.o: $(SRCDIR)/scrip_coawst.f kinds_mod.o constants.o iounits.o \
 		scripwrap_mod.o create_fullgrid.o read_swan.o read_roms.o  \
-		read_wrf.o read_ww3.o scrip.o create_masks.o \
+		read_wrf.o read_hydro.o read_ww3.o scrip.o create_masks.o \
 		$(INCLUDE)
-	$(FC) $(FLAGS) -c $(SRCDIR)/scrip_coawst.f
+	$(CPP) $(CPPFLAGS)  $(SRCDIR)/scrip_coawst.f  $(SRCDIR)/scrip_coawst.fpp
+	$(FC) $(FLAGS) -c $(SRCDIR)/scrip_coawst.fpp
 
 
 clean: 

@@ -1,7 +1,7 @@
 !
-!svn $Id: sediment_mod.h 921 2018-09-06 18:27:34Z arango $
+!svn $Id: sediment_mod.h 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group        John C. Warner   !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group        John C. Warner   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -26,7 +26,13 @@
 !   newlayer_thick  New layer deposit thickness criteria (m).          !
 !   morph_fac       Morphological scale factor (nondimensional).       !
 !                                                                      !
-!   thck_wbl_inp    Thickness of the wave boundary layer (m)           !
+!   sg_zwbl         Input elevation to get near-bottom current vel.(m) !
+!   sedslope_crit_wet Critical wet bed slope for slumping.             !
+!   sedslope_crit_dry Critical dry bed slope for slumping.             !
+!   slopefac_wet     Bedload wet bed slumping factor.                  !
+!   slopefac_dry     Bedload dry bed slumping factor.                  !
+!   bedload_vandera_alphaw Bedload scale factor for waves contribution.!
+!   bedload_vandera_alphac Bedload scale factor for currs contribution.!
 !                                                                      !
 !  BED properties indices:                                             !
 !  ======================                                              !
@@ -97,17 +103,17 @@
       integer, allocatable :: isand(:)    ! Non-cohesive sediment
 !
 !-----------------------------------------------------------------------
-!  Set bed property variables 
+!  Set bed property variables
 !-----------------------------------------------------------------------
 !
-      integer :: MBEDP                     ! Number of bed properties  
-      integer :: ithck, iaged, iporo, idiff 
+      integer :: MBEDP                     ! Number of bed properties
+      integer :: ithck, iaged, iporo, idiff
 #if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
-      integer :: ibtcr 
+      integer :: ibtcr
 #endif
 !
 !-----------------------------------------------------------------------
-!  Set bottom property variables 
+!  Set bottom property variables
 !-----------------------------------------------------------------------
 !
       integer :: MBOTP                     ! Number of bottom properties
@@ -115,13 +121,13 @@
       integer :: irlen, irhgt, ibwav, izdef
       integer :: izapp, izNik, izbio, izbfm
       integer :: izbld, izwbl, iactv, ishgt
-      integer :: imaxD, idnet  
+      integer :: imaxD, idnet
 #if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
       integer :: idoff, idslp, idtim, idbmx
-      integer :: idbmm, idbzs, idbzm, idbzp 
-#endif 
+      integer :: idbmm, idbzs, idbzm, idbzp
+#endif
 #if defined MIXED_BED
-      integer :: idprp 
+      integer :: idprp
 #endif
 !
 !  Sediment metadata indices vectors.
@@ -131,24 +137,24 @@
       integer, allocatable :: idUbld(:)    ! bed load u-points
       integer, allocatable :: idVbld(:)    ! bed load v-points
 !
-#if defined BEDLOAD 
-# if defined BEDLOAD_VANDERA
+#if defined BEDLOAD
+!# if defined BEDLOAD_VANDERA
       integer :: idsurs                    ! Ursell number of the asymmetric wave
-      integer :: idsrrw                    ! velocity skewness of the asymmetric wave 
+      integer :: idsrrw                    ! velocity skewness of the asymmetric wave
       integer :: idsbtw                    ! acceleration asymmetry parameter
       integer :: idszrw                    ! Reference height to get near bottom current velocity
-      integer :: idsksd                    ! Bed roughness (zo) to calc. wave boundary layer 
-      integer :: idsusc                    ! Current friction velocity at wave boundary layer 
-      integer :: idstbl                    ! Thickness at wave boundary layer 
-      integer :: idsubl                    ! Current velocity at wave boundary layer 
-      integer :: idspwc                    ! Angle between waves/currents 
-      integer :: idsfdw                    ! Friction factor from the current cycle  
-      integer :: idsucr                    ! Crest velocity of the asymmetric wave 
+      integer :: idsksd                    ! Bed roughness (zo) to calc. wave boundary layer
+      integer :: idsusc                    ! Current friction velocity at wave boundary layer
+      integer :: idstbl                    ! Thickness at wave boundary layer
+      integer :: idsubl                    ! Current velocity at wave boundary layer
+      integer :: idspwc                    ! Angle between waves/currents
+      integer :: idsfdw                    ! Friction factor from the current cycle
+      integer :: idsucr                    ! Crest velocity of the asymmetric wave
       integer :: idsutr                    ! Trough velocity of the asymmetric wave
-      integer :: idstcr                    ! Crest time period of the asymmetric wave 
+      integer :: idstcr                    ! Crest time period of the asymmetric wave
       integer :: idsttr                    ! Trough time period of the asymmetric wave
-# endif  
-#endif 
+!# endif
+#endif
 !
 !-----------------------------------------------------------------------
 !  Input sediment parameters.
@@ -158,11 +164,17 @@
       real(r8), allocatable :: minlayer_thick(:)   ! 2nd layer thickness criteria
       real(r8), allocatable :: bedload_coeff(:)    ! bedload rate coefficient
 !
-#if defined BEDLOAD 
-# if defined BEDLOAD_VANDERA
-      real(r8), allocatable :: thck_wbl_inp(:)    ! bedload rate coefficient
-# endif  
-#endif 
+#if defined BEDLOAD
+!# if defined BEDLOAD_VANDERA
+      real(r8), allocatable :: sg_zwbl(:)         ! input elevation to get near-bottom current vel
+      real(r8), allocatable :: sedslope_crit_wet(:) ! critical wet bed slope for slumping
+      real(r8), allocatable :: sedslope_crit_dry(:) ! critical dry bed slope for slumping
+      real(r8), allocatable :: slopefac_wet(:)    ! bedload wet bed slumping factor
+      real(r8), allocatable :: slopefac_dry(:)    ! bedload dry bed slumping factor
+      real(r8), allocatable :: bedload_vandera_alphaw(:)    ! bedload scale factor for waves contribution
+      real(r8), allocatable :: bedload_vandera_alphac(:)    ! bedload scale factor for currs contribution
+!# endif
+#endif
 !
       real(r8), allocatable :: Csed(:,:)       ! initial concentration
       real(r8), allocatable :: Erate(:,:)      ! erosion rate
@@ -212,36 +224,36 @@
 !  Local variable declarations
 !
       integer :: i, ic
-      integer :: counter1, counter2 
+      integer :: counter1, counter2
       real(r8), parameter :: IniVal = 0.0_r8
 !
 !-----------------------------------------------------------------------
 !  Set bed properties indices.
 !-----------------------------------------------------------------------
 !
-      counter1 = 1           ! Initializing counter 
+      counter1 = 1           ! Initializing counter
       ithck    = counter1    ! layer thickness
       counter1 = counter1+1
-      iaged    = counter1    ! layer age 
-      counter1 = counter1+1 
-      iporo    = counter1    ! layer porosity 
+      iaged    = counter1    ! layer age
       counter1 = counter1+1
-      idiff    = counter1    ! layer bio-diffusivity 
+      iporo    = counter1    ! layer porosity
+      counter1 = counter1+1
+      idiff    = counter1    ! layer bio-diffusivity
 #if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
-      counter1 = counter1+1 
-      ibtcr    = counter1    ! layer critical stress 
-#endif 
+      counter1 = counter1+1
+      ibtcr    = counter1    ! layer critical stress
+#endif
 !
 !-----------------------------------------------------------------------
 !  Set bottom properties indices.
 !-----------------------------------------------------------------------
-! 
-      counter2 = 1           ! Initializing counter 
+!
+      counter2 = 1           ! Initializing counter
       isd50    = counter2    ! Median sediment grain diameter (m).
       counter2 = counter2+1
       idens    = counter2    ! Median sediment grain density (kg/m3).
       counter2 = counter2+1
-      iwsed    = counter2    ! Mean settling velocity (m/s).  
+      iwsed    = counter2    ! Mean settling velocity (m/s).
       counter2 = counter2+1
       itauc    = counter2    ! Mean critical erosion stress (m2/s2).
       counter2 = counter2+1
@@ -256,53 +268,53 @@
       izapp    = counter2    ! Apparent bottom roughness (m).
       counter2 = counter2+1
       izNik    = counter2    ! Nikuradse bottom roughness (m).
-      counter2 = counter2+1  
+      counter2 = counter2+1
       izbio    = counter2    ! Biological bottom roughness (m).
-      counter2 = counter2+1  
+      counter2 = counter2+1
       izbfm    = counter2    ! Bed form bottom roughness (m).
       counter2 = counter2+1
       izbld    = counter2    ! Bed load bottom roughness (m).
       counter2 = counter2+1
       izwbl    = counter2    ! Bottom roughness used wave BBL (m).
-      counter2 = counter2+1  
+      counter2 = counter2+1
       iactv    = counter2    ! Active layer thickness for erosive potential (m).
-      counter2 = counter2+1  
+      counter2 = counter2+1
       ishgt    = counter2    ! Sediment saltation height (m).
-      counter2 = counter2+1   
+      counter2 = counter2+1
       imaxD    = counter2    ! Maximum inundation depth.
       counter2 = counter2+1
       idnet    = counter2    ! Erosion/deposition
 #if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
       counter2 = counter2+1
-      idoff    = counter2    ! Offset for calculation of dmix erodibility profile (m). 
-      counter2 = counter2+1                                 
-      idslp    = counter2    ! Slope  for calculation of dmix or erodibility profile.  
-      counter2 = counter2+1                                       
+      idoff    = counter2    ! Offset for calculation of dmix erodibility profile (m).
+      counter2 = counter2+1
+      idslp    = counter2    ! Slope  for calculation of dmix or erodibility profile.
+      counter2 = counter2+1
       idtim    = counter2    ! Time scale for restoring erodibility profile (s).
       counter2 = counter2+1
       idbmx    = counter2    ! Bed biodifusivity maximum.
-      counter2 = counter2+1    
+      counter2 = counter2+1
       idbmm    = counter2    ! Bed biodifusivity minimum.
       counter2 = counter2+1
       idbzs    = counter2    ! Bed biodifusivity zs.
-      counter2 = counter2+1     
+      counter2 = counter2+1
       idbzm    = counter2    ! Bed biodifusivity zm.
       counter2 = counter2+1
       idbzp    = counter2    ! Bed biodifusivity phi.
-#endif 
+#endif
 #if defined MIXED_BED
       counter2 = counter2+1
-      idprp    = counter2    ! Cohesive behavior. 
-#endif 
+      idprp    = counter2    ! Cohesive behavior.
+#endif
 !
-!  Allocate bed & bottom properties 
+!  Allocate bed & bottom properties
 !
       MBEDP   = counter1
       IF (.not.allocated(idSbed)) THEN
         allocate ( idSbed(MBEDP) )
       END IF
 !
-      MBOTP   = counter2 
+      MBOTP   = counter2
       IF (.not.allocated(idBott)) THEN
         allocate ( idBott(MBOTP) )
       END IF
@@ -332,13 +344,43 @@
       END IF
 !
 #if defined BEDLOAD
-# if defined BEDLOAD_VANDERA
-      IF (.not.allocated(thck_wbl_inp)) THEN
-        allocate ( thck_wbl_inp(Ngrids) )
-        thck_wbl_inp = IniVal
+!# if defined BEDLOAD_VANDERA
+      IF (.not.allocated(sg_zwbl)) THEN
+        allocate ( sg_zwbl(Ngrids) )
+        sg_zwbl = 0.1_r8
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
-# endif
+      IF (.not.allocated(sedslope_crit_wet)) THEN
+        allocate ( sedslope_crit_wet(Ngrids) )
+        sedslope_crit_wet = IniVal
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(sedslope_crit_dry)) THEN
+        allocate ( sedslope_crit_dry(Ngrids) )
+        sedslope_crit_dry = IniVal
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(slopefac_wet)) THEN
+        allocate ( slopefac_wet(Ngrids) )
+        slopefac_wet = IniVal
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(slopefac_dry)) THEN
+        allocate ( slopefac_dry(Ngrids) )
+        slopefac_dry = IniVal
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(bedload_vandera_alphaw)) THEN
+        allocate ( bedload_vandera_alphaw(Ngrids) )
+        bedload_vandera_alphaw = IniVal
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(bedload_vandera_alphac)) THEN
+        allocate ( bedload_vandera_alphac(Ngrids) )
+        bedload_vandera_alphac = IniVal
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+!# endif
 #endif
 !
 #if defined COHESIVE_BED || defined MIXED_BED

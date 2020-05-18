@@ -2,9 +2,9 @@
 #ifdef ADJOINT
       SUBROUTINE ad_wrt_his (ng)
 !
-!svn $Id: ad_wrt_his.F 889 2018-02-10 03:32:52Z arango $
+!svn $Id: ad_wrt_his.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -108,7 +108,7 @@
 # else
       kout=kstp(ng)
 # endif
-# if defined WEAK_CONSTRAINT && !defined TIME_CONV
+# if defined WEAK_CONSTRAINT
       kfout=2
 # endif
 # ifdef SOLVE3D
@@ -128,11 +128,8 @@
 !  Set time record index.
 !
       ADM(ng)%Rindex=ADM(ng)%Rindex+1
-      Fcount=ADM(ng)%Fcount
+      Fcount=ADM(ng)%load
       ADM(ng)%Nrec(Fcount)=ADM(ng)%Nrec(Fcount)+1
-# if defined WEAK_CONSTRAINT && defined TIME_CONV
-      kfout=NrecTC(ng)-ADM(ng)%Rindex+1
-# endif
 !
 !  If requested, set time index to recycle time records in the adjoint
 !  file.
@@ -148,16 +145,7 @@
           Tval(1)=REAL(ADM(ng)%Rindex,r8)*day2sec
         ELSE
 # ifdef WEAK_CONSTRAINT
-#  ifdef TIME_CONV
-          IF (ADM(ng)%Rindex.le.NrecTC(ng)) THEN
-            Tval(1)=dstart*day2sec+                                     &
-     &              REAL(kfout-1,r8)*nADJ(ng)*dt(ng)
-          ELSE
-            Tval(1)=dstart*day2sec
-          END IF
-#  else
           Tval(1)=ForceTime(ng)
-#  endif
 # else
           Tval(1)=time(ng)
 # endif
@@ -286,11 +274,7 @@
 #  ifdef MASKING
      &                       GRID(ng) % rmask,                          &
 #  endif
-#  ifdef TIME_CONV
-     &                       OCEAN(ng)% f_zetaS(:,:,kfout))
-#  else
      &                       OCEAN(ng)% f_zetaG(:,:,kfout))
-#  endif
           IF (FoundError(status, nf90_noerr, __LINE__,                  &
      &                   __FILE__)) THEN
             IF (Master) THEN
@@ -387,11 +371,7 @@
 #  ifdef MASKING
      &                       GRID(ng) % umask_full,                     &
 #  endif
-#  ifdef TIME_CONV
-     &                       OCEAN(ng) % f_ubarS(:,:,kfout))
-#  else
      &                       OCEAN(ng) % f_ubarG(:,:,kfout))
-#  endif
           IF (FoundError(status, nf90_noerr, __LINE__,                  &
      &                   __FILE__)) THEN
             IF (Master) THEN
@@ -478,11 +458,7 @@
 #  ifdef MASKING
      &                       GRID(ng) % vmask_full,                     &
 #  endif
-#  ifdef TIME_CONV
-     &                       OCEAN(ng) % f_vbarS(:,:,kfout))
-#  else
      &                       OCEAN(ng) % f_vbarG(:,:,kfout))
-#  endif
           IF (FoundError(status, nf90_noerr, __LINE__,                  &
      &                   __FILE__)) THEN
             IF (Master) THEN
@@ -571,11 +547,7 @@
 #   ifdef MASKING
      &                       GRID(ng) % umask_full,                     &
 #   endif
-#  ifdef TIME_CONV
-     &                       OCEAN(ng) % f_uS(:,:,:,kfout))
-#  else
      &                       OCEAN(ng) % f_uG(:,:,:,kfout))
-#  endif
           IF (FoundError(status, nf90_noerr, __LINE__,                  &
      &                   __FILE__)) THEN
             IF (Master) THEN
@@ -666,11 +638,7 @@
 #   ifdef MASKING
      &                       GRID(ng) % vmask_full,                     &
 #   endif
-#  ifdef TIME_CONV
-     &                       OCEAN(ng) % f_vS(:,:,:,kfout))
-#  else
      &                       OCEAN(ng) % f_vG(:,:,:,kfout))
-#  endif
           IF (FoundError(status, nf90_noerr, __LINE__,                  &
      &                   __FILE__)) THEN
             IF (Master) THEN
@@ -762,11 +730,7 @@
 #   ifdef MASKING
      &                         GRID(ng) % rmask,                        &
 #   endif
-#  ifdef TIME_CONV
-     &                         OCEAN(ng) % f_tS(:,:,:,kfout,itrc))
-#  else
      &                         OCEAN(ng) % f_tG(:,:,:,kfout,itrc))
-#  endif
             IF (FoundError(status, nf90_noerr, __LINE__,                &
      &                     __FILE__)) THEN
               IF (Master) THEN

@@ -86,9 +86,6 @@
 # define UV_COR
 # define UV_VIS2
 # define MIX_S_UV
-# define TS_U3HADVECTION
-# define TS_C4VADVECTION
-# undef  TS_MPDATA
 
 # ifdef SSW_BBL
 #  define SSW_CALC_ZNOT
@@ -118,8 +115,8 @@
 # ifdef WRF_MODEL
 #  undef BULK_FLUXES
 #  define ATM2OCN_FLUXES
-#  define ANA_SSFLUX
-#  undef LONGWAVE_OUT
+#  undef  ANA_SSFLUX
+#  undef  LONGWAVE_OUT
 # else
 #  define ANA_SMFLUX
 #  define ANA_STFLUX
@@ -128,6 +125,7 @@
 # define ATM_PRESS
 # define ANA_BTFLUX
 # define ANA_BSFLUX
+# define EMINUSP
 
 /* Turbulence closure */
 # define GLS_MIXING

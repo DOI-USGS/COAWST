@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE get_idata (ng)
 !
-!svn $Id: get_idata.F 906 2018-06-21 03:29:09Z arango $
+!svn $Id: get_idata.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -224,7 +224,8 @@
      &                  GRID(ng) % rmask,                               &
 #  endif
      &                  MIXING(ng) % m2_amp)
-        IF (exit_flag.ne.NoError) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__,                    &
+     &                 __FILE__)) RETURN
       END IF
 #endif
 
@@ -512,23 +513,25 @@
           time_save=time(ng)
           time(ng)=8640000.0_r8
           tdays(ng)=time(ng)*sec2day
-          CALL get_2dfld (ng, iNLM, idTpam, ncFRCid(idTpam,ng),         &
-     &                    nFfiles(ng), FRC(1,ng), update(1),            &
+          CALL get_2dfld (ng, iNLM, idTpam, TIDE(ng)%ncid,              &
+     &                    1, TIDE(ng), update(1),                       &
      &                    LBi, UBi, LBj, UBj, MTC, NTC(ng),             &
 # ifdef MASKING
      &                    GRID(ng) % rmask,                             &
 # endif
      &                    TIDES(ng) % POT_Tamp)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 
-          CALL get_2dfld (ng, iNLM, idTpph, ncFRCid(idTpph,ng),         &
-     &                    nFfiles(ng), FRC(1,ng), update(1),            &
+          CALL get_2dfld (ng, iNLM, idTpph, TIDE(ng)%ncid,              &
+     &                    1, TIDE(ng), update(1),                       &
      &                    LBi, UBi, LBj, UBj, MTC, NTC(ng),             &
 # ifdef MASKING
      &                    GRID(ng) % rmask,                             &
 # endif
      &                    TIDES(ng) % POT_Tphase)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
 
           time(ng)=time_save
           tdays(ng)=time(ng)*sec2day

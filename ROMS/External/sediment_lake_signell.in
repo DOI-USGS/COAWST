@@ -1,9 +1,9 @@
 !
 !  ROMS/TOMS Cohesive and Non-cohesive Sediment Model Parameters.
 !
-!svn $Id: sediment_lake_signell.in 830 2017-01-24 21:21:11Z arango $
+!svn $Id: sediment_lake_signell.in 1001 2020-01-10 22:41:16Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -37,7 +37,7 @@
 !==============================================================================
 !
 !------------------------------------------------------------------------------
-!  Sediment model control switch.
+! Sediment model control switch.
 !------------------------------------------------------------------------------
 
 ! Switch is used to control sediment model computation within nested and/or
@@ -46,7 +46,43 @@
    Lsediment == T
 
 !------------------------------------------------------------------------------
-!  Lateral boundary condition flags for all sediment tracers.
+! Tracer horizontal and vertical advection scheme.
+!------------------------------------------------------------------------------
+!
+! Set horizontal and vertical advection schemes for sediment tracers.
+! A different advection scheme is allowed for each tracer. For example,
+! a positive-definite (monotonic) algorithm can be activated for
+! salinity and biological tracers, while a different one is set for
+! temperature. [1:NAT+NPT,Ngrids] values are expected.
+!
+!   Keyword    Advection Algorithm
+!
+!   A4         4th-order Akima (horizontal/vertical)
+!   C2         2nd-order centered differences (horizontal/vertical)
+!   C4         4th-order centered differences (horizontal/vertical)
+!   HSIMT      3th-order HSIMT-TVD (horizontal/vertical)
+!   MPDATA     recursive flux corrected MPDATA (horizontal/vertical)
+!   SPLINES    parabolic splines (only vertical)
+!   SU3        split third-order upstream (horizontal/vertical)
+!   U3         3rd-order upstream-biased (only horizontal)
+!
+! The user has the option of specifying the full Keyword or the first
+! two letters, regardless if using uppercase or lowercase. If nested
+! grids, specify values for each grid.
+
+   Hadvection == HSIMT                          ! idsed(:), compact
+
+   Vadvection == HSIMT                          ! idsed(:), compact
+
+! Adjoint-based algorithms can have different horizontal and schemes
+! for active and inert tracers.
+
+ad_Hadvection == U3                             ! idsed(:), compact
+
+ad_Vadvection == C4                             ! idsed(:), compact
+
+!------------------------------------------------------------------------------
+! Lateral boundary condition flags for all sediment tracers.
 !------------------------------------------------------------------------------
 !
 ! Set lateral boundary conditions keyword. Notice that a value is expected

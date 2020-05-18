@@ -2,9 +2,9 @@
 #ifdef NESTING
       SUBROUTINE set_contact (ng, model)
 !
-!svn $Id: set_contact.F 923 2018-09-26 21:20:30Z arango $
+!svn $Id: set_contact.F 995 2020-01-10 04:01:28Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -705,6 +705,26 @@
         Dmem(dg)=Dmem(dg)+2.0_r8*REAL(N(dg)*NpointsR(cr),r8)
         Dmem(dg)=Dmem(dg)+2.0_r8*REAL(N(dg)*NpointsU(cr),r8)
         Dmem(dg)=Dmem(dg)+2.0_r8*REAL(N(dg)*NpointsV(cr),r8)
+
+#  if defined TANGENT || defined TL_IOMS
+        allocate ( Rcontact(cr) % tl_Vweight(2,N(dg),NpointsR(cr)) )
+        allocate ( Ucontact(cr) % tl_Vweight(2,N(dg),NpointsU(cr)) )
+        allocate ( Vcontact(cr) % tl_Vweight(2,N(dg),NpointsV(cr)) )
+
+        Dmem(dg)=Dmem(dg)+2.0_r8*REAL(N(dg)*NpointsR(cr),r8)
+        Dmem(dg)=Dmem(dg)+2.0_r8*REAL(N(dg)*NpointsU(cr),r8)
+        Dmem(dg)=Dmem(dg)+2.0_r8*REAL(N(dg)*NpointsV(cr),r8)
+#  endif
+
+#  ifdef ADJOINT
+        allocate ( Rcontact(cr) % ad_Vweight(2,N(dg),NpointsR(cr)) )
+        allocate ( Ucontact(cr) % ad_Vweight(2,N(dg),NpointsU(cr)) )
+        allocate ( Vcontact(cr) % ad_Vweight(2,N(dg),NpointsV(cr)) )
+
+        Dmem(dg)=Dmem(dg)+2.0_r8*REAL(N(dg)*NpointsR(cr),r8)
+        Dmem(dg)=Dmem(dg)+2.0_r8*REAL(N(dg)*NpointsU(cr),r8)
+        Dmem(dg)=Dmem(dg)+2.0_r8*REAL(N(dg)*NpointsV(cr),r8)
+#  endif
 # endif
       END DO
 !
@@ -1006,7 +1026,7 @@
 !  Number of refined grid time-steps. Their values are initialized to
 !  the optimal values based on the spatial refinement ratio.  These
 !  values are over-written in "metrics.F" to use the time-step
-!  size ration between donor and receiver grid.  The user is allowed
+!  size ratio between donor and receiver grid.  The user is allowed
 !  to take larger divisible time-step with respect to the donor grid.
 !  The user is responsible to set the appropriate refined grid time-step
 !  for stability.
@@ -1094,6 +1114,36 @@
           Dmem(dg)=Dmem(dg)+2.0_r8*REAL(4*NpointsU(cr),r8)
           Dmem(dg)=Dmem(dg)+2.0_r8*REAL(4*NpointsV(cr),r8)
 
+#  if defined TANGENT || defined TL_IOMS
+          allocate ( COMPOSITE(cr) % tl_bustr(4,NpointsU(cr)) )
+          allocate ( COMPOSITE(cr) % tl_bvstr(4,NpointsV(cr)) )
+
+          allocate ( COMPOSITE(cr) % tl_ubar(4,NpointsU(cr),2) )
+          allocate ( COMPOSITE(cr) % tl_vbar(4,NpointsV(cr),2) )
+          allocate ( COMPOSITE(cr) % tl_zeta(4,NpointsR(cr),2) )
+
+          allocate ( COMPOSITE(cr) % tl_rzeta(4,NpointsR(cr)) )
+
+          Dmem(dg)=Dmem(dg)+2.0_r8*REAL(4*NpointsR(cr),r8)
+          Dmem(dg)=Dmem(dg)+2.0_r8*REAL(4*NpointsU(cr),r8)
+          Dmem(dg)=Dmem(dg)+2.0_r8*REAL(4*NpointsV(cr),r8)
+#  endif
+
+#  ifdef ADJOINT
+          allocate ( COMPOSITE(cr) % ad_bustr(4,NpointsU(cr)) )
+          allocate ( COMPOSITE(cr) % ad_bvstr(4,NpointsV(cr)) )
+
+          allocate ( COMPOSITE(cr) % ad_ubar(4,NpointsU(cr),2) )
+          allocate ( COMPOSITE(cr) % ad_vbar(4,NpointsV(cr),2) )
+          allocate ( COMPOSITE(cr) % ad_zeta(4,NpointsR(cr),2) )
+
+          allocate ( COMPOSITE(cr) % ad_rzeta(4,NpointsR(cr)) )
+
+          Dmem(dg)=Dmem(dg)+2.0_r8*REAL(4*NpointsR(cr),r8)
+          Dmem(dg)=Dmem(dg)+2.0_r8*REAL(4*NpointsU(cr),r8)
+          Dmem(dg)=Dmem(dg)+2.0_r8*REAL(4*NpointsV(cr),r8)
+#  endif
+
 # ifdef SOLVE3D
           allocate ( COMPOSITE(cr) % DU_avg1(4,NpointsU(cr)) )
           allocate ( COMPOSITE(cr) % DV_avg1(4,NpointsV(cr)) )
@@ -1115,6 +1165,52 @@
           allocate ( COMPOSITE(cr) % t(4,N(dg),NpointsR(cr),NT(dg)) )
 
           Dmem(dg)=Dmem(dg)+2.0_r8*REAL(4*N(dg)*NpointsU(cr)*NT(dg),r8)
+
+#  if defined TANGENT || defined TL_IOMS
+          allocate ( COMPOSITE(cr) % tl_DU_avg1(4,NpointsU(cr)) )
+          allocate ( COMPOSITE(cr) % tl_DV_avg1(4,NpointsV(cr)) )
+          allocate ( COMPOSITE(cr) % tl_Zt_avg1(4,NpointsR(cr)) )
+
+          Dmem(dg)=Dmem(dg)+REAL(4*NpointsR(cr),r8)
+          Dmem(dg)=Dmem(dg)+REAL(4*NpointsU(cr),r8)
+          Dmem(dg)=Dmem(dg)+REAL(4*NpointsV(cr),r8)
+
+          allocate ( COMPOSITE(cr) % tl_u(4,N(dg),NpointsU(cr)) )
+          allocate ( COMPOSITE(cr) % tl_v(4,N(dg),NpointsV(cr)) )
+
+          allocate ( COMPOSITE(cr) % tl_Huon(4,N(dg),NpointsU(cr)) )
+          allocate ( COMPOSITE(cr) % tl_Hvom(4,N(dg),NpointsV(cr)) )
+
+          Dmem(dg)=Dmem(dg)+2.0_r8*REAL(4*N(dg)*NpointsU(cr),r8)
+          Dmem(dg)=Dmem(dg)+2.0_r8*REAL(4*N(dg)*NpointsV(cr),r8)
+
+          allocate ( COMPOSITE(cr) % tl_t(4,N(dg),NpointsR(cr),NT(dg)) )
+
+          Dmem(dg)=Dmem(dg)+2.0_r8*REAL(4*N(dg)*NpointsU(cr)*NT(dg),r8)
+#  endif
+
+#  ifdef ADJOINT
+          allocate ( COMPOSITE(cr) % ad_DU_avg1(4,NpointsU(cr)) )
+          allocate ( COMPOSITE(cr) % ad_DV_avg1(4,NpointsV(cr)) )
+          allocate ( COMPOSITE(cr) % ad_Zt_avg1(4,NpointsR(cr)) )
+
+          Dmem(dg)=Dmem(dg)+REAL(4*NpointsR(cr),r8)
+          Dmem(dg)=Dmem(dg)+REAL(4*NpointsU(cr),r8)
+          Dmem(dg)=Dmem(dg)+REAL(4*NpointsV(cr),r8)
+
+          allocate ( COMPOSITE(cr) % ad_u(4,N(dg),NpointsU(cr)) )
+          allocate ( COMPOSITE(cr) % ad_v(4,N(dg),NpointsV(cr)) )
+
+          allocate ( COMPOSITE(cr) % ad_Huon(4,N(dg),NpointsU(cr)) )
+          allocate ( COMPOSITE(cr) % ad_Hvom(4,N(dg),NpointsV(cr)) )
+
+          Dmem(dg)=Dmem(dg)+2.0_r8*REAL(4*N(dg)*NpointsU(cr),r8)
+          Dmem(dg)=Dmem(dg)+2.0_r8*REAL(4*N(dg)*NpointsV(cr),r8)
+
+          allocate ( COMPOSITE(cr) % ad_t(4,N(dg),NpointsR(cr),NT(dg)) )
+
+          Dmem(dg)=Dmem(dg)+2.0_r8*REAL(4*N(dg)*NpointsU(cr)*NT(dg),r8)
+#  endif
 # endif
         END DO
       END IF
@@ -1148,6 +1244,33 @@
           Dmem(rg)=Dmem(rg)+3.0_r8*REAL(4*NpointsU(cr),r8)
           Dmem(rg)=Dmem(rg)+3.0_r8*REAL(4*NpointsV(cr),r8)
 
+# if defined TANGENT || defined TL_IOMS
+          allocate ( REFINED(cr) % tl_ubar(4,NpointsU(cr),2) )
+          allocate ( REFINED(cr) % tl_vbar(4,NpointsV(cr),2) )
+          allocate ( REFINED(cr) % tl_zeta(4,NpointsR(cr),2) )
+
+          allocate ( REFINED(cr) % tl_DU_avg2(4,NpointsU(cr),2) )
+          allocate ( REFINED(cr) % tl_DV_avg2(4,NpointsV(cr),2) )
+
+          Dmem(rg)=Dmem(rg)+REAL(4*NpointsR(cr),r8)
+          Dmem(rg)=Dmem(rg)+3.0_r8*REAL(4*NpointsU(cr),r8)
+          Dmem(rg)=Dmem(rg)+3.0_r8*REAL(4*NpointsV(cr),r8)
+# endif
+
+# ifdef ADJOINT
+          allocate ( REFINED(cr) % ad_ubar(4,NpointsU(cr),2) )
+          allocate ( REFINED(cr) % ad_vbar(4,NpointsV(cr),2) )
+          allocate ( REFINED(cr) % ad_zeta(4,NpointsR(cr),2) )
+
+          allocate ( REFINED(cr) % ad_DU_avg2(4,NpointsU(cr),2) )
+          allocate ( REFINED(cr) % ad_DV_avg2(4,NpointsV(cr),2) )
+
+          Dmem(rg)=Dmem(rg)+REAL(4*NpointsR(cr),r8)
+          Dmem(rg)=Dmem(rg)+3.0_r8*REAL(4*NpointsU(cr),r8)
+          Dmem(rg)=Dmem(rg)+3.0_r8*REAL(4*NpointsV(cr),r8)
+# endif
+
+
 # ifdef SOLVE3D
           allocate ( REFINED(cr) % u(4,N(rg),NpointsU(cr),2) )
           allocate ( REFINED(cr) % v(4,N(rg),NpointsV(cr),2) )
@@ -1156,7 +1279,32 @@
           Dmem(rg)=Dmem(rg)+3.0_r8*REAL(4*N(rg)*NpointsV(cr),r8)
 
           allocate ( REFINED(cr) % t(4,N(rg),NpointsR(cr),2,NT(rg)) )
+
           Dmem(rg)=Dmem(rg)+2.0_r8*REAL(4*N(rg)*NpointsR(cr)*NT(rg),r8)
+
+#  if defined TANGENT || defined TL_IOMS
+          allocate ( REFINED(cr) % tl_u(4,N(rg),NpointsU(cr),2) )
+          allocate ( REFINED(cr) % tl_v(4,N(rg),NpointsV(cr),2) )
+
+          Dmem(rg)=Dmem(rg)+3.0_r8*REAL(4*N(rg)*NpointsU(cr),r8)
+          Dmem(rg)=Dmem(rg)+3.0_r8*REAL(4*N(rg)*NpointsV(cr),r8)
+
+          allocate ( REFINED(cr) % tl_t(4,N(rg),NpointsR(cr),2,NT(rg)) )
+
+          Dmem(rg)=Dmem(rg)+2.0_r8*REAL(4*N(rg)*NpointsR(cr)*NT(rg),r8)
+#  endif
+
+#  ifdef ADJOINT
+          allocate ( REFINED(cr) % ad_u(4,N(rg),NpointsU(cr),2) )
+          allocate ( REFINED(cr) % ad_v(4,N(rg),NpointsV(cr),2) )
+
+          Dmem(rg)=Dmem(rg)+3.0_r8*REAL(4*N(rg)*NpointsU(cr),r8)
+          Dmem(rg)=Dmem(rg)+3.0_r8*REAL(4*N(rg)*NpointsV(cr),r8)
+
+          allocate ( REFINED(cr) % ad_t(4,N(rg),NpointsR(cr),2,NT(rg)) )
+
+          Dmem(rg)=Dmem(rg)+2.0_r8*REAL(4*N(rg)*NpointsR(cr)*NT(rg),r8)
+#  endif
 # endif
         END DO
       END IF

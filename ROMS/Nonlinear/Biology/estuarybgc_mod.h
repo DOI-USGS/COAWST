@@ -1,7 +1,11 @@
 !
-!svn $Id: estuarybgc_mod.h 2232 2012-01-03 18:55:20Z arango $
-!================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2012 The ROMS/TOMS Group                         !
+!svn $Id: estuarybgc_mod.h 2232 2019-01-03 18:55:20Z arango $
+!================================================== Hernan G. Arango ==!
+!================================================ Tarandeep S. Kalra ==!
+!================================================== Neil K. Ganju    ==!
+!================================================== Jeremy Testa     ==!
+!================================================  John C. Warner    ==!
+!  Copyright (c) 2002-2019 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -65,8 +69,45 @@
 !   ETASPEC  Scattering spectral exponent.                             !
 !   BB2B     Particulate backscattering ratio.                         !
 !   Ndom     Number of dissolved matter constituents.                  !
-#endif
+#endif              
+#ifdef SAV_BIOMASS                                                 
+!   GMODopt  SAV growth rate options.                                  !
+!   KNSED    Half saturation coef. for sediment N uptake [millimole N].!
+!   KNWC     Half saturation coef. water-colmn. N uptake [millimoleN]. !
+!   TOPT     Optimum temperature for SAV growth [Celsius].             !
+!   THTA     Temperature growth theta for growth model 1.              !
+!   THTA2    Temperature growth theta for growth model 2.              !
+!   SCL      SAV growth fraction for growth model 1.                   !
+!   SCL2     SAV growth fraction for growth model 2.                   !
+!   KI       Half saturation for ligth (microeinsteins meter-2 s-1).   !
+!   SR       Surface reflectance of light.                             !
+!   LMBMAX   Maximum AGB in self-shading formulation (gram_C meter-2). !
+!   KMAG     Above biomass ground mortality rate.                      !
+!   ARSC     Maximum fraction of primary production respired.          !
+!   ARC      Active respiration coefficient.                           !
+!   BSRC     Maximum fraction of biomass required.                     !
+!   BRC      Basal respiration coefficient.                            !
+!   RTStTL   Seasonal root storage coefficient.                        !
+!   DOWNt    Downward translocation coefficient.                       !
+!   TRNS     Upward translocation coefficient.                         !
+!   TCRIT    Critical temp. for development of AGB (Celsius).          !
+!   KM       Below ground biomass mortality.                           !
+!   KN_EPB   Half saturation nutrient limitation(epiphytes)[millimoleN]!
+!   KL_EPB   Half saturation light limitation (epiphytes)[muE m-2 s-1].!
+! ARSC_EPB   Max fraction of photosynthesis (epiphytes).               !
+!   ARC_EPB  Active respiration coefficient (epiphytes).               !
+!  BSRC_EPB  Maximum fraction of epiphyte biomass respired.            !
+!   BRC_EPB  Basal respiration coefficient (epiphytes).                !
+! LMBMAX_EPB Maximum EPB in self-shading formulation (gram C m-2).     !
+! GRZMX_EPB  Maximum grazing rate (epiphytes).                         !
+!   GRZK_EPB Grazing coefficient (epiphytes).                          !
+!  TOPT_EPB  Optimum temperature (epiphytes) (deg C).                  !
+! KMORT_EPB  Mortality rate (epiphytes).                               !
+! SCL2_EPB   Maximum growth fraction (epiphytes).                      !
+! THTA2_EPB  Temp. growth theta for growth model (epiphytes).          !
 !                                                                      !
+#endif               
+!
 !=======================================================================
 !
       USE mod_param
@@ -94,27 +135,27 @@
       integer :: iOxyg                  ! Dissolved oxygen concentration
 #endif
 #ifdef SPECTRAL_LIGHT
-      integer :: idPARo                 ! PAR    Photosynthetically Available Radiation (PAR)
-      integer :: idPARs                 ! PARs            Spectral PAR
-      integer :: idSpKd                 ! SpKd            Spectral Attenuation
+      integer :: idPARo                 ! Photosynthetically Available Radiation (PAR)
+      integer :: idPARs                 ! Spectral PAR
+      integer :: idSpKd                 ! Spectral Attenuation
 #endif
 #ifdef SAV_BIOMASS
-      integer :: iddinw                 ! DINwcr  Dissolved Inorganic Nitrogen (water column)
-      integer :: iddins                 ! DINsed  Dissolved Inorganic Nitrogen (sediment column) 
-      integer :: iddowc                 ! DOwcr   Dissolved Oxygen (water column) 
-      integer :: idwsvl                 ! DINwcr_sav Dissolved Inorganic N in water column due to SAV
-      integer :: idsagb                 ! AGB     Above ground biomass 
-      integer :: idsbgb                 ! BGB     Below ground biomass 
-      integer :: idsvpp                 ! PP
-      integer :: idsvam                 ! AGM
-      integer :: idsgar                 ! AGAR
-      integer :: idsvbr                 ! AGBR
-      integer :: idsvrs                 ! SEARS
-      integer :: idsvbg                 ! AGBG
-      integer :: idsvag                 ! BGAG
-      integer :: idsbgr                 ! BGR
-      integer :: idsbgm                 ! BGM
-
+      integer :: iddinw                 ! Dissolved Inorganic Nitrogen (water column)
+      integer :: iddins                 ! Dissolved Inorganic Nitrogen (sediment column) 
+      integer :: iddowc                 ! Dissolved Oxygen (water column) 
+      integer :: idwsvl                 ! Dissolved Inorganic N in water column due to SAV
+      integer :: idsagb                 ! Above ground biomass 
+      integer :: idsbgb                 ! Below ground biomass 
+      integer :: idsepb                 ! Epiphyte biomass 
+      integer :: idsvpp                 ! Primary production        
+      integer :: idsvam                 ! Above ground mortality 
+      integer :: idsgar                 ! Active respiration 
+      integer :: idsvbr                 ! Above ground basal respiration 
+      integer :: idsvrs                 ! Seasonal root storage of carbon
+      integer :: idsvbg                 ! Above ground biomass to below ground 
+      integer :: idsvag                 ! Translocation of below ground biomass to above ground 
+      integer :: idsbgr                 ! Below ground biomass respiration
+      integer :: idsbgm                 ! Below ground biomass mortality 
 #endif
 #if defined DIAGNOSTICS && defined DIAGNOSTICS_BIO
 !
@@ -196,7 +237,7 @@
       real(r8), allocatable :: ETASPEC(:)             
       real(r8), allocatable :: BB2B(:)             
 #endif
-#ifdef SAV_BIOMASS
+#ifdef SAV_BIOMASS 
       integer,  allocatable :: GMODopt(:)
       real(r8), allocatable :: KNSED(:)             
       real(r8), allocatable :: KNWC(:)             
@@ -207,17 +248,30 @@
       real(r8), allocatable :: SCL2(:)             
       real(r8), allocatable :: KI(:)             
       real(r8), allocatable :: SR(:)             
-      real(r8), allocatable :: LMBAMX(:)             
+      real(r8), allocatable :: LMBMAX(:)             
       real(r8), allocatable :: KMAG(:)             
       real(r8), allocatable :: ARSC(:)             
       real(r8), allocatable :: ARC(:)             
       real(r8), allocatable :: BSRC(:)             
-      real(r8), allocatable :: RC(:)             
+      real(r8), allocatable :: BRC(:)             
       real(r8), allocatable :: RTStTL(:)             
       real(r8), allocatable :: DOWNt(:)             
       real(r8), allocatable :: TRNS(:)             
       real(r8), allocatable :: TCRIT(:)             
-      real(r8), allocatable :: KM(:)             
+      real(r8), allocatable :: KM(:)   
+      real(r8), allocatable :: KN_EPB(:)  
+      real(r8), allocatable :: KL_EPB(:)   
+      real(r8), allocatable :: ARSC_EPB(:)   
+      real(r8), allocatable :: ARC_EPB(:)
+      real(r8), allocatable :: BSRC_EPB(:) 
+      real(r8), allocatable :: BRC_EPB(:) 
+      real(r8), allocatable :: LMBMAX_EPB(:) 
+      real(r8), allocatable :: GRZMX_EPB(:)
+      real(r8), allocatable :: GRZK_EPB(:)
+      real(r8), allocatable :: TOPT_EPB(:) 
+      real(r8), allocatable :: KMORT_EPB(:)
+      real(r8), allocatable :: SCL2_EPB(:)
+      real(r8), allocatable :: THTA2_EPB(:)
 #endif 
 
       CONTAINS
@@ -459,8 +513,8 @@
       IF (.not.allocated(SR)) THEN
         allocate ( SR(Ngrids) )
       END IF
-      IF (.not.allocated(LMBAMX)) THEN
-        allocate ( LMBAMX(Ngrids) )
+      IF (.not.allocated(LMBMAX)) THEN
+        allocate ( LMBMAX(Ngrids) )
       END IF
       IF (.not.allocated(KMAG)) THEN
         allocate ( KMAG(Ngrids) )
@@ -474,8 +528,8 @@
       IF (.not.allocated(BSRC)) THEN
         allocate ( BSRC(Ngrids) )
       END IF
-      IF (.not.allocated(RC)) THEN
-        allocate ( RC(Ngrids) )
+      IF (.not.allocated(BRC)) THEN
+        allocate ( BRC(Ngrids) )
       END IF
       IF (.not.allocated(RtStTL)) THEN
         allocate (RtStTL(Ngrids) )
@@ -491,6 +545,45 @@
       END IF
       IF (.not.allocated(KM)) THEN
         allocate ( KM(Ngrids) )
+      END IF
+      IF (.not.allocated(KN_EPB)) THEN
+        allocate ( KN_EPB(Ngrids) )
+      END IF
+      IF (.not.allocated(KL_EPB)) THEN
+        allocate ( KL_EPB(Ngrids) )
+      END IF
+      IF (.not.allocated(ARSC_EPB)) THEN
+        allocate ( ARSC_EPB(Ngrids) )
+      END IF
+      IF (.not.allocated(ARC_EPB)) THEN
+        allocate ( ARC_EPB(Ngrids) )
+      END IF
+      IF (.not.allocated(BSRC_EPB)) THEN
+        allocate ( BSRC_EPB(Ngrids) )
+      END IF
+      IF (.not.allocated(BRC_EPB)) THEN
+        allocate ( BRC_EPB(Ngrids) )
+      END IF
+      IF (.not.allocated(LMBMAX_EPB)) THEN
+        allocate ( LMBMAX_EPB(Ngrids) )
+      END IF
+      IF (.not.allocated(GRZMX_EPB)) THEN
+        allocate ( GRZMX_EPB(Ngrids) )
+      END IF
+      IF (.not.allocated(GRZK_EPB)) THEN
+        allocate ( GRZK_EPB(Ngrids) )
+      END IF
+      IF (.not.allocated(TOPT_EPB)) THEN
+        allocate ( TOPT_EPB(Ngrids) )
+      END IF
+      IF (.not.allocated(KMORT_EPB)) THEN
+        allocate ( KMORT_EPB(Ngrids) )
+      END IF
+      IF (.not.allocated(SCL2_EPB)) THEN
+        allocate ( SCL2_EPB(Ngrids) )
+      END IF
+      IF (.not.allocated(THTA2_EPB)) THEN
+        allocate ( THTA2_EPB(Ngrids) )
       END IF
 #endif
 !
@@ -558,7 +651,6 @@
       iOxyg=ic+1
       ic=ic+1
 # endif
-
+!
       RETURN
       END SUBROUTINE initialize_biology
- 

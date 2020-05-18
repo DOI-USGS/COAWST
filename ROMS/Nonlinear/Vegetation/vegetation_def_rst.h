@@ -49,7 +49,7 @@
           Vinfo( 2)=Vname(2,idWdvg)
           Vinfo( 3)=Vname(3,idWdvg)
           Vinfo(14)=Vname(4,idWdvg)
-          Vinfo(16)=Vname(1,idWdvg)
+          Vinfo(16)=Vname(1,idtime)
 # if defined WRITE_WATER && defined MASKING
           Vinfo(20)='mask_rho'
 # endif
@@ -59,67 +59,102 @@
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
 #endif 
-#ifdef MARSH_WAVE_THRUST
 !
-!  Store initial masking marsh 
+#ifdef MARSH_DYNAMICS
+!
+!  Store marsh masking marsh from marsh cells. 
 !
           Vinfo( 1)=Vname(1,idTims)
           Vinfo( 2)=Vname(2,idTims)
           Vinfo( 3)=Vname(3,idTims)
           Vinfo(14)=Vname(4,idTims)
-          Vinfo(16)=Vname(1,idTims)
-# if defined WRITE_WATER && defined MASKING
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+#    if defined PERFECT_RESTART
+        Vinfo(24)='_FillValue'
+        Aval(6)=spval
+#    else
           Vinfo(20)='mask_rho'
-# endif
+#    endif
+#  endif
           Vinfo(22)='coordinates'
           Aval(5)=REAL(Iinfo(1,idTims,ng),r8)
           status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idTims),   &
      &                   NF_FRST, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
 !
-          Vinfo( 1)=Vname(1,idTmsk)
-          Vinfo( 2)=Vname(2,idTmsk)
-          Vinfo( 3)=Vname(3,idTmsk)
-          Vinfo(14)=Vname(4,idTmsk)
-          Vinfo(16)=Vname(1,idTmsk)
-# if defined WRITE_WATER && defined MASKING
+# ifdef MARSH_WAVE_THRUST
+!
+!  Total thrust from all directions due to waves.
+!
+          Vinfo( 1)=Vname(1,idTtot)
+          Vinfo( 2)=Vname(2,idTtot)
+          Vinfo( 3)=Vname(3,idTtot)
+          Vinfo(14)=Vname(4,idTtot)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+#    if defined PERFECT_RESTART
+        Vinfo(24)='_FillValue'
+        Aval(6)=spval
+#    else
           Vinfo(20)='mask_rho'
-# endif
+#    endif
+#  endif
           Vinfo(22)='coordinates'
-          Aval(5)=REAL(Iinfo(1,idTmsk,ng),r8)
-          status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idTmsk),   &
+          Aval(5)=REAL(Iinfo(1,idTtot,ng),r8)
+          status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idTtot),   &
      &                   NF_FRST, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
 !
-!  Define maximum thrust due to waves.
+#  ifdef MARSH_SED_EROSION
 !
-          Vinfo( 1)=Vname(1,idTmax)
-          Vinfo( 2)=Vname(2,idTmax)
-          Vinfo( 3)=Vname(3,idTmax)
-          Vinfo(14)=Vname(4,idTmax)
-          Vinfo(16)=Vname(1,idTmax)
-# if defined WRITE_WATER && defined MASKING
+!  Marsh sediment flux out from marsh cells from each sedclass.
+!
+        DO i=1,NST
+          Vinfo( 1)=Vname(1,idTmfo(i))
+          Vinfo( 2)=Vname(2,idTmfo(i))
+          Vinfo( 3)=Vname(3,idTmfo(i))
+          Vinfo(14)=Vname(4,idTmfo(i))
+          Vinfo(16)=Vname(1,idtime)
+#   if defined WRITE_WATER && defined MASKING
+#    if defined PERFECT_RESTART
+          Vinfo(24)='_FillValue'
+          Aval(6)=spval
+#    else
           Vinfo(20)='mask_rho'
-# endif
+#    endif
+#   endif
           Vinfo(22)='coordinates'
-          Aval(5)=REAL(Iinfo(1,idTmax,ng),r8)
-          status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idTmax),   &
+          Aval(5)=REAL(Iinfo(1,idTmfo(i),ng),r8)
+          status=def_var(ng, iNLM, RST(ng)%ncid,                        &
+     &                   RST(ng)%Vid(idTmfo(i)), NF_FRST,               &
+     &                   nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (exit_flag.ne.NoError) RETURN
+        END DO
+!
+#   ifdef MARSH_RETREAT
+!
+!  Amount of marsh retreat from all four directions.
+!
+          Vinfo( 1)=Vname(1,idTmmr)
+          Vinfo( 2)=Vname(2,idTmmr)
+          Vinfo( 3)=Vname(3,idTmmr)
+          Vinfo(14)=Vname(4,idTmmr)
+          Vinfo(16)=Vname(1,idtime)
+#    if defined WRITE_WATER && defined MASKING
+#     if defined PERFECT_RESTART
+        Vinfo(24)='_FillValue'
+        Aval(6)=spval
+#     else
+          Vinfo(20)='mask_rho'
+#     endif
+#    endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idTmmr,ng),r8)
+          status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idTmmr),   &
      &                   NF_FRST, nvd3, t2dgrd, Aval, Vinfo, ncname)
           IF (exit_flag.ne.NoError) RETURN
-!     
-!  Define Tonelli masking based thrust due to waves.
-!
-          Vinfo( 1)=Vname(1,idTton)
-          Vinfo( 2)=Vname(2,idTton)
-          Vinfo( 3)=Vname(3,idTton)
-          Vinfo(14)=Vname(4,idTton)
-          Vinfo(16)=Vname(1,idTton)
-# if defined WRITE_WATER && defined MASKING
-          Vinfo(20)='mask_rho'
-# endif
-          Vinfo(22)='coordinates'
-          Aval(5)=REAL(Iinfo(1,idTton,ng),r8)
-          status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idTton),   &
-     &                   NF_FRST, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
-#endif 
+#   endif 
+#  endif  
+# endif   
+#endif
