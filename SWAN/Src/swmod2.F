@@ -868,6 +868,8 @@
         REAL, POINTER :: NPLAF_G(:)
         REAL, POINTER :: TURBF_G(:)
         REAL, POINTER :: MUDLF_G(:)
+        REAL, POINTER :: AICEF_G(:)
+        REAL, POINTER :: HICEF_G(:)
 # ifdef WRF_COUPLING
         REAL, POINTER :: CosAngler_G(:)
         REAL, POINTER :: SinAngler_G(:)
@@ -894,6 +896,8 @@
       REAL   , POINTER :: NPLAF(:)
       REAL   , POINTER :: TURBF(:)
       REAL   , POINTER :: MUDLF(:)
+      REAL   , POINTER :: AICEF(:)
+      REAL   , POINTER :: HICEF(:)
 # ifdef WRF_COUPLING
       REAL  , POINTER :: CosAngler(:)
       REAL  , POINTER :: SinAngler(:)
@@ -910,8 +914,8 @@
       REAL   , SAVE, ALLOCATABLE :: WLEVL(:) , ASTDF(:)
       REAL   , SAVE, ALLOCATABLE :: MUDLF(:)
       REAL   , SAVE, ALLOCATABLE :: NPLAF(:) , TURBF(:)
-#endif
       REAL   , SAVE, ALLOCATABLE :: AICEF(:) , HICEF(:)
+#endif
       REAL   , SAVE, ALLOCATABLE :: LAYH(:), VEGDIL(:), VEGDRL(:),
      &                              VEGNSL(:)
 !ESMF!
