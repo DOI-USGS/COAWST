@@ -1240,7 +1240,7 @@
 !  Compute wind stress components (N/m2), Tau.
 !
           cff=rhoAir(i)*Cd*Wspeed
-          Taux(i,j)=(cff*Uwind(i,j)+Taur*SIGN(1.0_r8,Uwind(i,j)))
+          Taux(i,j)=(cff*Uair(i,j)+Taur*SIGN(1.0_r8,Uair(i,j)))
 # ifdef WET_DRY
           Taux(i,j)=Taux(i,j)*rmask_wet(i,j)
 # elif defined MASKING
@@ -1249,15 +1249,15 @@
 # ifdef WET_DRY
           Taux(i,j)=Taux(i,j)*rmask_wet(i,j)
 # endif
-          Tauy(i,j)=(cff*Vwind(i,j)+Taur*SIGN(1.0_r8,Vwind(i,j)))
+          Tauy(i,j)=(cff*Vair(i,j)+Taur*SIGN(1.0_r8,Vair(i,j)))
 # ifdef WET_DRY
           Tauy(i,j)=Tauy(i,j)*rmask_wet(i,j)
 # elif defined MASKING
           Tauy(i,j)=Tauy(i,j)*rmask(i,j)
 # endif
 # ifdef ICE_MODEL
-          Taux_Ice(i,j) = rhoAir(i)*cdai(ng)*Uwind(i,j)*Wspeed
-          Tauy_Ice(i,j) = rhoAir(i)*cdai(ng)*Vwind(i,j)*Wspeed
+          Taux_Ice(i,j) = rhoAir(i)*cdai(ng)*Uair(i,j)*Wspeed
+          Tauy_Ice(i,j) = rhoAir(i)*cdai(ng)*Vair(i,j)*Wspeed
 
 #  ifdef ICE_THERMO
 !  Correct ocean net short-wave radiation for ice cover and convert to
