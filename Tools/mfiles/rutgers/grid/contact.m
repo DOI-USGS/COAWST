@@ -2142,11 +2142,12 @@ if (dg > rg || AreaAvg_rg > AreaAvg_dg)
   R.xi_rho  = [];
   R.eta_rho = [];
 
-  R.x_rho   = [];
-  R.y_rho   = [];
   if (spherical)
     R.lon_rho = [];
     R.lat_rho = [];
+  else
+    R.x_rho   = [];
+    R.y_rho   = [];
   end
 
   R.Irg_rho = [];
@@ -2155,11 +2156,12 @@ if (dg > rg || AreaAvg_rg > AreaAvg_dg)
   R.xi_psi  = [];
   R.eta_psi = [];
 
-  R.x_psi   = [];
-  R.y_psi   = [];
   if (spherical)
     R.lon_psi = [];
     R.lat_psi = [];
+  else
+    R.x_psi   = [];
+    R.y_psi   = [];
   end
 
   R.Irg_psi = [];
@@ -2168,11 +2170,12 @@ if (dg > rg || AreaAvg_rg > AreaAvg_dg)
   R.xi_u  = [];
   R.eta_u = [];
 
-  R.x_u   = [];
-  R.y_u   = [];
   if (spherical)
     R.lon_u = [];
     R.lat_u = [];
+  else
+    R.x_u   = [];
+    R.y_u   = [];
   end
 
   R.Irg_u = [];
@@ -2181,11 +2184,12 @@ if (dg > rg || AreaAvg_rg > AreaAvg_dg)
   R.xi_v  = [];
   R.eta_v = [];
   
-  R.x_v   = [];
-  R.y_v   = [];
   if (spherical)
     R.lon_v = [];
     R.lat_v = [];
+  else
+    R.x_v   = [];
+    R.y_v   = [];
   end
 
   R.Irg_v = [];
