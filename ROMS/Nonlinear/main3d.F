@@ -835,7 +835,7 @@
 !
             DO ig=1,GridsInLayer(nl)
               ng=GridNumber(ig,nl)
-              CALL nesting (ng, iNLM, nzwgt)
+!jcw            CALL nesting (ng, iNLM, nzwgt)
             END DO
 # endif
 !

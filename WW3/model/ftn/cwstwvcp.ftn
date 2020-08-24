@@ -778,6 +778,8 @@
       USE W3ADATMD, ONLY: HS, PHIBBL, PHIOC, FP0, T0M1, UBA
       USE W3ADATMD, ONLY: THM, WLM
 !     USE W3ODATMD, ONLY: QB
+      USE W3WDATMD, ONLY: VA
+      USE W3IOGOMD
 !
       implicit none
 !/MPI      INCLUDE "mpif.h"
@@ -790,14 +792,14 @@
 !  Local variable declarations.
 !
       integer :: MyStatus, MyError, MySize, MyRank
-      integer :: i, id, j, gsmsize, ierr, indx, Tag
+      integer :: i, id, j, gsmsize, ierr, indx, Tag, JSEA
       integer :: Istr, Iend, Jstr, Jend
       integer :: start, length, grdsize
-      integer :: Isize, Jsize, Nprocs
+      integer :: Isize, Jsize, Nprocs, ipp
       integer, pointer :: points(:)
 
       real, pointer :: SND_BUF(:), RCV_BUF(:)
-      real(m8) :: fac
+      real(m8) :: fac, cff
       real(m8), pointer :: avdata(:)
       real(m8), pointer :: DIRE(:)
       real(m8), pointer :: DIRN(:)
@@ -842,6 +844,12 @@
       ENDIF
       start=(MyRank*INT(NY/Nprocs))*NX+1
       length=Jsize*NX
+
+!
+!  Call the output routine to compute the mean properties.
+!
+       CALL W3OUTG ( VA, .FALSE., .FALSE., .FALSE. )
+!
 !
 !  Load WW3 data into MCT storage buffers.
 !  The data is exported using ROMS definition for real kind m8=r8.
@@ -989,7 +997,8 @@
 !  Now extract the section of data from this tile
 !  and fill the mct array.
 !
-      fac=2.0_m8*PI
+!     fac=2.0_m8*PI
+      fac=1.0_m8
       IP=0
       DO i=start,start+length-1
         IP=IP+1
@@ -1063,7 +1072,8 @@
 !  Fill wet parts of array SND_BUF that is NXxNY length.
 !  The local variable is only 1:NSEAL(M) long.
 !
-      SND_BUF=0.0
+      SND_BUF=0.0_m8
+      RCV_BUF=0.0_m8
       DO i=1,NSEAL
         IP=(MyRank+1)+(i-1)*Nprocs
         IX     = MAPSF(IP,1)
@@ -1085,11 +1095,13 @@
         IP=IP+1
         avdata(IP)=REAL(RCV_BUF(i),m8)
       END DO
+
 !     fac=PI/180.0
       fac=1.0_m8
       DO IP=1,gsmsize
-        DIRE(IP)=1.0*SIN(avdata(IP)*fac)
-        DIRN(IP)=1.0*COS(avdata(IP)*fac)
+        cff=450.0_m8*PI/180.0_m8-(avdata(IP)+PI)
+        DIRE(IP)=1.0_m8*SIN(cff*fac)
+        DIRN(IP)=1.0_m8*COS(cff*fac)
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(iw)%wav2ocn_AV,             &
      &                           "DIRE",DIRE)
