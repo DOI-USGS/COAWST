@@ -33,15 +33,20 @@
       character(char_len) :: mo_string, mw_string, ma_string, mh_string
       integer(int_kind)   :: ncstat, nc_file_id, offset
       integer(int_kind)   :: i, j, c, Ikeep, Jkeep
-      integer(int_kind)   :: ii, jj, ij
+      integer(int_kind)   :: ii, jj, ij, Istr, Iend, Jstr, Jend
       integer(int_kind)   :: mo, ma, mw, mh, nx, ny, grdsize
       integer(int_kind)   :: igrdstr, igrdstr1, igrdstr2, igrdend
-      integer(int_kind)   :: N, INOUT, count
-      integer(int_kind)   :: ratio, MyStr, MyEnd, MyError
+      integer(int_kind)   :: N, INOUT, count, samegrid
+      integer(int_kind)   :: ratio, MyStr, MyEnd, MyError, My_map_type
+#ifdef MPI
+      integer(int_kind)   :: MyRank
+#endif
       real(dbl_kind)      :: dist1, dist_max, dlon
       real(dbl_kind)      :: latrad1, latrad2, dep, dlat
       real(dbl_kind)      :: xx1, yy1, xx2, yy2, PX, PY
       real(dbl_kind)      :: lons, lats, lond, latd, tol, cff
+      real(dbl_kind)      :: coslat_dst, sinlat_dst
+      real(dbl_kind)      :: coslon_dst, sinlon_dst
       integer(int_kind), allocatable :: src_mask_unlim(:,:)
       integer(int_kind), allocatable :: dst_mask_unlim(:,:)
       integer(int_kind), allocatable :: do_adjust(:)
@@ -87,6 +92,7 @@
 
       integer (kind=int_kind), intent(in) :: MyComm
 !     local variables
+      integer (kind=int_kind) :: mx, my, scale, scale2
       real(dbl_kind), allocatable :: XX(:), YY(:)
 
 !  Allocate the source mask
@@ -105,28 +111,12 @@
       end do
 !  Mask out child portion of the src mask.
       do mo=1,Ngrids_roms-1
-          do j=ngrd_rm(mo)%jstr_o,ngrd_rm(mo)%jend_o
-            do i=ngrd_rm(mo)%istr_o,ngrd_rm(mo)%iend_o
+          do j=ngrd_rm(mo+1)%jstr_o,ngrd_rm(mo+1)%jend_o
+            do i=ngrd_rm(mo+1)%istr_o,ngrd_rm(mo+1)%iend_o
               ngrd_rm(mo)%src_mask(i,j)=0
             end do
           end do
       end do
-!  If a child grid, then set perimeter src_mask=0 because
-!  this region comes from its parent.
-      if (Ngrids_roms.gt.1) then
-        do mo=2,Ngrids_roms
-          i=ngrd_rm(mo)%xi_size
-          do j=1,ngrd_rm(mo)%eta_size
-            ngrd_rm(mo)%src_mask(1,j)=0
-            ngrd_rm(mo)%src_mask(i,j)=0
-          end do
-          j=ngrd_rm(mo)%eta_size
-          do i=1,ngrd_rm(mo)%xi_size
-            ngrd_rm(mo)%src_mask(i,1)=0
-            ngrd_rm(mo)%src_mask(i,j)=0
-          end do
-        end do
-      end if
 !  NOTICE piped swan and roms loops to end
       allocate(do_adjust(Ngrids_swan))
       do mw=1,Ngrids_swan
@@ -139,40 +129,80 @@
           ny=ngrd_sw(mw)%Numy_swan
           allocate(ngrd_sw(mw)%dst_mask(nx,ny))
           allocate(dst_mask_unlim(nx,ny))
+          do nx=1,ngrd_sw(mw)%Numx_swan
+            do ny=1,ngrd_sw(mw)%Numy_swan
+              ngrd_sw(mw)%dst_mask(nx,ny)=1
+              dst_mask_unlim(nx,ny)=1
+            enddo
+          enddo
 !
 !  Compute swan grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
 !
-          do nx=1,ngrd_sw(mw)%Numx_swan
-            do ny=1,ngrd_sw(mw)%Numy_swan
-              dist_max=10e6
-              Ikeep=1
-              Jkeep=1
-              xx2=ngrd_sw(mw)%lon_rho_w(nx,ny)
-              yy2=ngrd_sw(mw)%lat_rho_w(nx,ny)
-              do j=1,ngrd_rm(mo)%eta_size
-                do i=1,ngrd_rm(mo)%xi_size
-                  dist1=sqrt((ngrd_rm(mo)%lon_rho_o(i,j)-xx2)**2+       &
-     &                       (ngrd_rm(mo)%lat_rho_o(i,j)-yy2)**2)
-!                 xx1=ngrd_rm(mo)%lon_rho_o(i,j)
-!                 yy1=ngrd_rm(mo)%lat_rho_o(i,j)
-!                 dlon = xx1-xx2
-!                 latrad1=abs(yy1*deg2rad)
-!                 latrad2=abs(yy2*deg2rad)
-!                 dep=cos(0.5*(latrad2+latrad1))*dlon
-!                 dlat=yy2-yy1
-!                 dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
-                  if(dist1<=dist_max)then
-                    dist_max=dist1
-                    Ikeep=i
-                    Jkeep=j
-                  endif
+          if (roms_swan_samegrid.eq.1) then
+            if (mw.eq.mo) then                     ! same grid, start with src mask
+              samegrid=1
+              do nx=1,ngrd_sw(mw)%Numx_swan
+                do ny=1,ngrd_sw(mw)%Numy_swan
+                  ngrd_sw(mw)%dst_mask(nx,ny)=                          &
+     &                                       ngrd_rm(mo)%src_mask(nx,ny)
                 enddo
               enddo
-              ngrd_sw(mw)%dst_mask(nx,ny)=                              &
+            end if
+            if (mw.gt.mo) then                    ! src is coarser, no use it
+              samegrid=0
+              do nx=1,ngrd_sw(mw)%Numx_swan
+                do ny=1,ngrd_sw(mw)%Numy_swan
+                  ngrd_sw(mw)%dst_mask(nx,ny)=0
+                enddo
+              enddo
+            end if
+            if (mw.lt.mo) then                   ! wave is larger than ocn
+              samegrid=0
+              do nx=1,ngrd_sw(mw)%Numx_swan
+                do ny=1,ngrd_sw(mw)%Numy_swan
+                  ngrd_sw(mw)%dst_mask(nx,ny)=0  ! start with all 0s
+                enddo
+              enddo
+              if (mw.eq.mo-1) then                 ! wave is 1x larger than ocn
+                do nx=ngrd_sw(mw+1)%istr_w,ngrd_sw(mw+1)%iend_w
+                  do ny=ngrd_sw(mw+1)%jstr_w,ngrd_sw(mw+1)%jend_w
+                    ngrd_sw(mw)%dst_mask(nx,ny)=1  ! make child receiving area be 1
+                  end do
+                end do
+              else                                 ! wave is 2x or more larger than ocn, do nothing
+              end if
+            end if
+          else            !not same roms swan grids
+            samegrid=0
+            do nx=1,ngrd_sw(mw)%Numx_swan
+              do ny=1,ngrd_sw(mw)%Numy_swan
+                dist_max=10e6
+                Ikeep=1
+                Jkeep=1
+                xx2=ngrd_sw(mw)%lon_rho_w(nx,ny)
+                yy2=ngrd_sw(mw)%lat_rho_w(nx,ny)
+                coslat_dst = cos(yy2)
+                sinlat_dst = sin(yy2)
+                coslon_dst = cos(xx2)
+                sinlon_dst = sin(xx2)
+                do j=1,ngrd_rm(mo)%eta_size
+                  do i=1,ngrd_rm(mo)%xi_size
+                    dist1=sqrt((ngrd_rm(mo)%lon_rho_o(i,j)-xx2)**2+     &
+     &                         (ngrd_rm(mo)%lat_rho_o(i,j)-yy2)**2)
+                    if(dist1<=dist_max)then
+                      dist_max=dist1
+                      Ikeep=i
+                      Jkeep=j
+                    endif
+                  enddo
+                enddo
+                ngrd_sw(mw)%dst_mask(nx,ny)=                            &
      &                                 ngrd_rm(mo)%src_mask(Ikeep,Jkeep)
-            enddo
-          enddo
+              enddo
+           enddo
+         end if         ! roms /= swan grids
+
 !  Apply the swan grid Land/Sea mask to dst_mask
           do j=1,ngrd_sw(mw)%Numy_swan
             do i=1,ngrd_sw(mw)%Numx_swan
@@ -221,51 +251,6 @@
           enddo
           deallocate(XX, YY)
 !
-!  Compare src and dst lon points and see if points are coincident. 
-!  The test looks for less than 2.0e-7 rads =  1.1459e-05 degs =~ 1.3m
-!  If so, then offset the dst by 2.0e-7 rads
-!
-            tol=1.1459e-05
-            do i=1,ngrd_rm(mo)%xi_size
-              if (do_adjust(mw).eq.1) exit
-              do j=1,ngrd_rm(mo)%eta_size
-                if (do_adjust(mw).eq.1) exit
-                lons=ngrd_rm(mo)%lon_rho_o(i,j)
-                lats=ngrd_rm(mo)%lat_rho_o(i,j)
-                do nx=1,ngrd_sw(mw)%Numx_swan
-                  if (do_adjust(mw).eq.1) exit
-                  do ny=1,ngrd_sw(mw)%Numy_swan
-                    lond=ngrd_sw(mw)%lon_rho_w(nx,ny)
-                    latd=ngrd_sw(mw)%lat_rho_w(nx,ny)
-                    cff=min(abs(lons-lond),abs(lats-latd))
-                    if (cff.le.tol) then
-                      do_adjust(mw)=1
-                  write(*,*) 'Do adjust for coincident points grid ', mw
-                      exit
-                    end if
-                  enddo
-                enddo
-              enddo
-            enddo
-            if (do_adjust(mw).eq.1) then
-              do nx=1,ngrd_sw(mw)%Numx_swan
-                do ny=1,ngrd_sw(mw)%Numy_swan
-                  ngrd_sw(mw)%lon_rho_w(nx,ny)=                         &
-     &                                  ngrd_sw(mw)%lon_rho_w(nx,ny)+tol
-                  ngrd_sw(mw)%lat_rho_w(nx,ny)=                         &
-     &                                  ngrd_sw(mw)%lat_rho_w(nx,ny)+tol
-                enddo
-              enddo
-              do nx=1,ngrd_sw(mw)%Numx_swan+1
-                do ny=1,ngrd_sw(mw)%Numy_swan+1
-                  ngrd_sw(mw)%x_full_grid(nx,ny)=                       &
-     &                                ngrd_sw(mw)%x_full_grid(nx,ny)+tol
-                  ngrd_sw(mw)%y_full_grid(nx,ny)=                       &
-     &                                ngrd_sw(mw)%y_full_grid(nx,ny)+tol
-                enddo
-              enddo
-            end if
-!
 !  Send the data to SCRIP routines
 !
           write(mw_string,'(i1)')mw
@@ -276,17 +261,26 @@
           map1_name='ROMS to SWAN distwgt Mapping'
           map2_name='unknown'
 
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
           write(stdout,*)"============================================="
           write(stdout,*)"Begin mapping between the two grids"
           write(stdout,*)"---------------------------------------------"
           write(stdout,*)"The interp file is: ", interp_file1
           write(stdout,*)"The src grid is: ", roms_grids(mo)
           write(stdout,*)"The dst grid is: ", swan_coord(mw)
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
 
           grid1_file=roms_grids(mo)
           grid2_file=swan_coord(mw)
 
           counter_grid=counter_grid+1
+          My_map_type = 2
 
           call scrip_package(grid1_file, grid2_file,                    &
      &                       ngrd_rm(mo)%xi_size,                       &
@@ -308,28 +302,8 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile, MyComm)
-!
-!  Undo the grid adjust.
-          if ((do_adjust(mw).eq.1).and.(mo.lt.Ngrids_roms)) then
-            do nx=1,ngrd_sw(mw)%Numx_swan
-              do ny=1,ngrd_sw(mw)%Numy_swan
-                ngrd_sw(mw)%lon_rho_w(nx,ny)=                           &
-     &                                ngrd_sw(mw)%lon_rho_w(nx,ny)-tol
-                ngrd_sw(mw)%lat_rho_w(nx,ny)=                           &
-     &                                ngrd_sw(mw)%lat_rho_w(nx,ny)-tol
-              enddo
-            enddo
-            do nx=1,ngrd_sw(mw)%Numx_swan+1
-              do ny=1,ngrd_sw(mw)%Numy_swan+1
-                ngrd_sw(mw)%x_full_grid(nx,ny)=                         &
-     &                              ngrd_sw(mw)%x_full_grid(nx,ny)-tol
-                ngrd_sw(mw)%y_full_grid(nx,ny)=                         &
-     &                              ngrd_sw(mw)%y_full_grid(nx,ny)-tol
-              enddo
-            enddo
-          end if
-          do_adjust(mw)=0
+     &                       output_ncfile, MyComm, My_map_type,        &
+     &                       samegrid)
 !
           deallocate(ngrd_sw(mw)%dst_mask)
           deallocate(dst_mask_unlim)
@@ -350,6 +324,7 @@
 
       integer (kind=int_kind), intent(in) :: MyComm
 !     local variables
+      integer (kind=int_kind) :: mx, my, scale, scale2
       real(dbl_kind), allocatable :: XX(:), YY(:)
 
 !  Allocate the source mask
@@ -368,28 +343,12 @@
       end do
 !  Mask out child portion of the src mask.
       do mw=1,Ngrids_swan-1
-        do j=ngrd_sw(mw)%jstr_w,ngrd_sw(mw)%jend_w
-          do i=ngrd_sw(mw)%istr_w,ngrd_sw(mw)%iend_w
+        do j=ngrd_sw(mw+1)%jstr_w,ngrd_sw(mw+1)%jend_w
+          do i=ngrd_sw(mw+1)%istr_w,ngrd_sw(mw+1)%iend_w
             ngrd_sw(mw)%src_mask(i,j)=0
            end do
         end do
       end do
-!  If a child grid, then set perimeter src_mask=0 because
-!  this region comes from its parent.
-      if (Ngrids_swan.gt.1) then
-        do mw=2,Ngrids_swan
-          i=ngrd_sw(mw)%Numx_swan
-          do j=1,ngrd_sw(mw)%Numy_swan
-            ngrd_sw(mw)%src_mask(1,j)=0
-            ngrd_sw(mw)%src_mask(i,j)=0
-          end do
-          j=ngrd_sw(mw)%Numy_swan
-          do i=1,ngrd_sw(mw)%Numx_swan
-            ngrd_sw(mw)%src_mask(i,1)=0
-            ngrd_sw(mw)%src_mask(i,j)=0
-          end do
-        end do
-      end if
 !  NOTICE piped swan and roms loops to end
       do mo=1,Ngrids_roms
         do mw=1,Ngrids_swan
@@ -400,40 +359,75 @@
           ny=ngrd_rm(mo)%eta_size
           allocate(ngrd_rm(mo)%dst_mask(nx,ny))
           allocate(dst_mask_unlim(nx,ny))
+          do nx=1,ngrd_rm(mo)%xi_size
+            do ny=1,ngrd_rm(mo)%eta_size
+              ngrd_rm(mo)%dst_mask(nx,ny)=1
+              dst_mask_unlim(nx,ny)=1
+            enddo
+          enddo
 !
 !  Compute roms grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
 !
-          do nx=1,ngrd_rm(mo)%xi_size
-            do ny=1,ngrd_rm(mo)%eta_size
-              dist_max=10e6
-              Ikeep=1
-              Jkeep=1
-              xx2=ngrd_rm(mo)%lon_rho_o(nx,ny)
-              yy2=ngrd_rm(mo)%lat_rho_o(nx,ny)
-              do j=1,ngrd_sw(mw)%Numy_swan
-                do i=1,ngrd_sw(mw)%Numx_swan
-                  dist1=sqrt((ngrd_sw(mw)%lon_rho_w(i,j)-xx2)**2+       &
-     &                       (ngrd_sw(mw)%lat_rho_w(i,j)-yy2)**2)
-!                 xx1=ngrd_sw(mw)%lon_rho_w(i,j)
-!                 yy1=ngrd_sw(mw)%lat_rho_w(i,j)
-!                 dlon = xx1-xx2
-!                 latrad1=abs(yy1*deg2rad)
-!                 latrad2=abs(yy2*deg2rad)
-!                 dep=cos(0.5*(latrad2+latrad1))*dlon
-!                 dlat=yy2-yy1
-!                 dist1=1852.0*60.0*sqrt(dlat**2+dep**2)
-                  if(dist1<=dist_max)then
-                    dist_max=dist1
-                    Ikeep=i
-                    Jkeep=j
-                  endif
+          if (roms_swan_samegrid.eq.1) then
+            if (mo.eq.mw) then                     ! same grid, start with src mask
+              samegrid=1
+              do nx=1,ngrd_rm(mo)%xi_size
+                do ny=1,ngrd_rm(mo)%eta_size
+                  ngrd_rm(mo)%dst_mask(nx,ny)=                          &
+     &                                       ngrd_sw(mw)%src_mask(nx,ny)
                 enddo
               enddo
-              ngrd_rm(mo)%dst_mask(nx,ny)=                              &
+            end if
+            if (mo.gt.mw) then                    ! src is coarser, no use it
+              samegrid=0
+              do nx=1,ngrd_rm(mo)%xi_size
+                do ny=1,ngrd_rm(mo)%eta_size
+                  ngrd_rm(mo)%dst_mask(nx,ny)=0
+                enddo
+              enddo
+            end if
+            if (mo.lt.mw) then                   ! wave is larger than ocn
+              samegrid=0
+              do nx=1,ngrd_rm(mo)%xi_size
+                do ny=1,ngrd_rm(mo)%eta_size
+                  ngrd_rm(mo)%dst_mask(nx,ny)=0  ! start with all 0s
+                enddo
+              enddo
+              if (mo.eq.mw-1) then                 ! ocn is 1x larger than wav
+                do nx=ngrd_rm(mo+1)%istr_o,ngrd_rm(mo+1)%iend_o
+                  do ny=ngrd_rm(mo+1)%jstr_o,ngrd_rm(mo+1)%jend_o
+                    ngrd_rm(mo)%dst_mask(nx,ny)=1  ! make child receiving area be 1
+                  end do
+                end do
+              else                                 ! ocn is 2x or more larger than wav, do 0
+              end if
+            end if
+          else            !not same roms swan grids
+            samegrid=0
+            do nx=1,ngrd_rm(mo)%xi_size
+              do ny=1,ngrd_rm(mo)%eta_size
+                dist_max=10e6
+                Ikeep=1
+                Jkeep=1
+                xx2=ngrd_rm(mo)%lon_rho_o(nx,ny)
+                yy2=ngrd_rm(mo)%lat_rho_o(nx,ny)
+                do j=1,ngrd_sw(mw)%Numy_swan
+                  do i=1,ngrd_sw(mw)%Numx_swan
+                    dist1=sqrt((ngrd_sw(mw)%lon_rho_w(i,j)-xx2)**2+     &
+     &                         (ngrd_sw(mw)%lat_rho_w(i,j)-yy2)**2)
+                    if(dist1<=dist_max)then
+                      dist_max=dist1
+                      Ikeep=i
+                      Jkeep=j
+                    endif
+                  enddo
+                enddo
+                ngrd_rm(mo)%dst_mask(nx,ny)=                            &
      &                                 ngrd_sw(mw)%src_mask(Ikeep,Jkeep)
+              enddo
             enddo
-          enddo
+         end if         ! roms /= swan grids
 !  Apply the roms grid Land/Sea mask to dst_mask
           do j=1,ngrd_rm(mo)%eta_size
             do i=1,ngrd_rm(mo)%xi_size
@@ -492,17 +486,26 @@
           map1_name='SWAN to ROMS distwgt Mapping'
           map2_name='unknown'
 
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
           write(stdout,*)"============================================="
           write(stdout,*)"Begin mapping between the two grids"
           write(stdout,*)"---------------------------------------------"
           write(stdout,*)"The interp file is: ", interp_file1
           write(stdout,*)"The src grid is: ", swan_coord(mw)
           write(stdout,*)"The dst grid is: ", roms_grids(mo)
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
 
           grid1_file=swan_coord(mw)
           grid2_file=roms_grids(mo)
 
           counter_grid=counter_grid+1
+          My_map_type = 2
 
           call scrip_package(grid1_file, grid2_file,                    &
      &                       ngrd_sw(mw)%Numx_swan,                     &
@@ -524,7 +527,8 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile, MyComm)
+     &                       output_ncfile, MyComm, My_map_type,        &
+     &                       samegrid)
 
           deallocate(ngrd_rm(mo)%dst_mask)
           deallocate(dst_mask_unlim)
@@ -538,17 +542,6 @@
 
 !======================================================================
 
-
-
-
-
-
-
-
-
-
-
-!=======================================================================
       subroutine ocn2hyd_mask(MyComm)
 
       implicit none
@@ -573,8 +566,8 @@
       end do
 !  Mask out child portion of the src mask.
       do mo=1,Ngrids_roms-1
-          do j=ngrd_rm(mo)%jstr_o,ngrd_rm(mo)%jend_o
-            do i=ngrd_rm(mo)%istr_o,ngrd_rm(mo)%iend_o
+          do j=ngrd_rm(mo+1)%jstr_o,ngrd_rm(mo+1)%jend_o
+            do i=ngrd_rm(mo+1)%istr_o,ngrd_rm(mo+1)%iend_o
               ngrd_rm(mo)%src_mask(i,j)=0
             end do
           end do
@@ -737,17 +730,27 @@
           map1_name='ROMS to HYDRO distwgt Mapping'
           map2_name='unknown'
 
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
           write(stdout,*)"============================================="
           write(stdout,*)"Begin mapping between the two grids"
           write(stdout,*)"---------------------------------------------"
           write(stdout,*)"The interp file is: ", interp_file1
           write(stdout,*)"The src grid is: ", roms_grids(mo)
           write(stdout,*)"The dst grid is: ", hydro_grids(mh)
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
 
           grid1_file=roms_grids(mo)
           grid2_file=hydro_grids(mh)
 
           counter_grid=counter_grid+1
+          My_map_type = 2
+          samegrid=0
 
           call scrip_package(grid1_file, grid2_file,                    &
      &                       ngrd_rm(mo)%xi_size,                       &
@@ -769,7 +772,8 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile, MyComm)
+     &                       output_ncfile, MyComm, My_map_type,        &
+     &                       samegrid)
 !
 !  Undo the grid adjust.
           if ((do_adjust(mh).eq.1).and.(mo.lt.Ngrids_roms)) then
@@ -831,8 +835,8 @@
       end do
 !  Mask out child portion of the src mask.
       do mh=1,Ngrids_hyd-1
-        do j=ngrd_hy(mh)%jstr_h,ngrd_hy(mh)%jend_h
-          do i=ngrd_hy(mh)%istr_h,ngrd_hy(mh)%iend_h
+        do j=ngrd_hy(mh+1)%jstr_h,ngrd_hy(mh+1)%jend_h
+          do i=ngrd_hy(mh+1)%istr_h,ngrd_hy(mh+1)%iend_h
             ngrd_hy(mh)%src_mask(i,j)=0
            end do
         end do
@@ -952,17 +956,27 @@
           map1_name='HYDRO to ROMS distwgt Mapping'
           map2_name='unknown'
 
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
           write(stdout,*)"============================================="
           write(stdout,*)"Begin mapping between the two grids"
           write(stdout,*)"---------------------------------------------"
           write(stdout,*)"The interp file is: ", interp_file1
           write(stdout,*)"The src grid is: ", hydro_grids(mh)
           write(stdout,*)"The dst grid is: ", roms_grids(mo)
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
 
           grid1_file=hydro_grids(mh)
           grid2_file=roms_grids(mo)
 
           counter_grid=counter_grid+1
+          My_map_type = 2
+          samegrid=0
 
           call scrip_package(grid1_file, grid2_file,                    &
      &                       ngrd_hy(mh)%we_size,                       &
@@ -984,7 +998,8 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile, MyComm)
+     &                       output_ncfile, MyComm, My_map_type,        &
+     &                       samegrid)
 
           deallocate(ngrd_rm(mo)%dst_mask)
           deallocate(dst_mask_unlim)
@@ -997,9 +1012,6 @@
       end subroutine hyd2ocn_mask
 
 !======================================================================
-
-
-
 
       subroutine ocn2atm_mask(MyComm)
 
@@ -1028,11 +1040,11 @@
       end do
 !  Mask out child portion of the src mask.
       do mo=1,Ngrids_roms-1
-          do j=ngrd_rm(mo)%jstr_o,ngrd_rm(mo)%jend_o
-            do i=ngrd_rm(mo)%istr_o,ngrd_rm(mo)%iend_o
-              ngrd_rm(mo)%src_mask(i,j)=0
-            end do
+        do j=ngrd_rm(mo+1)%jstr_o,ngrd_rm(mo+1)%jend_o
+          do i=ngrd_rm(mo+1)%istr_o,ngrd_rm(mo+1)%iend_o
+            ngrd_rm(mo)%src_mask(i,j)=0
           end do
+        end do
       end do
 !  If a child grid, then set perimeter src_mask=0 because
 !  this region comes from its parent.
@@ -1066,7 +1078,7 @@
 !  Compute wrf grid dst mask. Start by using locations on dst grid
 !  where src_mask=1.
 !
-          offset=MIN(mo-1,1)
+!          offset=MIN(mo-1,1)
           call get_MyStrMyEnd(MyComm, nx, ny)
 !
 ! Chunk out the dst grid to each processor.
@@ -1101,6 +1113,7 @@
 ! go along bottom, then top
               igrdstr1=1
               j=1
+              offset=0
               do i=1+offset,ngrd_rm(mo)%xi_size-offset
                 xx1=ngrd_rm(mo)%lon_rho_o(i,j)
                 if (xx1.gt.xx2) then
@@ -1121,9 +1134,8 @@
               igrdend=MIN( MAX(igrdstr1,igrdstr2)+4,                    &
      &                     ngrd_rm(mo)%xi_size-offset)
 
-              do j=1+offset,ngrd_rm(mo)%eta_size-offset
-!               do i=1+offset,ngrd_rm(mo)%xi_size-offset
-                do i=igrdstr,igrdend
+               do j=1,ngrd_rm(mo)%eta_size
+                 do i=1,ngrd_rm(mo)%xi_size
                   xx1=ngrd_rm(mo)%lon_rho_o(i,j)
                   yy1=ngrd_rm(mo)%lat_rho_o(i,j)
                   dlon = xx1-xx2
@@ -1266,17 +1278,27 @@
           map1_name='ROMS to WRF distwgt Mapping'
           map2_name='unknown'
 
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
           write(stdout,*)"============================================="
           write(stdout,*)"Begin mapping between the two grids"
           write(stdout,*)"---------------------------------------------"
           write(stdout,*)"The interp file is: ", interp_file1
           write(stdout,*)"The src grid is: ", roms_grids(mo)
           write(stdout,*)"The dst grid is: ", wrf_grids(ma)
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
 
           grid1_file=roms_grids(mo)
           grid2_file=wrf_grids(ma)
 
           counter_grid=counter_grid+1
+          My_map_type = 2
+          samegrid=0
 
           call scrip_package(grid1_file, grid2_file,                    &
      &                       ngrd_rm(mo)%xi_size,                       &
@@ -1298,7 +1320,8 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile, MyComm)
+     &                       output_ncfile, MyComm, My_map_type,        &
+     &                       samegrid)
 !
 !  Undo the grid adjust.
           if ((do_adjust(ma).eq.1).and.(mo.lt.Ngrids_roms)) then
@@ -1576,17 +1599,27 @@
           map1_name='WRF to ROMS distwgt Mapping'
           map2_name='unknown'
 
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
           write(stdout,*)"============================================="
           write(stdout,*)"Begin mapping between the two grids"
           write(stdout,*)"---------------------------------------------"
           write(stdout,*)"The interp file is: ", interp_file1
           write(stdout,*)"The src grid is: ", wrf_grids(ma)
           write(stdout,*)"The dst grid is: ", roms_grids(mo)
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
 
           grid1_file=wrf_grids(ma)
           grid2_file=roms_grids(mo)
 
           counter_grid=counter_grid+1
+          My_map_type = 1
+          samegrid=0
 
           call scrip_package(grid1_file, grid2_file,                    &
      &                       ngrd_wr(ma)%we_size,                       &
@@ -1608,7 +1641,8 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile, MyComm)
+     &                       output_ncfile, MyComm, My_map_type,        &
+     &                       samegrid)
 !
           deallocate(ngrd_rm(mo)%dst_mask)
           deallocate(src_mask_unlim, dst_mask_unlim)
@@ -1826,17 +1860,27 @@
           map1_name='WRF to SWAN distwgt Mapping'
           map2_name='unknown'
 
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
           write(stdout,*)"============================================="
           write(stdout,*)"Begin mapping between the two grids"
           write(stdout,*)"---------------------------------------------"
           write(stdout,*)"The interp file is: ", interp_file1
           write(stdout,*)"The src grid is: ", wrf_grids(ma)
           write(stdout,*)"The dst grid is: ", swan_coord(mw)
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
 
           grid1_file=wrf_grids(ma)
           grid2_file=swan_coord(mw)
 
           counter_grid=counter_grid+1
+          My_map_type = 2
+          samegrid=0
 
           call scrip_package(grid1_file, grid2_file,                    &
      &                       ngrd_wr(ma)%we_size,                       &
@@ -1858,7 +1902,8 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile, MyComm)
+     &                       output_ncfile, MyComm, My_map_type,        &
+     &                       samegrid)
 
           deallocate(ngrd_sw(mw)%dst_mask)
           deallocate(dst_mask_unlim)
@@ -1899,8 +1944,8 @@
       end do
 !  Mask out child portion of the src mask.
       do mw=1,Ngrids_swan-1
-          do j=ngrd_sw(mw)%jstr_w,ngrd_sw(mw)%jend_w
-            do i=ngrd_sw(mw)%istr_w,ngrd_sw(mw)%iend_w
+          do j=ngrd_sw(mw+1)%jstr_w,ngrd_sw(mw+1)%jend_w
+            do i=ngrd_sw(mw+1)%istr_w,ngrd_sw(mw+1)%iend_w
               ngrd_sw(mw)%src_mask(i,j)=0
             end do
           end do
@@ -1988,11 +2033,9 @@
               end do
               igrdstr=MAX( MIN(igrdstr1,igrdstr2)-4,1+offset)
               igrdend=MIN( MAX(igrdstr1,igrdstr2)+4,                    &
-     &                     ngrd_rm(mo)%xi_size-offset)
-
-              do j=1+offset,ngrd_sw(mw)%Numy_swan-offset
-!               do i=1+offset,ngrd_sw(mw)%Numx_swan-offset
-                do i=igrdstr,igrdend
+     &                     ngrd_sw(mw)%Numx_swan-offset)
+               do j=1,ngrd_sw(mw)%Numy_swan
+                 do i=1,ngrd_sw(mw)%Numx_swan
                   xx1=ngrd_sw(mw)%lon_rho_w(i,j)
                   yy1=ngrd_sw(mw)%lat_rho_w(i,j)
                   dlon = xx1-xx2
@@ -2091,17 +2134,27 @@
           map1_name='SWAN to WRF distwgt Mapping'
           map2_name='unknown'
 
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
           write(stdout,*)"============================================="
           write(stdout,*)"Begin mapping between the two grids"
           write(stdout,*)"---------------------------------------------"
           write(stdout,*)"The interp file is: ", interp_file1
           write(stdout,*)"The src grid is: ", swan_coord(mw)
           write(stdout,*)"The dst grid is: ", wrf_grids(ma)
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
 
           grid1_file=swan_coord(mw)
           grid2_file=wrf_grids(ma)
 
           counter_grid=counter_grid+1
+          My_map_type = 2
+          samegrid=0
 
           call scrip_package(grid1_file, grid2_file,                    &
      &                       ngrd_sw(mw)%Numx_swan,                     &
@@ -2123,7 +2176,8 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile, MyComm)
+     &                       output_ncfile, MyComm, My_map_type,        &
+     &                       samegrid)
 
           deallocate(ngrd_wr(ma)%dst_mask)
           deallocate(dst_mask_unlim)
@@ -2160,8 +2214,8 @@
       end do
 !  Mask out child portion of the src mask.
       do mo=1,Ngrids_roms-1
-          do j=ngrd_rm(mo)%jstr_o,ngrd_rm(mo)%jend_o
-            do i=ngrd_rm(mo)%istr_o,ngrd_rm(mo)%iend_o
+          do j=ngrd_rm(mo+1)%jstr_o,ngrd_rm(mo+1)%jend_o
+            do i=ngrd_rm(mo+1)%istr_o,ngrd_rm(mo+1)%iend_o
               ngrd_rm(mo)%src_mask(i,j)=0
             end do
           end do
@@ -2331,17 +2385,27 @@
           map1_name='ROMS to WW3 distwgt Mapping'
           map2_name='unknown'
 
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
           write(stdout,*)"============================================="
           write(stdout,*)"Begin mapping between the two grids"
           write(stdout,*)"---------------------------------------------"
           write(stdout,*)"The interp file is: ", interp_file1
           write(stdout,*)"The src grid is: ", roms_grids(mo)
           write(stdout,*)"The dst grid is: ", ww3_xcoord(mw)
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
 
           grid1_file=roms_grids(mo)
           grid2_file=ww3_xcoord(mw)
 
           counter_grid=counter_grid+1
+          My_map_type = 2
+          samegrid=0
 
           call scrip_package(grid1_file, grid2_file,                    &
      &                       ngrd_rm(mo)%xi_size,                       &
@@ -2363,7 +2427,8 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile, MyComm)
+     &                       output_ncfile, MyComm, My_map_type,        &
+     &                       samegrid)
 !
 !  Undo the grid adjust.
           if ((do_adjust(mw).eq.1).and.(mo.lt.Ngrids_roms)) then
@@ -2423,8 +2488,8 @@
       end do
 !  Mask out child portion of the src mask.
       do mw=1,Ngrids_ww3-1
-        do j=ngrd_w3(mw)%jstr_w,ngrd_w3(mw)%jend_w
-          do i=ngrd_w3(mw)%istr_w,ngrd_w3(mw)%iend_w
+        do j=ngrd_w3(mw+1)%jstr_w,ngrd_w3(mw+1)%jend_w
+          do i=ngrd_w3(mw+1)%istr_w,ngrd_w3(mw+1)%iend_w
             ngrd_w3(mw)%src_mask(i,j)=0
            end do
         end do
@@ -2547,17 +2612,27 @@
           map1_name='WW3 to ROMS distwgt Mapping'
           map2_name='unknown'
 
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
           write(stdout,*)"============================================="
           write(stdout,*)"Begin mapping between the two grids"
           write(stdout,*)"---------------------------------------------"
           write(stdout,*)"The interp file is: ", interp_file1
           write(stdout,*)"The src grid is: ", ww3_xcoord(mw)
           write(stdout,*)"The dst grid is: ", roms_grids(mo)
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
 
           grid1_file=ww3_xcoord(mw)
           grid2_file=roms_grids(mo)
 
           counter_grid=counter_grid+1
+          My_map_type = 2
+          samegrid=0
 
           call scrip_package(grid1_file, grid2_file,                    &
      &                       ngrd_w3(mw)%Numx_ww3,                      &
@@ -2579,7 +2654,8 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile, MyComm)
+     &                       output_ncfile, MyComm, My_map_type,        &
+     &                       samegrid)
 
           deallocate(ngrd_rm(mo)%dst_mask)
           deallocate(dst_mask_unlim)
@@ -2797,17 +2873,27 @@
           map1_name='WRF to WW3 distwgt Mapping'
           map2_name='unknown'
 
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
           write(stdout,*)"============================================="
           write(stdout,*)"Begin mapping between the two grids"
           write(stdout,*)"---------------------------------------------"
           write(stdout,*)"The interp file is: ", interp_file1
           write(stdout,*)"The src grid is: ", wrf_grids(ma)
           write(stdout,*)"The dst grid is: ", ww3_xcoord(mw)
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
 
           grid1_file=wrf_grids(ma)
           grid2_file=ww3_xcoord(mw)
 
           counter_grid=counter_grid+1
+          My_map_type = 2
+          samegrid=0
 
           call scrip_package(grid1_file, grid2_file,                    &
      &                       ngrd_wr(ma)%we_size,                       &
@@ -2829,7 +2915,8 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile, MyComm)
+     &                       output_ncfile, MyComm, My_map_type,        &
+     &                       samegrid)
 
           deallocate(ngrd_w3(mw)%dst_mask)
           deallocate(dst_mask_unlim)
@@ -2870,8 +2957,8 @@
       end do
 !  Mask out child portion of the src mask.
       do mw=1,Ngrids_ww3-1
-          do j=ngrd_w3(mw)%jstr_w,ngrd_w3(mw)%jend_w
-            do i=ngrd_w3(mw)%istr_w,ngrd_w3(mw)%iend_w
+          do j=ngrd_w3(mw+1)%jstr_w,ngrd_w3(mw+1)%jend_w
+            do i=ngrd_w3(mw+1)%istr_w,ngrd_w3(mw+1)%iend_w
               ngrd_w3(mw)%src_mask(i,j)=0
             end do
           end do
@@ -2961,9 +3048,8 @@
               igrdend=MIN( MAX(igrdstr1,igrdstr2)+4,                    &
      &                     ngrd_rm(mo)%xi_size-offset)
 
-              do j=1+offset,ngrd_w3(mw)%Numy_ww3-offset
-!               do i=1+offset,ngrd_w3(mw)%Numx_ww3-offset
-                do i=igrdstr,igrdend
+              do j=1,ngrd_w3(mw)%Numy_ww3
+                do i=1,ngrd_w3(mw)%Numx_ww3
                   xx1=ngrd_w3(mw)%lon_rho_w(i,j)
                   yy1=ngrd_w3(mw)%lat_rho_w(i,j)
                   dlon = xx1-xx2
@@ -3065,17 +3151,27 @@
           map1_name='WW3 to WRF distwgt Mapping'
           map2_name='unknown'
 
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
           write(stdout,*)"============================================="
           write(stdout,*)"Begin mapping between the two grids"
           write(stdout,*)"---------------------------------------------"
           write(stdout,*)"The interp file is: ", interp_file1
           write(stdout,*)"The src grid is: ", ww3_xcoord(mw)
           write(stdout,*)"The dst grid is: ", wrf_grids(ma)
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
 
           grid1_file=ww3_xcoord(mw)
           grid2_file=wrf_grids(ma)
 
           counter_grid=counter_grid+1
+          My_map_type = 2
+          samegrid=0
 
           call scrip_package(grid1_file, grid2_file,                    &
      &                       ngrd_w3(mw)%Numx_ww3,                      &
@@ -3097,7 +3193,8 @@
      &                       dst_mask_unlim,                            &
      &                       counter_grid,                              &
      &                       Ngrids_comb_total,                         &
-     &                       output_ncfile, MyComm)
+     &                       output_ncfile, MyComm, My_map_type,        &
+     &                       samegrid)
 
           deallocate(ngrd_wr(ma)%dst_mask)
           deallocate(dst_mask_unlim)

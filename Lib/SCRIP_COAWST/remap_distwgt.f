@@ -140,7 +140,7 @@
 
       grid_loop1: do dst_add = 1, grid2_size
 
-      write(*,*) 'jcw loop1 ',dst_add, ' of ', grid2_size
+!      write(*,*) 'jcw loop1 ',dst_add, ' of ', grid2_size
 
         if (.not. grid2_mask(dst_add)) cycle grid_loop1
 
@@ -222,7 +222,7 @@
 
       grid_loop2: do dst_add = 1, grid1_size
 
-      write(*,*) 'jcw loop2 ',dst_add, ' of ', grid1_size
+!      write(*,*) 'jcw loop2 ',dst_add, ' of ', grid1_size
 
         if (.not. grid1_mask(dst_add)) cycle grid_loop2
 

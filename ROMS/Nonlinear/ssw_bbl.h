@@ -596,7 +596,7 @@
 !         thck_wbl(i,j)=m_dwc
 #endif
 !
-          IF ((Umag(i,j).le.eps).and.(Ub(i,j).gt.eps)) THEN
+          IF ((Umag(i,j).le.eps).and.(Ub(i,j).ge.eps)) THEN
 !
 !  Pure waves - use wave friction factor approach from Madsen
 !  (1994, eqns 32-33).
@@ -613,7 +613,8 @@
             Taucwmax(i,j)=Tauw(i,j)
             znot(i,j)=zo
             znotc(i,j)=zo
-          ELSE IF ((Umag(i,j).gt.0.0_r8).and.(Ub(i,j).gt.eps).and.      &
+!         ELSE IF ((Umag(i,j).gt.0.0_r8).and.(Ub(i,j).ge.eps).and.      &
+          ELSE IF ((Umag(i,j).gt.eps).and.(Ub(i,j).ge.eps).and.      &
      &             ((Zr(i,j)/zo).le.1.0_r8)) THEN
 !
 !  Waves and currents, but zr <= zo.
@@ -621,7 +622,8 @@
             IF (Master) THEN
               PRINT *,' Warning: w-c calcs ignored because zr <= zo'
             END IF
-          ELSE IF ((Umag(i,j).gt.0.0_r8).and.(Ub(i,j).gt.eps).and.      &
+!         ELSE IF ((Umag(i,j).gt.0.0_r8).and.(Ub(i,j).gt.eps).and.      &
+          ELSE IF ((Umag(i,j).gt.eps).and.(Ub(i,j).ge.eps).and.      &
      &             ((Zr(i,j)/zo).gt.1.0_r8)) THEN
 !
 !  Waves and currents, zr > zo.
@@ -1583,6 +1585,9 @@
       zo = kN/30.0_r8
 
       IF (ubr.le.0.01_r8) THEN
+        dwc_va=kN
+        zoa=dwc_va
+        fwc=0.0_r8
         IF (ucr.le. 0.01_r8) THEN          ! no waves or currents
           ustrc=0.0_r8
           ustrwm=0.0_r8
@@ -1778,7 +1783,7 @@
             Zr_sg=z2
           END IF
         END DO
-      ELSEIF ( sg_loc.lt.Zr ) THEN
+      ELSE    !IF ( sg_loc.lt.Zr ) THEN
         z1=MAX( 2.5_r8*d50/30.0_r8, zapp_loc, 1.0e-10_r8 )
         z2=Zr
 !
@@ -1794,7 +1799,7 @@
           Vr_sg=fac*v_1d(1)
           Zr_sg=sg_loc
 !
-        ELSEIF ( sg_loc.gt.z1 ) THEN
+        ELSE   !IF ( sg_loc.gt.z1 ) THEN
 !
 ! If chosen height is less than the bottom cell thickness
 ! perform logarithmic interpolation with bottom roughness.
