@@ -680,9 +680,11 @@
         DO i=IstrR,IendR
           ij=ij+1
           A(ij)=GRID(ng)%h(i,j)
+#ifdef WET_DRY
           IF (GRID(ng)%rmask_wet(i,j).lt.0.5_r8) THEN
             A(ij)=9999.0_r8
           END IF
+#endif
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "DEPTH",    &
