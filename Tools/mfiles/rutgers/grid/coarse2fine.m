@@ -136,7 +136,8 @@ got_list = {'lon_rho'  , 'lat_rho'  , 'lon_psi'  , 'lat_psi'  ,         ...
 
 for value = got_list
   field = char(value);
-  got.(field) =  any(strcmp(vnames, field));
+%  got.(field) =  any(strcmp(vnames, field));
+  got.(field) =  any(strcmp(fieldnames(C), field));
 end
 
 % Set fields to process.
