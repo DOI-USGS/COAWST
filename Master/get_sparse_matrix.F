@@ -16,7 +16,6 @@
 !=======================================================================
 !
       USE mod_coupler_iounits
-      USE mod_coupler_kinds
       USE netcdf
 #ifdef ROMS_MODEL
       USE mod_iounits
@@ -188,7 +187,7 @@
       ELSE
         sparse_rows_main(1)=1
         sparse_cols_main(1)=1
-        sparse_weights_main(1)=0.0_m8
+        sparse_weights_main(1)=0.0_r8
       END IF
 !
 ! Check to see if the user computed additional weights to account

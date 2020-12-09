@@ -173,7 +173,7 @@
       real(r8), dimension(IminS:ImaxS,0:ND+1) :: curvd
       real(r8), dimension(IminS:ImaxS,0:ND+2) :: FD
 # ifdef AC_HSIMT
-      real(r8) :: cc1, cc2, cc3, epson, sw
+      real(r8) :: epson, sw
       real(r8) :: sw_xi, rl, rkal, a1, b1, betal, rt, rkar, betar
       real(r8) :: sw_eta, rd, rkad, betad, ru, rkau, betau
       real(r8), dimension(IminS:ImaxS) :: grad_x
@@ -276,9 +276,6 @@
             END DO
           END DO
 # elif defined AC_MPDATA || defined AC_HSIMT
-      cc1=0.25_r8
-      cc2=0.5_r8
-      cc3=1.0_r8/12.0_r8
       epson=1.0E-12_r8
 !
       DO j=Jstr,Jend
@@ -531,9 +528,6 @@
         END DO
 # elif defined AC_MPDATA || defined AC_HSIMT
       J_LOOP: DO j=Jstr,Jend
-        cc1=0.25_r8
-        cc2=0.5_r8
-        cc3=1.0_r8/12.0_r8
         epson=1.0E-12_r8
 !
         DO i=Istr,Iend
