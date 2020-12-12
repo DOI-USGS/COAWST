@@ -374,7 +374,7 @@ if (got.x_u && got.y_u) || (got.lon_u && got.lat_u)
       RCu = griddedInterpolant(XuC, YuC, C.x_u, method);
 
                                F.x_u = RCu(XuF, YuF);
-      RCu.Values = C.y_u(:);   F.y_u = RCu(XuF, YuF);
+      RCu.Values = C.y_u;   F.y_u = RCu(XuF, YuF);
     else
       F.x_u = interp2(XuC', YuC', C.x_u', XuF, YuF, method);
       F.y_u = interp2(XuC', YuC', C.y_u', XuF, YuF, method);
