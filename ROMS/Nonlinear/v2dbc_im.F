@@ -100,9 +100,13 @@
       real(r8), parameter :: eps = 1.0E-20_r8
 
       real(r8) :: Ce, Cx, Ze
-      real(r8) :: bry_pgr, bry_cor, bry_str, bry_val
+      real(r8) :: bry_pgr, bry_cor, bry_str, bry_wec, bry_val
       real(r8) :: cff, cff1, cff2, cff3, dt2d, dVde, dVdt, dVdx
       real(r8) :: obc_in, obc_out, phi, tau
+#ifdef WEC_VF
+      real(r8), parameter :: Lwave_min = 1.0_r8
+      real(r8) :: sigma, osigma, waven, waveny
+#endif
 #if defined ATM_PRESS && defined PRESS_COMPENSATE
       real(r8) :: OneAtm, fac
 #endif
@@ -221,7 +225,7 @@
         ELSE IF (LBC(isouth,isVbar,ng)%Flather) THEN
           DO i=Istr,Iend
             IF (LBC_apply(ng)%south(i)) THEN
-#if defined SSH_TIDES && !defined UV_TIDES
+#if (defined SSH_TIDES && !defined UV_TIDES) || defined INWAVE_MODEL
               IF (LBC(isouth,isFsur,ng)%acquire) THEN
                 bry_pgr=-g*(zeta(i,Jstr,know)-                          &
      &                      BOUNDARY(ng)%zeta_south(i))*                &
@@ -270,11 +274,33 @@
      &                                 GRID(ng)%h(i,Jstr  )+            &
      &                                 zeta(i,Jstr  ,know)))
 # endif
+# ifdef WEC_VF
+!             here we reduce pgr from depth 2m to pgr is 0 at 0 depth.
+              bry_pgr=MIN(0.5_r8*(GRID(ng)%h(i,Jstr)+                   &
+     &                             zeta(i,Jstr,know)), 1.0_r8)*bry_pgr
+              cff1=1.5_r8*pi-FORCES(ng)%Dwave(i,Jstr)-                  &
+     &             GRID(ng)%angler(i,Jstr)
+              waven=2.0_r8*pi/MAX(FORCES(ng)%Lwave(i,Jstr),Lwave_min)
+              waveny=waven*SIN(cff1)
+              sigma=SQRT(MAX(g*waven*TANH(waven/cff),eps))
+              osigma=1.0_r8/sigma
+              cff1=(1.0_r8-wec_alpha(ng))*osigma*                       &
+     &             FORCES(ng)%Dissip_break(i,Jstr)*waveny
+              bry_wec=cff1
+#  ifdef WEC_ROLLER
+              bry_wec=bry_wec+osigma*FORCES(ng)%Dissip_roller(i,Jstr)*  &
+     &                        waveny
+#  endif
+!             bry_wec=0.0_r8   !for now
+# else
+              bry_wec=0.0_r8
+# endif
               cff2=GRID(ng)%on_v(i,Jstr)*Ce
 !!            cff2=dt2d
               bry_val=vbar(i,Jstr+1,know)+                              &
      &                cff2*(bry_pgr+                                    &
      &                      bry_cor+                                    &
+     &                      bry_wec+                                    &
      &                      bry_str)
 #else
               bry_val=BOUNDARY(ng)%vbar_south(i)
@@ -609,7 +635,7 @@
         ELSE IF (LBC(inorth,isVbar,ng)%Flather) THEN
           DO i=Istr,Iend
             IF (LBC_apply(ng)%north(i)) THEN
-#if defined SSH_TIDES && !defined UV_TIDES
+#if (defined SSH_TIDES && !defined UV_TIDES) || defined INWAVE_MODEL
               IF (LBC(inorth,isFsur,ng)%acquire) THEN
                 bry_pgr=-g*(BOUNDARY(ng)%zeta_north(i)-                 &
      &                      zeta(i,Jend,know))*                         &
@@ -658,11 +684,33 @@
      &                                 GRID(ng)%h(i,Jend  )+            &
      &                                 zeta(i,Jend  ,know)))
 # endif
+# ifdef WEC_VF
+!             here we reduce pgr from depth 2m to pgr is 0 at 0 depth.
+              bry_pgr=MIN(0.5_r8*(GRID(ng)%h(i,Jend)+                   &
+     &                             zeta(i,Jend,know)), 1.0_r8)*bry_pgr
+              cff1=1.5_r8*pi-FORCES(ng)%Dwave(i,Jend)-                  &
+     &             GRID(ng)%angler(i,Jend)
+              waven=2.0_r8*pi/MAX(FORCES(ng)%Lwave(i,Jend),Lwave_min)
+              waveny=waven*SIN(cff1)
+              sigma=SQRT(MAX(g*waven*TANH(waven/cff),eps))
+              osigma=1.0_r8/sigma
+              cff1=(1.0_r8-wec_alpha(ng))*osigma*                       &
+     &             FORCES(ng)%Dissip_break(i,Jend)*waveny
+              bry_wec=cff1
+#  ifdef WEC_ROLLER
+              bry_wec=bry_wec+osigma*FORCES(ng)%Dissip_roller(i,Jend)*  &
+     &                        waveny
+#  endif
+!             bry_wec=0.0_r8   ! for now
+# else
+              bry_wec=0.0_r8
+# endif
               cff2=GRID(ng)%on_v(i,Jend+1)*Ce
 !!            cff2=dt2d
               bry_val=vbar(i,Jend,know)+                                &
      &                cff2*(bry_pgr+                                    &
      &                      bry_cor+                                    &
+     &                      bry_wec+                                    &
      &                      bry_str)
 #else
               bry_val=BOUNDARY(ng)%vbar_north(i)

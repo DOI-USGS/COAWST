@@ -5,14 +5,14 @@
 #  undef DOUBLESUM
 #  define SINGLESUM
 #  ifdef SINGLESUM
-#    undef  INTCDF
-#    define FCDF
+#    define INTCDF
+#    undef  FCDF
 #  endif
 !  2. Select direct or integrated hilbert.
 #  define DHILBERT
-#  undef IHILBERT
+#  undef  IHILBERT
 !  3. this hscale seems more needed for ihilbert.
-#  define HSCALE
+#  undef  HSCALE
 #endif
 
 ! SINGLESUM: SINGLE SUMMATION METHOD
@@ -374,24 +374,40 @@
       DO ff=1,WAVES(ng)%nfreqsw
         DO dd=1,WAVES(ng)%ndirsw*offset
           angle(ff,dd)=0.0_r8
+          fsw_2d(ff,dd)=0.0_r8
+          theta_2d(ff,dd)=0.0_r8
+          SDSW_circle(ff,dd)=0.0_r8
         END DO
       END DO
-      DO ff=1,WAVES(ng)%nfreqsw
-        DO dd=1,WAVES(ng)%ndirsw*offset
-          fsw_2d(ff,dd)=WAVES(ng)%fsw(ff)
-          IF (dd.le.WAVES(ng)%ndirsw) THEN
-            k=dd
-            theta_2d(ff,dd)=WAVES(ng)%theta(k)-360.0_r8*pi/180.0_r8
-          ELSEIF (dd.le.WAVES(ng)%ndirsw*2) THEN
-            k=dd-WAVES(ng)%ndirsw
-            theta_2d(ff,dd)=WAVES(ng)%theta(k)
-          ELSE
-            k=dd-WAVES(ng)%ndirsw*2
-            theta_2d(ff,dd)=WAVES(ng)%theta(k)+360.0_r8*pi/180.0_r8
-          END IF
-          SDSW_circle(ff,dd)=WAVES(ng)%SDSW(ff,k)
+      IF (WAVES(ng)%Swancircle.eq.1) THEN
+        DO ff=1,WAVES(ng)%nfreqsw
+          DO dd=1,WAVES(ng)%ndirsw*offset
+            fsw_2d(ff,dd)=WAVES(ng)%fsw(ff)
+            IF (dd.le.WAVES(ng)%ndirsw) THEN
+              k=dd
+              theta_2d(ff,dd)=WAVES(ng)%theta(k)-360.0_r8*pi/180.0_r8
+            ELSEIF (dd.le.WAVES(ng)%ndirsw*2) THEN
+              k=dd-WAVES(ng)%ndirsw
+              theta_2d(ff,dd)=WAVES(ng)%theta(k)
+            ELSE
+              k=dd-WAVES(ng)%ndirsw*2
+              theta_2d(ff,dd)=WAVES(ng)%theta(k)+360.0_r8*pi/180.0_r8
+            END IF
+            SDSW_circle(ff,dd)=WAVES(ng)%SDSW(ff,k)
+          END DO
         END DO
-      END DO
+      ELSE
+        DO ff=1,WAVES(ng)%nfreqsw
+          DO dd=1,WAVES(ng)%ndirsw*offset
+            fsw_2d(ff,dd)=WAVES(ng)%fsw(ff)
+            IF (dd.le.WAVES(ng)%ndirsw) THEN
+              k=dd
+              theta_2d(ff,dd)=WAVES(ng)%theta(k)
+            END IF
+            SDSW_circle(ff,dd)=WAVES(ng)%SDSW(ff,k)
+          END DO
+        END DO
+      ENDIF
 !
 !  Set up 2d gridded freq and dir arrays for user defined computation grid.
 !
@@ -731,8 +747,8 @@
       real(r8)                        :: h0, oh0 
       real(r8)                        :: x_mid, y_mid, dx_min
       real(r8), allocatable           :: k(:), angle_edge(:)
-      real(r8), allocatable           :: dist_local(:), dist_x(:), dist_y(:)
-      real(r8), allocatable           :: dx_local(:)
+      real(r8), allocatable           :: dist_x(:), dist_y(:)
+      real(r8), allocatable           :: dist_local(:), dx_local(:)
 #  ifdef INTCDF
       real(r8), allocatable           :: SDD_cumul(:)
 #  elif defined FCDF
@@ -1117,7 +1133,7 @@
 !
             DO dd=1,WAVES(ng)%ndir
 #  ifdef SINGLESUM
-              IF (m.eq.dd) THEN
+              IF (dd.eq.WAVES(ng)%dir_3_int(ff)) THEN
 #  endif
                 DIR3=1.5_r8*pi-WAVEG(ng)%wd(dd)-angle_edge(i)
                 kwx=k(ff)*cos(DIR3)
@@ -1340,6 +1356,7 @@
       USE mod_ncparam
       USE mod_scalars
       USE mod_inwave_vars
+      USE math_tools
 # ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcasti, mp_bcastf, mp_gather2d
 # endif
@@ -1356,15 +1373,15 @@
 !
       integer                         :: i, j, t, is, p1, p2, f1, f2
       integer                         :: n1, n2, SstrR, SendR, nt1
-      integer                         :: Npts, jcenter, mdir, nf
+      integer                         :: Npts, jcenter, mdir, nf, nn
       integer                         :: m, ier, lensav, lenwrk
       real(r8)                        :: cff, cff1, cff2, cff3, cff4
-      real(r8)                        :: twopi, otwopi, og2
+      real(r8)                        :: twopi, otwopi, og2, p
       real(r8)                        :: error, fmin, fmax
-      real(r8)                        :: fac1, fac2, fac3, fac4
+      real(r8)                        :: fac1, fac2, fac3, fac4, ofac4
       real(r8)                        :: L0, k0, k1, kh, wr
       real(r8)                        :: F, FDER, tanhkh
-      real(r8)                        :: DDf
+      real(r8)                        :: DDf, ont1
 # if !defined SINGLESUM
       real(r8)                        :: DDtheta, k3, Z_bw
       real(r8)                        :: k3_x, k3_y
@@ -1383,10 +1400,15 @@
 
       real(r8), allocatable           :: k(:), ocoshkh(:)
       real(r8), allocatable           :: dist_local(:)
+      real(r8), allocatable           :: angle_edge(:)
 # ifdef VARY_ACBC
-      real(r8), allocatable           :: temp1(:,:)
+      real(r8), allocatable           :: tempz(:,:)
+      real(r8), allocatable           :: tempu(:,:)
+      real(r8), allocatable           :: tempv(:,:)
 # else
-      real(r8), allocatable           :: temp1(:)
+      real(r8), allocatable           :: tempz(:)
+      real(r8), allocatable           :: tempu(:)
+      real(r8), allocatable           :: tempv(:)
 # endif
       real(r8), allocatable           :: dist_x(:), dist_y(:)
 # if defined SINGLESUM
@@ -1396,6 +1418,7 @@
       real(r8), allocatable           :: bw_ang(:)
       real(r8), allocatable           :: k3_x(:,:)
       real(r8), allocatable           :: k3_y(:,:)
+      real(r8), allocatable           :: theta_3(:,:)
       real(r8), allocatable           :: ff(:)
       real(r8), allocatable           :: D1(:)
       real(r8), allocatable           :: D2(:)
@@ -1409,9 +1432,9 @@
 
       complex(fftkind), dimension(:,:), allocatable :: Comptemp
       complex(fftkind), dimension(:,:), allocatable :: Comptempd
-      complex(fftkind), dimension(:), allocatable :: A
+      complex(fftkind), dimension(:), allocatable :: A, AA
+      complex(fftkind), dimension(:), allocatable :: Comp_int
 
-      real(r8), allocatable           :: Comp_int(:)
       real(r8), allocatable           :: zz(:)
       real(r8), allocatable           :: dpi(:)
       real(kind=8),dimension(:),allocatable    :: work, wsave
@@ -1536,6 +1559,11 @@
           SstrR=JstrR
           SendR=JendR
 
+          allocate(angle_edge(SstrR:SendR))
+          DO j=SstrR,SendR
+            angle_edge(j)=GRID(ng)%angler(is,j)
+          END DO
+
           x_mid=0.5_r8*(xr_local(is,Mm(ng)+1)+xr_local(is,0))
           y_mid=0.5_r8*(yr_local(is,Mm(ng)+1)+yr_local(is,0))
 
@@ -1581,6 +1609,11 @@
           END IF
           SstrR=IstrR
           SendR=IendR
+
+          allocate(angle_edge(SstrR:SendR))
+          DO i=SstrR,SendR
+            angle_edge(i)=GRID(ng)%angler(i,is)
+          END DO
 
           x_mid=0.5_r8*(xr_local(Lm(ng)+1,is)+xr_local(0,is))
           y_mid=0.5_r8*(yr_local(Lm(ng)+1,is)+yr_local(0,is))
@@ -1671,21 +1704,30 @@
 ! Compute the energy transfer for each pair of frequency bins.
 !
 # ifdef VARY_ACBC
-        allocate (temp1(SstrR:SendR,WAVES(ng)%Insteps))
+        allocate (tempz(SstrR:SendR,WAVES(ng)%Insteps))
+        allocate (tempu(SstrR:SendR,WAVES(ng)%Insteps))
+        allocate (tempv(SstrR:SendR,WAVES(ng)%Insteps))
 # else
-        allocate (temp1(WAVES(ng)%Insteps))
+        allocate (tempz(WAVES(ng)%Insteps))
+        allocate (tempu(WAVES(ng)%Insteps))
+        allocate (tempv(WAVES(ng)%Insteps))
 # endif
         DO t=1,WAVES(ng)%Insteps
           temp4(t)=REAL(t-1,r8)*WAVES(ng)%idt
 # ifdef VARY_ACBC
           DO j=SstrR,SendR
-            temp1(j,t)=0.0_r8
+            tempz(j,t)=0.0_r8
+            tempu(j,t)=0.0_r8
+            tempv(j,t)=0.0_r8
           END DO
 # else
-          temp1(t)=0.0_r8
+          tempz(t)=0.0_r8
+          tempu(t)=0.0_r8
+          tempv(t)=0.0_r8
 # endif
         END DO
         fac4=WAVES(ng)%df
+        ofac4=1.0_r8/WAVES(ng)%df
         fac5=WAVEG(ng)%pd
         og2=1.0_r8/(g**2)
 !
@@ -1700,6 +1742,7 @@
 !
 ! m to f1, k to nf
         nt1=WAVES(ng)%Insteps
+        ont1=1.0_r8/REAL(WAVES(ng)%Insteps,r8)
         nf=WAVES(ng)%nfreq
         fac4=WAVES(ng)%df
         fac5=WAVEG(ng)%pd
@@ -1710,6 +1753,7 @@
         allocate (bw_ang(nf-1))
         allocate (k3_x(nf-1,nf-1))
         allocate (k3_y(nf-1,nf-1))
+        allocate (theta_3(nf-1,nf-1))
         allocate (ff(nf-1))
         allocate (D1(nf-1))
         allocate (D2(nf-1))
@@ -1731,6 +1775,7 @@
         bw_ang=0.0_r8
         k3_x=0.0_r8
         k3_y=0.0_r8
+        theta_3=0.0_r8
         ff=0.0_r8
         D1=0.0_r8
         D2=0.0_r8
@@ -1764,7 +1809,7 @@
 !
 ! Compute the freq dif
 !
-          DDf=f1*WAVES(ng)%df
+          DDf=REAL(f1,r8)*WAVES(ng)%df
 !
 !         direction difference
           DDtheta(1:nf-f1)=(WAVES(ng)%dir_3_int(f1+1:nf)-               &
@@ -1845,7 +1890,7 @@
 !  Compute 
 !
 !       Comptemp = 0.5_r8*A3*exp(-1*sqrt(-1)*Z_bw)
-        Comptemp = 0.5_r8*A3*exp(-1*CMPLX(0.0_r8,1.0_r8)*Z_bw)
+        Comptemp = 0.5_r8*A3*exp(-1.0_r8*CMPLX(0.0_r8,Z_bw))
 !
 !  Compute this contribution to the bndwave (water level) and associated 
 !  currents; currents depend on direction
@@ -1853,45 +1898,117 @@
 !
 !  These are for the fourier computation below.
 !
-        lenwrk=nt1
-        lensav=nt1+int(log(real(nt1/2,kind=8))/log(2.0D+00))+4
+        p=log(real(nt1))/log(2.)
+        nn=ceiling(p)
+        nn=2**nn
+        lenwrk=2*nn
+        lensav=2*nn+int(log(real(nn,kind=8))/log(2.0D+00))+4
         allocate ( work(1:lenwrk) )
         allocate ( wsave(1:lensav) )
+        allocate (  AA(nn) )
+        work=0.
+        wsave=0.
+        call cfft1i ( nt1, wsave, lensav, ier )
 #  ifdef VARY_ACBC
         DO j=SstrR,SendR
 #  else
         DO j=1,1
 #  endif
-!         Comptempd=Comptemp*exp(-1*sqrt(-1)*(k3_y*dist_y(j)+k3_x*dist_x(j)))
-          Comptempd=Comptemp*exp(-1*CMPLX(0.0_r8,1.0_r8)*               &
-     &                           (k3_y*dist_y(j)+k3_x*dist_x(j)))
+!
+! Here we adjust to compute the grid normal direction
+!
+!  first get the bound_z term.
+          theta_3=ATAN2(k3_y,(k3_x+0.0000001_r8))+angle_edge(j)
+          Comptempd=Comptemp*exp(-1.0_r8*CMPLX(0.0_r8,k3_y*dist_y(j)+   &
+     &                                                k3_x*dist_x(j)))
 !
 !  Determine Fourier coefficients
 !
 !  we add all the components of same frequency
-          Comp_int(1:nf-1)=sum(Comptempd(:,:),2)
-          Comp_int(nf)=Comp_int(nf-1)
+!  need to start at 2 for the fft  conj symmetry
+           Comp_int(2:nf)=sum(Comptempd,2)
 !
 !  Compute the Fourier Coefficients
 !
           A=0.0_r8
+          AA=0.0_r8
           A(1:(nt1/2))=Comp_int
-          A((nt1/2+1):nt1)=conjg(A(nt1/2:1:-1))
+          A((nt1/2+2):nt1)=conjg(A(nt1/2:2:-1))
+          AA(1:nt1)=A
 !
-!         lenwrk=2*n
-!         lensav=2*n+int(log(real(n,kind=8))/log(2.0D+00))+4
           work=0.
-          wsave=0.
-          call cfft1i ( nt1/2, wsave, lensav, ier )
-          call cfft1f ( nt1/2, 1, A, nt1/2, wsave, lensav, work, lenwrk, ier )
+          call cfft1b (nt1, 1, AA, nn, wsave, lensav, work, lenwrk, ier)
 !
-!         zz=real(ifft(A))
-          zz=real(A,r8)
+          zz=0.0_r8
+          zz=real(AA(1:nt1),r8)
+
 #  ifdef VARY_ACBC
-          temp1(j,:)=zz/WAVES(ng)%df
+          tempz(j,:)=zz*ofac4*ont1
 #  else
-          temp1=zz/WAVES(ng)%df
-!         temp1=A3*COS(-2.0_r8*pi*DDf*temp4+Z_bw)
+          tempz=zz*ofac4*ont1
+#  endif
+
+!  now do u
+          theta_3=ATAN2(k3_y,(k3_x+0.0000001_r8))+angle_edge(j)
+          Comptempd=Comptemp*exp(-1.0_r8*CMPLX(0.0_r8,k3_y*dist_y(j)+   &
+     &                                                k3_x*dist_x(j)))* &
+     &                                                cos(theta_3)
+!
+!  Determine Fourier coefficients
+!
+!  we add all the components of same frequency
+!  need to start at 2 for the fft  conj symmetry
+           Comp_int(2:nf)=sum(Comptempd,2)
+!
+!  Compute the Fourier Coefficients
+!
+          A=0.0_r8
+          AA=0.0_r8
+          A(1:(nt1/2))=Comp_int
+          A((nt1/2+2):nt1)=conjg(A(nt1/2:2:-1))
+          AA(1:nt1)=A
+!
+          work=0.
+          call cfft1b (nt1, 1, AA, nn, wsave, lensav, work, lenwrk, ier)
+!
+          zz=0.0_r8
+          zz=real(AA(1:nt1),r8)
+
+#  ifdef VARY_ACBC
+          tempu(j,:)=zz*ofac4*ont1
+#  else
+          tempu=zz*ofac4*ont1
+#  endif
+!  now do v
+          theta_3=ATAN2(k3_y,(k3_x+0.0000001_r8))+angle_edge(j)
+          Comptempd=Comptemp*exp(-1.0_r8*CMPLX(0.0_r8,k3_y*dist_y(j)+   &
+     &                                                k3_x*dist_x(j)))* &
+     &                                                sin(theta_3)
+!
+!  Determine Fourier coefficients
+!
+!  we add all the components of same frequency
+!  need to start at 2 for the fft  conj symmetry
+           Comp_int(2:nf)=sum(Comptempd,2)
+!
+!  Compute the Fourier Coefficients
+!
+          A=0.0_r8
+          AA=0.0_r8
+          A(1:(nt1/2))=Comp_int
+          A((nt1/2+2):nt1)=conjg(A(nt1/2:2:-1))
+          AA(1:nt1)=A
+!
+          work=0.
+          call cfft1b (nt1, 1, AA, nn, wsave, lensav, work, lenwrk, ier)
+!
+          zz=0.0_r8
+          zz=real(AA(1:nt1),r8)
+
+#  ifdef VARY_ACBC
+          tempv(j,:)=zz*ofac4*ont1
+#  else
+          tempv=zz*ofac4*ont1
 #  endif
         END DO
         deallocate (work, wsave)
@@ -1902,21 +2019,22 @@
 !
 #  ifdef VARY_ACBC
         DO j=SstrR,SendR
-          WAVES(ng)%bndwave_z(j,:)=temp1(j,:)
-          WAVES(ng)%bndwave_u(j,:)=temp1(j,:)*oh0*sqrt(g*h0)
-          WAVES(ng)%bndwave_v(j,:)=temp1(j,:)*oh0*sqrt(g*h0)
+          WAVES(ng)%bndwave_z(j,:)=tempz(j,:)
+          WAVES(ng)%bndwave_u(j,:)=tempu(j,:)*oh0*sqrt(g*h0)
+          WAVES(ng)%bndwave_v(j,:)=tempv(j,:)*oh0*sqrt(g*h0)
+          
         END DO
 #  else
-        WAVES(ng)%bndwave_z(:)=temp1(:)
-        WAVES(ng)%bndwave_u(:)=temp1(:)*oh0*sqrt(g*h0)
-        WAVES(ng)%bndwave_v(:)=temp1(:)*oh0*sqrt(g*h0)
+        WAVES(ng)%bndwave_z(:)=tempz(:)
+        WAVES(ng)%bndwave_u(:)=tempu(:)*oh0*sqrt(g*h0)
+        WAVES(ng)%bndwave_v(:)=tempv(:)*oh0*sqrt(g*h0)
 #  endif
 !
         deallocate (DDtheta, k3, Z_bw, bw_ang)
-        deallocate (k3_x, k3_y, ff, D1, D2, D3, D4)
+        deallocate (k3_x, k3_y, theta_3, ff, D1, D2, D3, D4)
         deallocate (DTOT, E3, A3)
         deallocate (Comptemp, Comptempd, Comp_int)
-        deallocate (A, zz)
+        deallocate (A, AA, zz, angle_edge)
 !
 # else
 !
@@ -2002,12 +2120,12 @@
                   DO j=SstrR,SendR
                     cff2=k3_x*dist_x(j)+k3_y*dist_y(j)
                     DO t=1,WAVES(ng)%Insteps
-                      temp1(j,t)=temp1(j,t)+A3*COS(-2.0_r8*pi*DDf*      &
+                      tempz(j,t)=tempz(j,t)+A3*COS(-2.0_r8*pi*DDf*      &
      &                                             temp4(t)+Z_bw+cff2)
                     END DO
                   END DO
 #  else
-                  temp1=temp1+A3*COS(-2.0_r8*pi*DDf*temp4+Z_bw)
+                  tempz=tempz+A3*COS(-2.0_r8*pi*DDf*temp4+Z_bw)
 #  endif
                 END DO
               END DO
@@ -2022,24 +2140,24 @@
         DO j=SstrR,SendR
 #  ifdef VARY_ACBC
           WAVES(ng)%bndwave_z(j,:)=WAVES(ng)%bndwave_z(j,:)+            &
-     &                             temp1(j,:)
+     &                             tempz(j,:)
           WAVES(ng)%bndwave_u(j,:)=WAVES(ng)%bndwave_u(j,:)+            &
-     &                             temp1(J,:)*oh0*sqrt(g*h0)
+     &                             tempz(j,:)*oh0*sqrt(g*h0)
           WAVES(ng)%bndwave_v(j,:)=WAVES(ng)%bndwave_v(j,:)+            &
-     &                             temp1(j,:)*oh0*sqrt(g*h0)
+     &                             tempz(j,:)*oh0*sqrt(g*h0)
 #  else
-          WAVES(ng)%bndwave_z(:)=WAVES(ng)%bndwave_z(:)+temp1(:)
+          WAVES(ng)%bndwave_z(:)=WAVES(ng)%bndwave_z(:)+tempz(:)
           WAVES(ng)%bndwave_u(:)=WAVES(ng)%bndwave_u(:)+                &
-     &                           temp1(:)*oh0*sqrt(g*h0)
+     &                           tempz(:)*oh0*sqrt(g*h0)
           WAVES(ng)%bndwave_v(:)=WAVES(ng)%bndwave_v(:)+                &
-     &                           temp1(:)*oh0*sqrt(g*h0)
+     &                           tempz(:)*oh0*sqrt(g*h0)
 #  endif
         END DO
 # endif
+        deallocate(dist_x, dist_y)
+        deallocate (tempz, tempu, tempv)
+        deallocate (k, ocoshkh)
       END IF
-      deallocate(dist_x, dist_y)
-      deallocate (k, ocoshkh)
-      deallocate (temp1)
 
       RETURN
       END SUBROUTINE boundwave_tile

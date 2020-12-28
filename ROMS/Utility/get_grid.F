@@ -1038,6 +1038,10 @@
      &                            ng, TRIM(ncname), Fmin, Fmax
               END IF
             END IF
+            IF (.not.spherical) THEN
+              LonMin(ng)=Fmin
+              LonMax(ng)=Fmax
+            END IF
 # ifdef NESTING
             IF (.not.spherical) THEN
               CALL fill_contact(ng, model, tile,                        &
@@ -1081,6 +1085,10 @@
                 WRITE (stdout,30) 'y-location of RHO-points: y_rho',    &
      &                            ng, TRIM(ncname), Fmin, Fmax
               END IF
+            END IF
+            IF (.not.spherical) THEN
+              LatMin(ng)=Fmin
+              LatMax(ng)=Fmax
             END IF
 # ifdef NESTING
             IF (.not.spherical) THEN

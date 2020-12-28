@@ -146,8 +146,8 @@
 !  positive multiples of 360 map to 360 and negative multiples of 360
 !  map to zero using the MODULO intrinsic Fortran function.
 !
-      IF ((Xmin.ge.0.0_r8).and.(Xmax.gt.0.0_r8).and.                    &
-     &    ((Xmax-Xmin).gt.315.0_r8)) THEN
+      IF (((Xmin.ge.0.0_r8).and.(Xmax.gt.0.0_r8).and.                   &
+     &    ((Xmax-Xmin).gt.315.0_r8)).and.(spherical)) THEN
         EastLon=.TRUE.
         MyLonMin=MODULO(LonMin(ng), 360.0_r8)
         IF ((MyLonMin.eq.0.0_r8).and.                                   &

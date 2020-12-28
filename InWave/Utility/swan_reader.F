@@ -38,7 +38,7 @@
       character(72)         :: rline
       real(r8)              :: factor, m0, frep, cff, DTTIME
       integer               :: nfreq, ndir, switch
-      integer               :: i, j, d, inp
+      integer               :: i, j, d, inp, min1, min2
       integer               :: nfreqsw, ndirsw
       integer               :: minpos, readerr
       integer               :: INTTIM(6)
@@ -154,9 +154,15 @@
         ELSE
           WAVES(ng)%Swancircle=0
         END IF
-
-        IF((theta1(minpos+1)-theta1(minpos)).lt.                        &
-     &     (theta1(minpos-1)-theta1(minpos)))THEN
+!
+!        IF((theta1(minpos+1)-theta1(minpos)).lt.                        &
+!     &     (theta1(minpos-1)-theta1(minpos)))THEN
+        min1=minpos
+        min2=minpos
+        IF (minpos.eq.1)      min1=ndirsw+1
+        IF (minpos.eq.ndirsw) min2=0
+        IF((theta1(min2+1)-theta1(minpos)).lt.                          &
+     &     (theta1(min1-1)-theta1(minpos)))THEN
           DO i=1,ndirsw
             WAVES(ng)%posang(i)=minpos+(i-1)
             IF(WAVES(ng)%posang(i).gt.ndirsw)THEN
@@ -219,8 +225,8 @@
         END DO
 !  Set dt SpecTime to a large valule in case the spec2d file 
 !  has only 1 time instance.
-        WAVES(ng)%SpecTime(2)=WAVES(ng)%SpecTime(1)
         WAVES(ng)%SpecTimedt=99999999.0_r8
+        WAVES(ng)%SpecTime(2)=WAVES(ng)%SpecTime(1)+WAVES(ng)%SpecTimedt
 !
 !-----------------------------------------------------------------------
 ! Find FACTOR keyword
@@ -437,7 +443,7 @@
       END IF
 !     exit_flag=4
  240  IF (Master) THEN
-        WRITE(stdout,*) 'END of 2d spec file'
+        WRITE(stdout,*) '2d specfile END: NO EXC val or incorrect time'
       END IF
  250  CONTINUE
 #endif

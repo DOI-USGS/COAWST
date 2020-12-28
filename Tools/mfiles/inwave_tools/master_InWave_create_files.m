@@ -21,7 +21,8 @@ close all
 
 INWAVE_SHOREFACE=0;
 INLET_TEST=0;
-LIP=1;
+LIP=0;
+DELILAH=1;
 MY_APP=0;
 
 %2) Provide the name of the mfile containing configuration parameters of
@@ -33,6 +34,8 @@ elseif (INLET_TEST)
     inwave_gen_file='InWave_inlet_test_param';
 elseif (LIP)
     inwave_gen_file='InWave_lip_param';
+elseif (DELILAH)
+    inwave_gen_file='InWave_delilah_param';
 elseif (MY_APP)
     inwave_gen_file='InWave_myapp_param';
 end
