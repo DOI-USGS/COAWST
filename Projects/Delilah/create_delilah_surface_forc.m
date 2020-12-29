@@ -62,5 +62,26 @@ lon=[x_rho(1,1) x_rho(end,1); x_rho(1,end) x_rho(end,end)];
 lat=[y_rho(1,1) y_rho(end,1); y_rho(1,end) y_rho(end,end)];
 create_roms_forcings(lon, lat, time, 'frc_delilah2.nc', 'sustr', 'svstr');
 
+%now create swan wind file, if needed
+%first interpolate to a constant dt
+swan_time=[time(1):1/24:21-1/24];
+swan_uwind=interp1(time,Uwind,swan_time);
+swan_vwind=interp1(time,Vwind,swan_time);
+fid = fopen('wind_swan_delilah.dat','w');
+for i=1:length(swan_time)
+% disp(['Writing winds for SWAN at ',datestr(Time(i)+datenum(1858,11,17,0,0,0))])
+  uswan=squeeze(swan_uwind(i)); uswan=repmat(uswan,1,4);
+  vswan=squeeze(swan_vwind(i)); vswan=repmat(vswan,1,4);
+  fprintf(fid,'%10.2f\n',uswan');
+  fprintf(fid,'%10.2f\n',vswan');
+end
+fclose(fid);
+%then you need to use these wind commands
+%&& KEYWORD TO CREATE WIND GRID &&
+%INPGRID WIND REGULAR 0 0 0 1 1 1000 1500 &
+%       NONSTATIONARY 19901001.010000 1 HR 19901021.230000
+%READINP WIND 1 'Projects/Delilah/wind_swan_delilah.dat' 4 0 FREE
+
+
 
 

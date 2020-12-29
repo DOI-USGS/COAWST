@@ -75,7 +75,7 @@ fprintf(fid,'\n');
 fprintf(fid,'    91','%s\n');
 fprintf(fid,'\n');
 for mm=1:91
-  fprintf(fid,num2str(-90.0+(mm-1)*2.+90.),'%s \n');
+  fprintf(fid,num2str(180.0-(mm-1)*2.),'%s \n');
   fprintf(fid,'\n');
 end
 %
