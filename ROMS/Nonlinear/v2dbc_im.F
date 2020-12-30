@@ -278,6 +278,10 @@
 !             here we reduce pgr from depth 2m to pgr is 0 at 0 depth.
               bry_pgr=MIN(0.5_r8*(GRID(ng)%h(i,Jstr)+                   &
      &                             zeta(i,Jstr,know)), 1.0_r8)*bry_pgr
+              cff=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jstr-1)+                 &
+     &                            zeta(i,Jstr-1,know)+                  &
+     &                            GRID(ng)%h(i,Jstr  )+                 &
+     &                            zeta(i,Jstr  ,know)))
               cff1=1.5_r8*pi-FORCES(ng)%Dwave(i,Jstr)-                  &
      &             GRID(ng)%angler(i,Jstr)
               waven=2.0_r8*pi/MAX(FORCES(ng)%Lwave(i,Jstr),Lwave_min)
@@ -688,6 +692,10 @@
 !             here we reduce pgr from depth 2m to pgr is 0 at 0 depth.
               bry_pgr=MIN(0.5_r8*(GRID(ng)%h(i,Jend)+                   &
      &                             zeta(i,Jend,know)), 1.0_r8)*bry_pgr
+              cff=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jend  )+                 &
+     &                            zeta(i,Jend  ,know)+                  &
+     &                            GRID(ng)%h(i,Jend+1)+                 &
+     &                            zeta(i,Jend+1,know)))
               cff1=1.5_r8*pi-FORCES(ng)%Dwave(i,Jend)-                  &
      &             GRID(ng)%angler(i,Jend)
               waven=2.0_r8*pi/MAX(FORCES(ng)%Lwave(i,Jend),Lwave_min)
