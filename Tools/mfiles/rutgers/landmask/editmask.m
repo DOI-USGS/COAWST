@@ -373,8 +373,13 @@ switch lower(grid_file)
     got_coast=all(isfield(G,{'lon_coast','lat_coast'}));  % GRID NetCDF has
                                                           % coastline data
     spherical=G.spherical;
-    rlon=G.lon_rho;
-    rlat=G.lat_rho;
+    if (spherical)
+      rlon=G.lon_rho;
+      rlat=G.lat_rho;
+    else
+      rlon=G.x_rho;
+      rlat=G.y_rho;
+    end
     mask=G.mask_rho;
     rmask=mask;
 
