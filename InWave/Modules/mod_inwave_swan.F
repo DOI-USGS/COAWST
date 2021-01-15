@@ -68,6 +68,7 @@
 !  AMPZETA_TOT Amplitude of the free surface elevation                 !
 !  POSITION    positive frequencies of the Fourier Components          !
 !  CompFn      Fourier components                                      !
+!  DIR_3_INT   index of the directional array for each freq            !
 !=======================================================================
 !
 !
@@ -104,6 +105,7 @@
          integer             :: ndir, nfreq, mainangi
          integer             :: ndirsw, nfreqsw
          integer             :: Insteps, Swancircle
+
          real(r8)            :: dur, idt
          real(r8)            :: fmax, fmin, df
          real(r8)            :: ddir, fp, exc
@@ -113,14 +115,14 @@
          real(r8)            :: SpecTime(2)
          real(r8)            :: SpecTimedt
 
-         integer,  pointer :: posang(:)
+         integer, pointer  :: posang(:)
+         integer, pointer  :: dir_3_int(:)
 
          real(r8), pointer :: fsw(:)
          real(r8), pointer :: f(:)
          real(r8), pointer :: dir(:)
          real(r8), pointer :: theta(:)
          real(r8), pointer :: SF(:)
-         real(r8), pointer :: dir_3_int(:)
 
          real(r8), pointer :: SDSW(:,:)
          real(r8), pointer :: SD(:,:)
@@ -297,22 +299,12 @@
 !  For old way:
 !  If you keep fmax=0.5 then the number of freqs will be 1/2 the time length.
 !  We want this for the bound wave.
+!  The Ampzeta time series will repeat every 1/df time steps.
 !-----------------------------------------------------------------------
 !
       IF (first.eq.1) THEN
-! old way
-!        WAVES(ng)%nfreq=200
-!        WAVES(ng)%fmax=0.5_r8  !! Tmin = 2 s, this is ~ the Nyquist f
-!        WAVES(ng)%df=WAVES(ng)%fmax/WAVES(ng)%nfreq
-!        WAVES(ng)%ndir=ND
-!        WAVES(ng)%fmin=WAVES(ng)%df
-!        WAVES(ng)%idt=1.0_r8
-!        WAVES(ng)%dur=1./WAVES(ng)%df
-!        WAVES(ng)%Insteps=nint(WAVES(ng)%dur/WAVES(ng)%idt)
-!
-! new way
-! Use a 3600s time array at dt=1 sec
-!
+# ifdef SINGLESUM
+! new way, use a 3600s time array at dt=1 sec
         WAVES(ng)%ndir=ND
         WAVES(ng)%idt=1.0_r8
         WAVES(ng)%dur=3600.0_r8
@@ -321,6 +313,17 @@
         WAVES(ng)%fmin=WAVES(ng)%df
         WAVES(ng)%nfreq=WAVES(ng)%Insteps/2                     !-1
         WAVES(ng)%fmax=REAL(WAVES(ng)%nfreq,r8)*WAVES(ng)%df
+# else
+! old way
+        WAVES(ng)%nfreq=200
+        WAVES(ng)%fmax=0.5_r8  !! Tmin = 2 s, this is ~ the Nyquist f
+        WAVES(ng)%df=WAVES(ng)%fmax/WAVES(ng)%nfreq
+        WAVES(ng)%ndir=ND
+        WAVES(ng)%fmin=WAVES(ng)%df
+        WAVES(ng)%idt=1.0_r8
+        WAVES(ng)%dur=1./WAVES(ng)%df
+        WAVES(ng)%Insteps=nint(WAVES(ng)%dur/WAVES(ng)%idt)
+# endif
 !
         IF (Master) THEN
           WRITE(stdout,*) 'Computing InWave boundary forcing'
@@ -483,16 +486,6 @@
         DO dd=1,WAVEB(ng)%ND_bnd
           WAVEB(ng)%WD_BND(dd)=WAVEG(ng)%wd(dd)
         END DO
-!
-!  Determine the time dimensions of duration and num steps.
-!  The Ampzeta time series will repeat every 1/df time steps.
-!
-!        WAVES(ng)%dur=1./WAVES(ng)%df
-!       WAVES(ng)%idt=4.0_r8
-!        WAVES(ng)%idt=1.0_r8
-!       WAVES(ng)%Insteps=nint(WAVES(ng)%dur/dt(ng))
-!       WAVES(ng)%Insteps=nint(WAVES(ng)%dur/WAVES(ng)%idt)+1
-!        WAVES(ng)%Insteps=nint(WAVES(ng)%dur/WAVES(ng)%idt)
 !
 !  Allocate and init the computational arrays.
 !
@@ -1068,7 +1061,7 @@
 !  Scatter rand num from master to all nodes.
 !
         CALL MPI_BCAST(WAVES(ng)%dir_3_int, WAVES(ng)%nfreq,            &
-     &                 MP_FLOAT, 0, OCN_COMM_WORLD, MyError)
+     &                 MPI_INTEGER, 0, OCN_COMM_WORLD, MyError)
 #   endif
 #  endif
 !
@@ -1744,8 +1737,6 @@
         nt1=WAVES(ng)%Insteps
         ont1=1.0_r8/REAL(WAVES(ng)%Insteps,r8)
         nf=WAVES(ng)%nfreq
-        fac4=WAVES(ng)%df
-        fac5=WAVEG(ng)%pd
 
         allocate (DDtheta(nf-1))
         allocate (k3(nf-1))
@@ -1812,14 +1803,15 @@
           DDf=REAL(f1,r8)*WAVES(ng)%df
 !
 !         direction difference
-          DDtheta(1:nf-f1)=(WAVES(ng)%dir_3_int(f1+1:nf)-               &
-     &                      WAVES(ng)%dir_3_int(1:nf-f1))*deg2rad
+          
+          DDtheta(1:nf-f1)=(WAVEG(ng)%wd(WAVES(ng)%dir_3_int(f1+1:nf))-  &
+     &                      WAVEG(ng)%wd(WAVES(ng)%dir_3_int(1:nf-f1)))
 !
           dpi=1.0_r8*pi
 !
-          DDtheta(1:nf-f1)=DDtheta(1:nf-f1)+dpi
+          DDtheta(1:nf-f1)=ABS(DDtheta(1:nf-f1))+dpi
 !
-!         wave number, check -dpi
+!         wave number, -dpi is needed becasue we added it above.
           k3(1:nf-f1)=sqrt(k(f1+1:nf)**2+k(1:nf-f1)**2-                 &
      &                   2.0_r8*(k(f1+1:nf)*k(1:nf-f1))*                &
      &                   (cos(DDtheta(1:nf-f1)-dpi)))
@@ -1828,19 +1820,19 @@
 !
           mdir=WAVES(ng)%dir_3_int(f1)
           Z_bw(f1,1:nf-f1)=Waves(ng)%phase(f1+1:nf,mdir)-               &
-     &                    WAVES(ng)%phase(1:nf-f1,mdir)+dpi
+     &                     WAVES(ng)%phase(1:nf-f1,mdir)+dpi
 !
 !  bw_ang is in radians and nautical convention
 !
           bw_ang(1:nf-f1)=atan2(                                        &
-     &             k(f1+1:nf)*sin(180/pi*                               &
-     &                               WAVES(ng)%dir_3_int(f1+1:nf))-     &
-     &             k(1:nf-f1)*sin(180/pi*                               &
-     &                               WAVES(ng)%dir_3_int(1:nf-f1)),     &
-     &             k(f1+1:nf)*cos(180/pi*                               &
-     &                               WAVES(ng)%dir_3_int(f1+1:nf))-     &
-     &             k(1:nf-f1)*cos(180/pi*                               &
-     &                               WAVES(ng)%dir_3_int(1:nf-f1)))
+     &             k(f1+1:nf)*sin(WAVEG(ng)%wd(                         &
+     &                               WAVES(ng)%dir_3_int(f1+1:nf)))-    &
+     &             k(1:nf-f1)*sin(WAVEG(ng)%wd(                         &
+     &                               WAVES(ng)%dir_3_int(1:nf-f1))),    &
+     &             k(f1+1:nf)*cos(WAVEG(ng)%wd(                         &
+     &                               WAVES(ng)%dir_3_int(f1+1:nf)))-    &
+     &             k(1:nf-f1)*cos(WAVEG(ng)%wd(                         &
+     &                               WAVES(ng)%dir_3_int(1:nf-f1))))
 !
 !  Compute wave numbers in x and y
 !
@@ -1854,11 +1846,12 @@
 !  Compute the D terms
 !
 ! ??      ocoshkh=1.0_r8/cosh(k*h0) - several places below D4 D1
-          D1(1:nf-f1)=(((g*k(f1+1:nf)*k(1:nf-f1))*                      &
+          D1(1:nf-f1)=((g*k(f1+1:nf)*k(1:nf-f1))*                       &
      &                 cos(DDtheta(1:nf-f1)))/                          &
-     &                (8.0_r8*pi**2*ff(1:nf-f1))*                       &
-     &                 MIN(cosh(k3(1:nf-f1)*h0),1.0E10_r8)  /           &
-     &                 (cosh(k(f1+1:nf)*h0)*cosh(k(1:nf-f1)*h0)))
+     &                (8.0_r8*pi**2*ff(1:nf-f1))
+!         D1(1:nf-f1)=D1(1:nf-f1)*                                      &
+!    &                 MIN(cosh(k3(1:nf-f1)*h0),1.0E10_r8)  /           &
+!    &                 (cosh(k(f1+1:nf)*h0)*cosh(k(1:nf-f1)*h0))
           D2(1:nf-f1)=-g*DDf/((g*k3(1:nf-f1)*tanh(k3(1:nf-f1)*h0)-      &
      &                (twopi)**2*DDf**2)*ff(1:nf-f1))
           D3(1:nf-f1)=DDf*((twopi**4*(ff(1:nf-f1))**2)*og2-             &
@@ -1905,7 +1898,7 @@
         lensav=2*nn+int(log(real(nn,kind=8))/log(2.0D+00))+4
         allocate ( work(1:lenwrk) )
         allocate ( wsave(1:lensav) )
-        allocate (  AA(nn) )
+        allocate ( AA(nn) )
         work=0.
         wsave=0.
         call cfft1i ( nt1, wsave, lensav, ier )
@@ -1943,11 +1936,10 @@
           zz=real(AA(1:nt1),r8)
 
 #  ifdef VARY_ACBC
-          tempz(j,:)=zz*ofac4*ont1
+          tempz(j,:)=zz  !*ofac4*ont1
 #  else
-          tempz=zz*ofac4*ont1
+          tempz=zz !*ofac4*ont1
 #  endif
-
 !  now do u
           theta_3=ATAN2(k3_y,(k3_x+0.0000001_r8))+angle_edge(j)
           Comptempd=Comptemp*exp(-1.0_r8*CMPLX(0.0_r8,k3_y*dist_y(j)+   &
@@ -1975,9 +1967,9 @@
           zz=real(AA(1:nt1),r8)
 
 #  ifdef VARY_ACBC
-          tempu(j,:)=zz*ofac4*ont1
+          tempu(j,:)=zz   !*ofac4*ont1
 #  else
-          tempu=zz*ofac4*ont1
+          tempu=zz   !*ofac4*ont1
 #  endif
 !  now do v
           theta_3=ATAN2(k3_y,(k3_x+0.0000001_r8))+angle_edge(j)
@@ -2006,9 +1998,9 @@
           zz=real(AA(1:nt1),r8)
 
 #  ifdef VARY_ACBC
-          tempv(j,:)=zz*ofac4*ont1
+          tempv(j,:)=zz  !*ofac4*ont1
 #  else
-          tempv=zz*ofac4*ont1
+          tempv=zz   !*ofac4*ont1
 #  endif
         END DO
         deallocate (work, wsave)

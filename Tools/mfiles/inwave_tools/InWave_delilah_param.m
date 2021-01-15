@@ -33,7 +33,9 @@ if (make_InWave_grd)
 %   grd2 used 12Oct bathy, and mirrored north and south
 %   grd_file=strcat(filepath,'InWave_delilah_grd2.nc');  % name of the grid file
 %   grd3 used 07Oct bathy, and mirrored north and south
-    grd_file=strcat(filepath,'InWave_delilah_grd3.nc');  % name of the grid file
+%   grd_file=strcat(filepath,'InWave_delilah_grd3.nc');  % name of the grid file
+%   grd_file=strcat(filepath,'InWave_delilah_grd3_per.nc');  % name of the grid file
+    grd_file=strcat(filepath,'InWave_delilah_grd4_per.nc');  % name of the grid file
 
 % 2,3,4,5) x, y, dx, dy - Grid dimensions
     x=[50:2:950];
@@ -56,8 +58,8 @@ if (make_InWave_grd)
     Y=[725 748 772 796 820 844 868 892 916 940 964 988 1012 1036 1060 1084 1108 1132 ...
        1156 1180 1204 1228 1252 1276 1300];
     %now get the Z data from a specific file
-    %fid=fopen([filepath,'FRF_12Oct1990.grid']);
-    fid=fopen([filepath,'FRF_07Oct1990.grid']);
+    fid=fopen([filepath,'FRF_11Oct1990.grid']);   %grd4
+    %fid=fopen([filepath,'FRF_07Oct1990.grid']);    %grd3
     line=fgetl(fid);
     for mm=1:100000
       line=fgetl(fid);
@@ -69,10 +71,12 @@ if (make_InWave_grd)
     Z(1,end)=Z(1,end-1);  %this point looked bad
     Z(:,1)=Z(:,2);  %repeat the bottom row, it looked strange
     % here we repeat the first and last rows for X from 0 to 400.
-    Y=[600 Y 1500];
+%    Y=[600 Y 1500];
+    Y=[600 Y 1400 1500];
     X=repmat(X,length(Y),1)';
     Y=repmat(Y,size(X,1),1);
-    Z=[Z(:,1) Z Z(:,end)];
+%   Z=[Z(:,1) Z Z(:,end)];
+    Z=[Z(:,1) Z Z(:,1) Z(:,1)];
     %combine both data sets
     XX=[X(:);z1(:,1)];
     YY=[Y(:);z1(:,2)];
@@ -92,7 +96,7 @@ if (make_InWave_grd)
     colormap('jet')
 
 % 7) angle - set grid angle
-    roms_angle=zeros(size(z))+20.*pi/180.;
+    roms_angle=zeros(size(z))+18.2*pi/180.;
 
 % 8) mask - set masking
     mask_rho=ones(size(z));
@@ -102,6 +106,38 @@ if (make_InWave_grd)
 
 % 10) spherical - set if use spherical (F=no; T=yes)
     spherical='F';
+
+
+%%%%%%%%  here we make a taller grid to be used for swan
+  if (0) 
+    grd_file=strcat(filepath,'InWave_delilah_grd4_tall.nc');  % name of the grid file
+
+% 2,3,4,5) x, y, dx, dy - Grid dimensions
+    xs=[repmat(x(:,1),1,24), x];
+    ys=[repmat([0:25:575],451,1), y];
+    zs=[repmat(depth(:,1),1,24)*0, depth];
+    for mm=1:24
+     zs(:,mm)=zs(:,25);
+    end
+    dxs=gradient(x);
+    dys=gradient(y')';
+
+% 7) angle - set grid angle
+    roms_angles=zeros(size(zs))+18.2*pi/180.;
+
+% 8) mask - set masking
+    mask_rhos=ones(size(zs));
+
+% 9) f - set coriolis f
+    fs=zeros(size(zs));
+
+% 10) spherical - set if use spherical (F=no; T=yes)
+    spherical='F';
+    create_InWave_grd(xs,ys,dxs,dys,zs,roms_angles,mask_rhos,fs,spherical,grd_file)
+    roms2swan(grd_file);
+    !move swan_coord.grd delilah_swan_grd4_tall.grd
+    !move swan_bathy.bot delilah_swan_grd4_tall.bot
+  end
 
 else
   grd_file=strcat(filepath,'delilah_grid.nc');  % name of the grid file

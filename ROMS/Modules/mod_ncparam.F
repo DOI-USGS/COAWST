@@ -404,6 +404,7 @@
         integer  :: idW3Sd        ! 3D W-Stokes omega drift velocity
         integer  :: idW3St        ! 3D W-Stokes vertical drift velocity
         integer  :: idWamp        ! wave amplitude
+        integer  :: idWam2        ! wave amplitude squared
         integer  :: idWbeh        ! WEC Bernoulli head
         integer  :: idWbrk        ! percent wave breaking
         integer  :: idWdif        ! wave dissipation from bottom friction 
@@ -1664,6 +1665,8 @@
               idM2am=varid
             CASE ('idWamp')
               idWamp=varid
+            CASE ('idWam2')
+              idWam2=varid
             CASE ('idWbrk')
               idWbrk=varid
             CASE ('idWdib')

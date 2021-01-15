@@ -3120,6 +3120,9 @@
             CASE ('Aout(idWamp)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Aout(idWamp,1:Ngrids)=Lswitch(1:Ngrids)
+            CASE ('Aout(idWam2)')
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWam2,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef WAVES_LENGTH
             CASE ('Aout(idWlen)')

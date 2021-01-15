@@ -2117,6 +2117,15 @@
   'r2dvar'
   1.0d0
 
+'Hwave2'                                           ! Input
+  'wind-induced significant wave height squared'
+  'meter2'                                          ! [m]
+  'Hwave2, scalar, series'
+  'wave_time'
+  'idWam2'
+  'r2dvar'
+  1.0d0
+
 'Lwave'                                            ! Input
   'wind-induced mean wavelength'
   'meter'                                          ! [m]

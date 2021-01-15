@@ -3669,6 +3669,22 @@
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
+        IF (Aout(idWam2,ng)) THEN
+          Vinfo( 1)=Vname(1,idWam2)
+          WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,idWam2))
+          Vinfo( 3)=Vname(3,idWam2)
+          Vinfo(14)=Vname(4,idWam2)
+          Vinfo(16)=Vname(1,idtime)
+#  if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_r'
+#  endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idWam2,ng),r8)
+          status=def_var(ng, model, AVG(ng)%ncid, AVG(ng)%Vid(idWam2),  &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
+        END IF
 # endif
 # ifdef WAVES_LENGTH
         IF (Aout(idWlen,ng)) THEN
@@ -4475,6 +4491,9 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWamp))) THEN
             got_var(idWamp)=.TRUE.
             AVG(ng)%Vid(idWamp)=var_id(i)
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWam2))) THEN
+            got_var(idWam2)=.TRUE.
+            AVG(ng)%Vid(idWam2)=var_id(i)
 # endif
 # ifdef WAVES_LENGTH
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWlen))) THEN
@@ -5497,10 +5516,16 @@
           exit_flag=3
           RETURN
         END IF
+        IF (.not.got_var(idWam2).and.Aout(idWam2,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWam2)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
 # endif
 # ifdef WAVES_LENGTH
-        IF (.not.got_var(idWamp).and.Aout(idWamp,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWamp)),          &
+        IF (.not.got_var(idWlen).and.Aout(idWlen,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWlen)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

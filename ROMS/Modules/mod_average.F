@@ -327,6 +327,7 @@
 # endif
 # ifdef WAVES_HEIGHT
           real(r8), pointer :: avgWamp(:,:)
+          real(r8), pointer :: avgWam2(:,:)
 # endif
 # ifdef WAVES_LENGTH
           real(r8), pointer :: avgWlen(:,:)
@@ -918,6 +919,10 @@
 # ifdef WAVES_HEIGHT
       IF (Aout(idWamp,ng)) THEN
         allocate ( AVERAGE(ng) % avgWamp(LBi:UBi,LBj:UBj) )
+        Dmem(ng)=Dmem(ng)+size2d
+      END IF
+      IF (Aout(idWam2,ng)) THEN
+        allocate ( AVERAGE(ng) % avgWam2(LBi:UBi,LBj:UBj) )
         Dmem(ng)=Dmem(ng)+size2d
       END IF
 # endif
@@ -2030,6 +2035,13 @@
         DO j=Jmin,Jmax
           DO i=Imin,Imax
             AVERAGE(ng) % avgWamp(i,j) = IniVal
+          END DO
+        END DO
+      END IF
+      IF (Aout(idWam2,ng)) THEN
+        DO j=Jmin,Jmax
+          DO i=Imin,Imax
+            AVERAGE(ng) % avgWam2(i,j) = IniVal
           END DO
         END DO
       END IF

@@ -1915,6 +1915,18 @@
             END DO
           END DO
         END IF
+        IF (Aout(idWam2,ng)) THEN
+          DO j=JstrR,JendR
+            DO i=IstrR,IendR
+              AVERAGE(ng)%avgWam2(i,j)=FORCES(ng)%Hwave(i,j)*           &
+     &                                 FORCES(ng)%Hwave(i,j)
+#  ifdef WET_DRY
+              AVERAGE(ng)%avgWam2(i,j)=AVERAGE(ng)%avgWam2(i,j)*        &
+     &                                 GRID(ng)%rmask_full(i,j)
+#  endif
+            END DO
+          END DO
+        END IF
 # endif
 # ifdef WAVES_LENGTH
         IF (Aout(idWlen,ng)) THEN
@@ -4037,6 +4049,18 @@
 #  ifdef WET_DRY
      &                                 GRID(ng)%rmask_full(i,j)*        &
 #  endif
+     &                                 FORCES(ng)%Hwave(i,j)
+            END DO
+          END DO
+        END IF
+        IF (Aout(idWam2,ng)) THEN
+          DO j=JstrR,JendR
+            DO i=IstrR,IendR
+              AVERAGE(ng)%avgWam2(i,j)=AVERAGE(ng)%avgWam2(i,j)+        &
+#  ifdef WET_DRY
+     &                                 GRID(ng)%rmask_full(i,j)*        &
+#  endif
+     &                                 FORCES(ng)%Hwave(i,j)*           &
      &                                 FORCES(ng)%Hwave(i,j)
             END DO
           END DO
@@ -7319,6 +7343,26 @@
      &                          NghostPoints,                           &
      &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          AVERAGE(ng)%avgWamp)
+#  endif
+          END IF
+        END IF
+        IF (Aout(idWam2,ng)) THEN
+          DO j=JstrR,JendR
+            DO i=IstrR,IendR
+              AVERAGE(ng)%avgWam2(i,j)=rfac(i,j)*                       &
+     &                                  AVERAGE(ng)%avgWam2(i,j)
+            END DO
+          END DO
+          IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+            CALL exchange_r2d_tile (ng, tile,                           &
+     &                              LBi, UBi, LBj, UBj,                 &
+     &                              AVERAGE(ng)%avgWam2)
+#  ifdef DISTRIBUTE
+            CALL mp_exchange2d (ng, tile, iNLM, 1,                      &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          AVERAGE(ng)%avgWam2)
 #  endif
           END IF
         END IF
