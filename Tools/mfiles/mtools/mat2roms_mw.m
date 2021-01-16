@@ -227,9 +227,13 @@ else
   y_v=grid_y(i_psi, j_psi);
   y_v=diff(y_v); 
   x_v=dx(2:end-1,2:end);
-  ang=angle(x_v+y_v*sqrt(-1));
-  ang=[ang(1,:); ang; ang(end,:)];
-  ang=[ang ang(:,end)];
+  if (isfield(s,'roms_angle'))
+    ang=s.roms_angle;
+  else
+    ang=angle(x_v+y_v*sqrt(-1));
+    ang=[ang(1,:); ang; ang(end,:)];
+    ang=[ang ang(:,end)];
+  end
 end
 
 pm=1./dx;

@@ -83,7 +83,8 @@ disp(' ## Defining Dimensions, Variables, and Attributes...')
  
 ztID = netcdf.defVar(nc_bndry,'zeta_time','double',zttdimID);
 netcdf.putAtt(nc_bndry,ztID,'long_name','zeta_time');
-netcdf.putAtt(nc_bndry,ztID,'units','days');
+%netcdf.putAtt(nc_bndry,ztID,'units','days');
+netcdf.putAtt(nc_bndry,ztID,'units','days since 1990-10-01 00:00:00 UTC');
 netcdf.putAtt(nc_bndry,ztID,'field','zeta_time, scalar, series');
 
 zeteID = netcdf.defVar(nc_bndry,'zeta_east','double',[erhodimID zttdimID]);
