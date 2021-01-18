@@ -2,7 +2,7 @@
 
 #ifdef VARY_ACBC
 !  1. Select double or single (single also has 2 choices of intcdf or fcdf)
-#  undef DOUBLESUM
+#  undef  DOUBLESUM
 #  define SINGLESUM
 #  ifdef SINGLESUM
 #    define INTCDF
@@ -1367,14 +1367,15 @@
       integer                         :: i, j, t, is, p1, p2, f1, f2
       integer                         :: n1, n2, SstrR, SendR, nt1
       integer                         :: Npts, jcenter, mdir, nf, nn
+      integer                         :: mdir1
       integer                         :: m, ier, lensav, lenwrk
       real(r8)                        :: cff, cff1, cff2, cff3, cff4
       real(r8)                        :: twopi, otwopi, og2, p
-      real(r8)                        :: error, fmin, fmax
+      real(r8)                        :: error, fmin, fmax, deltaf
       real(r8)                        :: fac1, fac2, fac3, fac4, ofac4
       real(r8)                        :: L0, k0, k1, kh, wr
       real(r8)                        :: F, FDER, tanhkh
-      real(r8)                        :: DDf, ont1
+      real(r8)                        :: ont1
 # if !defined SINGLESUM
       real(r8)                        :: DDtheta, k3, Z_bw
       real(r8)                        :: k3_x, k3_y
@@ -1391,7 +1392,9 @@
       real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: xr_local
       real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: yr_local
 
-      real(r8), allocatable           :: k(:), ocoshkh(:)
+      real(r8), allocatable           :: k(:)
+      real(r8), allocatable           :: ok(:)
+      real(r8), allocatable           :: ocoshkh(:)
       real(r8), allocatable           :: dist_local(:)
       real(r8), allocatable           :: angle_edge(:)
 # ifdef VARY_ACBC
@@ -1408,11 +1411,13 @@
       real(r8), allocatable           :: DDtheta(:)
       real(r8), allocatable           :: k3(:)
       real(r8), allocatable           :: Z_bw(:,:)
-      real(r8), allocatable           :: bw_ang(:)
+      real(r8), allocatable           :: bw_ang(:,:)
       real(r8), allocatable           :: k3_x(:,:)
       real(r8), allocatable           :: k3_y(:,:)
       real(r8), allocatable           :: theta_3(:,:)
+      real(r8), allocatable           :: cg_3(:,:)
       real(r8), allocatable           :: ff(:)
+      real(r8), allocatable           :: DDf(:)
       real(r8), allocatable           :: D1(:)
       real(r8), allocatable           :: D2(:)
       real(r8), allocatable           :: D3(:)
@@ -1430,6 +1435,7 @@
 
       real(r8), allocatable           :: zz(:)
       real(r8), allocatable           :: dpi(:)
+      real(r8), allocatable           :: comp1(:)
       real(kind=8),dimension(:),allocatable    :: work, wsave
 # endif
 
@@ -1662,6 +1668,7 @@
 # endif
 !
         allocate (k(WAVES(ng)%nfreq))
+        allocate (ok(WAVES(ng)%nfreq))
 !
 ! Compute the wave number of each freq bin
 !
@@ -1684,6 +1691,7 @@
             k0=k1
           END DO
           k(i)=k0
+          ok(i)=1.0_r8/k(i)
         END DO
 !
 !  make some temp arrays
@@ -1741,11 +1749,13 @@
         allocate (DDtheta(nf-1))
         allocate (k3(nf-1))
         allocate (Z_bw(nf-1,nf-1))
-        allocate (bw_ang(nf-1))
+        allocate (bw_ang(nf-1,nf-1))
         allocate (k3_x(nf-1,nf-1))
         allocate (k3_y(nf-1,nf-1))
         allocate (theta_3(nf-1,nf-1))
+        allocate (cg_3(nf-1,nf-1))
         allocate (ff(nf-1))
+        allocate (DDf(nf-1))
         allocate (D1(nf-1))
         allocate (D2(nf-1))
         allocate (D3(nf-1))
@@ -1767,7 +1777,9 @@
         k3_x=0.0_r8
         k3_y=0.0_r8
         theta_3=0.0_r8
+        cg_3=0.0_r8
         ff=0.0_r8
+        DDf=0.0_r8
         D1=0.0_r8
         D2=0.0_r8
         D3=0.0_r8
@@ -1800,7 +1812,7 @@
 !
 ! Compute the freq dif
 !
-          DDf=REAL(f1,r8)*WAVES(ng)%df
+          deltaf=REAL(f1,r8)*WAVES(ng)%df
 !
 !         direction difference
           
@@ -1818,13 +1830,18 @@
 !
 !  Phase of the bound wave. Use the m value from INTCDF or FCDF above.
 !
-          mdir=WAVES(ng)%dir_3_int(f1)
-          Z_bw(f1,1:nf-f1)=Waves(ng)%phase(f1+1:nf,mdir)-               &
-     &                     WAVES(ng)%phase(1:nf-f1,mdir)+dpi
+
+          allocate (comp1(1:nf))
+          DO i=1,nf
+            mdir1=WAVES(ng)%dir_3_int(i)
+            comp1(i)=Waves(ng)%phase(i,mdir1)
+          END DO
+          Z_bw(f1,1:nf-f1)=comp1(f1+1:nf)-comp1(1:nf-f1)+pi
+          deallocate (comp1)
 !
 !  bw_ang is in radians and nautical convention
 !
-          bw_ang(1:nf-f1)=atan2(                                        &
+          bw_ang(f1,1:nf-f1)=atan2(                                     &
      &             k(f1+1:nf)*sin(WAVEG(ng)%wd(                         &
      &                               WAVES(ng)%dir_3_int(f1+1:nf)))-    &
      &             k(1:nf-f1)*sin(WAVEG(ng)%wd(                         &
@@ -1836,29 +1853,32 @@
 !
 !  Compute wave numbers in x and y
 !
-          k3_x(f1,1:nf-f1)=k3(1:nf-f1)*cos(1.5_r8*pi-bw_ang(1:nf-f1))
-          k3_y(f1,1:nf-f1)=k3(1:nf-f1)*sin(1.5_r8*pi-bw_ang(1:nf-f1))
+          k3_x(f1,1:nf-f1)=k3(1:nf-f1)*cos(1.5_r8*pi-bw_ang(f1,1:nf-f1))
+          k3_y(f1,1:nf-f1)=k3(1:nf-f1)*sin(1.5_r8*pi-bw_ang(f1,1:nf-f1))
 !
-!  Compute df*df
-!
-          ff(1:nf-f1)=WAVES(ng)%f(f1+1:nf)*WAVES(ng)%f(1:nf-f1);
+!  Compute df*df.  watch minus signs, it is -f1 + f2
+          ff(1:nf-f1)=WAVES(ng)%f(1:nf-f1)*WAVES(ng)%f(f1+1:nf)
+          DDf(1:nf-f1)=-WAVES(ng)%f(1:nf-f1)+WAVES(ng)%f(f1+1:nf)
 !
 !  Compute the D terms
 !
 ! ??      ocoshkh=1.0_r8/cosh(k*h0) - several places below D4 D1
-          D1(1:nf-f1)=((g*k(f1+1:nf)*k(1:nf-f1))*                       &
-     &                 cos(DDtheta(1:nf-f1)))/                          &
+          D1(1:nf-f1)=g*k(f1+1:nf)*k(1:nf-f1)*                          &
+     &                 cos(DDtheta(1:nf-f1))/                           &
      &                (8.0_r8*pi**2*ff(1:nf-f1))
-!         D1(1:nf-f1)=D1(1:nf-f1)*                                      &
-!    &                 MIN(cosh(k3(1:nf-f1)*h0),1.0E10_r8)  /           &
-!    &                 (cosh(k(f1+1:nf)*h0)*cosh(k(1:nf-f1)*h0))
-          D2(1:nf-f1)=-g*DDf/((g*k3(1:nf-f1)*tanh(k3(1:nf-f1)*h0)-      &
-     &                (twopi)**2*DDf**2)*ff(1:nf-f1))
-          D3(1:nf-f1)=DDf*((twopi**4*(ff(1:nf-f1))**2)*og2-             &
+!  correct for bottom pressure.
+         D1(1:nf-f1)=D1(1:nf-f1)*                                      &
+    &                 MIN(cosh(k3(1:nf-f1)*h0),1.0E10_r8)  /           &
+    &                 (cosh(k(f1+1:nf)*h0)*cosh(k(1:nf-f1)*h0))
+          D2(1:nf-f1)=-g*DDf(1:nf-f1)/((g*k3(1:nf-f1)*                  &
+     &                tanh(k3(1:nf-f1)*h0)-                             &
+     &                (twopi)**2*DDf(1:nf-f1)**2)*ff(1:nf-f1)+eps)
+          D3(1:nf-f1)=DDf(1:nf-f1)*((twopi**4*(ff(1:nf-f1))**2)*og2-    &
      &                k(f1+1:nf)*k(1:nf-f1)*cos(DDtheta(1:nf-f1))) 
-          D4(1:nf-f1)=-0.5*((-WAVES(ng)%f(f1+1:nf)*k(1:nf-f1)**2)/      &
-     &                (cosh(k(1:nf-f1)*h0))**2+(WAVES(ng)%f(1:nf-f1)    &
-     &                *k(f1+1:nf)**2)/(cosh(k(f1+1:nf)*h0))**2)
+          D4(1:nf-f1)=-0.5*((-WAVES(ng)%f(1:nf-f1)*k(f1+1:nf)**2)/      &
+     &                      (cosh(k(f1+1:nf)*h0))**2+                   &
+     &                      ( WAVES(ng)%f(f1+1:nf)*k(1:nf-f1)**2)/      &
+     &                      (cosh(k(1:nf-f1)*h0))**2)
 !
 !  Compute the double summation.
 !
@@ -1867,8 +1887,14 @@
 !
 !  do not consider frequencies higher than fcutoff.
 !
-          IF (DDf.gt.fcutoff) THEN
-            DTOT(1:nf-f1)=0.0_r8
+          WHERE (WAVES(ng)%f(1:nf-1).le.deltaf)
+            DTOT(:)=0.0_r8
+          END WHERE
+          IF (deltaf.le.fmin) THEN
+            DTOT(:)=0.0_r8
+          END IF
+          IF (deltaf.ge.fmax) THEN
+            DTOT(:)=0.0_r8
           END IF
 !
 !  compute Energy and Amplitude of bound wave.
@@ -1877,13 +1903,13 @@
      &              (WAVES(ng)%SDF(f1+1:nf)*WAVES(ng)%SDF(1:nf-f1)*     &
      &               fac5*fac5*fac4)
           A3(f1,1:nf-f1)=sqrt(2.0_r8*E3(1:nf-f1)*fac4)
+          cg_3(f1,1:nf-f1)=twopi*deltaf/k3(1:nf-f1)
           deallocate (dpi)
         END DO
 !
 !  Compute 
 !
-!       Comptemp = 0.5_r8*A3*exp(-1*sqrt(-1)*Z_bw)
-        Comptemp = 0.5_r8*A3*exp(-1.0_r8*CMPLX(0.0_r8,Z_bw))
+        Comptemp=0.5_r8*A3*exp(-1.0_r8*CMPLX(0.0_r8,Z_bw))
 !
 !  Compute this contribution to the bndwave (water level) and associated 
 !  currents; currents depend on direction
@@ -1908,10 +1934,7 @@
         DO j=1,1
 #  endif
 !
-! Here we adjust to compute the grid normal direction
-!
 !  first get the bound_z term.
-          theta_3=ATAN2(k3_y,(k3_x+0.0000001_r8))+angle_edge(j)
           Comptempd=Comptemp*exp(-1.0_r8*CMPLX(0.0_r8,k3_y*dist_y(j)+   &
      &                                                k3_x*dist_x(j)))
 !
@@ -1941,10 +1964,9 @@
           tempz=zz !*ofac4*ont1
 #  endif
 !  now do u
-          theta_3=ATAN2(k3_y,(k3_x+0.0000001_r8))+angle_edge(j)
           Comptempd=Comptemp*exp(-1.0_r8*CMPLX(0.0_r8,k3_y*dist_y(j)+   &
      &                                                k3_x*dist_x(j)))* &
-     &                                                cos(theta_3)
+     &                                                cg_3*cos(1.5_r8*pi-bw_ang)
 !
 !  Determine Fourier coefficients
 !
@@ -1967,15 +1989,14 @@
           zz=real(AA(1:nt1),r8)
 
 #  ifdef VARY_ACBC
-          tempu(j,:)=zz   !*ofac4*ont1
+          tempu(j,:)=zz
 #  else
-          tempu=zz   !*ofac4*ont1
+          tempu=zz
 #  endif
 !  now do v
-          theta_3=ATAN2(k3_y,(k3_x+0.0000001_r8))+angle_edge(j)
           Comptempd=Comptemp*exp(-1.0_r8*CMPLX(0.0_r8,k3_y*dist_y(j)+   &
      &                                                k3_x*dist_x(j)))* &
-     &                                                sin(theta_3)
+     &                                                cg_3*sin(1.5_r8*pi-bw_ang)
 !
 !  Determine Fourier coefficients
 !
@@ -1998,9 +2019,9 @@
           zz=real(AA(1:nt1),r8)
 
 #  ifdef VARY_ACBC
-          tempv(j,:)=zz  !*ofac4*ont1
+          tempv(j,:)=zz
 #  else
-          tempv=zz   !*ofac4*ont1
+          tempv=zz
 #  endif
         END DO
         deallocate (work, wsave)
@@ -2012,9 +2033,10 @@
 #  ifdef VARY_ACBC
         DO j=SstrR,SendR
           WAVES(ng)%bndwave_z(j,:)=tempz(j,:)
-          WAVES(ng)%bndwave_u(j,:)=tempu(j,:)*oh0*sqrt(g*h0)
-          WAVES(ng)%bndwave_v(j,:)=tempv(j,:)*oh0*sqrt(g*h0)
-          
+          WAVES(ng)%bndwave_u(j,:)=(tempu(j,:)*cos(angle_edge(j))+      &
+                                    tempv(j,:)*sin(angle_edge(j)))*oh0
+          WAVES(ng)%bndwave_v(j,:)=(-tempu(j,:)*sin(angle_edge(j))+     &
+                                     tempv(j,:)*cos(angle_edge(j)))*oh0
         END DO
 #  else
         WAVES(ng)%bndwave_z(:)=tempz(:)
@@ -2023,7 +2045,7 @@
 #  endif
 !
         deallocate (DDtheta, k3, Z_bw, bw_ang)
-        deallocate (k3_x, k3_y, theta_3, ff, D1, D2, D3, D4)
+        deallocate (k3_x, k3_y, cg_3, ff, DDf, D1, D2, D3, D4)
         deallocate (DTOT, E3, A3)
         deallocate (Comptemp, Comptempd, Comp_int)
         deallocate (A, AA, zz, angle_edge)
@@ -2148,7 +2170,7 @@
 # endif
         deallocate(dist_x, dist_y)
         deallocate (tempz, tempu, tempv)
-        deallocate (k, ocoshkh)
+        deallocate (k, ok, ocoshkh)
       END IF
 
       RETURN
