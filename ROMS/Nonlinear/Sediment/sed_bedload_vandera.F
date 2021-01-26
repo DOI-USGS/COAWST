@@ -300,7 +300,7 @@
 !
 !  Local variable declarations.
 !
-      integer :: i, ised, j, k
+      integer :: i, ii, ip, ised, j, jj, jp, k
 !
       real(r8) :: cff, cff1, cff2, cff3, cff4, cff5, fac1, fac2
       real(r8) :: Dstp, bed_change, dz, roll
@@ -745,7 +745,7 @@
      &               cff2*(FX_r(i-1,j)+FX_r(i,j)))+                     &
      &              0.5_r8*(1.0_r8-SIGN(1.0_r8,FX_r(i-1,j)))*           &
      &              (cff2*FX_r(i  ,j)+                                  &
-     &               cff1*0.0_r8*(FX_r(i-1,j)+FX_r(i,j)))
+          &               cff1*0.5_r8*(FX_r(i-1,j)+FX_r(i,j)))
 #  else
             FX(i,j)=0.5_r8*(FX_r(i-1,j)+FX_r(i,j))
 #  endif
@@ -778,7 +778,7 @@
      &               cff2*(FE_r(i,j-1)+FE_r(i,j)))+                     &
      &              0.5_r8*(1.0_r8-SIGN(1.0_r8,FE_r(i,j-1)))*           &
      &              (cff2*FE_r(i  ,j)+                                  &
-     &               cff1*0.0_r8*(FE_r(i,j-1)+FE_r(i,j)))
+     &               cff1*0.5_r8*(FE_r(i,j-1)+FE_r(i,j)))
 #  else
             FE(i,j)=0.5_r8*(FE_r(i,j-1)+FE_r(i,j))
 #  endif
@@ -822,14 +822,16 @@
 #   endif
             dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
             dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)
-!           dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
-!           dzdy=(bed(i,j,1,ithck)-bed(i,j-1,1,ithck))/on_v(i,j)
             dzdxdy=sqrt(dzdx**2.0_r8+dzdy**2.0_r8)
 !  For the wet part
-            cff=ABS(dzdxdy)-sedslope_crit_wet(ng)
+            cff=dzdxdy-sedslope_crit_wet(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
-            cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
-            cff2=cff*slopefac_wet_local*SIGN(1.0_r8,dzdx)
+!jcw
+!           cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
+!           cff2=cff*slopefac_wet_local*SIGN(1.0_r8,dzdx)
+!mai
+            cff=ABS(dzdxdy-sedslope_crit_wet(ng))*dzdx/(dzdxdy+eps)
+            cff2=cff*cff1/(pm(i,j)*pn(i,j))*slopefac_wet_local
 #   ifdef MASKING
              cff2=cff2*umask(i,j)
 #   ifdef WET_DRY
@@ -838,18 +840,24 @@
 #   endif
             FX(i,j)=FX(i,j)+cff2
 !  For the dry part
-            cff=ABS(dzdx)-sedslope_crit_dry(ng)
+!jcw
+!           cff=ABS(dzdx)-sedslope_crit_dry(ng)
+!           cff1=(0.5_r8+SIGN(0.5_r8,cff))
+!           cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
+!           cff2=cff*slopefac_dry_local*SIGN(1.0_r8,dzdx)
+!mai
+            cff=dzdxdy-sedslope_crit_dry(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
-            cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
-            cff2=cff*slopefac_dry_local*SIGN(1.0_r8,dzdx)
+            cff=ABS(dzdxdy-sedslope_crit_wet(ng))*dzdx/(dzdxdy+eps)
+            cff2=cff*cff1/(pm(i,j)*pn(i,j))*slopefac_dry_local
 #   ifdef MASKING
             cff2=cff2*umask(i,j)
 #    ifdef WET_DRY
-!            cff2=cff2*umask_wet(i,j)
-!             cff2=cff2*(1.0_r8-umask_wet(i,j))
+            ii=MAX(i-1,1)
+            ip=MIN(i+1,Lm(ng)+1)
             cff2=cff2*(1.0_r8-umask_wet(i,j))*                          &
-     &                ((1.0_r8-umask_wet(i-1,j))*umask_wet(i+1,j)+      &
-     &                 (1.0_r8-umask_wet(i+1,j))*umask_wet(i-1,j))
+     &                ((1.0_r8-umask_wet(ii,j))*umask_wet(ip,j)+        &
+     &                 (1.0_r8-umask_wet(ip,j))*umask_wet(ii,j))
 #    endif
 #   endif
             FX(i,j)=FX(i,j)+cff2
@@ -867,14 +875,16 @@
 #   endif
             dzdy=(h(i,j)-h(i,j-1))/on_v(i,j)   ! positive is downhill
             dzdx=(h(i,j)-h(i-1,j))/om_u(i,j)
-!           dzdx=(bed(i,j,1,ithck)-bed(i-1,j,1,ithck))/om_u(i,j)
-!           dzdy=(bed(i,j,1,ithck)-bed(i,j-1,1,ithck))/on_v(i,j)
             dzdxdy=sqrt(dzdx**2.0_r8+dzdy**2.0_r8)
 ! For the wet part
             cff=ABS(dzdxdy)-sedslope_crit_wet(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
-            cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
-            cff2=cff*slopefac_wet_local*SIGN(1.0_r8,dzdy)
+!jcw
+!           cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
+!           cff2=cff*slopefac_wet_local*SIGN(1.0_r8,dzdy)
+!mai
+            cff=ABS(dzdxdy-sedslope_crit_wet(ng))*dzdy/(dzdxdy+eps)
+            cff2=cff*cff1/(pm(i,j)*pn(i,j))*slopefac_wet_local
 #   ifdef MASKING
             cff2=cff2*vmask(i,j)
 #    ifdef WET_DRY
@@ -883,18 +893,24 @@
 #   endif
             FE(i,j)=FE(i,j)+cff2
 ! For the dry part
-            cff=ABS(dzdy)-sedslope_crit_dry(ng)
+!jcw
+!           cff=ABS(dzdy)-sedslope_crit_dry(ng)
+!           cff1=(0.5_r8+SIGN(0.5_r8,cff))
+!           cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
+!           cff2=cff*slopefac_dry_local*SIGN(1.0_r8,dzdy)
+!mai
+            cff=dzdxdy-sedslope_crit_dry(ng)
             cff1=(0.5_r8+SIGN(0.5_r8,cff))
-            cff=0.5_r8*cff*cff1/(pm(i,j)*pn(i,j))
-            cff2=cff*slopefac_dry_local*SIGN(1.0_r8,dzdy)
+            cff=ABS(dzdxdy-sedslope_crit_wet(ng))*dzdy/(dzdxdy+eps)
+            cff2=cff*cff1/(pm(i,j)*pn(i,j))*slopefac_dry_local
 #   ifdef MASKING
             cff2=cff2*vmask(i,j)
 #    ifdef WET_DRY
-!            cff2=cff2*vmask_wet(i,j)
-!           cff2=cff2*(1.0_r8-vmask_wet(i,j))
+            jj=MAX(j-1,1)
+            jp=MIN(j+1,Mm(ng)+1)
             cff2=cff2*(1.0_r8-vmask_wet(i,j))*                          &
-     &                ((1.0_r8-vmask_wet(i,j-1))*vmask_wet(i,j+1)+      &
-     &                 (1.0_r8-vmask_wet(i,j+1))*vmask_wet(i,j-1))
+     &                ((1.0_r8-vmask_wet(i,jj))*vmask_wet(i,jp)+        &
+     &                 (1.0_r8-vmask_wet(i,jp))*vmask_wet(i,jj))
 #    endif
 #   endif
             FE(i,j)=FE(i,j)+cff2
@@ -910,14 +926,14 @@
 ! Compute Total thickness available and change.
 !
             IF (FX(i,j).ge.0.0_r8) THEN
-             Dstp=z_w(i,j,1)-z_w(i,j,0)
-!              Dstp=z_w(i,j,N(ng))-z_w(i,j,0)
+              Dstp=z_w(i,j,1)-z_w(i,j,0)
+!             Dstp=z_w(i,j,N(ng))-z_w(i,j,0)
               rhs_bed=FX(i,j)*pm(i,j)*pn(i,j)
               bed_change=rhs_bed/(Srho(ised,ng)*                        &
      &                   (1.0_r8-bed(i,j,1,iporo)))
             ELSE
               Dstp=z_w(i-1,j,1)-z_w(i-1,j,0)
-!              Dstp=z_w(i-1,j,N(ng))-z_w(i-1,j,0)
+!             Dstp=z_w(i-1,j,N(ng))-z_w(i-1,j,0)
               rhs_bed=ABS(FX(i,j))*pm(i-1,j)*pn(i-1,j)
               bed_change=rhs_bed/(Srho(ised,ng)*                        &
      &                   (1.0_r8-bed(i-1,j,1,iporo)))
@@ -938,13 +954,13 @@
 !
             IF (FE(i,j).ge.0.0_r8) THEN
               Dstp=z_w(i,j,1)-z_w(i,j,0)
-!              Dstp=z_w(i,j,N(ng))-z_w(i,j,0)
+!             Dstp=z_w(i,j,N(ng))-z_w(i,j,0)
               rhs_bed=FE(i,j)*pm(i,j)*pn(i,j)
               bed_change=rhs_bed/(Srho(ised,ng)*                        &
      &                   (1.0_r8-bed(i,j,1,iporo)))
             ELSE
               Dstp=z_w(i,j-1,1)-z_w(i,j-1,0)
-!              Dstp=z_w(i,j-1,N(ng))-z_w(i,j-1,0)
+!             Dstp=z_w(i,j-1,N(ng))-z_w(i,j-1,0)
               rhs_bed=ABS(FE(i,j))*pm(i,j-1)*pn(i,j-1)
               bed_change=rhs_bed/(Srho(ised,ng)*                        &
      &                   (1.0_r8-bed(i,j-1,1,iporo)))

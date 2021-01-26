@@ -5542,18 +5542,16 @@
             HIS(ng)%Vid(idspwc)=var_id(i)
 #endif
           END IF
-!
 #if defined VEGETATION 
 # if defined VEG_DRAG || defined VEG_BIOMASS
           DO itrc=1,NVEGP
             IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idvprp(itrc)))) THEN
               got_var(idvprp(itrc))=.TRUE.
-              HIS(ng)%Vid(itrc)=var_id(i)
+              HIS(ng)%Vid(idvprp(itrc))=var_id(i)
             END IF
           END DO
 # endif 
 #endif
-! 
 #ifdef SOLVE3D
           DO itrc=1,NT(ng)
             IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTvar(itrc)))) THEN

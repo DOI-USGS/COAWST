@@ -134,6 +134,14 @@ zt(zt<-9999)=nan;
 zt(zt>9999)=nan;
 zeta=griddata(lor,lar,zt,Gout.lon_rho,Gout.lat_rho);
 zeta=maplev(squeeze(zeta(:,:)));
+%for wet dry prevent zeta<h
+for ii=1:size(h,1)
+  for jj=1:size(h,2)
+    if((h(ii,jj)+zeta(ii,jj))<0)
+      zeta(ii,jj)=0.0999-h(ii,jj);
+    end
+  end
+end
 clear zt
 
 display('Initializing ubar and vbar')
@@ -371,7 +379,11 @@ if (NST>0)
   clear zt; clear zt2;
 %
   display('Initializing bed biodiff.')
-  zt=ncread(parent_ini,'bed_biodiff');
+  try
+    zt=ncread(parent_ini,'bed_biodiff');
+  catch
+    zt=ncread(parent_ini,'bed_porosity')*0.;
+  end
   if (size(zt)>3)
     zt=squeeze(zt(:,:,:,init_indx));
   end
@@ -510,7 +522,11 @@ if (NST>0)
   ripple_height=maplev(squeeze(ripple_height(:,:)));
   clear zt
 %
-  zt=ncread(parent_ini,'dmix_offset');
+  try
+    zt=ncread(parent_ini,'dmix_offset');
+  catch
+    zt=ncread(parent_ini,'ripple_height')*0;
+  end
   if (size(zt)>2)
     zt=squeeze(zt(:,:,init_indx));
   end
@@ -521,7 +537,11 @@ if (NST>0)
   dmix_offset=maplev(squeeze(dmix_offset(:,:)));
   clear zt
 %
-  zt=ncread(parent_ini,'dmix_slope');
+  try
+    zt=ncread(parent_ini,'dmix_slope');
+  catch
+    zt=ncread(parent_ini,'ripple_height')*0;
+  end
   if (size(zt)>2)
     zt=squeeze(zt(:,:,init_indx));
   end
@@ -532,7 +552,11 @@ if (NST>0)
   dmix_slope=maplev(squeeze(dmix_slope(:,:)));
   clear zt
 %
-  zt=ncread(parent_ini,'dmix_time');
+  try
+    zt=ncread(parent_ini,'dmix_time');
+  catch
+    zt=ncread(parent_ini,'ripple_height')*0;
+  end
   if (size(zt)>2)
     zt=squeeze(zt(:,:,init_indx));
   end

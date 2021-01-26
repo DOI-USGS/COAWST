@@ -134,6 +134,7 @@
       Cdim=SIZE(Cval,1)
       Clen=LEN(Cval(1))
       Rdim=SIZE(Rval,1)
+      Nval=0
 !
 !-----------------------------------------------------------------------
 !  Read in physical model parameters. Then, load input data into module.
