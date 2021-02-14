@@ -154,7 +154,7 @@
      &                         rmask,                                   &
 # if defined WET_DRY
      &                         rmask_wet,                               &
-#  if def DIAGNOSTICS_BIO
+#  ifdef DIAGNOSTICS_BIO
      &                         rmask_full,                              &
 #  endif
 # endif

@@ -1338,15 +1338,15 @@
 !
 !  Quadratic interpolation weights.
 !
-              MaskQWsum=GRID(dg)%rmask_full(Idg-1, Jdg-1)+              &
-     &                  GRID(dg)%rmask_full(Idg  , Jdg-1)+              &
-     &                  GRID(dg)%rmask_full(Idgp1, Jdg-1)+              &
-     &                  GRID(dg)%rmask_full(Idg-1, Jdg  )+              &
-     &                  GRID(dg)%rmask_full(Idg  , Jdg  )+              &
-     &                  GRID(dg)%rmask_full(Idgp1, Jdg  )+              &
-     &                  GRID(dg)%rmask_full(Idg-1, Jdgp1)+              &
-     &                  GRID(dg)%rmask_full(Idg  , Jdgp1)+              &
-     &                  GRID(dg)%rmask_full(Idgp1, Jdgp1)
+              MaskQWsum=GRID(dg)%rmask(Idg-1, Jdg-1)+                   &
+     &                  GRID(dg)%rmask(Idg  , Jdg-1)+                   &
+     &                  GRID(dg)%rmask(Idgp1, Jdg-1)+                   &
+     &                  GRID(dg)%rmask(Idg-1, Jdg  )+                   &
+     &                  GRID(dg)%rmask(Idg  , Jdg  )+                   &
+     &                  GRID(dg)%rmask(Idgp1, Jdg  )+                   &
+     &                  GRID(dg)%rmask(Idg-1, Jdgp1)+                   &
+     &                  GRID(dg)%rmask(Idg  , Jdgp1)+                   &
+     &                  GRID(dg)%rmask(Idgp1, Jdgp1)
               IF (MaskQWsum.lt.9) THEN
 #   ifdef WET_DRY
                 Qweight(1)=Rcontact(cr)%QweightUnmasked(1,m)*           &
