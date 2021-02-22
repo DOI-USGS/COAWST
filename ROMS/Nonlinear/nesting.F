@@ -3547,8 +3547,8 @@
      &                          GRID(rg)%pm,                            &
      &                          GRID(rg)%pn,                            &
 #  ifdef MASKING
-!    &                          GRID(dg)%rmask_full,                    &
-!    &                          GRID(rg)%rmask_full,                    &
+!jcw &                          GRID(dg)%rmask_full,                    &
+!jcw &                          GRID(rg)%rmask,                         &
      &                          GRID(dg)%rmask     ,                    &
      &                          GRID(rg)%rmask ,                        &
 #  endif
