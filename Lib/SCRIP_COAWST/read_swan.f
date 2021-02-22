@@ -208,6 +208,8 @@
           end if
           roms_swan_samegrid=roms_swan_samegrid*test1*test2*test3
         end do
+      else
+        roms_swan_samegrid=0
       end if
 #ifdef MPI
         CALL mpi_comm_rank (MyComm, MyRank, MyError)
