@@ -225,7 +225,8 @@
         ELSE IF (LBC(isouth,isVbar,ng)%Flather) THEN
           DO i=Istr,Iend
             IF (LBC_apply(ng)%south(i)) THEN
-#if (defined SSH_TIDES && !defined UV_TIDES) || defined INWAVE_MODEL
+!#if (defined SSH_TIDES && !defined UV_TIDES) || defined INWAVE_MODEL
+#if (defined SSH_TIDES && !defined UV_TIDES)
               IF (LBC(isouth,isFsur,ng)%acquire) THEN
                 bry_pgr=-g*(zeta(i,Jstr,know)-                          &
      &                      BOUNDARY(ng)%zeta_south(i))*                &
@@ -639,7 +640,8 @@
         ELSE IF (LBC(inorth,isVbar,ng)%Flather) THEN
           DO i=Istr,Iend
             IF (LBC_apply(ng)%north(i)) THEN
-#if (defined SSH_TIDES && !defined UV_TIDES) || defined INWAVE_MODEL
+!#if (defined SSH_TIDES && !defined UV_TIDES) || defined INWAVE_MODEL
+#if (defined SSH_TIDES && !defined UV_TIDES)
               IF (LBC(inorth,isFsur,ng)%acquire) THEN
                 bry_pgr=-g*(BOUNDARY(ng)%zeta_north(i)-                 &
      &                      zeta(i,Jend,know))*                         &
