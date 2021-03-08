@@ -58,7 +58,8 @@
       USE mod_scalars
       USE mod_sources
 # if defined INWAVE_MODEL && defined INWAVE_SWAN_COUPLING
-      USE bndwavebc_mod
+      USE bndwavez_mod
+      USE bndwaveuv_mod
 # endif
 
 # if defined TRC_PSOURCE
@@ -1218,7 +1219,7 @@
         END IF
 # endif
 # if defined INWAVE_MODEL && defined INWAVE_SWAN_COUPLING
-        CALL bndwavebc (ng, tile)
+        CALL bndwavez (ng, tile)
 # endif
 # if defined WET_DRY
 !
@@ -1385,6 +1386,9 @@
      &                     __FILE__)) RETURN
           END IF
         END IF
+# endif
+# if defined INWAVE_MODEL && defined INWAVE_SWAN_COUPLING
+        CALL bndwaveuv (ng, tile)
 # endif
       END IF
 
