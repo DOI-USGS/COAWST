@@ -252,6 +252,9 @@
 # endif
           real(r8), pointer :: Akv(:,:,:)
           real(r8), pointer :: Akt(:,:,:,:)
+# ifdef TS_VAR
+          real(r8), pointer :: Akr(:,:,:)
+# endif
 # ifdef FLOAT_VWALK
           real(r8), pointer :: dAktdz(:,:,:)
 # endif
@@ -593,6 +596,10 @@
 
       allocate ( MIXING(ng) % Akt(LBi:UBi,LBj:UBj,0:N(ng),NAT) )
       Dmem(ng)=Dmem(ng)+REAL((N(ng)+1)*NAT,r8)*size2d
+# ifdef TS_VAR
+      allocate ( MIXING(ng) % Akr(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
+# endif
 
 # ifdef FLOAT_VWALK
       allocate ( MIXING(ng) % dAktdz(LBi:UBi,LBj:UBj,N(ng)) )
@@ -1062,10 +1069,17 @@
           DO i=Imin,Imax
             MIXING(ng) % Akv(i,j,0) = IniVal
             MIXING(ng) % Akv(i,j,N(ng)) = IniVal
+# ifdef TS_VAR
+            MIXING(ng) % Akr(i,j,0) = IniVal
+            MIXING(ng) % Akr(i,j,N(ng)) = IniVal
+# endif
           END DO
           DO k=1,N(ng)-1
             DO i=Imin,Imax
               MIXING(ng) % Akv(i,j,k) = Akv_bak(ng)
+# ifdef TS_VAR
+              MIXING(ng) % Akr(i,j,k) = IniVal
+# endif
             END DO
           END DO
           DO itrc=1,NAT

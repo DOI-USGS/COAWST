@@ -1737,6 +1737,25 @@
      &                   __FILE__)) RETURN
         END IF
 #  endif
+#  ifdef TS_VAR
+!
+!  Define vertical diffusion coefficient for salinity.
+!
+!        IF (Aout(idSdif,ng)) THEN
+          Vinfo( 1)=Vname(1,idRdif)
+          WRITE (Vinfo( 2),'(a,1x,a)') Prefix, TRIM(Vname(2,idRdif))
+          Vinfo( 3)=Vname(3,idRdif)
+          Vinfo(14)=Vname(4,idRdif)
+          Vinfo(16)=Vname(1,idtime)
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idRdif,ng),r8)
+          status=def_var(ng, model, AVG(ng)%ncid, AVG(ng)%Vid(idRdif),  &
+     &                   NF_FOUT, nvd4, w3dgrd, Aval, Vinfo, ncname,    &
+     &                   SetFillVal = .FALSE.)
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
+!        END IF
+#  endif
 #  if defined RUNOFF
 !
 !  Define surface air pressure.
@@ -4172,6 +4191,11 @@
             got_var(idSdif)=.TRUE.
             AVG(ng)%Vid(idSdif)=var_id(i)
 #  endif
+#  ifdef TS_VAR
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idRdif))) THEN
+            got_var(idRdif)=.TRUE.
+            AVG(ng)%Vid(idRdif)=var_id(i)
+#  endif
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSSSf))) THEN
             got_var(idSSSf)=.TRUE.
             AVG(ng)%Vid(idSSSf)=var_id(i)
@@ -4906,6 +4930,14 @@
         END IF
         IF (.not.got_var(idSdif).and.Aout(idSdif,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idSdif)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+#  endif
+#  ifdef TS_VAR
+        IF (.not.got_var(idRdif).and.Aout(idRdif,ng)) THEN
+          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idRdif)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN

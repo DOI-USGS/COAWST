@@ -221,6 +221,9 @@
           real(r8), pointer :: avgAKt(:,:,:)
           real(r8), pointer :: avgAKs(:,:,:)
 #  endif
+#  ifdef TS_VAR
+          real(r8), pointer :: avgAKr(:,:,:)
+#  endif
 #  ifdef LMD_SKPP
           real(r8), pointer :: avghsbl(:,:)
 #  endif
@@ -630,6 +633,12 @@
         allocate ( AVERAGE(ng) % avgAKs(LBi:UBi,LBj:UBj,0:N(ng)) )
         Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
       END IF
+#  endif
+#  ifdef TS_VAR
+!      IF (Aout(idVvis,ng)) THEN
+        allocate ( AVERAGE(ng) % avgAKr(LBi:UBi,LBj:UBj,0:N(ng)) )
+        Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
+!      END IF
 #  endif
 #  ifdef LMD_SKPP
       IF (Aout(idHsbl,ng)) THEN
@@ -1541,6 +1550,18 @@
           END DO
         END DO
       END IF
+#  endif
+
+#  ifdef TS_VAR
+!      IF (Aout(idVvis,ng)) THEN
+        DO k=0,N(ng)
+          DO j=Jmin,Jmax
+            DO i=Imin,Imax
+              AVERAGE(ng) % avgAKr(i,j,k) = IniVal
+            END DO
+          END DO
+        END DO
+!      END IF
 #  endif
 
 #  ifdef LMD_SKPP

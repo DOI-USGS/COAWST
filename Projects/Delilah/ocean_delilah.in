@@ -183,29 +183,29 @@ ad_Vadvection == C4       \                     ! temperature
 !
 !                   1       2       3       4
 
-   LBC(isFsur) ==   Clo     Gra     Cla     Gra         ! free-surface
-   LBC(isUbar) ==   Clo     Fla     Fla     Fla         ! 2D U-momentum
-   LBC(isVbar) ==   Clo     Shc     Fla     Shc         ! 2D V-momentum
-   LBC(isUvel) ==   Clo     Gra     Rad     Gra         ! 3D U-momentum
-   LBC(isVvel) ==   Clo     Gra     Rad     Gra         ! 3D V-momentum
-   LBC(isMtke) ==   Clo     Gra     Gra     Gra         ! mixing TKE
+   LBC(isFsur) ==   Clo     Per     Cla     Per         ! free-surface
+   LBC(isUbar) ==   Clo     Per     Fla     Per         ! 2D U-momentum
+   LBC(isVbar) ==   Clo     Per     Fla     Per         ! 2D V-momentum
+   LBC(isUvel) ==   Clo     Per     Rad     Per         ! 3D U-momentum
+   LBC(isVvel) ==   Clo     Per     Rad     Per         ! 3D V-momentum
+   LBC(isMtke) ==   Clo     Per     Gra     Per         ! mixing TKE
 
-   LBC(isTvar) ==   Clo     Gra     Gra     Gra \       ! temperature
-                    Clo     Gra     Gra     Gra         ! salinity
+   LBC(isTvar) ==   Clo     Per     Gra     Per \       ! temperature
+                    Clo     Per     Gra     Per         ! salinity
 
 ! Wec boundary conditions
 
-   LBC(isU2Sd) ==   Clo     Gra     Gra     Gra         ! 2D U-stokes
-   LBC(isV2Sd) ==   Clo     Gra     Gra     Gra         ! 2D V-stokes
-   LBC(isU3Sd) ==   Clo     Gra     Gra     Gra         ! 3D U-stokes
-   LBC(isV3Sd) ==   Clo     Gra     Gra     Gra         ! 3D V-stokes
+   LBC(isU2Sd) ==   Clo     Per     Gra     Per         ! 2D U-stokes
+   LBC(isV2Sd) ==   Clo     Per     Gra     Per         ! 2D V-stokes
+   LBC(isU3Sd) ==   Clo     Per     Gra     Per         ! 3D U-stokes
+   LBC(isV3Sd) ==   Clo     Per     Gra     Per         ! 3D V-stokes
 
 ! InWave boundary conditions
 
-   LBC(isAC3d) ==   Clo     Gra     Cla     Gra         ! 3D wave action density
-   LBC(isCT3d) ==   Clo     Gra     Gra     Gra         ! 3D wave theta celerity
-   LBC(isCX3d) ==   Clo     Gra     Gra     Gra         ! 3D wave x-dir celerity
-   LBC(isCY3d) ==   Clo     Gra     Gra     Gra         ! 3D wave y-dir celerity
+   LBC(isAC3d) ==   Clo     Per     Cla     Per         ! 3D wave action density
+   LBC(isCT3d) ==   Clo     Per     Gra     Per         ! 3D wave theta celerity
+   LBC(isCX3d) ==   Clo     Per     Gra     Per         ! 3D wave x-dir celerity
+   LBC(isCY3d) ==   Clo     Per     Gra     Per         ! 3D wave y-dir celerity
 
 ! Ice boundary conditions
 

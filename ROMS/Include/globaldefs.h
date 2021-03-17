@@ -659,7 +659,7 @@
 
 
 #if defined BBL_MODEL   || defined WEC || \
-    defined WAVES_OCEAN
+    defined WAVES_OCEAN || defined INWAVE_MODEL
 # define WAVES_DIR
 # define WAVES_DIRP
 #endif
@@ -672,6 +672,7 @@
 
 #if (defined BBL_MODEL        && !defined WAVES_UB) ||  \
      defined WEC              || \
+     defined INWAVE_MODEL     || \
      defined ZOS_HSIG         || defined COARE_TAYLOR_YELLAND || \
      defined BEDLOAD_SOULSBY  || defined BEDLOAD_VANDERA || \
      defined WAVES_OCEAN      || defined DRENNAN
@@ -679,7 +680,7 @@
 #endif
 
 #if defined WEC || defined BEDLOAD_SOULSBY || defined BEDLOAD_VANDERA || \
-    defined WAVES_OCEAN
+    defined WAVES_OCEAN || defined INWAVE_MODEL
 # define WAVES_LENGTH
 #endif
 

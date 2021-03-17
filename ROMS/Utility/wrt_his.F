@@ -1706,6 +1706,32 @@
           RETURN
         END IF
       END IF
+#ifdef TS_VAR
+!
+!  Write out vertical diffusion coefficient for salinity.
+!
+!      IF (Hout(idTdif,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*w3dvar
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idRdif), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
+# ifdef MASKING
+     &                     GRID(ng) % rmask_full,                       &
+# endif
+     &                     MIXING(ng) % Akr(:,:,:),                     &
+     &                     SetFillVal = .FALSE.)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idRdif)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+!      END IF
+#endif
 # ifdef SALINITY
 !
 !  Write out vertical diffusion coefficient for salinity.

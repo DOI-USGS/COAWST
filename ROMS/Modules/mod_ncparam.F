@@ -289,6 +289,9 @@
         integer  :: idragQ        ! bottom quadratic drag coefficient
         integer  :: idragW        ! bottom drag coefficient for internal tide
         integer  :: idSdif        ! vertical S-diffusion coefficient
+#ifdef TS_VAR
+        integer  :: idRdif        ! vertical resolved mixing
+#endif
         integer  :: idSinW        ! SIN(omega(k)*t)
         integer  :: idSin2        ! SIN(omega(k)*t)*SIN(omega(l)*t)
         integer  :: idSrad        ! net shortwave radiation flux
@@ -1222,11 +1225,25 @@
       END DO
 #endif
       isWvel=ic+1
-! This ic counter logic is messy - need to acount for isMtke
-#if defined SOLVE3D && (defined GLS_MIXING || defined MY25_MIXING) && \
-    (defined WEC || defined ICE_MODEL || defined CICE_MODEL)
-      ic=ic+1
+!
+!  Set generic lateral boundary indices for LBC structure.  Use the same
+!  values of the state variables at the same C-grid location.  Generic
+!  indices are used for testing periodicity.  The PSI-variables and
+!  W-variables are assign the same value as the RHO-variables.
+!
+      isBp2d=isFsur                           ! 2D PSI-variables
+      isBr2d=isFsur                           ! 2D RHO-variables
+      isBu2d=isUbar                           ! 2D U-variables
+      isBv2d=isVbar                           ! 2D V-variables
+      isBp3d=isTvar(1)                        ! 3D PSI-variables
+      isBr3d=isTvar(1)                        ! 3D RHO-variables
+      isBu3d=isUvel                           ! 3D U-variables
+      isBv3d=isVvel                           ! 3D V-variables
+      isBw3d=isTvar(1)                        ! 3D W-variables
+#if defined SOLVE3D && (defined GLS_MIXING || defined MY25_MIXING)
+      isMtke=isTvar(MT)+1                     ! turbulent variables
 #endif
+      ic=ic+1   ! counter logic seems off for Wvel, need to add one for Mtke
 #ifdef WEC
       isU2Sd=ic+1
       isV2Sd=ic+2
@@ -1260,25 +1277,6 @@
       isSig12=ic+10
       isSig22=ic+11
       ic=ic+11
-#endif
-      isWvel=ic+1
-!
-!  Set generic lateral boundary indices for LBC structure.  Use the same
-!  values of the state variables at the same C-grid location.  Generic
-!  indices are used for testing periodicity.  The PSI-variables and
-!  W-variables are assign the same value as the RHO-variables.
-!
-      isBp2d=isFsur                           ! 2D PSI-variables
-      isBr2d=isFsur                           ! 2D RHO-variables
-      isBu2d=isUbar                           ! 2D U-variables
-      isBv2d=isVbar                           ! 2D V-variables
-      isBp3d=isTvar(1)                        ! 3D PSI-variables
-      isBr3d=isTvar(1)                        ! 3D RHO-variables
-      isBu3d=isUvel                           ! 3D U-variables
-      isBv3d=isVvel                           ! 3D V-variables
-      isBw3d=isTvar(1)                        ! 3D W-variables
-#if defined SOLVE3D && (defined GLS_MIXING || defined MY25_MIXING)
-      isMtke=isTvar(MT)+1                     ! turbulent variables
 #endif
 !
 !  Initialize IO information variables.
@@ -1549,6 +1547,10 @@
             CASE ('idSdif')
               idSdif=varid
               idDiff(isalt)=idSdif
+#ifdef TS_VAR
+            CASE ('idRdif')
+              idRdif=varid
+#endif
             CASE ('idVmLS')
               idVmLS=varid
             CASE ('idVmKK')
@@ -3404,21 +3406,37 @@
 # endif
 #endif
 #ifdef WEC
-      ic=ic+2
-      idBvar(isU2Sd)=idU2Sd
-      idBvar(isV2Sd)=idV2Sd
+!      ic=ic+2
+!      idBvar(isU2Sd)=idU2Sd
+!      idBvar(isV2Sd)=idV2Sd
+      ic=ic+1
+      idBvar(ic)=idU2Sd
+      ic=ic+1
+      idBvar(ic)=idV2Sd
 # if defined SOLVE3D
-      ic=ic+2
-      idBvar(isU3Sd)=idU3Sd
-      idBvar(isV3Sd)=idV3Sd
+!      ic=ic+2
+!      idBvar(isU3Sd)=idU3Sd
+!      idBvar(isV3Sd)=idV3Sd
+      ic=ic+1
+      idBvar(ic)=idU3Sd
+      ic=ic+1
+      idBvar(ic)=idV3Sd
 # endif
 #endif
 #ifdef INWAVE_MODEL
-      ic=ic+4
-      idBvar(isAC3d)=idACen
-      idBvar(isCT3d)=idACct
-      idBvar(isCX3d)=idACcx
-      idBvar(isCY3d)=idACcy
+!      ic=ic+4
+!      idBvar(isAC3d)=idACen
+!      idBvar(isCT3d)=idACct
+!      idBvar(isCX3d)=idACcx
+!      idBvar(isCY3d)=idACcy
+      ic=ic+1
+      idBvar(ic)=idACen
+      ic=ic+1
+      idBvar(ic)=idACct
+      ic=ic+1
+      idBvar(ic)=idACcx
+      ic=ic+1
+      idBvar(ic)=idACcy
 #endif
 !
 !-----------------------------------------------------------------------

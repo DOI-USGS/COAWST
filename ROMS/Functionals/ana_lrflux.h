@@ -135,7 +135,6 @@
         END DO
       END DO
 # endif
-#endif
 !
 !  Exchange boundary data.
 !

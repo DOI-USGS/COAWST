@@ -397,6 +397,7 @@
               END IF
             END IF
 #  ifdef NESTING
+#   if !defined NOFILL_NESTING_MASK
             CALL fill_contact(ng, model, tile,                          &
      &                        cr, Rcontact(cr)%Npoints, Rcontact,       &
      &                        r2dvar, 'rmask', spval_check,             &
@@ -405,6 +406,7 @@
      &                        GRID(ng) % rmask)
             IF (FoundError(exit_flag, NoError, __LINE__,                &
      &                     __FILE__)) RETURN
+#   endif
 #  endif
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_r2d_tile (ng, tile,                         &
@@ -442,6 +444,7 @@
               END IF
             END IF
 #  ifdef NESTING
+#   if !defined NOFILL_NESTING_MASK
             CALL fill_contact(ng, model, tile,                          &
      &                        cr, Ucontact(cr)%Npoints, Ucontact,       &
      &                        u2dvar, 'umask', spval_check,             &
@@ -450,6 +453,7 @@
      &                        GRID(ng) % umask)
             IF (FoundError(exit_flag, NoError, __LINE__,                &
      &                     __FILE__)) RETURN
+#   endif
 #  endif
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_u2d_tile (ng, tile,                         &
@@ -487,6 +491,7 @@
               END IF
             END IF
 #  ifdef NESTING
+#   if !defined NOFILL_NESTING_MASK
             CALL fill_contact(ng, model, tile,                          &
      &                        cr, Vcontact(cr)%Npoints, Vcontact,       &
      &                        v2dvar, 'vmask', spval_check,             &
@@ -495,6 +500,7 @@
      &                        GRID(ng) % vmask)
             IF (FoundError(exit_flag, NoError, __LINE__,                &
      &                     __FILE__)) RETURN
+#   endif
 #  endif
             IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
               CALL exchange_v2d_tile (ng, tile,                         &

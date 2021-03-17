@@ -40,8 +40,8 @@
 #undef  UV_COR
 #define DJ_GRADPS
 #define SOLVE3D
-#define SPLINES_VVISC
-#define SPLINES_VDIFF
+#undef  SPLINES_VVISC
+#undef  SPLINES_VDIFF
 
 #define ANA_INITIAL
 #undef  ANA_SMFLUX
@@ -61,6 +61,8 @@
 #  define KANTHA_CLAYSON
 #  define N2S2_HORAVG
 #  define RI_SPLINES
+#  define TKE_WAVEDISS
+#  define ZOS_HSIG
 # endif
 # undef SEDIMENT
 # ifdef SEDIMENT
@@ -84,6 +86,6 @@
 # define ANA_SRFLUX
 #endif
 
-#undef AVERAGES
-#undef STATIONS
+#define AVERAGES
 #undef DIAGNOSTICS_UV
+#define STATIONS

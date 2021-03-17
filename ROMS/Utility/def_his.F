@@ -1552,6 +1552,28 @@
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
      &                   __FILE__)) RETURN
         END IF
+#ifdef TS_VAR
+!
+!  Define vertical diffusion coefficient for salinity mixing.
+!
+!        IF (Hout(idTdif,ng)) THEN
+          Vinfo( 1)=Vname(1,idRdif)
+          Vinfo( 2)=Vname(2,idRdif)
+          Vinfo( 3)=Vname(3,idRdif)
+          Vinfo(14)=Vname(4,idRdif)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idRdif,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idRdif),   &
+     &                   NF_FOUT, nvd4, w3dgrd, Aval, Vinfo, ncname,    &
+     &                   SetFillVal = .FALSE.)
+          IF (FoundError(exit_flag, NoError, __LINE__,                  &
+     &                   __FILE__)) RETURN
+!        END IF
+#endif
 # ifdef SALINITY
 !
 !  Define vertical diffusion coefficient for salinity.
@@ -5034,6 +5056,11 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSdif))) THEN
             got_var(idSdif)=.TRUE.
             HIS(ng)%Vid(idSdif)=var_id(i)
+#ifdef TS_VAR
+          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idRdif))) THEN
+            got_var(idRdif)=.TRUE.
+            HIS(ng)%Vid(idRdif)=var_id(i)
+#endif
 # if defined GLS_MIXING || defined MY25_MIXING
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idMtke))) THEN
             got_var(idMtke)=.TRUE.
@@ -5866,6 +5893,14 @@
           exit_flag=3
           RETURN
         END IF
+#ifdef TS_VAR
+        IF (.not.got_var(idRdif).and.Hout(idRdif,ng)) THEN
+          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idRdif)),          &
+     &                                  TRIM(ncname)
+          exit_flag=3
+          RETURN
+        END IF
+#endif
 # ifdef SALINITY
         IF (.not.got_var(idSdif).and.Hout(idSdif,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idSdif)),          &

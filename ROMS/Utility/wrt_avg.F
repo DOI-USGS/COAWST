@@ -3605,6 +3605,32 @@
         END IF
       END IF
 #  endif
+#  ifdef TS_VAR
+!
+!  Write out vertical diffusion coefficient for salinity.
+!
+!      IF (Aout(idSdif,ng)) THEN
+        scale=1.0_r8
+        gtype=gfactor*w3dvar
+        status=nf_fwrite3d(ng, iNLM, AVG(ng)%ncid, AVG(ng)%Vid(idRdif), &
+     &                     AVG(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
+#   ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+#   endif
+     &                     AVERAGE(ng) % avgAKr,                        &
+     &                     SetFillVal = .FALSE.)
+        IF (FoundError(status, nf90_noerr, __LINE__,                    &
+     &                 __FILE__)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idRdif)), AVG(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+!      END IF
+#  endif
 #  if defined RUNOFF
 !
 !  Write out surface air pressure.

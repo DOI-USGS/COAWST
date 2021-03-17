@@ -1,7 +1,7 @@
 #include "cppdefs.h"
       MODULE frc_inw_mod
 #if defined INWAVE_MODEL
-# if defined WEC_MELLOR || defined WEC_VF
+!# if defined WEC_MELLOR || defined WEC_VF
 !
 !svn $Id: celer_inw.F 732 2008-09-07 01:55:51Z jcwarner $
 !================================================== John C. Warner =====
@@ -346,7 +346,7 @@
 
       RETURN
       END SUBROUTINE frc_inw_tile
-# endif
+!# endif
 #endif
       END MODULE frc_inw_mod
 

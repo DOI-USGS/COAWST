@@ -543,7 +543,7 @@
 # ifdef DISTRIBUTE
       real(r8), allocatable :: wrk(:)
 # endif
-
+      call random_seed
       call random_number(WAVES(ng)%phase)
       twopi=2.0_r8*pi
 # ifdef DISTRIBUTE
@@ -1025,6 +1025,7 @@
       END DO
 #   endif
 !
+      call random_seed
       DO ff=1,WAVES(ng)%nfreq
 !
 !  Determine which direction to use for this freq.
@@ -1948,8 +1949,8 @@
 !
           A=0.0_r8
           AA=0.0_r8
-          A(1:(nt1/2))=Comp_int
-          A((nt1/2+2):nt1)=conjg(A(nt1/2:2:-1))
+          A(1:nf)=Comp_int
+          A(nt1-nf+2:nt1)=conjg(A(nf:2:-1))
           AA(1:nt1)=A
 !
           work=0.
@@ -1978,8 +1979,8 @@
 !
           A=0.0_r8
           AA=0.0_r8
-          A(1:(nt1/2))=Comp_int
-          A((nt1/2+2):nt1)=conjg(A(nt1/2:2:-1))
+          A(1:nf)=Comp_int
+          A(nt1-nf+2:nt1)=conjg(A(nf:2:-1))
           AA(1:nt1)=A
 !
           work=0.
@@ -2008,8 +2009,8 @@
 !
           A=0.0_r8
           AA=0.0_r8
-          A(1:(nt1/2))=Comp_int
-          A((nt1/2+2):nt1)=conjg(A(nt1/2:2:-1))
+          A(1:nf)=Comp_int
+          A(nt1-nf+2:nt1)=conjg(A(nf:2:-1))
           AA(1:nt1)=A
 !
           work=0.
@@ -2027,16 +2028,16 @@
         deallocate (work, wsave)
 !
 !  The currents need to be rotated to the roms grid plus they are
-!  defined in the rho points
-!  Here we assume these waves are shallow progressive water waves
+!  defined in the rho points. Keep the u v as fluxes and convert in
+!  the bndwave bc routine.
 !
 #  ifdef VARY_ACBC
         DO j=SstrR,SendR
           WAVES(ng)%bndwave_z(j,:)=tempz(j,:)
           WAVES(ng)%bndwave_u(j,:)=(tempu(j,:)*cos(angle_edge(j))+      &
-                                    tempv(j,:)*sin(angle_edge(j)))*oh0
+                                    tempv(j,:)*sin(angle_edge(j)))  !*oh0
           WAVES(ng)%bndwave_v(j,:)=(-tempu(j,:)*sin(angle_edge(j))+     &
-                                     tempv(j,:)*cos(angle_edge(j)))*oh0
+                                     tempv(j,:)*cos(angle_edge(j))) !*oh0
         END DO
 #  else
         WAVES(ng)%bndwave_z(:)=tempz(:)

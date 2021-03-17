@@ -166,7 +166,8 @@
 !
         ELSE IF (LBC(isouth,isV2Sd,ng)%gradient) THEN
           DO i=Istr,Iend
-            IF (LBC_apply(ng)%south(i)) THEN
+            IF ((LBC_apply(ng)%south(i)).or.                            &
+     &          (LBC(isouth,isVbar,ng)%nested)) THEN
               vbar_stokes(i,Jstr)=vbar_stokes(i,Jstr+1)
 # ifdef MASKING
               vbar_stokes(i,Jstr)=vbar_stokes(i,Jstr)*                  &
@@ -259,7 +260,8 @@
 !
         ELSE IF (LBC(inorth,isV2Sd,ng)%gradient) THEN
           DO i=Istr,Iend
-            IF (LBC_apply(ng)%north(i)) THEN
+            IF ((LBC_apply(ng)%north(i)).or.                            &
+     &          (LBC(inorth,isVbar,ng)%nested)) THEN
               vbar_stokes(i,Jend+1)=vbar_stokes(i,Jend)
 # ifdef MASKING
               vbar_stokes(i,Jend+1)=vbar_stokes(i,Jend+1)*              &
@@ -343,7 +345,8 @@
 !
         ELSE IF (LBC(iwest,isV2Sd,ng)%gradient) THEN
           DO j=JstrV,Jend
-            IF (LBC_apply(ng)%west(j)) THEN
+            IF ((LBC_apply(ng)%west(j)).or.                             &
+     &          (LBC(iwest,isVbar,ng)%nested)) THEN
               vbar_stokes(Istr-1,j)=vbar_stokes(Istr,j)
 # ifdef MASKING
               vbar_stokes(Istr-1,j)=vbar_stokes(Istr-1,j)*              &
@@ -448,7 +451,8 @@
 !
         ELSE IF (LBC(ieast,isV2Sd,ng)%gradient) THEN
           DO j=JstrV,Jend
-            IF (LBC_apply(ng)%east(j)) THEN
+            IF ((LBC_apply(ng)%east(j)).or.                             &
+     &          (LBC(ieast,isVbar,ng)%nested)) THEN
               vbar_stokes(Iend+1,j)=vbar_stokes(Iend,j)
 # ifdef MASKING
               vbar_stokes(Iend+1,j)=vbar_stokes(Iend+1,j)*              &

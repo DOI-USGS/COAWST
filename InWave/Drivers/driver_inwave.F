@@ -89,9 +89,9 @@
       USE curr_inw_mod, ONLY : curr_inw
 # endif
       USE celer_inw_mod, ONLY : celer_inw
-# if defined WEC_MELLOR || defined WEC_VF
+!# if defined WEC_MELLOR || defined WEC_VF
       USE frc_inw_mod, ONLY : frc_inw
-# endif
+!# endif
 # if defined INWAVE_SWAN_COUPLING
       USE mod_inwave_swan
 # endif
@@ -245,7 +245,7 @@
 ! Compute the wave parameters from the wave envelope
 !-----------------------------------------------------------------------
 !
-# if defined WEC_MELLOR || defined WEC_VF
+!# if defined WEC_MELLOR || defined WEC_VF
 !!$OMP PARALLEL DO PRIVATE(thread,subs,tile)                             &
 !!$OMP&            SHARED(ng,nnew,numthreads)
 !        DO thread=0,numthreads-1
@@ -254,7 +254,7 @@
             CALL frc_inw (ng, tile)
 !          END DO
 !        END DO
-# endif
+!# endif
 
 !-----------------------------------------------------------------------
 ! Compute the wave number change thru the eikonal equation (need to check)

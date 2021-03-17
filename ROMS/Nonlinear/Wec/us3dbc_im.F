@@ -154,7 +154,8 @@
         ELSE IF (LBC(iwest,isU3Sd,ng)%gradient) THEN
           DO k=1,N(ng)
             DO j=Jstr,Jend
-              IF (LBC_apply(ng)%west(j)) THEN
+            IF ((LBC_apply(ng)%west(j)).or.                             &
+     &          (LBC(iwest,isUvel,ng)%nested)) THEN
                 u_stokes(Istr,j,k)=u_stokes(Istr+1,j,k)
 # ifdef MASKING
                 u_stokes(Istr,j,k)=u_stokes(Istr,j,k)*                  &
@@ -256,7 +257,8 @@
         ELSE IF (LBC(ieast,isU3Sd,ng)%gradient) THEN
           DO k=1,N(ng)
             DO j=Jstr,Jend
-              IF (LBC_apply(ng)%east(j)) THEN
+            IF ((LBC_apply(ng)%east(j)).or.                             &
+     &          (LBC(ieast,isUvel,ng)%nested)) THEN
                 u_stokes(Iend+1,j,k)=u_stokes(Iend,j,k)
 # ifdef MASKING
                 u_stokes(Iend+1,j,k)=u_stokes(Iend+1,j,k)*              &
@@ -357,7 +359,8 @@
         ELSE IF (LBC(isouth,isU3Sd,ng)%gradient) THEN
           DO k=1,N(ng)
             DO i=IstrU,Iend
-              IF (LBC_apply(ng)%south(i)) THEN
+            IF ((LBC_apply(ng)%south(i)).or.                            &
+     &          (LBC(isouth,isUvel,ng)%nested)) THEN
                 u_stokes(i,Jstr-1,k)=u_stokes(i,Jstr,k)
 # ifdef MASKING
                 u_stokes(i,Jstr-1,k)=u_stokes(i,Jstr-1,k)*              &
@@ -474,7 +477,8 @@
         ELSE IF (LBC(inorth,isU3Sd,ng)%gradient) THEN
           DO k=1,N(ng)
             DO i=IstrU,Iend
-              IF (LBC_apply(ng)%north(i)) THEN
+            IF ((LBC_apply(ng)%north(i)).or.                            &
+     &          (LBC(inorth,isUvel,ng)%nested)) THEN
                 u_stokes(i,Jend+1,k)=u_stokes(i,Jend,k)
 # ifdef MASKING
                 u_stokes(i,Jend+1,k)=u_stokes(i,Jend+1,k)*              &

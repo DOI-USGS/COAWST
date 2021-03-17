@@ -61,6 +61,7 @@
       USE mod_ncparam
       USE mod_boundary
       USE mod_scalars
+      USE mod_ocean
       USE mod_inwave_vars
       USE mod_inwave_swan
 !
@@ -74,9 +75,9 @@
 !
       integer :: i, j, d
       integer :: tidx1, tidx2
-      real(r8):: cff, cff1, cff2, cff3, ramp, alpha
+      real(r8):: cff1, ramp
       real(r8):: fac1, fac2, tidx, ratio
-      real(r8):: phiw, cw, dist, toff, bndtot, veltot
+      real(r8):: bndtot, veltot
       real(r8), parameter :: eps = 0.0001_r8
 
 #  include "set_bounds.h"
@@ -96,8 +97,8 @@
 !  Lateral boundary conditions at the western edge.
 !-----------------------------------------------------------------------
 !
-      IF (LBC(iwest,isFsur,ng)%acquire.and.                             &
-     &    DOMAIN(ng)%Western_Edge(tile)) THEN
+!      IF (LBC(iwest,isFsur,ng)%acquire.and.                             &
+      IF (DOMAIN(ng)%Western_Edge(tile)) THEN
         IF (LBC(iwest,isAC3d,ng)%acquire) THEN
           DO j=Jstr,Jend
 # ifdef VARY_ACBC
@@ -117,9 +118,13 @@
 # endif
 !            BOUNDARY(ng)%zeta_west(j)=(BOUNDARY(ng)%zeta_west(j)+       &
 !     &                                 bndtot)*ramp
+            cff1=1.0_r8/(0.5_r8*(GRID(ng)%h(Istr-1,j)+                  &
+     &                           OCEAN(ng)%zeta(Istr-1,j,1)+            &
+     &                           GRID(ng)%h(Istr  ,j)+                  &
+     &                           OCEAN(ng)%zeta(Istr  ,j,1)))
             IF (LBC(iwest,isUbar,ng)%acquire) THEN
               BOUNDARY(ng)%ubar_west(j)=(BOUNDARY(ng)%ubar_west(j)+     &
-     &                                   veltot)*ramp
+     &                                   veltot*cff1)*ramp
             END IF
           END DO
         END IF
@@ -129,8 +134,8 @@
 !  Lateral boundary conditions at the eastern edge.
 !-----------------------------------------------------------------------
 !
-      IF (LBC(ieast,isFsur,ng)%acquire.and.                             &
-     &    DOMAIN(ng)%Eastern_Edge(tile)) THEN
+!      IF (LBC(ieast,isFsur,ng)%acquire.and.                             &
+      IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
         IF (LBC(ieast,isAC3d,ng)%acquire) THEN
           DO j=Jstr,Jend
 # ifdef VARY_ACBC
@@ -150,9 +155,15 @@
 # endif
 !            BOUNDARY(ng)%zeta_east(j)=(BOUNDARY(ng)%zeta_east(j)+       &
 !     &                                 bndtot)*ramp
+            cff1=1.0_r8/(0.5_r8*(GRID(ng)%h(Iend  ,j)+                  &
+     &                           OCEAN(ng)%zeta(Iend  ,j,1)+            &
+     &                           GRID(ng)%h(Iend+1,j)+                  &
+     &                           OCEAN(ng)%zeta(Iend+1,j,1)))
             IF (LBC(ieast,isUbar,ng)%acquire) THEN
               BOUNDARY(ng)%ubar_east(j)=(BOUNDARY(ng)%ubar_east(j)+     &
-     &                                   veltot)*ramp
+     &                                   veltot*cff1)*ramp
+!             BOUNDARY(ng)%ubar_east(j)=(BOUNDARY(ng)%ubar_east(j)+     &
+!    &                                   veltot)*ramp
             END IF
           END DO
         END IF
@@ -162,8 +173,8 @@
 !  Lateral boundary conditions at the southern edge.
 !-----------------------------------------------------------------------
 !
-      IF (LBC(isouth,isFsur,ng)%acquire.and.                            &
-     &    DOMAIN(ng)%Southern_Edge(tile)) THEN
+!      IF (LBC(isouth,isFsur,ng)%acquire.and.                            &
+      IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
         IF (LBC(isouth,isAC3d,ng)%acquire) THEN
           DO i=Istr,Iend
 # ifdef VARY_ACBC
@@ -183,9 +194,13 @@
 # endif
 !            BOUNDARY(ng)%zeta_south(i)=(BOUNDARY(ng)%zeta_south(i)+     &
 !     &                                  bndtot)*ramp
+            cff1=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jstr-1)+                  &
+     &                           OCEAN(ng)%zeta(i,Jstr-1,1)+            &
+     &                           GRID(ng)%h(i,Jstr  )+                  &
+     &                           OCEAN(ng)%zeta(i,Jstr  ,1)))
             IF (LBC(isouth,isVbar,ng)%acquire) THEN
               BOUNDARY(ng)%vbar_south(i)=(BOUNDARY(ng)%vbar_south(i)+   &
-     &                                    veltot)*ramp
+     &                                    veltot*cff1)*ramp
             END IF
           END DO
         END IF
@@ -195,8 +210,8 @@
 !  Lateral boundary conditions at the northern edge.
 !-----------------------------------------------------------------------
 !
-      IF (LBC(inorth,isFsur,ng)%acquire.and.                            &
-     &    DOMAIN(ng)%Northern_Edge(tile)) THEN
+!      IF (LBC(inorth,isFsur,ng)%acquire.and.                            &
+      IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
         IF (LBC(inorth,isAC3d,ng)%acquire) THEN
           DO i=Istr,Iend
 # ifdef VARY_ACBC
@@ -216,9 +231,13 @@
 # endif
 !            BOUNDARY(ng)%zeta_north(i)=(BOUNDARY(ng)%zeta_north(i)+     &
 !     &                                  bndtot)*ramp
+            cff1=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jend  )+                  &
+     &                           OCEAN(ng)%zeta(i,Jend  ,1)+            &
+     &                           GRID(ng)%h(i,Jend+1)+                  &
+     &                           OCEAN(ng)%zeta(i,Jend+1,1)))
             IF (LBC(inorth,isVbar,ng)%acquire) THEN
               BOUNDARY(ng)%vbar_north(i)=(BOUNDARY(ng)%vbar_north(i)+   &
-     &                                    veltot)*ramp
+     &                                    veltot*cff1)*ramp
             END IF
           END DO
         END IF

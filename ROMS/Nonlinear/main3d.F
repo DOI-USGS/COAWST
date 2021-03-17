@@ -735,9 +735,11 @@
                 IF (ANY(CompositeGrid(:,ng))) THEN
                   CALL nesting (ng, iNLM, n2dPS)
                 END IF
+#  ifdef NESTING_DEBUG
                 IF (RefinedGrid(ng).and.(RefineScale(ng).gt.0)) THEN
                   CALL nesting (ng, iNLM, nmflx)
                 END IF
+#  endif
               END DO
 # endif
 !
@@ -782,9 +784,11 @@
                 IF (ANY(CompositeGrid(:,ng))) THEN
                   CALL nesting (ng, iNLM, n2dCS)
                 END IF
+#  ifdef NESTING_DEBUG
                 IF (RefinedGrid(ng).and.(RefineScale(ng).gt.0)) THEN
                   CALL nesting (ng, iNLM, nmflx)
                 END IF
+#  endif
               END DO
 # endif
             END DO LOOP_2D

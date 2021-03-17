@@ -582,6 +582,21 @@
           END DO
         END IF
 #  endif
+#  ifdef TS_VAR
+!        IF (Aout(idSdif,ng)) THEN
+          DO k=0,N(ng)
+            DO j=JstrR,JendR
+              DO i=IstrR,IendR
+                AVERAGE(ng)%avgAKr(i,j,k)=MIXING(ng)%Akr(i,j,k)
+#   ifdef WET_DRY
+                AVERAGE(ng)%avgAKr(i,j,k)=AVERAGE(ng)%avgAKr(i,j,k)*    &
+     &                                    GRID(ng)%rmask_full(i,j)
+#   endif
+              END DO
+            END DO
+          END DO
+!        END IF
+#  endif
 #  ifdef LMD_SKPP
         IF (Aout(idHsbl,ng)) THEN
           DO j=JstrR,JendR
@@ -2722,6 +2737,21 @@
             END DO
           END DO
         END IF
+#  endif
+#  ifdef TS_VAR
+!        IF (Aout(idSdif,ng)) THEN
+          DO k=0,N(ng)
+            DO j=JstrR,JendR
+              DO i=IstrR,IendR
+                AVERAGE(ng)%avgAKr(i,j,k)=AVERAGE(ng)%avgAKr(i,j,k)+    &
+#   ifdef WET_DRY
+     &                                    GRID(ng)%rmask_full(i,j)*     &
+#   endif
+     &                                    MIXING(ng)%Akr(i,j,k)
+              END DO
+            END DO
+          END DO
+!        END IF
 #  endif
 #  ifdef LMD_SKPP
         IF (Aout(idHsbl,ng)) THEN
@@ -5074,6 +5104,31 @@
 #   endif
           END IF
         END IF
+#  endif
+
+#  ifdef TS_VAR
+!        IF (Aout(idSdif,ng)) THEN
+          DO k=0,N(ng)
+            DO j=JstrR,JendR
+              DO i=IstrR,IendR
+                AVERAGE(ng)%avgAKr(i,j,k)=rfac(i,j)*                    &
+     &                                    AVERAGE(ng)%avgAKr(i,j,k)
+              END DO
+            END DO
+          END DO
+          IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+            CALL exchange_w3d_tile (ng, tile,                           &
+     &                              LBi, UBi, LBj, UBj, 0, N(ng),       &
+     &                              AVERAGE(ng)%avgAKr)
+#   ifdef DISTRIBUTE
+            CALL mp_exchange3d (ng, tile, iNLM, 1,                      &
+     &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
+     &                          NghostPoints,                           &
+     &                          EWperiodic(ng), NSperiodic(ng),         &
+     &                          AVERAGE(ng)%avgAKr)
+#   endif
+          END IF
+!        END IF
 #  endif
 
 #  ifdef LMD_SKPP

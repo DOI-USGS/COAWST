@@ -3547,10 +3547,10 @@
      &                          GRID(rg)%pm,                            &
      &                          GRID(rg)%pn,                            &
 #  ifdef MASKING
-!jcw &                          GRID(dg)%rmask_full,                    &
-!jcw &                          GRID(rg)%rmask,                         &
-     &                          GRID(dg)%rmask     ,                    &
-     &                          GRID(rg)%rmask ,                        &
+     &                          GRID(dg)%rmask_full,                    &
+     &                          GRID(rg)%rmask,                         &
+!jcw     &                          GRID(dg)%rmask,                         &
+!jcw     &                          GRID(rg)%rmask,                         &
 #  endif
      &                          COUPLING(dg)%Zt_avg1,                   &
      &                          COUPLING(rg)%Zt_avg1)
@@ -4116,7 +4116,12 @@
 # endif
               END DO
             END DO
-            IF (my_count.gt.0.0_r8) my_avg=my_sum/my_count
+!jcw            IF (my_count.gt.0.0_r8) my_avg=my_sum/my_count
+            IF (my_count.gt.0.0_r8) THEN
+              my_avg=my_sum/my_count
+            ELSE
+              my_avg=C1(Ic,Jc)
+            END IF
 # ifdef MASKING
             my_avg=my_avg*Cmsk(Ic,Jc)
 # endif
