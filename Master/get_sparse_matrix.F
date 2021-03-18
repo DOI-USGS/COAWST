@@ -187,7 +187,7 @@
       ELSE
         sparse_rows_main(1)=1
         sparse_cols_main(1)=1
-        sparse_weights_main(1)=0.0_r8
+        sparse_weights_main(1)=0.0_m8
       END IF
 !
 ! Check to see if the user computed additional weights to account
@@ -196,7 +196,7 @@
       status=nf90_inq_varid(ncid,'add_src_address', varid)
       IF (status.eq.nf90_noerr) THEN
         status=nf90_inquire_variable(ncid,varid,dimids = dimIDs)
-        status=nf90_inquire_dimension(ncid, dimIDs(1), len=num_elems_add)
+        status=nf90_inquire_dimension(ncid, dimIDs(1),len=num_elems_add)
         num_sparse_elems=num_sparse_elems+num_elems_add
 !
 !       These 3 are the added arrays.
@@ -239,7 +239,8 @@
         END IF
         start(1)=1
         total(1)=num_elems_add
-        status=nf90_get_var(ncid, varid, sparse_weights_add, start, total)
+        status=nf90_get_var(ncid, varid, sparse_weights_add,            &
+     &                      start, total)
       END IF
 !
 ! Allocate total arrays.

@@ -147,12 +147,13 @@
       integer :: HYDid
 
       integer, dimension(:), pointer :: moving_nest
-# ifdef MOVE_NESTS
+# ifdef WRF_COUPLING
+!# ifdef MOVE_NESTS
 !  If WRF has a moving nest then we need to keep some information.
-      integer, dimension(:), pointer :: par_grid_ratio
+      integer, dimension(:), pointer :: pargrid_ratio
       integer, dimension(:), pointer :: full_Isize
       integer, dimension(:), pointer :: full_Jsize
-      integer, dimension(:), pointer :: parent_id
+      integer, dimension(:), pointer :: parentid
       integer, dimension(:), pointer :: moving_nest_istart
       integer, dimension(:), pointer :: moving_nest_jstart
 # endif
@@ -205,12 +206,13 @@
 #  endif
 # endif
       allocate (moving_nest(Natm_grids))
-# ifdef MOVE_NESTS
+# ifdef WRF_COUPLING
+!# ifdef MOVE_NESTS
 ! If WRF has a moving nest, for now, it has to be the last grid.
-      allocate (par_grid_ratio(Natm_grids))
+      allocate (pargrid_ratio(Natm_grids))
       allocate (full_Isize(Natm_grids))
       allocate (full_Jsize(Natm_grids))
-      allocate (parent_id(Natm_grids))
+!     allocate (parentid(Natm_grids))
       allocate (moving_nest_istart(Natm_grids))
       allocate (moving_nest_jstart(Natm_grids))
 # endif

@@ -214,10 +214,7 @@
       END TYPE T_SMPlus_R
       TYPE (T_SMPlus_R), ALLOCATABLE :: SMPlus_R(:)
 !
-!      integer :: par_grid_ratio,full_Isize,full_Jsize,parent_id
-
 # endif
-
       CONTAINS
 
       SUBROUTINE initialize_atm_coupling(grid, ia)
@@ -335,10 +332,10 @@
 !
 # ifdef MOVE_NESTS
 !  Save some grid information.
-      par_grid_ratio(ia)=grid%parent_grid_ratio
+      pargrid_ratio(ia)=grid%parent_grid_ratio
       full_Isize(ia)=grid%e_we-1
       full_Jsize(ia)=grid%e_sn-1
-      parent_id(ia)=grid%parent_id
+!     parentid(ia)=grid%parent_id
 !
 !  here we need to figure out the largest parent grid that is not moving.
 !
@@ -348,7 +345,7 @@
       END DO
       par_scale=1
       DO i=par_grid_nomove+1,ia
-        par_scale=par_scale*par_grid_ratio(ia)
+        par_scale=par_scale*pargrid_ratio(ia)
       END DO
 !
       IF ((Myrank.eq.0).and.(moving_nest(ia).eq.1)) THEN
@@ -361,7 +358,7 @@
 !!!!!!!!!!!!!!!!!!!!!!
 ! First work on atm_moving nest to static grid.
 ! This really means to interpolate the moving nest to a larger
-! static grid that is a factor par_grid_ratio larger.
+! static grid that is a factor pargrid_ratio larger.
 !!!!!!!!!!!!!!!!!!!!!!
 !
 
@@ -394,14 +391,14 @@
 !  Do not use first 3 (or 5) rows around child perimeter.
 
         jc=0
-        DO j=par_grid_ratio(ia)+1,src_grid_dims(2)-par_grid_ratio(ia)
-         DO i=par_grid_ratio(ia)+1,src_grid_dims(1)-par_grid_ratio(ia)
+        DO j=pargrid_ratio(ia)+1,src_grid_dims(2)-pargrid_ratio(ia)
+         DO i=pargrid_ratio(ia)+1,src_grid_dims(1)-pargrid_ratio(ia)
             jc=(j-1)*(src_grid_dims(1))+i
             sparse_weights(jc)=1.0
           END DO
         END DO
-        is=(grid%i_parent_start-1)*par_grid_ratio(ia)+1
-        js=(grid%j_parent_start-1)*par_grid_ratio(ia)+1
+        is=(grid%i_parent_start-1)*pargrid_ratio(ia)+1
+        js=(grid%j_parent_start-1)*pargrid_ratio(ia)+1
         moving_nest_istart(ia)=grid%i_parent_start-1
         moving_nest_jstart(ia)=grid%j_parent_start-1
         IF (moving_nest(ia-1).eq.1) THEN
@@ -1037,9 +1034,9 @@
           offset=1
           Istr=grid_ptr%i_parent_start+offset
           Jstr=grid_ptr%j_parent_start+offset
-          ij=full_Isize(ia+1)/par_grid_ratio(ia+1)
+          ij=full_Isize(ia+1)/pargrid_ratio(ia+1)
           Iend=grid_ptr%i_parent_start+ij-1-offset
-          ij=full_Jsize(ia+1)/par_grid_ratio(ia+1)
+          ij=full_Jsize(ia+1)/pargrid_ratio(ia+1)
           Jend=grid_ptr%j_parent_start+ij-1-offset
 !
           IF ((Istr.ge.is).or.(Istr.le.ie)) THEN
@@ -1066,7 +1063,7 @@
           END DO
           par_scale=1
           DO i=par_grid_nomove+1,ia
-            par_scale=par_scale*par_grid_ratio(ia)
+            par_scale=par_scale*pargrid_ratio(ia)
           END DO
 !
 !  Here we find where the child data sits in the scaled parent grid.
@@ -1086,8 +1083,8 @@
 ! If the moving grid had a moving parent, we need to find moving parent
 ! i j starts, then this grid i j starts. save the info
 ! 
-          Istr=(grid%i_parent_start-1)*par_grid_ratio(ia)+1
-          Jstr=(grid%j_parent_start-1)*par_grid_ratio(ia)+1
+          Istr=(grid%i_parent_start-1)*pargrid_ratio(ia)+1
+          Jstr=(grid%j_parent_start-1)*pargrid_ratio(ia)+1
           moving_nest_istart(ia)=grid%i_parent_start-1
           moving_nest_jstart(ia)=grid%j_parent_start-1
           IF (moving_nest(ia-1).eq.1) THEN
@@ -1118,8 +1115,8 @@
 !         src_grid_dims(2)=full_Jsize(parent_id(ia))*par_grid_ratio(ia)
           num_sparse_elems=dst_grid_dims(1)*dst_grid_dims(2)
           allocate ( sparse_cols(num_sparse_elems) )
-          Istr=(grid%i_parent_start-1)*par_grid_ratio(ia)+1
-          Jstr=(grid%j_parent_start-1)*par_grid_ratio(ia)+1
+          Istr=(grid%i_parent_start-1)*pargrid_ratio(ia)+1
+          Jstr=(grid%j_parent_start-1)*pargrid_ratio(ia)+1
           IF (moving_nest(ia-1).eq.1) THEN
             Istr=Istr+moving_nest_istart(ia-1)*par_scale
             Jstr=Jstr+moving_nest_jstart(ia-1)*par_scale
@@ -1590,14 +1587,14 @@
 !  1 - do you have a child that is moving?
 !  2  - if so, then where is it now?
 
-        IF (ia.eq.parent_id(Natm_grids)) THEN
+        IF (ia.eq.parentid(Natm_grids)) THEN
           CALL find_grid_by_id(Natm_grids, grid, grid_ptr)
           offset=1
           Istr=grid_ptr%i_parent_start+offset
           Jstr=grid_ptr%j_parent_start+offset
-          ij=full_Isize(Natm_grids)/par_grid_ratio(Natm_grids)
+          ij=full_Isize(Natm_grids)/pargrid_ratio(Natm_grids)
           Iend=grid_ptr%i_parent_start+ij-1-offset
-          ij=full_Jsize(Natm_grids)/par_grid_ratio(Natm_grids)
+          ij=full_Jsize(Natm_grids)/pargrid_ratio(Natm_grids)
           Jend=grid_ptr%j_parent_start+ij-1-offset
 !
           IF ((Istr.ge.is).or.(Istr.le.ie)) THEN
@@ -1619,13 +1616,13 @@
 !  First the fine to coarse
           src_grid_dims(1)=full_Isize(ia)
           src_grid_dims(2)=full_Jsize(ia)
-          dst_grid_dims(1)=full_Isize(parent_id(ia))*par_grid_ratio(ia)
-          dst_grid_dims(2)=full_Jsize(parent_id(ia))*par_grid_ratio(ia)
+          dst_grid_dims(1)=full_Isize(parentid(ia))*pargrid_ratio(ia)
+          dst_grid_dims(2)=full_Jsize(parentid(ia))*pargrid_ratio(ia)
           num_sparse_elems=src_grid_dims(1)*src_grid_dims(2)
           allocate ( sparse_rows(num_sparse_elems) )
 !
-          Istr=(grid%i_parent_start-1)*par_grid_ratio(ia)+1
-          Jstr=(grid%j_parent_start-1)*par_grid_ratio(ia)+1
+          Istr=(grid%i_parent_start-1)*pargrid_ratio(ia)+1
+          Jstr=(grid%j_parent_start-1)*pargrid_ratio(ia)+1
           jc=0
           DO j=1,src_grid_dims(2)
             count=(Jstr-1+j-1)*(dst_grid_dims(1))+Istr-1
@@ -1643,12 +1640,12 @@
 !
           dst_grid_dims(1)=full_Isize(ia)
           dst_grid_dims(2)=full_Jsize(ia)
-          src_grid_dims(1)=full_Isize(parent_id(ia))*par_grid_ratio(ia)
-          src_grid_dims(2)=full_Jsize(parent_id(ia))*par_grid_ratio(ia)
+          src_grid_dims(1)=full_Isize(parentid(ia))*pargrid_ratio(ia)
+          src_grid_dims(2)=full_Jsize(parentid(ia))*pargrid_ratio(ia)
           num_sparse_elems=dst_grid_dims(1)*dst_grid_dims(2)
           allocate ( sparse_cols(num_sparse_elems) )
-          Istr=(grid%i_parent_start-1)*par_grid_ratio(ia)+1
-          Jstr=(grid%j_parent_start-1)*par_grid_ratio(ia)+1
+          Istr=(grid%i_parent_start-1)*pargrid_ratio(ia)+1
+          Jstr=(grid%j_parent_start-1)*pargrid_ratio(ia)+1
           jc=0
           DO j=1,dst_grid_dims(2)
             count=(Jstr-1+j-1)*(src_grid_dims(1))+Istr-1

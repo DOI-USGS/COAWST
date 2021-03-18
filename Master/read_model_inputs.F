@@ -40,7 +40,7 @@
       integer :: Ivalue
 # if defined WRF_COUPLING
       integer :: sstupdate
-      integer, allocatable :: parentid(:)
+!     integer, allocatable :: parentid(:)
 # endif
       real(m8), dimension(100) :: Rval
       real(m8) :: FAC
