@@ -3651,10 +3651,11 @@
      &                            GRID(rg)%pm,                          &
      &                            GRID(rg)%pn,                          &
 #  ifdef MASKING
-!    &                            GRID(dg)%rmask_full,                  &
-!    &                            GRID(rg)%rmask_full,                  &
-     &                            GRID(dg)%rmask,                       &
+!jcw
+     &                            GRID(dg)%rmask_full,                  &
      &                            GRID(rg)%rmask,                       &
+!    &                            GRID(dg)%rmask,                       &
+!    &                            GRID(rg)%rmask,                       &
 #  endif
      &                            OCEAN(dg)%t(:,:,:,Dindex3d,itrc),     &
      &                            OCEAN(rg)%t(:,:,:,Rindex3d,itrc))
@@ -4116,11 +4117,13 @@
 # endif
               END DO
             END DO
-!jcw            IF (my_count.gt.0.0_r8) my_avg=my_sum/my_count
+!jcw        IF (my_count.gt.0.0_r8) my_avg=my_sum/my_count
             IF (my_count.gt.0.0_r8) THEN
               my_avg=my_sum/my_count
             ELSE
-              my_avg=C1(Ic,Jc)
+              IF (gtype.eq.r2dvar) THEN
+                my_avg=C1(Ic,Jc)
+              END IF
             END IF
 # ifdef MASKING
             my_avg=my_avg*Cmsk(Ic,Jc)
@@ -4482,7 +4485,14 @@
 #  endif
                 END DO
               END DO
-              IF (my_count.gt.0.0_r8) my_avg=my_sum/my_count
+!jcw          IF (my_count.gt.0.0_r8) my_avg=my_sum/my_count
+              IF (my_count.gt.0.0_r8) THEN
+                my_avg=my_sum/my_count
+              ELSE
+                IF (gtype.eq.r3dvar) THEN
+!                  my_avg=C(Ic,Jc,k)
+                END IF
+              END IF
 #  ifdef MASKING
               my_avg=my_avg*Cmsk(Ic,Jc)
 #  endif
