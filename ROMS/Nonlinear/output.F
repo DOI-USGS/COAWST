@@ -97,6 +97,7 @@
           END IF
           IF ((nrrec(ng).ne.0).and.(iic(ng).eq.ntstart(ng))) THEN
             IF ((iic(ng)-1).eq.idefHIS(ng)) THEN
+              HIS(ng)%load=0                  ! restart, reset counter
               Ldefine=.FALSE.                 ! finished file, delay
             ELSE                              ! creation of next file
               Ldefine=.TRUE.
