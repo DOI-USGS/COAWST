@@ -3,9 +3,9 @@
 #ifdef NONLINEAR
       SUBROUTINE output (ng)
 !
-!svn $Id: output.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: output.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -47,7 +47,7 @@
 !  Local variable declarations.
 !
       logical :: Ldefine, NewFile
-
+!
       integer :: Fcount, ifile, status, tile
 # ifdef FILTERED_RST
       integer :: i
@@ -133,12 +133,7 @@
             Fcount=HIS(ng)%load
             HIS(ng)%Nrec(Fcount)=0
             IF (Master) THEN
-              WRITE (HIS(ng)%name,10) TRIM(HIS(ng)%base), ifile
-#  ifdef LONG_NUMS
-  10          FORMAT (a,'_',i5.5,'.nc')
-#  else
-  10          FORMAT (a,'_',i4.4,'.nc')
-#  endif
+              WRITE (HIS(ng)%name,20) TRIM(HIS(ng)%base), ifile
             END IF
 #  ifdef DISTRIBUTE
             CALL mp_bcasts (ng, iNLM, HIS(ng)%name)
@@ -244,13 +239,8 @@
             Fcount=QCK(ng)%load
             QCK(ng)%Nrec(Fcount)=0
             IF (Master) THEN
-              WRITE (QCK(ng)%name,12) TRIM(QCK(ng)%base), ifile
+              WRITE (QCK(ng)%name,20) TRIM(QCK(ng)%base), ifile
             END IF
-#ifdef LONG_NUMS
-  12          FORMAT (a,'_',i5.5,'.nc')
-#else
-  12          FORMAT (a,'_',i4.4,'.nc')
-#endif
 # ifdef DISTRIBUTE
             CALL mp_bcasts (ng, iNLM, QCK(ng)%name)
 # endif
@@ -409,6 +399,7 @@
           END IF
           IF ((nrrec(ng).ne.0).and.(iic(ng).eq.ntstart(ng))) THEN
             IF ((iic(ng)-1).eq.idefAVG(ng)) THEN
+              AVG(ng)%load=0                  ! restart, reset counter
               Ldefine=.FALSE.                 ! finished file, delay
             ELSE                              ! creation of next file
               NewFile=.FALSE.
@@ -449,11 +440,6 @@
             AVG(ng)%Nrec(Fcount)=0
             IF (Master) THEN
               WRITE (AVG(ng)%name,20) TRIM(AVG(ng)%base), ifile
-#ifdef LONG_NUMS
-  20          FORMAT (a,'_',i5.5,'.nc')
-#else
-  20          FORMAT (a,'_',i4.4,'.nc')
-#endif
             END IF
 #  ifdef DISTRIBUTE
             CALL mp_bcasts (ng, iNLM, AVG(ng)%name)
@@ -647,12 +633,7 @@
             Fcount=DIA(ng)%load
             DIA(ng)%Nrec(Fcount)=0
             IF (Master) THEN
-              WRITE (DIA(ng)%name,30) TRIM(DIA(ng)%base), ifile
-#ifdef LONG_NUMS
-  30          FORMAT (a,'_',i5.5,'.nc')
-#else
-  30          FORMAT (a,'_',i4.4,'.nc')
-#endif
+              WRITE (DIA(ng)%name,20) TRIM(DIA(ng)%base), ifile
             END IF
 #  ifdef DISTRIBUTE
             CALL mp_bcasts (ng, iNLM, DIA(ng)%name)
@@ -782,7 +763,6 @@
 !
       IF (LwrtRST(ng)) THEN
         IF ((iic(ng).gt.ntstart(ng)).and.                               &
-!    & ((MOD(iic(ng)-1,nRST(ng)).eq.0) .or. ((iic(ng)-1)==ntimes(ng)))) THEN
      &      (MOD(iic(ng)-1,nRST(ng)).eq.0)) THEN
           CALL wrt_rst (ng)
           IF (FoundError(exit_flag, NoError, __LINE__,                  &
@@ -797,8 +777,9 @@
         END IF
       END IF
 
-# if (defined FOUR_DVAR || defined VERIFICATION) && \
-     !defined IS4DVAR_SENSITIVITY
+# if (defined FOUR_DVAR              || \
+      defined VERIFICATION)          && \
+     !defined I4DVAR_ANA_SENSITIVITY
 #  ifdef OBSERVATIONS
 !
 !-----------------------------------------------------------------------
@@ -810,9 +791,16 @@
      &    (ObsTime(ng).lt.(time(ng)+0.5_r8*dt(ng)))) THEN
         ProcessObs=.TRUE.
         CALL obs_read (ng, iNLM, .FALSE.)
+#   ifdef SP4DVAR
+        IF (iic(ng).ne.ntend(ng)+1.or.Lsadd(ng)) THEN
+          CALL obs_write (ng, tile, iNLM)
+          CALL obs_cost (ng, iNLM)
+        END IF
+#   else
         CALL obs_write (ng, tile, iNLM)
-#   if !(defined VERIFICATION || defined W4DVAR)
+#    if !(defined R4DVAR || defined VERIFICATION)
         CALL obs_cost (ng, iNLM)
+#    endif
 #   endif
       ELSE
         ProcessObs=.FALSE.
@@ -827,6 +815,19 @@
 !
       CALL wclock_off (ng, iNLM, 8, __LINE__, __FILE__)
 # endif
+!
+ 10   FORMAT (/,' OUTPUT - multi-file counter ',a,i0,                   &
+     &          ', is greater than Nfiles = ',i0,1x,'dimension',        &
+     &        /,10x,'in structure when creating next file: ',           &
+     &           a,'_',i4.4,'.nc',                                      &
+     &        /,10x,'Incorrect OutFiles logic in ''read_phypar''.')
+#  ifdef LONG_NUMS
+ 20   FORMAT (a,'_',i5.5,'.nc')
+#  else
+ 20   FORMAT (a,'_',i4.4,'.nc')
+#  endif
+!
+
       RETURN
       END SUBROUTINE output
 #else
