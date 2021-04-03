@@ -127,8 +127,8 @@
      &                             ifile
               END IF
               exit_flag=4
-              IF (FoundError(exit_flag, NoError,                        &
-     &                       __LINE__, MyFile)) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                     __FILE__)) RETURN
             END IF
             Fcount=HIS(ng)%load
             HIS(ng)%Nrec(Fcount)=0
@@ -238,8 +238,8 @@
      &                             ifile
               END IF
               exit_flag=4
-              IF (FoundError(exit_flag, NoError,                        &
-     &                       __LINE__, MyFile)) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                     __FILE__)) RETURN
             END IF
             Fcount=QCK(ng)%load
             QCK(ng)%Nrec(Fcount)=0
@@ -442,8 +442,8 @@
      &                             ifile
               END IF
               exit_flag=4
-              IF (FoundError(exit_flag, NoError,                        &
-     &                       __LINE__, MyFile)) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                       __FILE__)) RETURN
             END IF
             Fcount=AVG(ng)%load
             AVG(ng)%Nrec(Fcount)=0
@@ -641,8 +641,8 @@
      &                             ifile
               END IF
               exit_flag=4
-              IF (FoundError(exit_flag, NoError,                        &
-     &                       __LINE__, MyFile)) RETURN
+              IF (FoundError(exit_flag, NoError, __LINE__,              &
+     &                     __FILE__)) RETURN
             END IF
             Fcount=DIA(ng)%load
             DIA(ng)%Nrec(Fcount)=0
