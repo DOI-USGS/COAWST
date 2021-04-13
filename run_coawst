@@ -5,7 +5,7 @@
 #PBS -l nodes=1:ppn=8,walltime=120:00:00
 ### Mail to user
 #PBS -m ae
-#PBS -M jcwarner@usgs.gov
+#PBS -M user@mywork.edu
 ### Out files
 ###PBS -e isabel_105.err
 ###PBS -o isabel_105.out
