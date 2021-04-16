@@ -1,6 +1,6 @@
 #!/bin/bash
 # --------------------------------------------------------------------------- #
-# install_ww3_tar: install WAVEWATCH III version 4 from tar archive files     #
+# install_ww3_tar: install WAVEWATCH III version 6 from tar archive files     #
 #                                                                             #
 # -remarks :                                                                  #
 #                                                                             #
@@ -23,7 +23,7 @@
 
 # clear
   echo -e '\n\n\n                  ==================================='
-  echo -e '              ------ Installing WAVEWATCH III  v.4 ------'
+  echo -e '              ------ Installing WAVEWATCH III  v.6 ------'
   echo -e '                  =================================== \n'
   echo -e '                  Script for installing WAVEWATCH III. '
   echo -e '                  Modified to work in COAWST distribution.\n'
@@ -172,7 +172,7 @@ echo ' '                                         >> $ww3_env
 
   if [ "${FORT}" = "ifort" ]
   then
-     ./w3_setup -c Intel -s $WW3_SWITCH_FILE -t $main_dir/tmp -q ..
+     ./w3_setup -c intel -s $WW3_SWITCH_FILE -t $main_dir/tmp -q ..
   else
     ./w3_setup -c $FORT -s $WW3_SWITCH_FILE -t $main_dir/tmp -q ..
   fi

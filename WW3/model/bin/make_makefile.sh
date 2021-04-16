@@ -100,7 +100,8 @@
               dstress s_ice s_is reflection s_xx \
               wind windx wcor rwind curr currx mgwind mgprop mggse \
               subsec tdyn dss0 pdif tide refrx ig rotag arctic nnt mprf \
-              cou oasis agcm ogcm igcm trknc setup pdlib memck uost coawst
+              cou oasis agcm ogcm igcm trknc setup pdlib memck uost rstwind b4b \
+              coawst
   do
     case $type in
 #sort:mach:
@@ -258,6 +259,13 @@
                ID='wind vs. current definition'
                TS='RWND'
                OK='RWND' ;;
+
+#sort:rstwind:
+      rstwind  ) TY='upto1'
+               ID='wind in restart for wmesmf'
+               TS='WRST'
+               OK='WRST' ;;
+
 #sort:curr:
       curr   ) TY='one'
                ID='current interpolation in time'
@@ -391,6 +399,11 @@
                ID='unresolved obstacles source term'
                TS='UOST'
                OK='UOST' ;;
+#sort:b4b:
+      b4b    ) TY='upto1'
+               ID='bit-for-bit reproducability'
+               TS='B4B'
+               OK='B4B' ;;
    esac
 
     n_found='0'
@@ -508,6 +521,7 @@
       memck  ) memck=$sw ;;
       setup  ) setup=$sw ;;
       uost   ) uost=$sw ;;
+      b4b    ) b4b=$sw ;;
               *    ) ;;
     esac
   done
@@ -544,6 +558,13 @@
   then
       echo ' '
       echo "   *** !/ARC has to be used in combination with !/SMC"
+      echo ' ' ; exit 9
+  fi
+
+  if [ -n "$b4b" ] && [ -z "$thread2" ]
+  then
+      echo ' '
+      echo "   *** !/B4B should be used in combination with !/OMPG, !/OMPH or !/OMPX"
       echo ' ' ; exit 9
   fi
 
@@ -869,6 +890,7 @@
          ww3_ounp ww3_gspl ww3_gint ww3_bound ww3_bounc ww3_systrk $tideprog"
   progs="$progs ww3_multi_esmf  ww3_uprstr"
   progs="$progs libww3"
+  progs="$progs libww3.so"
 
   for prog in $progs
   do
@@ -879,7 +901,17 @@
                prop=
              source="w3parall w3triamd $stx $nlx $btx $is $uostmd"
                  IO='w3iogrmd'
-                aux="constants w3servmd w3arrymd w3dispmd w3gsrumd w3timemd w3nmlgridmd $pdlibyow $memcode" ;;
+                aux="constants w3servmd w3arrymd w3dispmd w3gsrumd w3timemd w3nmlgridmd $pdlibyow $memcode"
+                if [ "$scrip" = 'SCRIP' ]
+                then
+                  aux="$aux scrip_constants scrip_grids scrip_iounitsmod"
+                  aux="$aux scrip_remap_vars scrip_timers scrip_errormod scrip_interface"
+                  aux="$aux scrip_kindsmod scrip_remap_conservative wmscrpmd" 
+                fi 
+                if [ "$scripnc" = 'SCRIPNC' ]
+                then
+                  aux="$aux scrip_netcdfmod scrip_remap_write scrip_remap_read"
+                fi ;;
      ww3_strt) IDstring='Initial conditions program'
                core=
                data="$memcode w3gdatmd w3wdatmd w3adatmd w3idatmd w3odatmd"
@@ -914,7 +946,8 @@
                prop=
              source="$pdlibcode $pdlibyow $db $bt $setupcode w3triamd $stx $nlx $btx $is w3parall $uostmd"
                  IO="w3iogrmd $oasismd $agcmmd $ogcmmd $igcmmd"
-                aux="constants w3servmd w3timemd w3arrymd w3dispmd w3gsrumd $tidecode w3nmlprncmd" ;;
+                aux="constants w3servmd w3timemd w3arrymd w3dispmd w3gsrumd w3tidemd w3nmlprncmd" ;;
+#               aux="constants w3servmd w3timemd w3arrymd w3dispmd w3gsrumd $tidecode w3nmlprncmd" ;;
     ww3_prtide) IDstring='Tide prediction'
                core='w3fldsmd'
                data="wmmdatmd $memcode w3gdatmd w3wdatmd w3adatmd w3idatmd w3odatmd"
@@ -995,7 +1028,7 @@
              source="$pdlibcode $pdlibyow $db $bt $setupcode w3parall w3triamd $stx $nlx $btx  $is $uostmd"
                  IO='w3iogrmd w3iogomd w3iorsmd w3iopomd'
                 aux="constants w3servmd w3timemd w3arrymd w3dispmd w3gsrumd"
-                aux="$aux w3nmlounfmd $smco" ;;
+                aux="$aux w3nmlounfmd $smco w3ounfmetamd" ;;
      ww3_outp) IDstring='Point output'
                core=
                data="wmmdatmd w3parall w3triamd $memcode w3gdatmd w3wdatmd w3adatmd w3idatmd w3odatmd"
@@ -1077,6 +1110,13 @@
              source="w3triamd w3srcemd $dsx $flx $ln $st $nl $bt $ic $is $db $tr $bs $xx $refcode $igcode $uostmd"
                  IO='w3iogrmd w3iogomd w3iopomd w3iotrmd w3iorsmd w3iobcmd w3iosfmd w3partmd'
                 aux="constants w3servmd w3timemd $tidecode w3arrymd w3dispmd w3cspcmd w3gsrumd" ;;
+     libww3.so) IDstring='Object file archive'
+               core='w3fldsmd w3initmd w3wavemd w3wdasmd w3updtmd'
+               data='wmmdatmd w3gdatmd w3wdatmd w3adatmd w3idatmd w3odatmd'
+               prop="$pr"
+             source="w3triamd w3srcemd $dsx $flx $ln $st $nl $bt $ic $is $db $tr $bs $xx $refcode $igcode $uostmd"
+                 IO='w3iogrmd w3iogomd w3iopomd w3iotrmd w3iorsmd w3iobcmd w3iosfmd w3partmd'
+                aux="constants w3servmd w3timemd $tidecode w3arrymd w3dispmd w3cspcmd w3gsrumd" ;;  
      ww3_uprstr) IDstring='Update Restart File' 
               core= 
 	          data='wmmdatmd w3triamd w3gdatmd w3wdatmd w3adatmd w3idatmd w3odatmd' 
@@ -1084,7 +1124,7 @@
             source="$memcode $pdlibcode $pdlibyow $flx $ln $st $nl $bt $ic $is $db $tr $bs $xx $uostmd"
                 IO='w3iogrmd w3iogomd w3iorsmd' 
                aux="constants w3servmd w3timemd w3arrymd w3dispmd w3gsrumd" 
-               aux="$aux w3parall" ;; 
+               aux="$aux w3parall w3nmluprstrmd" ;; 
     esac
 
     # if esmf is included in program name, then
@@ -1096,7 +1136,7 @@
       filesl="$data $core $prop $source $IO $aux"
     # if program name is libww3, then
     # the target is compile and create archive
-    elif [ "$prog" = "libww3" ]
+    elif [ "$prog" = "libww3" ] ||  [ "$prog" = "libww3.so" ]
     then
       d_string="$prog"' : $(aPo)/'
       files="$aux $core $data $prop $source $IO"
@@ -1141,6 +1181,19 @@
       done
       echo "	@cd \$(aPo); $ar_cmd $lib $objs" >> makefile
       echo ' '                                   >> makefile
+    # if program name is libww3.so, then
+    # the target is compile and create archive
+    elif [ "$prog" = "libww3.so" ]
+    then
+      lib=$prog
+      objs=""
+      for file in $filesl
+      do
+        objs="$objs $file.o"
+      done
+      echo "	@cd \$(aPo); ld -o $lib -shared $objs" >> makefile
+      echo ' '                                   >> makefile
+      
     else
       echo '	@$(aPb)/link '"$filesl"          >> makefile
       echo ' '                                   >> makefile
@@ -1346,6 +1399,7 @@
          'W3NMLBOUNCMD' ) modtest=w3nmlbouncmd.o ;;
          'W3NMLSHELMD'  ) modtest=w3nmlshelmd.o ;;
          'W3NMLGRIDMD'  ) modtest=w3nmlgridmd.o ;;
+         'W3NMLUPRSTRMD' ) modtest=w3nmluprstrmd.o ;;
          'W3NETCDF'     ) modtest=w3netcdf.o ;;
          'YOWFUNCTION'  ) modtest=yowfunction.o ;;
          'YOWDATAPOOL'  ) modtest=yowdatapool.o ;;
@@ -1360,6 +1414,7 @@
          'PDLIB_W3PROFSMD'   ) modtest=w3profsmd_pdlib.o ;;
          'W3PARALL'     ) modtest=w3parall.o ;;
          'W3SMCOMD'     ) modtest=w3smcomd.o ;;
+         'W3OUNFMETAMD' ) modtest=w3ounfmetamd.o ;;
          'CWSTWVCP'     ) modtest=cwstwvcp.o ;;
          *              ) modfound=no ;; 
       esac

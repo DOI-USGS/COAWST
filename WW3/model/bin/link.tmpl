@@ -104,12 +104,40 @@
     fi
   fi
 
+#  # coawst coupler include mct dirs
+#  if [ "$coawst_mod" = 'yes' ]
+#  then
+#    opt="$opt ${FFLAGS}"
+#    opt="$opt -I$MCT_INCDIR"
+#    opt="$opt -I${MCT_PARAMS_DIR}"
+#  fi
+ # coawst coupler archive
+  if [ "$prog" = 'ww3_shel' ] || [ "$prog" = 'ww3_multi' ] || [ "$prog" = 'ww3_sbs1' ]
+  then
+    if [ "$coawst_mod" = 'yes' ]
+    then
+      echo "link with coawst"
+      comp=ar
+      opt="-rv libWW3.a"
+      libs="$libs $MCT_LIBDIR/libmct.a $MCT_LIBDIR/libmpeu.a" ;
+    fi
+  fi
+
+
+  # grib library
+  if [ "$ncep_grib_compile" = 'yes' ]
+  then
+    opt="$opt -convert big_endian -assume byterecl -prec-div -prec-sqrt -ip"
+    libs="$libs ${G2_LIB4} ${W3NCO_LIB4} ${BACIO_LIB4} ${JASPER_LIB} ${PNG_LIB} ${Z_LIB}"
+  fi
+
   # netcdf library dir
   if [ "$netcdf_compile" = 'yes' ] ; then
     case $WWATCH3_NETCDF in
       NC3) libs="$libs -L$NETCDF_LIBDIR -lnetcdf" ;;
       NC4) if [ "$mpi_mod" = 'no' ]; then comp="`$NETCDF_CONFIG --fc`"; fi
-           libs="$libs `$NETCDF_CONFIG --flibs`" ;;
+#          libs="$libs `$NETCDF_CONFIG --flibs` `$NETCDF_CONFIG --libs`" ;;
+           libs="$libs `$NETCDF_CONFIG --flibs`";;
     esac
   fi
 
@@ -126,6 +154,11 @@
     fi
   fi
 
+  # OMP support
+  if [ "$omp_mod" = 'yes' ] ; then
+    opt="$opt <optomp>"
+  fi
+
   opt="$opt $EXTRA_LINK_OPTIONS"
 
 # 3.b Link - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -139,6 +172,8 @@
       rpath="$rpath ${rprfx}${path//-L/}"
     fi
   done
+
+  echo -e "jcw Your link settings are $comp $opt $objects $libs $rpath" 
 
   $comp $opt $objects $libs $rpath                  > link.out 2> link.err
   OK="$?"
@@ -161,14 +196,22 @@
   else
     if [ ! -f $prog ]
     then
-      echo "      *** program $prog not found ***"
+      if [ "$coawst_mod" = 'yes' ]
+      then
+        echo "      *** $prog is in libWW3.a ***"
+      else
+        echo "      *** program $prog not found ***"
+      fi
       echo ' '
       cat link.out
       echo ' '
       cat link.err
       echo ' '
       rm -f link.???
-      exit 1
+      if [ "$coawst_mod" != 'yes' ]
+      then
+        exit 1
+      fi
     else
       mv $prog $main_dir/exe/.
       rm -f link.???
