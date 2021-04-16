@@ -75,18 +75,18 @@ ifdef USE_ROMS
            FFLAGS += -check bounds
            FFLAGS += -traceback
            FFLAGS += -check uninit
-           FFLAGS += -warn interfaces,nouncalled -gen-interfaces
+#           FFLAGS += -warn interfaces,nouncalled -gen-interfaces
            FFLAGS += -gen-interfaces
 ##         FFLAGS += -fp-stack-check
 #          FFLAGS += -Wl,-no_compact_unwind
 #          FFLAGS += -Wl,-stack_size,0x64000000
-           FFLAGS += -ftrapuv -fpe0
+#           FFLAGS += -ftrapuv -fpe0
  else
            FFLAGS += -ip -O3
            FFLAGS += -traceback
 #          FFLAGS += -Wl,-stack_size,0x64000000
   ifndef USE_WRFHYDRO
-           FFLAGS += -check uninit
+#           FFLAGS += -check uninit
   endif
  endif
 endif
