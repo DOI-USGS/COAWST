@@ -3,9 +3,9 @@
 
 #ifdef RPCG
 !
-!svn $Id: comp_Jb0.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: comp_Jb0.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -16,11 +16,11 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC comp_Jb0
       PUBLIC aug_oper
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -107,6 +107,7 @@
      &                    OCEAN(ng) % ad_vbar,                          &
 # endif
      &                    OCEAN(ng) % ad_zeta)
+!
       RETURN
       END SUBROUTINE comp_Jb0
 !
@@ -161,15 +162,15 @@
       USE mod_param
       USE mod_ncparam
       USE mod_fourdvar
-# if defined ADJUST_STFLUX   || defined ADJUST_WSTRESS || \
-     defined ADJUST_BOUNDARY
+      USE mod_iounits
+      USE mod_netcdf
       USE mod_scalars
-# endif
 # ifdef ADJUST_BOUNDARY
       USE mod_boundary
 # endif
 !
       USE state_dotprod_mod, ONLY : state_dotprod
+      USE strings_mod,       ONLY : FoundError
 !
 !  Imported variable declarations.
 !
@@ -281,6 +282,9 @@
 !  Local variable declarations.
 !
       real(r8), dimension(0:NstateVar(ng)) :: dot
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", comp_Jb0_tile"
 
 # include "set_bounds.h"
 !
@@ -326,9 +330,20 @@
      &                    ad_vbar(:,:,LADJ), tl_vbar(:,:,LTLM),         &
 # endif
      &                    ad_zeta(:,:,LADJ), tl_zeta(:,:,LTLM))
-
+!
+!  Compute outer loop background cost function.
+!
       Jb0(outLoop)=Jb0(outLoop)+dot(0)
-
+!
+!  Write out outer loop background cost function into 4D-Var NetCDF
+!  (DAV struc) file.  Recall that Jb0(0:Nouter)
+!
+      CALL netcdf_put_fvar (ng, model, DAV(ng)%name,                    &
+     &                      'Jb0', Jb0(0:),                             &
+     &                      (/1/), (/Nouter+1/),                        &
+     &                      ncid = DAV(ng)%ncid)
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
       RETURN
       END SUBROUTINE comp_Jb0_tile
 !
@@ -384,7 +399,7 @@
      &                    OCEAN(ng) % tl_vbar,                          &
 # endif
      &                    OCEAN(ng) % tl_zeta)
-
+!
       RETURN
       END SUBROUTINE aug_oper
 !
@@ -862,7 +877,7 @@
       END DO
 #  endif
 # endif
-
+!
       RETURN
       END SUBROUTINE aug_oper_tile
 #endif

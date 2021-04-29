@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_scalars
 !
-!svn $Id: mod_scalars.F 1007 2020-02-25 22:29:41Z arango $
+!svn $Id: mod_scalars.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -203,7 +203,6 @@
 #  endif
 # endif
 #endif
-
 !
 !-----------------------------------------------------------------------
 !  Time stepping indices, variables, and clocks.
@@ -240,12 +239,6 @@
 !    dstart        Time stamp assigned to model initialization (usually
 !                    a Calendar day, like modified Julian Day).
 !    tide_start    Reference time for tidal forcing (days).
-#ifdef CICE_MODEL
-!    tspy          timesteps per year
-!    tspd          timesteps per day
-!    dleftinSep    days in September before Oct1 restart
-!    Jan,Feb,...,Nov,Dec  days after restart until first of each month
-#endif
 !
         logical, allocatable :: PerfectRST(:)
         logical, allocatable :: PREDICTOR_2D_STEP(:)
@@ -268,10 +261,10 @@
 
         real(dp), allocatable :: TimeEnd(:)              ! seconds
         real(dp), allocatable :: AVGtime(:)              ! seconds
-        real(dp), allocatable :: AVG2time(:)             ! seconds
         real(dp), allocatable :: DIAtime(:)              ! seconds
         real(dp), allocatable :: IMPtime(:)              ! seconds
         real(dp), allocatable :: INItime(:)              ! seconds
+        real(dp), allocatable :: INItimeS(:)             ! seconds
         real(dp), allocatable :: ObsTime(:)              ! seconds
         real(dp), allocatable :: FrcTime(:)              ! seconds
 #ifdef TIDES_ASTRO
@@ -282,32 +275,15 @@
 #endif
 
         real(dp) :: dstart = 0.0_dp                      ! days
+#ifdef SP4DVAR
+        real(dp) :: dstartS = 0.0_dp                     ! days
+#endif
         real(dp) :: io_time = 0.0_dp                     ! seconds
         real(dp) :: run_time = 0.0_dp                    ! seconds
         real(dp) :: MyRunInterval = 0.0_dp               ! seconds
         real(dp) :: tide_start = 0.0_dp                  ! days
 
         character (len=22) :: F_code, I_code
-
-#ifdef CICE_MODEL
-        real(r8), allocatable :: tspy(:)                 ! timesteps
-        real(r8), allocatable :: tspd(:)                 ! timesteps
-        real(r8) :: dleftinSep = 0.0_r8                  ! days
-        real(r8) :: Jan = 0.0_r8                         ! days
-        real(r8) :: Feb = 0.0_r8                         ! days
-        real(r8) :: Mar = 0.0_r8                         ! days
-        real(r8) :: Apr = 0.0_r8                         ! days
-        real(r8) :: May = 0.0_r8                         ! days
-        real(r8) :: Jun = 0.0_r8                         ! days
-        real(r8) :: Jul = 0.0_r8                         ! days
-        real(r8) :: Aug = 0.0_r8                         ! days
-        real(r8) :: Sep = 0.0_r8                         ! days
-        real(r8) :: Oct = 0.0_r8                         ! days
-        real(r8) :: Nov = 0.0_r8                         ! days
-        real(r8) :: Dec = 0.0_r8                         ! days
-        real(r8), allocatable :: rhoice(:)
-        real(r8), allocatable :: min_a(:)
-#endif
 
         character (len=22), allocatable :: time_code(:)  ! date string
 !$OMP THREADPRIVATE (time_code)
@@ -373,11 +349,24 @@
         integer :: Ninner = 1                   ! number of inner loops
         integer :: Nouter = 1                   ! number of outer loops
         integer :: Nrun = 1                     ! Current counter
-        integer :: inner = 0                    ! inner loop counter
-        integer :: outer = 0                    ! outer loop counter
 #ifdef SENSITIVITY_4DVAR
         integer :: NrunSAVE = 0                 ! Loop counter
 #endif
+        integer :: OuterLoop = 0                ! split outer loop
+        integer :: inner = 0                    ! inner loop counter
+        integer :: outer = 0                    ! outer loop counter
+!
+! Set checksum algorithm: "adler32" or "crc32"
+!
+        character (len=*), parameter :: HashMethod = "crc32"
+!
+! Split 4D-Var phase.
+!
+        character (len=20) :: Phase4DVAR
+!
+! Number of sadde point 4D-Var intervals.
+!
+        integer :: Nsaddle = 1
 !
 !  First, starting, and ending timestepping parameters
 !
@@ -409,6 +398,11 @@
 !
         logical :: ThreeGhostPoints = .FALSE.
 !
+!  Switch to set-up application grid, metrics, and associated variables
+!  and parameters.
+!
+        logical, allocatable :: SetGridConfig(:)
+!
 !  Switch to proccess nudging coefficients for radiation open boundary
 !  conditions.
 !
@@ -424,9 +418,6 @@
 !
         logical, allocatable :: Lbiology(:)
         logical, allocatable :: Lfloats(:)
-#ifdef ICE_MODEL
-        logical, allocatable :: Lice(:)
-#endif
         logical, allocatable :: Lsediment(:)
         logical, allocatable :: Lstations(:)
 !
@@ -439,7 +430,7 @@
 !    Eradius       Earth equatorial radius (m).
 !    Infinity      Value resulting when dividing by zero.
 !    StefBo        Stefan-Boltzmann constant (W/m2/K4).
-!    emmiss        Infrared emmissivity.
+!    emmiss        Infrared emissivity.
 !    g             Acceleration due to gravity (m/s2).
 !    gorho0        gravity divided by mean density anomaly.
 !    rhow          fresh water density (kg/m3).
@@ -453,11 +444,7 @@
         real(dp) :: Csolar = 1353.0_dp          ! 1360-1380 W/m2
         real(dp) :: Infinity                    ! Infinity = 1.0/0.0
         real(dp) :: Eradius = 6371315.0_dp      ! m
-#ifdef ICE_BOX
-        real(dp) :: StefBo = 5.78E-8_dp         ! Watts/m2/K4 (Match MU)
-#else
         real(dp) :: StefBo = 5.67E-8_dp         ! Watts/m2/K4
-#endif
         real(dp) :: emmiss = 0.97_dp            ! non_dimensional
         real(dp) :: rhow = 1000.0_dp            ! kg/m3
 #ifdef SOLITON
@@ -524,9 +511,6 @@
         logical, allocatable :: Lm2CLM(:)            ! 2D momentum
         logical, allocatable :: Lm3CLM(:)            ! 3D momentum
         logical, allocatable :: LtracerCLM(:,:)      ! tracers
-        logical, allocatable :: LmiCLM(:)            ! ice momentum
-        logical, allocatable :: LaiCLM(:)            ! ice tracers
-        logical, allocatable :: LsiCLM(:)            ! ice tracers
 !
 !  Switched to nudge to climatology fields.
 !
@@ -534,9 +518,6 @@
         logical, allocatable :: LnudgeM2CLM(:)       ! 2D momentum
         logical, allocatable :: LnudgeM3CLM(:)       ! 3D momentum
         logical, allocatable :: LnudgeTCLM(:,:)      ! tracers
-        logical, allocatable :: LnudgeMICLM(:)       ! ice momentum
-        logical, allocatable :: LnudgeAICLM(:)       ! ice tracers
-        logical, allocatable :: LnudgeSICLM(:)       ! ice tracers
 !
 !  Switches to activate point Source/Sinks in an application:
 !    * Horizontal momentum transport (u or v)
@@ -559,7 +540,6 @@
 !    exit_flag = 7   Illegal input parameter
 !    exit_flag = 8   Fatal algorithm result
 !    exit_flag = 9   coupling error
-!    exit_flag = 10  Frazil ice error
 !
         integer :: exit_flag = 0
         integer :: blowup = 0
@@ -681,13 +661,23 @@
 !
 !  Minimun and maximum grid spacing
 !
-        real(dp), allocatable :: DXmin(:)
+        real(dp), allocatable :: DXmin(:)       ! all grid points
         real(dp), allocatable :: DXmax(:)
         real(dp), allocatable :: DYmin(:)
         real(dp), allocatable :: DYmax(:)
+#ifdef MASKING
+        real(dp), allocatable :: DXminW(:)      ! only water points
+        real(dp), allocatable :: DXmaxW(:)
+        real(dp), allocatable :: DYminW(:)
+        real(dp), allocatable :: DYmaxW(:)
+#endif
 #ifdef SOLVE3D
-        real(dp), allocatable :: DZmin(:)
+        real(dp), allocatable :: DZmin(:)       ! all grid points
         real(dp), allocatable :: DZmax(:)
+# ifdef MASKING
+        real(dp), allocatable :: DZminW(:)      ! only water points
+        real(dp), allocatable :: DZmaxW(:)
+# endif
 #endif
 !
 !  Maximum size of a grid node (m) over the whole curvilinear grid
@@ -954,12 +944,10 @@
         logical, allocatable :: LdefADJ(:)       ! Adjoint file
         logical, allocatable :: LdefAVG(:)       ! Average file
         logical, allocatable :: LdefDAI(:)       ! DA initial/restart
-        logical, allocatable :: LdefAVG2(:)      ! Average2 file
         logical, allocatable :: LdefDIA(:)       ! Diagnostics file
         logical, allocatable :: LdefERR(:)       ! 4DVar error file
         logical, allocatable :: LdefFLT(:)       ! Floats file
         logical, allocatable :: LdefHIS(:)       ! History file
-        logical, allocatable :: LdefHIS2(:)      ! History2 file
         logical, allocatable :: LdefHSS(:)       ! Hessian file
         logical, allocatable :: LdefINI(:)       ! Initial file
         logical, allocatable :: LdefIRP(:)       ! Initial RPM file
@@ -969,6 +957,12 @@
         logical, allocatable :: LdefMOD(:)       ! 4DVAR file
         logical, allocatable :: LdefQCK(:)       ! Quicksave file
         logical, allocatable :: LdefRST(:)       ! Restart file
+#ifdef SP4DVAR
+        logical, allocatable :: LdefSCA(:)       ! AD scratch state file
+        logical, allocatable :: LdefSCT(:)       ! TL scratch state file
+        logical, allocatable :: LdefSPA(:)       ! AD Arnoldi state file
+        logical, allocatable :: LdefSPT(:)       ! TL Arnoldi state file
+#endif
         logical, allocatable :: LdefSTA(:)       ! Stations file
         logical, allocatable :: LdefTIDE(:)      ! tide forcing file
         logical, allocatable :: LdefTLM(:)       ! Tangent linear file
@@ -976,15 +970,15 @@
 
         logical, allocatable :: LreadADM(:)      ! Read ADM multi-files
         logical, allocatable :: LreadBLK(:)      ! Read NLM bulk fluxes
-        logical, allocatable :: LreadFWD(:)      ! Read NLM trajectory
+        logical, allocatable :: LreadFRC(:)      ! Read FRC files
+        logical, allocatable :: LreadFWD(:)      ! Read FWD trajectory
+        logical, allocatable :: LreadQCK(:)      ! Read QCK trajectory
         logical, allocatable :: LreadTLM(:)      ! Read TLM multi-files
 
         logical, allocatable :: LwrtADJ(:)       ! Write adjoint file
         logical, allocatable :: LwrtAVG(:)       ! Write average file
-        logical, allocatable :: LwrtAVG2(:)      ! Write average2 file
         logical, allocatable :: LwrtDIA(:)       ! Write diagnostic file
         logical, allocatable :: LwrtHIS(:)       ! Write history file
-        logical, allocatable :: LwrtHIS2(:)      ! Write history2 file
         logical, allocatable :: LwrtPER(:)       ! Write during ensemble
         logical, allocatable :: LwrtQCK(:)       ! write quicksave file
         logical, allocatable :: LwrtRST(:)       ! Write restart file
@@ -1005,10 +999,19 @@
         logical, allocatable :: LwrtState2d(:)
         logical, allocatable :: LwrtTime(:)
 !
+!  Switch to write 4D-Var cost functions to DAV NetCDF.
+!
+        logical, allocatable :: LwrtCost(:)
+!
 !  Switch to write out adjoint surface forcing fields adjusted by the
 !  4DVAR algorithms.
 !
         logical, allocatable :: Ladjusted(:)
+!
+!  Switch to append information to an existing ROMS standard output
+!  log file.
+!
+        logical :: Lappend = .FALSE.
 !
 !  Switch to read input open boundary conditions data.
 !
@@ -1032,32 +1035,34 @@
 !
         integer, allocatable :: ndefADJ(:)       ! Adjoint file
         integer, allocatable :: ndefAVG(:)       ! Average file
-        integer, allocatable :: ndefAVG2(:)      ! Average2 file
         integer, allocatable :: ndefDIA(:)       ! Diagnostics file
         integer, allocatable :: ndefHIS(:)       ! History file
-        integer, allocatable :: ndefHIS2(:)      ! History2 file
         integer, allocatable :: ndefQCK(:)       ! Quicksave file
         integer, allocatable :: ndefTLM(:)       ! Tangent linear file
 !
 !  Starting timestep for accumulation of output.
 !
         integer, allocatable :: ntsAVG(:)        ! Average file
-        integer, allocatable :: ntsAVG2(:)       ! Average2 file
         integer, allocatable :: ntsDIA(:)        ! Diagnostics file
 !
 !  Number of timesteps between writing of output data.
 !
         integer, allocatable :: nADJ(:)          ! Adjoint file
         integer, allocatable :: nAVG(:)          ! Average file
-        integer, allocatable :: nAVG2(:)         ! Average2 file
         integer, allocatable :: nDIA(:)          ! Diagnostics file
         integer, allocatable :: nFLT(:)          ! Floats file
         integer, allocatable :: nHIS(:)          ! History file
-        integer, allocatable :: nHIS2(:)         ! History2 file
         integer, allocatable :: nQCK(:)          ! Quicksave file
         integer, allocatable :: nRST(:)          ! Restart file
         integer, allocatable :: nSTA(:)          ! Stations file
         integer, allocatable :: nTLM(:)          ! Tangent linear file
+#ifdef SP4DVAR
+        integer, allocatable :: nSCA(:)          ! AD scratch state file
+        integer, allocatable :: nSCT(:)          ! TL scratch state file
+        integer, allocatable :: nSPA(:)          ! AD Arnoldi state file
+        integer, allocatable :: nSPT(:)          ! TL Arnoldi state file
+        integer, allocatable :: Crec(:)          ! Convolution records
+#endif
 !
 !  Number of timesteps between print of single line information to
 !  standard output.
@@ -1399,6 +1404,9 @@
         real(dp) :: ad_bc_flux = 0.0_dp
         real(dp) :: ad_ubar_xs = 0.0_dp
 #endif
+#ifdef SP4DVAR
+        real(r8) :: sp_sumdot = 0.0_r8
+#endif
 
 #if defined BULK_FLUXES || defined BULK_FLUXES2D
 !
@@ -1432,31 +1440,6 @@
         real(r8), allocatable :: blk_ZT(:)        ! (m)
         real(r8), allocatable :: blk_ZW(:)        ! (m)
 #endif
-
-#ifdef ICESHELF
-!
-!---------------------------------------------------------------------
-!  Define parameters associated with the transfer of heat and salt
-!  beneath the ice shelf (values from Beckmann, et al. (1999) and
-!  Hellmer and Olbers (1989)).  Note that gamma_s and gamma_t
-!  can be changed if ICESHELF_3EQ defined.
-!---------------------------------------------------------------------
-!
-!    gamma_s       Turbulent salt exchange coefficient underneath
-!                    the ice (m/s)
-!    gamma_t       Turbulent heat exchange coefficient underneath
-!                    the ice (m/s)
-!    Hlfreeze      Latent heat for freezing salt water (J/kg)
-!    rho_ice       Density of sea-ice (kg/m^3)
-!    blk_Cpi       Specific heat capicity of ice (J/kg/deg C)
-!
-        real(dp) :: gamma_s = 5.05E-7_dp       ! (m/s)
-        real(dp) :: gamma_t = 1.00E-4_dp       ! (m/s)
-        real(dp) :: Hlfreeze = 334000.0_dp     ! (J/kg)
-        real(dp) :: rho_ice = 930.0_dp         ! (kg/m^3)
-        real(dp) :: blk_Cpi = 2000.0_dp        ! (J/kg/C)
-#endif
-
 # if defined SG_BBL || defined SSW_BBL
 !
 !-----------------------------------------------------------------------
@@ -1843,47 +1826,6 @@
 #ifdef FILTERED
         integer :: filtindx
 #endif
-
-#ifdef ICE_MODEL
-        integer, allocatable :: nstrs(:)
-        integer, allocatable :: nevp(:)
-        integer, allocatable :: ievp(:)
-
-        real(r8) :: tol     =  1.0E-16
-        real(r8) :: ice_emiss =  0.97_r8
-        real(r8) :: spec_heat_air =  1004._r8
-        real(r8) :: trans_coeff = 1.75E-3
-        real(r8) :: sublim_latent_heat = 2.834E+6
-        real(r8) :: t0deg = 273.15_r8                     ! [Kelvin]
-!       real(r8), parameter :: sice_ref = 3.2_r8          ! [psu]
-        real(r8), parameter :: sice_ref = 7.0_r8          ! [psu]
-
-        real(r8), allocatable :: dtice(:)
-        real(r8), allocatable :: dte(:)
-        real(r8), allocatable :: rhoice(:)
-        real(r8), allocatable :: cdiw(:)
-        real(r8), allocatable :: cdai(:)
-        real(r8), allocatable :: rho_air(:)
-        real(r8), allocatable :: rhosnow_dry(:)
-        real(r8), allocatable :: rhosnow_wet(:)
-        real(r8), allocatable :: pstar(:)
-        real(r8), allocatable :: pstar_e(:)
-        real(r8), allocatable :: zetamax(:)
-        real(r8), allocatable :: zetamin(:)
-        real(r8), allocatable :: ellip_sq(:)
-        real(r8), allocatable :: astren(:)
-        real(r8), allocatable :: alphai(:)
-        real(r8), allocatable :: min_h(:)
-        real(r8), allocatable :: min_a(:)
-        real(r8), allocatable :: max_a(:)
-        real(r8), allocatable :: stressang(:)
-# ifdef ICE_LANDFAST
-        real(r8), allocatable :: lf_k1(:)
-        real(r8), allocatable :: lf_k2(:)
-        real(r8), allocatable :: lf_u0(:)
-# endif
-#endif
-
       CONTAINS
 !
       SUBROUTINE allocate_scalars
@@ -2036,10 +1978,6 @@
         allocate ( AVGtime(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
-      IF (.not.allocated(AVG2time)) THEN
-        allocate ( AVG2time(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
       IF (.not.allocated(DIAtime)) THEN
         allocate ( DIAtime(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -2050,6 +1988,10 @@
       END IF
       IF (.not.allocated(INItime)) THEN
         allocate ( INItime(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(INItimeS)) THEN
+        allocate ( INItimeS(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
       IF (.not.allocated(ObsTime)) THEN
@@ -2094,24 +2036,6 @@
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 #endif
-#ifdef CICE_MODEL
-      IF (.not.allocated(tspy)) THEN
-        allocate ( tspy(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(tspd)) THEN
-        allocate ( tspd(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(rhoice)) THEN
-        allocate ( rhoice(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(min_a)) THEN
-        allocate ( min_a(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-#endif
 
 !$OMP PARALLEL
       IF (.not.allocated(synchro_flag)) THEN
@@ -2141,6 +2065,11 @@
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 
+      IF (.not.allocated(SetGridConfig)) THEN
+        allocate ( SetGridConfig(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+
       IF (.not.allocated(NudgingCoeff)) THEN
         allocate ( NudgingCoeff(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -2159,12 +2088,6 @@
         allocate ( Lfloats(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
-#ifdef ICE_MODEL
-      IF (.not. allocated(Lice)) THEN
-        allocate ( Lice(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-#endif
       IF (.not.allocated(Lsediment)) THEN
         allocate ( Lsediment(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -2253,19 +2176,6 @@
         Dmem(1)=Dmem(1)+REAL(MT*Ngrids,r8)
       END IF
 
-      IF (.not. allocated(LmiCLM)) THEN
-        allocate ( LmiCLM(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not. allocated(LaiCLM)) THEN
-        allocate ( LaiCLM(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not. allocated(LsiCLM)) THEN
-        allocate ( LsiCLM(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-
       IF (.not.allocated(Lnudging)) THEN
         allocate ( Lnudging(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -2281,19 +2191,6 @@
       IF (.not.allocated(LnudgeTCLM)) THEN
         allocate ( LnudgeTCLM(MT,Ngrids) )
         Dmem(1)=Dmem(1)+REAL(MT*Ngrids,r8)
-      END IF
-
-      IF (.not. allocated(LnudgeMICLM)) THEN
-        allocate ( LnudgeMICLM(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not. allocated(LnudgeAICLM)) THEN
-        allocate ( LnudgeAICLM(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not. allocated(LnudgeSICLM)) THEN
-        allocate ( LnudgeSICLM(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 
       IF (.not.allocated(LuvSrc)) THEN
@@ -2431,6 +2328,27 @@
         allocate ( DYmax(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+
+#ifdef MASKING
+      IF (.not.allocated(DXminW)) THEN
+        allocate ( DXminW(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(DXmaxW)) THEN
+        allocate ( DXmaxW(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(DYminW)) THEN
+        allocate ( DYminW(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(DYmaxW)) THEN
+        allocate ( DYmaxW(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+#endif
+
+
 #ifdef SOLVE3D
       IF (.not.allocated(DZmin)) THEN
         allocate ( DZmin(Ngrids) )
@@ -2440,6 +2358,16 @@
         allocate ( DZmax(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+# ifdef MASKING
+      IF (.not.allocated(DZminW)) THEN
+        allocate ( DZminW(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(DZmaxW)) THEN
+        allocate ( DZmaxW(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+# endif
 #endif
 
       IF (.not.allocated(grdmax)) THEN
@@ -2704,10 +2632,6 @@
         allocate ( LdefAVG(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
-      IF (.not.allocated(LdefAVG2)) THEN
-        allocate ( LdefAVG2(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
       IF (.not.allocated(LdefDAI)) THEN
         allocate ( LdefDAI(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -2726,10 +2650,6 @@
       END IF
       IF (.not.allocated(LdefHIS)) THEN
         allocate ( LdefHIS(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(LdefHIS2)) THEN
-        allocate ( LdefHIS2(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
       IF (.not.allocated(LdefHSS)) THEN
@@ -2768,6 +2688,24 @@
         allocate ( LdefRST(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+#ifdef SP4DVAR
+      IF (.not.allocated(LdefSCA)) THEN
+        allocate ( LdefSCA(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(LdefSCT)) THEN
+        allocate ( LdefSCT(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(LdefSPA)) THEN
+        allocate ( LdefSPA(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(LdefSPT)) THEN
+        allocate ( LdefSPT(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+#endif
       IF (.not.allocated(LdefSTA)) THEN
         allocate ( LdefSTA(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -2793,8 +2731,16 @@
         allocate ( LreadBLK(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+      IF (.not.allocated(LreadFRC)) THEN
+        allocate ( LreadFRC(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
       IF (.not.allocated(LreadFWD)) THEN
         allocate ( LreadFWD(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(LreadQCK)) THEN
+        allocate ( LreadQCK(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
       IF (.not.allocated(LreadTLM)) THEN
@@ -2810,20 +2756,12 @@
         allocate ( LwrtAVG(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
-      IF (.not.allocated(LwrtAVG2)) THEN
-        allocate ( LwrtAVG2(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
       IF (.not.allocated(LwrtDIA)) THEN
         allocate ( LwrtDIA(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
       IF (.not.allocated(LwrtHIS)) THEN
         allocate ( LwrtHIS(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(LwrtHIS2)) THEN
-        allocate ( LwrtHIS2(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
       IF (.not.allocated(LwrtPER)) THEN
@@ -2875,6 +2813,10 @@
         allocate ( LwrtTime(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+      IF (.not.allocated(LwrtCost)) THEN
+        allocate ( LwrtCost(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
 
       IF (.not.allocated(Ladjusted)) THEN
         allocate ( Ladjusted(Ngrids) )
@@ -2908,20 +2850,12 @@
         allocate ( ndefAVG(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
-      IF (.not.allocated(ndefAVG2)) THEN
-        allocate ( ndefAVG2(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
       IF (.not.allocated(ndefDIA)) THEN
         allocate ( ndefDIA(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
       IF (.not.allocated(ndefHIS)) THEN
         allocate ( ndefHIS(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(ndefHIS2)) THEN
-        allocate ( ndefHIS2(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
       IF (.not.allocated(ndefQCK)) THEN
@@ -2937,10 +2871,6 @@
         allocate ( ntsAVG(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
-      IF (.not.allocated(ntsAVG2)) THEN
-        allocate ( ntsAVG2(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
       IF (.not.allocated(ntsDIA)) THEN
         allocate ( ntsDIA(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -2954,10 +2884,6 @@
         allocate ( nAVG(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
-      IF (.not.allocated(nAVG2)) THEN
-        allocate ( nAVG2(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
       IF (.not.allocated(nDIA)) THEN
         allocate ( nDIA(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -2968,10 +2894,6 @@
       END IF
       IF (.not.allocated(nHIS)) THEN
         allocate ( nHIS(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(nHIS2)) THEN
-        allocate ( nHIS2(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
       IF (.not.allocated(nQCK)) THEN
@@ -2990,6 +2912,28 @@
         allocate ( nTLM(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
+#ifdef SP4DVAR
+      IF (.not.allocated(nSCA)) THEN
+        allocate ( nSCA(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(nSCT)) THEN
+        allocate ( nSCT(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(nSPA)) THEN
+        allocate ( nSPA(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(nSPT)) THEN
+        allocate ( nSPT(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+      IF (.not.allocated(Crec)) THEN
+        allocate ( Crec(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+#endif
 
       IF (.not.allocated(ninfo)) THEN
         allocate ( ninfo(Ngrids) )
@@ -3345,112 +3289,6 @@
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 
-#ifdef ICE_MODEL
-      IF (.not.allocated(nstrs)) THEN
-        allocate ( nstrs(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(nevp)) THEN
-        allocate ( nevp(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(ievp)) THEN
-        allocate ( ievp(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-
-      IF (.not.allocated(dtice)) THEN
-        allocate ( dtice(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(dte)) THEN
-        allocate ( dte(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(rhoice)) THEN
-        allocate ( rhoice(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(cdiw)) THEN
-        allocate ( cdiw(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(cdai)) THEN
-        allocate ( cdai(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(rho_air)) THEN
-        allocate ( rho_air(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(rhosnow_dry)) THEN
-        allocate ( rhosnow_dry(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(rhosnow_wet)) THEN
-        allocate ( rhosnow_wet(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(pstar)) THEN
-        allocate ( pstar(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(pstar_e)) THEN
-        allocate ( pstar_e(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(zetamax)) THEN
-        allocate ( zetamax(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(zetamin)) THEN
-        allocate ( zetamin(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(ellip_sq)) THEN
-        allocate ( ellip_sq(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(astren)) THEN
-        allocate ( astren(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(alphai)) THEN
-        allocate ( alphai(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(min_h)) THEN
-        allocate ( min_h(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(min_a)) THEN
-        allocate ( min_a(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(max_a)) THEN
-        allocate ( max_a(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(stressang)) THEN
-        allocate ( stressang(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-
-# ifdef ICE_LANDFAST
-      IF (.not.allocated(lf_k1)) THEN
-        allocate ( lf_k1(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(lf_k2)) THEN
-        allocate ( lf_k2(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-      IF (.not.allocated(lf_u0)) THEN
-        allocate ( lf_u0(Ngrids) )
-        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
-      END IF
-# endif
-#endif
 
       RETURN
       END SUBROUTINE allocate_scalars
@@ -3654,9 +3492,6 @@
         LcycleRST(ng)=.FALSE.
         LcycleTLM(ng)=.FALSE.
         Lfloats(ng)=.TRUE.
-#ifdef ICE_MODEL
-        Lice(ng)=.TRUE.
-#endif
         Lsediment(ng)=.TRUE.
         Lstations(ng)=.TRUE.
 #ifdef TIDES_ASTRO
@@ -3713,6 +3548,7 @@
         NSperiodic(ng)=.FALSE.
         NudgingCoeff(ng)=.FALSE.
         ObcData(ng)=.FALSE.
+        SetGridConfig(ng)=.TRUE.
         RefineScale(ng)=0
         gamma2(ng)=-1.0_r8
         Vtransform(ng)=1
@@ -3742,9 +3578,19 @@
         DXmax(ng)=-Large
         DYmin(ng)= Large
         DYmax(ng)=-Large
+#ifdef MASKING
+        DXminW(ng)= Large
+        DXmaxW(ng)=-Large
+        DYminW(ng)= Large
+        DYmaxW(ng)=-Large
+#endif
 #ifdef SOLVE3D
         DZmin(ng)= Large
         DZmax(ng)=-Large
+# ifdef MASKING
+        DZminW(ng)= Large
+        DZmaxW(ng)=-Large
+# endif
 #endif
         grdmax(ng)=-Large
 #ifdef DIFF_3DCOEF
@@ -3764,16 +3610,10 @@
         Lnudging(ng)=.FALSE.
         LnudgeM2CLM(ng)=.FALSE.
         LnudgeM3CLM(ng)=.FALSE.
-        LnudgeMICLM(ng)=.FALSE.
-        LnudgeAICLM(ng)=.FALSE.
-        LnudgeSICLM(ng)=.FALSE.
         Lclimatology(ng)=.FALSE.
         Lm2CLM(ng)=.FALSE.
         Lm3CLM(ng)=.FALSE.
         LsshCLM(ng)=.FALSE.
-        LmiCLM(ng)=.FALSE.
-        LaiCLM(ng)=.FALSE.
-        LsiCLM(ng)=.FALSE.
         Lsponge(ng)=.FALSE.
         LuvSponge(ng)=.FALSE.
         LuvSrc(ng)=.FALSE.
@@ -3892,7 +3732,6 @@
 
         LdefADJ(ng)=.FALSE.
         LdefAVG(ng)=.TRUE.
-        LdefAVG2(ng)=.TRUE.
         LdefDAI(ng)=.FALSE.
         LdefDIA(ng)=.TRUE.
         LdefERR(ng)=.FALSE.
@@ -3900,8 +3739,11 @@
         LdefFLT(ng)=.TRUE.
 #endif
         LdefHIS(ng)=.TRUE.
-        LdefHIS2(ng)=.TRUE.
+#ifdef FOUR_DVAR
+        LdefINI(ng)=.TRUE.
+#else
         LdefINI(ng)=.FALSE.
+#endif
         LdefIRP(ng)=.FALSE.
         LdefITL(ng)=.FALSE.
         LdefMOD(ng)=.FALSE.
@@ -3917,14 +3759,18 @@
 #endif
         LreadADM(ng)=.FALSE.
         LreadBLK(ng)=.FALSE.
+#ifdef FRC_FILE
+        LreadFRC(ng)=.TRUE.
+#else
+        LreadFRC(ng)=.FALSE.
+#endif
         LreadFWD(ng)=.FALSE.
+        LreadQCK(ng)=.FALSE.
         LreadTLM(ng)=.FALSE.
         LwrtADJ(ng)=.FALSE.
         LwrtAVG(ng)=.FALSE.
-        LwrtAVG2(ng)=.FALSE.
         LwrtDIA(ng)=.FALSE.
         LwrtHIS(ng)=.FALSE.
-        LwrtHIS2(ng)=.FALSE.
         LwrtPER(ng)=.FALSE.
         LwrtQCK(ng)=.FALSE.
         LwrtRST(ng)=.FALSE.
@@ -3936,6 +3782,7 @@
         SOinitial(ng)=.FALSE.
 #endif
         LwrtTime(ng)=.TRUE.
+        LwrtCost(ng)=.FALSE.
         ldefout(ng)=.FALSE.
 
       END DO
@@ -3947,6 +3794,7 @@
 !
       DO ng=1,Ngrids
         INItime(ng)=-1.0_dp
+        INItimeS(ng)=-1.0_dp
       END DO
 #ifdef BIOLOGY
       DO ng=1,Ngrids
@@ -4017,10 +3865,6 @@
       my_Sm3=my_A1*(1.0_r8-3.0_r8*my_C1-6.0_r8*my_A1/my_B1)
       my_Sm4=18.0_r8*my_A1*my_A1+9.0_r8*my_A1*my_A2
 # endif
-#endif
-#ifdef CICE_MODEL
-      rhoice = 900.0_r8
-      min_a = 1.0e-11_r8
 #endif
 
       RETURN

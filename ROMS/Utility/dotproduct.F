@@ -3,9 +3,9 @@
 
 #if defined TLM_CHECK || defined PROPAGATOR
 !
-!svn $Id: dotproduct.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: dotproduct.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -16,7 +16,7 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
 # ifdef TLM_CHECK
       PUBLIC :: ad_dotproduct
@@ -32,9 +32,9 @@
       PUBLIC :: tl_statenorm
 #  endif
 # endif
-
+!
       CONTAINS
-
+!
 # ifdef TLM_CHECK
       SUBROUTINE nl_dotproduct (ng, tile, Linp)
 !
@@ -55,10 +55,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", nl_dotproduct"
+!
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 7, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 7, __LINE__, MyFile)
 #  endif
       CALL nl_dotproduct_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
@@ -93,8 +96,9 @@
      &                         OCEAN(ng) % zeta,                        &
      &                         OCEAN(ng) % zetaG)
 #  ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 7, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 7, __LINE__, MyFile)
 #  endif
+!
       RETURN
       END SUBROUTINE nl_dotproduct
 !
@@ -366,7 +370,7 @@
         END IF
 !$OMP END CRITICAL (NL_DOT)
       END IF
-
+!
       RETURN
       END SUBROUTINE nl_dotproduct_tile
 # endif
@@ -393,10 +397,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", ad_statenorm"
+!
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iADM, 7, __LINE__, __FILE__)
+      CALL wclock_on (ng, iADM, 7, __LINE__, MyFile)
 #  endif
       CALL ad_statenorm_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -423,8 +430,9 @@
 #  endif
      &                        OCEAN(ng) % ad_zeta)
 #  ifdef PROFILE
-      CALL wclock_off (ng, iADM, 7, __LINE__, __FILE__)
+      CALL wclock_off (ng, iADM, 7, __LINE__, MyFile)
 #  endif
+!
       RETURN
       END SUBROUTINE ad_statenorm
 !
@@ -678,7 +686,7 @@
 #  undef IU_RANGE
 #  undef JR_RANGE
 #  undef JV_RANGE
-
+!
       RETURN
       END SUBROUTINE ad_statenorm_tile
 # endif
@@ -705,10 +713,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", tl_statenorm"
+!
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 7, __LINE__, __FILE__)
+      CALL wclock_on (ng, iTLM, 7, __LINE__, MyFile)
 #  endif
       CALL tl_statenorm_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -746,8 +757,9 @@
 #  endif
      &                        OCEAN(ng) % tl_zeta)
 #  ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 7, __LINE__, __FILE__)
+      CALL wclock_off (ng, iTLM, 7, __LINE__, MyFile)
 #  endif
+!
       RETURN
       END SUBROUTINE tl_statenorm
 
@@ -1087,7 +1099,7 @@
 #  undef IU_RANGE
 #  undef JR_RANGE
 #  undef JV_RANGE
-
+!
       RETURN
       END SUBROUTINE tl_statenorm_tile
 # endif
@@ -1113,10 +1125,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", tl_dotproduct"
+!
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 7, __LINE__, __FILE__)
+      CALL wclock_on (ng, iTLM, 7, __LINE__, MyFile)
 #  endif
       CALL tl_dotproduct_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
@@ -1145,8 +1160,9 @@
      &                         OCEAN(ng) % ad_zeta,                     &
      &                         OCEAN(ng) % tl_zeta)
 #  ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 7, __LINE__, __FILE__)
+      CALL wclock_off (ng, iTLM, 7, __LINE__, MyFile)
 #  endif
+!
       RETURN
       END SUBROUTINE tl_dotproduct
 
@@ -1396,7 +1412,7 @@
         END IF
 !$OMP END CRITICAL (TL_DOT)
       END IF
-
+!
       RETURN
       END SUBROUTINE tl_dotproduct_tile
 # endif
@@ -1421,10 +1437,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", ad_dotproduct"
+!
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iADM, 7, __LINE__, __FILE__)
+      CALL wclock_on (ng, iADM, 7, __LINE__, MyFile)
 #  endif
       CALL ad_dotproduct_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
@@ -1444,8 +1463,9 @@
      &                         OCEAN(ng) % ad_vbar,                     &
      &                         OCEAN(ng) % ad_zeta)
 #  ifdef PROFILE
-      CALL wclock_off (ng, iADM, 7, __LINE__, __FILE__)
+      CALL wclock_off (ng, iADM, 7, __LINE__, MyFile)
 #  endif
+!
       RETURN
       END SUBROUTINE ad_dotproduct
 !
@@ -1646,7 +1666,7 @@
         END IF
       END IF
 !$OMP END CRITICAL (AD_DOT)
-
+!
       RETURN
       END SUBROUTINE ad_dotproduct_tile
 # endif

@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_stepping
 !
-!svn $Id: mod_stepping.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: mod_stepping.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -72,15 +72,6 @@
         integer, allocatable :: nfm2(:)
         integer, allocatable :: nfm1(:)
 !$OMP THREADPRIVATE (nf, nfp1, nfm3, nfm2, nfm1)
-#endif
-
-#ifdef ICE_MODEL
-        integer, allocatable :: linew(:)
-        integer, allocatable :: liold(:)
-        integer, allocatable :: liunw(:)
-        integer, allocatable :: liuol(:)
-        integer, allocatable :: lienw(:)
-        integer, allocatable :: lieol(:)
 #endif
 !
 #ifdef ADJUST_BOUNDARY
@@ -174,38 +165,6 @@
       nfm1(1:Ngrids)=4
 #endif
 !$OMP END PARALLEL
-
-#ifdef ICE_MODEL
-      IF (.not.allocated(linew)) THEN
-        allocate ( linew(Ngrids) )
-      END IF
-      linew(1:Ngrids) = 1
-
-      IF (.not.allocated(liold)) THEN
-        allocate ( liold(Ngrids) )
-      END IF
-      liold(1:Ngrids) = 1
-
-      IF (.not.allocated(liunw)) THEN
-        allocate ( liunw(Ngrids) )
-      END IF
-      liunw(1:Ngrids) = 1
-
-      IF (.not.allocated(liuol)) THEN
-        allocate ( liuol(Ngrids) )
-      END IF
-      liuol(1:Ngrids) = 1
-
-      IF (.not.allocated(lienw)) THEN
-        allocate ( lienw(Ngrids) )
-      END IF
-      lienw(1:Ngrids) = 1
-
-      IF (.not.allocated(lieol)) THEN
-        allocate ( lieol(Ngrids) )
-      END IF
-      lieol(1:Ngrids) = 1
-#endif
 
 #ifdef ADJUST_BOUNDARY
       IF (.not.allocated(Lbinp)) THEN

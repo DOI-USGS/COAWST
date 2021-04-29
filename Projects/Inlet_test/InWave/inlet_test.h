@@ -38,6 +38,7 @@
 #define SOLVE3D
 #define SPLINES_VVISC
 #define SPLINES_VDIFF
+#undef  SALINITY
 
 #define ANA_INITIAL
 #define ANA_SMFLUX

@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE inp_decode_mod
 !
-!svn $Id: inp_decode.F 1014 2020-04-06 15:48:43Z arango $
+!svn $Id: inp_decode.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -394,17 +394,20 @@
 !  Imported variable declarations.
 !
       integer, intent(in) :: ng
-
+!
       character (len=*), intent(in) :: fname
       character (len=*), intent(in) :: KeyWord
 !
 !  Local variable declarations.
 !
       logical :: foundit, isURL
-
+!
       integer :: lstr, ncid
 !
-      SourceFile=__FILE__ // ", find_file"
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", find_file"
+!
+      SourceFile=MyFile
 !
 !-----------------------------------------------------------------------
 !  Check if the file exit.
@@ -422,8 +425,7 @@
      &            'for standard input script KeyWord: ',a)
         END IF
         exit_flag=5
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END IF
 !
 !  Check if provided file is a URL.  This implies the file is a NetCDF

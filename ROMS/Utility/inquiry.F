@@ -2,9 +2,9 @@
       SUBROUTINE inquiry (ng, model, job, Iout, Irec, Mrec, ifield,     &
      &                    ncid, Lmulti, nfiles, S)
 !
-!svn $Id: inquiry.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: inquiry.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -55,30 +55,33 @@
 !  Imported variable declarations.
 !
       logical, intent(in) :: Lmulti
-
+!
       integer, intent(in) :: ng, model, job, ifield, nfiles
       integer, intent(in) :: Iout, Irec, Mrec
       integer, intent(inout) :: ncid
-
+!
       TYPE(T_IO), intent(inout) :: S(nfiles)
 !
 !  Local variable declarations.
 !
       logical :: CloseFile, Liocycle, Lgridded, Lonerec
       logical :: foundit, got_var, got_time, special
-
+!
       integer :: Fcount, Nrec, Tid, Tindex, Trec, Vid, Vtype
       integer :: i, ifile, lstr, my_ncid, nvatt, nvdim
       integer :: Vsize(4)
-
+!
       real(dp) :: Clength, Tend, Tmax, Tmin, Tmono, Tscale, Tstr, Tval
       real(dp) :: scale
-
+!
       character (len=1  ), parameter :: blank = ' '
       character (len=3  ) :: label
       character (len=256) :: Fname
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 !
-      SourceFile=__FILE__
+      SourceFile=MyFile
 !
 !-----------------------------------------------------------------------
 !  On first call, inquire about the contents of input NetCDF file.
@@ -120,14 +123,13 @@
      &                            Fcount, S(ifile)%Nfiles
               END IF
               exit_flag=4
-              IF (FoundError(exit_flag, NoError, __LINE__,              &
-     &                       __FILE__)) RETURN
+              IF (FoundError(exit_flag, NoError,                        &
+     &                       __LINE__, MyFile)) RETURN
             END IF
             S(ifile)%Fcount=Fcount
             S(ifile)%name=TRIM(S(ifile)%files(Fcount))
             CALL netcdf_close (ng, model, ncid)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
             IF (label(1:3).eq.'FRC') THEN
               FRCids(ifile,ng)=-1
               S(ifile)%ncid=-1
@@ -153,8 +155,7 @@
           WRITE (stdout,20) Fcount, label, TRIM(Vname(1,ifield))
         END IF
         exit_flag=4
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END IF
 !
 !  If several input NetCDF files (nfiles>1), scan files until the
@@ -168,8 +169,7 @@
 !
         IF (S(ifile)%ncid.eq.-1) THEN
           CALL netcdf_open (ng, model, Fname, 0, my_ncid)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) THEN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
             IF (Master) WRITE (stdout,60) TRIM(Fname)
             RETURN
           END IF
@@ -183,8 +183,7 @@
 !
         CALL netcdf_check_dim (ng, model, Fname,                        &
      &                         ncid = my_ncid)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Inquire about requested variable.
 !
@@ -195,8 +194,7 @@
      &                       VarID = Vid,                               &
      &                       nVarDim = nvdim,                           &
      &                       nVarAtt = nvatt)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Determine if gridded or point data.  Set variable dimensions.
 !
@@ -301,8 +299,7 @@
      &                                    TRIM(Vname(1,ifield)),        &
      &                                    TRIM(Fname)
             exit_flag=4
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
         END IF
         IF (ABS(job).eq.1) THEN
@@ -310,8 +307,7 @@
             IF (Master) WRITE (stdout,40) TRIM(Vname(1,ifield)),        &
      &                                    Mrec, Nrec
             exit_flag=4
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
         END IF
 !
@@ -322,9 +318,8 @@
      &                    ncfile, my_ncid, Tname(ifield), Nrec,         &
      &                    tdays(ng), Tid, Liocycle, Clength, Trec,      &
      &                    Tstr, Tend, Tmin, Tmax,  Tscale)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-          SourceFile=__FILE__
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+          SourceFile=MyFile
         END IF
 !
 !  Store variable information into global information arrays.  Also
@@ -401,8 +396,7 @@
           END IF
         END IF
         exit_flag=2
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END IF
       IF (.not.got_time) THEN
         IF ((nfiles.gt.1).and.(label(1:3).eq.'FRC')) THEN
@@ -439,8 +433,7 @@
           END IF
         END IF
         exit_flag=2
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END IF
 !
 !  If processing model forcing (multiple files allowed), check if file
@@ -484,8 +477,7 @@
 !
       IF (ncid.eq.-1) THEN
         CALL netcdf_open (ng, model, ncfile, 0, ncid)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
            IF (Master) WRITE (stdout,60) TRIM(ncfile)
           RETURN
         END IF
@@ -559,8 +551,7 @@
      &                            ncid = ncid,                          &
      &                            start = (/Trec-1/),                   &
      &                            total = (/1/))
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) THEN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
               IF (Master) WRITE (stdout,70) TRIM(Tname(ifield)), Trec
               RETURN
             END IF
@@ -635,6 +626,6 @@
   60  FORMAT (/,' INQUIRY     - unable to open input NetCDF file: ',a)
   70  FORMAT (/,' INQUIRY     - error while reading variable: ',a,2x,   &
      &        ' at TIME index = ',i4)
-
+!
       RETURN
       END SUBROUTINE inquiry

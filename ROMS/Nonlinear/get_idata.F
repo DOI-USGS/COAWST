@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE get_idata (ng)
 !
-!svn $Id: get_idata.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: get_idata.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -56,21 +56,24 @@
 !
       logical, dimension(3) :: update =                                 &
      &         (/ .FALSE., .FALSE., .FALSE. /)
-
+!
       integer :: LBi, UBi, LBj, UBj
       integer :: itrc, is
 
 #if defined AVERAGES  && defined AVERAGES_DETIDE && \
    (defined SSH_TIDES || defined UV_TIDES)
       integer :: gtype, status, varid, Vsize(4)
-
+!
       real(r8), parameter :: Fscl = 1.0_r8
 
       real(r8) :: Fmin, Fmax, Htime
 #endif
       real(r8) :: time_save = 0.0_r8
 !
-      SourceFile=__FILE__
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
+      SourceFile=MyFile
 !
 !  Lower and upper bounds for tiled arrays.
 !
@@ -96,7 +99,7 @@
 !  Turn on input data time wall clock.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, iNLM, 3, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 3, __LINE__, MyFile)
 #endif
 #if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES
 !
@@ -112,8 +115,7 @@
      &                    1, TIDE(ng), update(1),                       &
      &                    1, MTC, 1, 1, 1, NTC(ng), 1,                  &
      &                    TIDES(ng) % Tperiod)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
       END IF
 #endif
@@ -137,8 +139,7 @@
      &                    GRID(ng) % rmask,                             &
 # endif
      &                    TIDES(ng) % SSH_Tamp)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
           CALL get_2dfld (ng, iNLM, idTzph, TIDE(ng)%ncid,              &
      &                    1, TIDE(ng), update(1),                       &
@@ -147,8 +148,7 @@
      &                    GRID(ng) % rmask,                             &
 # endif
      &                    TIDES(ng) % SSH_Tphase)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
           time(ng)=time_save
           tdays(ng)=time(ng)*sec2day
@@ -173,8 +173,7 @@
      &                    GRID(ng) % rmask,                             &
 # endif
      &                    TIDES(ng) % UV_Tangle)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
           CALL get_2dfld (ng, iNLM, idTvph, TIDE(ng)%ncid,              &
      &                    1, TIDE(ng), update(1),                       &
@@ -183,8 +182,7 @@
      &                    GRID(ng) % rmask,                             &
 # endif
      &                    TIDES(ng) % UV_Tphase)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
           CALL get_2dfld (ng, iNLM, idTvma, TIDE(ng)%ncid,              &
      &                    1, TIDE(ng), update(1),                       &
@@ -193,8 +191,7 @@
      &                    GRID(ng) % rmask,                             &
 # endif
      &                    TIDES(ng) % UV_Tmajor)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
           CALL get_2dfld (ng, iNLM, idTvmi, TIDE(ng)%ncid,              &
      &                    1, TIDE(ng), update(1),                       &
@@ -203,8 +200,7 @@
      &                    GRID(ng) % rmask,                             &
 # endif
      &                    TIDES(ng) % UV_Tminor)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
           time(ng)=time_save
           tdays(ng)=time(ng)*sec2day
@@ -239,8 +235,7 @@
 !-----------------------------------------------------------------------
 !
       CALL def_tides (ng, LdefTIDE(ng))
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !-----------------------------------------------------------------------
 !  If restarting, read in time-accumulated tide harmonics variables.
@@ -254,8 +249,7 @@
         CALL netcdf_get_time (ng, iNLM, HAR(ng)%name, Vname(1,idtime),  &
      &                        Rclock%DateNumber, Htime,                 &
      &                        ncid = HAR(ng)%ncid)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         IF (time(ng).ne.Htime) THEN
           IF (Master) THEN
@@ -271,8 +265,7 @@
         CALL netcdf_get_ivar (ng, iNLM, HAR(ng)%name, 'Hcount',         &
      &                        Hcount(ng),                               &
      &                        ncid = HAR(ng)%ncid)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Time-accumulated COS(omega(k)*t) harmonics.
 !
@@ -280,8 +273,7 @@
      &                  1, HAR(ng), update(1),                          &
      &                  1, MTC, 1, 1, 1, NTC(ng), 1,                    &
      &                  TIDES(ng) % CosW_sum)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Time-accumulated SIN(omega(k)*t) harmonics.
 !
@@ -289,8 +281,7 @@
      &                  1, HAR(ng), update(1),                          &
      &                  1, MTC, 1, 1, 1, NTC(ng), 1,                    &
      &                  TIDES(ng) % SinW_sum)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Time-accumulated COS(omega(k)*t)*COS(omega(k)*t) harmonics.
 !
@@ -298,8 +289,7 @@
      &                  1, HAR(ng), update(1),                          &
      &                  1, MTC, MTC, 1, 1, NTC(ng), NTC(ng),            &
      &                  TIDES(ng) % CosWCosW)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Time-accumulated SIN(omega(k)*t)*SIN(omega(k)*t) harmonics.
 !
@@ -307,8 +297,7 @@
      &                  1, HAR(ng), update(1),                          &
      &                  1, MTC, MTC, 1, 1, NTC(ng), NTC(ng),            &
      &                  TIDES(ng) %  SinWSinW)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Time-accumulated SIN(omega(k)*t)*COS(omega(k)*t) harmonics.
 !
@@ -316,8 +305,7 @@
      &                  1, HAR(ng), update(1),                          &
      &                  1, MTC, MTC, 1, 1, NTC(ng), NTC(ng),            &
      &                  TIDES(ng) %  SinWCosW)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Time-accumulated free-surface tide harmonics.
 !
@@ -332,8 +320,7 @@
      &                      GRID(ng) % rmask,                           &
 # endif
      &                      TIDES(ng) % zeta_tide)
-          IF (FoundError(status, nf90_noerr, __LINE__,                  &
-     &                   __FILE__)) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idFsuH)),                  &
      &                          TRIM(HAR(ng)%name)
@@ -361,8 +348,7 @@
      &                      GRID(ng) % umask,                           &
 # endif
      &                      TIDES(ng) % ubar_tide)
-          IF (FoundError(status, nf90_noerr, __LINE__,                  &
-     &                   __FILE__)) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idu2dH)),                  &
      &                          TRIM(HAR(ng)%name)
@@ -390,8 +376,7 @@
      &                      GRID(ng) % vmask,                           &
 # endif
      &                      TIDES(ng) % vbar_tide)
-          IF (FoundError(status, nf90_noerr, __LINE__,                  &
-     &                   __FILE__)) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idv2dH)),                  &
      &                          TRIM(HAR(ng)%name)
@@ -421,8 +406,7 @@
      &                      GRID(ng) % umask,                           &
 #  endif
      &                      TIDES(ng) % u_tide)
-          IF (FoundError(status, nf90_noerr, __LINE__,                  &
-     &                   __FILE__)) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idu3dH)),                  &
      &                          TRIM(HAR(ng)%name)
@@ -450,8 +434,7 @@
      &                      GRID(ng) % vmask,                           &
 #  endif
      &                      TIDES(ng) % v_tide)
-          IF (FoundError(status, nf90_noerr, __LINE__,                  &
-     &                   __FILE__)) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idv3dH)),                  &
      &                          TRIM(HAR(ng)%name)
@@ -482,8 +465,7 @@
      &                        GRID(ng) % rmask,                         &
 #  endif
      &                        TIDES(ng) % t_tide(:,:,:,:,itrc))
-            IF (FoundError(status, nf90_noerr, __LINE__,                &
-     &                     __FILE__)) THEN
+            IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
               IF (Master) THEN
                 WRITE (stdout,10) TRIM(Vname(1,idTrcH(itrc))),          &
      &                            TRIM(HAR(ng)%name)
@@ -520,8 +502,7 @@
      &                    GRID(ng) % rmask,                             &
 # endif
      &                    TIDES(ng) % POT_Tamp)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
 
           CALL get_2dfld (ng, iNLM, idTpph, TIDE(ng)%ncid,              &
      &                    1, TIDE(ng), update(1),                       &
@@ -530,9 +511,7 @@
      &                    GRID(ng) % rmask,                             &
 # endif
      &                    TIDES(ng) % POT_Tphase)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-
+          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           time(ng)=time_save
           tdays(ng)=time(ng)*sec2day
         END IF
@@ -553,30 +532,26 @@
      &                  1, SSF(ng), update(1),                          &
      &                  1, Nsrc(ng), 1, 1, 1, Nsrc(ng), 1,              &
      &                  SOURCES(ng) % Xsrc)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         CALL get_ngfld (ng, iNLM, idRepo, SSF(ng)%ncid,                 &
      &                  1, SSF(ng), update(1),                          &
      &                  1, Nsrc(ng), 1, 1, 1, Nsrc(ng), 1,              &
      &                  SOURCES(ng) % Ysrc)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         CALL get_ngfld (ng, iNLM, idRdir, SSF(ng)%ncid,                 &
      &                  1, SSF(ng), update(1),                          &
      &                  1, Nsrc(ng), 1, 1, 1, Nsrc(ng), 1,              &
      &                  SOURCES(ng) % Dsrc)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
 # ifdef SOLVE3D
         CALL get_ngfld (ng, iNLM, idRvsh, SSF(ng)%ncid,                 &
      &                  1, SSF(ng), update(1),                          &
      &                  1, Nsrc(ng), N(ng), 1, 1, Nsrc(ng), N(ng),      &
      &                  SOURCES(ng) % Qshape)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 # endif
 
         DO is=1,Nsrc(ng)
@@ -603,8 +578,7 @@
      &                GRID(ng) % rmask,                                 &
 # endif
      &                OCEAN(ng) % CystIni)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       IF (.not.Linfo(1,idCyst,ng)) THEN             ! if not gridded,
         OCEAN(ng) % CystIni = Fpoint(1,idCyst,ng)   ! load point data
       END IF
@@ -616,7 +590,7 @@
 !  Turn off input data time wall clock.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, iNLM, 3, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 3, __LINE__, MyFile)
 #endif
 
 #if defined AVERAGES  && defined AVERAGES_DETIDE && \
@@ -629,6 +603,6 @@
   30  FORMAT (16x,'- ',a,/,19x,'(Min = ',1p,e15.8,                      &
      &        ' Max = ',1p,e15.8,')')
 #endif
-
+!
       RETURN
       END SUBROUTINE get_idata

@@ -1,10 +1,11 @@
 #include "cppdefs.h"
       MODULE step3d_uv_mod
+
 #if defined NONLINEAR && defined SOLVE3D
 !
-!svn $Id: step3d_uv.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: step3d_uv.F 1054 2021-03-06 19:47:12Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license           Hernan G. Arango   !
 !    See License_ROMS.txt                   Alexander F. Shchepetkin   !
 !==================================================== John C. Warner ===
@@ -43,10 +44,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 34, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 34, __LINE__, MyFile)
 # endif
       CALL step3d_uv_tile (ng, tile,                                    &
      &                     LBi, UBi, LBj, UBj,                          &
@@ -100,9 +104,9 @@
      &                     GRID(ng) % Huon,                             &
      &                     GRID(ng) % Hvom)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 34, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 34, __LINE__, MyFile)
 # endif
-
+!
       RETURN
       END SUBROUTINE step3d_uv
 !
@@ -271,9 +275,9 @@
 !  Local variable declarations.
 !
       integer :: i, idiag, is, j, k
-
+!
       real(r8) :: cff, cff1, cff2
-
+!
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: AK
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: BC
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: CF
@@ -1653,7 +1657,7 @@
      &                    ubar(:,:,1), vbar(:,:,1),                     &
      &                    ubar(:,:,2), vbar(:,:,2))
 # endif
-
+!
       RETURN
       END SUBROUTINE step3d_uv_tile
 #endif

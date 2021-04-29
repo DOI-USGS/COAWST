@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE nf_fwrite2d_bry_mod
 !
-!svn $Id: nf_fwrite2d_bry.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: nf_fwrite2d_bry.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -30,6 +30,8 @@
 !  On Output:                                                          !
 !                                                                      !
 !     status       Error flag (integer).                               !
+!     MinValue     Minimum value (real, OPTIONAL)                      !
+!     MaxValue     Maximum value (real, OPTIONAL)                      !
 !                                                                      !
 #ifdef POSITIVE_ZERO
 !  Starting F95 zero values can be signed (-0 or +0) following the     !
@@ -51,7 +53,8 @@
      &                          ncvname, ncvarid,                       &
      &                          tindex, gtype,                          &
      &                          LBij, UBij, Nrec,                       &
-     &                          Ascl, A)  RESULT(status)
+     &                          Ascl, A,                                &
+     &                          MinValue, MaxValue)  RESULT(status)
 !***********************************************************************
 !
       USE mod_param
@@ -69,16 +72,19 @@
 !
       integer, intent(in) :: ng, model, ncid, ncvarid, tindex, gtype
       integer, intent(in) :: LBij, UBij, Nrec
-      real(r8), intent(in) :: Ascl
-
+!
+      real(dp), intent(in) :: Ascl
+!
       character (len=*), intent(in) :: ncname
       character (len=*), intent(in) :: ncvname
-
+!
 #ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: A(LBij:,:,:)
 #else
       real(r8), intent(in) :: A(LBij:UBij,4,Nrec)
 #endif
+      real(r8), intent(out), optional :: MinValue
+      real(r8), intent(out), optional :: MaxValue
 !
 !  Local variable declarations.
 !
@@ -204,10 +210,27 @@
 #ifdef DISTRIBUTE
 !
 !  If distributed-memory set-up, collect data from all spawned
-!  nodes.
+!  processes.
 !
       CALL mp_collect (ng, model, Npts, Aspv, Awrk)
 #endif
+!
+!-----------------------------------------------------------------------
+!  If applicable, compute output field minimum and maximum values.
+!-----------------------------------------------------------------------
+!
+      IF (PRESENT(MinValue)) THEN
+        IF (OutThread) THEN
+          MinValue=spval
+          MaxValue=-spval
+          DO i=1,Npts
+            IF (ABS(Awrk(i)).lt.spval) THEN
+              MinValue=MIN(MinValue,Awrk(i))
+              MaxValue=MAX(MaxValue,Awrk(i))
+            END IF
+          END DO
+        END IF
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Write output buffer into NetCDF file.

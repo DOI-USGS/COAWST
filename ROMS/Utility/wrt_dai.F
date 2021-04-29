@@ -2,9 +2,9 @@
 #if defined FOUR_DVAR || defined ENKF_RESTART
       SUBROUTINE wrt_dai (ng, tile)
 !
-!svn $Id: wrt_dai.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: wrt_dai.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -42,7 +42,11 @@
       integer :: i, j, k, itrc
       integer :: LBi, UBi, LBj, UBj
       integer :: Fcount, gfactor, gtype, status, varid
-      real(r8) :: scale
+!
+      real(dp) :: scale
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 
 # include "set_bounds.h"
 !
@@ -51,14 +55,13 @@
       LBj=LBOUND(GRID(ng)%h,DIM=2)
       UBj=UBOUND(GRID(ng)%h,DIM=2)
 !
-      SourceFile=__FILE__
+      SourceFile=MyFile
 !
 !-----------------------------------------------------------------------
 !  Write out Data Assimilation initial/restart fields.
 !-----------------------------------------------------------------------
 !
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Set grid type factor to write full (gfactor=1) fields.
 !
@@ -79,7 +82,7 @@
 !
 !  Write out time independent (unperturb) depths of RHO-points.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*r3dvar
       status=nf_fwrite3d(ng, iNLM, DAI(ng)%ncid, DAI(ng)%Vid(idpthR),   &
      &                   0, gtype,                                      &
@@ -89,8 +92,7 @@
 #  endif
      &                   GRID(ng) % z0_r,                               &
      &                   SetFillVal = .FALSE.)
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idpthR))
         END IF
@@ -101,7 +103,7 @@
 !
 !  Write out time independent (unperturb) depths of U-points.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*u3dvar
       DO k=1,N(ng)
         DO j=Jstr-1,Jend+1
@@ -119,8 +121,7 @@
 #  endif
      &                   GRID(ng) % z_v,                                &
      &                   SetFillVal = .FALSE.)
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idpthU))
         END IF
@@ -131,7 +132,7 @@
 !
 !  Write out time independent (unperturb) depths of V-points.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*v3dvar
       DO k=1,N(ng)
         DO j=JstrV-1,Jend+1
@@ -149,8 +150,7 @@
 #  endif
      &                   GRID(ng) % z_v,                                &
      &                   SetFillVal = .FALSE.)
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idpthV))
         END IF
@@ -161,7 +161,7 @@
 !
 !  Write out time independent (unperturb) depths of W-points.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*w3dvar
       status=nf_fwrite3d(ng, iNLM, DAI(ng)%ncid, DAI(ng)%Vid(idpthW),   &
      &                   0, gtype,                                      &
@@ -171,8 +171,7 @@
 #  endif
      &                   GRID(ng) % z0_w,                               &
      &                   SetFillVal = .FALSE.)
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idpthW))
         END IF
@@ -185,16 +184,15 @@
 !  Write out model time (s).
 !
       CALL netcdf_put_fvar (ng, iNLM, DAI(ng)%name,                     &
-     &                      TRIM(Vname(idtime,ng)), time(ng:),          &
+     &                      TRIM(Vname(1,idtime)), time(ng:),           &
      &                      (/DAI(ng)%Rindex/), (/1/),                  &
      &                      ncid = DAI(ng)%ncid,                        &
      &                      varid = DAI(ng)%Vid(idtime))
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Write out free-surface (m).
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*r2dvar
       status=nf_fwrite2d(ng, iNLM, DAI(ng)%ncid, DAI(ng)%Vid(idFsur),   &
      &                   DAI(ng)%Rindex, gtype,                         &
@@ -202,14 +200,22 @@
 # ifdef MASKING
      &                   GRID(ng) % rmask,                              &
 # endif
-# ifdef WET_DRY
+# if defined R4DVAR || defined SPLIT_R4DVAR
+#  ifdef WET_DRY
+     &                   OCEAN(ng) % tl_zeta(:,:,KOUT),                 &
+     &                   SetFillVal = .FALSE.)
+#  else
+     &                   OCEAN(ng) % tl_zeta(:,:,KOUT))
+#  endif
+# else
+#  ifdef WET_DRY
      &                   OCEAN(ng) % zeta(:,:,KOUT),                    &
      &                   SetFillVal = .FALSE.)
-# else
+#  else
      &                   OCEAN(ng) % zeta(:,:,KOUT))
+#  endif
 # endif
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idFsur)), DAI(ng)%Rindex
         END IF
@@ -220,7 +226,7 @@
 !
 !  Write out 2D momentum component (m/s) in the XI-direction.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*u2dvar
       status=nf_fwrite2d(ng, iNLM, DAI(ng)%ncid, DAI(ng)%Vid(idUbar),   &
      &                   DAI(ng)%Rindex, gtype,                         &
@@ -228,9 +234,12 @@
 # ifdef MASKING
      &                   GRID(ng) % umask_full,                         &
 # endif
+# if defined R4DVAR || defined SPLIT_R4DVAR
+     &                   OCEAN(ng) % tl_ubar(:,:,KOUT))
+# else
      &                   OCEAN(ng) % ubar(:,:,KOUT))
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+# endif
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idUbar)), DAI(ng)%Rindex
         END IF
@@ -241,7 +250,7 @@
 !
 !  Write out 2D momentum component (m/s) in the ETA-direction.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*v2dvar
       status=nf_fwrite2d(ng, iNLM, DAI(ng)%ncid, DAI(ng)%Vid(idVbar),   &
      &                   DAI(ng)%Rindex, gtype,                         &
@@ -249,9 +258,12 @@
 # ifdef MASKING
      &                   GRID(ng) % vmask_full,                         &
 # endif
+# if defined R4DVAR || defined SPLIT_R4DVAR
+     &                   OCEAN(ng) % tl_vbar(:,:,KOUT))
+# else
      &                   OCEAN(ng) % vbar(:,:,KOUT))
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+# endif
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idVbar)), DAI(ng)%Rindex
         END IF
@@ -264,7 +276,7 @@
 !
 !  Write out 3D momentum component (m/s) in the XI-direction.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*u3dvar
       status=nf_fwrite3d(ng, iNLM, DAI(ng)%ncid, DAI(ng)%Vid(idUvel),   &
      &                   DAI(ng)%Rindex, gtype,                         &
@@ -272,9 +284,12 @@
 #  ifdef MASKING
      &                   GRID(ng) % umask_full,                         &
 #  endif
+#  if defined R4DVAR || defined SPLIT_R4DVAR
+     &                   OCEAN(ng) % tl_u(:,:,:,NOUT))
+#  else
      &                   OCEAN(ng) % u(:,:,:,NOUT))
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+#  endif
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idUvel)), DAI(ng)%Rindex
         END IF
@@ -285,7 +300,7 @@
 !
 !  Write out momentum component (m/s) in the ETA-direction.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*v3dvar
       status=nf_fwrite3d(ng, iNLM, DAI(ng)%ncid, DAI(ng)%Vid(idVvel),   &
      &                   DAI(ng)%Rindex, gtype,                         &
@@ -293,9 +308,12 @@
 #  ifdef MASKING
      &                   GRID(ng) % vmask_full,                         &
 #  endif
+#  if defined R4DVAR || defined SPLIT_R4DVAR
+     &                   OCEAN(ng) % tl_v(:,:,:,NOUT))
+#  else
      &                   OCEAN(ng) % v(:,:,:,NOUT))
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+#  endif
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idVvel)), DAI(ng)%Rindex
         END IF
@@ -307,7 +325,7 @@
 !  Write out tracer type variables.
 !
       DO itrc=1,NT(ng)
-        scale=1.0_r8
+        scale=1.0_dp
         gtype=gfactor*r3dvar
         status=nf_fwrite3d(ng, iNLM, DAI(ng)%ncid, DAI(ng)%Tid(itrc),   &
      &                     DAI(ng)%Rindex, gtype,                       &
@@ -315,9 +333,12 @@
 #  ifdef MASKING
      &                     GRID(ng) % rmask,                            &
 #  endif
+#  if defined R4DVAR || defined SPLIT_R4DVAR
+     &                     OCEAN(ng) % tl_t(:,:,:,NOUT,itrc))
+#  else
      &                     OCEAN(ng) % t(:,:,:,NOUT,itrc))
-        IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+#  endif
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,20) TRIM(Vname(1,idTvar(itrc))), DAI(ng)%Rindex
           END IF
@@ -329,7 +350,7 @@
 !
 !  Write out vertical viscosity coefficient.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*w3dvar
       status=nf_fwrite3d(ng, iNLM, DAI(ng)%ncid, DAI(ng)%Vid(idVvis),   &
      &                   DAI(ng)%Rindex, gtype,                         &
@@ -339,8 +360,7 @@
 #  endif
      &                   MIXING(ng) % Akv,                              &
      &                   SetFillVal = .FALSE.)
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idVvis)), DAI(ng)%Rindex
         END IF
@@ -351,7 +371,7 @@
 !
 !  Write out vertical diffusion coefficient for potential temperature.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*w3dvar
       status=nf_fwrite3d(ng, iNLM, DAI(ng)%ncid, DAI(ng)%Vid(idTdif),   &
      &                   DAI(ng)%Rindex, gtype,                         &
@@ -361,8 +381,7 @@
 #  endif
      &                   MIXING(ng) % Akt(:,:,:,itemp),                 &
      &                   SetFillVal = .FALSE.)
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idTdif)), DAI(ng)%Rindex
         END IF
@@ -370,11 +389,12 @@
         ioerror=status
         RETURN
       END IF
+
 #  ifdef SALINITY
 !
 !  Write out vertical diffusion coefficient for salinity.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*w3dvar
       status=nf_fwrite3d(ng, iNLM, DAI(ng)%ncid, DAI(ng)%Vid(idSdif),   &
      &                   DAI(ng)%Rindex, gtype,                         &
@@ -384,8 +404,7 @@
 #   endif
      &                   MIXING(ng) % Akt(:,:,:,isalt),                 &
      &                   SetFillVal = .FALSE.)
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,20) TRIM(Vname(1,idSdif)), DAI(ng)%Rindex
         END IF
@@ -401,8 +420,7 @@
 !-----------------------------------------------------------------------
 !
       CALL netcdf_sync (ng, iNLM, DAI(ng)%name, DAI(ng)%ncid)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
 # ifdef SOLVE3D
 #  ifdef NESTING
@@ -421,20 +439,20 @@
   10  FORMAT (/,' WRT_DAI - error while writing variable: ',a,/,11x,    &
      &        'into DA initial/restart NetCDF file.')
   20  FORMAT (/,' WRT_DAI - error while writing variable: ',a,/,11x,    &
-     &        'into DA initial/rstart NetCDF file for time record: ',i4)
+     &        'into DA initial/rstart NetCDF file for time record: ',i0)
 # ifdef SOLVE3D
   30  FORMAT (6x,'WRT_DAI     - wrote DA INI/RST', t39,                 &
 #  ifdef NESTING
-     &        'fields (Index=',i1,',',i1,') in record = ',i7.7,t92,i2.2)
+     &        'fields (Index=',i1,',',i1,') in record = ',i0,t92,i2.2)
 #  else
-     &        'fields (Index=',i1,',',i1,') in record = ',i7.7)
+     &        'fields (Index=',i1,',',i1,') in record = ',i0)
 #  endif
 # else
   30  FORMAT (6x,'WRT_DAI     - wrote DA INI/RST', t39,                 &
 #  ifdef NESTING
-     &        'fields (Index=',i1,')   in record = ',i7.7,t92,i2.2)
+     &        'fields (Index=',i1,')   in record = ',i0,t92,i2.2)
 #  else
-     &        'fields (Index=',i1,')   in record = ',i7.7)
+     &        'fields (Index=',i1,')   in record = ',i0)
 #  endif
 # endif
 

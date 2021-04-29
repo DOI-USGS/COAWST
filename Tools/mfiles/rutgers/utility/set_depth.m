@@ -71,7 +71,7 @@ function [z]=set_depth(Vtransform, Vstretching, ...
 %    z             Depths (m, negative), 3D array
 %
 
-% svn $Id: set_depth.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: set_depth.m 1048 2020-11-19 19:04:13Z arango $
 %=========================================================================%
 %  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
@@ -164,7 +164,7 @@ if (report),
             '   at horizontal V-points']);
     case 5
       disp(['   igrid    = ',num2str(igrid),                            ...
-            '   at horizontal RHO-points']);
+            '   at horizontal W-points']);
   end
 end
 

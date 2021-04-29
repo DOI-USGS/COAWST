@@ -1,9 +1,9 @@
 !
 !  ROMS/TOMS Standard Input parameters.
 !
-!svn $Id: roms.in 1009 2020-03-03 20:38:52Z arango $
+!svn $Id: roms.in 1054 2021-03-06 19:47:12Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -190,20 +190,6 @@ ad_Vadvection == C4       \                     ! temperature
 
    LBC(isTvar) ==   Per     Clo     Per     Clo \       ! temperature
                     Per     Clo     Per     Clo         ! salinity
-
-! Ice boundary conditions
-
-   LBC(isAice) ==   Per     Clo     Per     Clo         ! ice concentration
-   LBC(isHice) ==   Per     Clo     Per     Clo         ! ice thickness
-   LBC(isHsno) ==   Per     Clo     Per     Clo         ! snow thickness
-   LBC(isTice) ==   Per     Clo     Per     Clo         ! ice temperature
-   LBC(isApond)==   Per     Clo     Per     Clo         ! surface water
-   LBC(isHpond)==   Per     Clo     Per     Clo         ! surface water
-   LBC(isSig11)==   Per     Clo     Per     Clo         ! sigma-11
-   LBC(isSig12)==   Per     Clo     Per     Clo         ! sigma-12
-   LBC(isSig22)==   Per     Clo     Per     Clo         ! sigma-22
-   LBC(isUice) ==   Per     Clo     Per     Clo         ! ice U-momentum
-   LBC(isVice) ==   Per     Clo     Per     Clo         ! ice V-momentum
 
 ! Adjoint-based algorithms can have different lateral boundary
 ! conditions keywords.
@@ -499,15 +485,6 @@ LtracerSponge == F F                            ! temperature, salinity, inert
 
   LnudgeTCLM == F F                        ! temperature, salinity, inert
 
-! Logical switches for ice climatology and nudging
-
-      LmiCLM == F
-      LaiCLM == F
-      LsiCLM == F
- LnudgeMICLM == F
- LnudgeAICLM == F
- LnudgeSICLM == F
-
 ! Starting (DstrS) and ending (DendS) day for adjoint sensitivity forcing.
 ! DstrS must be less or equal to DendS. If both values are zero, their
 ! values are reset internally to the full range of the adjoint integration.
@@ -774,46 +751,6 @@ Qout(idMtls) == F       ! gls                turbulent length scale
  Qout(inert) == F       ! dye_01, ...        inert passive tracers
  Qout(Snert) == F       ! dye_01_sur, ..     surface inert passive tracers
 
-! Logical switches (TRUE/FALSE) to activate writing of fields into
-! secondary Averages output file.
-
-Aout2(idUvel) == T       ! u                  3D U-velocity
-Aout2(idVvel) == T       ! v                  3D V-velocity
-Aout2(idu3dE) == T       ! u_eastward         3D U-eastward  at RHO-points
-Aout2(idv3dN) == T       ! v_northward        3D V-northward at RHO-points
-Aout2(idUbar) == T       ! ubar               2D U-velocity
-Aout2(idVbar) == T       ! vbar               2D V-velocity
-Aout2(idu2dE) == T       ! ubar_eastward      2D U-eastward  at RHO-points
-Aout2(idv2dN) == T       ! vbar_northward     2D V-northward at RHO-points
-Aout2(idFsur) == T       ! zeta               free-surface
-
-Aout2(idTvar) == T T     ! temp, salt         temperature and salinity
-
-Aout2(idUair) == T                          ! surface U-wind
-Aout2(idVair) == T                          ! surface V-wind
-Aout2(idUairE) == T      ! Uwind_eastward     surface U-wind
-Aout2(idVairN) == T      ! Vwind_northward    surface V-wind
-Aout2(idUsms) == T       ! sustr              surface U-stress
-Aout2(idVsms) == T       ! svstr              surface V-stress
-
-Aout2(idTsur) == T T     ! shflux, ssflux     surface net heat and salt flux
-Aout2(idLhea) == T       ! latent             latent heat flux
-Aout2(idShea) == T       ! sensible           sensible heat flux
-Aout2(idLrad) == T       ! lwrad              longwave radiation flux
-Aout2(idSrad) == T       ! swrad              shortwave radiation flux
-Aout2(idEmPf) == F       ! EminusP            E-P flux
-Aout2(idevap) == F       ! evaporation        evaporation rate
-Aout2(idrain) == F       ! rain               precipitation rate
-
-! Logical switches (TRUE/FALSE) to activate writing of extra inert passive
-! tracers other than biological and sediment tracers. An inert passive tracer
-! is one that it is only advected and diffused. Other processes are ignored.
-! These tracers include, for example, dyes, pollutants, oil spills, etc.
-! NPT values are expected. However, these switches can be activated using
-! compact parameter specification.
-
-Aout2(inert) == F       ! dye_01, ...        inert passive tracers
-
 ! Logical switches (TRUE/FALSE) to activate writing of time-averaged
 ! fields into AVERAGE output file.
 
@@ -1062,7 +999,6 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
      ADJNAME == roms_adj.nc
      HARNAME == roms_har.nc
      AVGNAME == roms_avg.nc
-    AVG2NAME == roms_avg2.nc
      DIANAME == roms_dia.nc
      STANAME == roms_sta.nc
      FLTNAME == roms_flt.nc
@@ -1072,7 +1008,6 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
      APARNAM =  s4dvar.in
      SPOSNAM =  stations.in
      FPOSNAM =  floats.in
-     IPARNAM =  ice.in
      BPARNAM =  bio_Fennel.in
      SPARNAM =  sediment.in
      USRNAME =  MyFile.dat
@@ -1372,20 +1307,6 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 ! LBC(isMtke) Mixing TKE,    [1:4, Ngrids] values are expected.
 ! LBC(isTvar) Tracers,       [1:4, 1:NAT+NPT, Ngrids] values are expected.
 !
-! Ice boundary conditions
-!
-!  LBC(isAice) Ice concentration, [1:4, Ngrids] values are expected.
-!  LBC(isHice) Ice thickness,     [1:4, Ngrids] values are expected.
-!  LBC(isHsno) Snow thickness,    [1:4, Ngrids] values are expected.
-!  LBC(isTice) Ice temperature,   [1:4, Ngrids] values are expected.
-!  LBC(isApond)Surface water,     [1:4, Ngrids] values are expected.
-!  LBC(isHpond)Surface water,     [1:4, Ngrids] values are expected.
-!  LBC(isSig11)Sigma-11,          [1:4, Ngrids] values are expected.
-!  LBC(isSig12)Sigma-12,          [1:4, Ngrids] values are expected.
-!  LBC(isSig22)Sigma-22,          [1:4, Ngrids] values are expected.
-!  LBC(isUice) Ice U-momentum,    [1:4, Ngrids] values are expected.
-!  LBC(isVice) Ice V-momentum,    [1:4, Ngrids] values are expected.
-!
 ! Similarly, the adjoint-based algorithms (ADM, TLM, RPM) can have different
 ! lateral boundary conditions keywords:
 !
@@ -1431,11 +1352,11 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !
 ! NTIMES_ANA   Total number of timesteps for computing observations impacts
 !                interval during the analysis cycle. It is only used when
-!                W4DPSAS_FCT_SENSITIVITY is activated.
+!                RBL4DVAR_FCT_SENSITIVITY is activated.
 !
 ! NTIMES_FCT   Total number of timesteps for computing observations impacts
 !                interval during the forecast cycle. It is only used when
-!                W4DPSAS_FCT_SENSITIVITY is activated.
+!                RBL4DVAR_FCT_SENSITIVITY is activated.
 !
 !------------------------------------------------------------------------------
 ! Model iteration loops parameters.
@@ -2892,7 +2813,7 @@ Dout(iTvdif) == T T     ! temp_vdiff, ...    vertical diffusion
 !  ADSNAME     Input adjoint sensitivity functional filename.
 !
 ! Input adjoint forcing filenames for computing observations impacts
-! during the analysis-forecast cycle when W4DPSAS_FCT_SENSITIVITY is
+! during the analysis-forecast cycle when RBL4DVAR_FCT_SENSITIVITY is
 ! activated.  The files FOInameA and FOInameB are used when the forecast
 ! metric is defined in state-space (CPP option OBS_SPACE is off). Both
 ! are regular adjoint forcing files just like ADSname.

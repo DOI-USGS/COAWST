@@ -25,6 +25,7 @@
 #define UV_QDRAG
 #define UV_VIS2
 #define MIX_S_UV
+#undef  SALINITY
 
 #ifdef SOLVE3D
 # define ANA_STFLUX

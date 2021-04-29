@@ -1,8 +1,8 @@
       SUBROUTINE ana_nudgcoef (ng, tile, model)
 !
-!! svn $Id: ana_nudgcoef.h 995 2020-01-10 04:01:28Z arango $
+!! svn $Id: ana_nudgcoef.h 1054 2021-03-06 19:47:12Z arango $
 !!================================================= Hernan G. Arango ===
-!! Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -34,7 +34,10 @@
 !
       integer, intent(in) :: ng, tile, model
 !
-!  Local variable declarations.
+! Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 !
 #include "tile.h"
 !
@@ -49,9 +52,9 @@
 #else
       IF (Lanafile.and.(tile.eq.0)) THEN
 #endif
-        ANANAME(16)=__FILE__
+        ANANAME(16)=MyFile
       END IF
-
+!
       RETURN
       END SUBROUTINE ana_nudgcoef
 !
@@ -88,11 +91,11 @@
 !  Local variable declarations.
 !
       integer :: Iwrk, i, itrc, j, k
-
+!
       real(r8) :: cff1, cff2
-
+!
       real(r8), parameter :: IniVal = 0.0_r8
-
+!
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wrk
 
 #include "set_bounds.h"
@@ -234,30 +237,6 @@
           END DO
         END DO
       END IF
-
-      IF (LnudgeMICLM(ng)) THEN
-        DO j=JstrT,JendT
-          DO i=IstrT,IendT
-            CLIMA(ng)%MInudgcof(i,j)=M2nudg(ng)
-          END DO
-        END DO
-      END IF
-
-      IF (LnudgeAICLM(ng)) THEN
-        DO j=JstrT,JendT
-          DO i=IstrT,IendT
-            CLIMA(ng)%AInudgcof(i,j)=M2nudg(ng)
-          END DO
-        END DO
-      END IF
-
-      IF (LnudgeSICLM(ng)) THEN
-        DO j=JstrT,JendT
-          DO i=IstrT,IendT
-            CLIMA(ng)%SInudgcof(i,j)=wrk(i,j)
-          END DO
-        END DO
-      END IF
 # endif
 #endif
 #ifdef DISTRIBUTE
@@ -288,29 +267,8 @@
      &                      NghostPoints, .FALSE., .FALSE.,             &
      &                      CLIMA(ng)%Tnudgcof)
       END IF
-!
-      IF (LnudgeMICLM(ng)) THEN
-        CALL mp_exchange2d (ng, tile, model, 1,                         &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      NghostPoints, .FALSE., .FALSE.,             &
-     &                      CLIMA(ng)%MInudgcof)
-      END IF
-!
-      IF (LnudgeAICLM(ng)) THEN
-        CALL mp_exchange2d (ng, tile, model, 1,                         &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      NghostPoints, .FALSE., .FALSE.,             &
-     &                      CLIMA(ng)%AInudgcof)
-      END IF
-!
-      IF (LnudgeSICLM(ng)) THEN
-        CALL mp_exchange2d (ng, tile, model, 1,                         &
-     &                      LBi, UBi, LBj, UBj,                         &
-     &                      NghostPoints, .FALSE., .FALSE.,             &
-     &                      CLIMA(ng)%SInudgcof)
-      END IF
 # endif
 #endif
-
+!
       RETURN
       END SUBROUTINE ana_nudgcoef_tile

@@ -2,9 +2,9 @@
 #ifdef STATIONS
       SUBROUTINE def_station (ng, ldef)
 !
-!svn $Id: def_station.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: def_station.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -44,9 +44,9 @@
 !  Local variable declarations.
 !
       integer, parameter :: Natt = 25
-
+!
       logical :: got_var(NV)
-
+!
       integer :: i, j, recdim, stadim
       integer :: status
 
@@ -59,20 +59,22 @@
 
       integer :: bgrd(3), rgrd(3), wgrd(3)
 # endif
-
+!
       real(r8) :: Aval(6)
-
+!
       character (len=120) :: Vinfo(Natt)
       character (len=256) :: ncname
 !
-      SourceFile=__FILE__
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
+      SourceFile=MyFile
 !
 !-----------------------------------------------------------------------
 !  Set and report file name.
 !-----------------------------------------------------------------------
 !
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       ncname=STA(ng)%name
 !
       IF (Master) THEN
@@ -89,8 +91,7 @@
 !
       DEFINE : IF (ldef) THEN
         CALL netcdf_create (ng, iNLM, TRIM(ncname), STA(ng)%ncid)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
           IF (Master) WRITE (stdout,30) TRIM(ncname)
           RETURN
         END IF
@@ -104,87 +105,72 @@
 # ifdef SOLVE3D
         status=def_dim(ng, iNLM, STA(ng)%ncid, ncname, 's_rho',         &
      &                 N(ng), DimIDs( 9))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         status=def_dim(ng, iNLM, STA(ng)%ncid, ncname, 's_w',           &
      &                 N(ng)+1, DimIDs(10))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         status=def_dim(ng, iNLM, STA(ng)%ncid, ncname, 'tracer',        &
      &                 NT(ng), DimIDs(11))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
 #  ifdef SEDIMENT
         status=def_dim(ng, iNLM, STA(ng)%ncid, ncname, 'NST',           &
      &                 NST, DimIDs(32))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         status=def_dim(ng, iNLM, STA(ng)%ncid, ncname, 'Nbed',          &
      &                 Nbed, DimIDs(16))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #  endif
 
 #  if defined VARIABLE_CDOM && defined SPECTRAL_LIGHT
         status=def_dim(ng, iNLM, STA(ng)%ncid, ncname, 'Ndom',          &
      &                 Ndom, DimIDs(27))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #  endif
 #  ifdef ECOSIM
         status=def_dim(ng, iNLM, STA(ng)%ncid, ncname, 'Nbands',        &
      &                 NBands, DimIDs(33))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         status=def_dim(ng, iNLM, STA(ng)%ncid, ncname, 'Nphy',          &
      &                 Nphy, DimIDs(25))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         status=def_dim(ng, iNLM, STA(ng)%ncid, ncname, 'Nbac',          &
      &                 Nbac, DimIDs(26))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         status=def_dim(ng, iNLM, STA(ng)%ncid, ncname, 'Ndom',          &
      &                 Ndom, DimIDs(27))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         status=def_dim(ng, iNLM, STA(ng)%ncid, ncname, 'Nfec',          &
      &                 Nfec, DimIDs(28))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #  endif
 # endif
 
         status=def_dim(ng, iNLM, STA(ng)%ncid, ncname, 'station' ,      &
      &                 Nstation(ng), DimIDs(13))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         status=def_dim(ng, iNLM, STA(ng)%ncid, ncname, 'boundary',      &
      &                 4, DimIDs(14))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
 # ifdef FOUR_DVAR
         status=def_dim(ng, iNLM, STA(ng)%ncid, ncname, 'Nstate',        &
      &                 NstateVar(ng), DimIDs(29))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 # endif
 
         status=def_dim(ng, iNLM, STA(ng)%ncid, ncname,                  &
      &                 TRIM(ADJUSTL(Vname(5,idtime))),                  &
      &                 nf90_unlimited, DimIDs(12))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         recdim=DimIDs(12)
         stadim=DimIDs(13)
@@ -234,8 +220,7 @@
 !-----------------------------------------------------------------------
 !
         CALL def_info (ng, iNLM, STA(ng)%ncid, ncname, DimIDs)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Define variables and their attributes.
@@ -251,8 +236,7 @@
         status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idtime),     &
      &                 NF_TOUT, 1, (/recdim/), Aval, Vinfo, ncname,     &
      &                 SetParAccess = .TRUE.)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Define free-surface.
 !
@@ -270,8 +254,7 @@
      &                   SetFillVal = .TRUE.,                           &
 # endif
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 
 # if defined SEDIMENT && defined SED_MORPH
@@ -288,8 +271,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .FALSE.,                          &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # endif
 !
@@ -305,8 +287,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 2D momentum in the ETA-direction.
@@ -321,8 +302,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 2D Eastward momentum component at RHO-points.
@@ -337,8 +317,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 2D Northward momentum component at RHO-points.
@@ -353,8 +332,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 
 # ifdef SOLVE3D
@@ -371,8 +349,7 @@
      &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 3D momentum component in the ETA-direction.
@@ -387,8 +364,7 @@
      &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 3D Eastward momentum component at RHO-points.
@@ -403,8 +379,7 @@
      &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 3D Northward momentum component at RHO-points.
@@ -419,8 +394,7 @@
      &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 3D momentum component in the S-direction.
@@ -435,8 +409,7 @@
      &                   NF_FOUT, 3, wgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define S-coordinate vertical "omega" momentum component (m3/s).
@@ -451,8 +424,7 @@
      &                   NF_FOUT, 3, wgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define tracer type variables.
@@ -475,8 +447,7 @@
      &                     NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,       &
      &                     SetFillVal = .TRUE.,                         &
      &                     SetParAccess = .TRUE.)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
         END DO
 !
@@ -492,8 +463,7 @@
      &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 
 #  ifdef NEMURO_SED1
@@ -510,8 +480,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define OPAL in sediment.
@@ -526,8 +495,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define DENIT in sediment.
@@ -543,8 +511,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define buried PON in sediment.
@@ -575,8 +542,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #  endif
 #  ifdef PRIMARY_PROD
@@ -593,8 +559,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #  endif
 #  ifdef LMD_SKPP
@@ -611,8 +576,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #  endif
 #  ifdef LMD_BKPP
@@ -629,8 +593,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #  endif
 !
@@ -646,8 +609,7 @@
      &                   NF_FOUT, 3, wgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define vertical diffusion coefficient for potential temperature.
@@ -662,8 +624,7 @@
      &                   NF_FOUT, 3, wgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 
 #  ifdef SALINITY
@@ -680,8 +641,7 @@
      &                   NF_FOUT, 3, wgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #  endif
 #  if defined GLS_MIXING || defined MY25_MIXING
@@ -698,8 +658,7 @@
      &                   NF_FOUT, 3, wgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define turbulent kinetic energy time length scale.
@@ -714,8 +673,7 @@
      &                   NF_FOUT, 3, wgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #  endif
 #  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
@@ -732,8 +690,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #  endif
 #  if defined BULK_FLUXES || defined ECOSIM
@@ -750,8 +707,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 
         IF (Sout(idVair,ng)) THEN
@@ -764,8 +720,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define surface East winds.
@@ -780,8 +735,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 
         IF (Sout(idVairN,ng)) THEN
@@ -794,8 +748,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #  endif
 !
@@ -814,9 +767,10 @@
      &                   2, pgrd, Aval, Vinfo, ncname,                  &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
+
+#  ifdef SALINITY
 !
 !  Define surface net salt flux.
 !
@@ -833,9 +787,10 @@
      &                   2, pgrd, Aval, Vinfo, ncname,                  &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
+#  endif
+
 #  ifdef BULK_FLUXES
 !
 !  Define latent heat flux.
@@ -852,8 +807,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define sensible heat flux.
@@ -870,8 +824,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define longwave radiation flux.
@@ -888,8 +841,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #  endif
 #  ifdef SHORTWAVE
@@ -912,7 +864,6 @@
      &                   __FILE__)) RETURN
         END IF
 #  endif
-#  if defined EMINUSP && (defined BULK_FLUXES || defined CCSM_FLUX)
 !
 !  Define E-P flux (as computed by bulk_flux.F).
 !
@@ -928,9 +879,9 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
+#  if defined EMINUSP && defined BULK_FLUXES
 !
 !  Define evaporation rate.
 !
@@ -946,8 +897,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define precipitation rate.
@@ -964,8 +914,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #  endif
 # endif
@@ -982,8 +931,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define surface V-momentum stress.
@@ -998,8 +946,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define bottom U-momentum stress.
@@ -1014,8 +961,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define bottom V-momentum stress.
@@ -1030,8 +976,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 
 # ifdef SOLVE3D
@@ -1049,8 +994,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define bottom V-current stress.
@@ -1065,8 +1009,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define wind-induced, bottom U-wave stress.
@@ -1081,8 +1024,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define bottom wind-induced, bottom V-wave stress.
@@ -1097,8 +1039,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define maximum wind and current, bottom U-wave stress.
@@ -1113,8 +1054,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define maximum wind and current, bottom V-wave stress.
@@ -1129,8 +1069,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define wind-induced, bed wave orbital U-velocity.
@@ -1145,8 +1084,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define wind-induced, bed wave orbital V-velocity.
@@ -1161,8 +1099,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define bottom U-momentum above bed.
@@ -1177,8 +1114,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define bottom V-momentum above bed.
@@ -1193,8 +1129,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #  endif
 #  ifdef SEDIMENT
@@ -1214,8 +1149,7 @@
      &                     3, bgrd, Aval, Vinfo, ncname,                &
      &                     SetFillVal = .TRUE.,                         &
      &                     SetParAccess = .TRUE.)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
 !
 !  Define sediment mass of each size class in each bed layer.
@@ -1232,8 +1166,7 @@
      &                     3, bgrd, Aval, Vinfo, ncname,                &
      &                     SetFillVal = .TRUE.,                         &
      &                     SetParAccess = .TRUE.)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
         END DO
 !
@@ -1251,8 +1184,7 @@
      &                     3, bgrd, Aval, Vinfo, ncname,                &
      &                     SetFillVal = .TRUE.,                         &
      &                     SetParAccess = .TRUE.)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
         END DO
 #  endif
@@ -1272,8 +1204,7 @@
      &                     2, pgrd, Aval, Vinfo, ncname,                &
      &                     SetFillVal = .TRUE.,                         &
      &                     SetParAccess = .TRUE.)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
         END DO
 #  endif
@@ -1292,8 +1223,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 2D radiation stress, Sxy-component.
@@ -1308,8 +1238,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 2D radiation stress, Syy-component.
@@ -1324,8 +1253,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         END IF
 
@@ -1343,8 +1271,7 @@
      &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 3D radiation stress, Sxy-component.
@@ -1359,8 +1286,7 @@
      &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 3D radiation stress, Syy-component.
@@ -1375,8 +1301,7 @@
      &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 3D radiation stress, Szx-component.
@@ -1391,8 +1316,7 @@
      &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 3D radiation stress, Szy-component.
@@ -1407,8 +1331,7 @@
      &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #  endif
 # endif
@@ -1425,8 +1348,7 @@
           status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idU2Sd),   &
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 2D v-Stokes drift velocity.
@@ -1440,8 +1362,7 @@
           status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idV2Sd),   &
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 2D total WEC u-stress.
@@ -1455,8 +1376,7 @@
           status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idU2rs),   &
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 2D total WEC v-stress.
@@ -1470,8 +1390,7 @@
           status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idV2rs),   &
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #  ifdef SOLVE3D
 !
@@ -1487,8 +1406,7 @@
      &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 3D v-Stokes velocity.
@@ -1503,8 +1421,7 @@
      &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 3D omega-Stokes velocity.
@@ -1519,8 +1436,7 @@
      &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 
 !
@@ -1536,8 +1452,7 @@
      &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 
 !
@@ -1553,8 +1468,7 @@
      &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define 3D total WEC v-stress.
@@ -1569,8 +1483,7 @@
      &                   NF_FOUT, 3, rgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #  endif
 # endif
@@ -1588,8 +1501,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # endif
 # ifdef WAVES_LENGTH
@@ -1606,8 +1518,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # endif
 # ifdef WAVES_LENGTHP
@@ -1624,8 +1535,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # endif
 # ifdef WAVES_DIR
@@ -1642,7 +1552,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # endif
 # ifdef WAVES_DIRP
@@ -1659,7 +1569,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # endif
 # ifdef WAVES_TOP_PERIOD
@@ -1676,8 +1586,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 
 # endif
@@ -1695,8 +1604,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 
 # endif
@@ -1714,8 +1622,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # endif
 # if defined WAVES_OCEAN || (defined WEC_VF && defined BOTTOM_STREAMING)
@@ -1732,8 +1639,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # endif
 # if defined TKE_WAVEDISS || defined WAVES_OCEAN || \
@@ -1751,8 +1657,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define wave dissipation due to white capping.
@@ -1767,8 +1672,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # endif
 # if defined WEC_ROLLER
@@ -1785,8 +1689,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # endif
 # if defined ROLLER_RENIERS
@@ -1803,8 +1706,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # endif
 # if defined ROLLER_SVENDSEN
@@ -1821,8 +1723,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # endif
 # if defined WAVES_DSPR
@@ -1839,8 +1740,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define wave spectrum peakedness.
@@ -1855,8 +1755,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # endif
 # if defined WEC_VF
@@ -1873,8 +1772,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define WEC quasi-static pressure.
@@ -1889,8 +1787,7 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Define WEC quasi-static sea level adjustment.
@@ -1905,702 +1802,23 @@
      &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
      &                   SetFillVal = .TRUE.,                           &
      &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # endif
-# ifdef ICE_MODEL
-!
-!  Define 2D ice momentum in the XI-direction.
-!
-        IF (Sout(idUice,ng)) THEN
-          Vinfo( 1)=Vname(1,idUice)
-          Vinfo( 2)=Vname(2,idUice)
-          Vinfo( 3)=Vname(3,idUice)
-          Vinfo(14)=Vname(4,idUice)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idUice),   &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define 2D ice momentum in the ETA-direction.
-!
-        IF (Sout(idVice,ng)) THEN
-          Vinfo( 1)=Vname(1,idVice)
-          Vinfo( 2)=Vname(2,idVice)
-          Vinfo( 3)=Vname(3,idVice)
-          Vinfo(14)=Vname(4,idVice)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idVice),   &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define 2D ice momentum in the East-direction.
-!
-        IF (Sout(idUiceE,ng)) THEN
-          Vinfo( 1)=Vname(1,idUiceE)
-          Vinfo( 2)=Vname(2,idUiceE)
-          Vinfo( 3)=Vname(3,idUiceE)
-          Vinfo(14)=Vname(4,idUiceE)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idUiceE),  &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define 2D ice momentum in the North-direction.
-!
-        IF (Sout(idViceN,ng)) THEN
-          Vinfo( 1)=Vname(1,idViceN)
-          Vinfo( 2)=Vname(2,idViceN)
-          Vinfo( 3)=Vname(3,idViceN)
-          Vinfo(14)=Vname(4,idViceN)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idViceN),  &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice concentration.
-!
-        IF (Sout(idAice,ng)) THEN
-          Vinfo( 1)=Vname(1,idAice)
-          Vinfo( 2)=Vname(2,idAice)
-          Vinfo( 3)=Vname(3,idAice)
-          Vinfo(14)=Vname(4,idAice)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idAice),   &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice average thickness.
-!
-        IF (Sout(idHice,ng)) THEN
-          Vinfo( 1)=Vname(1,idHice)
-          Vinfo( 2)=Vname(2,idHice)
-          Vinfo( 3)=Vname(3,idHice)
-          Vinfo(14)=Vname(4,idHice)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idHice),   &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice/snow surface temperature.
-!
-        IF (Sout(idTice,ng)) THEN
-          Vinfo( 1)=Vname(1,idTice)
-          Vinfo( 2)=Vname(2,idTice)
-          Vinfo( 3)=Vname(3,idTice)
-          Vinfo(14)=Vname(4,idTice)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idTice),   &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define snow thickness.
-!
-        IF (Sout(idHsno,ng)) THEN
-          Vinfo( 1)=Vname(1,idHsno)
-          Vinfo( 2)=Vname(2,idHsno)
-          Vinfo( 3)=Vname(3,idHsno)
-          Vinfo(14)=Vname(4,idHsno)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idHsno),   &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice age
-!
-        IF (Sout(idAgeice,ng)) THEN
-          Vinfo( 1)=Vname(1,idAgeice)
-          Vinfo( 2)=Vname(2,idAgeice)
-          Vinfo( 3)=Vname(3,idAgeice)
-          Vinfo(14)=Vname(4,idAgeice)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idAgeice), &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice-ocean mass flux
-!
-        IF (Sout(idIomflx,ng)) THEN
-          Vinfo( 1)=Vname(1,idIomflx)
-          Vinfo( 2)=Vname(2,idIomflx)
-          Vinfo( 3)=Vname(3,idIomflx)
-          Vinfo(14)=Vname(4,idIomflx)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idIomflx), &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice internal temperature.
-!
-        IF (Sout(idTimid,ng)) THEN
-          Vinfo( 1)=Vname(1,idTimid)
-          Vinfo( 2)=Vname(2,idTimid)
-          Vinfo( 3)=Vname(3,idTimid)
-          Vinfo(14)=Vname(4,idTimid)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idTimid),  &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice top temperature.
-!
-        IF (Sout(idT2ice,ng)) THEN
-          Vinfo( 1)=Vname(1,idT2ice)
-          Vinfo( 2)=Vname(2,idT2ice)
-          Vinfo( 3)=Vname(3,idT2ice)
-          Vinfo(14)=Vname(4,idT2ice)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idT2ice),  &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice-water friction velocity.
-!
-        IF (Sout(idTauiw,ng)) THEN
-          Vinfo( 1)=Vname(1,idTauiw)
-          Vinfo( 2)=Vname(2,idTauiw)
-          Vinfo( 3)=Vname(3,idTauiw)
-          Vinfo(14)=Vname(4,idTauiw)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idTauiw),  &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice-water momentum transfer coefficient.
-!
-        IF (Sout(idChuiw,ng)) THEN
-          Vinfo( 1)=Vname(1,idChuiw)
-          Vinfo( 2)=Vname(2,idChuiw)
-          Vinfo( 3)=Vname(3,idChuiw)
-          Vinfo(14)=Vname(4,idChuiw)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idChuiw),  &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define under-ice temperature
-!
-        IF (Sout(idT0mk,ng)) THEN
-          Vinfo( 1)=Vname(1,idT0mk)
-          Vinfo( 2)=Vname(2,idT0mk)
-          Vinfo( 3)=Vname(3,idT0mk)
-          Vinfo(14)=Vname(4,idT0mk)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idT0mk),   &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define under-ice salinity
-!
-        IF (Sout(idS0mk,ng)) THEN
-          Vinfo( 1)=Vname(1,idS0mk)
-          Vinfo( 2)=Vname(2,idS0mk)
-          Vinfo( 3)=Vname(3,idS0mk)
-          Vinfo(14)=Vname(4,idS0mk)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idS0mk),   &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define frazil ice growth rate
-!
-        IF (Sout(idWfr,ng)) THEN
-          Vinfo( 1)=Vname(1,idWfr)
-          Vinfo( 2)=Vname(2,idWfr)
-          Vinfo( 3)=Vname(3,idWfr)
-          Vinfo(14)=Vname(4,idWfr)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idWfr),    &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice growth/melt rate
-!
-        IF (Sout(idWai,ng)) THEN
-          Vinfo( 1)=Vname(1,idWai)
-          Vinfo( 2)=Vname(2,idWai)
-          Vinfo( 3)=Vname(3,idWai)
-          Vinfo(14)=Vname(4,idWai)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idWai),    &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!
-!  Define ice growth/melt rate
-!
-        IF (Sout(idWao,ng)) THEN
-          Vinfo( 1)=Vname(1,idWao)
-          Vinfo( 2)=Vname(2,idWao)
-          Vinfo( 3)=Vname(3,idWao)
-          Vinfo(14)=Vname(4,idWao)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idWao),    &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice growth/melt rate
-!
-        IF (Sout(idWio,ng)) THEN
-          Vinfo( 1)=Vname(1,idWio)
-          Vinfo( 2)=Vname(2,idWio)
-          Vinfo( 3)=Vname(3,idWio)
-          Vinfo(14)=Vname(4,idWio)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idWio),    &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice melt runoff rate
-!
-        IF (Sout(idWro,ng)) THEN
-          Vinfo( 1)=Vname(1,idWro)
-          Vinfo( 2)=Vname(2,idWro)
-          Vinfo( 3)=Vname(3,idWro)
-          Vinfo(14)=Vname(4,idWro)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idWro),    &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice divergence rate
-!
-        IF (Sout(idWdiv,ng)) THEN
-          Vinfo( 1)=Vname(1,idWdiv)
-          Vinfo( 2)=Vname(2,idWdiv)
-          Vinfo( 3)=Vname(3,idWdiv)
-          Vinfo(14)=Vname(4,idWdiv)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idWdiv),   &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define internal ice stress sig11
-!
-        IF (Sout(idSig11,ng)) THEN
-          Vinfo( 1)=Vname(1,idSig11)
-          Vinfo( 2)=Vname(2,idSig11)
-          Vinfo( 3)=Vname(3,idSig11)
-          Vinfo(14)=Vname(4,idSig11)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idSig11),  &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define internal ice stress sig12
-!
-        IF (Sout(idSig12,ng)) THEN
-          Vinfo( 1)=Vname(1,idSig12)
-          Vinfo( 2)=Vname(2,idSig12)
-          Vinfo( 3)=Vname(3,idSig12)
-          Vinfo(14)=Vname(4,idSig12)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idSig12),  &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define internal ice stress sig22
-!
-        IF (Sout(idSig22,ng)) THEN
-          Vinfo( 1)=Vname(1,idSig22)
-          Vinfo( 2)=Vname(2,idSig22)
-          Vinfo( 3)=Vname(3,idSig22)
-          Vinfo(14)=Vname(4,idSig22)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idSig22),  &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-# ifdef ICE_DIAGS
-!
-!  Define ocean albedo
-!
-        IF (Sout(idAlbe,ng)) THEN
-          Vinfo( 1)=Vname(1,idAlbe)
-          Vinfo( 2)=Vname(2,idAlbe)
-          Vinfo( 3)=Vname(3,idAlbe)
-          Vinfo(14)=Vname(4,idAlbe)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idAlbe),   &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice albedo
-!
-        IF (Sout(idAlbI,ng)) THEN
-          Vinfo( 1)=Vname(1,idAlbI)
-          Vinfo( 2)=Vname(2,idAlbI)
-          Vinfo( 3)=Vname(3,idAlbI)
-          Vinfo(14)=Vname(4,idAlbI)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idAlbI),   &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define downward longwave
-!
-        IF (Sout(idLWdn,ng)) THEN
-          Vinfo( 1)=Vname(1,idLWdn)
-          Vinfo( 2)=Vname(2,idLWdn)
-          Vinfo( 3)=Vname(3,idLWdn)
-          Vinfo(14)=Vname(4,idLWdn)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idLWdn),   &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define downward shortwave
-!
-        IF (Sout(idSWdn,ng)) THEN
-          Vinfo( 1)=Vname(1,idSWdn)
-          Vinfo( 2)=Vname(2,idSWdn)
-          Vinfo( 3)=Vname(3,idSWdn)
-          Vinfo(14)=Vname(4,idSWdn)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idSWdn),   &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice latent heat
-!
-        IF (Sout(idLatI,ng)) THEN
-          Vinfo( 1)=Vname(1,idLatI)
-          Vinfo( 2)=Vname(2,idLatI)
-          Vinfo( 3)=Vname(3,idLatI)
-          Vinfo(14)=Vname(4,idLatI)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idLatI),   &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice sensible heat
-!
-        IF (Sout(idSenI,ng)) THEN
-          Vinfo( 1)=Vname(1,idSenI)
-          Vinfo( 2)=Vname(2,idSenI)
-          Vinfo( 3)=Vname(3,idSenI)
-          Vinfo(14)=Vname(4,idSenI)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idSenI),   &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice longwave up
-!
-        IF (Sout(idLWupI,ng)) THEN
-          Vinfo( 1)=Vname(1,idLWupI)
-          Vinfo( 2)=Vname(2,idLWupI)
-          Vinfo( 3)=Vname(3,idLWupI)
-          Vinfo(14)=Vname(4,idLWupI)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idLWupI),  &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice shortwave up
-!
-        IF (Sout(idSWupI,ng)) THEN
-          Vinfo( 1)=Vname(1,idSWupI)
-          Vinfo( 2)=Vname(2,idSWupI)
-          Vinfo( 3)=Vname(3,idSWupI)
-          Vinfo(14)=Vname(4,idSWupI)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idSWupI),  &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice shortwave in
-!
-        IF (Sout(idSWinI,ng)) THEN
-          Vinfo( 1)=Vname(1,idSWinI)
-          Vinfo( 2)=Vname(2,idSWinI)
-          Vinfo( 3)=Vname(3,idSWinI)
-          Vinfo(14)=Vname(4,idSWinI)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idSWinI),  &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice shortwave through
-!
-        IF (Sout(idSWthruI,ng)) THEN
-          Vinfo( 1)=Vname(1,idSWthruI)
-          Vinfo( 2)=Vname(2,idSWthruI)
-          Vinfo( 3)=Vname(3,idSWthruI)
-          Vinfo(14)=Vname(4,idSWthruI)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idSWthruI),&
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define salt flux under ice
-!
-        IF (Sout(idSaltI,ng)) THEN
-          Vinfo( 1)=Vname(1,idSaltI)
-          Vinfo( 2)=Vname(2,idSaltI)
-          Vinfo( 3)=Vname(3,idSaltI)
-          Vinfo(14)=Vname(4,idSaltI)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idSaltI),  &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define salt flux in leads
-!
-        IF (Sout(idSaltL,ng)) THEN
-          Vinfo( 1)=Vname(1,idSaltL)
-          Vinfo( 2)=Vname(2,idSaltL)
-          Vinfo( 3)=Vname(3,idSaltL)
-          Vinfo(14)=Vname(4,idSaltL)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idSaltL),  &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define heat flux in leads
-!
-        IF (Sout(idQao,ng)) THEN
-          Vinfo( 1)=Vname(1,idQao)
-          Vinfo( 2)=Vname(2,idQao)
-          Vinfo( 3)=Vname(3,idQao)
-          Vinfo(14)=Vname(4,idQao)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idQao),    &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice-air heat flux
-!
-        IF (Sout(idQai,ng)) THEN
-          Vinfo( 1)=Vname(1,idQai)
-          Vinfo( 2)=Vname(2,idQai)
-          Vinfo( 3)=Vname(3,idQai)
-          Vinfo(14)=Vname(4,idQai)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idQai),    &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice-ocean heat flux
-!
-        IF (Sout(idQio,ng)) THEN
-          Vinfo( 1)=Vname(1,idQio)
-          Vinfo( 2)=Vname(2,idQio)
-          Vinfo( 3)=Vname(3,idQio)
-          Vinfo(14)=Vname(4,idQio)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idQio),    &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define ice heat flux
-!
-        IF (Sout(idQi2,ng)) THEN
-          Vinfo( 1)=Vname(1,idQi2)
-          Vinfo( 2)=Vname(2,idQi2)
-          Vinfo( 3)=Vname(3,idQi2)
-          Vinfo(14)=Vname(4,idQi2)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idQi2),    &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-!
-!  Define snow-ice conversion rate
-!
-        IF (Sout(idSnoI,ng)) THEN
-          Vinfo( 1)=Vname(1,idSnoI)
-          Vinfo( 2)=Vname(2,idSnoI)
-          Vinfo( 3)=Vname(3,idSnoI)
-          Vinfo(14)=Vname(4,idSnoI)
-          Vinfo(16)=Vname(1,idtime)
-          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idSnoI),   &
-     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
-     &                   SetFillVal = .TRUE.,                           &
-     &                   SetParAccess = .TRUE.)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-        END IF
-# endif
-#endif
 !
 !-----------------------------------------------------------------------
 !  Leave definition mode.
 !-----------------------------------------------------------------------
 !
         CALL netcdf_enddef (ng, iNLM, ncname, STA(ng)%ncid)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Write out time-recordless, information variables.
 !-----------------------------------------------------------------------
 !
         CALL wrt_info (ng, iNLM, STA(ng)%ncid, ncname)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
       END IF DEFINE
 !
@@ -2615,8 +1833,7 @@
 !  Open stations file for read/write.
 !
         CALL netcdf_open (ng, iNLM, ncname, 1, STA(ng)%ncid)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
           WRITE (stdout,50) TRIM(ncname)
           RETURN
         END IF
@@ -2625,15 +1842,13 @@
 !
         CALL netcdf_check_dim (ng, iNLM, ncname,                        &
      &                         ncid = STA(ng)%ncid)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Inquire about the variables.
 !
         CALL netcdf_inq_var (ng, iNLM, ncname,                          &
      &                       ncid = STA(ng)%ncid)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Initialize logical switches.
 !
@@ -2777,10 +1992,10 @@
             got_var(idSrad)=.TRUE.
             STA(ng)%Vid(idSrad)=var_id(i)
 #  endif
-#  if defined EMINUSP && defined BULK_FLUXES
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idEmPf))) THEN
             got_var(idEmPf)=.TRUE.
             STA(ng)%Vid(idEmPf)=var_id(i)
+#  if defined EMINUSP && defined BULK_FLUXES
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idevap))) THEN
             got_var(idevap)=.TRUE.
             STA(ng)%Vid(idevap)=var_id(i)
@@ -2834,7 +2049,8 @@
             got_var(idVbvr)=.TRUE.
             STA(ng)%Vid(idVbvr)=var_id(i)
 #  endif
-#  if defined WET_DRY
+# endif
+# if defined WET_DRY
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idRwet))) THEN
             got_var(idRwet)=.TRUE.
             STA(ng)%Vid(idRwet)=var_id(i)
@@ -2844,137 +2060,6 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVwet))) THEN
             got_var(idVwet)=.TRUE.
             STA(ng)%Vid(idVwet)=var_id(i)
-#  endif
-#  ifdef ICE_MODEL
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUice))) THEN
-            got_var(idUice)=.TRUE.
-            STA(ng)%Vid(idUice)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idVice))) THEN
-            got_var(idVice)=.TRUE.
-            STA(ng)%Vid(idVice)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idUiceE))) THEN
-            got_var(idUiceE)=.TRUE.
-            STA(ng)%Vid(idUiceE)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idViceN))) THEN
-            got_var(idViceN)=.TRUE.
-            STA(ng)%Vid(idViceN)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idAice))) THEN
-            got_var(idAice)=.TRUE.
-            STA(ng)%Vid(idAice)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idHice))) THEN
-            got_var(idHice)=.TRUE.
-            STA(ng)%Vid(idHice)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTice))) THEN
-            got_var(idTice)=.TRUE.
-            STA(ng)%Vid(idTice)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idHsno))) THEN
-            got_var(idHsno)=.TRUE.
-            STA(ng)%Vid(idHsno)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idAgeice))) THEN
-            got_var(idAgeice)=.TRUE.
-            STA(ng)%Vid(idAgeice)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idIomflx))) THEN
-            got_var(idIomflx)=.TRUE.
-            STA(ng)%Vid(idIomflx)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTimid))) THEN
-            got_var(idTimid)=.TRUE.
-            STA(ng)%Vid(idTimid)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idT2ice))) THEN
-            got_var(idT2ice)=.TRUE.
-            STA(ng)%Vid(idT2ice)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTauiw))) THEN
-            got_var(idTauiw)=.TRUE.
-            STA(ng)%Vid(idTauiw)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idChuiw))) THEN
-            got_var(idChuiw)=.TRUE.
-            STA(ng)%Vid(idChuiw)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idT0mk))) THEN
-            got_var(idT0mk)=.TRUE.
-            STA(ng)%Vid(idT0mk)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idS0mk))) THEN
-            got_var(idS0mk)=.TRUE.
-            STA(ng)%Vid(idS0mk)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWfr))) THEN
-            got_var(idWfr)=.TRUE.
-            STA(ng)%Vid(idWfr)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWai))) THEN
-            got_var(idWai)=.TRUE.
-            STA(ng)%Vid(idWai)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWao))) THEN
-            got_var(idWao)=.TRUE.
-            STA(ng)%Vid(idWao)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWio))) THEN
-            got_var(idWio)=.TRUE.
-            STA(ng)%Vid(idWio)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWro))) THEN
-            got_var(idWro)=.TRUE.
-            STA(ng)%Vid(idWro)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idWdiv))) THEN
-            got_var(idWdiv)=.TRUE.
-            STA(ng)%Vid(idWdiv)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSig11))) THEN
-            got_var(idSig11)=.TRUE.
-            STA(ng)%Vid(idSig11)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSig12))) THEN
-            got_var(idSig12)=.TRUE.
-            STA(ng)%Vid(idSig12)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSig22))) THEN
-            got_var(idSig22)=.TRUE.
-            STA(ng)%Vid(idSig22)=var_id(i)
-#   ifdef ICE_DIAGS
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idAlbe))) THEN
-            got_var(idAlbe)=.TRUE.
-            STA(ng)%Vid(idAlbe)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idAlbI))) THEN
-            got_var(idAlbI)=.TRUE.
-            STA(ng)%Vid(idAlbI)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idLWdn))) THEN
-            got_var(idLWdn)=.TRUE.
-            STA(ng)%Vid(idLWdn)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSWdn))) THEN
-            got_var(idSWdn)=.TRUE.
-            STA(ng)%Vid(idSWdn)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idLatI))) THEN
-            got_var(idLatI)=.TRUE.
-            STA(ng)%Vid(idLatI)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSenI))) THEN
-            got_var(idSenI)=.TRUE.
-            STA(ng)%Vid(idSenI)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idLWupI))) THEN
-            got_var(idLWupI)=.TRUE.
-            STA(ng)%Vid(idLWupI)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSWupI))) THEN
-            got_var(idSWupI)=.TRUE.
-            STA(ng)%Vid(idSWupI)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSWinI))) THEN
-            got_var(idSWinI)=.TRUE.
-            STA(ng)%Vid(idSWinI)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSWthruI))) THEN
-            got_var(idSWthruI)=.TRUE.
-            STA(ng)%Vid(idSWthruI)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSaltI))) THEN
-            got_var(idSaltI)=.TRUE.
-            STA(ng)%Vid(idSaltI)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSaltL))) THEN
-            got_var(idSaltL)=.TRUE.
-            STA(ng)%Vid(idSaltL)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idQao))) THEN
-            got_var(idQao)=.TRUE.
-            STA(ng)%Vid(idQao)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idQai))) THEN
-            got_var(idQai)=.TRUE.
-            STA(ng)%Vid(idQai)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idQio))) THEN
-            got_var(idQio)=.TRUE.
-            STA(ng)%Vid(idQio)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idQi2))) THEN
-            got_var(idQi2)=.TRUE.
-            STA(ng)%Vid(idQi2)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSnoI))) THEN
-            got_var(idSnoI)=.TRUE.
-            STA(ng)%Vid(idSnoI)=var_id(i)
-#   endif
-#  endif
 # endif
 # ifdef WEC_MELLOR
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idW2xx))) THEN
@@ -3408,13 +2493,13 @@
           RETURN
         END IF
 #  endif
-#  if defined EMINUSP && defined BULK_FLUXES
         IF (.not.got_var(idEmPf).and.Sout(idEmPf,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idEmPf)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
+#  if defined EMINUSP && defined BULK_FLUXES
         IF (.not.got_var(idevap).and.Sout(idevap,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idevap)),          &
      &                                  TRIM(ncname)
@@ -3842,152 +2927,6 @@
           RETURN
         END IF
 # endif
-# ifdef ICE_MODEL
-        IF (.not.got_var(idUice).and.Sout(idUice,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idUice)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idVice).and.Sout(idVice,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idVice)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idUiceE).and.Sout(idUiceE,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idUiceE)),         &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idViceN).and.Sout(idViceN,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idViceN)),         &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idAice).and.Sout(idAice,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idAice)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idHice).and.Sout(idHice,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idHice)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idTice).and.Sout(idTice,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idTice)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idHsno).and.Sout(idHsno,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idHsno)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idAgeice).and.Sout(idAgeice,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idAgeice)),        &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idIomflx).and.Sout(idIomflx,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idIomflx)),        &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idTimid).and.Sout(idTimid,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idTimid)),         &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idT2ice).and.Sout(idT2ice,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idT2ice)),         &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idTauiw).and.Sout(idTauiw,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idTauiw)),         &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idChuiw).and.Sout(idChuiw,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idChuiw)),         &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idT0mk).and.Sout(idT0mk,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idT0mk)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idS0mk).and.Sout(idS0mk,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idS0mk)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idWfr).and.Sout(idWfr,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWfr)),           &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idWai).and.Sout(idWai,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWai)),           &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idWao).and.Sout(idWao,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWao)),           &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idWio).and.Sout(idWio,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWio)),           &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idWro).and.Sout(idWro,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idWro)),           &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idSig11).and.Sout(idSig11,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idSig11)),         &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idSig12).and.Sout(idSig12,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idSig12)),         &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idSig22).and.Sout(idSig22,ng)) THEN
-          IF (Master) WRITE (stdout,60) TRIM(Vname(1,idSig22)),         &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-# endif
 !
 !  Set unlimited time record dimension to the appropriate value.
 !
@@ -4006,7 +2945,7 @@
      &        a)
   60  FORMAT (/,' DEF_STATION - unable to find variable: ',a,2x,        &
      &        ' in stations NetCDF file: ',a)
-
+!
       RETURN
       END SUBROUTINE def_station
 #else

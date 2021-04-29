@@ -2,9 +2,9 @@
       MODULE ad_ini_fields_mod
 #ifdef ADJOINT
 !
-!svn $Id: ad_ini_fields.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: ad_ini_fields.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -47,10 +47,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iADM, 2, __LINE__, __FILE__)
+      CALL wclock_on (ng, iADM, 2, __LINE__, MyFile)
 # endif
       CALL ad_ini_fields_tile (ng, tile, model,                         &
      &                         LBi, UBi, LBj, UBj,                      &
@@ -82,9 +85,9 @@
      &                         OCEAN(ng) % zeta,                        &
      &                         OCEAN(ng) % ad_zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iADM, 2, __LINE__, __FILE__)
+      CALL wclock_off (ng, iADM, 2, __LINE__, MyFile)
 # endif
-
+!
       RETURN
       END SUBROUTINE ad_ini_fields
 !
@@ -317,7 +320,7 @@
 !!            tl_t(i,j,k,nnew,itrc)=tl_cff1
 !>
               ad_cff1=ad_cff1+ad_t(i,j,k,nstp,itrc)
-!!  &                        ad_t(i,j,k,nnew,itrc)
+!!   &                        ad_t(i,j,k,nnew,itrc)
               ad_t(i,j,k,nstp,itrc)=0.0_r8
 !!            ad_t(i,j,k,nnew,itrc)=0.0_r8
 #  ifdef MASKING
@@ -885,7 +888,7 @@
 !!          tl_u(i,j,k,nnew)=tl_cff1
 !>
             ad_cff1=ad_cff1+ad_u(i,j,k,nstp)
-!!    &                    +ad_u(i,j,k,nnew)          ! only nstp needed
+!!   &                     +ad_u(i,j,k,nnew)          ! only nstp needed
             ad_u(i,j,k,nstp)=0.0_r8
 !!          ad_u(i,j,k,nnew)=0.0_r8
 #  ifdef MASKING
@@ -901,7 +904,7 @@
         END DO
       END DO
 # endif
-
+!
       RETURN
       END SUBROUTINE ad_ini_fields_tile
 
@@ -924,10 +927,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", ad_ini_zeta"
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iADM, 2, __LINE__, __FILE__)
+      CALL wclock_on (ng, iADM, 2, __LINE__, MyFile)
 # endif
       CALL ad_ini_zeta_tile (ng, tile, model,                           &
      &                       LBi, UBi, LBj, UBj,                        &
@@ -951,8 +957,9 @@
      &                       OCEAN(ng) % ad_zeta_sol,                   &
      &                       OCEAN(ng) % ad_zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iADM, 2, __LINE__, __FILE__)
+      CALL wclock_off (ng, iADM, 2, __LINE__, MyFile)
 # endif
+!
       RETURN
       END SUBROUTINE ad_ini_zeta
 !
@@ -1229,7 +1236,7 @@
      &                             ad_zeta(:,:,kstp))
       END IF
 
-# if !(defined AD_SENSITIVITY    || defined IS4DVAR_SENSITIVITY || \
+# if !(defined AD_SENSITIVITY    || defined I4DVAR_ANA_SENSITIVITY || \
        defined SENSITIVITY_4DVAR || defined SO_SEMI)
 !
       IF (.not.(ANY(ad_LBC(:,isFsur,ng)%radiation).or.                  &
@@ -1333,7 +1340,7 @@
           ad_zeta_sol(i,j)=ad_zeta(i,j,kstp)
         END DO
       END DO
-
+!
       RETURN
       END SUBROUTINE ad_ini_zeta_tile
 !
@@ -1358,10 +1365,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", ad_out_fields"
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iADM, 2, __LINE__, __FILE__)
+      CALL wclock_on (ng, iADM, 2, __LINE__, MyFile)
 # endif
       CALL ad_out_fields_tile (ng, tile, model,                         &
      &                         LBi, UBi, LBj, UBj,                      &
@@ -1390,9 +1400,9 @@
      &                         OCEAN(ng) % ad_vbar,                     &
      &                         OCEAN(ng) % ad_zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iADM, 2, __LINE__, __FILE__)
+      CALL wclock_off (ng, iADM, 2, __LINE__, MyFile)
 # endif
-
+!
       RETURN
       END SUBROUTINE ad_out_fields
 !
@@ -1751,10 +1761,9 @@
         END DO
       END DO
 # endif
-
+!
       RETURN
       END SUBROUTINE ad_out_fields_tile
-
 !
 !***********************************************************************
       SUBROUTINE ad_out_zeta (ng, tile, model)
@@ -1774,10 +1783,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", ad_out_zeta"
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iADM, 2, __LINE__, __FILE__)
+      CALL wclock_on (ng, iADM, 2, __LINE__, MyFile)
 # endif
       CALL ad_out_zeta_tile (ng, tile, model,                           &
      &                       LBi, UBi, LBj, UBj,                        &
@@ -1801,9 +1813,9 @@
      &                       OCEAN(ng) % ad_zeta_sol,                   &
      &                       OCEAN(ng) % ad_zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iADM, 2, __LINE__, __FILE__)
+      CALL wclock_off (ng, iADM, 2, __LINE__, MyFile)
 # endif
-
+!
       RETURN
       END SUBROUTINE ad_out_zeta
 !
@@ -1985,7 +1997,7 @@
 # endif
         END DO
       END DO
-
+!
       RETURN
       END SUBROUTINE ad_out_zeta_tile
 #endif

@@ -1,13 +1,13 @@
-#!/bin/csh -f
+#!/bin/bash
 #
-# svn $Id: build_roms.sh 995 2020-01-10 04:01:28Z arango $
+# svn $Id: build_roms.sh 1054 2021-03-06 19:47:12Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
 #                                                                       :::
-# ROMS/TOMS Compiling CSH Script                                        :::
+# ROMS Compiling BASH Script                                            :::
 #                                                                       :::
 # Script to compile an user application where the application-specific  :::
 # files are kept separate from the ROMS source code.                    :::
@@ -34,7 +34,7 @@
 #                                                                       :::
 #    -p macro    Prints any Makefile macro value. For example,          :::
 #                                                                       :::
-#                  build.sh -p FFLAGS                                   :::
+#                  build_roms.sh -p FFLAGS                              :::
 #                                                                       :::
 #    -noclean    Do not clean already compiled objects                  :::
 #                                                                       :::
@@ -43,41 +43,43 @@
 #                                                                       :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-set which_MPI = openmpi                      #  default, overwritten below
+export which_MPI=openmpi                       # default, overwritten below
 
-set parallel = 0
-set clean = 1
-set dprint = 0
+parallel=0
+clean=1
+dprint=0
 
-setenv MY_CPP_FLAGS ''
+export MY_CPP_FLAGS=
 
-while ( ($#argv) > 0 )
-  switch ($1)
-    case "-noclean"
+while [ $# -gt 0 ]
+do
+  case "$1" in
+    -j )
       shift
-      set clean = 0
-    breaksw
-
-    case "-p"
-      shift
-      set clean = 0
-      set dprint = 1
-      set debug = "print-$1"
-      shift
-    breaksw
-
-    case "-j"
-      shift
-      set parallel = 1
-      if (`echo $1 | grep '^[0-9]\+$'` != "" ) then
-        set NCPUS = "-j $1"
+      parallel=1
+      test=`echo $1 | grep '^[0-9]\+$'`
+      if [ "$test" != "" ]; then
+        NCPUS="-j $1"
         shift
       else
-        set NCPUS = "-j"
-      endif
-    breaksw
+        NCPUS="-j"
+      fi
+      ;;
 
-    case "-*":
+    -p )
+      shift
+      clean=0
+      dprint=1
+      debug="print-$1"
+      shift
+      ;;
+
+    -noclean )
+      shift
+      clean=0
+      ;;
+
+    * )
       echo ""
       echo "$0 : Unknown option [ $1 ]"
       echo ""
@@ -87,27 +89,26 @@ while ( ($#argv) > 0 )
       echo "              omit argument for all avaliable CPUs"
       echo ""
       echo "-p macro    Prints any Makefile macro value"
-      echo "              For example:  build.sh -p FFLAGS"
+      echo "              For example:  build_roms.sh -p FFLAGS"
       echo ""
       echo "-noclean    Do not clean already compiled objects"
       echo ""
       exit 1
-    breaksw
-
-  endsw
-end
+      ;;
+  esac
+done
 
 # Set the CPP option defining the particular application. This will
 # determine the name of the ".h" header file with the application
 # CPP definitions.
 
-setenv ROMS_APPLICATION      UPWELLING
+export   ROMS_APPLICATION=UPWELLING
 
 # Set a local environmental variable to define the path to the directories
 # where all this project's files are kept.
 
-setenv MY_ROOT_DIR           ${HOME}/ocean/repository
-setenv MY_PROJECT_DIR        ${PWD}
+export        MY_ROOT_DIR=${HOME}/ocean/repository
+export     MY_PROJECT_DIR=${PWD}
 
 # The path to the user's local current ROMS source code.
 #
@@ -119,7 +120,7 @@ setenv MY_PROJECT_DIR        ${PWD}
 # machine. This script is designed to more easily allow for differing paths
 # to the code and inputs on differing machines.
 
- setenv MY_ROMS_SRC          ${MY_ROOT_DIR}/trunk
+ export       MY_ROMS_SRC=${MY_ROOT_DIR}/trunk
 
 # Set path of the directory containing makefile configuration (*.mk) files.
 # The user has the option to specify a customized version of these files
@@ -127,8 +128,8 @@ setenv MY_PROJECT_DIR        ${PWD}
 # ${MY_ROMS_SRC}/Compilers. If this is the case, you need to keep these
 # configurations files up-to-date.
 
- setenv COMPILERS            ${MY_ROMS_SRC}/Compilers
-#setenv COMPILERS            ${HOME}/Compilers/ROMS
+ export         COMPILERS=${MY_ROMS_SRC}/Compilers
+#export         COMPILERS=${HOME}/Compilers/ROMS
 
 #--------------------------------------------------------------------------
 # Set tunable CPP options.
@@ -140,13 +141,13 @@ setenv MY_PROJECT_DIR        ${PWD}
 # Notice also that you need to use shell's quoting syntax to enclose the
 # definition.  Both single or double quotes work. For example,
 #
-#    setenv MY_CPP_FLAGS "${MY_CPP_FLAGS} -DAVERAGES"
-#    setenv MY_CPP_FLAGS "${MY_CPP_FLAGS} -DDEBUGGING"
+#export      MY_CPP_FLAGS="${MY_CPP_FLAGS} -DAVERAGES"
+#export      MY_CPP_FLAGS="${MY_CPP_FLAGS} -DDEBUGGING"
 #
 # can be used to write time-averaged fields. Notice that you can have as
 # many definitions as you want by appending values.
 
-#setenv MY_CPP_FLAGS "${MY_CPP_FLAGS} -D"
+#export      MY_CPP_FLAGS="${MY_CPP_FLAGS} -D"
 
 #--------------------------------------------------------------------------
 # Compiler options.
@@ -158,64 +159,63 @@ setenv MY_PROJECT_DIR        ${PWD}
 # out. Any string value (including off) will evaluate to TRUE in
 # conditional if-statements.
 
- setenv USE_MPI             on          # distributed-memory parallelism
- setenv USE_MPIF90          on          # compile with mpif90 script
-#setenv which_MPI           mpich       # compile with MPICH library
-#setenv which_MPI           mpich2      # compile with MPICH2 library
-#setenv which_MPI           mvapich2    # compile with MVAPICH2 library
- setenv which_MPI           openmpi     # compile with OpenMPI library
+ export           USE_MPI=on            # distributed-memory parallelism
+ export        USE_MPIF90=on            # compile with mpif90 script
+#export         which_MPI=mpich         # compile with MPICH library
+#export         which_MPI=mpich2        # compile with MPICH2 library
+#export         which_MPI=mvapich2      # compile with MVAPICH2 library
+ export         which_MPI=openmpi       # compile with OpenMPI library
 
-#setenv USE_OpenMP          on          # shared-memory parallelism
+#export        USE_OpenMP=on            # shared-memory parallelism
 
- setenv FORT                ifort
-#setenv FORT                gfortran
-#setenv FORT                pgi
+ export              FORT=ifort
+#export              FORT=gfortran
+#export              FORT=pgi
 
-#setenv USE_DEBUG           on          # use Fortran debugging flags
- setenv USE_LARGE           on          # activate 64-bit compilation
-#setenv USE_NETCDF4         on          # compile with NetCDF-4 library
-#setenv USE_PARALLEL_IO     on          # Parallel I/O with NetCDF-4/HDF5
+#export         USE_DEBUG=on            # use Fortran debugging flags
+ export         USE_LARGE=on            # activate 64-bit compilation
+#export       USE_NETCDF4=on            # compile with NetCDF-4 library
+#export          USE_HDF5=on            # compile with HDF5 library
+#export   USE_PARALLEL_IO=on            # Parallel I/O with NetCDF-4/HDF5
 
 #--------------------------------------------------------------------------
-# If coupling Earth Systems Models (ESM), set the location of the ESM
-# component libraries and modules. The strategy is to compile and link
-# each ESM component separately first, and then ROMS since it is driving
-# the coupled system. Only the ESM components activated are considered
-# and the rest are ignored.  Some components like WRF cannot be built
-# in a directory specified by the user but in it is the root directory,
-# and cannot be moved when debugging with tools like TotalView.
+# If Earth System Model (ESM) coupling, set location of ESM component
+# libraries and modules. The strategy is to compile and link each ESM
+# component separately first and ROMS last since it is driving the
+# coupled system. Only the ESM components activated are considered and
+# the rest ignored.
 #--------------------------------------------------------------------------
 
-setenv WRF_SRC_DIR         ${HOME}/ocean/repository/WRF
+export        WRF_SRC_DIR=${HOME}/ocean/repository/WRF
 
-if ($?USE_DEBUG) then
-  setenv CICE_LIB_DIR      ${MY_PROJECT_DIR}/Build_ciceG
-  setenv COAMPS_LIB_DIR    ${MY_PROJECT_DIR}/Build_coampsG
-  setenv REGCM_LIB_DIR     ${MY_PROJECT_DIR}/Build_regcmG
-  setenv WAM_LIB_DIR       ${MY_PROJECT_DIR}/Build_wamG
-# setenv WRF_LIB_DIR       ${MY_PROJECT_DIR}/Build_wrfG
-  setenv WRF_LIB_DIR       ${WRF_SRC_DIR}
+if [ -n "${USE_DEBUG:+1}" ]; then
+  export     CICE_LIB_DIR=${MY_PROJECT_DIR}/Build_ciceG
+  export   COAMPS_LIB_DIR=${MY_PROJECT_DIR}/Build_coampsG
+  export    REGCM_LIB_DIR=${MY_PROJECT_DIR}/Build_regcmG
+  export      WAM_LIB_DIR=${MY_PROJECT_DIR}/Build_wamG
+# export      WRF_LIB_DIR=${MY_PROJECT_DIR}/Build_wrfG
+  export      WRF_LIB_DIR=${WRF_SRC_DIR}
 else
-  setenv CICE_LIB_DIR      ${MY_PROJECT_DIR}/Build_cice
-  setenv COAMPS_LIB_DIR    ${MY_PROJECT_DIR}/Build_coamps
-  setenv REGCM_LIB_DIR     ${MY_PROJECT_DIR}/Build_regcm
-  setenv WAM_LIB_DIR       ${MY_PROJECT_DIR}/Build_wam
-  setenv WRF_LIB_DIR       ${MY_PROJECT_DIR}/Build_wrf
-# setenv WRF_LIB_DIR       ${WRF_SRC_DIR}
-endif
+  export     CICE_LIB_DIR=${MY_PROJECT_DIR}/Build_cice
+  export   COAMPS_LIB_DIR=${MY_PROJECT_DIR}/Build_coamps
+  export    REGCM_LIB_DIR=${MY_PROJECT_DIR}/Build_regcm
+  export      WAM_LIB_DIR=${MY_PROJECT_DIR}/Build_wam
+  export      WRF_LIB_DIR=${MY_PROJECT_DIR}/Build_wrf
+# export      WRF_LIB_DIR=${WRF_SRC_DIR}
+fi
 
 #--------------------------------------------------------------------------
 # If applicable, use my specified library paths.
 #--------------------------------------------------------------------------
 
- setenv USE_MY_LIBS no           # use system default library paths
-#setenv USE_MY_LIBS yes          # use my customized library paths
+ export USE_MY_LIBS=no            # use system default library paths
+#export USE_MY_LIBS=yes           # use my customized library paths
 
-set MY_PATHS = ${COMPILERS}/my_build_paths.sh
+MY_PATHS=${COMPILERS}/my_build_paths.sh
 
-if ($USE_MY_LIBS == 'yes') then
+if [ "${USE_MY_LIBS}" = "yes" ]; then
   source ${MY_PATHS} ${MY_PATHS}
-endif
+fi
 
 #--------------------------------------------------------------------------
 # The rest of this script sets the path to the users header file and
@@ -226,22 +226,22 @@ endif
 # customized biology model header file (like fennel.h, nemuro.h, ecosim.h,
 # etc).
 
- setenv MY_HEADER_DIR       ${MY_PROJECT_DIR}
+ export     MY_HEADER_DIR=${MY_PROJECT_DIR}
 
- setenv MY_ANALYTICAL_DIR   ${MY_PROJECT_DIR}
+ export MY_ANALYTICAL_DIR=${MY_PROJECT_DIR}
 
 # Put the binary to execute in the following directory.
 
- setenv BINDIR              ${MY_PROJECT_DIR}
+ export            BINDIR=${MY_PROJECT_DIR}
 
 # Put the f90 files in a project specific Build directory to avoid conflict
 # with other projects.
 
-if ($?USE_DEBUG) then
-  setenv SCRATCH_DIR        ${MY_PROJECT_DIR}/Build_romsG
+if [ -n "${USE_DEBUG:+1}" ]; then
+ export       SCRATCH_DIR=${MY_PROJECT_DIR}/Build_romsG
 else
-  setenv SCRATCH_DIR        ${MY_PROJECT_DIR}/Build_roms
-endif
+ export       SCRATCH_DIR=${MY_PROJECT_DIR}/Build_roms
+fi
 
 # Go to the users source directory to compile. The options set above will
 # pick up the application-specific code from the appropriate place.
@@ -250,10 +250,10 @@ endif
 
 # Stop if activating both MPI and OpenMP at the same time.
 
-if ( ${?USE_MPI} & ${?USE_OpenMP} ) then
+if [ -n "${USE_MPI:+1}" ] && [ -n "${USE_OpenMP:+1}" ]; then
   echo "You cannot activate USE_MPI and USE_OpenMP at the same time!"
   exit 1
-endif
+fi
 
 #--------------------------------------------------------------------------
 # Compile.
@@ -261,18 +261,18 @@ endif
 
 # Remove build directory.
 
-if ( $clean == 1 ) then
+if [ $clean -eq 1 ]; then
   make clean
-endif
+fi
 
 # Compile (the binary will go to BINDIR set above).
 
-if ( $dprint == 1 ) then
+if [ $dprint -eq 1 ]; then
   make $debug
 else
-  if ( $parallel == 1 ) then
+  if [ $parallel -eq 1 ]; then
     make $NCPUS
   else
     make
-  endif
-endif
+  fi
+fi

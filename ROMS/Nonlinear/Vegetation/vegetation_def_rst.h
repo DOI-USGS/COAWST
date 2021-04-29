@@ -9,7 +9,7 @@
 *************************************************** Alexis Beudin     **
 *************************************************** Tarandeep S. Kalra**
 **                                                                    **
-**  Defines vegetation module input parameters in output restart      ** 
+**  Defines vegetation module input parameters in output restart      **
 **  NetCDF files.                                                     **
 **  It is included in routine "def_rst.F".                            **
 **                                                                    **
@@ -37,13 +37,13 @@
           Aval(5)=REAL(Iinfo(1,idvprp(i),ng),r8)
           status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idvprp(i)),&
      &                  NF_FRST, nvd4, v3pgrd, Aval, Vinfo, ncname)
-         IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END DO
 #endif
 !
-#if defined VEG_STREAMING 
+#if defined VEG_STREAMING
 !
-!  Define wave dissipation due to vegetation 
+!  Define wave dissipation due to vegetation
 !
           Vinfo( 1)=Vname(1,idWdvg)
           Vinfo( 2)=Vname(2,idWdvg)
@@ -57,12 +57,12 @@
           Aval(5)=REAL(Iinfo(1,idWdvg,ng),r8)
           status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idWdvg),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
-#endif 
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+#endif
 !
 #ifdef MARSH_DYNAMICS
 !
-!  Store marsh masking marsh from marsh cells. 
+!  Store marsh masking marsh from marsh cells.
 !
           Vinfo( 1)=Vname(1,idTims)
           Vinfo( 2)=Vname(2,idTims)
@@ -81,7 +81,7 @@
           Aval(5)=REAL(Iinfo(1,idTims,ng),r8)
           status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idTims),   &
      &                   NF_FRST, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 # ifdef MARSH_WAVE_THRUST
 !
@@ -104,7 +104,7 @@
           Aval(5)=REAL(Iinfo(1,idTtot,ng),r8)
           status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idTtot),   &
      &                   NF_FRST, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 #  ifdef MARSH_SED_EROSION
 !
@@ -129,7 +129,7 @@
           status=def_var(ng, iNLM, RST(ng)%ncid,                        &
      &                   RST(ng)%Vid(idTmfo(i)), NF_FRST,               &
      &                   nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END DO
 !
 #   ifdef MARSH_RETREAT
@@ -153,8 +153,8 @@
           Aval(5)=REAL(Iinfo(1,idTmmr,ng),r8)
           status=def_var(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idTmmr),   &
      &                   NF_FRST, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
-#   endif 
-#  endif  
-# endif   
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+#   endif
+#  endif
+# endif
 #endif

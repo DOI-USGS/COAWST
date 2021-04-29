@@ -15,6 +15,10 @@
 %                         variables (visc_factor and diff_factor) to an
 %                         existing ROMS Grid NetCDF file.
 %
+%   cartesian_grid    - Given a larger donor grid, this function estracts
+%                         a rotated Cartesian grid centered at provided
+%                         coordinates and rotated by specified angle.
+%
 %   check_nest_masks  - Checks land/sea masks in nesting contact regions.
 %                         In particular, it can be used to examine the
 %                         nesting grids connectivity when there are land/sea
@@ -32,6 +36,14 @@
 %                         a larger input grid.
 %
 %   grid_metrics      - Computes ROMS Grid horizontal metrics.
+%                         This function is deprecated. Use "roms_metrics"
+%                         instead.
+%
+%   grid_rotated      - Given a larger Grid NetCDF file, this function
+%                         extracts and creates a rotated subdomain
+%                         (Cartesian or Spherical) Grid NetCDF file
+%                         centered at provided coordinate and rotated by
+%                         specified angle. 
 %
 %   grids_structure   - Compute a nested grids structure array, say G(:),
 %                         containing all the grid variables associated
@@ -40,6 +52,15 @@
 %
 %   get_roms_grid     - Builds or updates a ROMS grid structure for
 %                         a particular ROMS application.
+%
+%   roms_metrics      - Robust function to computes the several ROMS grid
+%                         metrics from the (lon,lat) coordinates. It
+%                         replaces "grid_metrics".
+%
+%   spherical_grid    - Given a larger donor grid, this function
+%                       extracts a rotated Spherical grid centered at
+%                       provided coordinates and rotated by specified
+%                       angle. 
 %
 %   uniform_grid      - Sets a ROMS Cartesian grid uniform coordinates and
 %                         metrics.
@@ -88,7 +109,7 @@
 %                         into a NetCDF file.
 %
 
-% svn $Id: Contents.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: Contents.m 1057 2021-03-16 23:33:12Z arango $
 %=========================================================================%
 %  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %

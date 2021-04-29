@@ -2,9 +2,9 @@
       MODULE ad_omega_mod
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_omega.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: ad_omega.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -20,10 +20,10 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: ad_omega
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -44,10 +44,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, model, 13, __LINE__, __FILE__)
+      CALL wclock_on (ng, model, 13, __LINE__, MyFile)
 # endif
       CALL ad_omega_tile (ng, tile, model,                              &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -67,8 +70,9 @@
      &                    OCEAN(ng) % W,                                &
      &                    OCEAN(ng) % ad_W)
 # ifdef PROFILE
-      CALL wclock_off (ng, model, 13, __LINE__, __FILE__)
+      CALL wclock_off (ng, model, 13, __LINE__, MyFile)
 # endif
+!
       RETURN
       END SUBROUTINE ad_omega
 !
@@ -220,7 +224,13 @@
           END DO
         END DO
 !
-!  Apply mass point sources (volume vertical influx), if any.
+!  Apply mass point sources (volume vertical influx) to the BASIC
+!  STATE, if any.
+!
+!  Overwrite W(Isrc,Jsrc,k) with the same divergence of Huon,Hvom as
+!  above but add in point source Qsrc(k) and reaccumulate the vertical
+!  sum to obtain the correct net Qbar given in user input - J. Levin
+!  (Jupiter Intelligence Inc.) and J. Wilkin
 !
         IF (LwSrc(ng)) THEN
           DO is=1,Nsrc(ng)
@@ -230,7 +240,10 @@
      &          ((JstrR.le.jj).and.(jj.le.JendR)).and.                  &
      &          (j.eq.jj)) THEN
               DO k=1,N(ng)
-                W(ii,jj,k)=W(ii,jj,k)+SOURCES(ng)%Qsrc(is,k)
+                W(ii,jj,k)=W(ii,jj,k-1)-                                &
+     &                     (Huon(ii+1,jj,k)-Huon(ii,jj,k)+              &
+     &                      Hvom(ii,jj+1,k)-Hvom(ii,jj,k))+             &
+     &                     SOURCES(ng)%Qsrc(is,k)
               END DO
             END IF
           END DO
@@ -278,7 +291,7 @@
           ad_cff=0.0_r8
         END DO
 !
-!  Apply mass point sources (volume vertical influx), if any.
+!  Adjoint of apply mass point sources (volume vertical influx), if any.
 !
         IF (LwSrc(ng)) THEN
           DO is=1,Nsrc(ng)
@@ -287,14 +300,33 @@
             IF (((IstrR.le.ii).and.(ii.le.IendR)).and.                  &
      &          ((JstrR.le.jj).and.(jj.le.JendR)).and.                  &
      &          (j.eq.jj)) THEN
-              DO k=1,N(ng)
-!>              tl_W(ii,jj,k)=tl_W(ii,jj,k)+0.0_r8
+!>            DO k=1,N(ng)
 !>
-!!              ad_W(ii,jj,k)=ad_W(ii,jj,k)+0.0_r8
+              DO k=N(ng),1,-1
+!>              tl_W(ii,jj,k)=tl_W(ii,jj,k-1)-                          &
+!>   &                        (tl_Huon(ii+1,jj,k)-tl_Huon(ii,jj,k)+     &
+!>   &                         tl_Hvom(ii,jj+1,k)-tl_Hvom(ii,jj,k))+    &
+!>   &                        SOURCES(ng)%tl_Qsrc(is,k)
+!>
+                ad_W(ii,jj,k-1)=ad_W(ii,jj,k-1)+ad_W(ii,jj,k)
+                ad_Huon(ii  ,jj,k)=ad_Huon(ii  ,jj,k)+ad_W(ii,jj,k)
+                ad_Huon(ii+1,jj,k)=ad_Huon(ii+1,jj,k)-ad_W(ii,jj,k)
+                ad_Hvom(ii,jj  ,k)=ad_Hvom(ii,jj  ,k)+ad_W(ii,jj,k)
+                ad_Hvom(ii,jj+1,k)=ad_Hvom(ii,jj+1,k)-ad_W(ii,jj,k)
+                SOURCES(ng)%ad_Qsrc(is,k)=SOURCES(ng)%ad_Qsrc(is,k)+    &
+     &                                    ad_W(ii,jj,k)
+!
+!  We have to do this here so that we do not double count ad_W(ii,jj,k)
+!  in the next loop. It is okay here since the loop is counting
+!  backwards in k, and ad_W is cleared after the net loop.
+!
+                ad_W(ii,jj,k)=0.0_r8
               END DO
             END IF
           END DO
         END IF
+!
+!  Adjoint of code added to clear tl_W to be consistent with adjoint.
 !
 !>      DO k=1,N(ng)
 !>
@@ -311,9 +343,6 @@
             ad_Hvom(i,j+1,k)=ad_Hvom(i,j+1,k)-ad_W(i,j,k)
           END DO
         END DO
-!
-!  Clear ad_W here since it is a diagnostic variable.
-!
         DO k=1,N(ng)
           DO i=Istr,Iend
 !>          tl_W(i,j,k)=0.0_r8
@@ -321,6 +350,9 @@
             ad_W(i,j,k)=0.0_r8
           END DO
         END DO
+!
+!  Adjoint of starting vertical velocity at the bottom.
+!
         DO i=Istr,Iend
 # if defined SEDIMENT_NOT_YET && defined SED_MORPH_NOT_YET
 !>        tl_W(i,j,0)=-cff1*(tl_bed_thick(i,j,nstp)-                    &
@@ -362,7 +394,7 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    W)
 # endif
-
+!
       RETURN
       END SUBROUTINE ad_omega_tile
 #endif

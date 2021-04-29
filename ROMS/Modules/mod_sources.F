@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_sources
 !
-!svn $Id: mod_sources.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: mod_sources.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -44,12 +44,12 @@
 !
         USE mod_kinds
         USE mod_param
-
+!
         implicit none
-
+!
         integer, allocatable :: Msrc(:)
         integer, allocatable :: Nsrc(:)
-
+!
         TYPE T_SOURCES
 
           integer, pointer :: Isrc(:)
@@ -81,12 +81,24 @@
 # endif
 #endif
 
+#ifdef ADJOINT
+          real(r8), pointer :: ad_Qbar(:)
+          real(r8), pointer :: ad_Qsrc(:,:)
+          real(r8), pointer :: ad_Tsrc(:,:,:)
+#endif
+
+#ifdef TANGENT
+          real(r8), pointer :: tl_Qbar(:)
+          real(r8), pointer :: tl_Qsrc(:,:)
+          real(r8), pointer :: tl_Tsrc(:,:,:)
+#endif
+
         END TYPE T_SOURCES
 
         TYPE (T_SOURCES), allocatable :: SOURCES(:)
-
+!
       CONTAINS
-
+!
       SUBROUTINE allocate_sources (ng)
 !
 !=======================================================================
@@ -115,19 +127,26 @@
 !
 #ifndef ANA_PSOURCE
       logical :: foundit
-
+!
       integer :: Vid, ifile, nvatt, nvdim
 #endif
       integer :: is, itrc, k, mg
 
       real(r8), parameter :: IniVal = 0.0_r8
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", allocate_sources"
+!
 !-----------------------------------------------------------------------
 !  Allocate module variables.
 !-----------------------------------------------------------------------
 !
-      IF (ng.eq.1) THEN
+!     IF (ng.eq.1) THEN
+      IF (.not.allocated(Msrc)) THEN
         allocate ( Msrc(Ngrids) )
+      END IF
+
+      IF (.not.allocated(Nsrc)) THEN
         allocate ( Nsrc(Ngrids) )
       END IF
 
@@ -145,8 +164,7 @@
      &                           VarID = Vid,                           &
      &                           nVardim = nvdim,                       &
      &                           nVarAtt = nvatt)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__//", allocate_sources")) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
             IF (foundit) THEN
               Nsrc(mg)=var_Dsize(1)         ! first dimension
@@ -223,6 +241,29 @@
       Dmem(ng)=Dmem(ng)+2.0_r8*REAL(Nsrc(ng)*N(ng)*NT(ng),r8)
 # endif
 #endif
+
+#ifdef ADJOINT
+      allocate ( SOURCES(ng) % ad_Qbar(Nsrc(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng),r8)
+
+      allocate ( SOURCES(ng) % ad_Qsrc(Nsrc(ng),N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng)*N(ng),r8)
+
+      allocate ( SOURCES(ng) % ad_Tsrc(Nsrc(ng),N(ng),NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng)*N(ng)*NT(ng),r8)
+#endif
+
+#ifdef TANGENT
+      allocate ( SOURCES(ng) % tl_Qbar(Nsrc(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng),r8)
+
+      allocate ( SOURCES(ng) % tl_Qsrc(Nsrc(ng),N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng)*N(ng),r8)
+
+      allocate ( SOURCES(ng) % tl_Tsrc(Nsrc(ng),N(ng),NT(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(Nsrc(ng)*N(ng)*NT(ng),r8)
+#endif
+
 !
 !-----------------------------------------------------------------------
 !  Initialize module variables.
@@ -240,11 +281,23 @@
         SOURCES(ng) % QbarG(is,1) = IniVal
         SOURCES(ng) % QbarG(is,2) = IniVal
 #endif
+#ifdef ADJOINT
+        SOURCES(ng) % ad_Qbar(is) = IniVal
+#endif
+#ifdef TANGENT
+        SOURCES(ng) % tl_Qbar(is) = IniVal
+#endif
       END DO
       DO k=1,N(ng)
         DO is=1,Nsrc(ng)
           SOURCES(ng) % Qshape(is,k) = IniVal
           SOURCES(ng) % Qsrc(is,k) = IniVal
+#ifdef ADJOINT
+          SOURCES(ng) % ad_Qsrc(is,k) = IniVal
+#endif
+#ifdef TANGENT
+          SOURCES(ng) % tl_Qsrc(is,k) = IniVal
+#endif
         END DO
       END DO
       DO itrc=1,NT(ng)
@@ -266,6 +319,12 @@
         DO k=1,N(ng)
           DO is=1,Nsrc(ng)
             SOURCES(ng) % Tsrc(is,k,itrc) = IniVal
+# ifdef ADJOINT
+            SOURCES(ng) % ad_Tsrc(is,k,itrc) = IniVal
+# endif
+# ifdef TANGENT
+            SOURCES(ng) % tl_Tsrc(is,k,itrc) = IniVal
+# endif
 # ifndef ANA_PSOURCE
             SOURCES(ng) % TsrcG(is,k,1,itrc) = IniVal
             SOURCES(ng) % TsrcG(is,k,2,itrc) = IniVal
@@ -274,7 +333,7 @@
         END DO
 #endif
       END DO
-
+!
       RETURN
       END SUBROUTINE allocate_sources
       END MODULE mod_sources

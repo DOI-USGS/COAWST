@@ -2,9 +2,9 @@
       MODULE tl_set_depth_mod
 #ifdef TANGENT
 !
-!svn $Id: tl_set_depth.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: tl_set_depth.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -55,10 +55,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, model, 12, __LINE__, __FILE__)
+      CALL wclock_on (ng, model, 12, __LINE__, MyFile)
 #  endif
       CALL tl_set_depth_tile (ng, tile, model,                          &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -78,9 +81,9 @@
      &                        GRID(ng) % tl_z_r,                        &
      &                        GRID(ng) % tl_z_w)
 #  ifdef PROFILE
-      CALL wclock_off (ng, model, 12, __LINE__, __FILE__)
+      CALL wclock_off (ng, model, 12, __LINE__, MyFile)
 #  endif
-
+!
       RETURN
       END SUBROUTINE tl_set_depth
 !
@@ -385,7 +388,7 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_z_r, tl_Hz)
 #  endif
-
+!
       RETURN
       END SUBROUTINE tl_set_depth_tile
 
@@ -404,10 +407,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", tl_set_depth_bry"
+!
 #   include "tile.h"
 !
 #   ifdef PROFILE
-      CALL wclock_on (ng, model, 12, __LINE__, __FILE__)
+      CALL wclock_on (ng, model, 12, __LINE__, MyFile)
 #   endif
       CALL tl_set_depth_bry_tile (ng, tile, model,                      &
      &                            LBi, UBi, LBj, UBj, LBij, UBij,       &
@@ -419,9 +425,9 @@
 #   endif
      &                            GRID(ng) % tl_Hz_bry)
 #   ifdef PROFILE
-      CALL wclock_off (ng, model, 12, __LINE__, __FILE__)
+      CALL wclock_off (ng, model, 12, __LINE__, MyFile)
 #   endif
-
+!
       RETURN
       END SUBROUTINE tl_set_depth_bry
 !
@@ -822,7 +828,7 @@
      &                          tl_Hz_bry(:,:,ibry))
       END DO
 #   endif
-
+!
       RETURN
       END SUBROUTINE tl_set_depth_bry_tile
 #  endif
@@ -841,19 +847,22 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", tl_bath"
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 12, __LINE__, __FILE__)
+      CALL wclock_on (ng, iTLM, 12, __LINE__, MyFile)
 # endif
       CALL tl_bath_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   GRID(ng) % tl_h)
 # ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 12, __LINE__, __FILE__)
+      CALL wclock_off (ng, iTLM, 12, __LINE__, MyFile)
 # endif
-
+!
       RETURN
       END SUBROUTINE tl_bath
 !
@@ -913,7 +922,7 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    tl_h)
 # endif
-
+!
       RETURN
       END SUBROUTINE tl_bath_tile
 #endif

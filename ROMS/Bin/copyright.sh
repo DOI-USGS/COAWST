@@ -1,13 +1,13 @@
-#!/bin/csh -f
+#!/bin/bash
 #
-# svn $Id: copyright.sh 995 2020-01-10 04:01:28Z arango $
+# svn $Id: copyright.sh 1054 2021-03-06 19:47:12Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::: David Robertson :::
 #                                                                       :::
-# ROMS/TOMS Copyright Update Script                                     :::
+# ROMS Copyright Update BASH Script                                     :::
 #                                                                       :::
 # Script to update the copyright information on ROMS source files.      :::
 # This script replaces the copyright string in the source files and     :::
@@ -27,37 +27,34 @@
 #                                                                       :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-set search = "2002-2019 The ROMS/TOMS"
-set replace = "2002-2020 The ROMS/TOMS"
+search="2002-2020 The ROMS/TOMS"
+replace="2002-2021 The ROMS/TOMS"
 
 # Directories to search for replacements.
 
-set c_dirs = "Apps Compilers ESM Master ROMS User"
+c_dirs="Compilers ESM Master ROMS User"
 
 # Specific files not in the "c_dirs".
 
-set special_files = "makefile Waves/SWAN/Src/Module.mk Waves/SWAN/Src/waves_coupler.F Waves/SWAN/Src/swancpp.h"
+special_files="makefile Waves/SWAN/Src/Module.mk Waves/SWAN/Src/waves_coupler.F Waves/SWAN/Src/swancpp.h"
 
-set setsvn = 1
+setsvn=1
+verbose=0
 
-# verbose is a csh command to print all lines of the script so I changed
-# this variable to "verb".
-
-set verb = 0
-
-while ( ($#argv) > 0 )
-  switch ($1)
-    case "-nosvn":
+while [ $# -gt 0 ]
+do
+  case "$1" in
+    -nosvn )
       shift
-      set setsvn = 0
-    breaksw
+      setsvn=0
+      ;;
 
-    case "-verbose":
+    -verbose )
       shift
-      set verb = 1
-    breaksw
+      verbose=1
+      ;;
 
-    case "-*":
+    * )
       echo ""
       echo "$0 : Unknown option [ $1 ]"
       echo ""
@@ -69,66 +66,57 @@ while ( ($#argv) > 0 )
       echo "-verbose  list files that are modified"
       echo ""
       exit 1
-    breaksw
+      ;;
+  esac
+done
 
-  endsw
-end
-
-echo ""
-echo "Replacing Copyright String in Files ..."
-echo ""
+echo -e "\nReplacing Copyright String in Files ...\n"
 
 # The "! -path '*/.svn/*'" is there to keep it from messing with
 # files in the .svn directories. The "! -name 'copyright.*'" is to
 # keep it from messing with the file that's making the reaplacements.
-# There is no way to redirect only stderr with csh.
+# The "2>" redirects stderr so errors don't get put in FILE.
 
-foreach FILE ( `find ${c_dirs} ! -path '*/.svn/*' ! -name 'copyright.*' -type f -print` )
+for FILE in `find ${c_dirs} ! -path '*/.svn/*' ! -name 'copyright.*' -type f -print 2> /dev/null`
+do
 
 # Double check that we're not changing a file in a .svn folder.
 
-  if ( `echo $FILE | grep -vc '.svn/'` ) then
-    if ( $verb == 1 ) then
-#      grep -l "${search}" $FILE && perl -i -pe "s|${search}|${replace}|g" $FILE
+  if [ `echo $FILE | grep -vc '.svn/'` -gt 0 ]; then
+    if [ $verbose -eq 1 ]; then
       grep -l "${search}" $FILE && sed -i -e "s|${search}|${replace}|g" $FILE
     else
-#      grep -l "${search}" $FILE > /dev/null && perl -i -pe "s|${search}|${replace}|g" $FILE
       grep -l "${search}" $FILE > /dev/null && sed -i -e "s|${search}|${replace}|g" $FILE
-    endif
+    fi
   else
     echo "There is a .svn in the path: $FILE skipped"
-  endif
-
-end
+  fi
+done
 
 # Replace the string in the "special_files" separately.
 
-foreach FILE ( $special_files )
-  if ( $verb == 1 ) then
-#    grep -l "${search}" $FILE && perl -i -pe "s|${search}|${replace}|g" $FILE
+for FILE in $special_files
+do
+  if [ $verbose -eq 1 ]; then
     grep -l "${search}" $FILE && sed -i -e "s|${search}|${replace}|g" $FILE
   else
-#    grep -l "${search}" $FILE > /dev/null && perl -i -pe "s|${search}|${replace}|g" $FILE
     grep -l "${search}" $FILE > /dev/null && sed -i -e "s|${search}|${replace}|g" $FILE
-  endif
-end
+  fi
+done
 
-echo ""
-echo "Done."
-echo ""
+echo -e "\nDone.\n"
 
-if ( $setsvn == 1 ) then
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' Compilers
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' Data
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' ESM
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' Master
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' ROMS
-  svn propset -R copyright '(c) 2002-2020 The ROMS/TOMS Group' User
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' . makefile
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' Waves/SWAN/Src/Module.mk
-  svn propset copyright '(c) 2002-2020 The ROMS/TOMS Group' Waves/SWAN/Src/waves_coupler.F
+if [ $setsvn -eq 1 ]; then
+  svn propset -R copyright '(c) 2002-2021 The ROMS/TOMS Group' Compilers
+  svn propset -R copyright '(c) 2002-2021 The ROMS/TOMS Group' Data
+  svn propset -R copyright '(c) 2002-2021 The ROMS/TOMS Group' ESM
+  svn propset -R copyright '(c) 2002-2021 The ROMS/TOMS Group' Master
+  svn propset -R copyright '(c) 2002-2021 The ROMS/TOMS Group' ROMS
+  svn propset -R copyright '(c) 2002-2021 The ROMS/TOMS Group' User
+  svn propset copyright '(c) 2002-2021 The ROMS/TOMS Group' . makefile
+  svn propset copyright '(c) 2002-2021 The ROMS/TOMS Group' Waves/SWAN/Src/Module.mk
+  svn propset copyright '(c) 2002-2021 The ROMS/TOMS Group' Waves/SWAN/Src/waves_coupler.F
 else
-  echo ""
-  echo "Not updating svn properties."
-  echo ""
-endif
+  echo -e "Not updating svn properties.\n"
+fi
+

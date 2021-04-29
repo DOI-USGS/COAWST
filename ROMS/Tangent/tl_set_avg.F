@@ -3,9 +3,9 @@
 #if (defined TL_AVERAGES && defined TANGENT) || \
     (defined RP_AVERAGES && defined TL_IOMS)
 !
-!svn $Id: tl_set_avg.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: tl_set_avg.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -35,10 +35,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 5, __LINE__, __FILE__)
+      CALL wclock_on (ng, iTLM, 5, __LINE__, MyFile)
 # endif
       CALL tl_set_avg_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
@@ -59,8 +62,9 @@
 # endif
 
 # ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 5, __LINE__, __FILE__)
+      CALL wclock_off (ng, iTLM, 5, __LINE__, MyFile)
 # endif
+!
       RETURN
       END SUBROUTINE tl_set_avg
 !
@@ -1246,7 +1250,7 @@
           DO j=Jstr,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgsvs(i,j)=vfac(i,j)*                        &
-    &                                 AVERAGE(ng)%avgsvs(i,j)
+     &                                AVERAGE(ng)%avgsvs(i,j)
             END DO
           END DO
         END IF
@@ -1255,7 +1259,7 @@
           DO j=JstrR,JendR
             DO i=Istr,IendR
               AVERAGE(ng)%avgbus(i,j)=ufac(i,j)*                        &
-    &                                 AVERAGE(ng)%avgbus(i,j)
+     &                                AVERAGE(ng)%avgbus(i,j)
             END DO
           END DO
         END IF
@@ -1263,7 +1267,7 @@
           DO j=Jstr,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgbvs(i,j)=vfac(i,j)*                        &
-    &                                 AVERAGE(ng)%avgbvs(i,j)
+     &                                AVERAGE(ng)%avgbvs(i,j)
             END DO
           END DO
         END IF
@@ -1273,7 +1277,7 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgstf(i,j)=rfac(i,j)*                        &
-    &                                 AVERAGE(ng)%avgstf(i,j)
+     &                                AVERAGE(ng)%avgstf(i,j)
             END DO
           END DO
         END IF
@@ -1281,7 +1285,7 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgswf(i,j)=rfac(i,j)*                        &
-    &                                 AVERAGE(ng)%avgswf(i,j)
+     &                                AVERAGE(ng)%avgswf(i,j)
             END DO
           END DO
         END IF
@@ -1290,7 +1294,7 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgsrf(i,j)=rfac(i,j)*                        &
-    &                                 AVERAGE(ng)%avgsrf(i,j)
+     &                                AVERAGE(ng)%avgsrf(i,j)
             END DO
           END DO
         END IF
@@ -1300,7 +1304,7 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avglhf(i,j)=rfac(i,j)*                        &
-    &                                 AVERAGE(ng)%avglhf(i,j)
+     &                                AVERAGE(ng)%avglhf(i,j)
             END DO
           END DO
         END IF
@@ -1308,7 +1312,7 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgshf(i,j)=rfac(i,j)*                        &
-    &                                 AVERAGE(ng)%avgshf(i,j)
+     &                                AVERAGE(ng)%avgshf(i,j)
             END DO
           END DO
         END IF
@@ -1316,7 +1320,7 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avglrf(i,j)=rfac(i,j)*                        &
-    &                                 AVERAGE(ng)%avglrf(i,j)
+     &                                AVERAGE(ng)%avglrf(i,j)
             END DO
           END DO
         END IF
@@ -1325,7 +1329,7 @@
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgevap(i,j)=rfac(i,j)*                       &
-    &                                  AVERAGE(ng)%avgevap(i,j)
+     &                                 AVERAGE(ng)%avgevap(i,j)
             END DO
           END DO
         END IF
@@ -1429,7 +1433,7 @@
         END DO
 # endif
       END IF
-
+!
       RETURN
       END SUBROUTINE tl_set_avg_tile
 #endif

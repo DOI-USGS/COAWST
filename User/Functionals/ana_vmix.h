@@ -1,8 +1,8 @@
       SUBROUTINE ana_vmix (ng, tile, model)
 !
-!! svn $Id: ana_vmix.h 995 2020-01-10 04:01:28Z arango $
+!! svn $Id: ana_vmix.h 1054 2021-03-06 19:47:12Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -22,7 +22,12 @@
 ! Imported variable declarations.
 !
       integer, intent(in) :: ng, tile, model
-
+!
+! Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 #include "tile.h"
 !
       CALL ana_vmix_tile (ng, tile, model,                              &
@@ -43,9 +48,9 @@
 #else
       IF (Lanafile.and.(tile.eq.0)) THEN
 #endif
-        ANANAME(35)=__FILE__
+        ANANAME(35)=MyFile
       END IF
-
+!
       RETURN
       END SUBROUTINE ana_vmix
 !
@@ -159,6 +164,6 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Akt)
 #endif
-
+!
       RETURN
       END SUBROUTINE ana_vmix_tile

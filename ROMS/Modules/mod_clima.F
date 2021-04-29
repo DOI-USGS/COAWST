@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_clima
 !
-!svn $Id: mod_clima.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: mod_clima.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -103,33 +103,6 @@
           real(r8), pointer :: tclmG(:,:,:,:,:)
 # endif
 #endif
-
-#ifdef ICE_MODEL
-          real(r8), pointer :: uiclm(:,:)
-          real(r8), pointer :: viclm(:,:)
-# ifndef ANA_MICLIMA
-          real(r8), pointer :: uiclmG(:,:,:)
-          real(r8), pointer :: viclmG(:,:,:)
-# endif
-
-          real(r8), pointer :: aiclm(:,:)
-          real(r8), pointer :: hiclm(:,:)
-          real(r8), pointer :: hsnclm(:,:)
-# ifndef ANA_AICLIMA
-          real(r8), pointer :: aiclmG(:,:,:)
-          real(r8), pointer :: hiclmG(:,:,:)
-          real(r8), pointer :: hsnclmG(:,:,:)
-# endif
-
-          real(r8), pointer :: sig11clm(:,:)
-          real(r8), pointer :: sig12clm(:,:)
-          real(r8), pointer :: sig22clm(:,:)
-# ifndef ANA_SICLIMA
-          real(r8), pointer :: sig11clmG(:,:,:)
-          real(r8), pointer :: sig12clmG(:,:,:)
-          real(r8), pointer :: sig22clmG(:,:,:)
-# endif
-#endif
 !
 !  Nudging coefficient arrays.
 !
@@ -139,14 +112,9 @@
 
           real(r8), pointer :: Tnudgcof(:,:,:,:)
 #endif
-#ifdef ICE_MODEL
-          real(r8), pointer :: MInudgcof(:,:)
-          real(r8), pointer :: AInudgcof(:,:)
-          real(r8), pointer :: SInudgcof(:,:)
-#endif
 
-#if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
-    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+#if defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR      || \
     defined SO_SEMI
 !
 !  Adjoint-based algorithms arrays.
@@ -269,58 +237,9 @@
         Dmem(ng)=Dmem(ng)+REAL(N(ng)*NTCLM(ng),r8)*size2d
 
 # ifndef ANA_TCLIMA
-        allocate ( CLIMA(ng) % tclmG(LBi:UBi,LBj:UBj,N(ng),2,          &
+        allocate ( CLIMA(ng) % tclmG(LBi:UBi,LBj:UBj,N(ng),2,           &
      &                               NTCLM(ng)) )
         Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)*NTCLM(ng),r8)*size2d
-# endif
-      END IF
-#endif
-
-#ifdef ICE_MODEL
-      IF (LmiCLM(ng)) THEN
-        allocate ( CLIMA(ng) % uiclm(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-        allocate ( CLIMA(ng) % viclm(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-# ifndef ANA_MICLIMA
-        allocate ( CLIMA(ng) % uiclmG(LBi:UBi,LBj:UBj,2) )
-        Dmem(ng)=Dmem(ng)+size2d*2
-        allocate ( CLIMA(ng) % viclmG(LBi:UBi,LBj:UBj,2) )
-        Dmem(ng)=Dmem(ng)+size2d*2
-# endif
-      END IF
-
-      IF (LaiCLM(ng)) THEN
-        allocate ( CLIMA(ng) % aiclm(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-        allocate ( CLIMA(ng) % hiclm(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-        allocate ( CLIMA(ng) % hsnclm(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-# ifndef ANA_AICLIMA
-        allocate ( CLIMA(ng) % aiclmG(LBi:UBi,LBj:UBj,2) )
-        Dmem(ng)=Dmem(ng)+size2d*2
-        allocate ( CLIMA(ng) % hiclmG(LBi:UBi,LBj:UBj,2) )
-        Dmem(ng)=Dmem(ng)+size2d*2
-        allocate ( CLIMA(ng) % hsnclmG(LBi:UBi,LBj:UBj,2) )
-        Dmem(ng)=Dmem(ng)+size2d*2
-# endif
-      END IF
-
-      IF (LsiCLM(ng)) THEN
-        allocate ( CLIMA(ng) % sig11clm(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-        allocate ( CLIMA(ng) % sig12clm(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-        allocate ( CLIMA(ng) % sig22clm(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-# ifndef ANA_SICLIMA
-        allocate ( CLIMA(ng) % sig11clmG(LBi:UBi,LBj:UBj,2) )
-        Dmem(ng)=Dmem(ng)+size2d*2
-        allocate ( CLIMA(ng) % sig12clmG(LBi:UBi,LBj:UBj,2) )
-        Dmem(ng)=Dmem(ng)+size2d*2
-        allocate ( CLIMA(ng) % sig22clmG(LBi:UBi,LBj:UBj,2) )
-        Dmem(ng)=Dmem(ng)+size2d*2
 # endif
       END IF
 #endif
@@ -339,30 +258,14 @@
       END IF
 
       IF (ANY(LnudgeTCLM(:,ng))) THEN
-        allocate ( CLIMA(ng) % Tnudgcof(LBi:UBi,LBj:UBj,N(ng),NTCLM(ng)) )
+        allocate ( CLIMA(ng) % Tnudgcof(LBi:UBi,LBj:UBj,N(ng),          &
+     &                                  NTCLM(ng)) )
         Dmem(ng)=Dmem(ng)+2.0_r8*REAL(N(ng)*NTCLM(ng),r8)*size2d
       END IF
 #endif
-#ifdef ICE_MODEL
-      IF (LnudgeMICLM(ng)) THEN
-        allocate ( CLIMA(ng) % MInudgcof(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-      END IF
 
-      IF (LnudgeAICLM(ng)) THEN
-        allocate ( CLIMA(ng) % AInudgcof(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-      END IF
-
-      IF (LnudgeSICLM(ng)) THEN
-        allocate ( CLIMA(ng) % SInudgcof(LBi:UBi,LBj:UBj) )
-        Dmem(ng)=Dmem(ng)+size2d
-      END IF
-#endif
-
-
-#if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
-    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+#if defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR      || \
     defined SO_SEMI
 !
 !  Adjoint-based algorithms arrays.
@@ -560,59 +463,6 @@
         END DO
       END IF
 #endif
-
-#ifdef ICE_MODEL
-      IF (LmiCLM(ng)) THEN
-        DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            CLIMA(ng) % uiclm(i,j) = IniVal
-            CLIMA(ng) % viclm(i,j) = IniVal
-# ifndef ANA_MICLIMA
-            CLIMA(ng) % uiclmG(i,j,1) = IniVal
-            CLIMA(ng) % uiclmG(i,j,2) = IniVal
-            CLIMA(ng) % viclmG(i,j,1) = IniVal
-            CLIMA(ng) % viclmG(i,j,2) = IniVal
-# endif
-          END DO
-        END DO
-      END IF
-
-      IF (LaiCLM(ng)) THEN
-        DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            CLIMA(ng) % aiclm(i,j) = IniVal
-            CLIMA(ng) % hiclm(i,j) = IniVal
-            CLIMA(ng) % hsnclm(i,j) = IniVal
-# ifndef ANA_AICLIMA
-            CLIMA(ng) % aiclmG(i,j,1) = IniVal
-            CLIMA(ng) % aiclmG(i,j,2) = IniVal
-            CLIMA(ng) % hiclmG(i,j,1) = IniVal
-            CLIMA(ng) % hiclmG(i,j,2) = IniVal
-            CLIMA(ng) % hsnclmG(i,j,1) = IniVal
-            CLIMA(ng) % hsnclmG(i,j,2) = IniVal
-# endif
-          END DO
-        END DO
-      END IF
-
-      IF (LsiCLM(ng)) THEN
-        DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            CLIMA(ng) % sig11clm(i,j) = IniVal
-            CLIMA(ng) % sig12clm(i,j) = IniVal
-            CLIMA(ng) % sig22clm(i,j) = IniVal
-# ifndef ANA_AICLIMA
-            CLIMA(ng) % sig11clmG(i,j,1) = IniVal
-            CLIMA(ng) % sig12clmG(i,j,2) = IniVal
-            CLIMA(ng) % sig22clmG(i,j,1) = IniVal
-            CLIMA(ng) % sig11clmG(i,j,2) = IniVal
-            CLIMA(ng) % sig12clmG(i,j,1) = IniVal
-            CLIMA(ng) % sig22clmG(i,j,2) = IniVal
-# endif
-          END DO
-        END DO
-      END IF
-#endif
 !
 !  Nudging coefficient arrays.
 !
@@ -649,34 +499,8 @@
       END IF
 #endif
 
-#ifdef ICE_MODEL
-      IF (LnudgeMICLM(ng)) THEN
-        DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            CLIMA(ng) % MInudgcof(i,j) = IniVal
-          END DO
-        END DO
-      END IF
-
-      IF (LnudgeAICLM(ng)) THEN
-        DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            CLIMA(ng) % AInudgcof(i,j) = IniVal
-          END DO
-        END DO
-      END IF
-
-      IF (LnudgeSICLM(ng)) THEN
-        DO j=Jmin,Jmax
-          DO i=Imin,Imax
-            CLIMA(ng) % SInudgcof(i,j) = IniVal
-          END DO
-        END DO
-      END IF
-#endif
-
-#if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
-    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+#if defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR      || \
     defined SO_SEMI
 !
 !  Adjoint-based algorithms arrays.

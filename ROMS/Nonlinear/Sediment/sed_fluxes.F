@@ -4,9 +4,9 @@
 
 #if defined NONLINEAR && defined SEDIMENT && defined SUSPLOAD
 !
-!svn $Id: sed_fluxes.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: sed_fluxes.F 1054 2021-03-06 19:47:12Z arango $
 !==================================================== John C. Warner ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -24,10 +24,10 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: sed_fluxes
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -48,10 +48,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 16, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 16, __LINE__, MyFile)
 # endif
       CALL sed_fluxes_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
@@ -87,8 +90,9 @@
      &                      SEDBED(ng) % bed_mass,                      &
      &                      SEDBED(ng) % bottom)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 16, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 16, __LINE__, MyFile)
 # endif
+!
       RETURN
       END SUBROUTINE sed_fluxes
 !
@@ -311,7 +315,7 @@
           END DO
         END DO SED_LOOP
       END DO J_LOOP
-
+!
       RETURN
       END SUBROUTINE sed_fluxes_tile
 #endif

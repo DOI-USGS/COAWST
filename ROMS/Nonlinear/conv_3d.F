@@ -4,9 +4,9 @@
 
 #if defined NONLINEAR && defined FOUR_DVAR && defined SOLVE3D
 !
-!svn $Id: conv_3d.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: conv_3d.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -309,7 +309,7 @@
             DO j=Jstr-1,Jend+1
               DO i=Istr-1,Iend+1
                 cff=1.0_r8/(z_r(i,j,k+1)-z_r(i,j,k))
-                dAdz(i,j,k2)=cff*(Awrk(i,j,k+1,Nold)-                  &
+                dAdz(i,j,k2)=cff*(Awrk(i,j,k+1,Nold)-                   &
      &                            Awrk(i,j,k  ,Nold))
 #  ifdef MASKING
                 dAdz(i,j,k2)=dAdz(i,j,k2)*rmask(i,j)
@@ -948,7 +948,7 @@
             DO j=Jstr-1,Jend+1
               DO i=IstrU-1,Iend+1
                 cff=1.0_r8/(z_r(i,j,k+1)-z_r(i,j,k))
-                dAdz(i,j,k2)=cff*(Awrk(i,j,k+1,Nold)-                  &
+                dAdz(i,j,k2)=cff*(Awrk(i,j,k+1,Nold)-                   &
      &                            Awrk(i,j,k  ,Nold))
 #  ifdef MASKING
                 dAdz(i,j,k2)=dAdz(i,j,k2)*umask(i,j)
@@ -1592,7 +1592,7 @@
             DO j=JstrV-1,Jend+1
               DO i=Istr-1,Iend+1
                 cff=1.0_r8/(z_r(i,j,k+1)-z_r(i,j,k))
-                dAdz(i,j,k2)=cff*(Awrk(i,j,k+1,Nold)-                  &
+                dAdz(i,j,k2)=cff*(Awrk(i,j,k+1,Nold)-                   &
      &                            Awrk(i,j,k  ,Nold))
 #  ifdef MASKING
                 dAdz(i,j,k2)=dAdz(i,j,k2)*vmask(i,j)

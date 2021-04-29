@@ -721,25 +721,25 @@ if (spherical)
   if (~isempty(G(dg).x_rho) && ~isempty(G(dg).y_rho))
     FCr = griddedInterpolant(XrC, YrC, G(dg).x_rho, method);
 
-    FCr.Values = G(dg).angle;    R.angle = FCr(XrF, YrF); 
-    FCr.Values = G(dg).f;        R.f     = FCr(XrF, YrF); 
-    FCr.Values = G(dg).h;        R.h     = FCr(XrF, YrF); 
+    FCr.Values = G(dg).angle(:);    R.angle = FCr(XrF, YrF); 
+    FCr.Values = G(dg).f(:);        R.f     = FCr(XrF, YrF); 
+    FCr.Values = G(dg).h(:);        R.h     = FCr(XrF, YrF); 
 
   elseif (~isempty(G(dg).lon_rho) && ~isempty(G(dg).lat_rho))
     FSr = griddedInterpolant(XrC, YrC, G(dg).lon_rho, method);
 
-    FSr.Values = G(dg).angle;    R.angle = FSr(XrF, YrF); 
-    FSr.Values = G(dg).f;        R.f     = FSr(XrF, YrF); 
-    FSr.Values = G(dg).h;        R.h     = FSr(XrF, YrF); 
+    FSr.Values = G(dg).angle(:);    R.angle = FSr(XrF, YrF); 
+    FSr.Values = G(dg).f(:);        R.f     = FSr(XrF, YrF); 
+    FSr.Values = G(dg).h(:);        R.h     = FSr(XrF, YrF); 
   
   end
 
 else
   FCr = griddedInterpolant(XrC, YrC, G(dg).x_rho, method);
 
-  FCr.Values = G(dg).angle;      R.angle = FCr(XrF, YrF); 
-  FCr.Values = G(dg).f;          R.f     = FCr(XrF, YrF); 
-  FCr.Values = G(dg).h;          R.h     = FCr(XrF, YrF); 
+  FCr.Values = G(dg).angle(:);      R.angle = FCr(XrF, YrF); 
+  FCr.Values = G(dg).f(:);          R.f     = FCr(XrF, YrF); 
+  FCr.Values = G(dg).h(:);          R.h     = FCr(XrF, YrF); 
 
 end
 
@@ -2150,15 +2150,12 @@ if (dg > rg || AreaAvg_rg > AreaAvg_dg)
   R.xi_rho  = [];
   R.eta_rho = [];
 
-%jcw
-  if (spherical)  %here is where R is not allowing x_rho
+  R.x_rho   = [];
+  R.y_rho   = [];
+  if (spherical)
     R.lon_rho = [];
     R.lat_rho = [];
   end
-%  else
-    R.x_rho   = [];
-    R.y_rho   = [];
-%  end
 
   R.Irg_rho = [];
   R.Jrg_rho = [];
@@ -2166,14 +2163,12 @@ if (dg > rg || AreaAvg_rg > AreaAvg_dg)
   R.xi_psi  = [];
   R.eta_psi = [];
 
+  R.x_psi   = [];
+  R.y_psi   = [];
   if (spherical)
     R.lon_psi = [];
     R.lat_psi = [];
   end
-%  else
-    R.x_psi   = [];
-    R.y_psi   = [];
-%  end
 
   R.Irg_psi = [];
   R.Jrg_psi = [];
@@ -2181,14 +2176,12 @@ if (dg > rg || AreaAvg_rg > AreaAvg_dg)
   R.xi_u  = [];
   R.eta_u = [];
 
+  R.x_u   = [];
+  R.y_u   = [];
   if (spherical)
     R.lon_u = [];
     R.lat_u = [];
   end
-%  else
-    R.x_u   = [];
-    R.y_u   = [];
-%  end
 
   R.Irg_u = [];
   R.Jrg_u = [];
@@ -2196,14 +2189,12 @@ if (dg > rg || AreaAvg_rg > AreaAvg_dg)
   R.xi_v  = [];
   R.eta_v = [];
   
+  R.x_v   = [];
+  R.y_v   = [];
   if (spherical)
     R.lon_v = [];
     R.lat_v = [];
   end
-%  else
-    R.x_v   = [];
-    R.y_v   = [];
-%  end
 
   R.Irg_v = [];
   R.Jrg_v = [];

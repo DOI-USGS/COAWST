@@ -2,9 +2,9 @@
       MODULE set_vbc_mod
 #ifdef NONLINEAR
 !
-!svn $Id: set_vbc.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: set_vbc.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -31,9 +31,6 @@
       USE mod_grid
       USE mod_forces
       USE mod_ocean
-# if defined ICE_MODEL || defined CICE_MODEL
-      USE mod_ice
-# endif
       USE mod_stepping
 !
 !  Imported variable declarations.
@@ -42,18 +39,18 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 6, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 6, __LINE__, MyFile)
 #  endif
       CALL set_vbc_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   IminS, ImaxS, JminS, JmaxS,                    &
      &                   nrhs(ng),                                      &
-#  if defined ICE_MODEL && defined NO_SCORRECTION_ICE
-     &                   liold(ng),                                     &
-#  endif
      &                   GRID(ng) % Hz,                                 &
 #  if defined UV_LOGDRAG
      &                   GRID(ng) % ZoBot,                              &
@@ -72,19 +69,13 @@
 #  ifdef WET_DRY
      &                   GRID(ng) % rmask_wet,                          &
 #  endif
-#  ifdef ICESHELF
+#  if defined ICESHELF
      &                   GRID(ng) % zice,                               &
-#   ifdef ICESHELF_3EQ
-     &                   GRID(ng) % f,                                  &
-#   endif
 #  endif
      &                   OCEAN(ng) % t,                                 &
 #  if !defined BBL_MODEL || defined ICESHELF
      &                   OCEAN(ng) % u,                                 &
      &                   OCEAN(ng) % v,                                 &
-#  endif
-#  ifdef ICESHELF_3EQ
-     &                   OCEAN(ng) % rho,                               &
 #  endif
 #  ifdef QCORRECTION
      &                   FORCES(ng) % dqdt,                             &
@@ -93,15 +84,9 @@
 #  if defined SCORRECTION || defined SRELAXATION
      &                   FORCES(ng) % sss,                              &
 #  endif
-#  if defined SSSFLX
-     &                   FORCES(ng) % sssflx,                           &
-#  endif
 #  if defined ICESHELF
 #   ifdef SHORTWAVE
      &                   FORCES(ng) % srflx,                            &
-#   endif
-#   ifdef ICESHELF_3EQ
-     &                   FORCES(ng) % Tair,                             &
 #   endif
      &                   FORCES(ng) % sustr,                            &
      &                   FORCES(ng) % svstr,                            &
@@ -110,26 +95,14 @@
      &                   FORCES(ng) % bustr,                            &
      &                   FORCES(ng) % bvstr,                            &
 #  endif
-#  ifdef ICE_MODEL
-     &                   FORCES(ng) % qao_n,                            &
-#  endif
-#  if defined ICE_MODEL || defined CICE_MODEL
-#   ifdef NO_SCORRECTION_ICE
-     &                   ICE(ng) % ai,                                  &
-#   endif
-#  endif
-#  if defined BULK_FLUXES || defined AIR_OCEAN
-     &                   FORCES(ng) % snhflx,                           &
-#  endif
-#  if (defined BULK_FLUXES && defined EMINUSP) || defined AIR_OCEAN
-     &                   FORCES(ng) % EminusP,                          &
-#  endif
+     &                   FORCES(ng) % stflux,                           &
+     &                   FORCES(ng) % btflux,                           &
      &                   FORCES(ng) % stflx,                            &
      &                   FORCES(ng) % btflx)
 #  ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 6, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 6, __LINE__, MyFile)
 #  endif
-
+!
       RETURN
       END SUBROUTINE set_vbc
 !
@@ -138,9 +111,6 @@
      &                         LBi, UBi, LBj, UBj,                      &
      &                         IminS, ImaxS, JminS, JmaxS,              &
      &                         nrhs,                                    &
-#  if defined ICE_MODEL && defined NO_SCORRECTION_ICE
-     &                         liold,                                   &
-#  endif
      &                         Hz,                                      &
 #  if defined UV_LOGDRAG
      &                         ZoBot,                                   &
@@ -158,18 +128,12 @@
 #  ifdef WET_DRY
      &                         rmask_wet,                               &
 #  endif
-#  ifdef ICESHELF
+#  if defined ICESHELF
      &                         zice,                                    &
-#   ifdef ICESHELF_3EQ
-     &                         f,                                       &
-#   endif
 #  endif
      &                         t,                                       &
 #  if !defined BBL_MODEL || defined ICESHELF
      &                         u, v,                                    &
-#  endif
-#  ifdef ICESHELF_3EQ
-     &                         rho,                                     &
 #  endif
 #  ifdef QCORRECTION
      &                         dqdt, sst,                               &
@@ -184,28 +148,12 @@
 #   ifdef SHORTWAVE
      &                         srflx,                                   &
 #   endif
-#   ifdef ICESHELF_3EQ
-     &                         Tair,                                    &
-#   endif
      &                         sustr, svstr,                            &
 #  endif
 #  ifndef BBL_MODEL
      &                         bustr, bvstr,                            &
 #  endif
-#  ifdef ICE_MODEL
-     &                         qao_n,                                   &
-#  endif
-#  if defined ICE_MODEL || defined CICE_MODEL
-#   ifdef NO_SCORRECTION_ICE
-     &                         ai,                                      &
-#   endif
-#  endif
-#  if defined BULK_FLUXES || defined AIR_OCEAN
-     &                         snhflx,                                  &
-#  endif
-#  if (defined BULK_FLUXES && defined EMINUSP) || defined AIR_OCEAN
-     &                         EminusP,                                 &
-#  endif
+     &                         stflux, btflux,                          &
      &                         stflx, btflx)
 !***********************************************************************
 !
@@ -213,9 +161,9 @@
       USE mod_scalars
 !
       USE bc_2d_mod
-# ifdef DISTRIBUTE
+#  ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d
-# endif
+#  endif
 !
 !  Imported variable declarations.
 !
@@ -223,9 +171,6 @@
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
       integer, intent(in) :: nrhs
-#  if defined ICE_MODEL && defined NO_SCORRECTION_ICE
-      integer, intent(in) :: liold
-#  endif
 !
 #  ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
@@ -246,19 +191,13 @@
 #   ifdef WET_DRY
       real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
 #   endif
-#   ifdef ICESHELF
+#   if defined ICESHELF
       real(r8), intent(in) :: zice(LBi:,LBj:)
-#    ifdef ICESHELF_3EQ
-      real(r8), intent(in) :: f(LBi:,LBj:)
-#    endif
 #   endif
       real(r8), intent(in) :: t(LBi:,LBj:,:,:,:)
 #   if !defined BBL_MODEL || defined ICESHELF
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
-#   endif
-#   ifdef ICESHELF_3EQ
-      real(r8), intent(in) :: rho(LBi:,LBj:,:)
 #   endif
 #   ifdef QCORRECTION
       real(r8), intent(in) :: dqdt(LBi:,LBj:)
@@ -270,18 +209,11 @@
 #   if defined SSSFLX
       real(r8), intent(inout) :: sssflx(LBi:,LBj:)
 #   endif
-#   if defined BULK_FLUXES || defined AIR_OCEAN
-      real(r8), intent(in) :: snhflx(LBi:,LBj:)
-#   endif
-#   if (defined BULK_FLUXES && defined EMINUSP) || defined AIR_OCEAN
-      real(r8), intent(in) :: EminusP(LBi:,LBj:)
-#   endif
+      real(r8), intent(in) :: stflux(LBi:,LBj:,:)
+      real(r8), intent(in) :: btflux(LBi:,LBj:,:)
 #   if defined ICESHELF
 #    ifdef SHORTWAVE
       real(r8), intent(inout) :: srflx(LBi:,LBj:)
-#    endif
-#    ifdef ICESHELF_3EQ
-      real(r8), intent(in)    :: Tair(LBi:,LBj:)
 #    endif
       real(r8), intent(inout) :: sustr(LBi:,LBj:)
       real(r8), intent(inout) :: svstr(LBi:,LBj:)
@@ -289,16 +221,6 @@
 #   ifndef BBL_MODEL
       real(r8), intent(inout) :: bustr(LBi:,LBj:)
       real(r8), intent(inout) :: bvstr(LBi:,LBj:)
-#   endif
-#   ifdef ICE_MODEL
-      real(r8), intent(inout) :: qao_n(LBi:,LBj:)
-#   endif
-#   ifdef NO_SCORRECTION_ICE
-#    ifdef ICE_MODEL
-      real(r8), intent(in) :: ai(LBi:,LBj:,:)
-#    elif defined CICE_MODEL
-      real(r8), intent(in) :: ai(LBi:,LBj:)
-#    endif
 #   endif
       real(r8), intent(inout) :: stflx(LBi:,LBj:,:)
       real(r8), intent(inout) :: btflx(LBi:,LBj:,:)
@@ -321,19 +243,13 @@
 #   ifdef WET_DRY
       real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
 #   endif
-#   ifdef ICESHELF
+#   if defined ICESHELF
       real(r8), intent(in) :: zice(LBi:UBi,LBj:UBj)
-#    ifdef ICESHELF_3EQ
-      real(r8), intent(in) :: f(LBi:UBi,LBj:UBj)
-#    endif
 #   endif
       real(r8), intent(in) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
 #   if !defined BBL_MODEL || defined ICESHELF
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
-#   endif
-#   ifdef ICESHELF_3EQ
-      real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
 #   endif
 #   ifdef QCORRECTION
       real(r8), intent(in) :: dqdt(LBi:UBi,LBj:UBj)
@@ -345,18 +261,11 @@
 #   if defined SSSFLX
       real(r8), intent(inout) :: sssflx(LBi:UBi,LBj:UBj)
 #   endif
-#   if defined BULK_FLUXES || defined AIR_OCEAN
-      real(r8), intent(in) :: snhflx(LBi:UBi,LBj:UBj)
-#   endif
-#   if (defined BULK_FLUXES && defined EMINUSP) || defined AIR_OCEAN
-      real(r8), intent(in) :: EminusP(LBi:UBi,LBj:UBj)
-#   endif
+      real(r8), intent(in) :: stflux(LBi:UBi,LBj:UBj,NT(ng))
+      real(r8), intent(in) :: btflux(LBi:UBi,LBj:UBj,NT(ng))
 #   if defined ICESHELF
 #    ifdef SHORTWAVE
       real(r8), intent(inout) :: srflx(LBi:UBi,LBj:UBj)
-#    endif
-#    ifdef ICESHELF_3EQ
-      real(r8), intent(in)    :: Tair(LBi:UBi,LBj:UBj)
 #    endif
       real(r8), intent(inout) :: sustr(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: svstr(LBi:UBi,LBj:UBj)
@@ -364,16 +273,6 @@
 #   ifndef BBL_MODEL
       real(r8), intent(inout) :: bustr(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: bvstr(LBi:UBi,LBj:UBj)
-#   endif
-#   ifdef ICE_MODEL
-      real(r8), intent(inout) :: qao_n(LBi:UBi,LBj:UBj)
-#   endif
-#   ifdef NO_SCORRECTION_ICE
-#    if defined ICE_MODEL
-      real(r8), intent(in) :: ai(LBi:UBi,LBj:UBj,2)
-#    elif defined CICE_MODEL
-      real(r8), intent(in) :: ai(LBi:UBi,LBj:UBj)
-#    endif
 #   endif
       real(r8), intent(inout) :: stflx(LBi:UBi,LBj:UBj,NT(ng))
       real(r8), intent(inout) :: btflx(LBi:UBi,LBj:UBj,NT(ng))
@@ -384,24 +283,6 @@
       integer :: i, j, itrc
 
       real(r8) :: EmP
-# ifdef ICESHELF
-
-#  ifdef ICESHELF_3EQ
-      real(r8) :: Hscale, Hlice, uStar, gturb, cff
-      real(r8) :: salt_b, temp_b, melt_rate
-#  endif
-
-#   ifdef ISOMIP
-      real(r8), parameter :: gamma = 0.0001_r8
-      real(r8), parameter :: refSalt = 34.4_r8
-      real(r8), parameter :: trelax = 30.0_r8 * 86400.0_r8
-      real(r8), parameter :: sfcTemp = -1.9_r8
-      real(r8), parameter :: sfcSalt = 34.4_r8
-
-      real(r8) :: temp_f
-#   endif
-#  endif
-
 #  if !defined BBL_MODEL || defined ICESHELF || \
        defined LIMIT_STFLX_COOLING
       real(r8) :: cff, cff1, cff2, cff3
@@ -411,39 +292,28 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wrk
 #  endif
 
-#  ifdef NO_SCORRECTION_ICE
-      real(r8) :: fac_ice
-#  endif
-      real(r8), parameter :: eps = 1.e-20_r8
-
 #  include "set_bounds.h"
-
-#  if defined BULK_FLUXES || defined AIR_OCEAN
 !
 !-----------------------------------------------------------------------
-!  If air-sea parameterization and or atmospheric coupling, assign
-!  surface net heat flux (degC m/s).  During model coupling, we need
-!  to make sure that this forcing is unaltered during the coupling
-!  interval when ROMS timestep size is smaller. Notice that further
-!  manipulations to state variable stflx(:,:,itemp)are allowed below.
+!  Load surface and bottom net heat flux (degC m/s) into state variables
+!  "stflx" and "btflx".
+!
+!  Notice that the forcing net heat flux stflux(:,:,itemp) is processed
+!  elsewhere from data, coupling, bulk flux parameterization,
+!  or analytical formulas.
+!
+!  During model coupling, we need to make sure that this forcing is
+!  unaltered during the coupling interval when ROMS timestep size is
+!  smaller. Notice that further manipulations to state variable
+!  stflx(:,:,itemp) are allowed below.
 !-----------------------------------------------------------------------
 !
-#   if defined FOUR_DVAR && defined NL_BULK_FLUXES
-      IF (Nrun.eq.1) THEN
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
-            stflx(i,j,itemp)=snhflx(i,j)
-          END DO
-        END DO
-      END IF
-#   else
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-          stflx(i,j,itemp)=snhflx(i,j)
+          stflx(i,j,itemp)=stflux(i,j,itemp)
+          btflx(i,j,itemp)=btflux(i,j,itemp)
         END DO
       END DO
-#   endif
-#  endif
 
 #  ifdef QCORRECTION
 !
@@ -457,9 +327,6 @@
         DO i=IstrR,IendR
           stflx(i,j,itemp)=stflx(i,j,itemp)+                            &
      &                     dqdt(i,j)*(t(i,j,N(ng),nrhs,itemp)-sst(i,j))
-#   ifdef ICE_MODEL
-          qao_n(i,j) = -stflx(i,j,itemp) * rho0 * Cp
-#   endif
         END DO
       END DO
 #  endif
@@ -495,68 +362,18 @@
 #  ifdef SALINITY
 !
 !-----------------------------------------------------------------------
-!  Multiply fresh water flux with surface salinity. If appropriate,
-!  apply correction.
+!  Multiply freshwater fluxes with surface and bottom salinity.
+!
+!  If appropriate, apply correction. Notice that input stflux(:,:,isalt)
+!  is the net freshwater flux (E-P; m/s) from data, coupling, bulk flux
+!  parameterization, or analytical formula. It has not been multiplied
+!  by the surface and bottom salinity.
 !-----------------------------------------------------------------------
 !
-#   if defined FOUR_DVAR && defined NL_BULK_FLUXES
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-          IF (Nrun.eq.1) THEN
-#    if (defined BULK_FLUXES && defined EMINUSP) || defined AIR_OCEAN
-            EmP=EminusP(i,j)
-#    else
-            EmP=stflx(i,j,isalt)
-#    endif
-          ELSE
-            EmP=stflx(i,j,isalt)
-          END IF
-#    if defined SCORRECTION
-          stflx(i,j,isalt)=EmP*t(i,j,N(ng),nrhs,isalt)-                 &
-     &                     Tnudg(isalt,ng)*Hz(i,j,N(ng))*               &
-     &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
-#    elif defined SRELAXATION
-          stflx(i,j,isalt)=-Tnudg(isalt,ng)*Hz(i,j,N(ng))*              &
-     &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
-#    else
-          stflx(i,j,isalt)=EmP*t(i,j,N(ng),nrhs,isalt)
-#    endif
-          btflx(i,j,isalt)=btflx(i,j,isalt)*t(i,j,1,nrhs,isalt)
-        END DO
-      END DO
-#   else
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-#    if (defined BULK_FLUXES && defined EMINUSP) || defined AIR_OCEAN
-          EmP=EminusP(i,j)
-#    else
-          EmP=stflx(i,j,isalt)
-#    endif
+          EmP=stflux(i,j,isalt)
 #   if defined SCORRECTION
-#    if defined ICE_MODEL || defined CICE_MODEL
-#     ifdef NO_SCORRECTION_ICE
-          fac_ice = 1.0_r8
-#      ifdef ICE_MODEL
-          IF(ai(i,j,liold).GE.0.1_r8) fac_ice = 0.0_r8
-#      else
-          IF(ai(i,j).GE.0.1_r8) fac_ice = 0.0_r8
-#      endif
-#     endif
-          stflx(i,j,isalt)=stflx(i,j,isalt) -                           &
-#     ifdef NO_SCORRECTION_ICE
-     &                     fac_ice*                                     &
-#     endif
-     &                     Tnudg_SSS(ng)*Hz(i,j,N(ng))*                 &
-
-#      if defined SSSC_THRESHOLD
-! limit mismatch to avoid too strong relaxation fluxes
-     &                     MIN(sss_mismatch_threshold(ng),              &
-     &                         (t(i,j,N(ng),nrhs,isalt)-sss(i,j)))
-#     else
-
-     &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
-#     endif
-#    else
           stflx(i,j,isalt)=EmP*t(i,j,N(ng),nrhs,isalt)-                 &
      &                     Tnudg(isalt,ng)*Hz(i,j,N(ng))*               &
 #     if defined SSSC_THRESHOLD
@@ -566,7 +383,6 @@
 #     else
      &                     (t(i,j,N(ng),nrhs,isalt)-sss(i,j))
 #     endif
-#    endif
 #    ifdef WET_DRY
           stflx(i,j,isalt) = rmask_wet(i,j)*stflx(i,j,isalt)
 #    elif defined MASKING
@@ -587,11 +403,7 @@
           stflx(i,j,isalt) = rmask(i,j)*stflx(i,j,isalt)
 #    endif
 #   else
-#    ifdef ICE_THERMO
-          stflx(i,j,isalt)=stflx(i,j,isalt)
-#    else
           stflx(i,j,isalt)=EmP*t(i,j,N(ng),nrhs,isalt)
-#    endif
 #    ifdef WET_DRY
           stflx(i,j,isalt) = rmask_wet(i,j)*stflx(i,j,isalt)
 #    elif defined MASKING
@@ -605,7 +417,6 @@
 #    elif defined MASKING
           stflx(i,j,isalt) = rmask(i,j)*stflx(i,j,isalt)
 #    endif
-
 #   endif
 #   if (defined SCORRECTION || defined SRELAXATION) && \
         defined SSSFLX
@@ -620,9 +431,49 @@
           btflx(i,j,isalt)=btflx(i,j,isalt)*t(i,j,1,nrhs,isalt)
         END DO
       END DO
-#   endif
 #  endif
+
+#  if defined BIOLOGY || defined SEDIMENT || defined T_PASSIVE
+!
+!-----------------------------------------------------------------------
+!  Load surface and bottom passive tracer fluxes (T m/s).
+!-----------------------------------------------------------------------
+!
+      DO itrc=NAT+1,NT(ng)
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            stflx(i,j,itrc)=stflux(i,j,itrc)
+            btflx(i,j,itrc)=btflux(i,j,itrc)
+          END DO
+        END DO
+      END DO
+#  endif
+
 #  ifdef ICESHELF
+!
+!-----------------------------------------------------------------------
+!  If ice shelf cavities, zero out for now the surface tracer flux
+!  over the ice.
+!-----------------------------------------------------------------------
+!
+      DO itrc=1,NT(ng)
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            IF (zice(i,j).ne.0.0_r8) THEN
+              stflx(i,j,itrc)=0.0_r8
+            END IF
+          END DO
+        END DO
+      END DO
+#   ifdef SHORTWAVE
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          IF (zice(i,j).ne.0.0_r8) THEN
+            srflx(i,j)=0.0_r8
+          END IF
+        END DO
+      END DO
+#   endif
 !
 !-----------------------------------------------------------------------
 !  If ice shelf cavities, replace surface wind stress with ice shelf
@@ -749,183 +600,8 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    sustr, svstr)
 #   endif
-!
-!-----------------------------------------------------------------------
-!
-!  Two sets of thermodynamics are currently available for the ice shelf
-!   cavities now:
-!
-!  1) ISOMIP: surface tracer fluxes underneath ice are computed in the
-!  manner defined by the ISOMIP test specification.  Note that the units
-!  for stflx for heat are degC m/s (which means the rho*C_p part is
-!  removed here) and for salt are psu m/s (unless sea ice is defined).
-!  This version is setup for the ISOMIP 2.01 case where the heat and salt
-!  fluxes for the open water/atmosphere interface match the relaxation
-!  calculation in sections 3.2.6 and 3.2.7 of John Hunter's document.
-!
-!  2) ICESHELF_3EQ: 3 equation formulation as per Holland and
-!  Jenkins (JPO, 1999) with the transfer coefficients computed from the
-!  friction velocity as in Schmidt et al. (OM, 2004).
-!
-!-----------------------------------------------------------------------
-!
-#   ifdef ICESHELF_3EQ
-!
-!  If there is an iceshelf, recalculate the total heat and salt flux
-!   at any point below the iceshelf.
-!
-      Hscale = 1.0_r8/(rho0*Cp)
-      DO j=Jstr,Jend      ! Have to index this way because of need
-        DO i=Istr,Iend    !  for surface stresses below
-          IF (zice(i,j) .ne. 0.0_r8) THEN
-!
-!  First, calculate the salinity in the boundary layer from solving the
-!   3 equations simultaneously
-!
-            IF (Tair(i,j) .lt. -1.95_r8) THEN
-              Hlice = Hlfreeze - blk_Cpi*(Tair(i,j)+1.95_r8)
-            ELSE
-              Hlice = Hlfreeze
-            END IF
-
-!  Compute friction velocity from surface stresses
-
-            uStar = SQRT(SQRT((0.5_r8*(sustr(i,j)+sustr(i+1,j)))**2+    &
-     &                        (0.5_r8*(svstr(i,j)+svstr(i,j+1)))**2))
-#    ifdef MASKING
-            uStar = uStar*rmask(i,j)
-#    endif
-
-
-!  Compute transfer coefficients
-
-            IF (uStar .gt. 1.0E-4_r8 .and. ABS(f(i,j)) .gt. 1.0E-8) THEN
-              gturb = 2.5*LOG(5300.0_r8*uStar*uStar/ABS(f(i,j))) +      &
-     &                7.12
-            ELSE
-              gturb = 0.0_r8
-            ENDIF
-
-            gamma_t = uStar/(gturb+65.9_r8)
-            gamma_s = uStar/(gturb+2255.0_r8)
-
-!           gamma_t = 9.00E-3_r8*uStar
-!           gamma_s = 0.025_r8*gamma_t
-
-
-!  Solve for the boundary layer salinity
-
-            cff=blk_Cpw*gamma_t/Hlice
-            cff1=cff*((0.0939_r8-t(i,j,N(ng),nrhs,itemp))+              &
-     &                 7.6410E-4_r8*zice(i,j))-gamma_s
-            cff2=cff1*cff1+4.0_r8*                                      &
-     &           cff*0.057_r8*gamma_s*t(i,j,N(ng),nrhs,isalt)
-            IF (cff2 .gt. 0.0_r8 .and. cff .ne. 0.0_r8) THEN
-              cff3=-cff1+sqrt(cff2)
-              IF (cff3 .lt. 0.0_r8) THEN
-                salt_b=cff3/(-2.0_r8*0.057_r8*cff)
-              ELSE
-                salt_b=(-cff1-sqrt(cff2))/(-2.0_r8*0.057_r8*cff)
-              END IF
-            ELSE
-              salt_b=5.0_r8
-            END IF
-!
-!  Then, calculate the actual heat (degC m/s) and salt (psu m/s) fluxes
-!   into the top model layer.  Note that this formulation includes the
-!   calculation and addition of the melt rate term for the proper flux
-!   condition through a material surface (see Jenkins et al. 2001 JPO).
-!
-!  Note: The salt flux has to be m/s if the SEA ICE model is being used.
-!
-            temp_b=0.0939_r8-0.057_r8*salt_b+7.6410E-4_r8*zice(i,j)
-            IF (salt_b .gt. 5.0_r8) THEN
-              melt_rate=-gamma_s*                                       &
-     &                   (1.0_r8-(t(i,j,N(ng),nrhs,isalt)/salt_b))
-            ELSE
-              melt_rate=0.0_r8
-            END IF
-
-            stflx(i,j,itemp)=(rho(i,j,N(ng))+1000.0_r8)*blk_Cpw*        &
-     &                       (gamma_t+melt_rate)*                       &
-     &                       (temp_b-t(i,j,N(ng),nrhs,itemp))*Hscale
-            IF (t(i,j,N(ng),nrhs,isalt) .gt. 0.001_r8) THEN
-#    ifdef ICE_THERMO
-              stflx(i,j,isalt)=(gamma_s+melt_rate)*                     &
-     &                         (salt_b-t(i,j,N(ng),nrhs,isalt))/        &
-     &                         t(i,j,N(ng),nrhs,isalt)
-#    else
-              stflx(i,j,isalt)=(gamma_s+melt_rate)*                     &
-     &                         (salt_b-t(i,j,N(ng),nrhs,isalt))
-#    endif
-            ELSE
-              stflx(i,j,isalt)=0.0_r8
-            END IF
-          END IF
-        END DO
-      END DO
-!
-!  Apply gradient or periodic boundary conditions for the two fluxes
-!
-      CALL bc_r2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  stflx(:,:,itemp))
-      CALL bc_r2d_tile (ng, tile,                                       &
-     &                  LBi, UBi, LBj, UBj,                             &
-     &                  stflx(:,:,isalt))
-#    ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints,                                 &
-     &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    stflx(:,:,itemp))
-      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
-     &                    LBi, UBi, LBj, UBj,                           &
-     &                    NghostPoints,                                 &
-     &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    stflx(:,:,isalt))
-#    endif
-#   elif defined ISOMIP
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          IF (zice(i,j).ne.0.0_r8) THEN
-            temp_f=0.0939_r8-0.057_r8*t(i,j,N(ng),nrhs,isalt)+          &
-     &             7.6410E-4_r8*zice(i,j)
-            stflx(i,j,itemp)=gamma*(temp_f-t(i,j,N(ng),nrhs,itemp))
-#    ifdef ICE_THERMO
-            stflx(i,j,isalt)=Cp*stflx(i,j,itemp)/Hlfreeze
-#    else
-            stflx(i,j,isalt)=Cp*stflx(i,j,itemp)*refSalt/Hlfreeze
-#    endif
-          ELSE
-            stflx(i,j,itemp)=Hz(i,j,N(ng))*                             &
-     &                       (sfcTemp-t(i,j,N(ng),nrhs,itemp))/trelax
-#    ifdef ICE_THERMO
-            IF (t(i,j,N(ng),nrhs,isalt) .gt. 0.001_r8) THEN
-              stflx(i,j,isalt)=Hz(i,j,N(ng))*                           &
-     &                         (sfcTemp-t(i,j,N(ng),nrhs,itemp))/       &
-     &                         (trelax*t(i,j,N(ng),nrhs,isalt))
-            ELSE
-              stflx(i,j,isalt)=0.0_r8
-            END IF
-#    else
-            stflx(i,j,isalt)=Hz(i,j,N(ng))*                             &
-     &                       (sfcSalt-t(i,j,N(ng),nrhs,isalt))/trelax
-#    endif
-          END IF
-        END DO
-      END DO
-#   endif
-#   ifdef SHORTWAVE
-      DO j=JstrR,JendR
-        DO i=IstrR,IendR
-          IF (zice(i,j).ne.0.0_r8) THEN
-            srflx(i,j)=0.0_r8
-          END IF
-        END DO
-      END DO
-#   endif
 #  endif
+
 #  ifndef BBL_MODEL
 !
 !-----------------------------------------------------------------------
@@ -1070,7 +746,7 @@
      &                    bustr, bvstr)
 #   endif
 #  endif
-
+!
       RETURN
       END SUBROUTINE set_vbc_tile
 
@@ -1093,10 +769,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 6, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 6, __LINE__, MyFile)
 #  endif
       CALL set_vbc_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
@@ -1112,9 +791,9 @@
      &                   FORCES(ng) % bustr,                            &
      &                   FORCES(ng) % bvstr)
 #  ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 6, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 6, __LINE__, MyFile)
 #  endif
-
+!
       RETURN
       END SUBROUTINE set_vbc
 !
@@ -1242,7 +921,7 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bustr, bvstr)
 #  endif
-
+!
       RETURN
       END SUBROUTINE set_vbc_tile
 # endif

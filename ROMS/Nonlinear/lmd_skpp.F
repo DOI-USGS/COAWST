@@ -5,9 +5,9 @@
       MODULE lmd_skpp_mod
 #if defined NONLINEAR && defined LMD_SKPP && defined SOLVE3D
 !
-!svn $Id: lmd_skpp.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: lmd_skpp.F 1054 2021-03-06 19:47:12Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -523,7 +523,7 @@
         END DO
 # else
 #  ifdef QUADRATIC
-#ifdef KATE
+#   ifdef KATE
 !    Quadratic interpolation to find hsbl, using a scheme from Bill
 !    Large et al. (personal communication)
         DO k=N(ng),2,-1
@@ -566,76 +566,33 @@
             ksbl(i,j)=k
           END DO
         END DO
-#endif
-!    Quadratic interpolation to find hsbl, using a scheme from Bill
-!    Large et al. (personal communication)
+#   else
         DO k=N(ng),2,-1
           DO i=Istr,Iend
-!              z_up = z_w(i,j,k)
-!              IF (k .eq. N(ng)) THEN
-!                slope_up = 0.0_r8
-!              ELSE
-!                slope_up = (FC(i,k+1) - FC(i,k)) /                     &
-!     &                   (z_up - z_w(i,j,k+1))
-!              END IF
-!              a_co = (FC(i,k-1) - FC(i,k) +                            &
-!     &              slope_up*(z_w(i,j,k-1) - z_up)) /                  &
-!     &              (z_up - z_w(i,j,k-1))**2
-!              b_co = slope_up + 2.0_r8*a_co*z_up
-!              c_co = FC(i,k) + z_up*                                   &
-!     &               (a_co*z_up + slope_up) - lmd_Ric
-!              sqrt_arg = b_co**2 - 4.0_r8*a_co*c_co
-!              if ( ( (abs(b_co) .gt. eps) .and.                        &
-!     &           (abs(a_co/b_co) .le. eps) ) .or.                      &
-!     &           (sqrt_arg .le.  0.0_r8 ) ) then
-!                hsbl(i,j) = - z_up + (z_up - z_w(i,j,k-1))*            &
-!     &                 (lmd_Ric - FC(i,k)) / (FC(i,k-1) - Fc(i,k))
-!              else
-!                hsbl(i,j) = (-b_co + sqrt(sqrt_arg)) / (2.0_r8*a_co)
-!              endif
-!              ksbl(i,j)=k
-!
-!             CAE version.  Assumes that FC is calculated on w-points
-!             It's possible my version is the same as that above.  Not sure.
-!             Solve FC = a*z^2 + b*z + c,
-!             If F' is d(FC)/dz, either up or down a half grid-point,
-!             a=(F'(k+.5)-F'(k-.5))/(z(k+1)-z(k-1)
-!             b=F'(k+.5)-2*a*z(k+.5)
-!             c=F(k)-a*z(k)*z(k)-bz(k)
-!             or 0 = a*z^2 + b*z + (c-FC).
-!             Let a_co=a, b_co=b, and c_co=c-Ric.
-            IF (k .eq. N(ng)) THEN
-              slope_up = 0.0_r8
-            ELSE
-              slope_up = (FC(i,k+1) - FC(i,k)) /                        &
-     &                   (z_w(i,j,k+1) - z_w(i,j,k))
+            IF ((ksbl(i,j).eq.1).and.(FC(i,k-1).ge.lmd_Ric)) THEN
+              z_up=z_w(i,j,k)
+              IF (k.eq.N(ng)) THEN
+                slope_up=0.0_r8
+              ELSE
+                slope_up=(FC(i,k+1)-FC(i,k))/(z_up-z_w(i,j,k+1))
+              END IF
+              a_co=(FC(i,k-1)-FC(i,k)+slope_up*(z_w(i,j,k-1)-z_up))/    &
+     &             (z_up-z_w(i,j,k-1))**2
+              b_co=slope_up+2.0_r8*a_co*z_up
+              c_co=FC(i,k)+z_up*(a_co*z_up+slope_up)-lmd_Ric
+              sqrt_arg=b_co*b_co-4.0_r8*a_co*c_co
+              IF (((ABS(b_co).gt.eps).and.(ABS(a_co/b_co).le.eps)).or.  &
+     &            (sqrt_arg.le.0.0_r8)) THEN
+                hsbl(i,j)=-z_up+(z_up-z_w(i,j,k-1))*                    &
+     &                          (lmd_Ric-FC(i,k))/(FC(i,k-1)-FC(i,k))
+              ELSE
+                hsbl(i,j)=(-b_co+SQRT(sqrt_arg))/(2.0_r8*a_co)
+              END IF
+              ksbl(i,j)=k
             END IF
-            slope_down = (FC(i,k) - FC(i,k-1)) /                        &
-     &                 (z_w(i,j,k) - z_w(i,j,k-1))
-            a_co = (slope_up-slope_down)/(z_w(i,j,k+1)-z_w(i,j,k-1))
-            b_co = slope_up - a_co*(z_w(i,j,k+1)+z_w(i,j,k))
-            c_co = FC(i,k) - a_co*z_w(i,j,k)*z_w(i,j,k) -               &
-     &               b_co*z_w(i,j,k)-lmd_Ric
-            sqrt_arg = b_co*b_co - 4.0_r8*a_co*c_co
-            if ( ( (abs(b_co) .gt. eps) .and.                           &
-     &           (abs(a_co/b_co) .le. eps) ) .or.                       &
-     &           (sqrt_arg .le.  0.0_r8 ) ) then
-!               CAE: if problem using quadratic, then use linear approx.
-              hsbl(i,j)=((FC(i,k-1)-lmd_Ric)*z_w(i,j,k  )+              &
-     &                    (lmd_Ric-FC(i,k  ))*z_w(i,j,k-1))/            &
-     &                    (FC(i,k-1)-FC(i,k))
-            else
-              hsbl(i,j) = (-b_co - sqrt(sqrt_arg)) / (2.0_r8*a_co)
-              if ( (hsbl(i,j) .gt. z_w(i,j,k)) .or.                     &
-     &               (hsbl(i,j) .gt. z_w(i,j,k)) ) then
-                write(6,*) 'Bad calculation of hsbl Q. Exiting', i,j
-! or bad test?
-                stop
-              endif
-            endif
-            ksbl(i,j)=k
           END DO
         END DO
+#   endif
 #  else
         DO k=N(ng),2,-1
           DO i=Istr,Iend

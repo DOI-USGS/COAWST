@@ -3,9 +3,9 @@
 
 #ifdef NESTING
 !
-!svn $Id: mod_nesting.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: mod_nesting.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -109,6 +109,19 @@
 !
       logical, allocatable :: Telescoping(:)        ! [Ngrids]
 !$OMP THREADPRIVATE (Telescoping)
+!
+!  Switch to compute depth-dependent, vertical interpolation weights.
+!  Currently, vertical weights are used in composite grids because
+!  their grids are not coincident. They are not needed in refinement
+!  grids because the donor and receiver grids have the same number of
+!  vertical levels and have matching bathymetry.  However, in the
+!  future, it is possible to have configurations that require vertical
+!  weights in refinement. The switch "get_Vweights" controls if such
+!  weights are computed or not. If false, it will accelerate the
+!  computations because of less distributed-memory communications.
+!
+      logical :: get_Vweights
+!$OMP THREADPRIVATE (get_Vweights)
 !
 !  If refinement, it contains the coarser donor grid number to finer
 !  receiver grid external contact points.  The donor grid is always
@@ -499,7 +512,7 @@
 # ifdef SOLVE3D
               allocate ( BRY_CONTACT(ibry,cr) % Tflux(LBi:UBi,          &
      &                                                N(rg),NT(rg)) )
-              Dmem(rg)=Dmem(rg)+REAL((UBj-LBj)*N(rg)*NT(rg),r8)
+              Dmem(rg)=Dmem(rg)+REAL((UBi-LBi)*N(rg)*NT(rg),r8)
 # endif
           END SELECT
         END DO

@@ -2,9 +2,9 @@
       MODULE ini_fields_mod
 #ifdef NONLINEAR
 !
-!svn $Id: ini_fields.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: ini_fields.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -36,9 +36,6 @@
 # if defined SOLVE3D && (defined SEDIMENT || defined BBL_MODEL)
       USE mod_sedbed
 # endif
-# ifdef ICE_MODEL
-      USE mod_ice
-# endif
       USE mod_stepping
 !
 !  Imported variable declarations.
@@ -47,10 +44,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 2, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 2, __LINE__, MyFile)
 # endif
       CALL ini_fields_tile (ng, tile, model,                            &
      &                      LBi, UBi, LBj, UBj,                         &
@@ -91,22 +91,14 @@
      &                      OCEAN(ng) % t,                              &
      &                      OCEAN(ng) % u,                              &
      &                      OCEAN(ng) % v,                              &
-#  ifdef ICE_MODEL
-     &                      ICE(ng) % ui,                               &
-     &                      ICE(ng) % vi,                               &
-     &                      ICE(ng) % ai,                               &
-     &                      ICE(ng) % hi,                               &
-     &                      ICE(ng) % hsn,                              &
-     &                      ICE(ng) % ti,                               &
-     &                      ICE(ng) % ageice,                           &
-#  endif
 # endif
      &                      OCEAN(ng) % ubar,                           &
      &                      OCEAN(ng) % vbar,                           &
      &                      OCEAN(ng) % zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 2, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 2, __LINE__, MyFile)
 # endif
+!
       RETURN
       END SUBROUTINE ini_fields
 !
@@ -139,10 +131,6 @@
 #  endif
      &                            Hz,                                   &
      &                            t, u, v,                              &
-#  ifdef ICE_MODEL
-     &                            ui, vi, ai, hi, hsn,                  &
-     &                            ti, ageice,                           &
-#  endif
 # endif
      &                            ubar, vbar, zeta)
 !***********************************************************************
@@ -178,9 +166,6 @@
 # endif
       USE u2dbc_mod, ONLY : u2dbc_tile
       USE v2dbc_mod, ONLY : v2dbc_tile
-# ifdef ICE_MODEL
-      USE ice_limit_mod, ONLY : ice_limit
-# endif
 !
 !  Imported variable declarations.
 !
@@ -230,15 +215,6 @@
       real(r8), intent(inout) :: t(LBi:,LBj:,:,:,:)
       real(r8), intent(inout) :: u(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: v(LBi:,LBj:,:,:)
-#   ifdef ICE_MODEL
-      real(r8), intent(inout) :: ui(LBi:,LBj:,:)
-      real(r8), intent(inout) :: vi(LBi:,LBj:,:)
-      real(r8), intent(inout) :: ai(LBi:,LBj:,:)
-      real(r8), intent(inout) :: hi(LBi:,LBj:,:)
-      real(r8), intent(inout) :: hsn(LBi:,LBj:,:)
-      real(r8), intent(inout) :: ti(LBi:,LBj:,:)
-      real(r8), intent(inout) :: ageice(LBi:,LBj:,:)
-#   endif
 #  endif
       real(r8), intent(inout) :: ubar(LBi:,LBj:,:)
       real(r8), intent(inout) :: vbar(LBi:,LBj:,:)
@@ -282,15 +258,6 @@
       real(r8), intent(inout) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
       real(r8), intent(inout) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(inout) :: v(LBi:UBi,LBj:UBj,N(ng),2)
-#   ifdef ICE_MODEL
-      real(r8), intent(inout) :: ui(LBi:UBi,LBj:UBj,2)
-      real(r8), intent(inout) :: vi(LBi:UBi,LBj:UBj,2)
-      real(r8), intent(inout) :: ai(LBi:UBi,LBj:UBj,2)
-      real(r8), intent(inout) :: hi(LBi:UBi,LBj:UBj,2)
-      real(r8), intent(inout) :: hsn(LBi:UBi,LBj:UBj,2)
-      real(r8), intent(inout) :: ti(LBi:UBi,LBj:UBj,2)
-      real(r8), intent(inout) :: ageice(LBi:UBi,LBj:UBj,2)
-#   endif
 #  endif
       real(r8), intent(inout) :: ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(inout) :: vbar(LBi:UBi,LBj:UBj,3)
@@ -781,95 +748,6 @@
 #  endif
 # endif
 
-# ifdef ICE_MODEL
-      IF (.not.PerfectRST(ng)) THEN
-        CALL ice_limit(ng, TILE)
-        DO j=Jstr,Jend
-          DO i=IstrU,Iend
-            cff1=ui(i,j,nstp)
-#  ifdef MASKING
-            cff1=cff1*umask(i,j)
-#  endif
-            ui(i,j,nstp)=cff1
-            ui(i,j,nnew)=cff1
-          END DO
-        END DO
-        DO j=JstrV,Jend
-          DO i=Istr,Iend
-            cff1=vi(i,j,nstp)
-#  ifdef MASKING
-            cff1=cff1*vmask(i,j)
-#  endif
-            vi(i,j,nstp)=cff1
-            vi(i,j,nnew)=cff1
-          END DO
-        END DO
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
-            cff1=ai(i,j,nstp)
-            cff2=hi(i,j,nstp)
-            cff3=hsn(i,j,nstp)
-            cff4=ti(i,j,nstp)
-            cff7=ageice(i,j,nstp)
-#  ifdef MASKING
-            cff1=cff1*rmask(i,j)
-            cff2=cff2*rmask(i,j)
-            cff3=cff3*rmask(i,j)
-            cff4=cff4*rmask(i,j)
-            cff7=cff7*rmask(i,j)
-#  endif
-            ai(i,j,nstp)=cff1
-            ai(i,j,nnew)=cff1
-            hi(i,j,nstp)=cff2
-            hi(i,j,nnew)=cff2
-            hsn(i,j,nstp)=cff3
-            hsn(i,j,nnew)=cff3
-            ti(i,j,nstp)=cff4
-            ti(i,j,nnew)=cff4
-            ageice(i,j,nstp)=cff7
-            ageice(i,j,nnew)=cff7
-          END DO
-        END DO
-      END IF
-      IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
-        DO i=1,2
-          CALL exchange_u2d_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj,                   &
-     &                            ui(:,:,i))
-          CALL exchange_v2d_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj,                   &
-     &                            vi(:,:,i))
-          CALL exchange_r2d_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj,                   &
-     &                            ai(:,:,i))
-          CALL exchange_r2d_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj,                   &
-     &                            hi(:,:,i))
-          CALL exchange_r2d_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj,                   &
-     &                            hsn(:,:,i))
-          CALL exchange_r2d_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj,                   &
-     &                            ti(:,:,i))
-          CALL exchange_r2d_tile (ng, tile,                             &
-     &                            LBi, UBi, LBj, UBj,                   &
-     &                            ageice(:,:,i))
-        END DO
-      END IF
-#  ifdef DISTRIBUTE
-        CALL mp_exchange3d (ng, tile, model, 4,                         &
-     &                      LBi, UBi, LBj, UBj, 1, 2,                   &
-     &                      NghostPoints,                               &
-     &                      EWperiodic(ng), NSperiodic(ng),             &
-     &                      ui, vi, ai, hi)
-        CALL mp_exchange3d (ng, tile, model, 3,                         &
-     &                      LBi, UBi, LBj, UBj, 1, 2,                   &
-     &                      NghostPoints,                               &
-     &                      EWperiodic(ng), NSperiodic(ng),             &
-     &                      hsn, ti, ageice)
-#  endif
-# endif
-
 # ifdef PERFECT_RESTART
 !
 !-----------------------------------------------------------------------
@@ -916,7 +794,7 @@
 #  endif
       END IF
 # endif
-
+!
       RETURN
       END SUBROUTINE ini_fields_tile
 !
@@ -941,10 +819,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", ini_zeta"
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 2, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 2, __LINE__, MyFile)
 # endif
       CALL ini_zeta_tile (ng, tile, model,                              &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -967,9 +848,9 @@
 # endif
      &                    OCEAN(ng) % zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 2, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 2, __LINE__, MyFile)
 # endif
-
+!
       RETURN
       END SUBROUTINE ini_zeta
 !
@@ -1277,7 +1158,7 @@
 #   endif
 #  endif
 # endif
-
+!
       RETURN
       END SUBROUTINE ini_zeta_tile
 #endif

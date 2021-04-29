@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: hessian_so_ocean.h 995 2020-01-10 04:01:28Z arango $
+!svn $Id: hessian_so_ocean.h 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -25,14 +25,14 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: ROMS_initialize
       PUBLIC  :: ROMS_run
       PUBLIC  :: ROMS_finalize
-
+!
       CONTAINS
-
+!
       SUBROUTINE ROMS_initialize (first, mpiCOMM)
 !
 !=======================================================================
@@ -50,6 +50,7 @@
       USE mod_fourdvar
       USE mod_netcdf
 !
+      USE inp_par_mod,       ONLY : inp_par
 #ifdef MCT_LIB
 # ifdef ATM_COUPLING
       USE ocean_coupler_mod, ONLY : initialize_ocn2atm_coupling
@@ -63,13 +64,13 @@
 !  Imported variable declarations.
 !
       logical, intent(inout) :: first
-
+!
       integer, intent(in), optional :: mpiCOMM
 !
 !  Local variable declarations.
 !
       logical :: allocate_vars = .TRUE.
-
+!
 #ifdef DISTRIBUTE
       integer :: MyError, MySize
 #endif
@@ -77,6 +78,9 @@
 #ifdef _OPENMP
       integer :: my_threadnum
 #endif
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", ROMS_initialize"
 
 #ifdef DISTRIBUTE
 !
@@ -113,14 +117,12 @@
 !  grids and dimension parameters are known.
 !
         CALL inp_par (iTLM)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Set domain decomposition tile partition range.  This range is
 !  computed only once since the "first_tile" and "last_tile" values
 !  are private for each parallel thread/node.
 !
-!$OMP PARALLEL
 #if defined _OPENMP
       MyThread=my_threadnum()
 #elif defined DISTRIBUTE
@@ -133,7 +135,6 @@
         first_tile(ng)=MyThread*chunk_size
         last_tile (ng)=first_tile(ng)+chunk_size-1
       END DO
-!$OMP END PARALLEL
 !
 !  Initialize internal wall clocks. Notice that the timings does not
 !  includes processing standard input because several parameters are
@@ -145,18 +146,14 @@
         END IF
 !
         DO ng=1,Ngrids
-!$OMP PARALLEL
           DO thread=THREAD_RANGE
-            CALL wclock_on (ng, iTLM, 0, __LINE__, __FILE__)
+            CALL wclock_on (ng, iTLM, 0, __LINE__, MyFile)
           END DO
-!$OMP END PARALLEL
         END DO
 !
 !  Allocate and initialize modules variables.
 !
-!$OMP PARALLEL
         CALL mod_arrays (allocate_vars)
-!$OMP END PARALLEL
 !
 !  Allocate and initialize 4D-Var arrays.
 !
@@ -185,19 +182,26 @@
 !  the size of the state vector, Nstate.  This size is computed in
 !  routine "wpoints".
 !-----------------------------------------------------------------------
+
+#ifdef FORWARD_FLUXES
 !
-#if defined BULK_FLUXES && defined NL_BULK_FLUXES
-!  Set structure for the nonlinear surface fluxes to be processed by
-!  by the tangent linear and adjoint models. Also, set switches to
-!  process the BLK structure in routine "check_multifile".  Notice that
-!  it is possible to split solution into multiple NetCDF files to reduce
-!  their size.
+!  Set the BLK structure to contain the nonlinear model surface fluxes
+!  needed by the tangent linear and adjoint models. Also, set switches
+!  to process that structure in routine "check_multifile". Notice that
+!  it is possible to split the solution into multiple NetCDF files to
+!  reduce their size.
 !
-      CALL edit_multifile ('FWD2BLK')
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+!  The switch LreadFRC is deactivated because all the atmospheric
+!  forcing, including shortwave radiation, is read from the NLM
+!  surface fluxes or is assigned during ESM coupling.  Such fluxes
+!  are available from the QCK structure. There is no need for reading
+!  and processing from the FRC structure input forcing-files.
+!
+      CALL edit_multifile ('QCK2BLK')
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       DO ng=1,Ngrids
         LreadBLK(ng)=.TRUE.
+        LreadFRC(ng)=.FALSE.
       END DO
 #endif
 !
@@ -205,16 +209,13 @@
 !
       DO ng=1,Ngrids
         LreadFWD(ng)=.TRUE
-!$OMP PARALLEL
         CALL tl_initial (ng)
-!$OMP END PARALLEL
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END DO
 !
 !-----------------------------------------------------------------------
 !  Read in Lanczos algorithm coefficients ("cg_beta", "cg_delta") from
-!  file LCZ(ng)%name NetCDF (IS4DVAR adjoint file), as computed in the
+!  file LCZ(ng)%name NetCDF (I4D-Var adjoint file), as computed in the
 !  I4D-Var Lanczos data assimilation algorithm for the first outer
 !  loop.  They are needed here, in routine "tl_inner2state", to compute
 !  the tangent linear model initial conditions as the weighted sum
@@ -222,16 +223,15 @@
 !  by solving a tri-diagonal system that uses "cg_beta" and "cg_gamma".
 !-----------------------------------------------------------------------
 !
-      SourceFile=__FILE__ // ", ROMS_initialize"
+      SourceFile=MyFile
       DO ng=1,Ngrids
         CALL netcdf_get_fvar (ng, iADM, LCZ(ng)%name, 'cg_beta',        &
      &                        cg_beta)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
         CALL netcdf_get_fvar (ng, iADM, LCZ(ng)%name, 'cg_delta',       &
      &                        cg_delta)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END DO
 !
 !  Allocate arrays associated with Generalized Stability Theory (GST)
@@ -305,14 +305,13 @@
         ELSE
           CALL def_gst (ng, iTLM)
         END IF
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END DO
 #endif
-
+!
       RETURN
       END SUBROUTINE ROMS_initialize
-
+!
       SUBROUTINE ROMS_run (RunInterval)
 !
 !=======================================================================
@@ -361,17 +360,20 @@
 #ifdef CHECKPOINTING
       logical :: LwrtGST
 #endif
-
+!
       integer :: Is, Ie
       integer :: i, iter, ng, tile
       integer :: NconvRitz(Ngrids)
-
+!
       real(r8) :: Enorm
-
+!
       TYPE (T_GST), allocatable :: ad_state(:)
       TYPE (T_GST), allocatable :: state(:)
-
+!
       character (len=55) :: string
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", ROMS_run"
 !
 !-----------------------------------------------------------------------
 !  Implicit Restarted Arnoldi Method (IRAM) for the computation of
@@ -403,7 +405,7 @@
 !
         DO ng=1,Ngrids
 #ifdef PROFILE
-          CALL wclock_on (ng, iTLM, 38, __LINE__, __FILE__)
+          CALL wclock_on (ng, iTLM, 38, __LINE__, MyFile)
 #endif
           IF (Master) THEN
             CALL dsaupd (ido(ng), bmat, Nsize(ng), which, NEV,          &
@@ -416,7 +418,7 @@
             Nconv(ng)=iaup2(4)
           END IF
 #ifdef PROFILE
-          CALL wclock_off (ng, iTLM, 38, __LINE__, __FILE__)
+          CALL wclock_off (ng, iTLM, 38, __LINE__, MyFile)
 #endif
 #ifdef DISTRIBUTE
 !
@@ -442,8 +444,7 @@
           IF ((MOD(iter,nGST).eq.0).or.(iter.ge.MaxIterGST).or.         &
      &        (ANY(ido.eq.99))) THEN
             CALL wrt_gst (ng, iTLM)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
 #endif
         END DO
@@ -479,12 +480,9 @@
             Ie=Is+Nsize(ng)-1
             ad_state(ng)%vector => STORAGE(ng)%SworkD(Is:Ie)
           END DO
-
-!$OMP PARALLEL
+!
           CALL propagator (RunInterval, iter, state, ad_state)
-!$OMP END PARALLEL
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         ELSE
           IF (ANY(info.ne.0)) THEN
             DO ng=1,Ngrids
@@ -512,7 +510,7 @@
      &                            iparam(3,ng)
               END IF
 #ifdef PROFILE
-              CALL wclock_on (ng, iTLM, 38, __LINE__, __FILE__)
+              CALL wclock_on (ng, iTLM, 38, __LINE__, MyFile)
 #endif
               IF (Master) THEN
                 CALL dseupd (Lrvec, howmany, select(1,ng),              &
@@ -537,7 +535,7 @@
               CALL mp_bcastf (ng, iTLM, STORAGE(ng)%Rvector)
 #endif
 #ifdef PROFILE
-              CALL wclock_off (ng, iTLM, 38, __LINE__, __FILE__)
+              CALL wclock_off (ng, iTLM, 38, __LINE__, MyFile)
 #endif
             END DO
 
@@ -581,12 +579,10 @@
                   state(ng)%vector => STORAGE(ng)%Rvector(Is:Ie,i)
                   ad_state(ng)%vector => SworkR(Is:Ie)
                 END DO
-
-!$OMP PARALLEL
+!
                 CALL propagator (RunInterval, -i, state, ad_state)
-!$OMP END PARALLEL
-                IF (FoundError(exit_flag, NoError, __LINE__,            &
-     &                         __FILE__)) RETURN
+                IF (FoundError(exit_flag, NoError,                      &
+     &                         __LINE__, MyFile)) RETURN
 !
                 DO ng=1,Ngrids
                   CALL r_norm2 (ng, iTLM, 1, Ninner,                    &
@@ -604,7 +600,7 @@
 !  twice in the TLM file for the initial and final perturbation of
 !  the eigenvector.
 !
-                SourceFile=__FILE__ // ", ROMS_run"
+                SourceFile=MyFile
                 DO ng=1,Ngrids
                   CALL netcdf_put_fvar (ng, iTLM, TLM(ng)%name,         &
      &                                  'Ritz_rvalue',                  &
@@ -612,8 +608,8 @@
      &                                  start = (/TLM(ng)%Rindex/),     &
      &                                  total = (/1/),                  &
      &                                  ncid = TLM(ng)%ncid)
-                  IF (FoundError(exit_flag, NoError, __LINE__,          &
-     &                           __FILE__)) RETURN
+                  IF (FoundError(exit_flag, NoError,                    &
+     &                           __LINE__, MyFile)) RETURN
 
                   CALL netcdf_put_fvar (ng, iTLM, TLM(ng)%name,         &
      &                                  'Ritz_norm',                    &
@@ -621,14 +617,14 @@
      &                                  start = (/TLM(ng)%Rindex/),     &
      &                                  total = (/1/),                  &
      &                                  ncid = TLM(ng)%ncid)
-                  IF (FoundError(exit_flag, NoError, __LINE__,          &
-     &                           __FILE__)) RETURN
+                  IF (FoundError(exit_flag, NoError,                    &
+     &                           __LINE__, MyFile)) RETURN
 
                   IF (LmultiGST) THEN
                     CALL netcdf_close (ng, iTLM, TLM(ng)%ncid,          &
      &                                 TLM(ng)%name)
-                    IF (FoundError(exit_flag, NoError, __LINE__,        &
-     &                             __FILE__)) RETURN
+                    IF (FoundError(exit_flag, NoError,                  &
+     &                             __LINE__, MyFile)) RETURN
                   END IF
 
                   CALL netcdf_put_fvar (ng, iADM, ADM(ng)%name,         &
@@ -637,8 +633,8 @@
      &                                  start = (/ADM(ng)%Rindex/),     &
      &                                  total = (/1/),                  &
      &                                  ncid = ADM(ng)%ncid)
-                  IF (FoundError(exit_flag, NoError, __LINE__,          &
-     &                           __FILE__)) RETURN
+                  IF (FoundError(exit_flag, NoError,                    &
+     &                           __LINE__, MyFile)) RETURN
 
                   CALL netcdf_put_fvar (ng, iADM, ADM(ng)%name,         &
      &                                  'Ritz_norm',                    &
@@ -646,8 +642,8 @@
      &                                  start = (/ADM(ng)%Rindex/),     &
      &                                  total = (/1/),                  &
      &                                  ncid = ADM(ng)%ncid)
-                  IF (FoundError(exit_flag, NoError, __LINE__,          &
-     &                           __FILE__)) RETURN
+                  IF (FoundError(exit_flag, NoError,                    &
+     &                           __LINE__, MyFile)) RETURN
                 END DO
               END DO
             END IF
@@ -662,10 +658,10 @@
  30   FORMAT (a,'_',i3.3,'.nc')
  40   FORMAT (1x,i4.4,'-th residual',1p,e14.6,0p,                       &
      &        '  Ritz value',1pe14.6,0p,2x,i4.4)
-
+!
       RETURN
       END SUBROUTINE ROMS_run
-
+!
       SUBROUTINE ROMS_finalize
 !
 !=======================================================================
@@ -684,6 +680,9 @@
 !  Local variable declarations.
 !
       integer :: Fcount, ng, thread
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", ROMS_finalize"
 !
 !-----------------------------------------------------------------------
 !  If blowing-up, save latest model state into RESTART NetCDF file.
@@ -718,23 +717,18 @@
 !
       IF (Master) THEN
         WRITE (stdout,20)
- 20     FORMAT (/,' Elapsed CPU time (seconds):',/)
+ 20     FORMAT (/,'Elapsed wall CPU time for each process (seconds):',/)
       END IF
 !
       DO ng=1,Ngrids
-!$OMP PARALLEL
         DO thread=THREAD_RANGE
-          CALL wclock_off (ng, iTLM, 0, __LINE__, __FILE__)
+          CALL wclock_off (ng, iTLM, 0, __LINE__, MyFile)
         END DO
-!$OMP END PARALLEL
-
       END DO
 !
 !  Report dynamic memory and automatic memory requirements.
 !
-!$OMP PARALLEL
       CALL memory
-!$OMP END PARALLEL
 !
 !  Close IO files.
 !
@@ -742,10 +736,10 @@
         CALL close_inp (ng, iTLM)
       END DO
       CALL close_out
-
+!
       RETURN
       END SUBROUTINE ROMS_finalize
-
+!
       SUBROUTINE IRAM_error (info, string)
 !
 !=======================================================================
@@ -756,11 +750,10 @@
 !                                                                      !
 !=======================================================================
 !
-!
 !  imported variable declarations.
 !
       integer, intent(in) :: info
-
+!
       character (len=*), intent(out) :: string
 !
 !-----------------------------------------------------------------------
@@ -810,7 +803,7 @@
       ELSE IF (info.eq.-9999) THEN
         string='Could not build and Arnoldi factorization              '
       END IF
-
+!
       RETURN
       END SUBROUTINE IRAM_error
 

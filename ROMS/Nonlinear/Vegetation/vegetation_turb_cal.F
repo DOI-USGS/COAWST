@@ -224,17 +224,17 @@
 ! Eddies typical size constrained by distance in between the plants
 !
               L=cl_veg*((1.0_r8-MIN(solid,1.0_r8))/                     &
-     &                 plant(i,j,iveg,pdens))**one_half
+     &                 (plant(i,j,iveg,pdens)+eps))**one_half
               L=MIN(L,max_L)
 !
 ! Dissipation time-scale of eddies in between the plants
 !
-              tauveg=(L**2.0_r8/(ck**2.0_r8*tke_loc_veg))**one_third
+              tauveg=(L**2.0_r8/(ck**2.0_r8*tke_loc_veg+eps))**one_third
 !
 ! Effective dissipation time-scale
 ! 
               taueff=MIN(taufree,tauveg)
-              gls_loc_veg=gls_c2(ng)*tke_loc_veg/taueff
+              gls_loc_veg=gls_c2(ng)*tke_loc_veg/(taueff+eps)
 !
 !-----------------------------------------------------------------------
 ! Add the tke and gls changes from all vegetation types

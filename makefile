@@ -1,6 +1,6 @@
-# svn $Id: makefile 995 2020-01-10 04:01:28Z arango $
+# svn $Id: makefile 1054 2021-03-06 19:47:12Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
-# Copyright (c) 2002-2020 The ROMS/TOMS Group             Kate Hedstrom :::
+# Copyright (c) 2002-2021 The ROMS/TOMS Group             Kate Hedstrom :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -77,10 +77,6 @@ MY_HEADER_DIR ?=
 #  biology model header file (like fennel.h, nemuro.h, ecosim.h, etc).
 
 MY_ANALYTICAL_DIR ?=
-
-# If applicable, where does CICE put its binary files?
-
-MY_CICE_DIR ?= /center/w/kate/CICE/NEP/compile
 
 #  Sometimes it is desirable to activate one or more CPP options to
 #  run different variants of the same application without modifying
@@ -178,12 +174,13 @@ ifdef USE_ROMS
 #--------------------------------------------------------------------------
 #  Notice that the token "libraries" is initialized with the ROMS/Utility
 #  library to account for calls to objects in other ROMS libraries or
-#  cycling dependencies. These type of dependencies are problematic in
-#  some compilers during linking. This library appears twice at linking
-#  step (begining and almost the end of ROMS library list).
+#  cycling dependencies. These types of dependencies are problematic in
+#  some compilers during linking. Such libraries appear twice at linking
+#  step (beginning and almost the end of ROMS library list).
 #--------------------------------------------------------------------------
 
-   libraries := $(SCRATCH_DIR)/libNLM.a $(SCRATCH_DIR)/libUTIL.a
+   libraries := $(SCRATCH_DIR)/libNLM.a $(SCRATCH_DIR)/libDRIVER.a \
+		$(SCRATCH_DIR)/libUTIL.a
 endif
 
 #--------------------------------------------------------------------------
@@ -373,7 +370,8 @@ endif
 
 ifneq "$(MAKECMDGOALS)" "clean"
  ifneq "$(MAKECMDGOALS)" "tarfile"
-  include $(COMPILERS)/$(OS)-$(strip $(FORT)).mk
+  MKFILE := $(COMPILERS)/$(OS)-$(strip $(FORT)).mk
+  include $(MKFILE)
  endif
 endif
 
@@ -421,10 +419,6 @@ CPPFLAGS += -D'SVN_REV="$(SVNREV)"'
 ifdef USE_ROMS
 .PHONY: all
 
-ifdef USE_CICE
-all: $(SCRATCH_DIR) $(SCRATCH_DIR)/libCICE.a
-endif
-
 all: $(SCRATCH_DIR) $(SCRATCH_DIR)/MakeDepend $(BIN) rm_macros
 endif
 
@@ -458,11 +452,8 @@ ifdef USE_ROMS
 		ROMS/Nonlinear/Vegetation \
 		ROMS/Functionals \
 		ROMS/Utility \
+		ROMS/Drivers \
 		ROMS/Modules
-endif
-ifdef USE_CICE
- modules  +=	SeaIce/Extra
-    LIBS  +=    $(SCRATCH_DIR)/libCICE.a
 endif
 
  includes :=	ROMS/Include
@@ -505,11 +496,6 @@ endif
 ifdef USE_SWAN
  modules  +=	SWAN/Src
  includes +=	SWAN/Src
-endif
-
-ifdef USE_REFDIF
- modules  +=	REFDIF
- includes +=	REFDIF
 endif
 
 ifdef USE_INWAVE
@@ -738,34 +724,6 @@ $(SCRATCH_DIR)/$(NETCDF_MODFILE): | $(SCRATCH_DIR)
 $(SCRATCH_DIR)/$(TYPESIZES_MODFILE): | $(SCRATCH_DIR)
 	cp -f $(NETCDF_INCDIR)/$(TYPESIZES_MODFILE) $(SCRATCH_DIR)
 
-ifdef USE_CICE
-$(SCRATCH_DIR)/libCICE.a: $(MY_CICE_DIR)/libCICE.a
-	cp -f $(MY_CICE_DIR)/libCICE.a $(MY_CICE_DIR)/*.mod $(SCRATCH_DIR)
-
-$(MY_CICE_DIR)/libCICE.a:
-	SeaIce/comp_ice
-$(SCRATCH_DIR)/initial.o: $(MY_CICE_DIR)/CICE_InitMod.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/CICE_RunMod.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_blocks.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_broadcast.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_calendar.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_communicate.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_constants.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_domain.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_domain_size.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_fileunits.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_flux.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_gather_scatter.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_grid.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_history.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_init.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_kinds_mod.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_restart.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_restart_shared.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_state.o
-$(SCRATCH_DIR)/ice_fakecpl.o: $(MY_CICE_DIR)/ice_timers.o
-endif
-
 $(SCRATCH_DIR)/MakeDepend: makefile \
                            $(SCRATCH_DIR)/$(NETCDF_MODFILE) \
                            $(SCRATCH_DIR)/$(TYPESIZES_MODFILE) \
@@ -792,7 +750,7 @@ endif
 .PHONY: tarfile
 
 tarfile:
-		tar --exclude=".svn" --exclude Output -cvf coawst_v3.6.tar *
+		tar --exclude=".svn" --exclude Output -cvf coawst_v3.7.tar *
 
 .PHONY: zipfile
 

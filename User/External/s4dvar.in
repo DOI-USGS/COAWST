@@ -1,8 +1,8 @@
 !  4DVar assimilation input parameters.
 !
-!svn $Id: s4dvar.in 995 2020-01-10 04:01:28Z arango $
+!svn $Id: s4dvar.in 1054 2021-03-06 19:47:12Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -96,19 +96,19 @@ balance(isVvel) =  T                      ! 3D momentum (u, v)
 
      LhessianEV = T
 
-! Switch (T/F) to activate hot start in weak-constraint (W4DVAR and
-! W4DPSAS) algorithms of subsequent outer loops.
+! Switch (T/F) to activate hot start in weak-constraint (R4DVAR and
+! RBL4DVAR) algorithms of subsequent outer loops.
 
       LhotStart = T
 
-! Switch (T/F) to activate IS4DVAR conjugate gradient preconditioning.
+! Switch (T/F) to activate I4DVAR conjugate gradient preconditioning.
 ! Two types of Limited-Memory Preconditioner (LMP) are available
 ! (Tshimanga et al., 2008): spectral LMP and Ritz LMP.
 
        Lprecond = F
 
 ! Switch to activate either Ritz Limited-Memory Preconditioner (T)
-! or spectral Limited-Memory Preconditioner (F) to the IS4DVAR algorithm.
+! or spectral Limited-Memory Preconditioner (F) to the I4DVAR algorithm.
 
           Lritz = T
 
@@ -552,9 +552,9 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !
 !
 !  LhotStart      Switch (T/F) to activate hot start in weak-constraint
-!                 (W4DVAR and W4DPSAS) algorithms.
+!                 (R4DVAR and RBL4DVAR) algorithms.
 !
-!  Lprecond       Switch (T/F) to activate preconditioning in the IS4DVAR
+!  Lprecond       Switch (T/F) to activate preconditioning in the I4DVAR
 !                 algorithm. Two types of Limited-Memory preconditioner (LMP)
 !                 are available Tshimanga et al., 2008): Spectral and Ritz.
 !
@@ -563,7 +563,7 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !
 !  Lritz          Switch to activate either Ritz Limited-Memory Preconditioner
 !                 (T) or spectral Limited-Memory Preconditioner (F) to the
-!                 IS4DVAR algorithm using eigenpairs approximation for the
+!                 I4DVAR algorithm using eigenpairs approximation for the
 !                 Hessian matrix.  The accuracy of the Hessian eigenvectors
 !                 (HevecErr) can be used to fine tune the minimization. That
 !                 is, HevecErr can be used to control number of eigenvalues
@@ -574,7 +574,7 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !                   If zero, use HevecErr parameter to determine the number
 !                   of converged eigenpairs.
 !
-!  NpostI         If weak constraint 4DVar (W4DPSAS or W4DVAR), set number of
+!  NpostI         If weak constraint 4DVar (RBL4DVAR or R4DVAR), set number of
 !                 iterations in the Lanczos algorithm used to estimate the
 !                 posterior analysis error covariance matrix.
 !
@@ -667,8 +667,8 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !                 The normalization NetCDF only needs to be created once
 !                 and simultaneous runs can write to the same NetCDF.  If
 !                 using this approach, compute the normalization factors
-!                 with the CORRELATION CPP-option and not IS4DVAR, W4DPSAS
-!                 or W4DVAR.
+!                 with the CORRELATION CPP-option and not I4DVAR, RBL4DVAR
+!                 or R4DVAR.
 !
 !  LwrtNRM        Switch (T/F) to write out correlation normalization factors
 !                 for, [4,1:Ngrids]:
@@ -941,7 +941,7 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !  ERRname        Output posterior error covariance matrix file name.
 !
 ! Input forcing filenames at observation locations for computing observations
-! impacts during the analysis-forecast cycle when W4DPSAS_FCT_SENSITIVITY and
+! impacts during the analysis-forecast cycle when RBL4DVAR_FCT_SENSITIVITY and
 ! OBS_SPACE are activated:
 !
 ! (See www.myroms.org/wiki/Analysis-Forecast_Cycle_Observation_Impacts)

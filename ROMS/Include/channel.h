@@ -1,7 +1,7 @@
 /*
-** svn $Id: channel.h 995 2020-01-10 04:01:28Z arango $
+** svn $Id: channel.h 1054 2021-03-06 19:47:12Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2020 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2021 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -21,18 +21,16 @@
 ** GRADIENT_CHECK             TLM/ADM Gradient Check
 ** FORCING_SV                 Forcing Singular Vectors
 ** FT_EIGENMODES              Finite Time Eigenmodes
-** IS4DVAR_OLD                Old Incremental, strong constraint 4DVAR
-** IS4DVAR                    Incremental, strong constraint 4DVAR
+** I4DVAR                     Incremental, strong constraint 4D-Var
 ** NLM_DRIVER                 Nonlinear Basic State trajectory
 ** OPT_PERTURBATION           Optimal perturbations
 ** PICARD_TEST                Picard Iterations Test
 ** R_SYMMETRY                 Representer Matrix Symmetry Test
-** S4DVAR                     Strong constraint 4DVAR
 ** SANITY_CHECK               Sanity Check
 ** SO_SEMI                    Stochastic Optimals: Semi-norm
 ** TLM_CHECK                  Tangent Linear Model Check
-** W4DPSAS                    Weak constraint 4D-PSAS
-** W4DVAR                     Weak constraint 4DVAR
+** RBL4DVAR                   Strong/Weak constraint RBL4D-Var
+** R4DVAR                     Weak constraint R4D-Var
 */
 
 

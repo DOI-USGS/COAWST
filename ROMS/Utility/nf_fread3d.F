@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE nf_fread3d_mod
 !
-!svn $Id: nf_fread3d.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: nf_fread3d.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -36,15 +36,17 @@
 !     Amin       Field minimum value (real)                            !
 !     Amax       Field maximum value (real)                            !
 !     A          Field to read in (real 3D array)                      !
+!     checksum   Field checksum value (32-bit integer; OPTIONAL)       !
+!                                                                      !
 !     nf_fread3d Error flag (integer)                                  !
 !                                                                      !
 !=======================================================================
 !
       implicit none
-
+!
       CONTAINS
 
-#if defined PARALLEL_IN && defined DISTRIBUTE
+#if defined PARALLEL_IO && defined DISTRIBUTE
 !
 !***********************************************************************
       FUNCTION nf_fread3d (ng, model, ncname, ncid,                     &
@@ -55,7 +57,7 @@
 # ifdef MASKING
      &                     Amask,                                       &
 # endif
-     &                     A)
+     &                     A, checksum)
 !***********************************************************************
 !
       USE mod_param
@@ -69,6 +71,7 @@
 # if defined MASKING && defined READ_WATER
       USE distribute_mod, ONLY : mp_collect
 # endif
+      USE get_hash_mod,   ONLY : get_hash
       USE strings_mod,    ONLY : FoundError
 !
       implicit none
@@ -78,14 +81,16 @@
       integer, intent(in) :: ng, model, ncid, ncvarid, tindex, gtype
       integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk
       integer, intent(in) :: Vsize(4)
-
+!
+      integer(i8b), intent(out), optional :: checksum
+!
       real(dp), intent(in)  :: Ascl
       real(r8), intent(out) :: Amin
       real(r8), intent(out) :: Amax
-
+!
       character (len=*), intent(in) :: ncname
       character (len=*), intent(in) :: ncvname
-
+!
 # ifdef ASSUMED_SHAPE
 #  ifdef MASKING
       real(r8), intent(in) :: Amask(LBi:,LBj:)
@@ -100,8 +105,9 @@
 !
 !  Local variable declarations.
 !
+      logical :: Lchecksum
       logical, dimension(3) :: foundit
-
+!
       integer :: i, ic, ij, j, jc, k, kc, np, MyNpts, Npts
       integer :: Imin, Imax, Isize, Jmin, Jmax, Jsize, IJsize
       integer :: Istr, Iend
@@ -112,7 +118,7 @@
       integer, dimension(4) :: start, total
 
       integer :: nf_fread3d
-
+!
       real(r8) :: Afactor, Aoffset, Aspval
 
       real(r8), parameter :: IniVal= 0.0_r8
@@ -124,9 +130,12 @@
       real(r8), allocatable :: A2d(:)
 # endif
       real(r8), allocatable :: wrk(:)
-
+!
       character (len= 3), dimension(2) :: op_handle
       character (len=12), dimension(3) :: AttName
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 !
 !-----------------------------------------------------------------------
 !  Set starting and ending indices to process.
@@ -206,8 +215,7 @@
       CALL netcdf_get_fatt (ng, model, ncname, ncvarid, AttName,        &
      &                      AttValue, foundit,                          &
      &                      ncid = ncid)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
         nf_fread3d=ioerror
         RETURN
       END IF
@@ -228,6 +236,15 @@
         Aspval=spval_check
       ELSE
         Aspval=AttValue(3)
+      END IF
+!
+!  Initialize checsum value.
+!
+      IF (PRESENT(checksum)) THEN
+        Lchecksum=.TRUE.
+        checksum=0_i8b
+      ELSE
+        Lchecksum=.FALSE.
       END IF
 !
 !-----------------------------------------------------------------------
@@ -302,6 +319,11 @@
               Amax=MAX(Amax,wrk(i))
             END IF
           END DO
+          IF ((ABS(Amin).ge.ABS(Aspval)).and.                           &
+     &        (ABS(Amax).ge.ABS(Aspval))) THEN
+            Amin=0.0_r8                       ! the entire data is all
+            Amax=0.0_r8                       ! field value, _FillValue
+          END IF
 !
 !  Set minimum and maximum values: global reduction.
 !
@@ -423,6 +445,11 @@
               Amax=MAX(Amax,wrk(i))
             END IF
           END DO
+          IF ((ABS(Amin).ge.ABS(Aspval)).and.                           &
+     &        (ABS(Amax).ge.ABS(Aspval))) THEN
+            Amin=0.0_r8                       ! the entire data is all
+            Amax=0.0_r8                       ! field value, _FillValue
+          END IF
 !
 !  Unpack read data.  This is tricky in parallel I/O.  The cheapeast
 !  thing to do is reconstruct a packed 2D global array and then select
@@ -463,7 +490,7 @@
       IF (allocated(wrk)) THEN
         deallocate (wrk)
       END IF
-
+!
       RETURN
       END FUNCTION nf_fread3d
 
@@ -479,7 +506,7 @@
 # ifdef MASKING
      &                     Amask,                                       &
 # endif
-     &                     A)
+     &                     A, checksum)
 !***********************************************************************
 !
       USE mod_param
@@ -497,6 +524,7 @@
       USE distribute_mod, ONLY : mp_scatter3d
 #  endif
 # endif
+      USE get_hash_mod,   ONLY : get_hash
       USE strings_mod,    ONLY : FoundError
 !
       implicit none
@@ -506,14 +534,16 @@
       integer, intent(in) :: ng, model, ncid, ncvarid, tindex, gtype
       integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk
       integer, intent(in) :: Vsize(4)
-
+!
+      integer(i8b), intent(out), optional :: checksum
+!
       real(dp), intent(in)  :: Ascl
       real(r8), intent(out) :: Amin
       real(r8), intent(out) :: Amax
-
+!
       character (len=*), intent(in) :: ncname
       character (len=*), intent(in) :: ncvname
-
+!
 # ifdef ASSUMED_SHAPE
 #  ifdef MASKING
       real(r8), intent(in) :: Amask(LBi:,LBj:)
@@ -528,8 +558,9 @@
 !
 !  Local variable declarations.
 !
+      logical :: Lchecksum
       logical, dimension(3) :: foundit
-
+!
       integer :: i, j, k, ic, Npts, NWpts, status, wtype
       integer :: Imin, Imax, Jmin, Jmax, Koff
       integer :: Ilen, Jlen, Klen, IJlen, MyType
@@ -539,7 +570,7 @@
       integer, dimension(4) :: start, total
 
       integer :: nf_fread3d
-
+!
       real(r8) :: Afactor, Aoffset, Aspval
 
       real(r8), dimension(3) :: AttValue
@@ -549,7 +580,11 @@
 # else
       real(r8), dimension(2+(Lm(ng)+2)*(Mm(ng)+2)*(UBk-LBk+1)) :: wrk
 # endif
+!
       character (len=12), dimension(3) :: AttName
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 !
 !-----------------------------------------------------------------------
 !  Set starting and ending indices to process.
@@ -619,8 +654,7 @@
       CALL netcdf_get_fatt (ng, model, ncname, ncvarid, AttName,        &
      &                      AttValue, foundit,                          &
      &                      ncid = ncid)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
         nf_fread3d=ioerror
         RETURN
       END IF
@@ -717,6 +751,15 @@
 !
       wrk=0.0_r8
 !
+!  Initialize checsum value.
+!
+      IF (PRESENT(checksum)) THEN
+        Lchecksum=.TRUE.
+        checksum=0_i8b
+      ELSE
+        Lchecksum=.FALSE.
+      END IF
+!
 !-----------------------------------------------------------------------
 !  Serial I/O: Read in requested field and scale it.
 !-----------------------------------------------------------------------
@@ -746,13 +789,20 @@
                 Amax=MAX(Amax,wrk(i))
               END IF
             END DO
+            IF ((ABS(Amin).ge.ABS(Aspval)).and.                         &
+     &          (ABS(Amax).ge.ABS(Aspval))) THEN
+              Amin=0.0_r8                     ! the entire data is all
+              Amax=0.0_r8                     ! field value, _FillValue
+            END IF
+          END IF
+          IF (Lchecksum) THEN
+            CALL get_hash (wrk, Npts, checksum)
           END IF
         END IF
 # ifdef DISTRIBUTE
         CALL mp_bcasti (ng, model, status)
 # endif
-        IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           exit_flag=2
           ioerror=status
           nf_fread3d=status
@@ -811,7 +861,7 @@
 # endif
 
       nf_fread3d=status
-
+!
       RETURN
       END FUNCTION nf_fread3d
 #endif

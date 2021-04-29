@@ -3,9 +3,9 @@
 
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_set_massflux.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: ad_set_massflux.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -41,10 +41,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, model, 12, __LINE__, __FILE__)
+      CALL wclock_on (ng, model, 12, __LINE__, MyFile)
 # endif
       CALL ad_set_massflux_tile (ng, tile, model,                       &
      &                           LBi, UBi, LBj, UBj,                    &
@@ -67,8 +70,9 @@
      &                           GRID(ng) % ad_Huon,                    &
      &                           GRID(ng) % ad_Hvom)
 # ifdef PROFILE
-      CALL wclock_off (ng, model, 12, __LINE__, __FILE__)
+      CALL wclock_off (ng, model, 12, __LINE__, MyFile)
 # endif
+!
       RETURN
       END SUBROUTINE ad_set_massflux
 
@@ -262,7 +266,7 @@
           END DO
         END DO
       END DO
-
+!
       RETURN
       END SUBROUTINE ad_set_massflux_tile
 #endif

@@ -1,6 +1,6 @@
-# svn $Id: Darwin-pgi.mk 995 2020-01-10 04:01:28Z arango $
+# svn $Id: Darwin-pgi.mk 1054 2021-03-06 19:47:12Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -13,6 +13,11 @@
 # FFLAGS         Flags to the fortran compiler
 # CPP            Name of the C-preprocessor
 # CPPFLAGS       Flags to the C-preprocessor
+# HDF5_INCDIR    HDF5 include directory
+# HDF5_LIBDIR    HDF5 library directory
+# HDF5_LIBS      HDF5 library switches
+# LIBS           Required libraries during linking
+# NF_CONFIG      NetCDF Fortran configuration script
 # CC             Name of the C compiler
 # CFLAGS         Flags to the C compiler
 # CXX            Name of the C++ compiler
@@ -186,6 +191,12 @@ endif
 ifndef USE_SCRIP
              LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
 endif
+
+ifdef USE_WW3
+             FFLAGS += -I${COAWST_WW3_DIR}/mod_MPI
+             LIBS += WW3/model/obj_MPI/libWW3.a
+endif
+
 ifdef USE_MCT
        MCT_INCDIR ?= /usr/local/mct/include
        MCT_LIBDIR ?= /usr/local/mct/lib
@@ -207,11 +218,6 @@ ifdef USE_WRF
              LIBS += WRF/frame/pack_utils.o
              LIBS += WRF/external/io_netcdf/libwrfio_nf.a
 #            LIBS += WRF/external/io_netcdf/wrf_io.o
-endif
-
-ifdef USE_WW3
-             FFLAGS += -I${COAWST_WW3_DIR}/mod_MPI
-             LIBS += WW3/model/obj_MPI/libWW3.a
 endif
 
        clean_list += ifc* work.pc*

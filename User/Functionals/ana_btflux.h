@@ -1,14 +1,15 @@
       SUBROUTINE ana_btflux (ng, tile, model, itrc)
 !
-!! svn $Id: ana_btflux.h 995 2020-01-10 04:01:28Z arango $
+!! svn $Id: ana_btflux.h 1054 2021-03-06 19:47:12Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
 !                                                                      !
-!  This routine sets kinematic bottom flux of tracer type variables    !
-!  (tracer units m/s).                                                 !
+!  Sets bottom flux of tracer type variables btflux(:,:,itrc) using    !
+!  analytical expressions (TracerUnits m/s).  The surface fluxes are   !
+!  processed and loaded to state variable "btflx" in "set_vbc".        !
 !                                                                      !
 !=======================================================================
 !
@@ -19,16 +20,18 @@
 ! Imported variable declarations.
 !
       integer, intent(in) :: ng, tile, model, itrc
-
+!
+! Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 #include "tile.h"
 !
       CALL ana_btflux_tile (ng, tile, model, itrc,                      &
      &                      LBi, UBi, LBj, UBj,                         &
      &                      IminS, ImaxS, JminS, JmaxS,                 &
-#ifdef TL_IOMS
-     &                      FORCES(ng) % tl_btflx,                      &
-#endif
-     &                      FORCES(ng) % btflx)
+     &                      FORCES(ng) % btflux)
 !
 ! Set analytical header file name used.
 !
@@ -37,9 +40,9 @@
 #else
       IF (Lanafile.and.(tile.eq.0)) THEN
 #endif
-        ANANAME( 3)=__FILE__
+        ANANAME( 3)=MyFile
       END IF
-
+!
       RETURN
       END SUBROUTINE ana_btflux
 !
@@ -47,10 +50,7 @@
       SUBROUTINE ana_btflux_tile (ng, tile, model, itrc,                &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            IminS, ImaxS, JminS, JmaxS,           &
-#ifdef TL_IOMS
-     &                            tl_btflx,                             &
-#endif
-     &                            btflx)
+     &                            btflux)
 !***********************************************************************
 !
       USE mod_param
@@ -63,15 +63,9 @@
       integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
 !
 #ifdef ASSUMED_SHAPE
-      real(r8), intent(inout) :: btflx(LBi:,LBj:,:)
-# ifdef TL_IOMS
-      real(r8), intent(inout) :: tl_btflx(LBi:,LBj:,:)
-# endif
+      real(r8), intent(inout) :: btflux(LBi:,LBj:,:)
 #else
-      real(r8), intent(inout) :: btflx(LBi:UBi,LBj:UBj,NT(ng))
-# ifdef TL_IOMS
-      real(r8), intent(inout) :: tl_btflx(LBi:UBi,LBj:UBj,NT(ng))
-# endif
+      real(r8), intent(inout) :: btflux(LBi:UBi,LBj:UBj,NT(ng))
 #endif
 !
 !  Local variable declarations.
@@ -81,73 +75,65 @@
 #include "set_bounds.h"
 !
 !-----------------------------------------------------------------------
-!  Set kinematic bottom heat flux (degC m/s) at horizontal RHO-points.
+!  Set bottom heat flux (degC m/s) at horizontal RHO-points.
 !-----------------------------------------------------------------------
 !
       IF (itrc.eq.itemp) THEN
 #if defined MY_APPLICATION
         DO j=JstrT,JendT
           DO i=IstrT,IendT
-            btflx(i,j,itrc)=???
+            btflux(i,j,itrc)=???
           END DO
         END DO
 #else
         DO j=JstrT,JendT
           DO i=IstrT,IendT
-            btflx(i,j,itrc)=0.0_r8
-# ifdef TL_IOMS
-            tl_btflx(i,j,itrc)=0.0_r8
-# endif
+            btflux(i,j,itrc)=0.0_r8
           END DO
         END DO
 #endif
 !
 !-----------------------------------------------------------------------
-!  Set kinematic bottom salt flux (m/s) at horizontal RHO-points,
-!  scaling by bottom salinity is done elsewhere.
+!  Set bottom salt flux (m/s) at horizontal RHO-points. The scaling
+!  by bottom salinity is done in "set_vbc".
 !-----------------------------------------------------------------------
 !
       ELSE IF (itrc.eq.isalt) THEN
 #if defined MY_APPLICATION
         DO j=JstrT,JendT
           DO i=IstrT,IendT
-            btflx(i,j,itrc)=???
+            btflux(i,j,itrc)=???
           END DO
         END DO
 #else
         DO j=JstrT,JendT
           DO i=IstrT,IendT
-            btflx(i,j,itrc)=0.0_r8
-# ifdef TL_IOMS
-            tl_btflx(i,j,itrc)=0.0_r8
-# endif
+            btflux(i,j,itrc)=0.0_r8
           END DO
         END DO
 #endif
 !
 !-----------------------------------------------------------------------
-!  Set kinematic bottom flux (T m/s) of passive tracers, if any.
+!  Set bottom flux (Tunits m/s) of passive tracers at RHO-point,
+!  if any.
 !-----------------------------------------------------------------------
 !
       ELSE
 #if defined MY_APPLICATION
         DO j=JstrT,JendT
           DO i=IstrT,IendT
-            btflx(i,j,itrc)=???
+            btflux(i,j,itrc)=???
           END DO
         END DO
       END IF
 #else
         DO j=JstrT,JendT
           DO i=IstrT,IendT
-            btflx(i,j,itrc)=0.0_r8
-# ifdef TL_IOMS
-            tl_btflx(i,j,itrc)=0.0_r8
-# endif
+            btflux(i,j,itrc)=0.0_r8
           END DO
         END DO
       END IF
 #endif
-
+!
       RETURN
       END SUBROUTINE ana_btflux_tile

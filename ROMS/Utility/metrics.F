@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE metrics_mod
 !
-!svn $Id: metrics.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: metrics.F 1054 2021-03-06 19:47:12Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -292,9 +292,15 @@
       real(r8) :: SecScale
 #endif
       real(dp) :: my_DXmax, my_DXmin, my_DYmax, my_DYmin
+#ifdef MASKING
+      real(dp) :: my_DXmaxW, my_DXminW, my_DYmaxW, my_DYminW
+#endif
 
 #ifdef SOLVE3D
       real(dp) :: my_DZmax, my_DZmin
+# ifdef MASKING
+      real(dp) :: my_DZmaxW, my_DZminW
+# endif
 #endif
       real(dp) :: my_Cg_Cor, my_Cg_max, my_Cg_min, my_grdmax
 #if defined DIFF_3DCOEF
@@ -311,8 +317,13 @@
 #endif
 
 #ifdef DISTRIBUTE
+# ifdef MASKING
+      real(dp), dimension(20) :: buffer
+      character (len=3), dimension(20) :: op_handle
+# else
       real(dp), dimension(14) :: buffer
       character (len=3), dimension(14) :: op_handle
+# endif
 #endif
 
 #ifdef SOLVE3D
@@ -748,9 +759,19 @@
       my_DXmax=-Large
       my_DYmin= Large
       my_DYmax=-Large
+#ifdef MASKING
+      my_DXminW= Large
+      my_DXmaxW=-Large
+      my_DYminW= Large
+      my_DYmaxW=-Large
+#endif
 #ifdef SOLVE3D
       my_DZmin= Large
       my_DZmax=-Large
+# ifdef MASKING
+      my_DZminW= Large
+      my_DZmaxW=-Large
+# endif
 #endif
       my_grdmax=-Large
       DO j=JstrT,JendT
@@ -764,11 +785,27 @@
           my_DXmax=MAX(my_DXmax,om_r(i,j))
           my_DYmin=MIN(my_DYmin,on_r(i,j))
           my_DYmax=MAX(my_DYmax,on_r(i,j))
+#ifdef MASKING
+          IF (rmask(i,j).gt.0.0_r8) THEN
+            my_grdmax=MAX(my_grdmax,cff)
+            my_DXminW=MIN(my_DXminW,om_r(i,j))
+            my_DXmaxW=MAX(my_DXmaxW,om_r(i,j))
+            my_DYminW=MIN(my_DYminW,on_r(i,j))
+            my_DYmaxW=MAX(my_DYmaxW,on_r(i,j))
+          END IF
+#else
           my_grdmax=MAX(my_grdmax,cff)
+#endif
 #ifdef SOLVE3D
           DO k=1,N(ng)
             my_DZmin=MIN(my_DZmin,Hz(i,j,k))
             my_DZmax=MAX(my_DZmax,Hz(i,j,k))
+# ifdef MASKING
+            IF (rmask(i,j).gt.0.0_r8) THEN
+              my_DZminW=MIN(my_DZminW,Hz(i,j,k))
+              my_DZmaxW=MAX(my_DZmaxW,Hz(i,j,k))
+            END IF
+# endif
           END DO
 #endif
         END DO
@@ -837,9 +874,19 @@
       DXmax(ng)=MAX(DXmax(ng),my_DXmax)
       DYmin(ng)=MIN(DYmin(ng),my_DYmin)
       DYmax(ng)=MAX(DYmax(ng),my_DYmax)
+#ifdef MASKING
+      DXminW(ng)=MIN(DXminW(ng),my_DXminW)
+      DXmaxW(ng)=MAX(DXmaxW(ng),my_DXmaxW)
+      DYminW(ng)=MIN(DYminW(ng),my_DYminW)
+      DYmaxW(ng)=MAX(DYmaxW(ng),my_DYmaxW)
+#endif
 #ifdef SOLVE3D
       DZmin(ng)=MIN(DZmin(ng),my_DZmin)
       DZmax(ng)=MAX(DZmax(ng),my_DZmax)
+# ifdef MASKING
+      DZminW(ng)=MIN(DZminW(ng),my_DZminW)
+      DZmaxW(ng)=MAX(DZmaxW(ng),my_DZmaxW)
+# endif
 #endif
 #ifdef DIFF_3DCOEF
       DiffMin(ng)=MIN(DiffMin(ng),my_DiffMin)
@@ -886,9 +933,9 @@
         buffer(12)=DiffMax(ng)
         op_handle(12)='MAX'
 # else
-        buffer(11)=0.0_r8
+        buffer(11)=0.0_dp
         op_handle(11)='MIN'
-        buffer(12)=0.0_r8
+        buffer(12)=0.0_dp
         op_handle(12)='MAX'
 # endif
 # ifdef VISC_3DCOEF
@@ -897,12 +944,35 @@
         buffer(14)=ViscMax(ng)
         op_handle(14)='MAX'
 # else
-        buffer(13)=0.0_r8
+        buffer(13)=0.0_dp
         op_handle(13)='MIN'
-        buffer(14)=0.0_r8
+        buffer(14)=0.0_dp
         op_handle(14)='MAX'
 # endif
+# ifdef MASKING
+        buffer(15)=DXminW(ng)
+        op_handle(15)='MIN'
+        buffer(16)=DXmaxW(ng)
+        op_handle(16)='MAX'
+        buffer(17)=DYminW(ng)
+        op_handle(17)='MIN'
+        buffer(18)=DYmaxW(ng)
+        op_handle(18)='MAX'
+#  ifdef SOLVE3D
+        buffer(19)=DZminW(ng)
+        op_handle(19)='MIN'
+        buffer(20)=DZmaxW(ng)
+        op_handle(20)='MAX'
+#  else
+        buffer(19)=0.0_dp
+        op_handle(19)='MIN'
+        buffer(20)=0.0_dp
+        op_handle(20)='MAX'
+#  endif
+        CALL mp_reduce (ng, model, 20, buffer, op_handle)
+# else
         CALL mp_reduce (ng, model, 14, buffer, op_handle)
+# endif
         Cg_min(ng)=buffer(1)
         Cg_max(ng)=buffer(2)
         Cg_Cor(ng)=buffer(3)
@@ -923,21 +993,58 @@
         ViscMin(ng)=buffer(13)
         ViscMax(ng)=buffer(14)
 # endif
+# ifdef MASKING
+        DXminW(ng)=buffer(15)
+        DXmaxW(ng)=buffer(16)
+        DYminW(ng)=buffer(17)
+        DYmaxW(ng)=buffer(18)
+#  ifdef SOLVE3D
+        DZminW(ng)=buffer(19)
+        DZmaxW(ng)=buffer(20)
+#  endif
+# endif
 #endif
         IF (Master.and.LwrtInfo(ng)) THEN
-          WRITE(stdout,10) ng,                                          &
-     &                     DXmin(ng)/1000.0_r8, DXmax(ng)/1000.0_r8,    &
-     &                     DYmin(ng)/1000.0_r8, DYmax(ng)/1000.0_r8
+          WRITE (stdout,10) ng,                                         &
+#ifdef MASKING
+     &                      DXmin(ng)*0.001_dp, DXminW(ng)*0.001_dp,    &
+     &                      DXmax(ng)*0.001_dp, DXmaxW(ng)*0.001_dp,    &
+     &                      DYmin(ng)*0.001_dp, DYminW(ng)*0.001_dp,    &
+     &                      DYmax(ng)*0.001_dp, DYmaxW(ng)*0.001_dp
+  10      FORMAT (/,' Metrics information for Grid ',i2.2,':',          &
+     &            /,' ===============================',/,               &
+     &            /,' Minimum X-grid spacing, DXmin = ',1pe15.8,' km',  &
+     &              4x,'Water points = ',1pe15.8,' km',                 &
+     &            /,' Maximum X-grid spacing, DXmax = ',1pe15.8,' km',  &
+     &              4x,'Water points = ',1pe15.8,' km',                 &
+     &            /,' Minimum Y-grid spacing, DYmin = ',1pe15.8,' km',  &
+     &              4x,'Water points = ',1pe15.8,' km',                 &
+     &            /,' Maximum Y-grid spacing, DYmax = ',1pe15.8,' km',  &
+     &              4x,'Water points = ',1pe15.8,' km')
+#else
+     &                      DXmin(ng)*0.001_dp,                         &
+     &                      DXmax(ng)*0.001_dp,                         &
+     &                      DYmin(ng)*0.001_dp,                         &
+     &                      DYmax(ng)*0.001_dp
   10      FORMAT (/,' Metrics information for Grid ',i2.2,':',          &
      &            /,' ===============================',/,               &
      &            /,' Minimum X-grid spacing, DXmin = ',1pe15.8,' km',  &
      &            /,' Maximum X-grid spacing, DXmax = ',1pe15.8,' km',  &
      &            /,' Minimum Y-grid spacing, DYmin = ',1pe15.8,' km',  &
      &            /,' Maximum Y-grid spacing, DYmax = ',1pe15.8,' km')
+#endif
 #ifdef SOLVE3D
-          WRITE(stdout,20) DZmin(ng), DZmax(ng)
+# ifdef MASKING
+          WRITE (stdout,20) DZmin(ng), DZminW(ng), DZmax(ng), DZmaxW(ng)
+  20      FORMAT (' Minimum Z-grid spacing, DZmin = ',1pe15.8,' m',     &
+     &            5x,'Water points = ',1pe15.8,' m',/,                  &
+     &            ' Maximum Z-grid spacing, DZmax = ',1pe15.8,' m',     &
+     &            5x,'Water points = ',1pe15.8,' m')
+# else
+          WRITE (stdout,20) DZmin(ng), DZmax(ng)
   20      FORMAT (' Minimum Z-grid spacing, DZmin = ',1pe15.8,' m',/,   &
      &            ' Maximum Z-grid spacing, DZmax = ',1pe15.8,' m')
+# endif
 #endif
           WRITE (stdout,30) Cg_min(ng), Cg_max(ng), Cg_Cor(ng)
   30      FORMAT (/,' Minimum barotropic Courant Number = ', 1pe15.8,/, &
@@ -945,8 +1052,13 @@
      &              ' Maximum Coriolis   Courant Number = ', 1pe15.8,/)
 # if defined VISC_GRID || defined DIFF_GRID
           WRITE (stdout,40) grdmax(ng)/1000.0_r8
-  40      FORMAT (' Horizontal mixing scaled by grid size,',            &
-     &            ' GRDMAX = ',1pe15.8,' km')
+  40      FORMAT (' Horizontal mixing scaled by grid area squared root',&
+#  ifdef MASKING
+     &            ', MAXVAL(grdscl) = ',1pe15.8,' km',                  &
+     &            2x,'(Water points)')
+#  else
+     &            ', MAXVAL(grdscl) = ',1pe15.8,' km')
+#  endif
 # endif
 # ifdef DIFF_3DCOEF
 #  ifdef TS_DIF2
@@ -993,8 +1105,8 @@
         DO cr=1,Ncontact
           dg=donor_grid(cr)
           rg=receiver_grid(cr)
-          IF (RefinedGrid(rg).and.                                        &
-     &        (RefineScale(rg).gt.0).and.                                 &
+          IF (RefinedGrid(rg).and.                                      &
+     &        (RefineScale(rg).gt.0).and.                               &
      &         DXmax(dg).gt.DXmax(rg)) THEN
             CoarserDonor(rg)=dg
           END IF
@@ -1008,8 +1120,8 @@
         DO cr=1,Ncontact
           dg=donor_grid(cr)
           rg=receiver_grid(cr)
-          IF (RefinedGrid(dg).and.                                        &
-     &        (RefineScale(dg).gt.0).and.                                 &
+          IF (RefinedGrid(dg).and.                                      &
+     &        (RefineScale(dg).gt.0).and.                               &
      &        DXmax(dg).gt.DXmax(rg)) THEN
             FinerDonor(dg)=rg
           END IF
@@ -1250,7 +1362,6 @@
 !  Report convolution parameters.
 !
       IF (Master.and.LwrtInfo(ng)) THEN
-        LwrtInfo(ng)=.FALSE.
         DO rec=1,NSA
           DO is=1,NstateVar(ng)
             IF (rec.eq.1) THEN

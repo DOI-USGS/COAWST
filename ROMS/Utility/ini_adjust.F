@@ -1,14 +1,19 @@
 #include "cppdefs.h"
       MODULE ini_adjust_mod
 
-#if defined TLM_CHECK  || defined OPT_PERTURBATION || \
-    defined FORCING_SV || defined STOCHASTIC_OPT || \
-    defined HESSIAN_SV || defined HESSIAN_SO || defined HESSIAN_FSV || \
-    (defined ADJOINT   && defined TANGENT)
+#if defined FORCING_SV       || \
+    defined HESSIAN_FSV      || \
+    defined HESSIAN_SO       || \
+    defined HESSIAN_SV       || \
+    defined OPT_PERTURBATION || \
+    defined STOCHASTIC_OPT   || \
+    defined TLM_CHECK        || \
+    (defined ADJOINT         && \
+     defined TANGENT)
 !
-!svn $Id: ini_adjust.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: ini_adjust.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -18,11 +23,15 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
-# if defined ADJOINT && defined TANGENT
-#  if defined IS4DVAR || defined TL_W4DPSAS          || \
-      defined W4DPSAS || defined W4DPSAS_SENSITIVITY
+# if defined ADJOINT                   && \
+     defined TANGENT
+#  if defined I4DVAR                   || \
+      defined RBL4DVAR                 || \
+      defined RBL4DVAR_ANA_SENSITIVITY || \
+      defined SP4DVAR                  || \
+      defined TL_RBL4DVAR
       PUBLIC :: ini_adjust
 #  endif
 # endif
@@ -33,29 +42,34 @@
 # ifdef TLM_CHECK
       PUBLIC :: ini_perturb
 # endif
-# if defined TL_W4DVAR          || defined W4DVAR      || \
-     defined W4DVAR_SENSITIVITY || defined ARRAY_MODES || \
-     defined CLIPPING
+# if defined ARRAY_MODES            || \
+     defined CLIPPING               || \
+     defined R4DVAR                 || \
+     defined R4DVAR_ANA_SENSITIVITY || \
+     defined TL_R4DVAR
       PUBLIC :: rp_ini_adjust
 # endif
 # ifdef TLM_CHECK
       PUBLIC :: tl_ini_perturb
 # endif
-# if defined OPT_PERTURBATION || defined FORCING_SV || \
-     defined STOCHASTIC_OPT   || defined HESSIAN_SV || \
-     defined HESSIAN_SO       || defined HESSIAN_FSV
+# if defined FORCING_SV       || \
+     defined HESSIAN_FSV      || \
+     defined HESSIAN_SO       || \
+     defined HESSIAN_SV       || \
+     defined OPT_PERTURBATION || \
+     defined STOCHASTIC_OPT
       PUBLIC :: ad_ini_perturb
 # endif
-
+!
       CONTAINS
-
+!
 # if defined ADJOINT && defined TANGENT
-#  if defined IS4DVAR
+#  if defined I4DVAR || defined SP4DVAR
       SUBROUTINE ini_adjust (ng, tile, Linp, Lout)
 !
 !=======================================================================
 !                                                                      !
-!  This routine adds 4DVAR inner loop tangent linear increments to     !
+!  This routine adds 4D-Var inner loop tangent linear increments to    !
 !  nonlinear state initial conditions.  The boundary condition and     !
 !  barotropic/baroclinic coupling, if any, are processed latter in     !
 !  routine "ini_fields" before time-stepping.                          !
@@ -79,10 +93,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 #   include "tile.h"
 !
 #   ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 7, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 7, __LINE__, MyFile)
 #   endif
       CALL ini_adjust_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
@@ -110,9 +127,9 @@
      &                      OCEAN(ng) % vbar,                           &
      &                      OCEAN(ng) % zeta)
 #   ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 7, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 7, __LINE__, MyFile)
 #   endif
-
+!
       RETURN
       END SUBROUTINE ini_adjust
 !
@@ -273,13 +290,14 @@
         END DO
       END DO
 #   endif
-
+!
       RETURN
       END SUBROUTINE ini_adjust_tile
 #  endif
 
-#  if defined TL_W4DPSAS          || defined W4DPSAS || \
-      defined W4DPSAS_SENSITIVITY
+#  if defined RBL4DVAR    || defined RBL4DVAR_ANA_SENSITIVITY || \
+      defined TL_RBL4DVAR
+!
       SUBROUTINE ini_adjust (ng, tile, Linp, Lout)
 !
 !=======================================================================
@@ -308,10 +326,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 #   include "tile.h"
 !
 #   ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 7, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 7, __LINE__, MyFile)
 #   endif
       CALL ini_adjust_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
@@ -339,9 +360,9 @@
      &                      OCEAN(ng) % vbar,                           &
      &                      OCEAN(ng) % zeta)
 #   ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 7, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 7, __LINE__, MyFile)
 #   endif
-
+!
       RETURN
       END SUBROUTINE ini_adjust
 !
@@ -502,14 +523,17 @@
         END DO
       END DO
 #   endif
-
+!
       RETURN
       END SUBROUTINE ini_adjust_tile
 #  endif
 
-#  if defined TL_W4DVAR          || defined W4DVAR      || \
-      defined W4DVAR_SENSITIVITY || defined ARRAY_MODES || \
-      defined CLIPPING
+#  if defined ARRAY_MODES            || \
+      defined CLIPPING               || \
+      defined R4DVAR                 || \
+      defined R4DVAR_ANA_SENSITIVITY || \
+      defined TL_R4DVAR
+!
       SUBROUTINE rp_ini_adjust (ng, tile, Linp, Lout)
 !
 !=======================================================================
@@ -538,10 +562,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", rp_ini_adjust"
+
 #   include "tile.h"
 !
 #   ifdef PROFILE
-      CALL wclock_on (ng, iRPM, 7, __LINE__, __FILE__)
+      CALL wclock_on (ng, iRPM, 7, __LINE__, MyFile)
 #   endif
       CALL rp_ini_adjust_tile (ng, tile,                                &
      &                         LBi, UBi, LBj, UBj,                      &
@@ -580,9 +607,9 @@
 #   endif
      &                         OCEAN(ng) % tl_zeta)
 #   ifdef PROFILE
-      CALL wclock_off (ng, iRPM, 7, __LINE__, __FILE__)
+      CALL wclock_off (ng, iRPM, 7, __LINE__, MyFile)
 #   endif
-
+!
       RETURN
       END SUBROUTINE rp_ini_adjust
 !
@@ -775,14 +802,14 @@
         END DO
       END DO
 #   endif
-
+!
       RETURN
       END SUBROUTINE rp_ini_adjust_tile
 #  endif
 # endif
 
 # if defined TANGENT && defined ADJOINT
-
+!
       SUBROUTINE load_ADtoTL (ng, tile, Linp, Lout, add)
 !
 !=======================================================================
@@ -817,10 +844,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", load_ADtoTL"
+
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 7, __LINE__, __FILE__)
+      CALL wclock_on (ng, iTLM, 7, __LINE__, MyFile)
 #  endif
       CALL load_ADtoTL_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj, LBij, UBij,            &
@@ -892,9 +922,9 @@
 #  endif
      &                       OCEAN(ng) % tl_zeta)
 #  ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 7, __LINE__, __FILE__)
+      CALL wclock_off (ng, iTLM, 7, __LINE__, MyFile)
 #  endif
-
+!
       RETURN
       END SUBROUTINE load_ADtoTL
 !
@@ -1592,10 +1622,10 @@
 #  endif
      &                   tl_zeta, ad_zeta)
       END IF
-
+!
       RETURN
       END SUBROUTINE load_ADtoTL_tile
-
+!
       SUBROUTINE load_TLtoAD (ng, tile, Linp, Lout, add)
 !
 !=======================================================================
@@ -1630,10 +1660,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", load_TLtoAD"
+
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iADM, 7, __LINE__, __FILE__)
+      CALL wclock_on (ng, iADM, 7, __LINE__, MyFile)
 #  endif
       CALL load_TLtoAD_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj, LBij, UBij,            &
@@ -1705,9 +1738,9 @@
 #  endif
      &                       OCEAN(ng) % ad_zeta)
 #  ifdef PROFILE
-      CALL wclock_off (ng, iADM, 7, __LINE__, __FILE__)
+      CALL wclock_off (ng, iADM, 7, __LINE__, MyFile)
 #  endif
-
+!
       RETURN
       END SUBROUTINE load_TLtoAD
 !
@@ -2407,12 +2440,13 @@
 #  endif
      &                   ad_zeta, tl_zeta)
       END IF
-
+!
       RETURN
       END SUBROUTINE load_TLtoAD_tile
 # endif
 
 # if defined TLM_CHECK
+!
       SUBROUTINE ini_perturb (ng, tile, Linp, Lout)
 !
 !=======================================================================
@@ -2441,10 +2475,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", ini_perturb"
+!
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 7, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 7, __LINE__, MyFile)
 #  endif
       CALL ini_perturb_tile (ng, tile,                                  &
      &                       LBi, UBi, LBj, UBj,                        &
@@ -2483,9 +2520,9 @@
      &                       OCEAN(ng) % vbar,                          &
      &                       OCEAN(ng) % zeta)
 #  ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 7, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 7, __LINE__, MyFile)
 #  endif
-
+!
       RETURN
       END SUBROUTINE ini_perturb
 !
@@ -2925,7 +2962,7 @@
  10   FORMAT (/,' Perturbing Nonlinear model Initial Conditions:',/)
  20   FORMAT (' (Outer,Inner) = ','(',i4.4,',',i4.4,')',3x,             &
      &        'Perturbing State Variable: ',a)
-
+!
       RETURN
       END SUBROUTINE ini_perturb_tile
 # endif
@@ -2933,7 +2970,7 @@
 # if defined OPT_PERTURBATION || defined FORCING_SV || \
      defined STOCHASTIC_OPT   || defined HESSIAN_SV || \
      defined HESSIAN_SO       || defined HESSIAN_FSV
-
+!
       SUBROUTINE ad_ini_perturb (ng, tile, Kinp, Kout, Ninp, Nout)
 !
 !=======================================================================
@@ -2957,10 +2994,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", ad_ini_perturb"
+!
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iADM, 7, __LINE__, __FILE__)
+      CALL wclock_on (ng, iADM, 7, __LINE__, MyFile)
 #  endif
       CALL ad_ini_perturb_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
@@ -3003,9 +3043,9 @@
 #  endif
      &                          OCEAN(ng) % ad_zeta)
 #  ifdef PROFILE
-      CALL wclock_off (ng, iADM, 7, __LINE__, __FILE__)
+      CALL wclock_off (ng, iADM, 7, __LINE__, MyFile)
 #  endif
-
+!
       RETURN
       END SUBROUTINE ad_ini_perturb
 !
@@ -3306,13 +3346,13 @@
 #  undef I_U_RANGE
 #  undef J_R_RANGE
 #  undef J_V_RANGE
-
+!
       RETURN
       END SUBROUTINE ad_ini_perturb_tile
 # endif
 
 # if defined TLM_CHECK
-
+!
       SUBROUTINE tl_ini_perturb (ng, tile, Linp, Lout)
 !
 !=======================================================================
@@ -3341,10 +3381,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", tl_ini_perturb"
+!
 #  include "tile.h"
 !
 #  ifdef PROFILE
-      CALL wclock_on (ng, iTLM, 7, __LINE__, __FILE__)
+      CALL wclock_on (ng, iTLM, 7, __LINE__, MyFile)
 #  endif
       CALL tl_ini_perturb_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
@@ -3385,9 +3428,9 @@
      &                          OCEAN(ng) % tl_vbar,                    &
      &                          OCEAN(ng) % tl_zeta)
 #  ifdef PROFILE
-      CALL wclock_off (ng, iTLM, 7, __LINE__, __FILE__)
+      CALL wclock_off (ng, iTLM, 7, __LINE__, MyFile)
 #  endif
-
+!
       RETURN
       END SUBROUTINE tl_ini_perturb
 !
@@ -3848,7 +3891,7 @@
  10   FORMAT (/,' Perturbing Tangent Linear Initial Conditions:',/)
  20   FORMAT (' (Outer,Inner) = ','(',i4.4,',',i4.4,')',3x,             &
      &        'Perturbing State Variable: ',a)
-
+!
       RETURN
       END SUBROUTINE tl_ini_perturb_tile
 # endif

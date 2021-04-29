@@ -1,8 +1,8 @@
       SUBROUTINE propagator (RunInterval, state, ad_state)
 !
-!svn $Id: propagator_afte.h 995 2020-01-10 04:01:28Z arango $
+!svn $Id: propagator_afte.h 1054 2021-03-06 19:47:12Z arango $
 !************************************************** Hernan G. Arango ***
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !***********************************************************************
@@ -43,7 +43,7 @@
 !  Imported variable declarations.
 !
       real(dp), intent(in) :: RunInterval
-
+!
       TYPE (T_GST), intent(in) :: state(Ngrids)
       TYPE (T_GST), intent(inout) :: ad_state(Ngrids)
 !
@@ -52,15 +52,18 @@
 #ifdef SOLVE3D
       logical :: FirstPass = .TRUE.
 #endif
+!
       integer :: ng, tile
-
+!
       real(r8) :: StateNorm(Ngrids)
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 !
 !=======================================================================
 !  Forward integration of the tangent linear model.
 !=======================================================================
 !
-!$OMP MASTER
       Nrun=Nrun+1
       IF (Master) THEN
         DO ng=1,Ngrids
@@ -70,7 +73,6 @@
      &                      Nconv(ng)
         END DO
       END IF
-!$OMP END MASTER
 !
 !  Initialize time stepping indices and counters.
 !
@@ -90,13 +92,10 @@
         synchro_flag(ng)=.TRUE.
         tdays(ng)=dstart+dt(ng)*REAL(ntimes(ng),r8)*sec2day
         time(ng)=tdays(ng)*day2sec
-!$OMP MASTER
         ntstart(ng)=ntimes(ng)+1
         ntend(ng)=1
         ntfirst(ng)=ntend(ng)
-!$OMP END MASTER
       END DO
-!$OMP BARRIER
 !
 !-----------------------------------------------------------------------
 !  Clear adjoint state variables.  There is not need to clean the basic
@@ -108,7 +107,6 @@
         DO tile=first_tile(ng),last_tile(ng),+1
           CALL initialize_ocean (ng, tile, iADM)
         END DO
-!$OMP BARRIER
       END DO
 
 #ifdef SOLVE3D
@@ -123,7 +121,6 @@
         DO tile=last_tile(ng),first_tile(ng),-1
           CALL set_depth (ng, tile, iADM)
         END DO
-!$OMP BARRIER
       END DO
 #endif
 !
@@ -136,7 +133,6 @@
           CALL ad_unpack (ng, tile, Nstr(ng), Nend(ng),                 &
      &                    state(ng)%vector)
         END DO
-!$OMP BARRIER
       END DO
 !
 !-----------------------------------------------------------------------
@@ -148,14 +144,10 @@
           CALL ad_statenorm (ng, tile, knew(ng), nstp(ng),              &
      &                       StateNorm(ng))
         END DO
-!$OMP BARRIER
-
-!$OMP MASTER
         IF (Master) THEN
           WRITE (stdout,20) ' PROPAGATOR - Grid: ', ng,                 &
      &                      ',  Adjoint Initial Norm: ', StateNorm(ng)
         END IF
-!$OMP END MASTER
       END DO
 !
 !-----------------------------------------------------------------------
@@ -165,18 +157,14 @@
 !-----------------------------------------------------------------------
 !
       DO ng=1,Ngrids
-!$OMP MASTER
         CALL close_inp (ng, iADM)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
         CALL ad_get_idata (ng)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
         CALL ad_get_data (ng)
-!$OMP END MASTER
-!$OMP BARRIER
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END DO
 !
 !-----------------------------------------------------------------------
@@ -184,24 +172,19 @@
 !-----------------------------------------------------------------------
 !
       DO ng=1,Ngrids
-!$OMP MASTER
         IF (Master) THEN
           WRITE (stdout,30) 'AD', ng, ntstart(ng), ntend(ng)
         END IF
         time(ng)=time(ng)+dt(ng)
-!$OMP END MASTER
         iic(ng)=ntstart(ng)+1
       END DO
-!$OMP BARRIER
 
 #ifdef SOLVE3D
       CALL ad_main3d (RunInterval)
 #else
       CALL ad_main2d (RunInterval)
 #endif
-!$OMP BARRIER
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Clear nonlinear state (basic state) variables and insure that the
@@ -216,7 +199,6 @@
           CALL initialize_coupling (ng, tile, 0)
 #endif
         END DO
-!$OMP BARRIER
       END DO
 
 #ifdef SOLVE3D
@@ -231,7 +213,6 @@
         DO tile=last_tile(ng),first_tile(ng),-1
           CALL set_depth (ng, tile, iADM)
         END DO
-!$OMP BARRIER
       END DO
 #endif
 !
@@ -244,14 +225,10 @@
           CALL ad_statenorm (ng, tile, knew(ng), nstp(ng),              &
      &                       StateNorm(ng))
         END DO
-!$OMP BARRIER
-
-!$OMP MASTER
         IF (Master) THEN
           WRITE (stdout,20) ' PROPAGATOR - Grid: ', ng,                 &
      &                      ',  Adjoint   Final Norm: ', StateNorm(ng)
         END IF
-!$OMP END MASTER
       END DO
 !
 !-----------------------------------------------------------------------
@@ -263,13 +240,12 @@
           CALL ad_pack (ng, tile, Nstr(ng), Nend(ng),                   &
      &                  ad_state(ng)%vector)
         END DO
-!$OMP BARRIER
       END DO
 !
  10   FORMAT (/,a,i2.2,a,i3.3,a,i3.3/)
  20   FORMAT (/,a,i2.2,a,1p,e15.6,/)
  30   FORMAT (/,1x,a,1x,'ROMS/TOMS: started time-stepping:',            &
      &        ' (Grid: ',i2.2,' TimeSteps: ',i8.8,' - ',i8.8,')')
-
+!
       RETURN
       END SUBROUTINE propagator

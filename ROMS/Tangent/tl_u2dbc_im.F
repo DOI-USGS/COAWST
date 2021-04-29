@@ -2,9 +2,9 @@
       MODULE tl_u2dbc_mod
 #ifdef TANGENT
 !
-!svn $Id: tl_u2dbc_im.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: tl_u2dbc_im.F 1058 2021-03-25 19:04:23Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -467,10 +467,21 @@
               tl_bry_val=0.0_r8
 #  endif
 # endif
+# ifdef WET_DRY_NOT_YET
+              cff=0.5_r8*(GRID(ng)%h(Istr-1,j)+                         &
+     &                    zeta(Istr-1,j,know)+                          &
+     &                    GRID(ng)%h(Istr  ,j)+                         &
+     &                    zeta(Istr  ,j,know))
+              tl_cff=0.5_r8*(GRID(ng)%tl_h(Istr-1,j)+                   &
+     &                       tl_zeta(Istr-1,j,know)+                    &
+     &                       GRID(ng)%tl_h(Istr  ,j)+                   &
+     &                       tl_zeta(Istr  ,j,know))
+# else
               cff=0.5_r8*(GRID(ng)%h(Istr-1,j)+                         &
      &                    GRID(ng)%h(Istr  ,j))
               tl_cff=0.5_r8*(GRID(ng)%tl_h(Istr-1,j)+                   &
      &                       GRID(ng)%tl_h(Istr  ,j))
+# endif
               cff1=SQRT(g/cff)
               tl_cff1=-0.5_r8*cff1*tl_cff/cff
               Cx=dt2d*cff1*cff*0.5_r8*(GRID(ng)%pm(Istr-1,j)+           &
@@ -1003,10 +1014,21 @@
               tl_bry_val=0.0_r8
 #  endif
 # endif
+# ifdef WET_DRY_NOT_YET
+              cff=0.5_r8*(GRID(ng)%h(Iend  ,j)+                         &
+     &                    zeta(Iend  ,j,know)+                          &
+     &                    GRID(ng)%h(Iend+1,j)+                         &
+     &                    zeta(Iend+1,j,know))
+              tl_cff=0.5_r8*(GRID(ng)%tl_h(Iend  ,j)+                   &
+     &                       tl_zeta(Iend  ,j,know)+                    &
+     &                       GRID(ng)%tl_h(Iend+1,j)+                   &
+     &                       tl_zeta(Iend+1,j,know))
+# else
               cff=0.5_r8*(GRID(ng)%h(Iend  ,j)+                         &
      &                    GRID(ng)%h(Iend+1,j))
               tl_cff=0.5_r8*(GRID(ng)%tl_h(Iend  ,j)+                   &
      &                       GRID(ng)%tl_h(Iend+1,j))
+# endif
               cff1=SQRT(g/cff)
               tl_cff1=-0.5_r8*cff1*tl_cff/cff
               Cx=dt2d*cff1*cff*0.5_r8*(GRID(ng)%pm(Iend  ,j)+           &
@@ -1648,7 +1670,8 @@
       IF (.not.EWperiodic(ng)) THEN
         IF (DOMAIN(ng)%Western_Edge(tile)) THEN
           DO j=Jstr,Jend
-            IF (LBC_apply(ng)%west(j)) THEN
+            IF (LBC_apply(ng)%west(j).or.                               &
+     &          LBC(iwest,isUbar,ng)%nested) THEN
 !>            cff1=ABS(ABS(GRID(ng)%umask_wet(Istr,j))-1.0_r8)
 !>            cff2=0.5_r8+DSIGN(0.5_r8,ubar(Istr,j,kout))*              &
 !>   &                    GRID(ng)%umask_wet(Istr,j)
@@ -1660,7 +1683,8 @@
         END IF
         IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
           DO j=Jstr,Jend
-            IF (LBC_apply(ng)%east(j)) THEN
+            IF (LBC_apply(ng)%east(j).or.                               &
+     &          LBC(ieast,isUbar,ng)%nested) THEN
 !>            cff1=ABS(ABS(GRID(ng)%umask_wet(Iend+1,j))-1.0_r8)
 !>            cff2=0.5_r8+DSIGN(0.5_r8,ubar(Iend+1,j,kout))*            &
 !>   &                    GRID(ng)%umask_wet(Iend+1,j)
@@ -1671,11 +1695,12 @@
           END DO
         END IF
       END IF
-
+!
       IF (.not.NSperiodic(ng)) THEN
         IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
           DO i=IstrU,Iend
-            IF (LBC_apply(ng)%south(i)) THEN
+            IF (LBC_apply(ng)%south(i).or.                              &
+     &          LBC(isouth,isUbar,ng)%nested) THEN
 !>            cff1=ABS(ABS(GRID(ng)%umask_wet(i,Jstr-1))-1.0_r8)
 !>            cff2=0.5_r8+DSIGN(0.5_r8,ubar(i,Jstr-1,kout))*            &
 !>   &                    GRID(ng)%umask_wet(i,Jstr-1)
@@ -1687,7 +1712,8 @@
         END IF
         IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
           DO i=Istr,Iend
-            IF (LBC_apply(ng)%north(i)) THEN
+            IF (LBC_apply(ng)%north(i).or.                              &
+     &          LBC(inorth,isUbar,ng)%nested) THEN
 !>            cff1=ABS(ABS(GRID(ng)%umask_wet(i,Jend+1))-1.0_r8)
 !>            cff2=0.5_r8+DSIGN(0.5_r8,ubar(i,Jend+1,kout))*            &
 !>   &                    GRID(ng)%umask_wet(i,Jend+1)
@@ -1698,11 +1724,13 @@
           END DO
         END IF
       END IF
-
+!
       IF (.not.(EWperiodic(ng).or.NSperiodic(ng))) THEN
         IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
-          IF (LBC_apply(ng)%south(Istr  ).and.                          &
-     &        LBC_apply(ng)%west (Jstr-1)) THEN
+          IF ((LBC_apply(ng)%south(Istr  ).and.                         &
+     &         LBC_apply(ng)%west (Jstr-1)).or.                         &
+     &        (LBC(iwest,isUbar,ng)%nested.and.                         &
+     &         LBC(isouth,isUbar,ng)%nested)) THEN
 !>          cff1=ABS(ABS(GRID(ng)%umask_wet(Istr,Jstr-1))-1.0_r8)
 !>          cff2=0.5_r8+DSIGN(0.5_r8,ubar(Istr,Jstr-1,kout))*           &
 !>   &                  GRID(ng)%umask_wet(Istr,Jstr-1)
@@ -1712,8 +1740,10 @@
           END IF
         END IF
         IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
-          IF (LBC_apply(ng)%south(Iend+1).and.                          &
-     &        LBC_apply(ng)%east (Jstr-1)) THEN
+          IF ((LBC_apply(ng)%south(Iend+1).and.                         &
+     &         LBC_apply(ng)%east (Jstr-1)).or.                         &
+     &        (LBC(ieast,isUbar,ng)%nested.and.                         &
+     &         LBC(isouth,isUbar,ng)%nested)) THEN
 !>          cff1=ABS(ABS(GRID(ng)%umask_wet(Iend+1,Jstr-1))-1.0_r8)
 !>          cff2=0.5_r8+DSIGN(0.5_r8,ubar(Iend+1,Jstr-1,kout))*         &
 !>   &                  GRID(ng)%umask_wet(Iend+1,Jstr-1)
@@ -1723,8 +1753,10 @@
           END IF
         END IF
         IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
-          IF (LBC_apply(ng)%north(Istr  ).and.                          &
-     &        LBC_apply(ng)%west (Jend+1)) THEN
+          IF ((LBC_apply(ng)%north(Istr  ).and.                         &
+     &         LBC_apply(ng)%west (Jend+1)).or.                         &
+     &        (LBC(iwest,isUbar,ng)%nested.and.                         &
+     &         LBC(inorth,isUbar,ng)%nested)) THEN
 !>          cff1=ABS(ABS(GRID(ng)%umask_wet(Istr,Jend+1))-1.0_r8)
 !>          cff2=0.5_r8+DSIGN(0.5_r8,ubar(Istr,Jend+1,kout))*           &
 !>   &                  GRID(ng)%umask_wet(Istr,Jend+1)
@@ -1734,19 +1766,21 @@
           END IF
         END IF
         IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
-          IF (LBC_apply(ng)%north(Iend+1).and.                          &
-     &        LBC_apply(ng)%east (Jend+1)) THEN
+          IF ((LBC_apply(ng)%north(Iend+1).and.                         &
+     &         LBC_apply(ng)%east (Jend+1)).or.                         &
+     &        (LBC(ieast,isUbar,ng)%nested.and.                         &
+     &         LBC(inorth,isUbar,ng)%nested)) THEN
 !>          cff1=ABS(ABS(GRID(ng)%umask_wet(Iend+1,Jend+1))-1.0_r8)
 !>          cff2=0.5_r8+DSIGN(0.5_r8,ubar(Iend+1,Jend+1,kout))*         &
 !>   &                  GRID(ng)%umask_wet(Iend+1,Jend+1)
-!>          cff=0.5_r8*GRID(ng)%umask_wet(Iend+1,Jend+1)+cff1+          &
+!>          cff=0.5_r8*GRID(ng)%umask_wet(Iend+1,Jend+1)*cff1+          &
 !>   &          cff2*(1.0_r8-cff1)
 !>          ubar(Iend+1,Jend+1,kout)=ubar(Iend+1,Jend+1,kout)*cff
           END IF
         END IF
       END IF
 # endif
-
+!
       RETURN
       END SUBROUTINE tl_u2dbc_tile
 #endif

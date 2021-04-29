@@ -2,9 +2,9 @@
 #ifdef FLOATS
       SUBROUTINE read_FltPar (model, inp, out, Lwrite)
 !
-!svn $Id: read_fltpar.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: read_fltpar.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -29,6 +29,7 @@
 !  Imported variable declarations
 !
       logical, intent(in) :: Lwrite
+!
       integer, intent(in) :: model, inp, out
 !
 !  Local variable declarations.
@@ -39,20 +40,23 @@
       integer, dimension(Ngrids) :: ncount, nentry
 
       integer, allocatable :: Fcoor(:,:), Fcount(:,:), Ftype(:,:)
-
+!
       real(r8) :: xfloat, yfloat, zfloat
 
       real(dp), dimension(nRval) :: Rval
 
       real(r8), allocatable :: Ft0(:,:), Fx0(:,:), Fy0(:,:), Fz0(:,:)
       real(r8), allocatable :: Fdt(:,:), Fdx(:,:), Fdy(:,:), Fdz(:,:)
-
+!
       character (len=1  ), parameter :: blank = ' '
 
       character (len=35 ) :: frmt
       character (len=40 ) :: KeyWord
       character (len=256) :: fname, line
       character (len=256), dimension(nCval) :: Cval
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 !
 !-----------------------------------------------------------------------
 !  Read in initial float locations.
@@ -149,7 +153,7 @@
      &                                   Fdy(nentry(igrid)+1,igrid),    &
      &                                   Fdz(nentry(igrid)+1,igrid)
                 IF (igrid.gt.Ngrids) THEN
-                  IF (Lwrite) WRITE (out,60) fposnam
+                  IF (Master) WRITE (out,60) fposnam
                   exit_flag=4
                   RETURN
                 END IF
@@ -179,7 +183,7 @@
 !  Report input parameters.
 !-----------------------------------------------------------------------
 !
-      IF (Lwrite) THEN
+      IF (Master.and.Lwrite) THEN
         DO ng=1,Ngrids
           IF (Lfloats(ng).and.Fprint(ng)) THEN
             IF (ncount(ng).ne.Nfloats(ng)) THEN
@@ -219,11 +223,12 @@
         END IF
       END IF
       exit_flag=4
-      IF (FoundError(exit_flag, NoError, __LINE__,                       &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
  50   CONTINUE
-      IF (Lwrite) WRITE (out,120) 'biological floats behavior File:  ', &
-     &                            TRIM(fname)
+      IF (Master.and.Lwrite) THEN
+        WRITE (out,120) 'biological floats behavior File:  ',           &
+     &                  TRIM(fname)
+      END IF
 # endif
 !
 !-----------------------------------------------------------------------

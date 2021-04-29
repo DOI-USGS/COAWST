@@ -53,9 +53,11 @@ DOBJ  = dgeqr2.o dlabad.o dlacon.o dlacpy.o dladiv.o dlae2.o dlaev2.o\
         dlarfg.o dlarfx.o dlarnd.o dlarnv.o dlartg.o dlaruv.o dlascl.o\
         dlaset.o dlasr.o  dlasrt.o dlassq.o dlasy2.o dorm2r.o dsteqr.o\
         dtrevc.o dtrexc.o dtrsen.o dtrsyl.o dpotrf.o dpotri.o dpttrf.o\
-        dpttrs.o dpotf2.o dlauum.o dlauu2.o dtrtri.o dtrti2.o
+        dpttrs.o dpotf2.o dlauum.o dlauu2.o dtrtri.o dtrti2.o dgeqrf.o\
+        dlarft.o dlarfb.o
 
-IOBJ  = ilaenv.o lsame.o lsamen.o xerbla.o xlaenv.o
+IOBJ  = ilaenv.o lsame.o lsamen.o xerbla.o xlaenv.o iparmq.o iladlr.o\
+        iladlc.o ieeeck.o
 
 CIOBJ = icmax1.o
 

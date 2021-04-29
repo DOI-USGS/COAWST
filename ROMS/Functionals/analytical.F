@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE analytical_mod
 !
-!svn $Id: analytical.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: analytical.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -15,7 +15,6 @@
 !                                                                      !
 !! Include Files:                                                      !
 !!                                                                     !
-!! ana_albedo.h        Analytical albedo values                        !
 !! ana_biology.h       Analytical initial conditions for biological    !
 !!                       tracers.                                      !
 !! ana_btflux.h        Analytical kinematic bottom flux of tracer      !
@@ -30,8 +29,6 @@
 !! ana_humid.h         Analytical surface air humidity.                !
 !! ana_initial.h       Analytical initial conditions for momentum,     !
 !!                       free surface and tracers.                     !
-!! ana_lrflux.h        Analytical kinematic surface longwave           !
-!!                       radiation flux.                               !
 !! ana_m2clima.h       Analytical 2D momentum climatology.             !
 !! ana_m2obc.h         Analytical 2D momentum boundary conditions.     !
 !! ana_m3clima.h       Analytical 3D momentum climatology.             !
@@ -44,7 +41,6 @@
 !! ana_perturb.h       Peturb analytical initial conditions with       !
 !!                       analytical expressions.                       !
 !! ana_psource.h       Analytical mass/tracer point sources/sinks.     !
-!! ana_trc_psource.h   Analytical mass/tracer point sources/sinks.     !
 !! ana_rain.h          Analytical rain fall rate.                      !
 !! ana_respiration.h   Analytical total respiration for hypoxia.       !
 !! ana_scope.h         Analytical adjoint sensitivity spatial scope    !
@@ -88,18 +84,6 @@
       CONTAINS
 !
 #ifdef ANALYTICAL
-# if defined ANA_AICLIMA && defined ICE_MODEL
-#  include <ana_aiclima.h>
-# endif
-
-# if defined ANA_AIOBC && defined ICE_MODEL
-#  include <ana_aiobc.h>
-# endif
-
-# ifdef ANA_ALBEDO
-#  include <ana_albedo.h>
-# endif
-
 # ifdef SOLVE3D
 #  if defined ANA_BIOLOGY && defined BIOLOGY
 #   include <ana_biology.h>
@@ -140,38 +124,16 @@
 #  include <ana_grid.h>
 # endif
 
-# if defined ANA_HIOBC && defined ICE_MODEL
-#  include <ana_hiobc.h>
-# endif
-
-# if defined ANA_HSNOBC && defined ICE_MODEL
-#  include <ana_hsnobc.h>
-# endif
-
-# if defined ANA_ICEBIOBC && defined ICE_BIO
-#  include <ana_IcePhLbc.h>
-#  include <ana_IceNO3bc.h>
-#  include <ana_IceNH4bc.h>
-# endif
-
 # ifdef SOLVE3D
 #  if defined ANA_HUMIDITY && \
     (defined BULK_FLUXES || defined ECOSIM || defined SPECTRAL_LIGHT \
-    || (defined ANA_SRFLUX  && defined ALBEDO_CLOUD) )
+    || (defined ANA_SRFLUX  && defined ALBEDO) )
 #   include <ana_humid.h>
 #  endif
 # endif
 
-# if defined ANA_ICE && defined ICE_MODEL
-#  include <ana_ice.h>
-# endif
-
 # ifdef ANA_INITIAL
 #  include <ana_initial.h>
-# endif
-
-# if defined ANA_LRFLUX && defined SOLVE3D
-#  include <ana_lrflux.h>
 # endif
 
 # ifdef ANA_M2CLIMA
@@ -192,14 +154,6 @@
 
 # if defined ANA_GRID && defined MASKING
 #  include <ana_mask.h>
-# endif
-
-# if defined ANA_MICLIMA && defined ICE_MODEL
-#  include <ana_miclima.h>
-# endif
-
-# if defined ANA_NCEP && defined NCEP_FLUXES
-#  include "ana_ncep.h"
 # endif
 
 # ifdef ANA_NUDGCOEF
@@ -224,10 +178,6 @@
 # endif
 
 # ifdef SOLVE3D
-#  if defined TRC_PSOURCE  && defined ANA_TRC_PSOURCE
-#   include <ana_trc_psource.h>
-#  endif
-
 #  if defined ANA_RAIN && defined BULK_FLUXES
 #   include <ana_rain.h>
 #  endif
@@ -240,8 +190,8 @@
 # endif
 
 # if defined ANA_GRID        && \
-   (defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
-    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+   (defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR      || \
     defined SO_SEMI)
 #  include <ana_scope.h>
 # endif
@@ -274,7 +224,7 @@
 #  include <ana_sponge.h>
 # endif
 
-# if (defined ANA_SRFLUX && defined SOLVE3D) || defined DIURNAL_SRFLUX
+# if (defined ANA_SRFLUX || defined DIURNAL_SRFLUX) && defined SOLVE3D
 #  include <ana_srflux.h>
 # endif
 
@@ -308,7 +258,7 @@
 # ifdef SOLVE3D
 #  if defined ANA_TAIR && \
     (defined BULK_FLUXES || defined ECOSIM ||  \
-     defined SPECTRAL_LIGHT ||(defined ANA_SRFLUX && defined ALBEDO_CLOUD) )
+     defined SPECTRAL_LIGHT ||(defined ANA_SRFLUX && defined ALBEDO) )
 #   include <ana_tair.h>
 #  endif
 # endif

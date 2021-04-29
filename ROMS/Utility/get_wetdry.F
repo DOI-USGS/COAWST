@@ -2,9 +2,9 @@
 #ifdef WET_DRY
       SUBROUTINE get_wetdry (ng, model, IniRec)
 !
-!svn $Id: get_wetdry.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: get_wetdry.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -42,30 +42,31 @@
       integer :: gtype, i, status
       integer :: varid_pmask, varid_rmask, varid_umask, varid_vmask
       integer :: Vsize(4)
-
+!
       real(dp), parameter :: Fscl = 1.0_r8
 
       real(r8) :: Fmax, Fmin
-
-      character (len=256) :: ncname
 !
-      SourceFile=__FILE__
+      character (len=256) :: ncname
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
+      SourceFile=MyFile
 !
 !-----------------------------------------------------------------------
 !  Inquire about the contents of restart NetCDF file:  Inquire about
 !  the dimensions and variables.  Check for consistency.
 !-----------------------------------------------------------------------
 !
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       ncname=INI(ng)%name
 !
 !  Open restart (initial) NetCDF for read/write.
 !
       IF (INI(ng)%ncid.eq.-1) THEN
         CALL netcdf_open (ng, model, ncname, 1, INI(ng)%ncid)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
           WRITE (stdout,10) TRIM(ncname)
           RETURN
         END IF
@@ -75,15 +76,13 @@
 !
       CALL netcdf_check_dim (ng, model, ncname,                         &
      &                       ncid = INI(ng)%ncid)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Inquire about the variables.
 !
       CALL netcdf_inq_var (ng, model, ncname,                           &
      &                     ncid = INI(ng)%ncid)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Check if required variables are available.
@@ -151,8 +150,7 @@
      &                  Fscl, Fmin, Fmax,                               &
      &                  GRID(ng) % pmask,                               &
      &                  GRID(ng) % pmask_wet)
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) WRITE (stdout,30) TRIM(Vname(1,idPwet)),            &
      &                                TRIM(ncname)
         exit_flag=2
@@ -175,8 +173,7 @@
      &                  Fscl, Fmin, Fmax,                               &
      &                  GRID(ng) % rmask,                               &
      &                  GRID(ng) % rmask_wet)
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) WRITE (stdout,30) TRIM(Vname(1,idRwet)),            &
      &                                TRIM(ncname)
         exit_flag=2
@@ -199,8 +196,7 @@
      &                  Fscl, Fmin, Fmax,                               &
      &                  GRID(ng) % umask,                               &
      &                  GRID(ng) % umask_wet)
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) WRITE (stdout,30) TRIM(Vname(1,idUwet)),            &
      &                                TRIM(ncname)
         exit_flag=2
@@ -223,8 +219,7 @@
      &                  Fscl, Fmin, Fmax,                               &
      &                  GRID(ng) % vmask,                               &
      &                  GRID(ng) % vmask_wet)
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) WRITE (stdout,30) TRIM(Vname(1,idVwet)),            &
      &                                TRIM(ncname)
         exit_flag=2
@@ -274,6 +269,7 @@
   40  FORMAT (3x,' GET_WETDRY  - ',a,/,19x,                             &
      &        '(Grid = ',i2.2,', File: ',a,')',/,19x,                   &
      &        '(Min = ', 1p,e15.8,0p,' Max = ',1p,e15.8,0p,')')
+!
 #else
       SUBROUTINE get_wetdry
 #endif

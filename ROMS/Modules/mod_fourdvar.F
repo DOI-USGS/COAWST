@@ -3,9 +3,9 @@
 
 #if defined FOUR_DVAR || defined VERIFICATION
 !
-!svn $Id: mod_fourdvar.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: mod_fourdvar.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -120,7 +120,7 @@
 !  statistics at observation locations:                                !
 !                                                                      !
 !  BgErr         4D-Var Background error standard deviation.           !
-!  increment     4D-Var increment, analysis minus background.          !
+!  NLincrement   4D-Var NLM increment, analysis minus background.      !
 !  innovation    4D-Var innovation, observations minus background.     !
 !  residual      4D-Var residual, observation minus analysis.          !
 !                                                                      !
@@ -156,8 +156,9 @@
           real(r8), allocatable :: CostNorm(:)
           real(r8), allocatable :: ObsCost(:)
           real(r8), allocatable :: DataPenalty(:)
-#   if defined DATALESS_LOOPS || defined SENSITIVITY_4DVAR || \
-       defined TL_W4DPSAS     || defined W4DPSAS
+#   if defined DATALESS_LOOPS    || defined RBL4DVAR  || \
+       defined SENSITIVITY_4DVAR || defined SP4DVAR   || \
+       defined TL_RBL4DVAR
           real(r8), allocatable :: NLPenalty(:)
 #   endif
           real(r8), allocatable :: NLobsCost(:)
@@ -230,28 +231,35 @@
 #  endif
         real(r8), allocatable :: ADmodVal(:)
         real(r8), allocatable :: NLmodVal(:)
+#  ifdef SP4DVAR
+        real(r8), allocatable :: ADmodVal_S(:,:)
+        real(r8), allocatable :: harnoldi(:,:,:)
+        real(r8), allocatable :: gmze(:,:)
+        real(r8), allocatable :: cg_beta0(:)
+        real(r8), allocatable :: Jobs(:,:)
+#  endif
 #  ifdef TLM_OBS
         real(r8), allocatable :: TLmodVal(:)
-#   if defined SENSITIVITY_4DVAR    || defined TL_W4DPSAS  || \
-       defined TL_W4DVAR            || defined W4DPSAS     || \
-       defined W4DVAR               || defined ARRAY_MODES || \
-       defined CLIPPING
+#   if defined ARRAY_MODES       || defined CLIPPING  || \
+       defined RBL4DVAR          || defined R4DVAR    || \
+       defined SENSITIVITY_4DVAR || defined SP4DVAR   || \
+       defined TL_RBL4DVAR       || defined TL_R4DVAR
         real(r8), allocatable :: TLmodVal_S(:,:,:)
 #    if defined RPCG              && \
-       (defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
-        defined TL_W4DVAR)
+       (defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
+        defined TL_R4DVAR)
         real(r8), allocatable :: tl_TLmodVal_S(:,:,:)
         real(r8), allocatable :: ad_TLmodVal_S(:,:,:)
 #    endif
 #   endif
-#   if defined ARRAY_MODES || defined SENSITIVITY_4DVAR || \
-       defined TL_W4DPSAS  || defined W4DPSAS
+#   if defined ARRAY_MODES       || defined RBL4DVAR    || \
+       defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR
         real(r8), allocatable :: BCKmodVal(:)
 
 #    ifdef RPCG
         real(r8), allocatable :: Hbk(:,:)
-#     if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
-         defined TL_W4DVAR
+#     if defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
+         defined TL_R4DVAR
         real(r8), allocatable :: tl_BCKmodVal(:)
         real(r8), allocatable :: tl_Hbk(:)
         real(r8), allocatable :: ad_BCKmodVal(:)
@@ -277,13 +285,13 @@
 #   ifndef RPCG
         real(r8), allocatable :: cg_pxsave(:)
 #   endif
-#   if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
-       defined TL_W4DVAR
+#   if defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
+       defined TL_R4DVAR
         real(r8), allocatable :: ad_zcglwk(:,:)
         real(r8), allocatable :: ad_zgrad0(:)
 #    if defined RPCG              && \
-       (defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
-        defined TL_W4DVAR)
+       (defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
+        defined TL_R4DVAR)
         real(r8), allocatable :: ad_vcglwk(:,:)
         real(r8), allocatable :: ad_vgrad0(:)
         real(r8), allocatable :: ad_vgrad0s(:)
@@ -457,6 +465,13 @@
 !  locations.
 !
         logical, allocatable :: ProcessObs(:)
+#  ifdef SP4DVAR
+!
+!  Switch to (de)activate the assimilation of observations during
+!  saddle point 4D-Var.
+!
+        logical, allocatable :: Lsadd(:)
+#  endif
 !
 !  Switch to activate writting of nonlinear model values at
 !  observations locations into observations NetCDF file.
@@ -483,7 +498,7 @@
 !
         logical, allocatable :: wrtMisfit(:)
 
-# if defined IS4DVAR_SENSITIVITY
+# if defined I4DVAR_ANA_SENSITIVITY
 #  ifdef OBS_IMPACT
 !
 !  Switch to control the writing of the total observation impact for
@@ -539,9 +554,9 @@
 !
         real(r8), allocatable :: BgErr(:)
 !
-!  4D-Var increment vector, analysis minus background {Mobs].
+!  4D-Var NLM increment vector, analysis minus background {Mobs].
 !
-        real(r8), allocatable :: increment(:)
+        real(r8), allocatable :: NLincrement(:)
 !
 !  4D-Var innovation vector, observations minus background [Mobs].
 !
@@ -605,7 +620,7 @@
         real(r8), allocatable :: KvMin(:)
         real(r8), allocatable :: KvMax(:)
 
-# if defined IS4DVAR || defined WEAK_CONSTRAINT
+# if defined I4DVAR || defined WEAK_CONSTRAINT
 !
 !-----------------------------------------------------------------------
 !  Conjugate gradient parameters.
@@ -613,8 +628,8 @@
 !
 !  Conjugate gradient coefficients.
 !
-#  if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS  || \
-      defined TL_W4DVAR
+#  if defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR  || \
+      defined TL_R4DVAR
         real(r8), allocatable :: ad_cg_beta(:)
 
         real(r8), allocatable :: tl_cg_beta(:)
@@ -642,8 +657,8 @@
 !
 !  Lanczos algorithm coefficients.
 !
-#  if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS  || \
-      defined TL_W4DVAR
+#  if defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR  || \
+      defined TL_R4DVAR
         real(r8), allocatable :: ad_cg_delta(:)
         real(r8), allocatable :: ad_cg_QG(:)
         real(r8), allocatable :: ad_cg_Gnorm(:)
@@ -742,13 +757,13 @@
         real(r8), allocatable :: GSmatinv(:,:) ! Inverse Gramm-Schmidt matrix
 #  endif
 # endif
-# if defined IS4DVAR_SENSITIVITY
+# if defined I4DVAR_ANA_SENSITIVITY
 !
 !-----------------------------------------------------------------------
 !  Lanczos algorithm coefficients.
 !-----------------------------------------------------------------------
 !
-!  These coefficients are computed in the 4DVAR Lanczos data
+!  These coefficients are computed in the 4D-Var Lanczos data
 !  assimilation algorithm and are used here to tangent linear
 !  model initial conditions as weighted sum of the Lanczos
 !  vectors.
@@ -763,7 +778,7 @@
 !  Lanczos algorithm coefficients.
 !-----------------------------------------------------------------------
 !
-!  These coefficients are computed in the IS4DVAR Lanczos data
+!  These coefficients are computed in the I4D-Var Lanczos data
 !  assimilation algorithm and are used here to tangent linear
 !  model initial conditions as weighted sum of the Lanczos
 !  vectors.
@@ -858,16 +873,17 @@
 #  ifdef RPM_RELAXATION
         logical, allocatable :: LweakRelax(:)
 #  endif
-#  ifdef W4DPSAS_FCT_SENSITIVITY
+#  ifdef RBL4DVAR_FCT_SENSITIVITY
         logical, allocatable :: LsenFCT(:)
 #  endif
-#  if defined W4DPSAS_SENSITIVITY || defined W4DPSAS_FCT_SENSITIVITY ||\
-      defined W4DVAR_SENSITIVITY
+#  if defined RBL4DVAR_ANA_SENSITIVITY || \
+      defined RBL4DVAR_FCT_SENSITIVITY || \
+      defined R4DVAR_ANA_SENSITIVITY
 !
 !  Switch to activate reading of adjoint sensitivity initial conditions
 !  for weak constraint 4DVAR observation sensitivity.
 !
-        logical, allocatable :: LsenPSAS(:)
+        logical, allocatable :: Lsen4DVAR(:)
 #   ifdef OBS_SPACE
         logical, allocatable :: Lobspace(:)
 #    ifndef OBS_IMPACT
@@ -875,7 +891,7 @@
 #    endif
 #   endif
 #  endif
-#  ifdef W4DPSAS_FCT_SENSITIVITY
+#  ifdef RBL4DVAR_FCT_SENSITIVITY
         integer, allocatable :: ntimes_ana(:)
         integer, allocatable :: ntimes_fct(:)
 #  endif
@@ -962,6 +978,13 @@
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 
+#  ifdef SP4DVAR
+      IF (.not.allocated(Lsadd)) THEN
+        allocate ( Lsadd(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+#  endif
+
       IF (.not.allocated(wrtNLmod)) THEN
         allocate ( wrtNLmod(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -983,7 +1006,7 @@
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 
-# if defined IS4DVAR_SENSITIVITY
+# if defined I4DVAR_ANA_SENSITIVITY
 #  ifdef OBS_IMPACT
       IF (.not.allocated(wrtIMPACT_TOT)) THEN
         allocate ( wrtIMPACT_TOT(Ngrids) )
@@ -1062,16 +1085,17 @@
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 #  endif
-#  ifdef W4DPSAS_FCT_SENSITIVITY
+#  ifdef RBL4DVAR_FCT_SENSITIVITY
       IF (.not.allocated(LsenFCT)) THEN
         allocate ( LsenFCT(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 #  endif
-#  if defined W4DPSAS_SENSITIVITY || defined W4DPSAS_FCT_SENSITIVITY ||\
-      defined W4DVAR_SENSITIVITY
-      IF (.not.allocated(LsenPSAS)) THEN
-        allocate ( LsenPSAS(Ngrids) )
+#  if defined RBL4DVAR_ANA_SENSITIVITY || \
+      defined RBL4DVAR_FCT_SENSITIVITY || \
+      defined R4DVAR_ANA_SENSITIVITY
+      IF (.not.allocated(Lsen4DVAR)) THEN
+        allocate ( Lsen4DVAR(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 #   ifdef OBS_SPACE
@@ -1087,7 +1111,7 @@
 #    endif
 #   endif
 #  endif
-#  ifdef W4DPSAS_FCT_SENSITIVITY
+#  ifdef RBL4DVAR_FCT_SENSITIVITY
       IF (.not.allocated(ntimes_ana)) THEN
         allocate ( ntimes_ana(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -1106,7 +1130,7 @@
       RETURN
       END SUBROUTINE allocate_fourdvar
 
-# if defined W4DPSAS_FCT_SENSITIVITY && defined OBS_SPACE
+# if defined RBL4DVAR_FCT_SENSITIVITY && defined OBS_SPACE
       SUBROUTINE deallocate_fourdvar
 !
 !=======================================================================
@@ -1238,8 +1262,8 @@
         deallocate (BgErr)
       END IF
 
-      IF (allocated(increment)) THEN
-        deallocate (increment)
+      IF (allocated(NLincrement)) THEN
+        deallocate (NLincrement)
       END IF
 
       IF (allocated(innovation)) THEN
@@ -1262,18 +1286,17 @@
         deallocate (TLmodVal)
       END IF
 
-#   if defined SENSITIVITY_4DVAR    || defined TL_W4DPSAS  || \
-       defined TL_W4DVAR            || defined W4DPSAS     || \
-       defined W4DVAR               || defined ARRAY_MODES || \
-       defined CLIPPING
-
+#   if defined ARRAY_MODES       || defined CLIPPING    || \
+       defined RBL4DVAR          || defined R4DVAR      || \
+       defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
+       defined TL_R4DVAR
       IF (allocated(TLmodVal_S)) THEN
         deallocate (TLmodVal_S)
       END IF
 
 #    if defined RPCG              && \
-       (defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
-        defined TL_W4DVAR)
+       (defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
+        defined TL_R4DVAR)
 
       IF (allocated(tl_TLmodVal_S)) THEN
         deallocate (tl_TLmodVal_S)
@@ -1286,8 +1309,8 @@
 
 #   endif
 
-#   if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
-       defined W4DPSAS
+#   if defined SENSITIVITY_4DVAR || defined RBL4DVAR || \
+       defined TL_RBL4DVAR
 
       IF (allocated(BCKmodVal)) THEN
         deallocate (BCKmodVal)
@@ -1297,8 +1320,8 @@
       IF (allocated(Hbk)) THEN
         deallocate (Hbk)
       END IF
-#     if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
-         defined TL_W4DVAR
+#     if defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
+         defined TL_R4DVAR
 
       IF (allocated(tl_BCKmodVal)) THEN
         deallocate (tl_BCKmodVal)
@@ -1321,8 +1344,8 @@
 !
 !  Deallocate and initialize weak constraint conjugate gradient vectors.
 !
-#   if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
-       defined TL_W4DVAR
+#   if defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
+       defined TL_R4DVAR
       IF (allocated(ad_zcglwk)) THEN
         deallocate (ad_zcglwk)
       END IF
@@ -1399,9 +1422,11 @@
         deallocate (cg_innov)
       END IF
 
-#    if defined TL_W4DPSAS             || defined TL_W4DVAR          || \
-        defined W4DPSAS_SENSITIVITY    || defined W4DVAR_SENSITIVITY || \
-        defined W4DPSAS_FCT_SENSITIVITY
+#    if defined RBL4DVAR_ANA_SENSITIVITY || \
+        defined RBL4DVAR_FCT_SENSITIVITY || \
+        defined R4DVAR_ANA_SENSITIVITY   || \
+        defined TL_RBL4DVAR              || \
+        defined TL_R4DVAR
 
       IF (allocated(ad_vcglwk)) THEN
         deallocate (ad_vcglwk)
@@ -1542,7 +1567,10 @@
 # endif
       real(r8), parameter :: IniVal = 0.0_r8
 !
-      SourceFile=__FILE__ // ", initialize_fourdvar"
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", initialize_fourdvar"
+
+      SourceFile=MyFile
 
 # ifdef OBSERVATIONS
 !
@@ -1556,8 +1584,7 @@
 !
       DO ng=1,Ngrids
         CALL netcdf_get_dim(ng, iNLM, TRIM(OBS(ng)%name))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
         Ndatum(ng)=0
         Nsurvey(ng)=0
@@ -1680,8 +1707,10 @@
           FOURDVAR(ng) % DataPenalty = IniVal
         END IF
 
-#   if defined DATALESS_LOOPS || defined SENSITIVITY_4DVAR || \
-       defined TL_W4DPSAS     || defined W4DPSAS
+#   if defined DATALESS_LOOPS    || defined RBL4DVAR || \
+       defined SENSITIVITY_4DVAR || defined SP4DVAR  || \
+       defined TL_RBL4DVAR
+
         IF (.not.allocated(FOURDVAR(ng) % NLPenalty)) THEN
           allocate ( FOURDVAR(ng) % NLPenalty(0:NobsVar(ng)) )
           Dmem(ng)=Dmem(ng)+REAL(NobsVar(ng)+1,r8)
@@ -1877,8 +1906,7 @@
      &                        FOURDVAR(ng)%NobsSurvey,                  &
      &                        start = (/1/),                            &
      &                        total = (/Nsurvey(ng)/))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Read in the time of each observation survey.
 !
@@ -1887,8 +1915,7 @@
      &                        FOURDVAR(ng)%SurveyTime,                  &
      &                        start = (/1/),                            &
      &                        total = (/Nsurvey(ng)/))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Determine maximum size of observation arrays.
 !
@@ -2008,6 +2035,38 @@
       END IF
       NLmodVal = IniVal
 
+#  ifdef SP4DVAR
+      IF (.not.allocated(ADmodVal_S)) THEN
+        allocate ( ADmodVal_S(Mobs, Ninner+4) )
+        Dmem(1)=Dmem(1)+REAL(Mobs*(Ninner+4),r8)
+      END IF
+      ADmodVal_S = IniVal
+
+      IF (.not.allocated(harnoldi)) THEN
+        allocate ( harnoldi(Ninner+1, Ninner, Nouter) )
+        Dmem(1)=Dmem(1)+REAL((Ninner+1)*Ninner*Nouter,r8)
+      END IF
+      harnoldi = IniVal
+
+      IF (.not.allocated(gmze)) THEN
+        allocate ( gmze(Ninner, Nouter) )
+        Dmem(1)=Dmem(1)+REAL(Ninner*Nouter,r8)
+      END IF
+      gmze = IniVal
+
+      IF (.not.allocated(cg_beta0)) THEN
+        allocate ( cg_beta0(Nouter) )
+        Dmem(1)=Dmem(1)+REAL(Nouter,r8)
+      END IF
+      cg_beta0 = IniVal
+
+      IF (.not.allocated(Jobs)) THEN
+        allocate ( Jobs(0:Ninner,1:Nouter) )
+        Dmem(1)=Dmem(1)+REAL((Ninner+1)*Nouter,r8)
+      END IF
+      Jobs = IniVal
+#  endif
+
 #  ifdef FOUR_DVAR
       IF (.not.allocated(BgErr)) THEN
         allocate ( BgErr(Mobs) )
@@ -2015,11 +2074,11 @@
       END IF
       BgErr = IniVal
 
-      IF (.not.allocated(increment)) THEN
-        allocate ( increment(Mobs) )
+      IF (.not.allocated(NLincrement)) THEN
+        allocate ( NLincrement(Mobs) )
         Dmem(1)=Dmem(1)+REAL(Mobs,r8)
       END IF
-      increment = IniVal
+      NLincrement = IniVal
 
       IF (.not.allocated(innovation)) THEN
         allocate ( innovation(Mobs) )
@@ -2055,26 +2114,25 @@
       END IF
       TLmodVal = IniVal
 
-#   if defined SENSITIVITY_4DVAR    || defined TL_W4DPSAS  || \
-       defined TL_W4DVAR            || defined W4DPSAS     || \
-       defined W4DVAR               || defined ARRAY_MODES || \
-       defined CLIPPING
-
+#   if defined ARRAY_MODES       || defined CLIPPING  || \
+       defined RBL4DVAR          || defined R4DVAR    || \
+       defined SENSITIVITY_4DVAR || defined SP4DVAR   || \
+       defined TL_RBL4DVAR       || defined TL_R4DVAR
 !
 !  The following arrays are only needed and used by the master node.
 !  In order to avoid hogging memory penalties in the other nodes, they
 !  are only allocated by the master node.
 !
-      IF (Master) THEN
-        IF (.not.allocated(TLmodVal_S)) THEN
-          allocate ( TLmodVal_S(Mobs,Ninner,Nouter) )
-          Dmem(1)=Dmem(1)+REAL(Mobs*Ninner*Nouter,r8)
-        END IF
-        TLmodVal_S = IniVal
+      IF (.not.allocated(TLmodVal_S)) THEN
+        allocate ( TLmodVal_S(Mobs,Ninner,Nouter) )
+        Dmem(1)=Dmem(1)+REAL(Mobs*Ninner*Nouter,r8)
+      END IF
+      TLmodVal_S = IniVal
 
 #    if defined RPCG              && \
-       (defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
-        defined TL_W4DVAR)
+       (defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
+        defined TL_R4DVAR)
+      IF (Master) THEN
         IF (.not.allocated(tl_TLmodVal_S)) THEN
           allocate ( tl_TLmodVal_S(Mobs,Ninner,Nouter) )
           Dmem(1)=Dmem(1)+REAL(Mobs*Ninner*Nouter,r8)
@@ -2086,13 +2144,12 @@
           Dmem(1)=Dmem(1)+REAL(Mobs*Ninner*Nouter,r8)
         END IF
         ad_TLmodVal_S = IniVal
-#    endif
       END IF
-
+#    endif
 #   endif
 
-#   if defined ARRAY_MODES || defined SENSITIVITY_4DVAR || \
-       defined TL_W4DPSAS  || defined W4DPSAS
+#   if defined ARRAY_MODES       || defined RBL4DVAR    || \
+       defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR
 
       IF (.not.allocated(BCKmodVal)) THEN
         allocate ( BCKmodVal(Mobs) )
@@ -2108,8 +2165,8 @@
       END IF
       Hbk = IniVal
 
-#     if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
-         defined TL_W4DVAR
+#     if defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
+         defined TL_R4DVAR
 
       IF (.not.allocated(tl_BCKmodVal)) THEN
         allocate ( tl_BCKmodVal(Mobs) )
@@ -2292,8 +2349,8 @@
 
 #   endif
 
-#   if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
-       defined TL_W4DVAR
+#   if defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
+       defined TL_R4DVAR
 
       IF (.not.allocated(ad_zcglwk)) THEN
         allocate ( ad_zcglwk(MyMobs,Ninner+1) )
@@ -2308,8 +2365,8 @@
       ad_zgrad0 = IniVal
 
 #    if defined RPCG              && \
-       (defined SENSITIVITY_4DVAR || defined TL_W4DPSAS || \
-        defined TL_W4DVAR)
+       (defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR || \
+        defined TL_R4DVAR)
 
       IF (.not.allocated(ad_vcglwk)) THEN
         allocate ( ad_vcglwk(MyMobs,Ninner+1) )
@@ -2538,12 +2595,12 @@
       DTsizeVB = IniVal
 
 
-# if defined IS4DVAR || defined WEAK_CONSTRAINT
+# if defined I4DVAR || defined WEAK_CONSTRAINT
 !
 !  Allocate conjugate gradient variables.
 !
-#  if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS  || \
-      defined TL_W4DVAR
+#  if defined SENSITIVITY_4DVAR || defined TL_RBL4DVAR  || \
+      defined TL_R4DVAR
       IF (.not.allocated(ad_cg_beta)) THEN
         allocate ( ad_cg_beta(Ninner+1) )
         Dmem(1)=Dmem(1)+REAL(Ninner+1,r8)
@@ -2785,7 +2842,7 @@
       cg_zu = IniVal
 
 # endif
-# if defined IS4DVAR_SENSITIVITY
+# if defined I4DVAR_ANA_SENSITIVITY
 !
 !  Allocate Lanczos algorithm coefficients.
 !
@@ -2857,6 +2914,9 @@
       DO ng=1,Ngrids
         Load_Zobs(ng)=.FALSE.
         ProcessObs(ng)=.FALSE.
+# ifdef SP4DVAR
+        Lsadd(ng)=.FALSE.
+# endif
         haveObsMeta(ng)=.FALSE.
         wrote_Zobs(ng)=.FALSE.
         wrtMisfit(ng)=.FALSE.
@@ -2867,7 +2927,7 @@
 # ifdef BALANCE_OPERATOR
         wrtZetaRef(ng)=.FALSE.
 # endif
-# ifdef IS4DVAR_SENSITIVITY
+# ifdef I4DVAR_ANA_SENSITIVITY
 #  ifdef OBS_IMPACT
         wrtIMPACT_TOT(ng)=.FALSE.
 #  endif

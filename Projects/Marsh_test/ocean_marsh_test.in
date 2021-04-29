@@ -3,7 +3,7 @@
 !
 !svn $Id: ocean_marsh_test.in 838 2019-11-17 04:22:18Z jcwarner $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -99,7 +99,7 @@ GridsInLayer =  1
         Nbed =  1             ! Number of sediment bed layers
        NBAND =  30            ! Number of spectral irradiance bands 
 
-         NAT =  2             ! Number of active tracers (usually, 2)
+         NAT =  1             ! Number of active tracers (usually, 2)
          NPT =  0             ! Number of inactive passive tracers
          NCS =  0             ! Number of cohesive (mud) sediment tracers
          NNS =  2             ! Number of non-cohesive (sand) sediment tracers
@@ -207,19 +207,6 @@ ad_Vadvection == C4       \                     ! temperature
    LBC(isCX3d) ==   Gra     Clo     Gra     Gra         ! 3D wave x-dir celerity
    LBC(isCY3d) ==   Gra     Clo     Gra     Gra         ! 3D wave y-dir celerity
 
-! Ice boundary conditions
-
-   LBC(isAice) ==   Clo     Per     Clo     Per         ! ice concentration
-   LBC(isHice) ==   Clo     Per     Clo     Per         ! ice thickness
-   LBC(isHsno) ==   Clo     Per     Clo     Per         ! snow thickness
-   LBC(isTice) ==   Clo     Per     Clo     Per         ! ice temperature
-   LBC(isApond)==   Clo     Clo     Clo     Clo         ! surface water
-   LBC(isHpond)==   Clo     Clo     Clo     Clo         ! surface water
-   LBC(isSig11)==   Clo     Clo     Clo     Clo         ! sigma-11
-   LBC(isSig12)==   Clo     Clo     Clo     Clo         ! sigma-12
-   LBC(isSig22)==   Clo     Clo     Clo     Clo         ! sigma-22
-   LBC(isUice) ==   Clo     Clo     Clo     Clo         ! ice U-momentum
-   LBC(isVice) ==   Clo     Clo     Clo     Clo         ! ice V-momentum
 
 ! Adjoint-based algorithms can have different lateral boundary
 ! conditions keywords.
@@ -266,6 +253,7 @@ ad_VolCons(north) ==  F                            ! northern boundary
        ERend =  1
       Nouter =  1
       Ninner =  1
+     Nsaddle =  1
   Nintervals =  1
 
 ! Number of eigenvalues (NEV) and eigenvectors (NCV) to compute for the
@@ -515,15 +503,6 @@ LtracerSponge == F F                            ! temperature, salinity, inert
  LnudgeM3CLM == F                          ! 3D momentum
 
   LnudgeTCLM == F F                        ! temperature, salinity, inert
-
-! Logical switches for ice climatology and nudging
-
-      LmiCLM == F
-      LaiCLM == F
-      LsiCLM == F
- LnudgeMICLM == F
- LnudgeAICLM == F
- LnudgeSICLM == F
 
 ! Starting (DstrS) and ending (DendS) day for adjoint sensitivity forcing.
 ! DstrS must be less or equal to DendS. If both values are zero, their
@@ -1060,17 +1039,29 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 
      NGCNAME =  ocean_ngc.nc
 
-! Input lateral boundary conditions and climatology file names.  The
-! USER has the option to split input data time records into several
-! NetCDF files (see prologue instructions above). If so, use a single
-! line per entry with a vertical bar (|) symbol after each entry,
-! except the last one.
+! Input lateral boundary conditions file names. The USER has the option
+! to separate the required lateral boundary variables into individual
+! NetCDF files (NBCFILES > 1), as in the input surface forcing.  Also,
+! the USER may split input data time records into several NetCDF files
+! (monthly, seasonal, or annual). See prologue instructions above. Use
+! a single line per entry with a continuation (\) or a vertical bar (|)
+! symbol after each entry, except the last one.
+
+    NBCFILES == 1                          ! number of boundary files
+
+     BRYNAME == ocean_bndry.nc
+
+! Input climatology file names. The USER has the option to separate the
+! climatology variables into individual NetCDF files (NCLMFILES > 1),
+! as in the input surface forcing.  Also, the USER may split input data
+! time records into several NetCDF files (monthly, seasonal, or annual).
+! See prologue instructions above. Use a single line per entry with a
+! continuation (\) or a vertical bar (|) symbol after each entry, except
+! the last one.
 
      NCLMFILES == 1                         ! number of climate files
-     CLMNAME == ocean_clm.nc
 
-     NBCFILES == 1                          ! number of boundary files
-     BRYNAME == ocean_bry.nc
+     CLMNAME == ocean_clm.nc
 
 ! Input climatology nudging coefficients file name.
 
@@ -1451,31 +1442,6 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! ad_LBC(isMtke) Mixing TKE,    [1:4, Ngrids] values are expected.
 ! ad_LBC(isTvar) Tracers,       [1:4, 1:NAT+NPT, Ngrids] values are expected.
 !
-! Ice boundary conditions
-!
-!  LBC(isAice) Ice concentration, [1:4, Ngrids] values are expected.
-!  LBC(isHice) Ice thickness,     [1:4, Ngrids] values are expected.
-!  LBC(isHsno) Snow thickness,    [1:4, Ngrids] values are expected.
-!  LBC(isTice) Ice temperature,   [1:4, Ngrids] values are expected.
-!  LBC(isApond)Surface water,     [1:4, Ngrids] values are expected.
-!  LBC(isHpond)Surface water,     [1:4, Ngrids] values are expected.
-!  LBC(isSig11)Sigma-11,          [1:4, Ngrids] values are expected.
-!  LBC(isSig12)Sigma-12,          [1:4, Ngrids] values are expected.
-!  LBC(isSig22)Sigma-22,          [1:4, Ngrids] values are expected.
-!  LBC(isUice) Ice U-momentum,    [1:4, Ngrids] values are expected.
-!  LBC(isVice) Ice V-momentum,    [1:4, Ngrids] values are expected.
-!
-! Similarly, the adjoint-based algorithms (ADM, TLM, RPM) can have different
-! lateral boundary conditions keywords:
-!
-! ad_LBC(isFsur) Free-surface,  [1:4, Ngrids] values are expected.
-! ad_LBC(isUbar) 2D U-momentum, [1:4, Ngrids] values are expected.
-! ad_LBC(isVbar) 2D V-momentum, [1:4, Ngrids] values are expected.
-! ad_LBC(isUvel) 3D U-momentum, [1:4, Ngrids] values are expected.
-! ad_LBC(isVvel) 3D V-momentum, [1:4, Ngrids] values are expected.
-! ad_LBC(isMtke) Mixing TKE,    [1:4, Ngrids] values are expected.
-! ad_LBC(isTvar) Tracers,       [1:4, 1:NAT+NPT, Ngrids] values are expected.
-!
 ! Lateral open boundary edge volume conservation switch for nonlinear model
 ! and adjoint-based algorithm. Usually activated with radiation boundary
 ! conditions to enforce global mass conservation. Notice that these switches
@@ -1510,11 +1476,11 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !
 ! NTIMES_ANA   Total number of timesteps for computing observations impacts
 !                interval during the analysis cycle. It is only used when
-!                W4DPSAS_FCT_SENSITIVITY is activated.
+!                RBL4DVAR_FCT_SENSITIVITY is activated.
 !
 ! NTIMES_FCT   Total number of timesteps for computing observations impacts
 !                interval during the forecast cycle. It is only used when
-!                W4DPSAS_FCT_SENSITIVITY is activated.
+!                RBL4DVAR_FCT_SENSITIVITY is activated.
 !
 !------------------------------------------------------------------------------
 ! Model iteration loops parameters.
@@ -1527,6 +1493,16 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 ! Nouter       Maximum number of 4DVAR outer loop iterations.
 !
 ! Ninner       Maximum number of 4DVAR inner loop iterations.
+!
+! Nsaddle      Number of kernel trajectory intervals for the solution of the
+!                Saddle-Point 4D-Var (SP4DVAR). It is used to accelerate
+!                4D-Var by parallelizing the inner loops in time. The tangent
+!                linear and adjoint models are time-stepped concurrently over
+!                the short time integration windows.  Make sure that
+!
+!                  MOD(NTIMES/NHIS, Nsaddle) = 0
+!
+!                for legal computations.
 !
 ! Nintervals   Number of time interval divisions for Stochastic Optimals
 !                computations. It must be a multiple of NTIMES. The tangent
@@ -2993,8 +2969,9 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !
 !  ADSNAME     Input adjoint sensitivity functional filename.
 !
+!
 ! Input adjoint forcing filenames for computing observations impacts
-! during the analysis-forecast cycle when W4DPSAS_FCT_SENSITIVITY is
+! during the analysis-forecast cycle when RBL4DVAR_FCT_SENSITIVITY is
 ! activated.  The files FOInameA and FOInameB are used when the forecast
 ! metric is defined in state-space (CPP option OBS_SPACE is off). Both
 ! are regular adjoint forcing files just like ADSname.
@@ -3005,12 +2982,14 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !
 !  FOInameB    Forecast initialized with 4D_Var background (blue curve)
 !
+!
 ! Input NetCDF filenames for the forecasts initialized from the 4D-Var
 ! analysis files:
 !
 !  FCTnameA    Current  4D-Var analysis cycle (red curve)
 !
 !  FCTnameB    Previous 4D-Var analysis cycle (blue curve)
+!
 !  IWININAME   Input initial conditions file name for InWave.
 !
 !  IWSWNNAME   Input file of SWAN 2D spec to drive InWave
@@ -3031,21 +3010,50 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !                for more information.
 !
 !
-! Input lateral boundary conditions and climatology filenames:
+! Input lateral boundary conditions file(s) name:
 !
-! BRYNAME      Input open boundary data filename(s) per nested grid.
+!  NBCFILES    Number of unique boundary files per nested grid.
 !
-! CLMNAME      Input climatology fields filename(s) per nested grid
+!  BRYNAME     Input open boundary data filename(s) per nested grid.
 !
-!  The USER has the option to split input data time records into several
-!  NetCDF files, as many as required. If so, use a single line per entry
-!  with a vertical bar (|) symbol after each entry, except the last one:
+!  The USER has the option to enter several filenames for the lateral
+!  boundary conditions variables and or split input data time records for
+!  each nested grid. For example, the USER may have different files for
+!  physical, biology, and sediment state variables. The model will scan
+!  the file list and will read the needed data from the first file in the
+!  list containing the lateral boundary variable. Therefore, the order of
+!  the filenames is critcal. It is also possible to split input data time
+!  records into several NetCDF files.
 !
-!    BRYNAME == my_bry_year1.nc |
-!               my_bry_year2.nc
+!    NBCFILES == 2                            ! number of boundary files
 !
-!    CLMNAME == my_clm_year1.nc |
-!               my_clm_year2.nc
+!     BRYNAME == my_physics_bry_year1.nc |    ! physical kernel variables
+!                my_physics_bry_year2.nc \
+!                my_biology_bry_year1.nc |    ! biological tracers
+!                my_biology_bry_year2.nc
+!
+!
+! Input climatology file(s) name:
+!
+!  NCLMFILES   Number of unique climatology files per nested grid.
+!
+!  CLMNAME     Input climatology data filename(s) per nested grid.
+!
+!  The USER has the option to enter several filenames for the climatology
+!  variables and or split input data time records for each nested grid.
+!  For example, the USER may have different files for physical, biology,
+!  and sediment state variables. The model will scan the file list and
+!  will read the needed data from the first file in the list containing
+!  the lateral climatology variable. Therefore, the order of the filenames
+!  is critical. It is also possible to split input data time records into
+!  several NetCDF files.
+!
+!    NCLMFILES == 2                           ! number of climatology files
+!
+!      CLMNAME == my_physics_clm_year1.nc |   ! physical kernel variables
+!                 my_physics_bry_year2.nc \
+!                 my_biology_bry_year1.nc |   ! biological tracers
+!                 my_biology_bry_year2.nc
 !
 !
 ! Input nudging coefficients filename:
@@ -3074,6 +3082,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !                be processed in ROMS because of the logical switches are
 !                FALSE the second grid.
 !
+!
 ! Input/output tidal forcing filename:
 !
 ! TIDENAME     Tidal constituents period, phase, elevation, and current data.
@@ -3084,6 +3093,7 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !                several least-squares time-accumulated harmonic variables
 !                are written into this NetCDF file to facilitate restart for
 !                during long fitting simulations.
+!
 !
 ! Input forcing file(s) name:
 !
@@ -3096,8 +3106,8 @@ Dout(iTvdif) == F F     ! temp_vdiff, ...    vertical diffusion
 !  the USER may have different files for wind products, heat fluxes, etc.
 !  The model will scan the file list and will read the needed data from
 !  the first file in the list containing the forcing field. Therefore,
-!  the order of the filenames is very important. It is also possible to
-!  split input data time records into several NetCDF files.
+!  the order of the filenames is essential. It is also possible to split
+!  input data time records into several NetCDF files.
 !
 !  Use a single line per entry with a continuation (\) or vertical bar (|)
 !  symbol after each entry, except the last one:

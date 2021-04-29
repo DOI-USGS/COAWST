@@ -6,9 +6,9 @@
     defined POSTERIOR_ERROR_F)
 
 !
-!svn $Id: random_ic.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: random_ic.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -53,10 +53,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, model, 45, __LINE__, __FILE__)
+      CALL wclock_on (ng, model, 83, __LINE__, MyFile)
 # endif
 !
       CALL random_ic_tile (ng, tile,                                    &
@@ -95,8 +98,9 @@
 # endif
      &                     OCEAN(ng) % tl_zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, model, 45, __LINE__, __FILE__)
+      CALL wclock_off (ng, model, 83, __LINE__, MyFile)
 # endif
+!
       RETURN
       END SUBROUTINE random_ic
 !
@@ -235,7 +239,7 @@
 # ifdef SOLVE3D
       integer :: itrc, k
 # endif
-
+!
       real(r8) :: Amax, Amin, Bmax, Bmin
 
       real(r8), dimension(LBi:UBi,LBj:UBj) :: A2d
@@ -249,10 +253,13 @@
       real(r8), dimension(LBij:UBij,1:N(ng)) :: B3d
 #  endif
 # endif
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", random_ic_tile"
 
 # include "set_bounds.h"
 !
-      SourceFile=__FILE__
+      SourceFile=MyFile
 !
 !-----------------------------------------------------------------------
 !  Generates random initial vectors for computation of the posterior
@@ -1060,7 +1067,7 @@
       END DO
 #  endif
 # endif
-
+!
       RETURN
       END SUBROUTINE random_ic_tile
 #endif

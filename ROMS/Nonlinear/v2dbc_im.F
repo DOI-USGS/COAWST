@@ -2,9 +2,9 @@
 
       MODULE v2dbc_mod
 !
-!svn $Id: v2dbc_im.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: v2dbc_im.F 1058 2021-03-25 19:04:23Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -247,34 +247,16 @@
 # else
               bry_cor=0.0_r8
 # endif
-# ifdef ICESHELF
-              cff1=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jstr-1)-                &
-     &                             ABS(GRID(ng)%zice(i,Jstr-1))+        &
-     &                             zeta(i,Jstr-1,know)+                 &
-     &                             GRID(ng)%h(i,Jstr  )-                &
-     &                             ABS(GRID(ng)%zice(i,Jstr  ))+        &
-     &                             zeta(i,Jstr  ,know)))
-# else
               cff1=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jstr-1)+                &
      &                             zeta(i,Jstr-1,know)+                 &
      &                             GRID(ng)%h(i,Jstr  )+                &
      &                             zeta(i,Jstr  ,know)))
-# endif
               bry_str=cff1*(FORCES(ng)%svstr(i,Jstr)-                   &
      &                      FORCES(ng)%bvstr(i,Jstr))
-# ifdef ICESHELF
-              Ce=1.0_r8/SQRT(g*0.5_r8*(GRID(ng)%h(i,Jstr-1)-            &
-     &                                 ABS(GRID(ng)%zice(i,Jstr-1))+    &
-     &                                 zeta(i,Jstr-1,know)+             &
-     &                                 GRID(ng)%h(i,Jstr  )-            &
-     &                                 ABS(GRID(ng)%zice(i,Jstr  ))+    &
-     &                                 zeta(i,Jstr  ,know)))
-# else
               Ce=1.0_r8/SQRT(g*0.5_r8*(GRID(ng)%h(i,Jstr-1)+            &
      &                                 zeta(i,Jstr-1,know)+             &
      &                                 GRID(ng)%h(i,Jstr  )+            &
      &                                 zeta(i,Jstr  ,know)))
-# endif
 # ifdef WEC_VF
 !             here we reduce pgr from depth 2m to pgr is 0 at 0 depth.
               bry_pgr=MIN(0.5_r8*(GRID(ng)%h(i,Jstr)+                   &
@@ -310,19 +292,10 @@
 #else
               bry_val=BOUNDARY(ng)%vbar_south(i)
 #endif
-#ifdef ICESHELF
-              cff=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jstr-1)-                 &
-     &                            ABS(GRID(ng)%zice(i,Jstr-1))+         &
-     &                            zeta(i,Jstr-1,know)+                  &
-     &                            GRID(ng)%h(i,Jstr  )-                 &
-     &                            ABS(GRID(ng)%zice(i,Jstr  ))+         &
-     &                            zeta(i,Jstr  ,know)))
-#else
               cff=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jstr-1)+                 &
      &                            zeta(i,Jstr-1,know)+                  &
      &                            GRID(ng)%h(i,Jstr  )+                 &
      &                            zeta(i,Jstr  ,know)))
-#endif
               Ce=SQRT(g*cff)
 #if defined ATM_PRESS && defined PRESS_COMPENSATE
               vbar(i,Jstr,kout)=bry_val-                                &
@@ -475,19 +448,10 @@
 #else
               bry_cor=0.0_r8
 #endif
-#ifdef ICESHELF
-              cff=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jstr-1)-                 &
-     &                            ABS(GRID(ng)%zice(i,Jstr-1))+         &
-     &                            zeta(i,Jstr-1,know)+                  &
-     &                            GRID(ng)%h(i,Jstr  )-                 &
-     &                            ABS(GRID(ng)%zice(i,Jstr  ))+         &
-     &                            zeta(i,Jstr  ,know)))
-#else
               cff=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jstr-1)+                 &
      &                            zeta(i,Jstr-1,know)+                  &
      &                            GRID(ng)%h(i,Jstr  )+                 &
      &                            zeta(i,Jstr  ,know)))
-#endif
               bry_str=cff*(FORCES(ng)%svstr(i,Jstr)-                    &
      &                     FORCES(ng)%bvstr(i,Jstr))
               vbar(i,Jstr,kout)=vbar(i,Jstr,know)+                      &
@@ -662,34 +626,16 @@
 # else
               bry_cor=0.0_r8
 # endif
-# ifdef ICESHELF
-              cff1=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jend  )-                &
-     &                             ABS(GRID(ng)%zice(i,Jend  ))+        &
-     &                             zeta(i,Jend  ,know)+                 &
-     &                             GRID(ng)%h(i,Jend+1)-                &
-     &                             ABS(GRID(ng)%zice(i,Jend+1))+        &
-     &                             zeta(i,Jend+1,know)))
-# else
               cff1=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jend  )+                &
      &                             zeta(i,Jend  ,know)+                 &
      &                             GRID(ng)%h(i,Jend+1)+                &
      &                             zeta(i,Jend+1,know)))
-# endif
               bry_str=cff1*(FORCES(ng)%svstr(i,Jend+1)-                 &
      &                      FORCES(ng)%bvstr(i,Jend+1))
-# ifdef ICESHELF
-              Ce=1.0_r8/SQRT(g*0.5_r8*(GRID(ng)%h(i,Jend+1)-            &
-     &                                 ABS(GRID(ng)%zice(i,Jend+1))+    &
-     &                                 zeta(i,Jend+1,know)+             &
-     &                                 GRID(ng)%h(i,Jend  )-            &
-     &                                 ABS(GRID(ng)%zice(i,Jend  ))+    &
-     &                                 zeta(i,Jend  ,know)))
-# else
               Ce=1.0_r8/SQRT(g*0.5_r8*(GRID(ng)%h(i,Jend+1)+            &
      &                                 zeta(i,Jend+1,know)+             &
      &                                 GRID(ng)%h(i,Jend  )+            &
      &                                 zeta(i,Jend  ,know)))
-# endif
 # ifdef WEC_VF
 !             here we reduce pgr from depth 2m to pgr is 0 at 0 depth.
               bry_pgr=MIN(0.5_r8*(GRID(ng)%h(i,Jend)+                   &
@@ -725,19 +671,10 @@
 #else
               bry_val=BOUNDARY(ng)%vbar_north(i)
 #endif
-#ifdef ICESHELF
-              cff=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jend  )-                 &
-     &                            ABS(GRID(ng)%zice(i,Jend  ))+         &
-     &                            zeta(i,Jend  ,know)+                  &
-     &                            GRID(ng)%h(i,Jend+1)-                 &
-     &                            ABS(GRID(ng)%zice(i,Jend+1))+         &
-     &                            zeta(i,Jend+1,know)))
-#else
               cff=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jend  )+                 &
      &                            zeta(i,Jend  ,know)+                  &
      &                            GRID(ng)%h(i,Jend+1)+                 &
      &                            zeta(i,Jend+1,know)))
-#endif
               Ce=SQRT(g*cff)
 #if defined ATM_PRESS && defined PRESS_COMPENSATE
             vbar(i,Jend+1,kout)=bry_val+                                &
@@ -890,19 +827,10 @@
 #else
               bry_cor=0.0_r8
 #endif
-#ifdef ICESHELF
-              cff=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jend  )-                 &
-     &                            ABS(GRID(ng)%zice(i,Jend  ))+         &
-     &                            zeta(i,Jend  ,know)+                  &
-     &                            GRID(ng)%h(i,Jend+1)-                 &
-     &                            ABS(GRID(ng)%zice(i,Jend+1))+         &
-     &                            zeta(i,Jend+1,know)))
-#else
               cff=1.0_r8/(0.5_r8*(GRID(ng)%h(i,Jend  )+                 &
      &                            zeta(i,Jend  ,know)+                  &
      &                            GRID(ng)%h(i,Jend+1)+                 &
      &                            zeta(i,Jend+1,know)))
-#endif
               bry_str=cff*(FORCES(ng)%svstr(i,Jend+1)-                  &
      &                     FORCES(ng)%bvstr(i,Jend+1))
               vbar(i,Jend+1,kout)=vbar(i,Jend+1,know)+                  &
@@ -1058,19 +986,10 @@
             IF (LBC_apply(ng)%west(j)) THEN
               cff=dt2d*0.5_r8*(GRID(ng)%pm(Istr,j-1)+                   &
      &                         GRID(ng)%pm(Istr,j  ))
-#ifdef ICESHELF
-              cff1=SQRT(g*0.5_r8*(GRID(ng)%h(Istr,j-1)-                 &
-     &                            ABS(GRID(ng)%zice(Istr,j-1))+         &
-     &                            zeta(Istr,j-1,know)+                  &
-     &                            GRID(ng)%h(Istr,j  )-                 &
-     &                            ABS(GRID(ng)%zice(Istr,j  ))+         &
-     &                            zeta(Istr,j  ,know)))
-#else
               cff1=SQRT(g*0.5_r8*(GRID(ng)%h(Istr,j-1)+                 &
      &                            zeta(Istr,j-1,know)+                  &
      &                            GRID(ng)%h(Istr,j  )+                 &
      &                            zeta(Istr,j  ,know)))
-#endif
               Cx=cff*cff1
               cff2=1.0_r8/(1.0_r8+Cx)
               vbar(Istr-1,j,kout)=cff2*(vbar(Istr-1,j,know)+            &
@@ -1215,19 +1134,10 @@
             IF (LBC_apply(ng)%east(j)) THEN
               cff=dt2d*0.5_r8*(GRID(ng)%pm(Iend,j-1)+                   &
      &                         GRID(ng)%pm(Iend,j  ))
-#ifdef ICESHELF
-            cff1=SQRT(g*0.5_r8*(GRID(ng)%h(Iend,j-1)-                   &
-     &                          ABS(GRID(ng)%zice(Iend,j-1))+           &
-     &                          zeta(Iend,j-1,know)+                    &
-     &                          GRID(ng)%h(Iend,j  )-                   &
-     &                          ABS(GRID(ng)%zice(Iend,j  ))+           &
-     &                          zeta(Iend,j  ,know)))
-#else
               cff1=SQRT(g*0.5_r8*(GRID(ng)%h(Iend,j-1)+                 &
      &                            zeta(Iend,j-1,know)+                  &
      &                            GRID(ng)%h(Iend,j  )+                 &
      &                            zeta(Iend,j  ,know)))
-#endif
               Cx=cff*cff1
               cff2=1.0_r8/(1.0_r8+Cx)
               vbar(Iend+1,j,kout)=cff2*(vbar(Iend+1,j,know)+            &
@@ -1390,7 +1300,7 @@
       IF (.not.(EWperiodic(ng).or.NSperiodic(ng))) THEN
         IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
           IF ((LBC_apply(ng)%south(Istr-1).and.                         &
-     &        LBC_apply(ng)%west (Jstr  )).or.                          &
+     &         LBC_apply(ng)%west (Jstr  )).or.                         &
      &        (LBC(iwest,isVbar,ng)%nested.and.                         &
      &         LBC(isouth,isVbar,ng)%nested)) THEN
             cff1=ABS(ABS(GRID(ng)%vmask_wet(Istr-1,Jstr))-1.0_r8)
@@ -1403,7 +1313,7 @@
         END IF
         IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
           IF ((LBC_apply(ng)%south(Iend+1).and.                         &
-     &        LBC_apply(ng)%east (Jstr  )).or.                          &
+     &         LBC_apply(ng)%east (Jstr  )).or.                         &
      &        (LBC(ieast,isVbar,ng)%nested.and.                         &
      &         LBC(isouth,isVbar,ng)%nested)) THEN
             cff1=ABS(ABS(GRID(ng)%vmask_wet(Iend+1,Jstr))-1.0_r8)
@@ -1416,7 +1326,7 @@
         END IF
         IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
           IF ((LBC_apply(ng)%north(Istr-1).and.                         &
-     &        LBC_apply(ng)%west (Jend+1)).or.                          &
+     &         LBC_apply(ng)%west (Jend+1)).or.                         &
      &        (LBC(iwest,isVbar,ng)%nested.and.                         &
      &         LBC(inorth,isVbar,ng)%nested)) THEN
             cff1=ABS(ABS(GRID(ng)%vmask_wet(Istr-1,Jend+1))-1.0_r8)
@@ -1429,7 +1339,7 @@
         END IF
         IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
           IF ((LBC_apply(ng)%north(Iend+1).and.                         &
-     &        LBC_apply(ng)%east (Jend+1)).or.                          &
+     &         LBC_apply(ng)%east (Jend+1)).or.                         &
      &        (LBC(ieast,isVbar,ng)%nested.and.                         &
      &         LBC(inorth,isVbar,ng)%nested)) THEN
             cff1=ABS(ABS(GRID(ng)%vmask_wet(Iend+1,Jend+1))-1.0_r8)

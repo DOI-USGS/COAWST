@@ -1,11 +1,11 @@
-#!/bin/csh -f
+#!/bin/bash
 #
-# svn $Id: build_wrf.sh 995 2020-01-10 04:01:28Z arango $
+# svn $Id: build_wrf.sh 1054 2021-03-06 19:47:12Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
 #                                                                       :::
-# WRF Compiling CSH Script                                              :::
+# WRF Compiling BASH Script                                             :::
 #                                                                       :::
 # Script to compile WRF where source code files are kept separate       :::
 # from the application configuration and build objects.                 :::
@@ -32,49 +32,51 @@
 #                                                                       :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-set which_MPI = openmpi                        # default, overwriten below
+export which_MPI=openmpi                      # default, overwritten below
 
-# Initialize.
+#Initialize.
 
-set separator = `perl -e "print ':' x 100;"`
+separator=`perl -e "print ':' x 100;"`
 
-set parallel = 0
-set clean = 1
-set config = 1
-set move = 0
+parallel=0
+clean=1
+config=1
+move=0
 
-setenv CPLFLAG ''
-setenv MY_CPP_FLAGS ''
+export CPLFLAG=''
+export MY_CPP_FLAGS=''
 
-while ( ($#argv) > 0 )
-  switch ($1)
-    case "-j"
+while [ $# -gt 0 ]
+do
+  case "$1" in
+    -j )
       shift
-      set parallel = 1
-      if (`echo $1 | grep '^[0-9]\+$'` != "" ) then
-        set NCPUS = $1
+      parallel=1
+      test=`echo $1 | grep '^[0-9]\+$'`
+      if [ "$test" != "" ]; then
+        NCPUS="$1"
         shift
       else
-        set NCPUS = 2
-      endif
-    breaksw
+        NCPUS="2"
+      fi
+      ;;
 
-    case "-noclean"
+    -move )
       shift
-      set clean = 0
-    breaksw
+      move=0
+      ;;
 
-    case "-noconfig"
+    -noclean )
       shift
-      set config = 0
-    breaksw
+      clean=0
+      ;;
 
-    case "-move"
+    -noconfig )
       shift
-      set move = 1
-    breaksw
+      config=0
+      ;;
 
-    case "-*":
+    * )
       echo ""
       echo "$0 : Unknown option [ $1 ]"
       echo ""
@@ -86,13 +88,12 @@ while ( ($#argv) > 0 )
       echo ""
       echo "-noclean      Do not run clean script"
       echo ""
-      echo "-noconfig     Do not run configure compilation script"
+      echo "-nocconfig    Do not run configure compilation script"
       echo ""
-     exit 1
-    breaksw
-
-  endsw
-end
+      exit 1
+      ;;
+  esac
+done
 
 #--------------------------------------------------------------------------
 # Set a local environmental variable to define the root path to the
@@ -101,18 +102,18 @@ end
 # ESMF/NUOPC Coupling (see below).
 #--------------------------------------------------------------------------
 
- setenv ROMS_SRC_DIR         ${HOME}/ocean/repository/coupling
+ export ROMS_SRC_DIR=${HOME}/ocean/repository/coupling
 
- setenv WRF_ROOT_DIR         ${HOME}/ocean/repository/WRF
- setenv WRF_SRC_DIR          ${WRF_ROOT_DIR}
+ export WRF_ROOT_DIR=${HOME}/ocean/repository/WRF
+ export WRF_SRC_DIR=${WRF_ROOT_DIR}
 
 #--------------------------------------------------------------------------
 # Set a local environmental variable to define the path of the working
 # application directory where all this project's files are kept.
 #--------------------------------------------------------------------------
 
- setenv MY_PROJECT_DIR       ${PWD}
- setenv MY_PROJECT_DATA      `dirname ${PWD}`/Data
+ export MY_PROJECT_DIR=${PWD}
+ export MY_PROJECT_DATA=`dirname ${PWD}`/Data
 
 #--------------------------------------------------------------------------
 # COAMPS configuration CPP options.
@@ -124,13 +125,13 @@ end
 # shell's quoting syntax to enclose the definition. Both single or
 # double quotes work. For example,
 #
-#setenv MY_CPP_FLAGS         "${MY_CPP_FLAGS} -DHDF5"
+#export MY_CPP_FLAGS="${MY_CPP_FLAGS} -DHDF5"
 #
 # can be used to read input data from HDF5 file instead of flat files.
 # Notice that you can have as many definitions as you want by appending
 # values.
 
- setenv MY_CPP_FLAGS         "${MY_CPP_FLAGS} -DHDF5"
+ export MY_CPP_FLAGS="${MY_CPP_FLAGS} -DHDF5"
 
 #--------------------------------------------------------------------------
 # Set Fortran compiler and MPI library to use.
@@ -142,37 +143,37 @@ end
 # ${COAMPS_ROOT_DIR}/compilers. If this is the case, the you need to keep
 # these configurations files up-to-date.
 
- setenv USE_MPI              on          # distributed-memory parallelism
- setenv USE_MPIF90           on          # compile with mpif90 script
-#setenv which_MPI            mpich       # compile with MPICH library
-#setenv which_MPI            mpich2      # compile with MPICH2 library
- setenv which_MPI            openmpi     # compile with OpenMPI library
+ export USE_MPI=on             # distributed-memory parallelism
+ export USE_MPIF90=on          # compile with mpif90 script
+#export which_MPI=mpich        # compile with MPICH library
+#export which_MPI=mpich2       # compile with MPICH2 library
+ export which_MPI=openmpi      # compile with OpenMPI library
 
- setenv FORT                 ifort
-#setenv FORT                 gfortran
-#setenv FORT                 pgi
+ export FORT=ifort
+#export FORT=gfortran
+#export FORT=pgi
 
-#setenv USE_REAL_DOUBLE      on          # use real double precision (-r8)
-#setenv USE_DEBUG            on          # use Fortran debugging flags
- setenv USE_HDF5             on          # compile with HDF5 library
- setenv USE_NETCDF           on          # compile with NetCDF
-#setenv USE_NETCDF4          on          # compile with NetCDF-4 library
-                                         # (Must also set USE_NETCDF)
+#export USE_REAL_DOUBLE=on          # use real double precision (-r8)
+#export USE_DEBUG=on                # use Fortran debugging flags
+ export USE_HDF5=on                 # compile with HDF5 library
+ export USE_NETCDF=on               # compile with NetCDF
+ export USE_NETCDF4=on              # compile with NetCDF-4 library
+                                    # (Must also set USE_NETCDF)
 
 #--------------------------------------------------------------------------
 # Use my specified library paths. It is not needed but it is added for
 # for checking in the future.
 #--------------------------------------------------------------------------
 
- setenv USE_MY_LIBS no           # use system default library paths
-#setenv USE_MY_LIBS yes          # use my customized library paths
+ export USE_MY_LIBS=no           # use system default library paths
+#export USE_MY_LIBS=yes          # use my customized library paths
 
-#set MY_PATHS = ${ROMS_SRC_DIR}/Compilers/my_build_paths.sh
- set MY_PATHS = ${HOME}/Compilers/ROMS/my_build_paths.sh
+#MY_PATHS=${ROMS_SRC_DIR}/Compilers/my_build_paths.sh
+ MY_PATHS=${HOME}/Compilers/ROMS/my_build_paths.sh
 
-if ($USE_MY_LIBS == 'yes') then
+if [ "${USE_MY_LIBS}" == 'yes' ]; then
   source ${MY_PATHS} ${MY_PATHS}
-endif
+fi
 
 #--------------------------------------------------------------------------
 # WRF build and executable directory.
@@ -181,15 +182,15 @@ endif
 # Put the *.a, .f and .f90 files in a project specific Build directory to
 # avoid conflict with other projects.
 
-if ($?USE_DEBUG) then
-  setenv  WRF_BUILD_DIR   ${MY_PROJECT_DIR}/Build_wrfG
+if [ -n "${USE_DEBUG:+1}" ]; then
+  export  WRF_BUILD_DIR=${MY_PROJECT_DIR}/Build_wrfG
 else
-  setenv  WRF_BUILD_DIR   ${MY_PROJECT_DIR}/Build_wrf
-endif
+  export  WRF_BUILD_DIR=${MY_PROJECT_DIR}/Build_wrf
+fi
 
 # Put WRF executables in the following directory.
 
-setenv  WRF_BIN_DIR       ${WRF_BUILD_DIR}/Bin
+export  WRF_BIN_DIR=${WRF_BUILD_DIR}/Bin
 
 # Go to the users source directory to compile. The options set above will
 # pick up the application-specific code from the appropriate place.
@@ -229,7 +230,7 @@ setenv  WRF_BIN_DIR       ${WRF_BUILD_DIR}/Bin
 
 # Clean source code and remove build directory.
 
-if ( $clean == 1 ) then
+if [ "$clean" -eq "1" ]; then
   echo ""
   echo "${separator}"
   echo "Cleaning WRF source code:  ${WRF_ROOT_DIR}/clean -a"
@@ -237,25 +238,25 @@ if ( $clean == 1 ) then
   echo ""
   ${WRF_ROOT_DIR}/clean -a            # clean source code
   /bin/rm -rf ${WRF_BUILD_DIR}        # remove existing build directories
-endif
+fi
 
-if ($?USE_DEBUG) then
-#  set DEBUG_FLAG = -d
-   set DEBUG_FLAG = -D
-endif
+if [ -n "${USE_DEBUG:+1}" ]; then
+#  DEBUG_FLAG="-d"
+   DEBUG_FLAG="-D"
+fi
 
-setenv CONFIG_FLAGS ''
+export CONFIG_FLAGS=''
 
-if ( $config == 1 ) then
-  if ($?USE_DEBUG && $?USE_REAL_DOUBLE) then
-    setenv CONFIG_FLAGS   "${DEBUG_FLAG} -r8"
-  else if ($?USE_DEBUG) then
-    setenv CONFIG_FLAGS   ${DEBUG_FLAG}
-  else if ($?USE_REAL_DOUBLE) then
-    setenv CONFIG_FLAGS   -r8
-  endif
+if [ "$config" -eq "1" ]; then
+  if [ -n "${USE_DEBUG:+1}" -a -n "${USE_REAL_DOUBLE:+1}" ]; then
+    export CONFIG_FLAGS="${DEBUG_FLAG} -r8"
+  elif [ -n "${USE_DEBUG:+1}" ]; then
+    export CONFIG_FLAGS="${DEBUG_FLAG}"
+  elif [ "${USE_REAL_DOUBLE:+1}" ]; then
+    export CONFIG_FLAGS="-r8"
+  fi
 
-  set CHECK_STRING = 'WRF-ROMS ESMF-NUOPC Coupling'
+  CHECK_STRING='WRF-ROMS ESMF-NUOPC Coupling'
   echo ""
   echo "${separator}"
   echo "If applicable, replacing several WRF files for WRF ESMF/NUOPC Coupling"
@@ -264,62 +265,62 @@ if ( $config == 1 ) then
 
 # Reworking linking NetCDF4 library dependencies
 
-  if (! `grep -c "${CHECK_STRING}" ${WRF_ROOT_DIR}/configure`) then
+  if [ `grep -c "${CHECK_STRING}" ${WRF_ROOT_DIR}/configure` -eq "0" ]; then
     mv -v ${WRF_ROOT_DIR}/configure ${WRF_ROOT_DIR}/configure.orig
     cp -fv ${ROMS_SRC_DIR}/ESM/wrf_configure ${WRF_ROOT_DIR}/configure
   else
     echo "   No need to replace: ${WRF_ROOT_DIR}/configure"
-  endif
+  fi
 
-  if (! `grep -c "${CHECK_STRING}" ${WRF_ROOT_DIR}/Makefile`) then
+  if [ `grep -c "${CHECK_STRING}" ${WRF_ROOT_DIR}/Makefile` -eq "0" ]; then
     mv -v  ${WRF_ROOT_DIR}/Makefile ${WRF_ROOT_DIR}/Makefile.orig
     cp -fv ${ROMS_SRC_DIR}/ESM/wrf_Makefile  ${WRF_ROOT_DIR}/Makefile
   else
     echo "   No need to replace: ${WRF_ROOT_DIR}/Makefile"
-  endif
+  fi
 
-  if (! `grep -c "${CHECK_STRING}" ${WRF_ROOT_DIR}/arch/postamble`) then
+  if [ `grep -c "${CHECK_STRING}" ${WRF_ROOT_DIR}/arch/postamble` -eq "0" ]; then
     mv -v  ${WRF_ROOT_DIR}/arch/postamble ${WRF_ROOT_DIR}/arch/postamble.orig
     cp -fv ${ROMS_SRC_DIR}/ESM/wrf_postamble ${WRF_ROOT_DIR}/arch/postamble
   else
-    echo "   No need to replace: ${WRF_ROOT_DIR}/arch/postamble"
-  endif
+    echo "   No need to replace: ${WRF_ROOT_DIR}/arch/postamble"  else
+  fi
 
 # Changing -openmp to -qopenmp, renaming ESMF/esmf to MYESMF/myesmf, adding
 # Intel/GNU with OpenMPI
 
-  if (! `grep -c "${CHECK_STRING}" ${WRF_ROOT_DIR}/arch/configure.defaults`) then
+  if [ `grep -c "${CHECK_STRING}" ${WRF_ROOT_DIR}/arch/configure.defaults` -eq "0" ]; then
     mv -v  ${WRF_ROOT_DIR}/arch/configure.defaults ${WRF_ROOT_DIR}/arch/configure.defaults.orig
     cp -fv ${ROMS_SRC_DIR}/ESM/wrf_configure.defaults ${WRF_ROOT_DIR}/arch/configure.defaults
   else
     echo "   No need to replace: ${WRF_ROOT_DIR}/arch/configure.defaults"
-  endif
+  fi
 
 # Renaming ESMF/esmf to MYESMF/myesmf
 
-  if (! `grep -c "${CHECK_STRING}" ${WRF_ROOT_DIR}/arch/Config.pl`) then
+  if [ `grep -c "${CHECK_STRING}" ${WRF_ROOT_DIR}/arch/Config.pl` -eq "0" ]; then
     mv -v  ${WRF_ROOT_DIR}/arch/Config.pl ${WRF_ROOT_DIR}/arch/Config.pl.orig
     cp -fv ${ROMS_SRC_DIR}/ESM/wrf_Config.pl ${WRF_ROOT_DIR}/arch/Config.pl
   else
     echo "   No need to replace: ${WRF_ROOT_DIR}/arch/Config.pl"
-  endif
+  fi
 
-  if (! `grep -c "${CHECK_STRING}" ${WRF_ROOT_DIR}/external/esmf_time_f90/Makefile`) then
+  if [ `grep -c "${CHECK_STRING}" ${WRF_ROOT_DIR}/external/esmf_time_f90/Makefile` -eq "0" ]; then
     mv -v  ${WRF_ROOT_DIR}/external/esmf_time_f90/Makefile ${WRF_ROOT_DIR}/external/esmf_time_f90/Makefile.orig
     cp -fv ${ROMS_SRC_DIR}/ESM/wrf_Makefile.esmf ${WRF_ROOT_DIR}/external/esmf_time_f90/Makefile
   else
     echo "   No need to replace: ${WRF_ROOT_DIR}/external/esmf_time_f90/Makefile"
-  endif
+  fi
 
 # Correcting optional argument from defaultCalendar to defaultCalKind to
 # ESMF_Initialize call
 
-  if (! `grep -c "${CHECK_STRING}" ${WRF_ROOT_DIR}/external/esmf_time_f90/Test1.F90`) then
+  if [ `grep -c "${CHECK_STRING}" ${WRF_ROOT_DIR}/external/esmf_time_f90/Test1.F90` -eq "0" ]; then
     mv -v  ${WRF_ROOT_DIR}/external/esmf_time_f90/Test1.F90 ${WRF_ROOT_DIR}/external/esmf_time_f90/Test1.F90.orig
     cp -fv ${ROMS_SRC_DIR}/ESM/wrf_Test1.F90 ${WRF_ROOT_DIR}/external/esmf_time_f90/Test1.F90
   else
     echo "   No need to replace: ${WRF_ROOT_DIR}/external/esmf_time_f90/Test1.F90"
-  endif
+  fi
 
   echo ""
   echo "${separator}"
@@ -334,7 +335,7 @@ if ( $config == 1 ) then
 
   cat ${ROMS_SRC_DIR}/ESM/wrf_add_configure.wrf >> ${WRF_ROOT_DIR}/configure.wrf
 
-endif
+fi
 
 #--------------------------------------------------------------------------
 # WRF Compile script:
@@ -370,20 +371,20 @@ endif
 #     compile -h           help message
 #--------------------------------------------------------------------------
 
-setenv WRF_DA_CORE 0             # no Data Assimilation core
-setenv WRF_EM_CORE 1             # Eurelian Mass-coordinate core
-setenv WRF_NMM_CORE 0            # Nonhydrostatic Mesoscale Model core
+export WRF_DA_CORE=0             # no Data Assimilation core
+export WRF_EM_CORE=1             # Eurelian Mass-coordinate core
+export WRF_NMM_CORE=0            # Nonhydrostatic Mesoscale Model core
 
 # Compile (the binary will go to BINDIR set above).
 
-#set WRF_CASE = wrf
- set WRF_CASE = em_real
+#WRF_CASE=wrf
+ WRF_CASE=em_real
 
-if ( $parallel == 1 ) then
-  setenv J "-j ${NCPUS}"
+if [ "$parallel" -eq "1" ]; then
+  export J="-j ${NCPUS}"
 else
-  setenv J "-j 2"
-endif
+  export J="-j 2"
+fi
 
 echo ""
 echo "${separator}"
@@ -403,7 +404,7 @@ ${WRF_ROOT_DIR}/compile ${WRF_CASE}
 # Move WRF objects and executables.
 #--------------------------------------------------------------------------
 
-if ( $move == 1 ) then
+if [ "$move" -eq "1" ]; then
 
   echo ""
   echo "${separator}"
@@ -411,11 +412,11 @@ if ( $move == 1 ) then
   echo "${separator}"
   echo ""
 
-  if ( ! -d ${WRF_BUILD_DIR} ) then
+  if [ ! -d ${WRF_BUILD_DIR} ]; then
     /bin/mkdir -pv ${WRF_BUILD_DIR}
     /bin/mkdir -pv ${WRF_BUILD_DIR}/Bin
     echo ""
-  endif
+  fi
 
   /bin/cp -pfv configure.wrf ${WRF_BUILD_DIR}
   /bin/cp -pfv Registry/Registry ${WRF_BUILD_DIR}
@@ -442,13 +443,14 @@ if ( $move == 1 ) then
 # (*.inc, *.F90, *.f90) that are part of repository. We cannot use the
 # compact "find" function for these file extensions.
 
-  foreach DIR ( frame chem share dyn_em dyn_exp dyn_nmm phys main tools wrftladj )
-    if ( -d $DIR ) then
+  for DIR in frame chem share dyn_em dyn_exp dyn_nmm phys main tools wrftladj
+  do
+    if [ -d $DIR ]; then
       /bin/mv -fv ${DIR}/*.f90 ${WRF_BUILD_DIR}
       /bin/mv -fv ${DIR}/*.F90 ${WRF_BUILD_DIR}
       /bin/mv -fv ${DIR}/*.inc ${WRF_BUILD_DIR}
-    endif
-  end
+    fi
+  done
 
   find ${WRF_ROOT_DIR} -type f -name "*.mod" -exec /bin/mv -fv {} ${WRF_BUILD_DIR} \;
   find ${WRF_ROOT_DIR} -type f -name "*.o"   -exec /bin/mv -fv {} ${WRF_BUILD_DIR} \;
@@ -468,13 +470,13 @@ if ( $move == 1 ) then
   /bin/mv -fv tools/fseeko_test ${WRF_BIN_DIR}
   /bin/mv -fv tools/registry ${WRF_BIN_DIR}
 
-endif
+fi
 
 #--------------------------------------------------------------------------
 # Create WRF data links.
 #--------------------------------------------------------------------------
 
-if ( $WRF_CASE == "em_real" ) then
+if [ "$WRF_CASE" == "em_real" ]; then
 
   echo ""
   echo "${separator}"
@@ -528,7 +530,7 @@ if ( $WRF_CASE == "em_real" ) then
   ln -sfv ${WRF_ROOT_DIR}/run/p3_lookup_table_1.dat-v2.8.2 .
   ln -sfv ${WRF_ROOT_DIR}/run/p3_lookup_table_2.dat-v2.8.2 .
 
-  if ( $?USE_REAL_DOUBLE ) then
+  if [ "${USE_REAL_DOUBLE:+1}" ]; then
     ln -sfv ${WRF_ROOT_DIR}/run/ETAMPNEW_DATA_DBL ETAMPNEW_DATA
     ln -sfv ${WRF_ROOT_DIR}/run/ETAMPNEW_DATA.expanded_rain_DBL ETAMPNEW_DATA.expanded_rain
     ln -sfv ${WRF_ROOT_DIR}/run/RRTM_DATA_DBL RRTM_DATA
@@ -540,7 +542,7 @@ if ( $WRF_CASE == "em_real" ) then
     ln -sfv ${WRF_ROOT_DIR}/run/RRTM_DATA RRTM_DATA
     ln -sfv ${WRF_ROOT_DIR}/run/RRTMG_LW_DATA RRTMG_LW_DATA
     ln -sfv ${WRF_ROOT_DIR}/run/RRTMG_SW_DATA RRTMG_SW_DATA
-  endif
+  fi
 
   ln -sfv ${WRF_ROOT_DIR}/run/GENPARM.TBL .
   ln -sfv ${WRF_ROOT_DIR}/run/LANDUSE.TBL .
@@ -564,4 +566,4 @@ if ( $WRF_CASE == "em_real" ) then
 
   find ${WRF_ROOT_DIR}/test/em_real -type l -exec /bin/rm -fv {} \;
 
-endif
+fi

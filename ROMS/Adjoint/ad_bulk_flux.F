@@ -2,9 +2,9 @@
       MODULE ad_bulk_flux_mod
 #if defined ADJOINT && defined BULK_FLUXES_NOT_YET
 !
-!svn $Id: ad_bulk_flux.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: ad_bulk_flux.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -44,10 +44,10 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: ad_bulk_flux
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -67,10 +67,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iADM, 17, __LINE__, __FILE__)
+      CALL wclock_on (ng, iADM, 17, __LINE__, MyFile)
 # endif
       CALL ad_bulk_flux_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -119,8 +122,9 @@
      &                        FORCES(ng) % ad_svstr)
 
 # ifdef PROFILE
-      CALL wclock_off (ng, iADM, 17, __LINE__, __FILE__)
+      CALL wclock_off (ng, iADM, 17, __LINE__, MyFile)
 # endif
+!
       RETURN
       END SUBROUTINE ad_bulk_flux
 !
@@ -400,9 +404,9 @@
 
 # include "set_bounds.h"
 !
-!-------------------------------------------------------------------------
+!------------------------------------------------------------------------
 !  Initialize adjoint private variables.
-!-------------------------------------------------------------------------
+!------------------------------------------------------------------------
 !
       ad_wet_bulb=0.0_r8
       ad_Wspeed=0.0_r8
@@ -629,8 +633,8 @@
           adfac=cff*ad_sustr(i,j)
           ad_Taux(i-1,j)=ad_Taux(i-1,j)+adfac
           ad_Taux(i  ,j)=ad_Taux(i  ,j)+adfac
-# if !(defined AD_SENSITIVITY      || defined ADJUST_WSTRESS   || \
-       defined IS4DVAR_SENSITIVITY || defined OPT_OBSERVATIONS || \
+# if !(defined AD_SENSITIVITY         || defined ADJUST_WSTRESS   || \
+       defined I4DVAR_ANA_SENSITIVITY || defined OPT_OBSERVATIONS || \
        defined SO_SEMI)
           ad_sustr(i,j)=0.0_r8
 # endif
@@ -646,8 +650,8 @@
           adfac=cff*ad_svstr(i,j)
           ad_Tauy(i,j-1)=ad_Tauy(i,j-1)+adfac
           ad_Tauy(i,j  )=ad_Tauy(i,j  )+adfac
-# if !(defined AD_SENSITIVITY      || defined ADJUST_WSTRESS   || \
-       defined IS4DVAR_SENSITIVITY || defined OPT_OBSERVATIONS || \
+# if !(defined AD_SENSITIVITY         || defined ADJUST_WSTRESS   || \
+       defined I4DVAR_ANA_SENSITIVITY || defined OPT_OBSERVATIONS || \
        defined SO_SEMI)
           ad_svstr(i,j)=0.0_r8
 # endif
@@ -681,8 +685,8 @@
 # ifdef EMINUSP
 !>        tl_stflx(i,j,isalt)=cff*tl_evap(i,j)
           ad_evap(i,j)=ad_evap(i,j)+cff*ad_stflx(i,j,isalt)
-#  if !(defined AD_SENSITIVITY      || defined ADJUST_STFLUX    || \
-        defined IS4DVAR_SENSITIVITY || defined OPT_OBSERVATIONS || \
+#  if !(defined AD_SENSITIVITY         || defined ADJUST_STFLUX    || \
+        defined I4DVAR_ANA_SENSITIVITY || defined OPT_OBSERVATIONS || \
         defined SO_SEMI)
           ad_stflx(i,j,isalt)=0.0_r8
 #  endif
@@ -691,7 +695,7 @@
           adfac=ad_evap(i,j)/Hlv(i,j)
           ad_LHeat(i,j)=ad_LHeat(i,j)+adfac
           ad_Hlv(i,j)=ad_Hlv(i,j)-adfac*evap(i,j)
-#  if !(defined AD_SENSITIVITY   || defind IS4DVAR_SENSITIVITY || \
+#  if !(defined AD_SENSITIVITY   || defind I4DVAR_ANA_SENSITIVITY || \
         defined OPT_OBSERVATIONS || defined SO_SEMI)
           ad_evap(i,j)=0.0_r8
 #  endif
@@ -701,19 +705,19 @@
           ad_lrflx(i,j)=ad_lrflx(i,j)+ad_stflx(i,j,itemp)
           ad_lhflx(i,j)=ad_lhflx(i,j)+ad_stflx(i,j,itemp)
           ad_shflx(i,j)=ad_shflx(i,j)+ad_stflx(i,j,itemp)
-# if !(defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+# if !(defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
        defined OPT_OBSERVATIONS || defined SO_SEMI)
           ad_stflx(i,j,itemp)=0.0_r8
 # endif
 !>        tl_shflx(i,j)=-tl_SHeat(i,j)*Hscale
           ad_SHeat(i,j)=ad_SHeat(i,j)-ad_shflx(i,j)*Hscale
-# if !(defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+# if !(defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
        defined OPT_OBSERVATIONS || defined SO_SEMI)
           ad_shflx(i,j)=0.0_r8
 # endif
 !>        tl_lhflx(i,j)=-tl_LHeat(i,j)*Hscale
           ad_LHeat(i,j)=ad_LHeat(i,j)-ad_lhflx(i,j)*Hscale
-# if !(defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
+# if !(defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
        defined OPT_OBSERVATIONS || defined SO_SEMI)
           ad_lhflx(i,j)=0.0_r8
 # endif
@@ -850,7 +854,7 @@
           cff=(1.0007_r8+3.46E-6_r8*PairM)*6.1121_r8*                   &
      &            EXP(17.502_r8*TseaC(i)/(240.97_r8+TseaC(i)))
 !
-!  Vapor Pressure reduced for salinity (Kraus & Businger, 1994, pp 42).
+!  Vapor Pressure reduced for salinity (Kraus and Businger, 1994, pp42).
 !
           cff=cff*0.98_r8
 !
@@ -1364,7 +1368,7 @@
           cff=(1.0007_r8+3.46E-6_r8*PairM)*6.1121_r8*                   &
      &            EXP(17.502_r8*TseaC(i)/(240.97_r8+TseaC(i)))
 !
-!  Vapor Pressure reduced for salinity (Kraus & Businger, 1994, pp 42).
+!  Vapor Pressure reduced for salinity (Kraus and Businger, 1994, pp42).
 !
           cff=cff*0.98_r8
 !
@@ -2175,7 +2179,7 @@
           cff=(1.0007_r8+3.46E-6_r8*PairM)*6.1121_r8*                   &
      &            EXP(17.502_r8*TseaC(i)/(240.97_r8+TseaC(i)))
 !
-!  Vapor Pressure reduced for salinity (Kraus & Businger, 1994, pp 42).
+!  Vapor Pressure reduced for salinity (Kraus and Businger, 1994, pp42).
 !
           cff=cff*0.98_r8
 !
@@ -2521,7 +2525,7 @@
           ad_fac=0.0_r8
 !
 !  Adjoint Vapor Pressure reduced for salinity
-!  (Kraus & Businger, 1994, pp 42).
+!  (Kraus and Businger, 1994, pp 42).
 !
 !>        tl_cff=tl_cff*0.98_r8
 !>
@@ -2634,9 +2638,10 @@
           ad_TseaC(i)=0.0_r8
         END DO
       END DO
+!
       RETURN
       END SUBROUTINE ad_bulk_flux_tile
-
+!
       FUNCTION ad_bulk_psiu (tl_ZoL, ZoL, pi)
 !
 !=======================================================================
@@ -2680,9 +2685,9 @@
      &       LOG(0.5_r8*(1.0_r8+x*x))-                                  &
      &       2.0_r8*ATAN(x)+0.5_r8*pi
         tl_psik=tl_x/(0.5_r8*(1.0_r8+x))+                               &
-     &       tl_x*x/(0.5_r8*(1.0_r8+x*x))-                              &
-     &       2.0_r8*tl_x/(1.0_r8+x*x)
-!     &       2.0_r8*tl_x/SQRT(1.0_r8+x*x)
+     &          tl_x*x/(0.5_r8*(1.0_r8+x*x))-                           &
+     &          2.0_r8*tl_x/(1.0_r8+x*x)
+!!   &          2.0_r8*tl_x/SQRT(1.0_r8+x*x)
 !
 !  For very unstable conditions, use free-convection (Fairall).
 !
@@ -2694,8 +2699,8 @@
         psic=1.5_r8*LOG(r3*(1.0_r8+y+y*y))-                             &
      &       cff*ATAN(fac)+pi/cff
         tl_psic=tl_y*(1.0_r8+2.0_r8*y)*1.5_r8/(1.0_r8+y+y*y)-           &
-     &       cff*tl_fac/(1.0_r8+fac*fac)
-!     &       cff*tl_fac/SQRT(1.0_r8+fac*fac)
+     &          cff*tl_fac/(1.0_r8+fac*fac)
+!!   &          cff*tl_fac/SQRT(1.0_r8+fac*fac)
 !
 !  Match Kansas and free-convection forms with weighting Fw.
 !
@@ -2716,9 +2721,10 @@
         ad_bulk_psiu=-(tl_ZoL+0.6667_r8*tl_ZoL/fac-                     &
      &                 tl_fac*0.6667_r8*(ZoL-14.28_r8)/(fac*fac))
       END IF
+!
       RETURN
       END FUNCTION ad_bulk_psiu
-
+!
       FUNCTION ad_bulk_psit (tl_ZoL, ZoL, pi)
 !
 !=======================================================================
@@ -2776,8 +2782,8 @@
         psic=1.5_r8*LOG(r3*(1.0_r8+y+y*y))-                             &
      &       cff*ATAN(fac)+pi/cff
         tl_psic=tl_y*(1.0_r8+2.0_r8*y)*1.5_r8/(1.0_r8+y+y*y)-           &
-     &       cff*tl_fac/(1.0_r8+fac*fac)
-!     &       cff*tl_fac/SQRT(1.0_r8+fac*fac)
+     &          cff*tl_fac/(1.0_r8+fac*fac)
+!!   &          cff*tl_fac/SQRT(1.0_r8+fac*fac)
 !
 !  Match Kansas and free-convection forms with weighting Fw.
 !
@@ -2796,9 +2802,10 @@
         fac=EXP(cff)
         tl_fac=tl_cff*fac
         ad_bulk_psit=-(3.0_r8*tl_ZoL*(1.0_r8+2.0_r8*ZoL)**0.5_r8+       &
-     &            0.6667_r8*tl_ZoL/fac-                                 &
+     &               0.6667_r8*tl_ZoL/fac-                              &
      &               tl_fac*0.6667_r8*(ZoL-14.28_r8)/(fac*fac))
       END IF
+!
       RETURN
       END FUNCTION ad_bulk_psit
 #endif

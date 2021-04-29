@@ -1,13 +1,13 @@
-#!/bin/csh -f
+#!/bin/bash
 #
-# svn $Id: ws_remove.sh 995 2020-01-10 04:01:28Z arango $
+# svn $Id: ws_remove.sh 1054 2021-03-06 19:47:12Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::: David Robertson :::
 #                                                                       :::
-# ROMS/TOMS White Space Removal Script                                  :::
+# ROMS White Space Removal BASH Script                                  :::
 #                                                                       :::
 # Script to remove trailing white space (including tabs) and report all :::
 # files that contain tabs (excluding the makefile) so you can remove    :::
@@ -15,7 +15,7 @@
 #                                                                       :::
 # Usage:                                                                :::
 #                                                                       :::
-#    ws_remove.sh [options]                                          :::
+#    ws_remove.sh [options]                                             :::
 #                                                                       :::
 # Options:                                                              :::
 #                                                                       :::
@@ -31,72 +31,75 @@
 
 # Initialize variables
 
-set log = 0
-set verb = 0
-set all = -1
-set c_dirs = ""
-set special_files = ""
-set tab_list = ""
-set s_count = 0
-set t_count = 0
+log=0
+verbose=0
+all=-1
+c_dirs=""
+special_files=""
+tab_list=""
+s_count=0
+t_count=0
 
 # Set spaces and tabs log file names
 
-set spaces = "spaces_removed.log"
-set tabs = "tabs_found.log"
+spaces="spaces_removed.log"
+tabs="tabs_found.log"
 
-while ( ($#argv) > 0 )
-  switch ($1)
-
-   case "-v":
+while [ $# -gt 0 ]
+do
+  case "$1" in
+    -v )
       shift
-      set verb = 1
-    breaksw
+      verbose=1
+    ;;
 
-    case "--log":
+    --log )
       shift
-      set log = 1
+      log=1
 
       # Remove the log files
       /bin/rm -f $spaces $tabs
-    breaksw
+    ;;
 
-     case "--all":
+    --all )
       shift
 
-      if ( $all == 0 ) then
+      if [ $all -eq 0 ]; then
         echo "-f and --all cannot be used together"
         exit 1
-      endif
+      fi
 
-      set c_dirs = "Compilers Master ROMS User"
-      set special_files = "makefile Waves/SWAN/Src/Module.mk Waves/SWAN/Src/waves_coupler.F"
-      set all = 1
-    breaksw
+      c_dirs="Compilers Master ROMS User"
+      special_files="makefile Waves/SWAN/Src/Module.mk Waves/SWAN/Src/waves_coupler.F"
+      all=1
+    ;;
 
-    case "-f":
+    -f )
       shift
 
-      if ( $all == 1 ) then
+      if [ $all -eq 1 ]; then
         echo "-f and --all cannot be used together"
         exit 1
-      endif
+      fi
 
-      @ c = 0
-      set all = 0
-      while ( `echo $1 | grep -c '^-'` == 0 && $1 != "" )
-        set special_files = "${special_files}${1} "
-        @ c++
+      c=0
+      all=0
+      #if [ $1 ]; then
+      while [[ $1 != '' ]] && [ `echo $1 | grep -c '^-'` -eq 0 ]
+      do
+        special_files="${special_files}${1} "
+        let c=c+1
         shift
-      end
-      if ( $c == 0 ) then
+      done
+      #fi
+      if [ $c -eq 0 ]; then
         echo "-f must be followed by filename(s)"
         exit 1
-      endif
-    breaksw
+      fi
+    ;;
 
-   case "-*":
-      set cmd = `basename $0`
+    * )
+      cmd=`basename $0`
       echo ""
       echo "${cmd} : Unknown option [ $1 ]"
       echo ""
@@ -111,148 +114,150 @@ while ( ($#argv) > 0 )
       echo "   -v          output files that are modified to screen"
       echo ""
       exit 1
-    breaksw
-  endsw
-end
+    ;;
+  esac
+done
 
-if ( $all == -1 ) then
-  set cmd = `basename $0`
+if [ $all -eq -1 ]; then
+  cmd=`basename $0`
   echo ""
   echo "${cmd}: You must use at least the -f or --all option"
   echo ""
   exit 1
-endif
+fi
 
-if ( $all == 1 ) then
-  /bin/echo -e "\nGenerating file list ...\n"
+if [ $all -eq 1 ]; then
+  echo -e "\nGenerating file list ...\n"
 else
-  /bin/echo -e "\nThe following file(s) will be processed:\n"
-  /bin/echo -e "${special_files}\n"
-endif
+  echo -e "\nThe following file(s) will be processed:\n"
+  echo -e "${special_files}\n"
+fi
 
 # Set space and tab counters (number of files not number of occurances)
 
-@ s=0
-@ t=0
+s=0
+t=0
 
 # The "! -path '*/.svn/*'" is there to keep it from messing with
-# files in the .svn directories. There is no way to redirect only
-# stderr with csh
+# files in the .svn directories. "2>" redirects stderr so errors
+# don't get put in FILE
 
-if ( $all == 1 ) then
-  foreach FILE ( `find ${c_dirs} ! -path '*/.svn/*' -type f -print | sort` )
-    set s_count = 0
-    set t_count = 0
+if [ $all -eq 1 ]; then
+  for FILE in `find ${c_dirs} ! -path '*/.svn/*' -type f -print 2> /dev/null | sort`
+  do
+    s_count=0
+    t_count=0
     # Double check that we're not changing a file in a .svn folder
-    if ( `/bin/echo $FILE | grep -vc '.svn/'` ) then
+    if [ `echo $FILE | grep -vc '.svn/'` -gt 0 ]; then
       # Grep for trailing white space including tabs
-      set s_count = `/bin/grep -cP '[ \t]+$' $FILE`
-      if ( $s_count >= 1 ) then
+      s_count=`grep -cP "[ \t]+$" $FILE`
+      if [ $s_count -ge 1 ]; then
         # Increment spaces file counter
-        @ s++
+        let s=s+1
 
         # Add FILE to spaces log if --log set
-        if ( $log == 1 ) then
-          /bin/echo -en "${FILE} ... " >> $spaces
-        endif
+        if [ $log -eq 1 ]; then
+          echo -en "${FILE} ... " >> $spaces
+        fi
 
         # Also output to screen if -v is set
-        if ( $verb == 1 ) then
-          /bin/echo -en "$FILE ... "
+        if [ $verbose -eq 1 ]; then
+          echo -en "${FILE} ... "
           # Actual replacement command
           sed -i 's|[ \t]*$||g' $FILE
-          /bin/echo -en "${s_count} replacement(s) made\n"
+          echo -en "${s_count} replacement(s) made\n"
         else
           # Actual replacement command
           sed -i 's|[ \t]*$||g' $FILE
-        endif
+        fi
 
         # Report in spaces log that FILE has been processed if --log set
-        if ( $log == 1 ) then
-          /bin/echo -en "${s_count} replacement(s) made\n" >> $spaces
-        endif
-      endif
+        if [ $log -eq 1 ]; then
+          echo -en "$s_count replacement(s) made\n" >> $spaces
+        fi
+      fi
 
       # make list of files with tabs to edit by hand
-      set t_count = `grep -cP "\t" $FILE`
-      if ( $t_count >= 1 ) then
-        # Increment tabs file counter and add FILE to tabs log
-        @ t++
+      t_count=`grep -cP "\t" $FILE`
+      if [ $t_count -ge 1 ]; then
+        # Increment tabs file counter
+        let t=t+1
 
-        # Add FILE to tabs log if --log set; otherwise update $tab_list
-        if ( $log == 1 ) then
-          /bin/echo "${FILE} ... ${t_count} tab(s) found" >> $tabs
-        endif
-        set tab_list = "${tab_list}${FILE} ... ${t_count} tab(s) found\n"
-      endif
+        # Add FILE to tabs log if --log set and update $tab_list
+        if [ $log -eq 1 ]; then
+          echo "$FILE ... ${t_count} tab(s) found" >> $tabs
+        fi
+        tab_list="${tab_list}${FILE} ... ${t_count} tab(s) found\n"
+      fi
 
     else
-      /bin/echo -e "\nThere is a .svn in the path: $FILE skipped\n"
-    endif
-  end
-endif
+      echo -e "\nThere is a .svn in the path: $FILE skipped\n"
+    fi
+  done
+fi
 
 # Now look in the special_files
 
-foreach FILE ( $special_files )
-  set s_count = 0
-  set t_count = 0
+for FILE in $special_files
+do
+  s_count=0
+  t_count=0
   # Grep for trailing white space including tabs
-  set s_count = `grep -cP '[ \t]+$' $FILE`
-  if ( $s_count >= 1 ) then
+  s_count=`grep -cP "[ \t]+$" $FILE`
+  if [ $s_count -ge 1 ]; then
     # Increment spaces file counter
-    @ s++
+    let s=s+1
 
     # Add FILE to spaces log if --log set
-    if ( $log == 1 ) then
-      /bin/echo -en "${FILE} ... " >> $spaces
-    endif
+    if [ $log -eq 1 ]; then
+      echo -en "${FILE} ... " >> $spaces
+    fi
 
     # Also output to screen if -v is set
-    if ( $verb == 1 ) then
-      /bin/echo -en "${FILE} ... "
+    if [ $verbose -eq 1 ]; then
+      echo -en "${FILE} ... "
       # Actual replacement command
       sed -i 's|[ \t]*$||g' $FILE
-      /bin/echo -en "${s_count} replacement(s) made\n"
+      echo -en "$s_count replacement(s) made\n"
     else
       # Actual replacement command
       sed -i 's|[ \t]*$||g' $FILE
-    endif
+    fi
 
     # Report in spaces log that FILE has been processed if --log set
-    if ( $log == 1 ) then
-      /bin/echo -en "${s_count} replacement(s) made\n" >> $spaces
-    endif
-  endif
+    if [ $log -eq 1 ]; then
+      echo -en "$s_count replacement(s) made\n" >> $spaces
+    fi
+  fi
 
   # Finish tabs file list. We need to leave the tabs in the
   # makefile though.
-  set t_count = `grep -cP '\t' $FILE`
-  if ( $t_count >= 1 && $FILE != "makefile" ) then
-    # Increment tabs file counter and add FILE to tabs log
-    @ t++
+  t_count=`grep -cP "\t" $FILE`
+  if [ $t_count -ge 1 ] && [[ $FILE != "makefile" ]]; then
+    # Increment tabs file counter
+    let t=t+1
 
-    # Add FILE to tabs log if --log set and update $tab_list
-    if ( $log == 1 ) then
-      /bin/echo "${FILE} ... ${t_count} tab(s) found" >> $tabs
-    endif
-    set tab_list = "${tab_list}${FILE} ... ${t_count} tab(s) found\n"
-  endif
-end
+    # Add FILE to tabs log if --log set; otherwise update $tab_list
+    if [ $log -eq 1 ]; then
+      echo "$FILE ... ${t_count} tab(s) found" >> $tabs
+    fi
+    tab_list="${tab_list}${FILE} ... ${t_count} tab(s) found\n"
+  fi
+done
 
-/bin/echo -e "\n# of files with trailing spaces: $s"
-/bin/echo "# of files with tabs:            $t"
+echo -e "\n# of files with trailing spaces: $s"
+echo "# of files with tabs:            $t"
 
-if ( $t >= 1 ) then
-  /bin/echo -e "\n********************************************************"
-  /bin/echo -e "********************************************************"
-  /bin/echo -e "**                                                    **"
-  /bin/echo -e "** The files listed below should be checked by hand   **"
-  /bin/echo -e "** to remove the remaining tabs.                      **"
-  /bin/echo -e "**                                                    **"
-  /bin/echo -e "********************************************************"
-  /bin/echo -e "********************************************************\n"
-  /bin/echo -en "$tab_list"
-endif
+if [ $t -ge 1 ]; then
+  echo -e "\n********************************************************"
+  echo -e "********************************************************"
+  echo -e "**                                                    **"
+  echo -e "** The files listed below should be checked by hand   **"
+  echo -e "** to remove the remaining tabs.                      **"
+  echo -e "**                                                    **"
+  echo -e "********************************************************"
+  echo -e "********************************************************\n"
+  echo -en "$tab_list"
+fi
 
-/bin/echo -e "\nFinished.\n"
+echo -e "\nFinished.\n"

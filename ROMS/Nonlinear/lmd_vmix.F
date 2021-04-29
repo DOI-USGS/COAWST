@@ -2,9 +2,9 @@
       MODULE lmd_vmix_mod
 #if defined NONLINEAR && defined LMD_MIXING && defined SOLVE3D
 !
-!svn $Id: lmd_vmix.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: lmd_vmix.F 1054 2021-03-06 19:47:12Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -53,10 +53,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 18, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 18, __LINE__, MyFile)
 # endif
       IF (.not.PerfectRST(ng).or.iic(ng).ne.ntstart(ng)) THEN
         CALL lmd_vmix_tile (ng, tile,                                   &
@@ -86,8 +89,9 @@
         CALL lmd_finish (ng, tile)
       END IF
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 18, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 18, __LINE__, MyFile)
 # endif
+!
       RETURN
       END SUBROUTINE lmd_vmix
 !
@@ -219,7 +223,7 @@
         DO k=1,N(ng)-1
           DO i=MAX(1,Istr-1),MIN(Iend+1,Lm(ng))
             shear2=dU(i,k)*dU(i,k)+dV(i,k)*dV(i,k)
-            Rig(i,j,k)=bvf(i,j,k)/max(shear2,eps)
+            Rig(i,j,k)=bvf(i,j,k)/(shear2+eps)
 !!          Rig(i,j,k)=-gorho0*dR(i,k)/(shear2+eps)
           END DO
         END DO
@@ -233,7 +237,7 @@
      &                   u(i+1,j,k+1,nstp)-u(i+1,j,k,nstp)))**2+        &
      &             (cff*(v(i,j  ,k+1,nstp)-v(i,j  ,k,nstp)+             &
      &                   v(i,j+1,k+1,nstp)-v(i,j+1,k,nstp)))**2
-            Rig(i,j,k)=bvf(i,j,k)/max(shear2,eps)
+            Rig(i,j,k)=bvf(i,j,k)/(shear2+eps)
           END DO
         END DO
       END DO
@@ -640,6 +644,7 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    Akt)
 # endif
+!
       RETURN
       END SUBROUTINE lmd_finish_tile
 #endif

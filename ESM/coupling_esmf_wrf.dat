@@ -1,9 +1,9 @@
 !
 !  Export/Import Coupling Variables
 !
-!svn $Id: coupling_esmf_wrf.dat 1007 2020-02-25 22:29:41Z arango $
+!svn $Id: coupling_esmf_wrf.dat 1054 2021-03-06 19:47:12Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2018 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -263,7 +263,7 @@
 'rain'
   'precipitation_flux'                             ! standard name
   'total precipitation rate'
-  'ifld_ttlprr', 'COAMPS'                          ! source variable, COAMPS
+  'raincv', 'WRF'                                  ! source variable, WRF
   'kg m-2 s-1'                                     ! source units
   'Center'                                         ! source grid-cell
   'rain', 'ROMS'                                   ! destination variable, ROMS
@@ -280,7 +280,7 @@
 'Uwind'                                            ! short name
   'inst_zonal_wind_height_lowest'                  ! standard name
   'surface (10m) zonal wind component'
-  'u10, v10', 'WRF'                                ! source variable, COAMPS
+  'u10, v10', 'WRF'                                ! source variable, WRF
   'm s-1'                                          ! source units
   'Center'                                         ! source grid-cell
   'Uair', 'ROMS'                                   ! destination variable, ROMS
@@ -297,7 +297,7 @@
 'Vwind'                                            ! short name
   'inst_merid_wind_height_lowest'                  ! standard name
   'surface meridional wind component'
-  'u10, v10', 'WRF'                                ! source variable, COAMPS
+  'u10, v10', 'WRF'                                ! source variable, WRF
   'm s-1'                                          ! source units
   'Center'                                         ! source grid-cell
   'Vwind', 'ROMS'                                  ! destination variable, ROMS
@@ -331,7 +331,7 @@
 'swflux'
   'surface_freshwater_flux'                        ! standard name
   'surface freshwater flux (E-P)'
-  'qfx, raincv, rainncv', 'WRF'                    ! source variable, COAMPS
+  'qfx, raincv, rainncv', 'WRF'                    ! source variable, WRF
   'kg m-2 s-1'                                     ! source units
   'Center'                                         ! source grid-cell
   'swflux', 'ROMS'                                 ! destination variable, ROMS
@@ -385,7 +385,7 @@
   't(:,:,N,itemp)', 'ROMS'                         ! source variable, ROMS
   'C'                                              ! source units
   'Center'                                         ! source grid-cell
-  'tsea', 'COAMPS'                                 ! destination variable, COAMPS
+   'sst', 'WRF'                                    ! destination variable, WRF
   'K'                                              ! destination units
   'Center'                                         ! destination grid-cell
   'SST'                                            ! DATA Model file variable
@@ -402,7 +402,7 @@
   'temperature', 'HyCOM'                           ! source variable, DATA
   'C'                                              ! source units
   'Center'                                         ! source grid-cell
-  'tsea', 'COAMPS'                                 ! destination variable, COAMPS
+  'sst', 'WRF'                                     ! destination variable, WRF
   'K'                                              ! destination units
   'Center'                                         ! destination grid-cell
   'temperature'                                    ! DATA field and time variables

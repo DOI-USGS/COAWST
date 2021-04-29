@@ -1,7 +1,7 @@
 #ifdef NONLINEAR
       SUBROUTINE step2d (ng, tile)
 !
-!svn $Id: step2d_LF_AM3.h 995 2020-01-10 04:01:28Z arango $
+!svn $Id: step2d_LF_AM3.h 1054 2021-03-06 19:47:12Z arango $
 !=======================================================================
 !                                                                      !
 !  Nonlinear shallow-water primitive equations predictor (Leap-frog)   !
@@ -41,10 +41,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 9, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 9, __LINE__, MyFile)
 # endif
       CALL step2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj, N(ng),                      &
@@ -66,9 +69,6 @@
      &                  GRID(ng) % umask_diff,  GRID(ng) % vmask_diff,  &
      &                  GRID(ng) % rmask_wet_avg,                       &
 #  endif
-# endif
-# if defined SOLVE3D && defined ICESHELF
-     &                  GRID(ng) % zice,                                &
 # endif
      &                  GRID(ng) % fomn,        GRID(ng) % h,           &
      &                  GRID(ng) % om_u,        GRID(ng) % om_v,        &
@@ -155,9 +155,9 @@
      &                  OCEAN(ng) % ubar,       OCEAN(ng) % vbar,       &
      &                  OCEAN(ng) % zeta)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 9, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 9, __LINE__, MyFile)
 # endif
-
+!
       RETURN
       END SUBROUTINE step2d
 !
@@ -181,9 +181,6 @@
      &                        umask_diff, vmask_diff,                   &
      &                        rmask_wet_avg,                            &
 #  endif
-# endif
-# if defined SOLVE3D && defined ICESHELF
-     &                        zice,                                     &
 # endif
      &                        fomn, h,                                  &
      &                        om_u, om_v, on_u, on_v, omn, pm, pn,      &
@@ -290,9 +287,6 @@
       real(r8), intent(in) :: rmask(LBi:,LBj:)
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
-#  endif
-#  if defined SOLVE3D && defined ICESHELF
-      real(r8), intent(in) :: zice(LBi:,LBj:)
 #  endif
       real(r8), intent(in) :: fomn(LBi:,LBj:)
       real(r8), intent(in) :: h(LBi:,LBj:)
@@ -428,9 +422,6 @@
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
-#  endif
-#  if defined SOLVE3D && defined ICESHELF
-      real(r8), intent(in) :: zice(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: fomn(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
@@ -572,7 +563,7 @@
       real(r8) :: cff, cff1, cff2, cff3, cff4
       real(r8) :: cff5, cff6, cff7, cff8
       real(r8) :: fac, fac1, fac2, fac3
-
+!
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Dgrad
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Dnew
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Drhs
@@ -607,9 +598,6 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: rhs_zeta
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zeta_new
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zwrk
-# ifdef ICESHELF
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: hw
-# endif
 # ifdef WET_DRY
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wetdry
 # endif
@@ -640,12 +628,7 @@
 !
       DO j=JstrV-2,Jendp2
         DO i=IstrU-2,Iendp2
-#  ifdef ICESHELF
-          hw(i,j)=h(i,j)-ABS(zice(i,j))
-          Drhs(i,j)=zeta(i,j,krhs)+hw(i,j)
-#  else
           Drhs(i,j)=zeta(i,j,krhs)+h(i,j)
-#  endif
         END DO
       END DO
       DO j=JstrV-2,Jendp2
@@ -682,16 +665,12 @@
 #  endif
         END DO
       END DO
+
 # else
 
       DO j=JstrVm2-1,Jendp2
         DO i=IstrUm2-1,Iendp2
-#  ifdef ICESHELF
-          hw(i,j)=h(i,j)-ABS(zice(i,j))
-          Drhs(i,j)=zeta(i,j,krhs)+hw(i,j)
-#  else
           Drhs(i,j)=zeta(i,j,krhs)+h(i,j)
-#  endif
         END DO
       END DO
       DO j=JstrVm2-1,Jendp2
@@ -933,11 +912,8 @@
 # ifdef MASKING
             zeta_new(i,j)=zeta_new(i,j)*rmask(i,j)
 # endif
-# ifdef ICESHELF
-            Dnew(i,j)=zeta_new(i,j)+hw(i,j)
-# else
             Dnew(i,j)=zeta_new(i,j)+h(i,j)
-# endif
+!
             zwrk(i,j)=0.5_r8*(zeta(i,j,kstp)+zeta_new(i,j))
 # if defined VAR_RHO_2D && defined SOLVE3D
             gzeta(i,j)=(fac+rhoS(i,j))*zwrk(i,j)
@@ -962,11 +938,8 @@
 # ifdef MASKING
             zeta_new(i,j)=zeta_new(i,j)*rmask(i,j)
 # endif
-# ifdef ICESHELF
-            Dnew(i,j)=zeta_new(i,j)+hw(i,j)
-# else
             Dnew(i,j)=zeta_new(i,j)+h(i,j)
-# endif
+!
             zwrk(i,j)=cff5*zeta(i,j,krhs)+                              &
      &                cff4*(zeta(i,j,kstp)+zeta_new(i,j))
 # if defined VAR_RHO_2D && defined SOLVE3D
@@ -996,11 +969,8 @@
 # ifdef MASKING
             zeta_new(i,j)=zeta_new(i,j)*rmask(i,j)
 # endif
-# ifdef ICESHELF
-            Dnew(i,j)=zeta_new(i,j)+hw(i,j)
-# else
             Dnew(i,j)=zeta_new(i,j)+h(i,j)
-# endif
+!
             zwrk(i,j)=cff5*zeta_new(i,j)+cff4*zeta(i,j,krhs)
 # if defined VAR_RHO_2D && defined SOLVE3D
             gzeta(i,j)=(fac+rhoS(i,j))*zwrk(i,j)
@@ -1107,23 +1077,13 @@
       DO j=Jstr,Jend
         DO i=IstrU,Iend
           rhs_ubar(i,j)=cff1*on_u(i,j)*                                 &
-# ifdef ICESHELF
-     &                  ((hw(i-1,j)+                                    &
-     &                    hw(i ,j))*                                    &
-# else
      &                  ((h(i-1,j)+                                     &
      &                    h(i ,j))*                                     &
-# endif
      &                   (gzeta(i-1,j)-                                 &
      &                    gzeta(i  ,j))+                                &
 # if defined VAR_RHO_2D && defined SOLVE3D
-# ifdef ICESHELF
-     &                   (hw(i-1,j)-                                    &
-     &                    hw(i ,j))*                                    &
-# else
      &                   (h(i-1,j)-                                     &
      &                    h(i  ,j))*                                    &
-# endif
      &                   (gzetaSA(i-1,j)+                               &
      &                    gzetaSA(i  ,j)+                               &
      &                    cff2*(rhoA(i-1,j)-                            &
@@ -1168,23 +1128,13 @@
         IF (j.ge.JstrV) THEN
           DO i=Istr,Iend
             rhs_vbar(i,j)=cff1*om_v(i,j)*                               &
-# ifdef ICESHELF
-     &                    ((hw(i,j-1)+                                  &
-     &                      hw(i,j  ))*                                 &
-# else
      &                    ((h(i,j-1)+                                   &
      &                      h(i,j  ))*                                  &
-# endif
      &                     (gzeta(i,j-1)-                               &
      &                      gzeta(i,j  ))+                              &
 # if defined VAR_RHO_2D && defined SOLVE3D
-# ifdef ICESHELF
-     &                     (hw(i,j-1)-                                  &
-     &                      hw(i,j  ))*                                 &
-# else
      &                     (h(i,j-1)-                                   &
      &                      h(i,j  ))*                                  &
-# endif
      &                     (gzetaSA(i,j-1)+                             &
      &                      gzetaSA(i,j  )+                             &
      &                      cff2*(rhoA(i,j-1)-                          &
@@ -1233,7 +1183,7 @@
 !-----------------------------------------------------------------------
 !  Add in horizontal advection of momentum.
 !-----------------------------------------------------------------------
-!
+
 #  ifdef UV_C2ADVECTION
 !
 !  Second-order, centered differences advection.
@@ -2620,11 +2570,7 @@
 !
       DO j=JstrV-1,Jend
         DO i=IstrU-1,Iend
-# ifdef ICESHELF
-          Dstp(i,j)=zeta(i,j,kstp)+hw(i,j)
-# else
           Dstp(i,j)=zeta(i,j,kstp)+h(i,j)
-# endif
         END DO
       END DO
 !
@@ -2997,11 +2943,7 @@
 # ifdef MASKING
      &                      umask, vmask,                               &
 # endif
-# ifdef ICESHELF
-     &                      hw, om_v, on_u,                             &
-# else
      &                      h, om_v, on_u,                              &
-# endif
      &                      ubar, vbar, zeta)
       END IF
 !
@@ -3009,15 +2951,6 @@
 !  Apply momentum transport point sources (like river runoff), if any.
 !-----------------------------------------------------------------------
 !
-      DO j=Jstr-1,Jend+1
-        DO i=Istr-1,Iend+1
-#  ifdef ICESHELF
-          Dnew(i,j)=zeta(i,j,knew)+hw(i,j)
-#  else
-          Dnew(i,j)=zeta(i,j,knew)+h(i,j)
-#  endif
-        END DO
-      END DO
       IF (LuvSrc(ng)) THEN
         DO is=1,Nsrc(ng)
           i=SOURCES(ng)%Isrc(is)
@@ -3025,10 +2958,14 @@
           IF (((IstrR.le.i).and.(i.le.IendR)).and.                      &
      &        ((JstrR.le.j).and.(j.le.JendR))) THEN
             IF (INT(SOURCES(ng)%Dsrc(is)).eq.0) THEN
-              cff=1.0_r8/(on_u(i,j)*0.5_r8*(Dnew(i-1,j)+Dnew(i,j)))
+              cff=1.0_r8/(on_u(i,j)*                                    &
+     &                    0.5_r8*(zeta(i-1,j,knew)+h(i-1,j)+            &
+     &                            zeta(i  ,j,knew)+h(i  ,j)))
               ubar(i,j,knew)=SOURCES(ng)%Qbar(is)*cff
             ELSE
-              cff=1.0_r8/(om_v(i,j)*0.5_r8*(Dnew(i,j-1)+Dnew(i,j)))
+              cff=1.0_r8/(om_v(i,j)*                                    &
+     &                    0.5_r8*(zeta(i,j-1,knew)+h(i,j-1)+            &
+     &                            zeta(i,j  ,knew)+h(i,j  )))
               vbar(i,j,knew)=SOURCES(ng)%Qbar(is)*cff
             END IF
           END IF
@@ -3056,7 +2993,7 @@
      &                    ubar(:,:,knew),                               &
      &                    vbar(:,:,knew))
 # endif
-
+!
       RETURN
       END SUBROUTINE step2d_tile
 #else

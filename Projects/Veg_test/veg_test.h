@@ -29,6 +29,7 @@
 #define SOLVE3D
 #define SPLINES_VVISC
 #define SPLINES_VDIFF
+#undef  SALINITY
 
 #define WEC_VF
 #define BOTTOM_STREAMING

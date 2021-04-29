@@ -2,15 +2,16 @@
 #if defined FOUR_DVAR && defined OBSERVATIONS
       SUBROUTINE obs_cost (ng, model)
 !
-!svn $Id: obs_cost.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: obs_cost.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
 
 # ifdef WEAK_CONSTRAINT
-#  if defined TL_W4DVAR || defined W4DVAR || defined W4DVAR_SENSITIVITY
+#  if defined R4DVAR    || defined R4DVAR_ANA_SENSITIVITY || \
+      defined TL_R4DVAR
 !                                                                      !
 !  This routine computes the data penalty function directly in during  !
 !  runs of the representer model:                                      !
@@ -32,11 +33,11 @@
 !  This routine computes the observation cost function (Jo) as the     !
 !  misfit (squared difference) between the model and observations.     !
 !                                                                      !
-!  If conventional strong contraint 4DVAR:                             !
+!  If conventional strong contraint 4D-Var:                            !
 !                                                                      !
 !         Jo = 1/2 transpose(H X - Xo) * O^(-1) * (H X - Xo)           !
 !                                                                      !
-!  or if incremental strong contraint 4DVAR:                           !
+!  or if incremental strong contraint 4D-Var:                          !
 !                                                                      !
 !         Jo = 1/2 transpose(H deltaX - d) * O^(-1) * (H deltaX - d)   !
 !                                                                      !
@@ -74,7 +75,8 @@
 
       real(r8), dimension(0:NobsVar(ng)) :: my_ObsCost
 # if defined DATALESS_LOOPS && \
-    (defined TL_W4DVAR || defined W4DVAR || defined W4DVAR_SENSITIVITY)
+    (defined R4DVAR         || defined R4DVAR_ANA_SENSITIVITY || \
+     defined TL_R4DVAR)
       real(r8), dimension(0:NobsVar(ng)) :: my_ObsCost1
 # endif
 !
@@ -82,7 +84,8 @@
 !  Compute observation misfit cost function (ObsCost).
 !-----------------------------------------------------------------------
 
-# if defined TL_W4DVAR || defined W4DVAR || defined W4DVAR_SENSITIVITY
+# if defined R4DVAR    || defined R4DVAR_ANA_SENSITIVITY || \
+     defined TL_R4DVAR
 !
 !  Compute data penalty function.
 !
@@ -113,8 +116,8 @@
         END DO
       END IF
 
-# elif defined TL_W4DPSAS          || defined W4DPSAS || \
-       defined W4DPSAS_SENSITIVITY
+# elif defined RBL4DVAR || defined RBL4DVAR_ANA_SENSITIVITY || \
+       defined SP4DVAR  || defined TL_RBL4DVAR
 !
 !  Compute nonlinear model data penalty function.
 !
@@ -144,7 +147,7 @@
         DO iobs=1,Nobs(ng)
           ivar=ObsType2State(ObsType(iobs))
           IF ((ivar.gt.0).and.(ObsScale(iobs).gt.0.0_r8)) THEN
-            cff=0.5_r8*ObsScale(iobs)*ObsErr(iobs)*                       &
+            cff=0.5_r8*ObsScale(iobs)*ObsErr(iobs)*                     &
      &          (NLmodVal(iobs)+TLmodVal(iobs)-ObsVal(iobs))**2
             my_ObsCost(0)=my_ObsCost(0)+cff
             my_ObsCost(ivar)=my_ObsCost(ivar)+cff
@@ -160,7 +163,7 @@
         DO iobs=1,Nobs(ng)
           ivar=ObsType2State(ObsType(iobs))
           IF ((ivar.gt.0).and.(ObsScale(iobs).gt.0.0_r8)) THEN
-            cff=0.5_r8*ObsScale(iobs)*ObsErr(iobs)*                       &
+            cff=0.5_r8*ObsScale(iobs)*ObsErr(iobs)*                     &
      &          (NLmodVal(iobs)-ObsVal(iobs))**2
             my_ObsCost(0)=my_ObsCost(0)+cff
             my_ObsCost(ivar)=my_ObsCost(ivar)+cff
@@ -184,7 +187,8 @@
       tile_count=tile_count+1
       IF (tile_count.eq.NSUB) THEN
         tile_count=0
-# if defined TL_W4DVAR || defined W4DVAR || defined W4DVAR_SENSITIVITY
+# if defined R4DVAR    || defined R4DVAR_ANA_SENSITIVITY || \
+     defined TL_R4DVAR
         IF (model.eq.iRPM) THEN
           DO ivar=0,NobsVar(ng)
             FOURDVAR(ng)%DataPenalty(ivar)=my_ObsCost(ivar)+            &
@@ -195,8 +199,8 @@
 #  endif
           END DO
         END IF
-# elif defined TL_W4DPSAS          || defined W4DPSAS || \
-       defined W4DPSAS_SENSITIVITY
+# elif defined RBL4DVAR || defined RBL4DVAR_ANA_SENSITIVITY || \
+       defined SP4DVAR  || defined TL_RBL4DVAR
         IF (model.eq.iNLM) THEN
           DO ivar=0,NobsVar(ng)
             FOURDVAR(ng)%NLPenalty(ivar)=my_ObsCost(ivar)+              &

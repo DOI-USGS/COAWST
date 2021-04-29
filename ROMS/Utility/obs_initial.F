@@ -2,9 +2,9 @@
 #if (defined FOUR_DVAR || defined VERIFICATION) && defined OBSERVATIONS
       SUBROUTINE obs_initial (ng, model, backward)
 !
-!svn $Id: obs_initial.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: obs_initial.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -30,22 +30,25 @@
 !  Imported variable declarations.
 !
       logical, intent(in) :: backward
-
+!
       integer, intent(in) :: ng, model
 !
 !  Local variable declarations.
 !
       logical, dimension(NV) :: got_var(NV)
-
+!
       integer :: Ifirst, i, nvd, recdim, status
       integer :: Vsize(4)
-
+!
 # ifdef WEAK_CONSTRAINT
       real(r8), parameter :: IniVal = 0.0_r8
 # endif
       real(r8) :: tend
 !
-      SourceFile=__FILE__
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
+      SourceFile=MyFile
 !
 !-----------------------------------------------------------------------
 !  Inquire about the contents of observation NetCDF file:  Inquire about
@@ -57,8 +60,7 @@
 !  Open observations NetCDF file.
 !
         CALL netcdf_open (ng, model, OBS(ng)%name, 1, OBS(ng)%ncid)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
           WRITE (stdout,10) TRIM(OBS(ng)%name)
           RETURN
         END IF
@@ -67,8 +69,7 @@
 !
         CALL netcdf_inq_var (ng, model, OBS(ng)%name,                   &
      &                       OBS(ng)%ncid)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Initialize logical switches.
 !
@@ -209,10 +210,13 @@
             Ifirst=MAX(Ifirst,i)
           END IF
         END DO
+# ifndef SP4DVAR
         IF (Ifirst.eq.0) THEN
-          WRITE (stdout,30) tend, tdays(ng)
-          STOP
+          IF (Master) WRITE (stdout,30) tend, tdays(ng)
+          exit_flag=2
+          RETURN
         END IF
+# endif
       ELSE
         Ifirst=Nsurvey(ng)
         tend=(time(ng)+ntimes(ng)*dt(ng))*sec2day
@@ -222,10 +226,13 @@
             Ifirst=MIN(Ifirst,i)
           END IF
         END DO
+# ifndef SP4DVAR
         IF (Ifirst.eq.0) THEN
-          WRITE (stdout,30) tdays(ng), tend
-          STOP
+          IF (Master) WRITE (stdout,30) tdays(ng), tend
+          exit_flag=2
+          RETURN
         END IF
+# endif
       END IF
       ObsTime(ng)=FOURDVAR(ng)%SurveyTime(Ifirst)*day2sec
 !
@@ -244,7 +251,7 @@
 !
       ProcessObs(ng)=.FALSE.
 
-# ifdef IS4DVAR
+# ifdef I4DVAR
 !
 !  Initialize cost function misfit between model and observations.
 !  The IF statement is to avoid rewritting its value before it is
@@ -291,9 +298,23 @@
 !
       DO i=1,Mobs
         NLmodVal(i)=IniVal
-        TLmodVal(i)=IniVal
         ObsVetting(i)=IniVal
+#  ifndef SP4DVAR
+        TLmodVal(i)=IniVal
+#  endif
+#  if defined SP4DVAR           && defined DISJOINTED && \
+      defined CONCURRENT_KERNEL
+        TLmodVal(i)=IniVal
+#  endif
       END DO
+#  if defined SP4DVAR           && defined DISJOINTED && \
+     !defined CONCURRENT_KERNEL
+      IF (model.ne.iADM) THEN
+        DO i=1,Mobs
+          TLmodVal(i)=IniVal
+        END DO
+      END IF
+#  endif
 # endif
 !
   20  FORMAT (/,' OBS_INITIAL - unable to open input NetCDF file: ',a)
@@ -301,6 +322,7 @@
      &        /,12x,'in input NetCDF file: ',a)
   30  FORMAT (/,' OBS_INITIAL - No are observations available for',     &
      &          ' time window (days): ',/,12x,f12.4,' - ',f12.4,/)
+!
       RETURN
       END SUBROUTINE obs_initial
 #else

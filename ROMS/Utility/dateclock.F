@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE dateclock_mod
 !
-!svn $Id: dateclock.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: dateclock.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -19,7 +19,7 @@
 !                   a serial number according to the supported calendar!
 !                   options.                                           !
 !                                                                      !
-!    datestr      Convets date number to date string of the form:      !
+!    datestr      Converts date number to date string of the form:     !
 !                   YYYY-MM-DD hh:mm:ss.ss                             !
 !                                                                      !
 !    datevec      Converts a given date number to a date vector. It is !
@@ -90,7 +90,7 @@
 !     mm_i          Month of the year, 1=Jan, ... (integer; OPTIONAL)  !
 !     dd_i          Day of the month (integer; OPTIONAL)               !
 !     h_i           Hour of the day (integer; OPTIONAL)                !
-!     m_i           Minutes of the hour, 1 - 23 (integer; OPTIONAL)    !
+!     m_i           Minutes of the hour, 0 - 59 (integer; OPTIONAL)    !
 !     s_i           Seconds of the minute (integer; OPTIONAL)          !
 !                                                                      !
 !     yd_dp         Day of the year (real, fraction; OPTIONAL)         !
@@ -192,7 +192,7 @@
 !
 !  The model clock is the elapsed time since reference time of the form
 !  'time-units since 1968-05-23 00:00:00 GMT'. It is a Truncated Julian
-!  day introduced by NASA and primarilily used by Astronomers. It has
+!  day introduced by NASA and primarily used by Astronomers. It has
 !  a year length of 365.25 days. It is less used nowadays since the length
 !  of the year is 648 seconds less (365.2425) resulting in too many leap
 !  years.  So it was corrected after 15 October 1582 and it is now called
@@ -269,8 +269,8 @@
 !  Matlab "datenum" function.  The difference between 0000-00-00 and   !
 !  0000-03-01 is 61 days.                                              !
 !                                                                      !
-!  On 15 October 1582, the Gregorian was adapted with a year length of !
-!  365.2425 days. This is coded as:                                    !
+!  On 15 October 1582, the Gregorian calendar was introduced with a    !
+!  year length of 365.2425 days. This is coded as:                     !
 !                                                                      !
 !     365 + 1/4 - 1/100 + 1/400   or   365 + 0.25 - 0.01 + 0.0025      !
 !                                                                      !
@@ -288,7 +288,7 @@
 !     year         Year including the century (integer)                !
 !     month        Month of the year: 1=January, ... (integer)         !
 !     day          Day of the month (integer)                          !
-!     hour         Hour of the day, 1, ... 23 (integer, OPTIONAL)      !
+!     hour         Hour of the day, 0, ... 23 (integer, OPTIONAL)      !
 !     minutes      Minutes of the hour (integer, OPTIONAL)             !
 !     seconds      Seconds of the minute (real, OPTIONAL)              !
 !                                                                      !
@@ -351,7 +351,8 @@
 !  (November 24, 4713 BC, in the Proleptic Gregorian Calendar).
 !  Although the formal definition of Julian day numbers starts and
 !  ends at noon, here Julian day starts and ends at midnight. So it
-!  is 12 hour faster (substract 12 hour to agree with fomal definition).
+!  is 12 hours faster (substract 12 hours to agree with formal
+!  definition).
 !
 !     datenum(-4713,11,24) = 0              ! Origin: Nov 24, 4713 BC
 !     datenum( 1968,05,23) = 2440000        ! Truncated reference (NASA)
@@ -368,11 +369,11 @@
         y01=MyYear/100
         MyYear=MyYear-y01*100
         MyDay=(146097*y01/4) + (1461*MyYear/4) + ((153*MyMonth+2)/5) +  &
-              day + 1721119
+     &        day + 1721119
 !
 !-----------------------------------------------------------------------
 !  Date mumber for the 360_day Calendar: the year has a length of 360
-!  days and every month has 30 day.
+!  days and every month has 30 days.
 !-----------------------------------------------------------------------
 !
 !     datenum(0000,01,01) = 0
@@ -384,7 +385,7 @@
 !-----------------------------------------------------------------------
 !  Date number for the Gregorian and Gregorian Proleptic Calendar. It
 !  has a year length of 365.2425 days (correspoding to the Gregorian
-!  Calendar adapted in 15 October 1582).
+!  Calendar introduced in 15 October 1582).
 !-----------------------------------------------------------------------
 !
 !     datenum(0000,01,01) = 1
@@ -514,7 +515,7 @@
 !                                                                      !
 !  Converts a given date number as computed by "datenum" to a date     !
 !  vector (year, month, day, hour, minutes, seconds).  It is the       !
-!  inverse routine for "datenum" abobe.                                !
+!  inverse routine for "datenum" above.                                !
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
@@ -529,7 +530,7 @@
 !     year         Year including the century (integer; YYYY)          !
 !     month        Month of the year: 1=January, ... (integer)         !
 !     day          Day of the month (integer)                          !
-!     hour         Hour of the day, 1, ... 23 (integer)                !
+!     hour         Hour of the day, 0, ... 23 (integer)                !
 !     minutes      Minutes of the hour (integer)                       !
 !     seconds      Seconds of the minute (real)                        !
 !                                                                      !
@@ -748,7 +749,7 @@
 !***********************************************************************
 !                                                                      !
 !  This subroutine computes a code for the day of the week, given      !
-!  the date. This code is good for date after:                         !
+!  the date. This code is good for dates after:                        !
 !                                                                      !
 !                              January 1, 1752 AD                      !
 !                                                                      !
@@ -851,8 +852,8 @@
       SUBROUTINE get_date (date_str)
 !***********************************************************************
 !                                                                      !
-!   This routine gets today date string.  It uses intrinsic fortran    !
-!   function "date_and_time" and a 12 hour clock.  The string is of    !
+!   This routine gets today's date string. It uses intrinsic fortran   !
+!   function "date_and_time" and a 12 hour clock.   The string is of   !
 !   the form:                                                          !
 !                                                                      !
 !                DayOfWeak - Month day, year - hh:mm:ss ?M             !
@@ -985,7 +986,7 @@
 !                  Rclock%year       => year including century (YYYY)  !
 !                  Rclock%month      => month of the year              !
 !                  Rclock%day        => day of the month               !
-!                  Rclock%hour       => hour of the day (1,...,23)     !
+!                  Rclock%hour       => hour of the day (0,...,23)     !
 !                  Rclock%minutes    => minutes of the hour            !
 !                  Rclock%seconds    => seconds of the minute          !
 !                  Rclock%base       => reference date (YYYYMMDD.dd)   !
@@ -1060,7 +1061,7 @@
 !
 !    Time = year * 360 + (month - 1) * 30 + (day - 1)
 !
-!  And it inverse
+!  And its inverse
 !
 !    year  = INT(Time / 360)
 !    yday  = INT((Time - year * 360) + 1)
@@ -1099,7 +1100,7 @@
 !  'time-units since 1968-05-23 00:00:00 GMT'. It is a Truncated Julian
 !  day. It has a year length of 365.25 days.
 !
-!  The one here is known as the Gregorian Calendar.  Altough, it is a
+!  The one here is known as the Gregorian Calendar.  Although, it is a
 !  minor correction to the Julian Calendar after 15 Oct 1582 with a
 !  year length of 365.2425.
 !
@@ -1144,7 +1145,7 @@
       END SUBROUTINE ref_clock
 !
 !**********************************************************************
-      SUBROUTINE ROMS_clock (year, month, day, hour, minutes, seconds, &
+      SUBROUTINE ROMS_clock (year, month, day, hour, minutes, seconds,  &
      &                       ClockTime)
 !***********************************************************************
 !                                                                      !
@@ -1187,16 +1188,16 @@
       real(dp), dimension(2) :: DateNumber
 !
 !-----------------------------------------------------------------------
-!  Compute ROMS clock ellapsed time since intialization in seconds from
+!  Compute ROMS clock elapsed time since intialization in seconds from
 !  reference time.
 !-----------------------------------------------------------------------
 !
 !  Convert requested date into date number.
 !
-      CALL datenum (DateNumber, year, month, day,                      &
+      CALL datenum (DateNumber, year, month, day,                       &
      &              hour, minutes, seconds)
 !
-!  Compute ROMS clock ellapsed time in seconds.
+!  Compute ROMS clock elapsed time in seconds.
 !
       ClockTime=DateNumber(2)-Rclock%DateNumber(2)
 !
@@ -1213,7 +1214,7 @@
 !       YYYY-MM-DD hh:mm:ss.ss                                         !
 !                                                                      !
 !  The decimal seconds (ss.s) are rounded to the next digit. This      !
-!  encoding allows an easy to read when reporting time.                !
+!  encoding allows an easy to read reporting time.                     !
 !                                                                      !
 !  On Input:                                                           !
 !                                                                      !
@@ -1295,11 +1296,11 @@
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
-!     yeae          Year including century (integer)                   !
+!     year          Year including century (integer)                   !
 !     month         Month of the year, 1=Jan, ..., 12=Dec (integer)    !
 !     day           Day of the month (integer)                         !
 !     hour          Hour of the day (integer)                          !
-!     minutes       Minutes of the hour, 1 - 23 (integer)              !
+!     minutes       Minutes of the hour, 0 - 59 (integer)              !
 !     seconds       Seconds of the minute (real)                       !
 !                                                                      !
 !  Examples of valid unit attributes:                                  !

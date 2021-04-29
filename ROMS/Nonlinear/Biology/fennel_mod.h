@@ -1,7 +1,7 @@
 !
-!svn $Id: fennel_mod.h 995 2020-01-10 04:01:28Z arango $
+!svn $Id: fennel_mod.h 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -24,6 +24,8 @@
 !              [m3/(mmol_N)].                                          !
 !   K_NO3    Inverse half-saturation for Phytoplankton NO3 uptake      !
 !              [m3/(mmol_N)].                                          !
+!   K_PO4    Inverse half-saturation for Phytoplankton PO4 uptake      !
+!              [m3/(mmol_P)].                                          !
 !   K_Phy    Zooplankton half-saturation, squared constant for         !
 !              ingestion [mmol_N/m3]^2.                                !
 !   LDeRR    Large Detrital re-mineralization rate [1/day].            !
@@ -31,6 +33,7 @@
 !   PARfrac  Fraction of shortwave radiation that is available for     !
 !              photosyntesis [nondimensional].                         !
 !   PhyCN    Phytoplankton Carbon:Nitrogen ratio [mol_C/mol_N].        !
+!   R_P2N    Phytoplankton Phosphorus:Nitrogen ratio [mol_P/mol_N].    !
 !   PhyIP    Phytoplankton NH4 inhibition parameter [1/(mmol_N)].      !
 !   PhyIS    Phytoplankton, initial slope of the P-I curve             !
 !              [1/(W m-2 day)].                                        !
@@ -40,6 +43,7 @@
 !              [1/day].                                                !
 !   SDeBR    Small Detrital breakdown to NH4 rate [1/day].             !
 !   SDeRR    Large Detrital re-mineralization rate [1/day].            !
+!   RDeRR    River Detrital re-mineralization rate [1/day].            !
 !   Vp0      Eppley temperature-limited and light-limited growth       !
 !              tuning parameter [nondimensional].                      !
 !   wLDet    Vertical sinking velocities for Large Detritus            !
@@ -69,22 +73,28 @@
       integer, allocatable :: idbio(:)  ! Biological tracers
       integer :: iNO3_                  ! Nitrate concentration
       integer :: iNH4_                  ! Ammonium concentration
+#ifdef PO4
+      integer :: iPO4_                  ! Phosphate concentration
+#endif
       integer :: iChlo                  ! Chlorophyll concentration
       integer :: iPhyt                  ! Phytoplankton concentration
       integer :: iZoop                  ! Zooplankton concentration
       integer :: iLDeN                  ! Large detritus N-concentration
       integer :: iSDeN                  ! Small detritus N-concentration
+#ifdef RIVER_DON
+      integer :: iRDeN                  ! River detritus N-concentration
+#endif
 #ifdef CARBON
       integer :: iLDeC                  ! Large detritus C-concentration
       integer :: iSDeC                  ! Small detritus C-concentration
       integer :: iTIC_                  ! Total inorganic carbon
       integer :: iTAlk                  ! Total alkalinity
+# ifdef RIVER_DON
+      integer :: iRDeC                  ! River detritus C-concentration
+# endif
 #endif
 #ifdef OXYGEN
       integer :: iOxyg                  ! Dissolved oxygen concentration
-#endif
-#ifdef ODU
-      integer :: iODU_                  ! Dissolved oxygen demand units
 #endif
 
 #if defined DIAGNOSTICS && defined DIAGNOSTICS_BIO
@@ -114,6 +124,7 @@
 
       integer  :: iPPro = 1                   ! primary productivity
       integer  :: iNO3u = 2                   ! NO3 uptake
+      integer  :: iNifx = 3                   ! Nitrification flux
 #endif
 !
 !  Biological parameters.
@@ -129,12 +140,14 @@
       real(r8), allocatable :: I_thNH4(:)            ! Watts/m2
       real(r8), allocatable :: K_NH4(:)              ! m3/mmol_N
       real(r8), allocatable :: K_NO3(:)              ! m3/mmol_N
+      real(r8), allocatable :: K_PO4(:)              ! m3/mmol_P
       real(r8), allocatable :: K_Phy(:)              ! (mmol_N/m3)^2
       real(r8), allocatable :: LDeRRN(:)             ! 1/day
       real(r8), allocatable :: LDeRRC(:)             ! 1/day
       real(r8), allocatable :: NitriR(:)             ! 1/day
       real(r8), allocatable :: PARfrac(:)            ! nondimensional
       real(r8), allocatable :: PhyCN(:)              ! mol_C/mol_N
+      real(r8), allocatable :: R_P2N(:)              ! mol_P/mol_N
       real(r8), allocatable :: PhyIP(:)              ! 1/mmol_N
       real(r8), allocatable :: PhyIS(:)              ! 1/(Watts m-2 day)
       real(r8), allocatable :: PhyMin(:)             ! mmol_N/m3
@@ -143,6 +156,8 @@
       real(r8), allocatable :: SDeBR(:)              ! 1/day
       real(r8), allocatable :: SDeRRN(:)             ! 1/day
       real(r8), allocatable :: SDeRRC(:)             ! 1/day
+      real(r8), allocatable :: RDeRRN(:)             ! 1/day
+      real(r8), allocatable :: RDeRRC(:)             ! 1/day
       real(r8), allocatable :: Vp0(:)                ! nondimensional
       real(r8), allocatable :: wLDet(:)              ! m/day
       real(r8), allocatable :: wPhy(:)               ! m/day
@@ -177,15 +192,43 @@
 !
 #ifdef CARBON
 # ifdef OXYGEN
+#  if defined PO4 && defined RIVER_DON
+      NBT=15
+#  elif defined RIVER_DON && !defined PO4
+      NBT=14
+#  elif defined PO4 && !defined RIVER_DON
+      NBT=13
+#  else
       NBT=12
+#  endif
 # else
+#  if defined PO4 && defined RIVER_DON
+      NBT=14
+#  elif defined RIVER_DON && !defined PO4
+      NBT=13
+#  elif defined PO4 && !defined RIVER_DON
+      NBT=12
+#  else
       NBT=11
+#  endif
 # endif
 #else
 # ifdef OXYGEN
+#  if defined PO4 && defined RIVER_DON
+      NBT=10
+#  elif defined PO4 || defined RIVER_DON
+      NBT=9
+#  else
       NBT=8
+#  endif
 # else
+#  if defined PO4 && defined RIVER_DON
+      NBT=9
+#  elif defined PO4 || defined RIVER_DON
+      NBT=8
+#  else
       NBT=7
+#  endif
 # endif
 #endif
 #ifdef ODU
@@ -200,7 +243,7 @@
 !
 !  Set number of diagnostics terms.
 !
-      NDbio3d=2
+      NDbio3d=3
       NDbio2d=0
 # ifdef DENITRIFICATION
       NDbio2d=NDbio2d+1
@@ -298,6 +341,11 @@
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 
+      IF (.not.allocated(K_PO4)) THEN
+        allocate ( K_PO4(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+
       IF (.not.allocated(K_Phy)) THEN
         allocate ( K_Phy(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
@@ -325,6 +373,11 @@
 
       IF (.not.allocated(PhyCN)) THEN
         allocate ( PhyCN(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+
+      IF (.not.allocated(R_P2N)) THEN
+        allocate ( R_P2N(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 
@@ -365,6 +418,16 @@
 
       IF (.not.allocated(SDeRRC)) THEN
         allocate ( SDeRRC(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+
+      IF (.not.allocated(RDeRRN)) THEN
+        allocate ( RDeRRN(Ngrids) )
+        Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
+      END IF
+
+      IF (.not.allocated(RDeRRC)) THEN
+        allocate ( RDeRRC(Ngrids) )
         Dmem(1)=Dmem(1)+REAL(Ngrids,r8)
       END IF
 
@@ -466,12 +529,24 @@
       iLDeN=ic+6
       iSDeN=ic+7
       ic=ic+7
+# ifdef RIVER_DON
+      iRDeN=ic+1
+      ic=ic+1
+# endif
+# ifdef PO4
+      iPO4_=ic+1
+      ic=ic+1
+# endif
 # ifdef CARBON
       iLDeC=ic+1
       iSDeC=ic+2
       iTIC_=ic+3
       iTAlk=ic+4
       ic=ic+4
+#  ifdef RIVER_DON
+      iRDeC=ic+1
+      ic=ic+1
+#  endif
 # endif
 # ifdef OXYGEN
       iOxyg=ic+1
