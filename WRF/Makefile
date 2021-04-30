@@ -156,7 +156,7 @@ all_wrfvar :
 	fi
 	if [ $(BUFR) ] ; then \
 	  (cd var/external/bufr;  \
-	  $(MAKE) $(J) FC="$(SFC)" CC="$(SCC)" CPP="$(CPP)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" FFLAGS="$(FCOPTIM) $(FORMAT_FIXED)" RANLIB="$(RANLIB)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ) ; \
+	  $(MAKE) $(J) FC="$(SFC)" CC="$(SCC)" CPP="$(CPP)" CPPFLAGS="$(CPPFLAGS)" CFLAGS="$(CFLAGS)" FFLAGS="$(FCOPTIM) $(FORMAT_FIXED) $(FCCOMPAT)" RANLIB="$(RANLIB)" AR="$(AR)" ARFLAGS="$(ARFLAGS)" ) ; \
 	fi
 ### Use 'make' to avoid '-i -r' above:
 	if [ $(WAVELET) ] ; then \
@@ -646,6 +646,10 @@ em_real : wrf
                 ln -sf ../../run/RRTM_DATA_DBL RRTM_DATA ;          \
                 ln -sf ../../run/RRTMG_LW_DATA_DBL RRTMG_LW_DATA ;  \
                 ln -sf ../../run/RRTMG_SW_DATA_DBL RRTMG_SW_DATA ;  \
+             fi )
+	( cd test/em_real ; if test -d ../../run/SBM_input_33 ; then				\
+             ln -sf ../../run/SBM_input_33 . ;						\
+             ln -sf ../../run/scattering_tables_2layer_high_quad_1dT_1%fw_110 . ;	\
              fi )
 	( cd test/em_real ; /bin/rm -f GENPARM.TBL ; ln -s ../../run/GENPARM.TBL . )
 	( cd test/em_real ; /bin/rm -f LANDUSE.TBL ; ln -s ../../run/LANDUSE.TBL . )
