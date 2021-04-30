@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE strings_mod
 !
-!svn $Id: strings.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: strings.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -11,6 +11,8 @@
 !  This module contains several string manipulation functions:         !
 !                                                                      !
 !    FoundError    check execution flag against no-error code          !
+!    GlobalError   global check execution flag against no-error code   !
+!    TaskError     task check execution flag against no-error code     !
 !    find_string   scans a character array for a specified string      !
 !    join_string   concatenate character array into a single string    !
 !    lowercase     converts input string characters to lowercase       !
@@ -33,6 +35,8 @@
       PRIVATE
 !
       PUBLIC :: FoundError
+      PUBLIC :: GlobalError
+      PUBLIC :: TaskError
       PUBLIC :: find_string
       PUBLIC :: join_string
       PUBLIC :: lowercase
@@ -63,7 +67,7 @@
 !
       USE mod_iounits,  ONLY : stdout
       USE mod_parallel, ONLY : Master
-
+!
 !  Imported variable declarations.
 !
       integer, intent(in) :: flag, NoErr, line
@@ -73,7 +77,6 @@
 !  Local variable declarations.
 !
       logical :: foundit
-      character (len=5) :: lstr
 !
 !-----------------------------------------------------------------------
 !  Scan array for requested string.
@@ -83,16 +86,211 @@
       IF (flag.ne.NoErr) THEN
         foundit=.TRUE.
         IF (Master) THEN
-          WRITE (lstr,'(i5)') line
-          WRITE (stdout,10) flag, ADJUSTL(TRIM(lstr)), TRIM(routine)
-  10      FORMAT (' Found Error: ', i2.2, t20, 'Line: ', a,             &
+          WRITE (stdout,10) flag, line, TRIM(routine)
+  10      FORMAT (' Found Error: ', i2.2, t20, 'Line: ', i0,            &
      &            t35, 'Source: ', a)
         END IF
+        CALL my_flush (stdout)
       END IF
 
       RETURN
       END FUNCTION FoundError
+!
+      FUNCTION GlobalError (ng, model, flag, NoErr, line, routine)      &
+     &                     RESULT (foundit)
+!
+!=======================================================================
+!                                                                      !
+!  This logical function checks ROMS execution flag against no-error   !
+!  code and issue a message if they are not equal. It can be used in   !
+!  split, disjointed, distributed-memory communicators.  All process   !
+!  in application needs to call this function and the master process   !
+!  knows to flag value to broadcast.                                   !
+!                                                                      !
+!  If not distributed-memory, this function has the same capability    !
+!  as FoundError.                                                      !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng           Nested grid number (integer)                        !
+!     model        Calling model identifier (integer)                  !
+!     flag         ROMS execution flag (integer)                       !
+!     NoErr        No Error code (integer)                             !
+!     line         Calling model routine line (integer)                !
+!     routine      Calling model routine (string)                      !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     flag         Updated flag value to all processes (integer)       !
+!     foundit      The value of the result is TRUE/FALSE if the        !
+!                    execution flag is in error.                       !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_parallel
+      USE mod_iounits,    ONLY : stdout
 
+#if defined DISTRIBUTE && defined DISJOINTED
+      USE distribute_mod, ONLY : mp_barrier, mp_bcasti
+#endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, NoErr, line
+      integer, intent(inout) :: flag
+
+      character (len=*), intent(in) :: routine
+!
+!  Local variable declarations.
+!
+      logical :: foundit
+      logical :: MasterProcess
+#ifdef DISTRIBUTE
+      integer :: MyCOMM
+#endif
+!
+!-----------------------------------------------------------------------
+!  Set master process.
+#ifdef DISTRIBUTE
+!  Set distribute-memory communicator and broadcast flag value to all
+!  processes.
+#endif
+!-----------------------------------------------------------------------
+!
+#ifdef DISTRIBUTE
+# ifdef DISJOINTED
+      MyCOMM=FULL_COMM_WORLD
+      MasterProcess=FullRank.eq.0
+# else
+      MyCOMM=OCN_COMM_WORLD
+      MasterProcess=MyRank.eq.0
+# endif
+#else
+      MasterProcess=Master
+#endif
+#if defined DISTRIBUTE && defined DISJOINTED
+!
+      CALL mp_bcasti (ng, model, flag, MyCOMM)
+#endif
+!
+!-----------------------------------------------------------------------
+!  Scan array for requested string.
+!-----------------------------------------------------------------------
+!
+      foundit=.FALSE.
+      IF (flag.ne.NoErr) THEN
+        foundit=.TRUE.
+        IF (MasterProcess) THEN
+          WRITE (stdout,10) flag, line, TRIM(routine)
+  10      FORMAT (' Found Error: ', i2.2, t20, 'Line: ', i0,            &
+     &            t35, 'Source: ', a)
+        END IF
+        CALL my_flush (stdout)
+      END IF
+
+      RETURN
+      END FUNCTION GlobalError
+!
+      FUNCTION TaskError (ng, model, flag, NoErr, line, routine)        &
+     &                    RESULT (foundit)
+!
+!=======================================================================
+!                                                                      !
+!  This logical function checks ROMS execution flag against no-error   !
+!  code and issue a message if they are not equal. It can be used in   !
+!  split, disjointed-tasks, distributed-memory communicators.  All     !
+!  processes in the task section needs to call this function and its   !
+!  master process knows to flag value to broadcast.                    !
+!                                                                      !
+!  If not distributed-memory, this function has the same capability    !
+!  as FoundError and GlobalError.                                      !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     ng           Nested grid number (integer)                        !
+!     model        Calling model identifier (integer)                  !
+!     flag         ROMS execution flag (integer)                       !
+!     NoErr        No Error code (integer)                             !
+!     line         Calling model routine line (integer)                !
+!     routine      Calling model routine (string)                      !
+!                                                                      !
+!  On Output:                                                          !
+!                                                                      !
+!     flag         Updated flag value to all processes (integer)       !
+!     foundit      The value of the result is TRUE/FALSE if the        !
+!                    execution flag is in error.                       !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_parallel
+      USE mod_iounits,    ONLY : stdout
+
+#if defined DISTRIBUTE && defined DISJOINTED
+      USE distribute_mod, ONLY : mp_barrier, mp_bcasti
+#endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, model, NoErr, line
+      integer, intent(inout) :: flag
+
+      character (len=*), intent(in) :: routine
+!
+!  Local variable declarations.
+!
+      logical :: foundit
+      logical :: MasterProcess
+#ifdef DISTRIBUTE
+      integer :: MyCOMM
+#endif
+!
+!-----------------------------------------------------------------------
+!  Set master process.
+#ifdef DISTRIBUTE
+!  Set distribute-memory communicator and broadcast flag value to all
+!  processes.
+#endif
+!-----------------------------------------------------------------------
+!
+#ifdef DISTRIBUTE
+# ifdef DISJOINTED
+#  ifdef CONCURRENT_KERNEL
+      MyCOMM=TASK_COMM_WORLD
+      MasterProcess=TaskRank.eq.0
+#  else
+      MyCOMM=FULL_COMM_WORLD
+      MasterProcess=FullRank.eq.0
+#  endif
+# else
+      MyCOMM=OCN_COMM_WORLD
+      MasterProcess=MyRank.eq.0
+# endif
+#else
+      MasterProcess=Master
+#endif
+#if defined DISTRIBUTE && defined DISJOINTED
+!
+      CALL mp_bcasti (ng, model, flag, MyCOMM)
+#endif
+!
+!-----------------------------------------------------------------------
+!  Scan array for requested string.
+!-----------------------------------------------------------------------
+!
+      foundit=.FALSE.
+      IF (flag.ne.NoErr) THEN
+        foundit=.TRUE.
+        IF (MasterProcess) THEN
+          WRITE (stdout,10) flag, line, TRIM(routine)
+  10      FORMAT (' Found Error: ', i2.2, t20, 'Line: ', i0,            &
+     &            t35, 'Source: ', a)
+        END IF
+        CALL my_flush (stdout)
+      END IF
+
+      RETURN
+      END FUNCTION TaskError
+!
       FUNCTION find_string (A, Asize, string, Aindex) RESULT (foundit)
 !
 !=======================================================================

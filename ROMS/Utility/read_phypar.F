@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE read_PhyPar (model, inp, out, Lwrite)
 !
-!svn $Id: read_phypar.F 1013 2020-03-11 01:46:00Z arango $
+!svn $Id: read_phypar.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -78,19 +78,20 @@
       logical, allocatable :: Lbottom(:,:)
 #endif
       logical, allocatable :: Ltracer(:,:)
-#if defined AD_SENSITIVITY    || defined IS4DVAR_SENSITIVITY || \
-    defined FORCING_SV        || defined OPT_OBSERVATIONS    || \
-    defined SENSITIVITY_4DVAR || defined SO_SEMI             || \
+#if defined AD_SENSITIVITY    || defined I4DVAR_ANA_SENSITIVITY || \
+    defined FORCING_SV        || defined OPT_OBSERVATIONS       || \
+    defined SENSITIVITY_4DVAR || defined SO_SEMI                || \
     defined STOCHASTIC_OPT
 # ifndef OBS_SPACE
       logical, allocatable :: Ladsen(:)
 # endif
 #endif
-
+!
       integer :: Npts, Nval, i, itrc, ivar, k, lstr, ng, nl, status
       integer :: ifield, ifile, igrid, itracer, nline, max_Ffiles
       integer :: ibcfile, iclmfile
       integer :: Cdim, Clen, Rdim
+      integer :: nPETs, maxPETs
       integer :: OutFiles
       integer :: Ivalue(1)
 
@@ -98,7 +99,7 @@
       integer, allocatable :: Ncount(:,:)
       integer, allocatable :: NBCcount(:,:)
       integer, allocatable :: NCLMcount(:,:)
-
+!
       real(dp), allocatable :: Dtracer(:,:)
       real(r8), allocatable :: Rtracer(:,:)
       real(r8), allocatable :: tracer(:,:)
@@ -109,12 +110,15 @@
       real(r8) :: Rvalue(1)
 
       real(dp), dimension(nRval) :: Rval
-
+!
       character (len=1  ), parameter :: blank = ' '
       character (len=40 ) :: KeyWord, text
       character (len=50 ) :: label
       character (len=256) :: fname, line
       character (len=256), dimension(nCval) :: Cval
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 !
 !-----------------------------------------------------------------------
 !  Initialize.
@@ -134,6 +138,7 @@
       Cdim=SIZE(Cval,1)
       Clen=LEN(Cval(1))
       Rdim=SIZE(Rval,1)
+      Nval=0
 !
 !-----------------------------------------------------------------------
 !  Read in physical model parameters. Then, load input data into module.
@@ -402,9 +407,9 @@
               CALL initialize_scalars  ! number of nested grids and
               CALL allocate_ncparam    ! domain parameters are known
               CALL initialize_ncparam
-#if defined AD_SENSITIVITY    || defined IS4DVAR_SENSITIVITY || \
-    defined FORCING_SV        || defined OPT_OBSERVATIONS    || \
-    defined SENSITIVITY_4DVAR || defined SO_SEMI             || \
+#if defined AD_SENSITIVITY    || defined I4DVAR_ANA_SENSITIVITY || \
+    defined FORCING_SV        || defined OPT_OBSERVATIONS       || \
+    defined SENSITIVITY_4DVAR || defined SO_SEMI                || \
     defined STOCHASTIC_OPT
 # ifndef OBS_SPACE
               IF (.not.allocated(Ladsen)) THEN
@@ -446,8 +451,8 @@
      &                       itracer, 1, NAT+NPT,                       &
      &                       Vname(1,idTvar(itrc)),                     &
      &                       Hadvection)
-              IF (FoundError(exit_flag, NoError, __LINE__,              &
-     &                       __FILE__)) RETURN
+              IF (FoundError(exit_flag, NoError,                        &
+     &                       __LINE__, MyFile)) RETURN
             CASE ('Vadvection')
               IF (itracer.lt.(NAT+NPT)) THEN
                 itracer=itracer+1
@@ -459,8 +464,8 @@
      &                       itracer, 1, NAT+NPT,                       &
      &                       Vname(1,idTvar(itrc)),                     &
      &                       Vadvection)
-              IF (FoundError(exit_flag, NoError, __LINE__,              &
-     &                       __FILE__)) RETURN
+              IF (FoundError(exit_flag, NoError,                        &
+     &                       __LINE__, MyFile)) RETURN
 # if defined ADJOINT || defined TANGENT || defined TL_IOMS
             CASE ('ad_Hadvection')
               IF (itracer.lt.(NAT+NPT)) THEN
@@ -473,8 +478,8 @@
      &                       itracer, 1, NAT+NPT,                       &
      &                       Vname(1,idTvar(itrc)),                     &
      &                       ad_Hadvection)
-              IF (FoundError(exit_flag, NoError, __LINE__,              &
-     &                       __FILE__)) RETURN
+              IF (FoundError(exit_flag, NoError,                        &
+     &                       __LINE__, MyFile)) RETURN
             CASE ('ad_Vadvection')
               IF (itracer.lt.(NAT+NPT)) THEN
                 itracer=itracer+1
@@ -486,8 +491,8 @@
      &                       itracer, 1, NAT+NPT,                       &
      &                       Vname(1,idTvar(itracer)),                  &
      &                       ad_Vadvection)
-              IF (FoundError(exit_flag, NoError, __LINE__,              &
-     &                       __FILE__)) RETURN
+              IF (FoundError(exit_flag, NoError,                        &
+     &                       __LINE__, MyFile)) RETURN
 # endif
 #endif
             CASE ('LBC(isFsur)')
@@ -540,41 +545,6 @@
             CASE ('LBC(isMtke)')
               Npts=load_lbc(Nval, Cval, line, nline, isMtke, igrid,     &
      &                      0, 0, Vname(1,idMtke), LBC)
-# endif
-# ifdef ICE_MODEL
-            CASE ('LBC(isUice)')
-              Npts=load_lbc(Nval, Cval, line, nline, isUice, igrid,     &
-     &                      0, 0, Vname(1,idUice), LBC)
-            CASE ('LBC(isVice)')
-              Npts=load_lbc(Nval, Cval, line, nline, isVice, igrid,     &
-     &                      0, 0, Vname(1,idVice), LBC)
-            CASE ('LBC(isAice)')
-              Npts=load_lbc(Nval, Cval, line, nline, isAice, igrid,     &
-     &                      0, 0, Vname(1,idAice), LBC)
-            CASE ('LBC(isHice)')
-              Npts=load_lbc(Nval, Cval, line, nline, isHice, igrid,     &
-     &                      0, 0, Vname(1,idHice), LBC)
-            CASE ('LBC(isTice)')
-              Npts=load_lbc(Nval, Cval, line, nline, isTice, igrid,     &
-     &                      0, 0, Vname(1,idTice), LBC)
-            CASE ('LBC(isHsno)')
-              Npts=load_lbc(Nval, Cval, line, nline, isHsno, igrid,     &
-     &                      0, 0, Vname(1,idHsno), LBC)
-            CASE ('LBC(isApond)')
-              Npts=load_lbc(Nval, Cval, line, nline, isApond, igrid,    &
-     &                      0, 0, Vname(1,idApond), LBC)
-            CASE ('LBC(isHpond)')
-              Npts=load_lbc(Nval, Cval, line, nline, isHpond, igrid,    &
-     &                      0, 0, Vname(1,idHpond), LBC)
-            CASE ('LBC(isSig11)')
-              Npts=load_lbc(Nval, Cval, line, nline, isSig11, igrid,    &
-     &                      0, 0, Vname(1,idSig11), LBC)
-            CASE ('LBC(isSig12)')
-              Npts=load_lbc(Nval, Cval, line, nline, isSig12, igrid,    &
-     &                      0, 0, Vname(1,idSig12), LBC)
-            CASE ('LBC(isSig22)')
-              Npts=load_lbc(Nval, Cval, line, nline, isSig22, igrid,    &
-     &                      0, 0, Vname(1,idSig22), LBC)
 # endif
             CASE ('LBC(isTvar)')
               IF (itracer.lt.(NAT+NPT)) THEN
@@ -652,7 +622,7 @@
 #endif
             CASE ('NTIMES')
               Npts=load_i(Nval, Rval, Ngrids, ntimes)
-#ifdef W4DPSAS_FCT_SENSITIVITY
+#ifdef RBL4DVAR_FCT_SENSITIVITY
             CASE ('NTIMES_ANA')
               Npts=load_i(Nval, Rval, Ngrids, ntimes_ana)
             CASE ('NTIMES_FCT')
@@ -687,6 +657,9 @@
             CASE ('Ninner')
               Npts=load_i(Nval, Rval, 1, Ivalue)
               Ninner=Ivalue(1)
+            CASE ('Nsaddle')
+              Npts=load_i(Nval, Rval, 1, Ivalue)
+              Nsaddle=Ivalue(1)
             CASE ('Nintervals')
               Npts=load_i(Nval, Rval, 1, Ivalue)
               Nintervals=Ivalue(1)
@@ -747,12 +720,21 @@
               Npts=load_i(Nval, Rval, Ngrids, nHIS)
             CASE ('NDEFHIS')
               Npts=load_i(Nval, Rval, Ngrids, ndefHIS)
-            CASE ('NHIS2')
-              Npts=load_i(Nval, Rval, Ngrids, nHIS2)
-            CASE ('NDEFHIS2')
-              Npts=load_i(Nval, Rval, Ngrids, ndefHIS2)
             CASE ('NQCK')
               Npts=load_i(Nval, Rval, Ngrids, nQCK)
+#if defined FORWARD_FLUXES && \
+   (defined BULK_FLUXES    || defined FRC_COUPLING)
+              DO ng=1,Ngrids
+                IF (nQCK(ng).le.0) THEN
+                  WRITE (text,'(a,i2.2,a)') 'nQCK(', ng, ') = '
+                  IF (Master) WRITE (out,260) TRIM(text), nQCK(ng),     &
+     &               'must be greater than zero because the QCK '//     &
+     &               'file is used as surface forcing basic state.'
+                  exit_flag=5
+                  RETURN
+                END IF
+              END DO
+#endif
             CASE ('NDEFQCK')
               Npts=load_i(Nval, Rval, Ngrids, ndefQCK)
             CASE ('NTSAVG')
@@ -766,12 +748,6 @@
               Npts=load_i(Nval, Rval, Ngrids, nAVG)
             CASE ('NDEFAVG')
               Npts=load_i(Nval, Rval, Ngrids, ndefAVG)
-            CASE ('NTSAVG2')
-              Npts=load_i(Nval, Rval, Ngrids, ntsAVG2)
-            CASE ('NAVG2')
-              Npts=load_i(Nval, Rval, Ngrids, nAVG2)
-            CASE ('NDEFAVG2')
-              Npts=load_i(Nval, Rval, Ngrids, ndefAVG2)
             CASE ('NTSDIA')
               Npts=load_i(Nval, Rval, Ngrids, ntsDIA)
             CASE ('NDIA')
@@ -793,18 +769,32 @@
             CASE ('NOBC')
               Npts=load_i(Nval, Rval, Ngrids, nOBC)
 #ifdef ADJUST_BOUNDARY
+# ifdef RBL4DVAR_FCT_SENSITIVITY
+              DO ng=1,Ngrids
+                Nbrec(ng)=1+ntimes_ana(ng)/nOBC(ng)
+              END DO
+              allocate ( OBC_time(MAXVAL(Nbrec),Ngrids) )
+# else
               DO ng=1,Ngrids
                 Nbrec(ng)=1+ntimes(ng)/nOBC(ng)
               END DO
               allocate ( OBC_time(MAXVAL(Nbrec),Ngrids) )
+# endif
 #endif
             CASE ('NSFF')
               Npts=load_i(Nval, Rval, Ngrids, nSFF)
 #if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
+# ifdef RBL4DVAR_FCT_SENSITIVITY
+              DO ng=1,Ngrids
+                Nfrec(ng)=1+ntimes_ana(ng)/nSFF(ng)
+              END DO
+              allocate ( SF_time(MAXVAL(Nfrec),Ngrids) )
+# else
               DO ng=1,Ngrids
                 Nfrec(ng)=1+ntimes(ng)/nSFF(ng)
               END DO
               allocate ( SF_time(MAXVAL(Nfrec),Ngrids) )
+# endif
 #endif
             CASE ('LmultiGST')
               Npts=load_l(Nval, Cval, 1, Lvalue)
@@ -924,7 +914,7 @@
 # endif
               END DO
             CASE ('AKT_LIMIT')
-              Npts=load_r(Nval, Rval, NAT, Ngrids, Rtracer)
+              Npts=load_r(Nval, Rval, NAT+NPT, Ngrids, Rtracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   Akt_limit(itrc,ng)=Rtracer(itrc,ng)
@@ -1174,22 +1164,8 @@
 # endif
               END DO
 #endif
-#ifdef ICE_MODEL
-            CASE ('LmiCLM')
-              Npts=load_l(Nval, Cval, Ngrids, LmiCLM)
-            CASE ('LaiCLM')
-              Npts=load_l(Nval, Cval, Ngrids, LaiCLM)
-            CASE ('LsiCLM')
-              Npts=load_l(Nval, Cval, Ngrids, LsiCLM)
-            CASE ('LnudgeMICLM')
-              Npts=load_l(Nval, Cval, Ngrids, LnudgeMICLM)
-            CASE ('LnudgeAICLM')
-              Npts=load_l(Nval, Cval, Ngrids, LnudgeAICLM)
-            CASE ('LnudgeSICLM')
-              Npts=load_l(Nval, Cval, Ngrids, LnudgeSICLM)
-#endif
-#if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
-    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+#if defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR      || \
     defined SO_SEMI
             CASE ('DstrS')
               Npts=load_r(Nval, Rval, Ngrids, DstrS)
@@ -1533,7 +1509,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   i=idTvar(itrc)
@@ -2098,7 +2074,7 @@
               Hout(idRunoff,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
-  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
+  || defined ATM2OCN_FLUXES
             CASE ('Hout(idPair)')
               IF (idPair.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idPair'
@@ -2159,7 +2135,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   i=idTsur(itrc)
@@ -2246,6 +2222,7 @@
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Hout(idTdif,1:Ngrids)=Lswitch(1:Ngrids)
+#ifdef SALINITY
             CASE ('Hout(idSdif)')
               IF (idSdif.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idSdif'
@@ -2254,6 +2231,7 @@
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Hout(idSdif,1:Ngrids)=Lswitch(1:Ngrids)
+#endif
             CASE ('Hout(idHsbl)')
               IF (idHsbl.eq.0) THEN
                 IF (Master) WRITE (out,280) 'idHsbl'
@@ -2296,341 +2274,6 @@
                 END DO
               END DO
 #endif
-#if defined HISTORY2
-            CASE ('Hout2(idUvel)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idUvel,:))
-            CASE ('Hout2(idVvel)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idVvel,:))
-            CASE ('Hout2(idWvel)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idWvel,:))
-            CASE ('Hout2(idOvel)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idOvel,:))
-            CASE ('Hout2(idUbar)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idUbar,:))
-            CASE ('Hout2(idVbar)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idVbar,:))
-            CASE ('Hout2(idFsur)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idFsur,:))
-            CASE ('Hout2(idu2dE)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idu2dE,:))
-            CASE ('Hout2(idv2dN)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idv2dN,:))
-            CASE ('Hout2(idu3dE)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idu3dE,:))
-            CASE ('Hout2(idv3dN)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idv3dN,:))
-            CASE ('Hout2(idTvar)')
-              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
-              DO ng=1,Ngrids
-                DO itrc=1,NAT
-                  i=idTvar(itrc)
-                  Hout2(i,ng)=Ltracer(itrc,ng)
-                END DO
-              END DO
-            CASE ('Hout2(idUsms)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idUsms,:))
-            CASE ('Hout2(idVsms)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idVsms,:))
-            CASE ('Hout2(idUbms)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idUbms,:))
-            CASE ('Hout2(idVbms)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idVbms,:))
-            CASE ('Hout2(idW2xx)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idW2xx,:))
-            CASE ('Hout2(idW2xy)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idW2xy,:))
-            CASE ('Hout2(idW2yy)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idW2yy,:))
-            CASE ('Hout2(idU2rs)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idU2rs,:))
-            CASE ('Hout2(idV2rs)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idV2rs,:))
-            CASE ('Hout2(idU2Sd)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idU2Sd,:))
-            CASE ('Hout2(idV2Sd)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idV2Sd,:))
-            CASE ('Hout2(idW3xx)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idW3xx,:))
-            CASE ('Hout2(idW3xy)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idW3xy,:))
-            CASE ('Hout2(idW3yy)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idW3yy,:))
-            CASE ('Hout2(idW3zx)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idW3zx,:))
-            CASE ('Hout2(idW3zy)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idW3zy,:))
-            CASE ('Hout2(idU3rs)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idU3rs,:))
-            CASE ('Hout2(idV3rs)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idV3rs,:))
-            CASE ('Hout2(idU3Sd)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idU3Sd,:))
-            CASE ('Hout2(idV3Sd)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idV3Sd,:))
-# ifdef SOLVE3D
-#  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
-            CASE ('Hout2(idPair)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idPair,:))
-#  endif
-#  if defined BULK_FLUXES || defined ECOSIM
-            CASE ('Hout2(idUair)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idUair,:))
-            CASE ('Hout2(idVair)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idVair,:))
-            CASE ('Hout2(idUairE)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idUairE,:))
-            CASE ('Hout2(idVairN)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idVairN,:))
-#  endif
-# endif
-            CASE ('Hout2(idTsur)')
-              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
-              DO ng=1,Ngrids
-                DO itrc=1,NAT
-                  i=idTsur(itrc)
-                  Hout2(i,ng)=Ltracer(itrc,ng)
-                END DO
-              END DO
-            CASE ('Hout2(idLhea)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idLhea,:))
-            CASE ('Hout2(idShea)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idShea,:))
-            CASE ('Hout2(idLrad)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idLrad,:))
-            CASE ('Hout2(idSrad)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idSrad,:))
-            CASE ('Hout2(idevap)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idevap,:))
-            CASE ('Hout2(idrain)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idrain,:))
-            CASE ('Hout2(idDano)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idDano,:))
-            CASE ('Hout2(idVvis)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idVvis,:))
-            CASE ('Hout2(idTdif)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idTdif,:))
-            CASE ('Hout2(idSdif)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idSdif,:))
-            CASE ('Hout2(idHsbl)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idHsbl,:))
-            CASE ('Hout2(idHbbl)')
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idHbbl,:))
-            CASE ('Hout2(id2dRV)')
-              IF (id2dRV.eq.0) THEN
-                IF (Master) WRITE (out,280) 'id2dRV'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(id2dRV,:))
-            CASE ('Hout2(id3dRV)')
-              IF (id3dRV.eq.0) THEN
-                IF (Master) WRITE (out,280) 'id3dRV'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(id3dRV,:))
-            CASE ('Hout2(id2dPV)')
-              IF (id2dPV.eq.0) THEN
-                IF (Master) WRITE (out,280) 'id2dPV'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(id2dPV,:))
-            CASE ('Hout2(id3dPV)')
-              IF (id3dPV.eq.0) THEN
-                IF (Master) WRITE (out,280) 'id3dPV'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(id3dPV,:))
-# if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
-            CASE ('Hout2(idFsuD)')
-              IF (idFsuD.eq.0) THEN
-                IF (Master) WRITE (out,280) 'idFsuD'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idFsuD,:))
-            CASE ('Hout2(idu2dD)')
-              IF (idu2dD.eq.0) THEN
-                IF (Master) WRITE (out,280) 'idu2dD'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idu2dD,:))
-            CASE ('Hout2(idv2dD)')
-              IF (idv2dD.eq.0) THEN
-                IF (Master) WRITE (out,280) 'idv2dD'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idv2dD,:))
-#  ifdef SOLVE3D
-            CASE ('Hout2(idu3dD)')
-              IF (idu3dD.eq.0) THEN
-                IF (Master) WRITE (out,280) 'idu3dD'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idu3dD,:))
-            CASE ('Hout2(idv3dD)')
-              IF (idv3dD.eq.0) THEN
-                IF (Master) WRITE (out,280) 'idv3dD'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idv3dD,:))
-            CASE ('Hout2(idTrcD)')
-              IF (MAXVAL(idTrcD).eq.0) THEN
-                IF (Master) WRITE (out,280) 'idTrcD'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
-              DO ng=1,Ngrids
-                DO itrc=1,NAT
-                  i=idTrcD(itrc)
-                  Hout2(i,ng)=Ltracer(itrc,ng)
-                END DO
-              END DO
-#  endif
-# endif
-# ifdef SOLVE3D
-            CASE ('Hout2(idHUav)')
-              IF (idHUav.eq.0) THEN
-                IF (Master) WRITE (out,280) 'idHUav'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idHUav,:))
-            CASE ('Hout2(idHVav)')
-              IF (idHVav.eq.0) THEN
-                IF (Master) WRITE (out,280) 'idHVav'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idHVav,:))
-            CASE ('Hout2(idUUav)')
-              IF (idUUav.eq.0) THEN
-                IF (Master) WRITE (out,280) 'idUUav'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idUUav,:))
-            CASE ('Hout2(idUVav)')
-              IF (idUVav.eq.0) THEN
-                IF (Master) WRITE (out,280) 'idUVav'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idUVav,:))
-            CASE ('Hout2(idVVav)')
-              IF (idVVav.eq.0) THEN
-                IF (Master) WRITE (out,280) 'idVVav'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idVVav,:))
-# endif
-            CASE ('Hout2(idU2av)')
-              IF (idU2av.eq.0) THEN
-                IF (Master) WRITE (out,280) 'idU2av'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idU2av,:))
-            CASE ('Hout2(idV2av)')
-              IF (idV2av.eq.0) THEN
-                IF (Master) WRITE (out,280) 'idV2av'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idV2av,:))
-            CASE ('Hout2(idZZav)')
-              IF (idZZav.eq.0) THEN
-                IF (Master) WRITE (out,280) 'idZZav'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, Ngrids, Hout2(idZZav,:))
-# ifdef SOLVE3D
-            CASE ('Hout2(idTTav)')
-              IF (MAXVAL(idTTav).eq.0) THEN
-                IF (Master) WRITE (out,280) 'idTTav'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
-              DO ng=1,Ngrids
-                DO itrc=1,NAT
-                  i=idTTav(itrc)
-                  Hout2(i,ng)=Ltracer(itrc,ng)
-                END DO
-              END DO
-            CASE ('Hout2(idUTav)')
-              IF (MAXVAL(idUTav).eq.0) THEN
-                IF (Master) WRITE (out,280) 'idUTav'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
-              DO ng=1,Ngrids
-                DO itrc=1,NAT
-                  i=idUTav(itrc)
-                  Hout2(i,ng)=Ltracer(itrc,ng)
-                END DO
-              END DO
-            CASE ('Hout2(idVTav)')
-              IF (MAXVAL(idVTav).eq.0) THEN
-                IF (Master) WRITE (out,280) 'idVTav'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
-              DO ng=1,Ngrids
-                DO itrc=1,NAT
-                  i=idVTav(itrc)
-                  Hout2(i,ng)=Ltracer(itrc,ng)
-                END DO
-              END DO
-            CASE ('Hout2(iHUTav)')
-              IF (MAXVAL(iHUTav).eq.0) THEN
-                IF (Master) WRITE (out,280) 'iHUTav'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
-              DO ng=1,Ngrids
-                DO itrc=1,NAT
-                  i=iHUTav(itrc)
-                  Hout2(i,ng)=Ltracer(itrc,ng)
-                END DO
-              END DO
-            CASE ('Hout2(iHVTav)')
-              IF (MAXVAL(iHVTav).eq.0) THEN
-                IF (Master) WRITE (out,280) 'iHVTav'
-                exit_flag=5
-                RETURN
-              END IF
-              Npts=load_l(Nval, Cval, NAT*Ngrids, Ltracer)
-              DO ng=1,Ngrids
-                DO itrc=1,NAT
-                  i=iHVTav(itrc)
-                  Hout2(i,ng)=Ltracer(itrc,ng)
-                END DO
-              END DO
-# endif
-# if defined SOLVE3D && defined T_PASSIVE
-            CASE ('Hout2(inert)')
-              Npts=load_l(Nval, Cval, NPT*Ngrids, Linert)
-              DO ng=1,Ngrids
-                DO i=1,NPT
-                  itrc=idTvar(inert(i))
-                  Hout2(itrc,ng)=Linert(i,ng)
-                END DO
-              END DO
-# endif
-#endif
             CASE ('Qout(idUvel)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Qout(idUvel,1:Ngrids)=Lswitch(1:Ngrids)
@@ -2670,7 +2313,7 @@
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Qout(idv3dN,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Qout(idTvar)')
-              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   i=idTvar(itrc)
@@ -2715,7 +2358,7 @@
                 exit_flag=5
                 RETURN
               END IF
-              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   i=idsurT(itrc)
@@ -2879,7 +2522,7 @@
 # endif
 #endif
             CASE ('Qout(idTsur)')
-              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   i=idTsur(itrc)
@@ -2916,9 +2559,11 @@
             CASE ('Qout(idTdif)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Qout(idTdif,1:Ngrids)=Lswitch(1:Ngrids)
+#ifdef SALINITY
             CASE ('Qout(idSdif)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Qout(idSdif,1:Ngrids)=Lswitch(1:Ngrids)
+#endif
             CASE ('Qout(idHsbl)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Qout(idHsbl,1:Ngrids)=Lswitch(1:Ngrids)
@@ -2987,7 +2632,7 @@
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Aout(idv3dN,1:Ngrids)=Lswitch(1:Ngrids)
             CASE ('Aout(idTvar)')
-              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   i=idTvar(itrc)
@@ -3120,6 +2765,9 @@
             CASE ('Aout(idWamp)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Aout(idWamp,1:Ngrids)=Lswitch(1:Ngrids)
+            CASE ('Aout(idWam2)')
+              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
+              Aout(idWam2,1:Ngrids)=Lswitch(1:Ngrids)
 # endif
 # ifdef WAVES_LENGTH
             CASE ('Aout(idWlen)')
@@ -3208,7 +2856,7 @@
               Aout(idRunoff,1:Ngrids)=Lswitch(1:Ngrids)
 #  endif
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
-  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
+  || defined ATM2OCN_FLUXES
             CASE ('Aout(idPair)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Aout(idPair,1:Ngrids)=Lswitch(1:Ngrids)
@@ -3234,7 +2882,7 @@
 #  endif
 # endif
             CASE ('Aout(idTsur)')
-              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
+              Npts=load_l(Nval, Cval, NAT+NPT, Ngrids, Ltracer)
               DO ng=1,Ngrids
                 DO itrc=1,NAT
                   i=idTsur(itrc)
@@ -3268,9 +2916,11 @@
             CASE ('Aout(idTdif)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Aout(idTdif,1:Ngrids)=Lswitch(1:Ngrids)
+# ifdef SALINITY
             CASE ('Aout(idSdif)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Aout(idSdif,1:Ngrids)=Lswitch(1:Ngrids)
+# endif
             CASE ('Aout(idHsbl)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Aout(idHsbl,1:Ngrids)=Lswitch(1:Ngrids)
@@ -3507,138 +3157,6 @@
                 DO i=1,NPT
                   itrc=idTvar(inert(i))
                   Aout(itrc,ng)=Linert(i,ng)
-                END DO
-              END DO
-# endif
-#endif
-#if defined AVERAGES2
-            CASE ('Aout2(idUvel)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idUvel,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idVvel)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idVvel,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idUbar)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idUbar,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idVbar)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idVbar,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idFsur)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idFsur,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idu2dE)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idu2dE,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idv2dN)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idv2dN,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idu3dE)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idu3dE,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idv3dN)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idv3dN,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idTvar)')
-              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
-              DO ng=1,Ngrids
-                DO itrc=1,NAT
-                  i=idTvar(itrc)
-                  Aout2(i,ng)=Ltracer(itrc,ng)
-                END DO
-              END DO
-            CASE ('Aout2(idUsms)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idUsms,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idVsms)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idVsms,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idUbms)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idUbms,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idVbms)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idVbms,1:Ngrids)=Lswitch(1:Ngrids)
-# ifdef SOLVE3D
-#  if defined RUNOFF
-            CASE ('Aout2(idRunoff)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idRunoff,1:Ngrids)=Lswitch(1:Ngrids)
-#  endif
-#  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
-            CASE ('Aout2(idPair)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idPair,1:Ngrids)=Lswitch(1:Ngrids)
-#  endif
-#  if defined BULK_FLUXES || defined ECOSIM
-            CASE ('Aout2(idUair)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idUair,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idVair)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idVair,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idUairE)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idUairE,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idVairN)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idVairN,1:Ngrids)=Lswitch(1:Ngrids)
-#  endif
-# endif
-            CASE ('Aout2(idTsur)')
-              Npts=load_l(Nval, Cval, NAT, Ngrids, Ltracer)
-              DO ng=1,Ngrids
-                DO itrc=1,NAT
-                  i=idTsur(itrc)
-                  Aout2(i,ng)=Ltracer(itrc,ng)
-                END DO
-              END DO
-            CASE ('Aout2(idLhea)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idLhea,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idShea)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idShea,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idLrad)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idLrad,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idSrad)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idSrad,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idevap)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idevap,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idrain)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idrain,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idDano)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idDano,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idHsbl)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idHsbl,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(idHbbl)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(idHbbl,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(id2dRV)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(id2dRV,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(id3dRV)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(id3dRV,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(id2dPV)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(id2dPV,1:Ngrids)=Lswitch(1:Ngrids)
-            CASE ('Aout2(id3dPV)')
-              Npts=load_l(Nval, Cval, Ngrids, Lswitch)
-              Aout2(id3dPV,1:Ngrids)=Lswitch(1:Ngrids)
-# if defined SOLVE3D && defined T_PASSIVE
-            CASE ('Aout2(inert)')
-              Npts=load_l(Nval, Cval, NPT, Ngrids, Linert)
-              DO ng=1,Ngrids
-                DO i=1,NPT
-                  itrc=idTvar(inert(i))
-                  Aout2(itrc,ng)=Linert(i,ng)
                 END DO
               END DO
 # endif
@@ -4403,10 +3921,6 @@
               label='HIS - nonlinear model history fields'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
      &                      Ngrids, Nfiles, HIS)
-            CASE ('HIS2NAME')
-              label='HIS2 - nonlinear model surface fields'
-              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Ngrids, Nfiles, HIS2)
             CASE ('QCKNAME')
               label='QCK - nonlinear model quicksave fields'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
@@ -4427,10 +3941,6 @@
               label='AVG - time-averaged history fields'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
      &                      Ngrids, Nfiles, AVG)
-            CASE ('AVG2NAME')
-              label='AVG2 - time-averaged history fields'
-              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Ngrids, Nfiles, AVG2)
             CASE ('HARNAME')
               label='HAR - least-squares detiding harmonics'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
@@ -4475,7 +3985,7 @@
               label='ADS - adjoint sensitivity functional'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
      &                      Ngrids, Nfiles, ADS)
-#ifdef W4DPSAS_FCT_SENSITIVITY
+#ifdef RBL4DVAR_FCT_SENSITIVITY
 # ifndef OBS_SPACE
             CASE ('FOInameA')
               label='FOIA - adjoint sensitivity functional A'
@@ -4518,6 +4028,16 @@
               NBCcount(1:max_Ffiles,1:Ngrids)=0
             CASE ('BRYNAME')
               label='BRY - lateral open boundary conditions'
+              DO ng=1,Ngrids
+                IF (nBCfiles(ng).lt.0) THEN
+                  IF (Master) WRITE (out,290) 'nBCfiles = ',            &
+     &                                        nBCfiles(ng),             &
+     &              'KeyWord ''NBCFILES'' unread or misssing from '//   &
+     &              'input script ''roms.in''.'
+                  exit_flag=4
+                  RETURN
+                END IF
+              END DO
               Npts=load_s2d(Nval, Cval, Cdim, line, label, ibcfile,     &
      &                      igrid, Ngrids, nBCfiles, NBCcount,          &
      &                      max_Ffiles, BRY)
@@ -4540,6 +4060,16 @@
               NCLMcount(1:max_Ffiles,1:Ngrids)=0
             CASE ('CLMNAME')
               label='CLM - climatology fields'
+              DO ng=1,Ngrids
+                IF (nCLMfiles(ng).lt.0) THEN
+                  IF (Master) WRITE (out,290) 'nCLMfiles = ',           &
+     &                                        nCLMfiles(ng),            &
+     &              'KeyWord ''NCLMFILES'' unread or misssing from '//  &
+     &              'input script ''roms.in''.'
+                  exit_flag=4
+                  RETURN
+                END IF
+              END DO
               Npts=load_s2d(Nval, Cval, Cdim, line, label, iclmfile,    &
      &                      igrid, Ngrids, nCLMfiles, NCLMcount,        &
      &                      max_Ffiles, CLM)
@@ -4575,6 +4105,16 @@
               Ncount(1:max_Ffiles,1:Ngrids)=0
             CASE ('FRCNAME')
               label='FRC - forcing fields'
+              DO ng=1,Ngrids
+                IF (nFfiles(ng).lt.0) THEN
+                  IF (Master) WRITE (out,290) 'nFfiles = ',             &
+     &                                        nFfiles(ng),              &
+     &              'KeyWord ''NFFILES'' unread or misssing from '//    &
+     &              'input script ''roms.in''.'
+                  exit_flag=4
+                  RETURN
+                END IF
+              END DO
               Npts=load_s2d(Nval, Cval, Cdim, line, label, ifile,       &
      &                      igrid, Ngrids, nFfiles, Ncount, max_Ffiles, &
      &                      FRC)
@@ -4598,11 +4138,6 @@
                 bparnam(i:i)=blank
               END DO
               bparnam=TRIM(ADJUSTL(Cval(Nval)))
-            CASE ('IPARNAM')
-              DO i=1,LEN(iparnam)
-                iparnam(i:i)=blank
-              END DO
-              iparnam=TRIM(ADJUSTL(Cval(Nval)))
             CASE ('SPARNAM')
               DO i=1,LEN(sparnam)
                 sparnam(i:i)=blank
@@ -4631,8 +4166,7 @@
               IWSWNNAME(1)=TRIM(ADJUSTL(Cval(Nval)))
 #endif
           END SELECT
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
       END DO
   10  IF (Master) WRITE (out,50) line
@@ -4684,33 +4218,73 @@
 !  source will be applies twice.
 !
       DO ng=1,Ngrids
-       IF (LuvSrc(ng).and.LwSrc(ng)) THEN
-         IF (Master) THEN
-           WRITE (out,260) 'LuvSrc', LuvSrc(ng),                        &
-     &           'Because LwSrc  is also ON; only one method is legal.'
-           WRITE (out,260) 'LwSrc', LwSrc(ng),                          &
-     &           'Because LuvSrc is also ON; only one method is legal.'
-           exit_flag=4
-           RETURN
-         END IF
-       END IF
-     END DO
+        IF (LuvSrc(ng).and.LwSrc(ng)) THEN
+          IF (Master) THEN
+            WRITE (out,260) 'LuvSrc', LuvSrc(ng),                       &
+     &            'Because LwSrc  is also ON; only one method is legal.'
+            WRITE (out,260) 'LwSrc', LwSrc(ng),                         &
+     &            'Because LuvSrc is also ON; only one method is legal.'
+          END IF
+          exit_flag=4
+          RETURN
+        END IF
+      END DO
 
-#if defined BULK_FLUXES && defined NL_BULK_FLUXES
+#ifdef SP4DVAR
 !
-!  Make sure that logical output switches are activated for wind
-!  stress and surface active tracers fluxes when using fluxes from
-!  the nonlinear model via (bulk_flux).
+!  Check if the number of split time intervals (Nsaddle) in the saddle-
+!  point 4D-Var is legal for a simulation.
 !
       DO ng=1,Ngrids
-        Hout(idUsms,ng)=.TRUE.
-        Hout(idVsms,ng)=.TRUE.
+        IF (MOD((ntimes(ng)/nHIS(ng)),Nsaddle).ne.0) THEN
+          IF (Master) THEN
+            WRITE (out,350) 'Nsaddle = ', Nsaddle, ng,                  &
+     &                      'ntimes/nHIS = ', ntimes(ng)/nHIS(ng),      &
+     &                      'MOD(ntimes/nHis,Nsaddle) = ',              &
+     &                      MOD((ntimes(ng)/nHIS(ng)),Nsaddle),         &
+     &                      'must be zero for legal computations.',     &
+     &                      'Revise input parameters.'
+          END IF
+          exit_flag=4
+          RETURN
+        END IF
+      END DO
+#endif
+
+# if defined FORWARD_FLUXES && \
+    (defined BULK_FLUXES    || defined FRC_COUPLING)
+!
+!  Make sure that logical output switches are activated for wind
+!  stress, shortwave radiation, and surface active tracers fluxes
+!  when using fluxes from the nonlinear model via (bulk_flux).
+!
+      DO ng=1,Ngrids
+        Qout(idUsms,ng)=.TRUE.
+        Qout(idVsms,ng)=.TRUE.
+# ifdef ATM_PRESS
+        Qout(idPair,ng)=.TRUE.
+# endif
 # ifdef SOLVE3D
-        Hout(idTsur(itemp),ng)=.TRUE.
-#  ifdef EMINUSP
-        Hout(idEmPf,ng)=.TRUE.
+        Qout(idSrad,ng)=.TRUE.
+        Qout(idTsur(itemp),ng)=.TRUE.
+#  if defined EMINUSP || defined FRC_COUPLING
+        Qout(idEmPf,ng)=.TRUE.
 #  endif
 # endif
+      END DO
+#endif
+
+#if defined FORWARD_MIXING && defined SOLVE3D    && \
+   (defined GLS_MIXING     || defined LMD_MIXING || \
+    defined MY25_MIXING)
+!
+!  Make sure that logical output switches are activated for vertical
+!  diffusion and viscosity mixing coefficients.
+!
+      DO ng=1,Ngrids
+        Hout(idSdif,ng)=.TRUE.
+        Hout(idTdif,ng)=.TRUE.
+        Hout(idVvis,ng)=.TRUE.
       END DO
 #endif
 
@@ -4824,19 +4398,8 @@
         CLM_FILE(ng)=.TRUE.
 # endif
 #endif
-#ifdef ICE_MODEL
-# ifndef ANA_MICLIMA
-        IF (LmiCLM(ng)) CLM_FILE(ng)=.TRUE.
-# endif
-# ifndef ANA_AICLIMA
-        IF (LaiCLM(ng)) CLM_FILE(ng)=.TRUE.
-# endif
-# ifndef ANA_SICLIMA
-        IF (LsiCLM(ng)) CLM_FILE(ng)=.TRUE.
-# endif
-#endif
 
-#if defined IS4DVAR || defined WEAK_CONSTRAINT
+#if defined I4DVAR || defined WEAK_CONSTRAINT
 !
 !  If weak constraint, disallow recycling of the adjoint model.
 !
@@ -4873,14 +4436,14 @@
         END DO
 # endif
 #endif
-#if defined IS4DVAR
+#if defined I4DVAR
 !
 !  If strong constraint, write only final adjoint solution since only
 !  we are estimating initial conditions.
 !
         nADJ(ng)=ntimes(ng)
 #endif
-#if defined W4DPSAS || defined W4DVAR
+#if defined RBL4DVAR || defined R4DVAR
 !
 !  If dual formulation and strong constraint, limit writing the adjoint
 !  solution to the end of time-stepping.
@@ -4889,7 +4452,7 @@
           nADJ(ng)=ntimes(ng)
         END IF
 #endif
-#if defined IS4DVAR || defined W4DPSAS || defined W4DVAR
+#if defined I4DVAR || defined RBL4DVAR || defined R4DVAR
 !
 !  Ensure that restart file is written only at least at the end.  In
 !  sequential data assimilation the restart file can be used as the
@@ -4917,13 +4480,17 @@
 !  and standard deviation factors.
 !
 # if defined CORRELATION || defined WEAK_CONSTRAINT
+#  ifdef SP4DVAR
+        NSA=2
+#  else
         IF (nADJ(ng).lt.ntimes(ng)) THEN
           NSA=2
         ELSE
           NSA=1
         END IF
-#  ifdef CORRELATION
+#   ifdef CORRELATION
         ntimes=1                 ! no time-stepping required
+#   endif
 #  endif
 # else
         NSA=1
@@ -4936,8 +4503,18 @@
 !  time-steps between writing of fields the same as the basic
 !  state.  Disallow recycling.
 !
+#  ifdef SP4DVAR
+        nTLM(ng)=ntimes(ng)/Nsaddle
+        nADJ(ng)=nTLM(ng)
+        nSPT(ng)=nTLM(ng)
+        nSPA(ng)=nTLM(ng)
+        nSCT(ng)=nTLM(ng)
+        nSCA(ng)=nTLM(ng)
+        LcycleTLM(ng)=.FALSE.
+#  else
         nTLM(ng)=nHIS(ng)
         LcycleTLM(ng)=.FALSE.
+#  endif
 # endif
 #endif
 #if defined TIME_CONV && defined WEAK_CONSTRAINT
@@ -4951,12 +4528,12 @@
 !  If variational data assimilation, disallow creation of multiple
 !  output adjoint history files and the tangent linear history file
 !  in I4D-Var.  Multiple TLM history are allow in R4d-Var and
-!  irrelevant in 4D-PSAS since TLM history is turned off.  The
+!  irrelevant in RBL4D-Var since TLM history is turned off.  The
 !  adjoint history files are special at the unlimited dimension
 !  is not associated with time records.
 !
         ndefADJ(ng)=0
-# if defined IS4DVAR || defined IS4DVAR_SENSITIVITY
+# if defined I4DVAR || defined I4DVAR_ANA_SENSITIVITY
         ndefTLM(ng)=0
 # endif
 #endif
@@ -4966,10 +4543,6 @@
         IF (((nrrec(ng).eq.0).and.(nAVG(ng).gt.ntimes(ng))).or.         &
      &      (nAVG(ng).eq.0)) THEN
           LdefAVG(ng)=.FALSE.
-        END IF
-        IF (((nrrec(ng).eq.0).and.(nAVG2(ng).gt.ntimes(ng))).or.        &
-     &      (nAVG2(ng).eq.0)) THEN
-          LdefAVG2(ng)=.FALSE.
         END IF
         IF (((nrrec(ng).eq.0).and.(nDIA(ng).gt.ntimes(ng))).or.         &
      &      (nDIA(ng).eq.0)) THEN
@@ -5042,18 +4615,27 @@
       DO ng=1,Ngrids
         IF ((nHIS(ng).gt.0).and.(ndefHIS(ng).gt.0)) THEN
           OutFiles=ntimes(ng)/ndefHIS(ng)
-          IF (nHIS(ng).eq.ndefHIS(ng)) OutFiles=Outfiles+1  ! because IC
+          IF ((nHIS(ng).eq.ndefHIS(ng)).or.                             &
+     &        (MOD(ntimes(ng),ndefHIS(ng)).ge.nHIS(ng))) THEN
+            OutFiles=Outfiles+1
+          END IF
           CALL edit_file_struct (ng, OutFiles, HIS)
         END IF
         IF ((nQCK(ng).gt.0).and.(ndefQCK(ng).gt.0)) THEN
           OutFiles=ntimes(ng)/ndefQCK(ng)
-          IF (nQCK(ng).eq.ndefQCK(ng)) OutFiles=Outfiles+1  ! because IC
+          IF ((nQCK(ng).eq.ndefQCK(ng)).or.                             &
+     &        (MOD(ntimes(ng),ndefQCK(ng)).ge.nQCK(ng))) THEN
+            OutFiles=Outfiles+1
+          END IF
           CALL edit_file_struct (ng, OutFiles, QCK)
         END IF
 #ifdef ADJOINT
         IF ((nADJ(ng).gt.0).and.(ndefADJ(ng).gt.0)) THEN
           OutFiles=ntimes(ng)/ndefADJ(ng)
-          IF (nADJ(ng).eq.ndefADJ(ng)) OutFiles=Outfiles+1  ! because IC
+          IF ((nADJ(ng).eq.ndefADJ(ng)).or.                             &
+     &        (MOD(ntimes(ng),ndefADJ(ng)).ge.nADJ(ng))) THEN
+            OutFiles=Outfiles+1
+          END IF
           CALL edit_file_struct (ng, OutFiles, ADM)
         END IF
 #endif
@@ -5074,19 +4656,22 @@
 #if defined TANGENT || defined TL_IOMS
         IF ((nTLM(ng).gt.0).and.(ndefTLM(ng).gt.0)) THEN
           OutFiles=ntimes(ng)/ndefTLM(ng)
-          IF (nTLM(ng).eq.ndefTLM(ng)) OutFiles=Outfiles+1  ! because IC
+          IF ((nTLM(ng).eq.ndefTLM(ng)).or.                             &
+     &        (MOD(ntimes(ng),ndefTLM(ng)).ge.nTLM(ng))) THEN
+            OutFiles=Outfiles+1
+          END IF
           CALL edit_file_struct (ng, OutFiles, TLM)
         END IF
 #endif
       END DO
 
-#ifdef BULK_FLUXES
+#ifdef FORWARD_FLUXES
 !
 !  Allocate and initialize BLK I/O structure with the same values as
-!  HIS.
+!  QCK.
 !
       DO ng=1,Ngrids
-        OutFiles=HIS(ng)%Nfiles
+        OutFiles=QCK(ng)%Nfiles
         allocate ( BLK(ng)%Nrec(OutFiles) )
         allocate ( BLK(ng)%time_min(OutFiles) )
         allocate ( BLK(ng)%time_max(OutFiles) )
@@ -5103,6 +4688,17 @@
         BLK(ng)%time_min=0.0_dp
         BLK(ng)%time_max=0.0_dp
         BLK(ng)%label='BLK - nonlinear model bulk fluxes'
+        lstr=LEN(BLK(ng)%name)
+        DO i=1,lstr
+          BLK(ng)%head(i:i)=blank
+          BLK(ng)%base(i:i)=blank
+          BLK(ng)%name(i:i)=blank
+        END DO
+        DO k=1,OutFiles
+          DO i=1,lstr
+            BLK(ng)%files(k)(i:i)=blank
+          END DO
+        END DO
       END DO
 #endif
 !
@@ -5110,13 +4706,23 @@
 !  Report input parameters.
 !-----------------------------------------------------------------------
 !
-      IF (Lwrite) THEN
+      IF (Master.and.Lwrite) THEN
         lstr=INDEX(my_fflags, 'free')-2
         IF (lstr.le.0) lstr=LEN_TRIM(my_fflags)
         WRITE (out,60) TRIM(title), TRIM(my_os), TRIM(my_cpu),          &
      &                 TRIM(my_fort), TRIM(my_fc), my_fflags(1:lstr),   &
 #ifdef DISTRIBUTE
+# ifdef DISJOINTED
+     &                 FULL_COMM_WORLD, FullSize, NsubGroups,           &
+     &                 FORK_COMM_WORLD, ForkSize,                       &
+     &                 0, (FullSize/ForkSize)-1,                        &
+#  ifdef CONCURRENT_KERNEL
+     &                 TASK_COMM_WORLD, TaskSize,                       &
+     &                 0, (FullSize/TaskSize)-1,                        &
+#  endif
+# else
      &                 OCN_COMM_WORLD, numthreads,                      &
+# endif
      &                 TRIM(Iname),                                     &
 #endif
 #ifdef GIT_URL
@@ -5133,8 +4739,30 @@
 #ifdef DISTRIBUTE
           WRITE (out,70) ng, Lm(ng), Mm(ng), N(ng), numthreads,         &
      &                   NtileI(ng), NtileJ(ng)
-          IF ((NtileI(ng)*NtileJ(ng)).ne.numthreads) THEN
-            WRITE (out,80) ng
+
+# ifdef SP4DVAR
+#  ifdef DISJOINTED
+#   ifdef CONCURRENT_KERNEL
+          maxPETs=FullSize
+          nPETs=NtileI(ng)*NtileJ(ng)*Nsaddle*2
+          label='NtileI * NtileJ * Nsaddle * 2 ='
+#   else
+          maxPETs=FullSize
+          nPETs=NtileI(ng)*NtileJ(ng)*Nsaddle
+          label='NtileI * NtileJ * Nsaddle ='
+#   endif
+#  else
+          maxPETs=numthreads
+          nPETs=NtileI(ng)*NtileJ(ng)
+          label='NtileI * NtileJ ='
+#  endif
+# else
+          maxPETs=numthreads
+          nPETs=NtileI(ng)*NtileJ(ng)
+          label='NtileI * NtileJ ='
+# endif
+          IF (nPETs.ne.maxPETs) THEN
+            WRITE (out,80) ng, TRIM(label), nPETS, maxPETs
             exit_flag=6
             RETURN
           END IF
@@ -5158,7 +4786,7 @@
           WRITE (out,110) ng
           WRITE (out,120) ntimes(ng), 'ntimes',                         &
      &          'Number of timesteps for 3-D equations.'
-#if defined W4DPSAS_FCT_SENSITIVITY
+#if defined RBL4DVAR_FCT_SENSITIVITY
           WRITE (out,120) ntimes_ana(ng), 'ntimes_ana',                 &
      &          'Observation impacts analysis interval.'
           WRITE (out,120) ntimes_fct(ng), 'ntimes_fct',                 &
@@ -5177,14 +4805,18 @@
           WRITE (out,120) Nouter, 'Nouter',                             &
      &          'Maximun number of 4DVAR outer loop iterations.'
 #endif
-#if defined IS4DVAR           || defined IS4DVAR_SENSITIVITY || \
-    defined SENSITIVITY_4DVAR || \
-    defined TL_W4DPSAS        || defined TL_W4DVAR           || \
-    defined W4DPSAS           || defined W4DVAR              || \
-    defined HESSIAN_SV        || defined HESSIAN_SO          || \
-    defined HESSIAN_FSV
+#if defined I4DVAR       || defined I4DVAR_ANA_SENSITIVITY || \
+    defined HESSIAN_FSV  || defined HESSIAN_SO             || \
+    defined HESSIAN_SV   || defined SENSITIVITY_4DVAR      || \
+    defined RBL4DVAR     || defined R4DVAR                 || \
+    defined SP4DVAR      || defined TL_RBL4DVAR            || \
+    defined TL_R4DVAR
           WRITE (out,120) Ninner, 'Ninner',                             &
-     &          'Maximum number of 4DVAR inner loop iterations.'
+     &          'Maximum number of 4D-Var inner loop iterations.'
+# ifdef SP4DVAR
+          WRITE (out,120) Nsaddle, 'Nsaddle',                           &
+     &          'Number of intervals for saddle point algorithm.'
+# endif
 #endif
 #ifdef STOCHASTIC_OPT
           WRITE (out,120) Nintervals, 'Nintervals',                     &
@@ -5250,19 +4882,6 @@
      &            'time-averaged file.'
           END IF
 #endif
-#if defined AVERAGES2
-          WRITE (out,130) ntsAVG2(ng), 'ntsAVG2',                       &
-     &          'Starting timestep for the accumulation of output',     &
-     &          'secondary time-averaged data.'
-          WRITE (out,130) nAVG2(ng), 'nAVG2',                           &
-     &          'Number of timesteps between the writing of',           &
-     &          'secondary time-averaged data into averages file.'
-          IF (ndefAVG2(ng).gt.0) THEN
-            WRITE (out,130) ndefAVG2(ng), 'ndefAVG2',                   &
-     &            'Number of timesteps between creation of new',        &
-     &            'secondary time-averaged file.'
-          END IF
-#endif
 #ifdef DIAGNOSTICS
           WRITE (out,130) ntsDIA(ng), 'ntsDIA',                         &
      &          'Starting timestep for the accumulation of output',     &
@@ -5303,7 +4922,7 @@
 #ifdef ADJUST_BOUNDARY
           WRITE (text,'(i8)') Nbrec(ng)
           WRITE (out,130) nOBC(ng), 'nOBC',                             &
-     &          'Number of timesteps between 4DVAR adjustment of',      &
+     &          'Number of timesteps between 4D-Var adjustment of',     &
      &          'open boundaries, Nbrec = '//TRIM(ADJUSTL(text))
           IF (Nbrec(ng).gt.500) THEN
             WRITE (out,'(t32,a)') 'WARNING: ''Nbrec'' is large, '//     &
@@ -5313,7 +4932,7 @@
 #if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
           WRITE (text,'(i8)') Nfrec(ng)
           WRITE (out,130) nSFF(ng), 'nSFF',                             &
-     &          'Number of timesteps between 4DVAR adjustment of',      &
+     &          'Number of timesteps between 4D-Var adjustment of',     &
      &          'surface forcing fields, Nfrec = '//TRIM(ADJUSTL(text))
           IF (Nfrec(ng).gt.500) THEN
             WRITE (out,'(t32,a)') 'WARNING: ''Nfrec'' is large, '//     &
@@ -5681,12 +5300,9 @@
      &            'Nudging/relaxation time scale (days)',               &
      &            'for tracer ', itrc, TRIM(Vname(1,idTvar(itrc)))
           END DO
-          WRITE (out,210) Tnudg_SSS(ng), 'Tnudg_SSS',                   &
-     &          'Nudging/relaxation time scale (days)',                 &
-     &          'for sea surface salinity.'
-# ifdef SCORRECTION
-          IF (Tnudg_SSS(ng).le.0.0_r8) THEN
-            WRITE (out,265) 'Tnudg_SSS = ', Tnudg_SSS(ng),              &
+# if defined SCORRECTION && defined SALINITY
+          IF (Tnudg(isalt,ng).le.0.0_r8) THEN
+            WRITE (out,265) 'Tnudg(isalt) = ', Tnudg(isalt,ng),         &
      &            'Must be greater than zero for salt flux correction.'
             exit_flag=5
             RETURN
@@ -5891,52 +5507,8 @@
           END DO
 # endif
 #endif
-#ifdef ICE_MODEL
-          IF (LmiCLM(ng)) THEN
-            WRITE (out,170) LmiCLM(ng), 'LmiCLM',                        &
-     &          'Turning ON  processing of ice momentum climatology.'
-          ELSE
-            WRITE (out,170) LmiCLM(ng), 'LmiCLM',                        &
-     &          'Turning OFF processing of ice momentum climatology.'
-          END IF
-          IF (LaiCLM(ng)) THEN
-            WRITE (out,170) LaiCLM(ng), 'LaiCLM',                        &
-     &          'Turning ON  processing of ice tracer climatology.'
-          ELSE
-            WRITE (out,170) LaiCLM(ng), 'LaiCLM',                        &
-     &          'Turning OFF processing of ice tracer climatology.'
-          END IF
-          IF (LsiCLM(ng)) THEN
-            WRITE (out,170) LsiCLM(ng), 'LsiCLM',                        &
-     &          'Turning ON  processing of ice stress climatology.'
-          ELSE
-            WRITE (out,170) LsiCLM(ng), 'LsiCLM',                        &
-     &          'Turning OFF processing of ice stress climatology.'
-          END IF
-          IF (LnudgeMICLM(ng)) THEN
-            WRITE (out,170) LnudgeMICLM(ng), 'LnudgeMICLM',              &
-     &          'Turning ON  nudging of ice momentum climatology.'
-          ELSE
-            WRITE (out,170) LnudgeMICLM(ng), 'LnudgeMICLM',              &
-     &          'Turning OFF nudging of ice momentum climatology.'
-          END IF
-          IF (LnudgeAICLM(ng)) THEN
-            WRITE (out,170) LnudgeAICLM(ng), 'LnudgeAICLM',              &
-     &          'Turning ON  nudging of ice tracer climatology.'
-          ELSE
-            WRITE (out,170) LnudgeAICLM(ng), 'LnudgeAICLM',              &
-     &          'Turning OFF nudging of ice tracer climatology.'
-          END IF
-          IF (LnudgeSICLM(ng)) THEN
-            WRITE (out,170) LnudgeSICLM(ng), 'LnudgeSICLM',              &
-     &          'Turning ON  nudging of ice stress climatology.'
-          ELSE
-            WRITE (out,170) LnudgeSICLM(ng), 'LnudgeSICLM',              &
-     &          'Turning OFF nudging of ice stress climatology.'
-          END IF
-#endif
-#if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
-    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+#if defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR      || \
     defined SO_SEMI
           WRITE (out,140) DstrS(ng), 'DstrS',                           &
      &          'Starting day for ADM sensitivity forcing.'
@@ -6426,7 +5998,7 @@
      &         'Write out surface fresh water input via runoff.'
 # endif
 # if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
-  || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
+  || defined ATM2OCN_FLUXES
             IF (Hout(idPair,ng)) WRITE (out,170) Hout(idPair,ng),       &
      &         'Hout(idPair)',                                          &
      &         'Write out surface air pressure.'
@@ -6453,15 +6025,17 @@
             IF (Hout(idTsur(itemp),ng)) WRITE (out,170)                 &
      &          Hout(idTsur(itemp),ng), 'Hout(idTsur)',                 &
      &         'Write out surface net heat flux.'
+# ifdef SALINITY
             IF (Hout(idTsur(isalt),ng)) WRITE (out,170)                 &
      &          Hout(idTsur(isalt),ng), 'Hout(idTsur)',                 &
      &         'Write out surface net salt flux.'
+# endif
 # ifdef SHORTWAVE
             IF (Hout(idSrad,ng)) WRITE (out,170) Hout(idSrad,ng),       &
      &         'Hout(idSrad)',                                          &
      &         'Write out shortwave radiation flux.'
 # endif
-# ifdef BULK_FLUXES
+# if defined BULK_FLUXES || defined FRC_COUPLING
             IF (Hout(idLrad,ng)) WRITE (out,170) Hout(idLrad,ng),       &
      &         'Hout(idLrad)',                                          &
      &         'Write out longwave radiation flux.'
@@ -6471,10 +6045,12 @@
             IF (Hout(idShea,ng)) WRITE (out,170) Hout(idShea,ng),       &
      &         'Hout(idShea)',                                          &
      &         'Write out sensible heat flux.'
-#  ifdef EMINUSP
+#  if defined EMINUSP || defined FRC_COUPLING
             IF (Hout(idEmPf,ng)) WRITE (out,170) Hout(idEmPf,ng),       &
      &         'Hout(idEmPf)',                                          &
      &         'Write out E-P flux.'
+#  endif
+#  ifdef EMINUSP
             IF (Hout(idevap,ng)) WRITE (out,170) Hout(idevap,ng),       &
      &         'Hout(idevap)',                                          &
      &         'Write out evaporation rate.'
@@ -6492,9 +6068,11 @@
             IF (Hout(idTdif,ng)) WRITE (out,170) Hout(idTdif,ng),       &
      &         'Hout(idTdif)',                                          &
      &         'Write out vertical diffusion: AKt(itemp).'
+# ifdef SALINITY
             IF (Hout(idSdif,ng)) WRITE (out,170) Hout(idSdif,ng),       &
      &         'Hout(idSdif)',                                          &
      &         'Write out vertical diffusion: AKt(isalt).'
+# endif
 # ifdef LMD_SKPP
             IF (Hout(idHsbl,ng)) WRITE (out,170) Hout(idHsbl,ng),       &
      &         'Hout(idHsbl)',                                          &
@@ -6756,6 +6334,11 @@
      &         'Qout(idPair)',                                          &
      &         'Write out surface air pressure.'
 # endif
+# if defined BULK_FLUXES
+            IF (Qout(idTair,ng)) WRITE (out,170) Qout(idTair,ng),       &
+     &         'Qout(idTair)',                                          &
+     &         'Write out surface air temperature.'
+# endif
 # if defined BULK_FLUXES || defined ECOSIM
           IF (Hout(idUair,ng)) WRITE (out,170) Hout(idUair,ng),         &
      &       'Hout(idUair)',                                            &
@@ -6779,15 +6362,17 @@
             IF (Qout(idTsur(itemp),ng)) WRITE (out,170)                 &
      &          Qout(idTsur(itemp),ng), 'Qout(idTsur)',                 &
      &         'Write out surface net heat flux.'
+# ifdef SALINITY
             IF (Qout(idTsur(isalt),ng)) WRITE (out,170)                 &
      &          Qout(idTsur(isalt),ng), 'Qout(idTsur)',                 &
      &         'Write out surface net salt flux.'
+# endif
 # ifdef SHORTWAVE
             IF (Qout(idSrad,ng)) WRITE (out,170) Qout(idSrad,ng),       &
      &         'Qout(idSrad)',                                          &
      &         'Write out shortwave radiation flux.'
 # endif
-# ifdef BULK_FLUXES
+# if defined BULK_FLUXES || defined FRC_COUPLING
             IF (Qout(idLrad,ng)) WRITE (out,170) Qout(idLrad,ng),       &
      &         'Qout(idLrad)',                                          &
      &         'Write out longwave radiation flux.'
@@ -6797,10 +6382,12 @@
             IF (Qout(idShea,ng)) WRITE (out,170) Qout(idShea,ng),       &
      &         'Qout(idShea)',                                          &
      &         'Write out sensible heat flux.'
-#  ifdef EMINUSP
+#  if defined EMINUSP || defined FRC_COUPLING
             IF (Qout(idEmPf,ng)) WRITE (out,170) Qout(idEmPf,ng),       &
      &         'Qout(idEmPf)',                                          &
      &         'Write out E-P flux.'
+#  endif
+#  ifdef EMINUSP
             IF (Qout(idevap,ng)) WRITE (out,170) Qout(idevap,ng),       &
      &         'Qout(idevap)',                                          &
      &         'Write out evaporation rate.'
@@ -6818,9 +6405,11 @@
             IF (Qout(idTdif,ng)) WRITE (out,170) Qout(idTdif,ng),       &
      &         'Qout(idTdif)',                                          &
      &         'Write out vertical diffusion: AKt(itemp).'
+# ifdef SALINITY
             IF (Qout(idSdif,ng)) WRITE (out,170) Qout(idSdif,ng),       &
      &         'Qout(idSdif)',                                          &
      &         'Write out vertical diffusion: AKt(isalt).'
+# endif
 # ifdef LMD_SKPP
             IF (Qout(idHsbl,ng)) WRITE (out,170) Qout(idHsbl,ng),       &
      &         'Qout(idHsbl)',                                          &
@@ -7019,11 +6608,16 @@
      &         'Write out averaged surface freshwater input via runoff.'
 #  endif
 #  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS \
-   || defined ATM2OCN_FLUXES || defined CCSM_FLUXES2D
+   || defined ATM2OCN_FLUXES
             IF (Aout(idPair,ng)) WRITE (out,170) Aout(idPair,ng),       &
      &         'Aout(idPair)',                                          &
      &         'Write out averaged surface air pressure.'
 #  endif
+# if defined BULK_FLUXES
+            IF (Aout(idTair,ng)) WRITE (out,170) Aout(idTair,ng),       &
+     &         'Aout(idTair)',                                          &
+     &         'Write out averaged surface air temperature.'
+# endif
 #  if defined BULK_FLUXES || defined ECOSIM
             IF (Aout(idUair,ng)) WRITE (out,170) Aout(idUair,ng),       &
      &         'Aout(idUair)',                                          &
@@ -7041,9 +6635,11 @@
             IF (Aout(idTsur(itemp),ng)) WRITE (out,170)                 &
      &          Aout(idTsur(itemp),ng), 'Aout(idTsur)',                 &
      &         'Write out averaged surface net heat flux.'
+#  ifdef SALINITY
             IF (Aout(idTsur(isalt),ng)) WRITE (out,170)                 &
      &          Aout(idTsur(isalt),ng), 'Aout(idTsur)',                 &
      &         'Write out averaged surface net salt flux.'
+#  endif
 #  ifdef SHORTWAVE
             IF (Aout(idSrad,ng)) WRITE (out,170) Aout(idSrad,ng),       &
      &         'Aout(idSrad)',                                          &
@@ -7078,9 +6674,11 @@
             IF (Aout(idTdif,ng)) WRITE (out,170) Aout(idTdif,ng),       &
      &         'Aout(idTdif)',                                          &
      &         'Write out averaged vertical diffusion: AKt(itemp).'
+#   ifdef SALINITY
             IF (Aout(idSdif,ng)) WRITE (out,170) Aout(idSdif,ng),       &
      &         'Aout(idSdif)',                                          &
      &         'Write out averaged vertical diffusion: AKt(isalt).'
+#   endif
 #  endif
 #  ifdef LMD_SKPP
             IF (Aout(idHsbl,ng)) WRITE (out,170) Aout(idHsbl,ng),       &
@@ -7163,7 +6761,8 @@
      &            TRIM(Vname(1,idTvar(itrc)))
             END DO
 # endif
-# if defined AVERAGES_DETIDE && (defined SSH_TIDES || defined UV_TIDES)
+# if defined AVERAGES  && defined AVERAGES_DETIDE && \
+    (defined SSH_TIDES || defined UV_TIDES)
             WRITE (out,'(1x)')
             IF (Aout(idFsuD,ng)) WRITE (out,170) Aout(idFsuD,ng),       &
      &         'Aout(idFsuD)',                                          &
@@ -7190,267 +6789,6 @@
 #  endif
 # endif
           END IF
-#endif
-#if defined AVERAGES2
-          WRITE (out,'(1x)')
-          IF (Aout2(idFsur,ng)) WRITE (out,170) Aout2(idFsur,ng),       &
-     &       'Aout2(idFsur)',                                           &
-     &       'Write out averaged free-surface.'
-          IF (Aout2(idUbar,ng)) WRITE (out,170) Aout2(idUbar,ng),       &
-     &       'Aout2(idUbar)',                                           &
-     &       'Write out averaged 2D U-momentum component.'
-          IF (Aout2(idVbar,ng)) WRITE (out,170) Aout2(idVbar,ng),       &
-     &       'Aout2(idVbar)',                                           &
-     &       'Write out averaged 2D V-momentum component.'
-          IF (Aout2(idu2dE,ng)) WRITE (out,170) Aout2(idu2dE,ng),       &
-     &       'Aout2(idu2dE)',                                           &
-     &       'Write out averaged 2D U-eastward  at RHO-points.'
-          IF (Aout2(idv2dN,ng)) WRITE (out,170) Aout2(idv2dN,ng),       &
-     &       'Aout2(idv2dN)',                                           &
-     &       'Write out averaged 2D V-northward at RHO-points.'
-# ifdef SOLVE3D
-          IF (Aout2(idUvel,ng)) WRITE (out,170) Aout2(idUvel,ng),       &
-     &       'Aout2(idUvel)',                                           &
-     &       'Write out averaged 3D U-momentum component.'
-          IF (Aout2(idVvel,ng)) WRITE (out,170) Aout2(idVvel,ng),       &
-     &       'Aout2(idVvel)',                                           &
-     &       'Write out averaged 3D V-momentum component.'
-          IF (Aout2(idu3dE,ng)) WRITE (out,170) Aout2(idu3dE,ng),       &
-     &       'Aout2(idu3dE)',                                           &
-     &       'Write out averaged 3D U-eastward  at RHO-points.'
-          IF (Aout2(idv3dN,ng)) WRITE (out,170) Aout2(idv3dN,ng),       &
-     &       'Aout2(idv3dN)',                                           &
-     &       'Write out averaged 3D V-northward at RHO-points.'
-          IF (Aout2(idWvel,ng)) WRITE (out,170) Aout2(idWvel,ng),       &
-     &       'Aout2(idWvel)',                                           &
-     &       'Write out averaged W-momentum component.'
-          IF (Aout2(idOvel,ng)) WRITE (out,170) Aout2(idOvel,ng),       &
-     &       'Aout2(idOvel)',                                           &
-     &       'Write out averaged omega vertical velocity.'
-          DO itrc=1,NAT
-            IF (Aout2(idTvar(itrc),ng)) WRITE (out,180)                 &
-     &          Aout2(idTvar(itrc),ng), 'Aout2(idTvar)',                &
-     &          'Write out averaged tracer ', itrc,                     &
-     &          TRIM(Vname(1,idTvar(itrc)))
-          END DO
-# endif
-          IF (Aout2(idUsms,ng)) WRITE (out,170) Aout2(idUsms,ng),       &
-     &       'Aout2(idUsms)',                                           &
-     &       'Write out averaged surface U-momentum stress.'
-          IF (Aout2(idVsms,ng)) WRITE (out,170) Aout2(idVsms,ng),       &
-     &       'Aout2(idVsms)',                                           &
-     &       'Write out averaged surface V-momentum stress.'
-          IF (Aout2(idUbms,ng)) WRITE (out,170) Aout2(idUbms,ng),       &
-     &       'Aout2(idUbms)',                                           &
-     &       'Write out averaged bottom U-momentum stress.'
-          IF (Aout2(idVbms,ng)) WRITE (out,170) Aout2(idVbms,ng),       &
-     &       'Aout2(idVbms)',                                           &
-     &       'Write out averaged bottom V-momentum stress.'
-# if defined NEARSHORE_MELLOR
-          IF (Aout2(idW2xx,ng)) WRITE (out,170) Aout2(idW2xx,ng),       &
-     &       'Aout2(idW2xx)',                                           &
-     &       'Write out averaged 2D radiation stress, Sxx.'
-          IF (Aout2(idW2xy,ng)) WRITE (out,170) Aout2(idW2xy,ng),       &
-     &       'Aout2(idW2xy)',                                           &
-     &       'Write out averaged 2D radiation stress, Sxy.'
-          IF (Aout2(idW2yy,ng)) WRITE (out,170) Aout2(idW2yy,ng),       &
-     &       'Aout2(idW2yy)',                                           &
-     &       'Write out averaged 2D radiation stress, Syy.'
-          IF (Aout2(idU2rs,ng)) WRITE (out,170) Aout2(idU2rs,ng),       &
-     &       'Aout2(idU2rs)',                                           &
-     &       'Write out averaged total 2D u-radiation stress.'
-          IF (Aout2(idV2rs,ng)) WRITE (out,170) Aout2(idV2rs,ng),       &
-     &       'Aout2(idV2rs)',                                           &
-     &       'Write out averaged total 2D v-radiation stress.'
-          IF (Aout2(idU2Sd,ng)) WRITE (out,170) Aout2(idU2Sd,ng),       &
-     &       'Aout2(idU2Sd)',                                           &
-     &       'Write out averaged 2D u-momentum stokes velocity.'
-          IF (Aout2(idV2Sd,ng)) WRITE (out,170) Aout2(idV2Sd,ng),       &
-     &       'Aout2(idV2Sd)',                                           &
-     &       'Write out averaged 2D v-momentum stokes velocity.'
-#  ifdef SOLVE3D
-          IF (Aout2(idW3xx,ng)) WRITE (out,170) Aout2(idW3xx,ng),       &
-     &       'Aout2(idW3xx)',                                           &
-     &       'Write out averaged 3D radiation stress, Sxx.'
-          IF (Aout2(idW3xy,ng)) WRITE (out,170) Aout2(idW3xy,ng),       &
-     &       'Aout2(idW3xy)',                                           &
-     &       'Write out averaged 3D radiation stress, Sxy.'
-          IF (Aout2(idW3yy,ng)) WRITE (out,170) Aout2(idW3yy,ng),       &
-     &       'Aout2(idW3yy)',                                           &
-     &       'Write out averaged 3D radiation stress, Syy.'
-          IF (Aout2(idW3zx,ng)) WRITE (out,170) Aout2(idW3zx,ng),       &
-     &       'Aout2(idW3zx)',                                           &
-     &       'Write out averaged 3D radiation stress, Szx.'
-          IF (Aout2(idW3zy,ng)) WRITE (out,170) Aout2(idW3zy,ng),       &
-     &       'Aout2(idW3zy)',                                           &
-     &       'Write out averaged 3D radiation stress, Szy.'
-          IF (Aout2(idU3rs,ng)) WRITE (out,170) Aout2(idU3rs,ng),       &
-     &       'Aout2(idU3rs)',                                           &
-     &       'Write out averaged total 3D u-radiation stress.'
-          IF (Aout2(idV3rs,ng)) WRITE (out,170) Aout2(idV3rs,ng),       &
-     &       'Aout2(idV3rs)',                                           &
-     &       'Write out averaged total 3D v-radiation stress.'
-          IF (Aout2(idU3Sd,ng)) WRITE (out,170) Aout2(idU3Sd,ng),       &
-     &       'Aout2(idU3Sd)',                                           &
-     &       'Write out averaged 3D u-momentum stokes velocity.'
-          IF (Aout2(idV3Sd,ng)) WRITE (out,170) Aout2(idV3Sd,ng),       &
-     &       'Aout2(idV3Sd)',                                           &
-     &       'Write out averaged 3D v-momentum stokes velocity.'
-#  endif
-# endif
-# if defined SOLVE3D && defined T_PASSIVE
-          DO itrc=1,NPT
-            IF (Aout2(idTvar(inert(itrc)),ng)) WRITE (out,180)          &
-     &          Aout2(idTvar(inert(itrc)),ng), 'Aout2(inert)',          &
-     &          'Write out  averaged inert passive tracer ', itrc,      &
-     &          TRIM(Vname(1,idTvar(inert(itrc))))
-          END DO
-# endif
-# ifdef SOLVE3D
-#  if defined BULK_FLUXES || defined ECOSIM || defined ATM_PRESS
-          IF (Aout2(idPair,ng)) WRITE (out,170) Aout2(idPair,ng),       &
-     &       'Aout2(idPair)',                                           &
-     &       'Write out averaged surface air pressure.'
-#  endif
-#  if defined BULK_FLUXES || defined ECOSIM
-          IF (Aout2(idUair,ng)) WRITE (out,170) Aout2(idUair,ng),       &
-     &       'Aout2(idUair)',                                           &
-     &       'Write out averaged surface U-wind component.'
-          IF (Aout2(idVair,ng)) WRITE (out,170) Aout2(idVair,ng),       &
-     &       'Aout2(idVair)',                                           &
-     &       'Write out averaged surface V-wind component.'
-          IF (Aout2(idUairE,ng)) WRITE (out,170) Aout2(idUairE,ng),     &
-     &       'Aout2(idUairE)',                                          &
-     &       'Write out averaged Eastward surface U-wind component.'
-          IF (Aout2(idVairN,ng)) WRITE (out,170) Aout2(idVairN,ng),     &
-     &       'Aout2(idVairN)',                                          &
-     &       'Write out averaged Northward surface V-wind component.'
-#  endif
-          IF (Aout2(idTsur(itemp),ng)) WRITE (out,170)                  &
-     &        Aout2(idTsur(itemp),ng), 'Aout2(idTsur)',                 &
-     &       'Write out averaged surface net heat flux.'
-          IF (Aout2(idTsur(isalt),ng)) WRITE (out,170)                  &
-     &        Aout2(idTsur(isalt),ng), 'Aout2(idTsur)',                 &
-     &       'Write out averaged surface net salt flux.'
-#  ifdef SHORTWAVE
-          IF (Aout2(idSrad,ng)) WRITE (out,170) Aout2(idSrad,ng),       &
-     &       'Aout2(idSrad)',                                           &
-     &       'Write out averaged shortwave radiation flux.'
-#  endif
-#  ifdef BULK_FLUXES
-          IF (Aout2(idLrad,ng)) WRITE (out,170) Aout2(idLrad,ng),       &
-     &       'Aout2(idLrad)',                                           &
-     &       'Write out averaged longwave radiation flux.'
-          IF (Aout2(idLhea,ng)) WRITE (out,170) Aout2(idLhea,ng),       &
-     &       'Aout2(idLhea)',                                           &
-     &       'Write out averaged latent heat flux.'
-          IF (Aout2(idShea,ng)) WRITE (out,170) Aout2(idShea,ng),       &
-     &       'Aout2(idShea)',                                           &
-     &       'Write out averaged sensible heat flux.'
-#   ifdef EMINUSP
-          IF (Aout2(idevap,ng)) WRITE (out,170) Aout2(idevap,ng),       &
-     &       'Aout2(idevap)',                                           &
-     &       'Write out averaged evaporation rate.'
-          IF (Aout2(idrain,ng)) WRITE (out,170) Aout2(idrain,ng),       &
-     &       'Aout2(idrain)',                                           &
-     &       'Write out averaged rain rate.'
-#   endif
-#  endif
-          IF (Aout2(idDano,ng)) WRITE (out,170) Aout2(idDano,ng),       &
-     &       'Aout2(idDano)',                                           &
-     &       'Write out averaged density anomaly.'
-#  if defined LMD_MIXING || defined MY25_MIXING || defined GLS_MIXING
-          IF (Aout2(idVvis,ng)) WRITE (out,170) Aout2(idVvis,ng),       &
-     &       'Aout2(idVvis)',                                           &
-     &       'Write out averaged vertical viscosity: AKv.'
-          IF (Aout2(idTdif,ng)) WRITE (out,170) Aout2(idTdif,ng),       &
-     &       'Aout2(idTdif)',                                           &
-     &       'Write out averaged vertical diffusion: AKt(itemp).'
-          IF (Aout2(idSdif,ng)) WRITE (out,170) Aout2(idSdif,ng),       &
-     &       'Aout2(idSdif)',                                           &
-     &       'Write out averaged vertical diffusion: AKt(isalt).'
-#  endif
-#  ifdef LMD_SKPP
-          IF (Aout2(idHsbl,ng)) WRITE (out,170) Aout2(idHsbl,ng),       &
-     &       'Aout2(idHsbl)',                                           &
-     &       'Write out averaged depth of surface boundary layer.'
-#  endif
-#  ifdef LMD_BKPP
-          IF (Aout2(idHbbl,ng)) WRITE (out,170) Aout2(idHbbl,ng),       &
-     &       'Aout2(idHbbl)',                                           &
-     &       'Write out averaged depth of bottom boundary layer.'
-#  endif
-# endif
-          IF (Aout2(id2dRV,ng)) WRITE (out,170) Aout2(id2dRV,ng),       &
-     &       'Aout2(id2dRV)',                                           &
-     &       'Write out averaged 2D relative vorticity.'
-          IF (Aout2(id2dPV,ng)) WRITE (out,170) Aout2(id2dPV,ng),       &
-     &       'Aout2(id2dPV)',                                           &
-     &       'Write out averaged 2D potential vorticity.'
-# ifdef SOLVE3D
-          IF (Aout2(id3dRV,ng)) WRITE (out,170) Aout2(id3dRV,ng),       &
-     &       'Aout2(id3dRV)',                                           &
-     &       'Write out averaged 3D relative vorticity.'
-          IF (Aout2(id3dPV,ng)) WRITE (out,170) Aout2(id3dPV,ng),       &
-     &       'Aout2(id3dPV)',                                           &
-     &       'Write out averaged 3D potential vorticity.'
-# endif
-          IF (Aout2(idZZav,ng)) WRITE (out,170) Aout2(idZZav,ng),       &
-     &       'Aout2(idZZav)',                                           &
-     &       'Write out averaged quadratic <zeta*zeta> term.'
-          IF (Aout2(idU2av,ng)) WRITE (out,170) Aout2(idU2av,ng),       &
-     &       'Aout2(idU2av)',                                           &
-     &       'Write out averaged quadratic <ubar*ubar> term.'
-          IF (Aout2(idV2av,ng)) WRITE (out,170) Aout2(idV2av,ng),       &
-     &       'Aout2(idV2av)',                                           &
-     &       'Write out averaged quadratic <vbar*vbar> term.'
-# ifdef SOLVE3D
-          IF (Aout2(idHUav,ng)) WRITE (out,170) Aout2(idHUav,ng),       &
-     &       'Aout2(idHUav)',                                           &
-     &       'Write out averaged u-volume flux, Huon.'
-          IF (Aout2(idHVav,ng)) WRITE (out,170) Aout2(idHVav,ng),       &
-     &       'Aout2(idHVav)',                                           &
-     &       'Write out averaged v-volume flux, Hvom.'
-          IF (Aout2(idUUav,ng)) WRITE (out,170) Aout2(idUUav,ng),       &
-     &       'Aout2(idUUav)',                                           &
-     &       'Write out averaged quadratic <u*u> term.'
-          IF (Aout2(idUVav,ng)) WRITE (out,170) Aout2(idUVav,ng),       &
-     &       'Aout2(idUVav)',                                           &
-     &       'Write out averaged quadratic <u*v> term.'
-          IF (Aout2(idVVav,ng)) WRITE (out,170) Aout2(idVVav,ng),       &
-     &       'Aout2(idVVav)',                                           &
-     &       'Write out averaged quadratic <v*v> term.'
-          DO itrc=1,NAT
-            IF (Aout2(idTTav(itrc),ng)) WRITE (out,180)                 &
-     &          Aout2(idTTav(itrc),ng), 'Aout2(idTTav)',                &
-     &          'Write out averaged <t*t> for tracer ', itrc,           &
-     &          TRIM(Vname(1,idTvar(itrc)))
-          END DO
-          DO itrc=1,NAT
-            IF (Aout2(idUTav(itrc),ng)) WRITE (out,180)                 &
-     &          Aout2(idUTav(itrc),ng), 'Aout2(idUTav)',                &
-     &          'Write out averaged <u*t> for tracer ', itrc,           &
-     &          TRIM(Vname(1,idTvar(itrc)))
-          END DO
-          DO itrc=1,NAT
-            IF (Aout2(idVTav(itrc),ng)) WRITE (out,180)                 &
-     &          Aout2(idVTav(itrc),ng), 'Aout2(idVTav)',                &
-     &          'Write out averaged <v*t> for tracer ', itrc,           &
-     &          TRIM(Vname(1,idTvar(itrc)))
-          END DO
-          DO itrc=1,NAT
-            IF (Aout2(iHUTav(itrc),ng)) WRITE (out,180)                 &
-     &          Aout2(iHUTav(itrc),ng), 'Aout2(iHUTav)',                &
-     &          'Write out averaged <Huon*t> for tracer ', itrc,        &
-     &          TRIM(Vname(1,idTvar(itrc)))
-          END DO
-          DO itrc=1,NAT
-            IF (Aout2(iHVTav(itrc),ng)) WRITE (out,180)                 &
-     &          Aout2(iHVTav(itrc),ng), 'Aout2(iHVTav)',                &
-     &          'Write out averaged <Hvom*t> for tracer ', itrc,        &
-     &          TRIM(Vname(1,idTvar(itrc)))
-          END DO
-# endif
 #endif
 #ifdef DIAGNOSTICS_UV
           IF ((nDIA(ng).gt.0).and.ANY(Dout(:,ng))) THEN
@@ -7789,24 +7127,6 @@
           WRITE (out,230) '  Output Detiding Harmonics File:  ',        &
      &                    TRIM(HAR(ng)%name)
 # endif
-# if defined AVERAGES2
-          IF (ndefAVG2(ng).eq.0) THEN
-            WRITE (out,230) '          Output Averages File:  ',        &
-     &                      TRIM(AVG2(ng)%name)
-          ELSE
-            WRITE (out,230) '     Prefix for Averages Files:  ',        &
-     &                      TRIM(AVG2(ng)%base)
-          END IF
-# endif
-# if defined HISTORY2
-          IF (ndefHIS2(ng).eq.0) THEN
-            WRITE (out,230) '          Output Surface File:  ',        &
-     &                      TRIM(HIS2(ng)%name)
-          ELSE
-            WRITE (out,230) '     Prefix for Surface Files:  ',        &
-     &                      TRIM(HIS2(ng)%base)
-          END IF
-# endif
 # ifdef DIAGNOSTICS
           IF (ndefDIA(ng).eq.0) THEN
             WRITE (out,230) '         Output Diagnostics File:  ',      &
@@ -7852,29 +7172,31 @@
 # endif
 # if !defined CORRELATION
 #  if defined TANGENT && \
-     !(defined FOUR_DVAR         || defined IS4DVAR_SENSITIVITY || \
-       defined OPT_OBSERVATIONS  || defined SANITY_CHECK        || \
+     !(defined FOUR_DVAR         || defined I4DVAR_ANA_SENSITIVITY || \
+       defined OPT_OBSERVATIONS  || defined SANITY_CHECK           || \
        defined SENSITIVITY_4DVAR || defined TLM_CHECK)
           fname=ITL(ng)%name
           IF (.not.find_file(ng, fname, 'ITLNAME')) GO TO 30
           WRITE (out,230) '      Input Tangent Initial File:  ',        &
      &                    TRIM(fname)
 #  endif
-#  if defined WEAK_CONSTRAINT         && \
-    !(defined W4DPSAS_FCT_SENSITIVITY || defined W4DPSAS || \
-      defined W4DPSAS_SENSITIVITY)
+#  if defined WEAK_CONSTRAINT          && \
+    !(defined RBL4DVAR                 || \
+      defined RBL4DVAR_ANA_SENSITIVITY || \
+      defined RBL4DVAR_FCT_SENSITIVITY || \
+      defined SP4DVAR)
           fname=IRP(ng)%name
           IF (.not.find_file(ng, fname, 'IRPNAME')) GO TO 30
           WRITE (out,230) '  Input Representer Initial File:  ',        &
      &                    TRIM(fname)
 #  endif
 #  if defined ADJOINT && \
-     !(defined AD_SENSITIVITY      || defined FOUR_DVAR         || \
-       defined IS4DVAR_SENSITIVITY || defined FORCING_SV        || \
-       defined OPT_OBSERVATIONS    || defined OPT_PERTURBATION  || \
-       defined SANITY_CHECK        || defined SENSITIVITY_4DVAR || \
-       defined SO_SEMI             || defined STOCHASTIC_OPT    || \
-       defined HESSIAN_SV          || defined HESSIAN_SO        || \
+     !(defined AD_SENSITIVITY         || defined FOUR_DVAR         || \
+       defined I4DVAR_ANA_SENSITIVITY || defined FORCING_SV        || \
+       defined OPT_OBSERVATIONS       || defined OPT_PERTURBATION  || \
+       defined SANITY_CHECK           || defined SENSITIVITY_4DVAR || \
+       defined SO_SEMI                || defined STOCHASTIC_OPT    || \
+       defined HESSIAN_SV             || defined HESSIAN_SO        || \
        defined HESSIAN_FSV)
           fname=IAD(ng)%name
           IF (.not.find_file(ng, fname, 'IADNAME')) GO TO 30
@@ -7920,10 +7242,10 @@
                 fname=CLM(i,ng)%files(ifile)
                 IF (.not.find_file(ng, fname, 'CLMNAME')) GO TO 30
                 IF (ifile.eq.1) THEN
-                  WRITE (out,230) '        Input Climatology File:  ',  &
-     &                            TRIM(fname)
+                  WRITE (out,310) '       Input Climatology File ', i,  &
+     &                            ':  ', TRIM(fname)
                 ELSE
-                  WRITE (out,'(35x,a)') TRIM(fname)
+                  WRITE (out,'(37x,a)') TRIM(fname)
                 END IF
               END DO
             END IF
@@ -7949,8 +7271,8 @@
             END IF
           END DO
 # endif
-# if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
-     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+# if defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
+     defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR      || \
      defined SO_SEMI
 #  ifndef OBS_SPACE
           fname=ADS(ng)%name
@@ -7966,8 +7288,8 @@
                 fname=BRY(i,ng)%files(ifile)
                 IF (.not.find_file(ng, fname, 'BRYNAME')) GO TO 30
                 IF (ifile.eq.1) THEN
-                  WRITE (out,230) '             Input Boundary File:  ',&
-     &                            TRIM(fname)
+                  WRITE (out,310) '  Input Lateral Boundary File ', i,  &
+     &                            ':  ', TRIM(fname)
                 ELSE
                   WRITE (out,'(37x,a)') TRIM(fname)
                 END IF
@@ -8006,12 +7328,6 @@
           WRITE (out,230) '         Vegetation Parameters File:  ',     &
      &                    TRIM(fname)
 # endif
-# ifdef ICE_MODEL
-          fname=iparnam
-          IF (.not.find_file(ng, fname, 'IPARNAM')) GO TO 30
-          WRITE (out,230) '       Ice Model Parameters File:  ',        &
-     &                    TRIM(fname)
-# endif
 #endif
           fname=varname
           IF (.not.find_file(ng, fname, 'VARNAME')) GO TO 30
@@ -8027,8 +7343,7 @@
             END IF
           END IF
           exit_flag=4
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
   40      CONTINUE
         END DO
         IF (Nuser.gt.0) THEN
@@ -8089,7 +7404,7 @@
         IF (ABS(RunTimeSec(1)-RunTimeSec(ng)).ne.0.0_r8) THEN
           IF (Master) THEN
             WRITE (out,340)  1, RunTimeSec( 1), RunTimeDay( 1),         &
-    &                       ng, RunTimeSec(ng), RunTimeDay(ng)
+     &                       ng, RunTimeSec(ng), RunTimeDay(ng)
           END IF
           exit_flag=5
           RETURN
@@ -8136,21 +7451,32 @@
 
   50  FORMAT (/,' READ_PhyPar - Error while processing line: ',/,a)
   60  FORMAT (/,1x,a,/,                                                 &
-     &        /,1x,'Operating system : ',a,                             &
-     &        /,1x,'CPU/hardware     : ',a,                             &
-     &        /,1x,'Compiler system  : ',a,                             &
-     &        /,1x,'Compiler command : ',a,                             &
-     &        /,1x,'Compiler flags   : ',a,                             &
+     &        /,1x,'Operating system  : ',a,                            &
+     &        /,1x,'CPU/hardware      : ',a,                            &
+     &        /,1x,'Compiler system   : ',a,                            &
+     &        /,1x,'Compiler command  : ',a,                            &
+     &        /,1x,'Compiler flags    : ',a,                            &
 #ifdef DISTRIBUTE
-     &        /,1x,'MPI Communicator : ',i0,2x,'PET size = ',i0,/,      &
-     &        /,1x,'Input Script     : ',a,/,                           &
+# ifdef DISJOINTED
+     &        /,1x,'Full Communicator : ',i0,',  PET size = ',i0,       &
+     &         ',  Disjointed Subgroups = ',i0,                         &
+     &        /,1x,'Fork Communicator : ',i0,',  PET size = ',i0,       &
+     &         ',  Color Range = ',i0,' to ',i0,                        &
+#  ifdef CONCURRENT_KERNEL
+     &        /,1x,'Task Communicator : ',i0,',  PET size = ',i0,       &
+     &         ',  Color Range = ',i0,' to ',i0,                        &
+#  endif
+              /,                                                        &
+# else
+     &        /,1x,'OCN Communicator  : ',i0,',  PET size = ',i0,/,     &
+# endif
+     &        /,1x,'Input Script      : ',a,/,                          &
 #else
      &        /,                                                        &
 #endif
 #ifdef GIT_URL
      &        /,1x,'GIT Root URL     : ',a,                             &
      &        /,1x,'GIT Revision     : ',a,                             &
-     &        /,1x,'Git Status       : ',a,/,                           &
 #endif
      &        /,1x,'SVN Root URL     : ',a,                             &
      &        /,1x,'SVN Revision     : ',a,/,                           &
@@ -8163,9 +7489,9 @@
      &        'x',i0)
   80  FORMAT (/,' ROMS/TOMS: Wrong choice of grid ',i2.2,1x,            &
      &        'partition or number of parallel nodes.',                 &
-     &        /,12x,'NtileI * NtileJ  must be equal to the number of ', &
-     &        'parallel nodes.',                                        &
-     &        /,12x,'Change -np value to mpirun or',                    &
+     &        /,12x,a,1x,i0,/,12x,                                      &
+     &        'must be equal to the number of parallel processes = ',   &
+     &        i0,/,12x,'Change -np value to mpirun or',                 &
      &        /,12x,'change domain partition in input script.')
   90  FORMAT (/,' Resolution, Grid ',i2.2,': ',i0,'x',i0,'x',i0,        &
      &        ',',2x,'Parallel Threads: ',i0,',',2x,'Tiling: ',i0,      &
@@ -8202,7 +7528,7 @@
  270  FORMAT (/,' READ_PHYPAR - Grid ',i2.2,                            &
      &        ', could not find input file:  ',a)
  280  FORMAT (/,' READ_PHYPAR - Variable index not yet loaded, ', a)
- 290  FORMAT (/,' READ_PHYPAR - Invalid dimension parameter, ',a,i4,    &
+ 290  FORMAT (/,' READ_PHYPAR - Invalid dimension parameter, ',a,i0,    &
      &        /,15x,a)
  300  FORMAT (/,' READ_PHYPAR - Invalid dimension parameter, ',a,'(',   &
      &        i2.2,')',/,15x,a)
@@ -8215,6 +7541,7 @@
      &        /,15x,'Grid ',i2.2,':',f14.1,' (sec)',2x,f14.2,' (days)', &
      &        /,15x,'Adjust standard input parameter NTIMES in ',       &
      &              '''roms.in''.'/)
-
+ 350  FORMAT (/,' READ_PHYPAR - Invalid input parameter, ',a,i0,        &
+     &        ', for grid ',i2.2,/,15x,a,i0,', ',a,i0,/,15x,a,/,15x,a)
       RETURN
       END SUBROUTINE read_PhyPar

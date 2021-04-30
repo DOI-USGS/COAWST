@@ -32,15 +32,15 @@
            Aval(5)=REAL(Iinfo(1,idvprp(i),ng),r8)
            status=def_var(ng, iNLM, HIS(ng)%ncid,HIS(ng)%Vid(idvprp(i))  &
      &                   ,NF_FOUT, nvd4, v3pgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
       END DO
-#endif 
-#if defined VEG_STREAMING 
+#endif
+#if defined VEG_STREAMING
 !
-!  Define wave dissipation due to vegetation. 
+!  Define wave dissipation due to vegetation.
 !
-        IF (Hout(idWdvg,ng)) THEN 
+        IF (Hout(idWdvg,ng)) THEN
           Vinfo( 1)=Vname(1,idWdvg)
           Vinfo( 2)=Vname(2,idWdvg)
           Vinfo( 3)=Vname(3,idWdvg)
@@ -54,14 +54,14 @@
           Aval(5)=REAL(Iinfo(1,idWdvg,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWdvg),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
-        END IF 
-#endif 
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        END IF
+#endif
 #ifdef MARSH_DYNAMICS
 !
-!  Store masking marsh of marsh cells. 
+!  Store masking marsh of marsh cells.
 !
-       IF (Hout(idTims,ng)) THEN 
+       IF (Hout(idTims,ng)) THEN
          Vinfo( 1)=Vname(1,idTims)
          Vinfo( 2)=Vname(2,idTims)
          Vinfo( 3)=Vname(3,idTims)
@@ -74,13 +74,13 @@
          Aval(5)=REAL(Iinfo(1,idTims,ng),r8)
          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTims),   &
      &                  NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-         IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
        END IF
 # ifdef MARSH_WAVE_THRUST
 !
 !  Total thrust from all directions due to waves.
 !
-        IF (Hout(idTtot,ng)) THEN 
+        IF (Hout(idTtot,ng)) THEN
           Vinfo( 1)=Vname(1,idTtot)
           Vinfo( 2)=Vname(2,idTtot)
           Vinfo( 3)=Vname(3,idTtot)
@@ -93,7 +93,7 @@
           Aval(5)=REAL(Iinfo(1,idTtot,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTtot),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 #  ifdef MARSH_SED_EROSION
@@ -115,15 +115,15 @@
             status=def_var(ng, iNLM, HIS(ng)%ncid,                      &
      &                     HIS(ng)%Vid(idTmfo(i)), NF_FOUT,             &
      &                     nvd3, t2dgrd, Aval, Vinfo, ncname)
-            IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
         END DO
 !
-#   ifdef MARSH_RETREAT 
+#   ifdef MARSH_RETREAT
 !
 !  Amount of marsh retreat from all directions.
 !
-        IF (Hout(idTmmr,ng)) THEN 
+        IF (Hout(idTmmr,ng)) THEN
           Vinfo( 1)=Vname(1,idTmmr)
           Vinfo( 2)=Vname(2,idTmmr)
           Vinfo( 3)=Vname(3,idTmmr)
@@ -136,16 +136,16 @@
           Aval(5)=REAL(Iinfo(1,idTmmr,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmmr),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-#   endif  
-#  endif  
-# endif 
-# ifdef MARSH_TIDAL_RANGE 
+#   endif
+#  endif
+# endif
+# ifdef MARSH_TIDAL_RANGE
 !
-!  Amount of marsh tidal range over a given frequency. 
+!  Amount of marsh tidal range over a given frequency.
 !
-        IF (Hout(idTmtr,ng)) THEN 
+        IF (Hout(idTmtr,ng)) THEN
           Vinfo( 1)=Vname(1,idTmtr)
           Vinfo( 2)=Vname(2,idTmtr)
           Vinfo( 3)=Vname(3,idTmtr)
@@ -158,12 +158,12 @@
           Aval(5)=REAL(Iinfo(1,idTmtr,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmtr),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
-!  Amount of marsh mean high water over a given frequency. 
+!  Amount of marsh mean high water over a given frequency.
 !
-        IF (Hout(idTmhw,ng)) THEN 
+        IF (Hout(idTmhw,ng)) THEN
           Vinfo( 1)=Vname(1,idTmhw)
           Vinfo( 2)=Vname(2,idTmhw)
           Vinfo( 3)=Vname(3,idTmhw)
@@ -176,14 +176,14 @@
           Aval(5)=REAL(Iinfo(1,idTmhw,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmhw),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
-	END IF 
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+	END IF
 !
-#  if defined MARSH_VERT_GROWTH 	
+#  if defined MARSH_VERT_GROWTH
 !
 !  Amount of marsh biomass peak
 !
-        IF (Hout(idTmbp,ng)) THEN 
+        IF (Hout(idTmbp,ng)) THEN
           Vinfo( 1)=Vname(1,idTmbp)
           Vinfo( 2)=Vname(2,idTmbp)
           Vinfo( 3)=Vname(3,idTmbp)
@@ -196,12 +196,12 @@
           Aval(5)=REAL(Iinfo(1,idTmbp,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmbp),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Amount of marsh vertical growth
 !
-        IF (Hout(idTmvg,ng)) THEN 
+        IF (Hout(idTmvg,ng)) THEN
           Vinfo( 1)=Vname(1,idTmvg)
           Vinfo( 2)=Vname(2,idTmvg)
           Vinfo( 3)=Vname(3,idTmvg)
@@ -214,8 +214,8 @@
           Aval(5)=REAL(Iinfo(1,idTmvg,ng),r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idTmvg),   &
      &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (exit_flag.ne.NoError) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
-#  endif 
-# endif  
-#endif   
+#  endif
+# endif
+#endif

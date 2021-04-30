@@ -680,6 +680,11 @@
         DO i=IstrR,IendR
           ij=ij+1
           A(ij)=GRID(ng)%h(i,j)
+#ifdef WET_DRY
+          IF (GRID(ng)%rmask_wet(i,j).lt.0.5_r8) THEN
+            A(ij)=9999.0_r8
+          END IF
+#endif
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "DEPTH",    &
@@ -1190,6 +1195,20 @@
           range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Dissip_fric(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Dissip_fric(i,j)=A(ij)
+        END DO
+      END DO
+# endif
 # ifdef DISTRIBUTE
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif
@@ -1223,6 +1242,20 @@
           range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Dissip_break(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Dissip_break(i,j)=A(ij)
+        END DO
+      END DO
+# endif
 # ifdef DISTRIBUTE
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif
@@ -1253,6 +1286,20 @@
           range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Dissip_wcap(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Dissip_wcap(i,j)=A(ij)
+        END DO
+      END DO
+# endif
 # ifdef DISTRIBUTE
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif
@@ -1283,6 +1330,20 @@
           range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Hwave(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Hwave(i,j)=A(ij)
+        END DO
+      END DO
+# endif
 # ifdef DISTRIBUTE
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif
@@ -1312,6 +1373,20 @@
           range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Pwave_top(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Pwave_top(i,j)=A(ij)
+        END DO
+      END DO
+# endif
 # ifdef DISTRIBUTE
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif
@@ -1341,6 +1416,20 @@
           range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Pwave_bot(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Pwave_bot(i,j)=A(ij)
+        END DO
+      END DO
+# endif
 # ifdef DISTRIBUTE
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif
@@ -1371,6 +1460,20 @@
           range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Uwave_rms(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Uwave_rms(i,j)=A(ij)
+        END DO
+      END DO
+# endif
 # ifdef DISTRIBUTE
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif
@@ -1403,6 +1506,20 @@
           range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Dwave(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Dwave(i,j)=A(ij)
+        END DO
+      END DO
+# endif
 # ifdef DISTRIBUTE
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif
@@ -1434,6 +1551,20 @@
           range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Dwavep(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Dwavep(i,j)=A(ij)
+        END DO
+      END DO
+# endif
 # ifdef DISTRIBUTE
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif
@@ -1463,6 +1594,20 @@
           range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Lwave(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Lwave(i,j)=A(ij)
+        END DO
+      END DO
+# endif
 # ifdef DISTRIBUTE
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif
@@ -1493,6 +1638,20 @@
           range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Lwavep(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Lwavep(i,j)=A(ij)
+        END DO
+      END DO
+# endif
 # ifdef DISTRIBUTE
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif
@@ -1525,6 +1684,20 @@
           range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Wave_break(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Wave_break(i,j)=A(ij)
+        END DO
+      END DO
+# endif
 # ifdef DISTRIBUTE
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif
@@ -1556,6 +1729,20 @@
           range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Wave_ds(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Wave_ds(i,j)=A(ij)
+        END DO
+      END DO
+# endif
 # ifdef DISTRIBUTE
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif
@@ -1586,6 +1773,20 @@
         END DO
       END DO
 # ifdef DISTRIBUTE
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Wave_qp(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Wave_qp(i,j)=A(ij)
+        END DO
+      END DO
+# endif
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif
       IF (Myrank.eq.MyMaster) THEN
@@ -1620,6 +1821,20 @@
           range(2)=MAX(range(2),cff)
         END DO
       END DO
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Dissip_veg(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Dissip_veg(i,j)=A(ij)
+        END DO
+      END DO
+# endif
 # ifdef DISTRIBUTE
       CALL mp_reduce (ng, iNLM, 2, range, op_handle)
 # endif

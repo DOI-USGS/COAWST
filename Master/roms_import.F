@@ -3,9 +3,9 @@
 
 #ifdef ROMS_COUPLING
 !
-!svn $Id: roms_import.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: roms_import.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -28,8 +28,6 @@
      &                          id, gtype, scale, add_offset,           &
 # if defined MCT_LIB
      &                          Npts, InpField,                         &
-# elif defined ESMF_LIB
-     &                          InpField,                               &
 # endif
      &                          Imin, Imax, Jmin, Jmax,                 &
      &                          LBi, UBi, LBj, UBj,                     &
@@ -64,15 +62,11 @@
 # ifdef ASSUMED_SHAPE
 #  if defined MCT_LIB
       real(r8), intent(in) ::  InpField(:)
-#  elif defined ESMF_LIB
-      real(r8), intent(in) ::  InpField(:,:)
 #  endif
       real(r8), intent(out) :: OutField(LBi:,LBj:)
 # else
 #  if defined MCT_LIB
       real(r8), intent(in) ::  InpField(Npts)
-#  elif defined ESMF_LIB
-      real(r8), intent(in) ::  InpField(:,:)
 #  endif
       real(r8), intent(out) :: OutField(LBi:UBi,LBj:UBj)
 # endif
@@ -108,7 +102,6 @@
           range(2)=MAX(range(2),OutField(i,j))
         END DO
       END DO
-# elif defined ESMF_LIB
 # endif
 # ifdef DISTRIBUTE
 !

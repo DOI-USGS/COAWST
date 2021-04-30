@@ -1,8 +1,8 @@
-!  4DVar assimilation input parameters.
+!  4D-Var assimilation input parameters.
 !
-!svn $Id: s4dvar.in 995 2020-01-10 04:01:28Z arango $
+!svn $Id: s4dvar.in 1058 2021-03-25 19:04:23Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -96,19 +96,19 @@ balance(isVvel) =  T                      ! 3D momentum (u, v)
 
      LhessianEV = T
 
-! Switch (T/F) to activate hot start in weak-constraint (W4DVAR and
-! W4DPSAS) algorithms of subsequent outer loops.
+! Switch (T/F) to activate hot start in weak-constraint (R4DVAR and
+! RBL4DVAR) algorithms of subsequent outer loops.
 
       LhotStart = T
 
-! Switch (T/F) to activate IS4DVAR conjugate gradient preconditioning.
+! Switch (T/F) to activate I4DVAR conjugate gradient preconditioning.
 ! Two types of Limited-Memory Preconditioner (LMP) are available
 ! (Tshimanga et al., 2008): spectral LMP and Ritz LMP.
 
        Lprecond = F
 
 ! Switch to activate either Ritz Limited-Memory Preconditioner (T)
-! or spectral Limited-Memory Preconditioner (F) to the IS4DVAR algorithm.
+! or spectral Limited-Memory Preconditioner (F) to the I4DVAR algorithm.
 
           Lritz = T
 
@@ -117,7 +117,7 @@ balance(isVvel) =  T                      ! 3D momentum (u, v)
 
         NritzEV = 0
 
-! If weak constraint 4DVar, set number of iterations in the Lanczos
+! If weak constraint 4D-Var, set number of iterations in the Lanczos
 ! algorithm used to estimate the posterior analysis error covariance
 ! matrix.
 
@@ -127,6 +127,14 @@ balance(isVvel) =  T                      ! 3D momentum (u, v)
 ! outer loop to process. It must be less or equal that Nouter.
 
         Nimpact = 1
+
+! If multiple executables 4D-Var, set the current outer counter and
+! its computation phase (string). The 4D-Var running script assigns
+! their values.
+
+      OuterLoop = MyOuterLoop
+
+     Phase4DVAR = MyPhase4DVAR
 
 ! Number of extra-observation classes (NextraObs), observation type
 ! indices (ExtraIndex), and observation type names (ExtraName) to
@@ -148,7 +156,7 @@ balance(isVvel) =  T                      ! 3D momentum (u, v)
 
       ExtraName = radial
 
-! If weak constraint 4DVar, set diffusive relaxation coefficients (m2/s)
+! If weak constraint 4D-Var, set diffusive relaxation coefficients (m2/s)
 ! used to relax representer tangent linear solution to privious Picard
 ! iteration linearized trajectory.
 
@@ -318,37 +326,39 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 
       bgqc_type == 1
 
-! If BGQC is in terms of state variables, set number of standard deviations
-! threshold to use in the quality control rejection of observations.
+! If BGQC is in terms of state variables, set the threshold, squared number
+! of standard deviations to use in the quality control rejection of
+! observations.
 !
 !   Use a large value (say, 1.0d+5) if you do not want to reject observations
 !   associated with a particular state variable.
 !
-!   Use a small value (typically, 4 standard deviations) to perform quality
-!   control of observations for a particular state variable.
+!   Use a small value (typically, 16 to rejecting based on on 4 standard
+!   deviations) to perform quality control of observations for a particular
+!   state variable.
 
  S_bgqc(isFsur) == 1.0d+5                                 ! free-surface
  S_bgqc(isUbar) == 1.0d+5                                 ! 2D U-momentum
  S_bgqc(isVbar) == 1.0d+5                                 ! 2D V-momentum
  S_bgqc(isUvel) == 1.0d+5                                 ! 3D U-momentum
  S_bgqc(isVvel) == 1.0d+5                                 ! 3D V-momentum
- S_bgqc(isTvar) == 4.0d0  4.0d0                           ! 1:NT tracers
+ S_bgqc(isTvar) == 16.0d0  16.0d0                         ! 1:NT tracers
 
-! If BGQC is in terms of observation provenance, set number of standard
-! deviations threshold to use in the quality control rejection of
+! If BGQC is in terms of observation provenance, set the threshold, squared
+! number of standard deviations to use in the quality control rejection of
 ! observations.
 !
-!   Use a small value (say, 4 standard deviations) to perform quality
-!   control for the desired observation provenance(s).
+!   Use a small value (say, 16 to rejecting based on on 4 standard deviations)
+!   to perform quality control for the desired observation provenance(s).
 !
 !   Nprovenance:   Number of observation provenances to quality control
 !   Iprovenance:   Observation provenance indices to process [1:Nprovenance]
 !   P_bgqc:        Standard deviation threshold [1:Nprovenance]
 
     Nprovenance == 2
-    Iprovenance == 6     7                ! ARGO Temperature and Salinity
+    Iprovenance == 6      7               ! ARGO Temperature and Salinity
 
-         P_bgqc == 4.0d0 4.0d0
+         P_bgqc == 16.0d0 16.0d0
 
 ! If applicable, set switches (T/F) used to adjust surface tracer flux,
 ! [1:NT,1:Ngrids].
@@ -432,8 +442,8 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 ! impacts during the analysis-forecast cycle when the forecast is initialized
 ! with the 4D-Var analysis (OIFnameA) or the 4D-Var background (OIFnameB).
 
-      OIFnameA == roms_oif_a.nc
-      OIFnameB == roms_oif_b.nc
+       OIFnameA == roms_oif_a.nc
+       OIFnameB == roms_oif_b.nc
 
 !
 !  GLOSSARY:
@@ -552,9 +562,9 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !
 !
 !  LhotStart      Switch (T/F) to activate hot start in weak-constraint
-!                 (W4DVAR and W4DPSAS) algorithms.
+!                 (R4DVAR and RBL4DVAR) algorithms.
 !
-!  Lprecond       Switch (T/F) to activate preconditioning in the IS4DVAR
+!  Lprecond       Switch (T/F) to activate preconditioning in the I4DVAR
 !                 algorithm. Two types of Limited-Memory preconditioner (LMP)
 !                 are available Tshimanga et al., 2008): Spectral and Ritz.
 !
@@ -563,7 +573,7 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !
 !  Lritz          Switch to activate either Ritz Limited-Memory Preconditioner
 !                 (T) or spectral Limited-Memory Preconditioner (F) to the
-!                 IS4DVAR algorithm using eigenpairs approximation for the
+!                 I4DVAR algorithm using eigenpairs approximation for the
 !                 Hessian matrix.  The accuracy of the Hessian eigenvectors
 !                 (HevecErr) can be used to fine tune the minimization. That
 !                 is, HevecErr can be used to control number of eigenvalues
@@ -574,8 +584,8 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !                   If zero, use HevecErr parameter to determine the number
 !                   of converged eigenpairs.
 !
-!  NpostI         If weak constraint 4DVar (W4DPSAS or W4DVAR), set number of
-!                 iterations in the Lanczos algorithm used to estimate the
+!  NpostI         If weak constraint 4D-Var (RBL4DVAR or R4DVAR), set number
+!                 of iterations in the Lanczos algorithm used to estimate the
 !                 posterior analysis error covariance matrix.
 !
 !------------------------------------------------------------------------------
@@ -588,6 +598,25 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !                 applications.  The observation analysis needs to be computed
 !                 separately for each outer loop.  The full analysis for all
 !                 outer loops is combined offline.
+!
+!------------------------------------------------------------------------------
+! Outer loop counter and phase for split 4D-Var in multiple executables.
+!------------------------------------------------------------------------------
+!
+!  OuterLoop      Current outer loop counter. It is set by the running shell
+!                 script.
+!
+!  Phase4DVAR     Current split 4D-Var algorithm elementary phases to compute:
+!
+!                   Phase4DVAR = 'background'         Xb
+!                   Phase4DVAR = 'increment'          dXa
+!                   Phase4DVAR = 'analysis'           Xa = Xb + dXa
+!                   Phase4DVAR = 'post_analysis'      (posterior analysis)
+!                   Phase4DVAR = 'post_error'         (posterior error)
+!
+!                 There is a 'prior_error' phase that it is always done in
+!                 'ROMS_initialize'.
+!
 !
 !------------------------------------------------------------------------------
 ! Additional observation operators.
@@ -632,7 +661,7 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 ! Diffusive relaxation coefficients.
 !------------------------------------------------------------------------------
 !
-! If weak constraint 4DVar and RPM_RELAXATION flag is activated, this
+! If weak constraint 4D-Var and RPM_RELAXATION flag is activated, this
 ! coefficients are use to relax the representer tangent lineas solution
 ! to previous outer loop linearized trajectory during the Picard
 ! iterations. The user may turn off relaxation on a particular variable
@@ -667,8 +696,8 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !                 The normalization NetCDF only needs to be created once
 !                 and simultaneous runs can write to the same NetCDF.  If
 !                 using this approach, compute the normalization factors
-!                 with the CORRELATION CPP-option and not IS4DVAR, W4DPSAS
-!                 or W4DVAR.
+!                 with the CORRELATION CPP-option and not I4DVAR, RBL4DVAR
+!                 or R4DVAR.
 !
 !  LwrtNRM        Switch (T/F) to write out correlation normalization factors
 !                 for, [4,1:Ngrids]:
@@ -838,9 +867,9 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !                                     or instrument. For example, temperature
 !                                     observation from ARGO buoys.
 !
-!  S_bgqc         Number of standard deviations threshold to use in the quality
-!                 control rejection of observations in terms of the state
-!                 variable index.
+!  S_bgqc         Threshold, squared number of standard deviations to use in
+!                 the quality control rejection of observations in terms of
+!                 the state variable index.
 !
 !                    S_bgqc(isFsur)             free-surface
 !                    S_bgqc(isUbar)             2D U-momentum
@@ -851,7 +880,8 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !
 !                 It used when bgqc_type = 1. Use a large value (say 1.0d+5)
 !                 to indicate that the observations are spread out over a wider
-!                 range of background values.
+!                 range of background values. Otherwise, you use values like
+!                 16 for rejecting observations based on 2 standard deviations.
 !
 !  Nprovenance    Number of observation provenances to consider for background
 !                 quality control.  Used when bgqc_type = 2.
@@ -862,13 +892,13 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !                 1:Nprovenance values are expected for each nested grid.
 !                 Used when bgqc_type = 2.
 !
-!  P_bgqc         Number of standard deviations threshold to use in the quality
-!                 control rejection of observations in terms of the provenance
-!                 index, 1:Nprovenance values are expected for each nested
-!                 grid. Used when bgqc_type = 2.
+!  P_bgqc         Threshold, squared number of standard deviations to use in
+!                 the quality control rejection of observations in terms of
+!                 the provenance index, 1:Nprovenance values are expected for
+!                 each nested grid. Used when bgqc_type = 2.
 !
 !------------------------------------------------------------------------------
-! 4DVAR adjustment switches.
+! 4D-Var adjustment switches.
 !------------------------------------------------------------------------------
 !
 !  Lstflux        Logical switches (T/F) used to adjust surface tracer flux,
@@ -941,7 +971,7 @@ HdecayF(isTsur) == 100.0d+3  100.0d+3             ! 1:NT surface tracers flux
 !  ERRname        Output posterior error covariance matrix file name.
 !
 ! Input forcing filenames at observation locations for computing observations
-! impacts during the analysis-forecast cycle when W4DPSAS_FCT_SENSITIVITY and
+! impacts during the analysis-forecast cycle when RBL4DVAR_FCT_SENSITIVITY and
 ! OBS_SPACE are activated:
 !
 ! (See www.myroms.org/wiki/Analysis-Forecast_Cycle_Observation_Impacts)

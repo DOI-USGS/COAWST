@@ -2,9 +2,9 @@
       MODULE set_masks_mod
 #ifdef MASKING
 !
-!svn $Id: set_masks.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: set_masks.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -52,10 +52,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, model, 2, __LINE__, __FILE__)
+      CALL wclock_on (ng, model, 2, __LINE__, MyFile)
 # endif
       CALL set_masks_tile (ng, tile, model,                             &
      &                     LBi, UBi, LBj, UBj,                          &
@@ -98,9 +101,9 @@
      &                     GRID(ng) % umask_full,                       &
      &                     GRID(ng) % vmask_full)
 # ifdef PROFILE
-      CALL wclock_off (ng, model, 2, __LINE__, __FILE__)
+      CALL wclock_off (ng, model, 2, __LINE__, MyFile)
 # endif
-
+!
       RETURN
       END SUBROUTINE set_masks
 !
@@ -349,7 +352,7 @@
         DO is=1,Nsrc(ng)
           i=SOURCES(ng)%Isrc(is)
           j=SOURCES(ng)%Jsrc(is)
-          IF (((IstrT.le.i).and.(i.le.IendT)).and.                        &
+          IF (((IstrT.le.i).and.(i.le.IendT)).and.                      &
      &        ((JstrT.le.j).and.(j.le.JendT))) THEN
             IF (INT(SOURCES(ng)%Dsrc(is)).eq.0) THEN
               umask_full(i,j)=1.0_r8
@@ -711,9 +714,8 @@
 #  endif
 
       END IF
-
+!
       RETURN
-
       END SUBROUTINE set_avg_masks
 # endif
 #endif

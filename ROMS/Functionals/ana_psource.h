@@ -1,8 +1,8 @@
       SUBROUTINE ana_psource (ng, tile, model)
 !
-!! svn $Id: ana_psource.h 995 2020-01-10 04:01:28Z arango $
+!! svn $Id: ana_psource.h 1054 2021-03-06 19:47:12Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -18,8 +18,15 @@
       USE mod_ocean
       USE mod_stepping
 !
+!  Imported variable declarations
+!
       integer, intent(in) :: ng, tile, model
-
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 #include "tile.h"
 !
       CALL ana_psource_tile (ng, tile, model,                           &
@@ -45,9 +52,9 @@
 #else
       IF (Lanafile.and.(tile.eq.0)) THEN
 #endif
-        ANANAME(20)=__FILE__
+        ANANAME(20)=MyFile
       END IF
-
+!
       RETURN
       END SUBROUTINE ana_psource
 !
@@ -113,7 +120,7 @@
 !  Local variable declarations.
 !
       integer :: Npts, NSUB, is, i, j, k, ised
-
+!
       real(r8) :: Pspv = 0.0_r8
       real(r8), save :: area_east, area_west
       real(r8) :: cff, fac, my_area_east, my_area_west
@@ -123,7 +130,7 @@
 #endif
 #if defined DISTRIBUTE
       real(r8), dimension(2) :: buffer
-
+!
       character (len=3), dimension(2) :: io_handle
 #endif
 
@@ -447,19 +454,25 @@
 #  ifdef ONE_TRACER_SOURCE
         IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
           SOURCES(ng)%Tsrc(itemp)=T0(ng)
+#   ifdef SALINITY
           SOURCES(ng)%Tsrc(isalt)=0.0_r8
+#   endif
         END IF
 #  elif defined TWO_D_TRACER_SOURCE
         IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
           SOURCES(ng)%Tsrc(is,itemp)=T0(ng)
+#   ifdef SALINITY
           SOURCES(ng)%Tsrc(is,isalt)=0.0_r8
+#   endif
         END IF
 #  else
         IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
           DO k=1,N(ng)
             DO is=1,Nsrc(ng)
               SOURCES(ng)%Tsrc(is,k,itemp)=T0(ng)
+#  ifdef SALINITY
               SOURCES(ng)%Tsrc(is,k,isalt)=0.0_r8
+#  endif
             END DO
           END DO
         END IF
@@ -469,13 +482,17 @@
 #  ifdef ONE_TRACER_SOURCE
         IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
           SOURCES(ng)%Tsrc(itemp)=T0(ng)
+#   ifdef SALINITY
           SOURCES(ng)%Tsrc(isalt)=S0(ng)
+#   endif
         END IF
 #  elif defined TWO_D_TRACER_SOURCE
         IF (DOMAIN(ng)%NorthEast_Test(tile)) THEN
           DO is=1,Nsrc(ng)-1
             SOURCES(ng)%Tsrc(is,itemp)=T0(ng)
+#   ifdef SALINITY
             SOURCES(ng)%Tsrc(is,isalt)=S0(ng)
+#   endif
           END DO
         END IF
 #  else
@@ -483,18 +500,21 @@
           DO k=1,N(ng)
             DO is=1,Nsrc(ng)-1
               SOURCES(ng)%Tsrc(is,k,itemp)=T0(ng)
+#  ifdef SALINITY
               SOURCES(ng)%Tsrc(is,k,isalt)=S0(ng)
+#  endif
             END DO
             SOURCES(ng)%Tsrc(Nsrc(ng),k,itemp)=T0(ng)
+#  ifdef SALINITY
             SOURCES(ng)%Tsrc(Nsrc(ng),k,isalt)=S0(ng)
+#  endif
           END DO
         END IF
-#  endif
 # else
         ana_psource.h: No values provided for Tsrc.
 # endif
       END IF TRACERS
 #endif
-
+!
       RETURN
       END SUBROUTINE ana_psource_tile

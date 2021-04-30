@@ -3,9 +3,9 @@
 #if defined NONLINEAR && defined SOLVE3D
 # define NEUMANN
 !
-!svn $Id: pre_step3d.F 1001 2020-01-10 22:41:16Z arango $
+!svn $Id: pre_step3d.F 1054 2021-03-06 19:47:12Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -55,10 +55,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 22, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 22, __LINE__, MyFile)
 # endif
       CALL pre_step3d_tile (ng, tile,                                   &
      &                      LBi, UBi, LBj, UBj,                         &
@@ -113,9 +116,9 @@
      &                      OCEAN(ng) % u,                              &
      &                      OCEAN(ng) % v)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 22, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 22, __LINE__, MyFile)
 # endif
-
+!
       RETURN
       END SUBROUTINE pre_step3d
 !
@@ -159,9 +162,6 @@
 !
       USE mod_param
       USE mod_scalars
-# if defined OFFLINE_BIOLOGY
-      USE mod_biology
-# endif
       USE mod_sources
 !
       USE exchange_3d_mod, ONLY : exchange_r3d_tile
@@ -367,12 +367,7 @@
         END DO
       END DO
 #  endif
-#  ifdef OFFLINE_BIOLOGY
-      T_LOOP1 :DO ibt=1,NBT
-        itrc=idbio(ibt)
-#  else
       T_LOOP1 :DO itrc=1,NT(ng)
-#  endif
         K_LOOP: DO k=1,N(ng)
 !
           HADV_FLUX : IF (Hadvection(itrc,ng)%CENTERED2) THEN
@@ -659,12 +654,8 @@
 !-----------------------------------------------------------------------
 !
       J_LOOP1 : DO j=Jstr,Jend
-#  ifdef OFFLINE_BIOLOGY
-        T_LOOP2: DO ibt=1,NBT
-          itrc=idbio(ibt)
-#  else
-        T_LOOP2: DO itrc=1,NT(ng)
-#  endif
+        T_LOOP2 : DO itrc=1,NT(ng)
+!
           VADV_FLUX : IF (Vadvection(itrc,ng)%SPLINES) THEN
 !
 !  Build conservative parabolic splines for the vertical derivatives
@@ -860,29 +851,8 @@
             END DO
           END IF VADV_FLUX
 !
-!  Apply mass point sources (volume vertical influx), if any.
-!  (Notice the j-loop is pipelined above).
-!
-          IF (LwSrc(ng)) THEN
-            DO is=1,Nsrc(ng)
-              Isrc=SOURCES(ng)%Isrc(is)
-              Jsrc=SOURCES(ng)%Jsrc(is)
-              IF (LtracerSrc(itrc,ng).and.                              &
-     &            ((Istr.le.Isrc).and.(Isrc.le.Iend+1)).and.            &
-     &            (j.eq.Jsrc)) THEN
-                DO k=1,N(ng)-1
-                  FC(Isrc,k)=FC(Isrc,k)+0.5_r8*                         &
-     &                       (SOURCES(ng)%Qsrc(is,k  )*                 &
-     &                        SOURCES(ng)%Tsrc(is,k  ,itrc)+            &
-     &                        SOURCES(ng)%Qsrc(is,k+1)*                 &
-     &                        SOURCES(ng)%Tsrc(is,k+1,itrc))
-                END DO
-              END IF
-            END DO
-          END IF
-!
 !  Compute artificial continuity equation and load it into private
-!  array DC (1/m). It is needed to preserve tracer constancy. It is
+!  array DC (1/m). It is imposed to preserve tracer constancy. It is
 !  not the same for all the tracer advection schemes because of the
 !  Gamma value.
 !
@@ -935,12 +905,7 @@
 !
       DO j=Jstr,Jend
         cff3=dt(ng)*(1.0_r8-lambda)
-#  ifdef OFFLINE_BIOLOGY
-        DO ibt=1,NBT
-          itrc=idbio(ibt)
-#  else
         DO itrc=1,NT(ng)
-#  endif
           ltrc=MIN(NAT,itrc)
           DO k=1,N(ng)-1
             DO i=Istr,Iend
@@ -1009,7 +974,6 @@
         END DO
       END DO
 # endif /* !TS_FIXED */
-# if !defined OFFLINE_BIOLOGY
 !
 !=======================================================================
 !  3D momentum equation in the XI-direction.
@@ -1221,7 +1185,6 @@
           END IF
         END IF
       END DO J_LOOP2
-# endif
 
 # ifndef TS_FIXED
 !
@@ -1230,12 +1193,7 @@
 !=======================================================================
 !
       ic=0
-#  ifdef OFFLINE_BIOLOGY
-      DO ibt=1,NBT
-        itrc=idbio(ibt)
-#  else
       DO itrc=1,NT(ng)
-#  endif
         IF (LtracerCLM(itrc,ng).and.LnudgeTCLM(itrc,ng)) THEN
           ic=ic+1
         END IF
@@ -1260,7 +1218,7 @@
      &                    t(:,:,:,3,:))
 #  endif
 # endif
-
+!
       RETURN
       END SUBROUTINE pre_step3d_tile
 #endif

@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_strings
 !
-!svn $Id: mod_strings.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: mod_strings.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -12,6 +12,7 @@
 !  fflags      F90/F95 compiler flags.                                 !
 !  title       Title of model run.                                     !
 !  Coptions    Activated C-preprocessing options.                      !
+!  Fregion     Start index of 4D-Var profiling region.                 !
 !  Mregion     Start index of message passage code profiling region.   !
 !  Nregion     Number of total code profiling regions.                 !
 !                                                                      !
@@ -20,7 +21,7 @@
 !                ( 2) previous state initial conditions                !
 !                ( 3) previous adjoint state solution                  !
 !                ( 4) latest adjoint state solution                    !
-!                ( 5) surface forcion and or OBC increments            !
+!                ( 5) surface forcing and or OBC increments            !
 !                ( 6) tangent linear model error forcing               !
 !                ( 7) impulse forcing                                  !
 !                ( 8) v-space increments                               !
@@ -33,6 +34,7 @@
 !                (15) model error normalization factors                !
 !                (16) OBC normalization factors                        !
 !                (17) surface forcing normalization factors            !
+!                (18) saddle-point Arnoldi state vector                !
 !                                                                      !
 !  Pregion     Model regions identifiers used for time profiling:      !
 !                ( 1) Allocation and array initialization              !
@@ -76,24 +78,24 @@
 !                (39) Two-way coupling to Atmosphere Model             !
 !                (40) Two-way coupling to Sea Ice Model                !
 !                (41) Two-way coupling to Wave Model                   !
-!                (42) Reading model state vector                       !
-!                (43) 4D-Var minimization solver                       !
-!                (44) Background error covariance matrix               !
-!                (45) Posterior error covariance matrix                !
-!                (46) Unused 01                                        !
-!                (47) Unused 02                                        !
-!                (48) Unused 03                                        !
-!                (49) Unused 04                                        !
-!                (50) Unused 05                                        !
-!                (51) Unused 06                                        !
-!                (52) Unused 07                                        !
-!                (53) Unused 08                                        !
-!                (54) Unused 09                                        !
-!                (55) Unused 10                                        !
-!                (56) Unused 11                                        !
-!                (57) Unused 12                                        !
-!                (58) Unused 13                                        !
-!                (59) Unused 14                                        !
+!                (42) Unused 01                                        !
+!                (43) Unused 02                                        !
+!                (44) Unused 03                                        !
+!                (45) Unused 04                                        !
+!                (46) Unused 05                                        !
+!                (47) Unused 06                                        !
+!                (48) Unused 07                                        !
+!                (49) Unused 08                                        !
+!                (50) Unused 09                                        !
+!                (51) Unused 10                                        !
+!                (52) Unused 11                                        !
+!                (53) Unused 12                                        !
+!                (54) Unused 13                                        !
+!                (55) Unused 14                                        !
+!                (56) Unused 15                                        !
+!                (57) Unused 16                                        !
+!                (58) Unused 17                                        !
+!                (59) Unused 18                                        !
 !                (60) Message Passage: 2D halo exchanges               !
 !                (61) Message Passage: 3D halo exchanges               !
 !                (62) Message Passage: 4D halo exchanges               !
@@ -108,19 +110,36 @@
 !                (71) Message Passage: nesting array data gathering    !
 !                (72) Message Passage: synchronization barrier         !
 !                (73) Message Passage: multi-model coupling            !
+!                (74) Unused 01                                        !
+!                (75) Unused 02                                        !
+!                (76) Unused 03                                        !
+!                (77) Unused 04                                        !
+!                (78) Unused 05                                        !
+!                (79) Unused 06                                        !
+!                (80) 4D-Var: reading model state vector               !
+!                (81) 4D-Var: writing model state vector               !
+!                (82) 4D-Var: prior error covariance matrix            !
+!                (83) 4D-Var: posterior error covariance matrix        !
+!                (84) 4D-Var: pre-conditioning                         !
+!                (85) 4D-Var: minimization solver                      !
+!                (86) 4D-Var: background phase                         !
+!                (87) 4D-Var: increment phase                          !
+!                (88) 4D-Var: analysis phase                           !
+!                (89) Unused 01                                        !
+!                (90) Unused 02                                        !
 !                                                                      !
 !=======================================================================
 !
         implicit none
-
+!
         character (len=80)   :: title
         character (len=2048) :: Coptions
-
-        integer, parameter :: Mregion = 60
-        integer, parameter :: Iceregion = 74
-        integer, parameter :: Nregion = 80
-
-        character (len=48), dimension(17) :: StateMsg =                 &
+!
+        integer, parameter :: Fregion = 80      ! start of 4D-Var region
+        integer, parameter :: Mregion = 60      ! start of mpi-region
+        integer, parameter :: Nregion = 88
+!
+        character (len=48), dimension(18) :: StateMsg =                 &
      &    (/'state initial conditions,                       ',         & !01
      &      'previous state initial conditions,              ',         & !02
      &      'previous adjoint state solution,                ',         & !03
@@ -137,8 +156,9 @@
      &      'IC normalization factors,                       ',         & !14
      &      'model error normalization factors,              ',         & !15
      &      'OBC normalization factors,                      ',         & !16
-     &      'surface forcing normalization factors,          '/)          !17
-
+     &      'surface forcing normalization factors,          ',         & !17
+     &      'saddle-point Arnoldi state vector,              '/)          !18
+!
         character (len=50), dimension(Nregion) :: Pregion =             &
      &    (/'Allocation and array initialization ..............',       & !01
      &      'Ocean state initialization .......................',       & !02
@@ -181,24 +201,24 @@
      &      'Two-way coupling to Atmosphere Model .............',       & !39
      &      'Two-way coupling to Sea Ice Model ................',       & !40
      &      'Two-way coupling to Wave Model ...................',       & !41
-     &      'Reading model state vector .......................',       & !42
-     &      '4D-Var minimization solver .......................',       & !43
-     &      'Background error covariance matrix ...............',       & !44
-     &      'Posterior error covariance matrix ................',       & !45
-     &      'Unused 01 ........................................',       & !46
-     &      'Unused 02 ........................................',       & !47
-     &      'Unused 03 ........................................',       & !48
-     &      'Unused 04 ........................................',       & !49
-     &      'Unused 05 ........................................',       & !50
-     &      'Unused 06 ........................................',       & !51
-     &      'Unused 07 ........................................',       & !52
-     &      'Unused 08 ........................................',       & !53
-     &      'Unused 09 ........................................',       & !54
-     &      'Unused 10 ........................................',       & !55
-     &      'Unused 11 ........................................',       & !56
-     &      'Unused 12 ........................................',       & !57
-     &      'Unused 13 ........................................',       & !58
-     &      'Unused 14 ........................................',       & !59
+     &      'Unused 01 ........................................',       & !42
+     &      'Unused 02 ........................................',       & !43
+     &      'Unused 03 ........................................',       & !44
+     &      'Unused 04 ........................................',       & !45
+     &      'Unused 05 ........................................',       & !46
+     &      'Unused 06 ........................................',       & !47
+     &      'Unused 07 ........................................',       & !48
+     &      'Unused 08 ........................................',       & !49
+     &      'Unused 09 ........................................',       & !50
+     &      'Unused 10 ........................................',       & !51
+     &      'Unused 11 ........................................',       & !52
+     &      'Unused 12 ........................................',       & !53
+     &      'Unused 13 ........................................',       & !54
+     &      'Unused 14 ........................................',       & !55
+     &      'Unused 15 ........................................',       & !56
+     &      'Unused 16 ........................................',       & !57
+     &      'Unused 17 ........................................',       & !58
+     &      'Unused 18 ........................................',       & !59
      &      'Message Passage: 2D halo exchanges ...............',       & !60
      &      'Message Passage: 3D halo exchanges ...............',       & !61
      &      'Message Passage: 4D halo exchanges ...............',       & !62
@@ -213,13 +233,21 @@
      &      'Message Passage: nesting array data gathering ....',       & !71
      &      'Message Passage: synchronization barrier .........',       & !72
      &      'Message Passage: multi-model coupling ............',       & !73
-     &      'Unused 15 ........................................',       & !74
-     &      'Unused 16 ........................................',       & !75
-     &      'Ice thermodynamics................................',       & !76
-     &      'Ice rheology coefficients.........................',       & !77
-     &      'Iterative solver of ice dynamics..................',       & !78
-     &      'Advection of ice tracers..........................',       & !79
-     &      'Frazil ice........................................'/)
+     &      'Unused 01 ........................................',       & !74
+     &      'Unused 02 ........................................',       & !75
+     &      'Unused 03 ........................................',       & !76
+     &      'Unused 04 ........................................',       & !77
+     &      'Unused 05 ........................................',       & !78
+     &      'Unused 06 ........................................',       & !79
+     &      '4D-Var: reading model state vector ...............',       & !80
+     &      '4D-Var: writing model state vector ...............',       & !81
+     &      '4D-Var: prior error covariance matrix ............',       & !82
+     &      '4D-Var: posterior error covariance matrix ........',       & !83
+     &      '4D-Var: pre-conditioning .........................',       & !84
+     &      '4D-Var: minimization solver ......................',       & !85
+     &      '4D-Var: background phase .........................',       & !86
+     &      '4D-Var: increment phase ..........................',       & !87
+     &      '4D-Var: analysis phase ...........................'/)        !88
 !
 !  The following variables are assigned during C-preprocessing.  They
 !  have information about operating sytem, CPU hardware, compiling

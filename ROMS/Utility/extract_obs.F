@@ -2,9 +2,9 @@
       MODULE extract_obs_mod
 #if (defined FOUR_DVAR || defined VERIFICATION) && defined OBSERVATIONS
 !
-!svn $Id: extract_obs.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: extract_obs.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -438,17 +438,22 @@
 #  else
             ObsVetting(iobs)=1.0_r8
 #  endif
+#  ifndef ALLOW_BOTTOM_OBS
 !
-!  Reject observations that lie in the lower most grid box (AMM).
+!  Reject observations that lie in the lower bottom grid cell (k=1) to
+!  avoid clustering due shallowing of bathymetry during smoothing and
+!  coarse level half-thickness (-h < Zobs < Adepth(:,:,1)) in deep
+!  water.
 !
             IF ((Zobs(iobs).gt.0.0_r8).and.(Zobs(iobs).le.1.0_r8)) THEN
               ObsVetting(iobs)=0.0_r8
             END IF
+#  endif
           END IF
         END IF
       END DO
+!
       RETURN
-
       END SUBROUTINE extract_obs3d
 # endif
 #endif

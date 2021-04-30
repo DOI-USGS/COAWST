@@ -74,7 +74,8 @@
      &                          dst_mask_unlim,                         &
      &                          counter_grid,                           &
      &                          Ngrids_comb_total,                      &
-     &                          output_ncfile, MyComm)
+     &                          output_ncfile, MyComm, My_map_type,     &
+     &                          samegrid)
 
       implicit none 
 
@@ -101,7 +102,8 @@
       integer (kind=int_kind), intent(in) :: dst_mask_unlim(:,:)
       integer (kind=int_kind), intent(in) :: counter_grid
       integer (kind=int_kind), intent(in) :: Ngrids_comb_total
-      integer (kind=int_kind), intent(in) :: MyComm
+      integer (kind=int_kind), intent(in) :: MyComm, My_map_type
+      integer (kind=int_kind), intent(in) :: samegrid
 !
       real    (kind=dbl_kind), intent(in) :: grid1_lon_rho(:,:)
       real    (kind=dbl_kind), intent(in) :: grid1_lat_rho(:,:)
@@ -133,9 +135,16 @@
       integer (kind=int_kind) :: n,                                     &
                                         ! dummy counter
      &                           iunit  ! unit number for namelist file
-#ifdef MPI
+!#ifdef MPI
       integer (kind=int_kind) :: MyError, MyRank
+!#endif
+
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+#else
+      MyRank=0
 #endif
+
 !-----------------------------------------------------------------------
 !
 !     initialize timers
@@ -148,9 +157,21 @@
       end do
 !
 !  These are hardwired for SCRIP-COAWST Package 
+!  Now this is selected for each grid pair 18May2020
       num_maps      = 1
-      map_type      = 1
-      map_method = 'conservative'
+      IF (My_map_type.eq.1) THEN
+        map_type      = 1
+        map_method = 'conservative'
+      ELSE IF (My_map_type.eq.2) THEN
+        map_type      = 2
+        map_method = 'bilinear'
+      ELSE IF (My_map_type.eq.3) THEN
+        map_type      = 3
+        map_method = 'bicubic'
+      ELSE IF (My_map_type.eq.4) THEN
+        map_type      = 4
+        map_method = 'distwgt'
+      END IF
       normalize_opt = 'fracarea'
       output_opt = 'scrip'
       restrict_type = 'latitude'
@@ -198,10 +219,18 @@
      &                      grid2_xdim, grid2_ydim,                     &
      &                      grid2_lon_rho, grid2_lat_rho,               &
      &                      grid2_lon_psi, grid2_lat_psi,               &
-     &                      src_mask, dst_mask)
+     &                      src_mask, dst_mask, MyRank)
 
+#ifdef MPI
+!     CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
       write(stdout, *) ' Computing remappings between: ',grid1_file
       write(stdout, *) '                          and  ',grid2_file
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
 
 !-----------------------------------------------------------------------
 !
@@ -222,7 +251,7 @@
       case(map_type_conserv)
         call remap_conserv (MyComm)
       case(map_type_bilinear)
-        call remap_bilin
+        call remap_bilin (MyComm, samegrid)
       case(map_type_distwgt)
         call remap_distwgt
       case(map_type_bicubic)
@@ -232,7 +261,7 @@
       end select
 
 #ifdef MPI
-      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+!     CALL mpi_comm_rank (MyComm, MyRank, MyError)
       IF (MyRank.eq.0) THEN
 #endif
 !-----------------------------------------------------------------------
@@ -252,7 +281,7 @@
 
       if (map1_name(1:11).eq.'WRF to ROMS') then
         call check_weights (dst_mask, dst_mask_unlim,                   &
-     &                      grid2_lon_rho, grid2_lat_rho)
+     &                      grid2_lon_rho, grid2_lat_rho, map_method)
       end if
 
       call write_remap(map1_name, map2_name,                            &
@@ -265,8 +294,17 @@
 #endif
 !-----------------------------------------------------------------------
 !     DEALLOCATE HERE for SCRIP_COAWST package
+#ifdef MPI
+!     CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
       write(stdout,*) "-------------------------------------------"
       write(stdout,*) "Reached the end of mapping one set of grids"
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
+
 !     deallocate arrays from grids.f
       deallocate ( grid1_dims, grid2_dims )
       deallocate ( grid1_area, grid2_area )
@@ -280,19 +318,31 @@
       deallocate( bin_addr1, bin_addr2, bin_lats, bin_lons)
       deallocate( grid1_add_map1, grid2_add_map1)
       deallocate( wts_map1)
-!     deallocate arrays from remap_conserv.f
-      if (num_links_map1.gt.0) then
-        deallocate(link_add1,link_add2)
+
+      if (map_method.eq.'conservative') then
+!       deallocate arrays from remap_conserv.f
+        if (num_links_map1.gt.0) then
+          deallocate(link_add1,link_add2)
+        endif
       endif
 
+#ifdef MPI
+!      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      IF (MyRank.eq.0) THEN
+#endif
       if (counter_grid.eq.Ngrids_comb_total) then
         write(*,*) 'end of scrip package '
       end if
+#ifdef MPI
+      END IF
+      CALL mpi_barrier (MyComm, MyError)
+#endif
       end subroutine scrip_package
 
 !======================================================================                                                                       
       SUBROUTINE check_weights (dst_mask, dst_mask_unlim,               &
-     &                          grid2_lon_rho, grid2_lat_rho)
+     &                          grid2_lon_rho, grid2_lat_rho,           &
+     &                          map_method)
 !
       implicit none
 !
@@ -302,6 +352,7 @@
       integer (kind=int_kind), intent(in) :: dst_mask_unlim(:,:)
       real(dbl_kind), intent(in) :: grid2_lon_rho(:,:)
       real(dbl_kind), intent(in) :: grid2_lat_rho(:,:)
+      character (char_len), intent(in) :: map_method
 !
 !     local variables
 !
@@ -483,14 +534,18 @@
             grid1_add_map1(mm) = 1
             grid2_add_map1(mm) = 1
             wts_map1    (1,mm) = 0
-            wts_map1    (2,mm) = 0
-            wts_map1    (3,mm) = 0
+            if (map_method.eq.'conservative') then
+              wts_map1    (2,mm) = 0
+              wts_map1    (3,mm) = 0
+            endif
           else
             grid1_add_map1(mm) = add_src_address(i)
             grid2_add_map1(mm) = add_dst_address(i)
             wts_map1    (1,mm) = add_remap_matrix(i)
-            wts_map1    (2,mm) = 0
-            wts_map1    (3,mm) = 0
+            if (map_method.eq.'conservative') then
+              wts_map1    (2,mm) = 0
+              wts_map1    (3,mm) = 0
+            endif
           endif
         end do
 

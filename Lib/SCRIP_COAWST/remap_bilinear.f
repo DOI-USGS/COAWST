@@ -40,6 +40,7 @@
       use constants     ! defines common constants
       use grids         ! module containing grid info
       use remap_vars    ! module containing remap info
+      use scripwrap_mod
 
       implicit none
 
@@ -57,7 +58,7 @@
 
 !***********************************************************************
 
-      subroutine remap_bilin
+      subroutine remap_bilin (MyComm, samegrid)
 
 !-----------------------------------------------------------------------
 !
@@ -65,11 +66,29 @@
 !
 !-----------------------------------------------------------------------
 
+      integer (kind=int_kind), intent(in) :: MyComm, samegrid
+
 !-----------------------------------------------------------------------
 !
 !     local variables
 !
 !-----------------------------------------------------------------------
+
+#ifdef MPI
+      include 'mpif.h'
+#endif
+      integer (kind=int_kind) :: MyStr, MyEnd
+#ifdef MPI
+      integer (kind=int_kind) :: MyError, MyRank, Nprocs, rank
+      integer (kind=int_kind) :: ratio
+      integer (kind=int_kind) :: i, j, ij, add1, add2, got_weight
+      integer (kind=int_kind) :: nlink, min_link, max_link
+      integer (kind=int_kind), dimension(MPI_STATUS_SIZE) :: status
+      integer (kind=int_kind), dimension(:), allocatable :: Numlinks
+      integer (kind=int_kind), dimension(:), allocatable :: Asendi
+      integer (kind=int_kind), dimension(:), allocatable :: Arecv1
+      integer (kind=int_kind), dimension(:), allocatable :: Arecv2
+#endif
 
       integer (kind=int_kind) :: n,icount,                              &
      &     dst_add,                                                     &
@@ -77,6 +96,8 @@
      &     iter,                                                        &
                            ! iteration counter
      &     nmap            ! index of current map being computed
+
+      integer (kind=int_kind) :: num_links_old  ! dummy index
 
       integer (kind=int_kind), dimension(4) ::                          &
      &     src_add         ! address for the four source points
@@ -109,6 +130,13 @@
                              ! matrix determinant
      &     sum_wgts          ! sum of weights for normalization
 
+#ifdef MPI
+      real (kind=dbl_kind), dimension(:), allocatable   ::  Asend
+      real (kind=dbl_kind), dimension(:), allocatable   ::  Arecvw
+      real (kind=dbl_kind), dimension(:,:), allocatable ::  Arecv
+      real (kind=dbl_kind), dimension(:,:), allocatable ::  Arecvw2d
+#endif
+
 !-----------------------------------------------------------------------
 !
 !     compute mappings from grid1 to grid2
@@ -124,147 +152,186 @@
       !*** loop over destination grid 
       !***
 
-      grid_loop1: do dst_add = 1, grid2_size
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+      CALL mpi_comm_size (MyComm, Nprocs, MyError)
+!
+! To do this in mpi, we will just break up the sweep loops into chunks. Then
+! gather all of the data at end of each loop so that each proc has a full set of
+! data. First we want to determine start and end chunks for this processor.
+!
+      IF (Nprocs.eq.1) THEN
+        MyStr=1
+        MyEnd=grid2_size
+      ELSE
+        ratio=INT(grid2_size/Nprocs)
+        MyStr=(MyRank*ratio)+1
+        MyEnd=MyStr+ratio-1
+        IF (MyRank+1.eq.Nprocs) MyEnd=grid2_size
+      END IF
+#else
+      MyStr=1
+      MyEnd=grid2_size
+#endif
+
+!     grid_loop1: do dst_add = 1, grid2_size
+      grid_loop1: do dst_add = MyStr, MyEnd
 
         if (.not. grid2_mask(dst_add)) cycle grid_loop1
 
-        plat = grid2_center_lat(dst_add)
-        plon = grid2_center_lon(dst_add)
+        if (samegrid.eq.1) then     ! same grids
+          src_add(1)=dst_add
+          src_add(2)=dst_add
+          src_add(3)=dst_add
+          src_add(4)=dst_add
+          wgts(1)=1.0000
+          wgts(2)=0.0000
+          wgts(3)=0.0000
+          wgts(4)=0.0000
+          call store_link_bilin(dst_add, src_add, wgts, nmap)
+        else
 
-        !***
-        !*** find nearest square of grid points on source grid
-        !***
+          plat = grid2_center_lat(dst_add)
+          plon = grid2_center_lon(dst_add)
 
-        call grid_search_bilin(src_add, src_lats, src_lons,             &
+          !***
+          !*** find nearest square of grid points on source grid
+          !***
+
+          call grid_search_bilin(src_add, src_lats, src_lons,           &
      &                         plat, plon, grid1_dims,                  &
      &                         grid1_center_lat, grid1_center_lon,      &
-     &                         grid1_bound_box, bin_addr1, bin_addr2)
-
-        !***
-        !*** check to see if points are land points
-        !***
-
-        if (src_add(1) > 0) then
-          do n=1,4
-            if (.not. grid1_mask(src_add(n))) src_add(1) = 0
-          end do
-        endif
-
-        !***
-        !*** if point found, find local i,j coordinates for weights
-        !***
-
-        if (src_add(1) > 0) then
-
-          grid2_frac(dst_add) = one
+     &                         grid1_bound_box, bin_addr1, bin_addr2,   &
+     &                         dst_add)
 
           !***
-          !*** iterate to find i,j for bilinear approximation
+          !*** check to see if points are land points
           !***
 
-          dth1 = src_lats(2) - src_lats(1)
-          dth2 = src_lats(4) - src_lats(1)
-          dth3 = src_lats(3) - src_lats(2) - dth2
-
-          dph1 = src_lons(2) - src_lons(1)
-          dph2 = src_lons(4) - src_lons(1)
-          dph3 = src_lons(3) - src_lons(2)
-
-          if (dph1 >  three*pih) dph1 = dph1 - pi2
-          if (dph2 >  three*pih) dph2 = dph2 - pi2
-          if (dph3 >  three*pih) dph3 = dph3 - pi2
-          if (dph1 < -three*pih) dph1 = dph1 + pi2
-          if (dph2 < -three*pih) dph2 = dph2 + pi2
-          if (dph3 < -three*pih) dph3 = dph3 + pi2
-
-          dph3 = dph3 - dph2
-
-          iguess = half
-          jguess = half
-
-          iter_loop1: do iter=1,max_iter
-
-            dthp = plat - src_lats(1) - dth1*iguess -                   &
-     &                    dth2*jguess - dth3*iguess*jguess
-            dphp = plon - src_lons(1)
-
-            if (dphp >  three*pih) dphp = dphp - pi2
-            if (dphp < -three*pih) dphp = dphp + pi2
-
-            dphp = dphp - dph1*iguess - dph2*jguess -                   &
-     &                    dph3*iguess*jguess
-
-            mat1 = dth1 + dth3*jguess
-            mat2 = dth2 + dth3*iguess
-            mat3 = dph1 + dph3*jguess
-            mat4 = dph2 + dph3*iguess
-
-            determinant = mat1*mat4 - mat2*mat3
-
-            deli = (dthp*mat4 - mat2*dphp)/determinant
-            delj = (mat1*dphp - dthp*mat3)/determinant
-
-            if (abs(deli) < converge .and.                              &
-     &          abs(delj) < converge) exit iter_loop1
-
-            iguess = iguess + deli
-            jguess = jguess + delj
-
-          end do iter_loop1
-
-          if (iter <= max_iter) then
-
-            !***
-            !*** successfully found i,j - compute weights
-            !***
-
-            wgts(1) = (one-iguess)*(one-jguess)
-            wgts(2) = iguess*(one-jguess)
-            wgts(3) = iguess*jguess
-            wgts(4) = (one-iguess)*jguess
-
-            call store_link_bilin(dst_add, src_add, wgts, nmap)
-
-          else
-            print *,'Point coords: ',plat,plon
-            print *,'Dest grid lats: ',src_lats
-            print *,'Dest grid lons: ',src_lons
-            print *,'Dest grid addresses: ',src_add
-            print *,'Current i,j : ',iguess, jguess
-            stop 'Iteration for i,j exceed max iteration count'
+          if (src_add(1) > 0) then
+            do n=1,4
+! this stops a weight if any of the 4 points are zero (masked). 
+! let the land/sea masking in coawst deal with it.
+! jcw         if (.not. grid1_mask(src_add(n))) src_add(1) = 0
+            end do
           endif
 
-        !***
-        !*** search for bilinear failed - use a distance-weighted
-        !*** average instead (this is typically near the pole)
-        !***
+          !***
+          !*** if point found, find local i,j coordinates for weights
+          !***
 
-        else if (src_add(1) < 0) then
-
-          src_add = abs(src_add)
-          icount = 0
-          do n=1,4
-            if (grid1_mask(src_add(n))) then
-              icount = icount + 1
-            else
-              src_lats(n) = zero
-            endif
-          end do
-
-          if (icount > 0) then
-            !*** renormalize weights
-
-            sum_wgts = sum(src_lats)
-            wgts(1) = src_lats(1)/sum_wgts
-            wgts(2) = src_lats(2)/sum_wgts
-            wgts(3) = src_lats(3)/sum_wgts
-            wgts(4) = src_lats(4)/sum_wgts
+          if (src_add(1) > 0) then
 
             grid2_frac(dst_add) = one
-            call store_link_bilin(dst_add, src_add, wgts, nmap)
-          endif
 
-        endif
+            !***
+            !*** iterate to find i,j for bilinear approximation
+            !***
+
+            dth1 = src_lats(2) - src_lats(1)
+            dth2 = src_lats(4) - src_lats(1)
+            dth3 = src_lats(3) - src_lats(2) - dth2
+
+            dph1 = src_lons(2) - src_lons(1)
+            dph2 = src_lons(4) - src_lons(1)
+            dph3 = src_lons(3) - src_lons(2)
+
+            if (dph1 >  three*pih) dph1 = dph1 - pi2
+            if (dph2 >  three*pih) dph2 = dph2 - pi2
+            if (dph3 >  three*pih) dph3 = dph3 - pi2
+            if (dph1 < -three*pih) dph1 = dph1 + pi2
+            if (dph2 < -three*pih) dph2 = dph2 + pi2
+            if (dph3 < -three*pih) dph3 = dph3 + pi2
+
+            dph3 = dph3 - dph2
+
+            iguess = half
+            jguess = half
+
+            iter_loop1: do iter=1,max_iter
+
+              dthp = plat - src_lats(1) - dth1*iguess -                 &
+     &                      dth2*jguess - dth3*iguess*jguess
+              dphp = plon - src_lons(1)
+
+              if (dphp >  three*pih) dphp = dphp - pi2
+              if (dphp < -three*pih) dphp = dphp + pi2
+
+              dphp = dphp - dph1*iguess - dph2*jguess -                 &
+     &                      dph3*iguess*jguess
+
+              mat1 = dth1 + dth3*jguess
+              mat2 = dth2 + dth3*iguess
+              mat3 = dph1 + dph3*jguess
+              mat4 = dph2 + dph3*iguess
+
+              determinant = mat1*mat4 - mat2*mat3
+
+              deli = (dthp*mat4 - mat2*dphp)/determinant
+              delj = (mat1*dphp - dthp*mat3)/determinant
+
+              if (abs(deli) < converge .and.                            &
+     &            abs(delj) < converge) exit iter_loop1
+
+              iguess = iguess + deli
+              jguess = jguess + delj
+
+            end do iter_loop1
+
+            if (iter <= max_iter) then
+
+              !***
+              !*** successfully found i,j - compute weights
+              !***
+
+              wgts(1) = (one-iguess)*(one-jguess)
+              wgts(2) = iguess*(one-jguess)
+              wgts(3) = iguess*jguess
+              wgts(4) = (one-iguess)*jguess
+
+              call store_link_bilin(dst_add, src_add, wgts, nmap)
+
+            else
+              print *,'Point coords: ',plat,plon
+              print *,'Dest grid lats: ',src_lats
+              print *,'Dest grid lons: ',src_lons
+              print *,'Dest grid addresses: ',src_add
+              print *,'Current i,j : ',iguess, jguess
+              stop 'Iteration for i,j exceed max iteration count'
+            endif
+
+          !***
+          !*** search for bilinear failed - use a distance-weighted
+          !*** average instead (this is typically near the pole)
+          !***
+
+          else if (src_add(1) < 0) then
+
+            src_add = abs(src_add)
+            icount = 0
+            do n=1,4
+              if (grid1_mask(src_add(n))) then
+                icount = icount + 1
+              else
+                src_lats(n) = zero
+              endif
+            end do
+
+            if (icount > 0) then
+              !*** renormalize weights
+
+              sum_wgts = sum(src_lats)
+              wgts(1) = src_lats(1)/sum_wgts
+              wgts(2) = src_lats(2)/sum_wgts
+              wgts(3) = src_lats(3)/sum_wgts
+              wgts(4) = src_lats(4)/sum_wgts
+
+              grid2_frac(dst_add) = one
+              call store_link_bilin(dst_add, src_add, wgts, nmap)
+            endif
+
+          endif
+        endif   !ro /= swan
       end do grid_loop1
 
 !-----------------------------------------------------------------------
@@ -298,7 +365,7 @@
         call grid_search_bilin(src_add, src_lats, src_lons,             &
      &                         plat, plon, grid2_dims,                  &
      &                         grid2_center_lat, grid2_center_lon,      &
-     &                         grid2_bound_box, bin_addr2, bin_addr1)
+     &                grid2_bound_box, bin_addr2, bin_addr1,dst_add)
 
         !***
         !*** check to see if points are land points
@@ -429,6 +496,106 @@
 
       endif ! nmap=2
 
+
+#ifdef MPI
+!
+!  Here we need to gather all the data that was computed in 
+!  store_link_bilin.  Then we just allow the Master node to
+!  compute the rest here. maybe redo this to allow each node to 
+!  do more work, but try this for now.  then we go to write out 
+!  the data back in scrip.f
+!
+! gather total number of links that were computed on each processor.
+!
+      allocate(Numlinks(Nprocs))
+      call mpi_gather(num_links_map1, 1, MPI_INT, Numlinks, 1, MPI_INT, &
+     &                0, MyComm, MyError)
+!
+!  Now gather all the weights from other nodes to make one combined set.
+!
+      IF (MyRank.ne.0) THEN
+        allocate (Asendi(num_links_map1))
+!
+        DO i=1,num_links_map1
+          Asendi(i)=grid1_add_map1(i)
+        END DO
+        call mpi_send(Asendi, num_links_map1, MPI_INT, 0,               &
+     &                10, MyComm, MyError)
+!
+        Asendi(1:num_links_map1)=grid2_add_map1(1:num_links_map1)
+        call mpi_send(Asendi, num_links_map1, MPI_INT, 0,               &
+     &                20, MyComm, MyError)
+        deallocate (Asendi)
+!
+        allocate (Asend(num_links_map1*num_wts))
+        ij=0
+        DO i=1,num_links_map1
+          DO j=1,num_wts
+            ij=ij+1
+            Asend(ij)=wts_map1(j,i)
+          END DO
+        END DO
+        call mpi_send(Asend, num_links_map1*num_wts, MPI_DOUBLE, 0,     &
+     &                30, MyComm, MyError)
+        deallocate (Asend)
+
+      ELSE                ! we are on the Master
+
+        DO i=2,Nprocs
+          allocate (Arecv1(Numlinks(i)))            !grid1_add_map1
+          allocate (Arecv2(Numlinks(i)))            !grid2_add_map1
+          allocate (Arecvw(num_wts*Numlinks(i)))    !wts_map1
+          allocate (Arecvw2d(num_wts,Numlinks(i)))  !wts_map1
+!
+!         Receiving grid1 area.
+!
+          call mpi_recv(Arecv1, Numlinks(i), MPI_INT, i-1, 10,          &
+     &                  MyComm, status, MyError)
+!
+!         Receiving grid2 area.
+!
+          call mpi_recv(Arecv2, Numlinks(i), MPI_INT, i-1, 20,          &
+     &                  MyComm, status, MyError)
+!
+!         Receiving weights
+!
+          call mpi_recv(Arecvw, Numlinks(i)*num_wts, MPI_DOUBLE,i-1,30, &
+     &                  MyComm, status, MyError)
+          ij=0
+          DO nlink=1,Numlinks(i)
+            DO j=1,num_wts
+              ij=ij+1
+              Arecvw2d(j,nlink)=Arecvw(ij)
+            END DO
+          END DO
+
+!-----------------------------------------------------------------------
+!
+!     increment number of links and check to see if remap arrays need
+!     to be increased to accomodate the new link.  then store the
+!     link.
+!
+!-----------------------------------------------------------------------
+
+          num_links_old  = num_links_map1
+          num_links_map1 = num_links_old + Numlinks(i)
+
+          if (num_links_map1 > max_links_map1)                            &
+     &       call resize_remap_vars(1,resize_increment)
+
+          do n=1,Numlinks(i)
+            grid1_add_map1(num_links_old+n) = Arecv1(n)
+            grid2_add_map1(num_links_old+n) = Arecv2(n)
+            wts_map1    (1,num_links_old+n) = Arecvw2d(1,n)
+          end do
+
+          deallocate (Arecv1, Arecv2, Arecvw, Arecvw2d)
+        END DO
+      END IF
+
+      deallocate(Numlinks)
+#endif
+
 !-----------------------------------------------------------------------
 
       end subroutine remap_bilin
@@ -439,7 +606,7 @@
      &                             plat, plon, src_grid_dims,           &
      &                             src_center_lat, src_center_lon,      &
      &                             src_grid_bound_box,                  &
-     &                             src_bin_add, dst_bin_add)
+     &                             src_bin_add, dst_bin_add, dst_add)
 
 !-----------------------------------------------------------------------
 !
@@ -476,6 +643,9 @@
 
       integer (kind=int_kind), dimension(2), intent(in) ::              &
      &        src_grid_dims  ! size of each src grid dimension
+
+      integer (kind=int_kind), intent(in) :: dst_add
+
 
       real (kind=dbl_kind), dimension(:), intent(in) ::                 &
      &        src_center_lat,                                           &
@@ -655,7 +825,6 @@
             src_add(2) = e_add
             src_add(3) = ne_add
             src_add(4) = n_add
-
             return
           endif
 
@@ -675,8 +844,8 @@
       !*** routine from computing bilinear weights
       !***
 
-      !print *,'Could not find location for ',plat,plon
-      !print *,'Using nearest-neighbor average for this point'
+!      print *,'Could not find location for ',plat,plon
+!      print *,'Using nearest-neighbor average for this point'
 
       coslat_dst = cos(plat)
       sinlat_dst = sin(plat)

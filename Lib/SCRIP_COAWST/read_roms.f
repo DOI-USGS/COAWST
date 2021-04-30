@@ -24,19 +24,20 @@
 
       contains 
 
-      subroutine load_roms_grid()
+      subroutine load_roms_grid( MyComm )
 
       implicit none
 
-!      include 'netcdf.inc'
-
+      integer(int_kind), intent(in) :: MyComm
       integer(int_kind) :: i, j, iunit
       integer(int_kind) :: nx, ny, mo 
       integer(int_kind)  :: ncstat, nc_file_id, nc_grdsize_id,          &
      &                      nc_grdlat_id, nc_grdlon_id,                 &
      &                      nc_grdcrnrlat_id, nc_grdcrnrlon_id,         &
      &                      nc_grdmsk_id
-
+#ifdef MPI
+      integer(int_kind) :: MyRank, MyError
+#endif
       real(dbl_kind) :: xx2, yy2, xxend_1, yyend_1
       real(dbl_kind) :: dist1, dist_max, scale
       real(dbl_kind), allocatable :: lon_psi_o(:,:), lat_psi_o(:,:)
@@ -54,6 +55,10 @@
 
       allocate(ngrd_rm(Ngrids_roms))
 
+#ifdef MPI
+      CALL mpi_comm_rank (MyComm, MyRank, MyError)
+#endif
+
       do mo=1,Ngrids_roms
 
 !     Open the file. 
@@ -63,6 +68,7 @@
 !     Read dimension id 
         ncstat=nf_inq_dimid(nc_file_id,'xi_rho',nc_grdsize_id) 
         call netcdf_error_handler(ncstat)
+
 !     Get the grid size in each direction 
         ncstat=nf_inq_dimlen(nc_file_id,nc_grdsize_id,                  &                 
      &                            ngrd_rm(mo)%xi_size)
@@ -73,6 +79,42 @@
         ncstat=nf_inq_dimlen(nc_file_id,nc_grdsize_id,                  &
      &                           ngrd_rm(mo)%eta_size)
         call netcdf_error_handler(ncstat)
+
+        if (mo.gt.1) then
+!         Get the size of any child grid
+          ncstat=nf_get_att_int(nc_file_id,NF_GLOBAL,                   &
+     &                           'parent_Imin',ngrd_rm(mo)%istr_o)
+          call netcdf_error_handler(ncstat)
+          ngrd_rm(mo)%istr_o=ngrd_rm(mo)%istr_o+1   !convert psi to rho
+!
+          ncstat=nf_get_att_int(nc_file_id,NF_GLOBAL,                   &
+     &                           'parent_Imax',ngrd_rm(mo)%iend_o)
+          call netcdf_error_handler(ncstat)
+!
+          ncstat=nf_get_att_int(nc_file_id,NF_GLOBAL,                   &
+     &                           'parent_Jmin',ngrd_rm(mo)%jstr_o)
+          call netcdf_error_handler(ncstat)
+          ngrd_rm(mo)%jstr_o=ngrd_rm(mo)%jstr_o+1   !convert psi to rho
+!
+          ncstat=nf_get_att_int(nc_file_id,NF_GLOBAL,                   &
+     &                           'parent_Jmax',ngrd_rm(mo)%jend_o)
+          call netcdf_error_handler(ncstat)
+!
+          ncstat=nf_get_att_int(nc_file_id,NF_GLOBAL,                   &
+     &                           'refine_factor',ngrd_rm(mo)%ref_fac)
+          call netcdf_error_handler(ncstat)
+#ifdef MPI
+          IF (MyRank.eq.0) THEN
+#endif
+            print*,"ROMS starting i j index of parent w.r.t child grid"
+            print*,ngrd_rm(mo)%istr_o, ngrd_rm(mo)%jstr_o
+            print*,"ending i & j index of parent w.r.t child grid--"
+            print*,ngrd_rm(mo)%iend_o, ngrd_rm(mo)%jend_o
+#ifdef MPI
+          END IF
+          CALL mpi_barrier (MyComm, MyError)
+#endif
+        endif
 
 !     Read spherical variable (it can be True/False or 1/0)
         ncstat=nf_inq_varid(nc_file_id, 'spherical', checksphere_id)
@@ -93,7 +135,7 @@
           my_type=nf_int
         endif
 
-!    Use scale to convert m to degrees, if spherical=T/t/1
+!     Use scale to convert m to degrees, if spherical=T/t/1
         scale=1.
         if (my_type.eq.nf_int) then
           ncstat=nf_get_var_int(nc_file_id, checksphere_id, AI)
@@ -116,7 +158,7 @@
               scale=1./6371000.
             endif
         endif 
-!         
+!
 !     Allocate arrays
 !
         allocate(ngrd_rm(mo)%                                           &
@@ -125,6 +167,8 @@
      &           lat_rho_o(ngrd_rm(mo)%xi_size,ngrd_rm(mo)%eta_size))
         allocate(ngrd_rm(mo)%                                           &
      &           mask_rho_o(ngrd_rm(mo)%xi_size,ngrd_rm(mo)%eta_size))
+        allocate(ngrd_rm(mo)%                                           &
+     &           mask_rho_or(ngrd_rm(mo)%xi_size,ngrd_rm(mo)%eta_size))
         allocate(ngrd_rm(mo)%x_full_grid(ngrd_rm(mo)%xi_size+1,         &
      &                                   ngrd_rm(mo)%eta_size+1))
         allocate(ngrd_rm(mo)%y_full_grid(ngrd_rm(mo)%xi_size+1          &
@@ -133,9 +177,9 @@
 !       Making lon_psi and lat_psi as local arrays 
 !       Local arrays need to deallocated, no_psi_pts=no_rho_pts-1
 !
-        allocate(lon_psi_o(ngrd_rm(mo)%xi_size-1,                             &
+        allocate(lon_psi_o(ngrd_rm(mo)%xi_size-1,                       &
      &                     ngrd_rm(mo)%eta_size-1))
-        allocate(lat_psi_o(ngrd_rm(mo)%xi_size-1,                             &
+        allocate(lat_psi_o(ngrd_rm(mo)%xi_size-1,                       &
      &                     ngrd_rm(mo)%eta_size-1))
 
 
@@ -172,9 +216,16 @@
         call netcdf_error_handler(ncstat)
         ngrd_rm(mo)%lat_rho_o=ngrd_rm(mo)%lat_rho_o*scale
 
-        ncstat=nf_get_var_int(nc_file_id, nc_grdmsk_id,                 &
-     &                                     ngrd_rm(mo)%mask_rho_o)
+!       ncstat=nf_get_var_int(nc_file_id, nc_grdmsk_id,                 &
+        ncstat=nf_get_var_double(nc_file_id, nc_grdmsk_id,              &
+     &                                     ngrd_rm(mo)%mask_rho_or)
         call netcdf_error_handler(ncstat)
+
+        do i=1,ngrd_rm(mo)%xi_size
+          do j=1,ngrd_rm(mo)%eta_size
+          ngrd_rm(mo)%mask_rho_o(i,j)=int(ngrd_rm(mo)%mask_rho_or(i,j))
+          end do
+        end do
 
         ncstat=nf_get_var_double(nc_file_id, nc_grdcrnrlon_id,          &
      &                                       lon_psi_o)
@@ -193,57 +244,7 @@
      &                             ngrd_rm(mo)%y_full_grid)
 
         deallocate(lon_psi_o, lat_psi_o)
-!
       end do
-
-!   Find child grid with respect to parent grid
-!
-      do mo=1,Ngrids_roms-1
-!       allocate(ngrd_rm(mo)%istr_o,ngrd_rm(mo)%jstr_o,                 &
-!    &           ngrd_rm(mo)%iend_o,ngrd_rm(mo)%jend_o)
-
-        nx=ngrd_rm(mo)%xi_size
-        ny=ngrd_rm(mo)%eta_size 
-        dist_max=10e6
-!       First the (2,2) point 
-        xx2=ngrd_rm(mo+1)%lon_rho_o(2,2)
-        yy2=ngrd_rm(mo+1)%lat_rho_o(2,2)
-
-        do j=1,ny
-          do i=1,nx
-            dist1=sqrt((ngrd_rm(mo)%lon_rho_o(i,j)-xx2)**2+             &
-     &                 (ngrd_rm(mo)%lat_rho_o(i,j)-yy2)**2)
-            if(dist1<=dist_max)then
-              dist_max=dist1
-              ngrd_rm(mo)%istr_o=i
-              ngrd_rm(mo)%jstr_o=j
-            endif
-          enddo
-        enddo
-        dist_max=10e6
-!       The second last point 
-        xxend_1=ngrd_rm(mo+1)%lon_rho_o(ngrd_rm(mo+1)%xi_size-1,        &
-     &                                ngrd_rm(mo+1)%eta_size-1 )
-        yyend_1=ngrd_rm(mo+1)%lat_rho_o(ngrd_rm(mo+1)%xi_size-1,        &
-     &                                ngrd_rm(mo+1)%eta_size-1 )
-        do j=1,ny
-          do i=1,nx
-            dist1=sqrt((ngrd_rm(mo)%lon_rho_o(i,j)-xxend_1)**2+         &
-     &                 (ngrd_rm(mo)%lat_rho_o(i,j)-yyend_1)**2)
-            if(dist1<=dist_max)then
-              dist_max=dist1
-              ngrd_rm(mo)%iend_o=i
-              ngrd_rm(mo)%jend_o=j
-            endif
-          enddo
-        enddo
-         print*,"ROMS starting i & j index of parent w.r.t child grid"
-         print*,ngrd_rm(mo)%istr_o, ngrd_rm(mo)%jstr_o
-         print*,"ending i & j index of parent w.r.t child grid--"
-         print*,ngrd_rm(mo)%iend_o, ngrd_rm(mo)%jend_o
-      enddo
-
-
 
       end subroutine load_roms_grid
 !======================================================================

@@ -1,7 +1,7 @@
 /*
-** svn $Id: wc13.h 1748 2018-02-10 03:25:17Z arango $
+** svn $Id: wc13.h 77 2020-05-13 03:06:55Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2020 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2021 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -23,18 +23,18 @@
 **  GRADIENT_CHECK            TLM/ADM Gradient Check
 **  FORCING_SV                Forcing Singular Vectors
 **  FT_EIGENMODES             Finite Time Eigenmodes
-**  IS4DVAR                   Incremental, strong constraint 4DVAR
+**  I4DVAR                    Incremental, strong constraint 4D-Var
 **  NLM_DRIVER                Nonlinear Basic State trajectory
+**  NORMALIZATION             Background error Covariance Normalization
 **  OPT_PERTURBATION          Optimal perturbations
 **  PICARD_TEST               Picard Iterations Test
+**  RBL4DVAR                  Strong/Weak constraint RBL4D-Var
+**  R4DVAR                    Stronf/Weak constraint R4D-Var
 **  R_SYMMETRY                Representer Matrix Symmetry Test
 **  SANITY_CHECK              Sanity Check
 **  SO_SEMI                   Stochastic Optimals: Semi-norm
 **  TLM_CHECK                 Tangent Linear Model Check
-**  W4DPSAS                   Weak constraint 4D-PSAS
-**  W4DVAR                    Weak constraint 4DVAR
 **  VERIFICATION              NL Observation Verification Driver
-**  NORMALIZATION             Background error Covariance Normalization
 */
 
 /*
@@ -138,14 +138,19 @@
 **  Common options to all 4DVAR algorithms.
 */
 
-#if defined ARRAY_MODES || defined CLIPPING            || \
-    defined IS4DVAR     || defined IS4DVAR_SENSITIVITY || \
-    defined W4DPSAS     || defined W4DPSAS_SENSITIVITY || \
-    defined W4DVAR      || defined W4DVAR_SENSITIVITY
+#if defined ARRAY_MODES              || \
+    defined CLIPPING                 || \
+    defined I4DVAR                   || \
+    defined I4DVAR_ANA_SENSITIVITY   || \
+    defined RBL4DVAR                 || \
+    defined RBL4DVAR_ANA_SENSITIVITY || \
+    defined R4DVAR                   || \
+    defined R4DVAR_ANA_SENSITIVITY
 # define ADJUST_BOUNDARY
 # define ADJUST_WSTRESS
 # define ADJUST_STFLUX
-# define NL_BULK_FLUXES
+# define PRIOR_BULK_FLUXES
+# define FORWARD_FLUXES
 # define VCONVOLUTION
 # define IMPLICIT_VCONV
 # define BALANCE_OPERATOR
@@ -162,7 +167,8 @@
 **  Special options for each 4DVAR algorithm.
 */
 
-#if defined ARRAY_MODES || \
-    defined W4DVAR      || defined W4DVAR_SENSITIVITY
+#if defined ARRAY_MODES            || \
+    defined R4DVAR                 || \
+    defined R4DVAR_ANA_SENSITIVITY
 # define RPM_RELAXATION
 #endif

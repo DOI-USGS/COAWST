@@ -2,9 +2,9 @@
 #if defined TL_IOMS && !defined SOLVE3D
       SUBROUTINE rp_main2d (RunInterval)
 !
-!svn $Id: rp_main2d.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: rp_main2d.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -77,7 +77,11 @@
 # ifdef FLOATS_NOT_YET
       integer :: Lend, Lstr, chunk_size
 # endif
+!
       real(r8) :: MaxDT, my_StepTime
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 !
 !=======================================================================
 !  Time-step tangent linear vertically integrated equations.
@@ -111,8 +115,7 @@
           CALL rp_get_data (ng)
 !$OMP END MASTER
 !$OMP BARRIER
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END DO
 !
 !-----------------------------------------------------------------------
@@ -126,8 +129,7 @@
           END DO
 !$OMP BARRIER
         END DO
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
 # ifdef WEAK_CONSTRAINT
 !
@@ -301,8 +303,7 @@
           CALL rp_output (ng)
 !$OMP END MASTER
 !$OMP BARRIER
-          IF ((FoundError(exit_flag, NoError, __LINE__,                 &
-     &                    __FILE__)).or.                                &
+          IF ((FoundError(exit_flag, NoError, __LINE__, MyFile)).or.    &
      &        ((iic(ng).eq.(ntend(ng)+1)).and.(ng.eq.Ngrids))) RETURN
         END DO
 !

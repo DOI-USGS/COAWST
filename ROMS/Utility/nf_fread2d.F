@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE nf_fread2d_mod
 !
-!svn $Id: nf_fread2d.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: nf_fread2d.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -34,17 +34,18 @@
 !     Amin       Field minimum value (real)                            !
 !     Amax       Field maximum value (real)                            !
 !     A          Field to read in (real 2D array)                      !
-!     Lregrid    Field regrid interpolation switch (logical; LOGICAL)  !
+!     checksum   Field checksum value (integer*8; OPTIONAL)            !
+!     Lregrid    Field regrid interpolation switch (logical; OPTIONAL) !
 !                                                                      !
 !     nf_fread2d Error flag (integer)                                  !
 !                                                                      !
 !=======================================================================
 !
       implicit none
-
+!
       CONTAINS
 
-#if defined PARALLEL_IN && defined DISTRIBUTE
+#if defined PARALLEL_IO && defined DISTRIBUTE
 !
 !***********************************************************************
       FUNCTION nf_fread2d (ng, model, ncname, ncid,                     &
@@ -55,7 +56,7 @@
 # ifdef MASKING
      &                     Amask,                                       &
 # endif
-     &                     A, Lregrid)
+     &                     A, checksum, Lregrid)
 !***********************************************************************
 !
       USE mod_param
@@ -67,6 +68,7 @@
       USE mod_scalars
 !
       USE distribute_mod, ONLY : mp_bcasti, mp_collect, mp_reduce
+      USE get_hash_mod,   ONLY : get_hash
       USE strings_mod,    ONLY : FoundError
 !
       implicit none
@@ -74,18 +76,20 @@
 !  Imported variable declarations.
 !
       logical, intent(out), optional :: Lregrid
-
+!
       integer, intent(in) :: ng, model, ncid, ncvarid, tindex, gtype
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: Vsize(4)
-
+!
+      integer(i8b), intent(out), optional :: checksum
+!
       real(dp), intent(in)  :: Ascl
       real(r8), intent(out) :: Amin
       real(r8), intent(out) :: Amax
-
+!
       character (len=*), intent(in) :: ncname
       character (len=*), intent(in) :: ncvname
-
+!
 # ifdef ASSUMED_SHAPE
 #  ifdef MASKING
       real(r8), intent(in) :: Amask(LBi:,LBj:)
@@ -100,10 +104,10 @@
 !
 !  Local variable declarations.
 !
-      logical :: interpolate
-
+      logical :: Lchecksum, interpolate
+!
       logical, dimension(3) :: foundit
-
+!
       integer :: i, ic, ij, j, jc, np, MyNpts, Npts
       integer :: Imin, Imax, Isize, Jmin, Jmax, Jsize, IJsize
       integer :: Istr, Iend, Jstr, Jend
@@ -127,9 +131,12 @@
       real(r8), allocatable :: A2d(:)
 # endif
       real(r8), allocatable :: wrk(:)
-
+!
       character (len= 3), dimension(2) :: op_handle
       character (len=12), dimension(3) :: AttName
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 !
 !-----------------------------------------------------------------------
 !  Set starting and ending indices to process.
@@ -225,8 +232,7 @@
       CALL netcdf_get_fatt (ng, model, ncname, ncvarid, AttName,        &
      &                      AttValue, foundit,                          &
      &                      ncid = ncid)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
         nf_fread2d=ioerror
         RETURN
       END IF
@@ -247,6 +253,15 @@
         Aspval=spval_check
       ELSE
         Aspval=AttValue(3)
+      END IF
+!
+!  Initialize checsum value.
+!
+      IF (PRESENT(checksum)) THEN
+        Lchecksum=.TRUE.
+        checksum=0_i8b
+      ELSE
+        Lchecksum=.FALSE.
       END IF
 !
 !-----------------------------------------------------------------------
@@ -338,6 +353,11 @@
               Amax=MAX(Amax,wrk(i))
             END IF
           END DO
+          IF ((ABS(Amin).ge.ABS(Aspval)).and.                           &
+     &        (ABS(Amax).ge.ABS(Aspval))) THEN
+            Amin=0.0_r8                       ! the entire data is all
+            Amax=0.0_r8                       ! field value, _FillValue
+          END IF
 !
 !  Set minimum and maximum values: global reduction.
 !
@@ -478,6 +498,11 @@
               Amax=MAX(Amax,wrk(i))
             END IF
           END DO
+          IF ((ABS(Amin).ge.ABS(Aspval)).and.                           &
+     &        (ABS(Amax).ge.ABS(Aspval))) THEN
+            Amin=0.0_r8                       ! the entire data is all
+            Amax=0.0_r8                       ! field value, _FillValue
+          END IF
 !
 !  Unpack read data.  This is tricky in parallel I/O.  The cheapeast
 !  thing to do is reconstruct a packed global array and then select
@@ -510,52 +535,112 @@
       IF (interpolate.and.(status.eq.nf90_noerr)) THEN
         SELECT CASE (ABS(MyType))
           CASE (p2dvar, p3dvar)
-            CALL regrid (ng, model, ncname, ncid, ncvname, ncvarid,     &
-     &                   MyType, InterpFlag,                            &
+            CALL regrid (ng, model, ncname, ncid,                       &
+     &                   ncvname, ncvarid, MyType, InterpFlag,          &
      &                   Ilen, Jlen, Awrk, Amin, Amax,                  &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   Imin, Imax, Jmin, Jmax,                        &
+# ifdef MASKING
+     &                   GRID(ng) % pmask,                              &
+# endif
      &                   GRID(ng) % MyLon,                              &
      &                   GRID(ng) % lonp,                               &
      &                   GRID(ng) % latp,                               &
      &                   A)
           CASE (r2dvar, r3dvar)
-            CALL regrid (ng, model, ncname, ncid, ncvname, ncvarid,     &
+            IF (spherical) THEN
+              CALL regrid (ng, model, ncname, ncid,                     &
+     &                     ncvname, ncvarid, MyType, InterpFlag,        &
+     &                     Ilen, Jlen, Awrk, Amin, Amax,                &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     Imin, Imax, Jmin, Jmax,                      &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif  
+     &                     GRID(ng) % MyLon,                            &
+     &                     GRID(ng) % lonr,                             &
+     &                     GRID(ng) % latr,                             &
+     &                     A)
+            ELSE
+              CALL regrid (ng, model, ncname, ncid,                     &
+     &                   ncvname, ncvarid,                              &
      &                   MyType, InterpFlag,                            &
      &                   Ilen, Jlen, Awrk, Amin, Amax,                  &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   Imin, Imax, Jmin, Jmax,                        &
+# ifdef MASKING
+     &                   GRID(ng) % rmask,                              &
+# endif
      &                   GRID(ng) % MyLon,                              &
-     &                   GRID(ng) % lonr,                               &
-     &                   GRID(ng) % latr,                               &
+     &                   GRID(ng) % xr,                                 &
+     &                   GRID(ng) % yr,                                 &
      &                   A)
+            END IF
           CASE (u2dvar, u3dvar)
-            CALL regrid (ng, model, ncname, ncid, ncvname, ncvarid,     &
-     &                   MyType, InterpFlag,                            &
-     &                   Ilen, Jlen, Awrk, Amin, Amax,                  &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   GRID(ng) % MyLon,                              &
-     &                   GRID(ng) % lonu,                               &
-     &                   GRID(ng) % latu,                               &
-     &                   A)
+            IF (spherical) THEN
+              CALL regrid (ng, model, ncname, ncid, ncvname, ncvarid,   &
+     &                     MyType, InterpFlag,                          &
+     &                     Ilen, Jlen, Awrk, Amin, Amax,                &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     Imin, Imax, Jmin, Jmax,                      &
+# ifdef MASKING
+     &                     GRID(ng) % umask,                            &
+# endif
+     &                     GRID(ng) % MyLon,                            &
+     &                     GRID(ng) % lonu,                             &
+     &                     GRID(ng) % latu,                             &
+     &                     A)
+            ELSE
+              CALL regrid (ng, model, ncname, ncid, ncvname, ncvarid,   &
+     &                     MyType, InterpFlag,                          &
+     &                     Ilen, Jlen, Awrk, Amin, Amax,                &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     Imin, Imax, Jmin, Jmax,                      &
+# ifdef MASKING
+     &                     GRID(ng) % vmask,                            &
+# endif
+     &                     GRID(ng) % MyLon,                            &
+     &                     GRID(ng) % xu,                               &
+     &                     GRID(ng) % yu,                               &
+     &                     A)
+            END IF
           CASE (v2dvar, v3dvar)
-            CALL regrid (ng, model, ncname, ncid, ncvname, ncvarid,     &
-     &                   MyType, InterpFlag,                            &
-     &                   Ilen, Jlen, Awrk, Amin, Amax,                  &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   GRID(ng) % MyLon,                              &
-     &                   GRID(ng) % lonv,                               &
-     &                   GRID(ng) % latv,                               &
-     &                   A)
-
+            IF (spherical) THEN
+              CALL regrid (ng, model, ncname, ncid, ncvname, ncvarid,   &
+     &                     MyType, InterpFlag,                          &
+     &                     Ilen, Jlen, Awrk, Amin, Amax,                &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     Imin, Imax, Jmin, Jmax,                      &
+# ifdef MASKING
+     &                     GRID(ng) % vmask,                            &
+# endif
+     &                     GRID(ng) % MyLon,                            &
+     &                     GRID(ng) % lonv,                             &
+     &                     GRID(ng) % latv,                             &
+     &                     A)
+            ELSE
+              CALL regrid (ng, model, ncname, ncid, ncvname, ncvarid,   &
+     &                     MyType, InterpFlag,                          &
+     &                     Ilen, Jlen, Awrk, Amin, Amax,                &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     Imin, Imax, Jmin, Jmax,                      &
+# ifdef MASKING
+     &                     GRID(ng) % vmask,                            &
+# endif
+     &                     GRID(ng) % MyLon,                            &
+     &                     GRID(ng) % xv,                               &
+     &                     GRID(ng) % yv,                               &
+     &                     A)
+            END IF
           CASE DEFAULT
-            CALL regrid (ng, model, ncname, ncid, ncvname, ncvarid,     &
-     &                   MyType, InterpFlag,                            &
+            CALL regrid (ng, model, ncname, ncid,                       &
+     &                   ncvname, ncvarid, MyType, InterpFlag,          &
      &                   Ilen, Jlen, Awrk, Amin, Amax,                  &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   Imin, Imax, Jmin, Jmax,                        &
+# ifdef MASKING
+     &                   GRID(ng) % rmask,                              &
+# endif
      &                   GRID(ng) % MyLon,                              &
      &                   GRID(ng) % lonr,                               &
      &                   GRID(ng) % latr,                               &
@@ -582,7 +667,7 @@
       IF (allocated(wrk)) THEN
         deallocate (wrk)
       END IF
-
+!
       RETURN
       END FUNCTION nf_fread2d
 
@@ -598,7 +683,7 @@
 # ifdef MASKING
      &                     Amask,                                       &
 # endif
-     &                     A, Lregrid)
+     &                     A, checksum, Lregrid)
 !***********************************************************************
 !
       USE mod_param
@@ -612,6 +697,7 @@
 # ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcastf, mp_bcasti, mp_scatter2d
 # endif
+      USE get_hash_mod,   ONLY : get_hash
       USE strings_mod,    ONLY : FoundError
 !
       implicit none
@@ -619,15 +705,17 @@
 !  Imported variable declarations.
 !
       logical, intent(out), optional :: Lregrid
-
+!
       integer, intent(in) :: ng, model, ncid, ncvarid, tindex, gtype
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(in) :: Vsize(4)
-
+!
+      integer(i8b), intent(out), optional :: checksum
+!
       real(dp), intent(in)  :: Ascl
       real(r8), intent(out) :: Amin
       real(r8), intent(out) :: Amax
-
+!
       character (len=*), intent(in) :: ncname
       character (len=*), intent(in) :: ncvname
 
@@ -646,10 +734,10 @@
 !
 !  Local variable declarations.
 !
-      logical :: interpolate
+      logical :: Lchecksum, interpolate
 
       logical, dimension(3) :: foundit
-
+!
       integer :: i, j, ic, Npts, NWpts, status, wtype
       integer :: Imin, Imax, Jmin, Jmax
       integer :: Ilen, Jlen, IJlen, MyType
@@ -665,8 +753,11 @@
       real(r8), dimension(3) :: AttValue
 
       real(r8), allocatable :: wrk(:)
-
+!
       character (len=12), dimension(3) :: AttName
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 !
 !-----------------------------------------------------------------------
 !  Set starting and ending indices to process.
@@ -764,8 +855,7 @@
       CALL netcdf_get_fatt (ng, model, ncname, ncvarid, AttName,        &
      &                      AttValue, foundit,                          &
      &                      ncid = ncid)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
         nf_fread2d=ioerror
         RETURN
       END IF
@@ -855,6 +945,15 @@
         wrk=0.0_r8
       END IF
 !
+!  Initialize checsum value.
+!
+      IF (PRESENT(checksum)) THEN
+        Lchecksum=.TRUE.
+        checksum=0_i8b
+      ELSE
+        Lchecksum=.FALSE.
+      END IF
+!
 !-----------------------------------------------------------------------
 !  Serial I/O: Read in requested field and scale it.
 !-----------------------------------------------------------------------
@@ -867,20 +966,27 @@
           Amax=-spval
           DO i=1,Npts
             IF (ABS(wrk(i)).ge.ABS(Aspval)) THEN
-              wrk(i)=0.0_r8                     ! masked with _FillValue
+              wrk(i)=0.0_r8                    ! masked with _FillValue
             ELSE
               wrk(i)=Ascl*(Afactor*wrk(i)+Aoffset)
               Amin=MIN(Amin,wrk(i))
               Amax=MAX(Amax,wrk(i))
             END IF
           END DO
+          IF ((ABS(Amin).ge.ABS(Aspval)).and.                           &
+     &        (ABS(Amax).ge.ABS(Aspval))) THEN
+            Amin=0.0_r8                        ! the entire data is all
+            Amax=0.0_r8                        ! field value, _FillValue
+          END IF
+          IF (Lchecksum) THEN
+            CALL get_hash (wrk, Npts, checksum)
+          END IF
         END IF
       END IF
 # ifdef DISTRIBUTE
       CALL mp_bcasti (ng, model, status)
 # endif
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         exit_flag=2
         ioerror=status
         nf_fread2d=status
@@ -963,56 +1069,145 @@
 !       CALL mp_collect (ng, model, Npts, 0.0_r8, Awrk)
         SELECT CASE (ABS(MyType))
           CASE (p2dvar, p3dvar)
-            CALL regrid (ng, model, ncname, ncid, ncvname, ncvarid,     &
-     &                   MyType, InterpFlag,                            &
-     &                   Ilen, Jlen, Awrk, Amin, Amax,                  &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   GRID(ng) % MyLon,                              &
-     &                   GRID(ng) % lonp,                               &
-     &                   GRID(ng) % latp,                               &
-     &                   A)
+            IF (spherical) THEN
+              CALL regrid (ng, model, ncname, ncid,                     &
+     &                     ncvname, ncvarid, MyType, InterpFlag,        &
+     &                     Ilen, Jlen, Awrk, Amin, Amax,                &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     Imin, Imax, Jmin, Jmax,                      &
+# ifdef MASKING
+     &                     Amask,                                       &
+# endif
+     &                     GRID(ng) % MyLon,                            &
+     &                     GRID(ng) % lonp,                             &
+     &                     GRID(ng) % latp,                             &
+     &                     A)
+            ELSE
+              CALL regrid (ng, model, ncname, ncid,                     &
+     &                     ncvname, ncvarid, MyType, InterpFlag,        &
+     &                     Ilen, Jlen, Awrk, Amin, Amax,                &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     Imin, Imax, Jmin, Jmax,                      &
+# ifdef MASKING
+     &                     Amask,                                       &
+# endif
+     &                     GRID(ng) % MyLon,                            &
+     &                     GRID(ng) % xp,                               &
+     &                     GRID(ng) % yp,                               &
+     &                     A)
+            END IF
           CASE (r2dvar, r3dvar)
-            CALL regrid (ng, model, ncname, ncid, ncvname, ncvarid,     &
-     &                   MyType, InterpFlag,                            &
-     &                   Ilen, Jlen, Awrk, Amin, Amax,                  &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   GRID(ng) % MyLon,                              &
-     &                   GRID(ng) % lonr,                               &
-     &                   GRID(ng) % latr,                               &
-     &                   A)
+            IF (spherical) THEN
+              CALL regrid (ng, model, ncname, ncid,                     &
+     &                     ncvname, ncvarid, MyType, InterpFlag,        &
+     &                     Ilen, Jlen, Awrk, Amin, Amax,                &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     Imin, Imax, Jmin, Jmax,                      &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     GRID(ng) % MyLon,                            &
+     &                     GRID(ng) % lonr,                             &
+     &                     GRID(ng) % latr,                             &
+     &                     A)
+            ELSE
+              CALL regrid (ng, model, ncname, ncid,                     &
+     &                     ncvname, ncvarid, MyType, InterpFlag,        &
+     &                     Ilen, Jlen, Awrk, Amin, Amax,                &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     Imin, Imax, Jmin, Jmax,                      &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     GRID(ng) % MyLon,                            &
+     &                     GRID(ng) % xr,                               &
+     &                     GRID(ng) % yr,                               &
+     &                     A)
+            END IF
           CASE (u2dvar, u3dvar)
-            CALL regrid (ng, model, ncname, ncid, ncvname, ncvarid,     &
-     &                   MyType, InterpFlag,                            &
-     &                   Ilen, Jlen, Awrk, Amin, Amax,                  &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   GRID(ng) % MyLon,                              &
-     &                   GRID(ng) % lonu,                               &
-     &                   GRID(ng) % latu,                               &
-     &                   A)
+            IF (spherical) THEN
+              CALL regrid (ng, model, ncname, ncid,                     &
+     &                     ncvname, ncvarid, MyType, InterpFlag,        &
+     &                     Ilen, Jlen, Awrk, Amin, Amax,                &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     Imin, Imax, Jmin, Jmax,                      &
+# ifdef MASKING
+     &                     GRID(ng) % umask,                            &
+# endif
+     &                     GRID(ng) % MyLon,                            &
+     &                     GRID(ng) % lonu,                             &
+     &                     GRID(ng) % latu,                             &
+     &                     A)
+            ELSE
+              CALL regrid (ng, model, ncname, ncid,                     &
+     &                     ncvname, ncvarid, MyType, InterpFlag,        &
+     &                     Ilen, Jlen, Awrk, Amin, Amax,                &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     Imin, Imax, Jmin, Jmax,                      &
+# ifdef MASKING
+     &                     GRID(ng) % umask,                            &
+# endif
+     &                     GRID(ng) % MyLon,                            &
+     &                     GRID(ng) % xu,                               &
+     &                     GRID(ng) % yu,                               &
+     &                     A)
+             END IF
           CASE (v2dvar, v3dvar)
-            CALL regrid (ng, model, ncname, ncid, ncvname, ncvarid,     &
-     &                   MyType, InterpFlag,                            &
-     &                   Ilen, Jlen, Awrk, Amin, Amax,                  &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   GRID(ng) % MyLon,                              &
-     &                   GRID(ng) % lonv,                               &
-     &                   GRID(ng) % latv,                               &
-     &                   A)
-
+            IF (spherical) THEN
+              CALL regrid (ng, model, ncname, ncid,                     &
+     &                     ncvname, ncvarid, MyType, InterpFlag,        &
+     &                     Ilen, Jlen, Awrk, Amin, Amax,                &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     Imin, Imax, Jmin, Jmax,                      &
+# ifdef MASKING
+     &                     GRID(ng) % vmask,                            &
+# endif
+     &                     GRID(ng) % MyLon,                            &
+     &                     GRID(ng) % lonv,                             &
+     &                     GRID(ng) % latv,                             &
+     &                     A)
+            ELSE
+              CALL regrid (ng, model, ncname, ncid,                     &
+     &                     ncvname, ncvarid, MyType, InterpFlag,        &
+     &                     Ilen, Jlen, Awrk, Amin, Amax,                &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     Imin, Imax, Jmin, Jmax,                      &
+# ifdef MASKING
+     &                     GRID(ng) % vmask,                            &
+# endif
+     &                     GRID(ng) % MyLon,                            &
+     &                     GRID(ng) % xv,                               &
+     &                     GRID(ng) % yv,                               &
+     &                     A)
+            END IF
           CASE DEFAULT
-            CALL regrid (ng, model, ncname, ncid, ncvname, ncvarid,     &
-     &                   MyType, InterpFlag,                            &
-     &                   Ilen, Jlen, Awrk, Amin, Amax,                  &
-     &                   LBi, UBi, LBj, UBj,                            &
-     &                   Imin, Imax, Jmin, Jmax,                        &
-     &                   GRID(ng) % MyLon,                              &
-     &                   GRID(ng) % lonr,                               &
-     &                   GRID(ng) % latr,                               &
-     &                   A)
+            IF (spherical) THEN
+              CALL regrid (ng, model, ncname, ncid,                     &
+     &                     ncvname, ncvarid, MyType, InterpFlag,        &
+     &                     Ilen, Jlen, Awrk, Amin, Amax,                &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     Imin, Imax, Jmin, Jmax,                      &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     GRID(ng) % MyLon,                            &
+     &                     GRID(ng) % lonr,                             &
+     &                     GRID(ng) % latr,                             &
+     &                     A)
+            ELSE
+              CALL regrid (ng, model, ncname, ncid,                     &
+     &                     ncvname, ncvarid, MyType, InterpFlag,        &
+     &                     Ilen, Jlen, Awrk, Amin, Amax,                &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     Imin, Imax, Jmin, Jmax,                      &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     GRID(ng) % MyLon,                            &
+     &                     GRID(ng) % xr,                               &
+     &                     GRID(ng) % yr,                               &
+     &                     A)
+           END IF
         END SELECT
       END IF
 !
@@ -1030,7 +1225,7 @@
       END IF
 
       nf_fread2d=status
-
+!
       RETURN
       END FUNCTION nf_fread2d
 #endif

@@ -37,6 +37,7 @@
 #define ANA_SMFLUX
 #define ANA_FSOBC
 #define ANA_M2OBC
+#undef  SALINITY
 
 /* define only one of the following 5 */
 #undef  UV_LOGDRAG

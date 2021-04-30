@@ -4,11 +4,14 @@
      &                   Nx, Ny, Finp, Amin, Amax,                      &
      &                   LBi, UBi, LBj, UBj,                            &
      &                   Imin, Imax, Jmin, Jmax,                        &
+# ifdef MASKING
+     &                   MyMask,                                        &
+# endif
      &                   MyXout, Xout, Yout, Fout)
 !
-!svn $Id: regrid.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: regrid.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -45,6 +48,9 @@
 !     Imax       Fout ending   data I-index (integer)                  !
 !     Jmin       Fout starting data J-index (integer)                  !
 !     Jmax       Fout ending   data J-index (integer)                  !
+# ifdef MASKING
+!     MyMask     Fout Land/Sea mask (real)                             !
+# endif
 !     MyXout     Work X-locations (longitude) for regridding (real)    !
 !     Xout       X-locations (longitude) to interpolate (real)         !
 !     Yout       Y-locations (latitude)  to interpolate (real)         !
@@ -63,9 +69,15 @@
 !
       USE interpolate_mod
 #ifdef DISTRIBUTE
-      USE distribute_mod, ONLY : mp_reduce
+      USE distribute_mod,  ONLY : mp_reduce
+# ifdef REGRID_SHAPIRO
+      USE mp_exchange_mod, ONLY : mp_exchange2d
+# endif
 #endif
-      USE strings_mod, ONLY : FoundError
+#ifdef REGRID_SHAPIRO
+      USE shapiro_mod,     ONLY : shapiro2d_tile
+#endif
+      USE strings_mod,     ONLY : FoundError
 !
       implicit none
 !
@@ -82,22 +94,30 @@
 
       real(r8), intent(inout) :: MyXout(LBi:UBi,LBj:UBj)
 
+#ifdef MASKING
+      real(r8), intent(in) :: MyMask(LBi:UBi,LBj:UBj)
+#endif
       real(r8), intent(in) :: Xout(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Yout(LBi:UBi,LBj:UBj)
 
       real(r8), intent(out) :: Fout(LBi:UBi,LBj:UBj)
-
+!
       character (len=*), intent(in) :: ncname
       character (len=*), intent(in) :: ncvname
 !
 !  Local variable declarations
 !
       logical :: EastLon, rectangular
+!
       integer :: i, j
       integer :: Istr, Iend, Jstr, Jend
+#ifdef REGRID_SHAPIRO
+      integer :: IminS, ImaxS, JminS, JmaxS, tile
+#endif
 #ifdef DISTRIBUTE
       integer :: Cgrid, ghost
 #endif
+!
       real(r8), parameter :: IJspv = 0.0_r8
 
       real(r8) :: my_min, my_max, Xmin, Xmax, Ymin, Ymax
@@ -112,8 +132,12 @@
 
 #ifdef DISTRIBUTE
       real(r8), dimension(2) :: buffer
+!
       character (len=3), dimension(2) :: op_handle
 #endif
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 !
 !-----------------------------------------------------------------------
 !  Get input variable coordinates.
@@ -123,8 +147,7 @@
      &                    ncvname, ncvarid, Nx, Ny,                     &
      &                    Xmin, Xmax, Xinp, Ymin, Ymax, Yinp,           &
      &                    rectangular)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Set input gridded data rotation angle.
 !
@@ -146,8 +169,8 @@
 !  positive multiples of 360 map to 360 and negative multiples of 360
 !  map to zero using the MODULO intrinsic Fortran function.
 !
-      IF ((Xmin.ge.0.0_r8).and.(Xmax.gt.0.0_r8).and.                    &
-     &    ((Xmax-Xmin).gt.315.0_r8)) THEN
+      IF (((Xmin.ge.0.0_r8).and.(Xmax.gt.0.0_r8).and.                   &
+     &    ((Xmax-Xmin).gt.315.0_r8)).and.(spherical)) THEN
         EastLon=.TRUE.
         MyLonMin=MODULO(LonMin(ng), 360.0_r8)
         IF ((MyLonMin.eq.0.0_r8).and.                                   &
@@ -258,6 +281,43 @@
      &                  Iout, Jout, MyXout, Yout,                       &
      &                  Fout, my_min, my_max)
       END IF
+
+#ifdef REGRID_SHAPIRO
+!
+!  Apply Shapiro filter to interpolated date. Often, input data is
+!  coarse and field have small scale noise. So, it is desirable to
+!  the 2-delta noise.
+!
+# ifdef DISTRIBUTE
+      tile=MyRank
+      CALL mp_exchange2d (ng, tile, 1, 1,                               &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    Fout)
+# else
+      tile=-1
+# endif
+# ifdef NESTING
+      IminS=BOUNDS(ng)%Istr(tile)-4
+      ImaxS=BOUNDS(ng)%Iend(tile)+3
+      JminS=BOUNDS(ng)%Jstr(tile)-4
+      JmaxS=BOUNDS(ng)%Jend(tile)+3
+# else
+      IminS=BOUNDS(ng)%Istr(tile)-3
+      ImaxS=BOUNDS(ng)%Iend(tile)+3
+      JminS=BOUNDS(ng)%Jstr(tile)-3
+      JmaxS=BOUNDS(ng)%Jend(tile)+3
+# endif
+!
+      CALL shapiro2d_tile (ng, tile, 1,                                 &
+     &                     LBi, UBi, LBj, UBj,                          &
+     &                     IminS, ImaxS, JminS, JmaxS,                  &
+# ifdef MASKING
+     &                     MyMask,                                      &
+# endif
+     &                     Fout)
+#endif
 !
 !  Compute global interpolated field minimum and maximum values.
 !  Notice that gridded data values are overwritten.
@@ -274,6 +334,6 @@
       Amin=my_min
       Amax=my_max
 #endif
-
+!
       RETURN
       END SUBROUTINE regrid

@@ -1,8 +1,8 @@
       SUBROUTINE t3dmix4 (ng, tile)
 !
-!svn $Id: t3dmix4_s.h 995 2020-01-10 04:01:28Z arango $
+!svn $Id: t3dmix4_s.h 1054 2021-03-06 19:47:12Z arango $
 !***********************************************************************
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !****************************************** Alexander F. Shchepetkin ***
@@ -30,10 +30,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 #include "tile.h"
 !
 #ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 27, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 27, __LINE__, MyFile)
 #endif
       CALL t3dmix4_tile (ng, tile,                                      &
      &                   LBi, UBi, LBj, UBj,                            &
@@ -70,9 +73,9 @@
 #endif
      &                   OCEAN(ng) % t)
 #ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 27, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 27, __LINE__, MyFile)
 #endif
-
+!
       RETURN
       END SUBROUTINE t3dmix4
 !
@@ -109,9 +112,6 @@
       USE mod_param
       USE mod_ncparam
       USE mod_scalars
-#ifdef OFFLINE_BIOLOGY
-      USE mod_biology
-#endif
 !
 !  Imported variable declarations.
 !
@@ -188,7 +188,7 @@
 !  Local variable declarations.
 !
       integer :: Imin, Imax, Jmin, Jmax
-      integer :: i, ibt, itrc, j, k
+      integer :: i, itrc, j, k
 
       real(r8) :: cff, cff1, cff2, cff3
 
@@ -227,12 +227,7 @@
 !
 !  Compute horizontal tracer flux in the XI- and ETA-directions.
 !
-#ifdef OFFLINE_BIOLOGY
-      DO ibt=1,NBT
-        itrc=idbio(ibt)
-#else
       DO itrc=1,NT(ng)
-#endif
         DO k=1,N(ng)
           DO j=Jmin,Jmax
             DO i=Imin,Imax+1
@@ -467,6 +462,6 @@
           END DO
         END DO
       END DO
-
+!
       RETURN
       END SUBROUTINE t3dmix4_tile

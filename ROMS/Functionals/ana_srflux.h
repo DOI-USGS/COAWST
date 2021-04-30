@@ -1,8 +1,8 @@
       SUBROUTINE ana_srflux (ng, tile, model)
 !
-!! svn $Id: ana_srflux.h 995 2020-01-10 04:01:28Z arango $
+!! svn $Id: ana_srflux.h 1054 2021-03-06 19:47:12Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -20,7 +20,12 @@
 ! Imported variable declarations.
 !
       integer, intent(in) :: ng, tile, model
-
+!
+!  Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 #include "tile.h"
 !
       CALL ana_srflux_tile (ng, tile, model,                            &
@@ -28,7 +33,7 @@
      &                      IminS, ImaxS, JminS, JmaxS,                 &
      &                      GRID(ng) % lonr,                            &
      &                      GRID(ng) % latr,                            &
-#ifdef ALBEDO_CLOUD
+#ifdef ALBEDO
      &                      FORCES(ng) % cloud,                         &
      &                      FORCES(ng) % Hair,                          &
      &                      FORCES(ng) % Tair,                          &
@@ -43,9 +48,9 @@
 #else
       IF (Lanafile.and.(tile.eq.0)) THEN
 #endif
-        ANANAME(27)=__FILE__
+        ANANAME(27)=MyFile
       END IF
-
+!
       RETURN
       END SUBROUTINE ana_srflux
 !
@@ -54,7 +59,7 @@
      &                            LBi, UBi, LBj, UBj,                   &
      &                            IminS, ImaxS, JminS, JmaxS,           &
      &                            lonr, latr,                           &
-#ifdef ALBEDO_CLOUD
+#ifdef ALBEDO
      &                            cloud, Hair, Tair, Pair,              &
 #endif
      &                            srflx)
@@ -78,7 +83,7 @@
 #ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: lonr(LBi:,LBj:)
       real(r8), intent(in) :: latr(LBi:,LBj:)
-# ifdef ALBEDO_CLOUD
+# ifdef ALBEDO
       real(r8), intent(in) :: cloud(LBi:,LBj:)
       real(r8), intent(in) :: Hair(LBi:,LBj:)
       real(r8), intent(in) :: Tair(LBi:,LBj:)
@@ -88,7 +93,7 @@
 #else
       real(r8), intent(in) :: lonr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: latr(LBi:UBi,LBj:UBj)
-# ifdef ALBEDO_CLOUD
+# ifdef ALBEDO
       real(r8), intent(in) :: cloud(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Hair(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Tair(LBi:UBi,LBj:UBj)
@@ -100,21 +105,22 @@
 !  Local variable declarations.
 !
       integer :: i, j
-#if defined ALBEDO_CLOUD || defined DIURNAL_SRFLUX
+!
+#if defined ALBEDO || defined DIURNAL_SRFLUX
       real(dp) :: hour, yday
       real(r8) :: Dangle, Hangle, LatRad
       real(r8) :: cff1, cff2
-# ifdef ALBEDO_CLOUD
+# ifdef ALBEDO
       real(r8) :: Rsolar, e_sat, vap_p, zenith
 # endif
 #endif
       real(r8) :: cff
-
+!
       real(r8), parameter :: alb_w=0.06_r8
 
 #include "set_bounds.h"
 
-#if defined ALBEDO_CLOUD || defined DIURNAL_SRFLUX
+#if defined ALBEDO || defined DIURNAL_SRFLUX
 !
 !-----------------------------------------------------------------------
 !  Compute shortwave radiation (degC m/s):
@@ -154,24 +160,24 @@
 !
       Hangle=(12.0_r8-hour)*pi/12.0_r8
 !
-# ifdef ALBEDO_CLOUD
+# ifdef ALBEDO
       Rsolar=Csolar/(rho0*Cp)
 # endif
       DO j=JstrT,JendT
         DO i=IstrT,IendT
 !
-!  Local daylight is a function of the declination (Dangle) and hour
-!  angle adjusted for the local meridian (Hangle-lonr(i,j)/15.0).
-!  The 15.0 factor is because the sun moves 15 degrees every hour.
+!  Local daylight, GMT time zone, is a function of the declination
+!  (Dangle) and hour angle adjusted for the local meridian
+!  (Hangle-lonr(i,j)*deg2rad).
 !
           LatRad=latr(i,j)*deg2rad
           cff1=SIN(LatRad)*SIN(Dangle)
           cff2=COS(LatRad)*COS(Dangle)
-# if defined ALBEDO_CLOUD
+# if defined ALBEDO
 !
 !  Estimate variation in optical thickness of the atmosphere over
 !  the course of a day under cloudless skies (Zillman, 1972). To
-!  obtain net incoming shortwave radiation multiply by (1.0-0.6*c**3),
+!  obtain incoming shortwave radiation multiply by (1.0-0.6*c**3),
 !  where c is the fractional cloud cover.
 !
 !  The equation for saturation vapor pressure is from Gill (Atmosphere-
@@ -183,18 +189,12 @@
 !!
 !
           srflx(i,j)=0.0_r8
-!         zenith=cff1+cff2*COS(Hangle-lonr(i,j)*deg2rad/15.0_r8)
           zenith=cff1+cff2*COS(Hangle-lonr(i,j)*deg2rad)
           IF (zenith.gt.0.0_r8) THEN
             cff=(0.7859_r8+0.03477_r8*Tair(i,j))/                       &
      &          (1.0_r8+0.00412_r8*Tair(i,j))
             e_sat=10.0_r8**cff    ! saturation vapor pressure (hPa=mbar)
-#  ifdef SPECIFIC_HUMIDITY
-!  With this directive specific humidity is input as kg/kg
-            vap_p=Pair(i,j)*Hair(i,j)/(0.62197_r8+0.378_r8*Hair(i,j))
-#  else
             vap_p=e_sat*Hair(i,j) ! water vapor pressure (hPa=mbar)
-#  endif
             srflx(i,j)=Rsolar*zenith*zenith*                            &
      &                 (1.0_r8-0.6_r8*cloud(i,j)**3)/                   &
      &                 ((zenith+2.7_r8)*vap_p*1.0E-3_r8+                &
@@ -231,14 +231,10 @@
               srflx(i,j)=0.0_r8                        ! All night case
             END IF
           ELSE
-            cff=(cff1*ACOS(-cff1/cff2)+SQRT((cff2+cff1)*(cff2-cff1)))/pi
-	    IF (cff .lt. 10.e-10) THEN
-              srflx(i,j)=0.0_r8
-            ELSE
-              srflx(i,j)=MAX(0.0_r8,                                      &
+            cff=(cff1*ACOS(-cff1/cff2)+SQRT(cff2*cff2-cff1*cff1))/pi
+            srflx(i,j)=MAX(0.0_r8,                                      &
      &                     srflx(i,j)/cff*                              &
      &                     (cff1+cff2*COS(Hangle-lonr(i,j)*deg2rad)))
-            END IF
           END IF
 # endif
         END DO
@@ -285,6 +281,6 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    srflx)
 #endif
-
+!
       RETURN
       END SUBROUTINE ana_srflux_tile

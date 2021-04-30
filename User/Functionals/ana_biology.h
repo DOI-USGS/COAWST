@@ -1,8 +1,8 @@
       SUBROUTINE ana_biology (ng, tile, model)
 !
-!! svn $Id: ana_biology.h 995 2020-01-10 04:01:28Z arango $
+!! svn $Id: ana_biology.h 1054 2021-03-06 19:47:12Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -19,7 +19,12 @@
 ! Imported variable declarations.
 !
       integer, intent(in) :: ng, tile, model
-
+!
+! Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 #include "tile.h"
 !
       CALL ana_biology_tile (ng, tile, model,                           &
@@ -34,9 +39,9 @@
 #else
       IF (Lanafile.and.(tile.eq.0)) THEN
 #endif
-        ANANAME( 1)=__FILE__
+        ANANAME( 1)=MyFile
       END IF
-
+!
       RETURN
       END SUBROUTINE ana_biology
 !
@@ -71,9 +76,9 @@
 !  Local variable declarations.
 !
       logical, save :: first = .TRUE.
-
+!
       integer :: i, is, itrc, j, k
-
+!
 #if defined BIO_FENNEL || defined NEMURO
       real(r8) :: SiO4, cff1, cff2, temp
 #elif defined ECOSIM
@@ -256,7 +261,9 @@
 !
             sftm=t(i,j,N(ng),1,itemp)
             temp=t(i,j,k,1,itemp)
+# ifdef SALINITY
             salt=t(i,j,k,1,isalt)
+# endif
             cff1=-0.0827_r8*sftm+2.6386_r8
             cff2=MAX(0.00001_r8,cff1*(1.0_r8-(sftm-temp)*cff3))
 !
@@ -356,7 +363,11 @@
 !
 ! DOC initialization.
 !
+# ifdef SALINITY
             cff6=MAX(0.001_r8,-0.9833_r8*salt+33.411_r8)
+# else
+            cff6=0.0_r8
+# endif
             t(i,j,k,1,iDOMC(1))=0.1_r8
             t(i,j,k,1,iDOMN(1))=t(i,j,k,1,iDOMC(1))*cff8
             t(i,j,k,1,iDOMP(1))=t(i,j,k,1,iDOMN(1))*cff9
@@ -396,6 +407,6 @@
   10  FORMAT (3x,' ANA_BIOLOGY - ',a,/,19x,                             &
      &        '(Grid = ',i2.2,', Min = ',1p,e15.8,0p,                   &
      &                         ' Max = ',1p,e15.8,0p,')')
-
+!
       RETURN
       END SUBROUTINE ana_biology_tile

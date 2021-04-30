@@ -1,7 +1,7 @@
 /*
-** svn $Id: ias.h 995 2020-01-10 04:01:28Z arango $
+** svn $Id: ias.h 1054 2021-03-06 19:47:12Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2020 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2021 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -15,23 +15,23 @@
 
 #define ROMS_MODEL
 
+#undef  AD_SENSITIVITY          /* Adjoint Sensitivity Driver */
 #undef  AFT_EIGENMODES          /* Adjoint Finite Time Eigenmodes */
 #undef  CORRELATION             /* Background-error Correlation Check */
 #undef  FORCING_SV              /* Forcing Singular Vectors */
 #undef  FT_EIGENMODES           /* Finite Time Eigenmodes */
-#undef  IS4DVAR                 /* Incremental, strong constraint 4DVAR */
+#undef  I4DVAR                  /* Incremental, strong constraint 4D-Var */
 #define NLM_DRIVER              /* Nonlinear Basic State trajectory */
+#undef  NORMALIZATION           /* Background error Covariance Normalization */
 #undef  OPT_PERTURBATION        /* Optimal perturbations */
 #undef  PICARD_TEST             /* Picard Iterations Test */
+#undef  RBL4DVAR                /* Strong/Weak constraint RBL4D-Var */
+#undef  R4DVAR                  /* Strong/Weak constraint R4D-Var */
 #undef  R_SYMMETRY              /* Representer Matrix Symmetry Test */
 #undef  SANITY_CHECK            /* Sanity Check */
 #undef  SO_SEMI                 /* Stochastic Optimals: Semi-norm */
 #undef  TLM_CHECK               /* Tangent Linear Model Check */
-#undef  W4DPSAS                 /* Weak constraint 4D-PSAS */
-#undef  W4DVAR                  /* Weak constraint 4DVAR */
 #undef  VERIFICATION            /* NL Observation Verification Driver */
-#undef  NORMALIZATION           /* Background error Covariance Normalization */
-#undef  AD_SENSITIVITY          /* Adjoint Sensitivity Driver */
 
 /*
 **-----------------------------------------------------------------------------
@@ -115,7 +115,7 @@
 # undef  MULTIPLE_TLM
 # undef  AVERAGES
 # undef  AVOID_ADJOINT
-# undef  W4DVAR
+# undef  R4DVAR
 # undef  R_SYMMETRY
 # define CORRELATION
 # undef  CONVOLVE
@@ -130,11 +130,11 @@
 # define OUT_DOUBLE
 #endif
 
-#if defined IS4DVAR || defined IS4DVAR_OLD
+#if defined I4DVAR || defined I4DVAR_OLD
 # undef  MULTIPLE_TLM
 # undef  AVERAGES
 # undef  AVOID_ADJOINT
-# undef  W4DVAR
+# undef  R4DVAR
 # undef  R_SYMMETRY
 # undef  CORRELATION
 # undef  CONVOLVE
@@ -149,10 +149,10 @@
 # define OUT_DOUBLE
 #endif
 
-#ifdef W4DVAR
+#ifdef R4DVAR
 # undef  AVERAGES
 # undef  AVOID_ADJOINT
-# undef  IS4DVAR
+# undef  I4DVAR
 # undef  R_SYMMETRY
 # undef  CORRELATION
 # define CONVOLVE
@@ -167,10 +167,10 @@
 # define OUT_DOUBLE
 #endif
 
-#ifdef W4DPSAS
+#ifdef RBL4DVAR
 # undef  AVERAGES
 # undef  AVOID_ADJOINT
-# undef  IS4DVAR
+# undef  I4DVAR
 # undef  R_SYMMETRY
 # undef  CORRELATION
 # define CONVOLVE

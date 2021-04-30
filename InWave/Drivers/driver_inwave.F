@@ -44,7 +44,6 @@
 !
 !  Local variable declarations.
 !
-      integer :: istp
 # include "tile.h"
 !
       CALL allocate_inwave_vars (ng, LBi, UBi, LBj, UBj)
@@ -63,10 +62,6 @@
       CALL get_inwave_data (ng)
 # else
       CALL inwave_swan_run (ng, 1, tile)
-      istp=NINT(WAVES(ng)%SpecTimedt/dt(ng))
-      IF (iic(ng).ne.0) THEN
-         CALL inwave_swan_run (ng, 2, tile)
-      END IF
 # endif
 
       RETURN
@@ -89,14 +84,14 @@
       USE dispersion_wr_inw_mod, ONLY : dispersion_wr_inw
       USE dispersion_inw_mod, ONLY : dispersion_inw
       USE eikonal_inw_mod, ONLY : eikonal_inw
-
+      USE dateclock_mod, ONLY : caldate
 # if defined DOPPLER
       USE curr_inw_mod, ONLY : curr_inw
 # endif
       USE celer_inw_mod, ONLY : celer_inw
-# if defined WEC_MELLOR || defined WEC_VF
+!# if defined WEC_MELLOR || defined WEC_VF
       USE frc_inw_mod, ONLY : frc_inw
-# endif
+!# endif
 # if defined INWAVE_SWAN_COUPLING
       USE mod_inwave_swan
 # endif
@@ -108,7 +103,9 @@
 !
 !  Local variable declarations.
 !
-      integer :: istp
+      integer             :: INTTIM(6)
+      integer             :: YYYY, NN, DD, HH, MN, SS
+      real(r8)            :: OceanTime
 !
 !-----------------------------------------------------------------------
 !  Read in required data, if any, from input NetCDF files.
@@ -119,9 +116,17 @@
         IF (exit_flag.ne.NoError) RETURN
 # else
         IF(iic(ng).gt.ntstart(ng)) then
-          istp=NINT(WAVES(ng)%SpecTimedt/dt(ng))
-          IF (MOD(iic(ng),istp).eq.0) THEN
-             CALL inwave_swan_run (ng, iic(ng)/istp+1, tile)
+          CALL caldate (tdays(ng),yy_i=YYYY,mm_i=NN,dd_i=DD,          &
+     &                  h_i=HH,m_i=MN,s_i=SS)
+          INTTIM(1)=YYYY
+          INTTIM(2)=NN
+          INTTIM(3)=DD
+          INTTIM(4)=HH
+          INTTIM(5)=MN
+          INTTIM(6)=SS
+          OceanTime=DTTIME(INTTIM)
+          IF ((OceanTime-WAVES(ng)%SpecTime(2)).ge.0.001_r8) THEN
+             CALL inwave_swan_run (ng, 2, tile)
           END IF
         END IF
 # endif
@@ -240,7 +245,7 @@
 ! Compute the wave parameters from the wave envelope
 !-----------------------------------------------------------------------
 !
-# if defined WEC_MELLOR || defined WEC_VF
+!# if defined WEC_MELLOR || defined WEC_VF
 !!$OMP PARALLEL DO PRIVATE(thread,subs,tile)                             &
 !!$OMP&            SHARED(ng,nnew,numthreads)
 !        DO thread=0,numthreads-1
@@ -249,7 +254,7 @@
             CALL frc_inw (ng, tile)
 !          END DO
 !        END DO
-# endif
+!# endif
 
 !-----------------------------------------------------------------------
 ! Compute the wave number change thru the eikonal equation (need to check)
@@ -286,6 +291,52 @@
 !
       RETURN
       END SUBROUTINE inwave_finalize
+
+
+!*******************************************************************
+      FUNCTION DTTIME (INTTIM)
+!                                                                  *
+!     Borrowed from SWAN ocpmix.F DTTIME                           *
+!*******************************************************************
+!
+      USE mod_scalars
+
+      IMPLICIT NONE
+
+      real(r8) ::  DTTIME
+!
+      INTEGER INTTIM(6)
+!
+      INTEGER IDYMON(12), IYEAR, IYRM1, IDNOW, I, II
+!
+      LOGICAL LEAPYR, LOGREF
+!
+      DATA IDYMON /31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31/
+!
+      IYEAR = INTTIM(1)
+      IYRM1 = IYEAR-1
+      LEAPYR=(MOD(IYEAR,4).EQ.0.AND.MOD(IYEAR,100).NE.0).OR.            &
+     &        MOD(IYEAR,400).EQ.0
+      IDNOW=0
+      DO I = 1,INTTIM(2)-1
+        IDNOW=IDNOW+IDYMON(I)
+      END DO
+      IDNOW=IDNOW+INTTIM(3)
+      IF (LEAPYR.AND.INTTIM(2).GT.2) IDNOW=IDNOW+1
+      IDNOW = IDNOW + IYEAR*365 + IYRM1/4 - IYRM1/100 + IYRM1/400 + 1
+      IF (IYEAR.EQ.0) IDNOW=IDNOW-1
+!      IF (.NOT.LOGREF) THEN
+!        REFDAY = IDNOW
+!        LOGREF = .TRUE.
+!        DTTIME = 0.
+!      ELSE
+!        DTTIME = REAL(IDNOW-REFDAY) * 24.*3600.
+        DTTIME = REAL(IDNOW) * 24.*3600.
+!      ENDIF
+      DTTIME = DTTIME + 3600.*REAL(INTTIM(4)) + 60.*REAL(INTTIM(5)) +   &
+     &                  REAL(INTTIM(6))
+      RETURN
+      END
 
 #endif
       END MODULE driver_inwave_mod

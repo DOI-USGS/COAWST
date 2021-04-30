@@ -227,7 +227,7 @@
 !
 !-----------------------------------------------------------------------
 
-      call sort_add(grid2_add_map1, grid1_add_map1, wts_map1)
+!jcw      call sort_add(grid2_add_map1, grid1_add_map1, wts_map1)
       if (num_maps > 1) then
         call sort_add(grid1_add_map2, grid2_add_map2, wts_map2)
       endif

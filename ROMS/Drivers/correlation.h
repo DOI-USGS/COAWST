@@ -1,8 +1,8 @@
       MODULE ocean_control_mod
 !
-!svn $Id: correlation.h 995 2020-01-10 04:01:28Z arango $
+!svn $Id: correlation.h 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -46,14 +46,14 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: ROMS_initialize
       PUBLIC  :: ROMS_run
       PUBLIC  :: ROMS_finalize
-
+!
       CONTAINS
-
+!
       SUBROUTINE ROMS_initialize (first, mpiCOMM)
 !
 !=======================================================================
@@ -70,19 +70,20 @@
       USE mod_ncparam
       USE mod_scalars
 !
+      USE inp_par_mod,       ONLY : inp_par
       USE normalization_mod, ONLY : normalization
       USE strings_mod,       ONLY : FoundError
 !
 !  Imported variable declarations.
 !
       logical, intent(inout) :: first
-
+!
       integer, intent(in), optional :: mpiCOMM
 !
 !  Local variable declarations.
 !
       logical :: allocate_vars = .TRUE.
-
+!
 #ifdef DISTRIBUTE
       integer :: MyError, MySize
 #endif
@@ -91,6 +92,9 @@
 #ifdef _OPENMP
       integer :: my_threadnum
 #endif
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", ROMS_initialize"
 
 #ifdef DISTRIBUTE
 !
@@ -127,14 +131,12 @@
 !  grids and dimension parameters are known.
 !
         CALL inp_par (iNLM)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Set domain decomposition tile partition range.  This range is
 !  computed only once since the "first_tile" and "last_tile" values
 !  are private for each parallel thread/node.
 !
-!$OMP PARALLEL
 #if defined _OPENMP
       MyThread=my_threadnum()
 #elif defined DISTRIBUTE
@@ -147,7 +149,6 @@
         first_tile(ng)=MyThread*chunk_size
         last_tile (ng)=first_tile(ng)+chunk_size-1
       END DO
-!$OMP END PARALLEL
 !
 !  Initialize internal wall clocks. Notice that the timings does not
 !  includes processing standard input because several parameters are
@@ -159,18 +160,14 @@
         END IF
 !
         DO ng=1,Ngrids
-!$OMP PARALLEL
           DO thread=THREAD_RANGE
-            CALL wclock_on (ng, iNLM, 0, __LINE__, __FILE__)
+            CALL wclock_on (ng, iNLM, 0, __LINE__, MyFile)
           END DO
-!$OMP END PARALLEL
         END DO
 !
 !  Allocate and initialize modules variables.
 !
-!$OMP PARALLEL
         CALL mod_arrays (allocate_vars)
-!$OMP END PARALLEL
 !
 !  Allocate and initialize observation arrays.
 !
@@ -182,11 +179,8 @@
 !  Initialize metrics over all nested grids, if applicable.
 !-----------------------------------------------------------------------
 !
-!$OMP PARALLEL
       CALL initial
-!$OMP END PARALLEL
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Adjust "time" variable since we are not time-stepping.
 !
@@ -210,8 +204,7 @@
       DO ng=1,Ngrids
         IF (LdefNRM(1,ng).or.LwrtNRM(1,ng)) THEN
           CALL get_state (ng, 10, 10, STD(1,ng)%name, STDrec, Tindex)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
       END DO
 !
@@ -223,8 +216,7 @@
       DO ng=1,Ngrids
         IF ((LdefNRM(2,ng).or.LwrtNRM(2,ng)).and.(NSA.eq.2)) THEN
           CALL get_state (ng, 11, 11, STD(2,ng)%name, STDrec, Tindex)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
       END DO
 
@@ -237,8 +229,7 @@
       DO ng=1,Ngrids
         IF (LdefNRM(3,ng).or.LwrtNRM(3,ng)) THEN
           CALL get_state (ng, 12, 12, STD(3,ng)%name, STDrec, Tindex)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
       END DO
 #endif
@@ -251,8 +242,7 @@
       DO ng=1,Ngrids
         IF (LdefNRM(4,ng).or.LwrtNRM(4,ng)) THEN
           CALL get_state (ng, 13, 13, STD(4,ng)%name, STDrec, Tindex)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
       END DO
 #endif
@@ -269,44 +259,37 @@
         IF (ANY(LwrtNRM(:,ng))) THEN
           IF (LdefNRM(1,ng).or.LwrtNRM(1,ng)) THEN
             CALL def_norm (ng, iNLM, 1)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
 
           IF ((LdefNRM(2,ng).or.LwrtNRM(2,ng)).and.(NSA.eq.2)) THEN
             CALL def_norm (ng, iNLM, 2)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
 #ifdef ADJUST_BOUNDARY
           IF (LdefNRM(3,ng).or.LwrtNRM(3,ng)) THEN
             CALL def_norm (ng, iNLM, 3)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
 #endif
 #if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
           IF (LdefNRM(4,ng).or.LwrtNRM(4,ng)) THEN
             CALL def_norm (ng, iNLM, 4)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
 #endif
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
-!$OMP PARALLEL
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           DO tile=first_tile(ng),last_tile(ng),+1
             CALL normalization (ng, tile, 2)
           END DO
-!$OMP END PARALLEL
           LdefNRM(1:4,ng)=.FALSE.
           LwrtNRM(1:4,ng)=.FALSE.
         END IF
       END DO
-
+!
       RETURN
       END SUBROUTINE ROMS_initialize
-
+!
       SUBROUTINE ROMS_run (RunInterval)
 !
 !=======================================================================
@@ -352,6 +335,9 @@
       integer :: Lbck = 1
 #endif
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", ROMS_run"
+!
 !-----------------------------------------------------------------------
 !  Test correlation model.
 !-----------------------------------------------------------------------
@@ -362,8 +348,7 @@
 !
       DO ng=1,Ngrids
         CALL get_state (ng, iNLM, 9, INI(ng)%name, Lbck, Lbck)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       END DO
 
 # ifdef ZETA_ELLIPTIC
@@ -373,12 +358,10 @@
 !
       IF (balance(isFsur)) THEN
         DO ng=1,Ngrids
-!$OMP PARALLEL
           DO tile=first_tile(ng),last_tile(ng),+1
             CALL balance_ref (ng, tile, Lbck)
             CALL biconj (ng, tile, iNLM, Lbck)
           END DO
-!$OMP END PARALLEL
           wrtZetaRef(ng)=.TRUE.
         END DO
       END IF
@@ -395,7 +378,6 @@
 
       DO ng=1,Ngrids
         Lnew(ng)=1
-!$OMP PARALLEL
         DO tile=first_tile(ng),last_tile(ng),+1
           CALL ana_perturb (ng, tile, iADM)
 #ifdef BALANCE_OPERATOR
@@ -404,7 +386,6 @@
 #endif
           CALL ad_convolution (ng, tile, Lnew(ng), Lweak, 2)
         END DO
-!$OMP END PARALLEL
 
         ADmodel=.FALSE.
 !
@@ -412,7 +393,6 @@
 !  Then, apply tangent linear convolution.
 !
         add=.FALSE.
-!$OMP PARALLEL
         DO tile=first_tile(ng),last_tile(ng),+1
           CALL load_ADtoTL (ng, tile, Lnew(ng), Lnew(ng), add)
           CALL tl_convolution (ng, tile, Lnew(ng), Lweak, 2)
@@ -422,7 +402,6 @@
 #endif
           CALL load_TLtoAD (ng, tile, Lnew(ng), Lnew(ng), add)
         END DO
-!$OMP END PARALLEL
       END DO
 !
 !  Write out background error correlation in adjoint history NetCDF
@@ -437,22 +416,20 @@
         LwrtADJ(ng)=.TRUE.
         LwrtState2d(ng)=.TRUE.
         CALL ad_def_his (ng, LdefADJ(ng))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
         Ladjusted(ng)=.TRUE.
 #endif
         CALL ad_wrt_his (ng)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
         Ladjusted(ng)=.FALSE.
 #endif
       END DO
-
+!
       RETURN
       END SUBROUTINE ROMS_run
-
+!
       SUBROUTINE ROMS_finalize
 !
 !=======================================================================
@@ -470,6 +447,9 @@
 !  Local variable declarations.
 !
       integer :: Fcount, ng, thread
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__//", ROMS_finalize"
 !
 !-----------------------------------------------------------------------
 !  If blowing-up, save latest model state into RESTART NetCDF file.
@@ -504,22 +484,18 @@
 !
       IF (Master) THEN
         WRITE (stdout,20)
- 20     FORMAT (/,'Elapsed CPU time (seconds):',/)
+ 20     FORMAT (/,'Elapsed wall CPU time for each process (seconds):',/)
       END IF
 !
       DO ng=1,Ngrids
-!$OMP PARALLEL
         DO thread=THREAD_RANGE
-          CALL wclock_off (ng, iNLM, 0, __LINE__, __FILE__)
+          CALL wclock_off (ng, iNLM, 0, __LINE__, MyFile)
         END DO
-!$OMP END PARALLEL
       END DO
 !
 !  Report dynamic memory and automatic memory requirements.
 !
-!$OMP PARALLEL
       CALL memory
-!$OMP END PARALLEL
 !
 !  Close IO files.
 !
@@ -527,7 +503,7 @@
         CALL close_inp (ng, iNLM)
       END DO
       CALL close_out
-
+!
       RETURN
       END SUBROUTINE ROMS_finalize
 

@@ -178,6 +178,21 @@
 # endif
             END IF
           END DO
+!
+!  Southern edge, nested.
+!
+        ELSE IF (LBC(isouth,isV2Sd,ng)%nested) THEN
+          DO i=Istr,Iend
+              vbar_stokes(i,Jstr)=vbar_stokes(i,Jstr+1)
+# ifdef MASKING
+              vbar_stokes(i,Jstr)=vbar_stokes(i,Jstr)*                  &
+     &                            GRID(ng)%vmask(i,Jstr)
+# endif
+# ifdef WET_DRY
+              vbar_stokes(i,Jstr)=vbar_stokes(i,Jstr)*                  &
+     &                            GRID(ng)%vmask_wet(i,Jstr)
+# endif
+          END DO
         END IF
       END IF
 !
@@ -271,6 +286,21 @@
 # endif
             END IF
           END DO
+!
+!  Northern edge, nested.
+!
+        ELSE IF (LBC(inorth,isV2Sd,ng)%nested) THEN
+          DO i=Istr,Iend
+              vbar_stokes(i,Jend+1)=vbar_stokes(i,Jend)
+# ifdef MASKING
+              vbar_stokes(i,Jend+1)=vbar_stokes(i,Jend+1)*              &
+     &                              GRID(ng)%vmask(i,Jend+1)
+# endif
+# ifdef WET_DRY
+              vbar_stokes(i,Jend+1)=vbar_stokes(i,Jend+1)*              &
+     &                              GRID(ng)%vmask_wet(i,Jend+1)
+# endif
+          END DO
         END IF
       END IF
 !
@@ -350,6 +380,17 @@
      &                              GRID(ng)%vmask(Istr-1,j)
 # endif
             END IF
+          END DO
+!
+!  Western edge, nested.
+!
+        ELSE IF (LBC(iwest,isV2Sd,ng)%nested) THEN
+          DO j=JstrV,Jend
+              vbar_stokes(Istr-1,j)=vbar_stokes(Istr,j)
+# ifdef MASKING
+              vbar_stokes(Istr-1,j)=vbar_stokes(Istr-1,j)*              &
+     &                              GRID(ng)%vmask(Istr-1,j)
+# endif
           END DO
 !
 !  Western edge, closed boundary condition: free slip (gamma2=1)  or
@@ -457,6 +498,17 @@
             END IF
           END DO
 !
+!  Eastern edge, nested.
+!
+        ELSE IF (LBC(ieast,isV2Sd,ng)%nested) THEN
+          DO j=JstrV,Jend
+              vbar_stokes(Iend+1,j)=vbar_stokes(Iend,j)
+# ifdef MASKING
+              vbar_stokes(Iend+1,j)=vbar_stokes(Iend+1,j)*              &
+     &                              GRID(ng)%vmask(Iend+1,j)
+# endif
+          END DO
+!
 !  Eastern edge, closed boundary condition: free slip (gamma2=1)  or
 !                                           no   slip (gamma2=-1).
 !
@@ -492,32 +544,40 @@
 !
       IF (.not.(EWperiodic(ng).or.NSperiodic(ng))) THEN
         IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
-          IF (LBC_apply(ng)%south(Istr-1).and.                          &
-     &        LBC_apply(ng)%west (Jstr  )) THEN
+          IF ((LBC_apply(ng)%south(Istr-1).and.                         &
+     &        LBC_apply(ng)%west (Jstr  )).or.                          &
+     &        (LBC(iwest,isV2Sd,ng)%nested.and.                         &
+     &         LBC(isouth,isV2Sd,ng)%nested)) THEN
               vbar_stokes(Istr-1,Jstr)=0.5_r8*                          &
      &                                  (vbar_stokes(Istr  ,Jstr  )+    &
      &                                   vbar_stokes(Istr-1,Jstr+1))
           END IF
         END IF
         IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
-          IF (LBC_apply(ng)%south(Iend+1).and.                          &
-     &        LBC_apply(ng)%east (Jstr  )) THEN
+          IF ((LBC_apply(ng)%south(Iend+1).and.                         &
+     &        LBC_apply(ng)%east (Jstr  )).or.                          &
+     &        (LBC(ieast,isV2Sd,ng)%nested.and.                         &
+     &         LBC(isouth,isV2Sd,ng)%nested)) THEN
               vbar_stokes(Iend+1,Jstr)=0.5_r8*                          &
      &                                 (vbar_stokes(Iend  ,Jstr  )+     &
      &                                  vbar_stokes(Iend+1,Jstr+1))
           END IF
         END IF
         IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
-          IF (LBC_apply(ng)%north(Istr-1).and.                          &
-     &        LBC_apply(ng)%west (Jend+1)) THEN
+          IF ((LBC_apply(ng)%north(Istr-1).and.                         &
+     &        LBC_apply(ng)%west (Jend+1)).or.                          &
+     &        (LBC(iwest,isV2Sd,ng)%nested.and.                         &
+     &         LBC(inorth,isV2Sd,ng)%nested)) THEN
               vbar_stokes(Istr-1,Jend+1)=0.5_r8*                        &
      &                                   (vbar_stokes(Istr-1,Jend  )+   &
      &                                    vbar_stokes(Istr  ,Jend+1))
           END IF
         END IF
         IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
-          IF (LBC_apply(ng)%north(Iend+1).and.                          &
-     &        LBC_apply(ng)%east (Jend+1)) THEN
+          IF ((LBC_apply(ng)%north(Iend+1).and.                         &
+     &        LBC_apply(ng)%east (Jend+1)).or.                          &
+     &        (LBC(ieast,isV2Sd,ng)%nested.and.                         &
+     &         LBC(inorth,isV2Sd,ng)%nested)) THEN
               vbar_stokes(Iend+1,Jend+1)=0.5_r8*                        &
      &                                   (vbar_stokes(Iend+1,Jend  )+   &
      &                                    vbar_stokes(Iend  ,Jend+1))

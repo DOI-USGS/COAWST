@@ -27,7 +27,7 @@ function F = coarse2fine(Ginp,Gout,Gfactor,varargin)
 %    F          Fine resolution Grid structure
 %
 
-% svn $Id: coarse2fine.m 996 2020-01-10 04:28:56Z arango $
+% svn $Id: coarse2fine.m 1047 2020-11-19 17:24:24Z arango $
 %=========================================================================%
 %  Copyright (c) 2002-2020 The ROMS/TOMS Group                            %
 %    Licensed under a MIT/X style license                                 %
@@ -136,7 +136,8 @@ got_list = {'lon_rho'  , 'lat_rho'  , 'lon_psi'  , 'lat_psi'  ,         ...
 
 for value = got_list
   field = char(value);
-  got.(field) =  any(strcmp(vnames, field));
+%  got.(field) =  any(strcmp(vnames, field));
+  got.(field) =  any(strcmp(fieldnames(C), field));
 end
 
 % Set fields to process.
@@ -373,7 +374,7 @@ if (got.x_u && got.y_u) || (got.lon_u && got.lat_u)
       RCu = griddedInterpolant(XuC, YuC, C.x_u, method);
 
                                F.x_u = RCu(XuF, YuF);
-      RCu.Values = C.y_u(:);   F.y_u = RCu(XuF, YuF);
+      RCu.Values = C.y_u;      F.y_u = RCu(XuF, YuF);
     else
       F.x_u = interp2(XuC', YuC', C.x_u', XuF, YuF, method);
       F.y_u = interp2(XuC', YuC', C.y_u', XuF, YuF, method);

@@ -3,9 +3,9 @@
    (defined SSH_TIDES || defined UV_TIDES)
       SUBROUTINE wrt_tides (ng)
 !
-!svn $Id: wrt_tides.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: wrt_tides.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -41,11 +41,14 @@
 !
       integer :: LBi, UBi, LBj, UBj
       integer :: gtype, itide, itrc, status, varid
-
-      real(r8) :: scale
+!
+      real(dp) :: scale
       real(r8) :: Work(NTC(ng))
 !
-      SourceFile=__FILE__
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
+      SourceFile=MyFile
 !
       LBi=LBOUND(GRID(ng)%h,DIM=1)
       UBi=UBOUND(GRID(ng)%h,DIM=1)
@@ -56,16 +59,14 @@
 !  Write out time-accumulated harmonic fields.
 !-----------------------------------------------------------------------
 !
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Write out number of time-accumulated harmonics.
 !
       CALL netcdf_put_ivar (ng, iNLM, HAR(ng)%name, 'Hcount',           &
      &                      Hcount(ng), (/0/), (/0/),                   &
      &                      ncid = HAR(ng)%ncid)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Write out model time for current time-accumulated harmonics.
 !
@@ -74,8 +75,7 @@
      &                      (/0/), (/0/),                               &
      &                      ncid = HAR(ng)%ncid,                        &
      &                      varid = HAR(ng)%Vid(idtime))
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Write out tidal period (hours).
 !
@@ -89,8 +89,7 @@
      &                      (/1/), (/NTC(ng)/),                         &
      &                      ncid = HAR(ng)%ncid,                        &
      &                      varid = HAR(ng)%Vid(idTper))
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Write out time-accumulated COS(omega(k)*t) harmonics.
 !
@@ -100,8 +99,7 @@
      &                      (/1/), (/NTC(ng)/),                         &
      &                      ncid = HAR(ng)%ncid,                        &
      &                      varid = HAR(ng)%Vid(idCosW))
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Write out time-accumulated SIN(omega(k)*t) harmonics.
 !
@@ -111,8 +109,7 @@
      &                      (/1/), (/NTC(ng)/),                         &
      &                      ncid = HAR(ng)%ncid,                        &
      &                      varid = HAR(ng)%Vid(idSinW))
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Write out time-accumulated COS(omega(k)*t)*COS(omega(l)*t) harmonics.
 !
@@ -122,8 +119,7 @@
      &                      (/1,1/), (/NTC(ng),NTC(ng)/),               &
      &                      ncid = HAR(ng)%ncid,                        &
      &                      varid = HAR(ng)%Vid(idCos2))
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Write out time-accumulated SIN(omega(k)*t)*SIN(omega(l)*t) harmonics.
 !
@@ -133,8 +129,7 @@
      &                      (/1,1/), (/NTC(ng),NTC(ng)/),               &
      &                      ncid = HAR(ng)%ncid,                        &
      &                      varid = HAR(ng)%Vid(idSin2))
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Write out time-accumulated SIN(omega(k)*t)*COS(omega(l)*t) harmonics.
 !
@@ -144,13 +139,12 @@
      &                      (/1,1/), (/NTC(ng),NTC(ng)/),               &
      &                      ncid = HAR(ng)%ncid,                        &
      &                      varid = HAR(ng)%Vid(idSWCW))
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Write out free-surface time-accumulated tide harmonics (m).
 !
       IF (Aout(idFsuD,ng)) THEN
-        scale=1.0_r8
+        scale=1.0_dp
         gtype=r3dvar
         status=nf_fwrite3d(ng, iNLM, HAR(ng)%ncid,                      &
      &                     HAR(ng)%Vid(idFsuH), 0, gtype,               &
@@ -160,8 +154,7 @@
 # endif
      &                     TIDES(ng) % zeta_tide,                       &
      &                     SetFillVal = .FALSE.)
-        IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idFsuH)), TRIM(HAR(ng)%name)
           END IF
@@ -174,7 +167,7 @@
 !  Write out 2D u-momentum time-accumulated tide harmonics (m/s).
 !
       IF (Aout(idu2dD,ng)) THEN
-        scale=1.0_r8
+        scale=1.0_dp
         gtype=u3dvar
         status=nf_fwrite3d(ng, iNLM, HAR(ng)%ncid,                      &
      &                     HAR(ng)%Vid(idu2dH), 0, gtype,               &
@@ -184,8 +177,7 @@
 # endif
      &                     TIDES(ng) % ubar_tide,                       &
      &                     SetFillVal = .FALSE.)
-        IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idu2dH)), TRIM(HAR(ng)%name)
           END IF
@@ -198,7 +190,7 @@
 !  Write out 2D v-momentum time-accumulated tide harmonics (m/s).
 !
       IF (Aout(idv2dD,ng)) THEN
-        scale=1.0_r8
+        scale=1.0_dp
         gtype=v3dvar
         status=nf_fwrite3d(ng, iNLM, HAR(ng)%ncid,                      &
      &                     HAR(ng)%Vid(idv2dH), 0, gtype,               &
@@ -208,8 +200,7 @@
 # endif
      &                     TIDES(ng) % vbar_tide,                       &
      &                     SetFillVal = .FALSE.)
-        IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idv2dH)), TRIM(HAR(ng)%name)
           END IF
@@ -224,7 +215,7 @@
 !  Write out 3D u-momentum time-accumulated tide harmonics (m/s).
 !
       IF (Aout(idu3dD,ng)) THEN
-        scale=1.0_r8
+        scale=1.0_dp
         gtype=u3dvar
         status=nf_fwrite4d(ng, iNLM, HAR(ng)%ncid,                      &
      &                     HAR(ng)%Vid(idu3dH), 0, gtype,               &
@@ -235,8 +226,7 @@
 #  endif
      &                     TIDES(ng) % u_tide,                          &
      &                     SetFillVal = .FALSE.)
-        IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idu3dH)), TRIM(HAR(ng)%name)
           END IF
@@ -249,7 +239,7 @@
 !  Write out 3D v-momentum time-accumulated tide harmonics (m/s).
 !
       IF (Aout(idv3dD,ng)) THEN
-        scale=1.0_r8
+        scale=1.0_dp
         gtype=v3dvar
         status=nf_fwrite4d(ng, iNLM, HAR(ng)%ncid,                      &
      &                     HAR(ng)%Vid(idv3dH), 0, gtype,               &
@@ -260,8 +250,7 @@
 #  endif
      &                     TIDES(ng) % v_tide,                          &
      &                     SetFillVal = .FALSE.)
-        IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idv3dH)), TRIM(HAR(ng)%name)
           END IF
@@ -275,7 +264,7 @@
 !
       DO itrc=1,NAT
         IF (Aout(idTrcD(itrc),ng)) THEN
-          scale=1.0_r8
+          scale=1.0_dp
           gtype=r3dvar
           status=nf_fwrite4d(ng, iNLM, HAR(ng)%ncid,                    &
      &                       HAR(ng)%Vid(idTrcH(itrc)), 0, gtype,       &
@@ -286,8 +275,7 @@
 #  endif
      &                       TIDES(ng) % t_tide(:,:,:,:,itrc),          &
      &                       SetFillVal = .FALSE.)
-          IF (FoundError(status, nf90_noerr, __LINE__,                  &
-     &                   __FILE__)) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idTrcH(itrc))),            &
      &                          TRIM(HAR(ng)%name)
@@ -306,8 +294,7 @@
 !-----------------------------------------------------------------------
 !
       CALL netcdf_sync (ng, iNLM, HAR(ng)%name, HAR(ng)%ncid)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
       IF (Master) WRITE (stdout,20) ng
 !

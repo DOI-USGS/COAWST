@@ -2,9 +2,9 @@
 #if defined TANGENT && defined SOLVE3D
       SUBROUTINE tl_main3d (RunInterval)
 !
-!svn $Id: tl_main3d.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: tl_main3d.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -50,7 +50,7 @@
 # ifdef BBL_MODEL_NOT_YET
 !!    USE tl_bbl_mod, ONLY : tl_bblm
 # endif
-# if defined BULK_FLUXES_NOT_YET && !defined NL_BULK_FLUXES
+# if defined BULK_FLUXES_NOT_YET && !defined PRIOR_BULK_FLUXES
 !!    USE tl_bulk_flux_mod,    ONLY : tl_bulk_flux
 # endif
 # ifdef BVF_MIXING_NOT_YET
@@ -126,7 +126,11 @@
 # ifdef FLOATS_NOT_YET
       integer :: Lend, Lstr, chunk_size
 # endif
+!
       real(r8) :: MaxDT, my_StepTime
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 !
 !=======================================================================
 !  Time-step tangent linear 3D primitive equations.
@@ -163,8 +167,7 @@
           CALL tl_get_data (ng)
 !$OMP END MASTER
 !$OMP BARRIER
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END DO
 !
 !-----------------------------------------------------------------------
@@ -181,8 +184,7 @@
           END DO
 !$OMP BARRIER
         END DO
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
 # ifdef FORWARD_READ
 !
@@ -197,7 +199,8 @@
 !$OMP BARRIER
         END DO
 # endif
-# if defined WEAK_CONSTRAINT || defined FORCING_SV
+# if (defined WEAK_CONSTRAINT || defined FORCING_SV) && \
+     !defined SP4DVAR
 !
 !-----------------------------------------------------------------------
 !  If appropriate, add convolved adjoint solution impulse forcing to
@@ -209,13 +212,23 @@
 !
         DO ng=1,Ngrids
 #  ifdef WEAK_CONSTRAINT
-          IF (FrequentImpulse(ng)) THEN
-            DO tile=first_tile(ng),last_tile(ng),+1
-              CALL tl_forcing (ng, tile, kstp(ng), nstp(ng))
-              CALL tl_set_depth (ng, tile, iTLM)
-            END DO
+#   ifdef WEAK_NOINTERP
+          IF ((iic(ng).gt.1).and.(iic(ng).ne.ntend(ng)+1).and.          &
+     &        (MOD(iic(ng)-1,nadj(ng)).eq.0)) THEN
+            IF (Master) THEN
+              WRITE (stdout,*) ' FORCING TLM at iic = ',iic(ng)
+            END IF
+#   endif
+            IF (FrequentImpulse(ng)) THEN
+              DO tile=first_tile(ng),last_tile(ng),+1
+                CALL tl_forcing (ng, tile, kstp(ng), nstp(ng))
+                CALL tl_set_depth (ng, tile, iTLM)
+              END DO
 !$OMP BARRIER
+            END IF
+#   ifdef WEAK_NOINTERP
           END IF
+#   endif
 #  else
           DO tile=first_tile(ng),last_tile(ng),+1
             CALL tl_forcing (ng, tile, kstp(ng), nstp(ng))
@@ -273,8 +286,7 @@
           END DO
 !$OMP BARRIER
         END DO
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
 # if defined ATM_COUPLING_NOT_YET && defined MCT_LIB
 !
@@ -333,7 +345,7 @@
 !
         DO ng=1,Ngrids
           DO tile=first_tile(ng),last_tile(ng),+1
-# if defined BULK_FLUXES_NOT_YET && !defined NL_BULK_FLUXES
+# if defined BULK_FLUXES_NOT_YET && !defined PRIOR_BULK_FLUXES
             CALL tl_bulk_flux (ng, tile)
 # endif
 # ifdef BBL_MODEL_NOT_YET
@@ -434,8 +446,7 @@
           CALL tl_output (ng)
 !$OMP END MASTER
 !$OMP BARRIER
-          IF ((FoundError(exit_flag, NoError, __LINE__,                 &
-     &                    __FILE__)).or.                                &
+          IF ((FoundError(exit_flag, NoError, __LINE__, MyFile)).or.    &
      &        ((iic(ng).eq.(ntend(ng)+1)).and.(ng.eq.Ngrids))) RETURN
         END DO
 !
@@ -616,7 +627,7 @@
         END DO
 # endif
       END DO STEP_LOOP
-
+!
       RETURN
       END SUBROUTINE tl_main3d
 #else

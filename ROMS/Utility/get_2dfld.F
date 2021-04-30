@@ -6,9 +6,9 @@
 #endif
      &                      Fout)
 !
-!svn $Id: get_2dfld.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: get_2dfld.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -58,13 +58,13 @@
 !  Imported variable declarations.
 !
       logical, intent(out) :: update
-
+!
       integer, intent(in) :: ng, model, ifield, nfiles, Iout, Irec
       integer, intent(in) :: LBi, UBi, LBj, UBj
       integer, intent(inout) :: ncid
-
+!
       TYPE(T_IO), intent(inout) :: S(nfiles)
-
+!
 #ifdef MASKING
       real(r8), intent(in) :: Fmask(LBi:UBi,LBj:UBj)
 #endif
@@ -74,28 +74,33 @@
 !
       logical :: Lgridded, Linquire, Liocycle, Lmulti, Lonerec, Lregrid
       logical :: special
-
+!
       integer :: Nrec, Tid, Tindex, Trec, Vid, Vtype
       integer :: gtype, job, lend, lstr, lvar, status
       integer :: Vsize(4)
-
+#ifdef CHECKSUM
+      integer(i8b) :: Fhash
+#endif
+!
       real(r8) :: Fmax, Fmin, Fval
 
       real(dp) :: Clength, Tdelta, Tend
       real(dp) :: Tmax, Tmin, Tmono, Tscale, Tstr
       real(dp) :: Tsec, Tval
-
+!
       character (len= 1) :: Rswitch
       character (len=22) :: t_code
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 !
-      SourceFile=__FILE__
+      SourceFile=MyFile
 !
 !-----------------------------------------------------------------------
 !  Initialize.
 !-----------------------------------------------------------------------
 !
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Determine if inquiring about the field to process in input NetCDF
 !  file(s).  This usually happens on first call or when the field
@@ -125,8 +130,7 @@
         job=2
         CALL inquiry (ng, model, job, Iout, Irec, 1, ifield, ncid,      &
      &                Lmulti, nfiles, S)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         IF (Linfo(6,ifield,ng)) THEN
           Linfo(6,ifield,ng)=.FALSE.
         END IF
@@ -194,8 +198,7 @@
      &                            ncid = ncid,                          &
      &                            start = (/Trec/),                     &
      &                            total = (/1/))
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) THEN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
               IF (Master) WRITE (stdout,40) TRIM(Tname(ifield)), Trec
               RETURN
             END IF
@@ -230,7 +233,12 @@
 #ifdef MASKING
      &                            Fmask,                                &
 #endif
+#ifdef CHECKSUM
+     &                            Fout,                                 &
+     &                            checksum = Fhash)
+#else
      &                            Fout)
+#endif
               ELSE
                 status=nf_fread2d(ng, model, ncfile, ncid,              &
      &                            Vname(1,ifield), Vid,                 &
@@ -240,7 +248,12 @@
 #ifdef MASKING
      &                            Fmask,                                &
 #endif
-     &                            Fout(:,:,Tindex), Lregrid)
+     &                            Fout(:,:,Tindex),                     &
+#ifdef CHECKSUM
+     &                            checksum = Fhash,                     &
+#endif
+     &                            Lregrid = Lregrid)
+
               END IF
             ELSE
               CALL netcdf_get_fvar (ng, model, ncfile, Vname(1,ifield), &
@@ -253,8 +266,7 @@
               Fmin=Fval
               Fmax=Fval
             END IF
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) THEN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
               IF (Master) WRITE (stdout,40) TRIM(Vname(1,ifield)), Trec
               RETURN
             END IF
@@ -266,7 +278,7 @@
               ELSE
                 lstr=SCAN(ncfile,'/',BACK=.TRUE.)+1
                 lend=LEN_TRIM(ncfile)
-                lvar=MIN(43,LEN_TRIM(Vname(2,ifield)))
+                lvar=MIN(46,LEN_TRIM(Vname(2,ifield)))
                 Tsec=Tval*day2sec
                 CALL time_string (Tsec, t_code)
                 IF (Lregrid) THEN
@@ -277,6 +289,9 @@
                 WRITE (stdout,60) Vname(2,ifield)(1:lvar), t_code,      &
      &                            ng, Trec, Tindex, ncfile(lstr:lend),  &
      &                            Tmin, Tmax, Tval, Fmin, Fmax, Rswitch
+#ifdef CHECKSUM
+                WRITE (stdout,70) Fhash
+#endif
               END IF
             END IF
             update=.TRUE.
@@ -299,7 +314,6 @@
         END IF
       END IF
 !
-
   10  FORMAT (/,' GET_2DFLD   - unable to find dimension ',a,           &
      &        /,15x,'for variable: ',a,/,15x,'in file: ',a,             &
      &        /,15x,'file is not CF compliant...')
@@ -311,12 +325,15 @@
   50  FORMAT (3x,' GET_2DFLD   - ',a,/,19x,'(Grid = ',i2.2,             &
      &        ', Min = ',1p,e15.8,0p,' Max = ',1p,e15.8,0p,')')
   60  FORMAT (3x,' GET_2DFLD   - ',a,',',t68,a,/,19x,                   &
-     &        '(Grid=',i2.2,', Rec=',i7.7,', Index=',i1,                &
+     &        '(Grid=',i2.2,', Rec=',i0,', Index=',i1,                  &
      &          ', File: ',a,')',/,19x,                                 &
      &        '(Tmin= ', f15.4, ' Tmax= ', f15.4,')',                   &
      &        t71, 't = ', f15.4 ,/, 19x,                               &
      &        '(Min = ', 1p,e15.8,0p,' Max = ',1p,e15.8,0p,')',         &
      &        t71, 'regrid = ',a)
-
+#ifdef CHECKSUM
+  70  FORMAT (19x,'(CheckSum = ',i0,')')
+#endif
+!
       RETURN
       END SUBROUTINE get_2dfld

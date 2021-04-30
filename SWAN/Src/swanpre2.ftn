@@ -4371,10 +4371,12 @@
   11      FORMAT (' heading line: ', A)
           NHEDF = 2
           NHEDT = 1
+          DORDER = 0
         ELSE
           ISTATF = 0
           BTYPE = 'SWNS'
           NHEDT  = 0
+          DORDER = 0
         ENDIF
 !
 !       read geographical locations

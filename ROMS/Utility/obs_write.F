@@ -2,9 +2,9 @@
 #if (defined FOUR_DVAR || defined VERIFICATION) && defined OBSERVATIONS
       SUBROUTINE obs_write (ng, tile, model)
 !
-!svn $Id: obs_write.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: obs_write.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -45,6 +45,7 @@
 !  Local variable declarations.
 !
       logical :: Lwrote
+!
       integer :: LBi, UBi, LBj, UBj
       integer :: Mstr, Mend, ObsSum, ObsVoid
       integer :: i, ic, ie, is, iobs, itrc, iweight, status, varid
@@ -54,22 +55,27 @@
 # ifdef DISTRIBUTE
       integer :: Ncollect
 # endif
+!
       real(r8), parameter :: IniVal = 0.0_r8
 
       real(r8) :: angle
 # ifdef BGQC
       real(r8) :: df1, df2, Thresh
 # endif
-      real(r8) :: misfit(Mobs), uradial(Mobs), vradial(Mobs)
+      real(r8) :: misfit(Mobs), unvetted(Mobs)
+      real(r8) :: uradial(Mobs), vradial(Mobs)
 # ifndef VERIFICATION
       real(r8) :: uBgErr(Mobs), vBgErr(Mobs)
 # endif
-
+!
       character (len=50) :: string
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 
 # include "set_bounds.h"
 !
-      SourceFile=__FILE__
+      SourceFile=MyFile
 !
       LBi=LBOUND(GRID(ng)%h,DIM=1)
       UBi=UBOUND(GRID(ng)%h,DIM=1)
@@ -105,10 +111,11 @@
 !  Initialize observation reject/accept processing flag.
 !
         DO iobs=Mstr,Mend
+          unvetted(iobs)=IniVal
           ObsVetting(iobs)=IniVal
         END DO
 
-# ifndef IS4DVAR_SENSITIVITY
+# ifndef I4DVAR_ANA_SENSITIVITY
 !
 !  Some entries are not computed in the extraction routine.  Set values
 !  to zero to avoid problems when writing non initialized values.
@@ -154,7 +161,7 @@
           END IF
 #  endif
         END IF
-#  ifdef TLM_OBS
+#  if defined TLM_OBS && !defined SP4DVAR
         IF (wrtTLmod(ng).or.wrtRPmod(ng)) THEN
           DO iobs=Mstr,Mend
             TLmodVal(iobs)=IniVal
@@ -167,7 +174,7 @@
 !  Free-surface observations.
 !-----------------------------------------------------------------------
 !
-# ifndef IS4DVAR_SENSITIVITY
+# ifndef I4DVAR_ANA_SENSITIVITY
         IF (wrtNLmod(ng).and.                                           &
      &      (FOURDVAR(ng)%ObsCount(isFsur).gt.0)) THEN
           CALL extract_obs2d (ng, 0, Lm(ng)+1, 0, Mm(ng)+1,             &
@@ -226,7 +233,7 @@
 !  Vertically integrated u-velocity observations.
 !-----------------------------------------------------------------------
 !
-# ifndef IS4DVAR_SENSITIVITY
+# ifndef I4DVAR_ANA_SENSITIVITY
         IF (wrtNLmod(ng).and.                                           &
      &      (FOURDVAR(ng)%ObsCount(isUbar).gt.0)) THEN
           CALL extract_obs2d (ng, 1, Lm(ng)+1, 0, Mm(ng)+1,             &
@@ -285,7 +292,7 @@
 !  Vertically integrated v-velocity observations.
 !-----------------------------------------------------------------------
 !
-# ifndef IS4DVAR_SENSITIVITY
+# ifndef I4DVAR_ANA_SENSITIVITY
         IF (wrtNLmod(ng).and.                                           &
      &      (FOURDVAR(ng)%ObsCount(isVbar).gt.0)) THEN
           CALL extract_obs2d (ng, 0, Lm(ng)+1, 1, Mm(ng)+1,             &
@@ -346,7 +353,7 @@
 !  3D u-velocity observations.
 !-----------------------------------------------------------------------
 !
-#  ifndef IS4DVAR_SENSITIVITY
+#  ifndef I4DVAR_ANA_SENSITIVITY
         IF (wrtNLmod(ng).and.                                           &
      &      (FOURDVAR(ng)%ObsCount(isUvel).gt.0)) THEN
           DO k=1,N(ng)
@@ -424,7 +431,7 @@
 !  3D v-velocity observations.
 !-----------------------------------------------------------------------
 !
-#  ifndef IS4DVAR_SENSITIVITY
+#  ifndef I4DVAR_ANA_SENSITIVITY
         IF (wrtNLmod(ng).and.                                           &
      &      (FOURDVAR(ng)%ObsCount(isVvel).gt.0)) THEN
           DO k=1,N(ng)
@@ -521,7 +528,7 @@
 #  endif
 !-----------------------------------------------------------------------
 !
-#  ifndef IS4DVAR_SENSITIVITY
+#  ifndef I4DVAR_ANA_SENSITIVITY
         IF (wrtNLmod(ng).and.                                           &
      &      (FOURDVAR(ng)%ObsCount(isRadial).gt.0)) THEN
           DO iobs=Mstr,Mend
@@ -783,7 +790,7 @@
 !-----------------------------------------------------------------------
 !
         DO itrc=1,NT(ng)
-#  ifndef IS4DVAR_SENSITIVITY
+#  ifndef I4DVAR_ANA_SENSITIVITY
           IF (wrtNLmod(ng).and.                                         &
      &        (FOURDVAR(ng)%ObsCount(isTvar(itrc)).gt.0)) THEN
             CALL extract_obs3d (ng, 0, Lm(ng)+1, 0, Mm(ng)+1,           &
@@ -857,7 +864,7 @@
           END DO
         END IF
 
-# if defined BGQC && !defined IS4DVAR_SENSITIVITY
+# if defined BGQC && !defined I4DVAR_ANA_SENSITIVITY
 !
 !-----------------------------------------------------------------------
 !  Perform the background quality control: check and reject observations
@@ -868,11 +875,11 @@
         IF (wrtObsScale(ng).and.wrtNLmod(ng)) THEN
           DO iobs=Mstr,Mend
             IF (ObsScale(iobs).ne.IniVal) THEN
-#  if defined IS4DVAR
+#  if defined I4DVAR
               df1=(ObsVal(iobs)-NLmodVal(iobs))/BgErr(iobs)
               df2=(1.0_r8/ObsErr(iobs))/(BgErr(iobs)*BgErr(iobs))
 #  elif defined WEAK_CONSTRAINT
-#    ifdef W4DVAR
+#    ifdef R4DVAR
               df1=(ObsVal(iobs)-TLmodVal(iobs))/BgErr(iobs)
               df2=ObsErr(iobs)/(BgErr(iobs)*BgErr(iobs))
 #    else
@@ -939,11 +946,15 @@
 # endif
 !
 !-----------------------------------------------------------------------
-!  Scale extracted data at observations location.
+!  Scale extracted data at observations location.  Save NLM unvetted
+!  values before they are rejected by quality control.  The unvetted
+!  vector is used only for output purposes to analyze why a datum was
+!  rejected.
 !-----------------------------------------------------------------------
 !
         IF (wrtNLmod(ng)) THEN
           DO iobs=Mstr,Mend
+            unvetted(iobs)=NLmodVal(iobs)
             NLmodVal(iobs)=ObsScale(iobs)*NLmodVal(iobs)
           END DO
         END IF
@@ -951,7 +962,7 @@
 # ifdef TLM_OBS
         IF (wrtTLmod(ng).or.wrtRPmod(ng)) THEN
           DO iobs=Mstr,Mend
-#  ifdef IS4DVAR_SENSITIVITY
+#  ifdef I4DVAR_ANA_SENSITIVITY
             TLmodVal(iobs)=ObsScale(iobs)*TLmodVal(iobs)*ObsErr(iobs)
 #  else
             TLmodVal(iobs)=ObsScale(iobs)*TLmodVal(iobs)
@@ -965,7 +976,7 @@
 !  Collect extracted data.
 !-----------------------------------------------------------------------
 !
-#  ifndef IS4DVAR_SENSITIVITY
+#  ifndef I4DVAR_ANA_SENSITIVITY
 
         IF (wrtNLmod(ng)) THEN
           CALL mp_collect (ng, model, Ncollect, IniVal,                 &
@@ -973,6 +984,12 @@
      &                     NLmodVal(Mstr:))
 #   else
      &                     NLmodVal)
+#   endif
+          CALL mp_collect (ng, model, Ncollect, IniVal,                 &
+#   if defined WEAK_CONSTRAINT
+     &                     unvetted(Mstr:))
+#   else
+     &                     unvetted)
 #   endif
         END IF
 #   ifndef VERIFICATION
@@ -1010,7 +1027,7 @@
 #  endif
 # endif
 
-# if defined FOUR_DVAR && !defined IS4DVAR_SENSITIVITY
+# if defined FOUR_DVAR && !defined I4DVAR_ANA_SENSITIVITY
 !
 !-----------------------------------------------------------------------
 !  Compute and write initial and final model-observation misfit
@@ -1020,11 +1037,11 @@
 !
         IF (wrtMisfit(ng)) THEN
           DO iobs=Mstr,Mend
-#  if defined IS4DVAR
+#  if defined I4DVAR
             misfit(iobs)=ObsScale(iobs)*SQRT(ObsErr(iobs))*             &
      &                   (NLmodVal(iobs)-ObsVal(iobs))
 #  elif defined WEAK_CONSTRAINT
-#   ifdef W4DVAR
+#   ifdef R4DVAR
             misfit(iobs)=ObsScale(iobs)/SQRT(ObsErr(iobs))*             &
      &                   (TLmodVal(iobs)-ObsVal(iobs))
 #   else
@@ -1035,28 +1052,32 @@
           END DO
           IF (Nrun.eq.1) THEN
             CALL netcdf_put_fvar (ng, model, DAV(ng)%name,              &
+     &                            Vname(1,idNLmp), unvetted(Mstr:),     &
+     &                            (/NstrObs(ng)/), (/Nobs(ng)/),        &
+     &                            ncid = DAV(ng)%ncid,                  &
+     &                            varid = DAV(ng)%Vid(idNLmu))
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+            CALL netcdf_put_fvar (ng, model, DAV(ng)%name,              &
      &                            Vname(1,idNLmi), NLmodVal(Mstr:),     &
      &                            (/NstrObs(ng)/), (/Nobs(ng)/),        &
      &                            ncid = DAV(ng)%ncid,                  &
      &                            varid = DAV(ng)%Vid(idNLmi))
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
             CALL netcdf_put_fvar (ng, model, DAV(ng)%name,              &
      &                            Vname(1,idMOMi), misfit(Mstr:),       &
      &                            (/NstrObs(ng)/), (/Nobs(ng)/),        &
      &                            ncid = DAV(ng)%ncid,                  &
      &                            varid = DAV(ng)%Vid(idMOMi))
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           ELSE
             CALL netcdf_put_fvar (ng, model, DAV(ng)%name,              &
      &                            Vname(1,idMOMf), misfit(Mstr:),       &
      &                            (/NstrObs(ng)/), (/Nobs(ng)/),        &
      &                            ncid = DAV(ng)%ncid,                  &
      &                            varid = DAV(ng)%Vid(idMOMf))
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
         END IF
 
@@ -1067,13 +1088,12 @@
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
      &                          ncid = DAV(ng)%ncid,                    &
      &                          varid = DAV(ng)%Vid(idBgTh))
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #  endif
 # endif
 
-# if defined FOUR_DVAR && !defined IS4DVAR_SENSITIVITY
+# if defined FOUR_DVAR && !defined I4DVAR_ANA_SENSITIVITY
 !
 !-----------------------------------------------------------------------
 !  Write out variables needed to compute Desroziers et al. (2005)
@@ -1090,25 +1110,24 @@
      &                            (/NstrObs(ng)/), (/Nobs(ng)/),        &
      &                            ncid = DAV(ng)%ncid,                  &
      &                            varid = DAV(ng)%Vid(idBgEr))
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                      __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
 !
 !  4D-Var innovation vector: observation minus background. Save initial
-!  background in the innovation vector.
+!  background in the NLincrement vector.
 !
           IF (Nrun.eq.1) THEN
             DO iobs=Mstr,Mend
-              innovation(iobs)=ObsVal(iobs)-NLmodVal(iobs)
-              increment(iobs)=NLmodVal(iobs)
+              innovation(iobs)=ObsScale(iobs)*                          &
+     &                         (ObsVal(iobs)-NLmodVal(iobs))
+              NLincrement(iobs)=NLmodVal(iobs)
             END DO
             CALL netcdf_put_fvar (ng, model, DAV(ng)%name,              &
      &                            Vname(1,idInno), innovation(Mstr:),   &
      &                            (/NstrObs(ng)/), (/Nobs(ng)/),        &
      &                            ncid = DAV(ng)%ncid,                  &
      &                            varid = DAV(ng)%Vid(idInno))
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
 !
 !  4D-Var increment (analysis minus background) and residual
@@ -1116,23 +1135,23 @@
 !
           IF (outer.eq.Nouter) THEN
             DO iobs=Mstr,Mend
-              increment(iobs)=NLmodVal(iobs)-increment(iobs)
-              residual(iobs)=ObsVal(iobs)-NLmodVal(iobs)
+              NLincrement(iobs)=ObsScale(iobs)*                         &
+     &                          (NLmodVal(iobs)-NLincrement(iobs))
+              residual(iobs)=ObsScale(iobs)*                            &
+     &                       (ObsVal(iobs)-NLmodVal(iobs))
             END DO
             CALL netcdf_put_fvar (ng, model, DAV(ng)%name,              &
-     &                            Vname(1,idIncr), increment(Mstr:),    &
+     &                            Vname(1,idIncr), NLincrement(Mstr:),  &
      &                            (/NstrObs(ng)/), (/Nobs(ng)/),        &
      &                            ncid = DAV(ng)%ncid,                  &
      &                            varid = DAV(ng)%Vid(idIncr))
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
             CALL netcdf_put_fvar (ng, model, DAV(ng)%name,              &
      &                            Vname(1,idResi), residual(Mstr:),     &
      &                            (/NstrObs(ng)/), (/Nobs(ng)/),        &
      &                            ncid = DAV(ng)%ncid,                  &
      &                            varid = DAV(ng)%Vid(idResi))
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
         END IF
 # endif
@@ -1140,7 +1159,7 @@
 !-----------------------------------------------------------------------
 !  Write out data into output 4DVAR NetCDF file.
 !-----------------------------------------------------------------------
-# if defined FOUR_DVAR && !defined IS4DVAR_SENSITIVITY
+# if defined FOUR_DVAR && !defined I4DVAR_ANA_SENSITIVITY
 !
 !  Current outer and inner loop.
 !
@@ -1148,14 +1167,12 @@
           CALL netcdf_put_ivar (ng, model, DAV(ng)%name, 'outer',       &
      &                          outer, (/0/), (/0/),                    &
      &                          ncid = DAV(ng)%ncid)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
           CALL netcdf_put_ivar (ng, model, DAV(ng)%name, 'inner',       &
      &                          inner, (/0/), (/0/),                    &
      &                          ncid = DAV(ng)%ncid)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #endif
 !
@@ -1167,14 +1184,17 @@
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
      &                          ncid = DAV(ng)%ncid,                    &
      &                          varid = DAV(ng)%Vid(idObsS))
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 
-# ifndef IS4DVAR_SENSITIVITY
+# ifndef I4DVAR_ANA_SENSITIVITY
 !
 !  Nonlinear model or first guess (background) state at observation
-!  locations.
+!  locations. If 4D-Var, the values are written for every outer loop.
+!  Also, the final value is written as individual variable to
+!  facilitate ERDDAP processing. Notice that it is always overwritten
+!  to avoid complicated logic with all the 4D-Var drivers. The last
+!  one written correspont to the final values.
 !
 #  ifdef VERIFICATION
         IF (wrtNLmod(ng)) THEN
@@ -1183,19 +1203,31 @@
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
      &                          ncid = DAV(ng)%ncid,                    &
      &                          varid = DAV(ng)%Vid(idNLmo))
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           haveNLmod(ng)=.TRUE.
         END IF
 #  else
         IF (wrtNLmod(ng).and.outer.gt.0) THEN
           CALL netcdf_put_fvar (ng, model, DAV(ng)%name,                &
+     &                          Vname(1,idNLmu), unvetted(Mstr:),       &
+     &                          (/NstrObs(ng),outer/), (/Nobs(ng),1/),  &
+     &                          ncid = DAV(ng)%ncid,                    &
+     &                          varid = DAV(ng)%Vid(idNLmu))
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+          CALL netcdf_put_fvar (ng, model, DAV(ng)%name,                &
      &                          Vname(1,idNLmo), NLmodVal(Mstr:),       &
      &                          (/NstrObs(ng),outer/), (/Nobs(ng),1/),  &
      &                          ncid = DAV(ng)%ncid,                    &
      &                          varid = DAV(ng)%Vid(idNLmo))
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+          CALL netcdf_put_fvar (ng, model, DAV(ng)%name,                &
+     &                          Vname(1,idNLmf), NLmodVal(Mstr:),       &
+     &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
+     &                          ncid = DAV(ng)%ncid,                    &
+     &                          varid = DAV(ng)%Vid(idNLmf))
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           haveNLmod(ng)=.TRUE.
         END IF
 #  endif
@@ -1210,11 +1242,10 @@
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
      &                          ncid = DAV(ng)%ncid,                    &
      &                          varid = DAV(ng)%Vid(idTLmo))
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           haveTLmod(ng)=.TRUE.
         END IF
-#  ifdef IS4DVAR_SENSITIVITY
+#  ifdef I4DVAR_ANA_SENSITIVITY
 #   ifdef OBS_IMPACT
 !
 !  Write the total observation impact.
@@ -1224,8 +1255,7 @@
      &                          'ObsImpact_total', TLmodVal(Mstr:),     &
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
      &                          ncid = DAV(ng)%ncid)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #   endif
 #   ifdef OBS_IMPACT_SPLIT
@@ -1237,8 +1267,7 @@
      &                          'ObsImpact_IC', TLmodVal(Mstr:),        &
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
      &                          ncid = DAV(ng)%ncid)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #    if defined ADJUST_WSTRESS || defined ADJUST_STFLUX
 !
@@ -1249,8 +1278,7 @@
      &                          'ObsImpact_FC', TLmodVal(Mstr:),        &
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
      &                          ncid = DAV(ng)%ncid)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #    endif
 #    if defined ADJUST_BOUNDARY
@@ -1262,15 +1290,14 @@
      &                          'ObsImpact_BC', TLmodVal(Mstr:),        &
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
      &                          ncid = DAV(ng)%ncid)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 #    endif
 #   endif
 #  endif
 # endif
-# if defined TL_W4DVAR          || defined W4DVAR             || \
-     defined W4DVAR_SENSITIVITY
+# if defined R4DVAR    || defined R4DVAR_ANA_SENSITIVITY || \
+     defined TL_R4DVAR
 !
 !  Write initial representer model increments at observation locations.
 !
@@ -1279,8 +1306,7 @@
      &                          'RPmodel_initial', TLmodVal(Mstr:),     &
      &                          (/NstrObs(ng)/), (/Nobs(ng)/) ,         &
      &                          ncid = DAV(ng)%ncid)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 # endif
 # ifdef SOLVE3D
@@ -1295,14 +1321,13 @@
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
      &                          ncid = DAV(ng)%ncid,                    &
      &                          varid = DAV(ng)%Vid(idObsZ))
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
 !  Write Z-location of observation in grid coordinates, if applicable.
 !  This values are needed elsewhere when using the interpolation
 !  weight matrix.  Recall that the depth of observations can be in
-!  meters or grid coordinates.  Recall that since the model levels
+!  meters or grid coordinates.  Notice that since the model levels
 !  evolve in time, the fractional level coordinate is unknow during
 !  the processing of the observations.
 !
@@ -1318,8 +1343,7 @@
      &                          (/NstrObs(ng)/), (/Nobs(ng)/),          &
      &                          ncid = OBS(ng)%ncid,                    &
      &                          varid = OBS(ng)%Vid(idObsZ))
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
           IF (model.eq.iADM) THEN
             Lwrote=ObsSurvey(ng).eq.1
@@ -1336,13 +1360,12 @@
         IF (wrtZetaRef(ng).and.balance(isFsur)) THEN
           status=nf_fwrite2d(ng, model, DAV(ng)%ncid,                   &
      &                       DAV(ng)%Vid(idFsur), 0, r2dvar,            &
-     &                       LBi, UBi, LBj, UBj, 1.0_r8,                &
+     &                       LBi, UBi, LBj, UBj, 1.0_dp,                &
 #  ifdef MASKING
      &                       GRID(ng) % rmask,                          &
 #  endif
      &                       FOURDVAR(ng) % zeta_ref)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           wrtZetaRef(ng)=.FALSE.
         END IF
 # endif
@@ -1353,14 +1376,12 @@
 !
         IF (wrtNLmod(ng).or.wrtTLmod(ng).or.wrtRPmod(ng)) THEN
           CALL netcdf_sync (ng, model, DAV(ng)%name, DAV(ng)%ncid)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
 # ifdef SOLVE3D
           IF (Load_Zobs(ng)) THEN
             CALL netcdf_sync (ng, model, OBS(ng)%name, OBS(ng)%ncid)
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           END IF
 # endif
         END IF
@@ -1445,7 +1466,7 @@
         ELSE IF (wrtRPmod(ng)) THEN
           string='Wrote RPM state at observation locations,         '
 #  else
-#   ifdef IS4DVAR_SENSITIVITY
+#   ifdef I4DVAR_ANA_SENSITIVITY
         ELSE IF (wrtTLmod(ng)) THEN
           string='Wrote 4DVAR observation sensitivity,              '
 #   else
@@ -1465,7 +1486,7 @@
   10  FORMAT (10x,a,t25,4(1x,i10))
   20  FORMAT (/,10x,'Total',t47,2(1x,i10),                              &
      &        /,10x,'Obs Tally',t47,2(1x,i10),/)
-  30  FORMAT (1x,a,' datum = ',i7.7,' - ',i7.7,/)
+  30  FORMAT (1x,a,' datum = ',i0,' - ',i0,/)
 
       RETURN
       END SUBROUTINE obs_write

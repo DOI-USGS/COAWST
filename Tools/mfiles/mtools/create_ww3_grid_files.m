@@ -42,7 +42,11 @@ fid = fopen(ww3_xcoord_file,'w');
 for index1 = 1:MP;
     for index2 = 1:LP;
        fprintf(fid,'   ');
-       fprintf(fid,'%12.8f',lon_rho(index2,index1));
+       if (spherical=='T' || spherical=='t' || spherical==1)
+         fprintf(fid,'%12.8f',lon_rho(index2,index1));
+       else
+         fprintf(fid,'%12.8f',x_rho(index2,index1));
+       end
     end
     fprintf(fid,'\n');
 end
@@ -54,7 +58,11 @@ fid = fopen(ww3_ycoord_file,'w');
 for index1 = 1:MP;
     for index2 = 1:LP;
        fprintf(fid,'   ');
-       fprintf(fid,'%12.8f',lat_rho(index2,index1));
+       if (spherical=='T' || spherical=='t' || spherical==1)
+         fprintf(fid,'%12.8f',lat_rho(index2,index1));
+       else
+         fprintf(fid,'%12.8f',y_rho(index2,index1));
+       end
     end
     fprintf(fid,'\n');
 end

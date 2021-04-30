@@ -4,9 +4,9 @@
       SUBROUTINE ad_congrad (ng, model, outLoop, innLoop, NinnLoop,     &
      &                       Lcgini)
 !
-!svn $Id: ad_congrad.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: ad_congrad.F 1054 2021-03-06 19:47:12Z arango $
 !=================================================== Andrew M. Moore ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group      Hernan G. Arango   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group      Hernan G. Arango   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -14,7 +14,7 @@
 !  Weak Constraint 4-Dimensional Variational (4DVar) Pre-conditioned   !
 !                     Conjugate Gradient Algorithm                     !
 
-# if defined TL_W4DVAR || defined W4DVAR_SENSITIVITY
+# if defined TL_R4DVAR || defined R4DVAR_ANA_SENSITIVITY
 !                                                                      !
 !  The indirect representer method solves the system:                  !
 !                                                                      !
@@ -55,7 +55,7 @@
 !    Chua, B. S. and A. F. Bennett,  2001:  An inverse ocean modeling  !
 !      sytem, Ocean Modelling, 3, 137-165.                             !
 
-# elif defined TL_W4DPSAS || defined W4DPSAS_SENSITIVITY
+# elif defined TL_RBL4DVAR || defined RBL4DVAR_ANA_SENSITIVITY
 !                                                                      !
 !  Solve the system (following Courtier, 1997):                        !
 !                                                                      !
@@ -203,7 +203,7 @@
 !
         IF (innLoop.eq.0) THEN
 
-# ifdef W4DPSAS
+# ifdef RBL4DVAR
 !
 !  If this is the first inner-loop, save NLmodVal in BCKmodVal.
 !
@@ -308,7 +308,7 @@
 !>
                 ad_pgrad(iobs)=ad_pgrad(iobs)/SQRT(ObsErr(iobs))
               END IF
-# ifdef W4DPSAS
+# ifdef RBL4DVAR
 !>            tl_pgrad(iobs)=-ObsScale(iobs)*tl_ObsVal(iobs)
 !>
               ad_ObsVal(iobs)=ad_ObsVal(iobs)-ObsScale(iobs)*           &
@@ -328,7 +328,7 @@
 # endif
             END DO
 
-# ifdef W4DPSAS_SENSITIVITY
+# ifdef RBL4DVAR_ANA_SENSITIVITY
 !
 !  For observation sensitivity, copy ADmodVal into TLmodVal.
 !
@@ -359,7 +359,7 @@
 !  cg_pxsave in v-space as the starting vector.
 !
               DO iobs=1,Ndatum(ng)
-# ifdef W4DPSAS
+# ifdef RBL4DVAR
 !>              tl_cg_innov(iobs)=-ObsScale(iobs)*tl_ObsVal(iobs)
 !>
                 ad_ObsVal(iobs)=ad_ObsVal(iobs)-ObsScale(iobs)*         &
@@ -863,7 +863,7 @@
               END DO
             END DO
 !
-            CALL ad_sqlq (innLoop, ztriT, ad_ztriT, tau, ad_tau,       &
+            CALL ad_sqlq (innLoop, ztriT, ad_ztriT, tau, ad_tau,        &
      &                    zwork1, ad_zwork1)
 !
             DO i=2,innLoop

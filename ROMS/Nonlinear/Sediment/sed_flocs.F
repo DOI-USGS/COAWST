@@ -233,8 +233,8 @@
 !ALA dissipation from turbulence clossure
 !
 		 IF (k.eq.1) THEN
-                    tke_av = tke(i,j,k-1,nnew)
-                    gls_av = gls(i,j,k-1,nnew)
+                    tke_av = tke(i,j,k,nnew)
+                    gls_av = gls(i,j,k,nnew)
 		 ELSEIF (k.eq.N(ng)) THEN
                     tke_av = tke(i,j,k,nnew)
                     gls_av = gls(i,j,k,nnew)
@@ -254,8 +254,8 @@
 ! As first cut, use turbulence closure
 !
 		 IF (k.eq.1) THEN
-                    tke_av = tke(i,j,k-1,nnew)
-                    gls_av = gls(i,j,k-1,nnew)
+                    tke_av = tke(i,j,k,nnew)
+                    gls_av = gls(i,j,k,nnew)
 		 ELSEIF (k.eq.N(ng)) THEN
                     tke_av = tke(i,j,k,nnew)
                     gls_av = gls(i,j,k,nnew)

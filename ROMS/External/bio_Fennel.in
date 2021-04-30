@@ -1,8 +1,8 @@
 !  Fennel et al (2006) Nitrogen-based Biological Model Parameters.
 !
-!svn $Id: bio_Fennel.in 1009 2020-03-03 20:38:52Z arango $
+!svn $Id: bio_Fennel.in 1054 2021-03-06 19:47:12Z arango $
 !========================================================= Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                                !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                                !
 !    Licensed under a MIT/X style license                                     !
 !    See License_ROMS.txt                                                     !
 !==============================================================================
@@ -87,6 +87,11 @@
 
        K_NH4 == 2.0d0
 
+! Inverse half-saturation for phytoplankton PO4 uptake [1/(millimole_P m-3)],
+! {333.0d0}.
+
+       K_PO4 == 32.0d0
+
 ! Zooplankton half-saturation constant (squared) for ingestion
 ! [millimole_N m-3]^2, {1.0d0}.
 
@@ -103,6 +108,10 @@
 ! Phytoplankton Carbon:Nitrogen ratio [mole_C/mole_N] , {6.625d0}.
 
        PhyCN == 6.625d0
+
+! Phytoplankton Phosphorus:Nitrogen ratio [mole_P/mole_N] , {0.0625d0}.
+
+       R_P2N == 0.0625d0
 
 ! Phytoplankton, NH4 inhibition parameter [1/(millimole_N)], {1.5d0}.
 
@@ -170,6 +179,14 @@
 
        SDeRRC == 0.03d0
 
+! River detritus remineralization rate N-fraction [1/day], {0.03d0}.
+
+       RDeRRN == 0.03d0
+
+! River detritus remineralization rate N-fraction [1/day], {0.03d0}.
+
+       RDeRRC == 0.03d0
+
 ! Vertical sinking velocity for phytoplankton [m/day], {0.1d0}.
 
         wPhy == 0.1d0
@@ -192,30 +209,30 @@
 ! Harmonic/biharmonic horizontal diffusion of biological tracer for
 ! nonlinear model and adjoint-based algorithms: [1:NBT,Ngrids].
 
-        TNU2 == 12*0.0d0                        ! m2/s
-        TNU4 == 12*0.0d0                        ! m4/s
+        TNU2 == 15*0.0d0                        ! m2/s
+        TNU4 == 15*0.0d0                        ! m4/s
 
-     ad_TNU2 == 12*0.0d0                        ! m2/s
-     ad_TNU4 == 12*0.0d0                        ! m4/s
+     ad_TNU2 == 15*0.0d0                        ! m2/s
+     ad_TNU4 == 15*0.0d0                        ! m4/s
 
 ! Logical switches (TRUE/FALSE) to increase/decrease horizontal diffusivity
 ! in specific areas of the application domain (like sponge areas) for the
 ! desired grid: [Ngrids]
 
-LtracerSponge == 12*F
+LtracerSponge == 15*F
 
 ! Vertical mixing coefficients for biological tracers for nonlinear
 ! model and basic state scale factor in adjoint-based algorithms:
 ! [1:NBT,Ngrids].
 
-     AKT_BAK == 12*1.0d-6                       ! m2/s
+     AKT_BAK == 15*1.0d-6                       ! m2/s
 
-  ad_AKT_fac == 12*1.0d0                        ! nondimensional
+  ad_AKT_fac == 15*1.0d0                        ! nondimensional
 
 ! Nudging/relaxation time scales, inverse scales will be computed
 ! internally: [1:NBT,Ngrids].
 
-       TNUDG == 12*0.0d0                        ! days
+       TNUDG == 15*0.0d0                        ! days
 
 ! Set horizontal and vertical advection schemes for biological tracers.
 ! A different advection scheme is allowed for each tracer. For example,
@@ -249,7 +266,10 @@ LtracerSponge == 12*F
                  HSIMT    \                     ! idbio( 9), SdetritusC
                  HSIMT    \                     ! idbio(10), TIC
                  HSIMT    \                     ! idbio(11), alkalinity
-                 HSIMT                          ! idbio(12), oxygen
+                 HSIMT    \                     ! idbio(12), oxygen
+                 HSIMT    \                     ! idbio(13), PO4
+                 HSIMT    \                     ! idbio(14), RdetritusN
+                 HSIMT                          ! idbio(15), RdetritusC
 
    Vadvection == HSIMT    \                     ! idbio( 1), NO3
                  HSIMT    \                     ! idbio( 2), NH4
@@ -262,7 +282,10 @@ LtracerSponge == 12*F
                  HSIMT    \                     ! idbio( 9), SdetritusC
                  HSIMT    \                     ! idbio(10), TIC
                  HSIMT    \                     ! idbio(11), alkalinity
-                 HSIMT                          ! idbio(12), oxygen
+                 HSIMT    \                     ! idbio(12), oxygen
+                 HSIMT    \                     ! idbio(13), PO4
+                 HSIMT    \                     ! idbio(14), RdetritusN
+                 HSIMT                          ! idbio(15), RdetritusC
 
 ! Adjoint-based algorithms can have different horizontal and schemes
 ! for active and inert tracers.
@@ -317,7 +340,10 @@ ad_Vadvection == C4                             ! idbio(:), compact
                     Per     Clo     Per     Clo \    ! idbio( 9), SdetritusC
                     Per     Clo     Per     Clo \    ! idbio(10), TIC
                     Per     Clo     Per     Clo \    ! idbio(11), alkalinity
-                    Per     Clo     Per     Clo      ! idbio(12), oxygen
+                    Per     Clo     Per     Clo \    ! idbio(12), oxygen
+                    Per     Clo     Per     Clo \    ! idbio(13), PO4
+                    Per     Clo     Per     Clo \    ! idbio(14), RdetritusN
+                    Per     Clo     Per     Clo      ! idbio(15), RdetritusC
 
 ! Adjoint-based algorithms can have different lateral boundary
 ! conditions keywords.
@@ -333,20 +359,23 @@ ad_LBC(isTvar) ==   Per     Clo     Per     Clo \    ! idbio( 1), NO3
                     Per     Clo     Per     Clo \    ! idbio( 9), SdetritusC
                     Per     Clo     Per     Clo \    ! idbio(10), TIC
                     Per     Clo     Per     Clo \    ! idbio(11), alkalinity
-                    Per     Clo     Per     Clo      ! idbio(12), oxygen
+                    Per     Clo     Per     Clo \    ! idbio(12), oxygen
+                    Per     Clo     Per     Clo \    ! idbio(13), PO4
+                    Per     Clo     Per     Clo \    ! idbio(14), RdetritusN
+                    Per     Clo     Per     Clo      ! idbio(15), RdetritusC
 
 ! Logical switches (TRUE/FALSE) to activate biological tracers point
 ! Sources/Sinks (like river runoff) and to specify which tracer variables
 ! to consider: [NBT,Ngrids] values are expected. See glossary below for
 ! details.
 
-  LtracerSrc == 12*F
+  LtracerSrc == 15*F
 
 ! Logical switches (TRUE/FALSE) to read and process biological tracer
 ! climatology fields: [NBT,Ngrids] values are expected. See glossary below
 ! for details.
 
-  LtracerCLM == 12*F
+  LtracerCLM == 15*F
 
 ! Logical switches (TRUE/FALSE) to nudge the desired biological tracer
 ! climatology field. If not analytical climatology fields, users need to
@@ -354,46 +383,46 @@ ad_LBC(isTvar) ==   Per     Clo     Per     Clo \    ! idbio( 1), NO3
 ! climatology NetCDF file that are needed for nudging; [NBT,Ngrids]
 ! values are expected. See glossary below for details.
 
-  LnudgeTCLM == 12*F
+  LnudgeTCLM == 15*F
 
 ! Logical switches (TRUE/FALSE) to activate writing of biological fields
 ! into HISTORY output file: [1:NBT,Ngrids].
 
-Hout(idTvar) == 12*T    ! ..., NO3, ...           biological tracer
-Hout(idTsur) == 12*F    ! ..., NO3_sflux, ...     surface tracer flux
+Hout(idTvar) == 15*T    ! ..., NO3, ...           biological tracer
+Hout(idTsur) == 15*F    ! ..., NO3_sflux, ...     surface tracer flux
 
 ! Logical switches (TRUE/FALSE) to activate writing of biological fields
 ! into QUICKSAVE output file: [1:NBT,Ngrids].
 
-Qout(idTvar) == 12*F    ! ..., NO3, ...           biological tracer
-Qout(idsurT) == 12*F    ! ..., NO3_sur, ...       surface biological tracer
-Qout(idTsur) == 12*F    ! ..., NO3_sflux, ...     surface tracer flux
+Qout(idTvar) == 15*F    ! ..., NO3, ...           biological tracer
+Qout(idsurT) == 15*F    ! ..., NO3_sur, ...       surface biological tracer
+Qout(idTsur) == 15*F    ! ..., NO3_sflux, ...     surface tracer flux
 
 ! Logical switches (TRUE/FALSE) to activate writing of time-averaged fields
 ! into AVERAGE output file: [1:NBT,Ngrids].
 
-Aout(idTvar) == 12*T    ! ..., NO3, ...           biological tracer
+Aout(idTvar) == 15*T    ! ..., NO3, ...           biological tracer
 
-Aout(idTTav) == 12*F    ! ..., NO3_2, ...         quadratic <t*t> tracer terms
-Aout(idUTav) == 12*F    ! ..., u_NO3, ...         quadratic <u*t> tracer terms
-Aout(idVTav) == 12*F    ! ..., v_NO3, ...         quadratic <v*t> tracer terms
-Aout(iHUTav) == 12*F    ! ..., Huon_NO3, ...      tracer volume flux, <Huon*t>
-Aout(iHVTav) == 12*F    ! ..., Hvom_NO3, ...      tracer volume flux, <Hvom*t>
+Aout(idTTav) == 15*F    ! ..., NO3_2, ...         quadratic <t*t> tracer terms
+Aout(idUTav) == 15*F    ! ..., u_NO3, ...         quadratic <u*t> tracer terms
+Aout(idVTav) == 15*F    ! ..., v_NO3, ...         quadratic <v*t> tracer terms
+Aout(iHUTav) == 15*F    ! ..., Huon_NO3, ...      tracer volume flux, <Huon*t>
+Aout(iHVTav) == 15*F    ! ..., Hvom_NO3, ...      tracer volume flux, <Hvom*t>
 
 ! Logical switches (TRUE/FALSE) to activate writing of time-averaged,
 ! biological tracer diagnostic terms into DIAGNOSTIC output file:
 ! [1:NBT,Ngrids].
 
-Dout(iTrate) == 12*T    ! ..., NO3_rate, ...      time rate of change
-Dout(iThadv) == 12*T    ! ..., NO3_hadv, ...      horizontal total advection
-Dout(iTxadv) == 12*T    ! ..., NO3_xadv, ...      horizontal XI-advection
-Dout(iTyadv) == 12*T    ! ..., NO3_yadv, ...      horizontal ETA-advection
-Dout(iTvadv) == 12*T    ! ..., NO3_vadv, ...      vertical advection
-Dout(iThdif) == 12*T    ! ..., NO3_hdiff, ...     horizontal total diffusion
-Dout(iTxdif) == 12*T    ! ..., NO3_xdiff, ...     horizontal XI-diffusion
-Dout(iTydif) == 12*T    ! ..., NO3_ydiff, ...     horizontal ETA-diffusion
-Dout(iTsdif) == 12*T    ! ..., NO3_sdiff, ...     horizontal S-diffusion
-Dout(iTvdif) == 12*T    ! ..., NO3_vdiff, ...     vertical diffusion
+Dout(iTrate) == 15*T    ! ..., NO3_rate, ...      time rate of change
+Dout(iThadv) == 15*T    ! ..., NO3_hadv, ...      horizontal total advection
+Dout(iTxadv) == 15*T    ! ..., NO3_xadv, ...      horizontal XI-advection
+Dout(iTyadv) == 15*T    ! ..., NO3_yadv, ...      horizontal ETA-advection
+Dout(iTvadv) == 15*T    ! ..., NO3_vadv, ...      vertical advection
+Dout(iThdif) == 15*T    ! ..., NO3_hdiff, ...     horizontal total diffusion
+Dout(iTxdif) == 15*T    ! ..., NO3_xdiff, ...     horizontal XI-diffusion
+Dout(iTydif) == 15*T    ! ..., NO3_ydiff, ...     horizontal ETA-diffusion
+Dout(iTsdif) == 15*T    ! ..., NO3_sdiff, ...     horizontal S-diffusion
+Dout(iTvdif) == 15*T    ! ..., NO3_vdiff, ...     vertical diffusion
 
 ! Logical switches (TRUE/FALSE) to activate writing of time-averaged,
 ! biological processes diagnostics terms into DIAGNOSTIC output file [Ngrids].
@@ -404,6 +433,7 @@ Dout(ipCO2) == T        ! pCO2               CO2 partial pressure
 Dout(iO2fx) == T        ! O2_airsea          air-sea O2 flux
 Dout(iPPro) == T        ! P_Production       primary production
 Dout(iNO3u) == T        ! NO3_uptake         NO3 uptake
+Dout(iNifx) == T        ! Nitrification      Nitrification flux
 
 !
 !  GLOSSARY:
@@ -411,7 +441,7 @@ Dout(iNO3u) == T        ! NO3_uptake         NO3 uptake
 !
 !------------------------------------------------------------------------------
 ! Fennel et al (2006), Nitrogen-based Biological Model Parameters. Currently,
-! it can be configured with 12 biological tracers:
+! it can be configured with 15 biological tracers:
 !
 ! idbio( 1)     NO3               Nitrate concentration
 ! idbio( 2)     NH4               Ammonium concentration
@@ -425,6 +455,9 @@ Dout(iNO3u) == T        ! NO3_uptake         NO3 uptake
 ! idbio(10)     TIC               Total inorganic carbon             if CARBON
 ! idbio(11)     alkalinity        Alkalinity                         if CARBON
 ! idbio(12)     oxygen            Oxygen concentration               if OXYGEN
+! idbio(13)     PO4               Phosphate concentration            if PO4
+! idbio(14)     RdetritusN        River detritus N-concentration     if RIVER_DON
+! idbio(15)     RdetritusC        River detritus C-concentration     if RIVER_DON
 !
 !------------------------------------------------------------------------------
 !
@@ -464,6 +497,9 @@ Dout(iNO3u) == T        ! NO3_uptake         NO3 uptake
 !  K_NH4          Inverse half-saturation for phytoplankton NH4 uptake
 !                   [1/(millimole_N m-3)].
 !
+!  K_PO4          Inverse half-saturation for phytoplankton PO4 uptake
+!                   [1/(millimole_P m-3)].
+!
 !  K_Phy          Zooplankton half-saturation, squared constant for ingestion
 !                   [millimole_N m-3]^2.
 !
@@ -471,6 +507,9 @@ Dout(iNO3u) == T        ! NO3_uptake         NO3 uptake
 !
 !  ChlMin         Chlorophyll minimum threshold value [mg_Chl/m3].  Set to
 !                   zero to avoid limiting.
+!
+!  R_P2N          Phytoplankton Phosphate:Nitrogen ratio [mole_P/mole_N].
+!
 !
 !  PhyCN          Phytoplankton Carbon:Nitrogen ratio [mole_C/mole_N].
 !
@@ -510,6 +549,8 @@ Dout(iNO3u) == T        ! NO3_uptake         NO3 uptake
 !  SDeRRN         Small nitrogen detritus remineralization rate [day-1].
 !
 !  SDeRRC         Small carbon detritus remineralization rate [day-1].
+!
+!  RDeRRN         River nitrogen detritus remineralization rate [day-1].
 !
 !  wPhy           Vertical sinking velocity for phytoplankton [m/day].
 !
@@ -753,6 +794,9 @@ Dout(iNO3u) == T        ! NO3_uptake         NO3 uptake
 !                     LtracerSrc(idbio(10),ng)    Total inorganic carbon
 !                     LtracerSrc(idbio(11),ng)    Alkalinity
 !                     LtracerSrc(idbio(12),ng)    Oxygen concentration
+!                     LtracerSrc(idbio(13),ng)    Phosphate concentration
+!                     LtracerSrc(idbio(14),ng)    River N-detritus
+!                     LtracerSrc(idbio(15),ng)    River C-detritus
 !
 !                   Recall that these switches are usually activated to add
 !                   river runoff as a point source. At minimum, it is necessary
@@ -809,6 +853,9 @@ Dout(iNO3u) == T        ! NO3_uptake         NO3 uptake
 !                     LtracerCLM(idbio(10),ng)    Total inorganic carbon
 !                     LtracerCLM(idbio(11),ng)    Alkalinity
 !                     LtracerCLM(idbio(12),ng)    Oxygen concentration
+!                     LtracerCLM(idbio(13),ng)    Phosphate concentration
+!                     LtracerCLM(idbio(14),ng)    River N-detritus
+!                     LtracerCLM(idbio(15),ng)    River C-detritus
 !
 !                   These switches also controls which climatology tracer
 !                   fields needs to be processed.  So we may reduce the
@@ -836,6 +883,9 @@ Dout(iNO3u) == T        ! NO3_uptake         NO3 uptake
 !                     LnudgeTCLM(idbio(10),ng)    Total inorganic carbon
 !                     LnudgeTCLM(idbio(11),ng)    Alkalinity
 !                     LnudgeTCLM(idbio(12),ng)    Oxygen concentration
+!                     LnudgeTCLM(idbio(13),ng)    Phosphate concentration
+!                     LnudgeTCLM(idbio(14),ng)    River N-detritus
+!                     LnudgeTCLM(idbio(15),ng)    River C-detritus
 !
 !                   User also needs to TURN ON the respective logical switches
 !                   "LtracerCLM", described above, to process the required 3D
@@ -871,6 +921,9 @@ Dout(iNO3u) == T        ! NO3_uptake         NO3 uptake
 !                   idTvar(idbio(10))=iTIC_    Total inorganic carbon
 !                   idTvar(idbio(11))=iTAlk    Alkalinity
 !                   idTvar(idbio(12))=iOxyg    Oxygen concentration
+!                   idTvar(idbio(13))=iPO4_    Phosphate concentration
+!                   idTvar(idbio(14))=iRDeN    River N-detritus
+!                   idTvar(idbio(15))=iRDeC    River C-detritus
 !
 !------------------------------------------------------------------------------
 ! Logical switches (T/F) to activate writing of fields into QUICKSAVE file.
@@ -938,4 +991,5 @@ Dout(iNO3u) == T        ! NO3_uptake         NO3 uptake
 !  Dout(iO2fx)    Write out air-sea O2 flux.
 !  Dout(iPPro)    Write out primary production.
 !  Dout(iNO3u)    Write out NO3 uptake.
+!  Dout(iNifx)    Write out Nitrification.
 !

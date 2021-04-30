@@ -18,11 +18,11 @@
       CALL netcdf_put_fvar (ng, model, ncname, 'energy_angle',          &
      &                      WAVEG(ng)%WD*180.0d0/pi, (/1/), (/ND/),     &
      &                      ncid = ncid)
-      IF (exit_flag.ne.NoError) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
 !      CALL netcdf_put_fvar (ng, model, ncname, 'energy_angle_c',        &
 !     &                      WAVEB(ng)%WD_bnd, (/1/),                    &
 !     &                      (/WAVEB(ng)%ND_bnd/),                       &
 !     &                      ncid = ncid)
-!      IF (exit_flag.ne.NoError) RETURN
+!      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 

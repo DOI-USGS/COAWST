@@ -1,10 +1,10 @@
 #include "cppdefs.h"
-#if defined NONLINEAR && defined SOLVE3D && (!defined OFFLINE)
+#if defined NONLINEAR && defined SOLVE3D
       SUBROUTINE main3d (RunInterval)
 !
-!svn $Id: main3d.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: main3d.F 1054 2021-03-06 19:47:12Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -41,24 +41,7 @@
       USE bbl_mod,              ONLY : bblm
 # endif
 # ifdef BULK_FLUXES
-#  ifdef CCSM_FLUXES
-      USE ccsm_flux_mod,        ONLY : ccsm_flux
-#  else
       USE bulk_flux_mod,        ONLY : bulk_flux
-#  endif
-# endif
-# if (defined ALBEDO_CLOUD || defined NCEP_FLUXES) && !defined BENCHMARK
-      USE cawdir_eval_mod,      ONLY : cawdir_eval
-# endif
-# if defined ALBEDO && defined SHORTWAVE
-#  if !defined NCEP_FLUXES && !defined ANA_ALBEDO
-      USE albedo_mod
-#  elif defined ANA_ALBEDO
-      USE analytical_mod,       ONLY : ana_albedo
-#  endif
-# endif
-# if defined NCEP_FLUXES
-      USE ncep_flux_mod,        ONLY : ncep_flux
 # endif
 # ifdef ATM2OCN_FLUXES
       USE atm2ocn_flux_mod,     ONLY : atm2ocn_flux
@@ -71,12 +54,15 @@
 # ifdef TLM_CHECK
       USE dotproduct_mod,       ONLY : nl_dotproduct
 # endif
-# if defined NLM_OUTER           || defined W4DPSAS                 ||\
-     defined W4DPSAS_SENSITIVITY || defined W4DPSAS_FCT_SENSITIVITY
+# if defined NLM_OUTER                || \
+     defined RBL4DVAR                 || \
+     defined RBL4DVAR_ANA_SENSITIVITY || \
+     defined RBL4DVAR_FCT_SENSITIVITY || \
+     defined SP4DVAR
       USE forcing_mod,          ONLY : forcing
 # endif
 # if defined ADJUST_STFLUX || defined ADJUST_WSTRESS
-      USE frc_adjust_mod,       ONLY : frc_adjust
+      USE frc_adjust_mod,       ONLY : frc_adjust, load_frc
 # endif
 # ifdef GLS_MIXING
       USE gls_corstep_mod,      ONLY : gls_corstep
@@ -140,12 +126,6 @@
 # ifdef AVERAGES
       USE set_avg_mod,          ONLY : set_avg
 # endif
-# if defined AVERAGES2 && !defined ADJOINT
-      USE set_avg2_mod,         ONLY : set_avg2
-# endif
-# ifdef CICE_MODEL
-      USE ice_fakecpl,          ONLY : cice_fakecpl
-# endif
       USE set_depth_mod,        ONLY : set_depth
       USE set_massflux_mod,     ONLY : set_massflux
 # if defined SSH_TIDES || defined UV_TIDES || defined POT_TIDES
@@ -166,9 +146,6 @@
 # ifdef WEC
       USE wstvelocity_mod,      ONLY : wstvelocity
 # endif
-# if defined ICE_MODEL
-      USE ice_flux_mod
-# endif
 !
       implicit none
 !
@@ -179,13 +156,16 @@
 !  Local variable declarations.
 !
       logical :: DoNestLayer, Time_Step
-
+!
       integer :: Nsteps, Rsteps
       integer :: ig, iw, ia, il, istep, ng, nl, tile
       integer :: my_iif, next_indx1
 # ifdef FLOATS
       integer :: Lend, Lstr, chunk_size
 # endif
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 !
 !=======================================================================
 !  Time-step nonlinear 3D primitive equations by the specified time.
@@ -219,8 +199,7 @@
 !  or just a single step (RunInterval=0).
 !
           CALL ntimesteps (iNLM, RunInterval, nl, Nsteps, Rsteps)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
           IF ((nl.le.0).or.(nl.gt.NestLayers)) EXIT
 !
 !  Time-step governing equations for Nsteps.
@@ -251,8 +230,8 @@
               CALL get_data (ng)
 !$OMP END MASTER
 !$OMP BARRIER
-              IF (FoundError(exit_flag, NoError, __LINE__,              &
-     &                       __FILE__)) RETURN
+              IF (FoundError(exit_flag, NoError,                        &
+     &                       __LINE__, MyFile)) RETURN
             END DO
 !
 !-----------------------------------------------------------------------
@@ -267,11 +246,12 @@
               END DO
 !$OMP BARRIER
             END DO
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
-# if defined NLM_OUTER           || defined W4DPSAS                 ||\
-     defined W4DPSAS_SENSITIVITY || defined W4DPSAS_FCT_SENSITIVITY
+# if defined NLM_OUTER                || \
+     defined RBL4DVAR                 || \
+     defined RBL4DVAR_ANA_SENSITIVITY || \
+     defined RBL4DVAR_FCT_SENSITIVITY
 !
 !-----------------------------------------------------------------------
 !  If appropriate, add convolved adjoint solution impulse forcing to
@@ -283,13 +263,23 @@
 !
             DO ig=1,GridsInLayer(nl)
               ng=GridNumber(ig,nl)
-              IF (FrequentImpulse(ng)) THEN
-                DO tile=first_tile(ng),last_tile(ng),+1
-                  CALL forcing (ng, tile, kstp(ng), nstp(ng))
-                  CALL set_depth (ng, tile, iNLM)
-                END DO
+#  if defined WEAK_NOINTERP
+              IF ((iic(ng).gt.1).and.(iic(ng).ne.ntend(ng)+1).and.      &
+     &            (MOD(iic(ng)-1,nadj(ng)).eq.0)) THEN
+                IF (Master) THEN
+                  WRITE (stdout,*) ' FORCING NLM at iic = ',iic(ng)
+                END IF
+#  endif
+                IF (FrequentImpulse(ng)) THEN
+                  DO tile=first_tile(ng),last_tile(ng),+1
+                    CALL forcing (ng, tile, kstp(ng), nstp(ng))
+                    CALL set_depth (ng, tile, iNLM)
+                  END DO
 !$OMP BARRIER
+                END IF
+#  if defined WEAK_NOINTERP
               END IF
+#  endif
             END DO
 # endif
 !
@@ -348,8 +338,7 @@
               END DO
 !$OMP BARRIER
             END DO
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
 # if defined ROMS_COUPLING && defined MCT_LIB
 !
@@ -392,8 +381,7 @@
               END DO
 !$OMP BARRIER
             END DO
-            IF (FoundError(exit_flag, NoError, __LINE__,                &
-     &                     __FILE__)) RETURN
+            IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 # endif
 
 # ifdef WEC_MELLOR
@@ -419,27 +407,12 @@
             DO ig=1,GridsInLayer(nl)
               ng=GridNumber(ig,nl)
               DO tile=first_tile(ng),last_tile(ng),+1
-# if (defined ALBEDO_CLOUD || defined NCEP_FLUXES) && !defined BENCHMARK
-                CALL cawdir_eval(ng, tile)
-# endif
-# if defined ALBEDO && defined SHORTWAVE
-#  ifdef ANA_ALBEDO
-                CALL ana_albedo(ng, tile, iNLM)
-#  elif !defined NCEP_FLUXES && !defined ALBEDO_FILE 
-                CALL albedo_eval(ng, tile)
-#  endif
-# endif
 # ifdef BULK_FLUXES
-#  if defined FOUR_DVAR && defined NL_BULK_FLUXES
+#  if defined FOUR_DVAR && defined PRIOR_BULK_FLUXES
                 IF (Nrun.eq.1) CALL bulk_flux (ng, tile)
-#  elif defined CCSM_FLUXES
-                CALL ccsm_flux (ng, tile)
 #  else
                 CALL bulk_flux (ng, tile)
 #  endif
-# endif
-# ifdef NCEP_FLUXES
-            CALL ncep_flux(ng, tile)
 # endif
 # ifdef ATM2OCN_FLUXES
                 CALL atm2ocn_flux (ng, tile)
@@ -468,34 +441,6 @@
             END DO
 # endif
 
-# ifdef CICE_MODEL
-!
-!-----------------------------------------------------------------------
-! Call the CICE model
-!-----------------------------------------------------------------------
-!
-! KLUDGE here! hard-coding ng=1
-            call cice_fakecpl
-# endif
-
-# if defined ICE_MODEL
-!
-!-----------------------------------------------------------------------
-!  Run ice model for one step
-!-----------------------------------------------------------------------
-!
-            IF (PerfectRST(1).and.iic(1).eq.ntstart(1)) THEN
-              DO ig=1,GridsInLayer(nl)
-                ng=GridNumber(ig,nl)
-                DO tile=first_tile(ng),last_tile(ng),+1
-                  CALL ice_flux_rst(ng, tile)
-                END DO
-              END DO
-            ELSE
-              CALL seaice
-            END IF
-# endif
-!
 # ifdef ADJUST_BOUNDARY
 !
 !-----------------------------------------------------------------------
@@ -529,6 +474,7 @@
               IF (iic(ng).lt.(ntend(ng)+1)) THEN
                 DO tile=first_tile(ng),last_tile(ng),+1
                   CALL frc_adjust (ng, tile, Lfinp(ng))
+                  CALL load_frc (ng, tile, Lfout(ng))
                 END DO
 !$OMP BARRIER
               END IF
@@ -583,9 +529,6 @@
                 CALL set_avg (ng, tile)
 #   endif
 # endif
-# if defined AVERAGES2 && !defined ADJOINT
-                CALL set_avg2 (ng, tile)
-# endif
               END DO
 !$OMP BARRIER
             END DO
@@ -615,8 +558,7 @@
               CALL output (ng)
 !$OMP END MASTER
 !$OMP BARRIER
-              IF ((FoundError(exit_flag, NoError, __LINE__,             &
-     &                        __FILE__)).or.                            &
+              IF ((FoundError(exit_flag, NoError, __LINE__, MyFile)).or.&
      &            ((iic(ng).eq.(ntend(ng)+1)).and.(ng.eq.Ngrids))) THEN
                 RETURN
               END IF
@@ -735,9 +677,11 @@
                 IF (ANY(CompositeGrid(:,ng))) THEN
                   CALL nesting (ng, iNLM, n2dPS)
                 END IF
+#  ifdef NESTING_DEBUG
                 IF (RefinedGrid(ng).and.(RefineScale(ng).gt.0)) THEN
                   CALL nesting (ng, iNLM, nmflx)
                 END IF
+#  endif
               END DO
 # endif
 !
@@ -782,9 +726,11 @@
                 IF (ANY(CompositeGrid(:,ng))) THEN
                   CALL nesting (ng, iNLM, n2dCS)
                 END IF
+#  ifdef NESTING_DEBUG
                 IF (RefinedGrid(ng).and.(RefineScale(ng).gt.0)) THEN
                   CALL nesting (ng, iNLM, nmflx)
                 END IF
+#  endif
               END DO
 # endif
             END DO LOOP_2D

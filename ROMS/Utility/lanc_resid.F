@@ -1,11 +1,11 @@
 #include "cppdefs.h"
       MODULE lanc_resid_mod
 
-#if defined IS4DVAR
+#if defined I4DVAR
 !
-!svn $Id: lanc_resid.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: lanc_resid.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -290,7 +290,7 @@
 !
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-          ad_zeta(i,j,Lout)=-tl_zeta(i,j,Linp)+                        &
+          ad_zeta(i,j,Lout)=-tl_zeta(i,j,Linp)+                         &
      &                      ad_zeta(i,j,Lout )
         END DO
       END DO

@@ -2,9 +2,9 @@
       MODULE step3d_t_mod
 #if !defined TS_FIXED && (defined NONLINEAR && defined SOLVE3D)
 !
-!svn $Id: step3d_t.F 1013 2020-03-11 01:46:00Z arango $
+!svn $Id: step3d_t.F 1054 2021-03-06 19:47:12Z arango $
 !=======================================================================
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                           Hernan G. Arango   !
 !========================================== Alexander F. Shchepetkin ===
@@ -58,10 +58,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 35, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 35, __LINE__, MyFile)
 # endif
       CALL step3d_t_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -96,6 +99,9 @@
      &                    GRID(ng) % Hvom,                              &
      &                    GRID(ng) % z_r,                               &
      &                    MIXING(ng) % Akt,                             &
+#ifdef TS_VAR
+     &                    MIXING(ng) % Akr,                             &
+#endif
      &                    OCEAN(ng) % W,                                &
 # ifdef WEC_VF
      &                    OCEAN(ng) % W_stokes,                         &
@@ -108,8 +114,9 @@
 # endif
      &                    OCEAN(ng) % t)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 35, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 35, __LINE__, MyFile)
 # endif
+!
       RETURN
       END SUBROUTINE step3d_t
 !
@@ -133,6 +140,9 @@
      &                          Hz, Huon, Hvom,                         &
      &                          z_r,                                    &
      &                          Akt,                                    &
+#ifdef TS_VAR
+     &                          Akr,                                    &
+#endif
      &                          W,                                      &
 # ifdef WEC_VF
      &                          W_stokes,                               &
@@ -153,9 +163,6 @@
       USE mod_nesting
 # endif
       USE mod_scalars
-# if (defined ICE_MODEL && defined ICE_THERMO) || defined CICE_MODEL
-      USE ice_frazil_mod, ONLY : ice_frazil
-# endif
       USE mod_sources
 !
       USE exchange_3d_mod, ONLY : exchange_r3d_tile
@@ -215,6 +222,9 @@
 #  else
       real(r8), intent(in) :: Akt(LBi:,LBj:,0:,:)
 #  endif
+#  ifdef TS_VAR
+      real(r8), intent(inout) :: Akr(LBi:,LBj:,0:)
+#  endif
       real(r8), intent(in) :: W(LBi:,LBj:,0:)
 #  ifdef WEC_VF
       real(r8), intent(in) :: W_stokes(LBi:,LBj:,0:)
@@ -261,6 +271,9 @@
       real(r8), intent(in) :: Hvom(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_r(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: Akt(LBi:UBi,LBj:UBj,0:N(ng),NAT)
+#  ifdef TS_VAR
+      real(r8), intent(inout) :: Akr(LBi:UBi,LBj:UBj,0:N(ng))
+#  endif
       real(r8), intent(in) :: W(LBi:UBi,LBj:UBj,0:N(ng))
 #  ifdef WEC_VF
       real(r8), intent(in) :: W_stokes(LBi:UBi,LBj:UBj,0:N(ng))
@@ -309,6 +322,7 @@
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: BC
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: DC
       real(r8), dimension(IminS:ImaxS,0:N(ng)) :: FC
+
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curv
@@ -402,12 +416,7 @@
 !  Horizontal tracer advection.  It is possible to have a different
 !  advection schme for each tracer.
 !
-# ifdef OFFLINE_BIOLOGY
-      T_LOOP1 : DO ibt=1,NBT
-        itrc=idbio(ibt)
-# else
       T_LOOP1 : DO itrc=1,NT(ng)
-# endif
 !
 !  The MPDATA and HSIMT algorithms requires a three-point footprint, so
 !  exchange boundary data on t(:,:,:,nnew,:) so other processes computed
@@ -796,11 +805,11 @@
                   IF (LtracerSrc(itrc,ng)) THEN
                     FX(Isrc,Jsrc)=Huon(Isrc,Jsrc,k)*                    &
 # ifdef ONE_TRACER_SOURCE
-     &                      SOURCES(ng)%Tsrc(itrc)
+     &                            SOURCES(ng)%Tsrc(itrc)
 # elif defined TWO_D_TRACER_SOURCE
-     &                      SOURCES(ng)%Tsrc(is,itrc)
+     &                            SOURCES(ng)%Tsrc(is,itrc)
 # else
-     &                      SOURCES(ng)%Tsrc(is,k,itrc)
+     &                            SOURCES(ng)%Tsrc(is,k,itrc)
 # endif
 # ifdef MASKING
                   ELSE
@@ -833,11 +842,11 @@
                   IF (LtracerSrc(itrc,ng)) THEN
                     FE(Isrc,Jsrc)=Hvom(Isrc,Jsrc,k)*                    &
 # ifdef ONE_TRACER_SOURCE
-     &                      SOURCES(ng)%Tsrc(itrc)
+     &                            SOURCES(ng)%Tsrc(itrc)
 # elif defined TWO_D_TRACER_SOURCE
-     &                      SOURCES(ng)%Tsrc(is,itrc)
+     &                            SOURCES(ng)%Tsrc(is,itrc)
 # else
-     &                      SOURCES(ng)%Tsrc(is,k,itrc)
+     &                            SOURCES(ng)%Tsrc(is,k,itrc)
 # endif
 # ifdef MASKING
                   ELSE
@@ -882,11 +891,9 @@
 # endif
 !
 !  If MPDATA, time-step horizontal advection for intermediate diffusive
-!  tracer, Ta. Otherwise, time-step horizontal advection term.
-!  Advective fluxes have units of Tunits m3/s.  The new tracer has
-!  units of m Tunits.
+!  tracer, Ta (m Tunits).
 !
-          IF (Hadvection(itrc,ng)%MPDATA) THEN
+          HADV_STEPPING : IF (Hadvection(itrc,ng)%MPDATA) THEN
             DO j=JstrVm2,Jendp2i
               DO i=IstrUm2,Iendp2i
                 cff=dt(ng)*pm(i,j)*pn(i,j)
@@ -911,7 +918,11 @@
               END DO
             END DO
 # endif
-          ELSE                                               ! otherwise
+!
+!  OTHERWISE, time-step horizontal advection term.  Advective fluxes
+!  have units of Tunits m3/s.  The new tracer has units of m Tunits.
+!
+          ELSE
             DO j=Jstr,Jend
               DO i=Istr,Iend
                 cff=dt(ng)*pm(i,j)*pn(i,j)
@@ -926,7 +937,7 @@
 # endif
               END DO
             END DO
-          END IF
+          END IF HADV_STEPPING
         END DO K_LOOP
       END DO T_LOOP1
 !
@@ -934,12 +945,7 @@
 !  Time-step vertical advection term.
 !-----------------------------------------------------------------------
 !
-# ifdef OFFLINE_BIOLOGY
-      T_LOOP2 : DO ibt=1,NBT
-        itrc=idbio(ibt)
-# else
       T_LOOP2 : DO itrc=1,NT(ng)
-# endif
         IF (Vadvection(itrc,ng)%MPDATA) THEN
           JminT=JstrVm2
           JmaxT=Jendp2i
@@ -954,7 +960,7 @@
 !
 !  Build conservative parabolic splines for the vertical derivatives
 !  "FC" of the tracer.  Then, the interfacial "FC" values are
-!  converted to vertical advective flux.
+!  converted to vertical advective flux (Tunits m3/s).
 !
             DO i=Istr,Iend
 # ifdef NEUMANN
@@ -1000,7 +1006,7 @@
 !
           ELSE IF (Vadvection(itrc,ng)%AKIMA4) THEN
 !
-!  Fourth-order, Akima vertical advective flux.
+!  Fourth-order, Akima vertical advective flux (Tunits m3/s).
 !
             DO k=1,N(ng)-1
               DO i=Istr,Iend
@@ -1046,7 +1052,8 @@
 !
           ELSE IF (Vadvection(itrc,ng)%CENTERED2) THEN
 !
-!  Second-order, central differences vertical advective flux.
+!  Second-order, central differences vertical advective flux
+!  (Tunits m3/s).
 !
             DO k=1,N(ng)-1
               DO i=Istr,Iend
@@ -1070,7 +1077,8 @@
 !
           ELSE IF (Vadvection(itrc,ng)%MPDATA) THEN
 !
-!  First_order, upstream differences vertical advective flux.
+!  First_order, upstream differences vertical advective flux
+!  (Tunits m3/s).
 !
             DO i=IstrUm2,Iendp2i
               DO k=1,N(ng)-1
@@ -1084,18 +1092,19 @@
                 FC(i,k)=cff1*t(i,j,k  ,3,itrc)+                         &
      &                  cff2*t(i,j,k+1,3,itrc)
               END DO
-#  ifdef SED_MORPH
+# ifdef SED_MORPH
               FC(i,0)=W(i,j,0)*t(i,j,1,3,itrc)
-#  else
+# else
               FC(i,0)=0.0_r8
-#  endif
+# endif
               FC(i,N(ng))=0.0_r8
             END DO
+!
           ELSE IF (Vadvection(itrc,ng)%HSIMT) THEN
 !
 !  Third High-order Spatial Interpolation at the Middle Temporal level
 !  (HSIMT; Wu and Zhu, 2010) with a Total Variation Diminishing (TVD)
-!  limiter vertical advection flux.
+!  limiter vertical advection flux (Tunits m3/s).
 !
             DO i=Istr,Iend
               KaZ(0)=0.0_r8
@@ -1173,7 +1182,8 @@
           ELSE IF ((Vadvection(itrc,ng)%CENTERED4).or.                  &
      &             (Vadvection(itrc,ng)%SPLIT_U3)) THEN
 !
-!  Fourth-order, central differences vertical advective flux.
+!  Fourth-order, central differences vertical advective flux
+!  (Tunits m3/s).
 !
             cff1=0.5_r8
             cff2=7.0_r8/12.0_r8
@@ -1219,56 +1229,48 @@
             END DO
           END IF VADV_FLUX
 !
-!  Apply mass point sources (volume vertical influx), if any.
+!  If MPDATA and cell-centered point source (LwSrc), augment the
+!  intermediate tracer, Ta, with the tracer divergence. For other
+!  advection schemes LwSrc is applied after the vertical advection
+!  is completed (J. Wilkin).
 !
           IF (LwSrc(ng)) THEN
-            DO is=1,Nsrc(ng)
-              Isrc=SOURCES(ng)%Isrc(is)
-              Jsrc=SOURCES(ng)%Jsrc(is)
-              IF (LtracerSrc(itrc,ng)) THEN
-                IF ((Vadvection(itrc,ng)%MPDATA).or.                    &
-     &              (Vadvection(itrc,ng)%HSIMT)) THEN
-                  LapplySrc=(IstrUm2.le.Isrc).and.                      &
-     &                      (Isrc.le.Iendp2i).and.(j.eq.Jsrc)
-                ELSE
-                  LapplySrc=(IstrR.le.Isrc).and.                        &
-     &                      (Isrc.le.IendR).and.(j.eq.Jsrc)
-                END IF
-                IF (LapplySrc) THEN
-                  DO k=1,N(ng)-1
+            IF (Hadvection(itrc,ng)%MPDATA) THEN
+              DO is=1,Nsrc(ng)
+                Isrc=SOURCES(ng)%Isrc(is)
+                Jsrc=SOURCES(ng)%Jsrc(is)
+                IF (((Istr.le.Isrc).and.(Isrc.le.Iend+1)).and.          &
+     &               ((Jstr.le.Jsrc).and.(Jsrc.le.Jend+1)).and.         &
+     &               (j.eq.Jsrc)) THEN
+                  DO k=1,N(ng)
+                    cff=dt(ng)*pm(i,j)*pn(i,j)
+                    IF (LtracerSrc(itrc,ng)) THEN
 #  ifdef ONE_TRACER_SOURCE
-                    FC(Isrc,k)=FC(Isrc,k)+0.5_r8*                       &
-     &                      (SOURCES(ng)%Qsrc(is,k  )*                  &
-     &                       SOURCES(ng)%Tsrc(itrc)+                    &
-     &                       SOURCES(ng)%Qsrc(is,k+1)*                  &
-     &                       SOURCES(ng)%Tsrc(itrc) )
+                      cff3=SOURCES(ng)%Tsrc(itrc)
 #  elif defined TWO_D_TRACER_SOURCE
-                    FC(Isrc,k)=FC(Isrc,k)+0.5_r8*                       &
-     &                      (SOURCES(ng)%Qsrc(is,k  )*                  &
-     &                       SOURCES(ng)%Tsrc(is,itrc)+                 &
-     &                       SOURCES(ng)%Qsrc(is,k+1)*                  &
-     &                       SOURCES(ng)%Tsrc(is,itrc) )
+                      cff3=SOURCES(ng)%Tsrc(is,itrc)
 #  else
-                    FC(Isrc,k)=FC(Isrc,k)+0.5_r8*                       &
-     &                         (SOURCES(ng)%Qsrc(is,k  )*               &
-     &                          SOURCES(ng)%Tsrc(is,k  ,itrc)+          &
-     &                          SOURCES(ng)%Qsrc(is,k+1)*               &
-     &                          SOURCES(ng)%Tsrc(is,k+1,itrc))
+                      cff3=SOURCES(ng)%Tsrc(is,k,itrc)
 #  endif
+                    ELSE
+                      cff3=t(Isrc,Jsrc,k,3,itrc)
+                    END IF
+                    Ta(Isrc,Jsrc,k,itrc)=Ta(Isrc,Jsrc,k,itrc)+          &
+     &                                   cff*SOURCES(ng)%Qsrc(is,k)*    &
+     &                                   cff3
                   END DO
                 END IF
-              END IF
-            END DO
+              END DO
+            END IF
           END IF
 !
 !  If MPDATA, time-step vertical advection for intermediate diffusive
-!  tracer, Ta (Tunits). Otherwise, time-step vertical advection term
-!  (m Tunits, except parabolic splines has Tunits).
+!  tracer, Ta (Tunits).
 # ifdef DIAGNOSTICS_TS
 !  Convert units of tracer diagnostic terms to Tunits.
 # endif
 !
-          IF (Vadvection(itrc,ng)%MPDATA) THEN
+          VADV_STEPPING : IF (Vadvection(itrc,ng)%MPDATA) THEN
             DO i=IstrUm2,Iendp2i
               CF(i,0)=dt(ng)*pm(i,j)*pn(i,j)
             END DO
@@ -1281,7 +1283,14 @@
 # endif
               END DO
             END DO
-          ELSE                                               ! otherwise
+!
+!  OTHERWISE, time-step vertical advection term (m Tunits, or Tunits if
+!  conservative, parabolic splines diffusion).
+# ifdef DIAGNOSTICS_TS
+!  Convert units of tracer diagnostic terms to Tunits.
+# endif
+!
+          ELSE
             DO i=Istr,Iend
               CF(i,0)=dt(ng)*pm(i,j)*pn(i,j)
             END DO
@@ -1301,7 +1310,7 @@
 # endif
               END DO
             END DO
-          END IF
+          END IF VADV_STEPPING
         END DO J_LOOP1
       END DO T_LOOP2
 !
@@ -1310,12 +1319,7 @@
 !  using MPDATA recursive method.  Notice that pipelined J-loop ended.
 !-----------------------------------------------------------------------
 !
-# ifdef OFFLINE_BIOLOGY
-      T_LOOP3 : DO ibt=1,NBT
-        itrc=idbio(ibt)
-# else
       T_LOOP3 : DO itrc=1,NT(ng)
-# endif
         MPDATA : IF ((Hadvection(itrc,ng)%MPDATA).and.                  &
      &               (Vadvection(itrc,ng)%MPDATA)) THEN
           CALL mpdata_adiff_tile (ng, tile,                             &
@@ -1367,14 +1371,14 @@
                 cff2=cff*(FE(i,j+1)-FE(i,j))
                 cff3=cff1+cff2
                 t(i,j,k,nnew,itrc)=Ta(i,j,k,itrc)*Hz(i,j,k)-cff3
-#  ifdef DIAGNOSTICS_TS
+# ifdef DIAGNOSTICS_TS
                 DiaTwrk(i,j,k,itrc,iTxadv)=DiaTwrk(i,j,k,itrc,iTxadv)-  &
      &                                     cff1
                 DiaTwrk(i,j,k,itrc,iTyadv)=DiaTwrk(i,j,k,itrc,iTyadv)-  &
      &                                     cff2
                 DiaTwrk(i,j,k,itrc,iThadv)=DiaTwrk(i,j,k,itrc,iThadv)-  &
      &                                     cff3
-#  endif
+# endif
               END DO
             END DO
           END DO
@@ -1396,9 +1400,9 @@
             END DO
 !
 !  Time-step corrected vertical advection (Tunits).
-#  ifdef DIAGNOSTICS_TS
+# ifdef DIAGNOSTICS_TS
 !  Convert units of tracer diagnostic terms to Tunits.
-#  endif
+# endif
 !
             DO i=Istr,Iend
               CF(i,0)=dt(ng)*pm(i,j)*pn(i,j)
@@ -1407,14 +1411,14 @@
               DO i=Istr,Iend
                 cff1=CF(i,0)*(FC(i,k)-FC(i,k-1))
                 t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)-cff1
-#  ifdef DIAGNOSTICS_TS
+# ifdef DIAGNOSTICS_TS
                 DiaTwrk(i,j,k,itrc,iTvadv)=Dvadv(i,j,k,itrc)-           &
      &                                     cff1
                 DO idiag=1,NDT
                   DiaTwrk(i,j,k,itrc,idiag)=DiaTwrk(i,j,k,itrc,idiag)*  &
      &                                      oHz(i,j,k)
                 END DO
-#  endif
+# endif
               END DO
             END DO
           END DO
@@ -1422,14 +1426,55 @@
       END DO T_LOOP3
 !
 !-----------------------------------------------------------------------
+!  Add tracer divergence due to cell-centered (LwSrc) point sources.
+!-----------------------------------------------------------------------
+!
+!  When LTracerSrc is .true. the inflowing concentration is Tsrc.
+!  When LtracerSrc is .false. we add tracer mass to compensate for the
+!  added volume to keep the receiving cell concentration unchanged.
+!  J. Levin (Jupiter Intelligence Inc.) and J. Wilkin
+!
+      IF (LwSrc(ng)) THEN
+        DO itrc=1,NT(ng)
+          IF (.not.((Hadvection(itrc,ng)%MPDATA).and.                   &
+     &              (Vadvection(itrc,ng)%MPDATA))) THEN
+            DO is=1,Nsrc(ng)
+              Isrc=SOURCES(ng)%Isrc(is)
+              Jsrc=SOURCES(ng)%Jsrc(is)
+              IF (((Istr.le.Isrc).and.(Isrc.le.Iend+1)).and.            &
+     &            ((Jstr.le.Jsrc).and.(Jsrc.le.Jend+1))) THEN
+                DO k=1,N(ng)
+                  cff=dt(ng)*pm(i,j)*pn(i,j)
+# ifdef SPLINES_VDIFF
+                  cff=cff*oHz(Isrc,Jsrc,k)
+# endif
+                  IF (LtracerSrc(itrc,ng)) THEN
+# ifdef ONE_TRACER_SOURCE
+                    cff3=SOURCES(ng)%Tsrc(itrc)
+# elif defined TWO_D_TRACER_SOURCE
+                    cff3=SOURCES(ng)%Tsrc(is,itrc)
+# else
+                    cff3=SOURCES(ng)%Tsrc(is,k,itrc)
+# endif
+                  ELSE
+                    cff3=t(Isrc,Jsrc,k,3,itrc)
+                  END IF
+                  t(Isrc,Jsrc,k,nnew,itrc)=t(Isrc,Jsrc,k,nnew,itrc)+    &
+     &                                     cff*SOURCES(ng)%Qsrc(is,k)*  &
+     &                                     cff3
+                END DO
+              END IF
+            END DO
+          END IF
+        END DO
+      END IF
+!
+!-----------------------------------------------------------------------
 !  Time-step vertical diffusion term.
 !-----------------------------------------------------------------------
 !
       J_LOOP2 : DO j=Jstr,Jend                  ! start pipelined J-loop
-#  ifdef OFFLINE_BIOLOGY
-        DO ibt=1,NBT
-          itrc=idbio(ibt)
-#  elif defined TS_VAR
+#  ifdef TS_VAR
         DO itrc=1,NAT
 #  else
         DO itrc=1,NT(ng)
@@ -1641,18 +1686,13 @@
 !  to tracer data and apply Land/Sea mask.
 !-----------------------------------------------------------------------
 !
-      ic=0
-#ifdef OFFLINE_BIOLOGY
-      DO ibt=1,NBT
-        itrc=idbio(ibt)
-#else
 !  Initialize tracer counter index. The "tclm" array is only allocated
 !  to the NTCLM fields that need to be processed. This is done to
 !  reduce memory.
 !
+      ic=0
 !
       DO itrc=1,NT(ng)
-#endif
 !
 !  Set compact reduced memory tracer index for nudging coefficients and
 !  climatology arrays.
@@ -1712,12 +1752,6 @@
           END DO
         END DO
 # endif
-
-#  if (defined ICE_MODEL && defined ICE_THERMO) || defined CICE_MODEL
-        IF (itrc == isalt) THEN
-          CALL ice_frazil(ng, tile)
-        END IF
-#  endif
 !
 !  Apply periodic boundary conditions.
 !
@@ -1732,9 +1766,9 @@
 !  Compute tracer variance.
 !
       itrc=inert(1)
-      DO k=1,N(ng)
-        DO j=JstrR,JendR
-          DO i=IstrR,IendR
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          DO k=1,N(ng)
 #  if !defined SPLINES_VDIFF || defined TS_MPDATA
             t(i,j,k,nnew,itrc)=t(i,j,k,nnew,itrc)*oHz(i,j,k)
             t(i,j,k,nnew,itrc+1)=t(i,j,k,nnew,itrc+1)*oHz(i,j,k)
@@ -1742,6 +1776,12 @@
             t(i,j,k,nnew,itrc+2)=(t(i,j,k,nnew,itrc+1)-                 &
      &                           t(i,j,k,nnew,itrc)*t(i,j,k,nnew,itrc))/&
      &                           dt(ng)
+          END DO
+          DO k=1,N(ng)-1
+            cff=(t(i,j,k+1,nnew,isalt)-t(i,j,k,nnew,isalt))/            &
+     &                         (z_r(i,j,k+1)-z_r(i,j,k))
+            AKr(i,j,k)=2.0_r8*cff*cff*(Akt(i,j,k,itemp)-                &
+     &                                 Akt_bak(itemp,ng))
           END DO
         END DO
       END DO

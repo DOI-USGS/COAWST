@@ -52,7 +52,7 @@ if [ -n "$print_usage" ] ; then
   echo '-help print this message'
   echo '*****************************************************************************'
   echo ' '
-  exit 
+  exit
 fi
 
 if `pwd | grep ' ' > /dev/null ` ; then
@@ -125,7 +125,7 @@ do
     else
       echo "$ac_t""found $ac_prog_where ($PERL)" 1>&1
     fi
-    PERLFULLPATH=$ac_prog_where  
+    PERLFULLPATH=$ac_prog_where
   else
     if test -z "$ac_echo_test" -a 1 = 1 ; then
       echo "$ac_t""no"
@@ -137,16 +137,16 @@ do
 done
 
 if test -z "$PERL" ; then
-    # We have to set this outside of the loop lest the first failure in 
+    # We have to set this outside of the loop lest the first failure in
     # PROGRAM_CHECK set the value (which then terminates the effect of the
-    # loop, since autoconf macros only set values that are null, they 
+    # loop, since autoconf macros only set values that are null, they
     # don't override them
     PERL=""
 fi
 
 if test -n "$PERL" ; then
     PERL="$PERL"
-    
+
     perlversion=`$PERL -v | grep 'This is perl' | \
        sed -e 's/^.*v[a-z ]*\([0-9]\).*$/\1/'`
 
@@ -158,7 +158,7 @@ if test -n "$PERL" ; then
         echo "Configure believes that $PERL is version $perlversion ."
         PERL=""
     fi
-    
+
 fi
 
 if  test -z "$NETCDF"  ; then
@@ -280,7 +280,7 @@ if [ -n "$NETCDF4" ] ; then
     fi
     for P in "$HDF5_PATH" "$ZLIB_PATH" "$GPFS_PATH" "$CURL_PATH"
     do
-      if [ "$P" != '' -a "$P" != "DEFAULT" ] ; then 
+      if [ "$P" != '' -a "$P" != "DEFAULT" ] ; then
         if [ "${P#${P%?}}" = "/" ] ; then
           P=`echo $P | sed 's/\/$//'`
         fi
@@ -308,7 +308,7 @@ if [ -n "$NETCDF4" ] ; then
         NETCDF=${NETCDF%/*}/$lastword
       fi
       buff="`ls -l $NETCDF | sed 's/  */ /g'`"
-    done 
+    done
     if [ "`echo $NETCDF | grep '..'`"  != "" ] ; then
       buff="`echo $NETCDF | sed -e 's/^\///' -e 's/\// /g'`"
       n=`echo $buff | wc -w`
@@ -316,7 +316,7 @@ if [ -n "$NETCDF4" ] ; then
       while [ $i -le $n ]
       do
         if [ "`echo $buff | cut -d' ' -f$i`" = ".." ] ; then
-          m=$i 
+          m=$i
         fi
         i=$(( $i + 1 ))
       done
@@ -375,12 +375,12 @@ else
       unset WRFPLUS_DIR
    fi
 fi
-# Users who are cross-compiling can set environment variable 
-# $WRF_OS to override the value normally obtained from `uname`.  
-# If $WRF_OS is set, then $WRF_MACH can also be set to override 
-# the value normally obtained from `uname -m`.  If $WRF_OS is 
-# set and $WRF_MACH is not set, then $WRF_MACH defaults to "ARCH".  
-# If $WRF_OS is not set then $WRF_MACH is ignored.  
+# Users who are cross-compiling can set environment variable
+# $WRF_OS to override the value normally obtained from `uname`.
+# If $WRF_OS is set, then $WRF_MACH can also be set to override
+# the value normally obtained from `uname -m`.  If $WRF_OS is
+# set and $WRF_MACH is not set, then $WRF_MACH defaults to "ARCH".
+# If $WRF_OS is not set then $WRF_MACH is ignored.
 if [ -n "$WRF_OS" ] ; then
   echo "${0}:  WRF operating system set to \"${WRF_OS}\" via environment variable \$WRF_OS"
   os=$WRF_OS
@@ -433,7 +433,7 @@ fi
 # the "!" is removed by Config.pl
 if [ -n "$WRF_HYDRO" ] ; then
   if [ $WRF_HYDRO = 1 ] ; then
-      echo building WRF-HYDRO 
+      echo building WRF-HYDRO
       compileflags="${compileflags}!-DWRF_HYDRO"
       echo $compileflags
   fi
@@ -509,11 +509,11 @@ if [ -n "$WRF_CHEM" ] ; then
     echo building WRF with chemistry option
     compileflags="${compileflags}!-DWRF_CHEM!-DBUILD_CHEM=1"
     if [ -n "$WRF_KPP" ] ; then
-      if [ $WRF_KPP = 1 ] ; then    
+      if [ $WRF_KPP = 1 ] ; then
         echo building WRF with KPP chemistry option
         compileflags="${compileflags}!-DWRF_KPP"
       fi
-    fi 
+    fi
   else
     compileflags="${compileflags} "
   fi
@@ -610,7 +610,7 @@ if test -f configure.wrf ; then
   if [ "$os" = "Darwin" ] ; then
     # fseeko64 does not exist under Darwin fseeko does. Remove the 0 length executable
     # file that might get generated anyway, even though the compiler complains about missing reference.
-    /bin/rm -f tools/fseeko64_test 
+    /bin/rm -f tools/fseeko64_test
   fi
   if test -x tools/fseeko64_test ; then
     ( tools/fseeko64_test 2> /dev/null ) 1> /dev/null
@@ -655,7 +655,7 @@ if test -n "$NETCDF" ; then
   configure_aaaa=$? ; export configure_aaaa
   if [ $configure_aaaa -a -z "$WRFIO_NCD_NO_LARGE_FILE_SUPPORT" ] ; then
     echo "NetCDF users note:"
-    echo " This installation of NetCDF supports large file support.  To DISABLE large file" 
+    echo " This installation of NetCDF supports large file support.  To DISABLE large file"
     echo " support in NetCDF, set the environment variable WRFIO_NCD_NO_LARGE_FILE_SUPPORT"
     echo " to 1 and run configure again. Set to any other value to avoid this message."
   fi
@@ -680,7 +680,7 @@ if [ -n "$WRFPLUS" ] ; then
   fi
 fi
 
-#Checking cross-compiling capability for some particular environment 
+#Checking cross-compiling capability for some particular environment
 #on Linux and Mac box
 
 if [ $os = "Linux" -o $os = "Darwin" ]; then
@@ -695,7 +695,7 @@ if [ $os = "Linux" -o $os = "Darwin" ]; then
 
   foo=foo_$$
 
-cat > ${foo}.c <<EOF 
+cat > ${foo}.c <<EOF
  int main(int argc, char ** argv)
  {
      return (0);
@@ -743,7 +743,7 @@ EOF
     netcdf_arch="`file ${foo}.o | grep -o -E '[0-9]{2}-bit|i386'`"
     rm ${foo}.o
 
-    $SFC -o ${foo} ${foo}.f > /dev/null 2>&1 
+    $SFC -o ${foo} ${foo}.f > /dev/null 2>&1
     SFC_arch="`file ${foo} | grep -o -E '[0-9]{2}-bit|i386'`"
     rm ${foo} ${foo}.o 2> /dev/null
 
@@ -761,7 +761,7 @@ EOF
     if [ "$SFC_arch" = "" -o "$SCC_arch" = "" -o "$CCOMP_arch" = "" ]; then
       echo "  One of compilers testing failed!"
       echo "  Please check your compiler"
-      echo 
+      echo
       rm -f ${foo} ${foo}.[cfo] 2> /dev/null
       exit
     else
@@ -872,14 +872,14 @@ EOF
             echo Please check your NetCDF lib and compiler
         else
           echo -m64 is appended to configure.wrf
-          echo It will be forced to build in 64-bit. 
+          echo It will be forced to build in 64-bit.
           echo If you don\'t want 64-bit binaries, please use 32-bit NetCDF, and re-run the configure script.
         fi
       fi
       ;;
     esac
 
-    if [ -e configure.wrf.edit ]; then 
+    if [ -e configure.wrf.edit ]; then
       mv configure.wrf.edit configure.wrf
     fi
 
@@ -998,6 +998,26 @@ if [ $retval -ne 0 ] ; then
   echo "*****************************************************************************"
 fi
 
+# testing for location of rpc/types.h file, used in landuse
+# ARCH_LOCAL is not used when building landread.c
+
+if [ -f /usr/include/rpc/types.h ] ; then
+  sed -e '/^CFLAGS_LOCAL/s/$/ -DRPC_TYPES=1/' configure.wrf > configure.wrf.edit
+  mv configure.wrf.edit configure.wrf
+  echo standard location of RPC
+elif [ -f /usr/include/tirpc/rpc/types.h ] ; then
+  sed -e '/^CFLAGS_LOCAL/s/$/ -DRPC_TYPES=2/' configure.wrf > configure.wrf.edit
+  mv configure.wrf.edit configure.wrf
+  echo newer location of RPC
+else
+  echo "************************** W A R N I N G ************************************"
+  echo " "
+  echo "The moving nest option is not available due to missing rpc/types.h file."
+  echo "Copy landread.c.dist to landread.c in share directory to bypass compile error."
+  echo " "
+  echo "*****************************************************************************"
+fi
+
 # testing for netcdf4 IO features
 if [ -n "$NETCDF4" ] ; then
   if [ $NETCDF4 -eq 1 ] ; then
@@ -1019,7 +1039,7 @@ if [ -n "$NETCDF4" ] ; then
       echo "OR set NETCDF_classic variable                                               "
       echo "   bash/ksh : export NETCDF_classic=1
       echo "        csh : setenv NETCDF_classic 1
-      echo 
+      echo
       echo "Then re-run this configure script                                            "
       echo
       echo "!!! configure.wrf has been REMOVED !!!"

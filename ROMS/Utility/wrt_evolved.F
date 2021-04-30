@@ -1,11 +1,11 @@
 #include "cppdefs.h"
 
-#if (defined IS4DVAR && defined EVOLVED_LCZ) || defined LCZ_FINAL
+#if (defined I4DVAR && defined EVOLVED_LCZ) || defined LCZ_FINAL
       SUBROUTINE wrt_evolved (ng, kout, nout)
 !
-!svn $Id: wrt_evolved.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: wrt_evolved.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -58,9 +58,13 @@
 # ifdef SOLVE3D
       integer :: itrc, k
 # endif
-      real(r8) :: scale
 !
-      SourceFile=__FILE__
+      real(dp) :: scale
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
+      SourceFile=MyFile
 !
       LBi=LBOUND(GRID(ng)%h,DIM=1)
       UBi=UBOUND(GRID(ng)%h,DIM=1)
@@ -75,8 +79,7 @@
 !  Write out evolved Lanczos vectors.
 !-----------------------------------------------------------------------
 !
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Set grid type factor to write full (gfactor=1) fields or water
 !  points (gfactor=-1) fields only.
@@ -100,12 +103,11 @@
      &                      (/LZE(ng)%Rindex/), (/1/),                  &
      &                      ncid = LZE(ng)%ncid,                        &
      &                      varid = LZE(ng)%Vid(idtime))
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Write out free-surface.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*r2dvar
       status=nf_fwrite2d(ng, iADM, LZE(ng)%ncid, LZE(ng)%Vid(idFsur),   &
      &                   LZE(ng)%Rindex, gtype,                         &
@@ -114,8 +116,7 @@
      &                   GRID(ng) % rmask,                              &
 # endif
      &                   OCEAN(ng)% tl_zeta(:,:,kout))
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idFsur)), LZE(ng)%Rindex
         END IF
@@ -129,7 +130,7 @@
 !  Write out free-surface open boundaries.
 !
       IF (ANY(Lobc(:,isFsur,ng))) THEN
-        scale=1.0_r8
+        scale=1.0_dp
         status=nf_fwrite2d_bry (ng, iADM, LZE(ng)%name, LZE(ng)%ncid,   &
      &                          Vname(1,idSbry(isFsur)),                &
      &                          LZE(ng)%Vid(idSbry(isFsur)),            &
@@ -137,8 +138,7 @@
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % tl_zeta_obc(LBij:,:,:,   &
      &                                                     kout))
-        IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isFsur))),            &
      &                        LZE(ng)%Rindex
@@ -152,7 +152,7 @@
 !
 !  Write out 2D U-momentum component.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*u2dvar
       status=nf_fwrite2d(ng, iADM, LZE(ng)%ncid, LZE(ng)%Vid(idUbar),   &
      &                   LZE(ng)%Rindex, gtype,                         &
@@ -161,8 +161,7 @@
      &                   GRID(ng) % umask_full,                         &
 # endif
      &                   OCEAN(ng) % tl_ubar(:,:,kout))
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUbar)), LZE(ng)%Rindex
         END IF
@@ -176,7 +175,7 @@
 !  Write out 2D U-momentum component open boundaries.
 !
       IF (ANY(Lobc(:,isUbar,ng))) THEN
-        scale=1.0_r8
+        scale=1.0_dp
         status=nf_fwrite2d_bry (ng, iADM, LZE(ng)%name, LZE(ng)%ncid,   &
      &                          Vname(1,idSbry(isUbar)),                &
      &                          LZE(ng)%Vid(idSbry(isUbar)),            &
@@ -184,8 +183,7 @@
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % tl_ubar_obc(LBij:,:,:,   &
      &                                                     kout))
-        IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isUbar))),            &
      &                        LZE(ng)%Rindex
@@ -199,7 +197,7 @@
 !
 !  Write out 2D V-momentum component.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*v2dvar
       status=nf_fwrite2d(ng, iADM, LZE(ng)%ncid, LZE(ng)%Vid(idVbar),   &
      &                   LZE(ng)%Rindex, gtype,                         &
@@ -208,8 +206,7 @@
      &                   GRID(ng) % vmask_full,                         &
 # endif
      &                   OCEAN(ng) % tl_vbar(:,:,kout))
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVbar)), LZE(ng)%Rindex
         END IF
@@ -223,7 +220,7 @@
 !  Write out 2D V-momentum component open boundaries.
 !
       IF (ANY(Lobc(:,isVbar,ng))) THEN
-        scale=1.0_r8
+        scale=1.0_dp
         status=nf_fwrite2d_bry (ng, iADM, LZE(ng)%name, LZE(ng)%ncid,   &
      &                          Vname(1,idSbry(isVbar)),                &
      &                          LZE(ng)%Vid(idSbry(isVbar)),            &
@@ -231,8 +228,7 @@
      &                          LBij, UBij, Nbrec(ng), scale,           &
      &                          BOUNDARY(ng) % tl_vbar_obc(LBij:,:,:,   &
      &                                                     kout))
-        IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isVbar))),            &
      &                        LZE(ng)%Rindex
@@ -248,7 +244,7 @@
 !
 !  Write out 3D U-momentum component.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*u3dvar
       status=nf_fwrite3d(ng, iADM, LZE(ng)%ncid, LZE(ng)%Vid(idUvel),   &
      &                   LZE(ng)%Rindex, gtype,                         &
@@ -257,8 +253,7 @@
      &                   GRID(ng) % umask_full,                         &
 #  endif
      &                   OCEAN(ng) % tl_u(:,:,:,nout))
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUvel)), LZE(ng)%Rindex
         END IF
@@ -272,7 +267,7 @@
 !  Write out 3D U-momentum component open boundaries.
 !
       IF (ANY(Lobc(:,isUvel,ng))) THEN
-        scale=1.0_r8
+        scale=1.0_dp
         status=nf_fwrite3d_bry (ng, iADM, LZE(ng)%name, LZE(ng)%ncid,   &
      &                          Vname(1,idSbry(isUvel)),                &
      &                          LZE(ng)%Vid(idSbry(isUvel)),            &
@@ -280,8 +275,7 @@
      &                          LBij, UBij, 1, N(ng), Nbrec(ng), scale, &
      &                          BOUNDARY(ng) % tl_u_obc(LBij:,:,:,:,    &
      &                                                  nout))
-        IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isUvel))),            &
      &                        LZE(ng)%Rindex
@@ -295,7 +289,7 @@
 !
 !  Write out 3D V-momentum component.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*v3dvar
       status=nf_fwrite3d(ng, iADM, LZE(ng)%ncid, LZE(ng)%Vid(idVvel),   &
      &                   LZE(ng)%Rindex, gtype,                         &
@@ -304,8 +298,7 @@
      &                   GRID(ng) % vmask_full,                         &
 #  endif
      &                   OCEAN(ng) % tl_v(:,:,:,nout))
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVvel)), LZE(ng)%Rindex
         END IF
@@ -319,7 +312,7 @@
 !  Write out 3D V-momentum component open boundaries.
 !
       IF (ANY(Lobc(:,isVvel,ng))) THEN
-        scale=1.0_r8
+        scale=1.0_dp
         status=nf_fwrite3d_bry (ng, iADM, LZE(ng)%name, LZE(ng)%ncid,   &
      &                          Vname(1,idSbry(isVvel)),                &
      &                          LZE(ng)%Vid(idSbry(isVvel)),            &
@@ -327,8 +320,7 @@
      &                          LBij, UBij, 1, N(ng), Nbrec(ng), scale, &
      &                          BOUNDARY(ng) % tl_v_obc(LBij:,:,:,:,    &
      &                                                  nout))
-        IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbry(isVvel))),            &
      &                        LZE(ng)%Rindex
@@ -343,7 +335,7 @@
 !  Write out tracer type variables.
 !
       DO itrc=1,NT(ng)
-        scale=1.0_r8
+        scale=1.0_dp
         gtype=gfactor*r3dvar
         status=nf_fwrite3d(ng, iADM, LZE(ng)%ncid, LZE(ng)%Tid(itrc),   &
      &                     LZE(ng)%Rindex, gtype,                       &
@@ -352,8 +344,7 @@
      &                     GRID(ng) % rmask,                            &
 #  endif
      &                     OCEAN(ng) % tl_t(:,:,:,nout,itrc))
-        IF (FoundError(status, nf90_noerr, __LINE__,                    &
-     &                 __FILE__)) THEN
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idTvar(itrc))),              &
      &                        LZE(ng)%Rindex
@@ -370,7 +361,7 @@
 !
       DO itrc=1,NT(ng)
         IF (ANY(Lobc(:,isTvar(itrc),ng))) THEN
-          scale=1.0_r8
+          scale=1.0_dp
           status=nf_fwrite3d_bry (ng, iADM, LZE(ng)%name, LZE(ng)%ncid, &
      &                            Vname(1,idSbry(isTvar(itrc))),        &
      &                            LZE(ng)%Vid(idSbry(isTvar(itrc))),    &
@@ -379,8 +370,7 @@
      &                            scale,                                &
      &                            BOUNDARY(ng) % tl_t_obc(LBij:,:,:,:,  &
      &                                                    nout,itrc))
-          IF (FoundError(status, nf90_noerr, __LINE__,                  &
-     &                   __FILE__)) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idSbry(isTvar(itrc)))),    &
      &                          LZE(ng)%Rindex
@@ -401,7 +391,7 @@
 !
       DO itrc=1,NT(ng)
         IF (Lstflux(itrc,ng)) THEN
-          scale=1.0_r8
+          scale=1.0_dp
           gtype=gfactor*r3dvar
           status=nf_fwrite3d(ng, iADM, LZE(ng)%ncid,                    &
      &                       LZE(ng)%Vid(idTsur(itrc)),                 &
@@ -411,8 +401,7 @@
      &                       GRID(ng) % rmask,                          &
 #   endif
      &                       FORCES(ng) % tl_tflux(:,:,:,kout,itrc))
-          IF (FoundError(status, nf90_noerr, __LINE__,                  &
-     &                   __FILE__)) THEN
+          IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idTsur(itrc))),            &
      &                          LZE(ng)%Rindex
@@ -431,7 +420,7 @@
 !  own fixed time-dimension (of size Nfrec) to allow 4DVAR adjustments
 !  at other times in addition to initialization time.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*u3dvar
       status=nf_fwrite3d(ng, iADM, LZE(ng)%ncid, LZE(ng)%Vid(idUsms),   &
      &                   LZE(ng)%Rindex, gtype,                         &
@@ -440,8 +429,7 @@
      &                   GRID(ng) % umask_full,                         &
 #  endif
      &                   FORCES(ng) % tl_ustr(:,:,:,kout))
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idUsms)), LZE(ng)%Rindex
         END IF
@@ -452,7 +440,7 @@
 !
 !  Write out surface V-momentum stress.
 !
-      scale=1.0_r8
+      scale=1.0_dp
       gtype=gfactor*v3dvar
       status=nf_fwrite3d(ng, iADM, LZE(ng)%ncid, LZE(ng)%Vid(idVsms),   &
      &                   LZE(ng)%Rindex, gtype,                         &
@@ -461,8 +449,7 @@
      &                   GRID(ng) % vmask_full,                         &
 #  endif
      &                   FORCES(ng) % tl_vstr(:,:,:,kout))
-      IF (FoundError(status, nf90_noerr, __LINE__,                      &
-     &               __FILE__)) THEN
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
         IF (Master) THEN
           WRITE (stdout,10) TRIM(Vname(1,idVsms)), LZE(ng)%Rindex
         END IF
@@ -478,8 +465,7 @@
 !-----------------------------------------------------------------------
 !
       CALL netcdf_sync (ng, iADM, LZE(ng)%name, LZE(ng)%ncid)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
 # ifdef SOLVE3D
 #  ifdef NESTING
@@ -496,20 +482,20 @@
 # endif
 !
   10  FORMAT (/,' WRT_EVOLVED - error while writing variable: ',a,/,    &
-     &        15x,'into evolved LCZ NetCDF file for time record: ',i4)
+     &        15x,'into evolved LCZ NetCDF file for time record: ',i0)
 # ifdef SOLVE3D
   20  FORMAT (6x,'WRT_EVOLVED - wrote evolved LCZ',t39,                 &
 #  ifdef NESTING
-     &        'fields (Index=',i1,',',i1,') in record = ',i7.7,t92,i2.2)
+     &        'fields (Index=',i1,',',i1,') in record = ',i0,t92,i2.2)
 #  else
-     &        'fields (Index=',i1,',',i1,') in record = ',i7.7)
+     &        'fields (Index=',i1,',',i1,') in record = ',i0)
 #  endif
 # else
   20  FORMAT (6x,'WRT_EVOLVED - wrote evolved LCS',t39,                 &
 #  ifdef NESTING
-     &        'fields (Index=',i1,')   in record = ',i7.7,t92,i2.2)
+     &        'fields (Index=',i1,')   in record = ',i0,t92,i2.2)
 #  else
-     &        'fields (Index=',i1,')   in record = ',i7.7)
+     &        'fields (Index=',i1,')   in record = ',i0)
 #  endif
 # endif
 

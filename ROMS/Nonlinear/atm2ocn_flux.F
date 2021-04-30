@@ -49,16 +49,14 @@
      &                        GRID(ng) % vmask,                         &
 # endif
 # ifdef EMINUSP
-     &                        FORCES(ng) % EminusP,                     &
      &                        FORCES(ng) % evap,                        &
 # endif
      &                        FORCES(ng) % rain,                        &
      &                        FORCES(ng) % lhflx,                       &
      &                        FORCES(ng) % lrflx,                       &
      &                        FORCES(ng) % shflx,                       &
-     &                        FORCES(ng) % snhflx,                      &
+     &                        FORCES(ng) % stflux,                      &
      &                        FORCES(ng) % srflx,                       &
-     &                        FORCES(ng) % stflx,                       &
      &                        FORCES(ng) % sustr,                       &
      &                        FORCES(ng) % svstr,                       &
      &                        FORCES(ng) % Taux,                        &
@@ -77,11 +75,11 @@
      &                              rmask, umask, vmask,                &
 # endif
 # ifdef EMINUSP
-     &                              EminusP, evap,                      &
+     &                              evap,                               &
 # endif
      &                              rain, lhflx,                        &
-     &                              lrflx, shflx, snhflx,               &
-     &                              srflx, stflx,                       &
+     &                              lrflx, shflx, stflux,               &
+     &                              srflx,                              &
      &                              sustr, svstr,                       &
      &                              Taux, Tauy)
 !***********************************************************************
@@ -107,16 +105,14 @@
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 #  endif
 #  ifdef EMINUSP
-      real(r8), intent(out) :: EminusP(LBi:,LBj:)
       real(r8), intent(inout) :: evap(LBi:,LBj:)
 #  endif
       real(r8), intent(inout) :: rain(LBi:,LBj:)
       real(r8), intent(inout) :: lhflx(LBi:,LBj:)
       real(r8), intent(inout) :: lrflx(LBi:,LBj:)
       real(r8), intent(inout) :: shflx(LBi:,LBj:)
-      real(r8), intent(inout) :: snhflx(LBi:,LBj:)
+      real(r8), intent(inout) :: stflux(LBi:,LBj:,:)
       real(r8), intent(inout) :: srflx(LBi:,LBj:)
-      real(r8), intent(inout) :: stflx(LBi:,LBj:,:)
       real(r8), intent(inout) :: sustr(LBi:,LBj:)
       real(r8), intent(inout) :: svstr(LBi:,LBj:)
       real(r8), intent(in) :: Taux(LBi:,LBj:)
@@ -128,16 +124,14 @@
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 #  endif
 #  ifdef EMINUSP
-      real(r8), intent(out) :: EminusP(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: evap(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(inout) :: rain(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: lhflx(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: lrflx(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: shflx(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: snhflx(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: stflux(LBi:UBi,LBj:UBj,NT(ng))
       real(r8), intent(inout) :: srflx(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: stflx(LBi:UBi,LBj:UBj,NT(ng))
       real(r8), intent(inout) :: sustr(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: svstr(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: Taux(LBi:UBi,LBj:UBj)
@@ -159,21 +153,18 @@
       cff=1.0_r8/rhow
       DO j=JstrR,JendR
         DO i=IstrR,IendR
-          snhflx(i,j)=(srflx(i,j)+lrflx(i,j)+                           &
-     &                 lhflx(i,j)+shflx(i,j))
+          stflux(i,j,itemp)=(srflx(i,j)+lrflx(i,j)+                     &
+     &                       lhflx(i,j)+shflx(i,j))
 # ifdef EMINUSP
-          stflx(i,j,isalt)=cff*(evap(i,j)-rain(i,j))
+          stflux(i,j,isalt)=cff*(evap(i,j)-rain(i,j))
 # endif
 # ifdef MASKING
-          snhflx(i,j)=snhflx(i,j)*rmask(i,j)
+          stflux(i,j,itemp)=stflux(i,j,itemp)*rmask(i,j)
           rain(i,j)=rain(i,j)*rmask(i,j)
 #   ifdef EMINUSP
           evap(i,j)=evap(i,j)*rmask(i,j)
-          stflx(i,j,isalt)=stflx(i,j,isalt)*rmask(i,j)
+          stflux(i,j,isalt)=stflux(i,j,isalt)*rmask(i,j)
 #   endif
-# endif
-# ifdef EMINUSP
-          EminusP(i,j)=stflx(i,j,isalt)
 # endif
         END DO
       END DO
@@ -205,7 +196,7 @@
 !
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
-     &                          snhflx)
+     &                          stflux(:,:,itemp))
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          rain)
@@ -215,10 +206,7 @@
      &                          evap)
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
-     &                          EminusP)
-        CALL exchange_r2d_tile (ng, tile,                               &
-     &                          LBi, UBi, LBj, UBj,                     &
-     &                          stflx(:,:,isalt))
+     &                          stflux(:,:,isalt))
 # endif
         CALL exchange_u2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
@@ -232,7 +220,7 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    rain, snhflx)
+     &                    rain, stflux(:,:,itemp))
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
@@ -243,8 +231,7 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    evap, EminusP,                                &
-     &                    stflx(:,:,isalt))
+     &                    evap, stflux(:,:,isalt))
 #  endif
 # endif
       RETURN

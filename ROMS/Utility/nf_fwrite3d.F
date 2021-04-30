@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE nf_fwrite3d_mod
 !
-!svn $Id: nf_fwrite3d.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: nf_fwrite3d.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -29,11 +29,13 @@
 !     Ascl         Factor to scale field before writing (real).        !
 !     A            Field to write out (real).                          !
 !     SetFillVal   Logical switch to set fill value in land areas      !
-!                    (optional).                                       !
+!                    (OPTIONAL).                                       !
 !                                                                      !
 !  On Output:                                                          !
 !                                                                      !
 !     nf_fwrite3d  Error flag (integer).                               !
+!     MinValue     Minimum value (real, OPTIONAL).                     !
+!     MaxValue     Maximum value (real, OPTIONAL).                     !
 !                                                                      !
 #ifdef POSITIVE_ZERO
 !  Starting F95 zero values can be signed (-0 or +0) following the     !
@@ -49,7 +51,7 @@
 
       CONTAINS
 
-#if defined PARALLEL_OUT && defined DISTRIBUTE
+#if defined PARALLEL_IO && defined DISTRIBUTE
 !
 !***********************************************************************
       FUNCTION nf_fwrite3d (ng, model, ncid, ncvarid, tindex, gtype,    &
@@ -57,7 +59,7 @@
 # ifdef MASKING
      &                      Amask,                                      &
 # endif
-     &                      A,  SetFillVal)
+     &                      A,  SetFillVal, MinValue, MaxValue)
 !***********************************************************************
 !
       USE mod_param
@@ -74,12 +76,12 @@
 !  Imported variable declarations.
 !
       logical, intent(in), optional :: SetFillVal
-
+!
       integer, intent(in) :: ng, model, ncid, ncvarid, tindex, gtype
       integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk
-
-      real(r8), intent(in) :: Ascl
-
+!
+      real(dp), intent(in) :: Ascl
+!
 # ifdef ASSUMED_SHAPE
 #  ifdef MASKING
       real(r8), intent(in) :: Amask(LBi:,LBj:)
@@ -91,6 +93,8 @@
 #  endif
       real(r8), intent(in) :: A(LBi:UBi,LBj:UBj,LBk:UBk)
 # endif
+      real(r8), intent(out), optional :: MinValue
+      real(r8), intent(out), optional :: MaxValue
 !
 !  Local variable declarations.
 !
@@ -374,7 +378,7 @@
 # ifdef MASKING
      &                      Amask,                                      &
 # endif
-     &                      A,  SetFillVal)
+     &                      A, SetFillVal, MinValue, MaxValue)
 !***********************************************************************
 !
       USE mod_param
@@ -396,12 +400,12 @@
 !  Imported variable declarations.
 !
       logical, intent(in), optional :: SetFillVal
-
+!
       integer, intent(in) :: ng, model, ncid, ncvarid, tindex, gtype
       integer, intent(in) :: LBi, UBi, LBj, UBj, LBk, UBk
-
-      real(r8), intent(in) :: Ascl
-
+!
+      real(dp), intent(in) :: Ascl
+!
 # ifdef ASSUMED_SHAPE
 #  ifdef MASKING
       real(r8), intent(in) :: Amask(LBi:,LBj:)
@@ -413,6 +417,8 @@
 #  endif
       real(r8), intent(in) :: A(LBi:UBi,LBj:UBj,LBk:UBk)
 # endif
+      real(r8), intent(out), optional :: MinValue
+      real(r8), intent(out), optional :: MaxValue
 !
 !  Local variable declarations.
 !
@@ -492,6 +498,13 @@
       END IF
 # endif
 !
+!  If appropriate, initialize minimum and maximum processed values.
+!
+      IF (PRESENT(MinValue)) THEN
+        MinValue=spval
+        MaxValue=-spval
+      END IF
+!
 !  Initialize local array to avoid denormalized numbers. This
 !  facilitates processing and debugging.
 !
@@ -534,6 +547,21 @@
 #  endif
 !
 !-----------------------------------------------------------------------
+!  If applicable, compute output field minimum and maximum values.
+!-----------------------------------------------------------------------
+!
+        IF (PRESENT(MinValue)) THEN
+          IF (OutThread) THEN
+            DO i=1,Npts
+              IF (ABS(Awrk(i)).lt.spval) THEN
+                MinValue=MIN(MinValue,Awrk(i))
+                MaxValue=MAX(MaxValue,Awrk(i))
+              END IF
+            END DO
+          END IF
+        END IF
+!
+!-----------------------------------------------------------------------
 !  Write output buffer into NetCDF file.
 !-----------------------------------------------------------------------
 !
@@ -574,6 +602,7 @@
 #  ifdef INLINE_2DIO
       END DO
 #  endif
+
 # else
 !
 !-----------------------------------------------------------------------
@@ -618,6 +647,21 @@
           END DO
         END DO
 #  endif
+      END IF
+!
+!-----------------------------------------------------------------------
+!  If applicable, compute output field minimum and maximum values.
+!-----------------------------------------------------------------------
+!
+      IF (PRESENT(MinValue)) THEN
+        IF (OutThread) THEN
+          DO i=1,Npts
+            IF (ABS(Awrk(i)).lt.spval) THEN
+              MinValue=MIN(MinValue,Awrk(i))
+              MaxValue=MAX(MaxValue,Awrk(i))
+            END IF
+          END DO
+        END IF
       END IF
 !
 !-----------------------------------------------------------------------

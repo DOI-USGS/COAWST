@@ -1152,6 +1152,7 @@
 !  Set ramp coefficient.
 !
       ramp=1.0_r8
+!     ramp=MIN(time(ng)/60.0_r8,1.0_r8)
 !
 !  Receive fields from wave model.
  40         FORMAT (a36,1x,2(1pe14.6))

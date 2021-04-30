@@ -1,8 +1,8 @@
       SUBROUTINE ana_initial (ng, tile, model)
 !
-!! svn $Id: ana_initial.h 995 2020-01-10 04:01:28Z arango $
+!! svn $Id: ana_initial.h 1054 2021-03-06 19:47:12Z arango $
 !!======================================================================
-!! Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!! Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !!   Licensed under a MIT/X style license                              !
 !!   See License_ROMS.txt                                              !
 !=======================================================================
@@ -21,7 +21,12 @@
 ! Imported variable declarations.
 !
       integer, intent(in) :: ng, tile, model
-
+!
+! Local variable declarations.
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 #include "tile.h"
 !
       IF (model.eq.iNLM) THEN
@@ -86,9 +91,9 @@
 #else
       IF (Lanafile.and.(tile.eq.0)) THEN
 #endif
-        ANANAME(10)=__FILE__
+        ANANAME(10)=MyFile
       END IF
-
+!
       RETURN
       END SUBROUTINE ana_initial
 !
@@ -176,15 +181,15 @@
 !  Local variable declarations.
 !
       logical, save :: first = .TRUE.
-
+!
       integer :: Iless, Iplus, i, itrc, j, k
-
+!
 #ifdef CHANNEL
       real(r8), parameter :: guscale = 40.0E+03_r8
       real(r8), parameter :: u0 = 1.6_r8
 #endif
       real(r8) :: depth, dx, val1, val2, val3, val4, x, x0, y, y0
-
+!
       TYPE (T_STATS), save :: Stats(7)   ! ubar, vbar, zeta, u, v, t, s
 
 #include "set_bounds.h"
@@ -522,7 +527,9 @@
           DO i=IstrT,IendT
             t(i,j,k,1,itemp)=val2*EXP(z_r(i,j,k)/800.0_r8)*             &
      &                       (0.6_r8-0.4_r8*TANH(z_r(i,j,k)/800.0_r8))
+#  ifdef SALINITY
             t(i,j,k,1,isalt)=35.0_r8
+#  endif
           END DO
         END DO
       END DO
@@ -543,7 +550,9 @@
           DO i=IstrT,IendT
             val1=TANH(1.1_r8*z_r(i,j,k)+11.0_r8)
             t(i,j,k,1,itemp)=T0(ng)+6.25_r8*val1
+#  ifdef SALINITY
             t(i,j,k,1,isalt)=S0(ng)-0.75_r8*val1
+#  endif
           END DO
         END DO
       END DO
@@ -553,7 +562,7 @@
         DO j=JstrT,JendT
           DO i=IstrT,IendT
             val1=(yr(i,j)-y0)/guscale
-            val2=-0.5_r8*u0*guscale*GRID(ng)%f(i,j)*SQRT(pi)/            &
+            val2=-0.5_r8*u0*guscale*GRID(ng)%f(i,j)*SQRT(pi)/           &
      &           (Tcoef(ng)*g*h(i,j))
             val3=(val2*ERF(val1)+T0(ng))*(1.0_r8+z_r(i,j,k)/h(i,j))
             t(i,j,k,1,itemp)=val3
@@ -590,7 +599,9 @@
             t(i,j,k,1,itemp)=val1*EXP(z_r(i,j,k)/800.0_r8)*             &
      &                       (0.6_r8-0.4_r8*TANH(z_r(i,j,k)/800.0_r8))+ &
      &                       1.5_r8
+#  ifdef SALINITY
             t(i,j,k,1,isalt)=35.0_r8
+#  endif
           END DO
         END DO
       END DO
@@ -615,6 +626,7 @@
         DO j=JstrT,JendT
           DO i=IstrT,IendT
             t(i,j,k,1,itemp)=10.0_r8
+#  ifdef SALINITY
             IF (xr(i,j).le.30000.0_r8) then
               t(i,j,k,1,isalt)=30.0_r8
             ELSEIF (xr(i,j).le.80000.0_r8) then
@@ -622,6 +634,7 @@
             ELSE
               t(i,j,k,1,isalt)=0.0_r8
             END IF
+#  endif
           END DO
         END DO
       END DO
@@ -638,11 +651,15 @@
         DO j=JstrT,JendT
           DO i=IstrT,MIN((Lm(ng)+1)/2,IendT)
             t(i,j,k,1,itemp)=T0(ng)+5.0_r8
+#  ifdef SALINITY
             t(i,j,k,1,isalt)=0.0_r8
+#  endif
           END DO
           DO i=MAX((Lm(ng)+1)/2+1,IstrT),IendT
             t(i,j,k,1,itemp)=T0(ng)
+#  ifdef SALINITY
             t(i,j,k,1,isalt)=S0(ng)
+#  endif
           END DO
 !!        DO i=IstrT,IendT
 !!          IF (i.lt.Lm(ng)/2) THEN
@@ -670,7 +687,9 @@
         DO j=JstrT,JendT
           DO i=IstrT,IendT
             t(i,j,k,1,itemp)=10.0_r8
+#  ifdef SALINITY
             t(i,j,k,1,isalt)=30.0_r8
+#  endif
           END DO
         END DO
       END DO
@@ -680,17 +699,21 @@
           DO i=IstrT,IendT
             t(i,j,k,1,itemp)=MIN(13.0_r8,                               &
      &                           7.0_r8+0.2_r8*(z_r(i,j,k)+50.0_r8))
+#  ifdef SALINITY
             t(i,j,k,1,isalt)=35.0_r8
+#  endif
           END DO
         END DO
       END DO
-#  elif defined MIXED_LAYER
+# elif defined MIXED_LAYER
       DO k=1,N(ng)
         DO j=JstrT,JendT
           DO i=IstrT,IendT
             t(i,j,k,1,itemp)=10.0_r8+3.0_r8*(z_r(i,j,k)+h(i,j))/        &
      &                       h(i,j)
+#  ifdef SALINITY
             t(i,j,k,1,isalt)=S0(ng)
+#  endif
           END DO
         END DO
       END DO
@@ -708,6 +731,7 @@
      &                         (1.078215685912076E-03_r8+depth*         &
      &                         (3.240318053903974E-05_r8+               &
      &                          1.262826857690271E-07_r8*depth))))))
+#  ifdef SALINITY
               t(i,j,k,1,isalt)= 3.066489149193135E+01_r8-depth*         &
      &                         (1.476725262946735E-01_r8+depth*         &
      &                         (1.126455760313399E-01_r8+depth*         &
@@ -716,11 +740,14 @@
      &                         (6.604436696792939E-04_r8+depth*         &
      &                         (3.191792361954220E-05_r8+               &
      &                          6.177352634409320E-07_r8*depth))))))
+#  endif
             ELSE
                t(i,j,k,1,itemp)=14.6_r8+                                &
      &                          6.70_r8*TANH(1.1_r8*depth+15.9_r8)
+#  ifdef SALINITY
                t(i,j,k,1,isalt)=31.3_r8-                                &
      &                          0.55_r8*TANH(1.1_r8*depth+15.9_r8)
+#  endif
             END IF
           END DO
         END DO
@@ -739,7 +766,9 @@
         DO j=JstrT,JendT
           DO i=IstrT,IendT
             t(i,j,k,1,itemp)=T0(ng)+0.01_r8*REAL(k,r8)
+#  ifdef SALINITY
             t(i,j,k,1,isalt)=S0(ng)
+#  endif
           END DO
         END DO
       END DO
@@ -748,7 +777,9 @@
         DO j=JstrT,JendT
           DO i=IstrT,IendT
             t(i,j,k,1,itemp)=T0(ng)
+#  ifdef SALINITY
             t(i,j,k,1,isalt)=S0(ng)
+#  endif
           END DO
         END DO
       END DO
@@ -765,7 +796,9 @@
         DO j=JstrT,JendT
           DO i=IstrT,IendT
             t(i,j,k,1,itemp)=20.0_r8
+#  ifdef SALINITY
             t(i,j,k,1,isalt)=0.0_r8
+#  endif
           END DO
         END DO
       END DO
@@ -777,6 +810,7 @@
 !!          t(i,j,k,1,itemp)=T0(ng)+(z_r(i,j,k)+75.0_r8)/150.0_r8+
 !!   &                       4.0_r8*(1.0_r8+TANH((z_r(i,j,k)+35.0_r8)/
 !!   &                                           6.5_r8))
+#  ifdef SALINITY
 !!          t(i,j,k,1,isalt)=1.0E-04_r8*yr(i,j)-S0(ng)
             t(i,j,k,1,isalt)=S0(ng)
 !!          IF (j.lt.Mm(ng)/2) THEN
@@ -786,6 +820,7 @@
 !!          ELSE IF (j.gt.Mm(ng)/2) THEN
 !!            t(i,j,k,1,isalt)=1.0_r8
 !!          END IF
+#  endif
           END DO
         END DO
       END DO
@@ -828,7 +863,7 @@
   10  FORMAT (3x,' ANA_INITIAL - ',a,/,19x,                             &
      &        '(Grid = ',i2.2,', Min = ',1p,e15.8,0p,                   &
      &                         ' Max = ',1p,e15.8,0p,')')
-
+!
       RETURN
       END SUBROUTINE ana_NLMinitial_tile
 
@@ -942,6 +977,7 @@
         END DO
       END DO
 # endif
+!
       RETURN
       END SUBROUTINE ana_TLMinitial_tile
 #endif
@@ -1056,6 +1092,7 @@
         END DO
       END DO
 # endif
+!
       RETURN
       END SUBROUTINE ana_ADMinitial_tile
 #endif

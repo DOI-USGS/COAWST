@@ -1,4 +1,6 @@
+#include "swancpp.h"
 subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it )
+#if !defined SWAN_MODEL
 !
 !   --|-----------------------------------------------------------|--
 !     | Delft University of Technology                            |
@@ -1437,4 +1439,5 @@ subroutine SwanCompUnstruc ( ac2, ac1, compda, spcsig, spcdir, xytst, cross, it 
  151 format (i4, t41, 'iteration')
  152 format (a , t41, 'date-time')
     !
+#endif
 end subroutine SwanCompUnstruc

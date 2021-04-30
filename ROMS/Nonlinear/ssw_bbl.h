@@ -5,9 +5,9 @@
 
       SUBROUTINE bblm (ng, tile)
 !
-!svn $Id: ssw_bbl.h 995 2020-01-10 04:01:28Z arango $
+!svn $Id: ssw_bbl.h 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group        Chris Sherwood   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group        Chris Sherwood   !
 !    Licensed under a MIT/X style license               Rich Signell   !
 !    See License_ROMS.txt                             John C. Warner   !
 !=======================================================================
@@ -39,10 +39,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 #include "tile.h"
 !
 #ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 37, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 37, __LINE__, MyFile)
 #endif
       CALL bblm_tile (ng, tile,                                         &
      &                LBi, UBi, LBj, UBj,                               &
@@ -99,8 +102,9 @@
      &                FORCES(ng) % bustr,                               &
      &                FORCES(ng) % bvstr)
 #ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 37, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 37, __LINE__, MyFile)
 #endif
+!
       RETURN
       END SUBROUTINE bblm
 !
@@ -596,7 +600,7 @@
 !         thck_wbl(i,j)=m_dwc
 #endif
 !
-          IF ((Umag(i,j).le.eps).and.(Ub(i,j).gt.eps)) THEN
+          IF ((Umag(i,j).le.eps).and.(Ub(i,j).ge.eps)) THEN
 !
 !  Pure waves - use wave friction factor approach from Madsen
 !  (1994, eqns 32-33).
@@ -613,7 +617,8 @@
             Taucwmax(i,j)=Tauw(i,j)
             znot(i,j)=zo
             znotc(i,j)=zo
-          ELSE IF ((Umag(i,j).gt.0.0_r8).and.(Ub(i,j).gt.eps).and.      &
+!         ELSE IF ((Umag(i,j).gt.0.0_r8).and.(Ub(i,j).ge.eps).and.      &
+          ELSE IF ((Umag(i,j).gt.eps).and.(Ub(i,j).ge.eps).and.      &
      &             ((Zr(i,j)/zo).le.1.0_r8)) THEN
 !
 !  Waves and currents, but zr <= zo.
@@ -621,7 +626,8 @@
             IF (Master) THEN
               PRINT *,' Warning: w-c calcs ignored because zr <= zo'
             END IF
-          ELSE IF ((Umag(i,j).gt.0.0_r8).and.(Ub(i,j).gt.eps).and.      &
+!         ELSE IF ((Umag(i,j).gt.0.0_r8).and.(Ub(i,j).gt.eps).and.      &
+          ELSE IF ((Umag(i,j).gt.eps).and.(Ub(i,j).ge.eps).and.      &
      &             ((Zr(i,j)/zo).gt.1.0_r8)) THEN
 !
 !  Waves and currents, zr > zo.
@@ -1416,9 +1422,10 @@
      &        19.41182758_r8*xp(8)-4.65950823_r8*xp(12)+                &
      &        0.33049424_r8*xp(16)-0.00926707_r8*xp(20)+                &
      &        0.00011997_r8*xp(24))
+!
       RETURN
       END SUBROUTINE sg_kelvin8m
-
+!
       SUBROUTINE sg_kelvin8p (x, ker, kei, ber, bei, kerp, keip,        &
      &                        berp, beip)
 !
@@ -1505,6 +1512,7 @@
 !
       berp=REAL(gofx*phip)-keip/pi
       beip=AIMAG(gofx*phip)+kerp/pi
+!
       RETURN
       END SUBROUTINE sg_kelvin8p
 #endif
@@ -1583,6 +1591,9 @@
       zo = kN/30.0_r8
 
       IF (ubr.le.0.01_r8) THEN
+        dwc_va=kN
+        zoa=dwc_va
+        fwc=0.0_r8
         IF (ucr.le. 0.01_r8) THEN          ! no waves or currents
           ustrc=0.0_r8
           ustrwm=0.0_r8
@@ -1778,7 +1789,7 @@
             Zr_sg=z2
           END IF
         END DO
-      ELSEIF ( sg_loc.lt.Zr ) THEN
+      ELSE    !IF ( sg_loc.lt.Zr ) THEN
         z1=MAX( 2.5_r8*d50/30.0_r8, zapp_loc, 1.0e-10_r8 )
         z2=Zr
 !
@@ -1794,7 +1805,7 @@
           Vr_sg=fac*v_1d(1)
           Zr_sg=sg_loc
 !
-        ELSEIF ( sg_loc.gt.z1 ) THEN
+        ELSE   !IF ( sg_loc.gt.z1 ) THEN
 !
 ! If chosen height is less than the bottom cell thickness
 ! perform logarithmic interpolation with bottom roughness.

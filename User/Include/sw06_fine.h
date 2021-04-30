@@ -1,7 +1,7 @@
 /*
-** svn $Id: sw06_fine.h 995 2020-01-10 04:01:28Z arango $
+** svn $Id: sw06_fine.h 1054 2021-03-06 19:47:12Z arango $
 *******************************************************************************
-** Copyright (c) 2002-2020 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2021 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -19,17 +19,16 @@
 #undef  CORRELATION             /* Background-error Correlation Check */
 #undef  FORCING_SV              /* Forcing Singular Vectors */
 #undef  FT_EIGENMODES           /* Finite Time Eigenmodes */
-#define IS4DVAR                 /* Incremental, strong constraint 4DVAR */
+#define I4DVAR                  /* Incremental, strong constraint 4D-Var */
 #undef  NLM_DRIVER              /* Nonlinear Basic State trajectory */
 #undef  OPT_PERTURBATION        /* Optimal perturbations */
 #undef  PICARD_TEST             /* Picard Iterations Test */
+#undef  RBL4DVAR                /* Strong/Weak constraint RBL4D-Var */
+#undef  R4DVAR                  /* Strong/Weak constraint R4D-Var */
 #undef  R_SYMMETRY              /* Representer Matrix Symmetry Test */
-#undef  S4DVAR                  /* Strong constraint 4DVAR */
 #undef  SANITY_CHECK            /* Sanity Check */
 #undef  SO_SEMI                 /* Stochastic Optimals: Semi-norm */
 #undef  TLM_CHECK               /* Tangent Linear Model Check */
-#undef  W4DPSAS                 /* Weak constraint 4D-PSAS */
-#undef  W4DVAR                  /* Weak constraint 4DVAR */
 
 /*
 **-----------------------------------------------------------------------------

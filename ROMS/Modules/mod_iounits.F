@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_iounits
 !
-!svn $Id: mod_iounits.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: mod_iounits.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -14,7 +14,6 @@
 !    ADM       Output adjoint model history data                       !
 !    ADS       Input adjoint sensitivity functional                    !
 !    AVG       Output time-averaged data                               !
-!    AVG2      Secondary time-averaged data                            !
 !    BLK       Input bulk fluxes data in adjoint-based applications    !
 !    BRY       Input open boundary conditions data                     !
 !    CLM       Input climatology data                                  !
@@ -23,12 +22,12 @@
 !    DAV       Output 4D-Var data assimilation variables               !
 !    DIA       Output diagnostics fields                               !
 !    ERR       Output 4DVar posterior error estimate                   !
-#ifdef W4DPSAS_FCT_SENSITIVITY
+#ifdef RBL4DVAR_FCT_SENSITIVITY
 !    FCTA      Input basic state forecast solution                     !
 !    FCTB      Input basic state forecast solution                     !
 #endif
 !    FLT       Output Lagrangian trajectories data                     !
-#if defined W4DPSAS_FCT_SENSITIVITY && !defined OBS_SPACE
+#if defined RBL4DVAR_FCT_SENSITIVITY && !defined OBS_SPACE
 !    FOIA      Input Forecast Observation Impacts forcing data when    !
 !                initialized from the 4D-Var Analysis (red curve)      !
 !    FOIB      Input Forecast Observation Impacts forcing data when    !
@@ -54,7 +53,7 @@
 !                NRM(4,ng)  surface forcing                            !
 !    NUD       Input climatology nudging coefficients                  !
 !    OBS       Input/output 4D-Var observations                        !
-#if defined W4DPSAS_FCT_SENSITIVITY && defined OBS_SPACE
+#if defined RBL4DVAR_FCT_SENSITIVITY && defined OBS_SPACE
 !    OIFA      Input Observations Impact Forcing at datum locations if !
 !                initialized from the 4D-Var Analysis (red curve)      !
 !    OIFB      Input Observations Impact Forcing at datum locations if !
@@ -65,6 +64,12 @@
 !    TIDE      Input tide forcing                                      !
 !    TLF       Input/output tangent linear model impulse forcing       !
 !    TLM       Output tangent linear model history                     !
+#ifdef SP4DVAR
+!    SCA       Output adjoint scratch state vector file                !
+!    SCT       Output tangent scratch state vector file                !
+!    SPA       Output adjoint Arnoldi state vector file                !
+!    SPT       Output tangent Arnoldi state vector file                !
+#endif
 !    SSF       Input Sources/Sinks forcing (river runoff)              !
 !    STA       Output station data                                     !
 !    STD       Input error covariance standard deviations              !
@@ -98,6 +103,7 @@
 !  BRYids      NetCDF file ID associated with each boundary field.     !
 !  CLMids      NetCDF file ID associated with each climatology field.  !
 !  FRCids      NetCDF file ID associated with each forcing field.      !
+!  CalledFrom  Calling routine in IO operations.                       !
 !  SSFids      NetCDF file ID associated with each river source field. !
 !  Rerror      Running error messages.                                 !
 !  SourceFile  Current executed file name. It is used for IO error     !
@@ -123,7 +129,6 @@
       TYPE(T_IO), allocatable :: ADM(:)     ! ADM history fields
       TYPE(T_IO), allocatable :: ADS(:)     ! sensitivity functional
       TYPE(T_IO), allocatable :: AVG(:)     ! time-averaged fields
-      TYPE(T_IO), allocatable :: AVG2(:)    ! secondary averaged fields
       TYPE(T_IO), allocatable :: BLK(:)     ! bulk fluxes fields
       TYPE(T_IO), allocatable :: DAI(:)     ! Data assilation IC/restart
       TYPE(T_IO), allocatable :: DAV(:)     ! 4D-Var variables
@@ -131,11 +136,11 @@
       TYPE(T_IO), allocatable :: ERR(:)     ! 4D-Var posterior error
       TYPE(T_IO), allocatable :: FIL(:,:)   ! Filter restart
       TYPE(T_IO), allocatable :: FLT(:)     ! Lagrangian trajectories
-#ifdef W4DPSAS_FCT_SENSITIVITY
+#ifdef RBL4DVAR_FCT_SENSITIVITY
       TYPE(T_IO), allocatable :: FCTA(:)    ! forecast for impacts, A
       TYPE(T_IO), allocatable :: FCTB(:)    ! forecast for impacts, B
 #endif
-#if defined W4DPSAS_FCT_SENSITIVITY && !defined OBS_SPACE
+#if defined RBL4DVAR_FCT_SENSITIVITY && !defined OBS_SPACE
       TYPE(T_IO), allocatable :: FOIA(:)    ! observation impacts, A
       TYPE(T_IO), allocatable :: FOIB(:)    ! observation impacts, B
 #endif
@@ -144,7 +149,6 @@
       TYPE(T_IO), allocatable :: GST(:)     ! generalized stability
       TYPE(T_IO), allocatable :: HAR(:)     ! detiding harmonics
       TYPE(T_IO), allocatable :: HIS(:)     ! NLM history fields
-      TYPE(T_IO), allocatable :: HIS2(:)    ! surface history fields
       TYPE(T_IO), allocatable :: HSS(:)     ! Hessian eigenvectors
       TYPE(T_IO), allocatable :: IAD(:)     ! ADM initial conditions
       TYPE(T_IO), allocatable :: INI(:)     ! NLM initial conditions
@@ -155,12 +159,18 @@
       TYPE(T_IO), allocatable :: NRM(:,:)   ! normalization
       TYPE(T_IO), allocatable :: NUD(:)     ! nudging coefficients
       TYPE(T_IO), allocatable :: OBS(:)     ! observations
-#if defined W4DPSAS_FCT_SENSITIVITY && defined OBS_SPACE
+#if defined RBL4DVAR_FCT_SENSITIVITY && defined OBS_SPACE
       TYPE(T_IO), allocatable :: OIFA(:)    ! observation impacts, A
       TYPE(T_IO), allocatable :: OIFB(:)    ! observation impacts, B
 #endif
       TYPE(T_IO), allocatable :: QCK(:)     ! quicksave fields
       TYPE(T_IO), allocatable :: RST(:)     ! restart fields
+#ifdef SP4DVAR
+      TYPE(T_IO), allocatable :: SCA(:)     ! ADM scratch state vector
+      TYPE(T_IO), allocatable :: SCT(:)     ! TLM scratch state vector
+      TYPE(T_IO), allocatable :: SPA(:)     ! ADM Arnoldi state vector
+      TYPE(T_IO), allocatable :: SPT(:)     ! TLM Arnoldi state vector
+#endif
       TYPE(T_IO), allocatable :: SSF(:)     ! Sources/Sinks forcing
       TYPE(T_IO), allocatable :: STA(:)     ! stations data
       TYPE(T_IO), allocatable :: STD(:,:)   ! standard deviation
@@ -180,7 +190,7 @@
       integer, allocatable :: nCLMfiles(:)
       integer, allocatable :: CLMids(:,:)
 
-      TYPE(T_IO), allocatable :: CLM(:,:)   ! climatology fields
+      TYPE(T_IO), allocatable :: CLM(:,:)
 !
 !  Input forcing data.
 !
@@ -191,7 +201,7 @@
 !
 !  Error messages.
 !
-      character (len=50), dimension(10) :: Rerror =                     &
+      character (len=50), dimension(9) :: Rerror =                      &
      &       (/ ' ROMS/TOMS - Blows up ................ exit_flag: ',   &
      &          ' ROMS/TOMS - Input error ............. exit_flag: ',   &
      &          ' ROMS/TOMS - Output error ............ exit_flag: ',   &
@@ -200,8 +210,7 @@
      &          ' ROMS/TOMS - Partition error ......... exit_flag: ',   &
      &          ' ROMS/TOMS - Illegal input parameter . exit_flag: ',   &
      &          ' ROMS/TOMS - Fatal algorithm result .. exit_flag: ',   &
-     &          ' ROMS/TOMS - Coupling error .......... exit_flag: ',   &
-     &          ' ROMS/TOMS - Frazil ice problem ...... exit_flag: ' /)
+     &          ' ROMS/TOMS - Coupling error .......... exit_flag: ' /)
 !
 !  Standard input scripts file names.
 !
@@ -213,7 +222,6 @@
       character (len=256) :: bparnam        ! biology model parameters
       character (len=256) :: fbionam        ! floats behavior parameters
       character (len=256) :: fposnam        ! floats positions
-      character (len=256) :: iparnam        ! ice model parameters
       character (len=256) :: sparnam        ! sediment model parameters
       character (len=256) :: vegnam         ! vegetation model parameters
       character (len=256) :: sposnam        ! station positions
@@ -223,6 +231,7 @@
 !
       integer :: ioerror = 0                ! I/O error flag
 
+      character (len=256) :: CalledFrom     ! routine calling IO
       character (len=256) :: MyAppCPP       ! application CPP flag
       character (len=256) :: SourceFile     ! current executed ROMS file
       character (len=256) :: ncfile         ! current NetCDF file
@@ -257,9 +266,6 @@
       IF (.not.allocated(AVG)) THEN
         allocate ( AVG(Ngrids) )
       END IF
-      IF (.not.allocated(AVG2)) THEN
-        allocate ( AVG2(Ngrids) )
-      END IF
       IF (.not.allocated(BLK)) THEN
         allocate ( BLK(Ngrids) )
       END IF
@@ -283,7 +289,7 @@
       IF (.not.allocated(FLT)) THEN
         allocate ( FLT(Ngrids) )
       END IF
-#ifdef W4DPSAS_FCT_SENSITIVITY
+#ifdef RBL4DVAR_FCT_SENSITIVITY
       IF (.not.allocated(FCTA)) THEN
         allocate ( FCTA(Ngrids) )
       END IF
@@ -291,7 +297,7 @@
         allocate ( FCTB(Ngrids) )
       END IF
 #endif
-#if defined W4DPSAS_FCT_SENSITIVITY && !defined OBS_SPACE
+#if defined RBL4DVAR_FCT_SENSITIVITY && !defined OBS_SPACE
       IF (.not.allocated(FOIA)) THEN
         allocate ( FOIA(Ngrids) )
       END IF
@@ -313,9 +319,6 @@
       END IF
       IF (.not.allocated(HIS)) THEN
         allocate ( HIS(Ngrids) )
-      END IF
-      IF (.not.allocated(HIS2)) THEN
-        allocate ( HIS2(Ngrids) )
       END IF
       IF (.not.allocated(HSS)) THEN
         allocate ( HSS(Ngrids) )
@@ -344,7 +347,7 @@
       IF (.not.allocated(OBS)) THEN
         allocate ( OBS(Ngrids) )
       END IF
-#if defined W4DPSAS_FCT_SENSITIVITY && defined OBS_SPACE
+#if defined RBL4DVAR_FCT_SENSITIVITY && defined OBS_SPACE
       IF (.not.allocated(OIFA)) THEN
         allocate ( OIFA(Ngrids) )
       END IF
@@ -358,6 +361,20 @@
       IF (.not.allocated(RST)) THEN
         allocate ( RST(Ngrids) )
       END IF
+#ifdef SP4DVAR
+      IF (.not.allocated(SCA)) THEN
+        allocate ( SCA(Ngrids) )
+      END IF
+      IF (.not.allocated(SCT)) THEN
+        allocate ( SCT(Ngrids) )
+      END IF
+      IF (.not.allocated(SPA)) THEN
+        allocate ( SPA(Ngrids) )
+      END IF
+      IF (.not.allocated(SPT)) THEN
+        allocate ( SPT(Ngrids) )
+      END IF
+#endif
       IF (.not.allocated(SSF)) THEN
         allocate ( SSF(Ngrids) )
       END IF
@@ -404,18 +421,16 @@
         ADS(ng)%ncid=-1
         AVG(ng)%ncid=-1
         BLK(ng)%ncid=-1
-!       BRY(ng)%ncid=-1
-!       CLM(ng)%ncid=-1
         DAI(ng)%ncid=-1
         DAV(ng)%ncid=-1
         DIA(ng)%ncid=-1
         ERR(ng)%ncid=-1
         FLT(ng)%ncid=-1
-#ifdef W4DPSAS_FCT_SENSITIVITY
+#ifdef RBL4DVAR_FCT_SENSITIVITY
         FCTA(ng)%ncid=-1
         FCTB(ng)%ncid=-1
 #endif
-#if defined W4DPSAS_FCT_SENSITIVITY && !defined OBS_SPACE
+#if defined RBL4DVAR_FCT_SENSITIVITY && !defined OBS_SPACE
         FOIA(ng)%ncid=-1
         FOIB(ng)%ncid=-1
 #endif
@@ -433,7 +448,7 @@
         LZE(ng)%ncid=-1
         NUD(ng)%ncid=-1
         OBS(ng)%ncid=-1
-#if defined W4DPSAS_FCT_SENSITIVITY && defined OBS_SPACE
+#if defined RBL4DVAR_FCT_SENSITIVITY && defined OBS_SPACE
         OIFA(ng)%ncid=-1
         OIFB(ng)%ncid=-1
 #endif
@@ -448,6 +463,10 @@
 
         NRM(1:4,ng)%ncid=-1
         STD(1:4,ng)%ncid=-1
+
+        nBCfiles(ng)=-1
+        nCLMfiles(ng)=-1
+        nFfiles(ng)=-1
       END DO
 !
 !-----------------------------------------------------------------------
@@ -473,14 +492,6 @@
           BLK(ng)%base(i:i)=blank
           BLK(ng)%name(i:i)=blank
 
-!         BRY(ng)%head(i:i)=blank
-!         BRY(ng)%base(i:i)=blank
-!         BRY(ng)%name(i:i)=blank
-
-!         CLM(ng)%head(i:i)=blank
-!         CLM(ng)%base(i:i)=blank
-!         CLM(ng)%name(i:i)=blank
-
           DAI(ng)%head(i:i)=blank
           DAI(ng)%base(i:i)=blank
           DAI(ng)%name(i:i)=blank
@@ -501,7 +512,7 @@
           FLT(ng)%base(i:i)=blank
           FLT(ng)%name(i:i)=blank
 
-#ifdef W4DPSAS_FCT_SENSITIVITY
+#ifdef RBL4DVAR_FCT_SENSITIVITY
           FCTA(ng)%head(i:i)=blank
           FCTA(ng)%base(i:i)=blank
           FCTA(ng)%name(i:i)=blank
@@ -511,7 +522,7 @@
           FCTB(ng)%name(i:i)=blank
 #endif
 
-#if defined W4DPSAS_FCT_SENSITIVITY && !defined OBS_SPACE
+#if defined RBL4DVAR_FCT_SENSITIVITY && !defined OBS_SPACE
           FOIA(ng)%head(i:i)=blank
           FOIA(ng)%base(i:i)=blank
           FOIA(ng)%name(i:i)=blank
@@ -577,7 +588,7 @@
           OBS(ng)%base(i:i)=blank
           OBS(ng)%name(i:i)=blank
 
-#if defined W4DPSAS_FCT_SENSITIVITY && defined OBS_SPACE
+#if defined RBL4DVAR_FCT_SENSITIVITY && defined OBS_SPACE
           OIFA(ng)%head(i:i)=blank
           OIFA(ng)%base(i:i)=blank
           OIFA(ng)%name(i:i)=blank
@@ -634,7 +645,6 @@
         bparnam(i:i)=blank
         fbionam(i:i)=blank
         fposnam(i:i)=blank
-        iparnam(i:i)=blank
         sparnam(i:i)=blank
         vegnam(i:i)=blank
         sposnam(i:i)=blank

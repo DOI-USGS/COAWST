@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_parallel
 !
-!svn $Id: mod_parallel.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: mod_parallel.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -39,6 +39,9 @@
 !  parallel nodes.
 !
       integer :: numthreads
+#ifndef DISJOINTED
+      integer :: ForkSize
+#endif
 !
 !  First and last tile to process in a tiled application.
 !
@@ -105,9 +108,27 @@
 !  Distributed-memory master process.
 !
       integer :: MyMaster = 0
+
+#if defined DISTRIBUTE && defined DISJOINTED
+!
+!  Split communicator parameters.
+!
+      logical :: FullMaster     ! full communicator master process
+
+      integer :: ForkColor = -1 ! Fork split criteria: FullRank/ForkSize
+      integer :: ForkKey        ! Fork split rank ordering: FullRank
+      integer :: ForkSize       ! number of processes in FORK_COMM_WORLD
+      integer :: FullSize       ! number of precesses in FULL_COMM_WORLD
+      integer :: NsubGroups     ! number of disjointed subgroups
+      integer :: TaskColor = -1 ! Task split criteria: FullRank/TaskSize
+      integer :: TaskKey        ! Task split rank ordering: FullRank
+      integer :: TaskSize       ! number of processes in TASK_COMM_WORLD
+#endif
 !
 !  Rank of the parallel local process.
 !
+      integer :: FullRank = 0
+      integer :: TaskRank = 0
       integer :: MyRank = 0
       integer :: MyThread = 0
 
@@ -116,9 +137,14 @@
 #ifdef DISTRIBUTE
 # ifdef MPI
 !
-!  Ocean model MPI group communicator handle.
+!  Distributed-memory group communicator handles.
 !
-      integer :: OCN_COMM_WORLD
+#  ifdef DISJOINTED
+      integer :: FULL_COMM_WORLD            ! full communicator
+      integer :: FORK_COMM_WORLD            ! fork communicator
+      integer :: TASK_COMM_WORLD            ! task communicator
+#  endif
+      integer :: OCN_COMM_WORLD             ! internal ROMS communicator
 !
 !  Set mpi_info opaque object handle.
 !
@@ -211,7 +237,7 @@
 
       RETURN
       END SUBROUTINE allocate_parallel
-
+!
       SUBROUTINE initialize_parallel
 !
 !=======================================================================
@@ -264,7 +290,8 @@
 !-----------------------------------------------------------------------
 !
 !  Get the number of processes in the group associated with the world
-!  communicator.
+!  communicator.  Here FullRank and MyRank are the same. It is computed
+!  for consistency wity concurrent applications.
 !
       CALL mpi_comm_size (OCN_COMM_WORLD, numthreads, MyError)
       IF (MyError.ne.0) THEN
@@ -274,6 +301,8 @@
         exit_flag=6
         RETURN
       END IF
+      CALL mpi_comm_rank (OCN_COMM_WORLD, FullRank, MyError)
+      ForkSize=numthreads
 !
 !  Identify master, input and output threads.
 !
@@ -306,8 +335,223 @@
       InpThread=.TRUE.
       OutThread=.TRUE.
 #endif
-
+!
       RETURN
       END SUBROUTINE initialize_parallel
+
+#if defined DISTRIBUTE && defined DISJOINTED
+!
+      SUBROUTINE split_communicator (Nsplit, Ntasks)
+!
+!=======================================================================
+!                                                                      !
+!  This routine splits the main distributed-memory communicator object !
+!  (OCN_COMM_WORLD saved as FULL_COMM_WORLD) into several disjointed   !
+!  subgroups processes with new communicator handle (FORK_COMM_WORLD). !
+!  Notice that at entry, the OCN_COMM_WORLD handle is the same object  !
+!  as MPI_COMM_WORLD, if no multi-model coupling.                      !
+!                                                                      !
+!  If Ntask=2, a second split is done. Both tasks (1 and 2) have equal !
+!  number processors. Task 1 uses the first half, whereas Task 2 uses  !
+!  the second half of all the processes assigned to ROMS. The extra    !
+!  communicator handle (TASK_COMM_WORLD) can be used for collective    !
+!  operations within each task section.                                !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     Nsplit     Number of disjointed by related subgroups (integer)   !
+!     Ntasks     Number of different code sections tasks (integer)     !
+!                  Usually, Ntasks=1 or Ntasks=2                       !
+!                                                                      !
+!  Therefore,                                                          !
+!                                                                      !
+!     ForkSize        Number of processes assigned for each subgroup:  !
+!                       ForkSize = FullSize/(Nplit*Ntasks)             !
+!                                                                      !
+!     FullSize        Total number of processes assigned to ROMS       !
+!                                                                      !
+!     TaskSize        Number of processes assigned for each task       !
+!                       TaskSize=FullSize/Ntasks                       !
+!                                                                      !
+!     NsubGroups      Total number of disjointed subgroups             !
+!                       NsubGroups=Nsplit*Ntasks                       !
+!                                                                      !
+!=======================================================================
+!
+      USE mod_iounits
+      USE mod_scalars
+!
+!  Imported variable declarations
+!
+      integer, intent(in) :: Nsplit, Ntasks
+!
+!  Local variable declarations.
+!
+      integer :: MyError, MySize
+      integer :: i, Lstr, Serror
+!
+      integer, allocatable :: GroupRanks(:)
+!
+      character (len=MPI_MAX_ERROR_STRING) :: string
+!
+!-----------------------------------------------------------------------
+!  Split ROMS communicator into disjointed subgroups, FORK_COMM_WORLD.
+!  It is used, for example, for the concurrent time-stepping of the
+!  ROMS kernel.
+!-----------------------------------------------------------------------
+!
+!  Save full communicator (starting handle) and inquire about its size
+!  and rank.
+!
+      FULL_COMM_WORLD=OCN_COMM_WORLD
+      CALL mpi_comm_rank (FULL_COMM_WORLD, FullRank, MyError)
+      CALL mpi_comm_size (FULL_COMM_WORLD, FullSize, MyError)
+      FullMaster=FullRank.eq.MyMaster
+!
+!  Split the full communicator into sub-communicators based on color and
+!  key. It is a collective operation.
+!
+!  For example, if FullSize=8 and Nsplit=2, we get ForkSize=4 and:
+!
+!  FullRank:    0    1    2    3    4    5    6    7    FULL_COMM_WORLD
+!  ForkColor:   0    0    0    0    1    1    1    1    split criteria
+!  ForkKey:     0    1    2    3    4    5    6    7    same as FullRank
+!  ForkRank:    0    1    2    3    0    1    2    3    FORK_COMM_WORLD
+!
+!
+!  The color determines in which of the sub-communicators the current
+!  process (spawn by FULL_COMM_WORLD) will fall.
+!
+!  The key argument determines the rank ordering within the split
+!  communicator. The process that passes in the smallest value for
+!  key will be rank 0, the next smallest will be rank 1, and so on.
+!  Here, the key is set to the rank of the full communicator since we
+!  want all of the processes in the split communicator to be in the
+!  same order that they were in the full communicator.
+!
+!  The resulting communicator, FORK_COMM_WORLD, has the same handle
+!  value (context ID) in all sub-communicators. However, each process
+!  only have reference to the sub-communicator that it belongs. It is
+!  an opaque object.
+!
+      NsubGroups=Nsplit*Ntasks
+      IF (MOD(FullSize, NsubGroups).ne.0) THEN
+        IF (FullMaster) THEN
+          WRITE (stdout,10) NsubGroups, FullSize
+        END IF
+        exit_flag=2
+        RETURN
+      END IF
+      ForkSize=FullSize/NsubGroups               ! integer operation
+      ForkColor=FullRank/ForkSize                ! integer operation
+      ForkKey=FullRank
+      CALL mpi_comm_split (FULL_COMM_WORLD, ForkColor, ForkKey,         &
+     &                     FORK_COMM_WORLD, MyError)
+      IF (MyError.ne.MPI_SUCCESS) THEN
+        CALL mpi_error_string (MyError, string, Lstr, Serror)
+        WRITE (stdout,20) 'MPI_COMM_SPLIT', 'TASK_COMM_WORLD',          &
+     &                     FullRank, MyError, TRIM(string)
+        exit_flag=2
+        RETURN
+      END IF
+!
+!-----------------------------------------------------------------------
+!  If Ntasks=2, split the FULL_COMM_WORLD into disjointed tasks
+!  communicators.
+!-----------------------------------------------------------------------
+!
+      IF (Ntasks.gt.1) THEN
+        TaskSize=FullSize/Ntasks
+        TaskColor=FullRank/TaskSize
+        TaskKey=FullRank
+        CALL mpi_comm_split (FULL_COMM_WORLD, TaskColor, TaskKey,       &
+     &                       TASK_COMM_WORLD, MyError)
+        IF (MyError.ne.MPI_SUCCESS) THEN
+          CALL mpi_error_string (MyError, string, Lstr, Serror)
+          WRITE (stdout,20) 'MPI_COMM_SPLIT', 'TASK_COMM_WORLD',        &
+     &                      FullRank, MyError, TRIM(string)
+          exit_flag=2
+          RETURN
+        END IF
+        CALL mpi_comm_rank (TASK_COMM_WORLD, TaskRank, MyError)
+      ELSE
+        TASK_COMM_WORLD=FULL_COMM_WORLD
+        TaskSize=FullSize
+        TaskRanK=FullRank
+        TaskKey=0
+        TaskColor=0
+      END IF
+!
+ 10   FORMAT (/,' SPLIT_COMMUNICATOR - illegal configuration, ',        &
+     &        'Nsplit * Ntasks = ',i0,/,22x,                            &
+     &        'needs to be less, equal, or a multiple of the ',         &
+     &        'communicator size, FullSize = ',i0,/,22x,                &
+     &        'That is, MOD(FullSise, Nsplit*Ntask)=0')
+ 20   FORMAT (/,' SPLIT_COMMUNICATOR - error during ',a,                &
+     &        ' call, Comm = ',a,', Rank = ',i0,' Error = ',i0,/,22x,a)
+!
+      RETURN
+      END SUBROUTINE split_communicator
+!
+      SUBROUTINE assign_communicator (choice)
+!
+!=======================================================================
+!                                                                      !
+!  This routine selects request distributed memory communicator and    !
+!  it associated parameters and control switches.  It assigns the      !
+!  requested communicator to the OCN_COMM_WORLD handle.                !
+!                                                                      !
+!  On Input:                                                           !
+!                                                                      !
+!     choice       Requested communicator keyword (string)             !
+!                                                                      !
+!=======================================================================
+!
+!  Imported variable declarations.
+!
+      character (len=*), intent(in) :: choice
+!
+!  Local variable declarations.
+!
+      integer :: MyError
+!
+!-----------------------------------------------------------------------
+!  Assing internal ROMS communicator, OCN_COMM_WORLD.
+!-----------------------------------------------------------------------
+!
+!  Set communicator handle and get its size and rank.
+!
+      SELECT CASE (TRIM(choice))
+        CASE ('FORK', 'SPLIT', 'CONCURRENT')
+          OCN_COMM_WORLD=FORK_COMM_WORLD
+          CALL mpi_comm_size (OCN_COMM_WORLD, numthreads, MyError)
+          CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
+          Master=MyRank.eq.MyMaster
+        CASE ('FULL')
+          OCN_COMM_WORLD=FULL_COMM_WORLD
+          CALL mpi_comm_size (OCN_COMM_WORLD, numthreads, MyError)
+          CALL mpi_comm_rank (OCN_COMM_WORLD, MyRank, MyError)
+          Master=MyRank.eq.MyMaster
+      END SELECT
+      CALL mpi_barrier (OCN_COMM_WORLD, MyError)
+!
+!  Initialize parallel control switches.
+!
+# ifdef PARALLEL_IO
+      InpThread=.TRUE.
+      OutThread=.TRUE.
+# else
+      IF (MyRank.eq.0) THEN
+        InpThread=.TRUE.
+        OutThread=.TRUE.
+      ELSE
+        InpThread=.FALSE.
+        OutThread=.FALSE.
+      END IF
+# endif
+!
+      RETURN
+      END SUBROUTINE assign_communicator
+#endif
 
       END MODULE mod_parallel

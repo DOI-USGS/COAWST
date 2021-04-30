@@ -2,9 +2,9 @@
       MODULE rp_step3d_uv_mod
 #if defined TL_IOMS && defined SOLVE3D
 !
-!svn $Id: rp_step3d_uv.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: rp_step3d_uv.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -48,10 +48,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iRPM, 34, __LINE__, __FILE__)
+      CALL wclock_on (ng, iRPM, 34, __LINE__, MyFile)
 # endif
       CALL rp_step3d_uv_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -118,9 +121,9 @@
      &                        GRID(ng) % Hvom,                          &
      &                        GRID(ng) % tl_Hvom)
 # ifdef PROFILE
-      CALL wclock_off (ng, iRPM, 34, __LINE__, __FILE__)
+      CALL wclock_off (ng, iRPM, 34, __LINE__, MyFile)
 # endif
-
+!
       RETURN
       END SUBROUTINE rp_step3d_uv
 !
@@ -174,8 +177,8 @@
 # ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange2d, mp_exchange3d
 # endif
-      USE rp_u3dbc_mod, ONLY : rp_u3dbc_tile
-      USE rp_v3dbc_mod, ONLY : rp_v3dbc_tile
+      USE rp_u3dbc_mod,    ONLY : rp_u3dbc_tile
+      USE rp_v3dbc_mod,    ONLY : rp_v3dbc_tile
 !
 !  Imported variable declarations.
 !
@@ -319,10 +322,10 @@
 !  Local variable declarations.
 !
       integer :: i, idiag, is, j, k
-
+!
       real(r8) :: cff, cff1, cff2
       real(r8) :: tl_cff, tl_cff1, tl_cff2
-
+!
       real(r8), dimension(IminS:ImaxS) :: CF1
       real(r8), dimension(IminS:ImaxS) :: FC1
 # ifdef NEARSHORE_MELLOR
@@ -569,7 +572,7 @@
             tl_DC(i,k)=tl_DC(i,k)*AK(i,k)+DC(i,k)*tl_AK(i,k)
 #  ifdef TL_IOMS
 !           tl_DC(i,k)=tl_DC(i,k)-                                      &
-!     &                DC(i,k)*AK(i,k)    ! needed if tl_AK is computed
+!    &                 DC(i,k)*AK(i,k)    ! needed if tl_AK is computed
 #  endif
             DC(i,k)=DC(i,k)*AK(i,k)
 !>          cff=dt(ng)*oHz(i,k)*(DC(i,k)-DC(i,k-1))
@@ -1536,7 +1539,11 @@
 # endif
 !>              u(i,j,k,nnew)=SOURCES(ng)%Qsrc(is,k)*cff1
 !>
-                tl_u(i,j,k,nnew)=SOURCES(ng)%Qsrc(is,k)*tl_cff1
+                tl_u(i,j,k,nnew)=SOURCES(ng)%tl_Qsrc(is,k)*cff1+        &
+     &                           SOURCES(ng)%Qsrc(is,k)*tl_cff1-        &
+# ifdef TL_IOMS
+     &                           SOURCES(ng)%Qsrc(is,k)*cff1
+# endif
               END DO
             ELSE
               DO k=1,N(ng)
@@ -1551,7 +1558,11 @@
 # endif
 !>              v(i,j,k,nnew)=SOURCES(ng)%Qsrc(is,k)*cff1
 !>
-                tl_v(i,j,k,nnew)=SOURCES(ng)%Qsrc(is,k)*tl_cff1
+                tl_v(i,j,k,nnew)=SOURCES(ng)%tl_Qsrc(is,k)*cff1+        &
+     &                           SOURCES(ng)%Qsrc(is,k)*tl_cff1-        &
+# ifdef TL_IOMS
+     &                           SOURCES(ng)%Qsrc(is,k)*cff1
+# endif
               END DO
             END IF
           END IF
@@ -2358,7 +2369,7 @@
      &                    tl_ubar(:,:,1), tl_vbar(:,:,1),               &
      &                    tl_ubar(:,:,2), tl_vbar(:,:,2))
 # endif
-
+!
       RETURN
       END SUBROUTINE rp_step3d_uv_tile
 #endif

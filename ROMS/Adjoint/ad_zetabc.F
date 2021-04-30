@@ -2,9 +2,9 @@
       MODULE ad_zetabc_mod
 #ifdef ADJOINT
 !
-!svn $Id: ad_zetabc.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: ad_zetabc.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -702,10 +702,10 @@
           DO i=Istr,Iend
             IF (LBC_apply(ng)%south(i)) THEN
 # ifdef MASKING
-!>            tl_zeta(i,Jstr-1,kout)=tl_zeta(i,Jstr-1,kout)*              &
+!>            tl_zeta(i,Jstr-1,kout)=tl_zeta(i,Jstr-1,kout)*            &
 !>   &                               GRID(ng)%rmask(i,Jstr-1)
 !>
-              ad_zeta(i,Jstr-1,kout)=ad_zeta(i,Jstr-1,kout)*              &
+              ad_zeta(i,Jstr-1,kout)=ad_zeta(i,Jstr-1,kout)*            &
      &                               GRID(ng)%rmask(i,Jstr-1)
 # endif
 # ifdef ADJUST_BOUNDARY
@@ -984,15 +984,15 @@
           DO j=Jstr,Jend
             IF (LBC_apply(ng)%east(j)) THEN
 # ifdef MASKING
-!>            tl_zeta(Iend+1,j,kout)=tl_zeta(Iend+1,j,kout)*              &
+!>            tl_zeta(Iend+1,j,kout)=tl_zeta(Iend+1,j,kout)*            &
 !>   &                               GRID(ng)%rmask(Iend+1,j)
 !>
-              ad_zeta(Iend+1,j,kout)=ad_zeta(Iend+1,j,kout)*              &
+              ad_zeta(Iend+1,j,kout)=ad_zeta(Iend+1,j,kout)*            &
      &                               GRID(ng)%rmask(Iend+1,j)
 # endif
 !>            tl_zeta(Iend+1,j,kout)=tl_zeta(Iend,j,kout)
 !>
-              ad_zeta(Iend  ,j,kout)=ad_zeta(Iend  ,j,kout)+              &
+              ad_zeta(Iend  ,j,kout)=ad_zeta(Iend  ,j,kout)+            &
      &                               ad_zeta(Iend+1,j,kout)
               ad_zeta(Iend+1,j,kout)=0.0_r8
             END IF

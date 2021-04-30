@@ -2,9 +2,9 @@
 #if defined FOUR_DVAR || defined VERIFICATION
       SUBROUTINE read_AssPar (model, inp, out, Lwrite)
 !
-!svn $Id: read_asspar.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: read_asspar.F 1058 2021-03-25 19:04:23Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -33,6 +33,7 @@
 !  Imported variable declarations
 !
       logical, intent(in) :: Lwrite
+!
       integer, intent(in) :: model, inp, out
 !
 !  Local variable declarations.
@@ -72,6 +73,9 @@
       character (len=50 ) :: label
       character (len=256) :: fname, line
       character (len=256), dimension(nCval) :: Cval
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 !
 !-----------------------------------------------------------------------
 !  Initialize.
@@ -156,6 +160,16 @@
             CASE ('Nimpact')
               Npts=load_i(Nval, Rval, 1, Ivalue)
               Nimpact=Ivalue(1)
+#  if defined SPLIT_4DVAR
+            CASE ('OuterLoop')
+              Npts=load_i(Nval, Rval, 1, Ivalue)
+              OuterLoop=Ivalue(1)
+            CASE ('Phase4DVAR')
+              DO i=1,LEN(Phase4DVAR)
+                Phase4DVAR(i:i)=blank
+              END DO
+              Phase4DVAR=TRIM(ADJUSTL(Cval(Nval)))
+#  endif
             CASE ('NextraObs')
               Npts=load_i(Nval, Rval, 1, Ivalue)
               NextraObs=Ivalue(1)
@@ -324,9 +338,11 @@
                 Cnorm(1,i)=Ltracer(itrc)
               END DO
 #  endif
+#  ifdef SALINITY
             CASE ('balance(isSalt)')
               Npts=load_l(Nval, Cval, 1, Lvalue)
               balance(isTvar(isalt))=Lvalue(1)
+#  endif
             CASE ('balance(isFsur)')
               Npts=load_l(Nval, Cval, 1, Lvalue)
               balance(isFsur)=Lvalue(1)
@@ -575,35 +591,35 @@
             CASE ('STDnameI')
               label='STD - initial conditions standard deviation'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Ngrids, Nfiles, STD(1,:))
+     &                      Ngrids, Nfiles, 4, 1, STD)
             CASE ('STDnameM')
               label='STD - model error standard deviation'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Ngrids, Nfiles, STD(2,:))
+     &                      Ngrids, Nfiles, 4, 2, STD)
             CASE ('STDnameB')
               label='STD - boundary conditions standard deviation'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Ngrids, Nfiles, STD(3,:))
+     &                      Ngrids, Nfiles, 4, 3, STD)
             CASE ('STDnameF')
               label='STD - surface forcing standard deviation'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Ngrids, Nfiles, STD(4,:))
+     &                      Ngrids, Nfiles, 4, 4, STD)
             CASE ('NRMnameI')
               label='NRM - initial conditions normalization'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Ngrids, Nfiles, NRM(1,:))
+     &                      Ngrids, Nfiles, 4, 1, NRM)
             CASE ('NRMnameM')
               label='NRM - model error normalization'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Ngrids, Nfiles, NRM(2,:))
+     &                      Ngrids, Nfiles, 4, 2, NRM)
             CASE ('NRMnameB')
               label='NRM - boundary conditions normalization'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Ngrids, Nfiles, NRM(3,:))
+     &                      Ngrids, Nfiles, 4, 3, NRM)
             CASE ('NRMnameF')
               label='NRM - surface forcing normalization'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
-     &                      Ngrids, Nfiles, NRM(4,:))
+     &                      Ngrids, Nfiles, 4, 4, NRM)
             CASE ('OBSname')
               label='OBS - data assimilation observations'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
@@ -628,7 +644,25 @@
               label='ERR - 4D-Var posterior error covariance'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
      &                      Ngrids, Nfiles, ERR)
-#if defined W4DPSAS_FCT_SENSITIVITY && defined OBS_SPACE
+#  ifdef SP4DVAR
+            CASE ('SPTname')
+              label='SPT - TLM Arnoldi vectors'
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Ngrids, Nfiles, SPT)
+            CASE ('SPAname')
+              label='SPA - ADM Arnoldi vectors'
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Ngrids, Nfiles, SPA)
+            CASE ('SCTname')
+              label='SCT - TLM Arnoldi vectors'
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Ngrids, Nfiles, SCT)
+            CASE ('SCAname')
+              label='SCA - ADM Arnoldi vectors'
+              Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
+     &                      Ngrids, Nfiles, SCA)
+#  endif
+#  if defined RBL4DVAR_FCT_SENSITIVITY && defined OBS_SPACE
             CASE ('OIFnameA')
               label='OIFA - observartion impacts forecast, analysis'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
@@ -637,7 +671,7 @@
               label='OIFB - observartion impacts forecast, background'
               Npts=load_s1d(Nval, Cval, Cdim, line, label, igrid,       &
      &                      Ngrids, Nfiles, OIFB)
-#endif
+#  endif
           END SELECT
         END IF
       END DO
@@ -695,7 +729,7 @@
 !  to Ninner.
 !
       IF ((Nvct.lt.1).or.(Nvct.gt.Ninner)) THEN
-        IF (Lwrite) THEN
+        IF (Master) THEN
           WRITE (out,55) 'Illegal parameter for array modes, Nvct = ',  &
      &                   Nvct, Ninner, '1 =< Nvct =< Ninner.'
         END IF
@@ -710,6 +744,7 @@
 !-----------------------------------------------------------------------
 !
 #   ifdef SOLVE3D
+#    ifdef SALINITY
       IF (.not.balance(isTvar(isalt)).and.balance(isFsur)) THEN
         balance(isTvar(isalt))=.TRUE.
       END IF
@@ -719,6 +754,7 @@
       IF (balance(isTvar(isalt))) THEN
         balance(isTvar(itemp))=.TRUE.
       END IF
+#    endif
       IF (balance(isVvel)) THEN
         balance(isUvel)=.TRUE.
       END IF
@@ -736,7 +772,7 @@
 !  Report input parameters.
 !-----------------------------------------------------------------------
 !
-      IF (Lwrite) THEN
+      IF (Master.and.Lwrite) THEN
         DO ng=1,Ngrids
 #  if defined FOUR_DVAR || defined VERIFICATION
           WRITE (out,60) ng
@@ -757,15 +793,15 @@
 #     endif
 #    endif
 #   endif
-#   ifndef IS4DVAR_SENSITIVITY
-#    ifdef IS4DVAR
+#   ifndef I4DVAR_ANA_SENSITIVITY
+#    ifdef I4DVAR
           WRITE (out,100) GradErr, 'GradErr',                           &
      &            'Upper bound on relative error of the gradient.'
-          WRITE (out,100) HevecErr, 'HevecErr',                         &
-     &            'Accuracy required for Hessian eigenvectors.'
           WRITE (out,70) LhessianEV, 'LhessianEV',                      &
      &            'Switch to compute Hessian eigenvectors.'
 #    endif
+          WRITE (out,100) HevecErr, 'HevecErr',                         &
+     &            'Accuracy required for eigenvectors.'
 #    ifdef WEAK_CONSTRAINT
           WRITE (out,70) LhotStart, 'LhotStart',                        &
      &            'Switch for hot start of subsequent outer loops.'
@@ -799,8 +835,10 @@
           WRITE (out,70) balance(isFsur), 'balance(isFsur)',            &
                   'Switch to include free-surface in balance operator.'
 #    ifdef SOLVE3D
+#     ifdef SALINITY
           WRITE (out,70) balance(isTvar(isalt)), 'balance(isSalt)',     &
                   'Switch to include salinity in balance operator.'
+#     endif
           WRITE (out,70) balance(isVvel), 'balance(isVvel)',            &
                   'Switch to include 3D momentum in balance operator.'
 #    else
@@ -821,13 +859,14 @@
           WRITE (out,80) NpostI, 'NpostI',                              &
      &            'Number of Lanczos iterations in posterior analysis.'
 #   endif
-#   if defined W4DPSAS_FCT_SENSITIVITY || defined W4DVAR_SENSITIVITY ||\
-       defined W4DPSAS_SENSITIVITY
-          WRITE (out,80) Nimpact, 'Nimpact',                             &
+#   if defined RBL4DVAR_ANA_SENSITIVITY || \
+       defined RBL4DVAR_FCT_SENSITIVITY || \
+       defined R4DVAR_ANA_SENSITIVITY
+          WRITE (out,80) Nimpact, 'Nimpact',                            &
      &            'Observations impact/sensitivity outer loop to use.'
           IF (Nimpact.gt.Nouter) THEN
             IF (Master) THEN
-              WRITE (out,240) 'Nimpact', Nimpact,                        &
+              WRITE (out,240) 'Nimpact', Nimpact,                       &
      &              'must be less or equal than Nouter'
             END IF
             exit_flag=5
@@ -835,19 +874,33 @@
           END IF
 #   endif
 #   if defined ARRAY_MODES
-          WRITE (out,80) Nimpact, 'Nimpact',                             &
+          WRITE (out,80) Nimpact, 'Nimpact',                            &
      &            'Array mode outer loop.'
           IF (Nimpact.gt.Nouter) THEN
             IF (Master) THEN
-              WRITE (out,240) 'Nimpact', Nimpact,                        &
+              WRITE (out,240) 'Nimpact', Nimpact,                       &
      &              'must be less or equal than Nouter'
             END IF
             exit_flag=5
             RETURN
           END IF
 #   endif
+#   if defined SPLIT_4DVAR
+          WRITE (out,80) OuterLoop, 'OuterLoop',                        &
+     &            'Current outer loop counter.'
+          IF (OuterLoop.gt.Nouter) THEN
+            IF (Master) THEN
+              WRITE (out,240) 'OuterLoop', OuterLoop,                   &
+     &              'must be less or equal than Nouter'
+            END IF
+            exit_flag=5
+            RETURN
+          END IF
+          WRITE (out,95) Phase4DVAR(1:10), 'Phase4DVAR',                &
+     &            'Current 4D-Var phase (first 10 characters).'
+#   endif
 #   ifndef TLM_CHECK
-#    ifndef IS4DVAR_SENSITIVITY
+#    ifndef I4DVAR_ANA_SENSITIVITY
           WRITE (out,170) LdefNRM(1:4,ng), 'LdefNRM',                   &
      &            'Switch to create a normalization NetCDF file.'
           WRITE (out,170) LwrtNRM(1:4,ng), 'LwrtNRM',                   &
@@ -865,9 +918,9 @@
      &            'Number of iterations for randomization.'
             END IF
           END IF
-#     if defined SENSITIVITY_4DVAR || \
-         defined TL_W4DPSAS        || defined TL_W4DVAR || \
-         defined W4DPSAS           || defined W4DVAR
+#     if defined RBL4DVAR           || defined R4DVAR    || \
+         defined SENSITIVITY_4DVAR  || defined SP4DVAR   || \
+         defined TL_RBL4DVAR        || defined TL_R4DVAR
           IF (ANY(LwrtNRM(:,ng))) THEN
             WRITE (out,70) Cnorm(2,isFsur), 'CnormM(isFsur)',           &
      &            'Compute model 2D RHO-normalization factors.'
@@ -972,9 +1025,9 @@
      &            'Vertical diffusion factor, boundary conditions.'
 #     endif
 #    endif
-#    if defined SENSITIVITY_4DVAR || \
-        defined TL_W4DPSAS        || defined TL_W4DVAR || \
-        defined W4DPSAS           || defined W4DVAR
+#    if defined RBL4DVAR           || defined R4DVAR    || \
+        defined SENSITIVITY_4DVAR  || defined SP4DVAR   || \
+        defined TL_RBL4DVAR        || defined TL_R4DVAR
          IF (nADJ(ng).lt.ntimes(ng)) THEN
             WRITE (out,120) Hdecay(2,isFsur,ng), 'HdecayM(isFsur)',     &
      &            'Model decorrelation H-scale (m), free-surface.'
@@ -1139,21 +1192,21 @@
           END IF
           IF (bgqc_type(ng).eq.1) THEN
             WRITE (out,100) S_bgqc(isFsur,ng), 'S_bgqc(isFsur)',        &
-     &            'Quality control reject threshold, free-surface.'
+     &        'Quality control reject squared threshold, free-surface.'
 #     ifndef SOLVE3D
             WRITE (out,100) S_bgqc(isUbar,ng), 'S_bgqc(isUbar)',        &
-     &            'Quality control reject threshold, 2D U-momentum.'
+     &        'Quality control reject squared threshold, 2D U-momentum.'
             WRITE (out,100) S_bgqc(isVbar,ng), 'S_bgqc(isVbar)',        &
-     &            'Quality control reject threshold, 2D V-momentum.'
+     &        'Quality control reject squared threshold, 2D V-momentum.'
 #     else
             WRITE (out,100) S_bgqc(isUvel,ng), 'S_bgqc(isUvel)',        &
-     &            'Quality control reject threshold, 3D U-momentum.'
+     &        'Quality control reject squared threshold, 3D U-momentum.'
             WRITE (out,100) S_bgqc(isVvel,ng), 'S_bgqc(isVvel)',        &
-     &            'Quality control reject threshold, 3D V-momentum.'
+     &        'Quality control reject squared threshold, 3D V-momentum.'
             DO itrc=1,NT(ng)
               WRITE (out,190) S_bgqc(isTvar(itrc),ng),                  &
      &            'S_bgqc(idTvar)',                                     &
-     &            'Quality control reject threshold, ',                 &
+     &            'Quality control reject squared threshold, ',         &
      &            TRIM(Vname(1,idTvar(itrc)))
             END DO
 #     endif
@@ -1162,7 +1215,7 @@
      &            'Number of provenances to Quality control.'
             DO i=1,Nprovenance(ng)
               WRITE (out,200) P_bgqc(i,ng), 'P_bgqc', i,                &
-     &            'Quality control reject threshold for provenance',    &
+     &       'Quality control reject squared threshold for provenance', &
      &            Iprovenance(i,ng)
             END DO
           END IF
@@ -1196,11 +1249,11 @@
 #   endif
 #  endif
           IF (NextraObs.gt.0) THEN
-            WRITE (out,80) NextraObs, 'NextraObs',                       &
+            WRITE (out,80) NextraObs, 'NextraObs',                      &
      &            'Number of extra-observations classes to process.'
             DO i=1,NextraObs
-              WRITE (out,85) ExtraIndex(i), 'ExtraIndex', i,             &
-     &            'Extra-observation type index for: '//                 &
+              WRITE (out,85) ExtraIndex(i), 'ExtraIndex', i,            &
+     &            'Extra-observation type index for: '//                &
      &            TRIM(ExtraName(i))
             END DO
           END IF
@@ -1211,22 +1264,25 @@
 !
           WRITE (out,150)
 #  ifdef VERIFICATION
-          WRITE (out,160) ' Verification Parameters File:  ',           &
+          WRITE (out,160) '     Verification Parameters File:  ',       &
      &                    TRIM(aparnam)
 #  else
-          WRITE (out,160) ' Assimilation Parameters File:  ',           &
+          WRITE (out,160) '     Assimilation Parameters File:  ',       &
      &                    TRIM(aparnam)
 #  endif
-#  if defined FOUR_DVAR || (defined HESSIAN_SV && defined BNORM)
-#   if defined IS4DVAR          || defined OBS_SENSITIVITY || \
-       defined OPT_OBSERVATIONS || defined WEAK_CONSTRAINT
-#    if defined SENSITIVITY_4DVAR || \
-        defined TL_W4DPSAS        || defined TL_W4DVAR || \
-        defined W4DPSAS           || defined W4DVAR
+#  if defined FOUR_DVAR           || \
+     (defined HESSIAN_SV          && defined BNORM)
+#   if defined I4DVAR             || defined OBS_SENSITIVITY || \
+       defined OPT_OBSERVATIONS   || defined WEAK_CONSTRAINT
+#    if defined RBL4DVAR          || defined R4DVAR          || \
+        defined SENSITIVITY_4DVAR || defined SP4DVAR         || \
+        defined TL_RBL4DVAR       || defined TL_R4DVAR
           fname=STD(2,ng)%name
-          IF (.not.find_file(ng, fname, 'STDnameM')) GO TO 30
-          WRITE (out,160) '                   Model STD File:  ',       &
-     &                    TRIM(fname)
+          IF (NSA.eq.2) THEN
+            IF (.not.find_file(ng, fname, 'STDnameM')) GO TO 30
+            WRITE (out,160) '                   Model STD File:  ',     &
+     &                      TRIM(fname)
+          END IF
 #    endif
           fname=STD(1,ng)%name
           IF (.not.find_file(ng, fname, 'STDnameI')) GO TO 30
@@ -1245,9 +1301,9 @@
      &                    TRIM(fname)
 #    endif
 #   endif
-#   if defined SENSITIVITY_4DVAR || defined TL_W4DPSAS  || \
-       defined TL_W4DVAR         || defined W4DPSAS     || \
-       defined W4DVAR
+#   if defined RBL4DVAR          || defined R4DVAR    || \
+       defined SENSITIVITY_4DVAR || defined SP4DVAR   || \
+       defined TL_RBL4DVAR       || defined TL_R4DVAR
           fname=NRM(2,ng)%name
           WRITE (out,160) '                  Model Norm File:  ',       &
      &                    TRIM(fname)
@@ -1320,7 +1376,7 @@
 #   if !defined CORRELATION
           WRITE (out,160) '        Input/Output Lanczos File:  ',       &
      &                    TRIM(LCZ(ng)%name)
-#    ifndef IS4DVAR_SENSITIVITY
+#    ifndef I4DVAR_ANA_SENSITIVITY
           WRITE (out,160) '        Input/Output Hessian File:  ',       &
      &                    TRIM(HSS(ng)%name)
 #    endif
@@ -1339,7 +1395,17 @@
           WRITE (out,160) '         Output verification File:  ',       &
      &                    TRIM(DAV(ng)%name)
 #   else
-          WRITE (out,160) '                Output 4DVAR File:  ',       &
+#    ifdef SP4DVAR
+          WRITE (out,160) '    Input/Output TLM Arnoldi File:  ',       &
+     &                    TRIM(SPT(ng)%name)
+          WRITE (out,160) '    Input/Output ADM Arnoldi File:  ',       &
+     &                    TRIM(SPA(ng)%name)
+          WRITE (out,160) '    Input/Output TLM Scratch File:  ',       &
+     &                    TRIM(SCT(ng)%name)
+          WRITE (out,160) '    Input/Output ADM Scratch File:  ',       &
+     &                    TRIM(SCA(ng)%name)
+#    endif
+          WRITE (out,160) '               Output 4D-Var File:  ',       &
      &                    TRIM(DAV(ng)%name)
 #   endif
 #  endif
@@ -1348,7 +1414,7 @@
           WRITE (out,160) '      Output Posterior Error File:  ',       &
      &                    TRIM(ERR(ng)%name)
 #  endif
-#  if defined W4DPSAS_FCT_SENSITIVITY && defined OBS_SPACE
+#  if defined RBL4DVAR_FCT_SENSITIVITY && defined OBS_SPACE
           fname=OIFA(ng)%name
 !!        IF (.not.find_file(ng, fname, 'OIFnameA')) GO TO 30
           WRITE (out,160) '  Input Obs Impacts Analysis File:  ',       &
@@ -1369,8 +1435,7 @@
             END IF
           END IF
           exit_flag=4
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
   40      CONTINUE
         END DO
       END IF
@@ -1419,8 +1484,8 @@
   70  FORMAT (10x,l1,2x,a,t30,a)
   80  FORMAT (1x,i10,2x,a,t30,a)
   85  FORMAT (1x,i10,2x,a,'(',i2.2,')',t30,a)
-
   90  FORMAT (1x,i10,2x,a,t30,a,/,t32,a)
+  95  FORMAT (1x,a,2x,a,t30,a)
  100  FORMAT (1p,e11.4,2x,a,t30,a)
  110  FORMAT (10x,l1,2x,a,t30,a,i2.2,':',1x,a)
  120  FORMAT (f11.3,2x,a,t30,a)

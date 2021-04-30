@@ -1,9 +1,9 @@
 #include "cppdefs.h"
-      SUBROUTINE inp_par (model)
+      MODULE inp_par_mod
 !
-!svn $Id: inp_par.F 1013 2020-03-11 01:46:00Z arango $
+!svn $Id: inp_par.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -13,6 +13,15 @@
 !                                                                      !
 !=======================================================================
 !
+      USE mod_kinds
+!
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE inp_par (model)
+!***********************************************************************
+!
+
 #ifdef FILTERED
       USE mod_filter, ONLY: nfil,fcount,nw,dtfil,FILN
 #endif
@@ -44,7 +53,7 @@
 !  Local variable declarations.
 !
       logical :: Lwrite
-
+!
       integer :: Itile, Jtile, Nghost, Ntiles, tile
       integer :: Imin, Imax, Jmin, Jmax
       integer :: Uoff, Voff
@@ -59,7 +68,12 @@
       real(r8), parameter :: spv = 0.0_r8
       character*2 :: ngnumber
 !
-      SourceFile=__FILE__
+      character (len=10) :: stdout_file
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
+      SourceFile=MyFile
 !
 !-----------------------------------------------------------------------
 !  Read in and report input model parameters.
@@ -69,13 +83,27 @@
 !
 !  Change default Fortran standard out unit, so ROMS run information is
 !  directed to a file. This is advantageous in coupling applications to
-!  ROMS information separated from other models.
+!  ROMS information separated from other models. It overwite Fortran
+!  default unit 6.
 !
-       stdout=66                     ! overwite Fortran default unit 6
+# if defined DISTRIBUTE && defined DISJOINTED
+       stdout=60+ForkColor
+       WRITE (stdout_file,'(a,i2.2,a)') 'log', ForkColor+1, '.roms'
+# else
+       stdout=60
+       stdout_file='log.roms'
+# endif
+!
+!  Open ROMS standard output file.
 !
        IF (Master) THEN
-         OPEN (stdout, FILE='log.roms', FORM='formatted',               &
-     &         STATUS='replace')
+         IF (Lappend) THEN
+           OPEN (stdout, FILE=TRIM(stdout_file), FORM='formatted',      &
+     &           STATUS='old', POSITION='append', ACTION='write')
+         ELSE
+           OPEN (stdout, FILE=TRIM(stdout_file), FORM='formatted',      &
+     &           STATUS='replace')
+         END IF
        END IF
 #endif
 !
@@ -89,6 +117,15 @@
       Lwrite=Master
       inp=stdinp
       out=stdout
+#endif
+#if defined SPLIT_4DVAR && SUPPRESS_REPORT
+!
+!  Supress reporting the information in the split 4D-Var algorithm when
+!  appending into standard output.
+!
+      IF (Lappend) THEN
+        Lwrite=.FALSE.
+      END IF
 #endif
 !
 !  Get current date.
@@ -106,12 +143,12 @@
 !  Read in physical model input parameters.
 !-----------------------------------------------------------------------
 !
-      IF (Lwrite) WRITE (out,10) version, TRIM(date_str)
+      IF (Master.and.Lwrite) WRITE (out,10) version, TRIM(date_str)
  10   FORMAT (80('-'),/,                                                &
               ' Model Input Parameters:  ROMS/TOMS version ',a,/,       &
      &        26x,a,/,80('-'))
 
-#ifdef COAWST_COUPLING
+#if defined COAWST_COUPLING || defined JEDI
 !
 !  In multiple model coupling, the ocean input physical parameter
 !  script needs to be opened and processed as a regular file.
@@ -161,8 +198,20 @@
 #ifdef DISTRIBUTE
       CALL mp_bcasti (1, model, exit_flag)
 #endif
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+#if defined SPLIT_4DVAR && SUPPRESS_REPORT
+!
+!  If appending into standard output file, supress the reporting of
+!  information.  Turn of "LwrtInfo" switch.
+!  appending into standard output.
+!
+      IF (Lappend) THEN
+        DO ng=1,Ngrids
+          LwrtInfo(ng)=.FALSE.
+        END DO
+      END IF
+#endif
 #ifdef BIOLOGY
 !
 !-----------------------------------------------------------------------
@@ -172,8 +221,7 @@
       OPEN (15, FILE=TRIM(bparnam), FORM='formatted', STATUS='old')
 
       CALL read_BioPar (model, 15, out, Lwrite)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #endif
 #ifdef SEDIMENT
 !
@@ -184,8 +232,7 @@
       OPEN (25, FILE=TRIM(sparnam), FORM='formatted', STATUS='old')
 
       CALL read_SedPar (model, 25, out, Lwrite)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #endif
 #ifdef NESTING
 !
@@ -195,8 +242,7 @@
 !-----------------------------------------------------------------------
 !
       CALL set_contact (1, model)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #endif
 !
 !-----------------------------------------------------------------------
@@ -628,7 +674,7 @@
 !  file.
 !-----------------------------------------------------------------------
 !
-      IF (Master) THEN
+      IF (Master.and.Lwrite) THEN
         DO ng=1,Ngrids
 #ifdef SOLVE3D
           WRITE (stdout,50) ng, Lm(ng), Mm(ng), N(ng),                  &
@@ -637,7 +683,6 @@
           WRITE (stdout,50) ng, Lm(ng), Mm(ng),                         &
      &                      NtileI(ng), NtileJ(ng)
 #endif
-          Print *,'Number of tracers: ', NT(ng)
 #if !defined DISTRIBUTE && defined ADJOINT
           IF ((NtileI(ng).ne.1).or.(NtileJ(ng).ne.1)) THEN
             WRITE (stdout,60)
@@ -712,13 +757,12 @@
 #ifdef DISTRIBUTE
       CALL mp_bcasti (1, model, exit_flag)
 #endif
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Report tile minimum and maximum fractional grid coordinates.
 !
       DO ng=1,Ngrids
-        IF (Master) THEN
+        IF (Master.and.Lwrite) THEN
           WRITE (stdout,90) ng
           DO tile=0,NtileI(ng)*NtileJ(ng)-1
             WRITE (stdout,100) tile,                                    &
@@ -786,7 +830,7 @@
         HaloSizeJ(ng)=Nghost*MaxHaloLenJ+6*Nghost
         TileSide(ng)=MAX(MaxHaloLenI,MaxHaloLenJ)
         TileSize(ng)=MaxHaloLenI*MaxHaloLenJ
-        IF (Master) THEN
+        IF (Master.and.Lwrite) THEN
           WRITE (stdout,110) ng, HaloSizeI(ng), ng, HaloSizeJ(ng),      &
      &                       ng, TileSide(ng),  ng, TileSize(ng)
  110      FORMAT (/,' Maximum halo size in XI and ETA directions:',/,   &
@@ -807,8 +851,7 @@
       OPEN (35, FILE=TRIM(aparnam), FORM='formatted', STATUS='old')
 
       CALL read_AssPar (model, 35, out, Lwrite)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #endif
 #ifdef FLOATS
 !
@@ -819,8 +862,7 @@
       OPEN (45, FILE=TRIM(fposnam), FORM='formatted', STATUS='old')
 
       CALL read_FltPar (model, 45, out, Lwrite)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #endif
 #if defined FLOATS && defined FLOAT_BIOLOGY
 !
@@ -831,8 +873,7 @@
       OPEN (50, FILE=TRIM(fbionam), FORM='formatted', STATUS='old')
 
       CALL read_FltBioPar (model, 50, out, Lwrite)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #endif
 #ifdef STATIONS
 !
@@ -843,8 +884,7 @@
       OPEN (55, FILE=TRIM(sposnam), FORM='formatted', STATUS='old')
 
       CALL read_StaPar (model, 55, out, Lwrite)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #endif
 !
 #ifdef VEGETATION
@@ -863,25 +903,23 @@
 !  Report tracer advection scheme.
 !-----------------------------------------------------------------------
 !
-      IF (Master) THEN
+      IF (Master.and.Lwrite) THEN
         WRITE (out,120) 'NLM'
  120    FORMAT (/,1x,'Tracer Advection Scheme: ',a,/,1x,24('='),/,      &
      &          /,1x,'Variable',t25,'Grid',t31,'Horizontal',            &
      &          t50,'Vertical', /,1x,'---------',t25,'----',            &
      &          t31,2('------------',7x))
       END IF
-      CALL tadv_report (out, iNLM, Hadvection, Vadvection)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      CALL tadv_report (out, iNLM, Hadvection, Vadvection, Lwrite)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
 # if defined ADJOINT || defined TANGENT || defined TL_IOMS
 !
-      IF (Master) THEN
+      IF (Master.and.Lwrite) THEN
         WRITE (out,120) 'TLM, RPM, and ADM'
       END IF
-      CALL tadv_report (out, iADM, ad_Hadvection, ad_Vadvection)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      CALL tadv_report (out, iADM, ad_Hadvection, ad_Vadvection, Lwrite)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 # endif
 #endif
 #if defined TANGENT || defined TL_IOMS
@@ -916,7 +954,7 @@
 !  Report lateral boundary conditions.
 !-----------------------------------------------------------------------
 !
-      IF (Master) THEN
+      IF (Master.and.Lwrite) THEN
         WRITE (out,130) 'NLM'
  130    FORMAT (/,1x,'Lateral Boundary Conditions: ',a,/,1x,28('='),/,  &
      &          /,1x,'Variable',t25,'Grid',t31,'West Edge',             &
@@ -934,8 +972,7 @@
         END DO
 #endif
       END IF
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Compute various constants.
@@ -988,9 +1025,7 @@
         FIL(7,ng)%name=TRIM(ADJUSTL('ocean_filr_'//ngnumber//'.nc'))
         FIL(8,ng)%name=TRIM(ADJUSTL('ocean_filt_'//ngnumber//'.nc'))
         FIL(9,ng)%name=TRIM(ADJUSTL('ocean_filw_'//ngnumber//'.nc'))
-#ifdef ICE_MODEL
-        FIL(10,ng)%name=TRIM(ADJUSTL('ocean_filice_'//ngnumber//'.nc'))
-#endif
+
         DO ifile=1,nfile
           allocate ( FIL(ifile,ng)%Nrec(1) )
           allocate ( FIL(ifile,ng)%Vid(NV) )
@@ -1153,9 +1188,6 @@
 !  Convert momentum stresses and tracer flux scales to kinematic
 !  Values. Recall, that all the model fluxes are kinematic.
 !
-#ifdef NCEP_FLUXES
-        cff=1.0_r8
-#else
         cff=1.0_r8/rho0
         Fscale(idUsms,ng)=cff*Fscale(idUsms,ng)
         Fscale(idVsms,ng)=cff*Fscale(idVsms,ng)
@@ -1167,10 +1199,6 @@
         Fscale(idVbws,ng)=cff*Fscale(idVbws,ng)
         Fscale(idUbcs,ng)=cff*Fscale(idUbcs,ng)
         Fscale(idVbcs,ng)=cff*Fscale(idVbcs,ng)
-#endif
-#ifdef NCEP_FLUXES
-        cff=1.0_r8
-#else
         cff=1.0_r8/(rho0*Cp)
         Fscale(idTsur(itemp),ng)=cff*Fscale(idTsur(itemp),ng)
         Fscale(idTbot(itemp),ng)=cff*Fscale(idTbot(itemp),ng)
@@ -1180,7 +1208,6 @@
         Fscale(idLhea,ng)=cff*Fscale(idLhea,ng)
         Fscale(idShea,ng)=cff*Fscale(idShea,ng)
         Fscale(iddQdT,ng)=cff*Fscale(iddQdT,ng)
-#endif
 
 #ifdef SOLVE3D
 !
@@ -1302,7 +1329,7 @@
 !  Check C-preprocessing options and definitions.
 !-----------------------------------------------------------------------
 !
-      IF (Master) THEN
+      IF (Master.and.Lwrite) THEN
         CALL checkdefs
         CALL my_flush (out)
       END IF
@@ -1310,8 +1337,7 @@
       CALL mp_bcasti (1, model, exit_flag)
       CALL mp_bcasts (1, model, Coptions)
 #endif
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !-----------------------------------------------------------------------
 !  Initialize random number sequence so we can get identical results
@@ -1323,3 +1349,5 @@
 !
       RETURN
       END SUBROUTINE inp_par
+!
+      END MODULE inp_par_mod

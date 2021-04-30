@@ -2,9 +2,9 @@
       MODULE ad_rhs3d_mod
 #if defined ADJOINT && defined SOLVE3D
 !
-!svn $Id: ad_rhs3d.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: ad_rhs3d.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group       Andrew M. Moore   !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group       Andrew M. Moore   !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -18,10 +18,10 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: ad_rhs3d
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -71,6 +71,9 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 # include "tile.h"
 # ifdef RPM_RELAXATION
 !
@@ -107,7 +110,7 @@
 !-----------------------------------------------------------------------
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iADM, 21, __LINE__, __FILE__)
+      CALL wclock_on (ng, iADM, 21, __LINE__, MyFile)
 # endif
       CALL ad_rhs3d_tile (ng, tile,                                     &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -165,7 +168,7 @@
      &                    OCEAN(ng) % ad_ru,                            &
      &                    OCEAN(ng) % ad_rv)
 # ifdef PROFILE
-      CALL wclock_off (ng, iADM, 21, __LINE__, __FILE__)
+      CALL wclock_off (ng, iADM, 21, __LINE__, MyFile)
 # endif
 # ifdef RPM_RELAXATION
 !
@@ -2912,8 +2915,8 @@
 #   endif
         DO j=JstrV-1,Jend
           DO i=Istr,Iend+1
-!>           tl_Huee(i,j)=tl_Huon(i,j-1,k)-2.0_r8*tl_Huon(i,j,k)+
-!>     &                  tl_Huon(i,j+1,k)
+!>           tl_Huee(i,j)=tl_Huon(i,j-1,k)-2.0_r8*tl_Huon(i,j,k)+       &
+!>   &                    tl_Huon(i,j+1,k)
 !>
             ad_Huon(i,j-1,k)=ad_Huon(i,j-1,k)+ad_Huee(i,j)
             ad_Huon(i,j  ,k)=ad_Huon(i,j  ,k)-2.0_r8*ad_Huee(i,j)
@@ -3928,6 +3931,7 @@
 !!    END DO
 #  endif
 # endif
+!
       RETURN
       END SUBROUTINE ad_rhs3d_tile
 #endif

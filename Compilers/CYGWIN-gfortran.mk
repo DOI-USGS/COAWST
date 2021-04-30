@@ -1,6 +1,6 @@
-# svn $Id: CYGWIN-gfortran.mk 995 2020-01-10 04:01:28Z arango $
+# svn $Id: CYGWIN-gfortran.mk 1054 2021-03-06 19:47:12Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -44,7 +44,7 @@
            INCDIR := /usr/include /usr/local/bin
             SLIBS := -L/usr/local/lib -L/usr/lib
             ULIBS :=
-             LIBS :=
+             LIBS := -L/usr/local/lib -L/usr/lib
 ifdef USE_ROMS
              LIBS += $(SCRATCH_DIR)/libNLM.a         # cyclic dependencies
 endif
@@ -72,9 +72,11 @@ ifdef USE_ROMS
            FFLAGS += -fcheck=all
 #          FFLAGS += -fsanitize=address -fsanitize=undefined
            FFLAGS += -finit-real=nan -ffpe-trap=invalid,zero,overflow
+           FFLAGS += -fallow-argument-mismatch
  else
-           FFLAGS += -O3
-           FFLAGS += -ffast-math
+           FFLAGS += -O2
+#          FFLAGS += -ffast-math
+           FFLAGS += -fallow-argument-mismatch
  endif
 endif
            MDEPFLAGS := --cpp --fext=f90 --file=- --objdir=$(SCRATCH_DIR)
@@ -203,6 +205,12 @@ endif
 ifndef USE_SCRIP
              LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
 endif
+
+ifdef USE_WW3
+             FFLAGS += -I${COAWST_WW3_DIR}/mod_MPI
+             LIBS += WW3/model/obj_MPI/libWW3.a
+endif
+
 ifdef USE_MCT
        MCT_INCDIR ?= /usr/local/mct/include
        MCT_LIBDIR ?= /usr/local/mct/lib
@@ -224,11 +232,6 @@ ifdef USE_WRF
              LIBS += WRF/frame/pack_utils.o
              LIBS += WRF/external/io_netcdf/libwrfio_nf.a
 #            LIBS += WRF/external/io_netcdf/wrf_io.o
-endif
-
-ifdef USE_WW3
-             FFLAGS += -I${COAWST_WW3_DIR}/mod_MPI
-             LIBS += WW3/model/obj_MPI/libWW3.a
 endif
 
 #

@@ -170,6 +170,23 @@
             END DO
           END DO
 !
+!  Southern edge, nested.
+!
+        ELSE IF (LBC(isouth,isV3Sd,ng)%nested) THEN
+          DO k=1,N(ng)
+            DO i=Istr,Iend
+                v_stokes(i,Jstr,k)=v_stokes(i,Jstr+1,k)
+# ifdef MASKING
+                v_stokes(i,Jstr,k)=v_stokes(i,Jstr,k)*                  &
+       &                           GRID(ng)%vmask(i,Jstr)
+# endif
+# ifdef WET_DRY
+                v_stokes(i,Jstr,k)=v_stokes(i,Jstr,k)*                  &
+     &                             GRID(ng)%vmask_wet(i,Jstr)
+# endif
+            END DO
+          END DO
+!
 !  Southern edge, closed boundary condition.
 !
         ELSE IF (LBC(isouth,isV3Sd,ng)%closed) THEN
@@ -271,6 +288,23 @@
           END DO
         END DO
 !
+!  Northern edge, nested.
+!
+        ELSE IF (LBC(inorth,isV3Sd,ng)%nested) THEN
+          DO k=1,N(ng)
+            DO i=Istr,Iend
+                v_stokes(i,Jend+1,k)=v_stokes(i,Jend,k)
+# ifdef MASKING
+                v_stokes(i,Jend+1,k)=v_stokes(i,Jend+1,k)*              &
+     &                                GRID(ng)%vmask(i,Jend+1)
+# endif
+# ifdef WET_DRY
+                v_stokes(i,Jend+1,k)=v_stokes(i,Jend+1,k)*              &
+     &                               GRID(ng)%vmask_wet(i,Jend+1)
+# endif
+          END DO
+        END DO
+!
 !  Northern edge, closed boundary condition.
 !
         ELSE IF (LBC(inorth,isV3Sd,ng)%closed) THEN
@@ -369,6 +403,23 @@
      &                               GRID(ng)%vmask_wet(Istr-1,j)
 # endif
               END IF
+            END DO
+          END DO
+!
+!  Western edge, nested.
+!
+        ELSE IF (LBC(iwest,isV3Sd,ng)%nested) THEN
+          DO k=1,N(ng)
+            DO j=JstrV,Jend
+                v_stokes(Istr-1,j,k)=v_stokes(Istr,j,k)
+# ifdef MASKING
+                v_stokes(Istr-1,j,k)=v_stokes(Istr-1,j,k)*              &
+     &                               GRID(ng)%vmask(Istr-1,j)
+# endif
+# ifdef WET_DRY
+                v_stokes(Istr-1,j,k)=v_stokes(Istr-1,j,k)*              &
+     &                               GRID(ng)%vmask_wet(Istr-1,j)
+# endif
             END DO
           END DO
 !
@@ -489,6 +540,23 @@
             END DO
           END DO
 !
+!  Eastern edge, nested.
+!
+        ELSE IF (LBC(ieast,isV3Sd,ng)%nested) THEN
+          DO k=1,N(ng)
+            DO j=JstrV,Jend
+                v_stokes(Iend+1,j,k)=v_stokes(Iend,j,k)
+# ifdef MASKING
+                v_stokes(Iend+1,j,k)=v_stokes(Iend+1,j,k)*              &
+     &                               GRID(ng)%vmask(Iend+1,j)
+# endif
+# ifdef WET_DRY
+                v_stokes(Iend+1,j,k)=v_stokes(Iend+1,j,k)*              &
+     &                               GRID(ng)%vmask_wet(Iend+1,j)
+# endif
+            END DO
+          END DO
+!
 !  Eastern edge, closed boundary condition: free slip (gamma2=1)  or
 !                                           no   slip (gamma2=-1).
 !
@@ -524,8 +592,10 @@
 !
       IF (.not.(EWperiodic(ng).or.NSperiodic(ng))) THEN
         IF (DOMAIN(ng)%SouthWest_Corner(tile)) THEN
-          IF (LBC_apply(ng)%south(Istr-1).and.                          &
-     &        LBC_apply(ng)%west (Jstr  )) THEN
+          IF ((LBC_apply(ng)%south(Istr-1).and.                         &
+     &        LBC_apply(ng)%west (Jstr  )).or.                          &
+     &        (LBC(iwest,isV3Sd,ng)%nested.and.                         &
+     &         LBC(isouth,isV3Sd,ng)%nested)) THEN
             DO k=1,N(ng)
               v_stokes(Istr-1,Jstr,k)=0.5_r8*                           &
      &                                (v_stokes(Istr  ,Jstr  ,k)+       &
@@ -534,8 +604,10 @@
           END IF
         END IF
         IF (DOMAIN(ng)%SouthEast_Corner(tile)) THEN
-          IF (LBC_apply(ng)%south(Iend+1).and.                          &
-     &        LBC_apply(ng)%east (Jstr  )) THEN
+          IF ((LBC_apply(ng)%south(Iend+1).and.                         &
+     &        LBC_apply(ng)%east (Jstr  )).or.                          &
+     &        (LBC(ieast,isV3Sd,ng)%nested.and.                         &
+     &         LBC(isouth,isV3Sd,ng)%nested)) THEN
             DO k=1,N(ng)
               v_stokes(Iend+1,Jstr,k)=0.5_r8*                           &
      &                                (v_stokes(Iend  ,Jstr  ,k)+       &
@@ -544,8 +616,10 @@
           END IF
         END IF
         IF (DOMAIN(ng)%NorthWest_Corner(tile)) THEN
-          IF (LBC_apply(ng)%north(Istr-1).and.                          &
-     &        LBC_apply(ng)%west (Jend+1)) THEN
+          IF ((LBC_apply(ng)%north(Istr-1).and.                         &
+     &        LBC_apply(ng)%west (Jend+1)).or.                          &
+     &        (LBC(iwest,isV3Sd,ng)%nested.and.                         &
+     &         LBC(inorth,isV3Sd,ng)%nested)) THEN
             DO k=1,N(ng)
               v_stokes(Istr-1,Jend+1,k)=0.5_r8*                         &
      &                                  (v_stokes(Istr-1,Jend  ,k)+     &
@@ -554,8 +628,10 @@
           END IF
         END IF
         IF (DOMAIN(ng)%NorthEast_Corner(tile)) THEN
-          IF (LBC_apply(ng)%north(Iend+1).and.                          &
-     &        LBC_apply(ng)%east (Jend+1)) THEN
+          IF ((LBC_apply(ng)%north(Iend+1).and.                         &
+     &        LBC_apply(ng)%east (Jend+1)).or.                          &
+     &        (LBC(ieast,isV3Sd,ng)%nested.and.                         &
+     &         LBC(inorth,isV3Sd,ng)%nested)) THEN
             DO k=1,N(ng)
               v_stokes(Iend+1,Jend+1,k)=0.5_r8*                         &
      &                                  (v_stokes(Iend+1,Jend  ,k)+     &

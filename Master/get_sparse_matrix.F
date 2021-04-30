@@ -37,7 +37,7 @@
 !
 !  Local variable declarations
 !
-      integer :: i, j, ndims, status, varid
+      integer :: i, j, ndims, status, varid, Min_elem_flag
       integer :: ncid, numelem, ncSPSid, grpid
       integer, dimension(2) :: start, total
       integer, dimension(nf90_max_var_dims) :: dimIDs
@@ -130,6 +130,15 @@
       status=nf90_inquire_dimension(ncid, dimIDs(1), len=num_elems_main)
       num_sparse_elems=num_elems_main
 !
+! Need to ensure we have at least 1 weight.
+!
+      Min_elem_flag=0
+      IF (num_sparse_elems.eq.0) THEN
+        num_elems_main=1
+        num_sparse_elems=1
+        Min_elem_flag=1
+      END IF
+!
 !     These 3 are for the main normal weights.
 !
       allocate ( sparse_rows_main(num_elems_main) )
@@ -138,41 +147,48 @@
 !
 ! Get the rows.
 !
-      status=nf90_inq_varid(ncid,'dst_address', varid)
-      IF (status.ne.nf90_noerr) THEN
-        WRITE (stdout,30) TRIM('dst_address')
-        exit_flag=4
-        ioerror=status
-      END IF
-      start(1)=1
-      total(1)=num_elems_main
-      status=nf90_get_var(ncid, varid, sparse_rows_main, start, total)
+      IF (Min_elem_flag.eq.0) THEN
+        status=nf90_inq_varid(ncid,'dst_address', varid)
+        IF (status.ne.nf90_noerr) THEN
+          WRITE (stdout,30) TRIM('dst_address')
+          exit_flag=4
+          ioerror=status
+        END IF
+        start(1)=1
+        total(1)=num_elems_main
+        status=nf90_get_var(ncid, varid, sparse_rows_main, start, total)
 !
 ! Get the cols.
 !
-      status=nf90_inq_varid(ncid,'src_address', varid)
-      IF (status.ne.nf90_noerr) THEN
-        WRITE (stdout,30) TRIM('src_address')
-        exit_flag=4
-        ioerror=status
-      END IF
-      start(1)=1
-      total(1)=num_elems_main
-      status=nf90_get_var(ncid, varid, sparse_cols_main, start, total)
+        status=nf90_inq_varid(ncid,'src_address', varid)
+        IF (status.ne.nf90_noerr) THEN
+          WRITE (stdout,30) TRIM('src_address')
+          exit_flag=4
+          ioerror=status
+        END IF
+        start(1)=1
+        total(1)=num_elems_main
+        status=nf90_get_var(ncid, varid, sparse_cols_main, start, total)
 !
 ! Get the weights.
 !
-      status=nf90_inq_varid(ncid,'remap_matrix', varid)
-      IF (status.ne.nf90_noerr) THEN
-        WRITE (stdout,30) TRIM('remap_matrix')
-        exit_flag=4
-        ioerror=status
+        status=nf90_inq_varid(ncid,'remap_matrix', varid)
+        IF (status.ne.nf90_noerr) THEN
+          WRITE (stdout,30) TRIM('remap_matrix')
+          exit_flag=4
+          ioerror=status
+        END IF
+        start(2)=1
+        total(2)=num_elems_main
+        start(1)=1
+        total(1)=1
+        status=nf90_get_var(ncid, varid, sparse_weights_main, start,    &
+     &                      total)
+      ELSE
+        sparse_rows_main(1)=1
+        sparse_cols_main(1)=1
+        sparse_weights_main(1)=0.0_m8
       END IF
-      start(2)=1
-      total(2)=num_elems_main
-      start(1)=1
-      total(1)=1
-      status=nf90_get_var(ncid, varid, sparse_weights_main, start, total)
 !
 ! Check to see if the user computed additional weights to account
 ! for land areas of the src model driving water pts in dst model.
@@ -180,7 +196,7 @@
       status=nf90_inq_varid(ncid,'add_src_address', varid)
       IF (status.eq.nf90_noerr) THEN
         status=nf90_inquire_variable(ncid,varid,dimids = dimIDs)
-        status=nf90_inquire_dimension(ncid, dimIDs(1), len=num_elems_add)
+        status=nf90_inquire_dimension(ncid, dimIDs(1),len=num_elems_add)
         num_sparse_elems=num_sparse_elems+num_elems_add
 !
 !       These 3 are the added arrays.
@@ -223,7 +239,8 @@
         END IF
         start(1)=1
         total(1)=num_elems_add
-        status=nf90_get_var(ncid, varid, sparse_weights_add, start, total)
+        status=nf90_get_var(ncid, varid, sparse_weights_add,            &
+     &                      start, total)
       END IF
 !
 ! Allocate total arrays.

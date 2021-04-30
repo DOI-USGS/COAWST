@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_param
 !
-!svn $Id: mod_param.F 1001 2020-01-10 22:41:16Z arango $
+!svn $Id: mod_param.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -511,14 +511,6 @@
 !  biological and/or sediment tracers.
 !
       integer :: NPT = 0
-
-#ifdef FILTERED_RST
-# ifdef ICE_MODEL
-      integer, parameter :: nfile = 10
-# else
-      integer, parameter :: nfile = 9
-# endif
-#endif
 !
 !  Number of biological tracers.
 !
@@ -1148,13 +1140,9 @@
 #endif
       END DO
 !
-!  Set maximum number of tracer between all nested grids.
+!  Set the maximum number of tracer between all nested grids.
 !
-#if defined IS4DVAR || defined W4DVAR || defined W4DPSAS
       MT=MAX(NAT,MAXVAL(NT))
-#else
-      MT=MAX(2,MAXVAL(NT))
-#endif
 !
 !-----------------------------------------------------------------------
 !  Allocate Lateral Boundary Conditions switches structure.
@@ -1164,9 +1152,6 @@
       nLBCvar=5+MT
 # if defined GLS_MIXING || defined MY25_MIXING
       nLBCvar=nLBCvar+1
-# endif
-# ifdef ICE_MODEL
-      nLBCvar=nLBCvar+11
 # endif
 # ifdef WEC
       nLBCvar=nLBCvar+4

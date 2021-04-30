@@ -163,6 +163,7 @@
 ! 
       real(r8), parameter :: one_third  = 1.0_r8/3.0_r8
       real(r8), parameter :: one_twelfth  = 1.0_r8/12.0_r8
+      real(r8), parameter :: eps  = 1.0E-8_r8
       real(r8), parameter :: Inival  = 0.0_r8
       real(r8) :: cff, cff1, cff2, cff3, cff4, Hz_inverse
       real(r8) :: sma, buoy, Umag, Ca, cflex
@@ -190,7 +191,6 @@
 !
       cff=0.75_r8/dt(ng)
 # endif
-
 !
 # if defined MARSH_DYNAMICS && defined MARSH_RETREAT 
       DO ivpr=1,NVEGP
@@ -229,7 +229,8 @@
 !
               buoy=(rhow-veg_massdens(iveg,ng))*g*plant(i,j,iveg,pdiam)*&
      &              plant(i,j,iveg,pthck)*                              &
-     &              plant(i,j,iveg,phght)**3.0_r8/(E_veg(iveg,ng)*sma)
+     &              plant(i,j,iveg,phght)**3.0_r8/                      &
+     &             (E_veg(iveg,ng)*sma+eps)
 !
 ! Current speed at rho points
 !
@@ -241,7 +242,7 @@
 !
               Ca=0.5_r8*rhow*Cd_veg(iveg,ng)*plant(i,j,iveg,pdiam)*     &
      &                   Umag**2.0_r8*plant(i,j,iveg,phght)**3.0_r8/    &
-     &                       (E_veg(iveg,ng)*sma)
+     &                       (E_veg(iveg,ng)*sma+eps)+eps
 !
               cflex=1.0_r8-((1.0_r8-0.9_r8*Ca**(-one_third))/           &
      &             (1.0_r8+(Ca**(-1.5_r8)*(8.0_r8+buoy**(1.5_r8)))))

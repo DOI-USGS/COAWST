@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE diag_mod
 !
-!svn $Id: diag.F 1007 2020-02-25 22:29:41Z arango $
+!svn $Id: diag.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -13,10 +13,10 @@
 !=======================================================================
 !
       implicit none
-
+!
       PRIVATE
       PUBLIC  :: diag
-
+!
       CONTAINS
 !
 !***********************************************************************
@@ -38,10 +38,13 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
 #include "tile.h"
 !
 #ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 7, __LINE__, __FILE__)
+      CALL wclock_on (ng, iNLM, 7, __LINE__, MyFile)
 #endif
       CALL diag_tile (ng, tile,                                         &
      &                LBi, UBi, LBj, UBj,                               &
@@ -58,11 +61,10 @@
      &                OCEAN(ng) % rho,                                  &
      &                OCEAN(ng) % u,                                    &
      &                OCEAN(ng) % v,                                    &
+# ifdef BIOLOGY
      &                OCEAN(ng) % t,                                    &
+# endif
      &                OCEAN(ng) % wvel,                                 &
-#endif
-#ifdef ICESHELF
-     &                GRID(ng) % zice,                                  &
 #endif
      &                OCEAN(ng) % ubar,                                 &
      &                OCEAN(ng) % vbar,                                 &
@@ -71,8 +73,9 @@
       CALL ana_diag (ng, tile, iNLM)
 #endif
 #ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 7, __LINE__, __FILE__)
+      CALL wclock_off (ng, iNLM, 7, __LINE__, MyFile)
 #endif
+!
       RETURN
       END SUBROUTINE diag
 !
@@ -84,7 +87,11 @@
      &                      h, pm, pn, omn,                             &
 #ifdef SOLVE3D
      &                      Hz, z_r, z_w,                               &
-     &                      rho, u, v, t, wvel,                         &
+     &                      rho, u, v,                                  &
+# ifdef BIOLOGY
+     &                      t,                                          &
+# endif
+     &                      wvel,                                       &
 #endif
 #ifdef ICESHELF
      &                      zice,                                       &
@@ -127,11 +134,10 @@
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
+#  ifdef BIOLOGY
       real(r8), intent(in) :: t(LBi:,LBj:,:,:,:)
+#  endif
       real(r8), intent(in) :: wvel(LBi:,LBj:,0:)
-# endif
-# ifdef ICESHELF
-      real(r8), intent(in) :: zice(LBi:,LBj:)
 # endif
       real(r8), intent(in) :: ubar(LBi:,LBj:,:)
       real(r8), intent(in) :: vbar(LBi:,LBj:,:)
@@ -148,11 +154,10 @@
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
+#  ifdef BIOLOGY
       real(r8), intent(in) :: t(LBi:UBi,LBj:UBj,N(ng),NT(ng),2)
+#  endif
       real(r8), intent(in) :: wvel(LBi:UBi,LBj:UBj,0:N(ng))
-# endif
-# ifdef ICESHELF
-      real(r8), intent(in) :: zice(LBi:UBi,LBj:UBj)
 # endif
       real(r8), intent(in) :: ubar(LBi:UBi,LBj:UBj,3)
       real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,3)
@@ -304,12 +309,7 @@
      &           ubar(i+1,j,krhs)*ubar(i+1,j,krhs)+                     &
      &           vbar(i,j  ,krhs)*vbar(i,j  ,krhs)+                     &
      &           vbar(i,j+1,krhs)*vbar(i,j+1,krhs)
-# ifdef ICESHELF
-            ke2d(i,j)=(zeta(i,j,krhs)+h(i,j)-ABS(zice(i,j)))*           &
-     &           0.25_r8*u2v2
-# else
             ke2d(i,j)=(zeta(i,j,krhs)+h(i,j))*0.25_r8*u2v2
-# endif
             pe2d(i,j)=cff*zeta(i,j,krhs)*zeta(i,j,krhs)
             my_Cu=0.5_r8*ABS(ubar(i,j,krhs)+ubar(i+1,j,krhs))*          &
      &            dt(ng)*pn(i,j)
@@ -347,14 +347,8 @@
             pe2d(i,Jend+1)=pe2d(i,Jend+1)+                              &
      &                     omn(i,j)*(z_w(i,j,N(ng))-z_w(i,j,0))
 #else
-# ifdef ICESHELF
-            pe2d(i,Jend+1)=pe2d(i,Jend+1)+                              &
-     &                     omn(i,j)*(zeta(i,j,krhs)+h(i,j)-             &
-     &                               ABS(zice(i,j)))
-# else
             pe2d(i,Jend+1)=pe2d(i,Jend+1)+                              &
      &                     omn(i,j)*(zeta(i,j,krhs)+h(i,j))
-# endif
 #endif
             pe2d(i,Jstr-1)=pe2d(i,Jstr-1)+omn(i,j)*pe2d(i,j)
             ke2d(i,Jstr-1)=ke2d(i,Jstr-1)+omn(i,j)*ke2d(i,j)
@@ -681,6 +675,7 @@
         END IF
 !$OMP END CRITICAL (NL_DIAGNOSTICS)
       END IF
+!
       RETURN
       END SUBROUTINE diag_tile
       END MODULE diag_mod

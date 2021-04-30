@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_grid
 !
-!svn $Id: mod_grid.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: mod_grid.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -83,12 +83,6 @@
 !  rmask_avg  Time-averaged full mask at RHO-points (0=dry, 1=wet).    !
 !  rmask_avg  Time-averaged full mask at   U-points (0=dry, 1=wet).    !
 !  rmask_avg  Time-averaged full mask at   V-points (0=dry, 1=wet).    !
-# endif
-# if defined AVERAGES2
-!  pmask_avg2 Time-average FillValue mask at PSI-points (0=dry, 1=wet) !
-!  rmask_avg2 Time-average FillValue mask at RHO-points (0=dry, 1=wet) !
-!  rmask_avg2 Time-average FillValue mask at   U-points (0=dry, 1=wet) !
-!  rmask_avg2 Time-average FillValue mask at   V-points (0=dry, 1=wet) !
 # endif
 # ifdef DIAGNOSTICS
 !
@@ -254,12 +248,6 @@
           real(r8), pointer :: umask_avg(:,:)
           real(r8), pointer :: vmask_avg(:,:)
 # endif
-# if defined AVERAGES2
-          real(r8), pointer :: pmask_avg2(:,:)
-          real(r8), pointer :: rmask_avg2(:,:)
-          real(r8), pointer :: umask_avg2(:,:)
-          real(r8), pointer :: vmask_avg2(:,:)
-# endif
 # ifdef DIAGNOSTICS
           real(r8), pointer :: pmask_dia(:,:)
           real(r8), pointer :: rmask_dia(:,:)
@@ -285,8 +273,8 @@
           real(r8), pointer :: rmask_wet_avg(:,:)
 # endif
 #endif
-#if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
-    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+#if defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR      || \
     defined SO_SEMI
           real(r8), pointer :: Rscope(:,:)
           real(r8), pointer :: Uscope(:,:)
@@ -596,12 +584,6 @@
       allocate ( GRID(ng) % vmask_avg(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
 # endif
-# if defined AVERAGES2
-      allocate ( GRID(ng) % pmask_avg2(LBi:UBi,LBj:UBj) )
-      allocate ( GRID(ng) % rmask_avg2(LBi:UBi,LBj:UBj) )
-      allocate ( GRID(ng) % umask_avg2(LBi:UBi,LBj:UBj) )
-      allocate ( GRID(ng) % vmask_avg2(LBi:UBi,LBj:UBj) )
-# endif
 # ifdef DIAGNOSTICS
       allocate ( GRID(ng) % pmask_dia(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
@@ -654,8 +636,8 @@
 # endif
 #endif
 
-#if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
-    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+#if defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR      || \
     defined SO_SEMI
       allocate ( GRID(ng) % Rscope(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
@@ -904,12 +886,6 @@
             GRID(ng) % umask_avg(i,j) = IniVal
             GRID(ng) % vmask_avg(i,j) = IniVal
 # endif
-# if defined AVERAGES2
-            GRID(ng) % pmask_avg2(i,j) = IniVal
-            GRID(ng) % rmask_avg2(i,j) = IniVal
-            GRID(ng) % umask_avg2(i,j) = IniVal
-            GRID(ng) % vmask_avg2(i,j) = IniVal
-# endif
 # ifdef DIAGNOSTICS
             GRID(ng) % pmask_dia(i,j) = IniVal
             GRID(ng) % rmask_dia(i,j) = IniVal
@@ -937,8 +913,8 @@
 # endif
 #endif
 
-#if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
-    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+#if defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR      || \
     defined SO_SEMI
             GRID(ng) % Rscope(i,j) = IniVal
             GRID(ng) % Uscope(i,j) = IniVal

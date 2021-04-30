@@ -4,9 +4,9 @@
      &                          Xmin, Xmax, X, Ymin, Ymax, Y,           &
      &                          rectangular)
 !
-!svn $Id: get_varcoords.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: get_varcoords.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -67,16 +67,19 @@
 !  Local variable declarations
 !
       logical :: foundit
-
+!
       integer :: i, ic, j, jc
       integer :: alen, blank1, blank2, varid
-
+!
       real(r8), dimension(Nx) :: Xwrk
       real(r8), dimension(Ny) :: Ywrk
-
-      character (len=20) :: Xname, Yname
 !
-      SourceFile=__FILE__
+      character (len=20) :: Xname, Yname
+
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
+      SourceFile=MyFile
 !
 !-----------------------------------------------------------------------
 !  Get coarse variable coordinates.
@@ -87,8 +90,7 @@
       CALL netcdf_inq_var (ng, model, ncname,                           &
      &                     ncid = ncid,                                 &
      &                     myVarName = ncvname)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Get names of variable coordinates.
 !
@@ -125,8 +127,7 @@
      &                     ncid = ncid,                                 &
      &                     myVarName = Xname,                           &
      &                     VarID= varid)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
       IF (n_vdim.eq.1) THEN
         CALL netcdf_get_fvar (ng, model, ncname, Xname,                 &
@@ -138,8 +139,7 @@
 #else
      &                        total = (/Nx/))
 #endif
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         rectangular=.TRUE.
         jc=0
@@ -167,8 +167,7 @@
      &                        ncid = ncid,                              &
      &                        start = (/1,1/),                          &
      &                        total = (/Nx,Ny/))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         jc=1
         DO j=2,Ny
@@ -184,8 +183,7 @@
      &                     ncid = ncid,                                 &
      &                     myVarName = Yname,                           &
      &                     VarID= varid)
-      IF (FoundError(exit_flag, NoError, __LINE__,                      &
-     &               __FILE__)) RETURN
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
       IF (n_vdim.eq.1) THEN
         CALL netcdf_get_fvar (ng, model, ncname, Yname,                 &
@@ -197,8 +195,7 @@
 #else
      &                        total = (/Ny/))
 #endif
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         rectangular=.TRUE.
         ic=0
@@ -224,8 +221,7 @@
      &                        ncid = ncid,                              &
      &                        start = (/1,1/),                          &
      &                        total = (/Nx,Ny/))
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         ic=1
         DO i=2,Nx
@@ -256,7 +252,7 @@
           Ymax=MAX(Ymax,Y(i,j))
         END DO
       END DO
-
+!
  10   FORMAT (/,' GET_VARCOORDS - Cannot find "coordinates" attribute', &
      &        ' for variable:',2x,a,/,17x,'in file:',2x,a,/,            &
      &     /,17x,'This attribute is needed to interpolate input data',  &
@@ -266,6 +262,6 @@
      &     /,17x,'      my_var:units = "my variable units" ;',          &
      &     /,17x,'      my_var:coordinates = "lon lat" ;',              &
      &     /,17x,'      my_var:time = "my_var_time" ;',/)
-
+!
       RETURN
       END SUBROUTINE get_varcoords

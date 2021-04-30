@@ -1,13 +1,13 @@
-#!/bin/csh -f
-
-# svn $Id: check_nc.sh 995 2020-01-10 04:01:28Z arango $
+#!/bin/bash
+#
+# svn $Id: check_nc.sh 1054 2021-03-06 19:47:12Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #:::::::::::::::::::::::::::::::::::::::::::::::::::::: David Robertson :::
 #                                                                       :::
-# ROMS/TOMS NetCDF file checker between simulations:                    :::
+# ROMS NetCDF file checker between simulations:                         :::
 #                                                                       :::
 # This script compares the binary differences of all ROMS/TOMS output   :::
 # NetCDF files between two simulations of the same application.  The    :::
@@ -20,9 +20,9 @@
 #                                                                       :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
 
-set dir1=$1
-set dir2=$2
-set diffs=0
+dir1=$1
+dir2=$2
+diffs=0
 
 # diff the file pairs one by one and increment $diffs if necessary.
 #
@@ -30,14 +30,15 @@ set diffs=0
 # If $? is non-zero it means that differences were found so we should
 # increment $diffs.
 
-foreach file ($dir1/*.nc)
-  set f = `basename $file`
+for file in $dir1/*.nc
+do
+  f=`basename $file`
   diff -q ${dir1}/${f} ${dir2}/${f} >& /dev/null
-  if( $? != 0 ) then
+  if [ $? -ne 0 ]; then
     echo "${dir1}/${f} and ${dir2}/${f} differ!"
-    @ diffs +=1
-  endif
-end
+    let "diffs+=1"
+  fi
+done
 
 # Exit and set exit code to $diffs so we can sum total differences
 # (hopefully 0) in the calling script.

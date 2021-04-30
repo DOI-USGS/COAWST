@@ -40,7 +40,7 @@
       integer :: Ivalue
 # if defined WRF_COUPLING
       integer :: sstupdate
-      integer, allocatable :: parentid(:)
+!     integer, allocatable :: parentid(:)
 # endif
       real(m8), dimension(100) :: Rval
       real(m8) :: FAC
@@ -259,6 +259,9 @@
       indx=INDEX(aline,blank)
       aline=aline(1:indx-1)
       read(aline,*) dtwav(iw)
+! Set minimum 1 sec dt
+      dtwav(iw)=MAX(dtwav(iw),1.0_m8)
+!
 !     write(*,*) 'ww3 dt is ', dtwav(iw)
 !
       test=1

@@ -65,10 +65,8 @@
                                             ! total points on each grid
      &             grid1_rank, grid2_rank,                              &
                                             ! rank of each grid
-     &             grid1_corners, grid2_corners
-                                                ! number of corners
+     &             grid1_corners, grid2_corners ! number of corners
                                                 ! for each grid cell
-
       integer (kind=int_kind), dimension(:), allocatable, save ::       &
      &             grid1_dims, grid2_dims  ! size of each grid dimension
 
@@ -173,7 +171,7 @@
      &                            grid2_xdim, grid2_ydim,               &
      &                            grid2_lon_rho, grid2_lat_rho,         &
      &                            grid2_lon_psi, grid2_lat_psi,         &
-     &                            src_mask, dst_mask)
+     &                            src_mask, dst_mask, MyRank)
 !     necessary changes (e.g. for 0,2pi longitude range)
 !
 !-----------------------------------------------------------------------
@@ -184,6 +182,7 @@
       integer (kind=int_kind), intent(in) :: grid2_xdim, grid2_ydim
       integer (kind=int_kind), intent(in) :: src_mask(:,:)
       integer (kind=int_kind), intent(in) :: dst_mask(:,:)
+      integer (kind=int_kind), intent(in) :: MyRank
       real    (kind=dbl_kind), intent(in) :: grid1_lon_rho(:,:) 
       real    (kind=dbl_kind), intent(in) :: grid1_lat_rho(:,:) 
       real    (kind=dbl_kind), intent(in) :: grid1_lon_psi(:,:) 
@@ -211,7 +210,8 @@
      &, n_add, e_add, ne_add                                            &
      &, nx, ny                                                          &
      &, counter                                                         &
-     &, MP,LP
+     &, MP,LP                                                           &
+     &, assume_cyclic
 
       integer (kind=int_kind), dimension(:), allocatable ::             &
      &                            imask ! integer mask read from file
@@ -234,10 +234,12 @@
       luse_grid1_area = .false. ! earlier an input 
       grid1_corners=4
       grid1_rank=2
-      grid1_size=grid1_xdim*grid1_ydim 
-      write(stdout,*)"----------------------------------------------"
-      write(stdout,*)"grid1 dimensions=",grid1_xdim, grid1_ydim
-      write(stdout,*)"----------------------------------------------"
+      grid1_size=grid1_xdim*grid1_ydim
+      IF (MyRank.eq.0) THEN
+        write(stdout,*)"----------------------------------------------"
+        write(stdout,*)"grid1 dimensions=",grid1_xdim, grid1_ydim
+        write(stdout,*)"----------------------------------------------"
+      END IF
 !-----------------------------------------------------------------------
 !
 !     allocate grid coordinates/masks and read data
@@ -309,10 +311,12 @@
       grid2_corners=4
       grid2_rank=2
       grid2_size=grid2_xdim*grid2_ydim 
-      
-      write(stdout,*)"----------------------------------------------"
-      write(stdout,*)"grid2 dimensions=",grid2_xdim, grid2_ydim
-      write(stdout,*)"----------------------------------------------"
+
+      IF (MyRank.eq.0) THEN
+        write(stdout,*)"----------------------------------------------"
+        write(stdout,*)"grid2 dimensions=",grid2_xdim, grid2_ydim
+        write(stdout,*)"----------------------------------------------"
+      END IF
 !-----------------------------------------------------------------------
 !
 !     allocate grid coordinates/masks and read data
@@ -429,6 +433,10 @@
 
         nx = grid1_dims(1)
         ny = grid1_dims(2)
+! here was problem with bilinear. it assumed cyclic so for points
+! on east side of grid, it grabbed the western edge.
+! set assum_cyclic=1 for original.
+        assume_cyclic=0
 
         do n=1,grid1_size
 
@@ -440,26 +448,34 @@
           if (i < nx) then
             ip1 = i + 1
           else
-            !*** assume cyclic
-            ip1 = 1
-            !*** but if it is not, correct
-            e_add = (j - 1)*nx + ip1
-            if (abs(grid1_center_lat(e_add) -                           &
-     &              grid1_center_lat(n   )) > pih) then
-              ip1 = i
+            if (assume_cyclic.eq.1) then
+              !*** assume cyclic
+              ip1 = 1
+              !*** but if it is not, correct
+              e_add = (j - 1)*nx + ip1
+              if (abs(grid1_center_lat(e_add) -                         &
+     &                grid1_center_lat(n   )) > pih) then
+                ip1 = i
+              endif
+            else
+              ip1=i
             endif
           endif
 
           if (j < ny) then
             jp1 = j+1
           else
-            !*** assume cyclic
-            jp1 = 1
-            !*** but if it is not, correct
-            n_add = (jp1 - 1)*nx + i
-            if (abs(grid1_center_lat(n_add) -                           &
-     &              grid1_center_lat(n   )) > pih) then                  
-              jp1 = j
+            if (assume_cyclic.eq.1) then
+              !*** assume cyclic
+              jp1 = 1
+              !*** but if it is not, correct
+              n_add = (jp1 - 1)*nx + i
+              if (abs(grid1_center_lat(n_add) -                         &
+     &                grid1_center_lat(n   )) > pih) then                  
+                jp1 = j
+              endif
+            else
+              jp1=j
             endif
           endif
 
@@ -483,6 +499,7 @@
           grid1_bound_box(2,n) = maxval(tmp_lats)
           grid1_bound_box(3,n) = minval(tmp_lons)
           grid1_bound_box(4,n) = maxval(tmp_lons)
+
         end do
 
         nx = grid2_dims(1)
@@ -498,26 +515,34 @@
           if (i < nx) then
             ip1 = i + 1
           else
-            !*** assume cyclic
-            ip1 = 1
-            !*** but if it is not, correct
-            e_add = (j - 1)*nx + ip1
-            if (abs(grid2_center_lat(e_add) -                            &
-     &              grid2_center_lat(n   )) > pih) then
-              ip1 = i
+            if (assume_cyclic.eq.1) then
+              !*** assume cyclic
+              ip1 = 1
+              !*** but if it is not, correct
+              e_add = (j - 1)*nx + ip1
+              if (abs(grid2_center_lat(e_add) -                          &
+     &                grid2_center_lat(n   )) > pih) then
+                ip1 = i
+              endif
+            else
+              ip1=i
             endif
           endif
 
           if (j < ny) then
             jp1 = j+1
           else
-            !*** assume cyclic
-            jp1 = 1
-            !*** but if it is not, correct
-            n_add = (jp1 - 1)*nx + i
-            if (abs(grid2_center_lat(n_add) -                            &
-     &              grid2_center_lat(n   )) > pih) then
-              jp1 = j
+            if (assume_cyclic.eq.1) then
+              !*** assume cyclic
+              jp1 = 1
+              !*** but if it is not, correct
+              n_add = (jp1 - 1)*nx + i
+              if (abs(grid2_center_lat(n_add) -                          &
+     &                grid2_center_lat(n   )) > pih) then
+                jp1 = j
+              endif
+            else
+              jp1=j
             endif
           endif
 
@@ -581,7 +606,9 @@
       select case (restrict_type)
 
       case ('latitude')
-        write(stdout,*) 'Using latitude bins to restrict search.'
+        IF (MyRank.eq.0) THEN
+          write(stdout,*) 'Using latitude bins to restrict search.'
+        END IF
 
         allocate(bin_addr1(2,num_srch_bins))
         allocate(bin_addr2(2,num_srch_bins))

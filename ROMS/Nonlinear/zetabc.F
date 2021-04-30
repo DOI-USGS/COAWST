@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE zetabc_mod
 !
-!svn $Id: zetabc.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: zetabc.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -199,18 +199,12 @@
           DO j=Jstr,Jend
             IF (LBC_apply(ng)%west(j)) THEN
               cff=dt2d*GRID(ng)%pm(Istr,j)
-#ifdef ICESHELF
-              cff1=SQRT(g*(GRID(ng)%h(Istr,j)-                          &
-     &                     ABS(GRID(ng)%zice(Istr,j))+                  &
-     &                     zeta(Istr,j,know)))
-#else
-# ifdef WET_DRY
+#ifdef WET_DRY
               cff1=SQRT(g*(MAX(GRID(ng)%h(Istr,j)+                      &
      &                         zeta(Istr,j,know),Dcrit(ng))))
-# else
+#else
               cff1=SQRT(g*(GRID(ng)%h(Istr,j)+                          &
      &                     zeta(Istr,j,know)))
-# endif
 #endif
               Cx=cff*cff1
               cff2=1.0_r8/(1.0_r8+Cx)
@@ -364,18 +358,12 @@
           DO j=Jstr,Jend
             IF (LBC_apply(ng)%east(j)) THEN
               cff=dt2d*GRID(ng)%pm(Iend,j)
-#ifdef ICESHELF
-              cff1=SQRT(g*(GRID(ng)%h(Iend,j)-                          &
-     &                     ABS(GRID(ng)%zice(Iend,j))+                  &
-     &                     zeta(Iend,j,know)))
-#else
-# ifdef WET_DRY
+#ifdef WET_DRY
               cff1=SQRT(g*(MAX(GRID(ng)%h(Iend,j)+                      &
      &                         zeta(Iend,j,know),Dcrit(ng))))
-# else
+#else
               cff1=SQRT(g*(GRID(ng)%h(Iend,j)+                          &
      &                     zeta(Iend,j,know)))
-# endif
 #endif
               Cx=cff*cff1
               cff2=1.0_r8/(1.0_r8+Cx)
@@ -529,18 +517,12 @@
           DO i=Istr,Iend
             IF (LBC_apply(ng)%south(i)) THEN
               cff=dt2d*GRID(ng)%pn(i,Jstr)
-#ifdef ICESHELF
-              cff1=SQRT(g*(GRID(ng)%h(i,Jstr)-                          &
-     &                     ABS(GRID(ng)%zice(i,Jstr))+                  &
-     &                     zeta(i,Jstr,know)))
-#else
-# ifdef WET_DRY
+#ifdef WET_DRY
               cff1=SQRT(g*(MAX(GRID(ng)%h(i,Jstr)+                      &
      &                         zeta(i,Jstr,know),Dcrit(ng))))
-# else
+#else
               cff1=SQRT(g*(GRID(ng)%h(i,Jstr)+                          &
      &                     zeta(i,Jstr,know)))
-# endif
 #endif
               Ce=cff*cff1
               cff2=1.0_r8/(1.0_r8+Ce)
@@ -694,18 +676,12 @@
           DO i=Istr,Iend
             IF (LBC_apply(ng)%north(i)) THEN
               cff=dt2d*GRID(ng)%pn(i,Jend)
-#ifdef ICESHELF
-              cff1=SQRT(g*(GRID(ng)%h(i,Jend)-                          &
-     &                     ABS(GRID(ng)%zice(i,Jend))+                  &
-     &                     zeta(i,Jend,know)))
-#else
-# ifdef WET_DRY
+#ifdef WET_DRY
               cff1=SQRT(g*(MAX(GRID(ng)%h(i,Jend)+                      &
      &                         zeta(i,Jend,know),Dcrit(ng))))
-# else
+#else
               cff1=SQRT(g*(GRID(ng)%h(i,Jend)+                          &
      &                     zeta(i,Jend,know)))
-# endif
 #endif
               Ce=cff*cff1
               cff2=1.0_r8/(1.0_r8+Ce)

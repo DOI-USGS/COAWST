@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       SUBROUTINE mod_arrays (allocate_vars)
 !
-!svn $Id: mod_arrays.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: mod_arrays.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -22,9 +22,6 @@
    (defined RP_AVERAGES && defined TL_IOMS) || \
    (defined TL_AVERAGES && defined TANGENT)
       USE mod_average, ONLY : allocate_average, initialize_average
-#endif
-#ifdef AVERAGES2
-      USE mod_average2, ONLY : allocate_average2, initialize_average2
 #endif
 #ifdef FILTERED
       USE mod_filter, ONLY : allocate_filter, initialize_filter
@@ -63,9 +60,6 @@
 #ifdef BBL_MODEL
       USE mod_bbl, ONLY : allocate_bbl, initialize_bbl
 #endif
-#if defined ICE_MODEL || defined CICE_MODEL
-      USE mod_ice, ONLY : allocate_ice, initialize_ice
-#endif
 !
       implicit none
 !
@@ -82,6 +76,9 @@
       integer :: LBi, UBi, LBj, UBj, LBij, UBij
 !
       integer, parameter :: model = 0
+!
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 
 #ifdef PROFILE
 !
@@ -91,7 +88,7 @@
 !
       DO ng=1,Ngrids
         DO thread=THREAD_RANGE
-          CALL wclock_on (ng, iNLM, 1, __LINE__, __FILE__)
+          CALL wclock_on (ng, iNLM, 1, __LINE__, MyFile)
         END DO
 !$OMP BARRIER
       END DO
@@ -108,8 +105,8 @@
         tile=0
 #endif
 
-#if defined AD_SENSITIVITY   || defined IS4DVAR_SENSITIVITY || \
-    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR   || \
+#if defined AD_SENSITIVITY   || defined I4DVAR_ANA_SENSITIVITY || \
+    defined OPT_OBSERVATIONS || defined SENSITIVITY_4DVAR      || \
     defined SO_SEMI
         LallocateClima=.TRUE.
 #else
@@ -130,18 +127,12 @@
    (defined TL_AVERAGES && defined TANGENT)
           CALL allocate_average (ng, LBi, UBi, LBj, UBj)
 #endif
-#ifdef AVERAGES2
-          CALL allocate_average2 (ng, LBi, UBi, LBj, UBj)
-#endif
 #ifdef FILTERED
           CALL allocate_filter (ng, LBi, UBi, LBj, UBj)
 #endif
           CALL allocate_boundary (ng)
 #ifdef BBL_MODEL
           CALL allocate_bbl (ng, LBi, UBi, LBj, UBj)
-#endif
-#if defined ICE_MODEL || defined CICE_MODEL
-          CALL allocate_ice (ng, LBi, UBi, LBj, UBj)
 #endif
           IF (LallocateClima.or.Lclimatology(ng)) THEN
             CALL allocate_clima (ng, LBi, UBi, LBj, UBj)
@@ -207,17 +198,11 @@
    (defined TL_AVERAGES && defined TANGENT)
           CALL initialize_average (ng, tile)
 #endif
-#ifdef AVERAGES2
-          CALL initialize_average2 (ng, tile)
-#endif
 #ifdef FILTERED
           CALL initialize_filter (ng, tile)
 #endif
 #ifdef BBL_MODEL
           CALL initialize_bbl (ng, tile)
-#endif
-#if defined ICE_MODEL || defined CICE_MODEL
-          CALL initialize_ice (ng, tile)
 #endif
           CALL initialize_boundary (ng, tile, model)
 
@@ -258,7 +243,7 @@
 !
       DO ng=1,Ngrids
         DO thread=THREAD_RANGE
-          CALL wclock_off (ng, iNLM, 1, __LINE__, __FILE__)
+          CALL wclock_off (ng, iNLM, 1, __LINE__, MyFile)
         END DO
 !$OMP BARRIER
       END DO

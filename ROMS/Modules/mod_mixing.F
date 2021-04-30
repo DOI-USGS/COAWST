@@ -1,9 +1,9 @@
 #include "cppdefs.h"
       MODULE mod_mixing
 !
-!svn $Id: mod_mixing.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: mod_mixing.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -125,6 +125,7 @@
 !                                                                      !
 #ifdef WEC_MELLOR
 !  Nearshore radiation stresses.                                       !
+!                                                                      !
 !  Sxx_bar      2D nearshore radiation stress, xx-component.           !
 !  Sxy_bar      2D nearshore radiation stress, xy-component.           !
 !  Syy_bar      2D nearshore radiation stress, yy-component.           !
@@ -252,6 +253,9 @@
 # endif
           real(r8), pointer :: Akv(:,:,:)
           real(r8), pointer :: Akt(:,:,:,:)
+# ifdef TS_VAR
+          real(r8), pointer :: Akr(:,:,:)
+# endif
 # ifdef FLOAT_VWALK
           real(r8), pointer :: dAktdz(:,:,:)
 # endif
@@ -593,6 +597,10 @@
 
       allocate ( MIXING(ng) % Akt(LBi:UBi,LBj:UBj,0:N(ng),NAT) )
       Dmem(ng)=Dmem(ng)+REAL((N(ng)+1)*NAT,r8)*size2d
+# ifdef TS_VAR
+      allocate ( MIXING(ng) % Akr(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
+# endif
 
 # ifdef FLOAT_VWALK
       allocate ( MIXING(ng) % dAktdz(LBi:UBi,LBj:UBj,N(ng)) )
@@ -1062,10 +1070,17 @@
           DO i=Imin,Imax
             MIXING(ng) % Akv(i,j,0) = IniVal
             MIXING(ng) % Akv(i,j,N(ng)) = IniVal
+# ifdef TS_VAR
+            MIXING(ng) % Akr(i,j,0) = IniVal
+            MIXING(ng) % Akr(i,j,N(ng)) = IniVal
+# endif
           END DO
           DO k=1,N(ng)-1
             DO i=Imin,Imax
               MIXING(ng) % Akv(i,j,k) = Akv_bak(ng)
+# ifdef TS_VAR
+              MIXING(ng) % Akr(i,j,k) = IniVal
+# endif
             END DO
           END DO
           DO itrc=1,NAT

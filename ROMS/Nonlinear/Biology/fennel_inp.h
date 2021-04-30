@@ -1,8 +1,8 @@
       SUBROUTINE read_BioPar (model, inp, out, Lwrite)
 !
-!svn $Id: fennel_inp.h 1001 2020-01-10 22:41:16Z arango $
+!svn $Id: fennel_inp.h 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -85,6 +85,8 @@
               Npts=load_r(Nval, Rval, Ngrids, K_NO3)
             CASE ('K_NH4')
               Npts=load_r(Nval, Rval, Ngrids, K_NH4)
+            CASE ('K_PO4')
+              Npts=load_r(Nval, Rval, Ngrids, K_PO4)
             CASE ('K_Phy')
               Npts=load_r(Nval, Rval, Ngrids, K_Phy)
             CASE ('Chl2C_m')
@@ -93,6 +95,8 @@
               Npts=load_r(Nval, Rval, Ngrids, ChlMin)
             CASE ('PhyCN')
               Npts=load_r(Nval, Rval, Ngrids, PhyCN)
+            CASE ('R_P2N')
+              Npts=load_r(Nval, Rval, Ngrids, R_P2N)
             CASE ('PhyIP')
               Npts=load_r(Nval, Rval, Ngrids, PhyIP)
             CASE ('PhyIS')
@@ -125,6 +129,10 @@
               Npts=load_r(Nval, Rval, Ngrids, SDeRRN)
             CASE ('SDeRRC')
               Npts=load_r(Nval, Rval, Ngrids, SDeRRC)
+            CASE ('RDeRRN')
+              Npts=load_r(Nval, Rval, Ngrids, RDeRRN)
+            CASE ('RDeRRC')
+              Npts=load_r(Nval, Rval, Ngrids, RDeRRC)
             CASE ('wPhy')
               Npts=load_r(Nval, Rval, Ngrids, wPhy)
             CASE ('wLDet')
@@ -654,6 +662,17 @@
               DO ng=1,Ngrids
                 Dout(i,ng)=Lbio(ng)
               END DO
+            CASE ('Dout(iNifx)')
+              IF (iDbio3(iNifx).eq.0) THEN
+                IF (Master) WRITE (out,40) 'iDbio3(iNifx)'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Lbio)
+              i=iDbio3(iNifx)
+              DO ng=1,Ngrids
+                Dout(i,ng)=Lbio(ng)
+              END DO
 #endif
           END SELECT
         END IF
@@ -667,7 +686,7 @@
 !  Report input parameters.
 !-----------------------------------------------------------------------
 !
-      IF (Lwrite) THEN
+      IF (Master.and.Lwrite) THEN
         DO ng=1,Ngrids
           IF (Lbiology(ng)) THEN
             WRITE (out,60) ng
@@ -695,6 +714,9 @@
             WRITE (out,90) K_NH4(ng), 'K_NH4',                          &
      &            'Inverse half-saturation for phytoplankton NH4',      &
      &            'uptake (1/(mmol_N m-3)).'
+            WRITE (out,90) K_PO4(ng), 'K_PO4',                          &
+     &            'Inverse half-saturation for phytoplankton PO4',      &
+     &            'uptake (1/(mmol_P m-3)).'
             WRITE (out,90) K_Phy(ng), 'K_Phy',                          &
      &            'Zooplankton half-saturation constant for ingestion', &
      &            '(mmol_N m-3)^2.'
@@ -704,6 +726,8 @@
      &            'Chlorophyll minimum threshold (mg_Chl/m3).'
             WRITE (out,80) PhyCN(ng), 'PhyCN',                          &
      &            'Phytoplankton Carbon:Nitrogen ratio (mol_C/mol_N).'
+            WRITE (out,80) R_P2N(ng), 'R_P2N',                          &
+     &            'Phytoplankton P:N ratio (mol_P/mol_N).'
             WRITE (out,80) PhyIP(ng), 'PhyIP',                          &
      &            'Phytoplankton NH4 inhibition parameter (1/mmol_N).'
             WRITE (out,90) PhyIS(ng), 'PhyIS',                          &
@@ -738,6 +762,10 @@
      &            'Remineralization rate for small detritus N (day-1).'
             WRITE (out,80) SDeRRC(ng), 'SDeRRC',                        &
      &            'Remineralization rate for small detritus C (day-1).'
+            WRITE (out,80) RDeRRN(ng), 'RDeRRN',                        &
+     &            'Remineralization rate for river detritus N (day-1).'
+            WRITE (out,80) RDeRRC(ng), 'RDeRRC',                        &
+     &            'Remineralization rate for river detritus C (day-1).'
             WRITE (out,80) wPhy(ng), 'wPhy',                            &
      &            'Phytoplankton sinking velocity (m/day).'
             WRITE (out,80) wLDet(ng), 'wLDet',                          &
@@ -951,76 +979,76 @@
               WRITE (out,'(1x)')
               DO i=1,NBT
                 itrc=idbio(i)
-                IF (Dout(idDtrc(itrc,iTrate),ng))                         &
-     &            WRITE (out,120) .TRUE., 'Dout(iTrate)',                 &
-     &                'Write out rate of change of tracer ', itrc,        &
+                IF (Dout(idDtrc(itrc,iTrate),ng))                       &
+     &            WRITE (out,120) .TRUE., 'Dout(iTrate)',               &
+     &                'Write out rate of change of tracer ', itrc,      &
      &                TRIM(Vname(1,idTvar(itrc)))
               END DO
               DO i=1,NBT
                 itrc=idbio(i)
-                IF (Dout(idDtrc(itrc,iThadv),ng))                         &
-     &            WRITE (out,120) .TRUE., 'Dout(iThadv)',                 &
-     &                'Write out horizontal advection, tracer ', itrc,    &
+                IF (Dout(idDtrc(itrc,iThadv),ng))                       &
+     &            WRITE (out,120) .TRUE., 'Dout(iThadv)',               &
+     &                'Write out horizontal advection, tracer ', itrc,  &
      &                TRIM(Vname(1,idTvar(itrc)))
               END DO
               DO i=1,NBT
                 itrc=idbio(i)
-                IF (Dout(idDtrc(itrc,iTxadv),ng))                         &
-     &            WRITE (out,120) .TRUE., 'Dout(iTxadv)',                 &
-     &                'Write out horizontal X-advection, tracer ', itrc,  &
-     &                TRIM(Vname(1,idTvar(itrc)))
+                IF (Dout(idDtrc(itrc,iTxadv),ng))                       &
+     &            WRITE (out,120) .TRUE., 'Dout(iTxadv)',               &
+     &               'Write out horizontal X-advection, tracer ', itrc, &
+     &               TRIM(Vname(1,idTvar(itrc)))
               END DO
               DO i=1,NBT
                 itrc=idbio(i)
-                IF (Dout(idDtrc(itrc,iTyadv),ng))                         &
-     &            WRITE (out,120) .TRUE., 'Dout(iTyadv)',                 &
-     &                'Write out horizontal Y-advection, tracer ', itrc,  &
-     &                TRIM(Vname(1,idTvar(itrc)))
+                IF (Dout(idDtrc(itrc,iTyadv),ng))                       &
+     &            WRITE (out,120) .TRUE., 'Dout(iTyadv)',               &
+     &               'Write out horizontal Y-advection, tracer ', itrc, &
+     &               TRIM(Vname(1,idTvar(itrc)))
               END DO
               DO i=1,NBT
                 itrc=idbio(i)
-                IF (Dout(idDtrc(itrc,iTvadv),ng))                         &
-     &            WRITE (out,120) .TRUE., 'Dout(iTvadv)',                 &
-     &                'Write out vertical advection, tracer ', itrc,      &
+                IF (Dout(idDtrc(itrc,iTvadv),ng))                       &
+     &            WRITE (out,120) .TRUE., 'Dout(iTvadv)',               &
+     &                'Write out vertical advection, tracer ', itrc,    &
      &                TRIM(Vname(1,idTvar(itrc)))
               END DO
 # if defined TS_DIF2 || defined TS_DIF4
               DO i=1,NBT
                 itrc=idbio(i)
-                IF (Dout(idDtrc(itrc,iThdif),ng))                         &
-     &            WRITE (out,120) .TRUE., 'Dout(iThdif)',                 &
-     &                'Write out horizontal diffusion, tracer ', itrc,    &
+                IF (Dout(idDtrc(itrc,iThdif),ng))                       &
+     &            WRITE (out,120) .TRUE., 'Dout(iThdif)',               &
+     &                'Write out horizontal diffusion, tracer ', itrc,  &
      &                TRIM(Vname(1,idTvar(itrc)))
               END DO
               DO i=1,NBT
                 itrc=idbio(i)
-                IF (Dout(idDtrc(i,iTxdif),ng))                            &
-     &            WRITE (out,120) .TRUE., 'Dout(iTxdif)',                 &
-     &                'Write out horizontal X-diffusion, tracer ', itrc,  &
-     &                TRIM(Vname(1,idTvar(itrc)))
+                IF (Dout(idDtrc(i,iTxdif),ng))                          &
+     &            WRITE (out,120) .TRUE., 'Dout(iTxdif)',               &
+     &               'Write out horizontal X-diffusion, tracer ', itrc, &
+     &               TRIM(Vname(1,idTvar(itrc)))
               END DO
               DO i=1,NBT
                 itrc=idbio(i)
-                IF (Dout(idDtrc(itrc,iTydif),ng))                         &
-     &            WRITE (out,120) .TRUE., 'Dout(iTydif)',                 &
-     &                'Write out horizontal Y-diffusion, tracer ', itrc,  &
-     &                TRIM(Vname(1,idTvar(itrc)))
+                IF (Dout(idDtrc(itrc,iTydif),ng))                       &
+     &            WRITE (out,120) .TRUE., 'Dout(iTydif)',               &
+     &               'Write out horizontal Y-diffusion, tracer ', itrc, &
+     &               TRIM(Vname(1,idTvar(itrc)))
               END DO
 #  if defined MIX_GEO_TS || defined MIX_ISO_TS
               DO i=1,NBT
                 itrc=idbio(i)
-                IF (Dout(idDtrc(itrc,iTsdif),ng))                         &
-     &            WRITE (out,120) .TRUE., 'Dout(iTsdif)',                 &
-     &                'Write out horizontal S-diffusion, tracer ', itrc,  &
-     &                TRIM(Vname(1,idTvar(itrc)))
+                IF (Dout(idDtrc(itrc,iTsdif),ng))                       &
+     &            WRITE (out,120) .TRUE., 'Dout(iTsdif)',               &
+     &               'Write out horizontal S-diffusion, tracer ', itrc, &
+     &               TRIM(Vname(1,idTvar(itrc)))
               END DO
 #  endif
 # endif
               DO i=1,NBT
                 itrc=idbio(i)
-                IF (Dout(idDtrc(itrc,iTvdif),ng))                         &
-     &            WRITE (out,120) .TRUE., 'Dout(iTvdif)',                 &
-     &                'Write out vertical diffusion, tracer ', itrc,      &
+                IF (Dout(idDtrc(itrc,iTvdif),ng))                       &
+     &            WRITE (out,120) .TRUE., 'Dout(iTvdif)',               &
+     &                'Write out vertical diffusion, tracer ', itrc,    &
      &                TRIM(Vname(1,idTvar(itrc)))
               END DO
             END IF
@@ -1030,15 +1058,15 @@
               IF (NDbio2d.gt.0) THEN
                 DO itrc=1,NDbio2d
                   i=iDbio2(itrc)
-                  IF (Dout(i,ng)) WRITE (out,130)                         &
-     &                Dout(i,ng), 'Dout(iDbio2)',                         &
+                  IF (Dout(i,ng)) WRITE (out,130)                       &
+     &                Dout(i,ng), 'Dout(iDbio2)',                       &
      &                'Write out diagnostics for', TRIM(Vname(1,i))
                 END DO
               END IF
               DO itrc=1,NDbio3d
                 i=iDbio3(itrc)
-                IF (Dout(i,ng)) WRITE (out,130)                           &
-     &              Dout(i,ng), 'Dout(iDbio3)',                           &
+                IF (Dout(i,ng)) WRITE (out,130)                         &
+     &              Dout(i,ng), 'Dout(iDbio3)',                         &
      &              'Write out diagnostics for', TRIM(Vname(1,i))
               END DO
             END IF

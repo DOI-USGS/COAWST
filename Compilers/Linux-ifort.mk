@@ -1,6 +1,6 @@
-# svn $Id: Linux-ifort.mk 995 2020-01-10 04:01:28Z arango $
+# svn $Id: Linux-ifort.mk 1054 2021-03-06 19:47:12Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -75,18 +75,18 @@ ifdef USE_ROMS
            FFLAGS += -check bounds
            FFLAGS += -traceback
            FFLAGS += -check uninit
-           FFLAGS += -warn interfaces,nouncalled -gen-interfaces
+#           FFLAGS += -warn interfaces,nouncalled -gen-interfaces
            FFLAGS += -gen-interfaces
 ##         FFLAGS += -fp-stack-check
 #          FFLAGS += -Wl,-no_compact_unwind
 #          FFLAGS += -Wl,-stack_size,0x64000000
-           FFLAGS += -ftrapuv -fpe0
+#           FFLAGS += -ftrapuv -fpe0
  else
            FFLAGS += -ip -O3
            FFLAGS += -traceback
 #          FFLAGS += -Wl,-stack_size,0x64000000
   ifndef USE_WRFHYDRO
-           FFLAGS += -check uninit
+#           FFLAGS += -check uninit
   endif
  endif
 endif
@@ -217,6 +217,12 @@ endif
 ifndef USE_SCRIP
              LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
 endif
+
+ifdef USE_WW3
+             FFLAGS += -I${COAWST_WW3_DIR}/mod_MPI
+             LIBS += WW3/model/obj_MPI/libWW3.a
+endif
+
 ifdef USE_MCT
        MCT_INCDIR ?= /opt/intelsoft/mct/include
        MCT_LIBDIR ?= /opt/intelsoft/mct/lib
@@ -256,12 +262,6 @@ ifdef USE_WRFHYDRO
              LIBS += $(WRFHYDRO_DIR)/lib/libHYDRO.a
 #            LIBS +=  $(WRFHYDRO_DIR)/Land_models/NoahMP/Noah/module_sf_myjsfc.o
 #            LIBS +=  $(WRFHYDRO_DIR)/Land_models/NoahMP/Noah/module_sf_sfclay.o
-endif
-
-
-ifdef USE_WW3
-             FFLAGS += -I${COAWST_WW3_DIR}/mod_MPI
-             LIBS += WW3/model/obj_MPI/libWW3.a
 endif
 
        clean_list += ifc* work.pc*

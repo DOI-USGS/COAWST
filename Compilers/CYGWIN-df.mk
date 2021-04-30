@@ -1,6 +1,6 @@
-# svn $Id: CYGWIN-df.mk 995 2020-01-10 04:01:28Z arango $
+# svn $Id: CYGWIN-df.mk 1054 2021-03-06 19:47:12Z arango $
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
-# Copyright (c) 2002-2020 The ROMS/TOMS Group                           :::
+# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
 #   Licensed under a MIT/X style license                                :::
 #   See License_ROMS.txt                                                :::
 #::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
@@ -101,6 +101,12 @@ endif
 ifndef USE_SCRIP
              LIBS += $(MCT_PARAMS_DIR)/mct_coupler_params.o
 endif
+
+ifdef USE_WW3
+             FFLAGS += -I${COAWST_WW3_DIR}/mod_MPI
+             LIBS += WW3/model/obj_MPI/libWW3.a
+endif
+
 ifdef USE_MCT
        MCT_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\mct
       MPEU_LIBDIR ?= c:\\work\\models\\MCT_v2.2\\mpeu
@@ -124,11 +130,6 @@ ifdef USE_WRF
              LIBS += WRF/frame/pack_utils.o
              LIBS += WRF/external/io_netcdf/libwrfio_nf.a
 #            LIBS += WRF/external/io_netcdf/wrf_io.o
-endif
-
-ifdef USE_WW3
-             FFLAGS += -I${COAWST_WW3_DIR}/mod_MPI
-             LIBS += WW3/model/obj_MPI/libWW3.a
 endif
 
 #

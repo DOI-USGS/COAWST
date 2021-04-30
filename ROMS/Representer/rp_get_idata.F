@@ -2,9 +2,9 @@
 #ifdef TL_IOMS
       SUBROUTINE rp_get_idata (ng)
 !
-!svn $Id: rp_get_idata.F 995 2020-01-10 04:01:28Z arango $
+!svn $Id: rp_get_idata.F 1054 2021-03-06 19:47:12Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2020 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -40,13 +40,16 @@
 !
       logical, dimension(3) :: update =                                 &
      &         (/ .FALSE., .FALSE., .FALSE. /)
-
+!
       integer :: LBi, UBi, LBj, UBj
       integer :: itrc, is
-
+!
       real(r8) :: time_save = 0.0_r8
 !
-      SourceFile=__FILE__
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
+      SourceFile=MyFile
 !
 !  Lower and upper bounds for tiled arrays.
 !
@@ -61,7 +64,7 @@
 !  Turn on input data time wall clock.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_on (ng, iRPM, 3, __LINE__, __FILE__)
+      CALL wclock_on (ng, iRPM, 3, __LINE__, MyFile)
 # endif
 
 # if defined SSH_TIDES_NOT_YET || defined UV_TIDES_NOT_YET
@@ -78,8 +81,7 @@
      &                    nFfiles(ng), FRC(1,ng), update(1),            &
      &                    1, MTC, 1, 1, 1, NTC(ng), 1,                  &
      &                    TIDES(ng) % Tperiod)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
       END IF
 # endif
@@ -103,8 +105,7 @@
      &                    GRID(ng) % rmask,                             &
 #  endif
      &                    TIDES(ng) % SSH_Tamp)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
           CALL get_2dfld (ng, iRPM, idTzph, ncFRCid(idTzph,ng),         &
      &                    nFfiles(ng), FRC(1,ng), update(1),            &
@@ -113,8 +114,7 @@
      &                    GRID(ng) % rmask,                             &
 #  endif
      &                    TIDES(ng) % SSH_Tphase)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
           time(ng)=time_save
           tdays(ng)=time(ng)*sec2day
@@ -139,8 +139,7 @@
      &                    GRID(ng) % rmask,                             &
 #  endif
      &                    TIDES(ng) % UV_Tangle)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
           CALL get_2dfld (ng, iRPM, idTvph, ncFRCid(idTvph,ng),         &
      &                    nFfiles(ng), FRC(1,ng), update(1),            &
@@ -149,8 +148,7 @@
      &                    GRID(ng) % rmask,                             &
 #  endif
      &                    TIDES(ng) % UV_Tphase)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
           CALL get_2dfld (ng, iRPM, idTvma, ncFRCid(idTvma,ng),         &
      &                    nFfiles(ng), FRC(1,ng), update(1),            &
@@ -159,8 +157,7 @@
      &                    GRID(ng) % rmask,                             &
 #  endif
      &                  TIDES(ng) % UV_Tmajor)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
           CALL get_2dfld (ng, iRPM, idTvmi, ncFRCid(idTvmi,ng),         &
      &                    nFfiles(ng), FRC(1,ng), update(1),            &
@@ -169,8 +166,7 @@
      &                    GRID(ng) % rmask,                             &
 #  endif
      &                    TIDES(ng) % UV_Tminor)
-          IF (FoundError(exit_flag, NoError, __LINE__,                  &
-     &                   __FILE__)) RETURN
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
           time(ng)=time_save
           tdays(ng)=time(ng)*sec2day
@@ -192,30 +188,26 @@
      &                  1, SSF(ng), update(1),                          &
      &                  1, Nsrc(ng), 1, 1, 1, Nsrc(ng), 1,              &
      &                  SOURCES(ng) % Xsrc)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         CALL get_ngfld (ng, iRPM, idRepo, SSF(ng)%ncid,                 &
      &                  1, SSF(ng), update(1),                          &
      &                  1, Nsrc(ng), 1, 1, 1, Nsrc(ng), 1,              &
      &                  SOURCES(ng) % Ysrc)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
         CALL get_ngfld (ng, iRPM, idRdir, SSF(ng)%ncid,                 &
      &                  1, SSF(ng), update(1),                          &
      &                  1, Nsrc(ng), 1, 1, 1, Nsrc(ng), 1,              &
      &                  SOURCES(ng) % Dsrc)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 
 #  ifdef SOLVE3D
         CALL get_ngfld (ng, iRPM, idRvsh, SSF(ng)%ncid,                 &
      &                  1, SSF(ng), update(1),                          &
      &                  1, Nsrc(ng), N(ng), 1, 1, Nsrc(ng), N(ng),      &
      &                  SOURCES(ng) % Qshape)
-        IF (FoundError(exit_flag, NoError, __LINE__,                    &
-     &                 __FILE__)) RETURN
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #  endif
 
         DO is=1,Nsrc(ng)
@@ -233,7 +225,7 @@
 !  Turn off input data time wall clock.
 !-----------------------------------------------------------------------
 !
-      CALL wclock_off (ng, iRPM, 3, __LINE__, __FILE__)
+      CALL wclock_off (ng, iRPM, 3, __LINE__, MyFile)
 # endif
 
       RETURN

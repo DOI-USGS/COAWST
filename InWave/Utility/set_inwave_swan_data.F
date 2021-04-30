@@ -73,11 +73,11 @@
       integer :: ILB, IUB, JLB, JUB
       integer :: Imin, Imax, Jmin, Jmax
       integer :: i, j, d, my_tile
-      integer :: tidx1, tidx2, ratio
+      integer :: tidx1, tidx2
 
       real(r8):: twopi, otwopi, cff1, cff2, cff3
       real(r8):: phiw, cw, dist, toff, alpha
-      real(r8):: fac1, fac2, tidx
+      real(r8):: fac1, fac2, tidx, ratio
       real(r8), parameter :: eps = 0.0001_r8
 
 # include "set_bounds.h"
@@ -88,13 +88,12 @@
 !     To compute the time index for the BC data, the Ampzeta array
 !     is Insteps long (1000sec), but it repeats every 1/df.
 !
-!     tidx=MOD(iic(ng),WAVES(ng)%Insteps)+1
-      ratio=INT(WAVES(ng)%idt/dt(ng))
-      tidx=MOD(iic(ng),(WAVES(ng)%Insteps-1)*ratio)/ratio+1.0_r8
+      ratio=WAVES(ng)%idt/dt(ng)
+      tidx=REAL(MOD(iic(ng),INT((WAVES(ng)%Insteps-1)*ratio)),r8)/ratio+1.0_r8
       tidx1=INT(tidx)
       tidx2=tidx+1
-      fac1=tidx-REAL(INT(tidx),r8)
-      fac2=1.0_r8-fac1
+      fac2=tidx-REAL(INT(tidx),r8)
+      fac1=1.0_r8-fac2
 
       IF (DOMAIN(ng)%Western_Edge(tile)) THEN
         IF (LBC(iwest,isAC3d,ng)%acquire) THEN
