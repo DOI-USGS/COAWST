@@ -161,7 +161,8 @@ export   WWATCH_ENV=${COAWST_WW3_DIR}/wwatch.env
 # 4) NETCDF_CONFIG is needed by WW3. You need to set this:
 #export   NETCDF_CONFIG=${NETCDF_LIBDIR}/../bin/nc-config
 #    This may require nf-config, depending on your system.
-export   NETCDF_CONFIG=/usr/bin/nc-config
+export   NETCDF_CONFIG=/usr/bin/nf-config
+#export   NETCDF_CONFIG=/vortexfs1/apps/impistack-1.0/bin/nf-config
 #
 # 5) WW3_SWITCH_FILE is like cpp options for WW3. You need to create it and
 #    list the name here.  You need to have COAWST listed in the switch file.
