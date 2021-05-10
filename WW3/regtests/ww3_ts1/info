@@ -1,0 +1,52 @@
+#############################################################################
+#                                                                           #
+# ww3_ts1   Test script for WW-III, source term integration in homogeneous  #
+#           conditions (1-point model)                                      #
+#                                                                           #
+# Model should be compiled with the switches :                              #
+#                                                                           #
+#   !/FLn !/LNn !/STn !/NLn !/BTn !/DBn !/TRn !/BSn !/XXn                   #
+#                        Select source term, growth needed, other opt.      #
+#   !/PR0                No propagation.                                    #
+#   !/WNX1 !/WNT1 !/CRX1 !/CRT1      Wind and current interpolation.        #
+#   !/O1 !/O2 !/O3 !/O4 !/O5 !/O6 !/O7   Sdt out output options.            #
+#                                                                           #
+#                                                                           #
+# - No other optional switches should be used.                              #
+# - Test case input (default):                                              #
+#   * ww3_grid.inp : (default)                                              #
+#     + one point grid without propagation.                                 #
+#     + Spectral grid: ntheta = 24, nf = 25 f1 = 0.042  , fgamma = 1.1      #
+#   * switch options :                                                      #
+#     + switch_ST1      : WAM 3 phyics.                                     #
+#     + switch_ST1_RWND : WAM 3 physics + wind dorrection.                  #
+#     + switch_ST2      : Tolman and Chalikov (default).                    #
+#     + switch_ST3      : WAM 4 physics.                                    #
+#     + switch_ST4      : Ardhuin et al. (2010), Romero (2019)              #
+#     + switch_ST6      : BYDRZ physics (2013).                             #
+#                                                                           #
+#  Example run_test commands:                                                  #
+#  (some details will vary by local system and configuration)                  #
+#  ./bin/run_test -s ST1  -w work_ST1 ../model ww3_ts1                         #
+#  ./bin/run_test -s ST2  -w work_ST2 ../model ww3_ts1                         #
+#  ./bin/run_test -s ST4 -o netcdf -N -w work_ST4 ../model ww3_ts1             #
+#  ./bin/run_test -s ST4 -o netcdf -N -w work_ST4_T700 -g ST4_T700 ../model ww3_ts1 #
+#  ./bin/run_test -s ST6 -o netcdf -w work_ST6 ../model ww3_ts1                #
+#  ./bin/run_test -c gnu -o netcdf ../model ww3_ts1                            #
+#                                                                              #
+#  ./bin/run_test -i input_icesct_IC0 -o both ../model ww3_ts1                 #
+#  ./bin/run_test -i input_icesct_IC1 -w work_IC1 ../model ww3_ts1             #
+#  ./bin/run_test -i input_icesct_IC2 -w work_IC2 ../model ww3_ts1             #
+#  ./bin/run_test -i input_icesct_IC3 -w work_IC3 ../model ww3_ts1             #
+#  ./bin/run_test -i input_icesct_IC4 -w work_IC4 ../model ww3_ts1             #
+#                                                                              #
+#                                                                              #
+#                                              Hendrik Tolman, Jun 2002        #
+#                                                   Last Mod : Jun 2020        #
+#                                                                              #
+#    Copyright 2009-2013 National Weather Service (NWS),                       #
+#       National Oceanic and Atmospheric Administration.  All rights           #
+#       reserved.  WAVEWATCH III is a trademark of the NWS.                    #
+#       No unauthorized use without permission.                                #
+#                                                                              #
+################################################################################ 

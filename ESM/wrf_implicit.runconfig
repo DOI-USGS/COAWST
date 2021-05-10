@@ -1,0 +1,60 @@
+#
+# svn $Id: wrf_implicit.runconfig 1054 2021-03-06 19:47:12Z arango $
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+# Copyright (c) 2002-2021 The ROMS/TOMS Group                           :::
+#   Licensed under a MIT/X style license                                :::
+#   See License_ROMS.txt                                                :::
+#::::::::::::::::::::::::::::::::::::::::::::::::::::: Hernan G. Arango :::
+#                                                                       :::
+# DATA-WRF-ROMS semi-implicit ESMF coupling:                            :::
+#                                                                       :::
+# This ESMF configuration file includes the Run Sequence to couple      :::
+# DATA, WRF, and ROMS components. All the components interact with      :::
+# the same coupling time step. The connector from ROMS to WRF is        :::
+# explicit, whereas the connector from WRF to ROMS is semi-implicit.    :::
+# Usually, the timestep of the atmosphere kernel is smaller than that   :::
+# for the ocean. Therefore, WRF export files are time-averaged over     :::
+# the coupling interval, which is the same as the ROMS timestep. It     :::
+# is semi-implicit because ROMS right-hand-side terms are forced with   :::
+# n+1/2 WRF fields because of the time-averaging.                       :::
+#                                                                       :::
+# The time-averaging is activated with WRF_TIMEAVG in the ROMS build    :::
+# script. The WRF "namelist.input" needs to include the parameters      :::
+# for the RAMS averaged diagnostics in the &time_control section.       :::
+# The User needs to check that the single coupling interval specified   :::
+# here is the same as for the ROMS coupling standard input script       :::
+# (keyword TimeStep).                                                   :::
+#                                                                       :::
+# It is not necessary to specify options to the connectors here for     :::
+# the "remapMethod" since it is specified in the input coupling         :::
+# metadata file (keyword CPLname) for each exchanged field.             :::
+#                                                                       :::
+# If the timeStep value (in seconds) coupling interval is a wildcard    :::
+# (*) character used for a single outer time loop in the run sequence,  :::
+# then the associated run clock is identical to the driver clock, which :::
+# is set up in standard input configuration script "coupling_esmf.in":  :::
+#                                                                       :::
+#     @*                                                                :::
+#       ...                                                             :::
+#       ...                                                             :::
+#     @                                                                 :::
+#                                                                       :::
+# Check NUOPC reference manual for more information (Chapter 3, API).   :::
+#                                                                       :::
+# The component label is specific to how is known in the ESMF driver.   :::
+# It is set in subroutine allocate_esmf_esm, variable MODELS(:)%name.   :::
+#                                                                       :::
+#::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::
+
+# Hurricane Irene Application
+
+runSeq::
+  @60                        # timeStep = 1 min interval, single time loop
+    DATA -> WRF              # DATA to WRF connector
+    DATA
+    ROMS -> WRF              # ROMS to WRF connector
+    WRF
+    WRF -> ROMS              # WRF to ROMS connector
+    ROMS
+  @
+::

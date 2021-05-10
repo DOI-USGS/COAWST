@@ -1,0 +1,344 @@
+#include "cppdefs.h"
+
+      MODULE marsh_vert_growth_mod
+!
+#if defined MARSH_VERT_GROWTH && defined MARSH_TIDAL_RANGE
+!
+!svn $Id: marsh_vert_growth.F 429 2015-04-20 17:30:26Z arango $
+!======================================================================!
+!  Copyright (c) 2002-2016 The ROMS/TOMS Group                         !
+!    Licensed under a MIT/X style license           Hernan G. Arango   !
+!    See License_ROMS.txt                   Alexander F. Shchepetkin   !
+!==============================================Tarandeep S. Kalra======!
+!==============================================Joel Carr===============!
+!================================================Neil K. Ganju  =======!
+!==============================================Alfredo Aretxabaleta====!
+!==============================================John C. Warner==========!
+!                                                                      !
+!  Calculate vertical growth of marsh through biomass production.      !
+!  Biomass production can lead to mudflats being converted to marsh    !
+!  cells and evolve marsh stem/canopy properties                       ! 
+!                                                                      !
+!  References:                                                         !
+!                                                                      !
+!======================================================================!
+!  For marsh vertical growth and parabolic profile:                    !
+!======================================================================!
+!  Morris, J. T., P. V. Sundareshwar, C. T. Nietch, B. Kjerfve, and    !
+!  D. R. Cahoon.: Responses of coastal wetlands to rising sea level,   !
+!  Ecology, 83(10), 2869–2877, 2002.                                   !
+!                                                                      !
+!======================================================================!
+!  For marsh vegetation parameters:                                    !
+!======================================================================!
+!  D'Alpaos, A.,  Lanzoni, S.,  Marani, M., Rinaldo, A.: Landscape     !
+!  evolution in tidal embayments: Modeling the interplay of erosion,   !
+!  sedimentation, and vegetation dynamics, Journal of Geophysical      !
+!  Research,112, F01008, 2007.                                         !
+!======================================================================!
+!                                                                      !
+      implicit none
+
+      PRIVATE
+      PUBLIC  :: marsh_vert_growth
+
+      CONTAINS
+!
+!***********************************************************************
+      SUBROUTINE marsh_vert_growth (ng,tile)
+!***********************************************************************
+      USE mod_param
+      USE mod_grid
+      USE mod_ocean
+      USE mod_vegarr
+      USE mod_sedbed
+      USE mod_stepping
+
+      integer, intent(in) :: ng, tile
+
+!  Local variable declarations.
+!
+# include "tile.h"
+!
+      CALL marsh_vert_growth_tile (ng, tile,                            &
+     &                       LBi, UBi, LBj, UBj,                        &
+     &                       IminS, ImaxS, JminS, JmaxS,                &
+     &                       GRID(ng) % h,                              &
+     &                       OCEAN(ng)  % zeta,                         &
+     &                       nnew(ng),                                  &
+     &                       SEDBED(ng) % bed,                          &
+     &                       SEDBED(ng) % bed_mass,                     &
+     &                       VEG(ng) % marsh_mask,                      &
+     &                       VEG(ng) % marsh_high_water,                &
+     &                       VEG(ng) % marsh_tidal_range,               &
+#  if defined MARSH_BIOMASS_VEG
+     &                       VEG(ng) % plant,                           &
+#  endif 
+#  if defined WET_DRY && defined MARSH_COLONIZE
+     &                       GRID(ng) % rmask_wet,                      &
+#  endif 
+     &                       VEG(ng) % marsh_biomass_peak,              &
+     &                       VEG(ng) % marsh_vert)
+
+      END SUBROUTINE marsh_vert_growth
+
+!***********************************************************************
+      SUBROUTINE marsh_vert_growth_tile (ng, tile,                      &
+     &                             LBi, UBi, LBj, UBj,                  &
+     &                             IminS, ImaxS, JminS, JmaxS,          &
+     &                             h,                                   &
+     &                             zeta,                                &
+     &                             nnew,                                &
+     &                             bed,                                 &
+     &                             bed_mass,                            &
+     &                             marsh_mask,                          &
+     &                             marsh_high_water,                    &
+     &                             marsh_tidal_range,                   &
+#  if defined MARSH_BIOMASS_VEG
+     &                             plant,                               &
+#  endif 
+#  if defined WET_DRY && defined MARSH_COLONIZE
+     &                             rmask_wet,                           &
+#  endif 
+     &                             marsh_biomass_peak,                  &
+     &                             marsh_vert)
+!***********************************************************************
+!
+      USE mod_grid
+      USE mod_forces
+      USE mod_param
+      USE mod_scalars
+      USE mod_vegetation
+      USE mod_vegarr
+      USE mod_sediment
+      USE bc_2d_mod, ONLY : bc_r2d_tile
+      USE bc_3d_mod, ONLY : bc_r3d_tile
+!      USE exchange_2d_mod
+# ifdef DISTRIBUTE
+      USE mp_exchange_mod, ONLY : mp_exchange2d, mp_exchange3d,         &
+     &                            mp_exchange4d
+# endif
+!
+!  Imported variable declarations.
+!
+      integer, intent(in) :: ng, tile
+      integer, intent(in) :: LBi, UBi, LBj, UBj
+      integer, intent(in) :: IminS, ImaxS, JminS, JmaxS
+      integer, intent(in) :: nnew
+!
+# ifdef ASSUMED_SHAPE
+      real(r8), intent(inout) :: marsh_mask(LBi:,LBj:)
+      real(r8), intent(inout) :: h(LBi:,LBj:)
+      real(r8), intent(in)    :: zeta(LBi:,LBj:,:)
+      real(r8), intent(in)    :: bed(LBi:,LBj:,:,:)
+      real(r8), intent(inout) :: bed_mass(LBi:,LBj:,:,:,:)
+      real(r8), intent(in)    :: marsh_high_water(LBi:,LBj:)
+      real(r8), intent(in)    :: marsh_tidal_range(LBi:,LBj:)
+#  if defined MARSH_BIOMASS_VEG
+      real(r8), intent(inout) :: plant(LBi:,LBj:,:,:)
+#  endif
+#  if defined WET_DRY && defined MARSH_COLONIZE
+      real(r8), intent(inout) :: rmask_wet(LBi:,LBj:)
+#  endif
+      real(r8), intent(inout) :: marsh_biomass_peak(LBi:,LBj:)
+      real(r8), intent(inout) :: marsh_vert(LBi:,LBj:)
+# else
+      real(r8), intent(inout) :: marsh_mask(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: h(LBi:UBi,LBj:UBj)
+      real(r8), intent(in)    :: zeta(LBi:UBi,LBj:UBj,3)
+      real(r8), intent(in)    :: bed(LBi:UBi,LBj:UBj,Nbed,MBEDP)
+      real(r8), intent(inout) :: bed_mass(LBi:UBi,LBj:UBj,Nbed,1:2,NST)
+      real(r8), intent(in)    :: marsh_high_water(LBi:UBi,LBj:UBj)
+      real(r8), intent(in)    :: marsh_tidal_range(LBi:UBi,LBj:UBj)
+#  if defined MARSH_BIOMASS_VEG
+      real(r8), intent(inout) :: plant(LBi:UBi,LBj:UBj,NVEG,NVEGP)
+#  endif
+#  if defined WET_DRY && defined MARSH_COLONIZE
+      real(r8), intent(inout) :: rmask_wet(LBi:UBi,LBj:UBj)
+#  endif
+      real(r8), intent(inout) :: marsh_biomass_peak(LBi:UBi,LBj:UBj)
+      real(r8), intent(inout) :: marsh_vert(LBi:UBi,LBj:UBj)
+# endif
+!
+!  Local variable declarations.
+!
+      integer  :: i, j, k, ised
+      real(r8) :: Dmin, Dmax, depth
+      real(r8) :: Bpeak, Rref, AMC
+      real(r8) :: ramp, cff 
+      real(r8) :: marsh_bulk_density
+!      real(r8), parameter :: lower_lev=1.0e-9 ! 800-1000 kg/m3 
+      real(r8), parameter ::                                            &
+     &                  one_over_year2sec=1.0_r8/(365.0_r8*86400.0_r8)
+!
+#  if defined MARSH_BIOMASS_VEG
+      integer :: ivpr, iveg
+#  endif 
+!
+# include "set_bounds.h"
+!          
+#  if defined WET_DRY && defined MARSH_COLONIZE
+      DO j=Jstr,Jend
+        DO i=Istr,Iend
+!          marsh_mask(i,j)=marsh_mask(i,j)*rmask_wet(i,j)
+          IF(rmask_wet(i,j)==0.0_r8) THEN 
+            marsh_mask(i,j)=1.0_r8
+          ENDIF 
+        END DO 
+      END DO 
+# endif 
+!
+!    Ramp to start the vertical growth rate. 
+! 
+      ramp=MIN(tdays(ng)/NTIMES_MARSH,1.0_r8)
+!
+      J_LOOP: DO j=Jstr,Jend
+        DO i=Istr,Iend
+!
+          Dmin=marsh_high_water(i,j)
+          Dmax=Par_fac1(ng)*2.0_r8*Dmin+Par_fac2(ng)+Dmin
+!
+          depth=ABS(h(i,j))
+!
+          IF(tdays(ng).lt.tdays_marsh_growth) THEN 
+!
+! scales parabola from 0 to 1 in next line.
+!
+            cff=0.25_r8*(Dmin-Dmax)*(Dmax-Dmin)
+!
+! peak biomass as a function of depth.
+! 
+            Bpeak=BMax(ng)*(Depth-Dmax)*(Depth-Dmin)/cff
+!
+            Bpeak=MAX(Bpeak,0.0_r8) 
+!
+! Amount of below ground biomass. 
+!
+            AMC=tdays(ng)*Bpeak*nuGp(ng)*one_over_year2sec
+          ELSE
+! 
+! 180 growing days, after 180 days make AMC=0, Bpeak=0.0.
+! 
+            Bpeak=0.0_r8
+            AMC=0.0_r8
+          ENDIF
+!       
+! Masking the amount of marsh biomass and saving in 2D array for I/O.
+! 
+          marsh_biomass_peak(i,j)=Bpeak*marsh_mask(i,j)*ramp
+!
+! what material remains after accounting for recalcitrant Carbon.
+!
+          Rref=AMC*chiref(ng)*ramp 
+!
+! Assuming that organic sed in class 1, add bed mass. 
+! 
+          bed_mass(i,j,1,nnew,1)=bed_mass(i,j,1,nnew,1)+Rref 
+!
+! Vertical accretion in m. 
+!
+          marsh_bulk_density=Srho(1,ng)*bed(i,j,1,iporo)
+          marsh_vert(i,j)=(Rref/marsh_bulk_density)*dt(ng)*             &
+     &                                     marsh_mask(i,j)      
+! 
+#  if defined MARSH_BIOMASS_VEG
+          IF(tdays(ng).gt.NTIMES_MARSH) THEN
+! 
+#   if defined MARSH_COLONIZE 
+!
+! Colonize if marsh biomass production (Bpeak)>0.0
+!
+            marsh_mask(i,j)=MIN(1.0_r8,MAX(Bpeak,0.0_r8))
+#   endif
+!
+            DO iveg=1,NVEG
+! 
+! Inside veg loop to change veg properties based on Bpeak
+!
+              cff=( (Bpeak*1000.0_r8)**beta_pdens(ng) )*marsh_mask(i,j)
+              plant(i,j,iveg,pdens)=alpha_pdens(ng)*cff
+! 
+              cff=( (Bpeak*1000.0_r8)**beta_phght(ng) )*marsh_mask(i,j)
+              plant(i,j,iveg,phght)=alpha_phght(ng)*cff
+! 
+              cff=( (Bpeak*1000.0_r8)**beta_pdiam(ng) )*marsh_mask(i,j)
+              plant(i,j,iveg,pdiam)=alpha_pdiam(ng)*cff
+!
+!              plant(i,j,iveg,pthck)=plant(i,j,iveg,pthck)*
+!              &                              marsh_mask(i,j)
+            END DO
+          END IF
+#  endif
+        END DO
+      END DO J_LOOP
+!
+!---------------------------------------------------------------------
+!  Apply periodic or gradient boundary conditions for output
+!  purposes only.
+!---------------------------------------------------------------------
+!
+! Exchange boundary data 
+!
+      DO ised=1,NST
+        CALL bc_r3d_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj, 1, Nbed,                  &
+     &                    bed_mass(:,:,:,nnew,ised))
+      END DO 
+!
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  marsh_biomass_peak)
+!
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  marsh_vert)
+!
+#  if defined MARSH_BIOMASS_VEG
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  marsh_mask)
+!
+      DO ivpr=1,NVEGP
+        CALL bc_r3d_tile (ng, tile,                                     &
+     &                    LBi, UBi, LBj, UBj, 1, NVEG,                  &
+     &                    plant(:,:,:,ivpr))
+      END DO
+#  endif 
+!
+# ifdef DISTRIBUTE
+!
+      CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj, 1, Nbed, 1, NST,          &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    bed_mass(:,:,:,nnew,:))
+!
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        NghostPoints,                             &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
+     &                        marsh_biomass_peak, marsh_vert)
+!
+#  if defined MARSH_BIOMASS_VEG
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
+     &                        LBi, UBi, LBj, UBj,                       &
+     &                        NghostPoints,                             &
+     &                        EWperiodic(ng), NSperiodic(ng),           &
+     &                        marsh_mask)
+!
+      CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj, 1, NVEG, 1, NVEGP,        &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    plant(:,:,:,:))         
+#  endif
+# endif
+!
+
+      END SUBROUTINE marsh_vert_growth_tile
+!
+!***********************************************************************
+#endif
+
+      END MODULE marsh_vert_growth_mod
+
