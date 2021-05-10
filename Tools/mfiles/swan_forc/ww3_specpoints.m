@@ -130,4 +130,4 @@ end
 %flip specpoints so that it is consistent with what ncgeodataset is look for.
 %specpts=specpts.';
 %save file as mat files
-save specpts.mat specpts
+%save specpts.mat specpts
