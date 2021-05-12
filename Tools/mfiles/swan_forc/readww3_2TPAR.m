@@ -1,14 +1,14 @@
 function ww3gb_2TPAR(modelgrid,yearww3,mmww3,ww3_grid,specpts)
 
 %set urls of the hsig, peak period, and dominant period
-if (yearww3<2017)
+if (str2num(yearww3)<2017)
   eval(['hsurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/',ww3_grid,'/multi_1.',ww3_grid,'.hs.',yearww3,mmww3,'.grb2'';'])
   eval(['tpurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/',ww3_grid,'/multi_1.',ww3_grid,'.tp.',yearww3,mmww3,'.grb2'';'])
   eval(['dpurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/',ww3_grid,'/multi_1.',ww3_grid,'.dp.',yearww3,mmww3,'.grb2'';'])
 else
-  eval(['hsurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/',gribs,'/multi_1.',ww3_grid,'.hs.',yearww3,mmww3,'.grb2'';'])
-  eval(['tpurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/',gribs,'/multi_1.',ww3_grid,'.tp.',yearww3,mmww3,'.grb2'';'])
-  eval(['dpurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/',gribs,'/multi_1.',ww3_grid,'.dp.',yearww3,mmww3,'.grb2'';'])
+  eval(['hsurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/gribs/multi_1.',ww3_grid,'.hs.',yearww3,mmww3,'.grb2'';'])
+  eval(['tpurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/gribs/multi_1.',ww3_grid,'.tp.',yearww3,mmww3,'.grb2'';'])
+  eval(['dpurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/gribs/multi_1.',ww3_grid,'.dp.',yearww3,mmww3,'.grb2'';'])
 end
 %
 %first lets get the lon, lat, and time of the ww3 data
