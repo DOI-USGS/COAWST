@@ -30,8 +30,10 @@ end
 %
 % Now prep the swan/roms grid location arrays
 %
-disp('We are adding 360 to the roms longitude - line 31 ww3gb_2TPAR.m')
-gx=specpts(:,1)+360;
+offset=0;
+if (min(specpts(:,1)<0)); offset=360; end
+disp(['We are adding ',num2str(offset),' to the roms longitude - line 34 ww3gb_2TPAR.m'])
+gx=specpts(:,1)+offset;
 gy=specpts(:,2);
 xl=min(gx(:))-3;xr=max(gx(:))+3;     %this adds a buffer to make sure we get enough data.
 yb=min(gy(:))-3;yt=max(gy(:))+3;
