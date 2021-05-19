@@ -115,7 +115,7 @@
             DO itide=1,NTC(ng)
               TIDES(mg)%Tperiod (1:NTC(ng))=TIDES(ng)%Tperiod (1:NTC(ng))
               TIDES(mg)%SinOmega(1:NTC(ng))=TIDES(ng)%SinOmega(1:NTC(ng))
-              TIDES(mg)%CosOmega(1:NTC(ng))=TIDES(ng)%SinOmega(1:NTC(ng))
+              TIDES(mg)%CosOmega(1:NTC(ng))=TIDES(ng)%CosOmega(1:NTC(ng))
             END DO
           END IF
         END DO
