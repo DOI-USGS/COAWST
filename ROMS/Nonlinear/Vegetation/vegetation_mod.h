@@ -74,7 +74,8 @@
 !  idTmtr        Mean tidal range  (MHHW-MLLW)                         !  
 !  idTmhw        Mean high high water (MHWW)                           !
 !  idTmbp        Below ground biomass for marsh growth                 !
-!  idTmvg        Amount of marsh vertical growth                       ! 
+!  idTmvg        Rate of marsh vertical growth                         ! 
+!  idTmvt        Amount of marsh vertical growth                       ! 
 !======================================================================!
 !                                                                      !
       USE mod_param
@@ -107,13 +108,15 @@
 # if defined MARSH_RETREAT
       integer ::  idTmmr
 # endif 
-# if defined MARSH_TIDAL_RANGE
+# if defined MARSH_TIDAL_RANGE_CALC
       integer ::  NTIMES_MARSH
-      integer ::  idTmtr, idTmhw 
-#  if defined MARSH_VERT_GROWTH
+      integer ::  idTmtr
+# endif
+# if defined MARSH_VERT_GROWTH
+      integer :: idTmhw, idTmlw  
       integer :: idTmbp
       integer :: idTmvg
-#  endif
+      integer :: idTmvt
 # endif 
 #endif 
 !
@@ -133,7 +136,7 @@
 # endif 
 # if defined MARSH_VERT_GROWTH 
       real(r8), allocatable :: PAR_FAC1(:), PAR_FAC2(:)
-      integer               :: TDAYS_MARSH_GROWTH
+      real(r8), allocatable :: TDAYS_MARSH_GROWTH(:)
 !      real(r8), allocatable :: MARSH_BULK_DENS(:)
       real(r8), allocatable :: NUGP(:)
       real(r8), allocatable :: BMAX(:)

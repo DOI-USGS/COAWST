@@ -1,7 +1,7 @@
 #include "cppdefs.h"
  
-       MODULE marsh_tidal_range_mod
-#if defined MARSH_TIDAL_RANGE
+       MODULE marsh_tidal_range_calc_mod
+#if defined MARSH_TIDAL_RANGE_CALC
 !
 !svn $Id: marsh_tidal_range.F 429 2015-04-20 17:30:26Z arango $
 !======================================================================!
@@ -21,12 +21,12 @@
       implicit none
 
       PRIVATE
-      PUBLIC  :: marsh_tidal_range
+      PUBLIC  :: marsh_tidal_range_calc
 
       CONTAINS
 !
 !***********************************************************************
-      SUBROUTINE marsh_tidal_range (ng, tile)
+      SUBROUTINE marsh_tidal_range_calc (ng, tile)
 !***********************************************************************
 !
       USE mod_param
@@ -44,7 +44,7 @@
 !
 # include "tile.h"
 !
-      CALL marsh_tidal_range_tile (ng, tile,                            &
+      CALL marsh_tidal_range_calc_tile (ng, tile,                       &
      &                        LBi, UBi, LBj, UBj,                       &
      &                        IminS, ImaxS, JminS, JmaxS,               &
      &                        nstp(ng),                                 &
@@ -59,11 +59,11 @@
      &                        VEG(ng)    % marsh_tidal_range) 
               
       RETURN
-      END SUBROUTINE marsh_tidal_range
+      END SUBROUTINE marsh_tidal_range_calc
 !
 !***********************************************************************
 !
-      SUBROUTINE marsh_tidal_range_tile  (ng, tile,                     &
+      SUBROUTINE marsh_tidal_range_calc_tile  (ng, tile,                &
      &                              LBi, UBi, LBj, UBj,                 &
      &                              IminS, ImaxS, JminS, JmaxS,         &
      &                              nstp,                               &
@@ -223,7 +223,7 @@
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    zeta_max_rec, zeta_min_rec)
 # endif 
-      END SUBROUTINE marsh_tidal_range_tile
+      END SUBROUTINE marsh_tidal_range_calc_tile
 #endif 
 !        
-      END MODULE marsh_tidal_range_mod
+      END MODULE marsh_tidal_range_calc_mod

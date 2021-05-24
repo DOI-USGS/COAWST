@@ -44,11 +44,17 @@
 
 # define MARSH_WAVE_THRUST
 # define MARSH_SED_EROSION
-# define MARSH_TIDAL_RANGE
+
+# define MARSH_TIDAL_RANGE_CALC
 # define MARSH_VERT_GROWTH
-#  define MARSH_BIOMASS_VEG
-/*
-*/
+/** If want internal calculation**/
+/** Choose one of the two formulation **/
+#  define MARSH_KIRWAN_FORMULATION
+#  define MARSH_TIDAL_RANGE_INTERNAL 
+#  undef MARSH_MCKEE_FORMULATION
+
+#  define MARSH_BIOMASS_VEG 
+
 #define SSW_BBL
 #ifdef SSW_BBL
 # define SSW_CALC_ZNOT
