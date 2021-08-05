@@ -940,7 +940,7 @@
 !  Set the switch to compute vertical interpolation weights. Currently,
 !  they are only needed in non-coincident composite grids.
 !
-      IF (.not.ANY(Lcoincident).and.ANY(Lcomposite)) THEN
+      IF (.not.ANY(Lcoincident).or.ANY(Lcomposite)) THEN
         get_Vweights=.TRUE.
       ELSE
         get_Vweights=.FALSE.

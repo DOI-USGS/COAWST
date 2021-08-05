@@ -797,7 +797,7 @@
           diffw=2.11E-5_r8*(TairK(i)/273.16_r8)**1.94_r8
           diffh=0.02411_r8*(1.0_r8+TairC(i)*                            &
      &                      (3.309E-3_r8-1.44E-6_r8*TairC(i)))/         &
-     &          (rhoAir(i)*blk_Cpa)
+     &          (rhoAir(i)*blk_Cpa+eps)
           cff=Qair(i)*Hlv(i,j)/(blk_Rgas*TairK(i)*TairK(i))
           wet_bulb=1.0_r8/(1.0_r8+0.622_r8*(cff*Hlv(i,j)*diffw)/        &
      &                                     (blk_Cpa*diffh))

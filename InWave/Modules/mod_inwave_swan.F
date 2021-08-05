@@ -1770,7 +1770,6 @@
         allocate (A(nt1))
         allocate (zz(nt1))
 
-
         DDtheta=0.0_r8
         k3=0.0_r8
         Z_bw=0.0_r8
@@ -1831,7 +1830,6 @@
 !
 !  Phase of the bound wave. Use the m value from INTCDF or FCDF above.
 !
-
           allocate (comp1(1:nf))
           DO i=1,nf
             mdir1=WAVES(ng)%dir_3_int(i)
@@ -1868,8 +1866,8 @@
      &                 cos(DDtheta(1:nf-f1))/                           &
      &                (8.0_r8*pi**2*ff(1:nf-f1))
 !  correct for bottom pressure.
-         D1(1:nf-f1)=D1(1:nf-f1)*                                      &
-    &                 MIN(cosh(k3(1:nf-f1)*h0),1.0E10_r8)  /           &
+          D1(1:nf-f1)=D1(1:nf-f1)*                                      &
+    &                  MIN(cosh(k3(1:nf-f1)*h0),1.0E10_r8)  /           &
     &                 (cosh(k(f1+1:nf)*h0)*cosh(k(1:nf-f1)*h0))
           D2(1:nf-f1)=-g*DDf(1:nf-f1)/((g*k3(1:nf-f1)*                  &
      &                tanh(k3(1:nf-f1)*h0)-                             &
@@ -1967,7 +1965,7 @@
 !  now do u
           Comptempd=Comptemp*exp(-1.0_r8*CMPLX(0.0_r8,k3_y*dist_y(j)+   &
      &                                                k3_x*dist_x(j)))* &
-     &                                                cg_3*cos(1.5_r8*pi-bw_ang)
+     &                                        cg_3*cos(1.5_r8*pi-bw_ang)
 !
 !  Determine Fourier coefficients
 !
@@ -1997,7 +1995,7 @@
 !  now do v
           Comptempd=Comptemp*exp(-1.0_r8*CMPLX(0.0_r8,k3_y*dist_y(j)+   &
      &                                                k3_x*dist_x(j)))* &
-     &                                                cg_3*sin(1.5_r8*pi-bw_ang)
+     &                                        cg_3*sin(1.5_r8*pi-bw_ang)
 !
 !  Determine Fourier coefficients
 !
@@ -2169,7 +2167,7 @@
 #  endif
         END DO
 # endif
-        deallocate(dist_x, dist_y)
+        deallocate (dist_x, dist_y)
         deallocate (tempz, tempu, tempv)
         deallocate (k, ok, ocoshkh)
       END IF

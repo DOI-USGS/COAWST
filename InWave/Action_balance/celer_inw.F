@@ -260,12 +260,11 @@
 !  Compute the absolute group velocities in space direction (Xi and ETAi)
 !========================================================================
 !
-# ifdef DOPPLER
-              cx_rho(i,j,d)=cgrx+u_rho(i,j)
-              cy_rho(i,j,d)=cgry+v_rho(i,j)
-# else
               cx_rho(i,j,d)=cgrx
               cy_rho(i,j,d)=cgry
+# ifdef DOPPLER
+              cx_rho(i,j,d)=cx_rho(i,j,d)+u_rho(i,j)
+              cy_rho(i,j,d)=cy_rho(i,j,d)+v_rho(i,j)
 # endif
             ENDIF
           ENDDO
