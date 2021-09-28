@@ -215,7 +215,7 @@
 !-----------------------------------------------------------------------
 !
       end_ang=WAVEG(ng)%wd(ND)+WAVEG(ng)%pd
-      IF(end_ang.ge.twopi)end_ang=end_ang- twopi
+      IF(end_ang.ge.twopi) end_ang=end_ang-twopi
       IF(end_ang.ne.WAVEG(ng)%wd(1))THEN
         write (stdout,30)
         exit_flag=4

@@ -91,6 +91,10 @@
       USE bc_3d_mod
       USE exchange_3d_mod
       USE kwc3dbc_mod
+#  ifdef DOPPLER_SHEAR
+      USE mod_grid
+      USE mod_ocean
+#  endif
 
 #  ifdef DISTRIBUTE
       USE mp_exchange_mod, ONLY : mp_exchange3d
@@ -147,7 +151,7 @@
       integer :: i, j, k, d
 
       real(r8) :: alfa_wave, kx, ky, cff, cff1, cff2
-      real(r8) :: crk, crx, cry, kh
+      real(r8) :: crk, crx, cry, kh, S
       real(r8), parameter :: kwc_max = 10.0_r8
       real(r8), parameter :: kwc_min = 0.015_r8
       real(r8), parameter :: eps = 1.0e-10_r8
@@ -170,6 +174,15 @@
             crk=0.5_r8*(sqrt(MAX(g/kwc(i-1,j,d)*tanh(cff1),eps))+       &
      &                  sqrt(MAX(g/kwc(i  ,j,d)*tanh(cff2),eps)))
             cff1=0.5_r8*(u_rho(i-1,j)+u_rho(i,j))
+#   ifdef DOPPLER_SHEAR
+            cff=GRID(ng)%Hz(i,j,1)
+            DO k=2,N(ng)
+              cff=cff+GRID(ng)%Hz(i,j,k)
+            END DO
+            S=OCEAN(ng)%u(i,j,N(ng),1)-OCEAN(ng)%u(i,j,1,1)
+!           crk=crk*sqrt(1.0_r8+S/cff/g*(cff1-cx(i,j,d)))
+            crk=crk*sqrt(1.0_r8+S/cff/g*cx(i,j,d))
+#   endif
             cff=(crk*cos(alfa_wave)+cff1)*on_u(i,j)
             cff1=MAX(cff,0.0_r8)
             cff2=MIN(cff,0.0_r8)
@@ -215,7 +228,7 @@
         END DO
       END DO
 !
-!  Apply nonperiodic boundary conditions in xi and etai space.
+!  Apply nonperiodic boundary conditions in xi and eta space.
 !
       CALL kwc3dbc_tile (ng, tile,                                      &
      &                     LBi, UBi, LBj, UBj,                          &

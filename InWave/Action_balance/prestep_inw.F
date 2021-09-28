@@ -1,6 +1,9 @@
 #include "cppdefs.h"
-#undef  AC_U3HADVECTION
-#define AC_HSIMT
+#undef  AC_HSIMT
+#define AC_U3HADVECTION
+#undef  AC_CENTERED2
+#undef  AC_CENTERED4
+#undef  AC_AKIMA4
       MODULE prestep_inw_mod
 #if defined INWAVE_MODEL
 !
@@ -162,6 +165,7 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curv
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
       real(r8), dimension(IminS:ImaxS,0:ND+1) :: curvd
 
 
@@ -175,8 +179,26 @@
 !  horizontal advection.
 !
       D_LOOP: DO d=1,ND
-# ifdef AC_U3HADVECTION
-!  Third-order, uptream-biased horizontal advective fluxes.
+# if defined AC_CENTERED2
+        DO j=Jstr,Jend
+          DO i=Istr,Iend+1
+            cff=cx(i,j,d)*on_u(i,j)
+            FX(i,j)=cff*0.5_r8*                                         &
+     &              (AC(i-1,j,d,nstp)+                                  &
+     &               AC(i  ,j,d,nstp))
+          END DO
+        END DO
+        DO j=Jstr,Jend+1
+          DO i=Istr,Iend
+            cff=cy(i,j,d)*om_v(i,j)
+            FE(i,j)=cff*0.5_r8*                                         &
+     &              (AC(i,j-1,d,nstp)+                                  &
+     &               AC(i,j  ,d,nstp))
+          END DO
+        END DO
+# elif defined AC_U3HADVECTION || defined AC_CENTERED4 || defined AC_AKIMA4
+!  Fourth-order Akima, fourth-order centered differences, or third-order
+!  upstream-biased horizontal advective fluxes.
         DO j=Jstr,Jend
           DO i=Istrm1,Iendp2
             FX(i,j)=AC(i  ,j,d,nstp)-                                   &
@@ -203,7 +225,18 @@
 !
         DO j=Jstr,Jend
           DO i=Istr-1,Iend+1
+#  if defined AC_U3HADVECTION
             curv(i,j)=FX(i+1,j)-FX(i,j)
+#  elif defined AC_AKIMA4
+            cff=2.0_r8*FX(i+1,j)*FX(i,j)
+            IF (cff.gt.eps) THEN
+              grad(i,j)=cff/(FX(i+1,j)+FX(i,j))
+            ELSE
+              grad(i,j)=0.0_r8
+            END IF
+#  elif defined AC_CENTERED4
+            grad(i,j)=0.5_r8*(FX(i+1,j)+FX(i,j))
+#  endif
           END DO
         END DO
 !
@@ -212,11 +245,19 @@
         DO j=Jstr,Jend
           DO i=Istr,Iend+1
             cff=cx(i,j,d)*on_u(i,j)
+#  if defined AC_U3HADVECTION
             FX(i,j)=cff*0.5_r8*                                         &
      &              (AC(i-1,j,d,nstp)+                                  &
      &               AC(i  ,j,d,nstp))-                                 &
      &               cff1*(curv(i-1,j)*MAX(cff,0.0_r8)+                 &
      &                     curv(i  ,j)*MIN(cff,0.0_r8))
+#  elif defined AC_CENTERED4 || defined AC_AKIMA4
+            FX(i,j)=cff*0.5_r8*                                         &
+     &              (AC(i-1,j,d,nstp)+                                  &
+     &               AC(i  ,j,d,nstp)-                                  &
+     &               cff2*(grad(i  ,j)-                                 &
+     &                     grad(i-1,j)))
+#  endif
           END DO
         END DO
 !
@@ -246,7 +287,18 @@
 !
         DO j=Jstr-1,Jend+1
           DO i=Istr,Iend
+#  if defined AC_U3HADVECTION
             curv(i,j)=FE(i,j+1)-FE(i,j)
+#  elif defined AC_AKIMA4
+            cff=2.0_r8*FE(i,j+1)*FE(i,j)
+            IF (cff.gt.eps) THEN
+              grad(i,j)=cff/(FE(i,j+1)+FE(i,j))
+            ELSE
+              grad(i,j)=0.0_r8
+            END IF
+#  elif defined AC_CENTERED4
+            grad(i,j)=0.5_r8*(FE(i,j+1)+FE(i,j))
+#  endif
           END DO
         END DO
 !
@@ -255,14 +307,22 @@
         DO j=Jstr,Jend+1
           DO i=Istr,Iend
             cff=cy(i,j,d)*om_v(i,j)
+#  if defined AC_U3HADVECTION
             FE(i,j)=cff*0.5_r8*                                         &
      &              (AC(i,j-1,d,nstp)+                                  &
      &               AC(i,j  ,d,nstp))-                                 &
      &               cff1*(curv(i,j-1)*MAX(cff,0.0_r8)+                 &
      &                     curv(i,j  )*MIN(cff,0.0_r8))
+#  elif defined AC_CENTERED4 || defined AC_AKIMA4
+            FE(i,j)=cff*0.5_r8*                                         &
+     &              (AC(i,j-1,d,nstp)+                                  &
+     &               AC(i,j  ,d,nstp)-                                  &
+     &               cff2*(grad(i  ,j)-                                 &
+     &                     grad(i-1,j)))
+#  endif
           END DO
         END DO
-# elif defined AC_MPDATA || defined AC_HSIMT
+# elif defined AC_HSIMT
 !
 !  First-order, upstream differences horizontal advective fluxes.
 !
@@ -272,7 +332,7 @@
             cff1=MAX(cff,0.0_r8)
             cff2=MIN(cff,0.0_r8)
             FX(i,j)=cff1*AC(i-1,j,d,nstp)+                              &
-     &             cff2*AC(i  ,j,d,nstp)
+     &              cff2*AC(i  ,j,d,nstp)
           END DO
         END DO
         DO j=Jstr,Jend+1
@@ -312,7 +372,8 @@
 ! Need to wrap around in theta dir. NOt always
 !
       opd=1.0_r8/pd
-# ifdef AC_U3HADVECTION
+# if defined AC_U3HADVECTION || defined AC_CENTERED2 || defined AC_CENTERED4 || \
+     defined AC_AKIMA4
       J_LOOP: DO j=Jstr,Jend
         DO i=Istr,Iend
 #  if defined THETA_AC_PERIODIC
@@ -321,9 +382,6 @@
           FD(i,1)=AC(i,j,1       ,nstp)-                                &
      &            AC(i,j,ND  ,nstp)
 #  else
-!!IN THIS POINT IT DOESNT MATTER THE BOUNDARY CONDITION, 
-!!WE JUST PUT IT AS IF IT WAS A NO GRADIENT
-!!THE WALL BOUNDARY CONDITION WILL BE STABLISHED LATER
           FD(i,0)=0.0_r8
           FD(i,1)=0.0_r8
 #  endif

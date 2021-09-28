@@ -56,8 +56,14 @@
 # endif
      &                 FORCES(ng) % Dissip_break,                       &
      &                 FORCES(ng) % Dissip_wcap,                        &
+     &                 FORCES(ng) % Lwave,                              &
+# ifdef WAVES_BOT_PERIOD
+     &                 FORCES(ng) % Pwave_bot,                          &
+# endif
      &                 WAVEP(ng) % h_tot,                               &
-     &                 WAVEP(ng) % AC, WAVEP(ng) % Tr, WAVEP(ng) % kwc)
+     &                 WAVEP(ng) % AC,                                  &
+     &                 WAVEP(ng) % Tr,                                  &
+     &                 WAVEP(ng) % kwc)
 !#  ifdef PROFILE
 !      CALL wclock_off (ng, iNLM, 35)
 !#  endif
@@ -77,6 +83,10 @@
 # endif
      &                       Dissip_break,                              &
      &                       Dissip_wcap,                               &
+     &                       Lwave,                                     &
+# ifdef WAVES_BOT_PERIOD
+     &                       Pwave_bot,                                 &
+# endif
      &                       h_tot,                                     &
      &                       AC, Tr, kwc)
 !***********************************************************************
@@ -111,6 +121,10 @@
 #   endif
       real(r8), intent(inout) :: Dissip_break(LBi:,LBj:)
       real(r8), intent(inout) :: Dissip_wcap(LBi:,LBj:)
+      real(r8), intent(in) :: Lwave(LBi:,LBj:)
+#   ifdef WAVES_BOT_PERIOD
+      real(r8), intent(in) :: Pwave_bot(LBi:,LBj:)
+#   endif
       real(r8), intent(in) :: h_tot(LBi:,LBj:)
       real(r8), intent(inout) :: AC(LBi:,LBj:,:,:)
       real(r8), intent(in) :: Tr(LBi:,LBj:,:)
@@ -126,6 +140,10 @@
 #   endif
       real(r8), intent(inout) :: Dissip_break(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: Dissip_wcap(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: Lwave(LBi:UBi,LBj:UBj)
+#   ifdef WAVES_BOT_PERIOD
+      real(r8), intent(in) :: Pwave_bot(LBi:UBi,LBj:UBj)
+#   endif
       real(r8), intent(in) :: h_tot(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: AC(LBi:UBi,LBj:UBj,ND,3)
       real(r8), intent(in) :: Tr(LBi:UBi,LBj:UBj,ND)
@@ -137,6 +155,10 @@
       integer :: i, j, d
       real(r8) :: EW, oEW, TRM, H, Qb, Hmax_r, diff, Emax_r
       real(r8) :: twopi, otwopi, ogrho0, cff
+#  ifdef WDISS_FRIC
+      real(r8) :: gamma, kd, dissfric
+      real(r8), parameter :: eps=1.0e-08_r8
+#  endif
       real(r8), parameter :: Trmin=1.0_r8
       real(r8), parameter :: alfa=1.0_r8
       real(r8), parameter :: breakr=0.45_r8
@@ -161,7 +183,7 @@
 !=======================================================================
 !  Compute the energy from action balance and wave heigth
 !=======================================================================
-            EN(d)=AC(i,j,d,nout)*twopi/(MAX(Trmin,Tr(i,j,d)))
+            EN(d)=AC(i,j,d,nout)*twopi/MAX(Trmin,Tr(i,j,d))
 !=======================================================================
 !  Compute the total energy
 !=======================================================================
@@ -191,6 +213,12 @@
 !  Compute the energy dissipation
 !=======================================================================
           IF (h_tot(i,j).ge.Dcrit(ng)) THEN
+#  ifdef WDISS_FRIC
+            gamma=0.067_r8/g**2
+            kD=twopi/(Lwave(i,j)+eps)*h_tot(i,j)
+            dissfric=dt(ng)*gamma*EW/((sinh(kD))**2)*                   &
+     &                twopi/Pwave_bot(i,j)*twopi/Pwave_bot(i,j)
+#  endif
 #  ifdef WDISS_ROELVINK
             Hmax_r=breakr*(MAX(h_tot(i,j),0.0_r8))
             Qb=MIN(1.0_r8,1.0_r8-EXP(-(H/Hmax_r)**n_r))
@@ -207,12 +235,21 @@
 #  endif
           ELSE
             Dissip_break(i,j)=0.0_r8
+#  ifdef WDISS_FRIC
+            dissfric=0.0_r8
+#  endif
           END IF
 #  ifdef MASKING
           Dissip_break(i,j)=Dissip_break(i,j)*rmask(i,j)
+#   ifdef WDISS_FRIC
+          dissfric=dissfric*rmask(i,j)
+#   endif
 #  endif
 #  ifdef WET_DRY
           Dissip_break(i,j)=Dissip_break(i,j)*rmask_wet(i,j)
+#   ifdef WDISS_FRIC
+          dissfric=dissfric*rmask_wet(i,j)
+#   endif
 #  endif
 !=======================================================================
 !  Distribute dissipation over directions and recompute Ac
@@ -220,7 +257,12 @@
           oEW=1.0_r8/MAX(EW,EWlim)
           DO d=1,ND
             IF ((h_tot(i,j).ge.Dcrit(ng)).and.(EW.gt.EWlim)) THEN
+#   ifdef WDISS_FRIC
+              EN(d)=MAX(0.0_r8,EN(d)-(Dissip_break(i,j)+dissfric)*      &
+     &                                EN(d)*oEW)
+#   else
               EN(d)=MAX(0.0_r8,EN(d)-Dissip_break(i,j)*EN(d)*oEW)
+#   endif
               AC(i,j,d,nout)=EN(d)*Tr(i,j,d)*otwopi
             ELSE
               AC(i,j,d,nout)=0.0_r8

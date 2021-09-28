@@ -1636,6 +1636,7 @@
      &                   SetFillVal = .FALSE.)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
+#   ifdef SALINITY
 !
 !  Define vertical diffusion coefficient for salinity.
 !
@@ -1652,6 +1653,7 @@
      &                   SetFillVal = .FALSE.)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
+#   endif
 #  endif
 #  ifdef TS_VAR
 !
@@ -3201,9 +3203,11 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idTdif))) THEN
             got_var(idTdif)=.TRUE.
             AVG(ng)%Vid(idTdif)=var_id(i)
+#   ifdef SALINITY
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idSdif))) THEN
             got_var(idSdif)=.TRUE.
             AVG(ng)%Vid(idSdif)=var_id(i)
+#   endif
 #  endif
 #  ifdef TS_VAR
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idRdif))) THEN
@@ -3814,12 +3818,14 @@
           exit_flag=3
           RETURN
         END IF
+#   ifdef SALINITY
         IF (.not.got_var(idSdif).and.Aout(idSdif,ng)) THEN
           IF (Master) WRITE (stdout,60) TRIM(Vname(1,idSdif)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
         END IF
+#   endif
 #  endif
 #  ifdef TS_VAR
         IF (.not.got_var(idRdif).and.Aout(idRdif,ng)) THEN

@@ -29,6 +29,9 @@
 # if defined DIAGNOSTICS_UV
       USE mod_diags
 # endif
+# if defined DOPPLER && defined INWAVE_MODEL
+      USE mod_inwave_vars
+# endif
 !
       integer, intent(in) :: ng, tile
 # include "tile.h"
@@ -60,6 +63,10 @@
      &                            FORCES(ng) % Lwave,                   &
 # if defined WEC_ROLLER
      &                            FORCES(ng) % rollA,                   &
+# endif
+# if defined DOPPLER && defined INWAVE_MODEL
+     &                            WAVEP(ng) % u_rho,                    &
+     &                            WAVEP(ng) % v_rho,                    &
 # endif
      &                            OCEAN(ng) % zeta,                     &
 # ifdef WEC_MELLOR
@@ -94,6 +101,9 @@
      &                                  Hwave, Dwave, Lwave,            &
 # if defined WEC_ROLLER
      &                                  rollA,                          &
+# endif
+# if defined DOPPLER && defined INWAVE_MODEL
+     &                                  u_rho, v_rho,                   &
 # endif
      &                                  zeta,                           &
 # ifdef WEC_MELLOR
@@ -150,6 +160,10 @@
 #  if defined WEC_ROLLER
       real(r8), intent(in) :: rollA(LBi:,LBj:)
 #  endif
+# if defined DOPPLER && defined INWAVE_MODEL
+      real(r8), intent(in) :: u_rho(LBi:,LBj:)
+      real(r8), intent(in) :: v_rho(LBi:,LBj:)
+# endif
       real(r8), intent(in) :: zeta(LBi:,LBj:,:)
 #  ifdef WEC_MELLOR
       real(r8), intent(inout) :: rulag2d(LBi:,LBj:)
@@ -186,6 +200,10 @@
 #  if defined WEC_ROLLER
       real(r8), intent(in) :: rollA(LBi:UBi,LBj:UBj)
 #  endif
+# if defined DOPPLER && defined INWAVE_MODEL
+      real(r8), intent(in) :: u_rho(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: v_rho(LBi:UBi,LBj:UBj)
+# endif
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
 #  ifdef WEC_MELLOR
       real(r8), intent(inout) :: rulag2d(LBi:UBi,LBj:UBj)
@@ -205,6 +223,9 @@
       integer :: i, j, k
       real(r8) :: cff, cff2, cff3, cff4, cff5, cff6, cff7
       real(r8) :: fac1, fac2, fac3, ofac3
+# if defined DOPPLER && defined INWAVE_MODEL
+      real(r8) :: wdl, theta_cur
+# endif
       real(r8), parameter :: eps = 1.0E-14_r8
       real(r8), parameter :: kDmax = 200.0_r8
       real(r8), parameter :: Lwave_min = 1.0_r8
@@ -220,6 +241,10 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: sigma
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Huons
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Hvoms
+# if defined DOPPLER && defined INWAVE_MODEL
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: u_dir
+# endif
+
 # include "set_bounds.h"
       fac1=1.0_r8/dt(ng)
       fac2=1.0_r8/g
@@ -239,12 +264,27 @@
           waveny(i,j)=waven(i,j)*SIN(cff)
           sigma(i,j)=SQRT(MAX(g*waven(i,j)*TANH(waven(i,j)*Dstp(i,j)),  &
      &                    eps))
+# if defined DOPPLER && defined INWAVE_MODEL
+!  wave direction
+          wdl=(1.5_r8*pi-Dwave(i,j))-angler(i,j)
+          IF (u_rho(i,j).eq.0.0_r8) THEN
+            theta_cur=0.5_r8*pi*SIGN(1.0_r8,v_rho(i,j))
+          ELSE
+            theta_cur=ATAN2(v_rho(i,j),u_rho(i,j))
+          ENDIF
+          u_dir(i,j)=SQRT(u_rho(i,j)**2+v_rho(i,j)**2)*                 &
+     &               COS(wdl-theta_cur)
+          sigma(i,j)=sigma(i,j)+u_dir(i,j)*waven(i,j)
+# endif
           waveE(i,j)=0.0625_r8*g*Hwave(i,j)*Hwave(i,j)
 !
 !  Compute wave celerity and kD
 !
           kD(i,j)=MIN(waven(i,j)*Dstp(i,j),kDmax)
           wavec(i,j)=SQRT(MAX(g*owaven(i,j)*TANH(kD(i,j)),eps))
+#if defined DOPPLER && defined INWAVE_MODEL
+          wavec(i,j)=wavec(i,j)+u_dir(i,j)
+# endif
         END DO
       END DO
 !

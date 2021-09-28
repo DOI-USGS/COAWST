@@ -2114,19 +2114,21 @@
             END DO
           END DO
         END IF
+#   ifdef SALINITY
         IF (Aout(idSdif,ng)) THEN
           DO k=0,N(ng)
             DO j=JstrR,JendR
               DO i=IstrR,IendR
                 AVERAGE(ng)%avgAKs(i,j,k)=AVERAGE(ng)%avgAKs(i,j,k)+    &
-#   ifdef WET_DRY
+#    ifdef WET_DRY
      &                                    GRID(ng)%rmask_full(i,j)*     &
-#   endif
+#    endif
      &                                    MIXING(ng)%Akt(i,j,k,isalt)
               END DO
             END DO
           END DO
         END IF
+#   endif
 #  endif
 #  ifdef TS_VAR
 !        IF (Aout(idSdif,ng)) THEN
@@ -2489,17 +2491,19 @@
             END DO
           END DO
         END IF
+#  ifdef SALINITY
         IF (Aout(idTsur(isalt),ng)) THEN
           DO j=JstrR,JendR
             DO i=IstrR,IendR
               AVERAGE(ng)%avgswf(i,j)=AVERAGE(ng)%avgswf(i,j)+          &
-#  ifdef WET_DRY
+#   ifdef WET_DRY
      &                                GRID(ng)%rmask_full(i,j)*         &
-#  endif
+#   endif
      &                                FORCES(ng)%stflx(i,j,isalt)
             END DO
           END DO
         END IF
+#  endif
 #  ifdef SSSFLX
         IF (Aout(idSSSf,ng)) THEN
           DO j=JstrR,JendR
@@ -3948,7 +3952,7 @@
 #   endif
           END IF
         END IF
-
+#   ifdef SALINITY
         IF (Aout(idSdif,ng)) THEN
           DO k=0,N(ng)
             DO j=JstrR,JendR
@@ -3962,15 +3966,16 @@
             CALL exchange_w3d_tile (ng, tile,                           &
      &                              LBi, UBi, LBj, UBj, 0, N(ng),       &
      &                              AVERAGE(ng)%avgAKs)
-#   ifdef DISTRIBUTE
+#    ifdef DISTRIBUTE
             CALL mp_exchange3d (ng, tile, iNLM, 1,                      &
      &                          LBi, UBi, LBj, UBj, 0, N(ng),           &
      &                          NghostPoints,                           &
      &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          AVERAGE(ng)%avgAKs)
-#   endif
+#    endif
           END IF
         END IF
+#   endif
 #  endif
 
 #  ifdef TS_VAR
@@ -4602,6 +4607,7 @@
           END IF
         END IF
 
+#  ifdef SALINITY
         IF (Aout(idTsur(isalt),ng)) THEN
           DO j=JstrR,JendR
             DO i=IstrR,IendR
@@ -4613,15 +4619,16 @@
             CALL exchange_r2d_tile (ng, tile,                           &
      &                              LBi, UBi, LBj, UBj,                 &
      &                              AVERAGE(ng)%avgswf)
-#  ifdef DISTRIBUTE
+#   ifdef DISTRIBUTE
             CALL mp_exchange2d (ng, tile, iNLM, 1,                      &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          NghostPoints,                           &
      &                          EWperiodic(ng), NSperiodic(ng),         &
      &                          AVERAGE(ng)%avgswf)
-#  endif
+#   endif
           END IF
         END IF
+#  endif
 #  ifdef SSSFLX
         IF (Aout(idSSSf,ng)) THEN
           DO j=JstrR,JendR

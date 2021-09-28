@@ -24,7 +24,10 @@
 # undef  DOPPLER
 # undef  WDISS_GAMMA
 # define WDISS_ROELVINK
+# define WDISS_FRIC
 # define VARY_ACBC
+# define ROLLER_RENIERS
+# define UV_KIRBY
 #endif
 
 #define WEC_VF
@@ -36,8 +39,8 @@
 #undef  UV_COR
 #define DJ_GRADPS
 #define SOLVE3D
-#define SPLINES_VVISC
-#define SPLINES_VDIFF
+#undef  SPLINES_VVISC
+#undef  SPLINES_VDIFF
 #undef  SALINITY
 
 #define ANA_INITIAL
@@ -58,6 +61,8 @@
 #  define KANTHA_CLAYSON
 #  define N2S2_HORAVG
 #  define RI_SPLINES
+#  define TKE_WAVEDISS
+#  define ZOS_HSIG
 # endif
 # undef SEDIMENT
 # ifdef SEDIMENT

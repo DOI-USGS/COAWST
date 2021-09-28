@@ -26,12 +26,13 @@
 # define WDISS_ROELVINK
 # define VARY_ACBC
 # define ROLLER_RENIERS
+# define WDISS_FRIC
+# define RAMP_INWAVE
 #endif
 
 #define WEC_VF
 #define WET_DRY
 #define CURVGRID
-#define RAMP_INWAVE
 
 #define UV_VIS2
 #define MIX_S_UV

@@ -1,6 +1,9 @@
 #include "cppdefs.h"
-#undef  AC_U3HADVECTION
-#define AC_HSIMT
+#undef  AC_HSIMT
+#define AC_U3HADVECTION
+#undef  AC_CENTERED2
+#undef  AC_CENTERED4
+#undef  AC_AKIMA4
       MODULE corstep_inw_mod
 #if defined INWAVE_MODEL
 !
@@ -56,7 +59,10 @@
      &                      GRID(ng) % pm,                              &
      &                      GRID(ng) % pn,                              &
      &                      GRID(ng) % on_u,                            &
+     &                      GRID(ng) % om_u,                            &
      &                      GRID(ng) % om_v,                            &
+     &                      GRID(ng) % pmon_u,                          &
+     &                      GRID(ng) % pnom_v,                          &
      &                      OCEAN(ng) % u,                              &
      &                      OCEAN(ng) % v,                              &
      &                      WAVEP(ng) % AC,                             &
@@ -83,12 +89,14 @@
 # ifdef WET_DRY
      &                            rmask_wet, umask_wet, vmask_wet,      &
 # endif
-     &                            pm, pn, on_u, om_v,                   &
+     &                            pm, pn, on_u, om_u, om_v,             &
+     &                            pmon_u, pnom_v,                       &
      &                            u, v,                                 &
      &                            AC, cx, cy, ct, Tr, kwc, pd)
 !***********************************************************************
 !
       USE mod_param
+      USE mod_ncparam
       USE mod_coupling
       USE mod_scalars
       USE mod_forces
@@ -126,7 +134,10 @@
       real(r8), intent(in) :: pm(LBi:,LBj:)
       real(r8), intent(in) :: pn(LBi:,LBj:)
       real(r8), intent(in) :: on_u(LBi:,LBj:)
+      real(r8), intent(in) :: om_u(LBi:,LBj:)
       real(r8), intent(in) :: om_v(LBi:,LBj:)
+      real(r8), intent(in) :: pmon_u(LBi:,LBj:)
+      real(r8), intent(in) :: pnom_v(LBi:,LBj:)
       real(r8), intent(in) :: u(LBi:,LBj:,:,:)
       real(r8), intent(in) :: v(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: AC(LBi:,LBj:,:,:)
@@ -150,7 +161,10 @@
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: pn(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: pmon_u(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: pnom_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: u(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(in) :: v(LBi:UBi,LBj:UBj,N(ng),2)
       real(r8), intent(inout) :: AC(LBi:UBi,LBj:UBj,ND,3)
@@ -165,11 +179,14 @@
 !  Local variable declarations.
 !
       integer :: i, is, itrc, j, k, d, ii, jj
+      real(r8) :: eps = 1.0E-16_r8
+
 
       real(r8) :: cff, cff1, cff2, cff3, opd
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FE
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: FX
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: curv
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: grad
       real(r8), dimension(IminS:ImaxS,0:ND+1) :: curvd
       real(r8), dimension(IminS:ImaxS,0:ND+2) :: FD
 # ifdef AC_HSIMT
@@ -189,7 +206,24 @@
 !  Compute horizontal AC advection fluxes.
 !
       D_LOOP: DO d=1,ND
-# ifdef  AC_U3HADVECTION
+# if defined AC_CENTERED2
+        DO j=Jstr,Jend
+          DO i=Istr,Iend+1
+            cff=cx(i,j,d)*on_u(i,j)
+            FX(i,j)=cff*0.5_r8*                                         &
+     &              (AC(i-1,j,d,3)+                                     &
+     &               AC(i  ,j,d,3))
+          END DO
+        END DO
+        DO j=Jstr,Jend+1
+          DO i=Istr,Iend
+            cff=cy(i,j,d)*om_v(i,j)
+            FE(i,j)=cff*0.5_r8*                                         &
+     &              (AC(i,j-1,d,3)+                                     &
+     &               AC(i,j  ,d,3))
+          END DO
+        END DO
+# elif defined AC_U3HADVECTION || defined AC_CENTERED4 || defined AC_AKIMA4
           DO j=Jstr,Jend
             DO i=Istrm1,Iendp2
               FX(i,j)=AC(i  ,j,d,3)-                                    &
@@ -216,7 +250,18 @@
 !
           DO j=Jstr,Jend
             DO i=Istr-1,Iend+1
+#  if defined AC_U3HADVECTION
               curv(i,j)=FX(i+1,j)-FX(i,j)
+#  elif defined AC_AKIMA4
+              cff=2.0_r8*FX(i+1,j)*FX(i,j)
+              IF (cff.gt.eps) THEN
+                grad(i,j)=cff/(FX(i+1,j)+FX(i,j))
+              ELSE
+                grad(i,j)=0.0_r8
+              END IF
+#  elif defined AC_CENTERED4
+              grad(i,j)=0.5_r8*(FX(i+1,j)+FX(i,j))
+#  endif
             END DO
           END DO
 !
@@ -225,11 +270,19 @@
           DO j=Jstr,Jend
             DO i=Istr,Iend+1
               cff=cx(i,j,d)*on_u(i,j)
+#  if defined AC_U3HADVECTION
               FX(i,j)=cff*0.5_r8*                                       &
      &                (AC(i-1,j,d,3)+                                   &
      &                 AC(i  ,j,d,3))-                                  &
      &                cff1*(curv(i-1,j)*MAX(cff,0.0_r8)+                &
      &                      curv(i  ,j)*MIN(cff,0.0_r8))
+#  elif defined AC_CENTERED4 || defined AC_AKIMA4
+              FX(i,j)=cff*0.5_r8*                                       &
+     &                (AC(i-1,j,d,3)+                                   &
+     &                 AC(i  ,j,d,3)-                                   &
+     &                 cff2*(grad(i  ,j)-                               &
+     &                       grad(i-1,j)))
+#  endif
             END DO
           END DO
 !
@@ -259,7 +312,18 @@
 !
           DO j=Jstr-1,Jend+1
             DO i=Istr,Iend
+#  if defined AC_U3HADVECTION
               curv(i,j)=FE(i,j+1)-FE(i,j)
+#  elif defined AC_AKIMA4
+              cff=2.0_r8*FE(i,j+1)*FE(i,j)
+              IF (cff.gt.eps) THEN
+                grad(i,j)=cff/(FE(i,j+1)+FE(i,j))
+              ELSE
+                grad(i,j)=0.0_r8
+              END IF
+#  elif defined AC_CENTERED4
+              grad(i,j)=0.5_r8*(FE(i,j+1)+FE(i,j))
+#  endif
             END DO
           END DO
 !
@@ -268,14 +332,22 @@
           DO j=Jstr,Jend+1
             DO i=Istr,Iend
               cff=cy(i,j,d)*om_v(i,j)
+#  if defined AC_U3HADVECTION
               FE(i,j)=cff*0.5_r8*                                       &
      &                (AC(i,j-1,d,3)+                                   &
      &                 AC(i,j  ,d,3))-                                  &
      &                cff1*(curv(i,j-1)*MAX(cff,0.0_r8)+                &
      &                      curv(i,j  )*MIN(cff,0.0_r8))
+#  elif defined AC_CENTERED4 || defined AC_AKIMA4
+              FE(i,j)=cff*0.5_r8*                                       &
+     &                (AC(i,j-1,d,3)+                                   &
+     &                 AC(i,j  ,d,3)-                                   &
+     &                 cff2*(grad(i,j  )-                               &
+     &                       grad(i,j-1)))
+#  endif
             END DO
           END DO
-# elif defined AC_MPDATA || defined AC_HSIMT
+# elif defined AC_HSIMT
       epson=1.0E-12_r8
 !
       DO j=Jstr,Jend
@@ -431,6 +503,40 @@
             AC(i,j,d,nnew)=AC(i,j,d,nstp)-cff1
           END DO
         END DO
+# if defined AC_CENTERED2 || defined AC_CENTERED4 || defined AC_AKIMA4
+!
+! here lets try horiz mix
+!
+         cff2=2.0_r8 ! for a4test chan   
+!        cff2=0.0_r8
+          DO j=Jstr,Jend
+            DO i=Istr,Iend+1
+              cff=0.5_r8*cff2*pmon_u(i,j)
+              FX(i,j)=cff*(AC(i,j,d,nnew)-AC(i-1,j,d,nnew))
+#  ifdef MASKING
+              FX(i,j)=FX(i,j)*umask(i,j)
+#  endif
+            END DO
+          END DO
+          DO j=Jstr,Jend+1
+            DO i=Istr,Iend
+              cff=0.5_r8*cff2*pnom_v(i,j)
+              FE(i,j)=cff*(AC(i,j,d,nnew)-AC(i,j-1,d,nnew))
+#  ifdef MASKING
+              FE(i,j)=FE(i,j)*vmask(i,j)
+#  endif
+            END DO
+          END DO
+          DO j=Jstr,Jend
+            DO i=Istr,Iend
+              cff=dt(ng)*pm(i,j)*pn(i,j)
+              cff1=cff*(FX(i+1,j  )-FX(i,j))
+              cff2=cff*(FE(i  ,j+1)-FE(i,j))
+              cff3=cff1+cff2
+              AC(i,j,d,nnew)=AC(i,j,d,nnew)+cff3
+            END DO
+          END DO
+# endif
       END DO D_LOOP
 !
 !-----------------------------------------------------------------------
@@ -438,8 +544,9 @@
 !-----------------------------------------------------------------------
 !
       opd=1.0_r8/pd
-# ifdef AC_U3HADVECTION
       J_LOOP: DO j=Jstr,Jend
+# if defined AC_U3HADVECTION || defined AC_CENTERED2 || defined AC_CENTERED4 || \
+     defined AC_AKIMA4
         DO i=Istr,Iend
 #  if defined THETA_AC_PERIODIC
             FD(i,0)=AC(i,j,ND  ,3)-                                     &
@@ -447,9 +554,6 @@
             FD(i,1)=AC(i,j,1   ,3)-                                     &
      &              AC(i,j,ND  ,3)
 #  else
-!!IN THIS POINT IT DOESNT MATTER THE BOUNDARY CONDITION, 
-!!WE JUST PUT IT AS IF IT WAS A NO GRADIENT
-!!THE WALL BOUNDARY CONDITION WILL BE STABLISHED LATER
           FD(i,0)=0.0_r8
           FD(i,1)=0.0_r8
 #  endif
@@ -526,8 +630,7 @@
      &                     curvd(i,d  )*MIN(cff,0.0_r8))
           END DO
         END DO
-# elif defined AC_MPDATA || defined AC_HSIMT
-      J_LOOP: DO j=Jstr,Jend
+# elif defined AC_HSIMT
         epson=1.0E-12_r8
 !
         DO i=Istr,Iend
@@ -716,6 +819,10 @@
 #  endif
      &                      FORCES(ng) % Dissip_break,                  &
      &                      FORCES(ng) % Dissip_wcap,                   &
+     &                      FORCES(ng) % Lwave,                         &
+#  ifdef WAVES_BOT_PERIOD
+     &                      FORCES(ng) % Pwave_bot,                     &
+#  endif
      &                      WAVEP(ng) % h_tot,                          &
      &                      AC, Tr, kwc)
 # endif
