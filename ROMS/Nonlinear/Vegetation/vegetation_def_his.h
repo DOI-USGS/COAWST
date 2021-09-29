@@ -58,6 +58,27 @@
      &                   SetFillVal = .FALSE.)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
+!
+!  Define spectral Cd due to wave vegetation. 
+!
+        IF (Hout(idCdvg,ng)) THEN 
+          Vinfo( 1)=Vname(1,idCdvg)
+          Vinfo( 2)=Vname(2,idCdvg)
+          Vinfo( 3)=Vname(3,idCdvg)
+          Vinfo(14)=Vname(4,idCdvg)
+!         Vinfo(16)=Vname(1,idCdvg)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idCdvg,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idCdvg),   &
+     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname,    &
+     &                   SetFillVal = .FALSE.)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+        END IF 
 #endif
 #ifdef MARSH_DYNAMICS
 !

@@ -532,6 +532,11 @@
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
+
+      to_add=':DICDVG'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
 #endif  
 !
 !  Finalize and remove trailing spaces from the wostring
@@ -580,6 +585,21 @@
 #if defined VEGETATION && defined VEG_SWAN_COUPLING
 !
       to_add=':VEGDENS'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':VEGHGHT'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':VEGDIAM'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':VEGTHCK'
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -920,6 +940,9 @@
       ELSE IF (IVTYPE.eq.57) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "DISVEG",avdata)
+      ELSE IF (IVTYPE.eq.80) THEN
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "DICDVG",avdata)
 #endif   
       END IF
 !
@@ -1190,7 +1213,8 @@
       integer :: NUMTRANSFER, NNEIGH, HALOSIZE, NUMSENT, INB
       integer :: WHICHWAY, GDEST, GSRC, TAGT, TAGB, TAGR, TAGL
       integer :: TREQUEST,BREQUEST,RREQUEST,LREQUEST,MSIZE
-      integer :: iddep, idwlv, idvlx, idvly, idveg
+      integer :: iddep, idwlv, idvlx, idvly
+      integer :: idveg, idvht, idvda, idvtk
       integer :: idruf, idice
       integer, dimension(MPI_STATUS_SIZE,4) :: status
 
@@ -1306,6 +1330,12 @@
 #  if defined VEGETATION && defined VEG_SWAN_COUPLING
         IP=IP+1
         idveg=IP
+        IP=IP+1
+        idvht=IP
+        IP=IP+1
+        idvda=IP
+        IP=IP+1
+        idvtk=IP
 #  endif
 !
 #  ifdef ICE_MODEL
@@ -1474,6 +1504,84 @@
         CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
         IF (MyRank.eq.0) THEN
           write(SCREEN,40) 'ROMStoSWAN Min/Max VEGDENS (indv/m-2): ',   &
+     &                      range(1),range(2)
+        END IF
+!
+!  Vegetation height.
+!
+        CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,            &
+     &                            "VEGHGHT",avdata,gsmsize)
+        range(1)= Large
+        range(2)=-Large
+        IP=0
+        DO IY=Jstr,Jend
+          DO IX=Istr,Iend
+            IP=IP+1
+            INDXG=(IY-1)*MXC+IX
+            TEMPMCT(INDXG,idvht)=avdata(IP)                     
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
+          END DO
+          IF (KREPTX.EQ.1) THEN
+            IP=IP+1
+          END IF
+        END DO
+        CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+        CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+        IF (MyRank.eq.0) THEN
+          write(SCREEN,40) 'ROMStoSWAN Min/Max VEGHGHT ( m ): ',        &
+     &                      range(1),range(2)
+        END IF
+!
+!  Vegetation diameter.
+!
+        CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,            &
+     &                            "VEGDIAM",avdata,gsmsize)
+        range(1)= Large
+        range(2)=-Large
+        IP=0
+        DO IY=Jstr,Jend
+          DO IX=Istr,Iend
+            IP=IP+1
+            INDXG=(IY-1)*MXC+IX
+            TEMPMCT(INDXG,idvda)=avdata(IP)                     
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
+          END DO
+          IF (KREPTX.EQ.1) THEN
+            IP=IP+1
+          END IF
+        END DO
+        CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+        CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+        IF (MyRank.eq.0) THEN
+          write(SCREEN,40) 'ROMStoSWAN Min/Max VEGDIAM (  m  ): ',      &
+     &                      range(1),range(2)
+        END IF
+!
+!  Vegetation thickness.
+!
+        CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,            &
+     &                            "VEGTHCK",avdata,gsmsize)
+        range(1)= Large
+        range(2)=-Large
+        IP=0
+        DO IY=Jstr,Jend
+          DO IX=Istr,Iend
+            IP=IP+1
+            INDXG=(IY-1)*MXC+IX
+            TEMPMCT(INDXG,idvtk)=avdata(IP)                     
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
+          END DO
+          IF (KREPTX.EQ.1) THEN
+            IP=IP+1
+          END IF
+        END DO
+        CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+        CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+        IF (MyRank.eq.0) THEN
+          write(SCREEN,40) 'ROMStoSWAN Min/Max VEGTHCK  ( m ): ',       &
      &                      range(1),range(2)
         END IF
 #  endif
@@ -1730,6 +1838,9 @@
             COMPDA(INDX,JFRC3)=COMPDA(INDX,JFRC2)
 #  if defined VEGETATION && defined VEG_SWAN_COUPLING
             COMPDA(INDX,JNPLA3)=COMPDA(INDX,JNPLA2)
+            COMPDA(INDX,JNPHT3)=COMPDA(INDX,JNPHT2)
+            COMPDA(INDX,JNPDA3)=COMPDA(INDX,JNPDA2)
+            COMPDA(INDX,JNPTK3)=COMPDA(INDX,JNPTK2)
 #  endif
           END DO
         END IF
@@ -1779,6 +1890,9 @@
                   COMPDA(INDX,JVY2)=TEMPMCT(IP,idvly)
 #  if defined VEGETATION && defined VEG_SWAN_COUPLING 
                   COMPDA(INDX,JNPLA2)=TEMPMCT(IP,idveg)
+                  COMPDA(INDX,JNPHT2)=TEMPMCT(IP,idvht)
+                  COMPDA(INDX,JNPDA2)=TEMPMCT(IP,idvda)
+                  COMPDA(INDX,JNPTK2)=TEMPMCT(IP,idvtk)
 #  endif
                 ELSE
 #  ifdef SED_MORPH
@@ -1792,6 +1906,12 @@
 #  if defined VEGETATION && defined VEG_SWAN_COUPLING
                   COMPDA(INDX,JNPLA2)=COMPDA(INDX,JNPLA2)+              &
      &                                TEMPMCT(IP,idveg)
+                  COMPDA(INDX,JNPHT2)=COMPDA(INDX,JNPHT2)+              &
+     &                                TEMPMCT(IP,idvht)
+                  COMPDA(INDX,JNPDA2)=COMPDA(INDX,JNPDA2)+              &
+     &                                TEMPMCT(IP,idvda)
+                  COMPDA(INDX,JNPTK2)=COMPDA(INDX,JNPTK2)+              &
+     &                                TEMPMCT(IP,idvtk)
 #  endif
 
                 END IF

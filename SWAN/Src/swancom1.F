@@ -3217,7 +3217,10 @@
      &  SWMATR(1,1,JGEN0)   ,SWMATR(1,1,JGEN1)   ,                        40.85
      &  SWMATR(1,1,JRED0)   ,SWMATR(1,1,JRED1)   ,                        40.85
      &  XIS                 ,COMPDA(1,JFRC2)     ,IT                  ,   40.00
-     &  COMPDA(1,JNPLA2)    ,COMPDA(1,JTURB2)    ,COMPDA(1,JMUDL2)    ,   40.59 40.35 40.55
+     &  COMPDA(1,JNPLA2)    ,COMPDA(1,JNPHT2)                         ,   40.59 40.35
+     &  COMPDA(1,JNPDA2)    ,COMPDA(1,JNPTK2)                         ,   40.59 40.35
+     &  COMPDA(1,JDSXC)     ,                                             40.59 
+     &  COMPDA(1,JTURB2)    ,COMPDA(1,JMUDL2)                         ,   40.59 40.35 40.55
      &  COMPDA(1,JAICE2)    ,COMPDA(1,JHICE2)    ,                        41.75
      &  COMPDA(1,JURSEL)    ,LSWMAT(1,1,JABIN)   ,REFLSO              ,   40.41 40.03
      &  COMPDA(1,JTAUW)
@@ -3362,8 +3365,8 @@
      &                  COMPDA(1,JDSXB)    ,                              40.67 40.61
      &                  COMPDA(1,JDSXS)    ,                              40.67 40.61
      &                  COMPDA(1,JDSXW)    ,                              40.67 40.61
-     &                  COMPDA(1,JDSXV)    ,COMPDA(1,JDSXT)    ,          40.35 40.67 40.61
-     &                  COMPDA(1,JDSXM)    ,                              40.67 40.61
+     &                  COMPDA(1,JDSXV)                        ,          40.35 
+     &                  COMPDA(1,JDSXT)    ,COMPDA(1,JDSXM)    ,          40.35 40.67 40.61
      &                  COMPDA(1,JDSXI)    ,                              41.75
      &                  COMPDA(1,JDSXL)    ,                              40.88
      &                  COMPDA(1,JGSXW)    ,COMPDA(1,JGENR)    ,          40.85
@@ -6607,8 +6610,11 @@
      &                     DISSC0     ,DISSC1     ,GENC0      ,           40.85
      &                     GENC1      ,REDC0      ,REDC1      ,           40.85
      &                     XIS        ,FRCOEF     ,IT         ,           30.00
-     &                     NPLA2      ,TURBV2     ,MUDL2      ,           40.59 40.35 40.55
-     &                     AICE2      ,HICE2      ,                       41.75
+     &                     NPLA2      ,NPHT2                  ,           40.59 40.35 40.55
+     &                     NPDA2      ,NPTK2                  ,           40.59 40.35 40.55
+     &                     CDVEG_COAWST                       ,           40.59  
+     &                     TURBV2     ,MUDL2                  ,           40.59 40.35 40.55
+     &                     AICE2      ,HICE2                  ,           41.75
      &                     URSELL     ,ANYBIN     ,REFLSO     ,           40.41 40.03
      &                     TAUWV
      &                    ,URMSTOP                                        40.88
@@ -6886,8 +6892,12 @@
 !      according to Hasselmann et al. (1974), Putnam and Jonsson (1949),
 !      Madsen et al. (1991) or Smith et al. (2011)
 !   ------------------------------------------------------------
-!   If SVEG is on (IVEG > 0 ) then,
+!   If SVEG is on (IVEG == 1 ) then,
 !     Call SVEG  to compute the source term due to vegetation
+!      dissipation according to Dalrymple (1984)
+!   If SVEG_COAWST is on (IVEG == 2 ) then,
+!     Call SVEG_COAWST spatially varying veg to compute the source 
+!      term due to vegetation
 !      dissipation according to Dalrymple (1984)
 !   ------------------------------------------------------------
 !   If STURBV is on (ITURBV > 0 ) then,
@@ -7010,11 +7020,13 @@
       REAL  :: REDC1 (1:MDC,1:MSC,1:MREDS)                                40.85
       REAL  :: URSELL(MCGRD)                                              40.03
       REAL  :: FRCOEF(MCGRD)                                              20.68
-      REAL  :: NPLA2(MCGRD)                                               40.55
+      REAL  :: NPLA2(MCGRD), NPHT2(MCGRD)                                 40.55
+      REAL  :: NPDA2(MCGRD), NPTK2(MCGRD)                                 40.55
       REAL  :: TURBV2(MCGRD)                                              40.35
       REAL  :: MUDL2(MCGRD)                                               40.59
       REAL, INTENT(IN)  :: AICE2(MCGRD)                                   41.75
       REAL, INTENT(IN)  :: HICE2(MCGRD)                                   41.75
+      REAL  :: CDVEG_COAWST(MCGRD)                                        41.75
       REAL  :: REFLSO(MDC,MSC)                                            40.41
       REAL  :: URMSTOP(MCGRD)                                             40.88
 !
@@ -7092,16 +7104,29 @@
 !TIMG      CALL SWTSTO(138)                                                    40.59
 !
 !TIMG      CALL SWTSTA(139)                                                    40.55
-      IF ( IVEG.GE.1 ) THEN                                               40.55
+      IF ( IVEG.EQ.1 ) THEN                                               40.55
 !
 !     *** wave-vegetation interactions ***                                40.55
 !
 !        *** energy dissipation according to Dalrymple (1984)             40.55
 !
          CALL SVEG (DEP2   ,IMATDA   ,ETOT   ,SMEBRK    ,                 40.58 40.55
-     &              KMESPC ,PLVEGT   ,                                    40.58 40.55
+     &              KMESPC ,PLVEGT                      ,                 40.58 40.55
      &              IDCMIN ,IDCMAX   ,ISSTOP ,DISSC1    ,                 40.55
      &              NPLA2  )                                              40.67 40.61 40.55
+      END IF                                                              40.55
+      IF ( IVEG.EQ.2 ) THEN                                               40.55
+!
+!     *** wave-vegetation interactions ***                                40.55
+!
+!        *** energy dissipation according to Dalrymple (1984)             40.55
+!
+         CALL SVEG_COAWST (DEP2   ,IMATDA   ,ETOT   ,SMEBRK    ,          40.58 40.55
+     &              KMESPC ,PLVEGT                             ,          40.58 40.55
+     &              IDCMIN ,IDCMAX   ,ISSTOP ,DISSC1           ,          40.55
+     &              ABRBOT ,KWAVE                              ,          40.55
+     &              NPLA2  ,NPHT2    ,NPDA2  ,NPTK2            ,          40.67 40.61 40.55
+     &              CDVEG_COAWST)
       END IF                                                              40.55
 !TIMG      CALL SWTSTO(139)                                                    40.55
 !

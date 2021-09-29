@@ -939,7 +939,7 @@
 
       Numcouple=14
 #if defined VEGETATION && defined VEG_SWAN_COUPLING 
-      Numcouple=15
+      Numcouple=16
 #endif 
       ALLOCATE (Cpltype(Numcouple))
       Cpltype(1)=54                      ! DISBOT  SWOEXD
@@ -958,6 +958,7 @@
       Cpltype(14)=58                     ! WQP     SWOEXA
 #if defined VEGETATION && defined VEG_SWAN_COUPLING 
       Cpltype(15)=57                     ! DISVEG  SWOEXD         
+      Cpltype(16)=80                     ! DICDVG  SWOEXD         
 #endif 
 !
       ALLOCATE (OQI(4))
@@ -1831,6 +1832,12 @@
             VOQR(26) = NVOQP-1
             OQPROC(26)=.TRUE.
          ENDIF
+!        DICD must be added
+!         IF (.NOT.OQPROC(80)) THEN
+!            NVOQP = NVOQP + 1
+!            VOQR(80) = NVOQP
+!           OQPROC(80)=.TRUE.
+!         ENDIF
       ENDIF
 !
       RETURN
@@ -2911,6 +2918,27 @@
             F1 = VOQ(IP,VOQR(57))
             IF (.NOT.EQREAL(F1,OVEXCV(57))) VOQ(IP,VOQR(57))=F1*RHO*GRAV
           END DO
+        ENDIF
+      ENDIF
+!
+!     vegetation drag coefficient 
+!
+      IF (OQPROC(80)) THEN                                               40.61
+        IF (ITEST.GE.50 .OR. IOUTES .GE. 10) WRITE (PRTEST, 121) 80,
+     &  VOQR(80), JDSXC
+        IF (JDSXC.GT.1) THEN                                              40.65
+           IF (OPTG.NE.5) THEN                                            40.80
+             CALL SWIPOL(COMPDA(1,JDSXC),OVEXCV(80), XC, YC, MIP, CROSS,  40.86
+     &                    VOQ(1,VOQR(80)) ,KGRPNT, COMPDA(1,JDP2))
+           ELSE                                                           40.80
+              CALL SwanInterpolateOutput ( VOQ(1, VOQR(80)), VOQ(1,1),    40.80
+     &                                     VOQ(1,2), COMPDA(1,JDSXC),     40.80
+     &                                     MIP, KVERT, OVEXCV(80) )       40.80
+          ENDIF                                                           40.80
+        ELSE
+          DO IP = 1, MIP                                                  31.02
+            VOQ(IP,VOQR(80))  = OVEXCV(80)                                31.02
+          ENDDO                                                           31.02
         ENDIF
       ENDIF
 !

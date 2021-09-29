@@ -251,6 +251,14 @@
                   poros(itrc,ng)=Rmud(itrc,ng)
                 END DO
               END DO
+            CASE ('MUD_RXN')
+              IF (.not.allocated(sed_rxn)) allocate (sed_rxn(NST,Ngrids))
+              Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
+              DO ng=1,Ngrids
+                DO itrc=1,NCS
+                  sed_rxn(itrc,ng)=Rmud(itrc,ng)
+                END DO
+              END DO
             CASE ('MUD_TNU2')
               Npts=load_r(Nval, Rval, NCS, Ngrids, Rmud)
               DO ng=1,Ngrids
@@ -716,6 +724,15 @@
                 DO itrc=1,NNS
                   i=NCS+itrc
                   poros(i,ng)=Rsand(itrc,ng)
+                END DO
+              END DO
+            CASE ('SAND_RXN')
+              IF (.not.allocated(sed_rxn)) allocate (sed_rxn(NST,Ngrids))
+              Npts=load_r(Nval, Rval, NNS, Ngrids, Rsand)
+              DO ng=1,Ngrids
+                DO itrc=1,NNS
+                  i=NCS+itrc
+                  sed_rxn(i,ng)=Rsand(itrc,ng)
                 END DO
               END DO
             CASE ('SAND_TNU2')
@@ -1262,6 +1279,32 @@
                 Hout(i,ng)=Lbed(ng)
               END DO
 #endif
+#if defined SEDBIO_COUP
+            CASE ('Hout(iboxy)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbed)
+              i=idSbed(iboxy)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbed(ng)
+              END DO
+            CASE ('Hout(ibno3)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbed)
+              i=idSbed(ibno3)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbed(ng)
+              END DO
+            CASE ('Hout(ibnh4)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbed)
+              i=idSbed(ibnh4)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbed(ng)
+              END DO
+            CASE ('Hout(ibodu)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbed)
+              i=idSbed(ibodu)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbed(ng)
+              END DO
+#endif
             CASE ('Hout(idiff)')
               Npts=load_l(Nval, Cval, Ngrids, Lbed)
               i=idSbed(idiff)
@@ -1271,6 +1314,12 @@
             CASE ('Hout(isd50)')
               Npts=load_l(Nval, Cval, Ngrids, Lbottom)
               i=idBott(isd50)
+              DO ng=1,Ngrids
+                Hout(i,ng)=Lbottom(ng)
+              END DO
+            CASE ('Hout(itpor)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbottom)
+              i=idBott(itpor)
               DO ng=1,Ngrids
                 Hout(i,ng)=Lbottom(ng)
               END DO
@@ -1512,6 +1561,32 @@
                 Qout(i,ng)=Lbed(ng)
               END DO
 #endif
+#if defined SEDBIO_COUP
+            CASE ('Qout(iboxy)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbed)
+              i=idSbed(iboxy)
+              DO ng=1,Ngrids
+                Qout(i,ng)=Lbed(ng)
+              END DO
+            CASE ('Qout(ibno3)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbed)
+              i=idSbed(ibno3)
+              DO ng=1,Ngrids
+                Qout(i,ng)=Lbed(ng)
+              END DO
+            CASE ('Qout(ibnh4)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbed)
+              i=idSbed(ibnh4)
+              DO ng=1,Ngrids
+                Qout(i,ng)=Lbed(ng)
+              END DO
+            CASE ('Qout(ibodu)')
+              Npts=load_l(Nval, Cval, Ngrids, Lbed)
+              i=idSbed(ibodu)
+              DO ng=1,Ngrids
+                Qout(i,ng)=Lbed(ng)
+              END DO
+#endif
             CASE ('Qout(idiff)')
               Npts=load_l(Nval, Cval, Ngrids, Lbed)
               i=idSbed(idiff)
@@ -1643,6 +1718,12 @@
      &                       nl_tnu2(i,ng), nl_tnu4(i,ng),              &
      &                       Akt_bak(i,ng), Tnudg(i,ng)
             END DO
+#if defined SEDTR_REACTIONS
+            WRITE (out,170)
+            DO itrc=1,NST
+              WRITE (out,70) itrc,  sed_rxn(itrc,ng)
+            END DO
+#endif
             WRITE (out,90)
             DO itrc=1,NST
               WRITE (out,70) itrc,  morph_fac(itrc,ng)
@@ -2000,6 +2081,7 @@
  140  FORMAT (' Transition for cohesive sediment =',e12.5,/)
  150  FORMAT (10x,l1,2x,a,'(',i2.2,')',t30,a,i2.2,':',1x,a)
  160  FORMAT (10x,l1,2x,a,t29,a,i2.2,':',1x,a)
+ 170  FORMAT (/,9x,'sed_rxn',/,9x,'(1/d)',/)
 
       RETURN
       END SUBROUTINE read_SedPar

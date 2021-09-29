@@ -856,12 +856,375 @@
             IMATDA(ID,IS) = IMATDA(ID,IS) + SVEGET
             IF (TESTFL) PLVEGT(ID,IS,IPTST) = -1.* SVEGET
             DISSC1(ID,IS,5) = DISSC1(ID,IS,5) + SVEGET
-
          END DO
       END DO
 
       RETURN
-      END
+      END SUBROUTINE SVEG
+!
+!****************************************************************
+!
+      SUBROUTINE SVEG_COAWST ( DEP2   ,IMATDA   ,ETOT ,SMEBRK,
+     &                  KMESPC ,PLVEGT                       ,
+     &                  IDCMIN ,IDCMAX   ,ISSTOP ,DISSC1     ,
+     &                  ABRBOT ,KWAVE                        ,
+     &                  NPLA2  ,NPHT2    ,NPDA2  ,NPTK2      ,
+     &                  CDVEG_COAWST )
+!
+!****************************************************************
+!
+!  6. Local variables
+      USE SWCOMM2
+      USE SWCOMM3
+      USE SWCOMM4
+      USE OCPCOMM4
+      USE M_GENARR
+!
+      IMPLICIT NONE
+!
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering                              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2019  Delft University of Technology
+!
+!     This program is free software; you can redistribute it and/or
+!     modify it under the terms of the GNU General Public License as
+!     published by the Free Software Foundation; either version 2 of
+!     the License, or (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     A copy of the GNU General Public License is available at
+!     http://www.gnu.org/copyleft/gpl.html#SEC3
+!     or by writing to the Free Software Foundation, Inc.,
+!     59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+!
+!
+!  0. Authors
+!
+!     40.55: Bastiaan Burger, Martijn Meijer
+!     40.61: Marcel Zijlema
+!     40.58: Tomo Suzuki, Marcel Zijlema
+!
+!  1. Updates
+!
+!     40.55, May. 05: implementation of vegetation dissipation formula
+!     40.61, Sep. 06: introduce DISVEG variable for output purposes
+!     40.58, Nov. 08: some modifications and corrections
+!
+!  2. Purpose
+!
+!     Computation of the source term due to vegetation dissipation
+!
+!  3. Method
+!
+!     The energy dissipation due to vegetation is described by a
+!     Morrison type equation, modelling the plants as vertical,
+!     noncompliant cylinders, neclecting swaying motions induced by
+!     waves. Vegetation characteristics that are used as input are
+!     drag coefficient, vegetation height, plant density and diameter.
+!
+!     The formula used in SWAN is due to Dalrymple (1984)
+!     (see Mendez and Losada, 2004):
+!
+!     d(Cg E)
+!     ------- = -epsv
+!        dx
+!
+!     with dissipation due to vegetation:
+!
+!     epsv = 1/2 * 1/sqrt(pi) * rho * Cd * bv * Nv *
+!                                                                3
+!                              (gk/2sigma)^3 * ((A + B)/C) * Hrms
+!
+!     where
+!
+!     rho   = water density
+!     k     = wave number
+!     sigma = angular frequency
+!     Cd    = drag coefficient
+!     bv    = stem thickness
+!     Nv    = vegetation density
+!     Hrms  = rms wave height
+!
+!     and the coefficients
+!
+!     A = sinh^3 k*ah
+!     B = 3*sinh k*ah
+!     C = 3k*cosh^3 kh
+!
+!     with ah the vegetation height
+!
+!     The source term to be used in SWAN is based on the
+!     corresponding dissipation rate and reads
+!
+!     Dtot = -epsv / rho / g
+!
+!     In the formulation, the mean average wavenumber according
+!     to the WAM-formulation and the mean frequency will be employed
+!
+!     Now, the source term is:
+!
+!                      E
+!     Sveg = Dtot *  ------ = factor * sqrt(Etot) * E
+!                     Etot
+!
+!     and is linearized by means of the Picard iteration
+!
+!
+!  4. Argument variables
+!
+!     DEP2        water depth
+!     IMATDA      coefficients of diagonal of matrix
+!     ETOT        total energy per spatial gridpoint
+!     SMEBRK      mean frequency according to first order moment
+!     KMESPC      mean average wavenumber according to the WAM-formulation
+!     PLVEGT      array containing the vegetation source term for test-output
+!     IDCMIN      frequency dependent counter in directional space
+!     IDCMAX      frequency dependent counter in directional space
+!     ISSTOP      maximum counter of wave component in frequency
+!                 space that is propagated
+!     DISSC1      dissipation coefficient
+!     ABRBOT      Near bottom excursion amplitude
+!     KWAVE       Wavenumber
+!     NPLA2       number of plants per square meter (depth-averaged)
+!     NPHT2       plant height that can be spatially distributed
+!     NPDA2       plant diameter that can be spatially distributed
+!     NPTK2       plant thickness that can be spatially distributed
+!
+      INTEGER ISSTOP, IDCMIN(MSC), IDCMAX(MSC)
+      REAL    DEP2(MCGRD)          ,
+     &        IMATDA(MDC,MSC)      ,
+     &        DISSC1(MDC,MSC,MDISP),
+     &        PLVEGT(MDC,MSC,NPTST),
+     &        KWAVE(MSC,MICMAX)    ,
+     &        NPLA2 (MCGRD), NPHT2 (MCGRD), 
+     &        NPDA2 (MCGRD), NPTK2 (MCGRD), 
+     &        CDVEG_COAWST(MCGRD)
+      REAL    ETOT, SMEBRK, KMESPC, ABRBOT
+!
+!  6. Local variables
+!
+!     A     :     auxiliary variable
+!     B     :     auxiliary variable
+!     C     :     auxiliary variable
+!     D     :     auxiliary variable
+!     ID    :     counter of the spectral direction
+!     IDDUM :     counter
+!     IENT  :     number of entries
+!     IK    :     counter
+!     IL    :     counter
+!     IS    :     counter of relative frequency band
+!     KD    :     wavenumber times water depth
+!     KVEGH :     wavenumber times plant height
+!     LAYPRT:     part of layer below water level
+!     SINHK :     sinh(kh)
+!     SLAYH :     total sum of layer thicknesses
+!     SLAYH1:     sum of layer thicknesses below water level
+!     SLAYH2:     sum of layer thicknesses below water level
+!     SVEG1 :     layer-independent dissipation factor
+!     SVEG2 :     total sum of dissipation factor over layers
+!     SVEGET:     source term containing dissipation due to vegetation
+!                 to be stored in the array IMATDA
+!
+      INTEGER ID, IDDUM, IENT, IK, IL, IS
+      REAL    A, B, C, D, KD, KVEGH, LAYPRT, SINHK, SLAYH,
+     &        SLAYH1, SLAYH2, SVEG1, SVEG2, SVEGET
+      REAL    VEGDIL_LOC, VEGTHK_LOC, VEGHGT_LOC 
+      REAL    LBYWE 
+      REAL    CAUCHY_NUM, KC_NUM, REY_NUM
+      REAL    CFF1, CFF2, CFF3, LAYH_RAT 
+      REAL    ALP, ORBVEL, SMA, Q, VEGDRL_CAL  
+      REAL    SVEGDR
+!      REAL    CDVEG_COAWST(MCGRD)
+!
+! Viscosity of water
+!       
+      REAL, PARAMETER :: NU=1.0E-6 
+      REAL, PARAMETER :: MIN_EPS=1.0E-12, MAX_EPS=1.0E12
+!
+!  9. Subroutines calling
+!
+!     SOURCE
+!
+! 12. Structure
+!
+!     Vegetation parameters are given per layer thickness, so for
+!     each layer the contribution to wave damping is calculated
+!
+!     This routine checks in which layer the water level is present
+!
+!            -----------
+!                        ILMAX
+!            -----------
+!              _ d       2
+!            --|--------
+!              |         1
+!            --|--------
+!
+!     d     = waterdepth
+!     ILMAX = number of layers in grid point
+!
+!     Subsequently, the vegetation parameters up to the layer where the
+!     water level is in, are used to calculate dissipation for each layer
+!
+!     Thereafter, the contributions to disspation are summed up
+!
+!     With this summation the total dissipation due to vertical varying
+!     vegetation is calculated
+!
+! 13. Source text
+!
+      SAVE IENT
+      DATA IENT/0/
+      IF (LTRACE) CALL STRACE (IENT,'SVEG')
+
+!     --- compute layer-independent vegetation dissipation factor
+
+!   The current logic only works if there is 1 vertical layer. 
+! Tsk KD is KDMEAN 
+      KD     = KMESPC * DEP2(KCGRD(1))
+      VEGDIL_LOC = NPDA2(KCGRD(1))
+      VEGTHK_LOC = NPTK2(KCGRD(1))
+      VEGHGT_LOC = NPHT2(KCGRD(1))
+ 
+      IF ( KD.GT.10. ) RETURN
+      C     = 3.*KMESPC*(COSH(KD))**3
+      SVEG1 = SQRT(2./PI) * GRAV**2 * (KMESPC/SMEBRK)**3 * SQRT(ETOT)/ C
+
+      IF ( VARNPL ) SVEG1 = SVEG1 * NPLA2(KCGRD(1))
+!
+!     --- compute dissipation factor for each layer and summed up
+!
+      SLAYH = 0.
+      DO IL = 1, ILMAX
+!
+!     --- Modify the veg height that is spatially varying. 
+!
+        SLAYH   = SLAYH + LAYH(IL)
+      ENDDO
+!
+      SLAYH  =VEGHGT_LOC
+
+      KVEGH = 0.
+      C     = 0.
+      D     = 0.
+      SVEG2 = 0.
+!
+! If total veg height < depth of water, all the vertical layers 
+! of veg are fully submerged. 
+! 
+      IF ( DEP2(KCGRD(1)).GT.SLAYH ) THEN
+!
+!           iffective blade length from Luhar and Nepf 2016.
+!          
+            ALP        = SLAYH/DEP2(KCGRD(1))
+            ORBVEL     = ( SQRT(2*ETOT)*SMEBRK*COSH(KD*ALP)/SINH(KD) )
+!
+! Second moment of area. 
+!           
+            SMA        = VEGDIL_LOC*VEGTHK_LOC**(3./12.) 
+            CFF1       = RHO*VEGDIL_LOC*(ORBVEL**2.)*(SLAYH**3.)
+!            
+!  Avoid division by zero later. 
+!    
+            CFF2       = MAX( (VEGYML(1)*SMA) , MIN_EPS)
+!
+! Cauchy number. 
+!
+            CAUCHY_NUM = MIN(CFF1/CFF2, MAX_EPS)
+! 
+            LAYH_RAT   = SLAYH/MIN(ABRBOT, MAX_EPS)
+            CFF3       = MIN( ( 0.7*(CAUCHY_NUM*LAYH_RAT)**(-0.21) ),  
+     &                               MAX_EPS  )
+            CFF3       = MIN(CFF3,1.0) ! to avoid NaN when Cauchy is zero 
+!
+! Keulegan Carpenter number. 
+!
+            KC_NUM   = ( SQRT(2.*ETOT)*SMEBRK*COSH(KD*ALP)/ 
+     &                   SINH(KD) )*(2.*pi/SMEBRK)/VEGDIL_LOC
+            KC_NUM   = MIN(KC_NUM, MAX_EPS)
+!
+! Compute Reynolds number.
+!
+            REY_NUM  = ( SQRT(2.*ETOT)*SMEBRK*COSH(KD*ALP)/
+     &                   SINH(KD) )*VEGDIL_LOC/NU  
+            REY_NUM   = MIN(REY_NUM, MAX_EPS)
+
+            IF    ( VEGDRL(1).eq.1. ) THEN 
+                    VEGDRL_CAL   = 1.
+            ELSEIF( VEGDRL(1).eq.2. ) THEN        
+!            
+! Suzuki et al 2012 (actually Mendez and Losada 2004)- almost identical to B&H2009 below
+!  
+                    Q            = MIN(KC_NUM/(ALP**0.76), MAX_EPS)
+                    VEGDRL_CAL   = MIN(EXP(-0.0138*Q)/(Q**0.3),MAX_EPS)
+            ENDIF 
+             
+            KVEGH = KVEGH + KMESPC * SLAYH * CFF3 
+            SINHK = SINH(KVEGH)
+            A     = C
+            B     = D
+            C     = SINHK**3
+            D     = 3.*SINHK
+            A     = C - A
+            B     = D - B
+            SVEG2 = SVEG2 + VEGDRL_CAL*VEGDIL_LOC*(A + B)
+!
+! If veg height > depth. 
+!
+      ELSE IF ( DEP2(KCGRD(1)).LT.SLAYH ) THEN
+         VEGDRL_CAL=1.95
+!
+         SINHK = SINH(KD)
+         A     = SINHK**3
+         B     = 3.*SINHK
+         SVEG2 = VEGDRL_CAL*VEGDIL_LOC*(A + B)
+
+      END IF
+
+!     --- compute total dissipation
+
+      SVEGET = SVEG1 * SVEG2
+!     --- compute drag coefficient in vegetation
+      SVEGDR = VEGDRL_CAL
+      CDVEG_COAWST(KCGRD(1))=MIN(SVEGDR, MAX_EPS)
+!
+!     *** test output ***
+!
+      IF (TESTFL .AND. ITEST.GE.60) THEN
+         WRITE (PRTEST, 110) IVEG, KCGRD(1), DEP2(KCGRD(1)), SVEGET
+ 110     FORMAT (' SVEG :IVEG INDX DEP VEGFAC:', 2I5, 2E12.4)
+      END IF
+
+      DO IS = 1, ISSTOP
+         DO IDDUM = IDCMIN(IS), IDCMAX(IS)
+            ID = MOD ( IDDUM - 1 + MDC , MDC ) + 1
+
+!           *** store the results in the array IMATDA ***
+!           *** if testfl store results in array for isoline plot ***
+
+            IMATDA(ID,IS) = IMATDA(ID,IS) + SVEGET
+            IF (TESTFL) PLVEGT(ID,IS,IPTST) = -1.* SVEGET
+            DISSC1(ID,IS,5) = DISSC1(ID,IS,5) + SVEGET
+!           DISSC1(ID,IS,9) = DISSC1(ID,IS,9) + SVEGDR 
+         END DO
+      END DO
+
+      RETURN
+      END SUBROUTINE SVEG_COAWST 
 !
 !****************************************************************
 !

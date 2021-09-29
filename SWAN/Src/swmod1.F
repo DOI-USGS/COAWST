@@ -612,6 +612,7 @@
 !                     DISSRF and DISWCP added)
 !     40.61, Sep. 06: NMOVAR increased by 1 (quantity DISMUD added)
 !     40.61, Sep. 06: NMOVAR increased by 1 (quantity DISVEG added)
+!TSK  40.61, Sep. 06: NMOVAR increased by 1 (quantity DICDVG added)
 !     40.64, Apr. 07: NMOVAR increased by 2 (quantities QP and BFI added)
 !     40.85, Aug. 08: NMOVAR increased by 10 (quantities GENE, GENW, REDI, REDQ, REDT,
 !                                             PROPA, PROPX, PROPT, PROPS and RADS added)
@@ -707,6 +708,7 @@
 !  (55) [ 'DISSU']
 !  (56) [  'DISW']
 !  (57) [  'DISV']
+!  (80) [  'DICD']
 !  (58) [    'QP']
 !  (59) [   'BFI']
 !  (60) [  'GENE']
@@ -784,6 +786,7 @@
 !  (55) [ 'Ssurf']
 !  (56) [ 'Swcap']
 !  (57) [  'Sveg']
+!  (80) [ 'Cdveg']
 !  (58) [    'Qp']
 !  (59) [   'BFI']
 !  (60) ['Genera']
@@ -861,6 +864,7 @@
 !  (55) [                'Surf breaking dissipation']
 !  (56) [                 'Whitecapping dissipation']
 !  (57) [                   'Vegetation dissipation']
+!  (80) [                'Vegetation Cd dissipation']
 !  (58) [                               'Peakedness']
 !  (59) [                      'Benjamin-Feir index']
 !  (60) [                        'Energy generation']
@@ -938,6 +942,7 @@
 !  (55) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (56) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
 !  (57) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
+!  (80) [     ' '] 
 !  (58) [     ' ']
 !  (59) [     ' ']
 !  (60) [  'm2/s'] change to UDL ???, changed to 'W/m2', if INRHOG=1
@@ -1072,6 +1077,7 @@
 !  (55)  [  1]   Ssurf
 !  (56)  [  1]   Swcap
 !  (57)  [  1]   Sveg
+!  (80)  [  1]   Cdveg
 !  (58)  [  1]   Qp
 !  (59)  [  1]   BFI
 !  (60)  [  1]   Genera
@@ -1147,6 +1153,7 @@
 !  (55)  [    -9.] Ssurf
 !  (56)  [    -9.] Swcap
 !  (57)  [    -9.] Sveg
+!  (80)  [    -1.] Cdveg
 !  (58)  [    -9.] Qp
 !  (59)  [    -9.] BFI
 !  (60)  [    -9.] Genera
@@ -1222,6 +1229,7 @@
 !  (55)  [     0.] Ssurf
 !  (56)  [     0.] Swcap
 !  (57)  [     0.] Sveg
+!  (80)  [     0.] Cdveg
 !  (58)  [     0.] Qp
 !  (59)  [     0.] BFI
 !  (60)  [     0.] Genera
@@ -1297,6 +1305,7 @@
 !  (55)  [     0.] Ssurf
 !  (56)  [     0.] Swcap
 !  (57)  [     0.] Sveg
+!  (80)  [     0.] Cdveg
 !  (58)  [     0.] Qp
 !  (59)  [     0.] BFI
 !  (60)  [     0.] Genera
@@ -1372,6 +1381,7 @@
 !  (55)  [    0.1] Ssurf
 !  (56)  [    0.1] Swcap
 !  (57)  [    0.1] Sveg
+!  (80)  [    0.1] Cdveg
 !  (58)  [     1.] Qp
 !  (59)  [  1000.] BFI
 !  (60)  [    0.1] Genera
@@ -1447,6 +1457,7 @@
 !  (55)  [  1000.] Ssurf
 !  (56)  [  1000.] Swcap
 !  (57)  [  1000.] Sveg
+!  (80)  [  1000.] Cdveg
 !  (58)  [     1.] Qp
 !  (59)  [  1000.] BFI
 !  (60)  [  1000.] Genera
@@ -1579,10 +1590,10 @@
 !
 !  6. Parameter variables
 !
-!     NUMGRD [  15]  maximum number of input grids
+!     NUMGRD [  18]  maximum number of input grids
 !
       INTEGER NUMGRD
-      PARAMETER (NUMGRD = 15)
+      PARAMETER (NUMGRD = 18)
 !
 !  7. Local variables
 !
@@ -1604,6 +1615,9 @@
 ! grid(13): fluid mud layer
 ! grid(14): ice concentration (fraction)
 ! grid(15): ice thickness (m)
+! grid(16): spatially varying plant height in m 
+! grid(17): spatially varying plant diameter in m 
+! grid(18): spatially varying plant thickness in m 
 !
 ! ALPG(NUMGRD)  [    0.] direction of the x-axis w.r.t. user coordinates
 ! CCURV         [ FALSE] correction curvilinear grid
@@ -1657,6 +1671,9 @@
 ! VARWLV        [   FAL] water level is/is not variable over space
 ! VARAICE       [   FAL] ice concentration (fraction) is/is not variable over space
 ! VARHICE       [   FAL] ice thickness is/is not variable over space
+! VARNPH        [   FAL] number of plant height m is/is not variable over space
+! VARNPD        [   FAL] plant diameter m is/is not variable over space
+! VARNPT        [   FAL] plant thickness m is/is not variable over space
 ! XPG(NUMGRD)   [    0.] x of origin
 ! XOFFS         [    0.] offset value in x
 !                        (from user coord. system to internal coord. system)
@@ -1679,7 +1696,8 @@
       LOGICAL, SAVE, TARGET, ALLOCATABLE :: DYNDEP_G(:)
       LOGICAL, POINTER :: VARAST
       LOGICAL, SAVE, TARGET, ALLOCATABLE :: VARAST_G(:)
-      LOGICAL VARNPL, VARMUD, CCURV, VARTUR
+      LOGICAL VARNPL, VARNPH, VARNPD, VARNPT
+      LOGICAL VARMUD, CCURV, VARTUR
       INTEGER LWDATE
 
       INTEGER, POINTER :: ICOND
@@ -1755,7 +1773,8 @@
       LOGICAL CVLEFT,      LXOFFS,      VARFR
       LOGICAL VARWI,       VARWLV,      DYNDEP
       LOGICAL VARAST
-      LOGICAL VARNPL,      VARTUR,      VARMUD
+      LOGICAL VARNPL,   VARNPH,  VARNPT,  VARNPD
+      LOGICAL VARTUR,   VARMUD
       LOGICAL CCURV                                                       41.53
 #endif
       LOGICAL VARAICE,     VARHICE
@@ -1902,7 +1921,7 @@
 !
 !     MBOT   [  10] dimension of array PBOT
 !     MDIFFR [  10] dimension of array PDIFFR                             40.21
-!     MDISP  [   8] dimension for dissipation arrays                      41.75 40.59 40.35 40.67
+!     MDISP  [   9] dimension for dissipation arrays                      41.75 40.59 40.35 40.67
 !     MGENR  [   1] dimension for generation arrays                       40.85
 !     MICMAX [  13] max. number of points in comput. stencil
 !     MMUD   [  10] dimension of array PMUD
@@ -1969,7 +1988,7 @@
 ! JDISS  [  2] total dissipation within array COMPDA
 ! JDPSAV [  1] saved depth (for setup) within array COMPDA
 ! JDP1   [  7] old depth within array COMPDA
-! JDP2   [  8] new depth within array COMPDA
+! JDP2   [  9] new depth within array COMPDA - TSK
 ! JDP3   [ 15] last read depth within array COMPDA
 ! JDSXB  [  1] bottom friction dissipation within array COMPDA
 !              set by command TABLE/BLOCK
@@ -1980,6 +1999,8 @@
 ! JDSXS  [  1] surf dissipation within array COMPDA
 !              set by command TABLE/BLOCK
 ! JDSXV  [  1] vegetation dissipation within array COMPDA
+!              set by command TABLE/BLOCK
+! JDSXC  [  1] spectral vegetation drag coefficient within array COMPDA
 !              set by command TABLE/BLOCK
 ! JDSXT  [  1] turbulent dissipation within array COMPDA
 !              set by command TABLE/BLOCK
@@ -2021,6 +2042,12 @@
 ! JHICE3 [   ] last read ice thickness within array COMPDA
 ! JNPLA2 [   ] new number of plants / m2 within array COMPDA
 ! JNPLA3 [   ] last read number of plants / m2 within array COMPDA
+! JNPHT2 [   ] new number of plant height m within array COMPDA
+! JNPHT3 [   ] last read number of plant height m within array COMPDA
+! JNPDA2 [   ] new number of plant diameter m within array COMPDA
+! JNPDA3 [   ] last read number of plant diameter m within array COMPDA
+! JNPTK2 [   ] new number of plant diameter m within array COMPDA
+! JNPTK3 [   ] last read number of plant diameter m within array COMPDA
 ! JTURB2 [   ] new turbulent viscosity within array COMPDA                40.35
 ! JTURB3 [   ] last read turbulent viscosity within array COMPDA          40.35
 ! JP4D   [  7] within array SWTSDA, quadruplet interactions (implicit part)
@@ -2130,7 +2157,7 @@
       INTEGER             JDSXS
       INTEGER             JDSXW
       INTEGER             JDSXM
-      INTEGER             JDSXV,       JDSXT
+      INTEGER             JDSXV,       JDSXC,       JDSXT
       INTEGER             JGSXW,       JGENR
       INTEGER             JRSXQ,       JRSXT,       JREDS,       JRADS
       INTEGER             JTSXG,       JTSXT,       JTSXS,       JTRAN
@@ -2141,6 +2168,9 @@
       INTEGER             JPWBRK,      JPWCAP,      JPWNDD,      JPWNDS
       INTEGER             JPMUD,       JMUDL1,      JMUDL2,      JMUDL3
       INTEGER             JPVEGT,      JNPLA2,      JNPLA3
+      INTEGER             JNPHT2,      JNPHT3       
+      INTEGER             JNPDA2,      JNPDA3       
+      INTEGER             JNPTK2,      JNPTK3       
       INTEGER             JPTURB,      JTURB2,      JTURB3
       INTEGER             JQB,         JSETUP,      JSTP,        JTAUW
       INTEGER             JUBOT,       JUSTAR,      JVX1,        JVX2

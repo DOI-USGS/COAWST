@@ -2347,6 +2347,7 @@
             END IF
           END IF
         END DO
+#  endif 
 #  if defined ESTUARYBGC && defined SAV_BIOMASS
 !
 !  Read in AGB and BGB values
@@ -2571,7 +2572,6 @@
             END IF
           END IF
         END DO
-#  endif
 #  endif
 # endif
       END IF NLM_STATE

@@ -3331,6 +3331,41 @@
   'b3dvar'
   1.0d0
 
+'bed_oxy'                                          ! Input/Output
+  'sediment porewater oxygen'
+  'mmol O2/m2'                                     ! [mmol O2/m2]
+  'bed_oxy, scalar, series'
+  'ocean_time'
+  'idSbed(iboxy)'
+  'b3dvar'
+  1.0d0
+
+'bed_no3'                                          ! Input/Output
+  'sediment porewater nitrate'
+  'mmol NO3/m2'                                    ! [mmol NO3/m2]
+  'bed_no3, scalar, series'
+  'ocean_time'
+  'idSbed(ibno3)'
+  'b3dvar'
+  1.0d0
+
+'bed_nh4'                                          ! Input/Output
+  'sediment porewater ammonium'
+  'mmol NH4/m2'                                    ! [mmol NH4/m2]
+  'bed_nh4, scalar, series'
+  'ocean_time'
+  'idSbed(ibnh4)'
+  'b3dvar'
+  1.0d0
+
+'bed_odu'                                       ! Input/Output
+  'sediment porewater oxygen demand units'
+  'mmol O2/m2'                                     ! [mmol O2/m2]
+  'bed_odu, scalar, series'
+  'ocean_time'
+  'idSbed(ibodu)'
+  'b3dvar'
+  1.0d0
 'grain_diameter'                                   ! Input/Output
   'sediment median grain diameter size'
   'meter'                                          ! [m]
@@ -4362,6 +4397,77 @@
   'r3dvar'
   1.0d0
 
+'sed_dif_O2'                                       ! Input/Output
+  'Seabed-water O2 diffusive flux'
+  'millimole tracer meter-2 day-1'                 ! [millimole/m2/day]
+  'sed_dif_O2, scalar, series'
+  'ocean_time'
+  'iDbio2(isdO2)'
+  'r2dvar'
+  1.0d0
+
+'sed_ero_O2'                                       ! Input/Output
+  'Seabed-water O2 erosive flux'
+  'millimole tracer meter-2 day-1'                 ! [millimole/m2/day]
+  'sed_ero_O2, scalar, series'
+  'ocean_time'
+  'iDbio2(iseO2)'
+  'r2dvar'
+  1.0d0
+
+'sed_dif_NO3'                                       ! Input/Output
+  'Seabed-water NO3 diffusive flux'
+  'millimole tracer meter-2 day-1'                 ! [millimole/m2/day]
+  'sed_dif_NO3, scalar, series'
+  'ocean_time'
+  'iDbio2(isdNO)'
+  'r2dvar'
+  1.0d0
+
+'sed_ero_NO3'                                       ! Input/Output
+  'Seabed-water NO3 erosive flux'
+  'millimole tracer meter-2 day-1'                 ! [millimole/m2/day]
+  'sed_ero_NO3, scalar, series'
+  'ocean_time'
+  'iDbio2(iseNO)'
+  'r2dvar'
+  1.0d0
+
+'sed_dif_NH4'                                       ! Input/Output
+  'Seabed-water NH4 diffusive flux'
+  'millimole tracer meter-2 day-1'                 ! [millimole/m2/day]
+  'sed_dif_NH4, scalar, series'
+  'ocean_time'
+  'iDbio2(isdNH)'
+  'r2dvar'
+  1.0d0
+
+'sed_ero_NH4'                                       ! Input/Output
+  'Seabed-water NH4 erosive flux'
+  'millimole tracer meter-2 day-1'                 ! [millimole/m2/day]
+  'sed_ero_NH4, scalar, series'
+  'ocean_time'
+  'iDbio2(iseNH)'
+  'r2dvar'
+  1.0d0
+
+'sed_dif_ODU'                                       ! Input/Output
+  'Seabed-water ODU diffusive flux'
+  'millimole tracer meter-2 day-1'                 ! [millimole/m2/day]
+  'sed_dif_ODU, scalar, series'
+  'ocean_time'
+  'iDbio2(isdOD)'
+  'r2dvar'
+  1.0d0
+
+'sed_ero_ODU'                                       ! Input/Output
+  'Seabed-water ODU erosive flux'
+  'millimole tracer meter-2 day-1'                 ! [millimole/m2/day]
+  'sed_ero_ODU, scalar, series'
+  'ocean_time'
+  'iDbio2(iseOD)'
+  'r2dvar'
+  1.0d0
 !--------------UMAINE variables
 'NO3_'                                              ! Input
   'nitrate concentration'
@@ -4624,6 +4730,14 @@
   'r3dvar'
   1.0d0
 
+'ODU_'                                           ! Input/Output
+  'dissolved oxygen concentration'
+  'millimole_O2 meter-3'                       ! [millimole/m3]
+  'ODU_, scalar, series'
+  'ocean_time'
+  'idTvar(iODU_)'
+  'r3dvar'
+  1.0d0
 'TIC_'                                              ! Input
   'total inorganic carbon'
   'millimole_carbon meter-3'                       ! [millimole/m3]
@@ -4792,6 +4906,41 @@
   'nulvar'
   1.0d0
 
+'ODU_east'                                      ! Input
+  'ODU eastern boundary condition'
+  'millimole_oxygen meter-3'                       ! [millimole/m3]
+  'ODU_east, scalar, series'
+  'ODU_time'
+  'idTbry(ieast,iODU_)'
+  'nulvar'
+  1.0d0
+
+'ODU_west'                                      ! Input
+  'ODU western boundary condition'
+  'millimole_oxygen meter-3'                       ! [millimole/m3]
+  'ODU_west, scalar, series'
+  'ODU_time'
+  'idTbry(iwest,iODU_)'
+  'nulvar'
+  1.0d0
+
+'ODU_north'                                     ! Input
+  'ODU northern boundary condition'
+  'millimole_oxygen meter-3'                       ! [millimole/m3]
+  'ODU_north, scalar, series'
+  'ODU_time'
+  'idTbry(inorth,iODU_)'
+  'nulvar'
+  1.0d0
+
+'ODU_south'                                     ! Input
+  'ODU southern boundary condition'
+  'millimole_oxygen meter-3'                       ! [millimole/m3]
+  'ODU_south, scalar, series'
+  'ODU_time'
+  'idTbry(isouth,iODU_)'
+  'nulvar'
+  1.0d0
 'alkalinity_east'                                  ! Input
   'alkalinity eastern boundary condition'
   'milliequivalents meter-3'                       ! [milliequivalents/m3]
@@ -6737,6 +6886,41 @@
   'nulvar'
   1.0d0
 
+'ODU_east'                                      ! Input
+  'ODU eastern boundary condition'
+  'millimole_O2 meter-3'                       ! [millimole/m3]
+  'ODU_east, scalar, series'
+  'ODU_time'
+  'idTbry(ieast,iODU_)'
+  'nulvar'
+  1.0d0
+
+'ODU_west'                                      ! Input
+  'ODU western boundary condition'
+  'millimole_O2 meter-3'                       ! [millimole/m3]
+  'ODU_west, scalar, series'
+  'ODU_time'
+  'idTbry(iwest,iODU_)'
+  'nulvar'
+  1.0d0
+
+'ODU_north'                                     ! Input
+  'ODU northern boundary condition'
+  'millimole_O2 meter-3'                       ! [millimole/m3]
+  'ODU_north, scalar, series'
+  'ODU_time'
+  'idTbry(inorth,iODU_)'
+  'nulvar'
+  1.0d0
+
+'ODU_south'                                     ! Input
+  'ODU southern boundary condition'
+  'millimole_O2 meter-3'                       ! [millimole/m3]
+  'ODU_south, scalar, series'
+  'ODU_time'
+  'idTbry(isouth,iODU_)'
+  'nulvar'
+  1.0d0
 'Talk_east'                                  ! Input
   'alkalinity eastern boundary condition'
   'milliequivalents meter-3'                       ! [milliequivalents/m3]
@@ -8945,7 +9129,15 @@
   'idWdvg'
   'r2dvar' 
    1.0d0
-!
+
+'Cdwave_veg'                                       ! Input/Output
+  'Spectral Cd due to waves and vegetation'
+  'unitless'                                       ! [unitless]
+  'Cdwave_veg, scalar, series'
+  'ocean_time'
+  'idCdvg'
+  'r2dvar'
+   1.0d0
 !
 !------------------------------------------------------------------------------
 !  Diaganostics for momentum terms.

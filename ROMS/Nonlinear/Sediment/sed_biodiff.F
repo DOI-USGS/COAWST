@@ -277,10 +277,80 @@
             ENDDO
 ! TODO - Mix porosity or assign it as f(depth)?
 ! TODO - Mix age?
+# if defined SEDBIO_COUP && defined OXYGEN && defined ODU
+!
+!   Calculate mixing for each porewater constituent 
+            DO ised=iboxy,ibodu
+!
+!  Set new biodiffusivity profile
+!  Assume uniform biodiffusivity profile 
+!
+            DO k=1,Nbed
+              Db(k)=Dbmx(ng)
+              IF (ised.eq.iboxy) Db(k)=11.99d-10
+              IF (ised.eq.ibno3) Db(k)=9.80d-10
+              IF (ised.eq.ibnh4) Db(k)=4.36d-10
+              IF (ised.eq.ibodu) Db(k)=4.01d-10
+            ENDDO
+!  Calculate finite differences
+            dzui(1)=1.0_r8/(zc(2)-zc(1))
+            dzli(1)=1.E35_r8       ! should not be needed
+            dzmi(1)=1.0_r8/bed(i,j,1,ithck)
+            DO k=2,Nbed-1
+              dzui(k)=1.0_r8/(zc(k+1)-zc(k))
+              dzli(k)=1.0_r8/(zc(k)-zc(k-1))
+              !dzmi(k)=1.0_r8/(zb(k+1)-zb(k))
+              ! equivalent:
+              dzmi(k)=1.0/bed(i,j,k,ithck)
+!  Tridiagonal terms
+              b(k)= -dt(ng)*dzmi(k)*Db(k-1)*dzli(k)
+              d(k)=1.0_r8+dt(ng)*dzmi(k)*                               &
+     &          ( Db(k-1)*dzli(k)+Db(k)*dzui(k) )
+              a(k)= -dt(ng)*dzmi(k)*Db(k)*dzui(k)
+            ENDDO
+            dzui(Nbed)=1.0E35_r8 ! should not be needed
+            dzli(Nbed)=1.0_r8/(zc(Nbed)-zc(Nbed-1))
+            dzmi(Nbed)=1.0_r8/bed(i,j,Nbed,ithck)
+!  No-flux boundary conditions
+            b(1) = 999.9_r8  ! should not be needed
+            d(1)=   1.0_r8 +dt(ng)*dzmi(1)*Db(1)*dzui(1)
+            a(1)=      -dt(ng)*dzmi(1)*Db(1)*dzui(1)
+            b(Nbed)=   -dt(ng)*dzmi(Nbed)*Db(Nbed-1)*dzli(Nbed)
+            d(Nbed)=1.0_r8+dt(ng)*dzmi(Nbed)*Db(Nbed-1)*dzli(Nbed)
+            a(Nbed)=999.9_r8 ! should not be needed
+!
+!   ...make working copies 
+              DO k=1,Nbed
+                cc(k) = bed(i,j,k,ised)/bed(i,j,k,ithck)/               &
+     &                  bed(i,j,k,iporo)
+                dd(k)= d(k)
+              ENDDO
+!   Solve a tridiagonal system of equations using Thomas' algorithm
+!   Anderson, Tannehill, and Pletcher (1984) pp. 549-550
+!   ...establish upper triangular matrix
+              il = 1
+              iu = Nbed
+              lp = il+1
+              DO k = lp,iu
+                rtemp = b(k)/dd(k-1)
+                dd(k)= dd(k)-rtemp*a(k-1);
+                cc(k)= cc(k)-rtemp*cc(k-1);
+              ENDDO
+!   ...back substitution
+              cc(iu) = cc(iu)/dd(iu)
+              DO k  = lp,iu
+                ii = iu-k+il;
+                cc(ii) = (cc(ii)-a(ii)*cc(ii+1))/dd(ii);
+              ENDDO
+!   ...solution stored in cc; copy out
+              DO k = 1,Nbed
+                bed(i,j,k,ised)=cc(k)*bed(i,j,k,ithck)*bed(i,j,k,iporo)
+              ENDDO
+            ENDDO
 
+# endif
 ! Recompute bed masses
             DO k=1,Nbed
-!             write(*,*) i,j,k,(bed_frac(i,j,k,ised),ised=1,NST)
 !            debugging: ensure fracs add up to 1
               cff3 = 0.0_r8
               DO ised=1,NST
@@ -317,7 +387,7 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange4d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj, 1, Nbed, 1, NST,          &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    bed_frac,                                     &
      &                    bed_mass(:,:,:,nnew,:))
 # endif
@@ -330,7 +400,7 @@
 # ifdef DISTRIBUTE
       CALL mp_exchange4d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj, 1, Nbed, 1, MBEDP,        &
-     &                    NghostPoints, EWperiodic, NSperiodic,         &
+     &                    NghostPoints, EWperiodic(ng), NSperiodic(ng), &
      &                    bed)
 # endif
 

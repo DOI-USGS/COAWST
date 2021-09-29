@@ -22,6 +22,12 @@
 !                   bed(:,:,:,iaged) => layer age                      !
 !                   bed(:,:,:,iporo) => layer porosity                 !
 !                   bed(:,:,:,idiff) => layer bio-diffusivity          !
+# if defined SEDBIO_COUP
+!                   bed(:,:,:,iboxy) => layer oxygen                   !
+!                   bed(:,:,:,ibno3) => layer nitrate                  !
+!                   bed(:,:,:,ibnh4) => layer ammonium                 !
+!                   bed(:,:,:,ibodu) => layer oxygen demand units      !
+# endif
 !  bed_frac       Sediment fraction of each size class in each bed     !
 !                   layer(nondimensional: 0-1.0).  Sum of              !
 !                   bed_frac = 1.0.                                    !

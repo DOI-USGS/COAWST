@@ -65,6 +65,28 @@
           RETURN
         END IF
       END IF
+!
+!  Write out spectral Cd due to wave vegetation. 
+! 
+      IF (Hout(idCdvg,ng)) THEN 
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idCdvg), &
+     &                     RST(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     VEG(ng)%Cdwave_veg )
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idCdvg)), RST(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
 # endif
 !
 # ifdef MARSH_DYNAMICS

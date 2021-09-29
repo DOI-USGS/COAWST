@@ -2164,6 +2164,8 @@
               idOtyp=varid
             CASE ('idOval')
               idOval=varid
+            CASE ('idOvar')
+              idOvar=varid
             CASE ('idResi')
               idResi=varid
             CASE ('idKhor')

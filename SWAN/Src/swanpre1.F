@@ -308,7 +308,7 @@
       REAL              :: ALTMP,FRLOW,FRHIG,GAMMA,TMPDIR,VALX,VALY
       REAL*8            :: DIFF
       REAL              :: DEGCNV
-      REAL              :: HH, CC, DD
+      REAL              :: HH, CC, DD, YY 
       INTEGER           :: NN
 !
       INTEGER, SAVE     :: INCNUM(1:MXINCL) = 0                           40.03
@@ -355,7 +355,7 @@
 
       TYPE VEGPT                                                          40.55
         INTEGER              :: N                                         40.55
-        REAL                 :: H, D, C                                   40.55
+        REAL                 :: H, D, C, Y                                40.55
         TYPE(VEGPT), POINTER :: NEXTV                                     40.55
       END TYPE VEGPT                                                      40.55
 
@@ -1343,7 +1343,7 @@
 !
 !   INPgrid                                                                &
 !      BOTtom / WLEVel / CURrent / VX / VY / FRiction / WInd / WX / WY     &
-!      NPLAnts / TURB / MUDL / AICE / HICE                                 &
+!      NPLAnts / TURB / MUDL / AICE / HICE / NPHT / NPDA / NPTK            &
 !      | REG [xpinp] [ypinp] [alpinp]  [mxinp] [myinp]  [dxinp] [dyinp] |
 !     <  CURVilinear [stagrx] [stagry] [mxinp] [myinp]                   > &
 !      | UNSTRUCtured                                                   |
@@ -1524,6 +1524,60 @@
 !         ice thickness (in meters)                                       41.75
           IGRD = 15                                                       41.75
           PSNAME = 'HICEGRID'                                             41.75
+        ELSE IF (KEYWIS ('NPHT')) THEN                                    40.55
+!         plant height                                                    40.55
+          IGRD = 16                                                       40.55
+          PSNAME = 'NPHTGRID'                                             40.55
+#ifdef COAWST_COUPLING
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+          VARNPL = .TRUE.                                                   40.55
+          IF (JNPHT2.LE.1) THEN                                             40.55
+            MCMVAR = MCMVAR + 2                                             40.55
+            JNPHT2 = MCMVAR - 1                                             40.55
+            JNPHT3 = MCMVAR                                                 40.55
+            ALOCMP = .TRUE.                                                 40.97
+          ENDIF                                                             40.55
+          DEALLOCATE(M_GENARR_MOD(ng)%NPHTF_G)
+          ALLOCATE (M_GENARR_MOD(ng)%NPHTF_G(MXG(IGR1)*MYG(IGR1)))
+          NPHTF=>M_GENARR_MOD(ng)%NPHTF_G
+          NPHTF=0.
+#endif
+        ELSE IF (KEYWIS ('NPDA')) THEN                                    40.55
+!         plant diameter                                                  40.55
+          IGRD = 17                                                       40.55
+          PSNAME = 'NPDAGRID'                                             40.55
+#ifdef COAWST_COUPLING
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+          VARNPD = .TRUE.                                                   40.55
+          IF (JNPDA2.LE.1) THEN                                             40.55
+            MCMVAR = MCMVAR + 2                                             40.55
+            JNPDA2 = MCMVAR - 1                                             40.55
+            JNPDA3 = MCMVAR                                                 40.55
+            ALOCMP = .TRUE.                                                 40.97
+          ENDIF                                                             40.55
+          DEALLOCATE(M_GENARR_MOD(ng)%NPDAF_G)
+          ALLOCATE (M_GENARR_MOD(ng)%NPDAF_G(MXG(IGR1)*MYG(IGR1)))
+          NPDAF=>M_GENARR_MOD(ng)%NPDAF_G
+          NPDAF=0.
+#endif
+        ELSE IF (KEYWIS ('NPTK')) THEN                                    40.55
+!         plant thickness                                                 40.55
+          IGRD = 18                                                       40.55
+          PSNAME = 'NPTKGRID'                                             40.55
+#ifdef COAWST_COUPLING
+          CALL SINPGR (IGRD, IGR2, PSNAME, ng)
+          VARNPT = .TRUE.                                                   40.55
+          IF (JNPTK2.LE.1) THEN                                             40.55
+            MCMVAR = MCMVAR + 2                                             40.55
+            JNPTK2 = MCMVAR - 1                                             40.55
+            JNPTK3 = MCMVAR                                                 40.55
+            ALOCMP = .TRUE.                                                 40.97
+          ENDIF                                                             40.55
+          DEALLOCATE(M_GENARR_MOD(ng)%NPTKF_G)
+          ALLOCATE (M_GENARR_MOD(ng)%NPTKF_G(MXG(IGR1)*MYG(IGR1)))
+          NPTKF=>M_GENARR_MOD(ng)%NPTKF_G
+          NPTKF=0.
+#endif 
         ELSE
           IGRD = 1
           PSNAME = 'BOTTGRID'
@@ -2782,6 +2836,153 @@
         GOTO 100
       END IF
 !
+! ==========================================
+!
+!   VEGCtation   < [height]  [diamtr]  [nstems]  [drag] >
+!
+! ==========================================
+!
+      IF (KEYWIS ('VEGC')) THEN
+        IVEG  = 2
+        ILMAX = 0
+        FRSTV%H = 0.
+        FRSTV%D = 0.
+        FRSTV%N = 0
+        FRSTV%C = 0.
+        FRSTV%Y = 0.
+        NULLIFY(FRSTV%NEXTV)
+        CURRV => FRSTV
+ 304    CALL INREAL ('HEIGHT',HH,'REP',-1.)
+        IF ( HH.NE.-1. ) THEN
+           IF ( HH.LT.0. ) THEN
+              CALL MSGERR (2,'height is negative')
+              HH = 0.
+           END IF
+           CALL INREAL ('DIAMTR',DD,'REQ', 0.)
+           IF ( DD.LT.0. ) THEN
+              CALL MSGERR (2,'stem diameter is negative')
+              DD = 0.
+           END IF
+           CALL ININTG ('NSTEMS',NN,'REQ', 1 )
+           IF ( NN.LE.0 ) THEN
+              CALL MSGERR (2,'number of stems is negative or zero')
+              NN = 1
+           END IF
+           CALL INREAL ('DRAG'  ,CC,'REQ', 0.)
+           IF ( CC.LT.0. ) THEN
+              CALL MSGERR (2,'drag coefficient is negative')
+              CC = 0.
+           ENDIF
+           CALL INREAL ('YOUNGSMOD'  ,YY,'REQ', 0.)
+           IF ( YY.LE.0. ) THEN
+              CALL MSGERR (2,'Youngs modulus is negative or zero')
+              YY = 0.
+           END IF
+           ILMAX = ILMAX+1
+           ALLOCATE(TMPV)
+           TMPV%H = HH
+           TMPV%D = DD
+           TMPV%N = NN
+           TMPV %C = CC
+           TMPV %Y = YY
+           NULLIFY(TMPV%NEXTV)
+           CURRV%NEXTV => TMPV
+           CURRV => TMPV
+           GO TO 304
+        END IF
+        IF (ILMAX.EQ.0) CALL MSGERR(2,'No vegetation parameters found')
+        IF (.NOT.ALLOCATED(LAYH  )) ALLOCATE(LAYH  (ILMAX))
+        IF (.NOT.ALLOCATED(VEGDIL)) ALLOCATE(VEGDIL(ILMAX))
+        IF (.NOT.ALLOCATED(VEGNSL)) ALLOCATE(VEGNSL(ILMAX))
+        IF (.NOT.ALLOCATED(VEGDRL)) ALLOCATE(VEGDRL(ILMAX))
+        IF (.NOT.ALLOCATED(VEGYML)) ALLOCATE(VEGYML(ILMAX))
+        CURRV => FRSTV%NEXTV
+        DO JJ = 1, ILMAX
+           LAYH  (JJ) = CURRV%H
+           VEGDIL(JJ) = CURRV%D
+           VEGNSL(JJ) = REAL(CURRV%N)
+           VEGDRL(JJ) = CURRV%C
+           VEGYML(JJ) = CURRV%Y
+           CURRV => CURRV%NEXTV
+        END DO
+        DEALLOCATE(TMPV)
+        GOTO 100
+      END IF
+!      
+! ==========================================
+!
+!   VEGCoawst   < [drag coeff] [Youngs mod.] >
+!
+! ==========================================
+!
+!      IF (KEYWIS ('VEGC')) THEN
+!        IVEG  = 2
+!        ILMAX = 0
+!        FRSTV%H = 0.
+!        FRSTV%D = 0.
+!        FRSTV%N = 0
+!        FRSTV%C = 0.
+!        FRSTV%Y = 0.
+!        NULLIFY(FRSTV%NEXTV)
+!        CURRV => FRSTV
+!304     CALL INREAL ('HEIGHT',HH,'REP',-1.)
+!        IF ( HH.NE.-1. ) THEN
+!           IF ( HH.LT.0. ) THEN
+!              CALL MSGERR (2,'height is negative')
+!              HH = 0.
+!           END IF
+!           CALL INREAL ('DIAMTR',DD,'REQ', 0.)
+!           IF ( DD.LT.0. ) THEN
+!              CALL MSGERR (2,'stem diameter is negative')
+!              DD = 0.
+!           END IF
+!           CALL ININTG ('NSTEMS',NN,'REQ', 1 )
+!           IF ( NN.LE.0 ) THEN
+!              CALL MSGERR (2,'number of stems is negative or zero')
+!              NN = 1
+!           END IF
+!           CALL INREAL ('DRAG METHOD'  ,CC,'REQ', 0.)
+!           IF ( CC.LT.0. ) THEN
+!              CALL MSGERR (2,'drag method is negative')
+!              CC = 0.
+!           END IF
+!        !write(6,*) "CC",CC
+!           CALL INREAL ('YOUNGSMOD'  ,YY,'REQ', 0.)
+!           IF ( YY.LE.0. ) THEN
+!              CALL MSGERR (2,'Youngs modulus is negative or zero')
+!              YY = 0.
+!           END IF
+!           ILMAX = ILMAX+1
+!           ALLOCATE(TMPV)
+!!           TMPV%H = HH
+!           TMPV%D = DD
+!           TMPV%N = NN
+!           TMPV%C = CC
+!           TMPV%Y = YY
+!           NULLIFY(TMPV%NEXTV)
+!           CURRV%NEXTV => TMPV
+!           CURRV => TMPV
+!           GO TO 304
+!       ! END IF
+!        IF (ILMAX.EQ.0) CALL MSGERR(2,'No vegetation parameters found')
+!        IF (.NOT.ALLOCATED(LAYH  )) ALLOCATE(LAYH  (ILMAX))
+!        IF (.NOT.ALLOCATED(VEGDIL)) ALLOCATE(VEGDIL(ILMAX))
+!        IF (.NOT.ALLOCATED(VEGNSL)) ALLOCATE(VEGNSL(ILMAX))
+!        IF (.NOT.ALLOCATED(VEGDRL)) ALLOCATE(VEGDRL(ILMAX))
+!        IF (.NOT.ALLOCATED(VEGYML)) ALLOCATE(VEGYML(ILMAX))
+!        CURRV => FRSTV%NEXTV
+!        DO JJ = 1, ILMAX
+!           LAYH  (JJ) = CURRV%H
+!           VEGDIL(JJ) = CURRV%D
+!           VEGNSL(JJ) = REAL(CURRV%N)
+!           VEGDRL(JJ) = CURRV%C
+!           VEGYML(JJ) = CURRV%Y
+!           CURRV => CURRV%NEXTV
+!        END DO
+!        DEALLOCATE(TMPV)
+!        GOTO 100
+!      END IF
+!
 ! =================================================================
 !
 !      TURBulence  [ctb]  (CURrent [tbcur])                               40.35
@@ -3610,6 +3811,12 @@
 !            | AICE     |                                                 41.75
 !            |          |
 !            | HICE     |                                                 41.75
+!            |          |
+!            | NPHTF    |                                                 41.75
+!            |          |
+!            | NPDAF    |                                                 41.75
+!            |          |
+!            | NPTKF    |                                                 41.75
 !
 !
 !    | REGular [xpinp] [ypinp] [alpinp] [mxinp] [myinp] [dxinp] [dyinp] |
@@ -4116,7 +4323,8 @@
 !   ============================================================================
 !
 !   READinp    BOTtom/WLevel/CURrent/FRiction/WInd/COORdinates/              &
-!              NPLAnts/TURB/MUDL/AICE/HICE                                   &
+!              NPLAnts/TURB/MUDL/AICE/HICE/NPHT                              &
+!              NPDA/NPTK                                                     &
 !        [fac]  / 'fname1'        \
 !               \ SERIES 'fname2' /  [idla] [nhedf] ([nhedt]) (nhedvec])     &
 !        FREE / FORMAT 'form' / [idfm] / UNFORMATTED
@@ -4344,6 +4552,36 @@
           JHICE3 = MCMVAR                                                 41.75
           ALOCMP = .TRUE.                                                 41.75
         ENDIF                                                             41.75
+      ELSE IF (KEYWIS ('NPHT')) THEN                                      40.55
+!       plant height meter
+        IGR1   = 16
+        VARNPH = .TRUE.                                                   40.55
+        IF (JNPHT2.LE.1) THEN                                             40.55
+          MCMVAR = MCMVAR + 2                                             40.55
+          JNPHT2 = MCMVAR - 1                                             40.55
+          JNPHT3 = MCMVAR                                                 40.55
+          ALOCMP = .TRUE.                                                 40.97
+        ENDIF                                                             40.55
+      ELSE IF (KEYWIS ('NPDA')) THEN                                      40.55
+!       plant diameter meter
+        IGR1   = 17
+        VARNPD = .TRUE.                                                   40.55
+        IF (JNPDA2.LE.1) THEN                                             40.55
+          MCMVAR = MCMVAR + 2                                             40.55
+          JNPDA2 = MCMVAR - 1                                             40.55
+          JNPDA3 = MCMVAR                                                 40.55
+          ALOCMP = .TRUE.                                                 40.97
+        ENDIF                                                             40.55
+      ELSE IF (KEYWIS ('NPTK')) THEN                                      40.55
+!       plant thickness meter
+        IGR1   = 18
+        VARNPT = .TRUE.                                                   40.55
+        IF (JNPTK2.LE.1) THEN                                             40.55
+          MCMVAR = MCMVAR + 2                                             40.55
+          JNPTK2 = MCMVAR - 1                                             40.55
+          JNPTK3 = MCMVAR                                                 40.55
+          ALOCMP = .TRUE.                                                 40.97
+        ENDIF                                                             40.55
       ELSE
         CALL  WRNKEY
       ENDIF
@@ -4453,6 +4691,21 @@
          ALLOCATE (M_GENARR_MOD(ng)%TURBF_G(MXG(IGR1)*MYG(IGR1)))
          TURBF=>M_GENARR_MOD(ng)%TURBF_G
          CALL SWCOPR( TARR, TURBF, MXG(IGR1)*MYG(IGR1) )                  40.31
+      ELSE IF (IGR1.EQ.16) THEN                                           40.55
+         DEALLOCATE(M_GENARR_MOD(ng)%NPHTF_G)
+         ALLOCATE (M_GENARR_MOD(ng)%NPHTF_G(MXG(IGR1)*MYG(IGR1)))
+         NPHTF=>M_GENARR_MOD(ng)%NPHTF_G
+         CALL SWCOPR( TARR, NPHTF, MXG(IGR1)*MYG(IGR1) )                 40.31
+      ELSE IF (IGR1.EQ.17) THEN                                           40.55
+         DEALLOCATE(M_GENARR_MOD(ng)%NPDAF_G)
+         ALLOCATE (M_GENARR_MOD(ng)%NPDAF_G(MXG(IGR1)*MYG(IGR1)))
+         NPDAF=>M_GENARR_MOD(ng)%NPDAF_G
+         CALL SWCOPR( TARR, NPDAF, MXG(IGR1)*MYG(IGR1) )                 40.31
+      ELSE IF (IGR1.EQ.18) THEN                                           40.55
+         DEALLOCATE(M_GENARR_MOD(ng)%NPTKF_G)
+         ALLOCATE (M_GENARR_MOD(ng)%NPTKF_G(MXG(IGR1)*MYG(IGR1)))
+         NPTKF=>M_GENARR_MOD(ng)%NPTKF_G
+         CALL SWCOPR( TARR, NPTKF, MXG(IGR1)*MYG(IGR1) )                 40.31
       END IF                                                              40.31
 #else
       IF (IGR1.EQ.1) THEN                                                 40.31
@@ -4490,6 +4743,15 @@
       ELSE IF (IGR1.EQ.15) THEN                                           41.75
          IF (.NOT.ALLOCATED(HICEF)) ALLOCATE(HICEF(MXG(IGR1)*MYG(IGR1)))  41.75
          CALL SWCOPR( TARR, HICEF, MXG(IGR1)*MYG(IGR1) )                  41.75
+      ELSE IF (IGR1.EQ.16) THEN                                           40.55
+         IF (.NOT.ALLOCATED(NPHTF)) ALLOCATE(NPHTF(MXG(IGR1)*MYG(IGR1)))  40.55
+         CALL SWCOPR( TARR, NPHTF, MXG(IGR1)*MYG(IGR1) )                  40.55
+      ELSE IF (IGR1.EQ.17) THEN                                           40.55
+         IF (.NOT.ALLOCATED(NPDAF)) ALLOCATE(NPDAF(MXG(IGR1)*MYG(IGR1)))  40.55
+         CALL SWCOPR( TARR, NPDAF, MXG(IGR1)*MYG(IGR1) )                  40.55
+      ELSE IF (IGR1.EQ.18) THEN                                           40.55
+         IF (.NOT.ALLOCATED(NPTKF)) ALLOCATE(NPTKF(MXG(IGR1)*MYG(IGR1)))  40.55
+         CALL SWCOPR( TARR, NPTKF, MXG(IGR1)*MYG(IGR1) )                  40.55
       END IF                                                              40.31
 #endif
       DEALLOCATE(TARR)                                                    40.31

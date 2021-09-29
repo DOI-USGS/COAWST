@@ -386,6 +386,11 @@
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
+!
+      to_add=':DICDVG'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
 #endif
 
 !
@@ -441,6 +446,21 @@
 #if defined VEGETATION && defined VEG_SWAN_COUPLING
 !
       to_add=':VEGDENS'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!      
+      to_add=':VEGHGHT'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!      
+      to_add=':VEGDIAM'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!      
+      to_add=':VEGTHCK'
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -907,6 +927,54 @@
         END DO
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VEGDENS",  &
+     &                           A, Asize)
+!
+!  Equivalent Plant height.
+!
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=0.0
+          DO iveg=1,NVEG
+            cff=VEG(ng)%plant(i,j,iveg,phght)+cff
+          END DO
+          A(ij)=cff/NVEG
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VEGHGHT",  &
+     &                           A, Asize)
+!
+!  Equivalent Plant diameter.
+!
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=0.0
+          DO iveg=1,NVEG
+            cff=VEG(ng)%plant(i,j,iveg,pdiam)+cff
+          END DO
+          A(ij)=cff/NVEG
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VEGDIAM",  &
+     &                           A, Asize)
+!
+!  Equivalent Plant thickness.
+!
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=0.0
+          DO iveg=1,NVEG
+            cff=VEG(ng)%plant(i,j,iveg,pthck)+cff
+          END DO
+          A(ij)=cff/NVEG
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VEGTHCK",  &
      &                           A, Asize)
 #endif
 #ifdef ICE_MODEL
@@ -1842,6 +1910,51 @@
         write(stdout,40) 'SWANtoROMS Min/Max DISVEG  (Wm-2):  ',        &
      &                    range(1),range(2)
       END IF
+!
+!  Spectral Cd due to vegetation.
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DICDVG",   &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      fac=1.0_r8
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij)*ramp)*fac
+          IF (iw.eq.1) THEN
+            VEG(ng)%Cdwave_veg(i,j)=cff
+          ELSE
+            VEG(ng)%Cdwave_veg(i,j)=VEG(ng)%Cdwave_veg(i,j)+            &
+     &                              cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Cdwave_veg(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Cdwave_veg(i,j)=A(ij)
+        END DO
+      END DO
+# endif
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max DICDVG(unitless):  ',      &
+     &                    range(1),range(2)
+      END IF
+!
 #endif
 !
       IF (EWperiodic(ng).or.NSperiodic(ng)) THEN

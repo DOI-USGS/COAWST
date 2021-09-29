@@ -37,6 +37,8 @@
 #if defined VEG_STREAMING 
             CASE ('idWdvg')
               idWdvg=varid
+            CASE ('idCdvg')
+              idCdvg=varid
 #endif 
 ! 
 #if defined MARSH_DYNAMICS

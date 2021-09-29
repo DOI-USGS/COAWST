@@ -61,6 +61,7 @@
 !  ipupbm         Id to output above ground biomass                    !
 !  ipdwbm         Id to output below ground biomass                    !
 !  idWdvg         Id to output wave dissipation from vegetation        !
+!  idCdvg         Id to output spectral Cd from waves vegetation       !
 !                                                                      !
 !  Marsh wave induced erosion Output:                                  !
 !  ==========================                                          !
@@ -91,7 +92,7 @@
 #endif
 !
 #ifdef VEG_STREAMING 
-      integer :: idWdvg
+      integer :: idWdvg, idCdvg
 #endif 
 #if defined VEG_DRAG || defined VEG_BIOMASS  
       integer, allocatable :: idvprp(:)

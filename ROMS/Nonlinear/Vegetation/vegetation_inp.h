@@ -274,6 +274,13 @@
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idWdvg,:))
+            CASE ('Hout(idCdvg)')
+              IF ((idCdvg).eq.0) THEN
+                IF (Master) WRITE (out,30) 'idCdvg'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idCdvg,:))
 #endif
 #ifdef MARSH_DYNAMICS
             CASE ('Hout(idTims)')

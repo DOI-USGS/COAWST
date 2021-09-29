@@ -62,6 +62,16 @@
               CASE ('idSbed(ibtcr)')
                 idSbed(ibtcr)=varid
 #endif
+#if defined SEDBIO_COUP
+              CASE ('idSbed(iboxy)')
+                idSbed(iboxy)=varid
+              CASE ('idSbed(ibno3)')
+                idSbed(ibno3)=varid
+              CASE ('idSbed(ibnh4)')
+                idSbed(ibnh4)=varid
+              CASE ('idSbed(ibodu)')
+                idSbed(ibodu)=varid
+#endif
               CASE ('idBott(isd50)')
                 idBott(isd50)=varid
               CASE ('idBott(idens)')
