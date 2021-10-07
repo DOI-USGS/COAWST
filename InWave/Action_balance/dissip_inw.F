@@ -216,8 +216,8 @@
 #  ifdef WDISS_FRIC
             gamma=0.067_r8/g**2
             kD=twopi/(Lwave(i,j)+eps)*h_tot(i,j)
-            dissfric=dt(ng)*gamma*EW/((sinh(kD))**2)*                   &
-     &                twopi/Pwave_bot(i,j)*twopi/Pwave_bot(i,j)
+            dissfric=dt(ng)*gamma*EW/((sinh(kD))**2)*twopi*twopi/       &
+     &               MAX(Trmin,Pwave_bot(i,j)*Pwave_bot(i,j))
 #  endif
 #  ifdef WDISS_ROELVINK
             Hmax_r=breakr*(MAX(h_tot(i,j),0.0_r8))
