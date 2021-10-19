@@ -17,9 +17,11 @@
       USE inwave_iounits
       USE mod_iounits
       USE mod_netcdf
+      USE mod_parallel
       USE mod_scalars
       USE mod_ncparam
       USE mod_inwave_params
+      USE strings_mod,        ONLY : FoundError
 !
       implicit none
 !
@@ -33,66 +35,86 @@
 !  Local variable declarations
 !
       integer ::  ndims, status, varid, ncid, numelem
-
-      integer, dimension(1) :: start, total
-      integer, dimension(nf90_max_var_dims) :: dimIDs
+      integer ::  model, my_Nangles
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+!
+      SourceFile=MyFile
 !
 !-----------------------------------------------------------------------
 !  Open grid NetCDF file for reading.
 !-----------------------------------------------------------------------
 !
-
-!  Hard code this for now, since swan does not init it.
-      ncSPSid=-1
-
+      model=iNLM
       IF (ncSPSid.eq.-1) THEN
-        status=nf90_open(TRIM(nc_name), nf90_nowrite, ncSPSid)
-        IF (status.ne.nf90_noerr) THEN
+        CALL netcdf_open (ng, model, TRIM(nc_name), 0, ncSPSid)
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
           WRITE (stdout,5) TRIM(nc_name)
-          exit_flag=2
-          ioerror=status
           RETURN
         END IF
       END IF
-      ncid=ncSPSid
 !
 !-----------------------------------------------------------------------
 ! Determine number of directions.
 !-----------------------------------------------------------------------
 !
-      status=nf90_inq_varid(ncSPSid,'energy_angle', varid)
-      status=nf90_inquire_variable(ncSPSid,varid,dimids = dimIDs)
-      IF (status.ne.nf90_noerr) THEN
-        WRITE (stdout,30) TRIM('num energy bins')
-        exit_flag=4
-        ioerror=status
+      CALL netcdf_inq_var (ng, model, TRIM(nc_name),                    &
+     &                     ncid = ncSPSid)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+!  Check if the number of nested grids is correct.
+!
+      CALL netcdf_get_dim (ng, model, TRIM(nc_name),                    &
+     &                     ncid = ncSPSid,                              &
+     &                     DimName = 'ND',                              &
+     &                     DimSize = my_Nangles)
+! catch to get old way
+      IF (exit_flag.ne.nf90_noerr) THEN
+        IF (Master) THEN
+          WRITE (stdout,60) 'cant find ND, search energy_angle_centers'
+ 60               FORMAT (/,' get_inwave_grid - ', a)
+        END IF
+        CALL netcdf_get_dim (ng, model, TRIM(nc_name),                  &
+     &                       ncid = ncSPSid,                            &
+     &                       DimName = 'energy_angle_centers',          &
+     &                       DimSize = my_Nangles)
+        IF (exit_flag.ne.nf90_noerr) THEN
+          IF (Master) THEN
+            WRITE (stdout,61) 'found energy_angle_centers!!  ALL GOOD.'
+ 61         FORMAT (/,' get_inwave_grid - ', a)
+          END IF
+        END IF
       END IF
-      status=nf90_inquire_dimension(ncid, dimIDs(1), len=ndims)
-      IF (ndims.ne.ND) THEN
-        WRITE (stdout,35) TRIM('num energy bins not same as input file')
-        exit_flag=4
-        ioerror=status
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+      IF (my_Nangles.ne.ND) THEN
+        IF (Master) THEN
+          WRITE (stdout,10) 'inconsistent num energy bins ND = ',       &
+     &                      ND, my_Nangles
+ 10             FORMAT (/,' get_inwave_grid - ', a, i4, 2x, i4,         &
+     &            /,16x,'in input file:'2x,a)
+        END IF
+        exit_flag=5
+        RETURN
       END IF
 !
 !-----------------------------------------------------------------------
 ! Get the angles.
 !-----------------------------------------------------------------------
 !
-      start(1)=1
-      total(1)=ndims
-      status=nf90_get_var(ncid, varid, WD, start, total)
+      CALL netcdf_get_fvar (ng, model, NGCname, 'energy_angle',         &
+     &                      WD,                                         &
+     &                      ncid = ncSPSid)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !-----------------------------------------------------------------------
 ! Close GRID NetCDF file.
 !-----------------------------------------------------------------------
 !
-      status=nf90_close(ncSPSid)
-      ncSPSid=-1
+      CALL netcdf_close (ng, model, ncSPSid, TRIM(nc_name), .FALSE.)
 !
 
   5   FORMAT (/,' GET_INWAVE_GRID - error while opening file: ', a)
- 10   FORMAT (/,' GET_INWAVE_GRID - error while reading attribute: ', a,&
-     &          ' for variable: ', a)
  20   FORMAT (/,' GET_INWAVE_GRID - error while inquiring attribute: ', &
      &        a,' for variable: ', a)
  30   FORMAT (/,' GET_INWAVE_GRID - cannot inquire ID for variable: ',a)

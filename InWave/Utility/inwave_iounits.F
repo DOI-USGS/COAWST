@@ -47,7 +47,11 @@
           IWINIname(j)(i:i)=blank
           IWSWNname(j)(i:i)=blank
         END DO
+      ncIWINIid(j)=-1
+      ncIWSWNid(j)=-1
       END DO
+
+      ncSPSid=-1
 
       RETURN
       END SUBROUTINE allocate_inwave_iounits
