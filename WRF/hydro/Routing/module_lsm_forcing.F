@@ -553,8 +553,8 @@ if (ierr .eq. NF_NOERR) isoilwater = istmp
 #endif
            return
         end if
-
-        ierr = nf_inq_varid(ncid,  "precip",  varid)
+        ierr = nf_inq_varid(ncid,  "RAINRATE",  varid) !! DX changed just for florence case
+!        ierr = nf_inq_varid(ncid,  "precip",  varid)
         if(ierr /= 0) ierr_flg = ierr
         if (ierr /= 0) then
           ierr = nf_inq_varid(ncid,  "precip_rate",  varid)   !recheck variable name...
@@ -2958,7 +2958,9 @@ end subroutine read_hydro_forcing_mpp1
 #ifdef MPP_LAND
       if(my_id .eq. io_id) then
 #endif
-        ierr = nf_inq_varid(ncid,  "precip",  varid)
+        ierr = nf_inq_varid(ncid,  "RAINRATE",  varid) !! DX changed just for florence case
+
+!        ierr = nf_inq_varid(ncid,  "precip",  varid)
 #ifdef MPP_LAND
       endif
       call mpp_land_bcast_int1(ierr)

@@ -1,7 +1,11 @@
 ! Module for handling National Water Model streamflow, land surface,
 ! gridded routing, lake, and groundwater output.
 
-! Logan Karsten, NCAR, RAL
+! Logan Karsten
+! National Center for Atmospheric Research
+! Research Applications Laboratory
+! karsten@ucar.edu
+! 303-497-2693
 
 module module_NWM_io
 
@@ -1112,7 +1116,7 @@ subroutine output_NoahMP_NWM(outDir,iGrid,output_timestep,itime,startdate,date,i
 
    ! Initialize water type to 16.
    ! NOTE THIS MAY CHANGE IN THE FUTURE!!!!!
-   waterVal = rt_domain(1)%iswater
+   waterVal = 16
 
    ! Initialize NWM dictionary derived type containing all the necessary
    ! metadata for the output file.
