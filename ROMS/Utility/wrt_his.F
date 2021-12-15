@@ -3395,7 +3395,8 @@
 #  ifdef MASKING
      &                       GRID(ng) % rmask,                          &
 #  endif
-     &                       SEDBED(ng) % bed_frac(:,:,:,i))
+     &                       SEDBED(ng) % bed_frac(:,:,:,i),            &
+     &                       SetFillVal = .FALSE.)
           IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idfrac(i))), HIS(ng)%Rindex
@@ -3420,7 +3421,8 @@
 #  ifdef MASKING
      &                       GRID(ng) % rmask,                          &
 #  endif
-     &                       SEDBED(ng) % bed_mass(:,:,:,NOUT,i))
+     &                       SEDBED(ng) % bed_mass(:,:,:,NOUT,i),       &
+     &                       SetFillVal = .FALSE.)
           IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idBmas(i))), HIS(ng)%Rindex
@@ -3445,7 +3447,8 @@
 #  ifdef MASKING
      &                       GRID(ng) % rmask,                          &
 #  endif
-     &                       SEDBED(ng) % bed(:,:,:,i))
+     &                       SEDBED(ng) % bed(:,:,:,i),                 &
+     &                       SetFillVal = .FALSE.)
           IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idSbed(i))), HIS(ng)%Rindex
@@ -3476,7 +3479,8 @@
 #  ifdef MASKING
      &                       GRID(ng) % rmask,                          &
 #  endif
-     &                       SEDBED(ng) % bottom(:,:,i))
+     &                       SEDBED(ng) % bottom(:,:,i),                &
+     &                       SetFillVal = .FALSE.)
           IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
             IF (Master) THEN
               WRITE (stdout,10) TRIM(Vname(1,idBott(i))), HIS(ng)%Rindex
@@ -3570,14 +3574,14 @@
         END IF
       END IF
 !
-!  Write out energy celerity xi-direction.
+!  Write out energy celerity theta-direction.
 !
       IF (Hout(idACct,ng)) THEN
         scale=1.0_dp
         gtype=gfactor*r3dvar
         status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACct), &
      &                     HIS(ng)%Rindex, gtype,                       &
-     &                     LBi, UBi, LBj, UBj, 1, ND, scale,            &
+     &                     LBi, UBi, LBj, UBj, 1, ND+1, scale,          &
 # ifdef MASKING
 #  ifdef WET_DRY
      &                     GRID(ng) % rmask_full,                       &

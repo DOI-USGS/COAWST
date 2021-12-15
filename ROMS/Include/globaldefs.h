@@ -906,7 +906,7 @@
 # define WAVES_TOP_PERIOD
 #endif
 
-#if defined BBL_MODEL || defined WAVES_OCEAN
+#if defined BBL_MODEL || defined WAVES_OCEAN || defined INWAVE_MODEL
 # define WAVES_BOT_PERIOD
 #endif
 

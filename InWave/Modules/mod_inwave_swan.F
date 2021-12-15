@@ -115,6 +115,7 @@
          real(r8)            :: SpecTime(2)
          real(r8)            :: SpecTimedt
          real(r8)            :: h0
+         real(r8)            :: dtifac
 
          integer, pointer  :: posang(:)
          integer, pointer  :: dir_3_int(:)
@@ -144,6 +145,7 @@
          real(r8), pointer :: position(:)
          real(r8), pointer :: dist_x(:)
          real(r8), pointer :: dist_y(:)
+         real(r8), pointer :: dist_xy(:)
          real(r8), pointer :: angle_edge(:)
          real(r8), pointer :: waven(:)
 
@@ -339,6 +341,7 @@
         WAVES(ng)%fmin=WAVES(ng)%df
         WAVES(ng)%nfreq=WAVES(ng)%Insteps/2                     !-1
         WAVES(ng)%fmax=REAL(WAVES(ng)%nfreq,r8)*WAVES(ng)%df
+        WAVES(ng)%dtifac=1.0_r8/5.0_r8
 # else
 ! old way
         WAVES(ng)%nfreq=200
@@ -981,11 +984,23 @@
         IF (first.eq.1) THEN
           allocate(WAVES(ng)%dist_x(0:Mm(ng)+1))
           allocate(WAVES(ng)%dist_y(0:Mm(ng)+1))
+          allocate(WAVES(ng)%dist_xy(0:Mm(ng)+1))
         END IF
 
+        WAVES(ng)%dist_x(0)=0.0_r8
+        WAVES(ng)%dist_y(0)=0.0_r8
+        DO j=1,Mm(ng)+1
+!         WAVES(ng)%dist_x(j)=xr_local(is,j)-xr_local(is,jcenter)
+!         WAVES(ng)%dist_y(j)=yr_local(is,j)-yr_local(is,jcenter)
+          WAVES(ng)%dist_x(j)=0.0_r8
+          WAVES(ng)%dist_y(j)=WAVES(ng)%dist_y(j-1)+                    &
+     &                        1.0_r8/pn_local(is,j)
+        END DO
+!try a new method here
+        WAVES(ng)%dist_xy(0)=0.0_r8
         DO j=0,Mm(ng)+1
-          WAVES(ng)%dist_x(j)=xr_local(is,j)-xr_local(is,jcenter)
-          WAVES(ng)%dist_y(j)=yr_local(is,j)-yr_local(is,jcenter)
+          WAVES(ng)%dist_xy(j)=sqrt( (xr_local(is,j)-xr_local(is,0))**2+&
+     &                               (yr_local(is,j)-yr_local(is,0))**2)
         END DO
       END IF
 !
@@ -1038,11 +1053,23 @@
         IF (first.eq.1) THEN
           allocate(WAVES(ng)%dist_x(0:Lm(ng)+1))
           allocate(WAVES(ng)%dist_y(0:Lm(ng)+1))
+          allocate(WAVES(ng)%dist_xy(0:Lm(ng)+1))
         END IF
 
-        DO i=0,Lm(ng)+1
-          WAVES(ng)%dist_x(i)=xr_local(i,is)-xr_local(jcenter,is)
-          WAVES(ng)%dist_y(i)=yr_local(i,is)-yr_local(jcenter,is)
+        WAVES(ng)%dist_x(0)=0.0_r8
+        WAVES(ng)%dist_y(0)=0.0_r8
+        DO i=1,Lm(ng)+1
+!         WAVES(ng)%dist_x(i)=xr_local(i,is)-xr_local(jcenter,is)
+!         WAVES(ng)%dist_y(i)=yr_local(i,is)-yr_local(jcenter,is)
+          WAVES(ng)%dist_x(i)=WAVES(ng)%dist_x(i-1)+                    &
+     &                        1.0_r8/pm_local(i,is)
+          WAVES(ng)%dist_y(i)=0.0_r8
+        END DO
+!try a new method here
+        WAVES(ng)%dist_xy(0)=0.0_r8
+        DO i=1,Lm(ng)+1
+          WAVES(ng)%dist_xy(i)=sqrt( (xr_local(i,is)-xr_local(0,is))**2+&
+     &                               (yr_local(i,is)-yr_local(0,is))**2)
         END DO
       END IF
 
@@ -1428,6 +1455,7 @@
 !  Loop over all frequencies
 !
         DO ff=1,nfreq
+!jcw      DO ff=18,900
           DO i=SstrR,SendR
 !
 !  If DOUBLESUM, double summation loop over all directions.

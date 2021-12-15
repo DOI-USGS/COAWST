@@ -217,13 +217,13 @@
             gamma=0.067_r8/g**2
             kD=twopi/(Lwave(i,j)+eps)*h_tot(i,j)
             dissfric=dt(ng)*gamma*EW/((sinh(kD))**2)*twopi*twopi/       &
-     &               MAX(Trmin,Pwave_bot(i,j)*Pwave_bot(i,j))
+     &         MAX(Trmin,Pwave_bot(i,j)*Pwave_bot(i,j))*WAVES(ng)%dtifac
 #  endif
 #  ifdef WDISS_ROELVINK
             Hmax_r=breakr*(MAX(h_tot(i,j),0.0_r8))
             Qb=MIN(1.0_r8,1.0_r8-EXP(-(H/Hmax_r)**n_r))
             IF (TRM.gt.0.0001_r8) THEN
-              Dissip_break(i,j)=2.0_r8*alfa/TRM*EW*Qb*dt(ng)
+            Dissbreak(i,j)=2.0_r8*alfa/TRM*EW*Qb*dt(ng)*WAVES(ng)%dtifac
             ELSE
               Dissip_break(i,j)=0.0_r8
             END IF
@@ -275,7 +275,7 @@
 #  endif
           ENDDO
           Dissip_wcap(i,j)=0.0_r8
-          Dissip_break(i,j)=Dissip_break(i,j)/(dt(ng)*rho0)
+          Dissip_break(i,j)=Dissbreak(i,j)/(dt(ng)*WAVES(ng)%dtifac*rho0)
         ENDDO
       ENDDO
 !

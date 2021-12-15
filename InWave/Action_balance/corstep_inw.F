@@ -102,6 +102,7 @@
       USE mod_forces
       USE mod_inwave_params
       USE mod_inwave_vars
+      USE mod_inwave_swan
       USE exchange_3d_mod, ONLY : exchange_AC3d_tile
 
 # ifdef DISTRIBUTE
@@ -354,7 +355,7 @@
         DO i=Istrm1,Iendp2
           grad_x(i)=(AC(i,j,d,3)-AC(i-1,j,d,3))
           cff=0.5_r8*(pm(i-1,j)+pm(i,j))
-          kax(i)=(1.0_r8-abs(cx(i,j,d)*dt(ng)*cff))
+          kax(i)=1.0_r8-abs(cx(i,j,d))*dt(ng)*cff*WAVES(ng)%dtifac
 #  ifdef MASKING
           grad_x(i)=grad_x(i)*umask(i,j)
           kax(i)=kax(i)*umask(i,j)
@@ -425,7 +426,7 @@
         DO j=Jstrm1,Jendp2
           grad_y(j)=(AC(i,j,d,3)-AC(i,j-1,d,3))
           cff=0.5_r8*(pn(i,j)+pn(i,j-1))
-          kay(j)=(1.0_r8-abs(cy(i,j,d)*dt(ng)*cff))
+          kay(j)=1.0_r8-abs(cy(i,j,d))*dt(ng)*cff*WAVES(ng)%dtifac
 #  ifdef MASKING
           grad_y(j)=grad_y(j)*vmask(i,j)
           kay(j)=kay(j)*vmask(i,j)
@@ -497,7 +498,7 @@
 !
         DO j=Jstr,Jend
           DO i=Istr,Iend
-            cff=dt(ng)*pm(i,j)*pn(i,j)
+            cff=dt(ng)*pm(i,j)*pn(i,j)*WAVES(ng)%dtifac
             cff1=cff*(FX(i+1,j)-FX(i,j)+                                &
      &                FE(i,j+1)-FE(i,j))
             AC(i,j,d,nnew)=AC(i,j,d,nstp)-cff1
@@ -636,7 +637,7 @@
         DO i=Istr,Iend
           DO d=2,ND
             grad_d(d)=(AC(i,j,d,3)-AC(i,j,d-1,3))
-            kad(d)=(1.0_r8-abs(ct(i,j,d)*dt(ng)))
+            kad(d)=1.0_r8-abs(ct(i,j,d))*dt(ng)*WAVES(ng)%dtifac
           END DO
 
           DO d=0,0
@@ -653,7 +654,7 @@
 #  else
             grad_d(d)=0.0_r8
 #  endif
-            kad(d)=(1.0_r8-abs(ct(i,j,d)*dt(ng)))
+            kad(d)=1.0_r8-abs(ct(i,j,d))*dt(ng)*WAVES(ng)%dtifac
           END DO
           DO d=ND+1,ND+1
 #  if defined THETA_AC_PERIODIC
@@ -799,7 +800,7 @@
 !
         DO d=1,ND
           DO i=Istr,Iend
-            cff=dt(ng)*pd
+            cff=dt(ng)*pd*WAVES(ng)%dtifac
             AC(i,j,d,nnew)=AC(i,j,d,nnew)-                              &
      &                     cff*(FD(i,d+1)-FD(i,d))
             AC(i,j,d,nnew)=MAX(0.0_r8,AC(i,j,d,nnew))

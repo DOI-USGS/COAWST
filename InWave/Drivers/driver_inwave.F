@@ -125,7 +125,8 @@
           INTTIM(5)=MN
           INTTIM(6)=SS
           OceanTime=DTTIME(INTTIM)
-          IF ((OceanTime-WAVES(ng)%SpecTime(2)).ge.0.001_r8) THEN
+!         IF ((OceanTime-WAVES(ng)%SpecTime(2)).ge.0.001_r8) THEN
+          IF ((OceanTime-WAVES(ng)%SpecTime(2)).ge.0.003_r8) THEN
              CALL inwave_swan_run (ng, 2, tile)
           END IF
         END IF

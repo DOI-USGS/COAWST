@@ -191,6 +191,9 @@
         status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname,'ND',             &
                        ND, DimIDs(34))
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+        status=def_dim(ng, iNLM, HIS(ng)%ncid, ncname,'NDp1',           &
+                       ND+1, DimIDs(36))
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #endif
 
 #ifdef SOLVE3D
@@ -438,7 +441,7 @@
 
         t3degrd(1)=DimIDs( 1)
         t3degrd(2)=DimIDs( 5)
-        t3degrd(3)=DimIDs(34)
+        t3degrd(3)=DimIDs(36)
         t3degrd(4)=DimIDs(12)
 #endif
 #ifdef SOLVE3D
@@ -2394,7 +2397,7 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r3dvar,r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACct),   &
-     &                   NF_FOUT, nvd4, r3degrd, Aval, Vinfo, ncname)
+     &                   NF_FOUT, nvd4, t3degrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
@@ -2412,7 +2415,7 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r3dvar,r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACtp),   &
-     &                   NF_FOUT, nvd4, t3degrd, Aval, Vinfo, ncname)
+     &                   NF_FOUT, nvd4, r3degrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
@@ -2431,7 +2434,7 @@
           Vinfo(22)='coordinates'
           Aval(5)=REAL(r3dvar,r8)
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idACkc),   &
-     &                   NF_FOUT, nvd4, t3degrd, Aval, Vinfo, ncname)
+     &                   NF_FOUT, nvd4, r3degrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !

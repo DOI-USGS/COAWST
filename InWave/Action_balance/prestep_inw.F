@@ -88,6 +88,7 @@
       USE mod_coupling
       USE mod_inwave_params
       USE mod_inwave_vars
+      USE mod_inwave_swan
       USE exchange_3d_mod, ONLY : exchange_AC3d_tile
 
 # ifdef DISTRIBUTE
@@ -349,11 +350,11 @@
 !  Time-step horizontal advection.
 !
         IF (iic(ng).eq.ntfirst(ng)) THEN
-          cff=0.5_r8*dt(ng)
+          cff=0.5_r8*dt(ng)*WAVES(ng)%dtifac
           cff1=1.0_r8
           cff2=0.0_r8
         ELSE
-          cff=(1.0_r8-Gamma)*dt(ng)
+          cff=(1.0_r8-Gamma)*dt(ng)*WAVES(ng)%dtifac
           cff1=0.5_r8+Gamma
           cff2=0.5_r8-Gamma
         END IF
@@ -512,9 +513,9 @@
 !  Time-step directional advection.
 !
         IF (iic(ng).eq.ntfirst(ng)) THEN
-          cff=0.5_r8*dt(ng)
+          cff=0.5_r8*dt(ng)*WAVES(ng)%dtifac
         ELSE
-          cff=(1.0_r8-Gamma)*dt(ng)
+          cff=(1.0_r8-Gamma)*dt(ng)*WAVES(ng)%dtifac
         END IF
         DO d=1,ND
           DO i=Istr,Iend

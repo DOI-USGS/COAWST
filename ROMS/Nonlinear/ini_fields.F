@@ -974,7 +974,8 @@
 # endif
 # ifdef WET_DRY
             IF (cff1.le.(Dcrit(ng)-h(i,j))) THEN
-              cff1=Dcrit(ng)-h(i,j)
+!jcw          cff1=Dcrit(ng)-h(i,j)
+              cff1=0.95_r8*Dcrit(ng)-h(i,j)
 !!            rmask_wet(i,j)=0.0_r8
 !!          ELSE
 !!            rmask_wet(i,j)=1.0_r8*rmask(i,j)

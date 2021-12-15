@@ -88,6 +88,7 @@
       USE mod_param
       USE mod_scalars
       USE mod_inwave_params
+      USE mod_inwave_swan
       USE bc_3d_mod
       USE exchange_3d_mod
       USE kwc3dbc_mod
@@ -152,7 +153,8 @@
 
       real(r8) :: alfa_wave, kx, ky, cff, cff1, cff2
       real(r8) :: crk, crx, cry, kh, S
-      real(r8), parameter :: kwc_max = 10.0_r8
+!     real(r8), parameter :: kwc_max = 10.0_r8
+      real(r8), parameter :: kwc_max = 1.0_r8
       real(r8), parameter :: kwc_min = 0.015_r8
       real(r8), parameter :: eps = 1.0e-10_r8
 
@@ -208,7 +210,7 @@
 !
 !  Time-step horizontal advection.
 !
-        cff=dt(ng)
+        cff=dt(ng)*WAVES(ng)%dtifac
         DO j=Jstr,Jend
           DO i=Istr,Iend
             kwc(i,j,d)=kwc(i,j,d)-                                      &
