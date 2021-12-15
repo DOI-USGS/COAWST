@@ -93,6 +93,7 @@
 !
       USE mod_param
       USE mod_inwave_params
+      USE mod_inwave_swan
       USE mod_boundary
       USE mod_grid
       USE mod_scalars
@@ -154,7 +155,7 @@
 !
       integer :: i, j, d
       real(r8) :: EW, oEW, TRM, H, Qb, Hmax_r, diff, Emax_r
-      real(r8) :: twopi, otwopi, ogrho0, cff
+      real(r8) :: twopi, otwopi, ogrho0, cff, orho0, fac
 #  ifdef WDISS_FRIC
       real(r8) :: gamma, kd, dissfric
       real(r8), parameter :: eps=1.0e-08_r8
@@ -172,6 +173,8 @@
       twopi=2.0_r8*pi
       otwopi=1.0_r8/twopi
       ogrho0=1.0_r8/(g*rho0)
+      orho0=1.0_r8/rho0
+      fac=1.0_r8/(dt(ng)*WAVES(ng)%dtifac)
 !
       DO j=Jstr,Jend
         DO i=Istr,Iend
@@ -223,7 +226,8 @@
             Hmax_r=breakr*(MAX(h_tot(i,j),0.0_r8))
             Qb=MIN(1.0_r8,1.0_r8-EXP(-(H/Hmax_r)**n_r))
             IF (TRM.gt.0.0001_r8) THEN
-            Dissbreak(i,j)=2.0_r8*alfa/TRM*EW*Qb*dt(ng)*WAVES(ng)%dtifac
+              Dissip_break(i,j)=2.0_r8*alfa/TRM*EW*Qb*dt(ng)*           &
+     &                          WAVES(ng)%dtifac
             ELSE
               Dissip_break(i,j)=0.0_r8
             END IF
@@ -275,7 +279,7 @@
 #  endif
           ENDDO
           Dissip_wcap(i,j)=0.0_r8
-          Dissip_break(i,j)=Dissbreak(i,j)/(dt(ng)*WAVES(ng)%dtifac*rho0)
+          Dissip_break(i,j)=Dissip_break(i,j)*orho0*fac
         ENDDO
       ENDDO
 !

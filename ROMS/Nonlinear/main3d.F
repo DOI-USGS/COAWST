@@ -74,7 +74,7 @@
       USE ini_fields_mod,       ONLY : ini_fields, ini_zeta
 #ifdef INWAVE_MODEL
       USE driver_inwave_mod,    ONLY : inwave_run
-      USE mod_inwave_swan,      ONLY : dtifac
+      USE mod_inwave_swan
 #endif
 # ifdef LMD_MIXING
       USE lmd_vmix_mod,         ONLY : lmd_vmix
@@ -358,9 +358,9 @@
 !-----------------------------------------------------------------------
 !  Couple ocean to infragravity wave model grids.
 !-----------------------------------------------------------------------
-            DO instep=1,INT(1.0_r8/WAVES(ng)%dtifac)
-              DO ig=1,GridsInLayer(nl)
-                ng=GridNumber(ig,nl)
+            DO ig=1,GridsInLayer(nl)
+              ng=GridNumber(ig,nl)
+              DO instep=1,INT(1.0_r8/WAVES(ng)%dtifac)
                 DO tile=first_tile(ng),last_tile(ng),+1
                   CALL inwave_run (ng, tile)
                 END DO
