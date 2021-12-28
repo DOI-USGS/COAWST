@@ -341,7 +341,7 @@
         WAVES(ng)%fmin=WAVES(ng)%df
         WAVES(ng)%nfreq=WAVES(ng)%Insteps/2                     !-1
         WAVES(ng)%fmax=REAL(WAVES(ng)%nfreq,r8)*WAVES(ng)%df
-        WAVES(ng)%dtifac=1.0_r8/5.0_r8
+        WAVES(ng)%dtifac=1.0_r8/1.0_r8
 # else
 ! old way
         WAVES(ng)%nfreq=200
@@ -717,7 +717,7 @@
       DO ff=1,WAVES(ng)%nfreq
         cff=0.0_r8
         DO dd=1,WAVES(ng)%ndir
-          cff=cff+(WAVES(ng)%SD(ff,dd)*cff2)
+          cff=cff+WAVES(ng)%SD(ff,dd)*cff2
         END DO
         WAVES(ng)%amp(ff)= sqrt(2.0_r8*cff*cff1)
       END DO
@@ -790,7 +790,7 @@
       integer                         :: ff, dd, my_rank
       integer                         :: is, jcenter
       integer                         :: Npts, p1
-      real(r8)                        :: x_mid, y_mid
+      real(r8)                        :: x_mid, y_mid, cff
       real(r8), allocatable           :: dist_local(:)
 
       real(r8), dimension((Lm(ng)+2)*(Mm(ng)+2)) :: Awrk
@@ -992,9 +992,14 @@
         DO j=1,Mm(ng)+1
 !         WAVES(ng)%dist_x(j)=xr_local(is,j)-xr_local(is,jcenter)
 !         WAVES(ng)%dist_y(j)=yr_local(is,j)-yr_local(is,jcenter)
-          WAVES(ng)%dist_x(j)=0.0_r8
+!         WAVES(ng)%dist_x(j)=0.0_r8
+!         WAVES(ng)%dist_y(j)=WAVES(ng)%dist_y(j-1)+                    &
+!     &                        1.0_r8/pn_local(is,j)
+          cff=0.5_r8*(1.0_r8/pn_local(is,j)+1.0_r8/pn_local(is,j-1))
+          WAVES(ng)%dist_x(j)=WAVES(ng)%dist_x(j-1)-                    &
+     &                        cff*sin(angle_local(is,j))
           WAVES(ng)%dist_y(j)=WAVES(ng)%dist_y(j-1)+                    &
-     &                        1.0_r8/pn_local(is,j)
+     &                        cff*cos(angle_local(is,j))
         END DO
 !try a new method here
         WAVES(ng)%dist_xy(0)=0.0_r8
@@ -1061,9 +1066,14 @@
         DO i=1,Lm(ng)+1
 !         WAVES(ng)%dist_x(i)=xr_local(i,is)-xr_local(jcenter,is)
 !         WAVES(ng)%dist_y(i)=yr_local(i,is)-yr_local(jcenter,is)
+!         WAVES(ng)%dist_x(i)=WAVES(ng)%dist_x(i-1)+                    &
+!    &                        1.0_r8/pm_local(i,is)
+!         WAVES(ng)%dist_y(i)=0.0_r8
+          cff=0.5_r8*(1.0_r8/pm_local(i,is)+1.0_r8/pm_local(i-1,is))
           WAVES(ng)%dist_x(i)=WAVES(ng)%dist_x(i-1)+                    &
-     &                        1.0_r8/pm_local(i,is)
-          WAVES(ng)%dist_y(i)=0.0_r8
+     &                        cff*cos(angle_local(i,is))
+          WAVES(ng)%dist_y(i)=WAVES(ng)%dist_y(i-1)+                    &
+     &                        cff*sin(angle_local(i,is))
         END DO
 !try a new method here
         WAVES(ng)%dist_xy(0)=0.0_r8
@@ -1455,7 +1465,6 @@
 !  Loop over all frequencies
 !
         DO ff=1,nfreq
-!jcw      DO ff=18,900
           DO i=SstrR,SendR
 !
 !  If DOUBLESUM, double summation loop over all directions.
@@ -1472,8 +1481,9 @@
                                          ! distx disty and angle_edge
 #  endif
 
-                DIR3=1.5_r8*pi-WAVES(ng)%dir(dd)-                       &
-     &                         WAVES(ng)%angle_edge(ii)
+!               DIR3=1.5_r8*pi-WAVES(ng)%dir(dd)-                       &
+!    &                         WAVES(ng)%angle_edge(ii)
+                DIR3=1.5_r8*pi-WAVES(ng)%dir(dd)
 !
                 kwx=waven(ff)*cos(DIR3)
                 kwy=waven(ff)*sin(DIR3)
@@ -1507,7 +1517,13 @@
 #  ifdef DHILBERT
 !  Maintain the directional distribution
 !
+#   ifdef HSCALE
+        allocate(Hsig_check(SstrR:SendR))
+#   endif
         DO i=SstrR,SendR
+#   ifdef HSCALE
+          cff=0.0_r8
+#   endif
           DO dd=1,ndir
             DO tidx=1,Insteps
               WAVES(ng)%Ampzeta_tot(tidx)=WAVES(ng)%Ampzeta(i,tidx,dd)
@@ -1517,8 +1533,14 @@
             DO tidx=1,Insteps
               cff1=(ABS(WAVES(ng)%Ampzeta_tot(tidx)))**2
               WAVES(ng)%Ampzeta(i,tidx,dd)=0.5_r8*cff1*g*rho0
+#   ifdef HSCALE
+              cff=cff+cff1
+#   endif
             END DO
           END DO
+#   ifdef HSCALE
+          Hsig_check(i)=4.0_r8*sqrt(cff/Insteps)
+#   endif
         END DO
 #  elif defined IHILBERT
 !  Integrated 
@@ -1557,7 +1579,8 @@
 #   endif
         END DO
 !
-#   ifdef HSCALE
+#  endif
+#  ifdef HSCALE
 !
 !  Scale energy so the time-averaged Hm0 is equivalent to SWAN spectra 
 !
@@ -1571,7 +1594,6 @@
           END DO
         END DO
         deallocate(Hsig_check)
-#   endif
 #  endif
 #  ifdef SINGLESUM
         deallocate(SDD_cumul)
@@ -1716,7 +1738,6 @@
 
       real(r8), parameter :: maxErr = 0.1_r8
       real(r8), parameter :: eps = 1.0E-10_r8
-      real(r8), parameter :: fcutoff = 1.0_r8/30.0_r8
 
 # include "set_bounds.h"
       twopi=2.0_r8*pi
@@ -1913,20 +1934,21 @@
 !     &             waven(1:nf-f1)*cos(WAVEG(ng)%wd(                     &
 !     &                               dir_3_int(1:nf-f1))))
           bw_ang(f1,1:nf-f1)=atan2(                                      &
-     &             waven(f1+1:nf)*sin(WAVES(ng)%dir(                     &
+     &             waven(f1+1:nf)*sin(1.5_r8*pi-WAVES(ng)%dir(           &
      &                               dir_3_int(f1+1:nf)))-               &
-     &             waven(1:nf-f1)*sin(WAVES(ng)%dir(                     &
+     &             waven(1:nf-f1)*sin(1.5_r8*pi-WAVES(ng)%dir(           &
      &                               dir_3_int(1:nf-f1))),               &
-     &             waven(f1+1:nf)*cos(WAVES(ng)%dir(                     &
+     &             waven(f1+1:nf)*cos(1.5_r8*pi-WAVES(ng)%dir(           &
      &                               dir_3_int(f1+1:nf)))-               &
-     &             waven(1:nf-f1)*cos(WAVES(ng)%dir(                     &
+     &             waven(1:nf-f1)*cos(1.5_r8*pi-WAVES(ng)%dir(           &
      &                               dir_3_int(1:nf-f1))))
 !
 !  Compute wave numbers in x and y
 !  The 1.5pi is beasue dir angles are nautical conv, from the direction.
 !
-          k3_x(f1,1:nf-f1)=k3(1:nf-f1)*cos(1.5_r8*pi-bw_ang(f1,1:nf-f1))
-          k3_y(f1,1:nf-f1)=k3(1:nf-f1)*sin(1.5_r8*pi-bw_ang(f1,1:nf-f1))
+
+          k3_x(f1,1:nf-f1)=k3(1:nf-f1)*cos(bw_ang(f1,1:nf-f1))
+          k3_y(f1,1:nf-f1)=k3(1:nf-f1)*sin(bw_ang(f1,1:nf-f1))
           cg_3(f1,1:nf-f1)=twopi*deltaf/k3(1:nf-f1)
 !
 !  Compute df*df.  watch minus signs, it is -f1 + f2
@@ -2039,7 +2061,7 @@
           Comptempd=Comptemp*exp(-1.0_r8*CMPLX(0.0_r8,                  &
      &                           k3_y*WAVES(ng)%dist_y(jj)+             &
      &                           k3_x*WAVES(ng)%dist_x(jj)))*           &
-     &                           cg_3*cos(1.5_r8*pi-bw_ang)
+     &                           cg_3*cos(bw_ang)
 !
 !  Determine Fourier coefficients
 !
@@ -2066,7 +2088,8 @@
           Comptempd=Comptemp*exp(-1.0_r8*CMPLX(0.0_r8,                  &
      &                           k3_y*WAVES(ng)%dist_y(jj)+             &
      &                           k3_x*WAVES(ng)%dist_x(jj)))*           &
-     &                           cg_3*sin(1.5_r8*pi-bw_ang)
+     &                           cg_3*sin(bw_ang)
+!          Comptempd=Comptemp
 !
 !  Determine Fourier coefficients
 !

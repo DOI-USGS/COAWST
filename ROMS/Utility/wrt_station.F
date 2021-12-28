@@ -163,6 +163,41 @@
      &                        ncid = STA(ng)%ncid,                      &
      &                        varid = STA(ng)%Vid(idFsur))
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+# ifdef WEC_VF
+        CALL extract_sta2d (ng, iNLM, Cgrid, idWztw, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, OCEAN(ng)%zetaw(:,:),                &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idWztw)), psta,              &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idWztw))
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+        CALL extract_sta2d (ng, iNLM, Cgrid, idWqsp, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, OCEAN(ng)%qsp(:,:),                  &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idWqsp)), psta,              &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idWqsp))
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+        CALL extract_sta2d (ng, iNLM, Cgrid, idWbeh, r2dvar,            &
+     &                      LBi, UBi, LBj, UBj,                         &
+     &                      scale, OCEAN(ng)%bh(:,:),                   &
+     &                      Nstation(ng), Xpos, Ypos, psta)
+        CALL netcdf_put_fvar (ng, iNLM, STA(ng)%name,                   &
+     &                        TRIM(Vname(1,idWbeh)), psta,              &
+     &                        (/1,STA(ng)%Rindex/), (/Nstation(ng),1/), &
+     &                        ncid = STA(ng)%ncid,                      &
+     &                        varid = STA(ng)%Vid(idWbeh))
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+
+# endif
       END IF
 
 # if defined SEDIMENT && defined SED_MORPH

@@ -255,8 +255,60 @@
 # endif
      &                   SetParAccess = .TRUE.)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+# ifdef WEC_VF
+!
+! zetaw
+!
+          Vinfo( 1)=Vname(1,idWztw)
+          Vinfo( 2)=Vname(2,idWztw)
+          Vinfo( 3)=Vname(3,idWztw)
+          Vinfo(14)=Vname(4,idWztw)
+          Vinfo(16)=Vname(1,idtime)
+          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idWztw),   &
+     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
+#  ifdef WET_DRY
+     &                   SetFillVal = .FALSE.,                          &
+#  else
+     &                   SetFillVal = .TRUE.,                           &
+#  endif
+     &                   SetParAccess = .TRUE.)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+! qsp
+!
+          Vinfo( 1)=Vname(1,idWqsp)
+          Vinfo( 2)=Vname(2,idWqsp)
+          Vinfo( 3)=Vname(3,idWqsp)
+          Vinfo(14)=Vname(4,idWqsp)
+          Vinfo(16)=Vname(1,idtime)
+          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idWqsp),   &
+     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
+#  ifdef WET_DRY
+     &                   SetFillVal = .FALSE.,                          &
+#  else
+     &                   SetFillVal = .TRUE.,                           &
+#  endif
+     &                   SetParAccess = .TRUE.)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+! zetaw
+!
+          Vinfo( 1)=Vname(1,idWbeh)
+          Vinfo( 2)=Vname(2,idWbeh)
+          Vinfo( 3)=Vname(3,idWbeh)
+          Vinfo(14)=Vname(4,idWbeh)
+          Vinfo(16)=Vname(1,idtime)
+          status=def_var(ng, iNLM, STA(ng)%ncid, STA(ng)%Vid(idWbeh),   &
+     &                   NF_FOUT, 2, pgrd, Aval, Vinfo, ncname,         &
+#  ifdef WET_DRY
+     &                   SetFillVal = .FALSE.,                          &
+#  else
+     &                   SetFillVal = .TRUE.,                           &
+#  endif
+     &                   SetParAccess = .TRUE.)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+# endif
         END IF
-
 # if defined SEDIMENT && defined SED_MORPH
 !
 !  Define time-varying bathymetry.

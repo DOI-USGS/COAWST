@@ -228,7 +228,9 @@
 !
 !  Solve roller evolution equation for rollA.
 !
-      numits=30
+!     numits=30
+      numits=1
+
       DO it=1,numits
 !
 !  Compute roller breaking source term (Eqn 40) and 
