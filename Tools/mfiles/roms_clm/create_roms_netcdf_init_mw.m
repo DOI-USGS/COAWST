@@ -1,8 +1,10 @@
 function create_roms_netcdf_init_mw(init_file,gn,Nbed,NNS,NCS,NVEG)
 
 %create init file
-nc_init=netcdf.create(init_file,'clobber');
- 
+%nc_init=netcdf.create(init_file,'clobber');
+%nc_init=netcdf.create(init_file,bitor(0,512));   %JBZ update for >2gb files, equivalent to 'clobber' + '64BIT_OFFSET'
+nc_init=netcdf.create(init_file,bitor(0,4096));   %JBZ update for NC4 files, equivalent to 'clobber' + 'NETCDF4'
+
 %% Global attributes:
 
 disp(' ## Defining Global Attributes...')

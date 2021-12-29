@@ -52,7 +52,11 @@ while ttu==1;
         for k=1:tz_levs
             disp(['doing griddata u for HYCOM level ' num2str(k)]);
             tmp=double(squeeze(tmpt(:,:,k)));
-            F = scatteredInterpolant(X(:),Y(:),tmp(:));
+            if (k==1)
+              F = scatteredInterpolant(X(:),Y(:),tmp(:));
+            else
+              F.Values = tmp(:);
+            end
             cff = F(gn.lon_rho,gn.lat_rho);
             clm.u(k,:,:)=maplev(cff);
         end
@@ -80,7 +84,11 @@ while ttv==1;
         for k=1:tz_levs
             disp(['doing griddata v for HYCOM level ' num2str(k)]);
             tmp=double(squeeze(tmpt(:,:,k)));
-            F = scatteredInterpolant(X(:),Y(:),tmp(:));
+            if (k==1)
+              F = scatteredInterpolant(X(:),Y(:),tmp(:));
+            else
+              F.Values = tmp(:);
+            end
             cff = F(gn.lon_rho,gn.lat_rho);
             clm.v(k,:,:)=maplev(cff);
         end
@@ -191,7 +199,11 @@ while ttt==1;
         for k=1:tz_levs
             disp(['doing griddata temp for HYCOM level ' num2str(k)]);
             tmp=double(squeeze(tmpt(:,:,k)));
-            F = scatteredInterpolant(X(:),Y(:),tmp(:));
+            if (k==1)
+              F = scatteredInterpolant(X(:),Y(:),tmp(:));
+            else
+              F.Values = tmp(:);
+            end
             cff = F(gn.lon_rho,gn.lat_rho);
 %           cff(cff<0)=nan;
             clm.temp(k,:,:)=maplev(cff);
@@ -230,7 +242,11 @@ while tts==1;
         for k=1:tz_levs
             disp(['doing griddata salt for HYCOM level ' num2str(k)]);
             tmp=double(squeeze(tmpt(:,:,k)));
-            F = scatteredInterpolant(X(:),Y(:),tmp(:));
+            if (k==1)
+              F = scatteredInterpolant(X(:),Y(:),tmp(:));
+            else
+              F.Values = tmp(:);
+            end
             cff = F(gn.lon_rho,gn.lat_rho);
             cff(cff<0)=nan;
             clm.salt(k,:,:)=maplev(cff);

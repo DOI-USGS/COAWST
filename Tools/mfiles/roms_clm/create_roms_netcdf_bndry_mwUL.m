@@ -24,7 +24,9 @@ function create_roms_netcdf_bndry_mwUL(fn,gn,t_clim)
   s    = gn.N;
 
 %% create bndry file
-nc_bndry=netcdf.create(fn,'clobber');
+%nc_bndry=netcdf.create(fn,'clobber');
+%nc_bndry=netcdf.create(fn,bitor(0,512));   %JBZ update for >2gb files, equivalent to 'clobber' + '64BIT_OFFSET'
+nc_bndry=netcdf.create(fn,bitor(0,4096));   %JBZ update for NC4 files, equivalent to 'clobber' + 'NETCDF4'
 if isempty(nc_bndry), return, end
 
 %% Global attributes:
