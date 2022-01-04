@@ -258,7 +258,7 @@
 # endif
       real(r8), parameter :: ks=0.03_r8
       real(r8), parameter :: awd=1.0_r8
-      real(r8), parameter :: KWDmax=200.0_r8
+      real(r8), parameter :: KWDmax=20.0_r8
       real(r8), parameter :: eps = 1.0E-14_r8
       real(r8), parameter :: kDmax = 5.0_r8
       real(r8), parameter :: Lwave_min = 1.0_r8
@@ -291,7 +291,7 @@
 !  Compute total depth
 !
           Dstp(i,j)=z_w(i,j,N(ng))-z_w(i,j,0)
-          oDstp(i,j)=1.0_r8/Dstp(i,j)
+          oDstp(i,j)=1.0_r8/(Dstp(i,j)+eps)
 !
 !  Compute wave amplitude (0.5*Hrms), wave number, intrinsic frequency.
 !
@@ -299,9 +299,9 @@
           cff=1.5_r8*pi-Dwave(i,j)-angler(i,j)
           wavenx(i,j)=waven(i,j)*COS(cff)
           waveny(i,j)=waven(i,j)*SIN(cff)
-          sigma(i,j)=MIN(SQRT(g*waven(i,j)*TANH(waven(i,j)*Dstp(i,j))), &
-     &                   2.0_r8)
-          osigma(i,j)=1.0_r8/sigma(i,j)
+          sigma(i,j)=MIN(SQRT(g*waven(i,j)*                             &
+     &               TANH(waven(i,j)*Dstp(i,j))+eps),2.0_r8)
+          osigma(i,j)=1.0_r8/(sigma(i,j)+eps)
 !
 !  Compute wave celerity and nonlinear water depth
 !
@@ -316,14 +316,14 @@
           cff=0.25_r8*sqrt2*sigma(i,j)*Hwave(i,j)/                      &
      &        (SINH(kD(i,j))+eps)
           cff1=awd*0.09_r8*ks*(cff/                                     &
-     &         (ks*sigma(i,j)))**0.82_r8
+     &         (ks*sigma(i,j)+eps))**0.82_r8
           KWD(i,j)=MIN(Dstp(i,j)/(cff1+eps),KWDmax)
           DO k=1,N(ng)
             cff2=(z_r(i,j,N(ng))-z_r(i,j,k))*oDstp(i,j)
             owd(i,j)=owd(i,j)+                                          &
      &               Hz(i,j,k)*COSH(KWD(i,j)*cff2)
           END DO
-          owd(i,j)=1.0_r8/owd(i,j)
+          owd(i,j)=1.0_r8/(owd(i,j)+eps)
 !
 !  Wave dissipation rate due to wave bottom drag Reniers et al. (2004b)
 !
@@ -515,19 +515,19 @@
         DO i=IstrU,Iend
           cff=0.5_r8*(Dstp(i,j)+Dstp(i-1,j))
 # ifdef BOTTOM_STREAMING
-          rubst2d(i,j)=rubst2d(i,j)/cff
+          rubst2d(i,j)=rubst2d(i,j)/(cff+eps)
 # endif
 # ifdef SURFACE_STREAMING
-          russt2d(i,j)=russt2d(i,j)/cff
+          russt2d(i,j)=russt2d(i,j)/(cff+eps)
 # endif
 !
           IF (j.ge.JstrV) THEN
             cff=0.5_r8*(Dstp(i,j)+Dstp(i,j-1))
 # ifdef BOTTOM_STREAMING
-            rvbst2d(i,j)=rvbst2d(i,j)/cff
+            rvbst2d(i,j)=rvbst2d(i,j)/(cff+eps)
 # endif
 # ifdef SURFACE_STREAMING
-            rvsst2d(i,j)=rvsst2d(i,j)/cff
+            rvsst2d(i,j)=rvsst2d(i,j)/(cff+eps)
 # endif
           END IF
         END DO

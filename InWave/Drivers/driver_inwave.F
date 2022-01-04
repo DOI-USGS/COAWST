@@ -105,7 +105,7 @@
 !
       integer             :: INTTIM(6)
       integer             :: YYYY, NN, DD, HH, MN, SS
-      real(r8)            :: OceanTime
+      real(dp)            :: OceanTime
 !
 !-----------------------------------------------------------------------
 !  Read in required data, if any, from input NetCDF files.
@@ -118,15 +118,14 @@
         IF(iic(ng).gt.ntstart(ng)) then
           CALL caldate (tdays(ng),yy_i=YYYY,mm_i=NN,dd_i=DD,          &
      &                  h_i=HH,m_i=MN,s_i=SS)
-          INTTIM(1)=YYYY
+          INTTIM(1)=YYYY-2000
           INTTIM(2)=NN
           INTTIM(3)=DD
           INTTIM(4)=HH
           INTTIM(5)=MN
           INTTIM(6)=SS
           OceanTime=DTTIME(INTTIM)
-!         IF ((OceanTime-WAVES(ng)%SpecTime(2)).ge.0.001_r8) THEN
-          IF ((OceanTime-WAVES(ng)%SpecTime(2)).ge.0.003_r8) THEN
+          IF ((OceanTime-WAVES(ng)%SpecTime(2)).ge.1.0_dp) THEN
              CALL inwave_swan_run (ng, 2, tile)
           END IF
         END IF
@@ -304,7 +303,7 @@
 
       IMPLICIT NONE
 
-      real(r8) ::  DTTIME
+      real(dp) ::  DTTIME
 !
       INTEGER INTTIM(6)
 !
@@ -326,16 +325,10 @@
       IF (LEAPYR.AND.INTTIM(2).GT.2) IDNOW=IDNOW+1
       IDNOW = IDNOW + IYEAR*365 + IYRM1/4 - IYRM1/100 + IYRM1/400 + 1
       IF (IYEAR.EQ.0) IDNOW=IDNOW-1
-!      IF (.NOT.LOGREF) THEN
-!        REFDAY = IDNOW
-!        LOGREF = .TRUE.
-!        DTTIME = 0.
-!      ELSE
-!        DTTIME = REAL(IDNOW-REFDAY) * 24.*3600.
-        DTTIME = REAL(IDNOW) * 24.*3600.
-!      ENDIF
-      DTTIME = DTTIME + 3600.*REAL(INTTIM(4)) + 60.*REAL(INTTIM(5)) +   &
-     &                  REAL(INTTIM(6))
+!       DTTIME = REAL(IDNOW-REFDAY) * 24.*3600.
+        DTTIME = REAL(IDNOW,dp) * 24.0_dp*3600.0_dp
+        DTTIME = DTTIME + 3600.0_dp*REAL(INTTIM(4)) +                   &
+     &           60.0_dp*REAL(INTTIM(5)) +  REAL(INTTIM(6),dp)
       RETURN
       END
 

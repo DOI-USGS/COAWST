@@ -43,7 +43,7 @@
 !
       real(r8) :: Ta
       real(r8) :: Amin, Amax
-      real(r8) , parameter :: Ascl=1.0_r8
+      real(dp) , parameter :: Ascl=1.0_dp
 
       integer :: ndims, status
       integer :: Vsize(4)

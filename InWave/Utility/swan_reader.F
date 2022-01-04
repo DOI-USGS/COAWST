@@ -36,7 +36,8 @@
 !
       character(6)          :: rtext
       character(72)         :: rline
-      real(r8)              :: factor, m0, frep, cff, DTTIME
+      real(r8)              :: factor, m0, frep, cff
+      real(dp)              :: DTTIME
       integer               :: nfreq, ndir, switch
       integer               :: i, j, d, inp, min1, min2
       integer               :: nfreqsw, ndirsw
@@ -201,6 +202,7 @@
           IF(rline(41:44).eq.'date') THEN
             read(rline(1:15),*) WAVES(ng)%SpecTimeIso(1)
             read(rline(1:4),'(I4)') INTTIM(1)
+            INTTIM(1)=INTTIM(1)-2000
             read(rline(5:6),'(I2)') INTTIM(2)
             read(rline(7:8),'(I2)') INTTIM(3)
             read(rline(10:11),'(I2)') INTTIM(4)
@@ -211,7 +213,7 @@
 !  Be within 10 seconds.
             CALL caldate (tdays(ng),yy_i=YYYY,mm_i=NN,dd_i=DD,          &
      &                    h_i=HH,m_i=MN,s_i=SS)
-            INTTIM(1)=YYYY
+            INTTIM(1)=YYYY-2000
             INTTIM(2)=NN
             INTTIM(3)=DD
             INTTIM(4)=HH
@@ -275,6 +277,7 @@
         IF(rline(41:44).eq.'date') THEN
           read(rline(1:15),*) WAVES(ng)%SpecTimeIso(2)
           read(rline(1:4),'(I4)') INTTIM(1)
+          INTTIM(1)=INTTIM(1)-2000
           read(rline(5:6),'(I2)') INTTIM(2)
           read(rline(7:8),'(I2)') INTTIM(3)
           read(rline(10:11),'(I2)') INTTIM(4)
@@ -287,7 +290,7 @@
      &                           WAVES(ng)%SpecTime(1)
             j=1
             IF (Master) THEN
-              WRITE(stdout,*) 'Using 2D spec data at ',                 &
+              WRITE(stdout,'(a24,f20.8)') 'Using 2D spec data at ',     &
      &                         WAVES(ng)%SpecTimeIso(1)
             END IF
           ELSE
@@ -295,7 +298,7 @@
 !  Be within 10 seconds.
             CALL caldate (tdays(ng),yy_i=YYYY,mm_i=NN,dd_i=DD,          &
      &                    h_i=HH,m_i=MN,s_i=SS)
-            INTTIM(1)=YYYY
+            INTTIM(1)=YYYY-2000
             INTTIM(2)=NN
             INTTIM(3)=DD
             INTTIM(4)=HH
@@ -322,7 +325,7 @@
                 END DO
                 where (sdsw1 == WAVES(ng)%exc) sdsw1=0.0_r8
                 IF (Master) THEN
-                  WRITE(stdout,*) 'Using 2D spec data at ',             &
+                  WRITE(stdout,'(a24, f20.8)') 'Using 2D spec data at ', &
      &                             WAVES(ng)%SpecTimeIso(2)
                 END IF
 !
@@ -335,6 +338,7 @@
                 IF(rline(41:44).eq.'date') THEN
                   read(rline(1:15),*) WAVES(ng)%SpecTimeIso(2)
                   read(rline(1:4),'(I4)') INTTIM(1)
+                  INTTIM(1)=INTTIM(1)-2000
                   read(rline(5:6),'(I2)') INTTIM(2)
                   read(rline(7:8),'(I2)') INTTIM(3)
                   read(rline(10:11),'(I2)') INTTIM(4)
@@ -460,7 +464,7 @@
 
       IMPLICIT NONE
 
-      real(r8) ::  DTTIME
+      real(dp) ::  DTTIME
 !
       INTEGER INTTIM(6)
 !
@@ -482,15 +486,9 @@
       IF (LEAPYR.AND.INTTIM(2).GT.2) IDNOW=IDNOW+1
       IDNOW = IDNOW + IYEAR*365 + IYRM1/4 - IYRM1/100 + IYRM1/400 + 1
       IF (IYEAR.EQ.0) IDNOW=IDNOW-1
-!      IF (.NOT.LOGREF) THEN
-!        REFDAY = IDNOW
-!        LOGREF = .TRUE.
-!        DTTIME = 0.
-!      ELSE
-!        DTTIME = REAL(IDNOW-REFDAY) * 24.*3600.
-        DTTIME = REAL(IDNOW) * 24.*3600.
-!      ENDIF
-      DTTIME = DTTIME + 3600.*REAL(INTTIM(4)) + 60.*REAL(INTTIM(5)) +   &
-     &                  REAL(INTTIM(6))
+!       DTTIME = REAL(IDNOW-REFDAY) * 24.*3600.
+        DTTIME = REAL(IDNOW,dp) * 24.0_dp*3600.0_dp
+        DTTIME = DTTIME + 3600.0_dp*REAL(INTTIM(4),dp) +                &
+     &           60.0_dp*REAL(INTTIM(5),dp) +  REAL(INTTIM(6),dp)
       RETURN
       END

@@ -906,12 +906,14 @@
 #  ifdef WET_DRY
           evap(i,j)=evap(i,j)*rmask_wet(i,j)
 #  endif
+#  ifdef SALINITY
           stflux(i,j,isalt)=cff*(evap(i,j)-rain(i,j))
-#  ifdef MASKING
+#   ifdef MASKING
           stflux(i,j,isalt)=stflux(i,j,isalt)*rmask(i,j)
-#  endif
-#  ifdef WET_DRY
+#   endif
+#   ifdef WET_DRY
           stflux(i,j,isalt)=stflux(i,j,isalt)*rmask_wet(i,j)
+#   endif
 #  endif
 # endif
         END DO
@@ -964,9 +966,11 @@
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          evap)
+#  ifdef SALINITY
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          stflux(:,:,isalt))
+#  endif
 # endif
         CALL exchange_u2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
@@ -984,12 +988,18 @@
      &                    lrflx, lhflx, shflx,                          &
      &                    stflux(:,:,itemp))
 #  ifdef EMINUSP
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    evap,                                         &
+     &                    evap)
+#   ifdef SALINITY
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    stflux(:,:,isalt))
+#   endif
 #  endif
       CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &

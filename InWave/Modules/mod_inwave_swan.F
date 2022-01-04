@@ -111,9 +111,9 @@
          real(r8)            :: ddir, fp, exc
          real(r8)            :: mainang, hm0gew, dang, integ
          real(r8)            :: df_fft, ampmax
-         real(r8)            :: SpecTimeIso(2)
-         real(r8)            :: SpecTime(2)
-         real(r8)            :: SpecTimedt
+         real(dp)            :: SpecTimeIso(2)
+         real(dp)            :: SpecTime(2)
+         real(dp)            :: SpecTimedt
          real(r8)            :: h0
          real(r8)            :: dtifac
 
@@ -790,6 +790,7 @@
       integer                         :: ff, dd, my_rank
       integer                         :: is, jcenter
       integer                         :: Npts, p1
+      real(dp)                        :: Ascl
       real(r8)                        :: x_mid, y_mid, cff
       real(r8), allocatable           :: dist_local(:)
 
@@ -803,6 +804,7 @@
       real(r8), dimension(0:(Lm(ng)+1),0:(Mm(ng)+1)) :: angle_local
 
 # include "set_bounds.h"
+      Ascl=1.0_dp
 !
 !  Gather the depth and zeta to determine total depth at boundary point.
 !
@@ -820,7 +822,7 @@
 
 # ifdef DISTRIBUTE
       CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                   &
-     &                  0, r2dvar, 1.0_r8,                              &
+     &                  0, r2dvar, Ascl,                                &
 #  ifdef MASKING
      &                  GRID(ng) % rmask,                               &
 #  endif
@@ -835,7 +837,7 @@
       END DO
 !
       CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                   &
-     &                  0, r2dvar, 1.0_r8,                              &
+     &                  0, r2dvar, Ascl,                                &
 #  ifdef MASKING
      &                  GRID(ng) % rmask,                               &
 #  endif
@@ -850,7 +852,7 @@
       END DO
 !
       CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                   &
-     &                  0, r2dvar, 1.0_r8,                              &
+     &                  0, r2dvar, Ascl,                                &
 #  ifdef MASKING
      &                  GRID(ng) % rmask,                               &
 #  endif
@@ -865,7 +867,7 @@
       END DO
 !
       CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                   &
-     &                  0, r2dvar, 1.0_r8,                              &
+     &                  0, r2dvar, Ascl,                                &
 #  ifdef MASKING
      &                  GRID(ng) % rmask,                               &
 #  endif
@@ -880,7 +882,7 @@
       END DO
 !
       CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                   &
-     &                  0, r2dvar, 1.0_r8,                              &
+     &                  0, r2dvar, Ascl,                                &
 #  ifdef MASKING
      &                  GRID(ng) % rmask,                               &
 #  endif
@@ -895,7 +897,7 @@
       END DO
 !
       CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                   &
-     &                  0, r2dvar, 1.0_r8,                              &
+     &                  0, r2dvar, Ascl,                                &
 #  ifdef MASKING
      &                  GRID(ng) % rmask,                               &
 #  endif
@@ -910,7 +912,7 @@
       END DO
 !
       CALL mp_gather2d (ng, iNLM, LBi, UBi, LBj, UBj,                   &
-     &                  0, r2dvar, 1.0_r8,                              &
+     &                  0, r2dvar, Ascl,                                &
 #  ifdef MASKING
      &                  GRID(ng) % rmask,                               &
 #  endif

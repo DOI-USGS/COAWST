@@ -85,7 +85,11 @@
 !  defined variable dimensions in output NetCDF files.
 !
 !       integer, parameter :: nDimID = 33
+#ifdef INWAVE_MODEL
+        integer, parameter :: nDimID = 36
+#else
         integer, parameter :: nDimID = 35
+#endif
 !
 !  Input/output grid-type variables.
 !
