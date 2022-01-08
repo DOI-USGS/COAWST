@@ -221,17 +221,17 @@
 !  Local variable declarations.
 !
       integer :: i, j, k
-      real(r8) :: cff, cff2, cff3, cff4, cff5, cff6, cff7
+      real(dp) :: cff, cff2, cff3, cff4, cff5, cff6, cff7
       real(r8) :: fac1, fac2, fac3, ofac3
 # if defined DOPPLER && defined INWAVE_MODEL
       real(r8) :: wdl, theta_cur
 # endif
       real(r8), parameter :: eps = 1.0E-14_r8
-      real(r8), parameter :: kDmax = 200.0_r8
+      real(dp), parameter :: kDmax = 200.0_dp
       real(r8), parameter :: Lwave_min = 1.0_r8
       real(r8), dimension(IminS:ImaxS) :: wrk
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Dstp
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: kD
+      real(dp), dimension(IminS:ImaxS,JminS:JmaxS) :: kD
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wavec
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: waven
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: owaven
@@ -323,9 +323,9 @@
 # endif
             u_stokes(i,j,k)=0.25_r8*cff2*cff4*cff5*fac2/               &
      &                      (fac3*(cff6-cff7))/                        &
-     &                      (SINH(0.5_r8*cff3)**2.0_r8)*               &
-     &                      SINH(0.5_r8*cff3*(cff6-cff7))*             &
-     &                      COSH(0.5_r8*cff3*(cff6+cff7+2.0_r8))
+     &                      (DSINH(0.5_r8*cff3)**2.0_r8)*              &
+     &                      DSINH(0.5_r8*cff3*(cff6-cff7))*            &
+     &                      DCOSH(0.5_r8*cff3*(cff6+cff7+2.0_r8))
 # ifdef MASKING
             u_stokes(i,j,k)=u_stokes(i,j,k)*umask(i,j)
 # endif
@@ -375,9 +375,9 @@
 # endif
             v_stokes(i,j,k)=0.25_r8*cff2*cff4*cff5*fac2/                &
      &                      (fac3*(cff6-cff7))/                         &
-     &                      (SINH(0.5_r8*cff3)**2.0_r8)*                &
-     &                      SINH(0.5_r8*cff3*(cff6-cff7))*              &
-     &                      COSH(0.5_r8*cff3*(cff6+cff7+2.0_r8))
+     &                      (DSINH(0.5_r8*cff3)**2.0_r8)*               &
+     &                      DSINH(0.5_r8*cff3*(cff6-cff7))*             &
+     &                      DCOSH(0.5_r8*cff3*(cff6+cff7+2.0_r8))
 # ifdef MASKING
             v_stokes(i,j,k)=v_stokes(i,j,k)*vmask(i,j)
 # endif
