@@ -1106,6 +1106,15 @@
   'w3dvar'
   1.0d0
 
+'AKr'                                              ! Input/Output
+  'salinity mixing vertical diffusion coefficient'
+  'tracer2 second-1'                               ! [trac2/s]
+  'AKr, scalar, series'
+  'ocean_time'
+  'idRdif'
+  'w3dvar'
+  1.0d0
+
 'ghat_temp'                                        ! Input/Output
   'potential temperature nonlocal transport'
   'nondimensional'                                 ! [nondimensional]
