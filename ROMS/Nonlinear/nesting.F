@@ -3654,6 +3654,7 @@
      &                          GRID(dg)%on_v,                          &
      &                          GRID(rg)%pm,                            &
      &                          GRID(rg)%pn,                            &
+     &                          GRID(rg)%h,                             &
 # ifdef MASKING
      &                          GRID(dg)%vmask_full,                    &
      &                          GRID(rg)%vmask_full,                    &
