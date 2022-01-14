@@ -3585,6 +3585,7 @@
      &                          GRID(dg)%on_r,                          &
      &                          GRID(rg)%pm,                            &
      &                          GRID(rg)%pn,                            &
+     &                          GRID(rg)%h,                             &
 #  ifdef MASKING
      &                          GRID(dg)%rmask_full,                    &
      &                          GRID(rg)%rmask,                         &
@@ -3604,6 +3605,7 @@
      &                          GRID(dg)%on_r,                          &
      &                          GRID(rg)%pm,                            &
      &                          GRID(rg)%pn,                            &
+     &                          GRID(rg)%h,                             &
 #  ifdef MASKING
 !    &                          GRID(dg)%rmask_full,                    &
 !    &                          GRID(rg)%rmask_full,                    &
@@ -3628,6 +3630,7 @@
      &                          GRID(dg)%on_u,                          &
      &                          GRID(rg)%pm,                            &
      &                          GRID(rg)%pn,                            &
+     &                          GRID(rg)%h,                             &
 # ifdef MASKING
      &                          GRID(dg)%umask_full,                    &
      &                          GRID(rg)%umask_full,                    &
@@ -3848,7 +3851,7 @@
 # else
      &                          dxF, dyF,                               &
 # endif
-     &                          pmC, pnC,                               &
+     &                          pmC, pnC, hhC,                          &
 # ifdef MASKING
 #  ifdef DISTRIBUTE
      &                          Amsk,                                   &
@@ -3900,6 +3903,7 @@
 # endif
 !     pmC        Coarser grid, inverse X-grid spacing (1/dx) at RHO    !
 !     pnC        Coarser grid, inverse Y-grid spacing (1/dy) at RHO    !
+!     hhC        Coarser grid, bathymetry at RHO                       !
 # ifdef MASKING
 #  ifdef DISTRIBUTE
 !     Amsk       Finer grid land/sea masking (2D array)                !
@@ -3948,6 +3952,7 @@
 # ifdef ASSUMED_SHAPE
       real(r8), intent(in) :: pmC(LBiC:,LBjC:)
       real(r8), intent(in) :: pnC(LBiC:,LBjC:)
+      real(r8), intent(in) :: hhC(LBiC:,LBjC:)
 #  ifdef MASKING
       real(r8), intent(in) :: Cmsk(LBiC:,LBjC:)
 #   ifdef DISTRIBUTE
@@ -3970,6 +3975,7 @@
 # else
       real(r8), intent(in) :: pmC(LBiC:UBiC,LBjC:UBjC)
       real(r8), intent(in) :: pnC(LBiC:UBiC,LBjC:UBjC)
+      real(r8), intent(in) :: hhC(LBiC:UBiC,LBjC:UBjC)
 #  ifdef MASKING
       real(r8), intent(in) :: Cmsk(LBiC:UBiC,LBjC:UBjC)
 #   ifdef DISTRIBUTE
@@ -4159,16 +4165,23 @@
               END DO
             END DO
 !jcw        IF (my_count.gt.0.0_r8) my_avg=my_sum/my_count
-            IF (my_count.gt.0.0_r8) THEN
-              my_avg=my_sum/my_count
-            ELSE
-              IF (gtype.eq.r2dvar) THEN
-                my_avg=C1(Ic,Jc)
-              END IF
-            END IF
+            IF (my_count.gt.0.0_r8) my_avg=my_sum/my_count
+!            IF (my_count.gt.0.0_r8) THEN
+!              my_avg=my_sum/my_count
+!            ELSE
+!              IF (gtype.eq.r2dvar) THEN
+!                my_avg=C1(Ic,Jc)
+!              END IF
+!            END IF
 # ifdef MASKING
             my_avg=my_avg*Cmsk(Ic,Jc)
 # endif
+            IF (gtype.eq.r2dvar) THEN
+              IF (my_avg.le.(Dcrit(ng)-hhC(Ic,Jc))) THEN
+                my_avg=Dcrit(ng)-hhC(Ic,Jc)
+              END IF
+            END IF
+!
             C1(Ic,Jc)=my_avg
             IF (PRESENT(C2)) THEN
               C2(Ic,Jc)=my_avg
