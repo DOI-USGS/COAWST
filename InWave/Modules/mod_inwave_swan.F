@@ -148,6 +148,9 @@
          real(r8), pointer :: dist_xy(:)
          real(r8), pointer :: angle_edge(:)
          real(r8), pointer :: waven(:)
+#  ifdef HSCALE
+         real(r8), pointer :: Hsig_check(:)
+#  endif
 
         END TYPE SHORT_WAVE
 
@@ -1084,7 +1087,30 @@
      &                               (yr_local(i,is)-yr_local(0,is))**2)
         END DO
       END IF
-
+# ifdef HSCALE
+!
+!  if hsig check is on, then we need to allocate array for the entire
+!  side of that grid.
+!
+      IF (LBC(iwest,isAC3d,ng)%acquire.or.                              &
+     &    LBC(ieast,isAC3d,ng)%acquire) THEN
+        IF (first.eq.1) THEN
+          allocate(WAVES(ng)%Hsig_check(0:Mm(ng)+1))
+        END IF
+        DO j=0,Mm(ng)+1
+          WAVES(ng)%Hsig_check(j)=0.0_r8
+        END DO
+      END IF
+      IF (LBC(isouth,isAC3d,ng)%acquire.or.                             &
+     &    LBC(inorth,isAC3d,ng)%acquire) THEN
+        IF (first.eq.1) THEN
+          allocate(WAVES(ng)%Hsig_check(0:Lm(ng)+1))
+        END IF
+        DO i=0,Lm(ng)+1
+          WAVES(ng)%Hsig_check(i)=0.0_r8
+        END DO
+      END IF
+# endif
       RETURN
       END SUBROUTINE grid_metrics_tile
 !
@@ -1264,6 +1290,7 @@
       USE mod_ocean
 #  ifdef DISTRIBUTE
       USE distribute_mod, ONLY : mp_bcastf, mp_gather2d
+      USE distribute_mod, ONLY : mp_assemble
 #  endif
 !
       implicit none
@@ -1316,7 +1343,7 @@
 !  Local variable declarations.
 !
       integer                         :: i, ii, j, k, m, tidx, nn
-      integer                         :: ff, dd, MyError
+      integer                         :: ff, dd, MyError, Npts
       integer                         :: index1, index2, numdirs
       real(r8)                        :: cff, cff1, cff2, DIR3, kwx, kwy
       real(r8)                        :: twopi, otwopi, x, cff3, kedge
@@ -1330,9 +1357,9 @@
 #  elif defined FCDF
       real(r8), allocatable           :: SDD_cumul(:,:)
 #  endif
-#  ifdef HSCALE
-      real(r8), allocatable           :: Hsig_check(:)
-#  endif
+!#  ifdef HSCALE
+!      real(r8), allocatable           :: Hsig_check(:)
+!#  endif
       real(r8), allocatable           :: atemp(:)
 
       real(r8), parameter :: maxErr = 0.1_r8
@@ -1467,6 +1494,7 @@
 !  Loop over all frequencies
 !
         DO ff=1,nfreq
+!       DO ff=18,900
           DO i=SstrR,SendR
 !
 !  If DOUBLESUM, double summation loop over all directions.
@@ -1519,9 +1547,6 @@
 #  ifdef DHILBERT
 !  Maintain the directional distribution
 !
-#   ifdef HSCALE
-        allocate(Hsig_check(SstrR:SendR))
-#   endif
         DO i=SstrR,SendR
 #   ifdef HSCALE
           cff=0.0_r8
@@ -1533,23 +1558,20 @@
             call hilbert(WAVES(ng)%Ampzeta_tot,                         &
      &                   size(WAVES(ng)%Ampzeta_tot))
             DO tidx=1,Insteps
-              cff1=(ABS(WAVES(ng)%Ampzeta_tot(tidx)))**2
-              WAVES(ng)%Ampzeta(i,tidx,dd)=0.5_r8*cff1*g*rho0
+              cff1=0.5_r8*(ABS(WAVES(ng)%Ampzeta_tot(tidx)))**2
+              WAVES(ng)%Ampzeta(i,tidx,dd)=cff1*g*rho0
 #   ifdef HSCALE
               cff=cff+cff1
 #   endif
             END DO
           END DO
 #   ifdef HSCALE
-          Hsig_check(i)=4.0_r8*sqrt(cff/Insteps)
+          WAVES(ng)%Hsig_check(i)=4.0_r8*sqrt(cff/Insteps)
 #   endif
         END DO
 #  elif defined IHILBERT
 !  Integrated 
 !
-#   ifdef HSCALE
-        allocate(Hsig_check(SstrR:SendR))
-#   endif
         DO i=SstrR,SendR
           DO tidx=1,Insteps
             WAVES(ng)%Ampzeta_tot(tidx)=0.0_r8
@@ -1569,25 +1591,50 @@
           DO dd=1,ndir
             cff2=SDD(dd)/WAVES(ng)%integ
             DO tidx=1,Insteps
-              cff1=((ABS(WAVES(ng)%Ampzeta_tot(tidx)))**2)*cff2     
-              WAVES(ng)%Ampzeta(i,tidx,dd)=0.5_r8*cff1*g*rho0
+              cff1=0.5_r8*((ABS(WAVES(ng)%Ampzeta_tot(tidx)))**2)*cff2     
+              WAVES(ng)%Ampzeta(i,tidx,dd)=cff1*g*rho0
 #   ifdef HSCALE
               cff=cff+cff1
 #   endif
             END DO
           END DO
 #   ifdef HSCALE
-          Hsig_check(i)=4.0_r8*sqrt(cff/Insteps)
+          WAVES(ng)%Hsig_check(i)=4.0_r8*sqrt(cff/Insteps)
 #   endif
         END DO
 !
 #  endif
+#  ifdef SINGLESUM
+        deallocate(SDD_cumul)
+#  endif
+      END IF
 #  ifdef HSCALE
+!
+!  mp scatter the hsig check to all nodes
+!
+#   ifdef DISTRIBUTE
+      Npts=size(WAVES(ng)%Hsig_check)
+      CALL MP_ASSEMBLE(ng, 1, Npts, 0.0_r8, WAVES(ng)%Hsig_check)
+!     IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+#   endif
+      IF (  ((LBC(iwest,isAC3d,ng)%acquire).and.                        &
+     &       (DOMAIN(ng)%Western_Edge(tile)) ).or.                      &
+     &      ((LBC(ieast,isAC3d,ng)%acquire).and.                        &
+     &       (DOMAIN(ng)%Eastern_Edge(tile))).or.                       &
+     &      ((LBC(isouth,isAC3d,ng)%acquire).and.                       &
+     &       (DOMAIN(ng)%Southern_Edge(tile))).or.                      &
+     &      ((LBC(inorth,isAC3d,ng)%acquire).and.                       &
+     &       (DOMAIN(ng)%Northern_Edge(tile)))) THEN
+
 !
 !  Scale energy so the time-averaged Hm0 is equivalent to SWAN spectra 
 !
+        cff=0.0_r8
+        DO i=0,Npts-1
+          cff=cff+WAVES(ng)%Hsig_check(i)
+        END DO
+        cff=WAVES(ng)%hm0gew/(cff/REAL(Npts,r8))
         DO i=SstrR,SendR
-          cff=WAVES(ng)%hm0gew/Hsig_check(i)
           DO dd=1,ndir
             DO tidx=1,Insteps
               WAVES(ng)%Ampzeta(i,tidx,dd)=                             &
@@ -1595,12 +1642,8 @@
             END DO
           END DO
         END DO
-        deallocate(Hsig_check)
-#  endif
-#  ifdef SINGLESUM
-        deallocate(SDD_cumul)
-#  endif
       END IF
+#  endif
       RETURN
       END SUBROUTINE FourierComp_tile
 
