@@ -403,10 +403,10 @@
         DO j=Jstrm1,Jendp1
           DO i=Istrm1,Iendp1
 !
-            Hs=Hwave(i,j)                       ! (m)
-            depth=h(i,j)+zeta(i,j,1)            ! (m)
-            Td=MAX(Pwave_bot(i,j),1.0_r8)       ! (s)
-            urms=Uwave_rms(i,j)                 ! (m/s)
+            Hs=Hwave(i,j)                             ! (m)
+            depth=MAX(h(i,j)+zeta(i,j,1),Dcrit(ng))   ! (m)
+            Td=MAX(Pwave_bot(i,j),1.0_r8)             ! (s)
+            urms=Uwave_rms(i,j)                       ! (m/s)
             phi_curwave=phi_wc(i,j)
 ! 
 ! Compute magnitude of stress for computing current velocity 
