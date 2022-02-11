@@ -365,7 +365,8 @@
 ! Compute bottom streaming based acceleration terms
 !
       K_LOOP : DO k=1,N(ng)
-# ifdef BOTTOM_STREAMING_YU
+# ifdef BOTTOM_STREAMING
+#  ifdef BOTTOM_STREAMING_YU
         DO j=Jstr-1,Jend+1
           DO i=Istr-1,Iend+1
             fac2=(z_r(i,j,N(ng))-z_r(i,j,k))*oDstp(i,j)
@@ -375,8 +376,8 @@
             BWDYL(i,j)=cff2*cff3*waveny(i,j)*owd(i,j)
           END DO
         END DO
-# endif
-# ifdef BOTTOM_STREAMING_XU_BOWEN
+#  endif
+#  ifdef BOTTOM_STREAMING_XU_BOWEN
         DO j=Jstr-1,Jend+1
           DO i=Istr-1,Iend+1
             fac2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)
@@ -417,15 +418,15 @@
 !          END DO
 !        END DO
 
-# endif
-# if defined VEGETATION && defined VEG_STREAMING
+#  endif
+#  if defined VEGETATION && defined VEG_STREAMING
         DO j=Jstr-1,Jend+1
           DO i=Istr-1,Iend+1
             BWDXL(i,j)=BWDXL_veg(i,j,k)
             BWDYL(i,j)=BWDYL_veg(i,j,k)
           END DO
         END DO
-# endif
+#  endif
 !
 ! Compute contribution to U-momentum
 ! 
@@ -437,9 +438,9 @@
      &                  BWDXL(i-1,j)*Hz(i-1,j,k))
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff
             rubst2d(i,j)=rubst2d(i,j)+cff*cff1*om_u(i,j)*on_u(i,j)
-# ifdef DIAGNOSTICS_UV
+#  ifdef DIAGNOSTICS_UV
             DiaRU(i,j,k,nrhs,M3bstm)=cff*om_u(i,j)*on_u(i,j)
-# endif
+#  endif
           END DO
         END DO
 !
@@ -453,11 +454,12 @@
      &                  BWDYL(i,j-1)*Hz(i,j-1,k))
             rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
             rvbst2d(i,j)=rvbst2d(i,j)+cff*cff1*om_v(i,j)*on_v(i,j)
-# ifdef DIAGNOSTICS_UV
+#  ifdef DIAGNOSTICS_UV
             DiaRV(i,j,k,nrhs,M3bstm)=cff*om_v(i,j)*on_v(i,j)
-# endif
+#  endif
           END DO
         END DO
+# endif
 !
 # ifdef SURFACE_STREAMING
 !
