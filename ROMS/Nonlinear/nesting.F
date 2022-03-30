@@ -1,4 +1,5 @@
 #include "cppdefs.h"
+#undef REFINE_BOUNDARY
       MODULE nesting_mod
 
 #ifdef NESTING
@@ -1328,11 +1329,6 @@
 !
 !  Linear interpolation weights.
 !
-!
-!             MaskLWsum=GRID(dg)%rmask_full(Idg  ,Jdg  )+               &
-!    &                  GRID(dg)%rmask_full(Idgp1,Jdg  )+               &
-!    &                  GRID(dg)%rmask_full(Idgp1,Jdgp1)+               &
-!    &                  GRID(dg)%rmask_full(Idg  ,Jdgp1)
               MaskLWsum=GRID(dg)%rmask(Idg  ,Jdg  )+                    &
      &                  GRID(dg)%rmask(Idgp1,Jdg  )+                    &
      &                  GRID(dg)%rmask(Idgp1,Jdgp1)+                    &
@@ -3589,8 +3585,6 @@
 #  ifdef MASKING
      &                          GRID(dg)%rmask_full,                    &
      &                          GRID(rg)%rmask,                         &
-!jcw     &                          GRID(dg)%rmask,                         &
-!jcw     &                          GRID(rg)%rmask,                         &
 #  endif
      &                          COUPLING(dg)%Zt_avg1,                   &
      &                          COUPLING(rg)%Zt_avg1)
@@ -3607,8 +3601,6 @@
      &                          GRID(rg)%pn,                            &
      &                          GRID(rg)%h,                             &
 #  ifdef MASKING
-!    &                          GRID(dg)%rmask_full,                    &
-!    &                          GRID(rg)%rmask_full,                    &
      &                          GRID(dg)%rmask,                         &
      &                          GRID(rg)%rmask,                         &
 #  endif
@@ -3691,11 +3683,8 @@
      &                            GRID(rg)%pm,                          &
      &                            GRID(rg)%pn,                          &
 #  ifdef MASKING
-!jcw
      &                            GRID(dg)%rmask_full,                  &
      &                            GRID(rg)%rmask,                       &
-!    &                            GRID(dg)%rmask,                       &
-!    &                            GRID(rg)%rmask,                       &
 #  endif
      &                            OCEAN(dg)%t(:,:,:,Dindex3d,itrc),     &
      &                            OCEAN(rg)%t(:,:,:,Rindex3d,itrc))
@@ -4165,15 +4154,7 @@
 # endif
               END DO
             END DO
-!jcw        IF (my_count.gt.0.0_r8) my_avg=my_sum/my_count
             IF (my_count.gt.0.0_r8) my_avg=my_sum/my_count
-!            IF (my_count.gt.0.0_r8) THEN
-!              my_avg=my_sum/my_count
-!            ELSE
-!              IF (gtype.eq.r2dvar) THEN
-!                my_avg=C1(Ic,Jc)
-!              END IF
-!            END IF
 # ifdef MASKING
             my_avg=my_avg*Cmsk(Ic,Jc)
 # endif
@@ -4190,6 +4171,7 @@
           END IF
         END DO
       END IF
+# ifdef REFINE_BOUNDARY
 !
 !-----------------------------------------------------------------------
 !  Average finer grid BOUNDARY data to coarse grid U-type and V-type
@@ -4303,7 +4285,7 @@
           END IF
         END DO
       END IF
-
+# endif
 # ifdef DISTRIBUTE
 !
 !  Deallocate work array.
@@ -4655,14 +4637,7 @@
 #  endif
                 END DO
               END DO
-!jcw          IF (my_count.gt.0.0_r8) my_avg=my_sum/my_count
-              IF (my_count.gt.0.0_r8) THEN
-                my_avg=my_sum/my_count
-              ELSE
-                IF (gtype.eq.r3dvar) THEN
-!                  my_avg=C(Ic,Jc,k)
-                END IF
-              END IF
+              IF (my_count.gt.0.0_r8) my_avg=my_sum/my_count
 #  ifdef MASKING
               my_avg=my_avg*Cmsk(Ic,Jc)
 #  endif
@@ -4671,6 +4646,7 @@
           END DO
         END DO
       END IF
+#  ifdef REFINE_BOUNDARY
 !
 !-----------------------------------------------------------------------
 !  Average finer grid BOUNDARY data to coarse grid U-type and V-type
@@ -4792,7 +4768,7 @@
           END DO
         END DO
       END IF
-
+#  endif
 #  ifdef DISTRIBUTE
 !
 !  Deallocate work array.
