@@ -42,6 +42,10 @@
 # undef SSW_BBL
 # ifdef SSW_BBL
 #  define SSW_CALC_ZNOT
+#  define SSW_LOGINT
+/*  define one of these 2 */
+#  define SSW_LOGINT_WBL
+#  undef  SSW_LOGINT_DIRECT
 #  define ANA_SEDIMENT
 # else
 #  define UV_LOGDRAG
