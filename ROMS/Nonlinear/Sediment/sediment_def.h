@@ -22,7 +22,7 @@
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-
+!
       Vinfo( 1)='newlayer_thick'
       Vinfo( 2)='depositional bed thickness criteria to crate a '//     &
      &          'new layer'
@@ -31,7 +31,14 @@
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-
+!
+      Vinfo( 1)='sg_zwbl'
+      Vinfo( 2)='input elevation to get near-bottom current vel.'
+      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
+     &               1, (/0/), Aval, Vinfo, ncname,                     &
+     &               SetParAccess = .FALSE.)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
 #ifdef BEDLOAD
       Vinfo( 1)='bedload_coeff'
       Vinfo( 2)='bedload transport rate coefficient'
@@ -40,14 +47,6 @@
      &               SetParAccess = .FALSE.)
       IF (FoundError(exit_flag, NoError, __LINE__,                      &
      &               __FILE__)) RETURN
-!
-!# ifdef BEDLOAD_VANDERA
-      Vinfo( 1)='sg_zwbl'
-      Vinfo( 2)='input elevation to get near-bottom current vel.'
-      status=def_var(ng, model, ncid, varid, NF_TYPE,                   &
-     &               1, (/0/), Aval, Vinfo, ncname,                     &
-     &               SetParAccess = .FALSE.)
-      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
       Vinfo( 1)='sedslope_crit_wet'
       Vinfo( 2)='critical wet bed slope for slumping.'
@@ -90,7 +89,6 @@
      &               1, (/0/), Aval, Vinfo, ncname,                     &
      &               SetParAccess = .FALSE.)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-!# endif
 !
 #endif
 !

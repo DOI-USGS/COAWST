@@ -47,7 +47,9 @@
 #ifdef SSW_BBL
 # define SSW_CALC_ZNOT
 # define SSW_LOGINT
-# define SSW_LOGINT_STOKES
+/* define one of these 2 */
+# define SSW_LOGINT_WBL
+# undef  SSW_LOGINT_DIRECT
 #endif
 
 #ifdef SOLVE3D
@@ -62,18 +64,21 @@
 #  define SUSPLOAD
 #  undef  BEDLOAD_SOULSBY
 #  undef  BEDLOAD_MPM
-#  undef  BEDLOAD_VANDERA
+#  define BEDLOAD_VANDERA
 #  ifdef BEDLOAD_VANDERA
-#   define BEDLOAD_VANDERA_STOKES
-#   define BEDLOAD_VANDERA_MADSEN
+/* select any or all of these 3 */
 #   define BEDLOAD_VANDERA_ASYM_LIMITS
 #   define BEDLOAD_VANDERA_SURFACE_WAVE
-#   undef  BEDLOAD_VANDERA_WAVE_AVGD_STRESS
-#   define BEDLOAD_VANDERA_CALC_WBL
+#   define BEDLOAD_VANDERA_WAVE_AVGD_STRESS
+/* define one of these 2 */
+#   define BEDLOAD_VANDERA_MADSEN_UDELTA
 #   undef  BEDLOAD_VANDERA_DIRECT_UDELTA
-#   undef  BEDLOAD_VANDERA_ZEROCURR
 #  endif
 #  define SED_MORPH
+#  undef  SED_SLUMP
+#  undef  SLOPE_KIRWAN
+#  undef  SLOPE_NEMETH
+#  undef  SLOPE_LESSER
 # endif
 # if defined SEDIMENT || defined SG_BBL || defined MB_BBL || defined SSW_BBL
 #  define ANA_SEDIMENT

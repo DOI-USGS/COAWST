@@ -146,7 +146,7 @@ ad_LBC(isTvar) ==   Gra     Per     Clo     Per      ! idsed(:), compact
 
 ! Bed load transport rate coefficient. [1:Ngrids].
 
-   BEDLOAD_COEFF == 0.15d0
+   BEDLOAD_COEFF == 1.0d0
 
 ! Maximum biodiffusivity, [1:Ngrids].
 
@@ -174,7 +174,7 @@ ad_LBC(isTvar) ==   Gra     Per     Clo     Per      ! idsed(:), compact
 
 ! Asymmetric bedload parameter: Sed slumping critical wet bed slope, [1:Ngrids].
 
-   SEDSLOPE_CRIT_WET == 0.30d0
+   SEDSLOPE_CRIT_WET == 0.05d0
 
 ! Asymmetric bedload parameter: Sed slumping critical dry bed slope, [1:Ngrids].
 
@@ -182,19 +182,19 @@ ad_LBC(isTvar) ==   Gra     Per     Clo     Per      ! idsed(:), compact
 
 ! Asymmetric bedload parameter: Sed slumping factor for wet bed slope, [1:Ngrids].
 
-   SLOPEFAC_WET == 0.0d0
+   SLOPEFAC_WET == 0.001d0
 
 ! Asymmetric bedload parameter: Sed slumping factor for dry bed slope, [1:Ngrids].
 
-   SLOPEFAC_DRY == 0.0d0
+   SLOPEFAC_DRY == 0.001d0
 
 ! Asymmetric bedload parameter: Scale factor for wave contribution to bed load, [1:Ngrids].
 
-   BEDLOAD_VANDERA_ALPHAW == 0.04d0
+   BEDLOAD_VANDERA_ALPHAW == 1.0d0
    
 ! Asymmetric bedload parameter: Scale factor for currents contribution to bed load, [1:Ngrids].
 
-   BEDLOAD_VANDERA_ALPHAC == 0.75d0
+   BEDLOAD_VANDERA_ALPHAC == 1.0d0
 
 ! Logical switches (TRUE/FALSE) to activate writing of bed layer
 ! parameters, [1:Ngrids] values expected.
@@ -210,13 +210,6 @@ ad_LBC(isTvar) ==   Gra     Per     Clo     Per      ! idsed(:), compact
 Hout(idsurs) == T                               ! Ursell number for the asymmetric wave form
 Hout(idsrrw) == T                               ! Velocity skewness parameter for the asymmetric wave form
 Hout(idsbtw) == T                               ! Acceleration asymmetry parameter for the asymmetric wave form
-Hout(idsksd) == T                               ! Bed roughness (Zo) for the wave boundary layer calc.
-Hout(idsusc) == T                               ! Current friction velocity the wave boundary layer
-Hout(idstbl) == T                               ! thickness at the wave boundary layer
-Hout(idsubl) == T                               ! Current velocity at the wave boundary layer
-Hout(idsfdw) == T                               ! Friction factor from the currents
-Hout(idszrw) == T
-Hout(idspwc) == T
 Hout(idsucr) == T                               ! Crest velocity of the asymmetric wave form
 Hout(idsutr) == T                               ! Trough velocity of the asymmetric wave form
 Hout(idstcr) == T                               ! Crest wave time period of the asymmetric wave form
@@ -234,15 +227,23 @@ Hout(idsttr) == T                               ! Trough wave time period of the
  Hout(ibwav) == T                               ! wave excursion amplitude     
  Hout(izdef) == T                               ! default bottom roughness
  Hout(izapp) == T                               ! apparent bottom roughness
- Hout(izNik) == F                               ! Nikuradse bottom roughness
- Hout(izbio) == F                               ! biological bottom roughness
- Hout(izbfm) == F                               ! bed form bottom roughness
- Hout(izbld) == F                               ! bed load bottom roughness
- Hout(izwbl) == F                               ! wave bottom roughness
+ Hout(izNik) == T                               ! Nikuradse bottom roughness
+ Hout(izbio) == T                               ! biological bottom roughness
+ Hout(izbfm) == T                               ! bed form bottom roughness
+ Hout(izbld) == T                               ! bed load bottom roughness
+ Hout(izwbl) == T                               ! wave bottom roughness
  Hout(iactv) == T                               ! active layer thickness
- Hout(ishgt) == F                               ! saltation height
+ Hout(ishgt) == T                               ! saltation height
  Hout(imaxD) == T                               ! maximum inundation depth
  Hout(idnet) == T                               ! Erosion or deposition
+ Hout(idtbl) == T                               ! Thickness at wave boundary layer
+ Hout(idubl) == T                               ! Current velocity at wave boundary layer
+ Hout(idfdw) == T                               ! Friction factor from the currents
+ Hout(idzrw) == T                               ! Reference height to get near bottom current velocity. 
+ Hout(idksd) == T                               ! Bed roughness (Zo) for the wave boundary layer calc.
+ Hout(idusc) == T                               ! Current friction velocity the wave boundary layer
+ Hout(idpcx) == T                               ! Anlge between currents and xi axis.
+ Hout(idpwc) == T                               ! Angle between waves and currents.
  Hout(idoff) == F                               ! dmix erodibility profile offset
  Hout(idslp) == F                               ! dmix or erodibility slope
  Hout(idtim) == F                               ! erodibility profile restore time 
@@ -314,7 +315,7 @@ Hout(idsttr) == T                               ! Trough wave time period of the
 ! Morphological time scale factor (greater than or equal to 1.0). A
 ! value of 1.0 has no scale effect.
 
-   SAND_MORPH_FAC == 1.0d0  1.0d0               ! nondimensional
+   SAND_MORPH_FAC == 1.0d0                      ! nondimensional
 
 ! Logical switches (TRUE/FALSE) to activate tracers point Sources/Sinks
 ! (like river runoff) and to specify which tracer variables to consider.
@@ -348,13 +349,11 @@ Hout(iSVbld) == T                               ! bed load at V-points
 ! non-cohesive sediment fields into AVERAGE output file.
 
 Aout(idsand) == F       ! sand_01, ...            suspended concentration
-
 Aout(iSTTav) == F       ! sand_01_2, ...          quadratic <t*t> tracer terms
 Aout(iSUTav) == F       ! u_sand_01, ...          quadratic <u*t> tracer terms
 Aout(iSVTav) == F       ! v_sand_01, ...          quadratic <v*t> tracer terms
 Aout(SHUTav) == F       ! Huon_sand_01, ...       tracer volume flux, <Huon*t>
 Aout(SHVTav) == F       ! Hvom_sand_01, ...       tracer volume flux, <Hvom*t>
-
 Aout(iSUbld) == F       ! bedload_Usand_01, ...   bed load at U-points
 Aout(iSVbld) == F       ! bedload_Vsand_01, ...   bed load at V-points
 
@@ -467,13 +466,11 @@ Hout(iMVbld) == T                               ! bed load at V-points
 ! cohesive sediment fields into AVERAGE output file.
 
 Aout(idmud)  == F       ! mud_01, ...             suspended concentration
-
 Aout(iMTTav) == F       ! mud_01_2, ...           quadratic <t*t> tracer terms
 Aout(iMUTav) == F       ! u_mud_01, ...           quadratic <u*t> tracer terms
 Aout(iMVTav) == F       ! v_mud_01, ...           quadratic <v*t> tracer terms
 Aout(MHUTav) == F       ! Huon_mud_01, ...        tracer volume flux, <Huon*t>
 Aout(MHVTav) == F       ! Hvom_mud_01, ...        tracer volume flux, <Hvom*t>
-
 Aout(iMUbld) == F       ! bedload_Umud_01, ...    bed load at U-points
 Aout(iMVbld) == F       ! bedload_Vmud_01, ...    bed load at V-points
 

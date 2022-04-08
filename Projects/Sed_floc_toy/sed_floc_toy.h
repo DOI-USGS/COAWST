@@ -60,9 +60,11 @@
 
 #define SSW_BBL
 #ifdef SSW_BBL
-# undef  SSW_CALC_UB
 # define SSW_CALC_ZNOT
 # define SSW_LOGINT
+/* define one of these 2 */
+# define SSW_LOGINT_WBL
+# undef  SSW_LOGINT_DIRECT
 #endif
 
 #define GLS_MIXING

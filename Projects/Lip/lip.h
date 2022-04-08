@@ -57,21 +57,32 @@
 # define SSW_BBL
 # ifdef SSW_BBL
 #  define SSW_CALC_ZNOT
-#  undef  SSW_CALC_UB
+#  define SSW_LOGINT
+/* define one of these 2 */
+#  define SSW_LOGINT_WBL
+#  undef  SSW_LOGINT_DIRECT
 # else
 #  define UV_LOGDRAG
 # endif
 # define SEDIMENT
 # ifdef SEDIMENT
 #  define SUSPLOAD
-#  define BEDLOAD_SOULSBY
+#  undef  BEDLOAD_SOULSBY
 #  undef  BEDLOAD_MPM
-#  undef  BEDLOAD_VANDERA
+#  define BEDLOAD_VANDERA
+#  ifdef BEDLOAD_VANDERA
+/* select any or all of these 3 */
+#   define BEDLOAD_VANDERA_ASYM_LIMITS
+#   define BEDLOAD_VANDERA_SURFACE_WAVE
+#   define BEDLOAD_VANDERA_WAVE_AVGD_STRESS
+/* define one of these 2 */
+#   define BEDLOAD_VANDERA_MADSEN_UDELTA
+#   undef  BEDLOAD_VANDERA_DIRECT_UDELTA
+#  endif
 #  define SED_MORPH
-#  define SED_SLUMP
-#  define SED_DUNEFACE
+#  undef  SED_SLUMP
 #  undef  SLOPE_KIRWAN
-#  define SLOPE_NEMETH
+#  undef  SLOPE_NEMETH
 #  undef  SLOPE_LESSER
 # endif
 # if defined SEDIMENT || defined SG_BBL || defined MB_BBL || defined SSW_BBL

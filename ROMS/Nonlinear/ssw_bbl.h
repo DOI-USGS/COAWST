@@ -78,16 +78,6 @@
 #if defined SSW_CALC_UB
      &                OCEAN(ng) % zeta,                                 &
 #endif
-#if defined BEDLOAD_VANDERA_MADSEN
-     &                SEDBED(ng) % ksd_wbl,                             &
-     &                SEDBED(ng) % ustrc_wbl,                           &
-     &                SEDBED(ng) % thck_wbl,                            &
-#endif
-# if defined BEDLOAD_VANDERA_MADSEN || defined BEDLOAD_VANDERA_DIRECT_UDELTA
-     &                SEDBED(ng) % Zr_wbl,                              &
-     &                SEDBED(ng) % udelta_wbl,                          &
-     &                SEDBED(ng) % phic_sgwbl,                          &
-#endif
      &                BBL(ng) % Iconv,                                  &
      &                BBL(ng) % Ubot,                                   &
      &                BBL(ng) % Vbot,                                   &
@@ -130,12 +120,6 @@
 #endif
 #if defined SSW_CALC_UB
      &                      zeta,                                       &
-#endif
-#if defined BEDLOAD_VANDERA_MADSEN
-     &                      ksd_wbl, ustrc_wbl, thck_wbl,               &
-#endif
-#if defined BEDLOAD_VANDERA_MADSEN || defined BEDLOAD_VANDERA_DIRECT_UDELTA
-     &                      Zr_wbl, udelta_wbl, phic_sgwbl,             &
 #endif
      &                      Iconv,                                      &
      &                      Ubot, Vbot, Ur, Vr,                         &
@@ -193,16 +177,6 @@
 # if defined SSW_CALC_UB
       real(r8), intent(in) :: zeta(LBi:,LBj:,:)
 # endif
-# if defined BEDLOAD_VANDERA_MADSEN
-      real(r8), intent(inout) :: ksd_wbl(LBi:,LBj:)
-      real(r8), intent(inout) :: ustrc_wbl(LBi:,LBj:)
-      real(r8), intent(inout) :: thck_wbl(LBi:,LBj:)
-# endif
-# if defined BEDLOAD_VANDERA_MADSEN || defined BEDLOAD_VANDERA_DIRECT_UDELTA
-      real(r8), intent(inout) :: Zr_wbl(LBi:,LBj:)
-      real(r8), intent(inout) :: udelta_wbl(LBi:,LBj:)
-      real(r8), intent(inout) :: phic_sgwbl(LBi:,LBj:)
-# endif
       real(r8), intent(out) :: Ubot(LBi:,LBj:)
       real(r8), intent(out) :: Vbot(LBi:,LBj:)
       real(r8), intent(out) :: Ur(LBi:,LBj:)
@@ -244,16 +218,6 @@
 # endif
 # if defined SSW_CALC_UB
       real(r8), intent(in) :: zeta(LBi:UBi,LBj:UBj,3)
-# endif
-# if defined BEDLOAD_VANDERA_MADSEN
-      real(r8), intent(inout) :: thck_wbl(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: ksd_wbl(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: ustrc_wbl(LBi:UBi,LBj:UBj)
-# endif
-# if defined BEDLOAD_VANDERA_MADSEN || defined BEDLOAD_VANDERA_DIRECT_UDELTA
-      real(r8), intent(inout) :: Zr_wbl(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: udelta_wbl(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: phic_sgwbl(LBi:UBi,LBj:UBj)
 # endif
       real(r8), intent(out) :: Ubot(LBi:UBi,LBj:UBj)
       real(r8), intent(out) :: Vbot(LBi:UBi,LBj:UBj)
@@ -349,9 +313,21 @@
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zoBF
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zoDEF
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: zoBIO
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: thck_wbl
+#if defined BEDLOAD_VANDERA_MADSEN_UDELTA
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ksd_wbl
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: ustrc_wbl
+#endif
+#if defined BEDLOAD_VANDERA_MADSEN_UDELTA || \
+    defined BEDLOAD_VANDERA_DIRECT_UDELTA
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: udelta_wbl
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Zr_wbl
+      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: phic_sgwbl
+#endif
 !
       real(r8), dimension(1:N(ng)) :: Urz, Vrz
-#if defined BEDLOAD_VANDERA_MADSEN || defined BEDLOAD_VANDERA_DIRECT_UDELTA
+#if defined BEDLOAD_VANDERA_MADSEN_UDELTA || \
+    defined BEDLOAD_VANDERA_DIRECT_UDELTA
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Ur_sgwbl
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Vr_sgwbl
       real(r8) :: Ucur_sgwbl, Vcur_sgwbl
@@ -374,23 +350,21 @@
 !
           Dstp=z_r(i,j,N(ng))-z_w(i,j,0)
 !
-!# if defined CRS_FIX
-# if defined BEDLOAD_VANDERA_DIRECT_UDELTA
+# if defined SSW_LOGINT_DIRECT
 !
-! Capping the minimum Zr for Madsen calc. to 0.9*depth.
+! Cap minimum Zr 0.9*depth and user input.
 !
-!         cff1=MIN(0.9_r8*Dstp, MAX(Zr(i,j), sg_z1min))
           cff1=MIN(0.9_r8*Dstp, MAX(Zr(i,j), sg_zwbl(ng)))
+# elif defined SSW_LOGINT_WBL
 !
-!# elif defined JCW_BBLTHICK
-# elif defined BEDLOAD_VANDERA_CALC_WBL
-          cff1=MIN(0.98_r8*Dstp,MAX(Zr(i,j), thck_wbl(i,j)*1.1_r8))
+! Cap minimum Zr 0.9*depth and computed wave bound layer
+!
+          cff1=MIN(0.98_r8*Dstp,MAX(Zr(i,j), bottom(i,j,idtbl)*1.1_r8))
 # else
 !
 ! Use the original coded ssw_logint formulation
 !
           cff1=sg_z1min
-!         cff1=sg_zwbl(ng)
 # endif
 !
 !  If using the logarithmic interpolation
@@ -594,10 +568,9 @@
           Taucwmax(i,j)=Tauc(i,j)
           znot(i,j)=zo
           znotc(i,j)=zo
-#if defined BEDLOAD_VANDERA_MADSEN
+#if defined BEDLOAD_VANDERA_MADSEN_UDELTA
           ksd_wbl(i,j)=zo
           ustrc_wbl(i,j)=sqrt(Tauc(i,j)+eps)
-!         thck_wbl(i,j)=m_dwc
 #endif
 !
           IF ((Umag(i,j).le.eps).and.(Ub(i,j).ge.eps)) THEN
@@ -735,7 +708,7 @@
             Taucwmax(i,j)=m_ustrr*m_ustrr
             znotc(i,j)=min( m_zoa, zoMAX )
             u100(i,j)=(m_ustrc/vonKar)*LOG(1.0_r8/m_zoa)
-
+            thck_wbl(i,j)=m_dwc
 #endif
 #if defined SSW_FORM_DRAG_COR
             IF (rheight(i,j).gt.(zoN(i,j)+zoST(i,j))) THEN
@@ -748,16 +721,15 @@
      &                       rheight(i,j)/rlength(i,j))
             END IF
 #endif
-#if defined BEDLOAD_VANDERA_MADSEN
+#if defined BEDLOAD_VANDERA_MADSEN_UDELTA
             ksd_wbl(i,j)=m_zoa
             ustrc_wbl(i,j)=m_ustrc
-            thck_wbl(i,j)=m_dwc
 #endif
           END IF
         END DO
       END DO
 !
-#if defined BEDLOAD_VANDERA_MADSEN
+#if defined BEDLOAD_VANDERA_MADSEN_UDELTA
 !
 ! Find the near-bottom current velocity(udelta) at a given elevation.
 ! Use the Madsen output of current shear stress, apparent roughness
@@ -769,28 +741,17 @@
 !
           Dstp=z_r(i,j,N(ng))-z_w(i,j,0)
 !
-# ifdef BEDLOAD_VANDERA_CALC_WBL
 ! Use wave boundary layer (wbl) thickness based on Madsen to get
 ! near bottom current velocity.
 !
           cff=MIN( 0.98_r8*Dstp, thck_wbl(i,j) )
-# else
-!
-! Use user input elevation to get near bottom current velocity.
-!
-          cff=MIN (0.98_r8*Dstp, sg_zwbl(ng) )
-# endif
 !
 ! Make sure that wbl is under total depth and greater than
 ! apparent roughness.
 !
           cff1=MAX(cff, 1.1_r8*ksd_wbl(i,j))
           cff2=LOG(cff1/ksd_wbl(i,j))
-# ifdef BEDLOAD_VANDERA_ZEROCURR
-          udelta_wbl(i,j)=0.0_r8
-# else
           udelta_wbl(i,j)=(ustrc_wbl(i,j)/vonKar)*cff2
-# endif
 !
           DO k=1,N(ng)
             Urz(k)=0.5_r8*(u(i,j,k,nrhs)+u(i+1,j,k,nrhs))
@@ -909,9 +870,9 @@
           Vbot(i,j)=Ub(i,j)*anglew
           Vr(i,j)=Vcur(i,j)
 !
-          bottom(i,j,ibwav)=Ab(i,j)
-          bottom(i,j,irhgt)=rheight(i,j)
           bottom(i,j,irlen)=rlength(i,j)
+          bottom(i,j,irhgt)=rheight(i,j)
+          bottom(i,j,ibwav)=Ab(i,j)
           bottom(i,j,izdef)=zoDEF(i,j)
           bottom(i,j,izapp)=znotc(i,j)
           bottom(i,j,izNik)=zoN(i,j)
@@ -919,6 +880,20 @@
           bottom(i,j,izbfm)=zoBF(i,j)
           bottom(i,j,izbld)=zoST(i,j)
           bottom(i,j,izwbl)=znot(i,j)
+          bottom(i,j,idtbl)=thck_wbl(i,j)
+#if defined BEDLOAD_VANDERA_MADSEN_UDELTA
+          bottom(i,j,idksd)=ksd_wbl(i,j)
+          bottom(i,j,idusc)=ustrc_wbl(i,j)
+#endif
+#if defined BEDLOAD_VANDERA_MADSEN_UDELTA || \
+    defined BEDLOAD_VANDERA_DIRECT_UDELTA
+          bottom(i,j,idubl)=udelta_wbl(i,j)
+          bottom(i,j,idzrw)=Zr_wbl(i,j)
+          bottom(i,j,idpcx)=phic_sgwbl(i,j)
+#else
+          bottom(i,j,idpcx)=phic(i,j)
+          bottom(i,j,idpwc)=phicw(i,j)
+#endif
         END DO
       END DO
 !
@@ -963,13 +938,13 @@
      &                  Vr)
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
-     &                  bottom(:,:,ibwav))
+     &                  bottom(:,:,irlen))
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  bottom(:,:,irhgt))
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
-     &                  bottom(:,:,irlen))
+     &                  bottom(:,:,ibwav))
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  bottom(:,:,izdef))
@@ -991,28 +966,33 @@
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
      &                  bottom(:,:,izwbl))
-#if defined BEDLOAD_VANDERA_MADSEN
+#if defined BEDLOAD_VANDERA_MADSEN_UDELTA
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
-     &                  ksd_wbl)
+     &                  bottom(:,:,idtbl))
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
-     &                  ustrc_wbl)
+     &                  bottom(:,:,idksd))
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
-     &                  thck_wbl)
+     &                  bottom(:,:,idusc))
 #endif
-#if defined BEDLOAD_VANDERA_MADSEN || defined BEDLOAD_VANDERA_DIRECT_UDELTA
+#if defined BEDLOAD_VANDERA_MADSEN_UDELTA || \
+    defined BEDLOAD_VANDERA_DIRECT_UDELTA
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
-     &                  Zr_wbl)
+     &                  bottom(:,:,idubl))
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
-     &                  udelta_wbl)
+     &                  bottom(:,:,idzrw))
+#else
       CALL bc_r2d_tile (ng, tile,                                       &
      &                  LBi, UBi, LBj, UBj,                             &
-     &                  phic_sgwbl)
+     &                  bottom(:,:,idpwc))
 #endif
+      CALL bc_r2d_tile (ng, tile,                                       &
+     &                  LBi, UBi, LBj, UBj,                             &
+     &                  bottom(:,:,idpcx))
 #ifdef DISTRIBUTE
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
@@ -1033,37 +1013,53 @@
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    bottom(:,:,ibwav),                            &
+     &                    bottom(:,:,irlen),                            &
      &                    bottom(:,:,irhgt),                            &
-     &                    bottom(:,:,irlen))
-      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
+     &                    bottom(:,:,ibwav))
+      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    bottom(:,:,izdef),                            &
-     &                    bottom(:,:,izapp))
+     &                    bottom(:,:,izapp),                            &
+     &                    bottom(:,:,izNik))
       CALL mp_exchange2d (ng, tile, iNLM, 4,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    bottom(:,:,izNik),                            &
      &                    bottom(:,:,izbio),                            &
      &                    bottom(:,:,izbfm),                            &
+     &                    bottom(:,:,izbld),                            &
      &                    bottom(:,:,izwbl))
-# if defined BEDLOAD_VANDERA_MADSEN
+# if defined BEDLOAD_VANDERA_MADSEN_UDELTA
       CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    ksd_wbl, ustrc_wbl, thck_wbl)
+     &                    bottom(:,:,idtbl),                            &
+     &                    bottom(:,:,idksd),                            &
+     &                    bottom(:,:,idusc))
 # endif
-# if defined BEDLOAD_VANDERA_MADSEN || defined BEDLOAD_VANDERA_DIRECT_UDELTA
-      CALL mp_exchange2d (ng, tile, iNLM, 3,                            &
+# if defined BEDLOAD_VANDERA_MADSEN_UDELTA || \
+     defined BEDLOAD_VANDERA_DIRECT_UDELTA
+      CALL mp_exchange2d (ng, tile, iNLM, 2,                            &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    zr_wbl, udelta_wbl, phic_sgwbl)
+     &                    bottom(:,:,idzrw),                            &
+     &                    bottom(:,:,idubl))
+# else
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    bottom(:,:,idpwc))
 # endif
+      CALL mp_exchange2d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj,                           &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    bottom(:,:,idpcx))
 #endif
 
       RETURN
@@ -1724,7 +1720,7 @@
 !
 #endif
 !
-#if defined SSW_LOGINT || defined BEDLOAD_VANDERA_MADSEN
+#if defined SSW_LOGINT || defined BEDLOAD_VANDERA_MADSEN_UDELTA
       SUBROUTINE log_interp( kmax, Dstp, sg_loc, u_1d, v_1d,            &
      &                        z_r_1d, z_w_1d,                           &
      &                        d50, zapp_loc,                            &

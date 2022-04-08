@@ -28,27 +28,13 @@
                 idSbed(iporo)=varid
               CASE ('idSbed(idiff)')
                 idSbed(idiff)=varid
-#if defined BEDLOAD && defined BEDLOAD_VANDERA
+#if defined BEDLOAD_VANDERA
               CASE ('idsurs')
                 idsurs=varid
               CASE ('idsrrw')
                 idsrrw=varid
               CASE ('idsbtw')
                 idsbtw=varid
-              CASE ('idszrw')
-                idszrw=varid
-              CASE ('idsksd')
-                idsksd=varid
-              CASE ('idsusc')
-                idsusc=varid
-              CASE ('idstbl')
-                idstbl=varid
-              CASE ('idsubl')
-                idsubl=varid
-              CASE ('idspwc')
-                idspwc=varid
-              CASE ('idsfdw')
-                idsfdw=varid
               CASE ('idsucr')
                 idsucr=varid
               CASE ('idsutr')
@@ -57,7 +43,7 @@
                 idstcr=varid
               CASE ('idsttr')
                 idsttr=varid
-#endif 
+#endif
 #if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
               CASE ('idSbed(ibtcr)')
                 idSbed(ibtcr)=varid
@@ -108,6 +94,22 @@
                 idBott(imaxD)=varid
               CASE ('idBott(idnet)')
                 idBott(idnet)=varid
+              CASE ('idBott(idtbl)')
+                idBott(idtbl)=varid
+              CASE ('idBott(idubl)')
+                idBott(idubl)=varid
+              CASE ('idBott(idfdw)')
+                idBott(idfdw)=varid
+              CASE ('idBott(idzrw)')
+                idBott(idzrw)=varid
+              CASE ('idBott(idksd)')
+                idBott(idksd)=varid
+              CASE ('idBott(idusc)')
+                idBott(idusc)=varid
+              CASE ('idBott(idpcx)')
+                idBott(idpcx)=varid
+              CASE ('idBott(idpwc)')
+                idBott(idpwc)=varid
 #if defined COHESIVE_BED || defined SED_BIODIFF || defined MIXED_BED
               CASE ('idBott(idoff)')
                 idBott(idoff)=varid

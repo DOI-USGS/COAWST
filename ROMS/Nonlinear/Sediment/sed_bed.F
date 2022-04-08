@@ -217,7 +217,7 @@
 ! Compute sediment bed layer stratigraphy.
 !-----------------------------------------------------------------------
 !
-# if defined BEDLOAD_MPM || defined SUSPLOAD
+!# if defined BEDLOAD || defined SUSPLOAD
 #  ifdef BBL_MODEL
       DO j=Jstr-1,Jend+1
         DO i=Istr-1,Iend+1
@@ -241,7 +241,7 @@
         END DO
       END DO
 #  endif
-# endif
+!# endif
 !
 !-----------------------------------------------------------------------
 !  Update bed properties according to ero_flux and dep_flux.

@@ -2797,132 +2797,6 @@
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
         END IF
 !
-!  Reference height to get near bottom current velocity. 
-!
-        IF (Hout(idszrw,ng)) THEN
-          Vinfo( 1)=Vname(1,idszrw)
-          Vinfo( 2)=Vname(2,idszrw)
-          Vinfo( 3)=Vname(3,idszrw)
-          Vinfo(14)=Vname(4,idszrw)
-          Vinfo(16)=Vname(1,idszrw)
-#    if defined WRITE_WATER && defined MASKING
-          Vinfo(20)='mask_rho'
-#    endif
-          Vinfo(22)='coordinates'
-          Aval(5)=REAL(Iinfo(1,idszrw,ng),r8)
-          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idszrw),   &
-     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-        END IF
-!
-!  Bed roughness (Zo) for wave boundary layer calc.  
-!
-        IF (Hout(idsksd,ng)) THEN
-          Vinfo( 1)=Vname(1,idsksd)
-          Vinfo( 2)=Vname(2,idsksd)
-          Vinfo( 3)=Vname(3,idsksd)
-          Vinfo(14)=Vname(4,idsksd)
-          Vinfo(16)=Vname(1,idsksd)
-#    if defined WRITE_WATER && defined MASKING
-          Vinfo(20)='mask_rho'
-#    endif
-          Vinfo(22)='coordinates'
-          Aval(5)=REAL(Iinfo(1,idsksd,ng),r8)
-          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsksd),   &
-     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-        END IF
-!
-!  Friction velocity at the wave boundary layer. 
-!
-        IF (Hout(idsusc,ng)) THEN
-          Vinfo( 1)=Vname(1,idsusc)
-          Vinfo( 2)=Vname(2,idsusc)
-          Vinfo( 3)=Vname(3,idsusc)
-          Vinfo(14)=Vname(4,idsusc)
-          Vinfo(16)=Vname(1,idsusc)
-#    if defined WRITE_WATER && defined MASKING
-          Vinfo(20)='mask_rho'
-#    endif
-          Vinfo(22)='coordinates'
-          Aval(5)=REAL(Iinfo(1,idsusc,ng),r8)
-          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsusc),   &
-     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-        END IF
-!
-!  Current velocity at the wave boundary layer. 
-!
-        IF (Hout(idsubl,ng)) THEN
-          Vinfo( 1)=Vname(1,idsubl)
-          Vinfo( 2)=Vname(2,idsubl)
-          Vinfo( 3)=Vname(3,idsubl)
-          Vinfo(14)=Vname(4,idsubl)
-          Vinfo(16)=Vname(1,idsubl)
-#    if defined WRITE_WATER && defined MASKING
-          Vinfo(20)='mask_rho'
-#    endif
-          Vinfo(22)='coordinates'
-          Aval(5)=REAL(Iinfo(1,idsubl,ng),r8)
-          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsubl),   &
-     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-        END IF
-!
-!  Angle between waves and currents. 
-!
-        IF (Hout(idspwc,ng)) THEN
-          Vinfo( 1)=Vname(1,idspwc)
-          Vinfo( 2)=Vname(2,idspwc)
-          Vinfo( 3)=Vname(3,idspwc)
-          Vinfo(14)=Vname(4,idspwc)
-          Vinfo(16)=Vname(1,idspwc)
-#    if defined WRITE_WATER && defined MASKING
-          Vinfo(20)='mask_rho'
-#    endif
-          Vinfo(22)='coordinates'
-          Aval(5)=REAL(Iinfo(1,idspwc,ng),r8)
-          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idspwc),   &
-     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-        END IF
-!
-!  Thickness at the wave boundary layer. 
-!
-        IF (Hout(idstbl,ng)) THEN
-          Vinfo( 1)=Vname(1,idstbl)
-          Vinfo( 2)=Vname(2,idstbl)
-          Vinfo( 3)=Vname(3,idstbl)
-          Vinfo(14)=Vname(4,idstbl)
-          Vinfo(16)=Vname(1,idstbl)
-#    if defined WRITE_WATER && defined MASKING
-          Vinfo(20)='mask_rho'
-#    endif
-          Vinfo(22)='coordinates'
-          Aval(5)=REAL(Iinfo(1,idstbl,ng),r8)
-          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idstbl),   &
-     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-        END IF
-!
-!  Friction factor from the current cycle. 
-!
-        IF (Hout(idsfdw,ng)) THEN
-          Vinfo( 1)=Vname(1,idsfdw)
-          Vinfo( 2)=Vname(2,idsfdw)
-          Vinfo( 3)=Vname(3,idsfdw)
-          Vinfo(14)=Vname(4,idsfdw)
-          Vinfo(16)=Vname(1,idsfdw)
-#    if defined WRITE_WATER && defined MASKING
-          Vinfo(20)='mask_rho'
-#    endif
-          Vinfo(22)='coordinates'
-          Aval(5)=REAL(Iinfo(1,idsfdw,ng),r8)
-          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idsfdw),   &
-     &                   NF_FOUT, nvd3, t2dgrd, Aval, Vinfo, ncname)
-          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-        END IF
-!
 !  Crest velocity of the asymmetric wave form. 
 !
         IF (Hout(idsucr,ng)) THEN
@@ -4372,21 +4246,6 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idsbtw))) THEN
             got_var(idsbtw)=.TRUE.
             HIS(ng)%Vid(idsbtw)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idsksd))) THEN
-            got_var(idsksd)=.TRUE.
-            HIS(ng)%Vid(idsksd)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idsusc))) THEN
-            got_var(idsusc)=.TRUE.
-            HIS(ng)%Vid(idsusc)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idsubl))) THEN
-            got_var(idsubl)=.TRUE.
-            HIS(ng)%Vid(idsubl)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idstbl))) THEN
-            got_var(idstbl)=.TRUE.
-            HIS(ng)%Vid(idstbl)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idsfdw))) THEN
-            got_var(idsfdw)=.TRUE.
-            HIS(ng)%Vid(idsfdw)=var_id(i)
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idsucr))) THEN
             got_var(idsucr)=.TRUE.
             HIS(ng)%Vid(idsucr)=var_id(i)
@@ -4399,12 +4258,6 @@
           ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idsttr))) THEN
             got_var(idsttr)=.TRUE.
             HIS(ng)%Vid(idsttr)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idszrw))) THEN
-            got_var(idszrw)=.TRUE.
-            HIS(ng)%Vid(idszrw)=var_id(i)
-          ELSE IF (TRIM(var_name(i)).eq.TRIM(Vname(1,idspwc))) THEN
-            got_var(idspwc)=.TRUE.
-            HIS(ng)%Vid(idspwc)=var_id(i)
 #endif
           END IF
 #if defined VEGETATION 
@@ -4883,8 +4736,6 @@
           exit_flag=3
           RETURN
         END IF
-
-
 #ifdef BEDLOAD_VANDERA
         IF (.not.got_var(idsurs).and.Hout(idsurs,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idsurs)),          &
@@ -4900,36 +4751,6 @@
         END IF
         IF (.not.got_var(idsbtw).and.Hout(idsbtw,ng)) THEN
           IF (Master) WRITE (stdout,70) TRIM(Vname(1,idsbtw)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idsksd).and.Hout(idsksd,ng)) THEN
-          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idsksd)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idsusc).and.Hout(idsusc,ng)) THEN
-          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idsusc)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idsubl).and.Hout(idsubl,ng)) THEN
-          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idsubl)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idstbl).and.Hout(idstbl,ng)) THEN
-          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idstbl)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idsfdw).and.Hout(idsfdw,ng)) THEN
-          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idsfdw)),          &
      &                                  TRIM(ncname)
           exit_flag=3
           RETURN
@@ -4958,22 +4779,6 @@
           exit_flag=3
           RETURN
         END IF
-
-
-        IF (.not.got_var(idszrw).and.Hout(idszrw,ng)) THEN
-          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idszrw)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-        IF (.not.got_var(idspwc).and.Hout(idspwc,ng)) THEN
-          IF (Master) WRITE (stdout,70) TRIM(Vname(1,idspwc)),          &
-     &                                  TRIM(ncname)
-          exit_flag=3
-          RETURN
-        END IF
-
-
 #endif
 #ifdef SOLVE3D
 # ifdef INWAVE_MODEL
@@ -5434,7 +5239,7 @@
           END IF
         END DO 
 #  endif
-# endif 
+# endif
 # ifdef SEDIMENT
         DO i=1,NST
           IF (.not.got_var(idfrac(i)).and.Hout(idfrac(i),ng)) THEN

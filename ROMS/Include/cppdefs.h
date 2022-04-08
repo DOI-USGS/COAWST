@@ -310,6 +310,8 @@
 ** SSW_BBL                 if Sherwood et al. BBL closure                    **
 ** SSW_CALC_ZNOT           if computing bottom roughness internally          **
 ** SSW_LOGINT              if logarithmic interpolation of (Ur,Vr)           **
+** SSW_LOGINT_WBL          if wave boundary layer height for Ur,Vr elevation **
+** SSW_LOGINT_DIRECT       if user height for Ur,Vr elevation                **
 ** SSW_CALC_UB             if computing bottom orbital velocity internally   **
 ** SSW_FORM_DRAG_COR       to activate form drag coefficient                 **
 ** SSW_ZOBIO               if biogenic bedform roughness from ripples        **

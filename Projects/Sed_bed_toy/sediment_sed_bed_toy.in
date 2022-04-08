@@ -105,7 +105,7 @@ ad_Vadvection == C4                             ! idsed(:), compact
 ! NOTICE: It is possible to specify the lateral boundary conditions for
 ! ======  all sediment tracers (cohesive and noncohesive) in a compact
 ! form with a single entry. If so, all the sediment tracers are assumed to
-! have the same boundary  as in the single entry.
+! have the same boundary condition as in the single entry.
 !
 !   Keyword    Lateral Boundary Condition Type
 !
@@ -133,7 +133,7 @@ ad_Vadvection == C4                             ! idsed(:), compact
 ad_LBC(isTvar) ==   Per     Per     Per     Per      ! idsed(:), compact
 
 !------------------------------------------------------------------------------
-!  General sediment bed model parameters.
+!  General sediment bed model controls.
 !------------------------------------------------------------------------------
 
 ! Depositional bed layer thickness criteria to create a new layer (m). If
@@ -162,22 +162,59 @@ ad_LBC(isTvar) ==   Per     Per     Per     Per      ! idsed(:), compact
    DBZM == 0.08d0
 
 ! Depth of minimum biodiffusivity, [1:Ngrids].
-
+   
    DBZP == 0.01d0
+
+! Asymmetric bedload parameter: Elevation(m) for near-bottom current vel., [1:Ngrids].
+
+   SG_ZWBL == 0.1d0
+
+! Asymmetric bedload parameter: Sed slumping critical wet bed slope, [1:Ngrids].
+
+   SEDSLOPE_CRIT_WET == 0.05d0
+
+! Asymmetric bedload parameter: Sed slumping critical dry bed slope, [1:Ngrids].
+
+   SEDSLOPE_CRIT_DRY == 0.05d0
+
+! Asymmetric bedload parameter: Sed slumping factor for wet bed slope, [1:Ngrids].
+
+   SLOPEFAC_WET == 0.001d0
+
+! Asymmetric bedload parameter: Sed slumping factor for dry bed slope, [1:Ngrids].
+
+   SLOPEFAC_DRY == 0.001d0
+
+! Asymmetric bedload parameter: Scale factor for wave contribution to bed load, [1:Ngrids].
+
+   BEDLOAD_VANDERA_ALPHAW == 1.0d0
+   
+! Asymmetric bedload parameter: Scale factor for currents contribution to bed load, [1:Ngrids].
+
+   BEDLOAD_VANDERA_ALPHAC == 1.0d0
 
 ! Logical switches (TRUE/FALSE) to activate writing of bed layer
 ! parameters, [1:Ngrids] values expected.
+  
+ Hout(ithck) == T                               ! sediment layer thickness
+ Hout(iaged) == T                               ! sediment layer age
+ Hout(iporo) == T                               ! sediment layer porosity
+ Hout(idiff) == T                               ! biodiffusivity
 
- Hout(ithck) == T       ! bed_thickness           sediment layer thickness
- Hout(iaged) == T       ! bed_age                 sediment layer age
- Hout(iporo) == T       ! bed_porosity            sediment layer porosity
- Hout(idiff) == F       ! bed_biodiff             biodiffusivity
- Hout(ibtcr) == T       ! bed_tau_crit            cohesive bed critical stress
+! Logical switches for wave asymmetry parameters obtained when using
+! bedload formulation from Vander A et al. (2013).
 
+Hout(idsurs) == T                               ! Ursell number for the asymmetric wave form
+Hout(idsrrw) == T                               ! Velocity skewness parameter for the asymmetric wave form
+Hout(idsbtw) == T                               ! Acceleration asymmetry parameter for the asymmetric wave form
+Hout(idsucr) == T                               ! Crest velocity of the asymmetric wave form
+Hout(idsutr) == T                               ! Trough velocity of the asymmetric wave form
+Hout(idstcr) == T                               ! Crest wave time period of the asymmetric wave form
+Hout(idsttr) == T                               ! Trough wave time period of the aymmetric wave form
 
 ! Logical switches (TRUE/FALSE) to activate writing of bed
 ! bottom sediment parameters, [1:Ngrids] values expected.
-
+  
  Hout(isd50) == T                               ! mean grain diameter
  Hout(idens) == T                               ! mean grain density
  Hout(iwsed) == T                               ! mean settling velocity
@@ -196,6 +233,14 @@ ad_LBC(isTvar) ==   Per     Per     Per     Per      ! idsed(:), compact
  Hout(ishgt) == F                               ! saltation height
  Hout(imaxD) == F                               ! maximum inundation depth
  Hout(idnet) == F                               ! Erosion or deposition
+ Hout(idtbl) == T                               ! Thickness at wave boundary layer
+ Hout(idubl) == T                               ! Current velocity at wave boundary layer
+ Hout(idfdw) == T                               ! Friction factor from the currents
+ Hout(idzrw) == T                               ! Reference height to get near bottom current velocity. 
+ Hout(idksd) == T                               ! Bed roughness (Zo) for the wave boundary layer calc.
+ Hout(idusc) == T                               ! Current friction velocity the wave boundary layer
+ Hout(idpcx) == T                               ! Anlge between currents and xi axis.
+ Hout(idpwc) == T                               ! Angle between waves and currents.
  Hout(idoff) == F                               ! dmix erodibility profile offset
  Hout(idslp) == F                               ! dmix or erodibility slope
  Hout(idtim) == F                               ! erodibility profile restore time
@@ -204,6 +249,7 @@ ad_LBC(isTvar) ==   Per     Per     Per     Per      ! idsed(:), compact
  Hout(idbzs) == F                               ! Bed biodifusivity zs
  Hout(idbzm) == F                               ! Bed biodifusivity zm
  Hout(idbzp) == F                               ! Bed biodifusivity phi
+ Hout(idprp) == F                               ! cohesive behavior
 
 !------------------------------------------------------------------------------
 ! Non-cohesive Sediment Parameters, [1:NNS,1:Ngrids] values expected.
@@ -1160,17 +1206,15 @@ Dout(MTvdif) == T       ! mud_01_vdiff, ...       vertical diffusion
 !
 !  MUD_POROS       Porosity (nondimensional: 0.0-1.0):  Vwater/(Vwater+Vsed).
 !
-!  MUD_TNU2        Nonlinar model lateral, harmonic, constant, mixing
-!                    coefficient (m2/s) for suspended cohesive sediment;
-!                    [1:NCS,1:Ngrids]. If variable horizontal diffusion is
-!                    activated, MUD_TNU2 is the mixing coefficient for
-!                    the largest grid-cell in the domain.
+!  MUD_TNU2        Lateral, harmonic, constant, mixing coefficient (m2/s),
+!                    TNU2(idsed(i)) with i=1:NCS.  If variable horizontal
+!                    diffusion is activated, TNU2 is the mixing coefficient
+!                    for the largest grid-cell in the domain.
 !
-!  MUD_TNU4        Nonlinar model lateral, biharmonic, constant, mixing
-!                    coefficient (m4/s) for suspended cohesive sediment;
-!                    [1:NCS,1:Ngrids]. If variable horizontal diffusion is
-!                    activated, MUD_TNU4 is the mixing coefficient for
-!                    the largest grid-cell in the domain.
+!  MUD_TNU4        Lateral, biharmonic, constant, mixing coefficient (m4/s),
+!                    TNU2(idsed(i)) with i=1:NCS.  If variable horizontal
+!                    diffusion is activated, TNU4 is the mixing coefficient
+!                    for the largest grid-cell in the domain.
 !
 !  ad_MUD_TNU2     Adjoint-based algorithms lateral, harmonic, constant,
 !                    mixing coefficient (m2/s) for suspended cohesive
@@ -1189,7 +1233,6 @@ Dout(MTvdif) == T       ! mud_01_vdiff, ...       vertical diffusion
 !                    areas of the domain. The CPP option SPONGE is now
 !                    deprecated and replaced with this switch to
 !                    facilitate or not sponge areas of desired tracer
-!                    in a particular nested grid.
 !
 !  MUD_AKT_BAK     Background vertical mixing coefficient (m2/s),
 !                    AKT_BAK(idsed(i)) with i=1:NCS.
@@ -1306,6 +1349,7 @@ Dout(MTvdif) == T       ! mud_01_vdiff, ...       vertical diffusion
 !                    bed load at V-points into HISTORY NetCDF file,
 !                    HOUT(idsed(i)) with i=1,NCS.
 !
+!
 !  Aout(*M...)     Logical switches to activate writing of time-averaged
 !                    cohesive sediment concentration into AVERAGE NetCDF
 !                    file, AOUT(idTvar(idsed(i))) with i=1:NCS.
@@ -1335,6 +1379,14 @@ Dout(MTvdif) == T       ! mud_01_vdiff, ...       vertical diffusion
 !                    Dout(MTydif)   Horizontal ETA-diffusion
 !                    Dout(MTsdif)   Horizontal   S-diffusion
 !                    Dout(MTvdif)   Vertical diffusion
+!
+!------------------------------------------------------------------------------
+! Flocculation Descomposition in Bed Sediment Parameters, [1] values expected.
+!------------------------------------------------------------------------------
+!
+!  MUD_FRAC_EQ    Equilibrium fractional class distribution (they should add up to 1).
+!
+!  MUD_T_DFLOC    Time scale of flocculation decomposition in bed
 !
 !------------------------------------------------------------------------------
 ! Mixed Bed parameters- Transition threshold for cohesive mix

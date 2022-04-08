@@ -1357,9 +1357,6 @@
 #  elif defined FCDF
       real(r8), allocatable           :: SDD_cumul(:,:)
 #  endif
-!#  ifdef HSCALE
-!      real(r8), allocatable           :: Hsig_check(:)
-!#  endif
       real(r8), allocatable           :: atemp(:)
 
       real(r8), parameter :: maxErr = 0.1_r8
@@ -1494,7 +1491,6 @@
 !  Loop over all frequencies
 !
         DO ff=1,nfreq
-!       DO ff=18,900
           DO i=SstrR,SendR
 !
 !  If DOUBLESUM, double summation loop over all directions.

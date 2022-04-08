@@ -2204,9 +2204,9 @@
 'river_PON'                                        ! Input
   'river runoff particulate organic nitrogen'
   'millimole_nitrogen meter-3'                     ! [millimole/m3]
-  'river_DON, scalar, series'
+  'river_PON, scalar, series'
   'river_time'
-  'idRtrc(iDON_)'
+  'idRtrc(iPON_)'
   'nulvar'
   1.0d0
 
@@ -3115,6 +3115,42 @@
   'v2dvar'
   1.0d0
 
+'bed_thickness'                                    ! Input/Output
+  'sediment bed layer thickness'
+  'meter'                                          ! [m]
+  'bed_thickness, scalar, series'
+  'ocean_time'
+  'idSbed(ithck)'
+  'b3dvar'
+  1.0d0
+
+'bed_age'                                          ! Input/Output
+  'sediment layer age'
+  'seconds'                                        ! [s]
+  'bed_age, scalar, series'
+  'ocean_time'
+  'idSbed(iaged)'
+  'b3dvar'
+  1.0d0
+
+'bed_porosity'                                     ! Input/Output
+  'sediment layer porosity'
+  'nondimensional'                                 ! [nondimensional]
+  'bed_porosity, scalar, series'
+  'ocean_time'
+  'idSbed(iporo)'
+  'b3dvar'
+  1.0d0
+
+'bed_biodiff'                                      ! Input/Output
+  'biodiffusivity at bottom of each layer'
+  'meter2 second-1'                                ! [m2/s]
+  'bed_biodiff, scalar, series'
+  'ocean_time'
+  'idSbed(idiff)'
+  'b3dvar'
+  1.0d0
+
 'ursell_no'                                       ! Output
   'Ursell number'
   'non-dimensional'                               ! [Non-dimensional]
@@ -3139,69 +3175,6 @@
   'beta_asymwave, scalar, series'
   'ocean_time'
   'idsbtw'
-  'r2dvar'
-  1.0d0
-
-'Zr_wbl'                                         ! Output
-  'Reference height to get near bottom current velocity.'
-  'meter-s'                                      ! [m/s]
-  'Zr_wbl, scalar, series' 
-  'ocean_time'
-  'idszrw'
-  'r2dvar'
-  1.0d0
-
-'ksd_wbl'                                         ! Output
-  'Bed roughness (Zo) for wave boundary layer calc.' 
-  'meter'                                         ! [m/s]
-  'ksd_wbl, scalar, series' 
-  'ocean_time'
-  'idsksd'
-  'r2dvar'
-  1.0d0
-
-'ustrc_wbl'                                       ! Output
-  'Current friction velocity at the wave boundary layer' 
-  'meter'                                         ! [m/s]
-  'ustrc_wbl, scalar, series' 
-  'ocean_time'
-  'idsusc'
-  'r2dvar'
-  1.0d0
-
-'thck_wbl'                                        ! Output
-  'Thickness of the wave boundary layer' 
-  'meter'                                         ! [m]
-  'thck_wbl, scalar, series' 
-  'ocean_time'
-  'idstbl'
-  'r2dvar'
-  1.0d0
-
-'udelta_wbl'                                      ! Output
-  'Current velocity at the wave boundary layer' 
-  'meter s-1'                                     ! [m/s]
-  'udelta_wbl, scalar, series' 
-  'ocean_time'
-  'idsubl'
-  'r2dvar'
-  1.0d0
-
-'phi_wc'                                          ! Output
-  'Angle between waves and currents' 
-  'radians'                                       ! [Non-dimensional]
-  'phi_wc, scalar, series' 
-  'ocean_time'
-  'idspwc'
-  'r2dvar'
-  1.0d0
-
-'fd_wbl'                                          ! Output
-  'Friction factor from the currents' 
-  'non-dimensional'                               ! [Non-dimensional]
-  'fd_wbl, scalar, series' 
-  'ocean_time'
-  'idsfdw'
   'r2dvar'
   1.0d0
 
@@ -3241,140 +3214,6 @@
   'r2dvar'
   1.0d0
 
-'ero_flux'                                         ! Output
-  'erosion flux'
-  'kilogram meter-2'                               ! [kg/m2]
-  'ero_flux, scalar, series'
-  'ocean_time'
-  'idBott(idefx)'
-  'r2dvar'
-  1.0d0
-
-'bed_inund_depth'                                  ! Output
-  'inundation depth'
-  'meter'                                          ! [m]
-  'bed_inund_depth, scalar, series'
-  'ocean_time'
-  'idBott(imaxD)'
-  'r2dvar'
-  1.0d0
-
-'dep_net'                                          ! Output
-  'erosion or deposition'
-  'meter'                                          ! [m]
-  'dep_net, scalar, series'
-  'ocean_time'
-  'idBott(idnet)'
-  'r2dvar'
-  1.0d0
-
-'tau_crit_off'                                     ! Output
-  'Offset for critical shear stress equation'
-  'kg/Pa/s'                                        ! [kg/Pa/s]
-  'tau_crit_off, scalar, series'
-  'ocean_time'
-  'idBott(idoff)'
-  'r2dvar'
-  1.0d0
-
-'tau_crit_slope'                                   ! Output
-  'Slope for critical shear stress equation'
-  'Pa/s'                                           ! [Pa/s]
-  'tau_crit_slope, scalar, series'
-  'ocean_time'
-  'idBott(idslp)'
-  'r2dvar'
-  1.0d0
-
-'tau_crit_time'                                    ! Output
-  'Nudging time for critical shear stress equation'
-  's-1'                                            ! [s-1]
-  'tau_crit_time, scalar, series'
-  'ocean_time'
-  'idBott(idtim)'
-  'r2dvar'
-  1.0d0
-
-'bed_thickness'                                    ! Input/Output
-  'sediment bed layer thickness'
-  'meter'                                          ! [m]
-  'bed_thickness, scalar, series'
-  'ocean_time'
-  'idSbed(ithck)'
-  'b3dvar'
-  1.0d0
-
-'bed_age'                                          ! Input/Output
-  'sediment layer age'
-  'seconds'                                        ! [s]
-  'bed_age, scalar, series'
-  'ocean_time'
-  'idSbed(iaged)'
-  'b3dvar'
-  1.0d0
-
-'bed_porosity'                                     ! Input/Output
-  'sediment layer porosity'
-  'nondimensional'                                 ! [nondimensional]
-  'bed_porosity, scalar, series'
-  'ocean_time'
-  'idSbed(iporo)'
-  'b3dvar'
-  1.0d0
-
-'bed_biodiff'                                      ! Input/Output
-  'biodiffusivity at bottom of each layer'
-  'meter2 second-1'                                ! [m2/s]
-  'bed_biodiff, scalar, series'
-  'ocean_time'
-  'idSbed(idiff)'
-  'b3dvar'
-  1.0d0
-
-'bed_tau_crit'                                     ! Input/Output
-  'tau critical in each layer'
-  'Newtons meter-2'                                ! [N/m2]
-  'bed_tau_crit, scalar, series'
-  'ocean_time'
-  'idSbed(ibtcr)'
-  'b3dvar'
-  1.0d0
-
-'bed_oxy'                                          ! Input/Output
-  'sediment porewater oxygen'
-  'mmol O2/m2'                                     ! [mmol O2/m2]
-  'bed_oxy, scalar, series'
-  'ocean_time'
-  'idSbed(iboxy)'
-  'b3dvar'
-  1.0d0
-
-'bed_no3'                                          ! Input/Output
-  'sediment porewater nitrate'
-  'mmol NO3/m2'                                    ! [mmol NO3/m2]
-  'bed_no3, scalar, series'
-  'ocean_time'
-  'idSbed(ibno3)'
-  'b3dvar'
-  1.0d0
-
-'bed_nh4'                                          ! Input/Output
-  'sediment porewater ammonium'
-  'mmol NH4/m2'                                    ! [mmol NH4/m2]
-  'bed_nh4, scalar, series'
-  'ocean_time'
-  'idSbed(ibnh4)'
-  'b3dvar'
-  1.0d0
-
-'bed_odu'                                       ! Input/Output
-  'sediment porewater oxygen demand units'
-  'mmol O2/m2'                                     ! [mmol O2/m2]
-  'bed_odu, scalar, series'
-  'ocean_time'
-  'idSbed(ibodu)'
-  'b3dvar'
-  1.0d0
 'grain_diameter'                                   ! Input/Output
   'sediment median grain diameter size'
   'meter'                                          ! [m]
@@ -3537,21 +3376,102 @@
   'r2dvar'
   1.0d0
 
-'cohesive_behavior'                                ! Output
-  'cohesive behavior'
-  '1'                                              ! []
-  'cohesive_behavior, scalar, series'
-  'ocean_time'
-  'idBott(idprp)'
-  'r2dvar'
-  1.0d0
-
 'saltation'                                        ! Input/Output
   'bottom saltation height'
   'meter'                                          ! [m]
   'saltation, scalar, series'
   'ocean_time'
   'idBott(ishgt)'
+  'r2dvar'
+  1.0d0
+
+'bed_inund_depth'                                  ! Output
+  'inundation depth'
+  'meter'                                          ! [m]
+  'bed_inund_depth, scalar, series'
+  'ocean_time'
+  'idBott(imaxD)'
+  'r2dvar'
+  1.0d0
+
+'dep_net'                                          ! Output
+  'erosion or deposition'
+  'meter'                                          ! [m]
+  'dep_net, scalar, series'
+  'ocean_time'
+  'idBott(idnet)'
+  'r2dvar'
+  1.0d0
+
+'thck_wbl'                                        ! Output
+  'Thickness of the wave boundary layer'
+  'meter'                                         ! [m]
+  'thck_wbl, scalar, series' 
+  'ocean_time'
+  'idBott(idtbl)'
+  'r2dvar'
+  1.0d0
+
+'udelta_wbl'                                      ! Output
+  'Current velocity at the wave boundary layer'
+  'meter s-1'                                     ! [m/s]
+  'udelta_wbl, scalar, series' 
+  'ocean_time'
+  'idBott(idubl)'
+  'r2dvar'
+  1.0d0
+
+'fd_wbl'                                          ! Output
+  'Friction factor from the currents' 
+  'non-dimensional'                               ! [Non-dimensional]
+  'fd_wbl, scalar, series' 
+  'ocean_time'
+  'idBott(idfdw)'
+  'r2dvar'
+  1.0d0
+
+'Zr_wbl'                                         ! Output
+  'Reference height to get near bottom current velocity.'
+  'meter-s'                                      ! [m/s]
+  'Zr_wbl, scalar, series' 
+  'ocean_time'
+  'idBott(idzrw)'
+  'r2dvar'
+  1.0d0
+
+'ksd_wbl'                                         ! Output
+  'Bed roughness (Zo) for wave boundary layer calc.' 
+  'meter'                                         ! [m/s]
+  'ksd_wbl, scalar, series' 
+  'ocean_time'
+  'idBott(idksd)'
+  'r2dvar'
+  1.0d0
+
+'ustrc_wbl'                                       ! Output
+  'Current friction velocity at wave boundary layer'
+  'meter'                                         ! [m/s]
+  'ustrc_wbl, scalar, series' 
+  'ocean_time'
+  'idBott(idusc)'
+  'r2dvar'
+  1.0d0
+
+'phic_sgwbl'                                      ! Output
+  'Angle between currents and xi axis' 
+  'radians'                                       ! [Non-dimensional]
+  'phi_wc, scalar, series' 
+  'ocean_time'
+  'idBott(idpcx)'
+  'r2dvar'
+  1.0d0
+
+'phi_wc'                                          ! Output
+  'Angle between waves and currents' 
+  'radians'                                       ! [Non-dimensional]
+  'phi_wc, scalar, series' 
+  'ocean_time'
+  'idBott(idpwc)'
   'r2dvar'
   1.0d0
 
@@ -3579,33 +3499,6 @@
   'dmix_time, scalar, series'
   'ocean_time'
   'idBott(idtim)'
-  'r2dvar'
-  1.0d0
-
-'tau_crit_slope_c'                                 ! Input/Output
-  'tau_crit_slope_c'
-  'N/m2'                                           ! [N/m2]
-  'tau_crit_slope_c, scalar, series'
-  'ocean_time'
-  'idBott(itcsc)'
-  'r2dvar'
-  1.0d0
-
-'tau_crit_offset_c'                                ! Input/Output
-  'tau_crit_offset_c'
-  'N/m2'                                           ! [N/m2]
-  'tau_crit_offset_c, scalar, series'
-  'ocean_time'
-  'idBott(itcoc)'
-  'r2dvar'
-  1.0d0
-
-'tau_crit_rtime'                                   ! Input/Output
-  'tau_crit_rtime'
-  's'                                              ! [s]
-  'tau_crit_rtime, scalar, series'
-  'ocean_time'
-  'idBott(itcrt)'
   'r2dvar'
   1.0d0
 
@@ -3652,6 +3545,87 @@
   'ocean_time'
   'idBott(idbzp)'
   'r2dvar'
+  1.0d0
+
+'cohesive_behavior'                                ! Output
+  'cohesive behavior'
+  '1'                                              ! []
+  'cohesive_behavior, scalar, series'
+  'ocean_time'
+  'idBott(idprp)'
+  'r2dvar'
+  1.0d0
+
+'tau_crit_slope_c'                                 ! Input/Output
+  'tau_crit_slope_c'
+  'N/m2'                                           ! [N/m2]
+  'tau_crit_slope_c, scalar, series'
+  'ocean_time'
+  'idBott(itcsc)'
+  'r2dvar'
+  1.0d0
+
+'tau_crit_offset_c'                                ! Input/Output
+  'tau_crit_offset_c'
+  'N/m2'                                           ! [N/m2]
+  'tau_crit_offset_c, scalar, series'
+  'ocean_time'
+  'idBott(itcoc)'
+  'r2dvar'
+  1.0d0
+
+'tau_crit_rtime'                                   ! Input/Output
+  'tau_crit_rtime'
+  's'                                              ! [s]
+  'tau_crit_rtime, scalar, series'
+  'ocean_time'
+  'idBott(itcrt)'
+  'r2dvar'
+  1.0d0
+
+'bed_tau_crit'                                     ! Input/Output
+  'tau critical in each layer'
+  'Newtons meter-2'                                ! [N/m2]
+  'bed_tau_crit, scalar, series'
+  'ocean_time'
+  'idSbed(ibtcr)'
+  'b3dvar'
+  1.0d0
+
+'bed_oxy'                                          ! Input/Output
+  'sediment porewater oxygen'
+  'mmol O2/m2'                                     ! [mmol O2/m2]
+  'bed_oxy, scalar, series'
+  'ocean_time'
+  'idSbed(iboxy)'
+  'b3dvar'
+  1.0d0
+
+'bed_no3'                                          ! Input/Output
+  'sediment porewater nitrate'
+  'mmol NO3/m2'                                    ! [mmol NO3/m2]
+  'bed_no3, scalar, series'
+  'ocean_time'
+  'idSbed(ibno3)'
+  'b3dvar'
+  1.0d0
+
+'bed_nh4'                                          ! Input/Output
+  'sediment porewater ammonium'
+  'mmol NH4/m2'                                    ! [mmol NH4/m2]
+  'bed_nh4, scalar, series'
+  'ocean_time'
+  'idSbed(ibnh4)'
+  'b3dvar'
+  1.0d0
+
+'bed_odu'                                       ! Input/Output
+  'sediment porewater oxygen demand units'
+  'mmol O2/m2'                                     ! [mmol O2/m2]
+  'bed_odu, scalar, series'
+  'ocean_time'
+  'idSbed(ibodu)'
+  'b3dvar'
   1.0d0
 
 'wet_dry_masking'                                  ! Input/Output
@@ -5859,7 +5833,7 @@
   'nulvar'
   1.0d0
 
-'RDeN_west'                                        ! Input
+'RDeC_west'                                        ! Input
   'river carbon detritus western boundary condition'
   'millimole_carbon meter-3'                       ! [millimole/m3]
   'RDeC_west, scalar, series'
@@ -5868,7 +5842,7 @@
   'nulvar'
   1.0d0
 
-'RDeN_north'                                       ! Input
+'RDeC_north'                                       ! Input
   'river carbon detritus northern boundary condition'
   'millimole_carbon meter-3'                       ! [millimole/m3]
   'RDeC_north, scalar, series'
@@ -5877,7 +5851,7 @@
   'nulvar'
   1.0d0
 
-'RDeN_south'                                       ! Input
+'RDeC_south'                                       ! Input
   'river carbon detritus southern boundary condition'
   'millimole_carbon meter-3'                       ! [millimole/m3]
   'RDeC_south, scalar, series'

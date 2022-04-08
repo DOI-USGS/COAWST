@@ -260,7 +260,8 @@
 !=======================================================================
           oEW=1.0_r8/MAX(EW,EWlim)
           DO d=1,ND
-            IF ((h_tot(i,j).ge.Dcrit(ng)).and.(EW.gt.EWlim)) THEN
+!           IF ((h_tot(i,j).ge.Dcrit(ng)).and.(EW.gt.EWlim)) THEN
+            IF ((h_tot(i,j).ge.1.5_r8*Dcrit(ng)).and.(EW.gt.EWlim)) THEN
 #   ifdef WDISS_FRIC
               EN(d)=MAX(0.0_r8,EN(d)-(Dissip_break(i,j)+dissfric)*      &
      &                                EN(d)*oEW)

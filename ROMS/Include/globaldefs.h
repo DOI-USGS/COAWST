@@ -691,6 +691,10 @@
 # define BBL_MODEL
 #endif
 
+#if defined SSW_LOGINT && defined WEC_STOKES
+# define SSW_LOGINT_STOKES
+#endif
+
 /*
 ** Check if spatially varying bottom friction parameters are needed.
 */
