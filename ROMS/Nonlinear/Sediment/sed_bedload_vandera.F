@@ -415,7 +415,7 @@
             depth=MAX(h(i,j)+zeta(i,j,1),Dcrit(ng))   ! (m)
             Td=MAX(Pwave_bot(i,j),1.0_r8)             ! (s)
             urms=Uwave_rms(i,j)                       ! (m/s)
-            phi_curwave=phi_wc(i,j)
+            phi_curwave=phi_wcl(i,j)
             udelta=bottom(i,j,idubl)
 # if defined BEDLOAD_VANDERA_MADSEN_UDELTA
             ksd_wbll(i,j)=bottom(i,j,idksd)

@@ -639,35 +639,35 @@
 #endif
 #if defined SEDIMENT && defined BEDLOAD_VANDERA_ASYM_LIMITS
 !
-      IF (Master) WRITE (stdout,30) 'BEDLOAD_VANDERA_ASYM_LIMITS',      &
+      IF (Master) WRITE (stdout,20) 'BEDLOAD_VANDERA_ASYM_LIMITS',      &
      &   'Activate bed load vanDerA asymmetry limits'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+29)=' BEDLOAD_VANDERA_ASYM_LIMITS,'
 #endif
 #if defined SEDIMENT && defined BEDLOAD_VANDERA_SURFACE_WAVE
 !
-      IF (Master) WRITE (stdout,31) 'BEDLOAD_VANDERA_SURFACE_WAVE',     &
+      IF (Master) WRITE (stdout,20) 'BEDLOAD_VANDERA_SURFACE_WAVE',     &
      &   'Activate bed load vanDerA surface wave'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+30)=' BEDLOAD_VANDERA_SURFACE_WAVE,'
 #endif
 #if defined SEDIMENT && defined BEDLOAD_VANDERA_WAVE_AVGD_STRESS
 !
-      IF (Master) WRITE (stdout,32) 'BEDLOAD_VANDERA_WAVE_AVGD_STRESS', &
+      IF (Master) WRITE (stdout,20) 'BEDLOAD_VANDERA_WAVE_AVGD_STRESS', &
      &   'Activate bed load vanDerA wave avg stress'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+34)=' BEDLOAD_VANDERA_WAVE_AVGD_STRESS,'
 #endif
 #if defined SEDIMENT && defined BEDLOAD_VANDERA_MADSEN_UDELTA
 !
-      IF (Master) WRITE (stdout,29) 'BEDLOAD_VANDERA_MADSEN_UDELTA',    &
+      IF (Master) WRITE (stdout,20) 'BEDLOAD_VANDERA_MADSEN_UDELTA',    &
      &   'Activate bed load madsen current calculation'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+31)=' BEDLOAD_VANDERA_MADSEN_UDELTA,'
 #endif
 #if defined SEDIMENT && defined BEDLOAD_VANDERA_DIRECT_UDELTA
 !
-      IF (Master) WRITE (stdout,28) 'BEDLOAD_VANDERA_DIRECT_UDELTA',    &
+      IF (Master) WRITE (stdout,20) 'BEDLOAD_VANDERA_DIRECT_UDELTA',    &
      &   'Activate bed load direct elevation current calculation'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+30)=' BEDLOAD_VANDERA_DIRECT_UDELTA,'
