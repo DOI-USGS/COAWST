@@ -2953,14 +2953,14 @@
 # endif
 # ifdef SSW_LOGINT_WBL
 !
-       IF (Master) WRITE (stdout,24) 'SSW_LOGINT_WBL',                  &
+       IF (Master) WRITE (stdout,20) 'SSW_LOGINT_WBL',                  &
      &   'Bottom currents logarithmic interpolation at wbl'
        is=LEN_TRIM(Coptions)+1
        Coptions(is:is+16)=' SSW_LOGINT_WBL,'
 # endif
 # ifdef SSW_LOGINT_DIRECT
 !
-       IF (Master) WRITE (stdout,27) 'SSW_LOGINT_DIRECT',               &
+       IF (Master) WRITE (stdout,20) 'SSW_LOGINT_DIRECT',               &
      &   'Bottom currents logarithmic interpolation at user elev'
        is=LEN_TRIM(Coptions)+1
        Coptions(is:is+19)=' SSW_LOGINT_DIRECT,'
