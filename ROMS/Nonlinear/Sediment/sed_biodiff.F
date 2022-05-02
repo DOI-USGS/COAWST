@@ -118,7 +118,7 @@
       real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
 #  endif
 #  if defined SED_MORPH
-      real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,3)
 #  endif
       real(r8), intent(inout) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
       real(r8), intent(inout) :: bed(LBi:UBi,LBj:UBj,Nbed,MBEDP)

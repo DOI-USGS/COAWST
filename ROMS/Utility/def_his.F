@@ -1163,6 +1163,21 @@
           status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idOvel),   &
      &                   NF_FOUT, nvd4, w3dgrd, Aval, Vinfo, ncname)
           IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+# if defined OMEGA_IMPLICIT
+          Vinfo( 1)=Vname(1,idOvil)
+          Vinfo( 2)=Vname(2,idOvil)
+          Vinfo( 3)='meter second-1'
+          Vinfo(14)=Vname(4,idOvil)
+          Vinfo(16)=Vname(1,idtime)
+# if defined WRITE_WATER && defined MASKING
+          Vinfo(20)='mask_rho'
+# endif
+          Vinfo(22)='coordinates'
+          Aval(5)=REAL(Iinfo(1,idOvil,ng),r8)
+          status=def_var(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idOvil),   &
+     &                   NF_FOUT, nvd4, w3dgrd, Aval, Vinfo, ncname)
+          IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+# endif
         END IF
 !
 !  Define tracer type variables.

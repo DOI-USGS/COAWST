@@ -124,9 +124,6 @@
      &                       SEDBED(ng) % bedldu,                       &
      &                       SEDBED(ng) % bedldv,                       &
 # endif
-# if defined SED_MORPH
-     &                       SEDBED(ng) % bed_thick,                    &
-# endif
      &                       SEDBED(ng) % bed,                          &
      &                       SEDBED(ng) % bed_frac,                     &
      &                       SEDBED(ng) % bed_mass,                     &
@@ -165,9 +162,6 @@
 # if defined BEDLOAD_MPM || defined BEDLOAD_SOULSBY
      &                             h, om_r, om_u, on_r, on_v,           &
      &                             bedldu, bedldv,                      &
-# endif
-# if defined SED_MORPH
-     &                             bed_thick,                           &
 # endif
      &                             bed, bed_frac, bed_mass,             &
      &                             bottom)
@@ -233,9 +227,6 @@
       real(r8), intent(inout) :: bedldu(LBi:,LBj:,:)
       real(r8), intent(inout) :: bedldv(LBi:,LBj:,:)
 #  endif
-#  if defined SED_MORPH
-      real(r8), intent(inout):: bed_thick(LBi:,LBj:,:)
-#  endif
       real(r8), intent(inout) :: bed(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: bed_frac(LBi:,LBj:,:,:)
       real(r8), intent(inout) :: bed_mass(LBi:,LBj:,:,:,:)
@@ -279,9 +270,6 @@
       real(r8), intent(in) :: on_v(LBi:UBi,LBj:UBj)
       real(r8), intent(inout) :: bedldu(LBi:UBi,LBj:UBj,NST)
       real(r8), intent(inout) :: bedldv(LBi:UBi,LBj:UBj,NST)
-#  endif
-#  if defined SED_MORPH
-      real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,2)
 #  endif
       real(r8), intent(inout) :: bed(LBi:UBi,LBj:UBj,Nbed,MBEDP)
       real(r8), intent(inout) :: bed_frac(LBi:UBi,LBj:UBj,Nbed,NST)

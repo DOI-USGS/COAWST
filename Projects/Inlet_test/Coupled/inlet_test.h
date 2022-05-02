@@ -26,6 +26,7 @@
 #define DJ_GRADPS
 #define SPLINES_VDIFF
 #define SPLINES_VVISC
+#define OMEGA_IMPLICIT
 
 #define SOLVE3D
 #undef  WEC_MELLOR

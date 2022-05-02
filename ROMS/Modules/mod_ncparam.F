@@ -260,6 +260,7 @@
         integer  :: idOtyp        ! observations type
         integer  :: idOval        ! observations value
         integer  :: idOvel        ! omega vertical velocity
+        integer  :: idOvil        ! omega vertical velocity implicit
         integer  :: idOclm        ! omega vertical velocity climatology
         integer  :: idQair        ! surface air humidity
         integer  :: idPair        ! surface air pressure
@@ -1351,6 +1352,8 @@
               idWvqp=varid
             CASE ('idOvel')
               idOvel=varid
+            CASE ('idOvil')
+              idOvil=varid
             CASE ('idDano')
               idDano=varid
             CASE ('idsurT(itemp)')

@@ -189,7 +189,7 @@
       real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,3)
 #  endif
 #  if defined SED_MORPH
-      real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,3)
 #  endif
       real(r8), intent(inout) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
       real(r8), intent(inout) :: ero_flux(LBi:UBi,LBj:UBj,NST)

@@ -29,9 +29,6 @@
       USE mod_mixing
 #endif
       USE mod_ocean
-#if defined SEDIMENT && defined SED_MORPH && defined SOLVE3D
-      USE mod_sedbed
-#endif
       USE mod_stepping
 !
 !  Imported variable declarations.
@@ -60,9 +57,6 @@
 #ifdef SOLVE3D
 # ifdef ICESHELF
      &                   GRID(ng) % zice,                               &
-# endif
-# if defined SEDIMENT && defined SED_MORPH
-     &                   SEDBED(ng) % bed_thick,                        &
 # endif
      &                   GRID(ng) % Hz,                                 &
      &                   GRID(ng) % z_r,                                &
@@ -112,9 +106,6 @@
 #ifdef SOLVE3D
 # ifdef ICESHELF
      &                         zice,                                    &
-# endif
-# if defined SEDIMENT && defined SED_MORPH
-     &                         bed_thick,                               &
 # endif
      &                         Hz, z_r, z_w,                            &
 #endif
@@ -182,9 +173,6 @@
 #  ifdef ICESHELF
       real(r8), intent(in) :: zice(LBi:,LBj:)
 #  endif
-#  if defined SEDIMENT && defined SED_MORPH
-      real(r8), intent(in):: bed_thick(LBi:,LBj:,:)
-#  endif
 # endif
 #if defined DIFF_GRID || defined DIFF_3DCOEF || \
     defined VISC_GRID || defined VISC_3DCOEF
@@ -235,9 +223,6 @@
 # ifdef SOLVE3D
 #  ifdef ICESHELF
       real(r8), intent(in) :: zice(LBi:UBi,LBj:UBj)
-#  endif
-#  if defined SEDIMENT && defined SED_MORPH
-      real(r8), intent(in):: bed_thick(LBi:UBi,LBj:UBj,2)
 #  endif
 # endif
 #if defined DIFF_GRID || defined DIFF_3DCOEF || \
@@ -745,9 +730,6 @@
      &                     h,                                           &
 # ifdef ICESHELF
      &                     zice,                                        &
-# endif
-# if defined SEDIMENT && defined SED_MORPH
-     &                     bed_thick,                                   &
 # endif
      &                     A2d,                                         &
      &                     Hz, z_r, z_w)

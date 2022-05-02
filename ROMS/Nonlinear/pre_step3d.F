@@ -743,11 +743,7 @@
               END DO
             END DO
             DO i=Istr,Iend
-#  ifdef SED_MORPH
-              FC(i,0)=W(i,j,0)*t(i,j,1,nstp,itrc)
-#  else
               FC(i,0)=0.0_r8
-#  endif
               FC(i,N(ng))=0.0_r8
             END DO
 !
@@ -767,11 +763,7 @@
               END DO
             END DO
             DO i=Istr,Iend
-#  ifdef SED_MORPH
-              FC(i,0)=W(i,j,0)*t(i,j,1,nstp,itrc)
-#  else
               FC(i,0)=0.0_r8
-#  endif
               FC(i,N(ng))=0.0_r8
             END DO
 !
@@ -794,11 +786,7 @@
               END DO
             END DO
             DO i=Istr,Iend
-#  ifdef SED_MORPH
-              FC(i,0)=W(i,j,0)*t(i,j,1,nstp,itrc)
-#  else
               FC(i,0)=0.0_r8
-#  endif
               FC(i,N(ng))=0.0_r8
             END DO
 !
@@ -824,13 +812,7 @@
               END DO
             END DO
             DO i=Istr,Iend
-#  ifdef SED_MORPH
-              FC(i,0)=W(i,j,0)*2.0_r8*                                  &
-     &                (cff2*t(i,j,1,nstp,itrc)-                         &
-     &                 cff3*t(i,j,2,nstp,itrc))
-#  else
               FC(i,0)=0.0_r8
-#  endif
 #  ifdef WEC_VF
               FC(i,1)=(W(i,j,1)+W_stokes(i,j,1))*                       &
 #  else

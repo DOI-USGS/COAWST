@@ -926,7 +926,7 @@
 #  if defined SOLVE3D && defined SEDIMENT && defined SED_MORPH
       real(r8), intent(in) :: bed(LBi:UBi,LBj:UBj,Nbed,MBEDP)
       real(r8), intent(inout) :: bed_thick0(LBi:UBi,LBj:UBj)
-      real(r8), intent(inout) :: bed_thick(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(inout) :: bed_thick(LBi:UBi,LBj:UBj,3)
 #  endif
 #  ifdef WET_DRY
       real(r8), intent(inout) :: rmask_wet(LBi:UBi,LBj:UBj)
@@ -1134,6 +1134,7 @@
           END DO
           bed_thick(i,j,1)=bed_thick0(i,j)
           bed_thick(i,j,2)=bed_thick0(i,j)
+          bed_thick(i,j,3)=bed_thick0(i,j)
         END DO
       END DO
 !
@@ -1147,15 +1148,18 @@
         CALL exchange_r2d_tile (ng, tile,                               &
      &                          LBi, UBi, LBj, UBj,                     &
      &                          bed_thick(:,:,2))
+        CALL exchange_r2d_tile (ng, tile,                               &
+     &                          LBi, UBi, LBj, UBj,                     &
+     &                          bed_thick(:,:,3))
       END IF
 
 #   ifdef DISTRIBUTE
-      CALL mp_exchange2d (ng, tile, model, 3,                           &
+      CALL mp_exchange2d (ng, tile, model, 4,                           &
      &                    LBi, UBi, LBj, UBj,                           &
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
-     &                    bed_thick0,                                   &
-     &                    bed_thick(:,:,1), bed_thick(:,:,2))
+     &                    bed_thick0, bed_thick(:,:,1),                 &
+     &                    bed_thick(:,:,2), bed_thick(:,:,3))
 #   endif
 #  endif
 # endif

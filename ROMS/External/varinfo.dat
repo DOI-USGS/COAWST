@@ -218,10 +218,19 @@
 
 'omega'                                            ! Output
   'S-coordinate vertical momentum component'
-  'meter3 second-1'                                ! [m3/s]
+  'meter second-1'                                 ! [m3/s]
   'omega, scalar, series'
   'ocean_time'
   'idOvel'
+  'w3dvar'
+  1.0d0
+
+'omega_implicit'                                   ! Output
+  'S-coordinate vertical implicit momentum component'
+  'meter second-1'                                 ! [m3/s]
+  'omega, scalar, series'
+  'ocean_time'
+  'idOvil'
   'w3dvar'
   1.0d0
 

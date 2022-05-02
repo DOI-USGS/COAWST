@@ -259,7 +259,7 @@
 #endif
 #if defined SEDIMENT && defined SED_MORPH
       allocate ( SEDBED(ng) % bed_thick0(LBi:UBi,LBj:UBj) )
-      allocate ( SEDBED(ng) % bed_thick(LBi:UBi,LBj:UBj,1:2) )
+      allocate ( SEDBED(ng) % bed_thick(LBi:UBi,LBj:UBj,1:3) )
 #endif
 #ifdef BEDLOAD
       allocate ( SEDBED(ng) % bedldu(LBi:UBi,LBj:UBj,NST) )
@@ -294,7 +294,7 @@
 # endif
 # if defined SEDIMENT && defined SED_MORPH
       allocate ( SEDBED(ng) % tl_bed_thick0(LBi:UBi,LBj:UBj) )
-      allocate ( SEDBED(ng) % tl_bed_thick(LBi:UBi,LBj:UBj,1:2) )
+      allocate ( SEDBED(ng) % tl_bed_thick(LBi:UBi,LBj:UBj,1:3) )
 # endif
 # ifdef BEDLOAD
       allocate ( SEDBED(ng) % tl_bedldu(LBi:UBi,LBj:UBj,NST) )
@@ -318,7 +318,7 @@
 # endif
 # if defined SEDIMENT && defined SED_MORPH
       allocate ( SEDBED(ng) % ad_bed_thick0(LBi:UBi,LBj:UBj) )
-      allocate ( SEDBED(ng) % ad_bed_thick(LBi:UBi,LBj:UBj,1:2) )
+      allocate ( SEDBED(ng) % ad_bed_thick(LBi:UBi,LBj:UBj,1:3) )
 # endif
 # ifdef BEDLOAD
       allocate ( SEDBED(ng) % ad_bedldu(LBi:UBi,LBj:UBj,NST) )
@@ -449,6 +449,7 @@
             SEDBED(ng) % bed_thick0(i,j) = IniVal
             SEDBED(ng) % bed_thick(i,j,1) = IniVal
             SEDBED(ng) % bed_thick(i,j,2) = IniVal
+            SEDBED(ng) % bed_thick(i,j,3) = IniVal
           END DO
 #endif
 #ifdef BEDLOAD
@@ -522,6 +523,7 @@
             SEDBED(ng) % tl_bed_thick0(i,j) = IniVal
             SEDBED(ng) % tl_bed_thick(i,j,1) = IniVal
             SEDBED(ng) % tl_bed_thick(i,j,2) = IniVal
+            SEDBED(ng) % tl_bed_thick(i,j,3) = IniVal
           END DO
 # endif
 # ifdef BEDLOAD
@@ -578,6 +580,7 @@
             SEDBED(ng) % ad_bed_thick0(i,j) = IniVal
             SEDBED(ng) % ad_bed_thick(i,j,1) = IniVal
             SEDBED(ng) % ad_bed_thick(i,j,2) = IniVal
+            SEDBED(ng) % ad_bed_thick(i,j,3) = IniVal
           END DO
 # endif
 # ifdef BEDLOAD

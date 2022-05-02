@@ -1255,19 +1255,7 @@
           END DO
         END DO
         DO i=IstrU,Iend
-#   ifdef SED_MORPH
-#    ifdef WEC_MELLOR
-          FC(i,0)=0.5_r8*(u(i,j,1,nrhs)+u_stokes(i,j,1))*               &
-     &            (W(i  ,j,0)+                                          &
-     &             W(i-1,j,0))
-#    else
-          FC(i,0)=0.5_r8*u(i,j,1,nrhs)*                                 &
-     &            (W(i  ,j,0)+                                          &
-     &             W(i-1,j,0))
-#    endif
-#   else
           FC(i,0)=0.0_r8
-#   endif
           FC(i,N(ng))=0.0_r8
         END DO
 #  elif defined UV_C4ADVECTION
@@ -1321,23 +1309,7 @@
      &                   u(i,j,3,nrhs)))*                               &
      &            (W(i  ,j,1)+                                          &
      &             W(i-1,j,1))
-#   ifdef SED_MORPH
-#    ifdef WEC_MELLOR
-          FC(i,0)=2.0_r8*                                               &
-     &            (cff1*(u(i,j,1,nrhs)+u_stokes(i,j,1))-                &
-     &             cff2*(u(i,j,2,nrhs)+u_stokes(i,j,2)))*               &
-     &            (W(i  ,j,0)+                                          &
-     &             W(i-1,j,0))
-#    else
-          FC(i,0)=2.0_r8*                                               &
-     &            (cff1*u(i,j,1,nrhs)-                                  &
-     &             cff2*u(i,j,2,nrhs))*                                 &
-     &            (W(i  ,j,0)+                                          &
-     &             W(i-1,j,0))
-#    endif
-#   else
           FC(i,0)=0.0_r8
-#   endif
         END DO
 #  else
         cff1=9.0_r8/16.0_r8
@@ -1396,27 +1368,7 @@
      &                   W(i-1,j,1))-                                   &
      &             cff2*(W(i+1,j,1)+                                    &
      &                   W(i-2,j,1)))
-#   ifdef SED_MORPH
-#    ifdef WEC_MELLOR
-          FC(i,0)=2.0_r8*                                               &
-     &            (cff1*(u(i,j,1,nrhs)+u_stokes(i,j,1))-                &
-     &             cff2*(u(i,j,2,nrhs)+u_stokes(i,j,2)))*               &
-     &            (cff1*(W(i  ,j,0)+                                    &
-     &                   W(i-1,j,0))-                                   &
-     &             cff2*(W(i+1,j,0)+                                    &
-     &                   W(i-2,j,0)))
-#    else
-          FC(i,0)=2.0_r8*                                               &
-     &            (cff1*u(i,j,1,nrhs)-                                  &
-     &             cff2*u(i,j,2,nrhs))*                                 &
-     &            (cff1*(W(i  ,j,0)+                                    &
-     &                   W(i-1,j,0))-                                   &
-     &             cff2*(W(i+1,j,0)+                                    &
-     &                   W(i-2,j,0)))
-#    endif
-#   else
           FC(i,0)=0.0_r8
-#   endif
         END DO
 #  endif
         DO k=1,N(ng)
@@ -1509,19 +1461,7 @@
             END DO
           END DO
           DO i=Istr,Iend
-#   ifdef SED_MORPH
-#    ifdef WEC_MELLOR
-            FC(i,0)=0.5_r8*(v(i,j,1,nrhs)+v_stokes(i,j,1))*             &
-     &              (W(i,j  ,0)+                                        &
-     &               W(i,j-1,0))
-#    else
-            FC(i,0)=0.5_r8*v(i,j,1,nrhs)*                               &
-     &              (W(i,j  ,0)+                                        &
-     &               W(i,j-1,0))
-#    endif
-#   else
             FC(i,0)=0.0_r8
-#   endif
             FC(i,N(ng))=0.0_r8
           END DO
 #  elif defined UV_C4ADVECTION
@@ -1578,23 +1518,7 @@
      &                     v(i,j,3,nrhs)))*                             &
      &              (W(i,j  ,1)+                                        &
      &               W(i,j-1,1))
-#   ifdef SED_MORPH
-#    ifdef WEC_MELLOR
-            FC(i,0)=2.0_r8*                                             &
-     &              (cff1*(v(i,j,1,nrhs)+v_stokes(i,j,1))-              &
-     &               cff2*(v(i,j,2,nrhs)+v_stokes(i,j,2)))*             &
-     &              (W(i,j  ,0)+                                        &
-     &               W(i,j-1,0))
-#    else
-            FC(i,0)=2.0_r8*                                             &
-     &              (cff1*v(i,j,1,nrhs)-                                &
-     &               cff2*v(i,j,2,nrhs))*                               &
-     &              (W(i,j  ,0)+                                        &
-     &               W(i,j-1,0))
-#    endif
-#   else
             FC(i,0)=0.0_r8
-#   endif
           END DO
 #  else
           cff1=9.0_r8/16.0_r8
@@ -1653,27 +1577,7 @@
      &                     W(i,j-1,1))-                                 &
      &               cff2*(W(i,j+1,1)+                                  &
      &                     W(i,j-2,1)))
-#   ifdef SED_MORPH
-#    ifdef WEC_MELLOR
-            FC(i,0)=2.0_r8*                                             &
-     &              (cff1*(v(i,j,1,nrhs)+v_stokes(i,j,1))-              &
-     &               cff2*(v(i,j,2,nrhs)+v_stokes(i,j,2)))*             &
-     &              (cff1*(W(i,j  ,0)+                                  &
-     &                     W(i,j-1,0))-                                 &
-     &               cff2*(W(i,j+1,0)+                                  &
-     &                     W(i,j-2,0)))
-#    else
-            FC(i,0)=2.0_r8*                                             &
-     &              (cff1*v(i,j,1,nrhs)-                                &
-     &               cff2*v(i,j,2,nrhs))*                               &
-     &              (cff1*(W(i,j  ,0)+                                  &
-     &                     W(i,j-1,0))-                                 &
-     &               cff2*(W(i,j+1,0)+                                  &
-     &                     W(i,j-2,0)))
-#    endif
-#   else
             FC(i,0)=0.0_r8
-#   endif
           END DO
 #  endif
           DO k=1,N(ng)

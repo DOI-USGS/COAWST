@@ -938,6 +938,35 @@
           RETURN
         END IF
         deallocate (Wr3d)
+# if defined OMEGA_IMPLICIT
+        IF (.not.allocated(Wr3d)) THEN
+          allocate (Wr3d(LBi:UBi,LBj:UBj,0:N(ng)))
+          Wr3d(LBi:UBi,LBj:UBj,0:N(ng))=0.0_r8
+        END IF
+        scale=1.0_dp
+        gtype=gfactor*w3dvar
+        CALL scale_omega (ng, tile, LBi, UBi, LBj, UBj, 0, N(ng),       &
+     &                    GRID(ng) % pm,                                &
+     &                    GRID(ng) % pn,                                &
+     &                    OCEAN(ng) % Wi,                               &
+     &                    Wr3d)
+        status=nf_fwrite3d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idOvil), &
+     &                     HIS(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, 0, N(ng), scale,         &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     Wr3d)
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idOvil)), HIS(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+        deallocate (Wr3d)
+# endif
       END IF
 !
 !  Write out vertical velocity (m/s).

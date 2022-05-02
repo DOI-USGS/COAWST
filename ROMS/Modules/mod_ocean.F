@@ -128,6 +128,9 @@
           real(r8), pointer :: u(:,:,:,:)
           real(r8), pointer :: v(:,:,:,:)
           real(r8), pointer :: W(:,:,:)
+# if defined OMEGA_IMPLICIT
+          real(r8), pointer :: Wi(:,:,:)
+# endif
           real(r8), pointer :: wvel(:,:,:)
 
 # ifdef NEMURO_SED1
@@ -475,6 +478,11 @@
 
       allocate ( OCEAN(ng) % W(LBi:UBi,LBj:UBj,0:N(ng)) )
       Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
+
+# if defined OMEGA_IMPLICIT
+      allocate ( OCEAN(ng) % Wi(LBi:UBi,LBj:UBj,0:N(ng)) )
+      Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
+# endif
 
       allocate ( OCEAN(ng) % wvel(LBi:UBi,LBj:UBj,0:N(ng)) )
       Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
@@ -1161,6 +1169,9 @@
               OCEAN(ng) % rv(i,j,k,2) = IniVal
 
               OCEAN(ng) % W(i,j,k) = IniVal
+# if defined OMEGA_IMPLICIT
+              OCEAN(ng) % Wi(i,j,k) = IniVal
+# endif
               OCEAN(ng) % wvel(i,j,k) = IniVal
 # if defined WEC
               OCEAN(ng) % W_stokes(i,j,k) = IniVal
