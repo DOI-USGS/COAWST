@@ -584,6 +584,7 @@
         IF (roms_exit.eq.NoError) THEN
           CALL finalize_ocn2wav_coupling
         ELSE
+          CALL SLEEP (20)
           ERROR STOP ! F-2008
           CALL mpi_finalize (MyError)
         END IF

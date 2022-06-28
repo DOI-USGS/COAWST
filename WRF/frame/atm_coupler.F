@@ -1220,7 +1220,7 @@
       CALL AttrVect_importRAttr (AttrVect_O(ia,io)%atm2ocn_AV, "HFX",   &
      &                           AA, Asize)
 !-----------------------------------------------------------------------
-!     USTRESS    Surface u-stress (m2 s-2).
+!     USTRESS    Surface u-stress (Pa).
 !     Use Uearth and Vearth rotated velocities to partition UST.
 !
       ij=0
@@ -1242,7 +1242,7 @@
       CALL AttrVect_importRAttr (AttrVect_O(ia,io)%atm2ocn_AV,"USTRESS",&
      &                           AA, Asize)
 !-----------------------------------------------------------------------
-!     VSTRESS    Surface v-stress (m2 s-2).
+!     VSTRESS    Surface v-stress (Pa).
 !     Use Uearth and Vearth rotated velocities to partition UST.
 !
       ij=0

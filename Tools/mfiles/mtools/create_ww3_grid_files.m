@@ -71,11 +71,11 @@ fclose(fid);
 % 4) Create ww3 bathy
 %
 fid = fopen(ww3_bath_file,'w');
-h(h<(min_depth))=9999;
+%h(h<(min_depth))=9999;
 for index1 = 1:MP;
     for index2 = 1:LP;
        fprintf(fid,'   ');
-       fprintf(fid,'%12.8f',h(index2,index1));
+       fprintf(fid,'%12.2f',h(index2,index1));
     end
     fprintf(fid,'\n');
 end
@@ -91,16 +91,20 @@ fclose(fid);
 %
 ww3_mask=ones(LP,MP);
 %
-% now make boudaries = 2
+% now make boudaries = 3
 %
-%ww3_mask(:,1)=2;
-%ww3_mask(:,end)=2;
-%ww3_mask(1,:)=2;
-%ww3_mask(end,:)=2;
+ww3_mask(:,1)=3;
+ww3_mask(:,end)=3;
+ww3_mask(1,:)=3;
+ww3_mask(end,:)=3;
+% For Inlet test use the next line.
+%ww3_mask(2:end-1,end-1)=2;  %impose BC at 1 grid cell in along north edge
 %
 % now remove land and set these points as 0
 %
 zz=find(mask_rho==0);
+ww3_mask(zz)=0;
+zz=find(h<(min_depth));
 ww3_mask(zz)=0;
 
 % now write this out
