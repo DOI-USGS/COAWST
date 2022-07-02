@@ -35,11 +35,18 @@ gn.z_w=shiftdim(gn.z_w,2);
 % Read HYCOM lon lat depth
 %
 display(['getting HYCOM grid data from ', url])
-numX=ncread(url,'X');
-numY=ncread(url,'Y');
-hycom_lon=ncread(url,'Longitude',[1 1],[length(numX) 1]);
-hycom_lat=ncread(url,'Latitude',[1 1],[1 length(numY)]);
-hycom_depth=ncread(url,'Depth');
+try
+  numX=ncread(url,'X');
+  numY=ncread(url,'Y');
+  hycom_lon=ncread(url,'Longitude',[1 1],[length(numX) 1]);
+  hycom_lat=ncread(url,'Latitude',[1 1],[1 length(numY)]);
+  hycom_depth=ncread(url,'Depth');
+catch
+  hycom_lon=ncread(url,'lon');
+  hycom_lat=ncread(url,'lat');
+  hycom_depth=ncread(url,'depth');
+end
+
 %for exp930
 %hycom_lon=ncread(url,'lon');
 %hycom_lat=ncread(url,'lat');
