@@ -122,6 +122,8 @@ end
 
 if (nargin < 9),
   zeta=zeros(size(h));
+%jcw
+  zeta=max(0.1-h,zeta);
 end
 
 if (nargin < 10),
@@ -179,6 +181,8 @@ end
 %  Average bathymetry and free-surface at requested C-grid type.
 %--------------------------------------------------------------------------
 
+%jcw
+zeta=max(0.1-h,zeta);
 switch ( igrid ),
   case 1
     hr=h;
@@ -206,7 +210,7 @@ if (Vtransform == 1),
   switch ( igrid ),
     case 1
       for k=1:N,
-	z0=(s(k)-C(k))*hc + C(k).*hr;
+        z0=(s(k)-C(k))*hc + C(k).*hr;
         z(:,:,k)=z0 + zetar.*(1.0 + z0./hr);
       end
     case 2
