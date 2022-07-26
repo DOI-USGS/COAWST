@@ -25,9 +25,8 @@ IWRITE=1;           % 1 to write output to netcdf, 0 for no output
       Gname='e:\data\models\COAWST\Projects\Sandy\Sandy_roms_grid.nc';
       Fname='tide_forc_Sandy.nc';
 
-% (2) Enter ROMS start time.  This will be used to calculate the proper phase
-%     for the tidal constituents.  If you change the start time, this routine
-%     must be run again to adjust the tidal phases. 
+% (2) Enter Tide start time.  This will be used to calculate the proper phase
+%     for the tidal constituents.
 %            YYYY   MO   DA    HR     MI    SC
       g = [  2012,  10,  28,   0,     0,    0];   % GMT
       disp(['Tidal Start Time =' datestr(g)])

@@ -33,7 +33,7 @@ dayFrequency = 1;
 url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';      % 2011-01 to 2013-08
 
 % (3) Enter working directory (wdr)
-wdr = 'F:\data\models\COAWST_tests\coawstv3.4_update\coawst_v3.4_tests\sandy\Projects\Sandy';
+wdr = 'E:\data\models\COAWST\Projects\Sandy';
 
 % (4) Enter path and name of the ROMS grid
 modelgrid = 'Sandy_roms_grid.nc'
