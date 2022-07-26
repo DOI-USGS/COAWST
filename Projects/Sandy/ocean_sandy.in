@@ -448,7 +448,7 @@ LtracerSponge == F F                            ! temperature, salinity, inert
 ! NetCDF units attribute.
 
       DSTART =  56228.5d0 56228.5d0        ! days
-  TIDE_START =  52866.0d0                  ! days
+  TIDE_START =  56228.0d0                  ! days
     TIME_REF =  18581117.0d0               ! yyyymmdd.dd
 
 ! Nudging/relaxation time scales, inverse scales will be computed
