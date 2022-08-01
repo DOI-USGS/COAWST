@@ -47,8 +47,10 @@ netcdf.close(RN)
 
 %%
 tz_levs=length(clm.z);
-X=repmat(clm.lon,1,length(clm.lat));
-Y=repmat(clm.lat,length(clm.lon),1);
+%X=repmat(clm.lon,1,length(clm.lat));
+%Y=repmat(clm.lat,length(clm.lon),1);
+X=clm.lon;
+Y=clm.lat;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 disp(['Interpolating u for ',datestr(tg(tid1))]);
 ttu=1;
