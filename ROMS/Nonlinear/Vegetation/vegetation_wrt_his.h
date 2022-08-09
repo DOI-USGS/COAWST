@@ -47,7 +47,8 @@
 !  Write out wave dissipation due to vegetation
 !
       IF (Hout(idWdvg,ng)) THEN
-        scale=1.0_r8
+        scale=rho0                          ! W m /kg to W/m2
+!       scale=1.0_r8
         gtype=gfactor*r2dvar
         status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idWdvg), &
      &                     HIS(ng)%Rindex, gtype,                       &
@@ -68,7 +69,7 @@
 !
 !  Write out spectral Cd due to vegetation.
 !
-      IF (Hout(idCdvg,ng)) THEN 
+      IF (Hout(idCdvg,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r2dvar
         status=nf_fwrite2d(ng, iNLM, HIS(ng)%ncid, HIS(ng)%Vid(idCdvg), &
@@ -79,7 +80,7 @@
 # endif
      &                     VEG(ng)%Cdwave_veg)
         IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
-          IF (Master) THEN 
+          IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idCdvg)), HIS(ng)%Rindex
           END IF
           exit_flag=3
@@ -88,7 +89,7 @@
         END IF
       END IF
 # endif
-! 
+!
 # ifdef MARSH_DYNAMICS
 !
 !  Write out masking for marsh cells.
@@ -215,9 +216,9 @@
           RETURN
         END IF
       END IF
-#  endif 
+#  endif
 !
-#  if  defined MARSH_VERT_GROWTH 
+#  if  defined MARSH_VERT_GROWTH
 !
 !  Write mean high high water over a given frequency.
 !
@@ -331,5 +332,5 @@
           RETURN
         END IF
       END IF
-#  endif  
-# endif  
+#  endif
+# endif
