@@ -2205,10 +2205,14 @@
         NREF = 0
 !       --- append node number to FILENM in case of                       40.30
 !           parallel computing                                            40.30
+#if defined SWAN_SINGLESPEC
+!jcw prevent additon of -001 etc to spec filename 
+#else
         IF ( PARLL ) THEN                                                 40.30
            ILPOS = INDEX ( FILENM, ' ' )-1                                40.30
            WRITE(FILENM(ILPOS+1:ILPOS+4),33) INODE                        40.30
         END IF                                                            40.30
+#endif
 !PUN        FILENM = TRIM(LOCALDIR)//DIRCH2//TRIM(FILENM)                     40.95
         ORQTMP%PSNAME = PSNAME                                            40.31
         ORQTMP%OQI(1) = NREF                                              40.31

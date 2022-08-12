@@ -4435,9 +4435,13 @@
 !                  output locations
 
                IF ( RTYPE(1:2).EQ.'SP' ) THEN
+#if defined SWAN_SINGLESPEC
+!jcw do not call collect of multiple spec files
+#else
                   CALL SWCOLSPC ( RTYPE, CORQ%OQI, CORQ%OQR, MIP,         41.40 40.51 40.41
      &                            IRQ  , BLKND   , XC      , YC )         40.51
                   IF (STPNOW()) RETURN
+#endif
                END IF
 
 !              --- rewrite block output by means of collection of process
