@@ -997,7 +997,7 @@
             cff2=cff2*umask_wet(i,j)
 #   endif
 #  endif
-            FX(i,j)=FX(i,j)+cff2
+            FX(i,j)=FX(i,j)+cff2*bed_frac(i,j,1,ised)
 !  For the dry part
 !jcw
 !           cff=ABS(dzdx)-sedslope_crit_dry(ng)
@@ -1019,7 +1019,7 @@
      &                 (1.0_r8-umask_wet(ip,j))*umask_wet(ii,j))
 #   endif
 #  endif
-            FX(i,j)=FX(i,j)+cff2
+            FX(i,j)=FX(i,j)+cff2*bed_frac(i,j,1,ised)
           END DO
         END DO
 !
@@ -1052,7 +1052,7 @@
             cff2=cff2*vmask_wet(i,j)
 #   endif
 #  endif
-            FE(i,j)=FE(i,j)+cff2
+            FE(i,j)=FE(i,j)+cff2*bed_frac(i,j,1,ised)
 ! For the dry part
 !jcw
 !           cff=ABS(dzdy)-sedslope_crit_dry(ng)
@@ -1074,7 +1074,7 @@
      &                 (1.0_r8-vmask_wet(i,jp))*vmask_wet(i,jj))
 #   endif
 #  endif
-            FE(i,j)=FE(i,j)+cff2
+            FE(i,j)=FE(i,j)+cff2*bed_frac(i,j,1,ised)
           END DO
         END DO
 # endif
