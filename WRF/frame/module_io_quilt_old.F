@@ -699,7 +699,9 @@ okay_to_w = .false.
                CALL cpl_finalize() 
             ELSE
 #endif
+#if !defined WRF_COUPLING
                CALL mpi_finalize(ierr)
+#endif
 #if ( DA_CORE != 1 )
             END IF
 #endif
