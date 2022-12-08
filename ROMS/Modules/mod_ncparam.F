@@ -312,6 +312,7 @@
         integer  :: idTice        ! temperature of ice surface
         integer  :: idtime        ! ocean time
         integer  :: idTpam        ! tidal potential amplitude
+        integer  :: idTref        ! tidal reference date for zero phase
         integer  :: idTper        ! tidal period
         integer  :: idTpph        ! tidal potential phase
         integer  :: idTvan        ! tidal current angle
@@ -1614,6 +1615,8 @@
               idW3St=varid
             CASE ('idTpam')
               idTpam=varid
+            CASE ('idTref')
+              idTref=varid
             CASE ('idTper')
               idTper=varid
             CASE ('idTpph')

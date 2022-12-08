@@ -77,6 +77,7 @@
       USE mod_pio_netcdf
 # endif
       USE mod_scalars
+      USE strings_mod,     ONLY : FoundError
 !
       USE dateclock_mod, ONLY : datenum, datestr
 !

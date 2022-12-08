@@ -1916,6 +1916,15 @@
 !------------------------------------------------------------------------------
 !
 
+'zero_phase_date'                                  ! Input
+  'ocean_tidal_reference_date_for_zero_phase'
+  'days'                                           ! [s]
+  'tidal reference date for zero phase, scalar, series'
+  'tidal reference date for zero phase'
+  'idTref'
+  'nulvar'
+  1.0d0
+
 'tide_period'                                      ! Input
   'tidal period'
   'hours'                                          ! [s]
