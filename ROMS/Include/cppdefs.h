@@ -1,9 +1,10 @@
 /*
 ** Include file "cppdefs.h"
 **
-** svn $Id: cppdefs.h 1054 2021-03-06 19:47:12Z arango $
+** git $Id$
+** svn $Id: cppdefs.h 1110 2022-02-27 21:37:32Z arango $
 ********************************************************** Hernan G. Arango ***
-** Copyright (c) 2002-2021 The ROMS/TOMS Group                               **
+** Copyright (c) 2002-2022 The ROMS/TOMS Group                               **
 **   Licensed under a MIT/X style license                                    **
 **   See License_ROMS.txt                                                    **
 *******************************************************************************
@@ -343,6 +344,7 @@
 ** UV_TIDES                if imposing tidal currents                        **
 ** POT_TIDES               if imposing potential tides                       **
 ** RAMP_TIDES              if ramping (over one day) tidal forcing           **
+** TIDE_GENERATING_FORCES  adds tide generation forces to pressure gradient  **
 ** FSOBC_REDUCED           if SSH data and reduced physics conditions        **
 ** ADD_FSOBC               to add tidal elevation to processed OBC data      **
 ** ADD_M2OBC               to add tidal currents  to processed OBC data      **

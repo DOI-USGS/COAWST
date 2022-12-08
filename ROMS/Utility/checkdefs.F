@@ -3057,6 +3057,13 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+9)=' TANGENT,'
 #endif
+#ifdef TIDE_GENERATING_FORCES
+!
+      IF (Master) WRITE (stdout,20) 'TIDE_GENERATING_FORCES',           &
+     &   'Adding astronomical TGF term to pressure gradient'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+24)=' TIDE_GENERATING_FORCES,'
+#endif
 #if defined TIME_CONV && defined WEAK_CONSTRAINT
 !
       IF (Master) WRITE (stdout,20) 'TIME_CONV',                        &
@@ -3843,6 +3850,26 @@
         exit_flag=5
       END IF
 #endif
-
+#if defined TIDE_GENERATING_FORCES && \
+   (defined ANA_GRID               && !defined SPHERICAL)
+!
+!  Stop if activating tide generating forces on analytical Cartesian
+!  grids. This forcing is only for spherical grids since the (lon,lat)
+!  is required to compute the equilibrium tide harmonics that depend
+!  on the geographical location with respect to the Moon and Sun.
+!
+      IF (Master) THEN
+        WRITE (stdout,280) uppercase('tide_generating_forces')
+            exit_flag=5
+            EXIT
+          END IF
+        END DO
+ 280    FORMAT (/,' CHECKDEFS - cannot activate option: ',a,            &
+     &          /,13x,'in analytical Cartesian grids applications...',  &
+     &          /,13x,'The grid (lon,lat) is needed to compute the',    &
+     &          /,13x,'equilibrium tide harmonics.')
+      END IF
+#endif
+!
       RETURN
       END SUBROUTINE checkdefs

@@ -1,9 +1,10 @@
 #include "cppdefs.h"
       MODULE mod_grid
 !
-!svn $Id: mod_grid.F 1054 2021-03-06 19:47:12Z arango $
+!git $Id$
+!svn $Id: mod_grid.F 1099 2022-01-06 21:01:01Z arango $
 !================================================== Hernan G. Arango ===
-!  Copyright (c) 2002-2021 The ROMS/TOMS Group                         !
+!  Copyright (c) 2002-2022 The ROMS/TOMS Group                         !
 !    Licensed under a MIT/X style license                              !
 !    See License_ROMS.txt                                              !
 !=======================================================================
@@ -29,6 +30,10 @@
 !               RHO-points.                                            !
 !  CosAngler  Cosine of curvilinear angle, angler.                     !
 !  SinAngler  Sine of curvilinear angle, angler.                       !
+#if defined TIDE_GENERATING_FORCES
+!  Cos2Lat    Squared cosine of latitude, COS2(latr).                  !
+!  SinLat2    Sine of twice the latitude, SIN(2*latr).                 !
+#endif
 !  dmde       ETA-derivative of inverse metric factor pm,              !
 !               d(1/pm)/d(ETA).                                        !
 !  dndx       XI-derivative  of inverse metric factor pn,              !
@@ -143,7 +148,7 @@
 !=======================================================================
 !
         USE mod_kinds
-
+!
         implicit none
 
         TYPE T_GRID
@@ -159,6 +164,11 @@
           real(r8), pointer :: angler(:,:)
           real(r8), pointer :: CosAngler(:,:)
           real(r8), pointer :: SinAngler(:,:)
+
+#if defined TIDE_GENERATING_FORCES
+          real(r8), pointer :: Cos2Lat(:,:)
+          real(r8), pointer :: SinLat2(:,:)
+#endif
 
 #if defined CURVGRID && defined UV_ADV
           real(r8), pointer :: dmde(:,:)
@@ -314,11 +324,11 @@
 # endif
 #endif
         END TYPE T_GRID
-
+!
         TYPE (T_GRID), allocatable :: GRID(:)
-
+!
       CONTAINS
-
+!
       SUBROUTINE allocate_grid (ng, LBi, UBi, LBj, UBj, LBij, UBij)
 !
 !=======================================================================
@@ -369,6 +379,14 @@
 
       allocate ( GRID(ng) % SinAngler(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
+
+#if defined TIDE_GENERATING_FORCES
+      allocate ( GRID(ng) % Cos2Lat(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+
+      allocate ( GRID(ng) % SinLat2(LBi:UBi,LBj:UBj) )
+      Dmem(ng)=Dmem(ng)+size2d
+#endif
 
 #if defined CURVGRID && defined UV_ADV
       allocate ( GRID(ng) % dmde(LBi:UBi,LBj:UBj) )
@@ -708,7 +726,7 @@
       Dmem(ng)=Dmem(ng)+REAL(N(ng)+1,r8)*size2d
 # endif
 #endif
-
+!
       RETURN
       END SUBROUTINE allocate_grid
 
@@ -802,6 +820,11 @@
             GRID(ng) % angler(i,j) = IniMetricVal
             GRID(ng) % CosAngler(i,j) = IniVal
             GRID(ng) % SinAngler(i,j) = IniVal
+
+#if defined TIDE_GENERATING_FORCES
+            GRID(ng) % Cos2Lat(i,j) = IniVal
+            GRID(ng) % SinLat2(i,j) = IniVal
+#endif
 
 #if defined CURVGRID && defined UV_ADV
             GRID(ng) % dmde(i,j) = IniMetricVal
@@ -1007,7 +1030,7 @@
 # endif
       END IF
 #endif
-
+!
       RETURN
       END SUBROUTINE initialize_grid
 

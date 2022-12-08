@@ -60,6 +60,9 @@
      &                  GRID(ng) % Hz,                                  &
      &                  GRID(ng) % z_w,                                 &
      &                  OCEAN(ng) % rho,                                &
+#ifdef TIDE_GENERATING_FORCES
+     &                  OCEAN(ng) % eq_tide,                            &
+#endif
 #ifdef WEC_VF
      &                  OCEAN(ng) % zetat,                              &
 #endif
@@ -90,6 +93,9 @@
      &                        om_v, on_u,                               &
      &                        Hz, z_w,                                  &
      &                        rho,                                      &
+#ifdef TIDE_GENERATING_FORCES
+     &                        eq_tide,                                  &
+#endif
 #ifdef WEC_VF
      &                        zetat,                                    &
 #endif
@@ -118,6 +124,9 @@
       real(r8), intent(in) :: Hz(LBi:,LBj:,:)
       real(r8), intent(in) :: z_w(LBi:,LBj:,0:)
       real(r8), intent(in) :: rho(LBi:,LBj:,:)
+# ifdef TIDE_GENERATING_FORCES
+      real(r8), intent(in) :: eq_tide(LBi:,LBj:)
+# endif
 # ifdef WEC_VF
       real(r8), intent(in) :: zetat(LBi:,LBj:)
 # endif
@@ -136,6 +145,9 @@
       real(r8), intent(in) :: Hz(LBi:UBi,LBj:UBj,N(ng))
       real(r8), intent(in) :: z_w(LBi:UBi,LBj:UBj,0:N(ng))
       real(r8), intent(in) :: rho(LBi:UBi,LBj:UBj,N(ng))
+# ifdef TIDE_GENERATING_FORCES
+      real(r8), intent(in) :: eq_tide(LBi:UBi,LBj:UBj)
+# endif
 # ifdef WEC_VF
       real(r8), intent(in) :: zetat(LBi:UBi,LBj:UBj)
 # endif
@@ -191,6 +203,9 @@
 #endif
 #ifdef ATM_PRESS
           P(i,j,N(ng))=P(i,j,N(ng))+fac*(Pair(i,j)-OneAtm)
+#endif
+#ifdef TIDE_GENERATING_FORCES
+          P(i,j,N(ng))=P(i,j,N(ng))-g*eq_tide(i,j)
 #endif
         END DO
         DO k=N(ng),1,-1
