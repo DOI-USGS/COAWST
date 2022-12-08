@@ -108,7 +108,8 @@
         real(dp) :: base               ! reference date (YYYYMMDD.dd)
         real(dp) :: DateNumber(2)      ! date number, [1]: days
                                        !              [2]: seconds
-
+        real(dp) :: tide_DateNumber(2) ! tide reference date number,
+                                       !   [1]: days  [2]: seconds
         character (len=22) :: string   ! YYYY-MM-DD hh:mm:ss.ss
         character (len=25) :: calendar ! date calendar
       END TYPE T_CLOCK
@@ -420,6 +421,11 @@
         logical, allocatable :: Lfloats(:)
         logical, allocatable :: Lsediment(:)
         logical, allocatable :: Lstations(:)
+!
+!  If equilibrium tides, switch to apply the 18.6-year lunar nodal
+!  cycle correction.
+!
+        logical :: Lnodal = .TRUE.
 !
 !-----------------------------------------------------------------------
 !  Physical constants.
