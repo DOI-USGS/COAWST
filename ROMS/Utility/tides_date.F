@@ -110,8 +110,8 @@
           END IF
         END IF
 !
-        SELECT CASE (TIDE(1)%IOtype)
-          CASE (io_nf90)
+!        SELECT CASE (TIDE(1)%IOtype)
+!          CASE (io_nf90)
             CALL netcdf_inq_var (ng, iNLM, TIDE(ng)%name,               &
      &                           MyVarName = Vname(1,idTref),           &
      &                           SearchVar = foundit)
@@ -132,7 +132,7 @@
      &                                  zero_phase_date)
             END IF
 # endif
-        END SELECT
+!        END SELECT
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  If found "zero_phase_date", decode from YYYYMMDD.dddd and compute
