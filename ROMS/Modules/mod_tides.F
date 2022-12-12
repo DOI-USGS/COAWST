@@ -213,8 +213,8 @@
       IF (LprocessTides(ng)) THEN
         MTC=0
         foundit=.FALSE.
-        SELECT CASE (TIDE(ng)%IOtype)
-          CASE (io_nf90)
+!        SELECT CASE (TIDE(ng)%IOtype)
+!          CASE (io_nf90)
             CALL netcdf_inq_var (ng, iNLM, TIDE(ng)%name,               &
      &                           MyVarName = Vname(1,idTper),           &
      &                           SearchVar = foundit,                   &
@@ -231,7 +231,7 @@
      &                               nVardim = nvdim,                   &
      &                               nVarAtt = nvatt)
 # endif
-        END SELECT
+!        END SELECT
         IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !  Set maximum number of tidal components.  Allocate and initialize
