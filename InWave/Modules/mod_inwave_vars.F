@@ -47,6 +47,7 @@
           real(r8), pointer :: wd(:)
           real(r8), pointer :: pd
           real(r8), pointer :: Trep
+          real(r8), pointer :: dtifac
 
         END TYPE T_INWAVEG
         TYPE (T_INWAVEG), allocatable :: WAVEG(:)
@@ -93,6 +94,7 @@
       allocate ( WAVEG(ng) % wd(ND) )
       allocate ( WAVEG(ng) % pd )
       allocate ( WAVEG(ng) % Trep )
+      allocate ( WAVEG(ng) % dtifac )
 
       RETURN
       END SUBROUTINE allocate_inwave_vars
@@ -168,6 +170,12 @@
         Jmax=Jend
       END IF
 #endif
+!
+!-----------------------------------------------------------------------
+! Init the dtifac in case of time scaling between ocn and wav.
+!-----------------------------------------------------------------------
+!
+       WAVEG(ng)%dtifac=1.0_r8/1.0_r8
 !
 !-----------------------------------------------------------------------
 ! Compute degree bins.

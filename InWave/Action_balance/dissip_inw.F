@@ -93,7 +93,7 @@
 !
       USE mod_param
       USE mod_inwave_params
-      USE mod_inwave_swan
+      USE mod_inwave_vars
       USE mod_boundary
       USE mod_grid
       USE mod_scalars
@@ -174,7 +174,7 @@
       otwopi=1.0_r8/twopi
       ogrho0=1.0_r8/(g*rho0)
       orho0=1.0_r8/rho0
-      fac=1.0_r8/(dt(ng)*WAVES(ng)%dtifac)
+      fac=1.0_r8/(dt(ng)*WAVEG(ng)%dtifac)
 !
       DO j=Jstr,Jend
         DO i=Istr,Iend
@@ -220,14 +220,14 @@
             gamma=0.067_r8/g**2
             kD=twopi/(Lwave(i,j)+eps)*h_tot(i,j)
             dissfric=dt(ng)*gamma*EW/((sinh(kD))**2)*twopi*twopi/       &
-     &         MAX(Trmin,Pwave_bot(i,j)*Pwave_bot(i,j))*WAVES(ng)%dtifac
+     &         MAX(Trmin,Pwave_bot(i,j)*Pwave_bot(i,j))*WAVEG(ng)%dtifac
 #  endif
 #  ifdef WDISS_ROELVINK
             Hmax_r=breakr*(MAX(h_tot(i,j),0.0_r8))
             Qb=MIN(1.0_r8,1.0_r8-EXP(-(H/Hmax_r)**n_r))
             IF (TRM.gt.0.0001_r8) THEN
               Dissip_break(i,j)=2.0_r8*alfa/TRM*EW*Qb*dt(ng)*           &
-     &                          WAVES(ng)%dtifac
+     &                          WAVEG(ng)%dtifac
             ELSE
               Dissip_break(i,j)=0.0_r8
             END IF

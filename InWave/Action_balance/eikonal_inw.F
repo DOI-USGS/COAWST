@@ -26,8 +26,8 @@
       USE mod_ocean
       USE mod_grid
       USE mod_stepping
-      USE mod_inwave_vars
       USE mod_inwave_params
+      USE mod_inwave_vars
 !
 !  Imported variable declarations.
 !
@@ -88,7 +88,7 @@
       USE mod_param
       USE mod_scalars
       USE mod_inwave_params
-      USE mod_inwave_swan
+      USE mod_inwave_vars
       USE bc_3d_mod
       USE exchange_3d_mod
       USE kwc3dbc_mod
@@ -210,7 +210,7 @@
 !
 !  Time-step horizontal advection.
 !
-        cff=dt(ng)*WAVES(ng)%dtifac
+        cff=dt(ng)*WAVEG(ng)%dtifac
         DO j=Jstr,Jend
           DO i=Istr,Iend
             kwc(i,j,d)=kwc(i,j,d)-                                      &

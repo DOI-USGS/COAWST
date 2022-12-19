@@ -115,7 +115,6 @@
          real(dp)            :: SpecTime(2)
          real(dp)            :: SpecTimedt
          real(r8)            :: h0
-         real(r8)            :: dtifac
 
          integer, pointer  :: posang(:)
          integer, pointer  :: dir_3_int(:)
@@ -344,7 +343,6 @@
         WAVES(ng)%fmin=WAVES(ng)%df
         WAVES(ng)%nfreq=WAVES(ng)%Insteps/2                     !-1
         WAVES(ng)%fmax=REAL(WAVES(ng)%nfreq,r8)*WAVES(ng)%df
-        WAVES(ng)%dtifac=1.0_r8/1.0_r8
 # else
 ! old way
         WAVES(ng)%nfreq=200

@@ -350,11 +350,11 @@
 !  Time-step horizontal advection.
 !
         IF (iic(ng).eq.ntfirst(ng)) THEN
-          cff=0.5_r8*dt(ng)*WAVES(ng)%dtifac
+          cff=0.5_r8*dt(ng)*WAVEG(ng)%dtifac
           cff1=1.0_r8
           cff2=0.0_r8
         ELSE
-          cff=(1.0_r8-Gamma)*dt(ng)*WAVES(ng)%dtifac
+          cff=(1.0_r8-Gamma)*dt(ng)*WAVEG(ng)%dtifac
           cff1=0.5_r8+Gamma
           cff2=0.5_r8-Gamma
         END IF
@@ -513,9 +513,9 @@
 !  Time-step directional advection.
 !
         IF (iic(ng).eq.ntfirst(ng)) THEN
-          cff=0.5_r8*dt(ng)*WAVES(ng)%dtifac
+          cff=0.5_r8*dt(ng)*WAVEG(ng)%dtifac
         ELSE
-          cff=(1.0_r8-Gamma)*dt(ng)*WAVES(ng)%dtifac
+          cff=(1.0_r8-Gamma)*dt(ng)*WAVEG(ng)%dtifac
         END IF
         DO d=1,ND
           DO i=Istr,Iend
