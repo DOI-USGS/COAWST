@@ -1218,10 +1218,7 @@
       integer :: idruf, idice
       integer, dimension(MPI_STATUS_SIZE,4) :: status
 
-      real :: cff
-# if !defined BBL_MODEL
-      real :: cff2
-# endif
+      real :: cff, cff2
       real, parameter ::  Large = 1.0E+20
       real, dimension(2) :: range
       real(m8), pointer :: avdata(:)
@@ -1852,7 +1849,7 @@
 ! If not using a BBL model, then determine the non-spatially 
 ! varying friction coeff to enter into the JFRC2 array.
 !
-# if defined WAVES_OCEAN && !defined BBL_MODEL
+# if defined WAVES_OCEAN
         cff2=0.05_m8                  ! default
         IF (IBOT.EQ.1) THEN           ! Jonswap
           cff2=PBOT(3)
@@ -1861,20 +1858,20 @@
         ELSE IF (IBOT.EQ.3) THEN      ! Madsen
           cff2=PBOT(5)
         END IF
-# endif
         IP=0
         DO IY=1,MYC
           DO IX=1,MXC
             IP=IP+1
             INDX = KGRPNT(IX,IY)
             IF (INDX.GT.1) THEN
-# ifdef WAVES_OCEAN
 #  ifdef BBL_MODEL
               IF (io.eq.1) THEN
-                COMPDA(INDX,JFRC2)=MAX(REAL(TEMPMCT(IP,idruf)), 0.0001)
+!               COMPDA(INDX,JFRC2)=MAX(REAL(TEMPMCT(IP,idruf)), 0.0001)
+                COMPDA(INDX,JFRC2)=MAX(REAL(TEMPMCT(IP,idruf)), cff2)
               ELSE
                 COMPDA(INDX,JFRC2)=COMPDA(INDX,JFRC2)+                  &
-     &                             MAX(REAL(TEMPMCT(IP,idruf)), 0.0001)
+     &                             MAX(REAL(TEMPMCT(IP,idruf)), cff2)
+!    &                             MAX(REAL(TEMPMCT(IP,idruf)), 0.0001)
               END IF
 #  else
               COMPDA(INDX,JFRC2)=cff2
