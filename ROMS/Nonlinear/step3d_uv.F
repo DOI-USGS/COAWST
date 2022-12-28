@@ -568,26 +568,26 @@
 !
         DO i=IstrU,Iend
 #  ifdef DIAGNOSTICS_UV
-          Dwrk(i,N(ng))=u(i,j,N(ng),nnew)
+          cff1=u(i,j,N(ng),nnew)
 #  endif
           DC(i,N(ng))=(DC(i,N(ng))+FCmax(i,N(ng)-1)*DC(i,N(ng)-1))/     &
      &                (BC(i,N(ng))+FCmax(i,N(ng)-1)*CF(i,N(ng)-1))
           u(i,j,N(ng),nnew)=DC(i,N(ng))
 #  ifdef DIAGNOSTICS_UV
           DiaRU(i,j,N(ng),nrhs,M3vadv)=DiaRU(i,j,N(ng),nrhs,M3vadv)+    &
-     &                                 u(i,j,N(ng),nnew)-Dwrk(i,N(ng))
+     &                                 u(i,j,N(ng),nnew)-cff1
 #  endif
         END DO
         DO k=N(ng)-1,1,-1
           DO i=IstrU,Iend
 #  ifdef DIAGNOSTICS_UV
-            Dwrk(i,k)=u(i,j,k,nnew)
+            cff1=u(i,j,k,nnew)
 #  endif
             DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
             u(i,j,k,nnew)=DC(i,k)
 #  ifdef DIAGNOSTICS_UV
             DiaRU(i,j,k,nrhs,M3vadv)=DiaRU(i,j,k,nrhs,M3vadv)+          &
-     &                               u(i,j,k,nnew)-Dwrk(i,k)
+     &                               u(i,j,k,nnew)-cff1
 #  endif
           END DO
         END DO
@@ -1042,26 +1042,26 @@
 !
           DO i=Istr,Iend
 #  ifdef DIAGNOSTICS_UV
-            Dwrk(i,N(ng))=v(i,j,N(ng),nnew)
+            cff1=v(i,j,N(ng),nnew)
 #  endif
             DC(i,N(ng))=(DC(i,N(ng))+FCmax(i,N(ng)-1)*DC(i,N(ng)-1))/   &
      &                  (BC(i,N(ng))+FCmax(i,N(ng)-1)*CF(i,N(ng)-1))
             v(i,j,N(ng),nnew)=DC(i,N(ng))
 #  ifdef DIAGNOSTICS_UV
             DiaRV(i,j,N(ng),nrhs,M3vadv)=DiaRV(i,j,N(ng),nrhs,M3vadv)+ &
-     &                                  v(i,j,N(ng),nnew)-Dwrk(i,N(ng))
+     &                                  v(i,j,N(ng),nnew)-cff1
 #  endif
           END DO
           DO k=N(ng)-1,1,-1
             DO i=Istr,Iend
 #  ifdef DIAGNOSTICS_UV
-              Dwrk(i,k)=v(i,j,k,nnew)
+              cff1=v(i,j,k,nnew)
 #  endif
               DC(i,k)=DC(i,k)-CF(i,k)*DC(i,k+1)
               v(i,j,k,nnew)=DC(i,k)
 #  ifdef DIAGNOSTICS_UV
               DiaRV(i,j,k,nrhs,M3vadv)=DiaRV(i,j,k,nrhs,M3vadv)+       &
-     &                                 v(i,j,k,nnew)-Dwrk(i,k)
+     &                                 v(i,j,k,nnew)-cff1
 #  endif
             END DO
           END DO

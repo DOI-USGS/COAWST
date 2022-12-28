@@ -250,13 +250,13 @@
      &            ((JstrR.le.jj).and.(jj.le.JendR)).and.                &
      &            (j.eq.jj)) THEN
 # if defined SEDIMENT && defined SED_MORPH
-                wrk(i)=fac*(bed_thick(ii,jj,nstp)-                      &
+                cff=fac*(bed_thick(ii,jj,nstp)-                         &
      &                      bed_thick(ii,jj,nnew))*omn(ii,jj)
 # endif
                 DO k=1,N(ng)
                   W(ii,jj,k)=W(ii,jj,k-1)-                              &
 # if defined SEDIMENT && defined SED_MORPH
-     &                       wrk(i)-                                    &
+     &                       cff-                                       &
 # endif
      &                       (Huon(ii+1,jj,k)-Huon(ii,jj,k)+            &
      &                        Hvom(ii,jj+1,k)-Hvom(ii,jj,k))+           &
