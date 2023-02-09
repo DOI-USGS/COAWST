@@ -183,8 +183,17 @@
       integer :: cid, cad, MXCGLc
       character (len=70)  :: nc_name
       character (len=20)  :: to_add
+# ifdef SPECTRUM_STOKES
+      character (len=520) :: wostring
+      character (len=140) :: owstring
+# else
       character (len=120) :: wostring
       character (len=120) :: owstring
+# endif
+# ifdef SPECTRUM_STOKES
+      character (len=5)   :: LSTCODE
+      integer             :: IZ
+# endif
 
       real :: cff
 
@@ -537,6 +546,43 @@
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
+#endif
+#ifdef SPECTRUM_STOKES
+      DO IZ=1,MSC
+        IF (IZ.LT.10) THEN
+         WRITE(LSTCODE,"(A4,I1)") ":KS0",IZ
+        ELSE
+         WRITE(LSTCODE,"(A3,I2)") ":KS",IZ 
+        END IF
+        to_add=LSTCODE
+        cad=LEN_TRIM(to_add)
+        write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad  
+      END DO
+
+      DO IZ=1,MSC
+        IF (IZ.LT.10) THEN
+         WRITE(LSTCODE,"(A4,I1)") ":US0",IZ
+        ELSE
+         WRITE(LSTCODE,"(A3,I2)") ":US",IZ 
+        END IF
+        to_add=LSTCODE
+        cad=LEN_TRIM(to_add)
+        write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad  
+      END DO
+
+      DO IZ=1,MSC
+        IF (IZ.LT.10) THEN
+         WRITE(LSTCODE,"(A4,I1)") ":VS0",IZ
+        ELSE
+         WRITE(LSTCODE,"(A3,I2)") ":VS",IZ 
+        END IF
+        to_add=LSTCODE
+        cad=LEN_TRIM(to_add)
+        write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad  
+      END DO
 #endif  
 !
 !  Finalize and remove trailing spaces from the wostring
@@ -724,6 +770,9 @@
 
 # ifdef ROMS_COUPLING
       SUBROUTINE WAV2OCN_COUPLING (MIP, NVOQP, VOQR, VOQ, IRQ,          &
+# ifdef SPECTRUM_STOKES
+     &                             KSS, USS, VSS,                       &
+# endif
      &                             IVTYPE, COMPDA, Numcouple, ng, io)
 !
 !=======================================================================
@@ -775,6 +824,11 @@
 
       real :: COMPDA(MCGRD,MCMVAR)
       real :: VOQ(MIP,NVOQP)
+# ifdef SPECTRUM_STOKES
+      real :: KSS(MIP,MSC)
+      real :: USS(MIP,MSC)
+      real :: VSS(MIP,MSC)
+# endif
 !
 !  Local variable declarations.
 !
@@ -783,7 +837,10 @@
       integer :: Istr, Iend, Jstr, Jend, MXCGLc, start
       integer :: Isize, Jsize, INDXG, NPROCS, OFFSET
       integer, pointer :: points(:)
-
+# ifdef SPECTRUM_STOKES
+      character (len=4) :: SCODE
+      integer :: IZ
+# endif
       real(m8), pointer :: avdata(:)
       real(m8), pointer :: DIRE(:)
       real(m8), pointer :: DIRN(:)
@@ -935,7 +992,7 @@
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "WQP",avdata)
 !
-#if defined VEGETATION && defined VEG_SWAN_COUPLING \
+# if defined VEGETATION && defined VEG_SWAN_COUPLING \
       && defined VEG_STREAMING      
       ELSE IF (IVTYPE.eq.57) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
@@ -943,7 +1000,54 @@
       ELSE IF (IVTYPE.eq.80) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "DICDVG",avdata)
-#endif   
+# endif   
+# ifdef SPECTRUM_STOKES
+      ELSE IF (IVTYPE.eq.81) THEN
+        DO IZ=1,MSC
+          IF (IZ.LT.10) THEN
+            WRITE(SCODE,"(A3,I1)") "KS0",IZ
+          ELSE
+            WRITE(SCODE,"(A2,I2)") "KS", IZ
+          END IF
+
+          DO IP=1,gsmsize
+            avdata(IP)= REAL(KSS(points(IP),IZ), m8)
+          END DO
+
+          CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,         &
+     &                             SCODE,avdata)
+        END DO
+
+        DO IZ=1,MSC
+          IF (IZ.LT.10) THEN
+            WRITE(SCODE,"(A3,I1)") "US0",IZ
+          ELSE
+            WRITE(SCODE,"(A2,I2)") "US", IZ
+          END IF
+
+          DO IP=1,gsmsize
+            avdata(IP)= REAL(USS(points(IP),IZ), m8)
+          END DO
+
+          CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,         &
+     &                             SCODE,avdata)
+        END DO
+
+        DO IZ=1,MSC
+          IF (IZ.LT.10) THEN
+            WRITE(SCODE,"(A3,I1)") "VS0",IZ
+          ELSE
+            WRITE(SCODE,"(A2,I2)") "VS", IZ
+          END IF
+
+          DO IP=1,gsmsize
+            avdata(IP)= REAL(VSS(points(IP),IZ), m8)
+          END DO
+
+          CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,         &
+     &                             SCODE,avdata)
+        END DO
+# endif
       END IF
 !
       IF (IRQ.eq.Numcouple) THEN

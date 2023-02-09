@@ -732,6 +732,8 @@
 !  (78) [  'HICE']
 #ifdef SWAN_MODEL
 !  (79) ['DIRBOT']
+!  (80) ['']
+!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! OVSNAM(NMOVAR)   short name of output quantity
 !  ( 1) [    'Xp']
@@ -810,6 +812,8 @@
 !  (78) ['  hice']
 #ifdef SWAN_MODEL
 !  (79) ['Dirbot']
+!  (80) ['']
+!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! OVLNAM(NMOVAR)   long name of output quantity
 !  ( 1) [                        'X user coordinate']
@@ -888,6 +892,8 @@
 !  (78) [                            'ice thickness']
 #ifdef SWAN_MODEL
 !  (79) [            'Average bottom wave direction']
+!  (80) ['']
+!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! OVUNIT(NMOVAR)   unit of of output quantity
 !  ( 1) [CALCULAT] =UL
@@ -966,6 +972,8 @@
 !  (78) [     'm']
 #ifdef SWAN_MODEL
 !  (79) [CALCULAT] =UDI
+!  (80) ['']
+!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! SNAME [        ] name of output point set
 ! UAP   [  'W/m2'] unit of dissipation
@@ -1101,6 +1109,8 @@
 !  (78)  [  1]   hice
 #ifdef SWAN_MODEL
 !  (79)  [  2]   DirBot
+!  (80) ['']
+!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! OVEXCV(NMOVAR)   exception value for output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1177,6 +1187,8 @@
 !  (78)  [    -9.] hice
 #ifdef SWAN_MODEL
 !  (79)  [  -999.] DirBot
+!  (80) ['']
+!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! OVLEXP(NMOVAR)   lower expected limit of output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1253,6 +1265,8 @@
 !  (78)  [     0.] hice
 #ifdef SWAN_MODEL
 !  (79)  [     0.] DirBot
+!  (80)  [     0.] Veg
+!  (81)  [     0.] Spectrum_stokes
 #endif
 ! OVLLIM(NMOVAR)   lower limit of validity of output quantity
 !  ( 1)  [ -1.E10] Xp
@@ -1329,6 +1343,8 @@
 !  (78)  [     0.] hice
 #ifdef SWAN_MODEL
 !  (79)  [     0.] DirBot
+!  (80) ['']
+!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! OVHEXP(NMOVAR)   upper expected limit of output quantity
 !  ( 1)  [  1.E10] Xp
@@ -1405,6 +1421,8 @@
 !  (78)  [    10.] hice
 #ifdef SWAN_MODEL
 !  (79)  [   360.] DirBot
+!  (80) ['']
+!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! OVULIM(NMOVAR)   upper limit of validity
 !  ( 1)  [  1.E10] Xp
@@ -1481,6 +1499,8 @@
 !  (78)  [   100.] hice
 #ifdef SWAN_MODEL
 !  (79)  [   360.] DirBot
+!  (80) ['']
+!  (81) ['SWAN_SPEC'] Spectrum_stokes
 #endif
 ! SINCQ  [       ] sin of ALCQ
 ! SINPQ  [       ] sin of ALPQ

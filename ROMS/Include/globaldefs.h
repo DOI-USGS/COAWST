@@ -691,9 +691,6 @@
 # define BBL_MODEL
 #endif
 
-#if defined SSW_LOGINT && defined WEC_STOKES
-# define SSW_LOGINT_STOKES
-#endif
 
 /*
 ** Check if spatially varying bottom friction parameters are needed.
@@ -845,13 +842,21 @@
 #endif
 /* end of ROMS coupling cpps */
 
-
 /*
 ** Define internal option to process wave data.
 */
 
 #if defined WEC_MELLOR || defined WEC_VF
 #   define WEC
+#endif
+
+#if defined SSW_LOGINT && defined WEC
+#   define SSW_LOGINT_STOKES
+#endif
+
+#if defined WEC
+#   undef  BULK_STOKES
+#   define SPECTRUM_STOKES
 #endif
 
 /*

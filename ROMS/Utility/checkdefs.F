@@ -2756,6 +2756,13 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' SNOW_FROM_RAIN,'
 #endif
+#ifdef SPECTRUM_STOKES
+!
+      IF (Master) WRITE (stdout,20) 'SPECTRUM_STOKES',                  &
+     &   'Stokes drift estimated from wave spectrum.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' SPECTRUM_STOKES,'
+#endif
 #ifdef SRELAXATION
 !
       IF (Master) WRITE (stdout,20) 'SRELAXATION',                      &

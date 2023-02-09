@@ -3974,6 +3974,24 @@
       OVLEXP(IVTYPE) = 0.
       OVHEXP(IVTYPE) = 360.
       OVEXCV(IVTYPE) = -999.
+
+!      As a note, 80 is listed earlier with Veg.
+!      IVTYPE = 80
+!      OVKEYW(IVTYPE) = 'DICD'                                             40.61
+!      ......
+#endif
+#if defined SWAN_MODEL && defined SPECTRUM_STOKES
+      IVTYPE = 81
+      OVKEYW(IVTYPE) = 'SSPEC'
+      OVSNAM(IVTYPE) = 'SSpec'
+      OVLNAM(IVTYPE) = 'Spectrum of Stokes drift'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 3
+      OVLLIM(IVTYPE) = -100.
+      OVULIM(IVTYPE) = 100.
+      OVLEXP(IVTYPE) = -2.
+      OVHEXP(IVTYPE) = 2.
+      OVEXCV(IVTYPE) = 0.
 #endif
 !
       IVTYPE = 100                                                        41.62
