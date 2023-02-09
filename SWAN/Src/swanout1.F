@@ -1843,7 +1843,6 @@
              VOQR(81) = NVOQP
              OQPROC(81) = .TRUE.
            ENDIF
-           write(*,*) 'setting oqproc for 81',  OQPROC(81)
          ENDIF
 #endif
 !
