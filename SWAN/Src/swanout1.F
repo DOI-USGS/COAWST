@@ -1525,7 +1525,7 @@
      &                 KNUM                ,CG                  ,         40.31 30.90
      &                 SPCDIR              ,NE                  ,         40.31 30.90
      &                 NED                 ,KGRPNT              ,         40.31 30.90
-     &                 COMPDA(1,JDP2)      ,CROSS                         40.86
+     &                 COMPDA(1,JDP2)      ,CROSS               ,         40.86
 #ifdef SPECTRUM_STOKES
      &                 KSS(1)                                   ,
      &                 USS(1)                                   ,
