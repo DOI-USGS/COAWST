@@ -855,8 +855,8 @@
 #endif
 
 #if defined WEC
-#   undef  BULK_STOKES
-#   define SPECTRUM_STOKES
+#   define BULK_STOKES
+#   undef  SPECTRUM_STOKES
 #endif
 
 /*

@@ -1534,10 +1534,10 @@
      &                                                          )
 !
           DEALLOCATE(ACLOC)                                               40.31
-#ifdef SPECTRUM_STOKES
-          DEALLOCATE(KSS,USS,VSS)
-#endif
         ENDIF
+#ifdef SPECTRUM_STOKES
+        DEALLOCATE(KSS,USS,VSS)
+#endif
 !
   68    CONTINUE                                                          40.31
 
