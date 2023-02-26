@@ -163,6 +163,7 @@
             ENDIF
             dtwav(iw)=dtwav(iw)*FAC
           END IF
+#  ifdef SPECTRUM_STOKES
 !
 !  here we look for MSCs for SPECTUM_STOKES
 !  such as CIRCLE 36 0.04 1.0 20
@@ -180,6 +181,7 @@
             read(aline(1:5),'(i5)') MSCs
             MSCs=MSCs+1
           END IF
+#  endif
         END IF
       END DO
  116  IF (MyRank.eq.MyMaster) WRITE (out,60) line
