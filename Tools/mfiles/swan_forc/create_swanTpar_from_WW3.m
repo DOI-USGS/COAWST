@@ -4,7 +4,7 @@
 % from WW3 data.
 %
 %  !!!!   This data is only from Feb 2005 to May 2019  !!!!
-%
+%  https://www.ncei.noaa.gov/thredds-ocean/catalog.html
 %
 
 % ************* BEGIN USER INPUT   ****************************
@@ -12,7 +12,7 @@
 % 1) Enter WORKING DIRECTORY.
 % This is the location where the forcing files to be created.
 %
-working_dir='E:\data\models\COAWST_updates\COAWST_beingupdatedto_v3.7\tools_test\Tools\mfiles\swan_forc'
+working_dir='E:\data\models\COAWST'
 
 % 2) Enter the year and month of the data requested.
 yearww3='2012';    %input year of data yyyy 
@@ -20,7 +20,7 @@ mmww3='10';        %input month of data mm
 %
 
 % 3) Enter path\name of SWAN grid. This is set up to use the roms grid as the same for swan.
-modelgrid='E:\data\models\COAWST_updates\COAWST_beingupdatedto_v3.7\tools_test\Projects\Sandy\Sandy_roms_grid.nc';
+modelgrid='E:\data\models\COAWST\Projects\Sandy\Sandy_roms_grid.nc';
 
 % 4) Enter the spacings of the forcing file locations around the perimeter
 % of the grid. One forcings file spans between the 'specres' points.

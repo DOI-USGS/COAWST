@@ -14,54 +14,64 @@
 %           - remove tri dependency, use TriScatteredInterp instead
 %
 % Requires: T_TIDE and TIDAL_ELLIPSE packages 
+%
+% More information here: https://www.myroms.org/wiki/Tidal_Forcing
  
 %%%%% BEGINNING of USER-MODIFIED SECTION %%%%%
 IPLOT=1;            % 1 to make plots, 0 for no plots
 IWRITE=1;           % 1 to write output to netcdf, 0 for no output
 
 % (1) Specify existing Grid File and new tide Forcing Files 
-      Gname='C:\work\models\COAWST\Projects\Sandy2\Sandy_roms_grid.nc';
+      Gname='e:\data\models\COAWST\Projects\Sandy\Sandy_roms_grid.nc';
       Fname='tide_forc_Sandy.nc';
 
-% (2) Enter ROMS start time.  This will be used to calculate the proper phase
-%     for the tidal constituents.  If you change the start time, this routine
-%     must be run again to adjust the tidal phases. 
+% (2) Enter Tide start time.  This will be used to calculate the proper phase
+%     for the tidal constituents.
 %            YYYY   MO   DA    HR     MI    SC
       g = [  2012,  10,  28,   0,     0,    0];   % GMT
       disp(['Tidal Start Time =' datestr(g)])
 
 % (3) Select Adcirc or topex/osu tidal constituent data 
       adcirc=1
-      adcirc2012=0
-      osu=0
+      adcirc2012=0   % you can get this via thredds coded below, or go here: https://www.myroms.org/wiki/Tidal_Forcing
+                     % or go here: https://adcirc.org/products/adcirc-tidal-databases/
+      osu=0          % go here: https://www.myroms.org/wiki/Tidal_Forcing
       if (adcirc)
-        load c:\work\models\COAWST_data\tide\adcirc_ec2001v2e_fix.mat tri lon lat u v elev depth periods freq names
+        load c:\work\models\COAWST\Tools\mfiles\tide\adcirc_ec2001v2e_fix_uv.mat
+        load c:\work\models\COAWST\Tools\mfiles\tide\adcirc_ec2001v2e_fix_z.mat
         names=names';
       end
       if (adcirc2012)
-        ncz=ncgeodataset('http://geoport.whoi.edu/thredds/dodsC/sand/usgs/users/aretxabaleta/ADCIRC_tides/f53.nc');
-        nc=ncgeodataset('http://geoport.whoi.edu/thredds/dodsC/sand/usgs/users/aretxabaleta/ADCIRC_tides/f54.nc');
-        lat=nc{'lat'}(:);
-        lon=nc{'lon'}(:);
-        depth=nc{'depth'}(:);
-        tri=nc{'ele'}(:);
+        %https://adcirc.org/products/adcirc-tidal-databases/
+        ncz_url='http://geoport.whoi.edu/thredds/dodsC/sand/usgs/users/aretxabaleta/ADCIRC_tides/f53.nc';
+        nc_url='http://geoport.whoi.edu/thredds/dodsC/sand/usgs/users/aretxabaleta/ADCIRC_tides/f54.nc';
+        lat=ncread(nc_url,'lat');
+        lon=ncread(nc_url,'lon');
+        depth=ncread(nc_url,'depth');
+        tri1=ncread(nc_url,'ele',[1 1],[Inf 1]);
+        tri2=ncread(nc_url,'ele',[1 2],[Inf 1]);
+        tri3=ncread(nc_url,'ele',[1 3],[Inf 1]);
+        tri=[tri1 tri2 tri3];
         ne=length(tri);nn=length(lat);
-        freq=nc{'Frequencies'}(:);
+        freq=ncread(nc_url,'Frequencies');
         periods=(2*pi./freq)/3600;
-        names=nc{'Names'}(:);
+        names=ncread(nc_url,'Names');
         elev=NaN*ones(nn,length(freq));
         u=NaN*ones(nn,length(freq));
         v=NaN*ones(nn,length(freq));
         for io=1:length(freq)
             display(['Z ',names(io,:)])
-            elev(:,io)=ncz{'Amp'}(io,:).*exp(sqrt(-1)*ncz{'Pha'}(io,:));
+            %elev(:,io)=ncread(ncz_url,'Amp'}(io,:).*exp(sqrt(-1)*ncz{'Pha'}(io,:));
+             elev(:,io)=ncread(ncz_url,'Amp',[1 io],[Inf 1]).*exp(sqrt(-1)* ncread(ncz_url,'Pha',[1 io],[Inf 1]));
             %elev(:,io)=complex(ncz{'Re'}(io,:),ncz{'Im'}(io,:));
         end
         for io=1:length(freq)
             display(['U ',names(io,:)])
-            u(:,io)=nc{'UAmp'}(io,:).*exp(sqrt(-1)*nc{'UPha'}(io,:));
+           %u(:,io)=nc{'UAmp'}(io,:).*exp(sqrt(-1)*nc{'UPha'}(io,:));
+            u(:,io)=ncread(nc_url,'UAmp',[1 io],[Inf 1]).*exp(sqrt(-1)* ncread(nc_url,'UPha',[1 io],[Inf 1]));
             display(['V ',names(io,:)])
-            v(:,io)=nc{'VAmp'}(io,:).*exp(sqrt(-1)*nc{'VPha'}(io,:));
+           %v(:,io)=nc{'VAmp'}(io,:).*exp(sqrt(-1)*nc{'VPha'}(io,:));
+            v(:,io)=ncread(nc_url,'VAmp',[1 io],[Inf 1]).*exp(sqrt(-1)* ncread(nc_url,'VPha',[1 io],[Inf 1]));
         end
         names=names';
       end

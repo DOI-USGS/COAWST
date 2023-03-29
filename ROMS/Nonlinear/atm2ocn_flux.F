@@ -35,10 +35,12 @@
 !
 !  Local variable declarations.
 !
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
 # include "tile.h"
 !
 # ifdef PROFILE
-      CALL wclock_on (ng, iNLM, 17)
+      CALL wclock_on (ng, iNLM, 17, __LINE__, MyFile)
 # endif
       CALL atm2ocn_flux_tile (ng, tile,                                 &
      &                        LBi, UBi, LBj, UBj,                       &
@@ -62,7 +64,7 @@
      &                        FORCES(ng) % Taux,                        &
      &                        FORCES(ng) % Tauy)
 # ifdef PROFILE
-      CALL wclock_off (ng, iNLM, 17)
+      CALL wclock_off (ng, iNLM, 17, __LINE__, MyFile)
 # endif
       RETURN
       END SUBROUTINE atm2ocn_flux

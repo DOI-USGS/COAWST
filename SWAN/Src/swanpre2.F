@@ -1681,6 +1681,11 @@
                    JDSXV  = MCMVAR                                        40.65
                    ALOCMP = .TRUE.                                        40.97
                 ENDIF                                                     40.65
+                IF (IVTYPE.EQ.80 .AND. JDSXC.LE.1) THEN                   40.65
+                   MCMVAR = MCMVAR+1                                      40.65
+                   JDSXC  = MCMVAR                                        40.65
+                   ALOCMP = .TRUE.                                        40.97
+                ENDIF                                                     40.65
                 IF (IVTYPE.EQ.60 .AND. JGENR.LE.1) THEN                   40.85
                    MCMVAR = MCMVAR+1                                      40.85
                    JGENR  = MCMVAR                                        40.85
@@ -1761,7 +1766,7 @@
                 IF (IVTYPE.EQ.7  .OR. IVTYPE.EQ.9  .OR.                   40.85
      &              IVTYPE.EQ.54 .OR. IVTYPE.EQ.55 .OR.                   40.85
      &              IVTYPE.EQ.56 .OR. IVTYPE.EQ.57 .OR.                   40.85
-     &              IVTYPE.GE.60 ) LADDS = .TRUE.                         40.85
+     &              IVTYPE.GE.60 .OR. IVTYPE.EQ.80) LADDS = .TRUE.        40.85
              ELSE IF (IVTYPE.LT.170) THEN                                 41.62
 !               add all 10 partitions of requested partition parameter
                 DO IVT = IVTYPE, IVTYPE+9                                 41.62
@@ -1999,6 +2004,11 @@
                JDSXV  = MCMVAR                                            40.65
                ALOCMP = .TRUE.                                            40.97
             ENDIF                                                         40.65
+            IF (IVTYPE.EQ.80 .AND. JDSXC.LE.1) THEN                       40.65
+               MCMVAR = MCMVAR+1                                          40.65
+               JDSXC  = MCMVAR                                            40.65
+               ALOCMP = .TRUE.                                            40.97
+            ENDIF                                                         40.65
             IF (IVTYPE.EQ.60 .AND. JGENR.LE.1) THEN                       40.85
                MCMVAR = MCMVAR+1                                          40.85
                JGENR  = MCMVAR                                            40.85
@@ -2079,7 +2089,7 @@
             IF (IVTYPE.EQ.7  .OR. IVTYPE.EQ.9  .OR.                       40.85
      &          IVTYPE.EQ.54 .OR. IVTYPE.EQ.55 .OR.                       40.85
      &          IVTYPE.EQ.56 .OR. IVTYPE.EQ.57 .OR.                       40.85
-     &          IVTYPE.GE.60 ) LADDS = .TRUE.                             40.85
+     &          IVTYPE.GE.60 .OR. IVTYPE.EQ.80)  LADDS = .TRUE.           40.85
             CALL INKEYW ('STA', ' ')                                      40.00
             IF (KEYWIS('UNIT')) THEN
               CALL MSGERR (1, 'UNIT is ignored in this version')          40.00
@@ -2195,10 +2205,14 @@
         NREF = 0
 !       --- append node number to FILENM in case of                       40.30
 !           parallel computing                                            40.30
+#if defined SWAN_SINGLESPEC
+!jcw prevent additon of -001 etc to spec filename 
+#else
         IF ( PARLL ) THEN                                                 40.30
            ILPOS = INDEX ( FILENM, ' ' )-1                                40.30
            WRITE(FILENM(ILPOS+1:ILPOS+4),33) INODE                        40.30
         END IF                                                            40.30
+#endif
 !PUN        FILENM = TRIM(LOCALDIR)//DIRCH2//TRIM(FILENM)                     40.95
         ORQTMP%PSNAME = PSNAME                                            40.31
         ORQTMP%OQI(1) = NREF                                              40.31
@@ -6774,6 +6788,10 @@
         WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    40.00
         ICHECK2=ICHECK2+1
         WRITE (IFPAR, 102) 'Svege',  'vegetation dissipation'             40.55
+        WRITE (IFPAR, 102) 'm2/s',   'unit'                               40.55
+        WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    40.55
+        ICHECK2=ICHECK2+1
+        WRITE (IFPAR, 102) 'Svege',  'vegetation drag coeffi'             40.55
         WRITE (IFPAR, 102) 'm2/s',   'unit'                               40.55
         WRITE (IFPAR, 104) OVEXCV(7),'exception value'                    40.55
         ICHECK2=ICHECK2+1

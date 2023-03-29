@@ -53,8 +53,16 @@
 !      integer, dimension(2) :: src_grid_dims, dst_grid_dims
       character (len=70)    :: nc_name
       character (len=20)    :: to_add
+#ifdef SPECTRUM_STOKES
+      integer               :: IZ
+      character (len=5)     :: LSTCODE
+      character (len=520)   :: wostring
+      character (len=140)   :: owstring
+#else
       character (len=120)   :: wostring
       character (len=120)   :: owstring
+#endif
+
       real(r8) :: cff
 !
 !-----------------------------------------------------------------------
@@ -379,13 +387,57 @@
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
 !
-#if defined WAVES_OCEAN && defined WEC_VF && \
-    defined BOTTOM_STREAMING && defined VEGETATION &&  \
-    defined VEG_SWAN_COUPLING && defined VEG_STREAMING
+#if defined VEGETATION && defined VEG_SWAN_COUPLING \
+      && defined VEG_STREAMING
       to_add=':DISVEG'
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
+!
+      to_add=':DICDVG'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+#endif
+#ifdef SPECTRUM_STOKES
+      DO IZ=1,MSCs
+         IF (IZ.LT.10) THEN
+           WRITE(LSTCODE,"(A4,I1)") ":KS0",IZ
+         ELSE
+           WRITE(LSTCODE,"(A3,I2)") ":KS",IZ
+         END IF
+
+        to_add=LSTCODE
+        cad=LEN_TRIM(to_add)
+        write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad
+      END DO
+
+      DO IZ=1,MSCs
+         IF (IZ.LT.10) THEN
+           WRITE(LSTCODE,"(A4,I1)") ":US0",IZ
+         ELSE
+           WRITE(LSTCODE,"(A3,I2)") ":US",IZ
+         END IF
+
+        to_add=LSTCODE
+        cad=LEN_TRIM(to_add)
+        write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad
+      END DO
+
+      DO IZ=1,MSCs
+         IF (IZ.LT.10) THEN
+           WRITE(LSTCODE,"(A4,I1)") ":VS0",IZ
+         ELSE
+           WRITE(LSTCODE,"(A3,I2)") ":VS",IZ
+         END IF
+
+        to_add=LSTCODE
+        cad=LEN_TRIM(to_add)
+        write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad
+      END DO
 #endif
 
 !
@@ -441,6 +493,21 @@
 #if defined VEGETATION && defined VEG_SWAN_COUPLING
 !
       to_add=':VEGDENS'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':VEGHGHT'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':VEGDIAM'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':VEGTHCK'
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -908,6 +975,54 @@
       END DO
       CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VEGDENS",  &
      &                           A, Asize)
+!
+!  Equivalent Plant height.
+!
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=0.0
+          DO iveg=1,NVEG
+            cff=VEG(ng)%plant(i,j,iveg,phght)+cff
+          END DO
+          A(ij)=cff/NVEG
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VEGHGHT",  &
+     &                           A, Asize)
+!
+!  Equivalent Plant diameter.
+!
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=0.0
+          DO iveg=1,NVEG
+            cff=VEG(ng)%plant(i,j,iveg,pdiam)+cff
+          END DO
+          A(ij)=cff/NVEG
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VEGDIAM",  &
+     &                           A, Asize)
+!
+!  Equivalent Plant thickness.
+!
+      ij=0
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=0.0
+          DO iveg=1,NVEG
+            cff=VEG(ng)%plant(i,j,iveg,pthck)+cff
+          END DO
+          A(ij)=cff/NVEG
+        END DO
+      END DO
+      CALL AttrVect_importRAttr (AttrVect_G(ng)%ocn2wav_AV, "VEGTHCK",  &
+     &                           A, Asize)
 #endif
 #ifdef ICE_MODEL
 !
@@ -1017,7 +1132,7 @@
       END SUBROUTINE ocnfwav_coupling
 !
 !***********************************************************************
-      SUBROUTINE ocnfwav_coupling_tile (ng, iw, tile,                       &
+      SUBROUTINE ocnfwav_coupling_tile (ng, iw, tile,                   &
      &                                  LBi, UBi, LBj, UBj,             &
      &                                  IminS, ImaxS, JminS, JmaxS)
 !***********************************************************************
@@ -1049,6 +1164,11 @@
 #ifdef DISTRIBUTE
       USE distribute_mod,  ONLY : mp_reduce
       USE mp_exchange_mod, ONLY : mp_exchange2d
+#endif
+
+#ifdef SPECTRUM_STOKES
+      USE exchange_3d_mod, ONLY : exchange_r3d_tile
+      USE mp_exchange_mod, ONLY : mp_exchange3d
 #endif
 !
       implicit none
@@ -1083,6 +1203,10 @@
 #endif
 #ifdef DISTRIBUTE
       character (len=3), dimension(2) :: op_handle
+#endif
+#ifdef SPECTRUM_STOKES
+      character (len=4) :: SCODE
+      integer :: IZ
 #endif
 !
 !-----------------------------------------------------------------------
@@ -1795,9 +1919,8 @@
       END IF
 #endif
 !
-#if defined WAVES_OCEAN && defined WEC_VF && \
-    defined BOTTOM_STREAMING && defined VEGETATION &&  \
-    defined VEG_SWAN_COUPLING && defined VEG_STREAMING
+#if defined VEGETATION && defined VEG_SWAN_COUPLING \
+      && defined VEG_STREAMING
 !
 !  Wave dissipation due to vegetation.
 !
@@ -1840,6 +1963,130 @@
 # endif
       IF (Myrank.eq.MyMaster) THEN
         write(stdout,40) 'SWANtoROMS Min/Max DISVEG  (Wm-2):  ',        &
+     &                    range(1),range(2)
+      END IF
+!
+!  Spectral Cd due to vegetation.
+!
+      CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, "DICDVG",   &
+     &                           A, Asize)
+      range(1)= Large
+      range(2)=-Large
+      ij=0
+      fac=1.0_r8
+      DO j=JstrR,JendR
+        DO i=IstrR,IendR
+          ij=ij+1
+          cff=MAX(0.0_r8,A(ij)*ramp)*fac
+          IF (iw.eq.1) THEN
+            VEG(ng)%Cdwave_veg(i,j)=cff
+          ELSE
+            VEG(ng)%Cdwave_veg(i,j)=VEG(ng)%Cdwave_veg(i,j)+            &
+     &                              cff
+          END IF
+          range(1)=MIN(range(1),cff)
+          range(2)=MAX(range(2),cff)
+        END DO
+      END DO
+# ifdef SWAN_IUNIFORM
+      ij=0
+      DO j=JstrR,JendR
+        ij=ij+1
+        A(ij)=FORCES(ng)%Cdwave_veg(25,j)
+      END DO
+      DO i=IstrR,IendR
+        ij=0
+        DO j=JstrR,JendR
+          ij=ij+1
+          FORCES(ng)%Cdwave_veg(i,j)=A(ij)
+        END DO
+      END DO
+# endif
+# ifdef DISTRIBUTE
+      CALL mp_reduce (ng, iNLM, 2, range, op_handle)
+# endif
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max DICDVG(unitless):  ',      &
+     &                    range(1),range(2)
+      END IF
+!
+#endif
+#ifdef SPECTRUM_STOKES
+      range(1)= Large
+      range(2)=-Large
+      DO IZ=1,MSCs
+        IF (IZ.LT.10) THEN
+          WRITE(SCODE,"(A3,I1)") "KS0",IZ
+        ELSE
+          WRITE(SCODE,"(A2,I2)") "KS",IZ
+        END IF
+
+        CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, SCODE,    &
+     &                             A, Asize)
+        ij=0
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            ij=ij+1
+            FORCES(ng)%spec_wn(i,j,IZ)=A(ij)
+            range(1)=MIN(range(1),A(ij))
+            range(2)=MAX(range(2),A(ij))
+          END DO
+        END DO
+      END DO
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max WAVENO  (m-1):   ',        &
+     &                    range(1),range(2)
+      END IF
+
+      range(1)= Large
+      range(2)=-Large
+      DO IZ=1,MSCs
+        IF (IZ.LT.10) THEN
+          WRITE(SCODE,"(A3,I1)") "US0",IZ
+        ELSE
+          WRITE(SCODE,"(A2,I2)") "US",IZ
+        END IF
+
+        CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, SCODE,    &
+     &                           A, Asize)
+        ij=0
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            ij=ij+1
+            FORCES(ng)%spec_us(i,j,IZ)=A(ij)
+            range(1)=MIN(range(1),A(ij))
+            range(2)=MAX(range(2),A(ij))
+          END DO
+        END DO
+      END DO
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max USS (ms-1):      ',        &
+     &                    range(1),range(2)
+      END IF
+
+      range(1)= Large
+      range(2)=-Large
+      DO IZ=1,MSCs
+        IF (IZ.LT.10) THEN
+          WRITE(SCODE,"(A3,I1)") "VS0",IZ
+        ELSE
+          WRITE(SCODE,"(A2,I2)") "VS",IZ
+        END IF
+
+        CALL AttrVect_exportRAttr (AttrVect_G(ng)%wav2ocn_AV, SCODE,    &
+     &                           A, Asize)
+        ij=0
+        DO j=JstrR,JendR
+          DO i=IstrR,IendR
+            ij=ij+1
+            FORCES(ng)%spec_vs(i,j,IZ)=A(ij)
+            range(1)=MIN(range(1),A(ij))
+            range(2)=MAX(range(2),A(ij))
+          END DO
+        END DO
+      END DO
+      IF (Myrank.eq.MyMaster) THEN
+        write(stdout,40) 'SWANtoROMS Min/Max VSS     (ms-1):  ',         &
      &                    range(1),range(2)
       END IF
 #endif
@@ -1900,6 +2147,17 @@
      &                        LBi, UBi, LBj, UBj,                       &
      &                        FORCES(ng)%Wave_qp)
 # endif
+# ifdef SPECTRUM_STOKES
+      CALL exchange_r3d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,1,MSCs,                &
+     &                        FORCES(ng)%spec_wn)
+      CALL exchange_r3d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,1,MSCs,                &
+     &                        FORCES(ng)%spec_us)
+      CALL exchange_r3d_tile (ng, tile,                                 &
+     &                        LBi, UBi, LBj, UBj,1,MSCs,                &
+     &                        FORCES(ng)%spec_vs)
+# endif
       END IF
 #ifdef DISTRIBUTE
 !
@@ -1953,6 +2211,18 @@
      &                    NghostPoints,                                 &
      &                    EWperiodic(ng), NSperiodic(ng),               &
      &                    FORCES(ng)%Wave_ds, FORCES(ng)%Wave_qp)
+# endif
+# ifdef SPECTRUM_STOKES
+      CALL mp_exchange3d (ng, tile, iNLM, 1,                            &
+     &                    LBi, UBi, LBj, UBj,1,MSCs,                    &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    FORCES(ng)%spec_wn)
+      CALL mp_exchange3d (ng, tile, iNLM, 2,                            &
+     &                    LBi, UBi, LBj, UBj,1,MSCs,                    &
+     &                    NghostPoints,                                 &
+     &                    EWperiodic(ng), NSperiodic(ng),               &
+     &                    FORCES(ng)%spec_us,FORCES(ng)%spec_vs)
 # endif
 #endif
 !

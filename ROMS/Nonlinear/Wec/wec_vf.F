@@ -324,17 +324,17 @@
 !  Local variable declarations.
 !
       integer :: i, j, k
-      real(r8) :: cff, cff1, cff2, cff3, cff4, cff5, cff6
-      real(r8) :: fac1, fac2, RB1, RB2
-      real(r8) :: vi1, vi2, VF
-!     real(r8), parameter :: eps = 1.0E-14_r8
+      real(r8) :: cff, cff1, cff3, cff4, cff5, cff6
+      real(r8) :: fac1, RB1, RB2
+      real(dp) :: fac2, cff2, vi1, vi2
+      real(r8) :: VF
       real(r8), parameter :: eps = 1.0E-8_r8
-      real(r8), parameter :: kDmax = 300.0_r8                !5.0_r8
+      real(dp), parameter :: kDmax = 300.0_dp                !5.0_r8
       real(r8), parameter :: Lwave_min = 1.0_r8
       real(r8), dimension(IminS:ImaxS) :: CF
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: Dstp
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: oDstp
-      real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: kD
+      real(dp), dimension(IminS:ImaxS,JminS:JmaxS) :: kD
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: wavec
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: waven
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: owaven
@@ -412,7 +412,7 @@
             cff2=MAX(MIN((z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)*gamr(i,j),  &
      &           1.0_r8),0.0_r8)
             odiss(i,j)=odiss(i,j)+Hz(i,j,k)*                            &
-     &                   COSH(2.0_r8*pi*cff2)
+     &                   DCOSH(2.0_dp*pi*cff2)
           END DO
           odiss(i,j)=1.0_r8/(odiss(i,j)+eps)
 !
@@ -470,17 +470,17 @@
         DO i=Istr,Iend
           cff=Hz(i,j,1)
           fac2=(z_r(i,j,N(ng))-z_r(i,j,1))*oDstp(i,j)
-          vi1=cff*shear2(i,1)*SINH(2.0_r8*kD(i,j)*fac2)
+          vi1=cff*shear2(i,1)*DSINH(2.0_dp*kD(i,j)*fac2)
           DO k=2,N(ng)
             cff=Hz(i,j,k)
             fac2=(z_r(i,j,N(ng))-z_r(i,j,k))*oDstp(i,j)
-            vi1=vi1+cff*shear2(i,k)*SINH(2.0_r8*kD(i,j)*fac2)             
+            vi1=vi1+cff*shear2(i,k)*DSINH(2.0_dp*kD(i,j)*fac2)             
           END DO
 !
 !  Calculate Bernoulli's Head at the surface
 !
           bh(i,j)=0.25_r8*vi1*sigma(i,j)*waveAA(i,j)/                   & 
-     &                    (waven(i,j)*(SINH(kD(i,j)))**2.0_r8)
+     &                    (waven(i,j)*(DSINH(kD(i,j)))**2.0_r8)
         END DO
 !
 !---------------------------------------------------------------------------
@@ -491,16 +491,16 @@
         DO i=Istr,Iend
           fac2=(z_r(i,j,1)-z_w(i,j,0))*oDstp(i,j)
           cff=Hz(i,j,1)
-          vi2=cff*shear2(i,1)*COSH(2.0_r8*kD(i,j)*fac2)
+          vi2=cff*shear2(i,1)*DCOSH(2.0_dp*kD(i,j)*fac2)
           DO k=2,N(ng)
              fac2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)
              cff=Hz(i,j,k)
-             vi2=vi2+cff*shear2(i,k)*COSH(2.0_r8*kD(i,j)*fac2)
+             vi2=vi2+cff*shear2(i,k)*DCOSH(2.0_dp*kD(i,j)*fac2)
           END DO
           cff1=0.5_r8*waveAA(i,j)*osigma(i,j)
-          cff2=TANH(kD(i,j))/SINH(2.0_r8*kD(i,j))
+          cff2=TANH(kD(i,j))/DSINH(2.0_dp*kD(i,j))
           qsp(i,j)=cff1*(cff2*(-shear1(i,N(ng))+                        &
-     &                         COSH(2.0_r8*kD(i,j))*shear1(i,0)+        &
+     &                         DCOSH(2.0_dp*kD(i,j))*shear1(i,0)+       &
      &                         vi2)-                                    &
      &                   2.0_r8*waven(i,j)*TANH(kD(i,j))*               &
      &                   (ku(i,N(ng))+kv(i,N(ng))))
@@ -517,7 +517,7 @@
 !  Compute quasi static sea surface elevation, Eq(7).
 !
           zetaw(i,j)=-(0.5_r8*waveAA(i,j)*waven(i,j)/                   &
-     &               SINH(2.0_r8*kD(i,j)))
+     &               DSINH(2.0_dp*kD(i,j)))
 !
 !  Compute barotropic component of geopotential function, without zeta_c.
 !  This gets sent to prsgrd functions.  The zeta_c is already included in
@@ -652,7 +652,7 @@
           DO i=IstrU-1,Iend
             fac2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)
             cff2=fac2*gamr(i,j)
-            cff3=COSH(2.0_r8*pi*cff2)*odiss(i,j)
+            cff3=DCOSH(2.0_dp*pi*cff2)*odiss(i,j)
 !           cff1=Dissip_wcap(i,j)+Dissip_break(i,j)
             cff1=Dissip_break(i,j)
             cff4=(1.0_r8-wec_alpha(ng))*cff1*osigma(i,j)

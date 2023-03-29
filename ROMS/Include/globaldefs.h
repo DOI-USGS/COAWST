@@ -691,6 +691,7 @@
 # define BBL_MODEL
 #endif
 
+
 /*
 ** Check if spatially varying bottom friction parameters are needed.
 */
@@ -841,13 +842,21 @@
 #endif
 /* end of ROMS coupling cpps */
 
-
 /*
 ** Define internal option to process wave data.
 */
 
 #if defined WEC_MELLOR || defined WEC_VF
 #   define WEC
+#endif
+
+#if defined SSW_LOGINT && defined WEC
+#   define SSW_LOGINT_STOKES
+#endif
+
+#if defined WEC
+#   define BULK_STOKES
+#   undef  SPECTRUM_STOKES
 #endif
 
 /*
@@ -906,7 +915,7 @@
 # define WAVES_TOP_PERIOD
 #endif
 
-#if defined BBL_MODEL || defined WAVES_OCEAN
+#if defined BBL_MODEL || defined WAVES_OCEAN || defined INWAVE_MODEL
 # define WAVES_BOT_PERIOD
 #endif
 

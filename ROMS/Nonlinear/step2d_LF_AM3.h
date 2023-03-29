@@ -90,6 +90,9 @@
      &                  MIXING(ng) % visc4_p,   MIXING(ng) % visc4_r,   &
 #  endif
 # endif
+# if defined SEDIMENT && defined SED_MORPH
+     &                 SEDBED(ng) % bed_thick,                          &
+# endif
 # if defined VEGETATION && defined VEG_DRAG
      &                  VEG(ng) % step2d_uveg,                          &
      &                  VEG(ng) % step2d_vveg,                          &
@@ -125,6 +128,9 @@
 #  endif
      &                  OCEAN(ng) % ubar_stokes,                        &
      &                  OCEAN(ng) % vbar_stokes,                        &
+# endif
+# if defined TIDE_GENERATING_FORCES && !defined SOLVE3D
+     &                  OCEAN(ng) % eq_tide,                            &
 # endif
 # ifndef SOLVE3D
      &                  FORCES(ng) % sustr,     FORCES(ng) % svstr,     &
@@ -197,6 +203,9 @@
      &                        visc4_p, visc4_r,                         &
 #  endif
 # endif
+# if defined SEDIMENT && defined SED_MORPH
+     &                        bed_thick,                                &
+# endif
 # if defined VEGETATION && defined VEG_DRAG
      &                        step2d_uveg, step2d_vveg,                 &
 # endif
@@ -223,6 +232,9 @@
      &                        rulag2d, rvlag2d,                         &
 #  endif
      &                        ubar_stokes, vbar_stokes,                 &
+# endif
+# if defined TIDE_GENERATING_FORCES && !defined SOLVE3D
+     &                        eq_tide,                                  &
 # endif
 # ifndef SOLVE3D
      &                        sustr, svstr, bustr, bvstr,               &
@@ -255,7 +267,7 @@
       USE mod_ncparam
       USE mod_scalars
 # if defined SEDIMENT && defined SED_MORPH
-      USE mod_sediment
+      USE mod_sedbed
 # endif
       USE mod_sources
 !
@@ -289,7 +301,11 @@
       real(r8), intent(in) :: vmask(LBi:,LBj:)
 #  endif
       real(r8), intent(in) :: fomn(LBi:,LBj:)
+#  if defined SEDIMENT && defined SED_MORPH
+      real(r8), intent(inout) :: h(LBi:,LBj:)
+#  else
       real(r8), intent(in) :: h(LBi:,LBj:)
+#  endif
       real(r8), intent(in) :: om_u(LBi:,LBj:)
       real(r8), intent(in) :: om_v(LBi:,LBj:)
       real(r8), intent(in) :: on_u(LBi:,LBj:)
@@ -319,6 +335,9 @@
       real(r8), intent(in) :: visc4_r(LBi:,LBj:)
 #   endif
 #  endif
+# if defined SEDIMENT && defined SED_MORPH
+      real(r8), intent(in) :: bed_thick(LBi:,LBj:,:)
+# endif
 #  if defined VEGETATION && defined VEG_DRAG
       real(r8), intent(in) :: step2d_uveg(LBi:,LBj:)
       real(r8), intent(in) :: step2d_vveg(LBi:,LBj:)
@@ -356,6 +375,9 @@
 #   endif
       real(r8), intent(in) :: ubar_stokes(LBi:,LBj:)
       real(r8), intent(in) :: vbar_stokes(LBi:,LBj:)
+#  endif
+#  if defined TIDE_GENERATING_FORCES && !defined SOLVE3D
+      real(r8), intent(in) :: eq_tide(LBi:,LBj:)
 #  endif
 #  ifndef SOLVE3D
       real(r8), intent(in) :: sustr(LBi:,LBj:)
@@ -424,7 +446,11 @@
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
 #  endif
       real(r8), intent(in) :: fomn(LBi:UBi,LBj:UBj)
+#  if defined SEDIMENT && defined SED_MORPH
+      real(r8), intent(inout) :: h(LBi:UBi,LBj:UBj)
+#  else
       real(r8), intent(in) :: h(LBi:UBi,LBj:UBj)
+#  endif
       real(r8), intent(in) :: om_u(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: om_v(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: on_u(LBi:UBi,LBj:UBj)
@@ -454,6 +480,9 @@
       real(r8), intent(in) :: visc4_r(LBi:UBi,LBj:UBj)
 #   endif
 #  endif
+# if defined SEDIMENT && defined SED_MORPH
+      real(r8), intent(in) :: bed_thick(LBi:UBi,LBj:UBj,1:3)
+# endif
 #  if defined VEGETATION && defined VEG_DRAG
       real(r8), intent(in) :: step2d_uveg(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: step2d_vveg(LBi:UBi,LBj:UBj)
@@ -491,6 +520,9 @@
 #   endif
       real(r8), intent(in) :: ubar_stokes(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vbar_stokes(LBi:UBi,LBj:UBj)
+#  endif
+#  if defined TIDE_GENERATING_FORCES && !defined SOLVE3D
+      real(r8), intent(in) :: eq_tide(LBi:UBi,LBj:UBj)
 #  endif
 #  ifndef SOLVE3D
       real(r8), intent(in) :: sustr(LBi:UBi,LBj:UBj)
@@ -612,6 +644,7 @@
 !
       ptsk=3-kstp
       CORRECTOR_2D_STEP=.not.PREDICTOR_2D_STEP(ng)
+
 !
 !-----------------------------------------------------------------------
 !  Compute total depth (m) and vertically integrated mass fluxes.
@@ -1040,6 +1073,20 @@
           END IF
         END DO
       END IF
+# if defined SEDIMENT && defined SED_MORPH
+!
+!  Scale the bed change with the fast time stepping. The
+!  half is becasue we do pred + cor. The ndtfast/nfast is
+!  becasue we do nfast steps to here.
+!
+        fac=0.5_r8*dtfast(ng)*ndtfast(ng)/(nfast(ng)*dt(ng))
+        DO j=Jstr,Jend
+          DO i=Istr,Iend
+            cff=fac*(bed_thick(i,j,nstp)-bed_thick(i,j,nnew))
+            h(i,j)=h(i,j)-cff
+        END DO
+      END DO
+# endif
 !
 !  Set free-surface lateral boundary conditions.
 !
@@ -1100,6 +1147,13 @@
      &                   gzeta(i-1,j)+gzeta(i,j))*                      &
      &                  (Pair(i-1,j)-Pair(i,j))
 # endif
+# if defined TIDE_GENERATING_FORCES && !defined SOLVE3D
+          rhs_ubar(i,j)=rhs_ubar(i,j)-                                  &
+     &                  cff1*on_u(i,j)*                                 &
+     &                  (h(i-1,j)+h(i,j)+                               &
+     &                   gzeta(i-1,j)+gzeta(i,j))*                      &
+     &                  (eq_tide(i,j)-eq_tide(i-1,j))
+# endif
 # ifdef DIAGNOSTICS_UV
           DiaU2rhs(i,j,M2pgrd)=rhs_ubar(i,j)
 # endif
@@ -1150,6 +1204,13 @@
      &                    (h(i,j-1)+h(i,j)+                             &
      &                     gzeta(i,j-1)+gzeta(i,j))*                    &
      &                    (Pair(i,j-1)-Pair(i,j))
+# endif
+# if defined TIDE_GENERATING_FORCES && !defined SOLVE3D
+            rhs_vbar(i,j)=rhs_vbar(i,j)-                                &
+     &                    cff1*om_v(i,j)*                               &
+     &                    (h(i,j-1)+h(i,j)+                             &
+     &                     gzeta(i,j-1)+gzeta(i,j))*                    &
+     &                    (eq_tide(i,j)-eq_tide(i,j-1))
 # endif
 # ifdef DIAGNOSTICS_UV
             DiaV2rhs(i,j,M2pgrd)=rhs_vbar(i,j)

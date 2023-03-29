@@ -390,14 +390,14 @@
 !
 !  Define dimensions for the plant array variables
 !
-#if !defined PERFECT_RESTART && defined VEGETATION
+!#if !defined PERFECT_RESTART && defined VEGETATION
 # if defined VEG_DRAG || defined VEG_BIOMASS
         v3pgrd(1)=DimIDs( 1)
         v3pgrd(2)=DimIDs( 5)
         v3pgrd(3)=DimIDs(35)
         v3pgrd(4)=DimIDs(12)
 # endif
-#endif
+!#endif
 #ifdef INWAVE_MODEL
 !
 !  Define dimension vector for energy wave layer type variables.

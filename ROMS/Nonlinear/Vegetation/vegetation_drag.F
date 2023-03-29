@@ -163,9 +163,11 @@
 ! 
       real(r8), parameter :: one_third  = 1.0_r8/3.0_r8
       real(r8), parameter :: one_twelfth  = 1.0_r8/12.0_r8
-      real(r8), parameter :: eps  = 1.0E-8_r8
-      real(r8), parameter :: Inival  = 0.0_r8
-      real(r8) :: cff, cff1, cff2, cff3, cff4, Hz_inverse
+      real(r8), parameter :: Inival  = 0.0_r8 
+      real(r8), parameter :: min_eps = 1.0E-12_r8
+      real(r8), parameter :: max_eps = 1.0E12_r8
+      real(r8) :: cff, inv_cff1, cff1, cff2, cff3, cff4, Hz_inverse
+      real(r8) :: cff5, cff6
       real(r8) :: sma, buoy, Umag, Ca, cflex
       real(r8) :: Lveg_loc, plant_height_eff
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS,0:N(ng)) :: dab
@@ -225,12 +227,16 @@
               sma=(plant(i,j,iveg,pdiam)*                               &
      &             plant(i,j,iveg,pthck)**3.0_r8)*(one_twelfth)
 !
+! Avoid division by zero
+!
+              cff1=MAX( (E_veg(iveg,ng)*sma), min_eps)
+              inv_cff1=1.0_r8/cff1 
+!
 ! Buoyancy parameter
 !
               buoy=(rhow-veg_massdens(iveg,ng))*g*plant(i,j,iveg,pdiam)*&
      &              plant(i,j,iveg,pthck)*                              &
-     &              plant(i,j,iveg,phght)**3.0_r8/                      &
-     &             (E_veg(iveg,ng)*sma+eps)
+     &              plant(i,j,iveg,phght)**3.0_r8*inv_cff1 
 !
 ! Current speed at rho points
 !
@@ -241,15 +247,25 @@
 ! Cauchy number
 !
               Ca=0.5_r8*rhow*Cd_veg(iveg,ng)*plant(i,j,iveg,pdiam)*     &
-     &                   Umag**2.0_r8*plant(i,j,iveg,phght)**3.0_r8/    &
-     &                       (E_veg(iveg,ng)*sma+eps)+eps
+     &           Umag**2.0_r8*plant(i,j,iveg,phght)**3.0_r8*inv_cff1
 !
-              cflex=1.0_r8-((1.0_r8-0.9_r8*Ca**(-one_third))/           &
-     &             (1.0_r8+(Ca**(-1.5_r8)*(8.0_r8+buoy**(1.5_r8)))))
+! Avoid infinity in Cauchy's number 
 !
-! To avoid NaN value when Ca is zero
+              cff4=MIN(Ca**-1.5_r8, max_eps)
 !
-              cflex=MIN(cflex,1.0_r8)
+! Denominator for cflex calculation
+!             
+              cff5=1.0_r8+(cff4*(8.0_r8+buoy**(1.5_r8)))
+!
+! Avoid infinity in Cauchy's number 
+!
+              cff6=MIN(Ca**(-one_third), max_eps) 
+!
+! set a minimum for cflex to be 1 , cflex will exceed 1 if Ca<0.7290
+! but don't allow those values 
+!
+              cflex=1.0_r8-((1.0_r8-0.9_r8*cff6)/(cff5))
+              cflex=MIN(cflex, 1.0_r8)
 !
 ! Effective blade length
 !
@@ -317,6 +333,7 @@
 !
               ru_veg(i,j,k)=ru_loc_veg(i,j,k,iveg)+ru_veg(i,j,k)
 
+!
 # ifdef WET_DRY
               cff4=cff*0.5_r8*(Hz(i-1,j,k)+Hz(i,j,k))
               ru_veg(i,j,k)=SIGN(1.0_r8, ru_veg(i,j,k))*                &
@@ -342,6 +359,7 @@
 !
               rv_veg(i,j,k)=rv_loc_veg(i,j,k,iveg)+rv_veg(i,j,k)
 
+!
 # ifdef WET_DRY
               cff4=cff*0.5_r8*(Hz(i,j-1,k)+Hz(i,j,k))
               rv_veg(i,j,k)=SIGN(1.0_r8, rv_veg(i,j,k))*                &

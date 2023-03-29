@@ -312,6 +312,10 @@
         DO i=IstrR,IendR
           stflx(i,j,itemp)=stflux(i,j,itemp)
           btflx(i,j,itemp)=btflux(i,j,itemp)
+#  ifdef WET_DRY
+          stflx(i,j,itemp)=stflx(i,j,itemp)*rmask_wet(i,j)
+          btflx(i,j,itemp)=btflx(i,j,itemp)*rmask_wet(i,j)
+#  endif
         END DO
       END DO
 
@@ -327,6 +331,9 @@
         DO i=IstrR,IendR
           stflx(i,j,itemp)=stflx(i,j,itemp)+                            &
      &                     dqdt(i,j)*(t(i,j,N(ng),nrhs,itemp)-sst(i,j))
+#  ifdef WET_DRY
+          stflx(i,j,itemp)=stflx(i,j,itemp)*rmask_wet(i,j)
+#  endif
         END DO
       END DO
 #  endif
@@ -355,6 +362,9 @@
           cff2=stflx(i,j,itemp)
           cff3=0.5_r8*(1.0_r8+SIGN(1.0_r8,cff1-t(i,j,N(ng),nrhs,itemp)))
           stflx(i,j,itemp)=cff2-cff3*0.5_r8*(cff2-ABS(cff2))
+#  ifdef WET_DRY
+          stflx(i,j,itemp)=stflx(i,j,itemp)*rmask_wet(i,j)
+#  endif
         END DO
       END DO
 #  endif

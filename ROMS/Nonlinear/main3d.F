@@ -54,6 +54,9 @@
 # ifdef TLM_CHECK
       USE dotproduct_mod,       ONLY : nl_dotproduct
 # endif
+# ifdef TIDE_GENERATING_FORCES
+      USE equilibrium_tide_mod, ONLY : equilibrium_tide
+# endif
 # if defined NLM_OUTER                || \
      defined RBL4DVAR                 || \
      defined RBL4DVAR_ANA_SENSITIVITY || \
@@ -73,7 +76,8 @@
 # endif
       USE ini_fields_mod,       ONLY : ini_fields, ini_zeta
 #ifdef INWAVE_MODEL
-      USE driver_inwave_mod, ONLY : inwave_run
+      USE driver_inwave_mod,    ONLY : inwave_run
+      USE mod_inwave_swan
 #endif
 # ifdef LMD_MIXING
       USE lmd_vmix_mod,         ONLY : lmd_vmix
@@ -162,6 +166,9 @@
       integer :: my_iif, next_indx1
 # ifdef FLOATS
       integer :: Lend, Lstr, chunk_size
+# endif
+# ifdef INWAVE_MODEL
+      integer :: instep
 # endif
 !
       character (len=*), parameter :: MyFile =                          &
@@ -331,6 +338,9 @@
 # ifndef TS_FIXED
                 CALL rho_eos (ng, tile, iNLM)
 # endif
+# ifdef TIDE_GENERATING_FORCES
+                CALL equilibrium_tide (ng, tile, iNLM)
+# endif
                 CALL diag (ng, tile)
 # ifdef TLM_CHECK
                 CALL nl_dotproduct (ng, tile, Lnew(ng))
@@ -352,13 +362,15 @@
 # if defined INWAVE_MODEL
 !
 !-----------------------------------------------------------------------
-!  Couple ocean to atmosphere and wave model grids.
+!  Couple ocean to infragravity wave model grids.
 !-----------------------------------------------------------------------
             DO ig=1,GridsInLayer(nl)
               ng=GridNumber(ig,nl)
-              DO tile=first_tile(ng),last_tile(ng),+1
-                CALL inwave_run (ng, tile)
-              END DO
+!             DO instep=1,INT(1.0_r8/WAVES(ng)%dtifac)
+                DO tile=first_tile(ng),last_tile(ng),+1
+                  CALL inwave_run (ng, tile)
+                END DO
+!             END DO
             END DO
 # endif
 
@@ -781,7 +793,7 @@
 !
             DO ig=1,GridsInLayer(nl)
               ng=GridNumber(ig,nl)
-              CALL nesting (ng, iNLM, nzwgt)
+!jcw            CALL nesting (ng, iNLM, nzwgt)
             END DO
 # endif
 !

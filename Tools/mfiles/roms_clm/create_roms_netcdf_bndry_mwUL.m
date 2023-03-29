@@ -1,4 +1,4 @@
-function create_roms_netcdf_bndry_mwUL(fn,gn,t_clim)
+function create_roms_netcdf_bndry_mwUL(fn,gn,t2d_clim,t3d_clim)
 %
 % jcw April 18, 2009
 % updated 01Sep2015 to have all 4 sides
@@ -24,7 +24,9 @@ function create_roms_netcdf_bndry_mwUL(fn,gn,t_clim)
   s    = gn.N;
 
 %% create bndry file
-nc_bndry=netcdf.create(fn,'clobber');
+%nc_bndry=netcdf.create(fn,'clobber');
+%nc_bndry=netcdf.create(fn,bitor(0,512));   %JBZ update for >2gb files, equivalent to 'clobber' + '64BIT_OFFSET'
+nc_bndry=netcdf.create(fn,bitor(0,4096));   %JBZ update for NC4 files, equivalent to 'clobber' + 'NETCDF4'
 if isempty(nc_bndry), return, end
 
 %% Global attributes:
@@ -46,11 +48,11 @@ eudimID = netcdf.defDim(nc_bndry,'eu',MP);
 evdimID = netcdf.defDim(nc_bndry,'ev',M);
 s_rhodimID = netcdf.defDim(nc_bndry,'s_rho',s);
 
-zttdimID = netcdf.defDim(nc_bndry,'zeta_time',t_clim);
-v2tdimID = netcdf.defDim(nc_bndry,'v2d_time',t_clim);
-v3tdimID = netcdf.defDim(nc_bndry,'v3d_time',t_clim);
-sltdimID = netcdf.defDim(nc_bndry,'salt_time',t_clim);
-tptdimID = netcdf.defDim(nc_bndry,'temp_time',t_clim);
+zttdimID = netcdf.defDim(nc_bndry,'zeta_time',t2d_clim);
+v2tdimID = netcdf.defDim(nc_bndry,'v2d_time',t2d_clim);
+v3tdimID = netcdf.defDim(nc_bndry,'v3d_time',t3d_clim);
+sltdimID = netcdf.defDim(nc_bndry,'salt_time',t3d_clim);
+tptdimID = netcdf.defDim(nc_bndry,'temp_time',t3d_clim);
  
 %% Variables and attributes:
 disp(' ## Defining Dimensions, Variables, and Attributes...')

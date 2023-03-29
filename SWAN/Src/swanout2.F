@@ -1674,7 +1674,12 @@
         OFAC = 1.
       ENDIF
 !
+! jcw here we limit writing of spec data to only 1 file
+#if defined SWAN_SINGLESPEC
+      IF ((NREF .EQ. 0).and.(IONOD(MIP).NE.-999)) THEN
+#else
       IF (NREF .EQ. 0) THEN
+#endif
         IERR = -1
         FILENM = OUTP_FILES(OQI(2))                                       40.31 40.13
         IOSTAT = -1                                                       20.75

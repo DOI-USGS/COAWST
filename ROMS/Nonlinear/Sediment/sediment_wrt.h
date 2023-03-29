@@ -24,7 +24,10 @@
      &                      newlayer_thick(ng), (/0/), (/0/),           &
      &                      ncid = ncid)
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
-
+      CALL netcdf_put_fvar (ng, model, ncname, 'sg_zwbl',               &
+     &                      sg_zwbl(ng), (/0/), (/0/),                  &
+     &                      ncid = ncid)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 #ifdef BEDLOAD
       CALL netcdf_put_fvar (ng, model, ncname, 'bedload_coeff',         &
      &                      bedload_coeff(ng), (/0/), (/0/),            &
@@ -32,10 +35,6 @@
       IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
 !# ifdef BEDLOAD_VANDERA
-      CALL netcdf_put_fvar (ng, model, ncname, 'sg_zwbl',               &
-     &                      sg_zwbl(ng), (/0/), (/0/),                  &
-     &                      ncid = ncid)
-      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
       CALL netcdf_put_fvar (ng, model, ncname, 'sedslope_crit_wet',     &
      &                      sedslope_crit_wet(ng), (/0/), (/0/),        &
      &                      ncid = ncid)

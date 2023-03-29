@@ -34,9 +34,9 @@
 !
 !  Local variable declarations.
 !
-      integer :: Npts, Nval, i, iw, ia, inp, out, status
+      integer :: Npts, Nval, i, isval, iw, ia, inp, out, status
       integer :: MyRank, MyError, MyMaster, DT, num, den
-      integer :: cdecode_line, cload_i, cload_r, indx, test
+      integer :: cdecode_line, cload_i, cload_r, indx, indx2, test
       integer :: Ivalue
 # if defined WRF_COUPLING
       integer :: sstupdate
@@ -125,32 +125,63 @@
       DO WHILE (.TRUE.)
         READ (inp,'(a)',ERR=116,END=140) line
         aline=ADJUSTL(line)
-        IF(aline(1:7).eq.'NSGRIDS') THEN
-          read(aline(8:12),'(i5)') Nwav_grids
-          allocate (dtwav(Nwav_grids))
-        END IF
-        IF(aline(1:4).eq.'COMP') THEN
-          DO i=1,3
-            indx=INDEX(aline,blank)
-            aline=aline(indx+1:LEN(aline))
-          END DO
-          DO i=1,1
-            indx=INDEX(aline,blank)
-            read(aline(1:indx),'(i10)') DT
-            dtwav(iw)=REAL(DT,m8)
-            aline=aline(indx+1:LEN(aline))
-          END DO
-          READ(aline,'(a1)') KEY
-          IF (KEY.eq.'D') THEN
-            FAC = 24.0_m8*3600.0_m8
-          ELSE IF (KEY.eq.'H') THEN
-            FAC = 3600.0_m8
-          ELSE IF (KEY.eq.'M') THEN
-            FAC = 60.0_m8
-          ELSE
-            FAC = 1.0_m8
-          ENDIF
-          dtwav(iw)=dtwav(iw)*FAC
+!
+!  dont read comment lines
+!
+        isval=INDEX(aline,'&')
+        IF(isval.eq.0) THEN
+!
+!  here we look for number of swan grids
+!
+          IF(aline(1:7).eq.'NSGRIDS') THEN
+            read(aline(8:12),'(i5)') Nwav_grids
+            allocate (dtwav(Nwav_grids))
+          END IF
+!
+!  here we look for model time step
+!
+          IF(aline(1:4).eq.'COMP') THEN
+            DO i=1,3
+              indx=INDEX(aline,blank)
+              aline=aline(indx+1:LEN(aline))
+            END DO
+            DO i=1,1
+              indx=INDEX(aline,blank)
+              read(aline(1:indx),'(i10)') DT
+              dtwav(iw)=REAL(DT,m8)
+              aline=aline(indx+1:LEN(aline))
+            END DO
+            READ(aline,'(a1)') KEY
+            IF (KEY.eq.'D') THEN
+              FAC = 24.0_m8*3600.0_m8
+            ELSE IF (KEY.eq.'H') THEN
+              FAC = 3600.0_m8
+            ELSE IF (KEY.eq.'M') THEN
+              FAC = 60.0_m8
+            ELSE
+              FAC = 1.0_m8
+            ENDIF
+            dtwav(iw)=dtwav(iw)*FAC
+          END IF
+#  ifdef SPECTRUM_STOKES
+!
+!  here we look for MSCs for SPECTUM_STOKES
+!  such as CIRCLE 36 0.04 1.0 20
+!
+          indx2=INDEX(aline,'CIRCLE')
+          IF(indx2.ge.1) THEN
+            aline=aline(indx2+6:LEN(aline))
+            aline=ADJUSTL(aline)
+            DO i=1,3
+              indx=INDEX(aline,blank)
+              aline=aline(indx+1:LEN(aline))
+              aline=ADJUSTL(aline)
+            END DO
+            aline=ADJUSTL(aline)
+            read(aline(1:5),'(i5)') MSCs
+            MSCs=MSCs+1
+          END IF
+#  endif
         END IF
       END DO
  116  IF (MyRank.eq.MyMaster) WRITE (out,60) line

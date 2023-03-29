@@ -281,6 +281,9 @@
       ALLOCATE (M_GENARR_MOD(ng)%WLEVL_G(1))
       ALLOCATE (M_GENARR_MOD(ng)%ASTDF_G(1))
       ALLOCATE (M_GENARR_MOD(ng)%NPLAF_G(1))
+      ALLOCATE (M_GENARR_MOD(ng)%NPHTF_G(1))
+      ALLOCATE (M_GENARR_MOD(ng)%NPDAF_G(1))
+      ALLOCATE (M_GENARR_MOD(ng)%NPTKF_G(1))
       ALLOCATE (M_GENARR_MOD(ng)%TURBF_G(1))
       ALLOCATE (M_GENARR_MOD(ng)%MUDLF_G(1))
       ALLOCATE (M_GENARR_MOD(ng)%AICEF_G(1))
@@ -592,6 +595,9 @@
       WLEVL=> M_GENARR_MOD(ng)%WLEVL_G
       ASTDF=> M_GENARR_MOD(ng)%ASTDF_G
       NPLAF=> M_GENARR_MOD(ng)%NPLAF_G
+      NPHTF=> M_GENARR_MOD(ng)%NPHTF_G
+      NPDAF=> M_GENARR_MOD(ng)%NPDAF_G
+      NPTKF=> M_GENARR_MOD(ng)%NPTKF_G
       TURBF=> M_GENARR_MOD(ng)%TURBF_G
       MUDLF=> M_GENARR_MOD(ng)%MUDLF_G
       AICEF=> M_GENARR_MOD(ng)%AICEF_G
@@ -669,7 +675,7 @@
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
      &                    UYB   , NPLAF , TURBF , MUDLF , WXI   ,         40.59 40.35 40.55 40.31
-     &                    AICEF , HICEF ,                                 41.75
+     &                    AICEF , HICEF , NPHTF , NPDAF , NPTKF ,         41.75
      &                    WYI   , ng    ,
      &                    ngp, IT_in, PARALL2_MOD(ngp)%AC2_parent_G)
 # else
@@ -677,7 +683,7 @@
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
      &                    UYB   , NPLAF , TURBF , MUDLF , WXI   ,         40.59 40.35 40.55 40.31
-     &                    AICEF , HICEF ,                                 41.75
+     &                    AICEF , HICEF , NPHTF , NPDAF,  NPTKF ,         41.75
      &                    WYI   , ng    ,
      &                    ngp, IT_in, 1.)
 # endif
@@ -1072,6 +1078,9 @@
       WLEVL=> M_GENARR_MOD(ng)%WLEVL_G
       ASTDF=> M_GENARR_MOD(ng)%ASTDF_G
       NPLAF=> M_GENARR_MOD(ng)%NPLAF_G
+      NPHTF=> M_GENARR_MOD(ng)%NPHTF_G
+      NPDAF=> M_GENARR_MOD(ng)%NPDAF_G
+      NPTKF=> M_GENARR_MOD(ng)%NPTKF_G
       TURBF=> M_GENARR_MOD(ng)%TURBF_G
       MUDLF=> M_GENARR_MOD(ng)%MUDLF_G
       AICEF=> M_GENARR_MOD(ng)%AICEF_G
@@ -1850,7 +1859,7 @@
      &                    SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,         40.31
      &                    XYTST , DEPTH , WLEVL , FRIC  , UXB   ,         40.31
      &                    UYB   , NPLAF , TURBF , MUDLF , WXI   ,         40.59 40.35 40.55 40.31
-     &                    AICEF , HICEF ,                                 41.75
+     &                    AICEF , HICEF , NPHTF , NPDAF , NPTKF ,         41.75
      &                    WYI   )
 !COH     &                    WYI   , z2w   , uv2w  )                         41.61
 !TIMG            CALL SWTSTO(7)                                                40.23
@@ -2497,6 +2506,9 @@
       VARAICE= .FALSE.                                                    41.75
       VARHICE= .FALSE.                                                    41.75
       VARNPL = .FALSE.                                                    40.55
+      VARNPH = .FALSE.                                                    40.55
+      VARNPD = .FALSE.                                                    40.55
+      VARNPT = .FALSE.                                                    40.55
       VARTUR = .FALSE.                                                    40.35
       U10    = 0.
       WDIP   = 0.
@@ -2862,7 +2874,14 @@
       JDSXV = 35                                                          40.65 40.61
       JTURB2= 36                                                           40.35
       JTURB3= 37                                                           40.35
-      MCMVAR = 37
+      JNPHT2= 38                                                          40.55
+      JNPHT3= 39                                                          40.55
+      JNPDA2= 40                                                          40.55
+      JNPDA3= 41                                                          40.55
+      JNPTK2= 42                                                          40.55
+      JNPTK3= 43                                                          40.55
+      JDSXC = 44                                                          40.55
+      MCMVAR = 44
       LADDS = .TRUE.
 #else
       MCMVAR = 28                                                         41.38 40.65 40.61 40.51 40.13
@@ -2885,6 +2904,15 @@
 !     added for number of plants per square meter                         40.55
       JNPLA2= 1                                                           40.55
       JNPLA3= 1                                                           40.55
+!     added for height of plants                                          40.55
+      JNPHT2= 1                                                           40.55
+      JNPHT3= 1                                                           40.55
+!     added for diameter of plants                                        40.55
+      JNPDA2= 1                                                           40.55
+      JNPDA3= 1                                                           40.55
+!     added for thickness of plants                                       40.55
+      JNPTK2= 1                                                           40.55
+      JNPTK3= 1     
 !     added for turbulent viscosity                                       40.35
       JTURB2= 1                                                           40.35
       JTURB3= 1                                                           40.35
@@ -2911,6 +2939,7 @@
       JDSXS  = 1                                                          40.65 40.61
       JDSXW  = 1                                                          40.65 40.61
       JDSXV  = 1                                                          40.65 40.61
+      JDSXC  = 1                                                          40.65 40.61
 #endif
       JDSXM  = 1                                                          40.65 40.61
       JDSXT  = 1                                                          40.35
@@ -3669,6 +3698,18 @@
       OVHEXP(IVTYPE) = 0.1
       OVEXCV(IVTYPE) = -9.
 !
+      IVTYPE = 80
+      OVKEYW(IVTYPE) = 'DICD'                                             40.61
+      OVSNAM(IVTYPE) = 'dicd'                                             40.85
+      OVLNAM(IVTYPE) = 'Spectral drag coefficient (veg)'
+      OVUNIT(IVTYPE) = ''
+      OVSVTY(IVTYPE) = 1
+      OVLLIM(IVTYPE) = 0.
+      OVULIM(IVTYPE) = 1.
+      OVLEXP(IVTYPE) = 0.
+      OVHEXP(IVTYPE) = 1.
+      OVEXCV(IVTYPE) = -9.
+!
       IVTYPE = 58                                                         40.64
       OVKEYW(IVTYPE) = 'QP'
       OVSNAM(IVTYPE) = 'Qp'
@@ -3933,6 +3974,24 @@
       OVLEXP(IVTYPE) = 0.
       OVHEXP(IVTYPE) = 360.
       OVEXCV(IVTYPE) = -999.
+
+!      As a note, 80 is listed earlier with Veg.
+!      IVTYPE = 80
+!      OVKEYW(IVTYPE) = 'DICD'                                             40.61
+!      ......
+#endif
+#if defined SWAN_MODEL && defined SPECTRUM_STOKES
+      IVTYPE = 81
+      OVKEYW(IVTYPE) = 'SSPEC'
+      OVSNAM(IVTYPE) = 'SSpec'
+      OVLNAM(IVTYPE) = 'Spectrum of Stokes drift'
+      OVUNIT(IVTYPE) = 'm2/s'
+      OVSVTY(IVTYPE) = 3
+      OVLLIM(IVTYPE) = -100.
+      OVULIM(IVTYPE) = 100.
+      OVLEXP(IVTYPE) = -2.
+      OVHEXP(IVTYPE) = 2.
+      OVEXCV(IVTYPE) = 0.
 #endif
 !
       IVTYPE = 100                                                        41.62
@@ -5912,6 +5971,18 @@
         COMPDA(1,JNPLA2) = 0.                                             40.55
         COMPDA(1,JNPLA3) = 0.                                             40.55
       ENDIF
+      IF (VARNPH) THEN                                                    40.55
+        COMPDA(1,JNPHT2) = 0.                                             40.55
+        COMPDA(1,JNPHT3) = 0.                                             40.55
+      ENDIF
+      IF (VARNPD) THEN                                                    40.55
+        COMPDA(1,JNPDA2) = 0.                                             40.55
+        COMPDA(1,JNPDA3) = 0.                                             40.55
+      ENDIF
+      IF (VARNPT) THEN                                                    40.55
+        COMPDA(1,JNPTK2) = 0.                                             40.55
+        COMPDA(1,JNPTK3) = 0.                                             40.55
+      ENDIF
       IF (VARTUR) THEN                                                    40.35
         COMPDA(1,JTURB2) = 0.                                             40.35
         COMPDA(1,JTURB3) = 0.                                             40.35
@@ -6040,6 +6111,30 @@
              XNPL = SVALQI (XP, YP, 11, NPLAF, 1 ,IX ,IY)                 40.55
              COMPDA(INDX,JNPLA2) = XNPL                                   40.55
              COMPDA(INDX,JNPLA3) = XNPL                                   40.55
+          ENDIF
+!
+!     ***** compute plant height spatially varying *****                  40.55
+!
+          IF (VARNPH) THEN
+             XNPH = SVALQI (XP, YP, 16, NPHTF, 1 ,IX ,IY)                 40.55
+             COMPDA(INDX,JNPHT2) = XNPH                                   40.55
+             COMPDA(INDX,JNPHT3) = XNPH                                   40.55
+          ENDIF
+!
+!     ***** compute plant diameter spatially varying *****                40.55
+!
+          IF (VARNPD) THEN
+             XNPD = SVALQI (XP, YP, 17, NPDAF, 1 ,IX ,IY)                 40.55
+             COMPDA(INDX,JNPDA2) = XNPD                                   40.55
+             COMPDA(INDX,JNPDA3) = XNPD                                   40.55
+          ENDIF
+!
+!     ***** compute plant thickness spatially varying *****               40.55
+!
+          IF (VARNPT) THEN
+             XNPT = SVALQI (XP, YP, 18, NPTKF, 1 ,IX ,IY)                 40.55
+             COMPDA(INDX,JNPTK2) = XNPT                                   40.55
+             COMPDA(INDX,JNPTK3) = XNPT                                   40.55
           ENDIF
 !
 !     ***** compute turbulent viscosity *****                             40.35
@@ -6211,6 +6306,42 @@
              COMPDA(INDX,JNPLA3) = XNPL                                   40.80
           ENDIF
 !
+!     ***** plant height spatially varying  *****                         40.80
+!
+          IF (VARNPH) THEN
+             IF ( IGTYPE(16).EQ.3 ) THEN
+                XNPH = NPHTF(INDX)
+             ELSE
+                XNPH = SVALQI (XP, YP, 16, NPHTF, 1 ,0, 0)                40.80
+             ENDIF
+             COMPDA(INDX,JNPHT2) = XNPH                                   40.80
+             COMPDA(INDX,JNPHT3) = XNPH                                   40.80
+          ENDIF
+!
+!     ***** plant diameter spatially varying  *****                       40.80
+!
+          IF (VARNPD) THEN
+             IF ( IGTYPE(17).EQ.3 ) THEN
+                XNPD = NPDAF(INDX)
+             ELSE
+                XNPD = SVALQI (XP, YP, 17, NPDAF, 1 ,0, 0)                40.80
+             ENDIF
+             COMPDA(INDX,JNPDA2) = XNPD                                   40.80
+             COMPDA(INDX,JNPDA3) = XNPD                                   40.80
+          ENDIF
+!
+!     ***** plant thickness spatially varying  *****                      40.80
+!
+          IF (VARNPT) THEN
+             IF ( IGTYPE(18).EQ.3 ) THEN
+                XNPT = NPTKF(INDX)
+             ELSE
+                XNPT = SVALQI (XP, YP, 18, NPTKF, 1 ,0, 0)                40.80
+             ENDIF
+             COMPDA(INDX,JNPTK2) = XNPT                                   40.80
+             COMPDA(INDX,JNPTK3) = XNPT                                   40.80
+          ENDIF
+!
 !     ***** compute turbulent viscosity *****                             40.35
 !
           IF (VARTUR) THEN
@@ -6245,10 +6376,10 @@
 !     ***** compute aice, ice concentration (fraction)  *****             41.75
 !                                                                         41.75
           IF (VARAICE) THEN                                               41.75
-             IF ( IGTYPE(12).EQ.3 ) THEN                                  41.75
+             IF ( IGTYPE(14).EQ.3 ) THEN                                  41.75
                 XAICE = AICEF(INDX)                                       41.75
              ELSE                                                         41.75
-                XAICE = SVALQI (XP, YP, 12, AICEF, 1 ,0, 0)               41.75
+                XAICE = SVALQI (XP, YP, 14, AICEF, 1 ,0, 0)               41.75
              ENDIF                                                        41.75
              COMPDA(INDX,JAICE2) = XAICE                                  41.75
              COMPDA(INDX,JAICE3) = XAICE                                  41.75
@@ -6257,10 +6388,10 @@
 !     ***** compute hice, ice thickness (m)  *****                        41.75
 !                                                                         41.75
           IF (VARHICE) THEN                                               41.75
-             IF ( IGTYPE(13).EQ.3 ) THEN                                  41.75
+             IF ( IGTYPE(15).EQ.3 ) THEN                                  41.75
                 XHICE = HICEF(INDX)                                       41.75
              ELSE                                                         41.75
-                XHICE = SVALQI (XP, YP, 13, HICEF, 1 ,0, 0)               41.75
+                XHICE = SVALQI (XP, YP, 15, HICEF, 1 ,0, 0)               41.75
              ENDIF                                                        41.75
              COMPDA(INDX,JHICE2) = XHICE                                  41.75
              COMPDA(INDX,JHICE3) = XHICE                                  41.75
@@ -6287,6 +6418,11 @@
 !     --- initialize UBOT and TMBOT                                       40.94
       COMPDA(:,JUBOT) = 0.                                                40.94
       IF (JPBOT.GT.1) COMPDA(:,JPBOT) = 0.                                40.94
+!
+!     initialize CDVEG_COAWST
+      DO INDX = 1, MCGRD                                                  32.02
+        COMPDA(INDX,JDSXC) =  0.                                          32.02
+      END DO 
 !
 !     --- initialize GAMBR and RESPL                                      41.38
       IF (ISURF.EQ.6) THEN
@@ -7606,7 +7742,7 @@
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
      &                   XYTST , DEPTH , WLEVL , FRIC  , UXB   ,          40.31
      &                   UYB   , NPLAF , TURBF , MUDLF , WXI   ,          40.59 40.35 40.55 40.31
-     &                   AICEF , HICEF ,                                  41.75
+     &                   AICEF , HICEF , NPHTF,  NPDAF , NPTKF ,          41.75
      &                   WYI   , ng    ,
      &                   ngp   , ITjcw,  AC2_parent)
 #else
@@ -7614,7 +7750,7 @@
      &                   SPCSIG, SPCDIR, XCGRID, YCGRID, KGRPNT,          40.31
      &                   XYTST , DEPTH , WLEVL , FRIC  , UXB   ,          40.31
      &                   UYB   , NPLAF , TURBF , MUDLF , WXI   ,          40.59 40.35 40.55 40.31
-     &                   AICEF , HICEF ,                                  41.75
+     &                   AICEF , HICEF , NPHTF , NPDAF , NPTKF ,          41.75
      &                   WYI   )
 #endif
 !COH     &                   WYI   , z2w   , uv2w  )                          41.61
@@ -7762,6 +7898,7 @@
      &         NPLAF(*), TURBF(*),                                        40.35 40.55
      &         MUDLF(*),                                                  40.59
      &         AICEF(*), HICEF(*),                                        41.75
+     &         NPHTF(*), NPDAF(*), NPTKF(*),                              41.75
      &         WXI(*), WYI(*)                                             40.31
 !COH      LOGICAL  uv2w, z2w                                                  41.61
 !
@@ -8311,6 +8448,86 @@
         ENDIF
       ENDIF
 
+!     field 16: field containing number of plant height
+      IF (IFLDYN(16) .EQ. 1) THEN
+        CALL FLFILE (16, 0, NPHTF, (/0./),
+     &               0, JNPHT2, JNPHT3, 0, 0, 0,
+     &               1., 0.,
+     &               COMPDA, XCGRID, YCGRID,
+     &               KGRPNT, IERR)
+        IF (STPNOW()) RETURN
+        IF (NPTST.GT.0) THEN
+          WRITE (PRTEST, '(A)') ' # plant height(m) from file points'
+          IF (OPTG.NE.5) THEN                                             40.80
+             DO IPTST = 1, MIN(10,NPTST)
+               IXP = XYTST(2*IPTST-1)
+               IYP = XYTST(2*IPTST)
+               TSTVAL(IPTST) = COMPDA(KGRPNT(IXP,IYP),JNPHT3)
+             ENDDO
+          ELSE                                                            40.80
+             DO IPTST = 1, MIN(10,NPTST)                                  40.80
+                IVP = XYTST(IPTST)                                        40.80
+                TSTVAL(IPTST) = COMPDA(IVP,JNPHT3)                        40.80
+             ENDDO                                                        40.80
+          ENDIF                                                           40.80
+          WRITE (PRTEST, 122) ' veg height: ',
+     &          (TSTVAL(IPTST), IPTST=1,MIN(10,NPTST))
+        ENDIF
+      ENDIF
+
+!     field 17: field containing number of plant diameter.
+      IF (IFLDYN(17) .EQ. 1) THEN
+        CALL FLFILE (17, 0, NPDAF, (/0./),
+     &               0, JNPDA2, JNPDA3, 0, 0, 0,
+     &               1., 0.,
+     &               COMPDA, XCGRID, YCGRID,
+     &               KGRPNT, IERR)
+        IF (STPNOW()) RETURN
+        IF (NPTST.GT.0) THEN
+          WRITE (PRTEST, '(A)') ' # plant diameter(m) from file points'
+          IF (OPTG.NE.5) THEN                                             40.80
+             DO IPTST = 1, MIN(10,NPTST)
+               IXP = XYTST(2*IPTST-1)
+               IYP = XYTST(2*IPTST)
+               TSTVAL(IPTST) = COMPDA(KGRPNT(IXP,IYP),JNPDA3)
+             ENDDO
+          ELSE                                                            40.80
+             DO IPTST = 1, MIN(10,NPTST)                                  40.80
+                IVP = XYTST(IPTST)                                        40.80
+                TSTVAL(IPTST) = COMPDA(IVP,JNPDA3)                        40.80
+             ENDDO                                                        40.80
+          ENDIF                                                           40.80
+          WRITE (PRTEST, 122) ' veg diameter: ',
+     &          (TSTVAL(IPTST), IPTST=1,MIN(10,NPTST))
+        ENDIF
+      ENDIF
+
+!     field 18: field containing number of plant thickness
+      IF (IFLDYN(18) .EQ. 1) THEN
+        CALL FLFILE (18, 0, NPTKF, (/0./),
+     &               0, JNPTK2, JNPTK3, 0, 0, 0,
+     &               1., 0.,
+     &               COMPDA, XCGRID, YCGRID,
+     &               KGRPNT, IERR)
+        IF (STPNOW()) RETURN
+        IF (NPTST.GT.0) THEN
+          WRITE (PRTEST, '(A)') ' # plant thickness(m) from file points'
+          IF (OPTG.NE.5) THEN                                             40.80
+             DO IPTST = 1, MIN(10,NPTST)
+               IXP = XYTST(2*IPTST-1)
+               IYP = XYTST(2*IPTST)
+               TSTVAL(IPTST) = COMPDA(KGRPNT(IXP,IYP),JNPTK3)
+             ENDDO
+          ELSE                                                            40.80
+             DO IPTST = 1, MIN(10,NPTST)                                  40.80
+                IVP = XYTST(IPTST)                                        40.80
+                TSTVAL(IPTST) = COMPDA(IVP,JNPTK3)                        40.80
+             ENDDO                                                        40.80
+          ENDIF                                                           40.80
+          WRITE (PRTEST, 122) ' veg thickness: ',
+     &          (TSTVAL(IPTST), IPTST=1,MIN(10,NPTST))
+        ENDIF
+      ENDIF
 !     field 12: field containing turbulent viscosity
       IF (IFLDYN(12) .EQ. 1) THEN
         CALL FLFILE (12, 0, TURBF, (/0./),
@@ -10267,6 +10484,9 @@
       DEALLOCATE(WLEVL )
       DEALLOCATE(ASTDF )
       DEALLOCATE(NPLAF )
+      DEALLOCATE(NPHTF )
+      DEALLOCATE(NPDAF )
+      DEALLOCATE(NPTKF )
       DEALLOCATE(TURBF )
       DEALLOCATE(MUDLF )
       DEALLOCATE(AICEF )
@@ -10316,10 +10536,15 @@
       IF (ALLOCATED(AICEF ))   DEALLOCATE(AICEF )
       IF (ALLOCATED(HICEF ))   DEALLOCATE(HICEF )
       IF (ALLOCATED(NPLAF ))   DEALLOCATE(NPLAF )
+      IF (ALLOCATED(NPHTF ))   DEALLOCATE(NPHTF )
+      IF (ALLOCATED(NPDAF ))   DEALLOCATE(NPDAF )
+      IF (ALLOCATED(NPTKF ))   DEALLOCATE(NPTKF )
       IF (ALLOCATED(LAYH  ))   DEALLOCATE(LAYH  )
       IF (ALLOCATED(VEGDIL))   DEALLOCATE(VEGDIL)
       IF (ALLOCATED(VEGNSL))   DEALLOCATE(VEGNSL)
       IF (ALLOCATED(VEGDRL))   DEALLOCATE(VEGDRL)
+      IF (ALLOCATED(VEGYML))   DEALLOCATE(VEGYML)
+      IF (ALLOCATED(VEGMDS))   DEALLOCATE(VEGMDS)
       IF (ALLOCATED(TURBF ))   DEALLOCATE(TURBF )
       IF (ALLOCATED(MUDLF ))   DEALLOCATE(MUDLF )
 !

@@ -1,9 +1,15 @@
 function ww3gb_2TPAR(modelgrid,yearww3,mmww3,ww3_grid,specpts)
 
 %set urls of the hsig, peak period, and dominant period
-eval(['hsurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/',ww3_grid,'/multi_1.',ww3_grid,'.hs.',yearww3,mmww3,'.grb2'';'])
-eval(['tpurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/',ww3_grid,'/multi_1.',ww3_grid,'.tp.',yearww3,mmww3,'.grb2'';'])
-eval(['dpurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/',ww3_grid,'/multi_1.',ww3_grid,'.dp.',yearww3,mmww3,'.grb2'';'])
+if (str2num(yearww3)<2017)
+  eval(['hsurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/',ww3_grid,'/multi_1.',ww3_grid,'.hs.',yearww3,mmww3,'.grb2'';'])
+  eval(['tpurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/',ww3_grid,'/multi_1.',ww3_grid,'.tp.',yearww3,mmww3,'.grb2'';'])
+  eval(['dpurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/',ww3_grid,'/multi_1.',ww3_grid,'.dp.',yearww3,mmww3,'.grb2'';'])
+else
+  eval(['hsurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/gribs/multi_1.',ww3_grid,'.hs.',yearww3,mmww3,'.grb2'';'])
+  eval(['tpurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/gribs/multi_1.',ww3_grid,'.tp.',yearww3,mmww3,'.grb2'';'])
+  eval(['dpurl=''https://www.ncei.noaa.gov/thredds-ocean/dodsC/ncep/nww3/',yearww3,'/',mmww3,'/gribs/multi_1.',ww3_grid,'.dp.',yearww3,mmww3,'.grb2'';'])
+end
 %
 %first lets get the lon, lat, and time of the ww3 data
 disp(' getting ww3 lon lat and time')
@@ -24,8 +30,10 @@ end
 %
 % Now prep the swan/roms grid location arrays
 %
-disp('We are adding 360 to the roms longitude - line 31 ww3gb_2TPAR.m')
-gx=specpts(:,1)+360;
+offset=0;
+if (min(specpts(:,1)<0)); offset=360; end
+disp(['We are adding ',num2str(offset),' to the roms longitude - line 34 ww3gb_2TPAR.m'])
+gx=specpts(:,1)+offset;
 gy=specpts(:,2);
 xl=min(gx(:))-3;xr=max(gx(:))+3;     %this adds a buffer to make sure we get enough data.
 yb=min(gy(:))-3;yt=max(gy(:))+3;
@@ -47,7 +55,6 @@ for tidx=1:length(timeww3)
 %
   disp(['getting hs tp and dp for ',datestr(time(tidx),'yyyymmdd.HHMM')])
 % get hs
-% hs=double(squeeze(ncread(hsurl,'Significant_height_of_combined_wind_waves_and_swell_surface',[1 1  tidx],[Inf Inf 1])));
   hs=double(squeeze(ncread(hsurl,'Significant_height_of_combined_wind_waves_and_swell_surface',[ig0 jg0 tidx],[ig1-ig0+1 jg1-jg0+1 1])));
   zz=hs>1000;
   hs(zz)=0; %make bad data 0, swan not like NaNs

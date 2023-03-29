@@ -96,6 +96,9 @@
 #ifdef OXYGEN
       integer :: iOxyg                  ! Dissolved oxygen concentration
 #endif
+#ifdef ODU
+      integer :: iODU_                  ! Dissolved oxygen demand units
+#endif
 
 #if defined DIAGNOSTICS && defined DIAGNOSTICS_BIO
 !

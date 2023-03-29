@@ -1,5 +1,5 @@
 #include "cppdefs.h"
-#if defined MODEL_COUPLING && defined MCT_LIB
+#if defined MODEL_COUPLING && !defined MCT_LIB
       SUBROUTINE read_CouplePar (model)
 !
 !svn $Id: read_couplepar.F 1054 2021-03-06 19:47:12Z arango $

@@ -292,9 +292,11 @@
             CASE ('Sout(idTdif)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Sout(idTdif,1:Ngrids)=Lswitch(1:Ngrids)
+#  ifdef SALINITY
             CASE ('Sout(idSdif)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Sout(idSdif,1:Ngrids)=Lswitch(1:Ngrids)
+#  endif
             CASE ('Sout(idHsbl)')
               Npts=load_l(Nval, Cval, Ngrids, Lswitch)
               Sout(idHsbl,1:Ngrids)=Lswitch(1:Ngrids)
@@ -786,9 +788,11 @@
             IF (Sout(idTdif,ng)) WRITE (out,90) Sout(idTdif,ng),        &
      &          'Sout(idTdif)',                                         &
      &          'Write out vertical T-diffusion coefficient.'
+#  ifdef SALINITY
             IF (Sout(idSdif,ng)) WRITE (out,90) Sout(idSdif,ng),        &
      &          'Sout(idSdif)',                                         &
      &          'Write out vertical S-diffusion coefficient.'
+#  endif
 #  ifdef LMD_SKPP
             IF (Sout(idHsbl,ng)) WRITE (out,90) Sout(idHsbl,ng),        &
      &          'Sout(idHsbl)',                                         &

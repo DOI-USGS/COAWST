@@ -1015,7 +1015,8 @@
 #  ifdef MASKING
      &                     GRID(ng) % rmask,                            &
 #  endif
-     &                     SEDBED(ng) % bed_frac(:,:,:,i))
+     &                     SEDBED(ng) % bed_frac(:,:,:,i),              &
+     &                     SetFillVal = .FALSE.)
         IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idfrac(i))), RST(ng)%Rindex
@@ -1038,7 +1039,8 @@
 #  ifdef MASKING
      &                     GRID(ng) % rmask,                            &
 #  endif
-     &                     SEDBED(ng) % bed_mass(:,:,:,NOUT,i))
+     &                     SEDBED(ng) % bed_mass(:,:,:,NOUT,i),         &
+     &                     SetFillVal = .FALSE.)
         IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idBmas(i))), RST(ng)%Rindex
@@ -1065,7 +1067,8 @@
 #  ifdef MASKING
      &                     GRID(ng) % rmask,                            &
 #  endif
-     &                     SEDBED(ng) % bed(:,:,:,i))
+     &                     SEDBED(ng) % bed(:,:,:,i),                   &
+     &                     SetFillVal = .FALSE.)
         IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
           IF (Master) THEN
             WRITE (stdout,10) TRIM(Vname(1,idSbed(i))), RST(ng)%Rindex

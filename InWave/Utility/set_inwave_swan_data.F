@@ -88,8 +88,9 @@
 !     To compute the time index for the BC data, the Ampzeta array
 !     is Insteps long (1000sec), but it repeats every 1/df.
 !
-      ratio=WAVES(ng)%idt/dt(ng)
-      tidx=REAL(MOD(iic(ng),INT((WAVES(ng)%Insteps-1)*ratio)),r8)/ratio+1.0_r8
+      ratio=WAVES(ng)%idt/(dt(ng)*WAVES(ng)%dtifac)
+      tidx=REAL(MOD(iic(ng),INT((WAVES(ng)%Insteps-1)*ratio)),r8)/ratio+&
+     &     1.0_r8
       tidx1=INT(tidx)
       tidx2=tidx+1
       fac2=tidx-REAL(INT(tidx),r8)
@@ -99,15 +100,8 @@
         IF (LBC(iwest,isAC3d,ng)%acquire) THEN
           DO d=1,ND
             DO j=Jstr,Jend
-#ifdef VARY_ACBC
-!             cff2=WAVES(ng)%Ampzeta(j,tidx,d)
               cff2=fac1*WAVES(ng)%Ampzeta(j,tidx1,d)+                   &
      &             fac2*WAVES(ng)%Ampzeta(j,tidx2,d)
-#else
-!             cff2=WAVES(ng)%Ampzeta(tidx,d)
-              cff2=fac1*WAVES(ng)%Ampzeta(tidx1,d)+                     &
-     &             fac2*WAVES(ng)%Ampzeta(tidx2,d)
-#endif
               WAVEB(ng)%AC_west(j,d)=cff2*WAVEP(ng)%Tr(Istr-1,j,d)*     &
      &                               otwopi
             END DO
@@ -119,15 +113,8 @@
         IF (LBC(ieast,isAC3d,ng)%acquire) THEN
           DO d=1,ND
             DO j=Jstr,Jend
-#ifdef VARY_ACBC
-!             cff2=WAVES(ng)%Ampzeta(j,tidx,d)
               cff2=fac1*WAVES(ng)%Ampzeta(j,tidx1,d)+                   &
      &             fac2*WAVES(ng)%Ampzeta(j,tidx2,d)
-#else
-!             cff2=WAVES(ng)%Ampzeta(tidx,d)
-              cff2=fac1*WAVES(ng)%Ampzeta(tidx1,d)+                     &
-     &             fac2*WAVES(ng)%Ampzeta(tidx2,d)
-#endif
               WAVEB(ng)%AC_east(j,d)=cff2*WAVEP(ng)%Tr(Iend+1,j,d)*     &
      &                               otwopi
             END DO
@@ -139,15 +126,8 @@
         IF (LBC(inorth,isAC3d,ng)%acquire) THEN
           DO d=1,ND
             DO i=Istr,Iend
-#ifdef VARY_ACBC
-!             cff2=WAVES(ng)%Ampzeta(i,tidx,d)
               cff2=fac1*WAVES(ng)%Ampzeta(i,tidx1,d)+                   &
      &             fac2*WAVES(ng)%Ampzeta(i,tidx2,d)
-#else
-!             cff2=WAVES(ng)%Ampzeta(tidx,d)
-              cff2=fac1*WAVES(ng)%Ampzeta(tidx1,d)+                     &
-     &             fac2*WAVES(ng)%Ampzeta(tidx2,d)
-#endif
               WAVEB(ng)%AC_north(i,d)=cff2*WAVEP(ng)%Tr(i,Jend+1,d)*    &
      &                                otwopi
             END DO
@@ -159,15 +139,8 @@
         IF (LBC(isouth,isAC3d,ng)%acquire) THEN
           DO d=1,ND
             DO i=Istr,Iend
-#ifdef VARY_ACBC
-!             cff2=WAVES(ng)%Ampzeta(i,tidx,d)
               cff2=fac1*WAVES(ng)%Ampzeta(i,tidx1,d)+                   &
      &             fac2*WAVES(ng)%Ampzeta(i,tidx2,d)
-#else
-!             cff2=WAVES(ng)%Ampzeta(tidx,d)
-              cff2=fac1*WAVES(ng)%Ampzeta(tidx1,d)+                     &
-     &             fac2*WAVES(ng)%Ampzeta(tidx2,d)
-#endif
               WAVEB(ng)%AC_south(i,d)=cff2*WAVEP(ng)%Tr(i,Jstr-1,d)*    &
      &                                otwopi
             END DO

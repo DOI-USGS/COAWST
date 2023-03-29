@@ -85,7 +85,11 @@
 !  defined variable dimensions in output NetCDF files.
 !
 !       integer, parameter :: nDimID = 33
+#ifdef INWAVE_MODEL
+        integer, parameter :: nDimID = 36
+#else
         integer, parameter :: nDimID = 35
+#endif
 !
 !  Input/output grid-type variables.
 !
@@ -256,6 +260,7 @@
         integer  :: idOtyp        ! observations type
         integer  :: idOval        ! observations value
         integer  :: idOvel        ! omega vertical velocity
+        integer  :: idOvil        ! omega vertical velocity implicit
         integer  :: idOclm        ! omega vertical velocity climatology
         integer  :: idQair        ! surface air humidity
         integer  :: idPair        ! surface air pressure
@@ -307,6 +312,7 @@
         integer  :: idTice        ! temperature of ice surface
         integer  :: idtime        ! ocean time
         integer  :: idTpam        ! tidal potential amplitude
+        integer  :: idTref        ! tidal reference date for zero phase
         integer  :: idTper        ! tidal period
         integer  :: idTpph        ! tidal potential phase
         integer  :: idTvan        ! tidal current angle
@@ -1347,6 +1353,8 @@
               idWvqp=varid
             CASE ('idOvel')
               idOvel=varid
+            CASE ('idOvil')
+              idOvil=varid
             CASE ('idDano')
               idDano=varid
             CASE ('idsurT(itemp)')
@@ -1607,6 +1615,8 @@
               idW3St=varid
             CASE ('idTpam')
               idTpam=varid
+            CASE ('idTref')
+              idTref=varid
             CASE ('idTper')
               idTper=varid
             CASE ('idTpph')
@@ -2164,6 +2174,8 @@
               idOtyp=varid
             CASE ('idOval')
               idOval=varid
+            CASE ('idOvar')
+              idOvar=varid
             CASE ('idResi')
               idResi=varid
             CASE ('idKhor')

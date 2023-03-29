@@ -326,6 +326,12 @@
           real(r8), pointer :: rollA(:,:)
 #endif
 
+#ifdef SPECTRUM_STOKES
+          real(r8), pointer :: spec_wn(:,:,:)
+          real(r8), pointer :: spec_us(:,:,:)
+          real(r8), pointer :: spec_vs(:,:,:)
+#endif
+
 #ifdef SOLVE3D
 
 # ifdef SHORTWAVE
@@ -759,6 +765,15 @@
 #if defined WEC_ROLLER
       allocate ( FORCES(ng) % rollA(LBi:UBi,LBj:UBj) )
       Dmem(ng)=Dmem(ng)+size2d
+#endif
+
+#ifdef SPECTRUM_STOKES
+      allocate ( FORCES(ng) % spec_wn(LBi:UBi,LBj:UBj,MSCs) )
+      Dmem(ng)=Dmem(ng)+size2d*REAL(MSCs,r8)
+      allocate ( FORCES(ng) % spec_us(LBi:UBi,LBj:UBj,MSCs) )
+      Dmem(ng)=Dmem(ng)+size2d*REAL(MSCs,r8)
+      allocate ( FORCES(ng) % spec_vs(LBi:UBi,LBj:UBj,MSCs) )
+      Dmem(ng)=Dmem(ng)+size2d*REAL(MSCs,r8)
 #endif
 
 #ifdef SOLVE3D
@@ -1334,6 +1349,14 @@
 
 #if defined WEC_ROLLER
             FORCES(ng) % rollA(i,j) = IniVal
+#endif
+
+#ifdef SPECTRUM_STOKES
+            DO k=1,MSCs
+              FORCES(ng) % spec_wn(i,j,k) = IniVal
+              FORCES(ng) % spec_us(i,j,k) = IniVal
+              FORCES(ng) % spec_vs(i,j,k) = IniVal
+            END DO
 #endif
 
 #ifdef SOLVE3D

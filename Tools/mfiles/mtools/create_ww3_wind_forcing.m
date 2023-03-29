@@ -3,10 +3,6 @@
 % jcwarner 13Nov2017
 %
 
-% This is very hacky for now. In future we will provide 
-% a file that directly reads NCEP data and writes out a
-% WW3 wind forcing ascii file.
-%
 netcdf_load('../romsforc_NARR_Sandy2012.nc')
 [LP, MP, ntimes]=size(Uwind);
 %

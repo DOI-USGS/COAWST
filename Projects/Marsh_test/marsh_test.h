@@ -44,14 +44,24 @@
 
 # define MARSH_WAVE_THRUST
 # define MARSH_SED_EROSION
-# define MARSH_TIDAL_RANGE
+
+# define MARSH_TIDAL_RANGE_CALC
 # define MARSH_VERT_GROWTH
+/** If want internal calculation**/
+/** Choose one of the two formulation **/
+#  define MARSH_KIRWAN_FORMULATION
+#  define MARSH_TIDAL_RANGE_INTERNAL
+#  undef MARSH_MCKEE_FORMULATION
+
 #  define MARSH_BIOMASS_VEG
-/*
-*/
+
 #define SSW_BBL
 #ifdef SSW_BBL
 # define SSW_CALC_ZNOT
+# define SSW_LOGINT
+/* define one of these 2 */
+# define SSW_LOGINT_WBL
+# undef  SSW_LOGINT_DIRECT
 #endif
 
 #ifdef SOLVE3D
@@ -66,18 +76,28 @@
 # endif
 #endif
 
-#  define ANA_SEDIMENT
-#define SEDIMENT
+# define ANA_SEDIMENT
+# define SEDIMENT
 # ifdef SEDIMENT
 #  define SUSPLOAD
+#  define BEDLOAD_SOULSBY
+#  undef  BEDLOAD_MPM
+#  undef  BEDLOAD_VANDERA
+#  ifdef BEDLOAD_VANDERA
+/* select any or all of these 3 */
+#   define BEDLOAD_VANDERA_ASYM_LIMITS
+#   define BEDLOAD_VANDERA_SURFACE_WAVE
+#   define BEDLOAD_VANDERA_WAVE_AVGD_STRESS
+/* define one of these 2 */
+#   define BEDLOAD_VANDERA_MADSEN_UDELTA
+#   undef  BEDLOAD_VANDERA_DIRECT_UDELTA
+#  endif
 #  define SED_MORPH
-#  define BEDLOAD
-#  define  BEDLOAD_SOULSBY
+#  undef  SED_SLUMP
+#  undef  SLOPE_KIRWAN
+#  undef  SLOPE_NEMETH
+#  undef  SLOPE_LESSER
 # endif
-
-/*
-# if defined SEDIMENT || defined SG_BBL || defined MB_BBL || defined SSW_BBL
-#  define SED_MORPH*/
 
 # define ANA_STFLUX
 # define ANA_SSFLUX

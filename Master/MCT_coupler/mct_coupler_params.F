@@ -106,6 +106,9 @@
       real(m8), dimension(:), pointer :: dtwav
       real(m8), dimension(:), pointer :: dtatm
       real(m8), dimension(:), pointer :: dthyd
+#ifdef SPECTRUM_STOKES
+      integer :: MSCs
+#endif
 !
 !# ifdef MOVE_NESTS
       integer, dimension(:), pointer :: wrf_e_we

@@ -35,6 +35,7 @@ evdimID = netcdf.defDim(nc_ini,'ev',M);
 
 etime_dimID = netcdf.defDim(nc_ini,'energy_time',length(initime));
 eanglec_dimID = netcdf.defDim(nc_ini,'energy_angle_centers',Nbins);
+eangleND_dimID = netcdf.defDim(nc_ini,'ND',Nbins);
 eangle_dimID = netcdf.defDim(nc_ini,'energy_angle_faces',Nbins+1);
 TA_dimID = netcdf.defDim(nc_ini,'TA_dim',1);
 
@@ -77,7 +78,7 @@ netcdf.putAtt(nc_ini,ctID,'long_name','directional component of the group celeri
 netcdf.putAtt(nc_ini,ctID,'units','rad s-1');
 netcdf.putAtt(nc_ini,ctID,'field','ct, scalar, series');
 
-TaID = netcdf.defVar(nc_ini,'Ta','double',TA_dimID);
+TaID = netcdf.defVar(nc_ini,'Ta','double',[xrhodimID erhodimID eanglec_dimID]);
 netcdf.putAtt(nc_ini,TaID,'long_name','representative absolute peak period');
 netcdf.putAtt(nc_ini,TaID,'units','seconds');
 netcdf.putAtt(nc_ini,TaID,'field','Ta, scalar, series');
@@ -94,7 +95,8 @@ ncwrite(inifile,'AC',Ac);
 ncwrite(inifile,'Cx',Cx);
 ncwrite(inifile,'Cy',Cy);
 ncwrite(inifile,'Ct',Ct);
-ncwrite(inifile,'Ta',TA);
+TA_full=zeros(size(Ac))+TA;
+ncwrite(inifile,'Ta',TA_full);
 
 disp(['Created initial file -->   ',inifile])
 

@@ -33,7 +33,7 @@ dayFrequency = 1;
 url = 'http://tds.hycom.org/thredds/dodsC/GLBa0.08/expt_90.9';      % 2011-01 to 2013-08
 
 % (3) Enter working directory (wdr)
-wdr = 'F:\data\models\COAWST_tests\coawstv3.4_update\coawst_v3.4_tests\sandy\Projects\Sandy';
+wdr = 'E:\data\models\COAWST\Projects\Sandy';
 
 % (4) Enter path and name of the ROMS grid
 modelgrid = 'Sandy_roms_grid.nc'
@@ -94,7 +94,7 @@ if numdays>1
     foutb='merged_coawst_bdy.nc';
     %create netcdf files to merge climatology into
     create_roms_netcdf_clm_mwUL(fout,gn,length(Dclm));% converted to BI functions
-    create_roms_netcdf_bndry_mwUL(foutb,gn,length(Dbdy));% converted to BI functions
+    create_roms_netcdf_bndry_mwUL(foutb,gn,length(Dbdy),length(Dclm));% converted to BI functions
     %% fill merged climatology files with data from each clm file
     % each file must contain only ONE time step
     %get variable names

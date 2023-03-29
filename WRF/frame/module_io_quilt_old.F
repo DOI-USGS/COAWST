@@ -1,3 +1,4 @@
+#include "wrfcpp.h"
 !WRF:DRIVER_LAYER:IO
 !
 #define DEBUG_LVL 50
@@ -698,7 +699,12 @@ okay_to_w = .false.
                CALL cpl_finalize() 
             ELSE
 #endif
+#if !defined WRF_COUPLING
                CALL mpi_finalize(ierr)
+#endif
+#if defined WRF_COUPLING
+               CALL mpi_barrier (mpi_comm_local, ierr)
+#endif
 #if ( DA_CORE != 1 )
             END IF
 #endif
@@ -2577,6 +2583,10 @@ okay_to_w = .false.
 #if defined( DM_PARALLEL ) && !defined( STUBMPI )
       USE module_dm, only: mpi_comm_allcompute
 #endif
+# ifdef WRF_COUPLING
+      USE m_MCTWorld, ONLY : MCTWorld_init => init
+      USE mct_coupler_params
+# endif
 !<DESCRIPTION>
 ! Both client (compute) and server tasks call this routine to initialize the 
 ! module.  Routine setup_quilt_servers() is called from this routine to 
@@ -2687,12 +2697,21 @@ okay_to_w = .false.
           mpi_comm_allcompute = mpi_comm_local
 #endif
           CALL wrf_set_dm_communicator( mpi_comm_local )
+#  ifdef WRF_COUPLING
+!  Update atm comm world to be the non quilting comm
+       ATM_COMM_WORLD=mpi_comm_local
+#  endif
+
 #  if ( DA_CORE != 1 )
           IF (coupler_on) CALL cpl_set_dm_communicator( mpi_comm_local )
 #  endif
        ELSE
 #  if ( DA_CORE != 1 )
           IF (coupler_on) CALL cpl_set_dm_communicator( MPI_COMM_NULL )
+#  endif
+#  ifdef WRF_COUPLING
+!  Here we just check into MCT so the global comm knows we exist.
+          CALL MCTWorld_init(N_mctmodels,MPI_COMM_WORLD,ATM_COMM_WORLD,myids=atmids)
 #  endif
           CALL quilt    ! will not return on io server tasks
        ENDIF

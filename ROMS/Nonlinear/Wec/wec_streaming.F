@@ -258,7 +258,7 @@
 # endif
       real(r8), parameter :: ks=0.03_r8
       real(r8), parameter :: awd=1.0_r8
-      real(r8), parameter :: KWDmax=200.0_r8
+      real(r8), parameter :: KWDmax=20.0_r8
       real(r8), parameter :: eps = 1.0E-14_r8
       real(r8), parameter :: kDmax = 5.0_r8
       real(r8), parameter :: Lwave_min = 1.0_r8
@@ -291,7 +291,7 @@
 !  Compute total depth
 !
           Dstp(i,j)=z_w(i,j,N(ng))-z_w(i,j,0)
-          oDstp(i,j)=1.0_r8/Dstp(i,j)
+          oDstp(i,j)=1.0_r8/(Dstp(i,j)+eps)
 !
 !  Compute wave amplitude (0.5*Hrms), wave number, intrinsic frequency.
 !
@@ -299,9 +299,9 @@
           cff=1.5_r8*pi-Dwave(i,j)-angler(i,j)
           wavenx(i,j)=waven(i,j)*COS(cff)
           waveny(i,j)=waven(i,j)*SIN(cff)
-          sigma(i,j)=MIN(SQRT(g*waven(i,j)*TANH(waven(i,j)*Dstp(i,j))), &
-     &                   2.0_r8)
-          osigma(i,j)=1.0_r8/sigma(i,j)
+          sigma(i,j)=MIN(SQRT(g*waven(i,j)*                             &
+     &               TANH(waven(i,j)*Dstp(i,j))+eps),2.0_r8)
+          osigma(i,j)=1.0_r8/(sigma(i,j)+eps)
 !
 !  Compute wave celerity and nonlinear water depth
 !
@@ -316,14 +316,14 @@
           cff=0.25_r8*sqrt2*sigma(i,j)*Hwave(i,j)/                      &
      &        (SINH(kD(i,j))+eps)
           cff1=awd*0.09_r8*ks*(cff/                                     &
-     &         (ks*sigma(i,j)))**0.82_r8
+     &         (ks*sigma(i,j)+eps))**0.82_r8
           KWD(i,j)=MIN(Dstp(i,j)/(cff1+eps),KWDmax)
           DO k=1,N(ng)
             cff2=(z_r(i,j,N(ng))-z_r(i,j,k))*oDstp(i,j)
             owd(i,j)=owd(i,j)+                                          &
      &               Hz(i,j,k)*COSH(KWD(i,j)*cff2)
           END DO
-          owd(i,j)=1.0_r8/owd(i,j)
+          owd(i,j)=1.0_r8/(owd(i,j)+eps)
 !
 !  Wave dissipation rate due to wave bottom drag Reniers et al. (2004b)
 !
@@ -365,7 +365,8 @@
 ! Compute bottom streaming based acceleration terms
 !
       K_LOOP : DO k=1,N(ng)
-# ifdef BOTTOM_STREAMING_YU
+# ifdef BOTTOM_STREAMING
+#  ifdef BOTTOM_STREAMING_YU
         DO j=Jstr-1,Jend+1
           DO i=Istr-1,Iend+1
             fac2=(z_r(i,j,N(ng))-z_r(i,j,k))*oDstp(i,j)
@@ -375,8 +376,8 @@
             BWDYL(i,j)=cff2*cff3*waveny(i,j)*owd(i,j)
           END DO
         END DO
-# endif
-# ifdef BOTTOM_STREAMING_XU_BOWEN
+#  endif
+#  ifdef BOTTOM_STREAMING_XU_BOWEN
         DO j=Jstr-1,Jend+1
           DO i=Istr-1,Iend+1
             fac2=(z_r(i,j,k)-z_w(i,j,0))*oDstp(i,j)
@@ -417,15 +418,15 @@
 !          END DO
 !        END DO
 
-# endif
-# if defined VEGETATION && defined VEG_STREAMING
+#  endif
+#  if defined VEGETATION && defined VEG_STREAMING
         DO j=Jstr-1,Jend+1
           DO i=Istr-1,Iend+1
             BWDXL(i,j)=BWDXL_veg(i,j,k)
             BWDYL(i,j)=BWDYL_veg(i,j,k)
           END DO
         END DO
-# endif
+#  endif
 !
 ! Compute contribution to U-momentum
 ! 
@@ -437,9 +438,9 @@
      &                  BWDXL(i-1,j)*Hz(i-1,j,k))
             rustr3d(i,j,k)=rustr3d(i,j,k)-cff
             rubst2d(i,j)=rubst2d(i,j)+cff*cff1*om_u(i,j)*on_u(i,j)
-# ifdef DIAGNOSTICS_UV
+#  ifdef DIAGNOSTICS_UV
             DiaRU(i,j,k,nrhs,M3bstm)=cff*om_u(i,j)*on_u(i,j)
-# endif
+#  endif
           END DO
         END DO
 !
@@ -453,11 +454,12 @@
      &                  BWDYL(i,j-1)*Hz(i,j-1,k))
             rvstr3d(i,j,k)=rvstr3d(i,j,k)-cff
             rvbst2d(i,j)=rvbst2d(i,j)+cff*cff1*om_v(i,j)*on_v(i,j)
-# ifdef DIAGNOSTICS_UV
+#  ifdef DIAGNOSTICS_UV
             DiaRV(i,j,k,nrhs,M3bstm)=cff*om_v(i,j)*on_v(i,j)
-# endif
+#  endif
           END DO
         END DO
+# endif
 !
 # ifdef SURFACE_STREAMING
 !
@@ -515,19 +517,19 @@
         DO i=IstrU,Iend
           cff=0.5_r8*(Dstp(i,j)+Dstp(i-1,j))
 # ifdef BOTTOM_STREAMING
-          rubst2d(i,j)=rubst2d(i,j)/cff
+          rubst2d(i,j)=rubst2d(i,j)/(cff+eps)
 # endif
 # ifdef SURFACE_STREAMING
-          russt2d(i,j)=russt2d(i,j)/cff
+          russt2d(i,j)=russt2d(i,j)/(cff+eps)
 # endif
 !
           IF (j.ge.JstrV) THEN
             cff=0.5_r8*(Dstp(i,j)+Dstp(i,j-1))
 # ifdef BOTTOM_STREAMING
-            rvbst2d(i,j)=rvbst2d(i,j)/cff
+            rvbst2d(i,j)=rvbst2d(i,j)/(cff+eps)
 # endif
 # ifdef SURFACE_STREAMING
-            rvsst2d(i,j)=rvsst2d(i,j)/cff
+            rvsst2d(i,j)=rvsst2d(i,j)/(cff+eps)
 # endif
           END IF
         END DO

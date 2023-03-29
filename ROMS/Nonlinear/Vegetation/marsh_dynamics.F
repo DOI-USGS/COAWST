@@ -63,11 +63,11 @@
 # if defined MARSH_SED_EROSION
       USE marsh_sed_erosion_mod, ONLY : marsh_sed_erosion 
 # endif 
-# if defined MARSH_TIDAL_RANGE
-      USE marsh_tidal_range_mod, ONLY : marsh_tidal_range
-#  if defined MARSH_VERT_GROWTH 
+# if defined MARSH_TIDAL_RANGE_CALC
+      USE marsh_tidal_range_calc_mod, ONLY : marsh_tidal_range_calc
+# endif 
+# if defined MARSH_VERT_GROWTH 
       USE marsh_vert_growth_mod, ONLY : marsh_vert_growth
-#  endif 
 # endif 
 !
 !  Imported variable declarations.
@@ -96,13 +96,15 @@
       CALL marsh_sed_erosion(ng, tile) 
 # endif 
 !
-# if defined MARSH_TIDAL_RANGE
+# if defined MARSH_TIDAL_RANGE_CALC
 !
 !***********************************************************************
 ! Compute tidal range and mean high water over a given frequency. 
 !***********************************************************************
 !
-      CALL marsh_tidal_range(ng, tile) 
+      CALL marsh_tidal_range_calc(ng, tile) 
+#  endif 
+!
 
 #  if defined MARSH_VERT_GROWTH 
 !
@@ -111,7 +113,6 @@
 !***********************************************************************
 !
       CALL marsh_vert_growth(ng, tile)
-#  endif 
 # endif 
 !
 # ifdef PROFILE

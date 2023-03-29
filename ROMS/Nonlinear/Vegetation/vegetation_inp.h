@@ -119,7 +119,7 @@
                  END DO
 # endif 
 #endif
-#if defined MARSH_TIDAL_RANGE
+#if defined MARSH_TIDAL_RANGE_CALC
             CASE ('NTIMES_MARSH') 
               Npts=load_i(Nval, Rval, Ngrids, NTIMES_MARSH)
                 IF (NTIMES_MARSH.lt.0) THEN
@@ -146,13 +146,18 @@
                  PAR_FAC2(ng)=Rmarsh(ng)
                END DO
              CASE ('TDAYS_MARSH_GROWTH')
-               Npts=load_i(Nval, Rval, Ngrids, TDAYS_MARSH_GROWTH)
-                IF (TDAYS_MARSH_GROWTH.lt.0) THEN
-                  IF (Master) WRITE (out,30) 'TDAYS_MARSH_GROWTH', ng,  &
-     &              'must be greater than zero.'
-                  exit_flag=5
-                  RETURN
-                END IF
+               IF (.not.allocated(TDAYS_MARSH_GROWTH))                  &
+     &                   allocate(TDAYS_MARSH_GROWTH(Ngrids))
+                 Npts=load_r(Nval, Rval, Ngrids, Rmarsh)
+                 DO ng=1,Ngrids
+                   TDAYS_MARSH_GROWTH(ng)=Rmarsh(ng)
+                 END DO
+                 IF (TDAYS_MARSH_GROWTH(ng).lt.0) THEN
+                   IF (Master) WRITE (out,30) 'TDAYS_MARSH_GROWTH', ng,  &
+     &                'must be greater than zero.'
+                      exit_flag=5
+                   RETURN
+                 END IF
 !             CASE ('MARSH_BULK_DENS')
 !               IF (.not.allocated(MARSH_BULK_DENS))                     &
 !     &                allocate(MARSH_BULK_DENS(Ngrids))
@@ -269,6 +274,13 @@
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idWdvg,:))
+            CASE ('Hout(idCdvg)')
+              IF ((idCdvg).eq.0) THEN
+                IF (Master) WRITE (out,30) 'idCdvg'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idCdvg,:))
 #endif
 #ifdef MARSH_DYNAMICS
             CASE ('Hout(idTims)')
@@ -315,7 +327,7 @@
 #   endif 
 #  endif 
 # endif 
-# ifdef MARSH_TIDAL_RANGE 
+# ifdef MARSH_TIDAL_RANGE_CALC 
             CASE ('Hout(idTmtr)')
               IF (idTmtr.eq.0) THEN
                 IF (Master) WRITE (out,40) 'idTmtr'
@@ -323,6 +335,9 @@
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idTmtr,1:Ngrids))
+# endif 
+!
+# ifdef MARSH_VERT_GROWTH 
             CASE ('Hout(idTmhw)')
               IF (idTmhw.eq.0) THEN
                 IF (Master) WRITE (out,40) 'idTmhw'
@@ -330,8 +345,13 @@
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idTmhw,1:Ngrids))
-!
-#  ifdef MARSH_VERT_GROWTH 
+            CASE ('Hout(idTmlw)')
+              IF (idTmlw.eq.0) THEN
+                IF (Master) WRITE (out,40) 'idTmlw'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idTmlw,1:Ngrids))
             CASE ('Hout(idTmvg)')
               IF (idTmvg.eq.0) THEN
                 IF (Master) WRITE (out,40) 'idTmvg'
@@ -339,6 +359,13 @@
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idTmvg,:))
+            CASE ('Hout(idTmvt)')
+              IF (idTmvt.eq.0) THEN
+                IF (Master) WRITE (out,40) 'idTmvt'
+                exit_flag=5
+                RETURN
+              END IF
+              Npts=load_l(Nval, Cval, Ngrids, Hout(idTmvt,:))
             CASE ('Hout(idTmbp)')
               IF (idTmbp.eq.0) THEN
                 IF (Master) WRITE (out,40) 'idTmbp'
@@ -346,7 +373,6 @@
                 RETURN
               END IF
               Npts=load_l(Nval, Cval, Ngrids, Hout(idTmbp,1:Ngrids))
-#  endif 
 # endif 
 #endif
           END SELECT
@@ -379,7 +405,7 @@
 # if defined MARSH_RETREAT 
            WRITE (out,100)  SCARP_HGHT(ng)
 # endif 
-# ifdef MARSH_TIDAL_RANGE
+# ifdef MARSH_TIDAL_RANGE_CALC 
 !           WRITE (out,110)
            WRITE (out,120) NTIMES_MARSH
 # endif 
@@ -387,8 +413,7 @@
 !	   WRITE(out,130) 
 	   WRITE(out,130) PAR_FAC1(ng)
 	   WRITE(out,140) PAR_FAC2(ng)
-           WRITE(out,150) TDAYS_MARSH_GROWTH
-!	   WRITE(out,160) MARSH_BULK_DENS(ng)
+           WRITE(out,150) TDAYS_MARSH_GROWTH(ng)
            WRITE (out,160) NUGP(ng)
 	   WRITE (out,170) BMAX(ng)
 	   WRITE (out,180) CHIREF(ng)
@@ -427,13 +452,13 @@
 #  endif 
 !  110  FORMAT (1x,l1,2x,a,t29,a,i2.2,':',1x,a)
 # endif 
-# ifdef MARSH_TIDAL_RANGE
-  120  FORMAT ('Days after marsh production starts     = ', i4,/,a)
+# ifdef MARSH_TIDAL_RANGE_CALC
+  120  FORMAT ('Days after which MHW calc. starts     = ', i4,/,a)
 # endif
 # ifdef MARSH_VERT_GROWTH 
   130  FORMAT ('Parabolic growth factor 1              = ',e11.3,/,a)
   140  FORMAT ('Parabolic growth factor 2              = ',e11.3,/,a)
-  150  FORMAT ('Number of growing days for marsh veg.  = ',  i4,/,a)
+  150  FORMAT ('Number of growing days for marsh biomass  = ',e11.3,/,a)
 !  160  FORMAT ('Marsh organic sed. bulk density (kg/m3)= ',e11.3,/,a)
 !  130  FORMAT (/,1x,'par_fac1',5x,'par_fac2',7x,                        &
 !      &        'tdays_marsh_growth(tdays)',3x,'marsh_bulk_dens(kg/m3)'/) 

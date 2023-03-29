@@ -630,6 +630,48 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+17)=' BEDLOAD_SOULSBY,'
 #endif
+#if defined SEDIMENT && defined BEDLOAD_VANDERA
+!
+      IF (Master) WRITE (stdout,20) 'BEDLOAD_VANDERA',                  &
+     &   'Activate bed load sediment transport vanDerA formula'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' BEDLOAD_VANDERA,'
+#endif
+#if defined SEDIMENT && defined BEDLOAD_VANDERA_ASYM_LIMITS
+!
+      IF (Master) WRITE (stdout,20) 'BEDLOAD_VANDERA_ASYM_LIMITS',      &
+     &   'Activate bed load vanDerA asymmetry limits'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+29)=' BEDLOAD_VANDERA_ASYM_LIMITS,'
+#endif
+#if defined SEDIMENT && defined BEDLOAD_VANDERA_SURFACE_WAVE
+!
+      IF (Master) WRITE (stdout,20) 'BEDLOAD_VANDERA_SURFACE_WAVE',     &
+     &   'Activate bed load vanDerA surface wave'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+30)=' BEDLOAD_VANDERA_SURFACE_WAVE,'
+#endif
+#if defined SEDIMENT && defined BEDLOAD_VANDERA_WAVE_AVGD_STRESS
+!
+      IF (Master) WRITE (stdout,20) 'BEDLOAD_VANDERA_WAVE_AVGD_STRESS', &
+     &   'Activate bed load vanDerA wave avg stress'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+34)=' BEDLOAD_VANDERA_WAVE_AVGD_STRESS,'
+#endif
+#if defined SEDIMENT && defined BEDLOAD_VANDERA_MADSEN_UDELTA
+!
+      IF (Master) WRITE (stdout,20) 'BEDLOAD_VANDERA_MADSEN_UDELTA',    &
+     &   'Activate bed load madsen current calculation'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+31)=' BEDLOAD_VANDERA_MADSEN_UDELTA,'
+#endif
+#if defined SEDIMENT && defined BEDLOAD_VANDERA_DIRECT_UDELTA
+!
+      IF (Master) WRITE (stdout,20) 'BEDLOAD_VANDERA_DIRECT_UDELTA',    &
+     &   'Activate bed load direct elevation current calculation'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+30)=' BEDLOAD_VANDERA_DIRECT_UDELTA,'
+#endif
 #if defined BGQC && defined FOUR_DVAR
 !
       IF (Master) WRITE (stdout,20) 'BGQC',                             &
@@ -2714,6 +2756,13 @@
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+16)=' SNOW_FROM_RAIN,'
 #endif
+#ifdef SPECTRUM_STOKES
+!
+      IF (Master) WRITE (stdout,20) 'SPECTRUM_STOKES',                  &
+     &   'Stokes drift estimated from wave spectrum.'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+17)=' SPECTRUM_STOKES,'
+#endif
 #ifdef SRELAXATION
 !
       IF (Master) WRITE (stdout,20) 'SRELAXATION',                      &
@@ -2907,7 +2956,21 @@
        IF (Master) WRITE (stdout,20) 'SSW_LOGINT',                      &
      &   'Bottom currents logarithmic interpolation'
        is=LEN_TRIM(Coptions)+1
-       Coptions(is:is+11)=' SSW_LOGINT,'
+       Coptions(is:is+12)=' SSW_LOGINT,'
+# endif
+# ifdef SSW_LOGINT_WBL
+!
+       IF (Master) WRITE (stdout,20) 'SSW_LOGINT_WBL',                  &
+     &   'Bottom currents logarithmic interpolation at wbl'
+       is=LEN_TRIM(Coptions)+1
+       Coptions(is:is+16)=' SSW_LOGINT_WBL,'
+# endif
+# ifdef SSW_LOGINT_DIRECT
+!
+       IF (Master) WRITE (stdout,20) 'SSW_LOGINT_DIRECT',               &
+     &   'Bottom currents logarithmic interpolation at user elev'
+       is=LEN_TRIM(Coptions)+1
+       Coptions(is:is+19)=' SSW_LOGINT_DIRECT,'
 # endif
 #endif
 #ifdef STATIONS
@@ -3000,6 +3063,13 @@
      &   'Tangent Linear Model'
       is=LEN_TRIM(Coptions)+1
       Coptions(is:is+9)=' TANGENT,'
+#endif
+#ifdef TIDE_GENERATING_FORCES
+!
+      IF (Master) WRITE (stdout,20) 'TIDE_GENERATING_FORCES',           &
+     &   'Adding astronomical TGF term to pressure gradient'
+      is=LEN_TRIM(Coptions)+1
+      Coptions(is:is+24)=' TIDE_GENERATING_FORCES,'
 #endif
 #if defined TIME_CONV && defined WEAK_CONSTRAINT
 !
@@ -3787,6 +3857,26 @@
         exit_flag=5
       END IF
 #endif
-
+#if defined TIDE_GENERATING_FORCES && \
+   (defined ANA_GRID               && !defined SPHERICAL)
+!
+!  Stop if activating tide generating forces on analytical Cartesian
+!  grids. This forcing is only for spherical grids since the (lon,lat)
+!  is required to compute the equilibrium tide harmonics that depend
+!  on the geographical location with respect to the Moon and Sun.
+!
+      IF (Master) THEN
+        WRITE (stdout,280) uppercase('tide_generating_forces')
+            exit_flag=5
+            EXIT
+          END IF
+        END DO
+ 280    FORMAT (/,' CHECKDEFS - cannot activate option: ',a,            &
+     &          /,13x,'in analytical Cartesian grids applications...',  &
+     &          /,13x,'The grid (lon,lat) is needed to compute the',    &
+     &          /,13x,'equilibrium tide harmonics.')
+      END IF
+#endif
+!
       RETURN
       END SUBROUTINE checkdefs

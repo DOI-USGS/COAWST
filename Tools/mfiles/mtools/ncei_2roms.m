@@ -87,6 +87,9 @@ interpto_user_grid = 1;
 % The code has been written so that longitude is in -deg E. 
 if interpto_roms_grid
   model_grid = 'C:\models\grids\USEast_grd31.nc';
+  lon_rho = ncread(model_grid,'lon_rho'); %+360;
+  lat_rho = ncread(model_grid,'lat_rho');
+  angle_rho = ncread(model_grid,'angle');
 elseif interpto_user_grid
 % Provide lon_rho, lat_rho, and angle_rho.
 % NAM / NARR grids are centered at~ -100 deg lon; GFS = 0:360 lon
@@ -114,11 +117,6 @@ if use_nctoolbox
 end
 
 % determine the grid to interpolate to
-if interpto_roms_grid
-  lon_rho = ncread(model_grid,'lon_rho');
-  lat_rho = ncread(model_grid,'lat_rho');
-  angle_rho = ncread(model_grid,'angle');
-end
 [Lp,Mp] = size(lon_rho);
 
 % determine date range
@@ -332,11 +330,13 @@ end
 
 if get_GFS
     disp('going to get GFS grid 4 0.5deg data')
-    
+    gotF=0;   %this is the F = scattered interp func, only need to call it once
     for mm = 1:ntimes
         
         dd = datestr(time(mm) + datenum(1858,11,17,0,0,0),'yyyymmddTHHMMSS');
-        url = ['https://www.ncei.noaa.gov/thredds/dodsC/gfs-g4-anl-files/',dd(1:6),'/',dd(1:8),'/gfsanl_4_',dd(1:8),'_',dd(10:11),'00_000.grb2'];
+%       url = ['https://www.ncei.noaa.gov/thredds/dodsC/gfs-g4-anl-files/',dd(1:6),'/',dd(1:8),'/gfsanl_4_',dd(1:8),'_',dd(10:11),'00_000.grb2'];
+        url = ['https://www.ncei.noaa.gov/thredds/dodsC/model-gfs-g4-anl-files-old/',dd(1:6),'/',dd(1:8),'/gfsanl_4_',dd(1:8),'_',dd(10:11),'00_000.grb2'];
+
         
         disp(['getting GFS grid 4 0.5 deg data at ',dd])
         if use_nctoolbox
@@ -396,7 +396,12 @@ if get_GFS
                 var = squeeze(var(1,:,:));
             end 
             var = var - 273.15; % K to degC
-            F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+            if mm == 1
+              F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+              gotF=1;
+            else
+              F.Values=var(:);
+            end
             cff = F(lon_rho,lat_rho);
             cff(isnan(cff)) = 0;
             Tair(:,:,mm) = cff;
@@ -408,7 +413,12 @@ if get_GFS
                 var = double(squeeze(geo{'Pressure_reduced_to_MSL_msl'}(:)));
             end
             var = var*0.01; %Pa to db
-            F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+            if gotF == 0
+              F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+              gotF=1;
+            else
+              F.Values=var(:);
+            end
             cff = F(lon_rho,lat_rho);
             cff(isnan(cff)) = 0;
             Pair(:,:,mm) = cff;
@@ -419,7 +429,12 @@ if get_GFS
             elseif use_nctoolbox
                 var = double(squeeze(geo{'Relative_humidity_height_above_ground'}(:)));
             end
-            F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+            if gotF == 0
+              F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+              gotF=1;
+            else
+              F.Values=var(:);
+            end
             cff = F(lon_rho,lat_rho);
             cff(isnan(cff)) = 0;
             Qair(:,:,mm) = cff;
@@ -432,7 +447,12 @@ if get_GFS
                 var = double(squeeze(geo{'u-component_of_wind_height_above_ground'}(:)));
                 var = squeeze(var(1,:,:));
             end
-            F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+            if gotF == 0
+              F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+              gotF=1;
+            else
+              F.Values=var(:);
+            end
             cff = F(lon_rho,lat_rho);
             cff(isnan(cff)) = 0;
             Uwind_ll = cff;
@@ -444,7 +464,12 @@ if get_GFS
                 var = double(squeeze(geo{'v-component_of_wind_height_above_ground'}(:)));
                 var = squeeze(var(1,:,:));
             end
-            F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+            if gotF == 0
+              F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+              gotF=1;
+            else
+              F.Values=var(:);
+            end
             cff = F(lon_rho,lat_rho);
             cff(isnan(cff)) = 0;
             Vwind_ll = cff;
@@ -464,7 +489,7 @@ end
 
 if get_NARR
     disp('going to get NARR-A grid 221 32km data')
-
+    gotF=0;   %this is the F = scattered interp func, only need to call it once
     for mm = 1:ntimes
         
         dd = datestr(time(mm) + datenum(1858,11,17,0,0,0),'yyyymmddTHHMMSS');
@@ -499,12 +524,22 @@ if get_NARR
                 up   = double(squeeze(geo{'Upward_long_wave_radiation_flux_surface'}(:)));
             end
             var = down-up;
-            F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+            if mm == 1
+              F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+              gotF=1;
+            else
+              F.Values=var(:);
+            end
             cff = F(lon_rho,lat_rho);
             cff(isnan(cff)) = 0;
             lwrad(:,:,mm) = cff;
-            
-            F = scatteredInterpolant(nlon(:),nlat(:),down(:));
+%
+            if gotF == 0
+              F = scatteredInterpolant(nlon(:),nlat(:),down(:));
+              gotF=1;
+            else
+              F.Values=down(:);
+            end
             cff = F(lon_rho,lat_rho);
             cff(isnan(cff)) = 0;
             lwrad_down(:,:,mm) = cff;
@@ -518,7 +553,12 @@ if get_NARR
                 up   = double(squeeze(geo{'Upward_long_wave_radiation_flux_surface'}(:)));
             end 
             var = down-up;
-            F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+            if gotF == 0
+              F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+              gotF=1;
+            else
+              F.Values=var(:);
+            end
             cff = F(lon_rho,lat_rho);
             cff(isnan(cff)) = 0;
             swrad(:,:,mm) = cff;
@@ -529,7 +569,12 @@ if get_NARR
             elseif use_nctoolbox
                 var = double(squeeze(geo{'Precipitation_rate'}(:)));
             end 
-            F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+            if gotF == 0
+              F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+              gotF=1;
+            else
+              F.Values=var(:);
+            end
             cff = F(lon_rho,lat_rho);
             cff(isnan(cff)) = 0;
             rain(:,:,mm) = cff;
@@ -544,7 +589,12 @@ if get_NARR
                 var = squeeze(var(1,:,:));
             end
             var = var - 273.15; % K to degC
-            F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+            if gotF == 0
+              F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+              gotF=1;
+            else
+              F.Values=var(:);
+            end
             cff = F(lon_rho,lat_rho);
             cff(isnan(cff)) = 0;
             Tair(:,:,mm) = cff;
@@ -556,7 +606,12 @@ if get_NARR
                 var = double(squeeze(geo{'Pressure_reduced_to_MSL'}(:)));
             end
             var = var*0.01; %Pa to db
-            F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+            if gotF == 0
+              F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+              gotF=1;
+            else
+              F.Values=var(:);
+            end
             cff = F(lon_rho,lat_rho);
             cff(isnan(cff)) = 0;
             Pair(:,:,mm) = cff;
@@ -567,7 +622,12 @@ if get_NARR
             elseif use_nctoolbox
                 var = double(squeeze(geo{'Relative_humidity'}(:)));
             end
-            F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+            if gotF == 0
+              F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+              gotF=1;
+            else
+              F.Values=var(:);
+            end
             cff = F(lon_rho,lat_rho);
             cff(isnan(cff)) = 0;
             Qair(:,:,mm) = cff;
@@ -580,7 +640,12 @@ if get_NARR
                 var = double(squeeze(geo{'u_wind_height_above_ground'}(:)));
                 var = squeeze(var(1,:,:));
             end
-            F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+            if gotF == 0
+              F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+              gotF=1;
+            else
+              F.Values=var(:);
+            end
             cff = F(lon_rho,lat_rho);
             cff(isnan(cff)) = 0;
             Uwind_lamb = cff;
@@ -592,7 +657,12 @@ if get_NARR
                 var = double(squeeze(geo{'v_wind_height_above_ground'}(:)));
                 var = squeeze(var(1,:,:));
             end
-            F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+            if gotF == 0
+              F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+              gotF=1;
+            else
+              F.Values=var(:);
+            end
             cff = F(lon_rho,lat_rho);
             cff(isnan(cff)) = 0;
             Vwind_lamb = cff;
@@ -630,7 +700,7 @@ end
 
 if get_NAM
     disp('going to get NAM grid 218 12km data')
-    
+    gotF=0;   %this is the F = scattered interp func, only need to call it once
     for mm = 1:ntimes
         
         dd = datestr(time(mm) + datenum(1858,11,17,0,0,0),'yyyymmddTHHMMSS');
@@ -653,7 +723,8 @@ if get_NAM
         end
         
         %url = ['https://www.ncei.noaa.gov/thredds/dodsC/namanl/',dd(1:6),'/',dd(1:8),'/namanl_218_',dd(1:8),'_',first,'_',second,'.grb2'];
-        url = ['https://www.ncei.noaa.gov/thredds/dodsC/namanl/',dd(1:6),'/',dd(1:8),'/namanl_218_',dd(1:8),'_',first,'_',second,'.grb'];
+        %url = ['https://www.ncei.noaa.gov/thredds/dodsC/namanl/',dd(1:6),'/',dd(1:8),'/namanl_218_',dd(1:8),'_',first,'_',second,'.grb'];
+        url = ['https://www.ncei.noaa.gov/thredds/dodsC/model-nam218/',dd(1:6),'/',dd(1:8),'/nam_218_',dd(1:8),'_',first,'_',second,'.grb2'];
         
         try
             if use_nctoolbox
@@ -687,10 +758,10 @@ if get_NAM
             end
             if get_lwrad
                 if use_matlab
-                    down = double(ncread(url,'downward_long_wave_rad_flux_surface')).';
-                    up = double(ncread(url,'upward_long_wave_rad_flux_surface')).';
-                    % down = double(ncread(url,'Downward_Long-Wave_Radp_Flux_surface')).';
-                    % up   = double(ncread(url,'Upward_Long-Wave_Radp_Flux_surface')).';
+                    %down = double(ncread(url,'downward_long_wave_rad_flux_surface')).';
+                    %up = double(ncread(url,'upward_long_wave_rad_flux_surface')).';
+                     down = double(ncread(url,'Downward_Long-Wave_Radp_Flux_surface')).';
+                     up   = double(ncread(url,'Upward_Long-Wave_Radp_Flux_surface')).';
                 elseif use_nctoolbox
                     down = double(squeeze(geo{'downward_long_wave_rad_flux_surface'}(:)));
                     up   = double(squeeze(geo{'upward_long_wave_rad_flux_surface'}(:)));
@@ -698,13 +769,23 @@ if get_NAM
                     % up   = double(squeeze(geo{'Upward_Long-Wave_Radp_Flux_surface'}(:)));
                 end
                 var = down-up;
-                F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+                if mm == 1
+                  F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+                  gotF=1;
+                else
+                  F.Values=var(:);
+                end
                 zz = F(lon_rho,lat_rho);
                 zz(isnan(zz)) = 0;
                 cff = squeeze(lwrad(:,:,mm)).*(1-mask)+zz.*mask;
                 lwrad(:,:,mm)=cff;
                 
-                F = scatteredInterpolant(nlon(:),nlat(:),down(:));
+                if gotF == 0
+                  F = scatteredInterpolant(nlon(:),nlat(:),down(:));
+                  gotF=1;
+                else
+                  F.Values=down(:);
+                end
                 zz = F(lon_rho,lat_rho);
                 zz(isnan(zz)) = 0;
                 cff = squeeze(lwrad_down(:,:,mm)).*(1-mask)+zz.*mask;
@@ -712,10 +793,10 @@ if get_NAM
             end
             if get_swrad
                 if use_matlab
-                    down = squeeze(ncread(url,'downward_short_wave_rad_flux_surface'));
-                    up = squeeze(ncread(url,'upward_short_wave_rad_flux_surface'));
-                    % down = double(ncread(url,'Downward_Short-Wave_Radiation_Flux_surface')).';
-                    % up   = double(ncread(url,'Upward_Short-Wave_Radiation_Flux_surface')).';
+                    %down = squeeze(ncread(url,'downward_short_wave_rad_flux_surface'));
+                    %up = squeeze(ncread(url,'upward_short_wave_rad_flux_surface'));
+                     down = double(ncread(url,'Downward_Short-Wave_Radiation_Flux_surface')).';
+                     up   = double(ncread(url,'Upward_Short-Wave_Radiation_Flux_surface')).';
                 elseif use_nctoolbox
                     down = double(squeeze(geo{'downward_short_wave_rad_flux_surface'}(:)));
                     up   = double(squeeze(geo{'upward_short_wave_rad_flux_surface'}(:)));
@@ -723,7 +804,12 @@ if get_NAM
                     % up   = double(squeeze(geo{'Upward_Short-Wave_Radiation_Flux_surface'}(:)));
                 end
                 var = down-up;
-                F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+                if gotF == 0
+                  F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+                  gotF=1;
+                else
+                  F.Values=var(:);
+                end
                 zz = F(lon_rho,lat_rho);
                 zz(isnan(zz)) = 0;
                 cff = squeeze(swrad(:,:,mm)).*(1-mask)+zz.*mask;
@@ -731,12 +817,17 @@ if get_NAM
             end
             if get_rain && mm == 1
                 % var = double(ncread(url,'Total_precipitation_surface_0_Hour_Accumulation')).';
-                % F = scatteredInterpolant(nlon(:),nlat(:),var(:));
-                % zz = F(lon_rho,lat_rho);
-                % zz(isnan(zz)) = 0;
-                % cff = squeeze(rain(:,:,mm)).*(1-mask)+zz.*mask;
-                % rain(:,:,mm) = cff;
-                disp('rain is not available for NAM');
+                var = double(ncread(url,'Categorical_Rain_surface')).';
+                if gotF == 0
+                  F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+                  gotF=1;
+                else
+                  F.Values=var(:);
+                end
+                zz = F(lon_rho,lat_rho);
+                zz(isnan(zz)) = 0;
+                cff = squeeze(rain(:,:,mm)).*(1-mask)+zz.*mask;
+                rain(:,:,mm) = cff;
             end
             if get_Tair
                 if use_matlab
@@ -747,7 +838,12 @@ if get_NAM
                     var = squeeze(var(1,:,:));
                 end
                 var = var - 273.15; % K to degC
-                F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+                if gotF == 0
+                  F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+                  gotF=1;
+                else
+                  F.Values=var(:);
+                end
                 zz = F(lon_rho,lat_rho);
                 zz(isnan(zz)) = 0;
                 cff = squeeze(Tair(:,:,mm)).*(1-mask)+zz.*mask;
@@ -760,7 +856,12 @@ if get_NAM
                     var = double(squeeze(geo{'Pressure_reduced_to_MSL_msl'}(:)));
                 end
                 var = var*0.01; % Pa to db
-                F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+                if gotF == 0
+                  F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+                  gotF=1;
+                else
+                  F.Values=var(:);
+                end
                 zz = F(lon_rho,lat_rho);
                 zz(isnan(zz)) = 0;
                 cff = squeeze(Pair(:,:,mm)).*(1-mask)+zz.*mask;
@@ -772,7 +873,12 @@ if get_NAM
                 elseif use_nctoolbox
                     var = double(squeeze(geo{'Relative_humidity_height_above_ground'}(:)));
                 end
-                F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+                if gotF == 0
+                  F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+                  gotF=1;
+                else
+                  F.Values=var(:);
+                end
                 zz = F(lon_rho,lat_rho);
                 zz(isnan(zz)) = 0;
                 cff = squeeze(Qair(:,:,mm)).*(1-mask)+zz.*mask;
@@ -786,7 +892,12 @@ if get_NAM
                     var = double(squeeze(geo{'u-component_of_wind_height_above_ground'}(:)));
                     var = squeeze(var(1,:,:));
                 end
-                F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+                if gotF == 0
+                  F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+                  gotF=1;
+                else
+                  F.Values=var(:);
+                end
                 cff = F(lon_rho,lat_rho);
                 cff(isnan(cff)) = 0;
                 Uwind_lamb = cff;
@@ -798,7 +909,12 @@ if get_NAM
                     var = double(squeeze(geo{'v-component_of_wind_height_above_ground'}(:)));
                     var = squeeze(var(1,:,:));
                 end
-                F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+                if gotF == 0
+                  F = scatteredInterpolant(nlon(:),nlat(:),var(:));
+                  gotF=1;
+                else
+                  F.Values=var(:);
+                end
                 cff = F(lon_rho,lat_rho);
                 cff(isnan(cff)) = 0;
                 Vwind_lamb = cff;

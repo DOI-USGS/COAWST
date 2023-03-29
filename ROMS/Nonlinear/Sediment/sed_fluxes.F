@@ -189,7 +189,7 @@
       real(r8), intent(in) :: vbar(LBi:UBi,LBj:UBj,3)
 #  endif
 #  if defined SED_MORPH
-      real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,3)
 #  endif
       real(r8), intent(inout) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
       real(r8), intent(inout) :: ero_flux(LBi:UBi,LBj:UBj,NST)
@@ -206,8 +206,6 @@
       integer :: bnew
 
       real(r8) :: cff, cff1, cff2, cff3, cff4, cff5
-      real(r8) :: cff6, cff7, cff8, cff9, cff10
-
       real(r8), dimension(IminS:ImaxS,JminS:JmaxS) :: tau_w
 
 # include "set_bounds.h"
@@ -314,6 +312,19 @@
 
           END DO
         END DO SED_LOOP
+!
+!  Calculate net deposition and erosion.
+!
+        DO i=Istr,Iend
+          cff=0.0_r8
+          cff2=0.0_r8
+          DO ised=1,NST
+            cff=cff+settling_flux(i,j,ised)
+            cff2=cff2+ero_flux(i,j,ised)
+          END DO
+          bottom(i,j,idnet)=cff-cff2
+        END DO
+!
       END DO J_LOOP
 !
       RETURN

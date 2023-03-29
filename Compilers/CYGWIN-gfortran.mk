@@ -32,7 +32,7 @@
               BIN := $(BIN).exe
 
                FC := gfortran
-           FFLAGS := -frepack-arrays
+           FFLAGS := -frepack-arrays -fallow-argument-mismatch
        FIXEDFLAGS := -ffixed-form
         FREEFLAGS := -ffree-form -ffree-line-length-none
               CPP := /usr/bin/cpp
@@ -207,6 +207,7 @@ ifndef USE_SCRIP
 endif
 
 ifdef USE_WW3
+             FFLAGS += -frecord-marker=4 -fconvert=big-endian
              FFLAGS += -I${COAWST_WW3_DIR}/mod_MPI
              LIBS += WW3/model/obj_MPI/libWW3.a
 endif

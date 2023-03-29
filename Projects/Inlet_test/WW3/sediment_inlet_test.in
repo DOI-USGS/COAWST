@@ -210,13 +210,6 @@ ad_LBC(isTvar) ==   Gra     Per     Clo     Per      ! idsed(:), compact
 Hout(idsurs) == T                               ! Ursell number for the asymmetric wave form
 Hout(idsrrw) == T                               ! Velocity skewness parameter for the asymmetric wave form
 Hout(idsbtw) == T                               ! Acceleration asymmetry parameter for the asymmetric wave form
-Hout(idsksd) == T                               ! Bed roughness (Zo) for the wave boundary layer calc.
-Hout(idsusc) == T                               ! Current friction velocity the wave boundary layer
-Hout(idstbl) == T                               ! thickness at the wave boundary layer
-Hout(idsubl) == T                               ! Current velocity at the wave boundary layer
-Hout(idsfdw) == T                               ! Friction factor from the currents
-Hout(idszrw) == T
-Hout(idspwc) == T
 Hout(idsucr) == T                               ! Crest velocity of the asymmetric wave form
 Hout(idsutr) == T                               ! Trough velocity of the asymmetric wave form
 Hout(idstcr) == T                               ! Crest wave time period of the asymmetric wave form
@@ -243,6 +236,14 @@ Hout(idsttr) == T                               ! Trough wave time period of the
  Hout(ishgt) == F                               ! saltation height
  Hout(imaxD) == T                               ! maximum inundation depth
  Hout(idnet) == T                               ! Erosion or deposition
+ Hout(idtbl) == T                               ! Thickness at wave boundary layer
+ Hout(idubl) == T                               ! Current velocity at wave boundary layer
+ Hout(idfdw) == T                               ! Friction factor from the currents
+ Hout(idzrw) == T                               ! Reference height to get near bottom current velocity. 
+ Hout(idksd) == T                               ! Bed roughness (Zo) for the wave boundary layer calc.
+ Hout(idusc) == T                               ! Current friction velocity the wave boundary layer
+ Hout(idpcx) == T                               ! Anlge between currents and xi axis.
+ Hout(idpwc) == T                               ! Angle between waves and currents.
  Hout(idoff) == F                               ! dmix erodibility profile offset
  Hout(idslp) == F                               ! dmix or erodibility slope
  Hout(idtim) == F                               ! erodibility profile restore time 

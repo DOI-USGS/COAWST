@@ -14,9 +14,16 @@ function [fn]=updatclim_coawst_mw(T1, gn, clm, clmname, wdr, url)
 %determine indices for time period of interpolation
 %
 disp('getting the number of time records ...');
-t0=datenum(1900,12,31); % tr0=datenum(1858,11,17);
-time=ncread(url,'MT');
-tg=time+t0;
+try 
+  time=ncread(url,'MT');
+  t0=datenum(1900,12,31); % tr0=datenum(1858,11,17);
+  tg=time+t0;
+catch
+  time=ncread(url,'time')/24;
+  time_att=ncreadatt(url,'time','units'); %'hours since 2000-01-01 00:00:00'
+  tg=datenum(str2num(time_att(13:16)),str2num(time_att(18:19)),str2num(time_att(21:22)),str2num(time_att(24:25)),str2num(time_att(27:28)),str2num(time_att(30:31)));
+  tg=time+tg;
+end
 tg2=julian(str2num(datestr(tg,'yyyy')),str2num(datestr(tg,'mm')),str2num(datestr(tg,'dd')),str2num(datestr(tg,'HH')))-2400001;
 %
 % get user times
@@ -40,19 +47,29 @@ netcdf.close(RN)
 
 %%
 tz_levs=length(clm.z);
-X=repmat(clm.lon,1,length(clm.lat));
-Y=repmat(clm.lat,length(clm.lon),1);
+%X=repmat(clm.lon,1,length(clm.lat));
+%Y=repmat(clm.lat,length(clm.lon),1);
+X=clm.lon;
+Y=clm.lat;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 disp(['Interpolating u for ',datestr(tg(tid1))]);
 ttu=1;
 clm.u=zeros([length(clm.z) size(gn.lon_rho)]);
 while ttu==1;
     try
-        tmpt=ncread(url,'u',[clm.ig0 clm.jg0 1 tid1],[clm.ig1-clm.ig0+1 clm.jg1-clm.jg0+1 tz_levs 1 ] );
+        try
+          tmpt=ncread(url,'u',[clm.ig0 clm.jg0 1 tid1],[clm.ig1-clm.ig0+1 clm.jg1-clm.jg0+1 tz_levs 1 ] );
+        catch
+          tmpt=ncread(url,'water_u',[clm.ig0 clm.jg0 1 tid1],[clm.ig1-clm.ig0+1 clm.jg1-clm.jg0+1 tz_levs 1 ] );
+        end
         for k=1:tz_levs
             disp(['doing griddata u for HYCOM level ' num2str(k)]);
             tmp=double(squeeze(tmpt(:,:,k)));
-            F = scatteredInterpolant(X(:),Y(:),tmp(:));
+            if (k==1)
+              F = scatteredInterpolant(X(:),Y(:),tmp(:));
+            else
+              F.Values = tmp(:);
+            end
             cff = F(gn.lon_rho,gn.lat_rho);
             clm.u(k,:,:)=maplev(cff);
         end
@@ -76,11 +93,19 @@ ttv=1;
 clm.v=zeros([length(clm.z) size(gn.lon_rho)]);
 while ttv==1;
     try
-        tmpt=ncread(url,'v',[clm.ig0 clm.jg0 1 tid1],[clm.ig1-clm.ig0+1 clm.jg1-clm.jg0+1 tz_levs 1 ] );
+        try
+          tmpt=ncread(url,'v',[clm.ig0 clm.jg0 1 tid1],[clm.ig1-clm.ig0+1 clm.jg1-clm.jg0+1 tz_levs 1 ] );
+        catch
+          tmpt=ncread(url,'water_v',[clm.ig0 clm.jg0 1 tid1],[clm.ig1-clm.ig0+1 clm.jg1-clm.jg0+1 tz_levs 1 ] );
+        end
         for k=1:tz_levs
             disp(['doing griddata v for HYCOM level ' num2str(k)]);
             tmp=double(squeeze(tmpt(:,:,k)));
-            F = scatteredInterpolant(X(:),Y(:),tmp(:));
+            if (k==1)
+              F = scatteredInterpolant(X(:),Y(:),tmp(:));
+            else
+              F.Values = tmp(:);
+            end
             cff = F(gn.lon_rho,gn.lat_rho);
             clm.v(k,:,:)=maplev(cff);
         end
@@ -157,7 +182,11 @@ disp(['Interpolating zeta for ',datestr(tg(tid1))]);
 ttz=1;
 while ttz==1;
     try
-        tmpt=ncread(url,'ssh',[clm.ig0 clm.jg0 tid1],[clm.ig1-clm.ig0+1 clm.jg1-clm.jg0+1 1 ] );
+        try
+          tmpt=ncread(url,'ssh',[clm.ig0 clm.jg0 tid1],[clm.ig1-clm.ig0+1 clm.jg1-clm.jg0+1 1 ] );
+        catch
+          tmpt=ncread(url,'surf_el',[clm.ig0 clm.jg0 tid1],[clm.ig1-clm.ig0+1 clm.jg1-clm.jg0+1 1 ] );
+        end
         tmp=double(squeeze(tmpt(:,:)));
         disp(['doing griddata zeta for HYCOM ']);
         F = scatteredInterpolant(X(:),Y(:),tmp(:));
@@ -187,11 +216,19 @@ ttt=1;
 clm.temp=zeros([length(clm.z) size(gn.lon_rho)]);
 while ttt==1;
     try
-        tmpt=ncread(url,'temperature',[clm.ig0 clm.jg0 1 tid1],[clm.ig1-clm.ig0+1 clm.jg1-clm.jg0+1 tz_levs 1 ] );
+        try
+          tmpt=ncread(url,'temperature',[clm.ig0 clm.jg0 1 tid1],[clm.ig1-clm.ig0+1 clm.jg1-clm.jg0+1 tz_levs 1 ] );
+        catch
+          tmpt=ncread(url,'water_temp',[clm.ig0 clm.jg0 1 tid1],[clm.ig1-clm.ig0+1 clm.jg1-clm.jg0+1 tz_levs 1 ] );
+        end
         for k=1:tz_levs
             disp(['doing griddata temp for HYCOM level ' num2str(k)]);
             tmp=double(squeeze(tmpt(:,:,k)));
-            F = scatteredInterpolant(X(:),Y(:),tmp(:));
+            if (k==1)
+              F = scatteredInterpolant(X(:),Y(:),tmp(:));
+            else
+              F.Values = tmp(:);
+            end
             cff = F(gn.lon_rho,gn.lat_rho);
 %           cff(cff<0)=nan;
             clm.temp(k,:,:)=maplev(cff);
@@ -230,7 +267,11 @@ while tts==1;
         for k=1:tz_levs
             disp(['doing griddata salt for HYCOM level ' num2str(k)]);
             tmp=double(squeeze(tmpt(:,:,k)));
-            F = scatteredInterpolant(X(:),Y(:),tmp(:));
+            if (k==1)
+              F = scatteredInterpolant(X(:),Y(:),tmp(:));
+            else
+              F.Values = tmp(:);
+            end
             cff = F(gn.lon_rho,gn.lat_rho);
             cff(cff<0)=nan;
             clm.salt(k,:,:)=maplev(cff);

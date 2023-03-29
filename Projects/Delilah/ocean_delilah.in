@@ -132,11 +132,9 @@ GridsInLayer =  1
 ! two letters, regardless if using uppercase or lowercase. If nested
 ! grids, specify values for each grid (see glossary below).
 
-   Hadvection == HSIMT    \                     ! temperature
-                 HSIMT                          ! salinity
+   Hadvection == HSIMT                         ! temperature
 
-   Vadvection == HSIMT   \                      ! temperature
-                 HSIMT                          ! salinity
+   Vadvection == HSIMT                         ! temperature
 
 ! Adjoint-based algorithms can have different horizontal and schemes
 ! for active and inert tracers.

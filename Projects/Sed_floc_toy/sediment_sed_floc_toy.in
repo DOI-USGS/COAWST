@@ -98,11 +98,11 @@ ad_Vadvection == C4                             ! idsed(:), compact
 ! That is, anticlockwise starting at the western boundary.
 !
 ! The keyword is case insensitive and usually has three characters. However,
-! it is possible to have compound keywords, if applicable. For example, the 
+! it is possible to have compound keywords, if applicable. For example, the
 ! keyword "RadNud" implies radiation boundary condition with nudging. This
 ! combination is usually used in active/passive radiation conditions.
 !
-! NOTICE: It is possible to specify the lateral boundary conditions for 
+! NOTICE: It is possible to specify the lateral boundary conditions for
 ! ======  all sediment tracers (cohesive and noncohesive) in a compact
 ! form with a single entry. If so, all the sediment tracers are assumed to
 ! have the same boundary condition as in the single entry.
@@ -110,7 +110,7 @@ ad_Vadvection == C4                             ! idsed(:), compact
 !   Keyword    Lateral Boundary Condition Type
 !
 !   Cla        Clamped                                _____N_____     j=Mm
-!   Clo        Closed                                |     4     |   
+!   Clo        Closed                                |     4     |
 !   Gra        Gradient                              |           |
 !   Nes        Nested                              1 W           E 3
 !   Nud        Nudging                               |           |
@@ -161,48 +161,95 @@ ad_LBC(isTvar) ==   Gra     Clo     Gra     Clo      ! idsed(:), compact
 
    DBZM == 0.08d0
 
-! Depth of minimum biodiffusivity, [1:Ngrids]. 
+! Depth of minimum biodiffusivity, [1:Ngrids].
    
    DBZP == 0.01d0
 
-! Logical switches (TRUE/FALSE) to activate writing of bed layer 
+! Asymmetric bedload parameter: Elevation(m) for near-bottom current vel., [1:Ngrids].
+
+   SG_ZWBL == 0.1d0
+
+! Asymmetric bedload parameter: Sed slumping critical wet bed slope, [1:Ngrids].
+
+   SEDSLOPE_CRIT_WET == 0.05d0
+
+! Asymmetric bedload parameter: Sed slumping critical dry bed slope, [1:Ngrids].
+
+   SEDSLOPE_CRIT_DRY == 0.05d0
+
+! Asymmetric bedload parameter: Sed slumping factor for wet bed slope, [1:Ngrids].
+
+   SLOPEFAC_WET == 0.001d0
+
+! Asymmetric bedload parameter: Sed slumping factor for dry bed slope, [1:Ngrids].
+
+   SLOPEFAC_DRY == 0.001d0
+
+! Asymmetric bedload parameter: Scale factor for wave contribution to bed load, [1:Ngrids].
+
+   BEDLOAD_VANDERA_ALPHAW == 1.0d0
+   
+! Asymmetric bedload parameter: Scale factor for currents contribution to bed load, [1:Ngrids].
+
+   BEDLOAD_VANDERA_ALPHAC == 1.0d0
+
+! Logical switches (TRUE/FALSE) to activate writing of bed layer
 ! parameters, [1:Ngrids] values expected.
- 
-Hout(ithck) == T                               ! sediment layer thickness
-Hout(iaged) == T                               ! sediment layer age
-Hout(iporo) == T                               ! sediment layer porosity
-Hout(idiff) == T                               ! biodiffusivity
- 
-! Logical switches (TRUE/FALSE) to activate writing of bed 
+  
+ Hout(ithck) == T                               ! sediment layer thickness
+ Hout(iaged) == T                               ! sediment layer age
+ Hout(iporo) == T                               ! sediment layer porosity
+ Hout(idiff) == T                               ! biodiffusivity
+
+! Logical switches for wave asymmetry parameters obtained when using
+! bedload formulation from Vander A et al. (2013).
+
+Hout(idsurs) == T                               ! Ursell number for the asymmetric wave form
+Hout(idsrrw) == T                               ! Velocity skewness parameter for the asymmetric wave form
+Hout(idsbtw) == T                               ! Acceleration asymmetry parameter for the asymmetric wave form
+Hout(idsucr) == T                               ! Crest velocity of the asymmetric wave form
+Hout(idsutr) == T                               ! Trough velocity of the asymmetric wave form
+Hout(idstcr) == T                               ! Crest wave time period of the asymmetric wave form
+Hout(idsttr) == T                               ! Trough wave time period of the aymmetric wave form
+
+! Logical switches (TRUE/FALSE) to activate writing of bed
 ! bottom sediment parameters, [1:Ngrids] values expected.
- 
-Hout(isd50) == T                               ! mean grain diameter
-Hout(idens) == T                               ! mean grain density
-Hout(iwsed) == T                               ! mean settling velocity
-Hout(itauc) == T                               ! critical erosion stress
-Hout(irlen) == T                               ! ripple length
-Hout(irhgt) == T                               ! ripple height
-Hout(ibwav) == T                               ! wave excursion amplitude     
-Hout(izdef) == T                               ! default bottom roughness
-Hout(izapp) == T                               ! apparent bottom roughness
-Hout(izNik) == T                               ! Nikuradse bottom roughness
-Hout(izbio) == T                               ! biological bottom roughness
-Hout(izbfm) == T                               ! bed form bottom roughness
-Hout(izbld) == T                               ! bed load bottom roughness
-Hout(izwbl) == T                               ! wave bottom roughness
-Hout(iactv) == T                               ! active layer thickness
-Hout(ishgt) == F                               ! saltation height
-Hout(imaxD) == F                               ! maximum inundation depth
-Hout(idnet) == F                               ! Erosion or deposition
-Hout(idoff) == F                               ! dmix erodibility profile offset
-Hout(idslp) == F                               ! dmix or erodibility slope
-Hout(idtim) == F                               ! erodibility profile restore time
-Hout(idbmx) == F                               ! Bed biodifusivity maximum
-Hout(idbmm) == F                               ! Bed biodifusivity minimum
-Hout(idbzs) == F                               ! Bed biodifusivity zs
-Hout(idbzm) == F                               ! Bed biodifusivity zm
-Hout(idbzp) == F                               ! Bed biodifusivity phi
-Hout(idprp) == F                               ! cohesive behavior
+  
+ Hout(isd50) == T                               ! mean grain diameter
+ Hout(idens) == T                               ! mean grain density
+ Hout(iwsed) == T                               ! mean settling velocity
+ Hout(itauc) == T                               ! critical erosion stress
+ Hout(irlen) == T                               ! ripple length
+ Hout(irhgt) == T                               ! ripple height
+ Hout(ibwav) == T                               ! wave excursion amplitude     
+ Hout(izdef) == T                               ! default bottom roughness
+ Hout(izapp) == T                               ! apparent bottom roughness
+ Hout(izNik) == T                               ! Nikuradse bottom roughness
+ Hout(izbio) == T                               ! biological bottom roughness
+ Hout(izbfm) == T                               ! bed form bottom roughness
+ Hout(izbld) == T                               ! bed load bottom roughness
+ Hout(izwbl) == T                               ! wave bottom roughness
+ Hout(iactv) == T                               ! active layer thickness
+ Hout(ishgt) == T                               ! saltation height
+ Hout(imaxD) == T                               ! maximum inundation depth
+ Hout(idnet) == T                               ! Erosion or deposition
+ Hout(idtbl) == T                               ! Thickness at wave boundary layer
+ Hout(idubl) == T                               ! Current velocity at wave boundary layer
+ Hout(idfdw) == T                               ! Friction factor from the currents
+ Hout(idzrw) == T                               ! Reference height to get near bottom current velocity. 
+ Hout(idksd) == T                               ! Bed roughness (Zo) for the wave boundary layer calc.
+ Hout(idusc) == T                               ! Current friction velocity the wave boundary layer
+ Hout(idpcx) == T                               ! Anlge between currents and xi axis.
+ Hout(idpwc) == T                               ! Angle between waves and currents.
+ Hout(idoff) == F                               ! dmix erodibility profile offset
+ Hout(idslp) == F                               ! dmix or erodibility slope
+ Hout(idtim) == F                               ! erodibility profile restore time 
+ Hout(idbmx) == F                               ! Bed biodifusivity maximum
+ Hout(idbmm) == F                               ! Bed biodifusivity minimum
+ Hout(idbzs) == F                               ! Bed biodifusivity zs
+ Hout(idbzm) == F                               ! Bed biodifusivity zm
+ Hout(idbzp) == F                               ! Bed biodifusivity phi
+ Hout(idprp) == F                               ! cohesive behavior
 
 !------------------------------------------------------------------------------
 ! Non-cohesive Sediment Parameters, [1:NNS,1:Ngrids] values expected.
@@ -447,14 +494,14 @@ Dout(MTsdif) == F       ! mud_01_sdiff, ...       horizontal S-diffusion
 Dout(MTvdif) == F       ! mud_01_vdiff, ...       vertical diffusion
 
 !------------------------------------------------------------------------------
-! Mixed Bed parameters- Transition threshold for cohesive mix 
+! Mixed Bed parameters- Transition threshold for cohesive mix
 ! and non-cohesive behaviors [1:Ngrids] values expected.
 !------------------------------------------------------------------------------
-! Cohesive transition- Under that value of total mud fraction 
-! entire bed behaves as a non-cohesive bed 
+! Cohesive transition- Under that value of total mud fraction
+! entire bed behaves as a non-cohesive bed
 
    TRANSC == 0.03d0
-    
+
 ! Noncohesive transition- Over that value of total mud fraction
 ! entire bed behaves as a cohesive bed
 
@@ -462,26 +509,26 @@ Dout(MTvdif) == F       ! mud_01_vdiff, ...       vertical diffusion
 
 !------------------------------------------------------------------------------
 ! Cohesive/Mixed bed critical shear
-! Bed critical shear stress values if cohesive or mixed Bed is active 
+! Bed critical shear stress values if cohesive or mixed Bed is active
 ! These values are applied to the entire bed. [1:Ngrids] values expected.
 !------------------------------------------------------------------------------
 
 ! Minimum shear for erosion
 
    MUD_TAUCR_MIN == 0.030000d0
-    
+
 ! Maximum shear for erosion
 
    MUD_TAUCR_MAX == 5.20d0
-    
+
 ! Tau_crit profile slope
 
    MUD_TAUCR_SLOPE == 0.300000d0
-    
+
 ! Tau_crit profile offset
 
    MUD_TAUCR_OFF == 1.000000d0
-    
+
 ! Tau_crit consolidation rate
 
    MUD_TAUCR_TIME == 28800.0d0
@@ -490,7 +537,7 @@ Dout(MTvdif) == F       ! mud_01_vdiff, ...       vertical diffusion
 ! Flocculation Sediment Parameters.
 !------------------------------------------------------------------------------
 
-! Boolean set to .true. if differential settling aggregation 
+! Boolean set to .true. if differential settling aggregation
 
    L_ADS == F
 
@@ -530,16 +577,16 @@ Dout(MTvdif) == F       ! mud_01_vdiff, ...       vertical diffusion
 
    F_ATER == 0.0d0
 
-! Fraction of the shear fragmentation term transfered to shear erosion. 
+! Fraction of the shear fragmentation term transfered to shear erosion.
 ! Ranging from [(0.0 - no erosion to 1.0 - all erosion)]
 
    F_ERO_FRAC == 0.0d0
 
-! Number of fragments induced by shear erosion.   
+! Number of fragments induced by shear erosion.
 
    F_ERO_NBFRAG == 2.0d0
 
-! Fragment size class (could be changed to a particle 
+! Fragment size class (could be changed to a particle
 !  size or a particle distribution) (INTEGER)
 
    F_ERO_IV == 1
@@ -571,6 +618,7 @@ Dout(MTvdif) == F       ! mud_01_vdiff, ...       vertical diffusion
 ! [1:Ngrids] values expected.
 
    MUD_T_DFLOC == 200.0d0
+
 !
 !  GLOSSARY:
 !  =========
@@ -654,13 +702,13 @@ Dout(MTvdif) == F       ! mud_01_vdiff, ...       vertical diffusion
 !------------------------------------------------------------------------------
 !  General sediment bed model controls, [1:Ngrids] values are expected.
 !------------------------------------------------------------------------------
-!
+! 
 !  NEWLAYER_THICK  Depositional bed layer thickness criteria to create a new
 !                    layer (m). If deposition exceeds this value, then a new
 !                    layer is created.
 !
 !  BEDLOAD_COEFF   Bed load transport rate coefficient.
-! 
+!
 !  DBMAX           Maximum biodiffusivity
 !
 !  DBMIN           Minimum biodiffusivity
@@ -672,7 +720,7 @@ Dout(MTvdif) == F       ! mud_01_vdiff, ...       vertical diffusion
 !  DBZP            Depth of minimum biodiffusivity
 !
 !------------------------------------------------------------------------------
-! Logical switches to activate writing of bed layer properties 
+! Logical switches to activate writing of bed layer properties
 ! [1:Ngrids] values expected.
 !------------------------------------------------------------------------------
 !

@@ -97,9 +97,16 @@ Hout(idTtot)   == T       ! Thrust_total       Total thrust from all direction d
 Hout(idTmfo)   == T       ! marsh_flux_out     Marsh sediment flux out from marsh cells
 Hout(idTmmr)   == F       ! marsh_retreat      Amount of marsh retreat from all directions
 
-Hout(idTmtr)   == F       ! marsh_tidal_range  Tidal range for vertical growth for marsh cells
+Hout(idTims)   == T       ! marsh_mask         Store masking marsh from marsh cells
+Hout(idTtot)   == T       ! Thrust_total       Total thrust from all direction due to waves
+Hout(idTmfo)   == F       ! marsh_flux_out     Marsh sediment flux out from marsh cells
+Hout(idTmmr)   == F       ! marsh_retreat      Amount of marsh retreat from all directions
+
+Hout(idTmtr)   == T       ! marsh_tidal_range  Tidal range for vertical growth for marsh cells
 Hout(idTmhw)   == T       ! marsh_high_water   Mean high water for marsh cells
-Hout(idTmvg)   == T       ! marsh_vert         Amount of vertical growth for marsh cells
+Hout(idTmlw)   == T       ! marsh_high_water   Mean high water for marsh cells
+Hout(idTmvg)   == T       ! marsh_vert_rate    rate of vertical growth for marsh cells
+Hout(idTmvt)   == T       ! marsh_accret       Amount of vertical growth for marsh cells
 Hout(idTmbp)   == T       ! marsh_biomass_peak Amount of marsh biomass peak
 !
 !  GLOSSARY:

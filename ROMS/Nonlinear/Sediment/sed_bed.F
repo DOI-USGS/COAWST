@@ -179,7 +179,7 @@
       real(r8), intent(in) :: bvstr(LBi:UBi,LBj:UBj)
 #  endif
 #  if defined SED_MORPH
-      real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,2)
+      real(r8), intent(inout):: bed_thick(LBi:UBi,LBj:UBj,3)
 #  endif
       real(r8), intent(inout) :: t(LBi:UBi,LBj:UBj,N(ng),3,NT(ng))
 #  ifdef SUSPLOAD
@@ -217,7 +217,7 @@
 ! Compute sediment bed layer stratigraphy.
 !-----------------------------------------------------------------------
 !
-# if defined BEDLOAD_MPM || defined SUSPLOAD
+!# if defined BEDLOAD || defined SUSPLOAD
 #  ifdef BBL_MODEL
       DO j=Jstr-1,Jend+1
         DO i=Istr-1,Iend+1
@@ -241,7 +241,7 @@
         END DO
       END DO
 #  endif
-# endif
+!# endif
 !
 !-----------------------------------------------------------------------
 !  Update bed properties according to ero_flux and dep_flux.
@@ -485,6 +485,7 @@
 # if defined SED_MORPH
       DO j=JstrR,JendR
         DO i=IstrR,IendR
+            bed_thick(i,j,3)=bed_thick(i,j,nnew)
             bed_thick(i,j,nnew)=0.0_r8
             DO k=1,Nbed
               bed_thick(i,j,nnew)=bed_thick(i,j,nnew)+                  &
@@ -496,6 +497,11 @@
           CALL exchange_r2d_tile (ng, tile,                             &
      &                            LBi, UBi, LBj, UBj,                   &
      &                            bed_thick(:,:,nnew))
+        END IF
+        IF (EWperiodic(ng).or.NSperiodic(ng)) THEN
+          CALL exchange_r2d_tile (ng, tile,                             &
+     &                            LBi, UBi, LBj, UBj,                   &
+     &                            bed_thick(:,:,3))
         END IF
 # endif
 !

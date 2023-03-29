@@ -50,25 +50,27 @@
 
 !$OMP THREADPRIVATE (first_tile, last_tile)
 
-#ifdef AIR_OCEAN
+#if !defined COAWST_MODEL
+# ifdef AIR_OCEAN
 !
 !  Parallel nodes assined to the atmosphere model.
 !
       integer :: peATM_frst            ! first atmosphere parallel node
       integer :: peATM_last            ! last  atmosphere parallel node
-#endif
-#ifdef WAVES_OCEAN
+# endif
+# ifdef WAVES_OCEAN
 !
 !  Parallel nodes assined to the wave model.
 !
       integer :: peWAV_frst            ! first atmosphere parallel node
       integer :: peWAV_last            ! last  atmosphere parallel node
-#endif
+# endif
 !
 !  Parallel nodes assined to the ocean model.
 !
       integer :: peOCN_frst            ! first ocean parallel node
       integer :: peOCN_last            ! last  ocean parallel node
+#endif
 !
 !  Parallel threads/nodes counters used in critical parallel regions.
 !

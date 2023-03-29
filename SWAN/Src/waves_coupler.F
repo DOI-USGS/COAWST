@@ -183,8 +183,17 @@
       integer :: cid, cad, MXCGLc
       character (len=70)  :: nc_name
       character (len=20)  :: to_add
+# ifdef SPECTRUM_STOKES
+      character (len=520) :: wostring
+      character (len=140) :: owstring
+# else
       character (len=120) :: wostring
       character (len=120) :: owstring
+# endif
+# ifdef SPECTRUM_STOKES
+      character (len=5)   :: LSTCODE
+      integer             :: IZ
+# endif
 
       real :: cff
 
@@ -532,6 +541,48 @@
       cad=LEN_TRIM(to_add)
       write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
+
+      to_add=':DICDVG'
+      cad=LEN_TRIM(to_add)
+      write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+#endif
+#ifdef SPECTRUM_STOKES
+      DO IZ=1,MSC
+        IF (IZ.LT.10) THEN
+         WRITE(LSTCODE,"(A4,I1)") ":KS0",IZ
+        ELSE
+         WRITE(LSTCODE,"(A3,I2)") ":KS",IZ 
+        END IF
+        to_add=LSTCODE
+        cad=LEN_TRIM(to_add)
+        write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad  
+      END DO
+
+      DO IZ=1,MSC
+        IF (IZ.LT.10) THEN
+         WRITE(LSTCODE,"(A4,I1)") ":US0",IZ
+        ELSE
+         WRITE(LSTCODE,"(A3,I2)") ":US",IZ 
+        END IF
+        to_add=LSTCODE
+        cad=LEN_TRIM(to_add)
+        write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad  
+      END DO
+
+      DO IZ=1,MSC
+        IF (IZ.LT.10) THEN
+         WRITE(LSTCODE,"(A4,I1)") ":VS0",IZ
+        ELSE
+         WRITE(LSTCODE,"(A3,I2)") ":VS",IZ 
+        END IF
+        to_add=LSTCODE
+        cad=LEN_TRIM(to_add)
+        write(wostring(cid:cid+cad-1),'(a)') to_add(1:cad)
+        cid=cid+cad  
+      END DO
 #endif  
 !
 !  Finalize and remove trailing spaces from the wostring
@@ -580,6 +631,21 @@
 #if defined VEGETATION && defined VEG_SWAN_COUPLING
 !
       to_add=':VEGDENS'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':VEGHGHT'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':VEGDIAM'
+      cad=LEN_TRIM(to_add)
+      write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
+      cid=cid+cad
+!
+      to_add=':VEGTHCK'
       cad=LEN_TRIM(to_add)
       write(owstring(cid:cid+cad-1),'(a)') to_add(1:cad)
       cid=cid+cad
@@ -704,6 +770,9 @@
 
 # ifdef ROMS_COUPLING
       SUBROUTINE WAV2OCN_COUPLING (MIP, NVOQP, VOQR, VOQ, IRQ,          &
+# ifdef SPECTRUM_STOKES
+     &                             KSS, USS, VSS,                       &
+# endif
      &                             IVTYPE, COMPDA, Numcouple, ng, io)
 !
 !=======================================================================
@@ -755,6 +824,11 @@
 
       real :: COMPDA(MCGRD,MCMVAR)
       real :: VOQ(MIP,NVOQP)
+# ifdef SPECTRUM_STOKES
+      real :: KSS(MIP,MSC)
+      real :: USS(MIP,MSC)
+      real :: VSS(MIP,MSC)
+# endif
 !
 !  Local variable declarations.
 !
@@ -763,7 +837,10 @@
       integer :: Istr, Iend, Jstr, Jend, MXCGLc, start
       integer :: Isize, Jsize, INDXG, NPROCS, OFFSET
       integer, pointer :: points(:)
-
+# ifdef SPECTRUM_STOKES
+      character (len=4) :: SCODE
+      integer :: IZ
+# endif
       real(m8), pointer :: avdata(:)
       real(m8), pointer :: DIRE(:)
       real(m8), pointer :: DIRN(:)
@@ -915,12 +992,62 @@
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "WQP",avdata)
 !
-#if defined VEGETATION && defined VEG_SWAN_COUPLING \
+# if defined VEGETATION && defined VEG_SWAN_COUPLING \
       && defined VEG_STREAMING      
       ELSE IF (IVTYPE.eq.57) THEN
         CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
      &                             "DISVEG",avdata)
-#endif   
+      ELSE IF (IVTYPE.eq.80) THEN
+        CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,           &
+     &                             "DICDVG",avdata)
+# endif   
+# ifdef SPECTRUM_STOKES
+      ELSE IF (IVTYPE.eq.81) THEN
+        DO IZ=1,MSC
+          IF (IZ.LT.10) THEN
+            WRITE(SCODE,"(A3,I1)") "KS0",IZ
+          ELSE
+            WRITE(SCODE,"(A2,I2)") "KS", IZ
+          END IF
+
+          DO IP=1,gsmsize
+            avdata(IP)= REAL(KSS(points(IP),IZ), m8)
+          END DO
+
+          CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,         &
+     &                             SCODE,avdata)
+        END DO
+
+        DO IZ=1,MSC
+          IF (IZ.LT.10) THEN
+            WRITE(SCODE,"(A3,I1)") "US0",IZ
+          ELSE
+            WRITE(SCODE,"(A2,I2)") "US", IZ
+          END IF
+
+          DO IP=1,gsmsize
+            avdata(IP)= REAL(USS(points(IP),IZ), m8)
+          END DO
+
+          CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,         &
+     &                             SCODE,avdata)
+        END DO
+
+        DO IZ=1,MSC
+          IF (IZ.LT.10) THEN
+            WRITE(SCODE,"(A3,I1)") "VS0",IZ
+          ELSE
+            WRITE(SCODE,"(A2,I2)") "VS", IZ
+          END IF
+
+          DO IP=1,gsmsize
+            avdata(IP)= REAL(VSS(points(IP),IZ), m8)
+          END DO
+
+          CALL AttrVect_importRAttr (AttrVect_G(ng)%wav2ocn_AV,         &
+     &                             SCODE,avdata)
+        END DO
+# endif
       END IF
 !
       IF (IRQ.eq.Numcouple) THEN
@@ -1190,14 +1317,12 @@
       integer :: NUMTRANSFER, NNEIGH, HALOSIZE, NUMSENT, INB
       integer :: WHICHWAY, GDEST, GSRC, TAGT, TAGB, TAGR, TAGL
       integer :: TREQUEST,BREQUEST,RREQUEST,LREQUEST,MSIZE
-      integer :: iddep, idwlv, idvlx, idvly, idveg
+      integer :: iddep, idwlv, idvlx, idvly
+      integer :: idveg, idvht, idvda, idvtk
       integer :: idruf, idice
       integer, dimension(MPI_STATUS_SIZE,4) :: status
 
-      real :: cff
-# if !defined BBL_MODEL
-      real :: cff2
-# endif
+      real :: cff, cff2
       real, parameter ::  Large = 1.0E+20
       real, dimension(2) :: range
       real(m8), pointer :: avdata(:)
@@ -1306,6 +1431,12 @@
 #  if defined VEGETATION && defined VEG_SWAN_COUPLING
         IP=IP+1
         idveg=IP
+        IP=IP+1
+        idvht=IP
+        IP=IP+1
+        idvda=IP
+        IP=IP+1
+        idvtk=IP
 #  endif
 !
 #  ifdef ICE_MODEL
@@ -1474,6 +1605,84 @@
         CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
         IF (MyRank.eq.0) THEN
           write(SCREEN,40) 'ROMStoSWAN Min/Max VEGDENS (indv/m-2): ',   &
+     &                      range(1),range(2)
+        END IF
+!
+!  Vegetation height.
+!
+        CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,            &
+     &                            "VEGHGHT",avdata,gsmsize)
+        range(1)= Large
+        range(2)=-Large
+        IP=0
+        DO IY=Jstr,Jend
+          DO IX=Istr,Iend
+            IP=IP+1
+            INDXG=(IY-1)*MXC+IX
+            TEMPMCT(INDXG,idvht)=avdata(IP)                     
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
+          END DO
+          IF (KREPTX.EQ.1) THEN
+            IP=IP+1
+          END IF
+        END DO
+        CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+        CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+        IF (MyRank.eq.0) THEN
+          write(SCREEN,40) 'ROMStoSWAN Min/Max VEGHGHT ( m ): ',        &
+     &                      range(1),range(2)
+        END IF
+!
+!  Vegetation diameter.
+!
+        CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,            &
+     &                            "VEGDIAM",avdata,gsmsize)
+        range(1)= Large
+        range(2)=-Large
+        IP=0
+        DO IY=Jstr,Jend
+          DO IX=Istr,Iend
+            IP=IP+1
+            INDXG=(IY-1)*MXC+IX
+            TEMPMCT(INDXG,idvda)=avdata(IP)                     
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
+          END DO
+          IF (KREPTX.EQ.1) THEN
+            IP=IP+1
+          END IF
+        END DO
+        CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+        CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+        IF (MyRank.eq.0) THEN
+          write(SCREEN,40) 'ROMStoSWAN Min/Max VEGDIAM (  m  ): ',      &
+     &                      range(1),range(2)
+        END IF
+!
+!  Vegetation thickness.
+!
+        CALL AttrVect_exportRAttr(AttrVect_G(ng)%ocn2wav_AV,            &
+     &                            "VEGTHCK",avdata,gsmsize)
+        range(1)= Large
+        range(2)=-Large
+        IP=0
+        DO IY=Jstr,Jend
+          DO IX=Istr,Iend
+            IP=IP+1
+            INDXG=(IY-1)*MXC+IX
+            TEMPMCT(INDXG,idvtk)=avdata(IP)                     
+            range(1)=MIN(range(1),REAL(avdata(IP)))
+            range(2)=MAX(range(2),REAL(avdata(IP)))
+          END DO
+          IF (KREPTX.EQ.1) THEN
+            IP=IP+1
+          END IF
+        END DO
+        CALL SWREDUCE(range(1),1,SWREAL,SWMIN)
+        CALL SWREDUCE(range(2),1,SWREAL,SWMAX)
+        IF (MyRank.eq.0) THEN
+          write(SCREEN,40) 'ROMStoSWAN Min/Max VEGTHCK  ( m ): ',       &
      &                      range(1),range(2)
         END IF
 #  endif
@@ -1730,6 +1939,9 @@
             COMPDA(INDX,JFRC3)=COMPDA(INDX,JFRC2)
 #  if defined VEGETATION && defined VEG_SWAN_COUPLING
             COMPDA(INDX,JNPLA3)=COMPDA(INDX,JNPLA2)
+            COMPDA(INDX,JNPHT3)=COMPDA(INDX,JNPHT2)
+            COMPDA(INDX,JNPDA3)=COMPDA(INDX,JNPDA2)
+            COMPDA(INDX,JNPTK3)=COMPDA(INDX,JNPTK2)
 #  endif
           END DO
         END IF
@@ -1741,7 +1953,7 @@
 ! If not using a BBL model, then determine the non-spatially 
 ! varying friction coeff to enter into the JFRC2 array.
 !
-# if defined WAVES_OCEAN && !defined BBL_MODEL
+# if defined WAVES_OCEAN
         cff2=0.05_m8                  ! default
         IF (IBOT.EQ.1) THEN           ! Jonswap
           cff2=PBOT(3)
@@ -1750,20 +1962,20 @@
         ELSE IF (IBOT.EQ.3) THEN      ! Madsen
           cff2=PBOT(5)
         END IF
-# endif
         IP=0
         DO IY=1,MYC
           DO IX=1,MXC
             IP=IP+1
             INDX = KGRPNT(IX,IY)
             IF (INDX.GT.1) THEN
-# ifdef WAVES_OCEAN
 #  ifdef BBL_MODEL
               IF (io.eq.1) THEN
-                COMPDA(INDX,JFRC2)=MAX(REAL(TEMPMCT(IP,idruf)), 0.0001)
+!               COMPDA(INDX,JFRC2)=MAX(REAL(TEMPMCT(IP,idruf)), 0.0001)
+                COMPDA(INDX,JFRC2)=MAX(REAL(TEMPMCT(IP,idruf)), cff2)
               ELSE
                 COMPDA(INDX,JFRC2)=COMPDA(INDX,JFRC2)+                  &
-     &                             MAX(REAL(TEMPMCT(IP,idruf)), 0.0001)
+     &                             MAX(REAL(TEMPMCT(IP,idruf)), cff2)
+!    &                             MAX(REAL(TEMPMCT(IP,idruf)), 0.0001)
               END IF
 #  else
               COMPDA(INDX,JFRC2)=cff2
@@ -1779,6 +1991,9 @@
                   COMPDA(INDX,JVY2)=TEMPMCT(IP,idvly)
 #  if defined VEGETATION && defined VEG_SWAN_COUPLING 
                   COMPDA(INDX,JNPLA2)=TEMPMCT(IP,idveg)
+                  COMPDA(INDX,JNPHT2)=TEMPMCT(IP,idvht)
+                  COMPDA(INDX,JNPDA2)=TEMPMCT(IP,idvda)
+                  COMPDA(INDX,JNPTK2)=TEMPMCT(IP,idvtk)
 #  endif
                 ELSE
 #  ifdef SED_MORPH
@@ -1792,6 +2007,12 @@
 #  if defined VEGETATION && defined VEG_SWAN_COUPLING
                   COMPDA(INDX,JNPLA2)=COMPDA(INDX,JNPLA2)+              &
      &                                TEMPMCT(IP,idveg)
+                  COMPDA(INDX,JNPHT2)=COMPDA(INDX,JNPHT2)+              &
+     &                                TEMPMCT(IP,idvht)
+                  COMPDA(INDX,JNPDA2)=COMPDA(INDX,JNPDA2)+              &
+     &                                TEMPMCT(IP,idvda)
+                  COMPDA(INDX,JNPTK2)=COMPDA(INDX,JNPTK2)+              &
+     &                                TEMPMCT(IP,idvtk)
 #  endif
 
                 END IF

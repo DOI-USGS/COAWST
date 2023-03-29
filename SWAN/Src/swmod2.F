@@ -795,9 +795,10 @@
 !     UXB   , UYB
 !     WXI   , WYI
 !     WLEVL , ASTDF
-!     NPLAF, TURBF
-!     MUDLF
-!     AICEF, HICEF
+!     NPLAF,  NPHTF
+!     NPDAF,  NPTKF, 
+!     TURBF,  MUDLF
+!     AICEF,  HICEF
 !
 !  4. Modules used
 !
@@ -827,6 +828,9 @@
 !     LAYH  : layer thickness for vegetation model
 !     MUDLF : input field containing fluid mud layer
 !     NPLAF : input field containing number of plants per square meter
+!     NPHTF : input field containing plant height in m 
+!     NPDAF : input field containing plant diameter in m 
+!     NPTKF : input field containing plant thickness in m 
 !     SPCDIR: (*,1); spectral directions (radians)
 !             (*,2); cosine of spectral directions
 !             (*,3); sine of spectral directions
@@ -840,6 +844,7 @@
 !     VEGDIL: vegetation diameter for each layer and grid point
 !     VEGDRL: drag coefficient for each layer and grid point
 !     VEGNSL: number of plants / m2 for each layer and grid point
+!     VEGYML: Youngs modulus for vegetation at each layer and grid point
 !     WLEVL : input field of water level
 !     WXI   : input field of wind U-velocity (contravariant)
 !     WYI   : input field of wind V-velocity (contravariant)
@@ -866,6 +871,9 @@
         REAL, POINTER :: WLEVL_G(:)
         REAL, POINTER :: ASTDF_G(:)
         REAL, POINTER :: NPLAF_G(:)
+        REAL, POINTER :: NPHTF_G(:)
+        REAL, POINTER :: NPDAF_G(:)
+        REAL, POINTER :: NPTKF_G(:)
         REAL, POINTER :: TURBF_G(:)
         REAL, POINTER :: MUDLF_G(:)
         REAL, POINTER :: AICEF_G(:)
@@ -894,6 +902,9 @@
       REAL   , POINTER :: WLEVL(:)
       REAL   , POINTER :: ASTDF(:)
       REAL   , POINTER :: NPLAF(:)
+      REAL   , POINTER :: NPHTF(:)
+      REAL   , POINTER :: NPDAF(:)
+      REAL   , POINTER :: NPTKF(:)
       REAL   , POINTER :: TURBF(:)
       REAL   , POINTER :: MUDLF(:)
       REAL   , POINTER :: AICEF(:)
@@ -912,12 +923,14 @@
       REAL   , SAVE, ALLOCATABLE :: UXB(:)   , UYB(:)
       REAL   , SAVE, ALLOCATABLE :: WXI(:)   , WYI(:)
       REAL   , SAVE, ALLOCATABLE :: WLEVL(:) , ASTDF(:)
+      REAL   , SAVE, ALLOCATABLE :: NPLAF(:) , NPHTF(:)
+      REAL   , SAVE, ALLOCATABLE :: NPDAF(:) , NPTKF(:) 
+      REAL   , SAVE, ALLOCATABLE :: TURBF(:)
       REAL   , SAVE, ALLOCATABLE :: MUDLF(:)
-      REAL   , SAVE, ALLOCATABLE :: NPLAF(:) , TURBF(:)
-      REAL   , SAVE, ALLOCATABLE :: AICEF(:) , HICEF(:)
+      REAL   , SAVE, ALLOCATABLE :: AICEF(:) , HICEF(:) 
 #endif
       REAL   , SAVE, ALLOCATABLE :: LAYH(:), VEGDIL(:), VEGDRL(:),
-     &                              VEGNSL(:)
+     &                              VEGNSL(:), VEGYML(:)
 !ESMF!
 !ESMF!     added to save Sin exponential growth term for coupling
 !ESMF      LOGICAL, SAVE :: SAVE_SINBAC

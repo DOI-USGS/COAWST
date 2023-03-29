@@ -50,6 +50,9 @@
 # ifdef WEC_VF
      &                              W_stokes,                           &
 # endif
+# if defined OMEGA_IMPLICIT
+     &                              Wi,                                 &
+# endif
      &                              t, Ta, Ua, Va, Wa)
 !***********************************************************************
 !
@@ -88,6 +91,9 @@
 #  ifdef WEC_VF
       real(r8), intent(in) :: W_stokes(LBi:,LBj:,0:)
 #  endif
+#  if defined OMEGA_IMPLICIT
+      real(r8), intent(in) :: Wi(LBi:,LBj:,0:)
+#  endif
       real(r8), intent(inout) :: Ta(IminS:,JminS:,:)
 
       real(r8), intent(out) :: Ua(IminS:,JminS:,:)
@@ -117,6 +123,9 @@
       real(r8), intent(in) :: w(LBi:UBi,LBj:UBj,0:N(ng))
 #  ifdef WEC_VF
       real(r8), intent(in) :: W_stokes(LBi:UBi,LBj:UBj,0:N(ng))
+#  endif
+#  if defined OMEGA_IMPLICIT
+      real(r8), intent(in) :: Wi(LBi:UBi,LBj:UBj,0:N(ng))
 #  endif
       real(r8), intent(inout) :: Ta(IminS:ImaxS,JminS:JmaxS,N(ng))
 
@@ -259,6 +268,12 @@
      &            (W_stokes(i-1,j,k  )*odz(i-1,j,k)*pm(i-1,j)*pn(i-1,j)+&
      &             W_stokes(i  ,j,k  )*odz(i  ,j,k)*pm(i  ,j)*pn(i  ,j))
 # endif
+# ifdef OMEGA_IMPLICIT
+          Wm(i,k)=Wm(i,k)+                                              &
+     &            0.25_r8*dt(ng)*                                       &
+     &            (Wi(i-1,j,k  )*odz(i-1,j,k)*pm(i-1,j)*pn(i-1,j)+      &
+     &             Wi(i  ,j,k  )*odz(i  ,j,k)*pm(i  ,j)*pn(i  ,j))
+# endif
         END DO
         DO k=2,N(ng)-1
           DO i=IstrU-1,Iendp2
@@ -285,6 +300,16 @@
      &                W_stokes(i  ,j,k-1)*odz(i  ,j,k-1))*              &
      &                                    pm(i  ,j)*pn(i  ,j))
 # endif
+# ifdef OMEGA_IMPLICIT
+            Wm(i,k)=Wm(i,k)+                                            &
+     &              0.25_r8*dt(ng)*                                     &
+     &              ((Wi(i-1,j,k-1)*odz(i-1,j,k-1)+                     &
+     &                Wi(i-1,j,k  )*odz(i-1,j,k  ))*                    &
+     &                                    pm(i-1,j)*pn(i-1,j)+          &
+     &               (Wi(i  ,j,k  )*odz(i  ,j,k  )+                     &
+     &                Wi(i  ,j,k-1)*odz(i  ,j,k-1))*                    &
+     &                                    pm(i  ,j)*pn(i  ,j))
+# endif
           END DO
         END DO
         k=N(ng)
@@ -304,6 +329,14 @@
      &              (W_stokes(i-1,j,k-1)*odz(i-1,j,k-1)*                &
      &                                   pm(i-1,j)*pn(i-1,j)+           &
      &               W_stokes(i  ,j,k-1)*odz(i  ,j,k-1)*                &
+     &                                   pm(i  ,j)*pn(i  ,j))
+# endif
+# ifdef OMEGA_IMPLICIT
+            Wm(i,k)=Wm(i,k)+                                            &
+     &              0.25_r8*dt(ng)*                                     &
+     &              (Wi(i-1,j,k-1)*odz(i-1,j,k-1)*                      &
+     &                                   pm(i-1,j)*pn(i-1,j)+           &
+     &               Wi(i  ,j,k-1)*odz(i  ,j,k-1)*                      &
      &                                   pm(i  ,j)*pn(i  ,j))
 # endif
         END DO
@@ -455,6 +488,12 @@
      &            (W_stokes(i,j-1,k )*odz(i,j-1,k )*pm(i,j-1)*pn(i,j-1)+&
      &             W_stokes(i,j  ,k )*odz(i,j  ,k )*pm(i,j  )*pn(i,j  ))
 # endif
+# ifdef OMEGA_IMPLICIT
+          Wm(i,k)=Wm(i,k)+                                              &
+     &            0.25_r8*dt(ng)*                                       &
+     &            (Wi(i,j-1,k )*odz(i,j-1,k )*pm(i,j-1)*pn(i,j-1)+      &
+     &             Wi(i,j  ,k )*odz(i,j  ,k )*pm(i,j  )*pn(i,j  ))
+# endif
         END DO
         DO k=2,N(ng)-1
           DO i=IstrU-1,Iendp1
@@ -481,6 +520,16 @@
      &                W_stokes(i,j  ,k-1)*odz(i,j  ,k-1))*              &
      &                                    pm(i,j  )*pn(i,j  ))
 # endif
+# ifdef OMEGA_IMPLICIT
+          Wm(i,k)=Wm(i,k)+                                              &
+     &            0.25_r8*dt(ng)*                                       &
+     &              ((Wi(i,j-1,k-1)*odz(i,j-1,k-1)+                     &
+     &                Wi(i,j-1,k  )*odz(i,j-1,k  ))*                    &
+     &                                    pm(i,j-1)*pn(i,j-1)+          &
+     &               (Wi(i,j  ,k  )*odz(i,j  ,k  )+                     &
+     &                Wi(i,j  ,k-1)*odz(i,j  ,k-1))*                    &
+     &                                    pm(i,j  )*pn(i,j  ))
+# endif
           END DO
         END DO
         k=N(ng)
@@ -500,6 +549,14 @@
      &            (W_stokes(i,j-1,k-1)*odz(i,j-1,k-1)*                  &
      &                                 pm(i,j-1)*pn(i,j-1)+             &
      &             W_stokes(i,j  ,k-1)*odz(i,j  ,k-1)*                  &
+     &                                 pm(i,j  )*pn(i,j  ))
+# endif
+# ifdef OMEGA_IMPLICIT
+          Wm(i,k)=Wm(i,k)+                                              &
+     &            0.25_r8*dt(ng)*                                       &
+     &            (Wi(i,j-1,k-1)*odz(i,j-1,k-1)*                        &
+     &                                 pm(i,j-1)*pn(i,j-1)+             &
+     &             Wi(i,j  ,k-1)*odz(i,j  ,k-1)*                        &
      &                                 pm(i,j  )*pn(i,j  ))
 # endif
         END DO
@@ -788,6 +845,10 @@
               Wm(i,k)=W(i,j,k)*odz(i,j,k)*pm(i,j)*pn(i,j)*dt(ng)
 # ifdef WEC_VF
               Wm(i,k)=Wm(i,k)+W_stokes(i,j,k)*odz(i,j,k)*               &
+     &                pm(i,j)*pn(i,j)*dt(ng)
+# endif
+# ifdef OMEGA_IMPLICIT
+              Wm(i,k)=Wm(i,k)+Wi(i,j,k)*odz(i,j,k)*                     &
      &                pm(i,j)*pn(i,j)*dt(ng)
 # endif
 !

@@ -1,4 +1,6 @@
+#include "cppdefs.h"
       Module MOD_VANDERA_FUNCS
+#if defined SEDIMENT && defined BEDLOAD_VANDERA
 !
 !svn $Id: mod_bedload_vandera_funcs.F 429 2018-04-10 17:30:26Z arango $
 !======================================================================!
@@ -354,4 +356,5 @@
       RETURN
       END FUNCTION theta_cr_calc
 !
+#endif
       END MODULE mod_vandera_funcs

@@ -38,6 +38,8 @@
               idTvar(iSDeN)=varid
             CASE ('idTvar(iChlo)')
               idTvar(iChlo)=varid
+            CASE ('idTvar(iODU_)')
+              idTvar(iODU_)=varid
 #ifdef CARBON
             CASE ('idTvar(iTIC_)')
               idTvar(iTIC_)=varid
@@ -115,6 +117,10 @@
 # ifdef OXYGEN
             CASE ('idTads(iOxyg)')
               idTads(iOxyg)=varid
+# endif
+# ifdef ODU
+              CASE ('idTads(iODU_)')
+                idTads(iODU_)=varid
 # endif
 # ifdef RIVER_DON
             CASE ('idTads(iRDeN)')

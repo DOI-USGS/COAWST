@@ -102,6 +102,14 @@
     USE sed_flocs_mod, ONLY : sed_flocmod
 #  endif
 # endif
+# if defined SEDTR_REACTIONS
+#  if defined SEDBIO_COUP
+    USE sedtr_reactions_pom_mod, ONLY : sedtr_reactions_pom
+#  elif defined SEDTR_DECAY
+    USE sedtr_decay_mod, ONLY : sedtr_decay
+#  endif
+# endif
+!
       USE sed_surface_mod, ONLY : sed_surface
 !
 !  Imported variable declarations.
@@ -163,6 +171,18 @@
 !
 # if defined SED_BIODIFF
       CALL sed_biodiff (ng, tile)
+# endif
+!
+!-----------------------------------------------------------------------
+!  Compute reactive sediment terms.
+!-----------------------------------------------------------------------
+!
+# if defined SEDTR_REACTIONS
+#  if defined SEDBIO_COUP
+      CALL sedtr_reactions_pom (ng, tile)
+#  elif defined SEDTR_DECAY
+      CALL sedtr_decay (ng, tile)
+#  endif
 # endif
 !
 !-----------------------------------------------------------------------

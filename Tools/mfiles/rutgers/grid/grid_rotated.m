@@ -128,7 +128,8 @@ M = Mp-1;
 
 if (D.spherical)
   nx = Im - 1;                     % XI-number  of interior RHO-points (Lm)
-  ny = Jm - 1:                     % ETA-number of interior RHO-points (Mm)
+  ny = Jm - 1;                     % ETA-number of interior RHO-points (Mm)
+  Clat = Ycenter;   % ?? jcw
 
   R = spherical_grid (D, nx, ny, dx, dy, Clat, Xcenter, Ycenter, theta);
 
@@ -244,14 +245,14 @@ end
  
 % Coriolis parameter (XI-ETA coordinates interpolation).
 
-Rrho.Values = D.f;
+Rrho.Values = D.f(:);
 R.f = Rrho(R.xi_rho, R.eta_rho);
 
 % Land/sea masking: use nondimensional fractional coordinates. Use
 % nearest point (XI-ETA) interpolation.
 
 if (got.mask_rho || got.mask_psi || got.mask_u || got.mask_v)
-  Rrho.Values = D.mask_rho;
+  Rrho.Values = D.mask_rho(:);
   Rrho.Method = 'nearest';
   R.mask_rho  = Rrho(R.xi_rho, R.eta_rho);
 
@@ -462,7 +463,7 @@ if (status ~= 0), return, end
 disp(['Writing finer grid variables into: ', Gout]);
 disp(' ');
 
-status = nc_write (Gout, 'spherical', R.spherical);
+status = nc_write (Gout, 'spherical', double(R.spherical));
 if (status ~= 0), return, end
 
 status = nc_write (Gout, 'xl', R.xl);

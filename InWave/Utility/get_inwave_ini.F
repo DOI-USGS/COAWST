@@ -16,6 +16,7 @@
 !                                                                       !
 !=======================================================================!
 !
+      USE inwave_iounits
       USE mod_param
       USE mod_grid
       USE mod_iounits
@@ -24,8 +25,9 @@
       USE mod_scalars
       USE mod_inwave_params
       USE mod_inwave_vars
+      USE mod_parallel
+      USE strings_mod,        ONLY : FoundError
       USE nf_fread3d_mod
-      USE inwave_iounits
 !
       implicit none
 !
@@ -41,146 +43,148 @@
 !
       real(r8) :: Ta
       real(r8) :: Amin, Amax
-      real(r8) , parameter :: Ascl=1.0_r8
+      real(dp) , parameter :: Ascl=1.0_dp
 
       integer :: ndims, status
       integer :: Vsize(4)
       integer, dimension(nf90_max_var_dims) :: dimIDs
 
       integer :: i, j, k, varid, gtype
-      integer :: nxnc, nync, ndnc, nxunc, nyvnc
+      integer :: model
 
-
-!# ifdef PROFILE
+      character (len=*), parameter :: MyFile =                          &
+     &  __FILE__
+      character (len=6 ) :: string
 !
-!-----------------------------------------------------------------------
-!  Turn on input data time wall clock.
-!-----------------------------------------------------------------------
-!
-!      CALL wclock_on (ng, iNLM, 3)
-!
-!# endif
-
+      SourceFile=MyFile
+      string=' NLM: '                    ! nonlinear model, restart
+      model=iNLM
 !
 !-----------------------------------------------------------------------
 !  Read in initial condition data from INITIAL INWAVE NetCDF file.
 !-----------------------------------------------------------------------
 !
 !  Open input NetCDF file.
-
-      status=nf90_open(TRIM(ncname), nf90_nowrite, ncIWINIid(ng))
-      IF (status.ne.nf90_noerr) THEN
-        WRITE (stdout,10)TRIM(ncname)
-        exit_flag=2
-         ioerror=status
-      ENDIF
+!
+      IF (ncIWINIid(ng).eq.-1) THEN
+        CALL netcdf_open (ng, model, TRIM(ncname), 0, ncIWINIid(ng))
+        IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) THEN
+          WRITE (stdout,5) TRIM(ncname)
+          RETURN
+        END IF
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Read the absolute period
 !-----------------------------------------------------------------------
 !
-      status=nf90_inq_varid(ncIWINIid(ng),TRIM(Vname(1,idACtp)),varid)
-      IF (status.ne.nf90_noerr) THEN
-        WRITE (stdout,20)TRIM(Vname(1,idACtp))
+      CALL netcdf_inq_var (ng, model, TRIM(ncname),                     &
+     &                     ncid = ncIWINIid(ng))
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+      CALL netcdf_inq_varid(ng, model, TRIM(ncname),                    &
+     &                      TRIM(Vname(1,idACtp)), ncIWINIid(ng), varid)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
+!
+      gtype=r3dvar
+      status=nf_fread3d(ng, model, TRIM(ncname), ncIWINIid(ng),         &
+     &                  TRIM(Vname(1,idACtp)), varid,                   &
+     &                  IniRec, gtype, Vsize,                           &
+     &                  LBi, UBi, LBj, UBj, 1, ND,                      &
+     &                  Ascl, Amin, Amax,                               &
+# ifdef MASKING
+     &                  GRID(ng) % rmask,                               &
+# endif
+# ifdef CHECKSUM
+     &                  ta_ini,                                         &
+     &                  checksum = Fhash)
+# else
+     &                  ta_ini)
+# endif
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+        IF (Master) THEN
+          WRITE (stdout,60) string, TRIM(Vname(1,idACtp)),              &
+     &                      IniRec, TRIM(ncname)
+        END IF
         exit_flag=2
         ioerror=status
-      ENDIF
-      status=nf90_inquire_variable(ncIWINIid(ng),varid,dimids = dimIDs)
-      status=nf90_inquire_dimension(ncIWINIid(ng), dimIDs(1), len=ndims)
-      IF (ndims.eq.1) THEN
-        status=nf90_get_var(ncIWINIid(ng),varid,Ta)
-        DO i=LBi,UBi
-          DO j=LBj,UBj
-            DO k=1,ND
-              ta_ini(i,j,k)=Ta
-            END DO
-          END DO
-        END DO
+        RETURN
       ELSE
-        gtype=r3dvar
-        status= nf_fread3d (ng, iNLM, TRIM(ncname), ncIWINIid(ng),      &
-     &              TRIM(Vname(1,idACtp)),varid, IniRec, gtype,         &
-     &              Vsize, LBi, UBi, LBj, UBj, 1, ND, Ascl,             &
-     &              Amin, Amax,                                         &
-#ifdef MASKING
-     &              GRID (ng)% rmask,                                   &
-#endif
-     &              ta_ini)
-      ENDIF
-      IF (status.ne.nf90_noerr) THEN
-        WRITE (stdout,30)TRIM(Vname(1,idACtp))
-        exit_flag=2
-         ioerror=status
-      ENDIF
-!
-!-----------------------------------------------------------------------
-!  Read dimensions
-!-----------------------------------------------------------------------
-!
-!     status=nf90_inq_dimid(ncIWINIid(ng),'xi_rho', varid)
-!     status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=nxnc)
-!     status=nf90_inq_dimid(ncIWINIid(ng),'xi_u', varid)
-!     status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=nxunc)
-!     status=nf90_inq_dimid(ncIWINIid(ng),'eta_rho', varid)
-!     status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=nync)
-!     status=nf90_inq_dimid(ncIWINIid(ng),'eta_v', varid)
-!     status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=nyvnc)
-!     status=nf90_inq_dimid(ncIWINIid(ng),'energy_angle_c', varid)
-!     write(*,*) 'status is  **** ', status
-!     status=nf90_inquire_dimension(ncIWINIid(ng), varid, len=ndnc)
-
+        IF (Master) THEN
+# ifdef CHECKSUM
+          WRITE (stdout,70) TRIM(Vname(2,idACtp)), Amin, Amax,          &
+     &                      Fhash
+# else
+          WRITE (stdout,70) TRIM(Vname(2,idACtp)), Amin, Amax
+# endif
+        END IF
+      END IF
 !
 !-----------------------------------------------------------------------
 !  Read initial wave energy
 !-----------------------------------------------------------------------
 !
-      status=nf90_inq_varid(ncIWINIid(ng),TRIM(Vname(1,idACen)),varid)
-      IF (status.ne.nf90_noerr) THEN
-        WRITE (stdout,20)TRIM(Vname(1,idACen))
-        exit_flag=2
-         ioerror=status
-      ENDIF
-      gtype=r3dvar
-      status= nf_fread3d (ng, iNLM, TRIM(ncname), ncIWINIid(ng),        &
-     &            TRIM(Vname(1,idACen)),varid, IniRec, gtype,           &
-     &            Vsize, LBi, UBi, LBj, UBj, 1, ND, Ascl,               &
-     &            Amin, Amax,                                           &
-#ifdef MASKING
-     &            GRID (ng)% rmask,                                     &
-#endif
-     &            AC_ini)
-      IF (status.ne.nf90_noerr) THEN
-        WRITE (stdout,30)TRIM(Vname(1,idACen))
-        exit_flag=2
-         ioerror=status
-      ENDIF
+      CALL netcdf_inq_varid(ng, model, TRIM(ncname),                    &
+     &                      TRIM(Vname(1,idACen)), ncIWINIid(ng), varid)
+      IF (FoundError(exit_flag, NoError, __LINE__, MyFile)) RETURN
 !
+      gtype=r3dvar
+      status=nf_fread3d(ng, model, TRIM(ncname), ncIWINIid(ng),         &
+     &                  TRIM(Vname(1,idACen)), varid,                   &
+     &                  IniRec, gtype, Vsize,                           &
+     &                  LBi, UBi, LBj, UBj, 1, ND,                      &
+     &                  Ascl, Amin, Amax,                               &
+# ifdef MASKING
+     &                  GRID(ng) % rmask,                               &
+# endif
+# ifdef CHECKSUM
+     &                  ta_ini,                                         &
+     &                  checksum = Fhash)
+# else
+     &                  AC_ini)
+# endif
+      IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+        IF (Master) THEN
+          WRITE (stdout,60) string, TRIM(Vname(1,idACen)),              &
+     &                      IniRec, TRIM(ncname)
+        END IF
+        exit_flag=2
+        ioerror=status
+        RETURN
+      ELSE
+        IF (Master) THEN
+# ifdef CHECKSUM
+          WRITE (stdout,70) TRIM(Vname(2,idACen)), Amin, Amax,          &
+     &                      Fhash
+# else
+          WRITE (stdout,70) TRIM(Vname(2,idACen)), Amin, Amax
+# endif
+        END IF
+      END IF
 !
 !-----------------------------------------------------------------------
 ! Close GRID NetCDF file.
 !-----------------------------------------------------------------------
 !
-      status=nf90_close(ncIWINIid(ng))
-      ncIWINIid(ng)=-1
+      CALL netcdf_close (ng, model, ncIWINIid(ng), TRIM(ncname),        &
+     &                   .FALSE.)
 
-!# ifdef PROFILE
-!
-!-----------------------------------------------------------------------
-!  Turn off input data time wall clock.
-!-----------------------------------------------------------------------
-!
-!      CALL wclock_off (ng, iNLM, 3)
-!# endif
-  10  FORMAT (/'GET_INWAVE_INI - unable to open input NetCDF file: ',a)
-  20  FORMAT (/'GET_INWAVE_INI - unable to find the array: ',a)
-  30  FORMAT (/'GET_INWAVE_INI - unable to read the array: ',a)
-
+ 5    FORMAT (/,' GET_INWAVE_INI - error while opening file: ', a)
+ 60   FORMAT (/,a,'GET_STATE - error while reading variable: ',a,2x,    &
+     &        'at time record = ',i3,/,18x,'in input NetCDF file: ',a)
+#ifdef CHECKSUM
+ 70   FORMAT (16x,'- ',a,/,19x,'(Min = ',1p,e15.8,                      &
+     &        ' Max = ',1p,e15.8,' CheckSum = ',i0,')')
+#else
+ 70   FORMAT (16x,'- ',a,/,19x,'(Min = ',1p,e15.8,                      &
+     &        ' Max = ',1p,e15.8,')')
+#endif
 
       RETURN
       END SUBROUTINE get_inwave_ini
 #else
-      SUBROUTINE get_inwave_ini (ng, LBi, UBi, LBj, UBj, nc_name, Ac_ini,&
-     &   Cx_ini, Cy_ini, Ct_ini, Ta)
+      SUBROUTINE get_inwave_ini (ng, LBi, UBi, LBj, UBj, nc_name,       &
+     &                           Ac_ini, Cx_ini, Cy_ini, Ct_ini, Ta)
       RETURN
       END SUBROUTINE get_inwave_ini
 #endif

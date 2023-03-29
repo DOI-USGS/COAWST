@@ -36,9 +36,8 @@ eudimID = netcdf.defDim(nc_bndry,'eu',MP);
 evdimID = netcdf.defDim(nc_bndry,'ev',M);
 
 etime_dimID = netcdf.defDim(nc_bndry,'energy_time',length(time));
-%eangle_dimID = netcdf.defDim(nc_bndry,'energy_angle',Nbins+1);
-%eanglec_dimID = netcdf.defDim(nc_bndry,'energy_angle_c',length(nbin));
-eanglec_dimID = netcdf.defDim(nc_bndry,'energy_angle',length(nbin));
+eanglec_dimID = netcdf.defDim(nc_bndry,'energy_angle_c',length(nbin));
+eangle_dimID = netcdf.defDim(nc_bndry,'energy_angle',length(nbin));
 TA_dimID = netcdf.defDim(nc_bndry,'TA_dim',1);
 
 NT=length(time);
@@ -58,6 +57,11 @@ ecID = netcdf.defVar(nc_bndry,'energy_angle_c','double',eanglec_dimID);
 netcdf.putAtt(nc_bndry,ecID,'long_name','direction respect to the north of the bin');
 netcdf.putAtt(nc_bndry,ecID,'units','degrees');
 netcdf.putAtt(nc_bndry,ecID,'field','energy_angle_c, scalar, series');
+
+ecID = netcdf.defVar(nc_bndry,'energy_angle','double',eangle_dimID);
+netcdf.putAtt(nc_bndry,ecID,'long_name','direction respect to the north of the bin');
+netcdf.putAtt(nc_bndry,ecID,'units','degrees');
+netcdf.putAtt(nc_bndry,ecID,'field','energy_angle, scalar, series');
 
 TAID = netcdf.defVar(nc_bndry,'TA_dim','double',TA_dimID);
 netcdf.putAtt(nc_bndry,TAID,'long_name','representative absolute peak period');
@@ -138,6 +142,7 @@ netcdf.close(nc_bndry)
 
 ncwrite(bndfile,'energy_time',time(1,1:NT));
 ncwrite(bndfile,'energy_angle_c',dir);
+ncwrite(bndfile,'energy_angle',dir);
 ncwrite(bndfile,'TA_dim',1);
 
 if obc(3)==1

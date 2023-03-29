@@ -260,12 +260,11 @@
 !  Compute the absolute group velocities in space direction (Xi and ETAi)
 !========================================================================
 !
-# ifdef DOPPLER
-              cx_rho(i,j,d)=cgrx+u_rho(i,j)
-              cy_rho(i,j,d)=cgry+v_rho(i,j)
-# else
               cx_rho(i,j,d)=cgrx
               cy_rho(i,j,d)=cgry
+# ifdef DOPPLER
+              cx_rho(i,j,d)=cx_rho(i,j,d)+u_rho(i,j)
+              cy_rho(i,j,d)=cy_rho(i,j,d)+v_rho(i,j)
 # endif
             ENDIF
           ENDDO
@@ -337,6 +336,15 @@
             wr=twopi/MAX(Tamin,Tr(i,j,d))
             wa=wr
 #  ifdef DOPPLER
+#   ifdef DOPPLER_SHEAR
+            cff=GRID(ng)%Hz(i,j,N(ng))
+            DO k=N(ng)-2,N(ng)-1
+              cff=cff+GRID(ng)%Hz(i,j,k)
+            END DO
+            S=OCEAN(ng)%u(i,j,N(ng),nnew)-OCEAN(ng)%u(i,j,N(ng)-2,nnew)
+            wa=wa*sqrt(1.0_r8+S/cff/g*cx_rho(i,j,d))
+!    &         (u_dir(i,j)-cx_rho(i,j,d)))
+#   endif
             wa=wa+kwc(i,j,d)*u_dir(i,j)
 #  endif
             Ta(i,j,d)=MAX(Tamin,MIN(twopi/wa,Tamax))

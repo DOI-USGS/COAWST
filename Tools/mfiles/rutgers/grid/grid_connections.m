@@ -83,6 +83,7 @@ adjacent  = [ieast, inorth, iwest, isouth];   % Receiver grid boundary
 spherical = S.spherical;                      % spherical grid switch
 
 debugging = false;
+%debugging = true;  %jcw
 
 % Compute grid maximum spacing.  In refinement, the donor grid is
 % coarser than receiver grid so the grid spacing is larger.
@@ -131,7 +132,9 @@ for dg=1:S.Ngrids
         end
       end
 
-      if any(IN)
+      if any(IN)   %orig
+%     if any(IN(:))   %jcw
+%      if (sum(IN(:))==size(IN,1).*size(IN,2))
         IsInside(rg,dg) = true;
         C(dg).ToGrid = [C(dg).ToGrid rg];      
         C(dg).count  = C(dg).count + 1;      
@@ -157,7 +160,7 @@ for dg = 1:S.Ngrids
     for i = 1: C(dg).count
       ng = C(dg).ToGrid(i);
       if (ng ~= rg)
-        IsInside(ng,dg) = false;        % reject indirect connection
+        IsInside(ng,dg) = false;        % reject indirect connection   %jcw commented out
       end
     end
   end
@@ -645,8 +648,10 @@ if (S.Ngrids == 2)
       Xmax=max(X(:)-G(rg).lon_rho(:));
     else
       X=G(dg).x_rho(Imin(rg):Imax(rg)+1, Jmin(rg):Jmax(rg)+1);
-      Xmin=min(X(:)-G(rg).x_rho(:));
-      Xmax=max(X(:)-G(rg).x_rho(:));
+%     Xmin=min(X(:)-G(rg).x_rho(:));  jcw orig
+%     Xmax=max(X(:)-G(rg).x_rho(:));  jcw orig
+      Xmin=min(min(X(:,:)-G(rg).x_rho(1:Imax(rg)+1-Imin(rg),:)));
+      Xmax=max(max(X(:,:)-G(rg).x_rho(1:Imax(rg)+1-Imin(rg),:)));
     end
     if (Xmin < eps && Xmax < eps)
       S.contact(cr).hybrid   = true;

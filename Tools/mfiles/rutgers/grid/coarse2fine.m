@@ -40,7 +40,7 @@ function F = coarse2fine(Ginp,Gout,Gfactor,varargin)
 % in ROMS from an intermediate very fine resolution grid. It Also
 % allows Gfactor=1 to extract a small grid from a larger one.
 
-if 0~=mod(Gfactor-1,2) || Gfactor >= 27
+if 0~=mod(Gfactor-1,2) || Gfactor >= 57
   error([' COARSE2FINE: illegal refinement factor, Gfactor = ',         ...
          num2str(Gfactor)]);
 end

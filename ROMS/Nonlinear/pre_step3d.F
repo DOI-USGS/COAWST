@@ -71,11 +71,12 @@
      &                      GRID(ng) % rmask,                           &
      &                      GRID(ng) % umask,                           &
      &                      GRID(ng) % vmask,                           &
-#  if defined SOLAR_SOURCE && defined WET_DRY
+#  if defined WET_DRY
      &                      GRID(ng) % rmask_wet,                       &
+     &                      GRID(ng) % umask_wet,                       &
+     &                      GRID(ng) % vmask_wet,                       &
 #  endif
 # endif
-
      &                      GRID(ng) % pm,                              &
      &                      GRID(ng) % pn,                              &
      &                      GRID(ng) % Hz,                              &
@@ -129,8 +130,8 @@
      &                            nrhs, nstp, nnew,                     &
 # ifdef MASKING
      &                            rmask, umask, vmask,                  &
-#  if defined SOLAR_SOURCE && defined WET_DRY
-     &                            rmask_wet,                            &
+#  if defined WET_DRY
+     &                            rmask_wet, umask_wet, vmask_wet,      &
 #  endif
 # endif
      &                            pm, pn,                               &
@@ -185,8 +186,10 @@
       real(r8), intent(in) :: rmask(LBi:,LBj:)
       real(r8), intent(in) :: umask(LBi:,LBj:)
       real(r8), intent(in) :: vmask(LBi:,LBj:)
-#   if defined SOLAR_SOURCE && defined WET_DRY
+#   if defined WET_DRY
       real(r8), intent(in) :: rmask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: umask_wet(LBi:,LBj:)
+      real(r8), intent(in) :: vmask_wet(LBi:,LBj:)
 #   endif
 #  endif
       real(r8), intent(in) :: pm(LBi:,LBj:)
@@ -243,8 +246,10 @@
       real(r8), intent(in) :: rmask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: umask(LBi:UBi,LBj:UBj)
       real(r8), intent(in) :: vmask(LBi:UBi,LBj:UBj)
-#   if defined SOLAR_SOURCE && defined WET_DRY
+#   if defined WET_DRY
       real(r8), intent(in) :: rmask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: umask_wet(LBi:UBi,LBj:UBj)
+      real(r8), intent(in) :: vmask_wet(LBi:UBi,LBj:UBj)
 #   endif
 #  endif
       real(r8), intent(in) :: pm(LBi:UBi,LBj:UBj)
@@ -743,11 +748,7 @@
               END DO
             END DO
             DO i=Istr,Iend
-#  ifdef SED_MORPH
-              FC(i,0)=W(i,j,0)*t(i,j,1,nstp,itrc)
-#  else
               FC(i,0)=0.0_r8
-#  endif
               FC(i,N(ng))=0.0_r8
             END DO
 !
@@ -767,11 +768,7 @@
               END DO
             END DO
             DO i=Istr,Iend
-#  ifdef SED_MORPH
-              FC(i,0)=W(i,j,0)*t(i,j,1,nstp,itrc)
-#  else
               FC(i,0)=0.0_r8
-#  endif
               FC(i,N(ng))=0.0_r8
             END DO
 !
@@ -794,11 +791,7 @@
               END DO
             END DO
             DO i=Istr,Iend
-#  ifdef SED_MORPH
-              FC(i,0)=W(i,j,0)*t(i,j,1,nstp,itrc)
-#  else
               FC(i,0)=0.0_r8
-#  endif
               FC(i,N(ng))=0.0_r8
             END DO
 !
@@ -824,13 +817,7 @@
               END DO
             END DO
             DO i=Istr,Iend
-#  ifdef SED_MORPH
-              FC(i,0)=W(i,j,0)*2.0_r8*                                  &
-     &                (cff2*t(i,j,1,nstp,itrc)-                         &
-     &                 cff3*t(i,j,2,nstp,itrc))
-#  else
               FC(i,0)=0.0_r8
-#  endif
 #  ifdef WEC_VF
               FC(i,1)=(W(i,j,1)+W_stokes(i,j,1))*                       &
 #  else
@@ -1003,6 +990,9 @@
 # else
           FC(i,0)=dt(ng)*bustr(i,j)
           FC(i,N(ng))=dt(ng)*sustr(i,j)
+#  ifdef WET_DRY
+          FC(i,N(ng))=FC(i,N(ng))*umask_wet(i,j)
+#  endif
 # endif
         END DO
 !
@@ -1108,6 +1098,9 @@
 # else
             FC(i,0)=dt(ng)*bvstr(i,j)
             FC(i,N(ng))=dt(ng)*svstr(i,j)
+#  ifdef WET_DRY
+            FC(i,N(ng))=FC(i,N(ng))*vmask_wet(i,j)
+#  endif
 # endif
           END DO
 !

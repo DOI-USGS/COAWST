@@ -45,6 +45,10 @@
 #define SSW_BBL
 #ifdef SSW_BBL
 # define SSW_CALC_ZNOT
+# define SSW_LOGINT
+/* define one of these 2 */
+# define SSW_LOGINT_WBL
+# undef  SSW_LOGINT_DIRECT
 #endif
 
 /* Vegetation flags*/
@@ -73,16 +77,6 @@
 #  define RI_SPLINES
 # endif
 
-# undef SEDIMENT
-# ifdef SEDIMENT
-#  define SUSPLOAD
-#  undef  BEDLOAD_SOULSBY
-#  undef  BEDLOAD_MPM
-#  undef SED_MORPH
-# endif
-# if defined SEDIMENT || defined SG_BBL || defined MB_BBL || defined SSW_BBL
-#  undef ANA_SEDIMENT
-# endif
 # define ANA_SMFLUX
 # define ANA_STFLUX
 # define ANA_SSFLUX

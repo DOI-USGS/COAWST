@@ -424,6 +424,7 @@ then
        [ "$cmplr" == "intel" ] || [ "$cmplr" == "intel_debug" ]                     || \
        [ "$cmplr" == "so_intel" ] || [ "$cmplr" == "so_intel_debug" ]               || \
        [ "$cmplr" == "datarmor_intel" ] || [ "$cmplr" == "datarmor_intel_debug" ]   || \
+       [ "$cmplr" == "gfortran" ]                                                   || \
        [ "$cmplr" == "gnu" ] || [ "$cmplr" == "gnu_debug" ]                         || \
        [ "$cmplr" == "hera.intel" ] || [ "$cmplr" == "orion.intel" ]                || \
        [ "$cmplr" == "hera.gnu" ]   || [ "$cmplr" == "jet.intel" ]                  || \
@@ -452,6 +453,7 @@ then
        [ "$cmplr" == "intel" ] || [ "$cmplr" == "intel_debug" ]                     || \
        [ "$cmplr" == "so_intel" ] || [ "$cmplr" == "so_intel_debug" ]               || \
        [ "$cmplr" == "datarmor_intel" ] || [ "$cmplr" == "datarmor_intel_debug" ]   || \
+       [ "$cmplr" == "gfortran" ]                                                   || \
        [ "$cmplr" == "gnu" ] || [ "$cmplr" == "gnu_debug" ]                         || \
        [ "$cmplr" == "hera.intel" ] || [ "$cmplr" == "orion.intel" ]                || \
        [ "$cmplr" == "hera.gnu" ]   || [ "$cmplr" == "jet.intel" ]                  || \

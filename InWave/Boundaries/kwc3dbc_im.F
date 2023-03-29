@@ -56,7 +56,8 @@
       real(r8) :: F, FDER, tanhkh
       real(r8) :: cff, cff1, cff2
       real(r8), parameter :: maxErr = 0.1_r8
-      real(r8), parameter :: kwc_max = 10.0_r8
+!     real(r8), parameter :: kwc_max = 10.0_r8
+      real(r8), parameter :: kwc_max = 1.0_r8
       real(r8), parameter :: kwc_min = 0.015_r8
 
 # include "set_bounds.h"

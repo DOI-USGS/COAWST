@@ -998,7 +998,8 @@
           bry_update=.FALSE.
           IF (DOMAIN(ng)%Western_Edge(tile)) THEN
             DO j=JstrR,JendR
-              cff=Dcrit(ng)-GRID(ng)%h(0,j)
+!jcw          cff=Dcrit(ng)-GRID(ng)%h(0,j)
+              cff=0.95_r8*Dcrit(ng)-GRID(ng)%h(0,j)
               IF (BOUNDARY(ng)%zeta_west(j).le.cff) THEN
                 BOUNDARY(ng)%zeta_west(j)=cff
               END IF
@@ -1016,7 +1017,8 @@
           bry_update=.FALSE.
           IF (DOMAIN(ng)%Eastern_Edge(tile)) THEN
             DO j=JstrR,JendR
-              cff=Dcrit(ng)-GRID(ng)%h(Lm(ng)+1,j)
+!jcw          cff=Dcrit(ng)-GRID(ng)%h(Lm(ng)+1,j)
+              cff=0.95_r8*Dcrit(ng)-GRID(ng)%h(Lm(ng)+1,j)
               IF (BOUNDARY(ng)%zeta_east(j).le.cff) THEN
                 BOUNDARY(ng)%zeta_east(j)=cff
               END IF
@@ -1034,7 +1036,8 @@
           bry_update=.FALSE.
           IF (DOMAIN(ng)%Southern_Edge(tile)) THEN
             DO i=IstrR,IendR
-              cff=Dcrit(ng)-GRID(ng)%h(i,0)
+!jcw          cff=Dcrit(ng)-GRID(ng)%h(i,0)
+              cff=0.95_r8*Dcrit(ng)-GRID(ng)%h(i,0)
               IF (BOUNDARY(ng)%zeta_south(i).le.cff) THEN
                 BOUNDARY(ng)%zeta_south(i)=cff
               END IF
@@ -1052,7 +1055,8 @@
           bry_update=.FALSE.
           IF (DOMAIN(ng)%Northern_Edge(tile)) THEN
             DO i=IstrR,IendR
-              cff=Dcrit(ng)-GRID(ng)%h(i,Mm(ng)+1)
+!jcw          cff=Dcrit(ng)-GRID(ng)%h(i,Mm(ng)+1)
+              cff=0.95_r8*Dcrit(ng)-GRID(ng)%h(i,Mm(ng)+1)
               IF (BOUNDARY(ng)%zeta_north(i).le.cff) THEN
                 BOUNDARY(ng)%zeta_north(i)=cff
               END IF

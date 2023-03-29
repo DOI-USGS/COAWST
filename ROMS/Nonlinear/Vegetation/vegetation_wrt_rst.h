@@ -16,9 +16,10 @@
 */
 # if defined VEG_DRAG || defined VEG_BIOMASS
 !
-!  Write out vegetation properties
-!
-      DO i=1,NVEGP
+!  Write out vegetation properties 
+! 
+      DO i=1,NVEGP 
+        IF (Hout(idvprp(i),ng)) THEN 
           scale=1.0_r8
           gtype=gfactor*r3dvar
           status=nf_fwrite3d(ng, iNLM, RST(ng)%ncid,                    &
@@ -37,13 +38,15 @@
             ioerror=status
             RETURN
           END IF
-      END DO
-# endif
+        END IF
+      END DO 
+# endif 
 !
 # ifdef VEG_STREAMING
 !
-!  Write out wave dissipation due to vegetation
-!
+!  Write out wave dissipation due to vegetation 
+! 
+      IF (Hout(idWdvg,ng)) THEN 
         scale=1.0_r8
         gtype=gfactor*r2dvar
         status=nf_fwrite2d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idWdvg), &
@@ -61,10 +64,32 @@
           ioerror=status
           RETURN
         END IF
+      END IF
+!
+!  Write out spectral Cd due to wave vegetation. 
+! 
+      IF (Hout(idCdvg,ng)) THEN 
+        scale=1.0_r8
+        gtype=gfactor*r2dvar
+        status=nf_fwrite2d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idCdvg), &
+     &                     RST(ng)%Rindex, gtype,                       &
+     &                     LBi, UBi, LBj, UBj, scale,                   &
+# ifdef MASKING
+     &                     GRID(ng) % rmask,                            &
+# endif
+     &                     VEG(ng)%Cdwave_veg )
+        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+          IF (Master) THEN
+            WRITE (stdout,10) TRIM(Vname(1,idCdvg)), RST(ng)%Rindex
+          END IF
+          exit_flag=3
+          ioerror=status
+          RETURN
+        END IF
+      END IF
 # endif
 !
 # ifdef MARSH_DYNAMICS
-#  ifdef MARSH_WAVE_THRUST
 !
 !  Store marsh masking from marsh cells.
 !
@@ -85,9 +110,12 @@
           ioerror=status
           RETURN
         END IF
+!      END IF
+#  ifdef MARSH_WAVE_THRUST 
 !
-!  Total thrust from all directions due to waves.
+!  Write total thrust in all directions due to waves.
 !
+!      IF (Hout(idTtot,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r2dvar
         status=nf_fwrite2d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idTtot), &
@@ -97,23 +125,27 @@
      &                     GRID(ng) % rmask,                            &
 #   endif
      &                     VEG(ng)%Thrust_total)
-        IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
-          IF (Master) THEN
-            WRITE (stdout,10) TRIM(Vname(1,idTtot)), RST(ng)%Rindex
-          END IF
-          exit_flag=3
-          ioerror=status
-          RETURN
-        END IF
+         IF (FoundError(status, nf90_noerr, __LINE__, MyFile)) THEN
+           IF (Master) THEN
+             WRITE (stdout,10) TRIM(Vname(1,idTtot)), RST(ng)%Rindex
+           END IF
+           exit_flag=3
+           ioerror=status
+           RETURN
+         END IF
+!       END IF
+!     END DO 
+#  endif 
 !
-#   ifdef MARSH_SED_EROSION
+#  if defined MARSH_SED_EROSION
 !
-!  Marsh sediment flux out from marsh cells from each sedclass.
+!  Write out marsh sediment flux out from marsh cells from each sedclass.
 !
       DO i=1,NST
-        scale=1.0_r8
-        gtype=gfactor*r2dvar
-        status=nf_fwrite2d(ng, iNLM, RST(ng)%ncid,                      &
+!        IF (Hout(idTmfo(i),ng)) THEN
+          scale=1.0_r8
+          gtype=gfactor*r2dvar
+          status=nf_fwrite2d(ng, iNLM, RST(ng)%ncid,                    &
      &                     RST(ng)%Vid(idTmfo(i)),                      &
      &                     RST(ng)%Rindex, gtype,                       &
      &                     LBi, UBi, LBj, UBj, scale,                   &
@@ -136,6 +168,7 @@
 !
 !  Amount of marsh retreat from all directions.
 !
+!      IF (Hout(idTmmr,ng)) THEN
         scale=1.0_r8
         gtype=gfactor*r2dvar
         status=nf_fwrite2d(ng, iNLM, RST(ng)%ncid, RST(ng)%Vid(idTmmr), &
@@ -153,8 +186,9 @@
           ioerror=status
           RETURN
         END IF
+!      END IF 
 !
 #   endif
 #  endif
-# endif
+!# endif
 
