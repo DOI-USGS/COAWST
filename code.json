@@ -1,0 +1,52 @@
+[
+  {
+    "name": "COAWST",
+    "organization": "U.S. Geological Survey",
+    "description": "Coupled-Ocean-Atmosphere-Wave Sediment Transport Modeling System",
+    "version": "v3.4",
+    "status": "Development",
+
+    "permissions": {
+      "usageType": "openSource",
+      "licenses": [
+        {
+          "name": "Public Domain, CC0-1.0",
+           "URL": "https://code.usgs.gov/coawstmodel/COAWST/blob/master/LICENSE.md"
+        }
+      ]
+    },
+    "homepageURL": "https://code.usgs.gov/coawstmodel/COAWST",
+    "downloadURL": "https://code.usgs.gov/coawstmodel/COAWST/-/archive/master/COAWST-master.zip",
+    "disclaimerURL": "https://code.usgs.gov/coawstmodel/COAWST/blob/master/DISCLAIMER.md",
+    "repositoryURL": "https://code.usgs.gov/coawstmodel/COAWST/COAWST.git",
+    "vcs": "git",
+
+
+    "laborHours": 0,
+
+    "tags": [
+      "Oceanography",
+      "Wave dynamics",
+      "Atmosphere dynamics",
+      "Sediment transport",
+      "Numerical modeling"
+    ],
+
+    "languages": [
+      "Fortran",
+      "C",
+      "C++",
+      "MATLAB",
+      "Shell"
+    ],
+
+    "contact": {
+      "name": "John C. Warner",
+      "email": "jcwarner@usgs.gov"
+    },
+
+    "date": {
+      "metadataLastUpdated": "2019-03-04"
+    }
+  }
+]
