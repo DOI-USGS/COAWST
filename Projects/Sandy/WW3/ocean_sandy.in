@@ -77,12 +77,12 @@
 
 ! Number of nested grids.
 
-      Ngrids =  2
+      Ngrids =  1
 
 ! Number of grid nesting layers.  This parameter is used to allow refinement
 ! and composite grid combinations.
 
-  NestLayers =  2
+  NestLayers =  1
 
 ! Number of grids in each nesting layer [1:NestLayers].
 
@@ -1077,10 +1077,10 @@ PIO_I2C_Preq = 65                 ! Maximum pending I2C requests
 
 ! Input NetCDF file names, [1:Ngrids].
 
-     GRDNAME == Projects/Sandy/Sandy_roms_grid.nc \
-                Projects/Sandy/Sandy_roms_grid_ref3.nc
-     ININAME == Projects/Sandy/Sandy_ini.nc \
-                Projects/Sandy/Sandy_ini_ref3.nc
+     GRDNAME == Projects/Sandy/Sandy_roms_grid.nc 
+!                Projects/Sandy/Sandy_roms_grid_ref3.nc
+     ININAME == Projects/Sandy/Sandy_ini.nc
+!                Projects/Sandy/Sandy_ini_ref3.nc
      ITLNAME == ocean_itl.nc
      IRPNAME == ocean_irp.nc
      IADNAME == ocean_iad.nc
@@ -1138,8 +1138,8 @@ PIO_I2C_Preq = 65                 ! Maximum pending I2C requests
 ! the last one.
 
      NCLMFILES == 1                         ! number of climate files
-     CLMNAME == Projects/Sandy/Sandy_clm.nc \
-                Projects/Sandy/Sandy_clm_ref3.nc
+     CLMNAME == Projects/Sandy/Sandy_clm.nc 
+!                Projects/Sandy/Sandy_clm_ref3.nc
 
 
 ! Input climatology nudging coefficients file name.
@@ -1173,23 +1173,23 @@ PIO_I2C_Preq = 65                 ! Maximum pending I2C requests
 ! the last one.
 
      NFFILES == 1
-     FRCNAME == Projects/Sandy/romsforc_NARR_Sandy2012.nc \
-                Projects/Sandy/romsforc_NARR_Sandy2012.nc
+     FRCNAME == Projects/Sandy/romsforc_NARR_Sandy2012.nc 
+!                Projects/Sandy/romsforc_NARR_Sandy2012.nc
 
 ! Output NetCDF file names, [1:Ngrids].
 
      DAINAME == ocean_dai.nc
      GSTNAME == ocean_gst.nc
-     RSTNAME == Sandy_ocean_rst.nc \
-                Sandy_ocean_ref3_rst.nc
-     HISNAME == Sandy_ocean_his.nc \
-                Sandy_ocean_ref3_his.nc
+     RSTNAME == Sandy_ocean_rst.nc 
+!                Sandy_ocean_ref3_rst.nc
+     HISNAME == Sandy_ocean_his.nc 
+!                Sandy_ocean_ref3_his.nc
      QCKNAME == ocean_qck.nc
      TLMNAME == ocean_tlm.nc
      TLFNAME == ocean_tlf.nc
      ADJNAME == ocean_adj.nc
-     AVGNAME == Sandy_ocean_avg.nc \
-                Sandy_ocean_ref3_avg.nc
+     AVGNAME == Sandy_ocean_avg.nc 
+!                Sandy_ocean_ref3_avg.nc
      HARNAME == ocean_har.nc
      DIANAME == ocean_dia.nc
      STANAME == ocean_sta.nc
