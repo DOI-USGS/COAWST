@@ -1,0 +1,444 @@
+subroutine SwanGridFace ( nfaces, ncells, nverts, xcugrd, ycugrd, kvertf )
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering and Geosciences              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmer: Marcel Zijlema                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2023  Delft University of Technology
+!
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
+!
+!
+!   Authors
+!
+!   40.80: Marcel Zijlema
+!
+!   Updates
+!
+!   40.80, July 2007: New subroutine
+!
+!   Purpose
+!
+!   Fills face-based data structure
+!
+!   Method
+!
+!   Based on unstructured grid
+!
+!   Modules used
+!
+    use ocpcomm4
+    use SwanGridobjects
+!
+    implicit none
+!
+!   Argument variables
+!
+    integer, intent(in)                       :: ncells  ! number of cells in grid
+    integer, intent(in)                       :: nfaces  ! number of faces in grid
+    integer, intent(in)                       :: nverts  ! number of vertices in grid
+    !
+    integer, dimension(2, nfaces), intent(in) :: kvertf  ! vertices of the face
+                                                         ! (must be filled by a gridgenerator!)
+    !
+    real, dimension(nverts), intent(in)       :: xcugrd  ! the x-coordinates of the grid vertices
+    real, dimension(nverts), intent(in)       :: ycugrd  ! the y-coordinates of the grid vertices
+!
+!   Local variables
+!
+    integer                               :: icell     ! loop counter over cells
+    integer                               :: icell1    ! sequence number of cell 1 adjacent to present face
+    integer                               :: icell2    ! sequence number of cell 2 adjacent to present face
+    integer                               :: icelll    ! sequence number of left cell adjacent to present face
+    integer                               :: icellr    ! sequence number of right cell adjacent to present face
+    integer                               :: iface     ! loop counter over faces
+    integer, save                         :: ient = 0  ! number of entries in this subroutine
+    integer                               :: ivert     ! loop counter over vertices
+    integer                               :: j         ! loop counter
+    integer                               :: jf        ! loop counter
+    integer                               :: k         ! counter
+    integer                               :: v1        ! first vertex of present face
+    integer                               :: vl1       ! first vertex of local face for given cell
+    integer                               :: v2        ! second vertex of present face
+    integer                               :: vl2       ! second vertex of local face for given cell
+    !
+    integer, dimension(:  ), allocatable  :: cntv1     ! array of vertex counter for for vertex 1
+    integer, dimension(:  ), allocatable  :: cntv2     ! array of vertex counter for for vertex 2
+    integer, dimension(:,:), allocatable  :: iflist1   ! list of index faces stored for vertex 1
+    integer, dimension(:,:), allocatable  :: iflist2   ! list of index faces stored for vertex 2
+    !
+    real                                  :: dxb       ! distance between centroid and boundary face
+    real                                  :: dxf       ! distance between circumcenters adjacent to present face
+    real                                  :: dxl       ! distance between face center and circumcenter of left cell
+    real                                  :: dxr       ! distance between face center and circumcenter of right cell
+    real                                  :: lengthf   ! length of present face
+    real                                  :: nx        ! x-component of normal to face
+    real                                  :: ny        ! y-component of normal to face
+    real                                  :: xcb       ! x-coordinate of centroid adjacent to boundary face
+    real                                  :: xcf       ! x-coordinate of face center
+    real                                  :: xcl       ! x-coordinate of circumcenter of left cell
+    real                                  :: xcr       ! x-coordinate of circumcenter of right cell
+    real                                  :: xdiff     ! difference in x-coordinate between vertex 2 and vertex 1
+    real                                  :: xv1       ! x-coordinate of vertex 1
+    real                                  :: xv2       ! x-coordinate of vertex 2
+    real                                  :: ycb       ! y-coordinate of centroid adjacent to boundary face
+    real                                  :: ycf       ! y-coordinate of face center
+    real                                  :: ycl       ! y-coordinate of circumcenter of left cell
+    real                                  :: ycr       ! y-coordinate of circumcenter of right cell
+    real                                  :: ydiff     ! difference in y-coordinate between vertex 2 and vertex 1
+    real                                  :: yv1       ! y-coordinate of vertex 1
+    real                                  :: yv2       ! y-coordinate of vertex 2
+    !
+    logical                               :: facefound ! true if face is found
+    !
+    type(celltype), dimension(:), pointer :: cell      ! datastructure for cells with their attributes
+    type(facetype), dimension(:), pointer :: face      ! datastructure for faces with their attributes
+    type(verttype), dimension(:), pointer :: vert      ! datastructure for vertices with their attributes
+!
+!   Structure
+!
+!   Description of the pseudo code
+!
+!   Source text
+!
+    if (ltrace) call strace (ient,'SwanGridFace')
+    !
+    ! point to vertex, cell and face objects
+    !
+    vert => gridobject%vert_grid
+    cell => gridobject%cell_grid
+    face => gridobject%face_grid
+    !
+    ! loop over all faces
+    !
+    do iface = 1, nfaces
+       !
+       ! identification number
+       !
+       face(iface)%atti(FACEID) = iface
+       !
+       ! Fill vertices
+       !
+       v1 = kvertf(1,iface)
+       v2 = kvertf(2,iface)
+       face(iface)%atti(FACEV1) = v1
+       face(iface)%atti(FACEV2) = v2
+       !
+       ! compute length of face
+       !
+       xdiff   = xcugrd(v2) - xcugrd(v1)
+       ydiff   = ycugrd(v2) - ycugrd(v1)
+       lengthf = sqrt( xdiff*xdiff + ydiff*ydiff )
+       !
+       ! fill length of face and normal to face
+       !
+       face(iface)%attr(FACELEN  ) = lengthf
+       face(iface)%attr(FACENORMX) =  ydiff/lengthf
+       face(iface)%attr(FACENORMY) = -xdiff/lengthf
+       !
+       ! compute coordinates of midpoint of face
+       !
+       face(iface)%attr(FACEMX) = 0.5*(xcugrd(v1) + xcugrd(v2))
+       face(iface)%attr(FACEMY) = 0.5*(ycugrd(v1) + ycugrd(v2))
+       !
+       face(iface)%atti(FACEC1 ) = 0
+       face(iface)%atti(FACEC2 ) = 0
+       face(iface)%atti(FACECL ) = 0
+       face(iface)%atti(FACECR ) = 0
+       face(iface)%atti(FMARKER) = 0
+       face(iface)%atti(FBTYPE ) = 0
+       !
+    enddo
+    !
+    allocate(cntv1  (nverts   ))
+    allocate(cntv2  (nverts   ))
+    allocate(iflist1(nverts,10))
+    allocate(iflist2(nverts,10))
+    !
+    cntv1   =  0
+    cntv2   =  0
+    iflist1 = -1
+    iflist2 = -2
+    !
+    do iface = 1, nfaces
+       !
+       v1 = face(iface)%atti(FACEV1)
+       v2 = face(iface)%atti(FACEV2)
+       !
+       k = cntv1(v1) +1
+       if ( k > 10 ) then
+          call msgerr ( 4, 'SwanGridFace: more than 10 faces around vertex ' )
+          return
+       endif
+       cntv1  (v1  ) = k
+       iflist1(v1,k) = iface
+       !
+       k = cntv2(v2) +1
+       if ( k > 10 ) then
+          call msgerr ( 4, 'SwanGridFace: more than 10 faces around vertex ' )
+          return
+       endif
+       cntv2  (v2  ) = k
+       iflist2(v2,k) = iface
+       !
+    enddo
+    !
+    ! loop over all cells
+    !
+    do icell = 1, ncells
+       !
+       ! loop over all local faces of the cell
+       !
+       do jf = 1, cell(icell)%nof
+          !
+          ! determine vertices of the local face
+          !
+          vl1 = cell(icell)%face(jf)%atti(FACEV1)
+          vl2 = cell(icell)%face(jf)%atti(FACEV2)
+          !
+          ! search for identification number of that face
+          !
+          facefound = .false.
+          !
+          kloop: do k = 1, 10
+             !
+             iface = iflist1(vl1,k)
+             !
+             do j = 1, 10
+                if ( iflist2(vl2,j) == iface ) then
+                   facefound = .true.
+                   exit kloop
+                endif
+             enddo
+             !
+          enddo kloop
+          !
+          if ( .not.facefound ) then
+             !
+             jloop: do j = 1, 10
+                !
+                iface = iflist2(vl1,j)
+                !
+                do k = 1, 10
+                   if ( iflist1(vl2,k) == iface ) then
+                      facefound = .true.
+                      exit jloop
+                   endif
+                enddo
+                !
+             enddo jloop
+             !
+          endif
+          !
+          if ( facefound ) then
+             cell(icell)%face(jf)%atti(FACEID) = iface
+          else
+             call msgerr ( 4, 'inconsistency found in SwanGridFace: no face found ' )
+             return
+          endif
+          !
+          v1 = face(iface)%atti(FACEV1)
+          v2 = face(iface)%atti(FACEV2)
+          !
+          ! Requirement: face(iface)%atti(FACEC1) < face(iface)%atti(FACEC2)
+          !
+          if ( v1 == vl1 ) then
+             if ( face(iface)%atti(FACEC1) == 0 ) then
+                face(iface)%atti(FACEC1) = icell
+             else
+                call msgerr ( 4, 'SwanGridFace: not all cells have counterclockwise order of vertices ' )
+                return
+             endif
+          else
+             if ( face(iface)%atti(FACEC2) == 0 ) then
+                face(iface)%atti(FACEC2) = icell
+             else
+                call msgerr ( 4, 'SwanGridFace: not all cells have counterclockwise order of vertices ' )
+                return
+             endif
+          endif
+          !
+       enddo
+       !
+    enddo
+    !
+    deallocate(cntv1,cntv2,iflist1,iflist2)
+    !
+    ! loop over all faces
+    !
+    do iface = 1, nfaces
+       !
+       ! marks boundary face
+       !
+       if (face(iface)%atti(FACEC2) == 0) face(iface)%atti(FMARKER) = 1
+       !
+       ! assign left and right cells adjacent to face
+       ! note: the orientation of the normal at face is such that it is
+       !       pointing out of left cell and into right cell
+       !
+       nx = face(iface)%attr(FACENORMX)
+       ny = face(iface)%attr(FACENORMY)
+       !
+       if ( nx > 0. ) then
+          icelll = face(iface)%atti(FACEC1)
+          icellr = face(iface)%atti(FACEC2)
+       else
+          icelll = face(iface)%atti(FACEC2)
+          icellr = face(iface)%atti(FACEC1)
+       endif
+       !
+       face(iface)%atti(FACECL) = icelll
+       face(iface)%atti(FACECR) = icellr
+       !
+       if ( .not. nx > 0. ) then
+          nx = -nx
+          ny = -ny
+       endif
+       !
+       face(iface)%attr(FACENORMX) = nx
+       face(iface)%attr(FACENORMY) = ny
+       !
+       ! store relevant factors meant for discretization
+       !
+       if ( face(iface)%atti(FMARKER) == 1 ) then
+          !
+          face(iface)%attr(FACELINPF) = 0.
+          !
+          v1     = face(iface)%atti(FACEV1)
+          v2     = face(iface)%atti(FACEV2)
+          icell1 = face(iface)%atti(FACEC1)
+          !
+          ! get coordinates of vertices of the boundary face
+          !
+          xv1 = xcugrd(v1)
+          yv1 = ycugrd(v1)
+          xv2 = xcugrd(v2)
+          yv2 = ycugrd(v2)
+          !
+          ! get coordinates of centroid of boundary cell
+          ! note: do not choose the circumcenter as it may lie outside the boundary cell
+          !
+          xcb = cell(icell1)%attr(CELLCX)
+          ycb = cell(icell1)%attr(CELLCY)
+          !
+          ! compute the shortest distance between the centroid and the boundary face
+          !
+          lengthf = sqrt( (xv2-xv1)*(xv2-xv1) + (yv2-yv1)*(yv2-yv1) )
+          dxb     = abs( (yv1-yv2)*xcb + (xv2-xv1)*ycb + (xv1*yv2-xv2*yv1) ) / lengthf
+          !
+          if ( ycb > min(yv1,yv2) .and. ycb < max(yv1,yv2) ) then
+             if ( xcb > max(xv1,xv2) ) dxb = -dxb                  ! left/west boundary
+          else
+             if ( ycb > max(yv1,yv2) ) dxb = -dxb                  ! lower/south boundary
+          endif
+          !
+          if ( dxb /= 0. ) then
+             face(iface)%attr(FACEDISTC) = 1. / dxb
+             face(iface)%attr(FACEDISTG) = 1. / abs(dxb)
+          else
+             face(iface)%attr(FACEDISTC) = 0.
+             face(iface)%attr(FACEDISTG) = 0.
+          endif
+          !
+       else
+          !
+          icelll = face(iface)%atti(FACECL)
+          icellr = face(iface)%atti(FACECR)
+          !
+          ! get coordinates of circumcenter of left cell
+          !
+          xcl = cell(icelll)%attr(CELLCCX)
+          ycl = cell(icelll)%attr(CELLCCY)
+          !
+          ! get coordinates of circumcenter of right cell
+          !
+          xcr = cell(icellr)%attr(CELLCCX)
+          ycr = cell(icellr)%attr(CELLCCY)
+          !
+          ! get coordinates of midface
+          !
+          xcf = face(iface)%attr(FACEMX)
+          ycf = face(iface)%attr(FACEMY)
+          !
+          ! compute the distance between the face center and the circumcenter
+          ! and subsequently, compute the distance between the circumcenters
+          !
+          dxl = sqrt( (xcf-xcl)*(xcf-xcl) + (ycf-ycl)*(ycf-ycl) )
+          dxr = sqrt( (xcf-xcr)*(xcf-xcr) + (ycf-ycr)*(ycf-ycr) )
+          dxf = dxl + dxr
+          !
+          if ( dxf /= 0. ) then
+             face(iface)%attr(FACEDISTC) =  1. / dxf
+             face(iface)%attr(FACELINPF) = dxl / dxf
+          else
+             face(iface)%attr(FACEDISTC) = 0.
+             face(iface)%attr(FACELINPF) = 1.
+          endif
+          !
+          ! get coordinates of centroid of left cell
+          !
+          xcl = cell(icelll)%attr(CELLCX)
+          ycl = cell(icelll)%attr(CELLCY)
+          !
+          ! get coordinates of centroid of right cell
+          !
+          xcr = cell(icellr)%attr(CELLCX)
+          ycr = cell(icellr)%attr(CELLCY)
+          !
+          ! compute the distance between the face center and the centroid
+          ! and subsequently, compute the distance between the centroids
+          !
+          dxl = sqrt( (xcf-xcl)*(xcf-xcl) + (ycf-ycl)*(ycf-ycl) )
+          dxr = sqrt( (xcf-xcr)*(xcf-xcr) + (ycf-ycr)*(ycf-ycr) )
+          dxf = dxl + dxr
+          !
+          if ( dxf /= 0. ) then
+             face(iface)%attr(FACEDISTG) =  1. / dxf
+          else
+             face(iface)%attr(FACEDISTG) = 0.
+          endif
+          !
+       endif
+       !
+    enddo
+    !
+    ! marks boundary cells
+    !
+    do icell = 1, ncells
+       !
+       cell(icell)%atti(CMARKER) = 0
+       !
+       ! loop over all local faces of the cell
+       !
+       do jf = 1, cell(icell)%nof
+          !
+          iface = cell(icell)%face(jf)%atti(FACEID)
+          !
+          if ( face(iface)%atti(FMARKER) == 1 ) then
+             cell(icell)%atti(CMARKER) = 1
+             exit
+          endif
+          !
+       enddo
+       !
+    enddo
+
+end subroutine SwanGridFace

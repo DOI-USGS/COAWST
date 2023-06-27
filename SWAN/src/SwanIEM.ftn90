@@ -1,0 +1,1265 @@
+#include "swancpp.h"
+! This file contains data and routines for surfbeat (Infragravity Energy Model)
+!
+module SwanIEM
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering and Geosciences              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2023  Delft University of Technology
+!
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
+!
+!
+!   Authors
+!
+!   41.85: Ad Reniers
+!
+!   Updates
+!
+!   41.85, January 2019: New module
+!
+!   Purpose
+!
+!   Contains data with respect to 1D surfbeat
+!
+!   Method
+!
+!   MODULE construct
+!
+!   Modules used
+!
+    implicit none
+!
+!   Module variables
+!
+    integer                                      :: nf           ! number of frequencies
+    integer                                      :: nff          !
+    integer                                      :: nif          ! number of incident frequencies
+    integer                                      :: nmax         ! maximum number of short-wave pairs
+    integer, save                                :: ntf = -9     ! number of infragravity frequencies
+                                                                 ! note: ntf < 0 during first COMPUTE and
+                                                                 !       ntf > 0 during second COMPUTE
+    !
+    integer, dimension(:)    , save, allocatable :: iss          !
+    integer, dimension(:)    , save, allocatable :: iwt          !
+    integer, dimension(:)    , save, allocatable :: itt          !
+    !
+    real                                         :: dfiem        ! frequency resolution for incident spectrum (constant)
+    real                                         :: e_trsh       ! energy threshold in fraction of maximum Emax
+    real   , dimension(:,:)  , save, allocatable :: E0           ! energy density [J/m2] at offshore boundary over uniformly distributed frequencies
+    real   , dimension(:,:,:), save, allocatable :: Ebig         ! bound infragravity wave energy
+    real   , dimension(:)    , save, allocatable :: freq         ! uniformly distributed relative frequencies
+    !
+    logical                                      :: sflog        ! indicate whether ig frequencies are uniformly or logarithmically distributed
+!
+!   Source text
+!
+contains
+!
+subroutine SwanIEMinitig
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering and Geosciences              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2023  Delft University of Technology
+!
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
+!
+!
+!   Authors
+!
+!   41.85: Ad Reniers
+!
+!   Updates
+!
+!   41.85, May 2019: New subroutine
+!
+!   Purpose
+!
+!   Initializes several variables and arrays for the computation of reflected waves
+!
+!   Method
+!
+!   Reflected ig wave components are computed during the second COMPUTE
+!   for which a number of variables and arrays need to be initialized
+!
+!   In particular, action density AC2 and spectral frequencies SPCSIG must be
+!   refilled with the ig wave field, and the incoming short wave components
+!   (from first COMPUTE) at the boundary must be removed
+!   In addition, we keep the reflected ig wave components at east boundary
+!   and set other boundaries to zero
+!
+!   Modules used
+!
+    use OCPCOMM4
+    use SWCOMM2 , only: NBGRPT
+    use SWCOMM3 , only: DDIR, FRINTF, FRINTH, MCGRD, MXC, MYC, MSC, MDC, PI2
+#ifdef SWAN_MODEL
+!   use M_GENARR, only: M_GENARR_MOD
+    use M_GENARR
+    use M_COUPLING
+#else
+    use M_GENARR, only: SPCSIG, AC2, KGRPNT
+#endif
+    use M_WCAP  , only: SIGPOW
+    use M_PARALL, only: NBGGL
+!
+    implicit none
+!
+!   Local variables
+!
+    integer                         :: id       ! loop counter in directional space
+    integer, save                   :: ient = 0 ! number of entries in this subroutine
+    integer                         :: indx     ! index pointer to current grid point
+    integer                         :: is       ! loop counter in frequency space
+    integer                         :: ix       ! loop counter in x-direction
+    integer                         :: iy       ! loop counter in y-direction
+    !
+    real                            :: df       ! increment in uniform frequency space
+    real                            :: sfac     ! factor to be used for logarithmic distribution
+    real                            :: shig     ! highest ig frequency
+    real                            :: slow     ! lowest ig frequency
+    !
+    real, dimension(ntf)            :: freqs    ! uniformly distributed ig frequencies
+    real, dimension(ntf)            :: spec1    ! auxiliary array to store ig densities over uniformly distributed frequencies
+    real, dimension(:), allocatable :: spec2    ! auxiliary array to store ig densities over logarithmically distributed frequencies
+!
+!   Structure
+!
+!   Description of the pseudo code
+!
+!   Source text
+!
+    if (ltrace) call strace (ient,'SwanIEMinitig')
+    !
+    ! refill arrays SPCSIG and AC2 with ig waves
+    !
+    ! Note: distribution of ig frequencies may either be uniform or logarithmic (user defined)
+    !       hence, redistribute ig wave energy accordingly
+    !
+    df = PI2 * dfiem
+    !
+    if ( .not.sflog ) then
+       !
+       MSC = ntf
+       !
+       ! reallocate SPCSIG to be filled with ig frequencies
+       !
+#ifdef SWAN_MODEL
+!      if (allocated(M_GENARR_MOD(ng)%SPCSIG_G)) deallocate(M_GENARR_MOD(ng)%SPCSIG_G)
+       deallocate(M_GENARR_MOD(ng)%SPCSIG_G)
+       ALLOCATE (M_GENARR_MOD(ng)%SPCSIG_G(MSC))
+       SPCSIG=>M_GENARR_MOD(ng)%SPCSIG_G
+#else
+       if (allocated(SPCSIG)) deallocate(SPCSIG)
+       allocate(SPCSIG(MSC))
+#endif
+       !
+       ! fill SPCSIG (uniform distribution)
+       !
+       SPCSIG(1) = df
+       do is = 2, MSC
+          SPCSIG(is) = SPCSIG(is-1) + df
+       enddo
+       !
+       ! reallocate AC2 to be filled with ig components
+       !
+#ifdef SWAN_MODEL
+!      if (allocated(M_GENARR_MOD(ng)%AC2_G)) deallocate(M_GENARR_MOD(ng)%AC2_G)
+       deallocate(M_GENARR_MOD(ng)%AC2_G)
+       ALLOCATE (M_GENARR_MOD(ng)%AC2_G(MDC,MSC,MCGRD))
+       AC2=>M_GENARR_MOD(ng)%AC2_G
+#else
+       if (allocated(AC2)) deallocate(AC2)
+       allocate(AC2(MDC,MSC,MCGRD))
+#endif
+       !
+       ! copy ig components to AC2
+       !
+       do indx = 1, MCGRD
+          !
+          do id = 1, MDC
+             do is = 1, MSC
+                AC2(id,is,indx) = Ebig(id,is,indx) / SPCSIG(is) / ( df * DDIR )
+             enddo
+          enddo
+          !
+       enddo
+       !
+    else
+       !
+       slow = df
+       shig = SPCSIG(1)
+       MSC  = nint(alog(shig/slow)/FRINTF) + 1
+       !
+       FRINTF = alog(shig/slow) / float(MSC-1)
+       sfac   = exp(FRINTF)
+       FRINTH = sqrt(sfac)
+       !
+       ! reallocate SPCSIG to be filled with ig frequencies
+       !
+#ifdef SWAN_MODEL
+!      if (allocated(M_GENARR_MOD(ng)%SPCSIG_G)) deallocate(M_GENARR_MOD(ng)%SPCSIG_G)
+       deallocate(M_GENARR_MOD(ng)%SPCSIG_G)
+       ALLOCATE (M_GENARR_MOD(ng)%SPCSIG_G(MSC))
+       SPCSIG=>M_GENARR_MOD(ng)%SPCSIG_G
+#else
+       if (allocated(SPCSIG)) deallocate(SPCSIG)
+       allocate(SPCSIG(MSC))
+#endif
+       !
+       ! fill SPCSIG (logarithmic distribution)
+       !
+       SPCSIG(1) = slow
+       do is = 2, MSC
+          SPCSIG(is) = SPCSIG(is-1) * sfac
+       enddo
+       !
+       ! reallocate AC2 to be filled with ig components
+       !
+#ifdef SWAN_MODEL
+!      if (allocated(M_GENARR_MOD(ng)%AC2_G)) deallocate(M_GENARR_MOD(ng)%AC2_G)
+       deallocate(M_GENARR_MOD(ng)%AC2_G)
+       ALLOCATE (M_GENARR_MOD(ng)%AC2_G(MDC,MSC,MCGRD))
+       AC2=>M_GENARR_MOD(ng)%AC2_G
+#else
+       if (allocated(AC2)) deallocate(AC2)
+       allocate(AC2(MDC,MSC,MCGRD))
+#endif
+       !
+       ! determine uniformly distributed ig frequencies for interpolation purposes
+       !
+       freqs(1) = df
+       do is = 2, ntf
+          freqs(is) = freqs(is-1) + df
+       enddo
+       !
+       allocate(spec2(MSC))
+       !
+       ! copy ig components to AC2
+       !
+       do indx = 1, MCGRD
+          !
+          ! for each direction, interpolate over logarithmic distributed frequencies while keeping energy constant
+          !
+          do id = 1, MDC
+             !
+             do is = 1, ntf
+                spec1(is) = Ebig(id,is,indx) / freqs(is) / ( df * DDIR )
+             enddo
+             !
+             call CHGBAS ( freq, SPCSIG, 0., spec1, spec2, ntf, MSC, ITEST, PRTEST )
+             !
+             do is = 1, MSC
+                AC2(id,is,indx) = spec2(is)
+             enddo
+             !
+          enddo
+          !
+       enddo
+       !
+       deallocate(spec2)
+       !
+    endif
+    !
+    ! reallocate SIGPOW
+    !
+    if (allocated(SIGPOW)) deallocate(SIGPOW)
+    allocate(SIGPOW(MSC,6))
+    !
+    ! calculate powers of sigma and store in array
+    !
+    SIGPOW(:,1) = SPCSIG
+    SIGPOW(:,2) = SPCSIG**2
+    SIGPOW(:,3) = SPCSIG * SIGPOW(:,2)
+    SIGPOW(:,4) = SPCSIG * SIGPOW(:,3)
+    SIGPOW(:,5) = SPCSIG * SIGPOW(:,4)
+    SIGPOW(:,6) = SPCSIG * SIGPOW(:,5)
+    !
+    ! reallocate and refill Ebig to be used as boundary condition at obstacle
+    ! (see routine SWTRCF)
+    !
+    if (allocated(Ebig)) deallocate(Ebig)
+    allocate(Ebig(MDC,MSC,MCGRD))
+    !
+    Ebig = AC2  ! note: Ebig has only the function of storing AC2 during second COMPUTE
+    !
+    ! remove incoming short-wave boundary conditions
+    !
+    NBGRPT = 0
+    NBGGL  = 0
+    !
+    ! during the second COMPUTE we keep the reflected ig wave components at east boundary
+    ! and set all other boundaries to zero
+    !
+    do iy = 1, MYC
+       !
+       ! west boundary
+       indx = KGRPNT(1,iy)
+       !
+       AC2(:,:,indx) = 0.
+       !
+    enddo
+    !
+    do ix = 1, MXC
+       !
+       ! south boundary
+       indx = KGRPNT(ix,1)
+       !
+       AC2(:,:,indx) = 0.
+       !
+       ! north boundary
+       indx = KGRPNT(ix,MYC)
+       !
+       AC2(:,:,indx) = 0.
+       !
+    enddo
+    !
+end subroutine SwanIEMinitig
+!
+subroutine SwanIEMmeanwav ( AC2, HSIBC, SPCSIG, KGRPNT, HS )
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering and Geosciences              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2023  Delft University of Technology
+!
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
+!
+!
+!   Authors
+!
+!   41.85: Ad Reniers
+!
+!   Updates
+!
+!   41.85, February 2019: New subroutine
+!
+!   Purpose
+!
+!   Gets mean wave transformation
+!
+!   Modules used
+!
+    use OCPCOMM4
+    use SWCOMM3, only: DDIR, FRINTF, MXC, MYC, MCGRD, MSC, MDC, GRAV, PI2, PWIND
+!
+    implicit none
+!
+!   Argument variables
+!
+    integer, dimension(MXC,MYC)      , intent(in ) :: KGRPNT ! indirect addressing for grid points
+    !
+    real   , dimension(MDC,MSC,MCGRD), intent(in ) :: AC2    ! action densities
+    real   , dimension(MCGRD)        , intent(out) :: HS     ! significant wave height at computational grid points
+    real   , dimension(MCGRD)        , intent(in ) :: HSIBC  ! significant wave height at offshore boundary
+    real   , dimension(MSC)          , intent(in ) :: SPCSIG ! relative frequency bins
+!
+!   Local variables
+!
+    integer                         :: id       ! loop counter in directional space
+    integer, save                   :: ient = 0 ! number of entries in this subroutine
+    integer                         :: is       ! loop counter in frequency space
+    integer                         :: indx     ! index pointer to current grid point
+    integer                         :: ix       ! loop counter in x-direction
+    integer                         :: iy       ! loop counter in y-direction
+    !
+    real                            :: df       ! increment in frequency space
+    real                            :: fmax     ! maximum frequency
+    real                            :: fmin     ! minimum frequency
+    real                            :: m0       ! zeroth moment
+    real                            :: rho      ! water density
+    !
+    real, dimension(MDC,MSC)        :: E        ! variance density [m2/Hz/rad] at offshore boundary as function of relative frequencies (SPCSIG)
+    real, dimension(MSC)            :: sum0     ! integration term for calculating zeroth moment
+    real, dimension(MSC)            :: spec1    ! auxiliary array to store 1D variance density as function of relative frequencies (SPCSIG)
+    real, dimension(:), allocatable :: spec2    ! auxiliary array to store 1D variance density over uniformly distributed frequencies
+!
+!   Structure
+!
+!   obtain significant wave height in each grid point
+!   obtain energy density at offshore boundary
+!   determine frequency range and number of frequencies (uniformly distributed)
+!   interpolate offshore density over uniformly distributed frequencies
+!
+!   Source text
+!
+    if (ltrace) call strace (ient,'SwanIEMmeanwav')
+    !
+    rho = PWIND(17)
+    !
+    do iy = 1, MYC
+       do ix = 1, MXC
+          !
+          indx = KGRPNT(ix,iy)
+          !
+          sum0(:) = sum(AC2(:,:,indx),dim=1) * SPCSIG(:)**2 * FRINTF * DDIR
+          !
+          m0 = sum(sum0)
+          !
+          ! compute significant wave height (tail not included)
+          !
+          if ( m0 > 1.e-8 ) then
+             !
+             HS(indx) = 4. * sqrt(m0)
+             !
+          else
+             !
+             HS(indx) = 0.
+             !
+          endif
+          !
+          if ( HSIBC(indx) > 1.e-25 ) then
+             !
+             do id = 1, MDC
+                do is = 1, MSC
+                   E(id,is) = AC2(id,is,indx) * SPCSIG(is)
+                enddo
+             enddo
+             !
+          endif
+          !
+       enddo
+    enddo
+    !
+    ! determine frequency range and number of frequencies (uniformly distributed)
+    !
+    df   = PI2 * dfiem
+    fmin = SPCSIG(  1)
+    fmax = SPCSIG(MSC)
+    nf   = nint((fmax-fmin)/df) + 1
+    !
+    if ( .not.allocated(freq) ) allocate(freq(nf))
+    !
+    freq(1) = fmin
+    do is = 2, nf
+       freq(is) = freq(is-1) + df
+    enddo
+    !
+    allocate(spec2(nf))
+    !
+    if ( .not.allocated(E0) ) allocate(E0(MDC,nf))
+    !
+    ! for each direction, interpolate over uniformly distributed frequencies while keeping energy constant
+    !
+    do id = 1, MDC
+       !
+       do is = 1, MSC
+          spec1(is) = E(id,is)
+       enddo
+       !
+       call CHGBAS ( SPCSIG, freq, 0., spec1, spec2, MSC, nf, ITEST, PRTEST )
+       !
+       do is = 1, nf
+          E0(id,is) = spec2(is)
+       enddo
+       !
+    enddo
+    !
+    E0 = rho * GRAV * E0 * df * DDIR
+    !
+    deallocate(spec2)
+    !
+end subroutine SwanIEMmeanwav
+!
+subroutine SwanIEMncalc
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering and Geosciences              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2023  Delft University of Technology
+!
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
+!
+!
+!   Authors
+!
+!   41.85: Ad Reniers
+!
+!   Updates
+!
+!   41.85, January 2019: New subroutine
+!
+!   Purpose
+!
+!   Determines the number of possible combinations of
+!   bichromatic incident waves within 2D spectrum
+!
+!   Method
+!
+!   Find appropriate indices within 2D offshore spectrum
+!
+!   Increase nic (number of short-wave pair calculations) while nic is
+!   larger than nmax or the energy level e_trs is less than e_trsh
+!
+!   If e_trsh is set to 0.05 than all short wave components that have
+!   an energy level that is more than 5% of the short wave component
+!   with the maximum energy level are taken into account
+!
+!   Modules used
+!
+    use OCPCOMM4
+    use SWCOMM3, only: MDC, PI2
+!
+    implicit none
+!
+!   Parameter variables
+!
+    real, parameter                      :: d_trs = 0.01 ! increment of energy level
+!
+!   Local variables
+!
+    integer                              :: id           ! loop counter in directional space
+    integer, save                        :: ient = 0     ! number of entries in this subroutine
+    integer                              :: is           ! loop counter in frequency space
+    integer                              :: j            ! loop counter
+    integer                              :: k            ! counter
+    integer                              :: nic          ! number of short-wave pairs
+    integer                              :: nnf          ! total number of frequencies
+!
+    real                                 :: Emax         ! maximum of energy density
+    real                                 :: e_trs        ! actual energy level
+    real                                 :: fhig         ! high frequency cut-off for incident spectrum
+    real                                 :: flow         ! low frequency cut-off for incident spectrum
+!
+    integer, dimension(:)  , allocatable :: iw           ! temporary array containing
+    integer, dimension(:)  , allocatable :: iwtt         ! temporary array containing
+    integer, dimension(:)  , allocatable :: ittt         ! temporary array containing
+!
+    logical, dimension(:,:), allocatable :: enl          !
+    logical, dimension(:)  , allocatable :: isl          !
+    logical, dimension(:)  , allocatable :: iwl          !
+!
+!   Structure
+!
+!   Description of the pseudo code
+!
+!   Source text
+!
+    if (ltrace) call strace (ient,'SwanIEMncalc')
+    !
+    flow = freq( 1) / PI2
+    fhig = freq(nf) / PI2
+    !
+    ntf = ceiling(flow/dfiem)
+    nnf = ceiling(fhig/dfiem)
+    !
+    allocate(iwtt(MDC*nf))
+    allocate(ittt(MDC*nf))
+    !
+    iwtt = 0
+    ittt = 0
+    !
+    allocate(iw(nnf))
+    !
+    iw = 0
+    !
+    allocate(iwl(MDC*nf))
+    !
+    iwl = .false.
+    !
+    allocate(enl(MDC,nf))
+    !
+    enl = .false.
+    !
+    ! compute maximum energy level
+    !
+    Emax = maxval(E0)
+    !
+    ! initialize number of short-wave pairs and energy level
+    !
+    nic   = 1000000
+    e_trs = 0.01
+    !
+    do while ( nic > nmax .or. e_trs < e_trsh )
+       !
+       enl = ( E0 > e_trs*Emax )
+       nif = count(enl)
+       k=0
+       do id = 1, MDC
+          do is = 1, nf
+             if (enl(id,is)) then
+                k = k + 1
+                iwtt(k) = is
+                ittt(k) = id
+             endif
+          enddo
+       enddo
+       !
+       do j = 1, nnf
+          iwl   = ( iwtt == j )
+          iw(j) = count(iwl(1:nif))
+       enddo
+       !
+       nic = 0
+       do j = 1, nnf-1
+          if ( j + ntf < nnf ) then
+             nic = nic + iw(j) * sum( iw(j+1:j+ntf) )
+          else
+             nic = nic + iw(j) * sum( iw(j+1:nnf) )
+          endif
+       enddo
+       !
+       e_trs = e_trs + d_trs
+       !
+    enddo
+    !
+    if ( e_trs > 0.1 ) then
+       call msgerr (4, 'too much energy missing to compute surfbeat')
+       call msgerr (0, 'please reduce directional resolution' )
+    endif
+    !
+    if ( .not.allocated(iwt) ) allocate(iwt(nif))
+    if ( .not.allocated(itt) ) allocate(itt(nif))
+    !
+    iwt(1:nif) = iwtt(1:nif)
+    itt(1:nif) = ittt(1:nif)
+    !
+    allocate(isl(nnf))
+    !
+    isl = ( iw > 0 )
+    nff = count(isl)
+    !
+    if ( .not.allocated(iss) ) allocate(iss(nff))
+    !
+    k = 0
+    do j = 1, nnf
+       if ( isl(j) ) then
+          k = k + 1
+          iss(k) = iw(j)
+       endif
+    enddo
+    !
+    deallocate(iw,iwtt,ittt,enl,isl,iwl)
+    !
+end subroutine SwanIEMncalc
+!
+subroutine SwanIEMsrfbeat ( HS, AC2, DEP2, SPCDIR, SPCSIG, KGRPNT )
+!
+!   --|-----------------------------------------------------------|--
+!     | Delft University of Technology                            |
+!     | Faculty of Civil Engineering and Geosciences              |
+!     | Environmental Fluid Mechanics Section                     |
+!     | P.O. Box 5048, 2600 GA  Delft, The Netherlands            |
+!     |                                                           |
+!     | Programmers: The SWAN team                                |
+!   --|-----------------------------------------------------------|--
+!
+!
+!     SWAN (Simulating WAves Nearshore); a third generation wave model
+!     Copyright (C) 1993-2023  Delft University of Technology
+!
+!     This program is free software: you can redistribute it and/or modify
+!     it under the terms of the GNU General Public License as published by
+!     the Free Software Foundation, either version 3 of the License, or
+!     (at your option) any later version.
+!
+!     This program is distributed in the hope that it will be useful,
+!     but WITHOUT ANY WARRANTY; without even the implied warranty of
+!     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+!     GNU General Public License for more details.
+!
+!     You should have received a copy of the GNU General Public License
+!     along with this program. If not, see <http://www.gnu.org/licenses/>.
+!
+!
+!   Authors
+!
+!   41.85: Ad Reniers
+!
+!   Updates
+!
+!   41.85, February 2019: New subroutine
+!
+!   Purpose
+!
+!   Computes infragravity wave energy using SWAN predicted short wave energy
+!
+!   Method
+!
+!   See the CE paper of Reniers and Zijlema (2022)
+!   Note: eqs numbers below refer to those of the paper
+!
+!   The current implementation assumes that the orientation of the computational
+!   rectilinear grid is restricted to the following case:
+!
+!   - alongshore is y-direction along which the bathymetry is assumed to be uniform
+!   - cross-shore is x-direction with offshore on the west side of the domain
+!
+!   Modules used
+!
+    use OCPCOMM4
+    use SWCOMM3, only: DEPMIN, DX, GRAV, PI, DDIR, FRINTF, MXC, MYC, MCGRD, MDC, MSC, PWIND, PSURF
+!
+    implicit none
+!
+!   Argument variables
+!
+    integer, dimension(MXC,MYC)      , intent(in) :: KGRPNT ! indirect addressing for grid points
+    !
+    real   , dimension(MDC,MSC,MCGRD), intent(in) :: AC2    ! action densities
+    real   , dimension(MCGRD)        , intent(in) :: DEP2   ! water depth at computational grid points
+    real   , dimension(MCGRD)        , intent(in) :: HS     ! significant wave height at computational grid points
+    real   , dimension(MDC,6)        , intent(in) :: SPCDIR ! (*,1): spectral direction bins (radians)
+                                                            ! (*,2): cosine of spectral directions
+                                                            ! (*,3): sine of spectral directions
+                                                            ! (*,4): cosine^2 of spectral directions
+                                                            ! (*,5): cosine*sine of spectral directions
+                                                            ! (*,6): sine^2 of spectral directions
+    real   , dimension(MSC)          , intent(in) :: SPCSIG ! relative frequency bins
+!
+!   Local variables
+!
+    integer              :: id           ! loop counter in directional space
+    integer              :: id1          ! counter of first short wave component in directional space
+    integer              :: id2          ! counter of second short wave component in directional space
+    integer, save        :: ient  = 0    ! number of entries in this subroutine
+    integer              :: ind          ! index pointer to current grid point
+    integer              :: indf         ! pointer to first grid point at west side
+    integer              :: indl         ! index of point left from point of consideration
+    integer              :: is1          ! counter of first short wave component in frequency space
+    integer              :: is2          ! counter of second short wave component in frequency space
+    integer              :: ix           ! loop counter in x-direction
+    integer              :: iy           ! loop counter in y-direction
+    integer              :: j            ! loop counter
+    integer              :: jdl          ! infragravity direction index
+    integer              :: jfl          ! infragravity frequency index
+    integer              :: k            ! loop counter
+    !
+    real                 :: biph         ! biphase
+    real                 :: c1           ! phase velocity of first wave component
+    real                 :: c2           ! phase velocity of second wave component
+    real                 :: cgdx         ! x-derivative of group velocity divided by cosine of bound wave direction
+    real                 :: ci1          ! phase velocity of first wave component at offshore boundary
+    real                 :: ci2          ! phase velocity of second wave component at offshore boundary
+    real                 :: cosbp        ! cosine of biphase
+    real                 :: costm        ! cosine of mean sea-swell direction
+    real                 :: ct1          ! cosine of theta1
+    real                 :: ct2          ! cosine of theta2
+    real                 :: cphi         ! contributions to the evolution equation for biphase
+    real                 :: deltaf       ! difference frequency related to sea-swell spectrum
+    real                 :: deploc       ! local water depth
+    real                 :: df           ! increment in frequency space
+    real                 :: dth          ! directional bin
+    real                 :: dtheta       ! difference angle
+    real                 :: E1           ! energy modulation of the two short wave components at offshore boundary
+    real                 :: eta0         ! offshore bound wave amplitude
+    real                 :: Ev           ! wave group modulation [J/m2]
+    real                 :: F1x          ! x-derivative of cross-shore forcing
+    real                 :: F2x          ! x-derivative of shear forcing
+    real                 :: fdb          ! fraction of directional bin for allocating bound energy in adjacent bins
+    real                 :: fluxb        ! bound long wave energy flux
+    real                 :: gamma        ! BJ surf breaking coefficient
+    real                 :: hdth         ! half of directional bin
+    real                 :: Hmax         ! maximum sea-swell wave height
+    real                 :: idth         ! distance to origin of directional grid divided by directional bin (fractional number)
+    real                 :: k1           ! wave number of first wave component
+    real                 :: k2           ! wave number of second wave component
+    real                 :: k_l          ! cross-shore difference wave number
+    real                 :: kbly         ! alongshore bound long wave number (constant)
+    real                 :: m0           ! zeroth moment
+    real                 :: m1           ! minus first moment
+    real                 :: mu           ! resonant mismatch
+    real                 :: Qb           ! fraction of breaking waves
+    real                 :: rho          ! water density
+    real                 :: rval         ! auxiliary real
+    real                 :: Rt           ! work done by radiation stresses
+    real                 :: Shatxx       ! x-component of radiation stress in x-direction with respect to slowly modulated forcing
+    real                 :: Shatxy       ! cross component of radiation stress in x/y-direction with respect to slowly modulated forcing
+    real                 :: Shatyy       ! y-component of radiation stress in y-direction with respect to slowly modulated forcing
+    real                 :: sinbp        ! sine of biphase
+    real                 :: sinth1       ! sine of direction of first short wave component
+    real                 :: sinth2       ! sine of direction of second short wave component
+    real                 :: sintm        ! sine of mean sea-swell direction
+    real                 :: st1          ! sine of theta1
+    real                 :: st2          ! sine of theta2
+    real, dimension(MSC) :: sum0         ! integration term for calculating zeroth moment
+    real, dimension(MSC) :: sum1         ! integration term for calculating minus first moment
+    real                 :: T1           ! contribution to the biphase eq
+    real                 :: T2           ! contribution to the biphase eq
+    real                 :: T3           ! contribution to the biphase eq
+    real                 :: T4           ! contribution to the biphase eq
+    real                 :: T5           ! contribution to the biphase eq
+    real                 :: T6           ! contribution to the biphase eq
+    real                 :: theta1       ! wave incidence angle of first wave component
+    real                 :: theta2       ! wave incidence angle of second wave component
+    real                 :: thetam       ! mean sea-swell direction
+    real                 :: Ub           ! cross-shore bound infragravity velocity
+    real                 :: Vb           ! alongshore bound infragravity velocity
+    real                 :: w1           ! radial frequency of first wave component
+    real                 :: w2           ! radial frequency of second wave component
+    real                 :: w_l          ! difference radial frequency
+    real                 :: wm           ! mean radial frequency
+    !
+    real, dimension(:), allocatable :: cg      ! group velocity based on local Tm-1,0
+    real, dimension(:), allocatable :: cgx     ! cross-shore group velocity
+    real, dimension(:), allocatable :: costb   ! cosine of bound wave direction
+    real, dimension(:), allocatable :: F1      ! cross-shore forcing
+    real, dimension(:), allocatable :: F2      ! shear forcing
+    real, dimension(:), allocatable :: F3      ! alongshore forcing
+    real, dimension(:), allocatable :: kblx    ! cross-shore bound long wave number
+    real, dimension(:), allocatable :: n       ! ratio of group and phase velocity based on local Tm-1,0
+    real, dimension(:), allocatable :: sintb   ! sine of bound wave direction
+    real, dimension(:), allocatable :: thetab  ! bound long wave direction
+    real, dimension(:), allocatable :: Ut      ! bound infragravity velocity amplitude
+    real, dimension(:), allocatable :: Z       ! bound infragravity surface elevation
+!
+!   Structure
+!
+!   Description of the pseudo code
+!
+!   Source text
+!
+    if (ltrace) call strace (ient,'SwanIEMsrfbeat')
+    !
+    ! allocate help arrays
+    !
+    allocate(cg    (MCGRD))
+    allocate(cgx   (MCGRD))
+    allocate(costb (MCGRD))
+    allocate(F1    (MCGRD))
+    allocate(F2    (MCGRD))
+    allocate(F3    (MCGRD))
+    allocate(kblx  (MCGRD))
+    allocate(n     (MCGRD))
+    allocate(sintb (MCGRD))
+    allocate(thetab(MCGRD))
+    allocate(Ut    (MCGRD))
+    allocate(Z     (MCGRD))
+    !
+    ! set to fixed value for permanently dry points
+    ! note: the following quantities will be used in finite differences
+    !
+    cg(1)    = 0.
+    F1(1)    = 0.
+    F2(1)    = 0.
+    costb(1) = 1.
+    !
+    ! allocate and initialize array to store bound infragravity wave energy
+    !
+    if ( .not.allocated(Ebig) ) allocate(Ebig(MDC,ntf,MCGRD))
+    Ebig = 0.
+    !
+    rho   = PWIND(17)
+    gamma = PSURF(2)
+    !
+    ! frequency resolution
+    !
+    df  = 2. * PI * dfiem
+    !
+    ! directional resolution
+    !
+    dth  = DDIR
+    hdth = 0.5 * dth
+    !
+    ! compute group velocity and ratio group velocity over phase velocity in each wet grid point
+    !
+    do ind = 2, MCGRD
+       !
+       deploc = DEP2(ind)
+       !
+       if ( deploc > DEPMIN ) then
+          !
+          sum0(:) = sum(AC2(:,:,ind),dim=1) * SPCSIG(:)**2 * FRINTF * DDIR
+          sum1(:) = sum0(:) / SPCSIG(:)
+          !
+          m0 = sum(sum0)
+          m1 = sum(sum1)
+          !
+          ! compute mean radial frequency based on Tm-1,0 (tail not included)
+          !
+          if ( m0 > 1.e-8 .and. m1 > 1.e-8 ) then
+             !
+             wm = m0 / m1
+             !
+          else
+             !
+             wm = 10.
+             !
+          endif
+          !
+          call KSCIP1 ( 1, wm, deploc, rval, cg(ind), n(ind), rval )
+          !
+       else
+          !
+          ! set cg to zero for temporarily dry points
+          ! note: this will be used in finite differences
+          cg(ind) = 0.
+          !
+       endif
+       !
+    enddo
+    !
+    ! compute all bichromatic combinations
+    !
+    floop: do j = 1, nif - iss(nff)
+       !
+       ! get first short wave component
+       !
+       is1 = iwt(j)
+       id1 = itt(j)
+       !
+       sinth1 = SPCDIR(id1,3)
+       !
+       sloop: do k = j, nif
+          !
+          ! get second short wave component
+          !
+          is2 = iwt(k)
+          id2 = itt(k)
+          !
+          sinth2 = SPCDIR(id2,3)
+          !
+          ! test for maximum low frequency
+          !
+          deltaf = abs( freq(is1) - freq(is2) )
+          !
+          if ( deltaf > 0 .and. .not. deltaf > ntf*df ) then
+             !
+             ! bichromatic wave characteristics
+             !
+             w1 = freq(is1)
+             w2 = freq(is2)
+             !
+             w_l = abs( w1 -w2 )
+             !
+             ! compute some characteristics of bound long waves
+             !
+             do iy = 1, MYC
+                !
+                ! first grid point (at west boundary)
+                indf = KGRPNT(1,iy)
+                !
+                do ix = 1, MXC
+                   !
+                   ind    = KGRPNT(ix,iy)
+                   deploc = DEP2(ind)
+                   !
+                   if ( ind > 1 .and. deploc > DEPMIN ) then
+                      !
+                      ! compute wave numbers and phase velocities
+                      !
+                      call KSCIP1 ( 1, w1, deploc, k1, rval, rval, rval )
+                      call KSCIP1 ( 1, w2, deploc, k2, rval, rval, rval )
+                      !
+                      c1 = w1 / k1
+                      c2 = w2 / k2
+                      !
+                      if ( ind == indf ) then
+                         !
+                         ci1 = c1
+                         ci2 = c2
+                         !
+                      endif
+                      !
+                      ! compute wave incidence angles using Snel's law
+                      !
+                      theta1 = asin( c1 * sinth1 / ci1 )
+                      theta2 = asin( c2 * sinth2 / ci2 )
+                      !
+                      st1 = sin(theta1)
+                      ct1 = cos(theta1)
+                      st2 = sin(theta2)
+                      ct2 = cos(theta2)
+                      !
+                      dtheta = theta2 - theta1 + PI
+                      !
+                      ! compute mean sea-swell direction (eq. 5)
+                      !
+                      thetam = atan( ( k1*st1 + k2*st2 ) / ( k1*ct1 + k2*ct2 ) )
+                      costm  = cos(thetam)
+                      sintm  = sin(thetam)
+                      !
+                      ! compute direction of bound wave (eq. 10)
+                      !
+                      thetab(ind) = atan( ( k1*st1 - k2*st2 ) / ( k1*ct1 - k2*ct2 ) )
+                      costb (ind) = cos(thetab(ind))
+                      sintb (ind) = sin(thetab(ind))
+                      !
+                      ! compute cross-shore group velocity
+                      ! note: use the mean direction (not that of bound wave which may lead to caustics)
+                      !
+                      cgx(ind) = cg(ind) * costm
+                      !
+                      ! compute cross-shore component of bound long wave number
+                      !
+                      k_l       = sqrt( k1*k1 + k2*k2 + 2.*k1*k2*cos(dtheta) )
+                      kblx(ind) = k_l * costb(ind)
+                      !
+                      ! compute alongshore component of bound long wave number (constant)
+                      !
+                      if ( ind == indf ) kbly = k_l * sintb(ind)
+                      !
+                      ! compute wave group modulation based on SWAN energy (eq. 25)
+                      !
+                      E1 = 2. * sqrt( E0(id1,is1) * E0(id2,is2) )
+                      !
+                      Ev = E1 * HS(ind) * HS(ind) / ( HS(indf)*HS(indf) )
+                      !
+                      ! account for reduced modulation by wave breaking (eqs. 25 and 26)
+                      !
+                      Hmax = gamma * deploc
+                      Qb   = exp( -( Hmax / HS(ind) )**2 )
+                      Ev   = Ev * max( 1. - Qb, 0.01 )
+                      !
+                      ! compute radiation stresses with respect to slowly modulated forcing (eqs. 2-4)
+                      !
+                      Shatxx = ( n(ind)*(costm*costm + 1.) -0.5 ) * Ev
+                      Shatxy =   n(ind)* sintm*costm              * Ev
+                      Shatyy = ( n(ind)*(sintm*sintm + 1.) -0.5 ) * Ev
+                      !
+                      F1(ind) = Shatxx / rho
+                      F2(ind) = Shatxy / rho
+                      F3(ind) = Shatyy / rho
+                      !
+                   else
+                      !
+                      ! set some quantities to fixed value for temporarily dry points
+                      ! as they will be used in finite differences
+                      !
+                      costb(ind) = 1.
+                      F1   (ind) = 0.
+                      F2   (ind) = 0.
+                      !
+                   endif
+                   !
+                enddo
+             enddo
+             !
+             ! compute ig energy and biphase through evolution equations (eqs. 15 and 16)
+             !
+             do iy = 1, MYC
+                !
+                ! first grid point (at west boundary)
+                indf = KGRPNT(1,iy)
+                !
+                ! specify boundary conditions meant for energy flux balance (eqs. 17-19)
+                !
+                deploc   = DEP2(indf)
+                mu       = 1. - ( w_l*w_l - GRAV*deploc*kbly*kbly ) / ( GRAV*deploc*kblx(indf)*kblx(indf) )
+                eta0     = ( F1(indf) + 2.*F2(indf)*kbly/kblx(indf) ) / ( mu * GRAV * deploc )
+                Z(indf)  = abs(eta0)
+                Ut(indf) = cg(indf) * Z(indf) / deploc
+                fluxb    = 0.5 * rho * cgx(indf) * deploc * Ut(indf)*Ut(indf)
+                !
+                ! determine offshore boundary condition of evolution equation for biphase
+                !
+                biph  = 0.
+                sinbp = 0.
+                cosbp = 1.
+                !
+                ! sweep through rows in computational domain to update energy flux and biphase
+                !
+                do ix = 2, MXC
+                   !
+                   ind    = KGRPNT(ix  ,iy)
+                   indl   = KGRPNT(ix-1,iy)
+                   deploc = DEP2(ind)
+                   !
+                   if ( ind > 1 .and. deploc > DEPMIN ) then
+                      !
+                      ! compute cross-shore and alongshore bound infragravity velocities (see e.g., eq. 9)
+                      !
+                      Ub = Ut(indl) * costb(ind)
+                      Vb = Ut(indl) * sintb(ind)
+                      !
+                      ! compute work done by the radiation stresses (eq. 14)
+                      !
+                      Rt = 0.5 * rho * ( kblx(ind) * Ub * F1(ind) + kbly * Vb * F2(ind) ) * sinbp
+                      !
+                      ! the third term rhs of eq. 14 should not be included because comparable to the reduction by wave breaking though less accurate
+                      !
+                      !F1x = ( F1(ind) - F1(indl) ) / DX
+                      !Rt  = Rt + 0.5 * rho * Ub * F1x * cosbp
+                      !
+                      ! update infragravity energy flux (eq. 15)
+                      !
+                      fluxb = fluxb + DX * Rt
+                      !
+                      ! update bound infragravity velocity (eq. 12) and surface elevation (eq. 18)
+                      !
+                      Ut(ind) = sqrt( 2.*abs(fluxb) / ( rho*cgx(ind)*deploc ) )
+                      Z (ind) = Ut(ind) * deploc / cg(ind)
+                      !
+                      ! compute resonant mismatch (eq. 17)
+                      !
+                      mu = 1. - ( w_l*w_l - GRAV*deploc*kbly*kbly ) / ( GRAV*deploc*kblx(ind)*kblx(ind) )
+                      !
+                      ! compute contributions to the evolution equation for biphase (eq. 16)
+                      !
+                      T1   = -0.5 * kblx(ind) * mu
+                      !
+                      rval = GRAV * deploc * abs(Z(ind))
+                      !
+                      T2   = 0.5 * F1(ind) / rval
+                      T4   =       F2(ind) / rval
+                      T6   = 0.5 * F3(ind) / rval
+                      !
+                      F1x  = ( F1(ind) - F1(indl) ) / DX
+                      cgdx = ( (cg(ind)/costb(ind)) - (cg(indl)/costb(indl)) ) / DX
+                      T3   = 2. * F1x / F1(ind) - costb(ind) * cgdx / cg(ind)
+                      !
+                      F2x  = ( F2(ind) - F2(indl) ) / DX
+                      if ( F2(ind) /= 0. .or. (F2x /= 0. .and. kbly /= 0.) ) then
+                         T5 = F2x / F2(ind) * kbly / kblx(ind)
+                      else
+                         T5 = 0.
+                      endif
+                      !
+                      cphi = T1 + T2 * ( kblx(ind) * cosbp - T3 * sinbp ) + T4 * ( kbly * cosbp - T5 * sinbp ) - T6 * ( kbly*kbly / kblx(ind) * sinbp )
+                      !
+                      ! update biphase
+                      !
+                      biph  = biph + DX * cphi
+                      sinbp = sin(biph)
+                      cosbp = cos(biph)
+                      !
+                   else
+                      !
+                      ! set Ut to zero for temporarily dry points
+                      ! note: this will be used in finite differences
+                      !
+                      Ut(ind) = 0.
+                      !
+                   endif
+                   !
+                enddo
+             enddo
+             !
+             ! find appropriate frequency index for storage
+             !
+             jfl = abs( nint(w_l/df) )
+             !
+             do iy = 1, MYC
+                !
+                ! first grid point (at west boundary)
+                indf = KGRPNT(1,iy)
+                !
+                ! compute bound infragravity variance (eq. 29)
+                !
+                do ix = 1, MXC
+                   !
+                   ind    = KGRPNT(ix,iy)
+                   deploc = DEP2(ind)
+                   !
+                   ! find appropriate direction index for storage at each cross-shore location
+                   !
+                   idth = ( thetab(ind) - hdth ) / dth
+                   !
+                   jdl = floor(idth) + 1
+                   if ( jdl < 1 ) jdl = jdl + MDC
+                   !
+                   ! compute fraction of actual directional bin to appropriately assign amount of bound energy in directional space
+                   !
+                   fdb = idth - floor(idth)
+                   !
+                   if ( ind > 1 .and. deploc > DEPMIN ) then
+                      !
+                      Ebig(jdl  ,jfl,ind) = Ebig(jdl  ,jfl,ind) + max( (1.-fdb) * 0.5 * abs(Z(ind))**2, 0. )
+                      Ebig(jdl+1,jfl,ind) = Ebig(jdl+1,jfl,ind) + max(     fdb  * 0.5 * abs(Z(ind))**2, 0. )
+                      !
+                   endif
+                   !
+                enddo
+             enddo
+             !
+          endif
+          !
+       enddo sloop
+    enddo floop
+    !
+    ! deallocate arrays
+    !
+    deallocate(cg    )
+    deallocate(cgx   )
+    deallocate(costb )
+    deallocate(F1    )
+    deallocate(F2    )
+    deallocate(F3    )
+    deallocate(kblx  )
+    deallocate(n     )
+    deallocate(sintb )
+    deallocate(thetab)
+    deallocate(Ut    )
+    deallocate(Z     )
+    !
+end subroutine SwanIEMsrfbeat
+!
+end module SwanIEM

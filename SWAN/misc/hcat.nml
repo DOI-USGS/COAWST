@@ -1,0 +1,7 @@
+&arg_nml                       !namelist identifier
+basefile = "hotfile_example",  !(required) base file name (w/o mpi node tag)
+free = .true.                  !(optional) free format (default .true.)
+halo = 3,                      !(optional) halo size (default is 3)
+verbose = .false.,             !(optional) verbose screen ouput (default .false.)
+stomp = .false.                !(optional) overwrite basefile (default .false.)
+/                              !end-of-namelist marker
